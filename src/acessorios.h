@@ -10,6 +10,7 @@
 using namespace std;
 #include "Acidentes2.h"
 #include "Bcsm2.h"
+#include "multiBCS.h"
 #include "BombaVol.h"
 //#include "BombaVolVap.h"
 #include "FonteMas.h"
@@ -24,11 +25,12 @@ class acessorio{
    public:
    int tipo;//0-> sem acess�rio,1->Fonte de g�s, 2->Fonte de l�quido,3->IPR,
    //4-> BCS, 5-> choke,6-> mudan�a de d�metro, 7-> delp, 8-> bomba volum�trica, 10->fonteMult
-   //, 11-> IPR Vapor, 12->massica vapor, 14-> bombavolvap, 15->porosoRadial, 16->poroso2D
+   //, 11-> IPR Vapor, 12->massica vapor, 14-> bombavolvap, 15->porosoRadial, 16->poroso2D, 17->multiBCS
 
    //9-> fontechoke
 
    BomCentSub bcs;
+   multiBomCentSub multibcs;
    BomVol bvol;
    //BomVolVapor bvolvap;
    MudaArea mda;
@@ -59,8 +61,8 @@ class acessorio{
    //return 0.;}
 };
 
-inline void carrega(const BomCentSub& acsr, acessorio& grupo)
-{grupo.bcs=acsr;grupo.tipo=3;}
+inline void carrega(const BomCentSub& acsr, acessorio& grupo){grupo.bcs=acsr;grupo.tipo=3;}
+inline void carrega(const multiBomCentSub& acsr, acessorio& grupo){grupo.multibcs=acsr;grupo.tipo=17;}
 inline void carrega(const MudaArea& acsr, acessorio& grupo){grupo.mda=acsr;grupo.tipo=5;}
 inline void carrega(const choke& acsr, acessorio& grupo){grupo.chk=acsr;grupo.tipo=4;}
 inline void carrega(const IPR& acsr, acessorio& grupo)

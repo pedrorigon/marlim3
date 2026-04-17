@@ -1984,6 +1984,10 @@ JSON_entrada_dutosServico_Item_nCelulas_XY& JSON_entrada_dutosServico_Item::nCel
 	return static_cast<JSON_entrada_hidrato_Hammerschmidt_Khamm&>(*contents["Khamm"].get()); //hydvaloritem
 }*/ //chris - Hidratos
 
+JSON_entrada_hidrato_modeloHidrato_tipoHmodel& JSON_entrada_hidrato_modeloHidrato::tipoHmodel(){ //hydvaloritem
+	return static_cast<JSON_entrada_hidrato_modeloHidrato_tipoHmodel&>(*contents["tipoHmodel"].get()); //chris-model2
+}
+
 JSON_entrada_hidrato_Hammerschmidt_MMH& JSON_entrada_hidrato_Hammerschmidt::MMH(){ //hydvaloritem
 	return static_cast<JSON_entrada_hidrato_Hammerschmidt_MMH&>(*contents["MMH"].get());
 }
@@ -2036,6 +2040,10 @@ JSON_entrada_hidrato_PropFluHidrato_coefEsteq& JSON_entrada_hidrato_PropFluHidra
 	return static_cast<JSON_entrada_hidrato_PropFluHidrato_coefEsteq&>(*contents["coefEsteq"].get());
 }
 
+JSON_entrada_hidrato_modeloHidrato::JSON_entrada_hidrato_modeloHidrato(){ //hydvalor //chris-model2
+	//contents["rhoH"] = make_shared<JSON_entrada_hidrato_PropFluHidrato_rhoH>(); //chris - Hidratos
+	contents["tipoHmodel"] = make_shared<JSON_entrada_hidrato_modeloHidrato_tipoHmodel>();
+}
 
 JSON_entrada_hidrato_PropFluHidrato::JSON_entrada_hidrato_PropFluHidrato(){ //hydvalor
 	//contents["rhoH"] = make_shared<JSON_entrada_hidrato_PropFluHidrato_rhoH>(); //chris - Hidratos
@@ -2088,6 +2096,7 @@ JSON_entrada_hidrato_ModeloTurner_rp& JSON_entrada_hidrato_ModeloTurner::rp(){
 
 JSON_entrada_hidrato::JSON_entrada_hidrato(){
 	contents["calculoInterno"] = make_shared<JSON_entrada_hidrato_calculoInterno>();
+	contents["modeloHidrato"] = make_shared<JSON_entrada_hidrato_modeloHidrato>(); //chris-model2
 	contents["pressao"] = make_shared<JSON_entrada_hidrato_pressao>();
 	contents["temperatura"] = make_shared<JSON_entrada_hidrato_temperatura>();
 	contents["Hammerschmidt"] = make_shared<JSON_entrada_hidrato_Hammerschmidt>();
@@ -2098,6 +2107,10 @@ JSON_entrada_hidrato::JSON_entrada_hidrato(){
 JSON_entrada_hidrato_calculoInterno& JSON_entrada_hidrato::calculoInterno(){
 	return static_cast<JSON_entrada_hidrato_calculoInterno&>(*contents["calculoInterno"].get());
 }
+
+JSON_entrada_hidrato_modeloHidrato& JSON_entrada_hidrato::modeloHidrato(){
+	return static_cast<JSON_entrada_hidrato_modeloHidrato&>(*contents["modeloHidrato"].get());
+} //chris-model2
 
 JSON_entrada_hidrato_pressao& JSON_entrada_hidrato::pressao(){
 	return static_cast<JSON_entrada_hidrato_pressao&>(*contents["pressao"].get());
@@ -2236,6 +2249,7 @@ JSON_entrada_bcs_Item::JSON_entrada_bcs_Item(){
 	contents["correcHI"] = make_shared<JSON_entrada_bcs_Item_correcHI>();
 	contents["id"] = make_shared<JSON_entrada_bcs_Item_id>();
 	contents["comprimentoMedido"] = make_shared<JSON_entrada_bcs_Item_comprimentoMedido>();
+	contents["fracTermMotorEfic"] = make_shared<JSON_entrada_bcs_Item_fracTermMotorEfic>();
 	contents["tempo"] = make_shared<JSON_entrada_bcs_Item_tempo>();
 	contents["frequencia"] = make_shared<JSON_entrada_bcs_Item_frequencia>();
 	contents["vazao"] = make_shared<JSON_entrada_bcs_Item_vazao>();
@@ -2263,6 +2277,10 @@ JSON_entrada_bcs_Item_id& JSON_entrada_bcs_Item::id(){
 
 JSON_entrada_bcs_Item_comprimentoMedido& JSON_entrada_bcs_Item::comprimentoMedido(){
 	return static_cast<JSON_entrada_bcs_Item_comprimentoMedido&>(*contents["comprimentoMedido"].get());
+}
+
+JSON_entrada_bcs_Item_fracTermMotorEfic& JSON_entrada_bcs_Item::fracTermMotorEfic(){
+	return static_cast<JSON_entrada_bcs_Item_fracTermMotorEfic&>(*contents["fracTermMotorEfic"].get());
 }
 
 JSON_entrada_bcs_Item_tempo& JSON_entrada_bcs_Item::tempo(){
@@ -2307,6 +2325,106 @@ JSON_entrada_bcs_Item_EficienciaMotor& JSON_entrada_bcs_Item::EficienciaMotor(){
 
 JSON_entrada_bcs_Item_FrequenciaMinima& JSON_entrada_bcs_Item::FrequenciaMinima(){
 	return static_cast<JSON_entrada_bcs_Item_FrequenciaMinima&>(*contents["FrequenciaMinima"].get());
+}
+
+
+
+JSON_entrada_multibcs_Item_curva_Item::JSON_entrada_multibcs_Item_curva_Item(){
+	contents["vazao"] = make_shared<JSON_entrada_multibcs_Item_curva_Item_vazao>();
+	contents["potencia"] = make_shared<JSON_entrada_multibcs_Item_curva_Item_potencia>();
+	contents["eficiencia"] = make_shared<JSON_entrada_multibcs_Item_curva_Item_eficiencia>();
+	contents["head"] = make_shared<JSON_entrada_multibcs_Item_curva_Item_head>();
+	contents["nestag"] = make_shared<JSON_entrada_multibcs_Item_curva_Item_nestag>();
+	contents["nestagFab"] = make_shared<JSON_entrada_multibcs_Item_curva_Item_nestagFab>();
+}
+
+JSON_entrada_multibcs_Item_curva_Item_vazao& JSON_entrada_multibcs_Item_curva_Item::vazao(){
+	return static_cast<JSON_entrada_multibcs_Item_curva_Item_vazao&>(*contents["vazao"].get());
+}
+
+JSON_entrada_multibcs_Item_curva_Item_potencia& JSON_entrada_multibcs_Item_curva_Item::potencia(){
+	return static_cast<JSON_entrada_multibcs_Item_curva_Item_potencia&>(*contents["potencia"].get());
+}
+
+JSON_entrada_multibcs_Item_curva_Item_eficiencia& JSON_entrada_multibcs_Item_curva_Item::eficiencia(){
+	return static_cast<JSON_entrada_multibcs_Item_curva_Item_eficiencia&>(*contents["eficiencia"].get());
+}
+
+JSON_entrada_multibcs_Item_curva_Item_head& JSON_entrada_multibcs_Item_curva_Item::head(){
+	return static_cast<JSON_entrada_multibcs_Item_curva_Item_head&>(*contents["head"].get());
+}
+
+JSON_entrada_multibcs_Item_curva_Item_nestag& JSON_entrada_multibcs_Item_curva_Item::nestag(){
+	return static_cast<JSON_entrada_multibcs_Item_curva_Item_nestag&>(*contents["nestag"].get());
+}
+
+JSON_entrada_multibcs_Item_curva_Item_nestagFab& JSON_entrada_multibcs_Item_curva_Item::nestagFab(){
+	return static_cast<JSON_entrada_multibcs_Item_curva_Item_nestagFab&>(*contents["nestagFab"].get());
+}
+
+
+JSON_entrada_multibcs_Item::JSON_entrada_multibcs_Item(){
+	contents["ativo"] = make_shared<JSON_entrada_multibcs_Item_ativo>();
+	contents["correcHI"] = make_shared<JSON_entrada_multibcs_Item_correcHI>();
+	contents["equilTerm"] = make_shared<JSON_entrada_multibcs_Item_equilTerm>();
+	contents["id"] = make_shared<JSON_entrada_multibcs_Item_id>();
+	contents["comprimentoMedido"] = make_shared<JSON_entrada_multibcs_Item_comprimentoMedido>();
+	contents["fracTermMotorEfic"] = make_shared<JSON_entrada_multibcs_Item_fracTermMotorEfic>();
+	contents["tempo"] = make_shared<JSON_entrada_multibcs_Item_tempo>();
+	contents["frequencia"] = make_shared<JSON_entrada_multibcs_Item_frequencia>();
+	contents["EficienciaMotor"] = make_shared<JSON_entrada_multibcs_Item_EficienciaMotor>();
+	contents["FrequenciaMinima"] = make_shared<JSON_entrada_multibcs_Item_FrequenciaMinima>();
+	contents["freqref"] = make_shared<JSON_entrada_multibcs_Item_freqref>();
+
+	contents["curva"] = make_shared<JSON_entrada_multibcs_Item_curva>();
+}
+
+JSON_entrada_multibcs_Item_ativo& JSON_entrada_multibcs_Item::ativo(){
+	return static_cast<JSON_entrada_multibcs_Item_ativo&>(*contents["ativo"].get());
+}
+
+JSON_entrada_multibcs_Item_correcHI& JSON_entrada_multibcs_Item::correcHI(){
+	return static_cast<JSON_entrada_multibcs_Item_correcHI&>(*contents["correcHI"].get());
+}
+
+JSON_entrada_multibcs_Item_equilTerm& JSON_entrada_multibcs_Item::equilTerm(){
+	return static_cast<JSON_entrada_multibcs_Item_equilTerm&>(*contents["equilTerm"].get());
+}
+
+JSON_entrada_multibcs_Item_id& JSON_entrada_multibcs_Item::id(){
+	return static_cast<JSON_entrada_multibcs_Item_id&>(*contents["id"].get());
+}
+
+JSON_entrada_multibcs_Item_comprimentoMedido& JSON_entrada_multibcs_Item::comprimentoMedido(){
+	return static_cast<JSON_entrada_multibcs_Item_comprimentoMedido&>(*contents["comprimentoMedido"].get());
+}
+
+JSON_entrada_multibcs_Item_fracTermMotorEfic& JSON_entrada_multibcs_Item::fracTermMotorEfic(){
+	return static_cast<JSON_entrada_multibcs_Item_fracTermMotorEfic&>(*contents["fracTermMotorEfic"].get());
+}
+
+JSON_entrada_multibcs_Item_tempo& JSON_entrada_multibcs_Item::tempo(){
+	return static_cast<JSON_entrada_multibcs_Item_tempo&>(*contents["tempo"].get());
+}
+
+JSON_entrada_multibcs_Item_frequencia& JSON_entrada_multibcs_Item::frequencia(){
+	return static_cast<JSON_entrada_multibcs_Item_frequencia&>(*contents["frequencia"].get());
+}
+
+JSON_entrada_multibcs_Item_EficienciaMotor& JSON_entrada_multibcs_Item::EficienciaMotor(){
+	return static_cast<JSON_entrada_multibcs_Item_EficienciaMotor&>(*contents["EficienciaMotor"].get());
+}
+
+JSON_entrada_multibcs_Item_FrequenciaMinima& JSON_entrada_multibcs_Item::FrequenciaMinima(){
+	return static_cast<JSON_entrada_multibcs_Item_FrequenciaMinima&>(*contents["FrequenciaMinima"].get());
+}
+
+JSON_entrada_multibcs_Item_freqref& JSON_entrada_multibcs_Item::freqref(){
+	return static_cast<JSON_entrada_multibcs_Item_freqref&>(*contents["freqref"].get());
+}
+
+JSON_entrada_multibcs_Item_curva& JSON_entrada_multibcs_Item::curva(){
+	return static_cast<JSON_entrada_multibcs_Item_curva&>(*contents["curva"].get());
 }
 
 JSON_entrada_bombaVolumetrica_Item::JSON_entrada_bombaVolumetrica_Item(){
@@ -2396,6 +2514,33 @@ JSON_entrada_deltaPressao_Item_eficGas& JSON_entrada_deltaPressao_Item::eficGas(
 }
 
 
+JSON_entrada_fonteCalor_Item::JSON_entrada_fonteCalor_Item(){
+	contents["ativo"] = make_shared<JSON_entrada_fonteCalor_Item_ativo>();
+	contents["id"] = make_shared<JSON_entrada_fonteCalor_Item_id>();
+	contents["comprimentoMedido"] = make_shared<JSON_entrada_fonteCalor_Item_comprimentoMedido>();
+	contents["tempo"] = make_shared<JSON_entrada_fonteCalor_Item_tempo>();
+	contents["calor"] = make_shared<JSON_entrada_fonteCalor_Item_calor>();
+}
+
+JSON_entrada_fonteCalor_Item_ativo& JSON_entrada_fonteCalor_Item::ativo(){
+	return static_cast<JSON_entrada_fonteCalor_Item_ativo&>(*contents["ativo"].get());
+}
+
+JSON_entrada_fonteCalor_Item_id& JSON_entrada_fonteCalor_Item::id(){
+	return static_cast<JSON_entrada_fonteCalor_Item_id&>(*contents["id"].get());
+}
+
+JSON_entrada_fonteCalor_Item_comprimentoMedido& JSON_entrada_fonteCalor_Item::comprimentoMedido(){
+	return static_cast<JSON_entrada_fonteCalor_Item_comprimentoMedido&>(*contents["comprimentoMedido"].get());
+}
+
+JSON_entrada_fonteCalor_Item_tempo& JSON_entrada_fonteCalor_Item::tempo(){
+	return static_cast<JSON_entrada_fonteCalor_Item_tempo&>(*contents["tempo"].get());
+}
+
+JSON_entrada_fonteCalor_Item_calor& JSON_entrada_fonteCalor_Item::calor(){
+	return static_cast<JSON_entrada_fonteCalor_Item_calor&>(*contents["calor"].get());
+}
 
 JSON_entrada_master1::JSON_entrada_master1(){
 	contents["ativo"] = make_shared<JSON_entrada_master1_ativo>();
@@ -3342,6 +3487,7 @@ JSON_entrada_perfilProducao::JSON_entrada_perfilProducao(){
 	contents["tempParede"] = make_shared<JSON_entrada_perfilProducao_tempParede>();
 	contents["subResfria"] = make_shared<JSON_entrada_perfilProducao_subResfria>();
 	contents["dadosParafina"] = make_shared<JSON_entrada_perfilProducao_dadosParafina>();
+	contents["correlacaoBB"] = make_shared<JSON_entrada_perfilProducao_correlacaoBB>();
 }
 
 JSON_entrada_perfilProducao_ativo& JSON_entrada_perfilProducao::ativo(){
@@ -3619,6 +3765,10 @@ JSON_entrada_perfilProducao_subResfria& JSON_entrada_perfilProducao::subResfria(
 
 JSON_entrada_perfilProducao_dadosParafina& JSON_entrada_perfilProducao::dadosParafina(){
 	return static_cast<JSON_entrada_perfilProducao_dadosParafina&>(*contents["dadosParafina"].get());
+}
+
+JSON_entrada_perfilProducao_correlacaoBB& JSON_entrada_perfilProducao::correlacaoBB(){
+	return static_cast<JSON_entrada_perfilProducao_correlacaoBB&>(*contents["correlacaoBB"].get());
 }
 
 JSON_entrada_perfilServico::JSON_entrada_perfilServico(){
@@ -4038,8 +4188,10 @@ JSON_entrada::JSON_entrada(){
 	contents["ipr"] = make_shared<JSON_entrada_ipr>();
 	contents["fonteChoke"] = make_shared<JSON_entrada_fonteChoke>();
 	contents["bcs"] = make_shared<JSON_entrada_bcs>();
+	contents["multibcs"] = make_shared<JSON_entrada_multibcs>();
 	contents["bombaVolumetrica"] = make_shared<JSON_entrada_bombaVolumetrica>();
 	contents["deltaPressao"] = make_shared<JSON_entrada_deltaPressao>();
+	contents["fonteCalor"] = make_shared<JSON_entrada_fonteCalor>();
 	contents["master1"] = make_shared<JSON_entrada_master1>();
 	contents["master2"] = make_shared<JSON_entrada_master2>();
 	contents["pig"] = make_shared<JSON_entrada_pig>();
@@ -4158,12 +4310,20 @@ JSON_entrada_bcs& JSON_entrada::bcs(){
 	return static_cast<JSON_entrada_bcs&>(*contents["bcs"].get());
 }
 
+JSON_entrada_multibcs& JSON_entrada::multibcs(){
+	return static_cast<JSON_entrada_multibcs&>(*contents["multibcs"].get());
+}
+
 JSON_entrada_bombaVolumetrica& JSON_entrada::bombaVolumetrica(){
 	return static_cast<JSON_entrada_bombaVolumetrica&>(*contents["bombaVolumetrica"].get());
 }
 
 JSON_entrada_deltaPressao& JSON_entrada::deltaPressao(){
 	return static_cast<JSON_entrada_deltaPressao&>(*contents["deltaPressao"].get());
+}
+
+JSON_entrada_fonteCalor& JSON_entrada::fonteCalor(){
+	return static_cast<JSON_entrada_fonteCalor&>(*contents["fonteCalor"].get());
 }
 
 JSON_entrada_master1& JSON_entrada::master1(){
