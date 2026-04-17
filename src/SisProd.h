@@ -36,6 +36,7 @@ using namespace std;
 #include "FonteMas.h"
 #include "FonteMassCHK.h"
 #include "Bcsm2.h"
+#include "multiBCS.h"
 #include "BombaVol.h"
 #include "Acidentes2.h"
 #include "acessorios.h"

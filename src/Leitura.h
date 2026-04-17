@@ -33,6 +33,7 @@ using namespace std;
 #include "Vetor.h"
 #include "Matriz.h"
 #include "Bcsm2.h"
+#include "multiBCS.h"
 #include "BombaVol.h"
 #include "acessorios.h"
 #include "celula3.h"
@@ -54,9 +55,11 @@ using namespace std;
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/error/pt_BR.h"
 #include "JSON_entrada.h"
+#include "JSONDataModel.h"
 #include "MarlimComposicional.h"
 #include "variaveisGlobais1D.h"
 #include "criterioIntermiSevera.h"
+#include "validaTipoJson.h"
 
 //#define VERSAO_SCHEMA_JSON "1.3.9"
 //#define ARQUIVO_SCHEMA_JSON "schema_1_3_9.json"
@@ -548,6 +551,64 @@ struct detBCS{
 	double eficM;//eficiecia do motor
 	double freqMinima;//frequencia mpinima de operacao da BCS
 	int correcHI;
+	double fracTermMotorEfic;
+};
+
+struct detMultiBCS{
+	int posicP;//indice da celula onde a BCS se encontra no sistema de producao
+	double comp;//comprimento onde a BCS se encontra no sistema de producao, referencia->fundo de poco
+	double eficM;//eficiecia do motor
+	double freqMinima;//frequencia mpinima de operacao da BCS
+	int correcHI;
+	int equilTerm;
+	double fracTermMotorEfic;
+	double freqref;//frequencia de referencia em que a curva foi levantada
+	int nestag;//numero de estagios da bomba
+	int parserie;//numero de elementos da serie de tempo
+	double* tempo;//vetor com os tempos da serie de tempo
+	double* freq;//vetor com as frequencias, Hertz, da serie de tempo da BCS
+	int nBCS;
+	int* nestagParcFab;
+	int* nestagParc;
+	int* ncurva;
+	detBCS* BCSinterno;
+	detMultiBCS(){
+		posicP=-1;
+		comp=-1.;
+		eficM=0.;
+		freqMinima=0.;
+		correcHI=-1;
+		equilTerm=1;
+		freqref=0.;
+		nestag=0;
+		parserie=0;
+		tempo=0;
+		freq=0;
+		nBCS=0;
+		nestagParcFab=0;
+		nestagParc=0;
+		BCSinterno=0;
+		ncurva=0;
+		fracTermMotorEfic=0.;
+	}
+	~detMultiBCS(){
+		if(nestagParc!=0 && nBCS>0) delete [] nestagParc;
+		if(nestagParcFab!=0 && nBCS>0) delete [] nestagParcFab;
+		if(ncurva!=0 && nBCS>0) delete [] ncurva;
+		if(BCSinterno!=0 && nBCS>0){
+			  for(int i=0; i<nBCS;i++){
+				  delete [] BCSinterno[i].tempo;
+				  delete [] BCSinterno[i].freq;
+				  delete [] BCSinterno[i].vaz;
+				  delete [] BCSinterno[i].head;
+				  delete [] BCSinterno[i].power;
+				  delete [] BCSinterno[i].efic;
+			  }
+			  delete [] BCSinterno;
+			  nBCS=0;
+			  BCSinterno=0;
+		}
+	 }
 };
 
 //struct com o detalhamento da Bomba Volumetrica
@@ -600,6 +661,15 @@ struct detMASTER1{
 struct detPSEP{
 	int parserie;//numero de elementos da serie de tempo
 	double* pres;//vetor com os valores de pressao do separador/jusante, kgf/cm2, da serie de tempo
+	double* tempo;//vetor com os tempos da serie de tempo
+};
+
+//struct com o detalhamento de fonte de calor
+struct detCalor{
+	int posicP;//indice da celula onde a fonte se encontra no sistema de producao
+	double comp;//comprimento onde a fonte se encontra no sistema de producao, referencia->fundo de poco
+	int parserie;//numero de elementos da serie de tempo
+	double* cal;//vetor com a potência da fonte de calor, W
 	double* tempo;//vetor com os tempos da serie de tempo
 };
 
@@ -733,6 +803,8 @@ struct detPROFP{
 
 	int subResfria;
 
+	int correlacaoBB;
+	
 	double* tempo;//vetor com os tempos em que serao gravados os perfis
 };
 
@@ -1091,6 +1163,8 @@ class Ler{
     public:
     
 	//*** solver hidratos - chris
+	
+	int tipoHmodel; //chris-model2
    	double MMH, MMG, MMW, Whamm; //chris - Hidratos
    	//double Khamm //chris - Hidratos
    	//double Methanol, MMEG; chris - Hidratos
@@ -1134,8 +1208,10 @@ class Ler{
 	int nPoro2D;//numero de fontes de meio poroso 2D cadastradas no Json
 	int nfuro;//numero de fontes de pressao cadastradas no Json
 	int nbcs;//npumero de BCSs cadastradas no Json
+	int nmultibcs;
 	int nbvol;//numero de bombas volumetricas cadastradas no Json
 	int ndpreq;//numero de incrementpos de pressao cadastrados no Json
+	int ncalor;//numero de fontes de calor cadastrados no Json
 	int npig;//npumero de pigs cadastrados no Json
 	int nperfisp;//numero de perfis de producao que serao impressos
 	int nperfisg;//numero de perfis de linha de servico que serao impressos
@@ -1247,8 +1323,10 @@ class Ler{
     detPoro2D* poroso2D;//vetor com o detalhamento das fontes de meio poroso 2D cadastradas no Json
     detFURO* furo;//vetor com o detalhamento das fontes de pressao cadastradas no Json
     detBCS* bcs;//vetor com o detalhamento das BCS cadastradas no Json
+    detMultiBCS* multiBcs;
     detBVOL* bvol;//vetor com o detalhamento das bombas volumetricas cadastradas no Json
     detDPREQ* dpreq;//vetor com o detalhamento dos incrementos de pressao cadastrados no Json
+    detCalor* fonteCal;//vetor com o detalhamento das fontes de calor cadastradas no Json
     detMASTER1 master1;//objeto com detalhamento de serie temporal da master1
     detMASTER1 master2;//objeto com detalhamento de serie temporal da master2
     detPSEP psep;//objeto com detalhamento de serie temporal da pressao na plataforma
@@ -1285,6 +1363,7 @@ class Ler{
     int MedSimpPresFront;//indicador  de como as pressoe na fronteira sao calculadas, por um metodo
     //mais completo ou por um metodo mais simples; quando zero, calcula-se da maneira mais completa,
     //quando 1, usa os valores medios
+    //int JTLiquidoSimple; //chris
     double limTransMass;//limite de pressao em que abaixo deste valor, se utiliza um modelo de transferencia de massa
     //mais simples, porem mais estavel (em pressoes muito baixas, em shutins, o simulador tem dificuldades com o modelo
     //de transferencia de massa)
@@ -1730,6 +1809,8 @@ class Ler{
 		  delete [] bcs;
 		}
 
+		if(nmultibcs>0) delete [] multiBcs;
+
 		if(nbvol>0){
 		  for(int i=0; i<this->nbvol;i++){
 			  delete [] bvol[i].tempo;
@@ -1744,6 +1825,14 @@ class Ler{
 			  delete [] dpreq[i].tempo;
 		  }
 		  delete [] dpreq;
+		}
+
+		if(ncalor>0){
+		  for(int i=0; i<this->ncalor;i++){
+			  delete [] fonteCal[i].cal;
+			  delete [] fonteCal[i].tempo;
+		  }
+		  delete [] fonteCal;
 		}
 
 		if(npig>0) delete [] pig;
@@ -2055,8 +2144,11 @@ class Ler{
 		void gerafPoro2DFonte(Cel* celula);//metodo que gera os objetos fonte de meio Poroso 2D na linha de producao em SisProd
 		void geraFuro(Cel* celula);//metodo que gera os objetos de vazamento na linha de producao em SisProd
 		void gerafBCS(Cel* celula);//metodo que gera os objetos BCSs na linha de producao em SisProd
+		void gerafmultiBCS(Cel* celula);
 		void gerafBVOL(Cel* celula);//metodo que gera os objetos de bomba volumetrica na linha de producao em SisProd
 		void geraDPReq(Cel* celula);//metodo que gera os objetos de delta pressao na linha de producao em SisProd
+		void geraFonteCalor(Cel* celula);
+		void geraCalor(Cel* celula);//metodo que gera os objetos de fonte de calor na linha de producao em SisProd
 		void funcRazCV(double abertura, detCV* cvCurv,int ncurvaCV,double cdchk,
 				            double AreaTub, double& razarea);
 		void geraValv(Cel* celula);//metodo que gera os objetos de valvulas na linha de producao em SisProd
@@ -2164,6 +2256,7 @@ class Ler{
     string arquivoLog;
     tipoValidacaoJson_t validacaoJson;
 
+    void testaTipo();
     Document parseSchema();
     JSON_entrada parseEntrada();
 
@@ -2219,8 +2312,10 @@ class Ler{
     void parse_fontechk(JSON_entrada_fonteChoke& fontechk_json);
     void parse_pig(JSON_entrada_pig& pig_json);
     void parse_bcs(JSON_entrada_bcs& bcs_json);
+    void parse_multibcs(JSON_entrada_multibcs& multibcs_json);
     void parse_bomba_volumetrica(JSON_entrada_bombaVolumetrica& bomba_volumetrica_json);
     void parse_delta_pressao(JSON_entrada_deltaPressao& delta_pressao_json);
+    void parse_fonteCalor(JSON_entrada_fonteCalor& fonteCalor_json);
     void troca_gaslift(detVALVGL& valv1, detVALVGL& valv2);//alteracao2
     void parse_fonte_gaslift(JSON_entrada_fonteGasLift& fonte_gaslift_json);
     void parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_json);
@@ -2269,8 +2364,10 @@ class Ler{
     void copia_fontechk(Ler& arqAntigo);
     void copia_pig(Ler& arqAntigo);
     void copia_bcs(Ler& arqAntigo);
+    void copia_multibcs(Ler& arqAntigo);
     void copia_bomba_volumetrica(Ler& arqAntigo);
     void copia_delta_pressao(Ler& arqAntigo);
+    void copia_fonteCalor(Ler& arqAntigo);
     void copia_fonte_gaslift(Ler& arqAntigo);
     void copia_intermitencia(Ler& arqAntigo);
     void copia_perfil_producao(Ler& arqAntigo);

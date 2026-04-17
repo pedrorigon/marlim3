@@ -20,19 +20,43 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 
 	//Solver de Hidratos
 
+	//modeloIII
+	V_h_total = 0.0L;
+	V_h_dep = 0.0L;
+	V_h_disp = 0.0L;
+
+	e_dep = 0.0L;
+	D_h_eff = 0.0L;
+	A_eff = 0.0L;
+	phi_h_disp = 0.0L;
+
+	phi_h_eff = 0.0L;
+	mu_rel_slurry = 0.0L;
+	mu_base_liq = 0.0L;
+	mu_slurry = 0.0L; //modeloIII
+
 	// --- Solver de Hidratos: inicialização ---
 	// fluxos em massa (por área) – começam em zero
-	j_H = 0.0L;
-	j_G = 0.0L;
-	j_W = 0.0L;
+	j_H = 0.0L; //não são usados no modelo I de Hidratos
+	j_G = 0.0L; //não são usados no modelo I de Hidratos
+	j_W = 0.0L; //não são usados no modelo I de Hidratos
 
 	// volumes físicos
 	V_h = 0.0L;   // sem hidrato no início
 	V_w=0.;
-	//V_w = 0.0L;   // será atribuído em solverHidrato() usando BSW
+	V_g=0.; //chris Hidratos
+
 
 	FVH = 0.0L;
 	agua_consumida=0.;
+	gas_consumido=0.;
+
+	agua_consumida_massa=0.; //alteracao Hidratos
+	gas_consumido_massa=0.; //alteracao Hidratos
+
+	agua_consumida_massa_step=0.; //alteracao Hidratos
+	gas_consumido_massa_step=0.; //alteracao Hidratos
+
 	massa_hidrato=0.0L; //chris - Hidratos
 	
 	vg1dSP=Vvg1dSP;
@@ -147,6 +171,7 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
     dpB=0.;
     potB=0;
     potBT=0;
+    potTermo=0.;
     dpBL=0.;
     potBL=0;
     potBTL=0;
@@ -377,6 +402,8 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 
 	fluxcalAcopRedeP=0.;
 	resAcopRedeP=0.;
+
+	fonteCal=0.;
 }
 
 Cel::Cel(const Cel& vcel) :
@@ -388,9 +415,34 @@ Cel::Cel(const Cel& vcel) :
 			j_W=vcel.j_W;
 			V_h=vcel.V_h;
 			V_w=vcel.V_w;
+			V_g=vcel.V_g; //chris Hidratos
 			FVH=vcel.FVH;
+
 			massa_hidrato=vcel.massa_hidrato; //chris - Hidratos
 			agua_consumida=vcel.agua_consumida; //chris - Hidratos
+			gas_consumido=vcel.gas_consumido; //chris - Hidratos
+	
+			agua_consumida_massa=vcel.agua_consumida_massa; //Alteracao Hidratos
+			gas_consumido_massa=vcel.gas_consumido_massa; //Alteracao Hidratos
+
+			agua_consumida_massa_step=vcel.agua_consumida_massa_step; //alteracao Hidratos
+			gas_consumido_massa_step=vcel.gas_consumido_massa_step; //alteracao Hidratos
+
+			//modeloIII
+			V_h_total = vcel.V_h_total;
+			V_h_dep = vcel.V_h_dep;
+			V_h_disp = vcel.V_h_disp;
+
+			e_dep = vcel.e_dep;
+			D_h_eff = vcel.D_h_eff;
+			A_eff = vcel.A_eff;
+			phi_h_disp = vcel.phi_h_disp;
+
+			phi_h_disp = 0.0L;
+			phi_h_eff = vcel.phi_h_eff;
+			mu_rel_slurry = vcel.mu_rel_slurry;
+			mu_base_liq  = vcel.mu_base_liq;
+			mu_slurry = vcel.mu_slurry; //modeloIII
 	
 			vg1dSP=vcel.vg1dSP;
 			dutoL = vcel.dutoL;
@@ -510,6 +562,7 @@ Cel::Cel(const Cel& vcel) :
 		    dpB=vcel.dpB;
 		    potB=vcel.potB;
 		    potBT=vcel.potBT;
+		    potTermo=vcel.potTermo;
 		    dpBL=vcel.dpBL;
 		    potBL=vcel.potBL;
 		    potBTL=vcel.potBTL;
@@ -709,6 +762,8 @@ Cel::Cel(const Cel& vcel) :
 			fluxcalAcopRedeP=vcel.fluxcalAcopRedeP;
 			resAcopRedeP=vcel.resAcopRedeP;
 
+			fonteCal=vcel.fonteCal;
+
 }
 
 Cel& Cel::operator =(const Cel& vcel) {
@@ -720,9 +775,34 @@ Cel& Cel::operator =(const Cel& vcel) {
 		j_W=vcel.j_W;
 		V_h=vcel.V_h;
 		V_w=vcel.V_w;
+		V_g=vcel.V_g; //chris Hidratos
 		FVH=vcel.FVH;
+
 		massa_hidrato=vcel.massa_hidrato; //chris - Hidratos
-		agua_consumida=vcel.agua_consumida;
+		agua_consumida=vcel.agua_consumida; //chris - Hidratos
+		gas_consumido=vcel.gas_consumido; //chris-Hidratos
+		
+		agua_consumida_massa=vcel.agua_consumida_massa; //Alteracao Hidratos
+		gas_consumido_massa=vcel.gas_consumido_massa; //Alteracao Hidratos
+		
+		agua_consumida_massa_step=vcel.agua_consumida_massa_step; //alteracao Hidratos
+		gas_consumido_massa_step=vcel.gas_consumido_massa_step; //alteracao Hidratos
+
+		//modeloIII
+		V_h_total = vcel.V_h_total;
+		V_h_dep = vcel.V_h_dep;
+		V_h_disp = vcel.V_h_disp;
+
+		e_dep = vcel.e_dep;
+		D_h_eff = vcel.D_h_eff;
+		A_eff = vcel.A_eff;
+		phi_h_disp = vcel.phi_h_disp;
+
+		phi_h_disp = 0.0L;
+		phi_h_eff = vcel.phi_h_eff;
+		mu_rel_slurry = vcel.mu_rel_slurry;
+		mu_base_liq  = vcel.mu_base_liq;
+		mu_slurry = vcel.mu_slurry; //modeloIII
 		
 		vg1dSP=vcel.vg1dSP;
 		dutoL = vcel.dutoL;
@@ -856,6 +936,7 @@ Cel& Cel::operator =(const Cel& vcel) {
 	    dpB=vcel.dpB;
 	    potB=vcel.potB;
 	    potBT=vcel.potBT;
+	    potTermo=vcel.potTermo;
 	    dpBL=vcel.dpBL;
 	    potBL=vcel.potBL;
 	    potBTL=vcel.potBTL;
@@ -1055,6 +1136,8 @@ Cel& Cel::operator =(const Cel& vcel) {
 
 		fluxcalAcopRedeP=vcel.fluxcalAcopRedeP;
 		resAcopRedeP=vcel.resAcopRedeP;
+
+		fonteCal=vcel.fonteCal;
 
 
 	}
@@ -1750,11 +1833,13 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 		    	  //bombavisc.Fpower(vazmix)*745.7;
 		     dpB=0.3048*acsr.bcs.Hvis*rhomix1*9.82;
 		     potB=acsr.bcs.Pvis*745.7;
-		     if(acsr.bcs.Evis>0.)potB*=(100./acsr.bcs.Evis);
-		     else potB=0.;
+		     potTermo=(1.-acsr.bcs.Evis/100.)*potB;
+		     //if(acsr.bcs.Evis>0.)potB*=(100./acsr.bcs.Evis);
+		     //else potB=0.;
 		     if(acsr.bcs.eficM>0.)
 		     potBT=(1.+100.*(1.-acsr.bcs.eficM/100.)/acsr.bcs.eficM)*potB;
 		     else potBT=0.;
+		     potTermo+=potBT* (1. - acsr.bcs.eficM / 100.)*acsr.bcs.fracTermMotorEfic;
 		     double Cdpb=AC*(86400/0.1589876);
 		     double djdm=(term1R/rholC+(1-term1R)/rhogC)/AC;
 		     //double dpdvaz=0.3048*bombavisc.Fhead(vazmix*1.001)*rhomix1*9.82;
@@ -1781,7 +1866,30 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 			else Wcomp=presauxR*98066.5*qgMon*logl(1+acsr.delp/presauxR);
 			Wcomp*=(100./acsr.eficGas);
 			potB =Wcomp+Wbomb;
+			potTermo=((1.-acsr.eficLiq/100.)*Wbomb+(1.-acsr.eficGas/100.)*Wcomp);
 			potBT =Wcomp+Wbomb;
+		}
+		else if(acsr.tipo==17&&acsr.multibcs.freqnova>1. && j1>=0.){
+			double alf0=alf;
+			double bet0 = bet;
+			acsr.multibcs.flui=flui;
+			acsr.multibcs.fluicol=fluicol;
+			acsr.multibcs.marchaMultiBcs((MR-MliqiniR)/rhogC, MliqiniR/rholC,
+			    		presauxR, temp,alf0, bet0);
+			dpB = acsr.multibcs.dpB*98066.52;
+			potB = acsr.multibcs.potB;
+			potBT = acsr.multibcs.potBT;
+			potTermo=acsr.multibcs.potTermo;
+			potTermo+=potBT* (1. - acsr.multibcs.eficM / 100.)*acsr.multibcs.fracTermMotorEfic;
+
+		     double Cdpb=AC*(86400/0.1589876);
+		     double djdm=(term1R/rholC+(1-term1R)/rhogC)/AC;
+		     double vazmix=(MR-MliqiniR)/rhogC+MliqiniR/rholC;
+		     vazmix*=(86400/0.1589876);
+		     acsr.multibcs.marchaMultiBcs((MR-MliqiniR)*1.001/rhogC, MliqiniR*1.001/rholC,
+		     			    		presauxR, temp,alf0, bet0);
+		     double dpdvaz=(acsr.multibcs.dpB*98066.52-dpB)/(0.001*vazmix);
+		     coefDpB=Cdpb*djdm*dpdvaz;
 		}
 
 		double delpChoke=0.;

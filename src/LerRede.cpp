@@ -58,18 +58,7 @@ Rede::Rede(const Rede& vrede) {
 }
 
 Rede& Rede::operator =(const Rede& vrede) {
-	if (this != &vrede) {
-	 if(nsisprod>0){
-		 if(anelGL==0){
-		    for(int i=0; i<this->nsisprod;i++){
-			  if(malha[i].ncoleta>0)delete [] malha[i].coleta;
-			  if(malha[i].nafluente>0)delete [] malha[i].afluente;
-		    }
-		 }
-		 if(malha!=0)delete [] malha;
-		 if(conexFR!=0)delete [] conexFR;
-		 delete [] impfiles;
-	}
+  if (this != &vrede) {
     entrada = vrede.entrada;
     entradaLog=vrede.entradaLog;
     validacaoJson = vrede.validacaoJson;
