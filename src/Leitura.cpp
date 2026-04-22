@@ -38,8 +38,10 @@ void Ler::iniciarVariaveis() {
 	ninjmass = 0;
 	nfuro = 0;
 	nbcs = 0;
+	nmultibcs=0;
 	nbvol = 0;
 	ndpreq = 0;
+	ncalor=0;
 	npig = 0;
 	master1.parserie = 0;
 	master1.ncv=0;
@@ -93,8 +95,10 @@ void Ler::iniciarVariaveis() {
 	poroso2D=0;
 	furo=0;
 	bcs = 0;
+	multiBcs=0;
 	bvol = 0;
 	dpreq = 0;
+	fonteCal=0;
 	fontechk = 0;
 	pig = 0;
 
@@ -563,6 +567,8 @@ void Ler::iniciarVariaveisConstrutorDefault() {
 
 	//Solver Hidratos - chris
     //Khamm=1297; //chris - Hidratos
+    
+	tipoHmodel=1; //chris-model2
 	MMH=120;
 	MMG=17.4;
 	MMW=18;
@@ -856,6 +862,14 @@ Ler& Ler::operator =(const Ler& vler) {
 				delete[] dpreq[i].tempo;
 			}
 			delete[] dpreq;
+		}
+
+		if(ncalor>0){
+		  for(int i=0; i<this->ncalor;i++){
+			  delete [] fonteCal[i].cal;
+			  delete [] fonteCal[i].tempo;
+		  }
+		  delete [] fonteCal;
 		}
 
 		if (npig > 0)
@@ -2031,6 +2045,25 @@ void Ler::copiaSemJson(Ler& vler) {
 	return schemaDoc;
 }*/
 
+
+void Ler::testaTipo() {
+	Document doc;
+	FILE *mr3InFile = NULL;
+	char mr3InBuf[65536];
+	logger.setNomeArqEntrada(impfile);
+	    // abrir arquivo de entrada da simulação
+	mr3InFile = fopen(impfile.c_str(), "r");
+    // criar stream para o arquivo de entrada da simulação
+	FileReadStream mr3InStream(mr3InFile, mr3InBuf, sizeof(mr3InBuf));
+	// realizar o parse do Rede de entrada
+	doc.ParseStream(mr3InStream);
+	    // fechar o arquivo
+	fclose(mr3InFile);
+
+	validadorTipo testaTipo;
+	testaTipo.validaGeral(doc);
+}
+
 /*!
  * Realizar parse do arquivo JSON de parametros da simulacao.
  */
@@ -2046,9 +2079,14 @@ JSON_entrada Ler::parseEntrada() {
 	// realizar a leitura do arquivo MRT
 	try {
 		// atualizar a estrutura de resultado do parse do arquivo de entrada da simulacao
-		logger.setNomeArqEntrada(impfile);
+		//logger.setNomeArqEntrada(impfile);
 		// realizar o parse do MRT de entrada
 		jsonDoc.load(impfile.c_str());
+
+		//rapidjson::Document& doc = *(jsonDoc.getDocument());
+		//validadorTipo testaTipo;
+		//testaTipo.validaGeral(doc);
+
 		// caso parse do MRT de entrada com erro
 		if (jsonDoc.HasParseError()) {
 			//cout << "ErrorOffset: " << determinarLinhaErro(jsonDoc.GetErrorOffset()) << endl;
@@ -2727,7 +2765,7 @@ void Ler::parse_configuracao_inicial(
 		if (configuracao_inicial_json.sentidoGeometriaSegueEscoamento().exists()) {
 			sentidoGeometriaSegueEscoamento = configuracao_inicial_json.sentidoGeometriaSegueEscoamento();
 		}
-		if(reverso==1)sentidoGeometriaSegueEscoamento=0;
+		if(reverso>0)sentidoGeometriaSegueEscoamento=false;
 
 		// indicador do sentido dos angulos dos dutos em relacao ao do escoamento
 		saidaClassica = 1; // angulos do duto a favor do sentido do escoamento
@@ -5897,9 +5935,10 @@ void Ler::parse_unidades_producao(
 						duto[ind].ang =
 								dutos_producao_json[indAtivo].angulo();
 					} else {
+						double mult=1.0;
+						if(reverso>0)mult=-1.;
 						duto[ind].ang =
-								dutos_producao_json[indAtivo].angulo()
-										* (1.0-2*reverso);
+								dutos_producao_json[indAtivo].angulo()*mult;
 					}
 				}
 				else{
@@ -5914,7 +5953,7 @@ void Ler::parse_unidades_producao(
 						if(y1>yProd0)duto[ind].ang=M_PI/2.;
 						else duto[ind].ang=-M_PI/2.;
 					}
-					if (!sentidoGeometriaSegueEscoamento && reverso==1)duto[ind].ang *=(1.0-2*reverso);
+					if (!sentidoGeometriaSegueEscoamento && reverso>0)duto[ind].ang *=(-1.);
 					lxy=sqrtl((x1-xProd0)*(x1-xProd0)+(y1-yProd0)*(y1-yProd0));
 					xProd0=x1;
 					yProd0=y1;
@@ -6585,9 +6624,10 @@ void Ler::parse_unidades_producaoAmb(
 						duto[ind].ang =
 								dutos_producao_json[indAtivo].angulo();
 					} else {
+						double mult=1.0;
+						if(reverso>0)mult=-1.;
 						duto[ind].ang =
-								dutos_producao_json[indAtivo].angulo()
-										* (1.0-2*reverso);
+								dutos_producao_json[indAtivo].angulo()*mult;
 					}
 				}
 				else{
@@ -6602,7 +6642,7 @@ void Ler::parse_unidades_producaoAmb(
 						if(y1>yProd0)duto[ind].ang=M_PI/2.;
 						else duto[ind].ang=-M_PI/2.;
 					}
-					if (!sentidoGeometriaSegueEscoamento && reverso==1)duto[ind].ang *=(1.0-2*reverso);
+					if (!sentidoGeometriaSegueEscoamento && reverso>0)duto[ind].ang *=(-1.);
 					lxy=sqrtl((x1-xProd0)*(x1-xProd0)+(y1-yProd0)*(y1-yProd0));
 					xProd0=x1;
 					yProd0=y1;
@@ -8298,6 +8338,19 @@ void Ler::parse_hidrato(JSON_entrada_hidrato& hidrato_json/*, */) {
 		else{
 		    //solverHidrato - chris
 
+			if (hidrato_json.modeloHidrato().exists()) { //chris-model2
+
+				tipoHmodel =
+						hidrato_json.modeloHidrato().tipoHmodel(); //chris-model2
+
+			} else {
+
+				logger.log(LOGGER_FALHA,
+				LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+						"Chave modeloHidrato requerida", chaveJson,
+						"solverHidrato=true");
+			}
+
 			if (hidrato_json.Hammerschmidt().exists()) {
 				// carregar os parâmetros da chave
 				/*Khamm =
@@ -8438,7 +8491,7 @@ void Ler::parse_ipr(JSON_entrada_ipr& ipr_json/*, */) {
 						|| (origemGeometria == origemGeometria_t::poco
 								&& sistemaSimulacao
 										== sistemaSimulacao_t::injetor))*/
-				if(!sentidoGeometriaSegueEscoamento)
+				if(!sentidoGeometriaSegueEscoamento && reverso<2)
 					IPRS[i].comp = nCompTotalUnidadesP - IPRS[i].comp; //04-04-2018
 				if (IPRS[i].comp < 0)
 					IPRS[i].comp = 0.0;
@@ -8841,7 +8894,7 @@ void Ler::parse_fonte_gaslift(JSON_entrada_fonteGasLift& fonte_gaslift_json) {
 				valvgl[i].compP =
 						fonte_gaslift_json[indAtivo].comprimentoMedidoProducao();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					valvgl[i].compP = nCompTotalUnidadesP - valvgl[i].compP; //04-04-2018
 				if (valvgl[i].compP < 0.0)
 					valvgl[i].compP = 0.0;
@@ -9061,7 +9114,7 @@ void Ler::parse_fonte_gas(JSON_entrada_fonteGas& fonte_gas_json/*, */) {
 				fonteg[i].comp =
 						fonte_gas_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					fonteg[i].comp = nCompTotalUnidadesP - fonteg[i].comp; //04-04-2018
 				if (fonteg[i].comp < 0.0)
 					fonteg[i].comp = 0.0;
@@ -9232,7 +9285,7 @@ void Ler::parse_valv(JSON_entrada_valvula& valvula_json) {
 				valv[i].comp =
 						valvula_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					valv[i].comp = nCompTotalUnidadesP - valv[i].comp; //04-04-2018
 				if (valv[i].comp < 0.0)
 					valv[i].comp = 0.0;
@@ -9359,7 +9412,7 @@ void Ler::parse_fonte_liquido(JSON_entrada_fonteLiquido& fonte_liquido_json) {
 				fontel[i].comp =
 						fonte_liquido_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					fontel[i].comp = nCompTotalUnidadesP - fontel[i].comp; //04-04-2018
 				if (fontel[i].comp < 0.0)
 					fontel[i].comp = 0.0;
@@ -9474,7 +9527,7 @@ void Ler::parse_fonte_massa(JSON_entrada_fonteMassa& fonte_massa_json) {
 				fontem[0].condiTermo=0;
 				fontem[0].comp =0;
 				fontem[0].indfluP =indfluPIni;
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					fontem[0].comp = nCompTotalUnidadesP - fontem[0].comp; //04-04-2018
 				if (fontem[0].comp < 0.0)
 					fontem[0].comp = 0.0;
@@ -9519,7 +9572,7 @@ void Ler::parse_fonte_massa(JSON_entrada_fonteMassa& fonte_massa_json) {
 				fontem[i].comp =
 						fonte_massa_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					fontem[i].comp = nCompTotalUnidadesP - fontem[i].comp; //04-04-2018
 				if (fontem[i].comp < 0.0)
 					fontem[i].comp = 0.0;
@@ -9658,7 +9711,7 @@ void Ler::parse_fonte_PoroRadial(JSON_entrada_fontePoroRadial& fonte_poroRadial_
 				porosoRad[i].comp =
 						fonte_poroRadial_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					porosoRad[i].comp = nCompTotalUnidadesP - porosoRad[i].comp; //04-04-2018
 				if (porosoRad[i].comp < 0.0)
 					porosoRad[i].comp = 0.0;
@@ -9733,7 +9786,7 @@ void Ler::parse_fonte_Poro2D(JSON_entrada_fontePoro2D& fonte_poro2D_json) {
 				poroso2D[i].comp =
 						fonte_poro2D_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					poroso2D[i].comp = nCompTotalUnidadesP - poroso2D[i].comp; //04-04-2018
 				if (poroso2D[i].comp < 0.0)
 					poroso2D[i].comp = 0.0;
@@ -9912,7 +9965,7 @@ void Ler::parse_furo(JSON_entrada_fontePressao &fontePressao_json) {
 
 				furo[i].comp = fontePressao_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					furo[i].comp = nCompTotalUnidadesP - furo[i].comp; //04-04-2018
 				if (furo[i].comp < 0.0)
 					furo[i].comp = 0.0;
@@ -9960,7 +10013,6 @@ void Ler::parse_furo(JSON_entrada_fontePressao &fontePressao_json) {
 				if(fontePressao_json[indAtivo].cd().exists())
 				furo[i].cd = fontePressao_json[indAtivo].cd();
 				furo[i].check=0;
-				furo[i].tempoChk =0;
 				if(fontePressao_json[indAtivo].check().exists()){
 					//furo[i].check = fontePressao_json[indAtivo].check();
 					// caso os tamanhos dos vetores das chaves difiram entre si
@@ -10084,7 +10136,7 @@ void Ler::parse_bcs(JSON_entrada_bcs& bcs_json) {
 				bcs[i].comp =
 						bcs_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					bcs[i].comp = nCompTotalUnidadesP - bcs[i].comp; //04-04-2018
 				if (bcs[i].comp < 0.0)
 					bcs[i].comp = 0.0;
@@ -10146,12 +10198,18 @@ void Ler::parse_bcs(JSON_entrada_bcs& bcs_json) {
 								bcs_json[indAtivo].eficiencia()[j];
 					}
 				}
-				bcs[i].freqref = bcs_json[indAtivo].freqref();
+				bcs[i].freqref = 60.;
+				if(bcs_json[indAtivo].freqref().exists())
+					bcs[i].freqref = bcs_json[indAtivo].freqref();
 				bcs[i].nestag = bcs_json[indAtivo].nestag();
 				bcs[i].eficM = 100.;
 				if (bcs_json[indAtivo].EficienciaMotor().exists())
 					bcs[i].eficM =
 							bcs_json[indAtivo].EficienciaMotor();
+				bcs[i].fracTermMotorEfic = 0.;
+				if (bcs_json[indAtivo].fracTermMotorEfic().exists())
+					bcs[i].fracTermMotorEfic =
+							bcs_json[indAtivo].fracTermMotorEfic();
 				bcs[i].freqMinima = 0.;
 				if (bcs_json[indAtivo].FrequenciaMinima().exists())
 					bcs[i].freqMinima =
@@ -10176,6 +10234,188 @@ void Ler::parse_bcs(JSON_entrada_bcs& bcs_json) {
 		LOG_ERR_UNEXPECTED_EXCEPTION, "", chaveJson, e.what());
 	}
 }
+
+
+void Ler::parse_multibcs(JSON_entrada_multibcs& multibcs_json) {
+	// criar variavel para o nome da propriedade json em processo de parse
+	string chaveJson("#/multibcs");
+	// criar vetor de inteiros para armazenar os ids
+	//int* identificadores = NULL;
+	std::vector<int> identificadores;
+	// criar variavel para o maior identificador encontrado
+	int maiorIdentificador = -99999;
+	try {
+		// tamanho do vetor de bcs
+		nmultibcs = 0;
+		// percorre o array de bcs
+		for (size_t i = 0; i < multibcs_json.size(); i++) {
+			// caso o bcs esteja ativo
+			if (is_ativo(multibcs_json[i]))
+				nmultibcs++;
+		}
+		if (nmultibcs > 0) {
+			multiBcs = new detMultiBCS[nmultibcs];
+			// criar vetor de inteiros para armazenar os ids
+			//identificadores = new int[nbcs];
+			identificadores.resize(nmultibcs);
+			// loop para parse das estruturas do bcs
+			int indAtivo = -1;
+			for (int i = 0; i < nmultibcs; i++) {
+				// enquanto a propriedade "ativo" do bcs esteja desabilitada, avança
+				while (!is_ativo(multibcs_json[++indAtivo]))
+					;
+
+				// obter maior identificador
+				identificadores[i] = multibcs_json[indAtivo].id();
+				// caso o identificador seja maior que o ultimo selecionado, substitui
+				if (identificadores[i] > maiorIdentificador) {
+					maiorIdentificador = identificadores[i];
+				}
+
+				multiBcs[i].comp =
+						multibcs_json[indAtivo].comprimentoMedido();
+				// sentido plataforma para fundo-poco
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
+					multiBcs[i].comp = nCompTotalUnidadesP - multiBcs[i].comp; //04-04-2018
+				if (multiBcs[i].comp < 0.0)
+					multiBcs[i].comp = 0.0;
+				double lverif = multiBcs[i].comp;
+				multiBcs[i].posicP = buscaIndiceFrontP(lverif);
+
+				// caso os tamanhos dos vetores das chaves difiram entre si
+				if (multibcs_json[indAtivo].tempo().size()
+						!= multibcs_json[indAtivo].frequencia().size()) {
+					// RN-080: chaves tempo, temperatura, beta e vazaoLiquido com tamanhos diferentes
+					logger.log(LOGGER_FALHA,
+					LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+							chaveJson,
+							"Chaves #/multibcs/tempo, #/multibcs/frequencia com tamanhos diferentes");
+				} else {
+					multiBcs[i].parserie = (int) multibcs_json[indAtivo].tempo().size();
+					multiBcs[i].tempo = new double[multiBcs[i].parserie];
+					multiBcs[i].freq = new double[multiBcs[i].parserie];
+					for (int j = 0; j < multiBcs[i].parserie; j++) {
+						multiBcs[i].tempo[j] =
+								multibcs_json[indAtivo].tempo()[j];
+						multiBcs[i].freq[j] =
+								multibcs_json[indAtivo].frequencia()[j];
+					}
+				}
+				multiBcs[i].correcHI=1;
+				if (multibcs_json[indAtivo].correcHI().exists())
+					multiBcs[i].correcHI = multibcs_json[indAtivo].correcHI();
+				multiBcs[i].equilTerm=1;
+				if (multibcs_json[indAtivo].equilTerm().exists())
+					multiBcs[i].equilTerm = multibcs_json[indAtivo].equilTerm();
+				multiBcs[i].freqref = 60.;
+				if(multibcs_json[indAtivo].freqref().exists())
+					multiBcs[i].freqref = multibcs_json[indAtivo].freqref();
+				multiBcs[i].nestag = 0;
+				multiBcs[i].eficM = 100.;
+				if (multibcs_json[indAtivo].EficienciaMotor().exists())
+					multiBcs[i].eficM =
+							multibcs_json[indAtivo].EficienciaMotor();
+				multiBcs[i].fracTermMotorEfic = 0.;
+				if (multibcs_json[indAtivo].fracTermMotorEfic().exists())
+					multiBcs[i].fracTermMotorEfic =
+							multibcs_json[indAtivo].fracTermMotorEfic();
+				multiBcs[i].freqMinima = 0.;
+				if (multibcs_json[indAtivo].FrequenciaMinima().exists())
+					multiBcs[i].freqMinima =
+							multibcs_json[indAtivo].FrequenciaMinima();
+				if(!multibcs_json[indAtivo].curva().exists()){
+					logger.log(LOGGER_FALHA,
+					LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+					chaveJson,
+					"Sem objeto curva em multibcs");
+				}
+
+				else{
+
+					multiBcs[i].nBCS=multibcs_json[indAtivo].curva().size();
+					multiBcs[i].ncurva=new int[multiBcs[i].nBCS];
+					multiBcs[i].nestagParc=new int[multiBcs[i].nBCS];
+					multiBcs[i].nestagParcFab=new int[multiBcs[i].nBCS];
+					multiBcs[i].BCSinterno = new detBCS[multiBcs[i].nBCS];
+					for(int j=0; j<multiBcs[i].nBCS;j++){
+						// caso os tamanhos dos vetores das chaves difiram entre si
+						if ((multibcs_json[indAtivo].curva()[j].vazao().size()
+							!= multibcs_json[indAtivo].curva()[j].head().size())
+							|| (multibcs_json[indAtivo].curva()[j].vazao().size()
+								!= multibcs_json[indAtivo].curva()[j].potencia().size())
+								|| (multibcs_json[indAtivo].curva()[j].vazao().size()
+								!= multibcs_json[indAtivo].curva()[j].eficiencia().size())) {
+							// RN-081: chaves vazao, head, potencia e eficiencia com tamanhos diferentes
+							logger.log(LOGGER_FALHA,
+								LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+								chaveJson,
+								"Chaves #/multibcs/vazao, #/multibcs/head, #/multibcs/potencia e #/multibcs/eficiencia com tamanhos diferentes");
+						} else {
+							multiBcs[i].ncurva[j] = (int) multibcs_json[indAtivo].curva()[j].vazao().size();
+							multiBcs[i].nestagParcFab[j]=1;
+							if (multibcs_json[indAtivo].curva()[j].nestagFab().exists())
+								multiBcs[i].nestagParcFab[j] = multibcs_json[indAtivo].curva()[j].nestagFab();
+							if (multibcs_json[indAtivo].curva()[j].nestag().exists()){
+								multiBcs[i].nestagParc[j] = multibcs_json[indAtivo].curva()[j].nestag();
+								multiBcs[i].nestag+=multiBcs[i].nestagParc[j];
+							}
+							else{
+								logger.log(LOGGER_FALHA,
+								LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+								chaveJson,
+								"Sem nestag em multibcs");
+							}
+
+							multiBcs[i].BCSinterno[j].comp=multiBcs[i].comp;
+							multiBcs[i].BCSinterno[j].posicP=multiBcs[i].posicP;
+							multiBcs[i].BCSinterno[j].correcHI=multiBcs[i].correcHI;
+							multiBcs[i].BCSinterno[j].eficM=multiBcs[i].eficM;
+							multiBcs[i].BCSinterno[j].fracTermMotorEfic=multiBcs[i].fracTermMotorEfic;
+							multiBcs[i].BCSinterno[j].freqref=multiBcs[i].freqref;
+							multiBcs[i].BCSinterno[j].ncurva=multiBcs[i].ncurva[j];
+							multiBcs[i].BCSinterno[j].nestag=1;
+							multiBcs[i].BCSinterno[j].parserie=1;
+							multiBcs[i].BCSinterno[j].tempo=new double[1];
+							multiBcs[i].BCSinterno[j].freq=new double[1];
+
+							multiBcs[i].BCSinterno[j].vaz = new double[multiBcs[i].ncurva[j]];
+							multiBcs[i].BCSinterno[j].head = new double[multiBcs[i].ncurva[j]];
+							multiBcs[i].BCSinterno[j].power = new double[multiBcs[i].ncurva[j]];
+							multiBcs[i].BCSinterno[j].efic = new double[multiBcs[i].ncurva[j]];
+							for (int k = 0; k < multiBcs[i].ncurva[j]; k++) {
+								multiBcs[i].BCSinterno[j].vaz[k] =
+										multibcs_json[indAtivo].curva()[j].vazao()[k];
+								multiBcs[i].BCSinterno[j].head[k] =
+										multibcs_json[indAtivo].curva()[j].head()[k]/multiBcs[i].nestagParcFab[j];
+								multiBcs[i].BCSinterno[j].power[k] =
+										multibcs_json[indAtivo].curva()[j].potencia()[k]/multiBcs[i].nestagParcFab[j];
+								multiBcs[i].BCSinterno[j].efic[k] =
+										multibcs_json[indAtivo].curva()[j].eficiencia()[k];
+							}
+						}
+					}
+				}
+			}
+			// verificar a unicidade dos identificadores
+			if (!verificarUnicidade(identificadores)) {
+				// RN-094: Unicidade da chave 'id' em '#/bcs'
+				// incluir falha
+				logger.log(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+						"id", chaveJson, "Unicidade da chave 'id'");
+			}
+			// caso exista uma condicao de falha da aplicacao ate esta etapa
+				if (!logger.getStResultadoSimulacao().sucesso) {
+					// gerar o arquivo de saida da simulacao e encerra a aplicacao
+					logger.write_logs_and_exit();
+				}
+		}
+	} catch (exception& e) {
+		// incluir falha
+		logger.log_write_logs_and_exit(LOGGER_FALHA,
+		LOG_ERR_UNEXPECTED_EXCEPTION, "", chaveJson, e.what());
+	}
+}
+
 
 /*!
  * Converter os elementos "bombaVolumetrica" do arquivo Json do MRT em struct bvol.
@@ -10223,7 +10463,7 @@ void Ler::parse_bomba_volumetrica(
 				bvol[i].comp =
 						bomba_volumetrica_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					bvol[i].comp = nCompTotalUnidadesP - bvol[i].comp; //04-04-2018
 				if (bvol[i].comp < 0.0)
 					bvol[i].comp = 0.0;
@@ -10321,7 +10561,7 @@ void Ler::parse_delta_pressao(JSON_entrada_deltaPressao& delta_pressao_json) {
 				dpreq[i].comp =
 						delta_pressao_json[indAtivo].comprimentoMedido();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					dpreq[i].comp = nCompTotalUnidadesP - dpreq[i].comp; //04-04-2018
 				if (dpreq[i].comp < 0.0)
 					dpreq[i].comp = 0.0;
@@ -10385,6 +10625,94 @@ void Ler::parse_delta_pressao(JSON_entrada_deltaPressao& delta_pressao_json) {
 	}
 }
 
+
+void Ler::parse_fonteCalor(JSON_entrada_fonteCalor& fonteCalor_json) {
+	// criar variavel para o nome da propriedade json em processo de parse
+	string chaveJson("#/fonteCalor");
+	// criar vetor de inteiros para armazenar os ids
+	//int* identificadores = NULL;
+	std::vector<int> identificadores;
+	// criar variavel para o maior identificador encontrado
+	int maiorIdentificador = -99999;
+	try {
+		// tamanho do array de deltas de pressão
+		ncalor = 0;
+		// percorre o array de deltas de pressão
+		for (size_t i = 0; i < fonteCalor_json.size(); i++) {
+			// caso o delta de pressão esteja ativo
+			if (is_ativo(fonteCalor_json[i]))
+				ncalor++;
+		}
+		if (ncalor > 0) {
+			fonteCal = new detCalor[ncalor];
+			// criar vetor de inteiros para armazenar os ids
+			//identificadores = new int[ndpreq];
+			identificadores.resize(ncalor);
+			// loop para parse das estruturas de deltas de pressão
+			int indAtivo = -1;
+			for (int i = 0; i < ncalor; i++) {
+				// enquanto a propriedade "ativo" do delta de pressão esteja desabilitada, avança
+				while (!is_ativo(fonteCalor_json[++indAtivo]));
+
+				// obter maior identificador
+				identificadores[i] =
+						fonteCalor_json[indAtivo].id();
+				// caso o identificador seja maior que o ultimo selecionado, substitui
+				if (identificadores[i] > maiorIdentificador) {
+					maiorIdentificador = identificadores[i];
+				}
+
+				fonteCal[i].comp =
+						fonteCalor_json[indAtivo].comprimentoMedido();
+				// sentido plataforma para fundo-poco
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
+					fonteCal[i].comp = nCompTotalUnidadesP - fonteCal[i].comp; //04-04-2018
+				if (fonteCal[i].comp < 0.0)
+					fonteCal[i].comp = 0.0;
+				double lverif = fonteCal[i].comp;
+				fonteCal[i].posicP = buscaIndiceFrontP(lverif);
+
+				// caso os tamanhos dos vetores das chaves difiram entre si
+				if (fonteCalor_json[indAtivo].tempo().size()
+						!= fonteCalor_json[indAtivo].calor().size()) {
+					// RN-083: chaves tempo, deltaPressao com tamanhos diferentes
+					logger.log(LOGGER_FALHA,
+					LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+							chaveJson,
+							"Chaves #/fonteCalor/tempo, #/fonteCalor/calor com tamanhos diferentes");
+				} else {
+					fonteCal[i].parserie =
+							(int) fonteCalor_json[indAtivo].tempo().size();
+					fonteCal[i].tempo = new double[fonteCal[i].parserie];
+					fonteCal[i].cal = new double[fonteCal[i].parserie];
+					for (int j = 0; j < dpreq[i].parserie; j++) {
+						fonteCal[i].tempo[j] =
+								fonteCalor_json[indAtivo].tempo()[j];
+						fonteCal[i].cal[j] =
+								fonteCalor_json[indAtivo].calor()[j]*1000.;
+					}
+				}
+			}
+			// verificar a unicidade dos identificadores
+			if (!verificarUnicidade(identificadores)) {
+				// RN-096: Unicidade da chave 'id' em '#/deltaPressao'
+				// incluir falha
+				logger.log(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+						"id", chaveJson, "Unicidade da chave 'id'");
+			}
+			// caso exista uma condicao de falha da aplicacao ate esta etapa
+				if (!logger.getStResultadoSimulacao().sucesso) {
+					// gerar o arquivo de saida da simulacao e encerra a aplicacao
+					logger.write_logs_and_exit();
+				}
+		}
+	} catch (exception& e) {
+		// incluir falha
+		logger.log_write_logs_and_exit(LOGGER_FALHA,
+		LOG_ERR_UNEXPECTED_EXCEPTION, "", chaveJson, e.what());
+	}
+}
+
 /*!
  * Converter os elementos "master1" do arquivo Json do MRT em struct master1.
  *
@@ -10425,7 +10753,7 @@ void Ler::parse_master1(JSON_entrada_master1& master1_json) {
 			master1.razareaativ = master1_json.razaoAreaAtiva(); //alteracao4
 		master1.comp = master1_json.comprimentoMedido();
 		// sentido plataforma para fundo-poco
-		if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/){
+		if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/){
 			master1.comp = nCompTotalUnidadesP - (master1.comp+0.01);  //04-04-2018
 		}
 		else{
@@ -10888,13 +11216,13 @@ void Ler::parse_pig(JSON_entrada_pig& pig_json) {
 
 				pig[i].compL = pig_json[indAtivo].lancador();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					pig[i].compL = nCompTotalUnidadesP - pig[i].compL; //04-04-2018
 				if (pig[i].compL < 0.0)
 					pig[i].compL = 0.0;
 				pig[i].compR = pig_json[indAtivo].recebedor();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					pig[i].compR = nCompTotalUnidadesP - pig[i].compR; //04-04-2018
 				if (pig[i].compR < 0.0)
 					pig[i].compR = 0.0;
@@ -10982,7 +11310,7 @@ void Ler::parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_js
 				double comp =
 						intermitencia_json[indAtivo].inicioTrechoAcumula();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					comp = nCompTotalUnidadesP - comp; //04-04-2018
 				if (comp < 0.0)
 					comp = 0.0;
@@ -10990,14 +11318,14 @@ void Ler::parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_js
 
 				comp =intermitencia_json[indAtivo].fimTrechoAcumula();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					comp = nCompTotalUnidadesP - comp; //04-04-2018
 				if (comp < 0.0)comp = 0.0;
 				intermi[i].indFimTrechoAcumula = buscaIndiceMeioP(comp);
 
 				comp =intermitencia_json[indAtivo].fimTrechoColuna();
 				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento/*origemGeometria == origemGeometria_t::plataforma*/)
+				if (!sentidoGeometriaSegueEscoamento && reverso<2/*origemGeometria == origemGeometria_t::plataforma*/)
 					comp = nCompTotalUnidadesP - comp; //04-04-2018
 				if (comp < 0.0)comp = 0.0;
 				intermi[i].indFimTrechoColuna = buscaIndiceMeioP(comp);
@@ -11166,6 +11494,8 @@ void Ler::parse_perfil_producao(
 				profp.dadosParafina=0;
 
 				profp.subResfria=0;
+
+				profp.correlacaoBB=0;
 
 
 
@@ -11577,6 +11907,12 @@ void Ler::parse_perfil_producao(
 					profp.dadosParafina = perfil_producao_json.dadosParafina();
 					if (profp.dadosParafina == 1)
 						nvarprofp+=12;
+				}
+
+				if (perfil_producao_json.correlacaoBB().exists() && tipoModeloDrift==0) {
+					profp.correlacaoBB = perfil_producao_json.correlacaoBB();
+					if (profp.correlacaoBB == 1)
+						nvarprofp++;
 				}
 			}
 		}
@@ -13169,6 +13505,7 @@ void Ler::lerArq() {
 					"Arquivo de entrada inexistente");
 		}
 
+		testaTipo();
 		// parse do documento raiz do arquivo MRT de entrada
 		JSON_entrada jsonDoc = parseEntrada();
 		// caso configurada opcao de termino apos validacao do formato do arquivo JSON
@@ -14048,6 +14385,7 @@ void Ler::lerArq() {
 
 		// iniciar os valores dos contadores dos equipamentos da simulacao
 		nbcs = 0;
+		nmultibcs=0;
 		nbvol = 0;
 		ndpreq = 0;
 		npig = 0;
@@ -14067,6 +14405,9 @@ void Ler::lerArq() {
 			if (contemChaveAtivaArray(jsonDoc, bcs)) {
 				parse_bcs(jsonDoc.bcs());
 			}
+			if (contemChaveAtivaArray(jsonDoc, multibcs)) {
+				parse_multibcs(jsonDoc.multibcs());
+			}
 			// parser do elemento "bombaVolumetrica"
 			if (contemChaveAtivaArray(jsonDoc, bombaVolumetrica)) {
 				parse_bomba_volumetrica(jsonDoc.bombaVolumetrica());
@@ -14074,6 +14415,10 @@ void Ler::lerArq() {
 			// parser do elemento "deltaPressao"
 			if (contemChaveAtivaArray(jsonDoc, deltaPressao)) {
 				parse_delta_pressao(jsonDoc.deltaPressao());
+			}
+			// parser do elemento "fonteCalor"
+			if (contemChaveAtivaArray(jsonDoc, fonteCalor)) {
+				parse_fonteCalor(jsonDoc.fonteCalor());
 			}
 			// parser do elemento "furo"
 			if (contemChaveAtivaArray(jsonDoc, fontePressao)) {
@@ -14689,8 +15034,10 @@ void Ler::copiaArq(Ler& arqAntigo) {
 	copia_fonte_Poro2D(arqAntigo);
 	copia_valv(arqAntigo);
 	copia_bcs(arqAntigo);
+	copia_multibcs(arqAntigo);
 	copia_bomba_volumetrica(arqAntigo);
 	copia_delta_pressao(arqAntigo);
+	copia_fonteCalor(arqAntigo);
 	copia_furo(arqAntigo);
 	copia_master1(arqAntigo);
 	copia_pig(arqAntigo);
@@ -16584,6 +16931,15 @@ void Ler::geraevento(int inic, int extrem) {
 			}
 		}
 	}
+
+	e.instante = 1e9;
+	e.duracao = 1e9;
+	e.descricao = "Evento buffer";
+	e.estIni = 1e9;
+	e.estFim = 1e9;
+	logevento.push_back(e);
+	logeventoEstat.push_back(e);
+
 	if (logevento.size() > 0)
 		sort(logevento.begin(), logevento.end());
 	if (logeventoEstat.size() > 0)
@@ -17604,9 +17960,38 @@ void Ler::gerafBCS(Cel* celula) {
 		int iposp = bcs[i].posicP;
 		BomCentSub bcsMRT(bcs[i].ncurva, bcs[i].vaz, bcs[i].head,
 				bcs[i].power, bcs[i].efic, bcs[i].freqref, bcs[i].nestag,
-				bcs[i].eficM, bcs[i].freqMinima);
+				bcs[i].eficM, bcs[i].freqMinima, bcs[i].correcHI, bcs[i].fracTermMotorEfic);
 		celula[iposp].acsr.tipo = 4;
 		celula[iposp].acsr.bcs = bcsMRT;
+	}
+
+}
+
+void Ler::gerafmultiBCS(Cel* celula) {
+	//InjGas injgasMRT();
+
+	for (int i = 0; i < nmultibcs; i++) {
+		int iposp = multiBcs[i].posicP;
+		BomCentSub* bcstemp;
+		bcstemp=new BomCentSub[multiBcs[i].nBCS];
+		for(int j=0; j<multiBcs[i].nBCS; j++){
+			BomCentSub bcslaco(multiBcs[i].BCSinterno[j].ncurva, multiBcs[i].BCSinterno[j].vaz,
+					multiBcs[i].BCSinterno[j].head,multiBcs[i].BCSinterno[j].power,
+					multiBcs[i].BCSinterno[j].efic, multiBcs[i].freqref, 1,
+					multiBcs[i].eficM, multiBcs[i].freqMinima, multiBcs[i].correcHI, multiBcs[i].fracTermMotorEfic);
+			bcstemp[j]=bcslaco;
+		}
+
+		multiBomCentSub multiBcscel(multiBcs[i].nBCS ,bcstemp ,multiBcs[i].nestagParcFab,
+				multiBcs[i].nestagParc, multiBcs[i].freq[0], multiBcs[i].eficM,
+				multiBcs[i].freqMinima, multiBcs[i].correcHI,multiBcs[i].equilTerm,multiBcs[i].fracTermMotorEfic,
+			    celula[iposp].flui,celula[iposp].fluicol);
+
+		celula[iposp].acsr.tipo = 17;
+		celula[iposp].acsr.multibcs = multiBcscel;
+
+
+		delete [] bcstemp;
 	}
 
 }
@@ -17663,6 +18048,16 @@ void Ler::geraDPReq(Cel* celula) {
 		celula[iposp].acsr.fatPoli = dpreq[i].fatPoli;
 		celula[iposp].acsr.eficLiq = dpreq[i].eficLiq;
 		celula[iposp].acsr.eficGas = dpreq[i].eficGas;
+	}
+
+}
+
+void Ler::geraFonteCalor(Cel* celula) {
+	//InjGas injgasMRT();
+
+	for (int i = 0; i < ncalor; i++) {
+		int iposp = fonteCal[i].posicP;
+		celula[iposp].fonteCal=fonteCal[i].cal[0];
 	}
 
 }
@@ -18189,6 +18584,21 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 			else
 				dpsup = dpreq[i].dp[ind];
 			celula[celpos].acsr.delp = dpinf * raz + (1 - raz) * dpsup;
+		}
+	}
+
+	if (ncalor > 0) {
+		double calinf;
+		double calsup;
+		for (int i = 0; i < ncalor; i++) {
+			celpos = fonteCal[i].posicP;
+			indraz(ind, raz, tempo, fonteCal[i].parserie, fonteCal[i].tempo);
+			calinf = fonteCal[i].cal[ind];
+			if (ind < fonteCal[i].parserie - 1)
+				calsup = fonteCal[i].cal[ind + 1];
+			else
+				calsup = fonteCal[i].cal[ind];
+			celula[celpos].fonteCal = calinf * raz + (1 - raz) * calsup;
 		}
 	}
 
@@ -19149,6 +19559,10 @@ void Ler::imprimeProfile(Cel* const celula,
 				flut[i][k+10] = celula[i].rhoWaxLiq;
 				flut[i][k+11] = celula[i].Sum_dCwaxdT;
 				k+=12;
+			}
+			if(tipoModeloDrift==0 && profp.correlacaoBB==1){
+				flut[i][k] = celula[i].correlacaoMR2;
+				k++;
 			}
 			if (unidade < nunidadep - 1) {
 				if (comp >= unidadeP[unidade + 1].Lini)
@@ -21645,6 +22059,10 @@ void Ler::copia_hidrato(Ler& arqAntigo) {
 	}
 	if(calculaEnvelope==1){
 
+
+		tipoHmodel=1; //chris-model2
+		tipoHmodel=arqAntigo.tipoHmodel; //chris-model2
+		
 			MMH =arqAntigo.MMH;
 			MMG =arqAntigo.MMG;
 			MMW =arqAntigo.MMW;
@@ -22152,7 +22570,68 @@ void Ler::copia_bcs(Ler& arqAntigo) {
 			bcs[i].freqref = arqAntigo.bcs[i].freqref;
 			bcs[i].nestag = arqAntigo.bcs[i].nestag;
 			bcs[i].eficM = arqAntigo.bcs[i].eficM;
+			bcs[i].fracTermMotorEfic = arqAntigo.bcs[i].fracTermMotorEfic;
 			bcs[i].freqMinima = arqAntigo.bcs[i].freqMinima;
+		}
+	}
+}
+
+void Ler::copia_multibcs(Ler& arqAntigo) {
+
+	nmultibcs = arqAntigo.nmultibcs;
+	if (nmultibcs > 0) {
+		multiBcs = new detMultiBCS[nmultibcs];
+		for (int i = 0; i < nmultibcs; i++) {
+			multiBcs[i].comp = arqAntigo.multiBcs[i].comp;
+			multiBcs[i].posicP = arqAntigo.multiBcs[i].posicP;
+			multiBcs[i].parserie = arqAntigo.multiBcs[i].parserie;
+			multiBcs[i].tempo = new double[multiBcs[i].parserie];
+			multiBcs[i].freq = new double[multiBcs[i].parserie];
+			for (int j = 0; j < multiBcs[i].parserie; j++) {
+				multiBcs[i].tempo[j] =arqAntigo.multiBcs[i].tempo[j];
+				multiBcs[i].freq[j] =arqAntigo.multiBcs[i].freq[j];
+			}
+			multiBcs[i].freqref = arqAntigo.multiBcs[i].freqref;
+			multiBcs[i].nestag = arqAntigo.multiBcs[i].nestag;
+			multiBcs[i].eficM = arqAntigo.multiBcs[i].eficM;
+			multiBcs[i].fracTermMotorEfic = arqAntigo.multiBcs[i].fracTermMotorEfic;
+			multiBcs[i].freqMinima = arqAntigo.multiBcs[i].freqMinima;
+			multiBcs[i].correcHI=arqAntigo.multiBcs[i].correcHI;
+			multiBcs[i].equilTerm=arqAntigo.multiBcs[i].equilTerm;
+			multiBcs[i].nBCS=arqAntigo.multiBcs[i].nBCS;
+			multiBcs[i].BCSinterno= new detBCS[multiBcs[i].nBCS];
+			multiBcs[i].nestagParcFab=new int[multiBcs[i].nBCS];
+			multiBcs[i].nestagParc=new int[multiBcs[i].nBCS];
+			multiBcs[i].ncurva=new int[multiBcs[i].nBCS];
+
+			for(int j=0; j<multiBcs[i].nBCS; j++){
+
+				multiBcs[i].nestagParcFab[j]=arqAntigo.multiBcs[i].nestagParcFab[j];
+				multiBcs[i].nestagParc[j]=arqAntigo.multiBcs[i].nestagParc[j];
+				multiBcs[i].ncurva[j]=arqAntigo.multiBcs[i].ncurva[j];
+
+				multiBcs[i].BCSinterno[j].comp=multiBcs[i].comp;
+				multiBcs[i].BCSinterno[j].posicP=multiBcs[i].posicP;
+				multiBcs[i].BCSinterno[j].correcHI=multiBcs[i].correcHI;
+				multiBcs[i].BCSinterno[j].eficM=multiBcs[i].eficM;
+				multiBcs[i].BCSinterno[j].fracTermMotorEfic=multiBcs[i].fracTermMotorEfic;
+				multiBcs[i].BCSinterno[j].freqref=multiBcs[i].freqref;
+				multiBcs[i].BCSinterno[j].ncurva=multiBcs[i].ncurva[j];
+				multiBcs[i].BCSinterno[j].nestag=1;
+				multiBcs[i].BCSinterno[j].parserie=1;
+				multiBcs[i].BCSinterno[j].tempo=new double[1];
+				multiBcs[i].BCSinterno[j].freq=new double[1];
+				multiBcs[i].BCSinterno[j].vaz = new double[multiBcs[i].ncurva[j]];
+				multiBcs[i].BCSinterno[j].head = new double[multiBcs[i].ncurva[j]];
+				multiBcs[i].BCSinterno[j].power = new double[multiBcs[i].ncurva[j]];
+				multiBcs[i].BCSinterno[j].efic = new double[multiBcs[i].ncurva[j]];
+				for (int k = 0; k < multiBcs[i].ncurva[j]; k++) {
+					multiBcs[i].BCSinterno[j].vaz[k] =arqAntigo.multiBcs[i].BCSinterno[j].vaz[k];
+					multiBcs[i].BCSinterno[j].head[k] =arqAntigo.multiBcs[i].BCSinterno[j].head[k];
+					multiBcs[i].BCSinterno[j].power[k] =arqAntigo.multiBcs[i].BCSinterno[j].power[k];
+					multiBcs[i].BCSinterno[j].efic[k] =arqAntigo.multiBcs[i].BCSinterno[j].efic[k];
+				}
+			}
 		}
 	}
 }
@@ -22199,6 +22678,26 @@ void Ler::copia_delta_pressao(Ler& arqAntigo) {
 			for (int j = 0; j < dpreq[i].parserie; j++) {
 				dpreq[i].tempo[j] = arqAntigo.dpreq[i].tempo[j];
 				dpreq[i].dp[j] = arqAntigo.dpreq[i].dp[j];
+			}
+		}
+	}
+}
+
+void Ler::copia_fonteCalor(Ler& arqAntigo) {
+
+	ncalor = arqAntigo.ncalor;
+	if (ncalor > 0) {
+		fonteCal = new detCalor[ncalor];
+		for (int i = 0; i < ndpreq; i++) {
+			fonteCal[i].comp = arqAntigo.fonteCal[i].comp;
+			fonteCal[i].posicP = arqAntigo.fonteCal[i].posicP;
+
+			fonteCal[i].parserie = arqAntigo.fonteCal[i].parserie;
+			fonteCal[i].tempo = new double[fonteCal[i].parserie];
+			fonteCal[i].cal = new double[fonteCal[i].parserie];
+			for (int j = 0; j < fonteCal[i].parserie; j++) {
+				fonteCal[i].tempo[j] = arqAntigo.fonteCal[i].tempo[j];
+				fonteCal[i].cal[j] = arqAntigo.fonteCal[i].cal[j];
 			}
 		}
 	}
@@ -22325,6 +22824,7 @@ void Ler::copia_perfil_producao(Ler& arqAntigo) {
 		profp.TempParede=arqAntigo.profp.TempParede;
 		profp.dadosParafina=arqAntigo.profp.dadosParafina;
 		profp.subResfria=arqAntigo.profp.subResfria;
+		profp.correlacaoBB=arqAntigo.profp.correlacaoBB;
 	}
 }
 

@@ -106,6 +106,8 @@ using namespace std;
 #include "FA_Hidratos.h" //chris - Hidratos
 #include "FA_Hidratos_Servico.h" //chris - Hidratos
 
+#include "multiBCS.h"
+
 
 //---------------------------------------------------------------------------
 
@@ -259,7 +261,7 @@ detCI CI;
 detCC CC;
 
 int nthrdMatriz=1;
-string versao="Marlim - 3.3.1";
+string versao="Marlim - 3.4.0";
 
 time_t nowGlobIni;
 tm *ltmGlobIni;
@@ -7820,11 +7822,11 @@ void cicloRedeCompCego(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativ
     				for(int j=0; j<arqRede.malha[i].ncoleta;j++){
     					int indCol=arqRede.malha[i].coleta[j];
     					if((malha[indCol].celula[0].acsr.tipo==1 && (malha[indCol].celula[0].acsr.injg.QGas+
-    							malha[indCol].celula[1].acsr.injg.QGas)>0) ||
+    							malha[indCol].celula[1].acsr.injg.QGas)>=0) ||
     						(malha[indCol].celula[0].acsr.tipo==2 && (malha[indCol].celula[0].acsr.injl.QLiq+
-    								malha[indCol].celula[1].acsr.injl.QLiq)>0) ||
+    								malha[indCol].celula[1].acsr.injl.QLiq)>=0) ||
 							(malha[indCol].celula[0].acsr.tipo==10 && (malha[indCol].celula[0].acsr.injm.MassP+
-									malha[indCol].celula[1].acsr.injm.MassP)>0) ||
+									malha[indCol].celula[1].acsr.injm.MassP)>=0) ||
 							prepTab[indCol]==1){
     						for(int k=0; k<malha[i].ncel;k++){
     							malha[i].celula[k].flui=malha[indCol].celula[0].flui;

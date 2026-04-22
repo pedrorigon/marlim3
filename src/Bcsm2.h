@@ -41,23 +41,25 @@ class BomCentSub{ // BCS � uma  classe que trabalha com spline,
         double Pvis;
         double Evis;
         int correcHI;
+        double fracTermMotorEfic;
 
         double FalsaCorda(int,double ,double , double delta=0.000001 ,double epsn=0.000001,int maxit=100)const;//Calculo de zero de fun��o apenas para calculo de zero na FNDran
 
                BomCentSub(int n=0, const double* const Vvaz=0, const double* const Vhead=0,
                        const double* const Vpower=0,const double* const Vefic=0, double Vfreq=0,int nestag=1, double VeficM=100,
-					    double freqcMinima=0., int vcorrecHI=1); //construtor
+					    double freqcMinima=0., int vcorrecHI=1, double vfracTermMotorEfic=0.); //construtor
                BomCentSub(const BomCentSub&);//construtor de c�pia
-               ~BomCentSub(){delete[] vaz;
-                      delete[] head;
-                      delete[] power;
-                      delete[] efic;
+               ~BomCentSub(){
+            	   	  if(lenth>0 && vaz!=0)delete[] vaz;
+            	   	  if(lenth>0 && head!=0)delete[] head;
+            	   	  if(lenth>0 && power!=0)delete[] power;
+            	   	  if(lenth>0 && efic!=0)delete[] efic;
                       //delete[] d1head;
                       //delete[] d1power;
                       //delete[] d1efic;
-                      delete[] d2head;
-                      delete[] d2power;
-                      delete[] d2efic;} //destrutor
+            	   	  if(lenth>1 && d2head!=0)delete[] d2head;
+            	   	  if(lenth>1 && d2power!=0)delete[] d2power;
+            	   	  if(lenth>1 && d2efic!=0)delete[] d2efic;} //destrutor
                 BomCentSub& operator=(const BomCentSub&);//sobrecarga do operador =
                 double operator[](int i)const{return vaz[i];}//sobrecarga do operador []
                 double MelhorVaz()const{return BEP;}

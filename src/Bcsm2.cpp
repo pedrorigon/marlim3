@@ -2,7 +2,7 @@
 
 BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhead,
                                 const double* const Vpower,const double* const Vefic, double Vfreq, int Vnestag, double VeficM,
-								double vfreqMinima, int vcorrecHI){//construtor
+								double vfreqMinima, int vcorrecHI, double vfracTermMotorEfic){//construtor
 
 	if(nC>0){
         nC--;
@@ -19,6 +19,7 @@ BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhea
         eficM=VeficM;
         freqMinima=vfreqMinima;
         correcHI=vcorrecHI;
+        fracTermMotorEfic=vfracTermMotorEfic;
 
 	for (int i=0; i<lenth; i++){
          vaz[i]= *(Vvaz+i);//copiando de uma �rea apontada por um ponteiro
@@ -102,6 +103,7 @@ BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhea
         freqMinima=0.;
         eficM=0.;
         correcHI=0;
+        fracTermMotorEfic=0.;
        }
 }
 BomCentSub::BomCentSub(const BomCentSub& bombaantiga){
@@ -139,6 +141,7 @@ BomCentSub::BomCentSub(const BomCentSub& bombaantiga){
         Pvis=bombaantiga.Pvis;
         Evis=bombaantiga.Evis;
         correcHI=bombaantiga.correcHI;
+        fracTermMotorEfic=bombaantiga.fracTermMotorEfic;
 }
 
 BomCentSub& BomCentSub::operator =(const BomCentSub& bombaantiga){
@@ -168,6 +171,7 @@ BomCentSub& BomCentSub::operator =(const BomCentSub& bombaantiga){
         	eficM=bombaantiga.eficM;
         	freqMinima=bombaantiga.freqMinima;
         	correcHI=bombaantiga.correcHI;
+        	fracTermMotorEfic=bombaantiga.fracTermMotorEfic;
 
         	for (int i=0; i<lenth; i++){
         		vaz[i]= bombaantiga.vaz[i];
@@ -204,6 +208,7 @@ BomCentSub& BomCentSub::operator =(const BomCentSub& bombaantiga){
                 freqMinima=0.;
                 eficM=0.;
                 correcHI=1;
+                fracTermMotorEfic=0.;
                }
 	}
     return *this;
@@ -469,7 +474,8 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 	    		Ce=pow(Bhi,expoente);
 	    		Evis=Ce*Fefic(Qw);
 	    		if(Evis>1e-5){
-	    			Pvis=(42./144.)*Qvis*Hvis*(MasEsp/1000.)/(3960*(Evis)/100);
+	    			Pvis=(Qw*(0.158987/86400.)*Hvis*(0.3048)*(MasEsp*9.8)/745.7)*(100./Evis);
+	    			//Pvis=(42./144.)*Qvis*Hvis*(MasEsp/1000.)/(3960*(Evis)/100);
 	    		}
 	    		else Pvis=0.;
 	    	}

@@ -2,6 +2,7 @@
 
 acessorio::acessorio(const int vtipo):
    bcs(),
+   multibcs(),
    //bvolvap(),
    mda(),
    chk(),
@@ -29,6 +30,7 @@ acessorio::acessorio(const acessorio& antigo){//construtor c�pia
 
    tipo=antigo.tipo;
    bcs=antigo.bcs;
+   multibcs=antigo.multibcs;
    mda=antigo.mda;
    chk=antigo.chk;
    ipr=antigo.ipr;
@@ -54,6 +56,7 @@ acessorio::acessorio(const acessorio& antigo){//construtor c�pia
 acessorio& acessorio::operator =(const acessorio& antigo){
    tipo=antigo.tipo;
    bcs=antigo.bcs;
+   multibcs=antigo.multibcs;
    mda=antigo.mda;
    chk=antigo.chk;
    ipr=antigo.ipr;

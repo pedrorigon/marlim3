@@ -36,13 +36,37 @@ class Cel{
       	
 	    //Solver de Hidratos
 
+//modeloIII
+	double V_h_total;
+	double V_h_dep;
+	double V_h_disp;
+
+	double e_dep;
+	double D_h_eff;
+	double A_eff;
+	double phi_h_disp;
+
+	double phi_h_eff;
+	double mu_rel_slurry;
+	double mu_base_liq;
+	double mu_slurry; //modeloIII
+	
 		double j_H;
 		double j_G;
 		double j_W;
 		double V_h;
 		double V_w; //chris - Hidratos
+		double V_g; //chris - Hidratos
 		double FVH; //chris - Hidratos
 		double agua_consumida;  // acumulada por hidrato //chris - Hidratos
+		double gas_consumido;
+
+		double agua_consumida_massa;  //alteracao Hidratos
+		double gas_consumido_massa; //alteracao Hidratos
+
+		double agua_consumida_massa_step;  //alteracao Hidratos
+		double gas_consumido_massa_step; //alteracao Hidratos
+
 		double massa_hidrato; //chris - Hidratos
 		//double Vcel_hyd; //chris - Hidratos
 		//double VolLiq;  //chris - Hidratos
@@ -249,6 +273,7 @@ class Cel{
         double potB;//potencia aplicada ao fluido devido a uma BCS ou um incremento de pressao;
         double potBT;//potencia aplicada a um fluido devido a um equipamento de bombeio considerando a
         //eficiencia do motor
+        double potTermo;
         double dpBL;
         double potBL;
         double potBTL;
@@ -416,6 +441,8 @@ class Cel{
 
         double fluxcalAcopRedeP;
         double resAcopRedeP;
+
+        double fonteCal;
 
         Cel(varGlob1D* Vvg1dSP=0,const DadosGeo vdutoL=DadosGeo(),
         	const DadosGeo vduto=DadosGeo(),
