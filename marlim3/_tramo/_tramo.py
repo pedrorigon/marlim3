@@ -295,9 +295,9 @@ class Tramo:
             self.to_json(label)
 
             if self.sistema == 'INJETOR':
-                comando_simulacao = f'{executavel} -d {diretorio} -i {filename} -s INJETOR'
+                comando_simulacao = f'"{executavel}" -d "{diretorio}" -i "{filename}" -s INJETOR'
             else:
-                comando_simulacao = f'{executavel} -d {diretorio} -i {filename}'
+                comando_simulacao = f'"{executavel}" -d "{diretorio}" -i "{filename}"'
 
             # Iniciar o processo de simulação
             if platform.system() == "Windows":

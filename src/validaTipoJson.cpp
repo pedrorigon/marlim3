@@ -5909,12 +5909,12 @@ void validadorTipo::validaGeral(Document& jsonDoc) {
 	if(!sucesso){
 	std::string mensagem;
 	int nele=erros.size();
-	for(int i=0; i<nele;i++)logger.log(LOGGER_FALHA,
-      	LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
-      	erros[i],"validacao de tipo", "jsonDoc");
-		//logger.log_write_logs_and_exit(LOGGER_FALHA,
-		//LOG_ERR_UNEXPECTED_EXCEPTION, "validacao de tipo", "jsonDoc",
-					//"erro de tipo");
+	for(int i=0; i<nele;i++)//logger.log(LOGGER_FALHA,
+      	//LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+      	//erros[i],"validacao de tipo", "jsonDoc");
+		logger.log_write_logs_and_exit(LOGGER_FALHA,
+		LOG_ERR_UNEXPECTED_EXCEPTION, "validacao de tipo "+erros[i], "jsonDoc",
+					"erro de tipo");
 	}
 
 }

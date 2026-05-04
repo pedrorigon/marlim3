@@ -288,6 +288,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
   npseudoWaxOut=0;
   oMolecularWeightsOfWaxComponentsOut=0;
   oInterpolatedWaxConcsTDerivOutput=0;
+  oInterpolatedMassWaxConcsTDerivOutput=0;
   oInterpolatedWaxConcs=0;
   iIERW=0;
   iWaxComponentCountOutput=0;
@@ -612,6 +613,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
  npseudoWaxOut=0;
  oMolecularWeightsOfWaxComponentsOut=0;
  oInterpolatedWaxConcsTDerivOutput=0;
+ oInterpolatedMassWaxConcsTDerivOutput=0;
  oInterpolatedWaxConcs=0;
 
  iIERW=0;
@@ -1008,6 +1010,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
   npseudoWaxOut=0;
   oMolecularWeightsOfWaxComponentsOut=0;
   oInterpolatedWaxConcsTDerivOutput=0;
+  oInterpolatedMassWaxConcsTDerivOutput=0;
   oInterpolatedWaxConcs=0;
 
   iIERW=0;
@@ -1359,11 +1362,15 @@ ProFlu::ProFlu(const ProFlu& fluido):
 	  oLiquidDensitiesOfWaxComponentsOutput=new double[npseudoWax];
 	  oMolecularWeightsOfWaxComponentsOut=new double[npseudoWax];
 	  oInterpolatedWaxConcsTDerivOutput=new double[npseudoWax];
+	  oInterpolatedMassWaxConcsTDerivOutput=new double[npseudoWax];
 	  oInterpolatedWaxConcs=new double[npseudoWax];
 	  for(int j=0; j<npseudoWax;j++){
 		  oLiquidDensitiesOfWaxComponentsOutput[j]=fluido.oLiquidDensitiesOfWaxComponentsOutput[j];
 		  oMolecularWeightsOfWaxComponentsOut[j]=fluido.oMolecularWeightsOfWaxComponentsOut[j];
-		  oInterpolatedWaxConcsTDerivOutput[j]=fluido.oInterpolatedWaxConcsTDerivOutput[j];
+		  oInterpolatedWaxConcsTDerivOutput[j]=
+				  fluido.oInterpolatedWaxConcsTDerivOutput[j];
+		  oInterpolatedMassWaxConcsTDerivOutput[j]=
+				  fluido.oInterpolatedMassWaxConcsTDerivOutput[j];
 		  oInterpolatedWaxConcs[j]=fluido.oInterpolatedWaxConcs[j];
 	  }
   }
@@ -1699,6 +1706,7 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
  if(modoParafina==1 && npseudoWax>0){
 	delete[] oMolecularWeightsOfWaxComponentsOut;
 	delete[] oInterpolatedWaxConcsTDerivOutput;
+	delete[] oInterpolatedMassWaxConcsTDerivOutput;
 	delete[] oInterpolatedWaxConcs;
 	delete[] oLiquidDensitiesOfWaxComponentsOutput;
 

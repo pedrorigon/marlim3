@@ -72,7 +72,7 @@ void Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(double dPressure, double dTe
 		double* oLiquidDensitiesOfWaxComponents, int* iIER, int* iWaxComponentCount_output, double* oMolecularWeightsOfWaxComponents_output,
 		double* oLiquidDensitiesOfWaxComponents_output, double* dCloudPointT_output, double* dInterpolatedCPWax_output,
 		double* dInterpolatedThermCond_output, double* dInterpolatedDens_output, double* dInterpolatedLiqMW_output,
-        double* oInterpolatedWaxConcsTDeriv_output, double* oInterpolatedWaxConcs_output);
+        double* oInterpolatedWaxConcsTDeriv_output, double* oInterpolatedMassWaxConcsTDeriv_output, double* oInterpolatedWaxConcs_output);
 
 #ifdef __cplusplus
 	extern "C"

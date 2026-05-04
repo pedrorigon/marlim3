@@ -261,7 +261,7 @@ detCI CI;
 detCC CC;
 
 int nthrdMatriz=1;
-string versao="Marlim - 3.4.0";
+string versao="Marlim - 3.5.0";
 
 time_t nowGlobIni;
 tm *ltmGlobIni;

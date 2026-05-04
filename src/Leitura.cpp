@@ -11906,7 +11906,7 @@ void Ler::parse_perfil_producao(
 				if (perfil_producao_json.dadosParafina().exists() && modoParafina==1) {
 					profp.dadosParafina = perfil_producao_json.dadosParafina();
 					if (profp.dadosParafina == 1)
-						nvarprofp+=12;
+						nvarprofp+=18;
 				}
 
 				if (perfil_producao_json.correlacaoBB().exists() && tipoModeloDrift==0) {
@@ -12721,7 +12721,7 @@ void Ler::parse_tendencia_producao(
 				if (tendencia_producao_json[indAtivo].dadosParafina().exists() && modoParafina==1) {
 					trendp[i].dadosParafina = tendencia_producao_json[indAtivo].dadosParafina();
 					if (trendp[i].dadosParafina == 1)
-						nvartrendp[i]+=5;
+						nvartrendp[i]+=11;
 				}
 
 				if (tendencia_producao_json[indAtivo].tempParede().exists()) {
@@ -19558,7 +19558,13 @@ void Ler::imprimeProfile(Cel* const celula,
 				flut[i][k+9] = celula[i].MW_wax;
 				flut[i][k+10] = celula[i].rhoWaxLiq;
 				flut[i][k+11] = celula[i].Sum_dCwaxdT;
-				k+=12;
+				flut[i][k+12] = celula[i].detParCel.difusividadeParafina;
+				flut[i][k+13] = celula[i].detParCel.fluxMassParafina1;
+				flut[i][k+14] = celula[i].detParCel.fluxMassParafina2;
+				flut[i][k+15] = celula[i].detParCel.gradienteConcentracao;
+				flut[i][k+16] = celula[i].detParCel.kDep;
+				flut[i][k+17] = celula[i].detParCel.tempInterDeposito;
+				k+=18;
 			}
 			if(tipoModeloDrift==0 && profp.correlacaoBB==1){
 				flut[i][k] = celula[i].correlacaoMR2;
@@ -19764,6 +19770,12 @@ void Ler::imprimeProfile(Cel* const celula,
 			escreveIni << " Massa Molecular Parafina (kgMol) C;";
 			escreveIni << " Massa especÃ­fica Parafina na fase liquida (kg/m3) C;";
 			escreveIni << " Derivada da concentracao da parafina com a temnperatura na fase liquida (1/K) C;";
+			escreveIni << " Difusividade Mássica Parafina (m2/s) C;";
+			escreveIni << " Fluxo Massico de Parafina Total (kg/(m2-s)) C;";
+			escreveIni << " Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;";
+			escreveIni << " Gradiente de concentracao de parafina (1/m) C;";
+			escreveIni << " Condutividade do deposito (W/(m-K)) C;";
+			escreveIni << " Temperatura da Interface do deposito (C) C;";
 		}
 		escreveIni << " id do duto;";
 		escreveIni << " Elevacao (m) F;";
@@ -20896,7 +20908,13 @@ void Ler::imprimeTrend(Cel* const celula,
 			flut[linha][k+2] = celula[i].flui.dInterpolatedThermCondOutput;
 			flut[linha][k+3] = celula[i].flui.dInterpolatedDensOutput;
 			flut[linha][k+4] = celula[i].flui.dInterpolatedLiqMWOutput;
-			k+=5;
+			flut[linha][k+5] = celula[i].detParCel.difusividadeParafina;
+			flut[linha][k+6] = celula[i].detParCel.fluxMassParafina1;
+			flut[linha][k+7] = celula[i].detParCel.fluxMassParafina2;
+			flut[linha][k+8] = celula[i].detParCel.gradienteConcentracao;
+			flut[linha][k+9] = celula[i].detParCel.kDep;
+			flut[linha][k+10] = celula[i].detParCel.tempInterDeposito;
+			k+=11;
 		}
 		if(trendp[trend].autoVal == 1){
 			double som=celula[i].somVel();

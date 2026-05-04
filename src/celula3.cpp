@@ -404,6 +404,7 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 	resAcopRedeP=0.;
 
 	fonteCal=0.;
+    detParCel=detalhaParafina();
 }
 
 Cel::Cel(const Cel& vcel) :
@@ -1317,7 +1318,8 @@ void Cel::avancalf(int& reinicia, int ncel){
    		  (term1Mass/ (1+CoefDTR/(rpC*duto.area)))*dt;
 
    double resto=0.;
-   if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny))){
+   if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny) && jmix>1e-3) ||
+		   ((alf<=1e-3)&&(alf>=-1e-3) && jmix<=1e-3)){
 	   alf=fabsl(0.);
    }
    else if(alf<-(*vg1dSP).localtiny){
@@ -1339,7 +1341,8 @@ void Cel::avancalf(int& reinicia, int ncel){
       }
       else alfIter=alf=fabsl(0.);
    }
-   else if((alf>=(1.-(*vg1dSP).localtiny)&&alf<=(1.+(*vg1dSP).localtiny))){
+   else if(((alf>=(1.-(*vg1dSP).localtiny)&&alf<=(1.+(*vg1dSP).localtiny))&& jmix>1e-3) ||
+		   ((alf>=(1.-1e-3)&&alf<=(1.+1e-3))&& jmix<=1e-3)){
 	   alf=1.;
    }
    else if(alf>(1.+(*vg1dSP).localtiny)){
@@ -3324,6 +3327,7 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 	double D_multip = detalParafina.DmultipWax; // Samuel - 10/10/25
 	double E_multip = detalParafina.EmultipWax; // Samuel - 10/10/25
 	double F_multip = detalParafina.FmultipWax; // Samuel - 10/10/25
+	detParCel.tempInterDeposito=calor.Tcamada[0][0];
 
 	//flui.atualizaPropParafina(pres, temp); // A fração molar dos componentes parafínicos na fase líquida vecZwaxLiq[i] vem da tabela termodinâmica do PVTsim
 	flui.atualizaPropParafina(pres, calor.Tcamada[0][0]);
@@ -3340,7 +3344,8 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		for (int i = 0; i < comp; i++){
 			//MW_wax = MW_wax + vecZwaxLiq[i]*flui.oMolecularWeightsOfWaxComponentsOut[i];
 			MW_wax = MW_wax + flui.oInterpolatedWaxConcs[i]*flui.oMolecularWeightsOfWaxComponentsOut[i];
-			vecCwaxLiq[i] = flui.oInterpolatedWaxConcs[i]*flui.oMolecularWeightsOfWaxComponentsOut[i];
+			vecCwaxLiq[i] = flui.oInterpolatedWaxConcs[i]*flui.oMolecularWeightsOfWaxComponentsOut[i]/
+							flui.dInterpolatedLiqMWOutput;
 			rhoWaxLiq = rhoWaxLiq + vecCwaxLiq[i]*flui.oLiquidDensitiesOfWaxComponents[i];
 			SumZwaxLiq = SumZwaxLiq + flui.oInterpolatedWaxConcs[i];
 			SumCwaxLiq = SumCwaxLiq + vecCwaxLiq[i];
@@ -3463,9 +3468,9 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 
 		double Tint=calor.Tcamada[0][0] + 273.15;
 		double MwOil=flui.dInterpolatedLiqMWOutput;
-		Dparaffin = MultipDwax*7.4E-12*Tint*pow(AssocParam*MwOil,0.5)/((muOilf*1e-3)*pow(Vwax,0.6));//imprimir nova saida
+		detParCel.difusividadeParafina= Dparaffin = MultipDwax*7.4E-12*Tint*pow(AssocParam*MwOil,0.5)/((muOilf*1e-3)*pow(Vwax,0.6));//imprimir nova saida
 		for (int i = 0; i < comp; i++){
-			Sum_dCwaxdT = Sum_dCwaxdT + flui.oInterpolatedWaxConcsTDerivOutput[i];
+			Sum_dCwaxdT = Sum_dCwaxdT + flui.oInterpolatedMassWaxConcsTDerivOutput[i];
 		}
 
 		if (flowPattern == 0 || flowPattern == -1){
@@ -3505,15 +3510,17 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		//atencao!!!!!!!!! Coloquei em módulo, mas apenas para teste, algo está estranho espessura negativa!!!!!!!!!
 		double dCwaxdTemp=Sum_dCwaxdT;
 		if(Sum_dCwaxdT<0) dCwaxdTemp=0.;
-		ddeltadt = (pi1/(1.0+pi2))*((rhoLiq*Fi)/(rhoWaxSolid*(1.0-Fi)))*(heatFluxInt/kMix)*Dparaffin*dCwaxdTemp;
-		double novaVar=(pi1/(1.0+pi2))*((rhoLiq*Fi))*(heatFluxInt/kMix)*Dparaffin*dCwaxdTemp;//imprimir nova saida
+		detParCel.gradienteConcentracao=(heatFluxInt/kMix)*dCwaxdTemp;
+		detParCel.fluxMassParafina2 = (pi1)*rhoLiq*Fi*Dparaffin*detParCel.gradienteConcentracao;
+		detParCel.fluxMassParafina1 = detParCel.fluxMassParafina2/(1.0+pi2);
+		ddeltadt = (pi1/(1.0+pi2))*((rhoLiq*Fi)/(rhoWaxSolid*(1.0-Fi)))*Dparaffin*detParCel.gradienteConcentracao;
 		double delta =ddeltadt*dt;
 		deltaPar=delta;
 
 		double rhoDep = Fi*rhoOil + (1.0-Fi)*rhoWaxSolid;
 		double cpDep = flui.dInterpolatedCPWaxOutput;
 
-		double kDep = ((2*flui.dInterpolatedThermCondOutput + kOil +
+		detParCel.kDep = ((2*flui.dInterpolatedThermCondOutput + kOil +
 						   (flui.dInterpolatedThermCondOutput - kOil)*Fi)/
 						   (2*flui.dInterpolatedThermCondOutput + kOil - 2*(flui.dInterpolatedThermCondOutput - kOil)*Fi))*kOil;
 		if(isnan(delta)){
@@ -3521,12 +3528,12 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 			para=0;
 		}
 		if(parafinado==0 && delta>0.){
-			duto.atualizaCamada(delta, rug, cpDep, kDep, rhoDep);
+			duto.atualizaCamada(delta, rug, cpDep, detParCel.kDep, rhoDep);
 			calor.atualiza(duto, 1);
 			parafinado=1;
 		}
 		else if(delta>0){
-			duto.atualizaCamada2(delta, cpDep, kDep, rhoDep);
+			duto.atualizaCamada2(delta, cpDep, detParCel.kDep, rhoDep);
 			calor.atualiza2(duto);
 		}
 	}

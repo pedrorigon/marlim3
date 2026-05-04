@@ -1,6 +1,25 @@
 import math
 import plotly.graph_objects as go
 
+
+def _get_duto_length(duto):
+    """Calculate duct length from discretization or dxCelula."""
+    agrupamento = duto.get("agrupamento", True)
+    if agrupamento:
+        disc = duto.get("discretizacao", [])
+        if not isinstance(disc, list) or not disc:
+            return 0
+        return sum(
+            (item.get("nCelulas", 0) or 0) * (item.get("comprimento", 0) or 0)
+            for item in disc if isinstance(item, dict)
+        )
+    else:
+        dx_celula = duto.get("dxCelula", [])
+        if not isinstance(dx_celula, list) or not dx_celula:
+            return 0
+        return sum(float(x) for x in dx_celula)
+
+
 def _plotar_geometria(tramo):
 
     # Configurações iniciais
@@ -13,31 +32,32 @@ def _plotar_geometria(tramo):
         y_coords_serv = []  # Coordenada Y inicial para dutos de serviço
         tooltips_serv = []  # Tooltip para dutos de serviço
 
+    # Determine if modoXY is active
+    config_inicial = getattr(tramo, "configuracaoInicial", None) or {}
+    if isinstance(config_inicial, dict):
+        modo_xy = config_inicial.get("modoXY", False)
+    else:
+        modo_xy = getattr(config_inicial, "modoXY", False)
+
     # Processando dutos de produção
-    for duto in tramo.dutosProducao:
-        if "xcoor" in duto and "ycoor" in duto:
-            # Coordenadas fornecidas diretamente
-            x_coords_prod.append(duto["xcoor"])
-            y_coords_prod.append(duto["ycoor"])
-        elif "angulo" in duto and "discretizacao" in duto:
-            # Coordenadas calculadas a partir do ângulo e comprimento
-            comprimento = sum(item["nCelulas"] * item["comprimento"] for item in duto["discretizacao"])
-            angulo_rad = math.radians(duto["angulo"])  # Converter ângulo para radianos
-            if math.isclose(duto["angulo"], math.pi / 2, abs_tol=1e-9):
-                dx = 0
-                dy = comprimento
-            elif math.isclose(duto["angulo"], 3 * math.pi / 2, abs_tol=1e-9):
-                dx = 0
-                dy = -comprimento
-            else:
-                dx = comprimento * math.cos(duto["angulo"])
-                dy = comprimento * math.sin(duto["angulo"])
+    for idx, duto in enumerate(tramo.dutosProducao):
+        if modo_xy and "xCoor" in duto and "yCoor" in duto:
+            # In XY mode, xCoor/yCoor represent absolute endpoint coordinates.
+            # For production ducts starting from origin, we can use them directly.
+            x_coords_prod.append(float(duto["xCoor"]))
+            y_coords_prod.append(float(duto["yCoor"]))
+        elif "angulo" in duto:
+            # Angle mode: compute displacement from angle and length
+            comprimento = _get_duto_length(duto)
+            ang = float(duto["angulo"])
+            dx = comprimento * math.cos(ang)
+            dy = comprimento * math.sin(ang)
             x_coords_prod.append(x_coords_prod[-1] + dx)
             y_coords_prod.append(y_coords_prod[-1] + dy)
         else:
-            raise ValueError("Informações insuficientes para determinar as coordenadas do duto.")
+            continue
         tooltips_prod.append(
-            f"ID: {duto['id']}<br>"
+            f"ID: {duto.get('id', '?')}<br>"
             f"Rótulo: {duto.get('rotulo', 'N/A')}<br>"
             f"idCorte: {duto.get('idCorte', 'N/A')}<br>"
             f"Acoplamento Térmico: {duto.get('acoplamentoTermico', 'N/A')}"
@@ -48,39 +68,39 @@ def _plotar_geometria(tramo):
     platform_y = y_coords_prod[-1]
 
     if tramo.dutosServico:
-        # Coordenadas iniciais para os dutos de serviço 
+        # Coordenadas iniciais para os dutos de serviço
         # (começam na plataforma)
         x_coords_serv.append(platform_x)
         y_coords_serv.append(platform_y)
 
     # Processando dutos de serviço
     if tramo.dutosServico:
-        for duto in tramo.dutosServico:
-            if "xcoor" in duto and "ycoor" in duto:
-                # Coordenadas fornecidas diretamente
-                x_coords_serv.append(duto["xcoor"])
-                y_coords_serv.append(duto["ycoor"])
-            elif "angulo" in duto and "discretizacao" in duto:
-                # Coordenadas calculadas a partir do ângulo e comprimento 
-                # (invertendo o sentido)
-                comprimento = sum(item["nCelulas"] * item["comprimento"] for item in duto["discretizacao"])
-                angulo_rad = math.radians(duto["angulo"]) 
-                if math.isclose(duto["angulo"], math.pi / 2, abs_tol=1e-9):
-                    dx = 0
-                    dy = comprimento
-                elif math.isclose(duto["angulo"], 3 * math.pi / 2, abs_tol=1e-9):
-                    dx = 0
-                    dy = -comprimento
+        for idx, duto in enumerate(tramo.dutosServico):
+            if modo_xy and "xCoor" in duto and "yCoor" in duto:
+                # In XY mode, compute delta from previous duct's xCoor/yCoor
+                # (first duct's reference is origin 0,0)
+                if idx == 0:
+                    prev_x, prev_y = 0.0, 0.0
                 else:
-                    dx = comprimento * math.cos(duto["angulo"])
-                    dy = comprimento * math.sin(duto["angulo"])
-
+                    prev_duto = tramo.dutosServico[idx - 1]
+                    prev_x = float(prev_duto.get("xCoor", 0))
+                    prev_y = float(prev_duto.get("yCoor", 0))
+                dx = float(duto["xCoor"]) - prev_x
+                dy = float(duto["yCoor"]) - prev_y
+                x_coords_serv.append(x_coords_serv[-1] + dx)
+                y_coords_serv.append(y_coords_serv[-1] + dy)
+            elif "angulo" in duto:
+                # Angle mode: invert X direction for service ducts
+                comprimento = _get_duto_length(duto)
+                ang = float(duto["angulo"])
+                dx = comprimento * math.cos(ang)
+                dy = comprimento * math.sin(ang)
                 x_coords_serv.append(x_coords_serv[-1] - dx)
                 y_coords_serv.append(y_coords_serv[-1] + dy)
             else:
-                raise ValueError("Informações insuficientes para determinar as coordenadas do duto.")
+                continue
             tooltips_serv.append(
-                f"ID: {duto['id']}<br>"
+                f"ID: {duto.get('id', '?')}<br>"
                 f"Rótulo: {duto.get('rotulo', 'N/A')}<br>"
                 f"idCorte: {duto.get('idCorte', 'N/A')}<br>"
                 f"Acoplamento Térmico: {duto.get('acoplamentoTermico', 'N/A')}"
@@ -94,6 +114,7 @@ def _plotar_geometria(tramo):
         x=x_coords_prod,
         y=y_coords_prod,
         mode="lines+markers",
+        name="Production",
         hovertext=tooltips_prod,
         hoverinfo="text",
         line=dict(color="#39C0E0", width=3),
@@ -106,6 +127,7 @@ def _plotar_geometria(tramo):
             x=x_coords_serv,
             y=y_coords_serv,
             mode="lines+markers",
+            name="Service",
             hovertext=tooltips_serv,
             hoverinfo="text",
             line=dict(color="#FFA933", width=3),
@@ -117,8 +139,8 @@ def _plotar_geometria(tramo):
         xaxis_title="x (m)",
         yaxis_title="y (m)",
         showlegend=False,
-        xaxis=dict(scaleanchor="y"),  # Same scale for x and y axes
-        yaxis=dict(scaleanchor="x")  # Same scale for x and y axes
+        xaxis=dict(scaleanchor="y"),
+        yaxis=dict(scaleanchor="x")
     )
 
     # Mostrando o gráfico

@@ -14,7 +14,6 @@ module Constants
     integer(c_int), parameter :: WILSON_EQCONST_CORRELATION = 0
     integer(c_int), parameter :: PENG_ROBINSON_78_PENELOUX = 1
     integer(c_int), parameter :: SRK_PENELOUX = 2
-    integer(c_int), parameter :: PENG_ROBINSON_PENELOUX = 3
 
     ! Códigos de possíveis erros:
     integer(c_int), parameter :: ERROR_EverythingOK = 0
@@ -52,8 +51,6 @@ module Constants
     integer(c_int), parameter :: ERROR_InvalidExternalFileForWaxParameters = 32
     integer(c_int), parameter :: ERROR_SingularEquationSystemEncountered = 33
     integer(c_int), parameter :: ERROR_WaxInterpolationFoundNoInterval = 34
-    integer(c_int), parameter :: ERROR_InvalidRsCorrelation = 35
-    integer(c_int), parameter :: ERROR_SatPressureNotFoundWithinPVTAnalysisBounds = 36
 
     ! Códigos de possíveis tipos de cálculo:
     integer(c_int), parameter :: CALCTYPE_BubblePoint = 0
@@ -75,12 +72,5 @@ module Constants
     ! Código de possiveis fases no escoamento (líquido, vapor, etc):
     integer(c_int), parameter :: PHASE_Liquid = 0
     integer(c_int), parameter :: PHASE_Vapor = 1
-
-    ! Código de possíveis correlações "black-oil" para cálculo de "Rs":
-    integer(c_int), parameter :: RSCORRELATION_VAZQUEZBEGGS = 0
-    integer(c_int), parameter :: RSCORRELATION_LASATER = 1
-    integer(c_int), parameter :: RSCORRELATION_STANDING = 2
-    integer(c_int), parameter :: RSCORRELATION_GLASO = 3
-    integer(c_int), parameter :: RSCORRELATION_COUNT = 4    ! Contagem de correlações de Rs disponíveis!
 
 end module Constants

@@ -28,6 +28,42 @@ extern int chaverede;//variavel global, indica se se esta simulando um tramo sol
 extern int chaveredeT;*/
 
 struct dadosParafina;
+struct detalhaParafina{
+	double tempInterDeposito;
+	double difusividadeParafina;
+	double gradienteConcentracao;
+	double fluxMassParafina1;
+	double fluxMassParafina2;
+	double kDep;
+	detalhaParafina(){
+		tempInterDeposito=0.;
+		difusividadeParafina=0.;
+		gradienteConcentracao=0.;
+		fluxMassParafina1=0.;
+		fluxMassParafina2=0.;
+		kDep=0.;
+	}
+	detalhaParafina(const detalhaParafina& temp){
+		tempInterDeposito=temp.tempInterDeposito;
+		difusividadeParafina=temp.difusividadeParafina;
+		gradienteConcentracao=temp.gradienteConcentracao;
+		fluxMassParafina1=temp.fluxMassParafina1;
+		fluxMassParafina2=temp.fluxMassParafina2;
+		kDep=temp.kDep;
+	}
+	detalhaParafina& operator=(const detalhaParafina& temp){
+		if (this != &temp) {
+			tempInterDeposito=temp.tempInterDeposito;
+			difusividadeParafina=temp.difusividadeParafina;
+			gradienteConcentracao=temp.gradienteConcentracao;
+			fluxMassParafina1=temp.fluxMassParafina1;
+			fluxMassParafina2=temp.fluxMassParafina2;
+			kDep=temp.kDep;
+		}
+		return *this;
+	}
+
+};
 
 class Cel{
 
@@ -443,6 +479,8 @@ class Cel{
         double resAcopRedeP;
 
         double fonteCal;
+
+        detalhaParafina detParCel;
 
         Cel(varGlob1D* Vvg1dSP=0,const DadosGeo vdutoL=DadosGeo(),
         	const DadosGeo vduto=DadosGeo(),

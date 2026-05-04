@@ -441,10 +441,10 @@ module PvtSimWAXFileImport
 
     ! =============================================================
     ! =============================================================
-    subroutine InterpolatePVTSIMWaxCalcParameters(iWaxComponentCount, iPressureCount, iTemperatureCount, oPressurePoints, oCloudPointTemperatures, oStructurePressures, &
+    subroutine InterpolatePVTSIMWaxCalcParameters(iWaxComponentCount, iPressureCount, iTemperatureCount, oMolecularWeightsOfWaxComponents, oPressurePoints, oCloudPointTemperatures, oStructurePressures, &
             oStructureTemperatures, oStructureCPWax, oStructureThermCond, oStructureDensities, oStructureLiqMW, oStructureWaxConcs, &
             dPressure, dTemperature, iIER, dCloudPointT, dInterpolatedCPWax, dInterpolatedThermCond, dInterpolatedDens, dInterpolatedLiqMW, &
-            oInterpolatedWaxConcsTDeriv, oInterpolatedWaxConcs)
+            oInterpolatedWaxConcsTDeriv, oInterpolatedMassWaxConcsTDeriv, oInterpolatedWaxConcs)
 
         ! OBJETIVO: Fazer interpolações em P e T de determinados parâmetros de cálculos de
         !   deposição de parafinas obtidos de arquivo "*.wax" do PVTSIM.
@@ -454,6 +454,7 @@ module PvtSimWAXFileImport
         integer(c_int), intent(in) :: iWaxComponentCount                                 ! Variável obtida do arquivo "wax" do PVTSIM (consultar rotina de leitura deste arquivo).
         integer(c_int), intent(in) :: iPressureCount                                     ! Variável obtida do arquivo "wax" do PVTSIM (consultar rotina de leitura deste arquivo).
         integer(c_int), intent(in) :: iTemperatureCount                                  ! Variável obtida do arquivo "wax" do PVTSIM (consultar rotina de leitura deste arquivo).
+        real(c_double), dimension(iWaxComponentCount), intent(in) :: oMolecularWeightsOfWaxComponents     ! [novo] "Molecular Weights of Wax Components" apresentados pelo arquivo "wax" do PVTSIM.
         real(c_double), dimension(iPressureCount), intent(in) :: oPressurePoints         ! Variável obtida do arquivo "wax" do PVTSIM (consultar rotina de leitura deste arquivo).
         real(c_double), dimension(iPressureCount), intent(in) :: oCloudPointTemperatures ! Variável obtida do arquivo "wax" do PVTSIM (consultar rotina de leitura deste arquivo).
         real(c_double), dimension(iPressureCount), intent(in) :: oStructurePressures     ! Variável obtida do arquivo "wax" do PVTSIM (consultar rotina de leitura deste arquivo).
@@ -473,7 +474,8 @@ module PvtSimWAXFileImport
         real(c_double), intent(out) :: dInterpolatedThermCond   ! RESULTADO: "Therm Cond" interpolado à P e T de interesse
         real(c_double), intent(out) :: dInterpolatedDens        ! RESULTADO: "Dens" interpolado à P e T de interesse
         real(c_double), intent(out) :: dInterpolatedLiqMW       ! RESULTADO: "Liq MW" interpolado à P e T de interesse
-        real(c_double), dimension(iWaxComponentCount), intent(out) :: oInterpolatedWaxConcsTDeriv    ! RESULTADO: Derivadas de concentrações com temperatura à P e T de interesse.
+        real(c_double), dimension(iWaxComponentCount), intent(out) :: oInterpolatedWaxConcsTDeriv      ! RESULTADO: Derivadas de concentrações com temperatura à P e T de interesse.
+        real(c_double), dimension(iWaxComponentCount), intent(out) :: oInterpolatedMassWaxConcsTDeriv  ! [novo] RESULTADO: Derivadas de concentrações MÁSSICAS com temperatura à P e T de interesse.
         real(c_double), dimension(iWaxComponentCount), intent(out) :: oInterpolatedWaxConcs  ! RESULTADO: Concentrações interpoladas na pressão e na temperatura.
 
         ! ------------ DECLARAÇÃO E DESCRIÇÃO DAS VARIÁVEIS LOCAIS:
@@ -492,6 +494,7 @@ module PvtSimWAXFileImport
         real(c_double), dimension(2) :: oDensInterpInT            ! Valores de "Dens" interpolados na temperatura de interesse para as duas pressões limítrofes.
         real(c_double), dimension(2) :: oLiqMWInterpInT           ! Valores de "Liq Mw" interpolados na temperatura de interesse para as duas pressões limítrofes.
         real(c_double), dimension(iWaxComponentCount, 2) :: oWaxConcsTDeriv ! Derivadas dos "WaxConcs" com a temperatura para as duas pressões limítrofes.
+        real(c_double), dimension(iWaxComponentCount, 2) :: oMassWaxConcTDeriv  ! Derivadas MÁSSICAS dos "WaxConcs" com a temperatura para as duas pressões limítrofes. 
         real(c_double), dimension(iWaxComponentCount, 2) :: oWaxConcInterpInT   ! Valores de "Wax Concs" interpolados na temperatura de interesse para as duas pressões limítrofes.
 
         ! ------------ CONSTANTES:
@@ -610,10 +613,16 @@ module PvtSimWAXFileImport
 
             if (iIER.ne.ERROR_EverythingOK) return
 
-            ! Curvas de solubilidade:
+            ! Curvas de solubilidade - molar e mássico:
             compLoopT: do l = 1, iWaxComponentCount
+
                 oWaxConcsTDeriv(l, k+1) = (oWaxConcsMiniTable(l, k+1, 2) - oWaxConcsMiniTable(l, k+1, 1)) / &
                                           (oTemperatureMiniTable(k+1, 2) - oTemperatureMiniTable(k+1, 1))
+
+                oMassWaxConcTDeriv(l, k+1) = oMolecularWeightsOfWaxComponents(l) * (oWaxConcsMiniTable(l, k+1, 2) / oLiqMWMiniTable(k+1, 2) - &
+                                                                                    oWaxConcsMiniTable(l, k+1, 1) / oLiqMWMiniTable(k+1, 1)) / &
+                                             (oTemperatureMiniTable(k+1, 2) - oTemperatureMiniTable(k+1, 1))
+
             end do compLoopT
 
             ! Concentrações molares:
@@ -653,6 +662,10 @@ module PvtSimWAXFileImport
         compLoopP: do l = 1, iWaxComponentCount
 
             call InterpolateInVectors(2, oLimitP, oWaxConcsTDeriv(l, :), dPressure, iIER, oInterpolatedWaxConcsTDeriv(l))
+
+            if (iIER.ne.ERROR_EverythingOK) return
+
+            call InterpolateInVectors(2, oLimitP, oMassWaxConcTDeriv(l, :), dPressure, iIER, oInterpolatedMassWaxConcsTDeriv(l))
 
             if (iIER.ne.ERROR_EverythingOK) return
 
@@ -776,7 +789,7 @@ module PvtSimWAXFileImport
                     oStructureWaxConcs, oMolecularWeightsOfWaxComponents, oLiquidDensitiesOfWaxComponents, iIER, &
                     iWaxComponentCount_output, oMolecularWeightsOfWaxComponents_output, oLiquidDensitiesOfWaxComponents_output, dCloudPointT_output, &
                     dInterpolatedCPWax_output, dInterpolatedThermCond_output, dInterpolatedDens_output, dInterpolatedLiqMW_output, oInterpolatedWaxConcsTDeriv_output, &
-                    oInterpolatedWaxConcs_output)
+                    oInterpolatedMassWaxConcsTDeriv_output, oInterpolatedWaxConcs_output)
 
         ! OBJETIVO: Obter, a partir das informações lidas de um arquivo padrão "wax PVTSIM", os parâmetros necessários
         !       para que uma simulação 1D de escoamento possa fazer cálculos de deposição de parafinas.
@@ -810,20 +823,22 @@ module PvtSimWAXFileImport
         real(c_double), intent(out) :: dInterpolatedDens_output        ! RESULTADO: "Dens" interpolado à P e T de interesse
         real(c_double), intent(out) :: dInterpolatedLiqMW_output       ! RESULTADO: "Liq MW" interpolado à P e T de interesse
         real(c_double), dimension(:), intent(out) :: oInterpolatedWaxConcsTDeriv_output    ! RESULTADO: Derivadas de concentrações com temperatura à P e T de interesse.
+        real(c_double), dimension(:), intent(out) :: oInterpolatedMassWaxConcsTDeriv_output ! [novo] RESULTADO: Derivadas MÁSSICAS de concentrações com temperatura à P e T de interesse.
         real(c_double), dimension(:) :: oInterpolatedWaxConcs_output ! RESULTADO: Concentrações interpoladas na pressão e na temperatura.
 
         ! ------------ DECLARAÇÃO E DESCRIÇÃO DAS VARIÁVEIS LOCAIS:
         real(c_double) :: dCloudPointT, dInterpolatedCPWax, dInterpolatedThermCond, dInterpolatedDens, dInterpolatedLiqMW
         real(c_double), dimension(iWaxComponentCount) :: oInterpolatedWaxConcsTDeriv
         real(c_double), dimension(iWaxComponentCount) :: oInterpolatedWaxConcs
+        real(c_double), dimension(iWaxComponentCount) :: oInterpolatedMassWaxConcsTDeriv
 
         ! ------------ PROCEDIMENTOS:
 
         ! Fazer as interpolações que forem necessárias:
-        call InterpolatePVTSIMWaxCalcParameters(iWaxComponentCount, iPressureCount, iTemperatureCount, oPressurePoints, oCloudPointTemperatures, oStructurePressures, &
+        call InterpolatePVTSIMWaxCalcParameters(iWaxComponentCount, iPressureCount, iTemperatureCount, oMolecularWeightsOfWaxComponents, oPressurePoints, oCloudPointTemperatures, oStructurePressures, &
             oStructureTemperatures, oStructureCPWax, oStructureThermCond, oStructureDensities, oStructureLiqMW, oStructureWaxConcs, &
             dPressure, dTemperature, iIER, dCloudPointT, dInterpolatedCPWax, dInterpolatedThermCond, dInterpolatedDens, dInterpolatedLiqMW, &
-            oInterpolatedWaxConcsTDeriv, oInterpolatedWaxConcs)
+            oInterpolatedWaxConcsTDeriv, oInterpolatedMassWaxConcsTDeriv, oInterpolatedWaxConcs)
 
         if (iIER.ne.ERROR_EverythingOK) return
 
@@ -837,6 +852,7 @@ module PvtSimWAXFileImport
         dInterpolatedDens_output = dInterpolatedDens
         dInterpolatedLiqMW_output = dInterpolatedLiqMW
         oInterpolatedWaxConcsTDeriv_output = oInterpolatedWaxConcsTDeriv
+        oInterpolatedMassWaxConcsTDeriv_output = oInterpolatedMassWaxConcsTDeriv
         oInterpolatedWaxConcs_output = oInterpolatedWaxConcs
 
     end subroutine GetPvtSimWAXFileInfoFor1DFlowSimulation

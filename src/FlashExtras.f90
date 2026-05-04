@@ -1068,7 +1068,7 @@ module FlashExtras
         bPhasicZAvailable = .false.
 
         ! O modelo termodinâmico selecionado é uma equação de estado cúbica?
-        bThermodynamicModelIsCubicEOS = (iPhasicThermodynamicModel.EQ.PENG_ROBINSON_78_PENELOUX).or.(iPhasicThermodynamicModel.EQ.SRK_PENELOUX).or.(iPhasicThermodynamicModel.EQ.PENG_ROBINSON_PENELOUX)
+        bThermodynamicModelIsCubicEOS = (iPhasicThermodynamicModel.EQ.PENG_ROBINSON_78_PENELOUX).or.(iPhasicThermodynamicModel.EQ.SRK_PENELOUX)
 
         ! Proceder de acordo com o método selecionado:
         whichMethod: if(bThermodynamicModelIsCubicEOS) then
@@ -1387,7 +1387,7 @@ module FlashExtras
         dPhasicZ = -10.0d0
 
         ! O modelo termodinâmico selecionado é uma equação de estado cúbica?
-        bThermodynamicModelIsCubicEOS = (iPhasicThermodynamicModel.EQ.PENG_ROBINSON_78_PENELOUX).or.(iPhasicThermodynamicModel.EQ.SRK_PENELOUX).or.(iPhasicThermodynamicModel.EQ.PENG_ROBINSON_PENELOUX)
+        bThermodynamicModelIsCubicEOS = (iPhasicThermodynamicModel.EQ.PENG_ROBINSON_78_PENELOUX).or.(iPhasicThermodynamicModel.EQ.SRK_PENELOUX)
 
         ! Proceder de acordo com o método selecionado:
         whichMethod: if(bThermodynamicModelIsCubicEOS) then
@@ -1508,11 +1508,6 @@ module FlashExtras
 
         ! Identificar a equação cúbica e proceder de acordo:
         whichEOS: if(iCubicEOSModel.EQ.PENG_ROBINSON_78_PENELOUX) then
-
-            dDelta1 = 1.0d0 + sqrt(2.0d0)
-            dDelta2 = 1.0d0 - sqrt(2.0d0)
-
-        else if(iCubicEOSModel.EQ.PENG_ROBINSON_PENELOUX) then whichEOS
 
             dDelta1 = 1.0d0 + sqrt(2.0d0)
             dDelta2 = 1.0d0 - sqrt(2.0d0)

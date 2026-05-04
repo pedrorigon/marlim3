@@ -427,6 +427,7 @@ class ProFlu{
     	double* oLiquidDensitiesOfWaxComponentsOutput;
     	///////////////////////////////
     	double* oInterpolatedWaxConcsTDerivOutput;
+    	double* oInterpolatedMassWaxConcsTDerivOutput;
     	double* oInterpolatedWaxConcs;
     	double* oMolecularWeightsOfWaxComponentsOut;
 
@@ -526,6 +527,7 @@ class ProFlu{
  			if(modoParafina==1 && npseudoWax>0){
 				delete[] oMolecularWeightsOfWaxComponentsOut;
 				delete[] oInterpolatedWaxConcsTDerivOutput;
+				delete[] oInterpolatedMassWaxConcsTDerivOutput;
 				delete[] oInterpolatedWaxConcs;
 				delete[] oLiquidDensitiesOfWaxComponentsOutput;
  			}
@@ -865,6 +867,7 @@ class ProFlu{
 					&dInterpolatedDensOutput/*densidade da parafina*/,
 					&dInterpolatedLiqMWOutput/*massa molecular da fase l[iquida*/,
         	        oInterpolatedWaxConcsTDerivOutput/*curva de solubilidade*/,
+					oInterpolatedMassWaxConcsTDerivOutput/*curva de solubilidade Massica*/,
 					oInterpolatedWaxConcs);
         }
 

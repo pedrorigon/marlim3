@@ -624,7 +624,7 @@ subroutine Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(dPressure, dTemperatur
                 oMolecularWeightsOfWaxComponents, oLiquidDensitiesOfWaxComponents, iIER, iWaxComponentCount_output, &
                 oMolecularWeightsOfWaxComponents_output, oLiquidDensitiesOfWaxComponents_output, dCloudPointT_output, &
                 dInterpolatedCPWax_output, dInterpolatedThermCond_output, dInterpolatedDens_output, dInterpolatedLiqMW_output, &
-                oInterpolatedWaxConcsTDeriv_output, oInterpolatedWaxConcs_output) bind(C, name = "Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation")
+                oInterpolatedWaxConcsTDeriv_output, oInterpolatedMassWaxConcsTDeriv_output, oInterpolatedWaxConcs_output) bind(C, name = "Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation")
 
     ! OBJETIVO: Obter, para dadas condições locais de escoamento determinadas no simulador MARLIM 3, os parâmetros necessários
     !       para cálculos de deposição de parafinas adaptados de arquivos padrão "wax PVTSIM".
@@ -658,6 +658,7 @@ subroutine Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(dPressure, dTemperatur
     real(c_double), intent(out) :: dInterpolatedDens_output
     real(c_double), intent(out) :: dInterpolatedLiqMW_output
     type(c_ptr), value, intent(in) :: oInterpolatedWaxConcsTDeriv_output
+    type(c_ptr), value, intent(in) ::  oInterpolatedMassWaxConcsTDeriv_output
     type(c_ptr), value, intent(in) :: oInterpolatedWaxConcs_output
 
     ! ------------ DECLARAÇÃO E DESCRIÇÃO DAS VARIÁVEIS LOCAIS:
@@ -677,6 +678,7 @@ subroutine Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(dPressure, dTemperatur
     real(c_double), dimension(:), pointer :: temp_oMolecularWeightsOfWaxComponents_output   ! Mapeamento do argumento "oMolecularWeightsOfWaxComponents_output"
     real(c_double), dimension(:), pointer :: temp_oLiquidDensitiesOfWaxComponents_output    ! Mapeamento do argumento "oLiquidDensitiesOfWaxComponents_output"
     real(c_double), dimension(:), pointer :: temp_oInterpolatedWaxConcsTDeriv_output        ! Mapeamento do argumento "oInterpolatedWaxConcsTDeriv_output"
+    real(c_double), dimension(:), pointer :: temp_oInterpolatedMassWaxConcsTDeriv           ! Mapeamento do argumento "oInterpolatedMassWaxConcsTDeriv_output"
     real(c_double), dimension(:), pointer :: temp_oInterpolatedWaxConcs_output      ! Mapeamento do argumento "oInterpolatedWaxConcs_output".
 
     ! ------------ PROCEDIMENTOS:
@@ -697,6 +699,7 @@ subroutine Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(dPressure, dTemperatur
     call c_f_pointer(oLiquidDensitiesOfWaxComponents_output, temp_oLiquidDensitiesOfWaxComponents_output, [iWaxComponentCount])
     call c_f_pointer(oInterpolatedWaxConcsTDeriv_output, temp_oInterpolatedWaxConcsTDeriv_output, [iWaxComponentCount])
     call c_f_pointer(oInterpolatedWaxConcs_output, temp_oInterpolatedWaxConcs_output, [iWaxComponentCount])
+    call c_f_pointer(oInterpolatedMassWaxConcsTDeriv_output, temp_oInterpolatedMassWaxConcsTDeriv, [iWaxComponentCount])
 
     ! CONVERSÃO DE UNIDADES:
     dPressure_Conv = dPressure * 98066.52d0
@@ -712,7 +715,8 @@ subroutine Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(dPressure, dTemperatur
                     temp_oStructureWaxConcs, temp_oMolecularWeightsOfWaxComponents, temp_oLiquidDensitiesOfWaxComponents, iIER, &
                     iWaxComponentCount_output, temp_oMolecularWeightsOfWaxComponents_output, temp_oLiquidDensitiesOfWaxComponents_output, &
                     dCloudPointT_output, dInterpolatedCPWax_output, dInterpolatedThermCond_output, dInterpolatedDens_output, &
-                    dInterpolatedLiqMW_output, temp_oInterpolatedWaxConcsTDeriv_output, temp_oInterpolatedWaxConcs_output)
+                    dInterpolatedLiqMW_output, temp_oInterpolatedWaxConcsTDeriv_output, &
+                    temp_oInterpolatedMassWaxConcsTDeriv, temp_oInterpolatedWaxConcs_output)
 
     if(iIER.NE.ERROR_EverythingOK) return
 
@@ -1762,6 +1766,51 @@ subroutine Marlim_CalculateOilFormationVolumeFactor(dPressure, dTemperature, iNC
                     dCompositionalOilFormationVolumeFactor)
 
 end subroutine Marlim_CalculateOilFormationVolumeFactor
+
+! ===========================================================================================================
+!  ROTINA A SER CHAMADA PELO MARLIM 3 NO INÍCIO DE SIMULAÇÕES PARA AJUSTAR MODELOS BLACK-OIL CONTRA ANÁLISES PVT
+! ===========================================================================================================
+!subroutine Marlim_FitBlackOilPVTAnalysisCalibrationModels(iNPVTPoints, oExpPressures_Arg, oExpRs_Arg, dExpTemperature, dPSEP_VB, dTSEP_VB) bind(C, name = "Marlim_FitBlackOilPVTAnalysisCalibrationModels")
+!
+!    ! OBJETIVO: Permitir que o MARLIM 3 faça a regressão de correlações black-oil contra resultados experimentais de Análises PVT.
+!
+!    ! REFERÊNCIA BIBLIOGRÁFICA 1: "Multiphase Flow in Wells", James P. Brill e Hemanta Mukherjee, 1999
+!    implicit none
+!
+!    ! ------------ DECLARAÇÃO E DESCRIÇÃO DOS ARGUMENTOS:
+!    integer(c_int), value, intent(in) :: iNPVTPoints                         ! Número de pontos experimentais da Análise PVT.
+!    type(c_ptr), value, intent(in) :: oExpPressures_Arg                      ! Pressões da Análise PVT (kgf/cm2).
+!    type(c_ptr), value, intent(in) :: oExpRs_Arg                             ! Valores de Rs medidos na Análise PVT ("scft/bbl").
+!    real(c_double), value, intent(in) :: dExpTemperature                     ! Temperatura da Análise PVT (°C)
+!    real(c_double), value, intent(in) :: dPSEP_VB        ! Vazquez e Beggs, pág 104 da Referência 1: "actual separator pressure", em kgf/cm2 (MARLIM 2 usa "standard")
+!    real(c_double), value, intent(in) :: dTSEP_VB        ! Vazquez e Beggs, pág 104 da Referência 1: "actual separator temperature", em graus Celsius (MARLIM 2 usa "standard")
+!
+!    ! PAREI AQUI NO SÃO LUCAS EM 21/04/2026
+!    ! (Seguir trabalhando na lista de argumentos, na ordem da chamada principal)
+!
+!    ! PRESENCIAL PUC 28/4/2026: COMENTANDO A ROTINA INTEIRA PRA PERMITIR COMPILAR A PARAFINA!
+!    ! (quando for continuar esta rotina, basta descomentar CADA linha na primeira coluna)
+!
+!    ! ------------ DECLARAÇÃO E DESCRIÇÃO DAS VARIÁVEIS LOCAIS:
+!    real(c_double), dimension(:), pointer :: temp_oExpPressures_Arg                ! Mapeamento do argumento "oExpPressures_Arg"
+!    real(c_double), dimension(:), pointer :: temp_oExpRs_Arg                       ! Mapeamento do argumento "oExpRs_Arg"
+!
+!    ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+!
+!    ! Mapeando vetores e matrizes:
+!    call c_f_pointer(oExpPressures_Arg, temp_oExpPressures_Arg, [iNPVTPoints])
+!    call c_f_pointer(oExpRs_Arg, temp_oExpRs_Arg, [iNPVTPoints])
+!
+!    ! CONVERSÃO DE UNIDADES:
+!
+!        ! TODO: Converter "oExpRs_Arg" de "scft/bbl" para "m3/m3".
+!
+!    ! CHAMADA PRINCIPAL:
+!    call FitBlackOilPVTAnalysisCalibrationModels(iNPVTPoints, temp_oExpPressures_Arg, temp_oExpRs_Arg, dExpTemperature, dPSEP_VB, dTSEP_VB, dAPI, &
+!        dRGO_Arg, dDeng, oTestedRsCorrelations, oCorrelationsRs, iBestRsCorrelation, iRsRegressionModelType, dRsRegressionA, dRsRegressionB, &
+!        oCorrectedRs, oCalibrationInfoSummary, iIER)
+!
+!end subroutine Marlim_FitBlackOilPVTAnalysisCalibrationModels
 
 ! ===========================================================================================================
 !       ROTINA A SER CHAMADA PELO MARLIM TRANSIENTE PARA CALCULAR A PRESSÃO DE BOLHA DA MISTURA EM ESCOAMENTO

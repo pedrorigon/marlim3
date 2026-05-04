@@ -19727,6 +19727,12 @@ void  SProd::ImprimeTrendPCab(int i, int nrede) {
   			escreveTrend << " Condutividade Termica Parafina (W / [m K]) C;";
   			escreveTrend << " Massa Especifica Parafina (kg/m3) C;";
   			escreveTrend << " Massa molar do Liquido Parafina (kg/mol) C;";
+  			escreveTrend << " Difusividade Mássica Parafina (m2/s) C;";
+  			escreveTrend << " Fluxo Massico de Parafina Total (kg/(m2-s)) C;";
+  			escreveTrend << " Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;";
+  			escreveTrend << " Gradiente de concentracao de parafina (1/m) C;";
+  			escreveTrend << " Condutividade do deposito (W/(m-K)) C;";
+  			escreveTrend << " Temperatura da Interface do deposito (C) C;";
   		}
  		 if(arq.trendp[i].autoVal == 1){
  			for(int konta1=0; konta1<3; konta1++){
