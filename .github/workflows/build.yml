@@ -172,30 +172,29 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          brew update
           brew install gcc make
 
       - name: Build (release)
         working-directory: src
         run: |
           # Use brew-installed GNU compilers (not Apple's clang)
-          # Find the latest gcc version installed by brew
-          GCC_VERSION=$(ls /opt/homebrew/bin/gcc-* 2>/dev/null || ls /usr/local/bin/gcc-* 2>/dev/null | grep -oE '[0-9]+$' | sort -n | tail -1)
+          # Find the latest gcc version number installed by brew
+          if [ -d /opt/homebrew/bin ]; then
+            GCC_VERSION=$(ls /opt/homebrew/bin/gcc-[0-9]* 2>/dev/null | grep -oE 'gcc-[0-9]+$' | grep -oE '[0-9]+' | sort -n | tail -1)
+          else
+            GCC_VERSION=$(ls /usr/local/bin/gcc-[0-9]* 2>/dev/null | grep -oE 'gcc-[0-9]+$' | grep -oE '[0-9]+' | sort -n | tail -1)
+          fi
           
           if [ -z "$GCC_VERSION" ]; then
             echo "Error: No GCC version found from brew"
             exit 1
           fi
           
-          export CXX="g++-${GCC_VERSION}"
-          export CF="gfortran-${GCC_VERSION}"
-          echo "Using CXX=$CXX and CF=$CF"
+          echo "Using g++-${GCC_VERSION} and gfortran-${GCC_VERSION}"
+          g++-${GCC_VERSION} --version | head -1
+          gfortran-${GCC_VERSION} --version | head -1
           
-          # Verify compilers exist and show versions
-          which $CXX && $CXX --version | head -1
-          which $CF && $CF --version | head -1
-          
-          make release
+          make release CXX="g++-${GCC_VERSION}" CF="gfortran-${GCC_VERSION}"
 
       - name: Verify binary architecture and dependencies
         working-directory: src
@@ -251,14 +250,20 @@ jobs:
           name: Marlim3-macos-arm64
           path: artifacts/macos-arm64
 
+      - name: Renomear binários
+        run: |
+          mv artifacts/linux/Marlim3 artifacts/linux/Marlim3-linux-x64
+          mv artifacts/macos-x64/Marlim3 artifacts/macos-x64/Marlim3-macos-x64
+          mv artifacts/macos-arm64/Marlim3 artifacts/macos-arm64/Marlim3-macos-arm64
+
       - name: Criar Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/linux/Marlim3
+            artifacts/linux/Marlim3-linux-x64
             artifacts/windows/Marlim3.exe
-            artifacts/macos-x64/Marlim3
-            artifacts/macos-arm64/Marlim3
+            artifacts/macos-x64/Marlim3-macos-x64
+            artifacts/macos-arm64/Marlim3-macos-arm64
           draft: false
           prerelease: false
           generate_release_notes: true
