@@ -181,10 +181,34 @@ jobs:
           # Use brew-installed GNU compilers (not Apple's clang)
           # Find the latest gcc version installed by brew
           GCC_VERSION=$(ls /opt/homebrew/bin/gcc-* 2>/dev/null || ls /usr/local/bin/gcc-* 2>/dev/null | grep -oE '[0-9]+$' | sort -n | tail -1)
+          
+          if [ -z "$GCC_VERSION" ]; then
+            echo "Error: No GCC version found from brew"
+            exit 1
+          fi
+          
           export CXX="g++-${GCC_VERSION}"
           export CF="gfortran-${GCC_VERSION}"
           echo "Using CXX=$CXX and CF=$CF"
+          
+          # Verify compilers exist and show versions
+          which $CXX && $CXX --version | head -1
+          which $CF && $CF --version | head -1
+          
           make release
+
+      - name: Verify binary architecture and dependencies
+        working-directory: src
+        run: |
+          echo "=== Binary architecture ==="
+          file Marlim3
+          lipo -info Marlim3
+          
+          echo "=== Dynamic library dependencies ==="
+          otool -L Marlim3
+          
+          echo "=== Checking for OpenMP support ==="
+          otool -L Marlim3 | grep -i gomp || echo "Warning: libgomp not found"
 
       - name: Upload artefato
         uses: actions/upload-artifact@v4
