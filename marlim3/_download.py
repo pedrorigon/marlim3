@@ -17,13 +17,24 @@ def get_platform_asset_info():
     Returns tuple: (asset_name, executable_name)
     """
     system = platform.system()
+    machine = platform.machine().lower()
     
     if system == 'Windows':
         return ('Marlim3.exe', 'Marlim3.exe')
     elif system == 'Linux':
-        return ('Marlim3', 'Marlim3')
+        return ('Marlim3-linux-x64', 'Marlim3')
+    elif system == 'Darwin':  # macOS
+        # Only ARM64 build available (Intel Macs can run via Rosetta 2)
+        if machine in ['arm64', 'aarch64']:
+            return ('Marlim3-macos-arm64', 'Marlim3')
+        elif machine in ['x86_64', 'amd64']:
+            # Intel Mac: use ARM64 binary which will run via Rosetta 2
+            print("[INFO] Intel Mac detected. Using ARM64 binary (runs via Rosetta 2).")
+            return ('Marlim3-macos-arm64', 'Marlim3')
+        else:
+            raise RuntimeError(f"Unsupported macOS architecture: {machine}")
     else:
-        raise RuntimeError(f"Unsupported platform: {system}. Only Windows and Linux are supported.")
+        raise RuntimeError(f"Unsupported platform: {system}. Supported: Windows, Linux, macOS.")
 
 
 def get_executable_path():
