@@ -177,7 +177,14 @@ jobs:
 
       - name: Build (release)
         working-directory: src
-        run: make release
+        run: |
+          # Use brew-installed GNU compilers (not Apple's clang)
+          # Find the latest gcc version installed by brew
+          GCC_VERSION=$(ls /opt/homebrew/bin/gcc-* 2>/dev/null || ls /usr/local/bin/gcc-* 2>/dev/null | grep -oE '[0-9]+$' | sort -n | tail -1)
+          export CXX="g++-${GCC_VERSION}"
+          export CF="gfortran-${GCC_VERSION}"
+          echo "Using CXX=$CXX and CF=$CF"
+          make release
 
       - name: Upload artefato
         uses: actions/upload-artifact@v4
