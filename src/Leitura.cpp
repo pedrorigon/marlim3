@@ -5401,11 +5401,13 @@ void Ler::parse_fluidos_producao(
 
 	    			flup[i].oMolecularWeightsOfWaxComponentsOut=new double[npseudoWax];
 	    			flup[i].oInterpolatedWaxConcsTDerivOutput=new double[npseudoWax];
+	    			flup[i].oInterpolatedMassWaxConcsTDerivOutput=new double[npseudoWax];
 	    			flup[i].oLiquidDensitiesOfWaxComponentsOutput=new double[npseudoWax];
 	    			flup[i].oInterpolatedWaxConcs=new double[npseudoWax];
 	    			for(int j=0; j<npseudoWax;j++){
 	    				flup[i].oMolecularWeightsOfWaxComponentsOut[j]=flup[i].oMolecularWeightsOfWaxComponents[j];
 	    				flup[i].oInterpolatedWaxConcsTDerivOutput[j]=0.;
+	    				flup[i].oInterpolatedMassWaxConcsTDerivOutput[j]=0.;
 	    				flup[i].oInterpolatedWaxConcs[j]=oInterpolatedWaxConcs[j];
 	    			}
 	    		}
@@ -19770,7 +19772,7 @@ void Ler::imprimeProfile(Cel* const celula,
 			escreveIni << " Massa Molecular Parafina (kgMol) C;";
 			escreveIni << " Massa especÃ­fica Parafina na fase liquida (kg/m3) C;";
 			escreveIni << " Derivada da concentracao da parafina com a temnperatura na fase liquida (1/K) C;";
-			escreveIni << " Difusividade Mássica Parafina (m2/s) C;";
+			escreveIni << " Difusividade Mï¿½ssica Parafina (m2/s) C;";
 			escreveIni << " Fluxo Massico de Parafina Total (kg/(m2-s)) C;";
 			escreveIni << " Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;";
 			escreveIni << " Gradiente de concentracao de parafina (1/m) C;";
@@ -21895,12 +21897,14 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 
     			flup[i].oMolecularWeightsOfWaxComponentsOut=new double[npseudoWax];
     			flup[i].oInterpolatedWaxConcsTDerivOutput=new double[npseudoWax];
+    			flup[i].oInterpolatedMassWaxConcsTDerivOutput=new double[npseudoWax];
     			flup[i].oLiquidDensitiesOfWaxComponentsOutput=new double[npseudoWax];
     			flup[i].oInterpolatedWaxConcs=new double[npseudoWax];
     			for(int j=0; j<npseudoWax;j++){
     				flup[i].oMolecularWeightsOfWaxComponentsOut[j]=flup[i].oMolecularWeightsOfWaxComponents[j];
     				flup[i].oInterpolatedWaxConcsTDerivOutput[j]=0.;
     				flup[i].oInterpolatedWaxConcs[j]=oInterpolatedWaxConcs[j];
+    				flup[i].oInterpolatedMassWaxConcsTDerivOutput[j]=0.;
     			}
     		}
 		}
