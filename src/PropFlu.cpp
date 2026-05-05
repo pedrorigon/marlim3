@@ -1726,12 +1726,14 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
 	oLiquidDensitiesOfWaxComponentsOutput=new double[npseudoWax];
 	oMolecularWeightsOfWaxComponentsOut=new double[npseudoWax];
 	oInterpolatedWaxConcsTDerivOutput=new double[npseudoWax];
+	oInterpolatedMassWaxConcsTDerivOutput=new double[npseudoWax];
 	oInterpolatedWaxConcs=new double[npseudoWax];
 	for(int j=0; j<npseudoWax;j++){
 		oLiquidDensitiesOfWaxComponentsOutput[j]=fluido.oLiquidDensitiesOfWaxComponentsOutput[j];
 		oMolecularWeightsOfWaxComponentsOut[j]=fluido.oMolecularWeightsOfWaxComponentsOut[j];
 		oInterpolatedWaxConcs[j]=fluido.oInterpolatedWaxConcs[j];
 		oInterpolatedWaxConcsTDerivOutput[j]=fluido.oInterpolatedWaxConcsTDerivOutput[j];
+		oInterpolatedMassWaxConcsTDerivOutput[j]=fluido.oInterpolatedMassWaxConcsTDerivOutput[j];
 	}
  }
 
