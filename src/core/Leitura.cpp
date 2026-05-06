@@ -16950,7 +16950,7 @@ void Ler::geraevento(int inic, int extrem) {
 	// caso nao seja simulacao POCO_INJETOR
 	if (tipoSimulacao != tipoSimulacao_t::poco_injetor) {
 		ostringstream saidaLog;
-		saidaLog << "LogEvento" << ".dat";
+		saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
 		string tmp = saidaLog.str();
 		ofstream escreveIni(tmp.c_str(), ios_base::out);
 		/* escreveIni<<" Tempo ; ";
@@ -16964,7 +16964,7 @@ void Ler::geraevento(int inic, int extrem) {
 
 		int neve = logeventoEstat.size();
 		ostringstream saidaExt;
-		saidaExt << "EventosExternos" << ".dat";
+		saidaExt << pathPrefixoArqSaida << "EventosExternos" << ".dat";
 		tmp = saidaExt.str();
 		ofstream escreveExt(tmp.c_str(), ios_base::out);
 		escreveExt << " Tempo ; ";
