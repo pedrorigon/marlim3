@@ -382,8 +382,7 @@ class Tramo:
                     except FileNotFoundError:
                         pass
 
-            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log'),
-                                os.path.join(os.getcwd(),'EventosExternos.dat')]:
+            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log')]:
                 try:
                     if os.path.exists(origin_file):
                         destination_file = os.path.join(diretorio, os.path.basename(origin_file))

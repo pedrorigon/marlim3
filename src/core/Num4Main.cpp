@@ -981,7 +981,6 @@ void preProcRede(Rede& arqRede, int narq){
 				escreveIni <<"  ]"<< endl;
 				escreveIni <<" }"<< endl;
 				escreveIni.close();*/
-				gravaRedeInterna(arqRede, narq, nredeAtiva, nrede, sizeRede, saidaT);
 				gravaRedeInterna(arqRede, narq, nredeAtiva, nrede, sizeRede, saidaT2);
 			}
 		}
@@ -15178,7 +15177,7 @@ int main(int argc, char** argv) {
             		 	 vg1dRede[i].qualRede=i;
 
             			 ostringstream entrada;
-            			 entrada<<"RedeInterna-" <<i<<".json";
+            			 entrada<<pathPrefixoArqSaida<<"RedeInterna-" <<i<<".json";
             			 string tmp = entrada.str();
             			 //leitura do arquivo json da rede interna i
             			 Rede arqRedeTemp2(tmp, nomeArquivoLog, validacaoJson, tipoSimulacao, &vg1dRede[i]);//leitura
@@ -15253,7 +15252,7 @@ int main(int argc, char** argv) {
             		 	 vg1dRede[i].qualRede=i;
             			 cout<<"!!!!!! Resolvendo REDE INTERNA "<<i<< "!!!!!!"<<"\n";
             			 ostringstream entrada;
-            			 entrada<<"RedeInterna-" <<i<<".json";
+            			 entrada<<pathPrefixoArqSaida<<"RedeInterna-" <<i<<".json";
             			 string tmp = entrada.str();
             			 //leitura do arquivo json da rede interna i
             			 Rede arqRedeTemp(tmp, nomeArquivoLog, validacaoJson, tipoSimulacao, &vg1dRede[i]);//leitura
