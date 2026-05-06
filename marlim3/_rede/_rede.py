@@ -190,8 +190,7 @@ class Rede:
             log_thread.join()
 
             # Mover arquivos de log para o diretório de resultados antes de processá-los
-            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log'),
-                                os.path.join(os.getcwd(),'EventosExternos.dat')]:
+            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log')]:
                 try:
                     destination_file = os.path.join(diretorio, os.path.basename(origin_file))
                     if os.path.exists(destination_file):
@@ -300,12 +299,12 @@ class Rede:
         tramo_index_to_name = {}
         
         # Carregar os JSONs das redes internas
-        input_dir = os.getcwd() #os.path.dirname(diretorio)  # O diretório de entrada está acima do diretório de resultados
+        input_dir = diretorio  # RedeInterna-{n}.json are now written directly to the output dir
 
       #  print('TO NA AREA')
         
         # Procurar arquivos de rede interna
-        for file in os.listdir(os.getcwd()):
+        for file in os.listdir(diretorio):
            # print('FILE', file)
             if file.startswith("RedeInterna-") and file.endswith(".json"):
                # print('FILE', file)

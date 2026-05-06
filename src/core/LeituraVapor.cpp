@@ -2042,7 +2042,7 @@ if (logeventoEstat.size() > 0)
 	sort(logeventoEstat.begin(), logeventoEstat.end());
 
 ostringstream saidaLog;
-saidaLog << "LogEvento" << ".dat";
+saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
 string tmp = saidaLog.str();
 ofstream escreveIni(tmp.c_str(), ios_base::out);
 /* escreveIni<<" Tempo ; ";
@@ -2054,7 +2054,7 @@ escreveIni.close();
 
 int neve = logeventoEstat.size();
 ostringstream saidaExt;
-saidaExt << "EventosExternos" << ".dat";
+saidaExt << pathPrefixoArqSaida << "EventosExternos" << ".dat";
 tmp = saidaExt.str();
 ofstream escreveExt(tmp.c_str(), ios_base::out);
 escreveExt << " Tempo ; ";
