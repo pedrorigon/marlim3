@@ -93,7 +93,7 @@ CelVap::CelVap(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
     cinematico=1.;
     arranjo=1;
     arranjoR=1;
-	if(fabsl(ML)<1e-5){
+	if(fabs(ML)<1e-5){
 		term1L=0.;
 		term2L=0.;
 	}
@@ -101,7 +101,7 @@ CelVap::CelVap(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 		term1L=MliqiniL/ML;
 		term2L=0.;
 	}
-	if(fabsl(MC)<1e-5){
+	if(fabs(MC)<1e-5){
 		term1=0.;
 		term2=0.;
 	}
@@ -109,7 +109,7 @@ CelVap::CelVap(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 		term1=Mliqini/MC;
 		term2=0.;
 	}
-	if(fabsl(MR)<1e-5){
+	if(fabs(MR)<1e-5){
 		term1R=0.;
 		term2R=0.;
 	}
@@ -120,8 +120,8 @@ CelVap::CelVap(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 	double localtinyTemp;
 	if(vg1dSP!=0)localtinyTemp=(*vg1dSP).localtiny;
 	else localtinyTemp=1e-9;
-	if(fabsl(alf)>=localtinyTemp && fabsl(alf)<=1-localtinyTemp)transic=0;
-	else if(fabsl(alf)>=localtinyTemp)transic=-1;
+	if(fabs(alf)>=localtinyTemp && fabs(alf)<=1-localtinyTemp)transic=0;
+	else if(fabs(alf)>=localtinyTemp)transic=-1;
 	else transic=1;
 	double razdx;
 	razdx=dx/(dx+dxL);
@@ -484,35 +484,35 @@ CelVap& CelVap::operator =(const CelVap& vcel) {
 
 double CelVap::Rey(double dia, double vel,
 		double rho, double vis) {
-	return dia * fabsl(vel) * rho / (vis * 1e-3);
+	return dia * fabs(vel) * rho / (vis * 1e-3);
 }
 double CelVap::fric(double re, double eps) {
 
 /*
  double val;
- if (fabsl(re) > 1e-5) {
+ if (fabs(re) > 1e-5) {
 		if (re > 2400) {
-			val = 6.9 / fabsl(re) + pow(eps / 3.7, 1.11);
-			val = -1.8 * (logl(val) / logl(10.));
+			val = 6.9 / fabs(re) + pow(eps / 3.7, 1.11);
+			val = -1.8 * (log(val) / log(10.));
 			val = pow(1 / val,2.);
 		} else
-			val = 4*16. / fabsl(re);
+			val = 4*16. / fabs(re);
 	} else
 		val = 0.;
 	return val/4.;*/
 	double val;
-	   if (fabsl(re) > 1e-5) {
+	   if (fabs(re) > 1e-5) {
 			if (re > 2400) {
-				val = 6.9 / fabsl(re) + pow(eps / 3.7, 1.11);
-				val = -1.8 * (logl(val) / logl(10.));
+				val = 6.9 / fabs(re) + pow(eps / 3.7, 1.11);
+				val = -1.8 * (log(val) / log(10.));
 				val = pow(1 / val,2.);
 				for(int konta=0;konta<2;konta++){
-				  val=pow(-2.*logl( 2.51 / fabsl(re*sqrtl(val)) + eps/ 3.7)/logl(10.),2.);
+				  val=pow(-2.*log( 2.51 / fabs(re*sqrt(val)) + eps/ 3.7)/log(10.),2.);
 				  val=1./val;
 				}
 				val/=4.;
 			} else
-				val = 16. / fabsl(re);
+				val = 16. / fabs(re);
 		} else
 			val = 0.;
 	   return val;
@@ -554,7 +554,7 @@ double CelVap::fric(double re, double eps) {
 
    double resto=0.;
    if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny))){
-	   alf=fabsl(0.);
+	   alf=fabs(0.);
    }
    else if(alf<-(*vg1dSP).localtiny){
       double dtaux;
@@ -564,9 +564,9 @@ double CelVap::fric(double re, double eps) {
       if(dtaux>(*vg1dSP).localtiny){
         dt=dtaux;
         reinicia=-1;
-        alf=fabsl(0.);
+        alf=fabs(0.);
       }
-      else alf=fabsl(0.);
+      else alf=fabs(0.);
    }
    else if((alf>=(1.-(*vg1dSP).localtiny)&&alf<=(1.+(*vg1dSP).localtiny))){
 	   alf=1.;
@@ -621,7 +621,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 	  int master=1;
 	  if(acsrL!=0){
 			if(((*acsrL).tipo==5&&(*acsrL).chk.AreaGarg<(1e-3+razareativa)*AL)
-				||((*acsrL).tipo==8&&fabsl((*acsrL).bvol.freq)>1 ))master=0;
+				||((*acsrL).tipo==8&&fabs((*acsrL).bvol.freq)>1 ))master=0;
 	  }
 	  if(master==1){
 
@@ -676,7 +676,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
       }
 
       if((acsr.tipo!=5||acsr.chk.AreaGarg>=(1e-3+razareativa)*AC)&&
-    	 (acsr.tipo!=8||fabsl(acsr.bvol.freq)<=1.)){
+    	 (acsr.tipo!=8||fabs(acsr.bvol.freq)<=1.)){
 		double dxmed = 0.5 * (dx + dxR);
 		double Amed =(dx*AC+dxR*AR)/(dx + dxR);
 		//double Amed =AC;
@@ -770,14 +770,14 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 			f2*=1.;
 		}
 		double razdx = dx / (dxR + dx);
-		double coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC * razdx;
+		double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC * razdx;
 		double dpfric=coefTensC*coef2C;
-		double coefTensR=0.5 * f2*rhomix2*( fabsl(j2)) * siR * (1.-razdx);
+		double coefTensR=0.5 * f2*rhomix2*( fabs(j2)) * siR * (1.-razdx);
 		dpfric+=coefTensR*coef2R;
-		double dphidro=9.82 * sinl(duto.teta) *AC*rhomix1* razdx;
-		dphidro+=9.82 * sinl(dutoR.teta) *AR*rhomix2* (1.-razdx);
-		double estrat1=perdaEstratL*term1R*fabsl(MliqiniR)+perdaEstratG*(1-term1R)*fabsl(MR-MliqiniR);
-		double estrat2=(perdaEstratL*fabsl(MliqiniR)-perdaEstratG*fabsl(MR-MliqiniR))*term2R;
+		double dphidro=9.82 * sin(duto.teta) *AC*rhomix1* razdx;
+		dphidro+=9.82 * sin(dutoR.teta) *AR*rhomix2* (1.-razdx);
+		double estrat1=perdaEstratL*term1R*fabs(MliqiniR)+perdaEstratG*(1-term1R)*fabs(MR-MliqiniR);
+		double estrat2=(perdaEstratL*fabs(MliqiniR)-perdaEstratG*fabs(MR-MliqiniR))*term2R;
 
 		estrat1=0.;
 		estrat2=0.;
@@ -816,7 +816,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 		TL[1]-=(dpfric+dphidro-(dpB+delpChoke-
 				coefDpB*MR-(sinalPig*DelPig*velPig*98066.5))*((dx*AC+dxR*AR)/(dx + dxR))/dx+estrat2);
 
-		cinematico=(fabsl(MR-MRini) / dt)/fabsl((Amed*98066.5/dxmed)*(presR-pres));
+		cinematico=(fabs(MR-MRini) / dt)/fabs((Amed*98066.5/dxmed)*(presR-pres));
       }
       else{
     	compres = flui.ZFunc(pres, temp);
@@ -973,9 +973,9 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 				  re1 = Rey(dhid, j1, rhomix1,viscmix1);
 			  }
 			  double f1 = fric(re1, duto.rug / duto.a);
-			  double coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC;
+			  double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC;
 			  double dpfric=coefTensC*coef2C;
-			  double dphidro=9.82 * sinl(duto.teta) *AC*rhomix1;
+			  double dphidro=9.82 * sin(duto.teta) *AC*rhomix1;
 
 			  double ugl=(MC-Mliqini)/rhogC;
 			  double ugr=(MR-MliqiniR)/rhogR;
@@ -1060,12 +1060,12 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 		  double f1 = fric(re1, duto.rug / duto.a);
 		  double f2 = fric(re2, dutoR.rug / dutoR.a);
 		  double razdx = dx / (dxR + dx);
-		  double coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC * razdx;
+		  double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC * razdx;
 		  double dpfric=coefTensC*coef2C;
-		  double coefTensR=0.5 * f2*rhomix2*( fabsl(j2)) * siR * (1.-razdx);
+		  double coefTensR=0.5 * f2*rhomix2*( fabs(j2)) * siR * (1.-razdx);
 		  dpfric+=coefTensR*coef2R;
-		  double dphidro=9.82 * sinl(duto.teta) *AC*rhomix1* razdx;
-		  dphidro+=9.82 * sinl(dutoR.teta) *AR*rhomix2* (1.-razdx);
+		  double dphidro=9.82 * sin(duto.teta) *AC*rhomix1* razdx;
+		  dphidro+=9.82 * sin(dutoR.teta) *AR*rhomix2* (1.-razdx);
 
 		  local[1][3] +=(coefTensC*coef1C+coefTensR*coef1R);
 		  TL[1]-=(dpfric+dphidro);
@@ -1090,9 +1090,9 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
      if(dtaux>(*vg1dSP).localtiny){
        dtPig=dtaux;
        reinicia=-1;
-       razPig=fabsl(0.);
+       razPig=fabs(0.);
      }
-     else razPig=fabsl(0.);
+     else razPig=fabs(0.);
   }
   else if((razPig>=(1.-(*vg1dSP).localtiny)&&razPig<=(1.+(*vg1dSP).localtiny))){
 	   razPig=1.;
@@ -1128,7 +1128,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
     	 double areagarg=RazAreaPig*duto.area;
     	 double rlm=(1.-alfPigEini)*(rpC)+
     			          alfPigEini*flui.MasEspGas(pres,temp,TEMP);
-     	 double massica=areagarg*sqrtl(2.*rlm*(DelPig*velPig)*98066.52);
+     	 double massica=areagarg*sqrt(2.*rlm*(DelPig*velPig)*98066.52);
    		 massica=cdpig*massica;
    		 VazaPig=massica/rlm;
         }//alteracao2
@@ -1171,7 +1171,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
    	     double areagarg=RazAreaPig*duto.area;
    	     double rlm=(alfPigDini)*(rpC)+
 		                  alfPigDini*flui.MasEspGas(pres,temp,TEMP);
-    	 double massica=areagarg*sqrtl(2.*rlm*(DelPig*fabsl(velPig))*98066.52);
+    	 double massica=areagarg*sqrt(2.*rlm*(DelPig*fabs(velPig))*98066.52);
   		 massica=cdpig*massica;
   		 VazaPig=-massica/rlm;
        }//alteracao2

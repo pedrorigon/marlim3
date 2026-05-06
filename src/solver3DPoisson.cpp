@@ -901,7 +901,7 @@ int solverP3D::permanentePoisson(){
     	for(int i=0;i<malha.nele;i++){
     		//malha.mlh3d[i].cel3D.tempC0=malha.mlh3d[i].cel3D.tempCI=malha.mlh3d[i].cel3D.tempC;
     		malha.mlh3d[i].cel3D.tempC=malha.vecSolv[i];
-    		norma+=fabsl(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempC0);
+    		norma+=fabs(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempC0);
     	}
     	norma/=malha.nele;
     	if(norma>=norma0)diverge=1;
@@ -1075,8 +1075,8 @@ void solverP3D::transientePoisson(double vdelt){
 				for(int i=0;i<malha.nele;i++){
 					malha.mlh3d[i].cel3D.tempCI=malha.mlh3d[i].cel3D.tempC;
 					malha.mlh3d[i].cel3D.tempC=malha.vecSolv[i];
-					norma+=fabsl(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI);
-					if(fabsl(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI)>1){
+					norma+=fabs(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI);
+					if(fabs(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI)>1){
 						int para;
 						para=0;
 					}
@@ -1255,7 +1255,7 @@ void solverP3D::transientePoissonDummy(double vdelt,int konta){
 				for(int i=0;i<malha.nele;i++){
 					malha.mlh3d[i].cel3D.tempCI=malha.mlh3d[i].cel3D.tempC;
 					malha.mlh3d[i].cel3D.tempC=malha.vecSolv[i];
-					norma+=fabsl(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI);
+					norma+=fabs(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI);
 				}
 				norma/=malha.nele;
 

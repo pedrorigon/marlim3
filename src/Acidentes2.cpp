@@ -141,11 +141,11 @@ double massica(double presEstag, double presGarg, const double temp, double alf,
 // double vs=VelSomH(presGarg, t1, alf, fluido);
 // double maxmas=areaG*rhogG*vs;
  double val;
-// double num=2*((Cpl*(1-x)+Cpg*x)*(temp-t1)+(1-x)*(1/rhogE)*fabsl(presEstag-presGarg)*98066.5);
+// double num=2*((Cpl*(1-x)+Cpg*x)*(temp-t1)+(1-x)*(1/rhogE)*fabs(presEstag-presGarg)*98066.5);
  //double den=(1/(areaG*areaG*rhomisG)-1/(areaE*areaE*rhomisE));
  double den=0.5*(1./(pow(areaG,2.)*rhomisG*rhomisG)-1./(pow(areaE,2.)*rhomisE*rhomisE));
  double num=x*Cpg*(temp+273.1)*(1-pow(razpres,(1-k)/k))+(1-x)*presGarg*98066.5*(razpres-1)/rholE;
- val=sqrtl(fabs(num/den));
+ val=sqrt(fabs(num/den));
  //if(val>maxmas)val=maxmas;
  return sinal*val;
 }
@@ -234,7 +234,7 @@ double RPresH(const double pres, const double temp,const double alf,const double
       alfG=rhol*x/(rl1*x+rg1*(1-x));
       rhomisE=(1-alf)*rhol+alf*rhogE;
       rhomisG=(1-alfG)*rl1+alfG*rg1;
-      //num=2*((Cpl*(1-x)+Cpg*x)*(temp-t1)+fabsl((presEstag/rhol)-(presGarg/rl1))*98066.5);
+      //num=2*((Cpl*(1-x)+Cpg*x)*(temp-t1)+fabs((presEstag/rhol)-(presGarg/rl1))*98066.5);
      // den=(1/(areaGarg*areaGarg*rhomisG)-1/(areaTub*areaTub*rhomisE));
 
       val=0.5*masentrada*masentrada*(1./(pow(areaGarg,2.)*rhomisG*rhomisG)-1./(pow(areaTub,2.)*rhomisE*rhomisE));
@@ -246,7 +246,7 @@ double RPresH(const double pres, const double temp,const double alf,const double
       val=val+(1-x)*presGarg*98066.5*(razpres-1)/rhol;
       double der=(1-x)*presGarg*98066.5/rhol-x*Cpg*(temp+273.1)*((1-k)/k)*pow(razpres,1/k);
       razpres=razpres-val/der;
-      dif=fabsl(raz0-razpres);
+      dif=fabs(raz0-razpres);
       presEstag=razpres*presGarg;
       if(presEstag<presGarg){
     	int para=0;
@@ -475,7 +475,7 @@ double choke::vazmassSachd(double y, double presE, double tempE,double alf, doub
 
 	       G2= 2*presE*98066.5*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
 	       //G2= presE*98600*rm2*rm2*pow(y,2.*(1-k*k)/k)*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
-	       G2=sqrtl(G2);
+	       G2=sqrt(G2);
 		}
 		else{
 		       double rhog=fluido.MasEspGas(presE, tempE);
@@ -502,7 +502,7 @@ double choke::vazmassSachd(double y, double presE, double tempE,double alf, doub
 		       G2=(x/xi)*G2+((xmin-x)/xi)*GL;
 
 		       //G2= presE*98600*rm2*rm2*pow(y,2.*(1-k*k)/k)*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
-		       G2=sqrtl(G2);
+		       G2=sqrt(G2);
 		}
 	 }
 	 else G2=0.;
@@ -540,7 +540,7 @@ double choke::vazmaxSachd(double presE, double tempE,double alf, double bet,doub
 
     	 G2= 2*presE*98066.5*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
     	 //double G2= presE*98600*rm2*rm2*pow(y,2.*(1-k*k)/k)*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
-		 G2=sqrtl(G2);
+		 G2=sqrt(G2);
      }
      else{
        	 double y;
@@ -569,7 +569,7 @@ double choke::vazmaxSachd(double presE, double tempE,double alf, double bet,doub
          //double G2= presE*98600*rm2*rm2*pow(y,2.*(1-k*k)/k)*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
 	     double GL= 2*presE*98066.5*rhol*rhol*((1-y)/rhol);
 	     G2=(x/xi)*G2+((xmin-x)/xi)*GL;
-         G2=sqrtl(G2);
+         G2=sqrt(G2);
      }
 	 return cdchk*G2*AreaGarg;
 }
@@ -686,7 +686,7 @@ double choke::vazmassSachdVap(double y, double presE, double tempE,double alf,do
 
 	 G2= 2*presE*98600*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
 	 //G2= presE*98600*rm2*rm2*pow(y,2.*(1-k*k)/k)*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
-	 G2=sqrtl(G2);
+	 G2=sqrt(G2);
 	 }
 	 else G2=0.;
 	 return cdchk*G2*AreaGarg;
@@ -717,7 +717,7 @@ double choke::vazmaxSachdVap(double presE, double tempE,double alf,double  x){
 
 	 double G2= 2*presE*98600*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
 	 //double G2= presE*98600*rm2*rm2*pow(y,2.*(1-k*k)/k)*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
-	 G2=sqrtl(G2);
+	 G2=sqrt(G2);
 	 return cdchk*G2*AreaGarg;
 }
 

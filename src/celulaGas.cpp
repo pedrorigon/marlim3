@@ -16,17 +16,17 @@ CelG::CelG(const DadosGeo vdutoL,const DadosGeo vduto,
 
 	// --- Solver de Hidratos: inicialização ---
 	// fluxos em massa (por área) – começam em zero
-	j_H = 0.0L;
-	j_G = 0.0L;
-	j_W = 0.0L;
+	j_H = 0.0;
+	j_G = 0.0;
+	j_W = 0.0;
 
 	// volumes físicos
-	V_h = 0.0L;   // sem hidrato no início
-	V_w = 0.0L;   // será atribuído em solverHidrato() usando BSW
+	V_h = 0.0;   // sem hidrato no início
+	V_w = 0.0;   // será atribuído em solverHidrato() usando BSW
 
-	FVHG = 0.0L;
+	FVHG = 0.0;
 	agua_consumida=0.;
-	massa_hidrato=0.0L; //chris - Hidratos
+	massa_hidrato=0.0; //chris - Hidratos
 
 	dutoL= vdutoL;
 	duto = vduto;
@@ -322,33 +322,33 @@ CelG& CelG::operator =(const CelG& vcel) {
 
 double CelG::Rey(double dia, double vel,
 		double rho, double vis) {
-	return dia * fabsl(vel) * rho / (vis * 1e-3);
+	return dia * fabs(vel) * rho / (vis * 1e-3);
 }
 double CelG::fric(double re, double eps) {
 /*	double val;
-	if (fabsl(re) > 1e-5) {
+	if (fabs(re) > 1e-5) {
 		if (re > 2400) {
-			val = 6.9 / fabsl(re) + pow(eps / 3.7, 1.11);
-			val = -1.8 * (logl(val) / logl(10.));
+			val = 6.9 / fabs(re) + pow(eps / 3.7, 1.11);
+			val = -1.8 * (log(val) / log(10.));
 			val = pow(1 / val,2.)/4.;
 		} else
-			val = 16. / fabsl(re);
+			val = 16. / fabs(re);
 	} else
 		val = 0.;
 	return val;*/
 	double val;
-	   if (fabsl(re) > 1e-5) {
+	   if (fabs(re) > 1e-5) {
 			if (re > 2400) {
-				val = 6.9 / fabsl(re) + pow(eps / 3.7, 1.11);
-				val = -1.8 * (logl(val) / logl(10.));
+				val = 6.9 / fabs(re) + pow(eps / 3.7, 1.11);
+				val = -1.8 * (log(val) / log(10.));
 				val = pow(1 / val,2.);
 				for(int konta=0;konta<2;konta++){
-				  val=pow(-2.*logl( 2.51 / fabsl(re*sqrtl(val)) + eps/ 3.7)/logl(10.),2.);
+				  val=pow(-2.*log( 2.51 / fabs(re*sqrt(val)) + eps/ 3.7)/log(10.),2.);
 				  val=1./val;
 				}
 				val/=4.;
 			} else
-				val = 16. / fabsl(re);
+				val = 16. / fabs(re);
 		} else
 			val = 0.;
 	   return val;
@@ -476,10 +476,10 @@ double CelG::DrhoDtFlu(double pres, double temper) const{//alteracao2
 		      double f1 = fric(re1, duto.rug / duto.a);
 		      double f2 = fric(re2, dutoR.rug / dutoR.a);
 		      double razdx = dx0 / (dx1 + dx0);
-		      double multvelL=0.5 * f1*( fabsl(vel1)/duto.area) * duto.peri * razdx;
-		      double multvelR=0.5 * f2*( fabsl(vel2)/dutoR.area) * dutoR.peri * (1.-razdx);
-		      varpresL=1*( 9.82 * sinl(duto.teta) * dx0) /( (dx1 + dx0));
-		      varpresR=1*( 9.82 * sinl(dutoR.teta) * dx1) / ((dx1 + dx0));
+		      double multvelL=0.5 * f1*( fabs(vel1)/duto.area) * duto.peri * razdx;
+		      double multvelR=0.5 * f2*( fabs(vel2)/dutoR.area) * dutoR.peri * (1.-razdx);
+		      varpresL=1*( 9.82 * sin(duto.teta) * dx0) /( (dx1 + dx0));
+		      varpresR=1*( 9.82 * sin(dutoR.teta) * dx1) / ((dx1 + dx0));
 
 		      local[1][0] = 0.;
 		      local[1][1] = -vel1 / (2. * dxmed)+0.5*multvelL;
@@ -607,12 +607,12 @@ double CelG::DrhoDtFlu(double pres, double temper) const{//alteracao2
 				  }
 
 		  double f1 = fric(re1, dutoR.rug / dutoR.a);
-		  double multvelL=0.5 * f1*( fabsl(vel1)/dutoR.area) * dutoR.peri;
+		  double multvelL=0.5 * f1*( fabs(vel1)/dutoR.area) * dutoR.peri;
 
 		  local[1][0] = 0.;
 		  local[1][1] = 0.;
 		  local[1][2] = 0.;
-		  //local[1][3] = -(Amed * dpdrho * (1 / dutoR.area) * (1 / dxmed))+1*9.82 * sinl(duto.teta);//alteracao2
+		  //local[1][3] = -(Amed * dpdrho * (1 / dutoR.area) * (1 / dxmed))+1*9.82 * sin(duto.teta);//alteracao2
 		  local[1][3] = -(Amed * (compres1*RUni*(temp+273)) * (1 / duto.area) * (1 / dxmed));//alteracao2
 		  local[1][4] = 1 / dt + (vel2 - 2. * vel1) / (2. * dxmed)+multvelL;
 		  //local[1][5] =-0*Amed*dpdrho*(-drhodT)*(1 / dxmed);//alteracao2
@@ -797,17 +797,17 @@ void CelG::GeraLocal(int ncelGas,double presiniG,double tempiniG
 		      double f1 = fric(re1, duto.rug / duto.a);
 		      double f2 = fric(re2, dutoR.rug / dutoR.a);
 		      double razdx = dx0 / (dx1 + dx0);
-		      //double multvelL=dPdLFric*0.5 * f1*( fabsl(vel1)/duto.area) * duto.peri * razdx;
-		      double multvelL=dPdLFric*0.5 * f1*( fabsl(vel1)/duto.area)* duto.peri * razdx;
-		      //double multvelR=dPdLFric*0.5 * f2*( fabsl(vel2)/dutoR.area) * dutoR.peri * (1.-razdx);
-		      double multvelR=dPdLFric*0.5 * f2*( fabsl(vel2)/dutoR.area) * dutoR.peri * (1.-razdx);
-		      varpresL=dPdLHidro*( 9.82 * sinl(duto.teta) * dx0*u1L) /( (dx1 + dx0));
-		      varpresR=dPdLHidro*( 9.82 * sinl(dutoR.teta) * dx1*u1R) / ((dx1 + dx0));
+		      //double multvelL=dPdLFric*0.5 * f1*( fabs(vel1)/duto.area) * duto.peri * razdx;
+		      double multvelL=dPdLFric*0.5 * f1*( fabs(vel1)/duto.area)* duto.peri * razdx;
+		      //double multvelR=dPdLFric*0.5 * f2*( fabs(vel2)/dutoR.area) * dutoR.peri * (1.-razdx);
+		      double multvelR=dPdLFric*0.5 * f2*( fabs(vel2)/dutoR.area) * dutoR.peri * (1.-razdx);
+		      varpresL=dPdLHidro*( 9.82 * sin(duto.teta) * dx0*u1L) /( (dx1 + dx0));
+		      varpresR=dPdLHidro*( 9.82 * sin(dutoR.teta) * dx1*u1R) / ((dx1 + dx0));
 
-		      termoFric=0.5 * f1*( fabsl(vel1)*vel1/duto.area) * duto.peri * razdx*(u1L/duto.area)+
-		    		  0.5 * f2*( fabsl(vel2)*vel2/dutoR.area) * dutoR.peri * (1.-razdx)*(u1R/dutoR.area);
-		      termoHidro=( 9.82 * sinl(duto.teta) * dx0*(u1L/duto.area)) /( (dx1 + dx0))+
-		    		  ( 9.82 * sinl(dutoR.teta) * dx1*(u1R/dutoR.area)) / ((dx1 + dx0));
+		      termoFric=0.5 * f1*( fabs(vel1)*vel1/duto.area) * duto.peri * razdx*(u1L/duto.area)+
+		    		  0.5 * f2*( fabs(vel2)*vel2/dutoR.area) * dutoR.peri * (1.-razdx)*(u1R/dutoR.area);
+		      termoHidro=( 9.82 * sin(duto.teta) * dx0*(u1L/duto.area)) /( (dx1 + dx0))+
+		    		  ( 9.82 * sin(dutoR.teta) * dx1*(u1R/dutoR.area)) / ((dx1 + dx0));
 
 		      local[1][0] = 0.;
 		      local[1][1] = -vel1 / (2. * dxmed)+0.5*multvelL;
@@ -941,12 +941,12 @@ void CelG::GeraLocal(int ncelGas,double presiniG,double tempiniG
 				  }
 
 		  double f1 = fric(re1, dutoR.rug / dutoR.a);
-		  double multvelL=dPdLFric*0.5 * f1*( fabsl(vel1)/dutoR.area) * dutoR.peri;
+		  double multvelL=dPdLFric*0.5 * f1*( fabs(vel1)/dutoR.area) * dutoR.peri;
 
 		  local[1][0] = 0.;
 		  local[1][1] = 0.;
 		  local[1][2] = 0.;
-		  //local[1][3] = -(Amed * dpdrho * (1 / dutoR.area) * (1 / dxmed))+1*9.82 * sinl(duto.teta);//alteracao2
+		  //local[1][3] = -(Amed * dpdrho * (1 / dutoR.area) * (1 / dxmed))+1*9.82 * sin(duto.teta);//alteracao2
 		  local[1][3] = -(Amed* 98066.5* (1 / dxmed));//alteracao2
 		  local[1][4] = 1 / dt + (vel2 - 2. * vel1) / (2. * dxmed)+multvelL;
 		  //local[1][5] =-0*Amed*dpdrho*(-drhodT)*(1 / dxmed);//alteracao2
@@ -1092,9 +1092,9 @@ void CelG::GeraLocal(int ncelGas,double presiniG,double tempiniG
      if(dtaux>localtiny){
        dtInter=dtaux;
        reinicia=-1;
-       razInter=fabsl(0.);
+       razInter=fabs(0.);
      }
-     else razInter=fabsl(0.);
+     else razInter=fabs(0.);
   }
   else if((razInter>=(1.-localtiny)&&razInter<=(1.+localtiny))){
 	   razInter=1.;

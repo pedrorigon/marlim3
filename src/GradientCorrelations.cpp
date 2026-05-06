@@ -64,7 +64,7 @@ Dicionário de variáveis:
 - a, b, c : Coeficientes do polinômio de interpolação
 ==============================================================================
 */
-long double interpolate(const std::vector<double>& xValues, const std::vector<double>& yValues,
+double interpolate(const std::vector<double>& xValues, const std::vector<double>& yValues,
                    double xTarget, int degree, int numPoints) {
     // Checagens de tamanho
     if (numPoints < 2) throw std::invalid_argument("numPoints deve ser >= 2");
@@ -133,7 +133,7 @@ Dicionário de variáveis:
 - interpolatedRow  : Vetor auxiliar para armazenar valores interpolados nas linhas
 ==============================================================================
 */
-long double interpolate2D(const std::vector<double>& verticalPoints,
+double interpolate2D(const std::vector<double>& verticalPoints,
                      const std::vector<double>& horizontalPoints, 
                      const std::vector<double>& matrixValues,
                      int numVertical, int numHorizontal, 
@@ -242,31 +242,31 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
                        double& reynolds, unsigned char& flowType) {
     
     
-    long double area;
-    long double diameter;
-    long double roughness;
-    long double alfmed;
-    long double betmed;
-    long double rhog;
-    long double rhol;
-    long double ugsmed;
-    long double ulsmed;
-    long double tmed;
-    long double pmed;
-    long double j;
-    long double rhomix;
-    long double gasViscosity;
-    long double liquidViscosity;
-    long double viscmix;
-    long double angle;
-    long double velocity;
-    long double temperature;  // Temperatura em °F
-	long double compressibilityFactor;
-	long double surfaceTension;
-	long double productionRate;
-	long double waterFraction;
-	long double oilSurfaceTension;
-	long double waterSurfaceTension;
+    double area;
+    double diameter;
+    double roughness;
+    double alfmed;
+    double betmed;
+    double rhog;
+    double rhol;
+    double ugsmed;
+    double ulsmed;
+    double tmed;
+    double pmed;
+    double j;
+    double rhomix;
+    double gasViscosity;
+    double liquidViscosity;
+    double viscmix;
+    double angle;
+    double velocity;
+    double temperature;  // Temperatura em °F
+	double compressibilityFactor;
+	double surfaceTension;
+	double productionRate;
+	double waterFraction;
+	double oilSurfaceTension;
+	double waterSurfaceTension;
 
     
     
@@ -318,7 +318,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
            	alfmed = celula[i-1].alf;
             betmed = celula[i-1].bet;
         }
-        long double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
+        double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
         
         if(AceleraConvergPerm == 0 && inter!=0) {
             tmed = razdx * celula[i].temp + (1.0 - razdx) * celula[i - 1].temp;
@@ -343,9 +343,9 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         j = ugsmed + ulsmed;
         velocity = 3.28084 * (ugsmed + ulsmed);  
         
-        long double sinalJ = 1.0;
-        if(fabsl(j) > 1e-15) {
-            sinalJ = j / fabsl(j);
+        double sinalJ = 1.0;
+        if(fabs(j) > 1e-15) {
+            sinalJ = j / fabs(j);
         }
         
         rhomix = alfmed * rhog + (1.0 - alfmed) * rhol;
@@ -358,11 +358,11 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     
     
     pmed*=(0.9678411)*14.69595;
-    long double liquidFraction;
-    if(fabsl(j)>1e-15)liquidFraction= fabsl(ulsmed / j);
+    double liquidFraction;
+    if(fabs(j)>1e-15)liquidFraction= fabs(ulsmed / j);
     else liquidFraction=1.-celula[i-1].alf;
-    long double gasDensity = 0.06243 * rhog;      
-    long double liquidDensity = 0.06243 * rhol;   
+    double gasDensity = 0.06243 * rhog;      
+    double liquidDensity = 0.06243 * rhol;   
     
     // Variáveis adicionais para correlações que retornam mais parâmetros
     double accelGrad = 0.0;
@@ -933,7 +933,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             loopFlag = true;
             switch (flowType) {
                 case 3: // Fluxo distribuído
-                	if(fabsl(froudeNumber)>1e-15)horizontalHoldup = 1.065 * pow(liquidFraction, 0.5824) * pow(froudeNumber, -0.0609);
+                	if(fabs(froudeNumber)>1e-15)horizontalHoldup = 1.065 * pow(liquidFraction, 0.5824) * pow(froudeNumber, -0.0609);
                 	else horizontalHoldup = liquidFraction;
                     flowPatternCoefD = 1.0;
                     flowPatternCoefE = 0.0;
@@ -941,7 +941,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
                     flowPatternCoefG = 0.0;
                     break;
                 case 4: // Fluxo intermitente
-                	if(fabsl(froudeNumber)>1e-15)horizontalHoldup = 0.845 * pow(liquidFraction, 0.5351) * pow(froudeNumber, -0.0173);
+                	if(fabs(froudeNumber)>1e-15)horizontalHoldup = 0.845 * pow(liquidFraction, 0.5351) * pow(froudeNumber, -0.0173);
                 	else horizontalHoldup = liquidFraction;
                     flowPatternCoefD = 2.96;
                     flowPatternCoefE = 0.305;
@@ -949,7 +949,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
                     flowPatternCoefG = 0.0978;
                     break;
                 case 5: // Fluxo segregado
-                	if(fabsl(froudeNumber)>1e-15)horizontalHoldup = 0.98 * pow(liquidFraction, 0.4846) * pow(froudeNumber, -0.0868);
+                	if(fabs(froudeNumber)>1e-15)horizontalHoldup = 0.98 * pow(liquidFraction, 0.4846) * pow(froudeNumber, -0.0868);
                 	else horizontalHoldup = liquidFraction;
                     flowPatternCoefD = 0.011;
                     flowPatternCoefE = -3.768;
@@ -976,7 +976,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
                 
                 // Calcular fator C
                 double cFactor;
-                if(fabsl(froudeNumber)>1e-15)
+                if(fabs(froudeNumber)>1e-15)
                     cFactor = (1.0 - liquidFraction) * log(flowPatternCoefD * pow(liquidFraction, flowPatternCoefE) * pow(liquidVelNumber, flowPatternCoefF) * pow(froudeNumber, flowPatternCoefG));
                 else cFactor =0.;
                 if (cFactor < 0.0) cFactor = 0.0;
@@ -1026,7 +1026,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
     // Calcular fator de atrito do diagrama de Moody
     reynolds = 1488.0 * noSlipDensity * velocity * diameter / noSlipViscosity;
     double frictionFactorValue;
-    if(fabsl(reynolds)>1e-15)frictionFactor(reynolds, roughness, frictionFactorValue);
+    if(fabs(reynolds)>1e-15)frictionFactor(reynolds, roughness, frictionFactorValue);
     else frictionFactorValue=0.;
     
     if (flowType > 2) {

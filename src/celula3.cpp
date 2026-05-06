@@ -21,33 +21,33 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 	//Solver de Hidratos
 
 	//modeloIII
-	V_h_total = 0.0L;
-	V_h_dep = 0.0L;
-	V_h_disp = 0.0L;
+	V_h_total = 0.0;
+	V_h_dep = 0.0;
+	V_h_disp = 0.0;
 
-	e_dep = 0.0L;
-	D_h_eff = 0.0L;
-	A_eff = 0.0L;
-	phi_h_disp = 0.0L;
+	e_dep = 0.0;
+	D_h_eff = 0.0;
+	A_eff = 0.0;
+	phi_h_disp = 0.0;
 
-	phi_h_eff = 0.0L;
-	mu_rel_slurry = 0.0L;
-	mu_base_liq = 0.0L;
-	mu_slurry = 0.0L; //modeloIII
+	phi_h_eff = 0.0;
+	mu_rel_slurry = 0.0;
+	mu_base_liq = 0.0;
+	mu_slurry = 0.0; //modeloIII
 
 	// --- Solver de Hidratos: inicialização ---
 	// fluxos em massa (por área) – começam em zero
-	j_H = 0.0L; //não são usados no modelo I de Hidratos
-	j_G = 0.0L; //não são usados no modelo I de Hidratos
-	j_W = 0.0L; //não são usados no modelo I de Hidratos
+	j_H = 0.0; //não são usados no modelo I de Hidratos
+	j_G = 0.0; //não são usados no modelo I de Hidratos
+	j_W = 0.0; //não são usados no modelo I de Hidratos
 
 	// volumes físicos
-	V_h = 0.0L;   // sem hidrato no início
+	V_h = 0.0;   // sem hidrato no início
 	V_w=0.;
 	V_g=0.; //chris Hidratos
 
 
-	FVH = 0.0L;
+	FVH = 0.0;
 	agua_consumida=0.;
 	gas_consumido=0.;
 
@@ -57,7 +57,7 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 	agua_consumida_massa_step=0.; //alteracao Hidratos
 	gas_consumido_massa_step=0.; //alteracao Hidratos
 
-	massa_hidrato=0.0L; //chris - Hidratos
+	massa_hidrato=0.0; //chris - Hidratos
 	
 	vg1dSP=Vvg1dSP;
 	dutoL = vdutoL;
@@ -178,7 +178,7 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
     cinematico=1.;
     arranjo=1;
     arranjoR=1;
-	if(fabsl(ML)<1e-5){
+	if(fabs(ML)<1e-5){
 		term1L=0.;
 		term2L=0.;
 	}
@@ -186,7 +186,7 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 		term1L=MliqiniL/ML;
 		term2L=0.;
 	}
-	if(fabsl(MC)<1e-5){
+	if(fabs(MC)<1e-5){
 		term1=0.;
 		term2=0.;
 	}
@@ -194,7 +194,7 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 		term1=Mliqini/MC;
 		term2=0.;
 	}
-	if(fabsl(MR)<1e-5){
+	if(fabs(MR)<1e-5){
 		term1R=0.;
 		term2R=0.;
 	}
@@ -205,8 +205,8 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
 	double localtinyTemp;
 	if(vg1dSP!=0)localtinyTemp=(*vg1dSP).localtiny;
 	else localtinyTemp=1e-9;
-	if(fabsl(alf)>=localtinyTemp && fabsl(alf)<=1-localtinyTemp)transic=0;
-	else if(fabsl(alf)>=localtinyTemp)transic=-1;
+	if(fabs(alf)>=localtinyTemp && fabs(alf)<=1-localtinyTemp)transic=0;
+	else if(fabs(alf)>=localtinyTemp)transic=-1;
 	else transic=1;
 	transic0=transic;
 	double razdx;
@@ -439,7 +439,7 @@ Cel::Cel(const Cel& vcel) :
 			A_eff = vcel.A_eff;
 			phi_h_disp = vcel.phi_h_disp;
 
-			phi_h_disp = 0.0L;
+			phi_h_disp = 0.0;
 			phi_h_eff = vcel.phi_h_eff;
 			mu_rel_slurry = vcel.mu_rel_slurry;
 			mu_base_liq  = vcel.mu_base_liq;
@@ -799,7 +799,7 @@ Cel& Cel::operator =(const Cel& vcel) {
 		A_eff = vcel.A_eff;
 		phi_h_disp = vcel.phi_h_disp;
 
-		phi_h_disp = 0.0L;
+		phi_h_disp = 0.0;
 		phi_h_eff = vcel.phi_h_eff;
 		mu_rel_slurry = vcel.mu_rel_slurry;
 		mu_base_liq  = vcel.mu_base_liq;
@@ -1147,42 +1147,42 @@ Cel& Cel::operator =(const Cel& vcel) {
 
 double Cel::Rey(double dia, double vel,
 		double rho, double vis) {
-	return dia * fabsl(vel) * rho / (vis * 1e-3);
+	return dia * fabs(vel) * rho / (vis * 1e-3);
 }
 double Cel::fric(double re, double eps, int tipo) {
 
 /*
  double val;
- if (fabsl(re) > 1e-5) {
+ if (fabs(re) > 1e-5) {
 		if (re > 2400) {
-			val = 6.9 / fabsl(re) + pow(eps / 3.7, 1.11);
-			val = -1.8 * (logl(val) / logl(10.));
+			val = 6.9 / fabs(re) + pow(eps / 3.7, 1.11);
+			val = -1.8 * (log(val) / log(10.));
 			val = pow(1 / val,2.);
 		} else
-			val = 4*16. / fabsl(re);
+			val = 4*16. / fabs(re);
 	} else
 		val = 0.;
 	return val/4.;*/
 	double val;
-	   if (fabsl(re) > 1e-5) {
+	   if (fabs(re) > 1e-5) {
 			if (re > 2400) {
 				if(tipo==-1)
-				val = 6.9 / fabsl(re) + pow(eps / 3.7, 1.11);
-				else val = 6.9 / fabsl(re) + termRug;
-				//val = -1.8 * (logl(val) / logl(10.));
-				val = -1.8 * (logl(val) / 2.30259);
+				val = 6.9 / fabs(re) + pow(eps / 3.7, 1.11);
+				else val = 6.9 / fabs(re) + termRug;
+				//val = -1.8 * (log(val) / log(10.));
+				val = -1.8 * (log(val) / 2.30259);
 				val*=val;
 				val=1/val;
 				//val = pow(1 / val,2.);
 				for(int konta=0;konta<2;konta++){
-				  //val=pow(-2.*logl( 2.51 / fabsl(re*sqrtl(val)) + eps/ 3.7)/logl(10.),2.);
-				  val=-2.*logl( 2.51 / fabsl(re*sqrtl(val)) + eps/ 3.7)/2.30259;
+				  //val=pow(-2.*log( 2.51 / fabs(re*sqrt(val)) + eps/ 3.7)/log(10.),2.);
+				  val=-2.*log( 2.51 / fabs(re*sqrt(val)) + eps/ 3.7)/2.30259;
 				  val*=val;
 				  val=1./val;
 				}
 				val/=4.;
 			} else
-				val = 16. / fabsl(re);
+				val = 16. / fabs(re);
 		} else
 			val = 0.;
 
@@ -1192,8 +1192,8 @@ double Cel::fric(double re, double eps, int tipo) {
 	   if(Hl>1e-5 && QL>1e-5)y=Cl/(Hl*Hl);
 	   else y=1.;
 	   double S;
-	   if(y>=1. && y<=1.2)S=logl(2.2*y-1.2);
-	   else S=logl(y)/(-0.0523+3.182*logl(y)-0.8725*pow(logl(y),2.)+0.01853*pow(logl(y),4.));
+	   if(y>=1. && y<=1.2)S=log(2.2*y-1.2);
+	   else S=log(y)/(-0.0523+3.182*log(y)-0.8725*pow(log(y),2.)+0.01853*pow(log(y),4.));
 	   val*=exp(S);*/
 
 
@@ -1263,7 +1263,7 @@ void Cel::avancalf(int& reinicia, int ncel){
     double termoDrholP=0.;
     double termoTtrans=0.;
     double termoDrholT=0.;
-    double jmix=(fabsl(QL)+fabsl(QG))/duto.area;
+    double jmix=(fabs(QL)+fabs(QG))/duto.area;
     if(posic==44){
     	int para;
     	para=0;
@@ -1320,7 +1320,7 @@ void Cel::avancalf(int& reinicia, int ncel){
    double resto=0.;
    if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny) && jmix>1e-3) ||
 		   ((alf<=1e-3)&&(alf>=-1e-3) && jmix<=1e-3)){
-	   alf=fabsl(0.);
+	   alf=fabs(0.);
    }
    else if(alf<-(*vg1dSP).localtiny){
       double dtaux;
@@ -1336,10 +1336,10 @@ void Cel::avancalf(int& reinicia, int ncel){
         //if(correrGlobHol==1)reinicia=-1;
         //else
         	reiniciaAlf=-1;
-        alf=fabsl(0.);
+        alf=fabs(0.);
         //mudaDT=1;
       }
-      else alfIter=alf=fabsl(0.);
+      else alfIter=alf=fabs(0.);
    }
    else if(((alf>=(1.-(*vg1dSP).localtiny)&&alf<=(1.+(*vg1dSP).localtiny))&& jmix>1e-3) ||
 		   ((alf>=(1.-1e-3)&&alf<=(1.+1e-3))&& jmix<=1e-3)){
@@ -1392,7 +1392,7 @@ void Cel::avancbet(int& reinicia, int ncel){
    double rc0=fluicol.MasEspFlu(presaux,tmed0);
    double rc1=fluicol.MasEspFlu(presauxR,tmed1);
 
-   double jmix=fabsl(QL)/duto.area;
+   double jmix=fabs(QL)/duto.area;
 
    dt2=dt;
 
@@ -1433,7 +1433,7 @@ void Cel::avancbet(int& reinicia, int ncel){
 
    double resto=0.;
    if(((bet<=(*vg1dSP).localtiny)&&(bet>=-(*vg1dSP).localtiny))){
-	   bet=fabsl(0.);
+	   bet=fabs(0.);
    }
    else if(bet<-(*vg1dSP).localtiny){
       double dtaux;
@@ -1445,9 +1445,9 @@ void Cel::avancbet(int& reinicia, int ncel){
         //if(correrGlobHol==1)reinicia=-1;
         //else
         	reiniciaBet=-1;
-        bet=fabsl(0.);
+        bet=fabs(0.);
       }
-      else bet=fabsl(0.);
+      else bet=fabs(0.);
    }
    else if((bet>=(1.-(*vg1dSP).localtiny)&&bet<=(1.+(*vg1dSP).localtiny))){
 	   bet=1.;
@@ -1496,8 +1496,8 @@ double Cel::delpJus(double presfim) {
       re1 = Rey(dhid, j, rhomix, viscmix);
   }
   double f1 = fric(re1, duto.rug / dia);
-  double gradfric = 0.5 * f1 * rhomix * (fabsl(j) * j) * si * dxmed / area;
-  double gradhidro = 9.82 * sinl(duto.teta) * rhomix * dxmed;
+  double gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dxmed / area;
+  double gradhidro = 9.82 * sin(duto.teta) * rhomix * dxmed;
   return (0*gradfric + gradhidro) / 98066.5;
 }
 
@@ -1567,7 +1567,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  	  int master=1;
  	     if(acsrL!=0){
  			if(((*acsrL).tipo==5&&(*acsrL).chk.AreaGarg<(1e-3+razareativa)*AL)
- 				||((*acsrL).tipo==8&&fabsl((*acsrL).bvol.freq)>1 ))master=0;
+ 				||((*acsrL).tipo==8&&fabs((*acsrL).bvol.freq)>1 ))master=0;
  	     }
  	     if(master==1){
  		    if(ciclo==0){
@@ -1665,7 +1665,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 
 
       if((acsr.tipo!=5||acsr.chk.AreaGarg>=(1e-3+razareativa)*AC)&&
-    	 (acsr.tipo!=8||fabsl(acsr.bvol.freq)<=1.)&&ciclo==0){
+    	 (acsr.tipo!=8||fabs(acsr.bvol.freq)<=1.)&&ciclo==0){
 
 		double dxmed = 0.5 * (dx + dxR);
 		//double Amed =(dx*AC+dxR*AR)/(dx + dxR);
@@ -1774,17 +1774,17 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 			f2*=1.;
 		}
 		double razdx = dx / (dxR + dx);
-		double coefTensC=dPdLFric*0.5 * f1*rhomix1*( fabsl(j1)) * siC * razdx;
+		double coefTensC=dPdLFric*0.5 * f1*rhomix1*( fabs(j1)) * siC * razdx;
 		double dpfric=coefTensC*coef2C;
-		double coefTensR=dPdLFric*0.5 * f2*rhomix2*( fabsl(j2)) * siR * (1.-razdx);
+		double coefTensR=dPdLFric*0.5 * f2*rhomix2*( fabs(j2)) * siR * (1.-razdx);
 		dpfric+=coefTensR*coef2R;
-		double dphidro=dPdLHidro*9.82 * sinl(duto.teta) *AC*rhomix1* razdx;
+		double dphidro=dPdLHidro*9.82 * sin(duto.teta) *AC*rhomix1* razdx;
 		termoHidro=dphidro/AC;
-		termoHidro+=9.82 * sinl(dutoR.teta) *rhomix2* (1.-razdx);
+		termoHidro+=9.82 * sin(dutoR.teta) *rhomix2* (1.-razdx);
 		termoFric=coefTensC*j1/AC+coefTensR*j2/AR;
-		dphidro+=9.82 * sinl(dutoR.teta) *AR*rhomix2* (1.-razdx);
-		double estrat1=perdaEstratL*term1R*fabsl(MliqiniR)+perdaEstratG*(1-term1R)*fabsl(MR-MliqiniR);
-		double estrat2=(perdaEstratL*fabsl(MliqiniR)-perdaEstratG*fabsl(MR-MliqiniR))*term2R;
+		dphidro+=9.82 * sin(dutoR.teta) *AR*rhomix2* (1.-razdx);
+		double estrat1=perdaEstratL*term1R*fabs(MliqiniR)+perdaEstratG*(1-term1R)*fabs(MR-MliqiniR);
+		double estrat2=(perdaEstratL*fabs(MliqiniR)-perdaEstratG*fabs(MR-MliqiniR))*term2R;
 
 		estrat1=0.;
 		estrat2=0.;
@@ -1794,7 +1794,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 		potBT=0.;
 		double coefDpB=0.;
 		double perdArea=0.;
-		if((duto.area!=dutoR.area && re1>2400 && re2>2400) && (mudaArea==1 && (fabsl(j1)>=0.1 && fabsl(j2)>=0.1))){
+		if((duto.area!=dutoR.area && re1>2400 && re2>2400) && (mudaArea==1 && (fabs(j1)>=0.1 && fabs(j2)>=0.1))){
 			double areaMenor;
 			double areaMaior;
 			double bernou;
@@ -1866,7 +1866,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 			if(acsr.tipoCompGas!=2)
 				 Wcomp=-(presauxR*98066.5*qgMon/(1.-npoli))*
 						  (pow(1+acsr.delp/presauxR,(npoli-1.)/npoli)-1.);
-			else Wcomp=presauxR*98066.5*qgMon*logl(1+acsr.delp/presauxR);
+			else Wcomp=presauxR*98066.5*qgMon*log(1+acsr.delp/presauxR);
 			Wcomp*=(100./acsr.eficGas);
 			potB =Wcomp+Wbomb;
 			potTermo=((1.-acsr.eficLiq/100.)*Wbomb+(1.-acsr.eficGas/100.)*Wcomp);
@@ -1910,7 +1910,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 						coefDpB*MR-(sinalPig*DelPig*velPig*98066.5))*Amed/dxmed+estrat2);
 
 
-		//cinematico=0.*(fabsl(MR-MRini) / dt)/fabsl((Amed*98066.5/dxmed)*(presR-pres));
+		//cinematico=0.*(fabs(MR-MRini) / dt)/fabs((Amed*98066.5/dxmed)*(presR-pres));
 		cinematico=0;
       }
       else{
@@ -2056,9 +2056,9 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 					f1*=1.;
 				}
 
-				double coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC/AC;
+				double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC/AC;
 				double dpfric=coefTensC*coef2C;
-				double dphidro=9.82 * sinl(duto.teta)*rhomix1;
+				double dphidro=9.82 * sin(duto.teta)*rhomix1;
 				termoHidro=dphidro;
 				termoFric=coefTensC*j1;
 
@@ -2107,9 +2107,9 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 			  re1 = Rey(dhid, j1, rhomix1,viscmix1);
 		  }
 		  double f1 = fric(re1, duto.rug / duto.a);
-		  double coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC;
+		  double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC;
 		  double dpfric=coefTensC*coef2C;
-		  double dphidro=9.82 * sinl(duto.teta) *AC*rhomix1;
+		  double dphidro=9.82 * sin(duto.teta) *AC*rhomix1;
 
 		  local[0][0] = 0.;
 		  local[0][1] = -AC*98066.5/(dx);
@@ -2291,9 +2291,9 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 				  re1 = Rey(dhid, j1, rhomix1,viscmix1);
 			  }
 			  double f1 = fric(re1, duto.rug / duto.a);
-			  double coefTensC=dPdLFric*0.5 * f1*rhomix1*( fabsl(j1)) * siC;
+			  double coefTensC=dPdLFric*0.5 * f1*rhomix1*( fabs(j1)) * siC;
 			  double dpfric=coefTensC*coef2C;
-			  double dphidro=dPdLHidro*9.82 * sinl(duto.teta) *AC*rhomix1;
+			  double dphidro=dPdLHidro*9.82 * sin(duto.teta) *AC*rhomix1;
 			  termoHidro=dphidro/AC;
               termoFric=coefTensC*j1/AC;
 
@@ -2384,15 +2384,15 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 		  double f1 = fric(re1, duto.rug / duto.a);
 		  double f2 = fric(re2, dutoR.rug / dutoR.a,-1);
 		  double razdx = dx / (dxR + dx);
-		  double coefTensC=dPdLFric*0.5 * f1*rhomix1*( fabsl(j1)) * siC * razdx;
+		  double coefTensC=dPdLFric*0.5 * f1*rhomix1*( fabs(j1)) * siC * razdx;
 		  double dpfric=coefTensC*coef2C;
-		  double coefTensR=dPdLFric*0.5 * f2*rhomix2*( fabsl(j2)) * siR * (1.-razdx);
+		  double coefTensR=dPdLFric*0.5 * f2*rhomix2*( fabs(j2)) * siR * (1.-razdx);
 		  dpfric+=coefTensR*coef2R;
-		  double dphidro=dPdLHidro*9.82 * sinl(duto.teta) *AC*rhomix1* razdx;
+		  double dphidro=dPdLHidro*9.82 * sin(duto.teta) *AC*rhomix1* razdx;
 		  termoHidro=dphidro/AC;
-		  termoHidro+=9.82 * sinl(dutoR.teta) *rhomix2* (1.-razdx);
+		  termoHidro+=9.82 * sin(dutoR.teta) *rhomix2* (1.-razdx);
 		  termoFric=coefTensC*j1+coefTensR*j2;
-		  dphidro+=9.82 * sinl(dutoR.teta) *AR*rhomix2* (1.-razdx);
+		  dphidro+=9.82 * sin(dutoR.teta) *AR*rhomix2* (1.-razdx);
 
 		  local[1][4] +=(coefTensC*coef1C+coefTensR*coef1R);
 		  TL[1]-=(dpfric+dphidro);
@@ -2496,12 +2496,12 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 					f2*=1.;
 				}
 				double razdx = dx / (dxR + dx);
-				double coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC * razdx;
+				double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC * razdx;
 				double dpfric=coefTensC*coef2C;
-				double coefTensR=0.5 * f2*rhomix2*( fabsl(j2)) * siR * (1.-razdx);
+				double coefTensR=0.5 * f2*rhomix2*( fabs(j2)) * siR * (1.-razdx);
 				dpfric+=coefTensR*coef2R;
-				double dphidro=9.82 * sinl(duto.teta) *AC*rhomix1* razdx;
-				dphidro+=9.82 * sinl(dutoR.teta) *AR*rhomix2* (1.-razdx);
+				double dphidro=9.82 * sin(duto.teta) *AC*rhomix1* razdx;
+				dphidro+=9.82 * sin(dutoR.teta) *AR*rhomix2* (1.-razdx);
 
 
 
@@ -2530,9 +2530,9 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 				  re1 = Rey(dhid, j1, rhomix1,viscmix1);
 			  }
 			  f1 = fric(re1, duto.rug / duto.a);
-			  coefTensC=0.5 * f1*rhomix1*( fabsl(j1)) * siC;
+			  coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * siC;
 			  dpfric=coefTensC*coef2C;
-			  dphidro=9.82 * sinl(duto.teta) *AC*rhomix1;
+			  dphidro=9.82 * sin(duto.teta) *AC*rhomix1;
 
 			  double ugl=(MC-Mliqini)/rhogC;
 			  double ugr=(MR-MliqiniR)/rhogR;
@@ -2579,9 +2579,9 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
        //if(correrGlobHol==1)reinicia=-1;
        //else
     	   reiniciaPig=-1;
-       razPig=fabsl(0.);
+       razPig=fabs(0.);
      }
-     else razPig=fabsl(0.);
+     else razPig=fabs(0.);
   }
   else if((razPig>=(1.-(*vg1dSP).localtiny)&&razPig<=(1.+(*vg1dSP).localtiny))){
 	   razPig=1.;
@@ -2634,7 +2634,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
     	 double areagarg=RazAreaPig*duto.area;
     	 double rlm=(1.-alfPigEini)*((1-betPigEini)*rpC+betPigEini*rcC)+
     			          alfPigEini*flui.MasEspGas(pres,temp);
-     	 double massica=areagarg*sqrtl(2.*rlm*(DelPig*velPig)*98066.52);
+     	 double massica=areagarg*sqrt(2.*rlm*(DelPig*velPig)*98066.52);
    		 massica=cdpig*massica;
    		 VazaPig=massica/rlm;
         }//alteracao2
@@ -2702,7 +2702,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
    	     double areagarg=RazAreaPig*duto.area;
    	     double rlm=(alfPigDini)*((1-betPigDini)*rpC+betPigDini*rcC)+
 		                  alfPigDini*flui.MasEspGas(pres,temp);
-    	 double massica=areagarg*sqrtl(2.*rlm*(DelPig*fabsl(velPig))*98066.52);
+    	 double massica=areagarg*sqrt(2.*rlm*(DelPig*fabs(velPig))*98066.52);
   		 massica=cdpig*massica;
   		 VazaPig=-massica/rlm;
        }//alteracao2
@@ -2952,7 +2952,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  double Cel::SIGN(double a, double b) {
-   return (b >= 0 ? 1.0 : -1.0) * fabsl(a);
+   return (b >= 0 ? 1.0 : -1.0) * fabs(a);
  }
 
 
@@ -2963,7 +2963,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  	double xmin;
  	double fl=rp-flui.MasEspLiq(x1,temp);
  	double fh=rp-flui.MasEspLiq(x2,temp);
- 	if(fabsl(fh)<fabsl(fl)){
+ 	if(fabs(fh)<fabs(fl)){
  		fmin=fh;
  		xmin=x2;
  	}
@@ -2978,27 +2978,27 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  		for(int j=0;j<maxit;j++){
  			double xm=0.5*(xl+xh);
  			double fm=rp-flui.MasEspLiq(xm,temp);
- 			if(fabsl(fm)<fabsl(fmin)){
+ 			if(fabs(fm)<fabs(fmin)){
  				fmin=fm;
  				xmin=xm;
  			}
- 			double s=sqrtl(fm*fm-fl*fh);
+ 			double s=sqrt(fm*fm-fl*fh);
  			if(s==0.0){
  				fmin=rp-flui.MasEspLiq(xmin,temp);
  				return xmin;
  			}
  			double xnew=xm+(xm-xl)*((fl>=fh ? 1.0 : -1.0)*fm/s);
- 			if(fabsl(xnew-ans)<=xacc ){
+ 			if(fabs(xnew-ans)<=xacc ){
  				fmin=rp-flui.MasEspLiq(xmin,temp);
  				return xmin;
  			}
  			ans=xnew;
  			double fnew=rp-flui.MasEspLiq(ans,temp);
- 			if(fabsl(fnew)<fabsl(fmin)){
+ 			if(fabs(fnew)<fabs(fmin)){
  				fmin=fnew;
  				xmin=ans;
  			}
- 			if(fabsl(fnew)<=xacc ){
+ 			if(fabs(fnew)<=xacc ){
  				fmin=rp-flui.MasEspLiq(xmin,temp);
  				return xmin;
  			}
@@ -3017,7 +3017,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  				fl=fnew;
  			}
  			else return -100000.;
- 			if(fabsl(xh-xl)<=xacc ){
+ 			if(fabs(xh-xl)<=xacc ){
  				fmin=rp-flui.MasEspLiq(xmin,temp);
  				return xmin;
  			}
@@ -3026,8 +3026,8 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  		 return 100000.;
  	}
  	else {
- 		if(fabsl(fl)<=xacc) return x1;
- 		if(fabsl(fh)<=xacc) return x2;
+ 		if(fabs(fl)<=xacc) return x1;
+ 		if(fabs(fh)<=xacc) return x2;
  		return -10000.;
  	}
  }
@@ -3063,8 +3063,8 @@ double Cel::somVel(){
 		 else vg=0.;
 		 double val1=1.-c0*alfI+c0*alfI*alfI*(vg-vl)*(vg-vl)*(c0*alfI-1.)/(cg2)+c0*alfI*rgCi/rlmix;
 		 val1*=rgCi*cg2;
-		 val1=sqrtl(val1);
-		 val1/=sqrtl(alfI*rlmix);
+		 val1=sqrt(val1);
+		 val1/=sqrt(alfI*rlmix);
 		 val1/=(1.-c0*alfI+c0*alfI*(rgCi/rlmix));
 		 val=val1;
 		 if(val>1500.)val=1500.;
@@ -3197,8 +3197,8 @@ double Cel::termAdSomVel(){
 
 		velSupLiqUp=QLR/areaUp;
 		velSupLiqDn=QL/areaDn;
-		if(fabsl(1.-alfUp)>1e-15)velOilUp=velSupLiqUp/(1.-alfUp);
-		if(fabsl(1.-alfDn)>1e-15)velOilDn=velSupLiqUp/(1.-alfDn);
+		if(fabs(1.-alfUp)>1e-15)velOilUp=velSupLiqUp/(1.-alfUp);
+		if(fabs(1.-alfDn)>1e-15)velOilDn=velSupLiqUp/(1.-alfDn);
 
 		double velOil = (velOilUp + velOilDn)/2.0;
 		if(posic==0)velOil = velOilUp;
@@ -3255,7 +3255,7 @@ double Cel::termAdSomVel(){
 		// dos fluidos. NO FUTURO, AVALIAR CASOS DE PARADA DE PRODUÇÃO, SEGREGAÇÃO, ESCOAMENTO REVERSO, REDUÇÃO DA FRAÇÃO DE PARAFINA, ETC.
 
 		//atencao!!!!!!!!! Coloquei em módulo, mas apenas para teste, algo está estranho espessura negativa!!!!!!!!!
-		ddeltadt = (pi1/(1.0+pi2))*((rhoLiq*Fi)/(rhoWaxSolid*(1.0-Fi)))*(heatFluxInt/kMix)*Dparaffin*fabsl(Sum_dCwaxdT);
+		ddeltadt = (pi1/(1.0+pi2))*((rhoLiq*Fi)/(rhoWaxSolid*(1.0-Fi)))*(heatFluxInt/kMix)*Dparaffin*fabs(Sum_dCwaxdT);
 		double delta =ddeltadt*dt;
 		deltaPar=delta;
 
@@ -3398,8 +3398,8 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 
 		velSupLiqUp=QLR/areaUp;
 		velSupLiqDn=QL/areaDn;
-		if(fabsl(1.-alfUp)>1e-15)velOilUp=velSupLiqUp/(1.-alfUp);
-		if(fabsl(1.-alfDn)>1e-15)velOilDn=velSupLiqUp/(1.-alfDn);
+		if(fabs(1.-alfUp)>1e-15)velOilUp=velSupLiqUp/(1.-alfUp);
+		if(fabs(1.-alfDn)>1e-15)velOilDn=velSupLiqUp/(1.-alfDn);
 
 		double velOil = (velOilUp + velOilDn)/2.0;
 		if(posic==0)velOil = velOilUp;

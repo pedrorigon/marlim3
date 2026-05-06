@@ -224,7 +224,7 @@ void malha3d::imprime(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PERFIST" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();

@@ -392,8 +392,8 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 
 
 	   /* double visC=vis*1000/MasEsp;
-        double Y=-112.1374+6.6504*logl(Fhead(BEP)/nestag)+12.8429*logl(BEP);
-        double Qast=exp((39.52766+26.5605*logl(visC)-Y)/51.6565);
+        double Y=-112.1374+6.6504*log(Fhead(BEP)/nestag)+12.8429*log(BEP);
+        double Qast=exp((39.52766+26.5605*log(visC)-Y)/51.6565);
         double Cq=1-4.0327*pow(10,-3)*Qast-1.724*pow(10,-4)*Qast*Qast;
         double Coeff=1-3.3075*pow(10,-2)*Qast+2.8875*pow(10,-4)*Qast*Qast;
         double Ch1=1-3.68*pow(10,-3)*Qast-4.36*pow(10,-5)*Qast*Qast;

@@ -210,8 +210,8 @@ celradSimp::celradSimp(varGlob1D* Vvg1dSP, int vncel,int vicel,double vr0, doubl
 		pcAO0=0;
 	}
 
-	kabsol1=sqrtl(kXR*kYR);
-	kabsol0=sqrtl(kXL*kYL);
+	kabsol1=sqrt(kXR*kYR);
+	kabsol0=sqrt(kXL*kYL);
 
 	darcyO1=kmed1*kabsol1*98066.22/((1.-alfmed1)*mio1+alfmed1*mig1);
 	darcyO0=kmed0*kabsol0*98066.22/((1.-alfmed0)*mio0+alfmed0*mig0);
@@ -810,8 +810,8 @@ void celradSimp::calcVazOWG(){
 
 double celradSimp::cflO(){
    double vazTot=0.;
-   if((QocamadaR+QwcamadaR)<0.)vazTot+=fabsl((QocamadaR+QwcamadaR)/(2.*M_PI));
-   if((QocamadaL+QwcamadaL)>0.)vazTot+=fabsl((QocamadaL+QwcamadaL)/(2.*M_PI));
+   if((QocamadaR+QwcamadaR)<0.)vazTot+=fabs((QocamadaR+QwcamadaR)/(2.*M_PI));
+   if((QocamadaL+QwcamadaL)>0.)vazTot+=fabs((QocamadaL+QwcamadaL)/(2.*M_PI));
    double porod=poro*(1-compresPoro*(Pcamada-presRes2));
    double massCel=porod*(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
    return massCel/vazTot;
@@ -819,8 +819,8 @@ double celradSimp::cflO(){
 
 double celradSimp::cflA(){
    double vazTot=0.;
-   if(QwcamadaR<0.)vazTot+=fabsl(QwcamadaR/(2.*M_PI));
-   if(QwcamadaL>0.)vazTot+=fabsl(QwcamadaL/(2.*M_PI));
+   if(QwcamadaR<0.)vazTot+=fabs(QwcamadaR/(2.*M_PI));
+   if(QwcamadaL>0.)vazTot+=fabs(QwcamadaL/(2.*M_PI));
    double porod=poro*(1-compresPoro*(Pcamada-presRes2));
    double massCel=(sW)*porod*(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
    if(vazTot>1e-15)return massCel/vazTot;
@@ -890,7 +890,7 @@ void celradSimp::evoluiSL(int& reinicia,int ciclo,double dpdt){
 	      else sL=1.;
 	}
 	else if((val<=(satConata+localtiny)&&val>=(satConata-localtiny))){
-		   sL=fabsl(satConata);
+		   sL=fabs(satConata);
 	}
 	else if(val<(satConata-localtiny)){
 	      double dtaux;
@@ -899,9 +899,9 @@ void celradSimp::evoluiSL(int& reinicia,int ciclo,double dpdt){
 	        dtSL=dtaux;
 	        //reinicia=-1;
 	        reiniciaSL=-1;
-	        sL=fabsl(satConata);
+	        sL=fabs(satConata);
 	      }
-	      else sL=fabsl(satConata);
+	      else sL=fabs(satConata);
 	}
 	else sL=val;
 
@@ -939,12 +939,12 @@ void celradSimp::evoluiSW(int& reinicia,int ciclo,double dpdt){
     double localtiny=1e-5;
 
 	if(((val<=sL+localtiny)&&(val>=sL-localtiny))){
-		   //alf=fabsl(0.);
+		   //alf=fabs(0.);
 		   sW=sL;
 	}
 	else if(val>sL+localtiny){
 	      double dtaux;
-	      if(fabsl(balanco)>1e-15)
+	      if(fabs(balanco)>1e-15)
 	      dtaux=(sL-sWini)/(balanco);
 	      else{
 	    	  dtaux=0.;
@@ -959,20 +959,20 @@ void celradSimp::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	      else sW=1.;
 	}
 	else if((val<=(satConata+localtiny)&&val>=(satConata-localtiny))){
-		   sW=fabsl(satConata);
+		   sW=fabs(satConata);
 	}
 	else if(val<(satConata-localtiny)){
 	      double dtaux;
-	      if(fabsl(balanco)>1e-15)
+	      if(fabs(balanco)>1e-15)
 	      dtaux=(satConata-sWini)/(balanco);
 	      else dtaux=0.;
 	      if(reinicia==0 && dtaux>1e-5){
 	        dtSW=dtaux;
 	        //reinicia=-1;
 	        reiniciaSW=-1;
-	        sW=fabsl(satConata);
+	        sW=fabs(satConata);
 	      }
-	      else sW=fabsl(satConata);
+	      else sW=fabs(satConata);
 	}
 	else sW=val;
 
@@ -998,7 +998,7 @@ void celradSimp::transcel(int idisc){
   double area=(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
   double poro0=poro*(1-compresPoro*(Pcamada-presRes2));
   double multTot;
-  if(fabsl((Pcamada-Pini)/Pini)<1e-3){
+  if(fabs((Pcamada-Pini)/Pini)<1e-3){
 	  double dporo=-poro*compresPoro;
 	  double porod=poro*(1-compresPoro*(Pcamada*1.0001-presRes2));
 	  double dPoroRhoo=0;
@@ -1158,8 +1158,8 @@ double ma1=-darcyA1*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)
 		  double fracO;
 		  double fracA;
 		  double fracG;
-		  /*if(fabsl(presRes-Pcamada)>1e-15){
-			  double fatTot=fabsl((vr1/(drcamada*h1))*(Pcamada-PcamadaL)/(presRes-Pcamada));
+		  /*if(fabs(presRes-Pcamada)>1e-15){
+			  double fatTot=fabs((vr1/(drcamada*h1))*(Pcamada-PcamadaL)/(presRes-Pcamada));
 			  fracO=darcyO1*fatTot;
 			  fracA=darcyA1*fatTot;
 			  fracG=darcyG1*fatTot;
@@ -1213,8 +1213,8 @@ double ma1=-darcyA1*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)
 	  double fracO;
 	  double fracA;
 	  double fracG;
-	 /* if(fabsl(Pcamada-Pint)>1e-15){
-		  double fatTot=fabsl((rm/(drcamada*h1))*(PcamadaR-Pcamada)/(Pcamada-Pint));
+	 /* if(fabs(Pcamada-Pint)>1e-15){
+		  double fatTot=fabs((rm/(drcamada*h1))*(PcamadaR-Pcamada)/(Pcamada-Pint));
 		  fracO=darcyO1*fatTot;
 		  fracA=darcyA1*fatTot;
 		  fracG=darcyG1*fatTot;

@@ -815,8 +815,8 @@ double solv2D::calcYInterUno(double x,double ymed){
 		y[0]=y[1];
 		y[1]=val;
 	}
-	if(fabsl(y[0]-y[1])>1e-15){
-		if(fabsl(y[0]-ymed)>fabsl(y[1]-ymed))y[0]=y[1];
+	if(fabs(y[0]-y[1])>1e-15){
+		if(fabs(y[0]-ymed)>fabs(y[1]-ymed))y[0]=y[1];
 	}
 	return y[0];
 }
@@ -876,7 +876,7 @@ void solv2D::parse_mapProp(
 }
 
 double solv2D::SIGN(double a, double b) {
-  return (b >= 0 ? 1.0 : -1.0) * fabsl(a);
+  return (b >= 0 ? 1.0 : -1.0) * fabs(a);
 }
 double  solv2D::zriddr(double x1,double x2,double a,double b,double ymed){
 	double xacc=1e-5;
@@ -885,7 +885,7 @@ double  solv2D::zriddr(double x1,double x2,double a,double b,double ymed){
 	double xmin;
 	double fl=a*x1+b-calcYInterUno(x1,ymed);
 	double fh=a*x2+b-calcYInterUno(x2,ymed);
-	if(fabsl(fh)<fabsl(fl)){
+	if(fabs(fh)<fabs(fl)){
 		fmin=fh;
 		xmin=x2;
 	}
@@ -900,27 +900,27 @@ double  solv2D::zriddr(double x1,double x2,double a,double b,double ymed){
 		for(int j=0;j<maxit;j++){
 			double xm=0.5*(xl+xh);
 			double fm=a*xm+b-calcYInterUno(xm,ymed);
-			if(fabsl(fm)<fabsl(fmin)){
+			if(fabs(fm)<fabs(fmin)){
 				fmin=fm;
 				xmin=xm;
 			}
-			double s=sqrtl(fm*fm-fl*fh);
+			double s=sqrt(fm*fm-fl*fh);
 			if(s==0.0){
 				fmin=a*xmin+b-calcYInterUno(xmin,ymed);
 				return xmin;
 			}
 			double xnew=xm+(xm-xl)*((fl>=fh ? 1.0 : -1.0)*fm/s);
-			if(fabsl(xnew-ans)<=xacc ){
+			if(fabs(xnew-ans)<=xacc ){
 				fmin=a*xmin+b-calcYInterUno(xmin,ymed);
 				return xmin;
 			}
 			ans=xnew;
 			double fnew=a*ans+b-calcYInterUno(ans,ymed);
-			if(fabsl(fnew)<fabsl(fmin)){
+			if(fabs(fnew)<fabs(fmin)){
 				fmin=fnew;
 				xmin=ans;
 			}
-			if(fabsl(fnew)<=xacc ){
+			if(fabs(fnew)<=xacc ){
 				fmin=a*xmin+b-calcYInterUno(xmin,ymed);
 				return xmin;
 			}
@@ -939,7 +939,7 @@ double  solv2D::zriddr(double x1,double x2,double a,double b,double ymed){
 				fl=fnew;
 			}
 			else return -100000.;
-			if(fabsl(xh-xl)<=xacc ){
+			if(fabs(xh-xl)<=xacc ){
 				fmin=a*xmin+b-calcYInterUno(xmin,ymed);
 				return xmin;
 			}
@@ -948,8 +948,8 @@ double  solv2D::zriddr(double x1,double x2,double a,double b,double ymed){
 		 return 100000.;
 	}
 	else {
-		if(fabsl(fl)<=xacc) return x1;
-		if(fabsl(fh)<=xacc) return x2;
+		if(fabs(fl)<=xacc) return x1;
+		if(fabs(fh)<=xacc) return x2;
 		return -10000.;
 	}
 }
@@ -1080,7 +1080,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 					xsup[k+1]=xInterf[k];
 					ysup[k+1]=yInterf[k];
 				}
-    			double subVElem=0.5*fabsl((xsup[1]-xsup[0])*
+    			double subVElem=0.5*fabs((xsup[1]-xsup[0])*
 					(ysup[2]-ysup[0])-(xsup[2]-xsup[0])*
 					(ysup[1]-ysup[0]));
     			double holInf=1.-subVElem/malha.mlh2d[iEle].cel2D.vElem;
@@ -1152,7 +1152,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 					xinf[k+1]=xInterf[k];
 					yinf[k+1]=yInterf[k];
 				}
-    			double subVElem=0.5*fabsl((xinf[1]-xinf[0])*
+    			double subVElem=0.5*fabs((xinf[1]-xinf[0])*
 					(yinf[2]-yinf[0])-(xinf[2]-xinf[0])*
 					(yinf[1]-yinf[0]));
     			double holInf=subVElem/malha.mlh2d[iEle].cel2D.vElem;
@@ -1224,7 +1224,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 					xext[k+1]=xInterf[k];
 					yext[k+1]=yInterf[k];
 				}
-    			double subVElem=0.5*fabsl((xext[1]-xext[0])*
+    			double subVElem=0.5*fabs((xext[1]-xext[0])*
 					(yext[2]-yext[0])-(xext[2]-xext[0])*
 					(yext[1]-yext[0]));
     			double holInt=1.-subVElem/malha.mlh2d[iEle].cel2D.vElem;
@@ -1296,7 +1296,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 					xint[k+1]=xInterf[k];
 					yint[k+1]=yInterf[k];
 				}
-    			double subVElem=0.5*fabsl((xint[1]-xint[0])*
+    			double subVElem=0.5*fabs((xint[1]-xint[0])*
 					(yint[2]-yint[0])-(xint[2]-xint[0])*
 					(yint[1]-yint[0]));
     			double holInt=subVElem/malha.mlh2d[iEle].cel2D.vElem;
@@ -1415,10 +1415,10 @@ void solv2D::malhaRegular(double& dx, double& dy, malha2dVF& malha){
 						double dely=malha.mlh2d[iele].cel2D.coordVert[ivert+1][1]-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
 						double dxteste=xcoor-malha.mlh2d[iele].cel2D.coordVert[ivert][0];
 						double dyteste=ycoor-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
-						if(fabsl(delx)>1e-15)
+						if(fabs(delx)>1e-15)
 							ylim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][1]+(dely/delx)*dxteste;
 						else ylim[ivert]=1e20;
-						if(fabsl(dely)>1e-15)
+						if(fabs(dely)>1e-15)
 							xlim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][0]+(delx/dely)*dyteste;
 						else xlim[ivert]=1e20;
 						if((ylim[ivert]<=malha.mlh2d[iele].cel2D.coordVert[ivert][1] && ylim[ivert]>=malha.mlh2d[iele].cel2D.coordVert[ivert+1][1]) ||
@@ -1433,10 +1433,10 @@ void solv2D::malhaRegular(double& dx, double& dy, malha2dVF& malha){
 						double dely=malha.mlh2d[iele].cel2D.coordVert[0][1]-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
 						double dxteste=xcoor-malha.mlh2d[iele].cel2D.coordVert[ivert][0];
 						double dyteste=ycoor-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
-						if(fabsl(dely)>1e-15)
+						if(fabs(dely)>1e-15)
 							ylim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][1]+(dely/delx)*dxteste;
 						else ylim[ivert]=1e20;
-						if(fabsl(dely)>1e-15)
+						if(fabs(dely)>1e-15)
 							xlim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][0]+(delx/dely)*dyteste;
 						else xlim[ivert]=1e20;
 						if((ylim[ivert]<=malha.mlh2d[iele].cel2D.coordVert[ivert][1] && ylim[ivert]>=malha.mlh2d[iele].cel2D.coordVert[0][1]) ||
@@ -1480,7 +1480,7 @@ void solv2D::malhaRegular(double& dx, double& dy, malha2dVF& malha){
 
 void solv2D::imprimeMalhaRegular(malha2dVF& malha, int var){
 	FullMtx<double> flut((*vg1dSP).nxMH,(*vg1dSP).nyMH);
-	int numero = roundl((*vg1dSP).tempo);
+	int numero = round((*vg1dSP).tempo);
 	double ymaxWall=malha.mlh2d[(*vg1dSP).eleYmaxWall].cel2D.centroideElem[1];
 	if(var==1){
 		#pragma omp parallel for num_threads(nthrdLocal)
@@ -1488,7 +1488,7 @@ void solv2D::imprimeMalhaRegular(malha2dVF& malha, int var){
 			for(int j=0;j<(*vg1dSP).nyMH;j++){
 				if(malhaH[i][j].buraco==0){
 					double dh=ymaxWall-malhaH[i][j].ycoor;
-					double forcaCorpo=dh*(malha.mlh2d[malhaH[i][j].indEle].cel2D.rho)*(*vg1dSP).gravVF*sinl((*vg1dSP).angY);
+					double forcaCorpo=dh*(malha.mlh2d[malhaH[i][j].indEle].cel2D.rho)*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
 					flut[i][j]=(malha.mlh2d[malhaH[i][j].indEle].cel2D.presC+
 							0*malhaH[i][j].delx*malha.mlh2d[malhaH[i][j].indEle].cel2D.gradGreenPres[0]+
 							0*malhaH[i][j].dely*malha.mlh2d[malhaH[i][j].indEle].cel2D.gradGreenPres[1]+
@@ -1576,7 +1576,7 @@ void solv2D::imprimeMalhaRegular(malha2dVF& malha, int var){
 					double vtemp=malha.mlh2d[malhaH[i][j].indEle].cel2D.vC+
 						0*malhaH[i][j].delx*malha.mlh2d[malhaH[i][j].indEle].cel2D.gradGreenV[0]+
 						0*malhaH[i][j].dely*malha.mlh2d[malhaH[i][j].indEle].cel2D.gradGreenV[1];
-					flut[i][j]=sqrtl(utemp*utemp+vtemp*vtemp);
+					flut[i][j]=sqrt(utemp*utemp+vtemp*vtemp);
 				}
 				else flut[i][j]=0.;
 			}
@@ -1676,7 +1676,7 @@ double solv2D::velMed(malha2dVF& malha){
 #pragma omp parallel for reduction(+:varTemp,varCapTerm) num_threads(nthrdLocal)
 	for(int i=1;i<malha.nele;i++){
 		double capLocal=malha.mlh2d[i].cel2D.vElem;
-		varTemp+=capLocal*sqrtl(malha.mlh2d[i].cel2D.uC*malha.mlh2d[i].cel2D.uC+malha.mlh2d[i].cel2D.vC*malha.mlh2d[i].cel2D.vC);
+		varTemp+=capLocal*sqrt(malha.mlh2d[i].cel2D.uC*malha.mlh2d[i].cel2D.uC+malha.mlh2d[i].cel2D.vC*malha.mlh2d[i].cel2D.vC);
 		varCapTerm+=capLocal;
 	}
 
@@ -2436,7 +2436,7 @@ void solv2D::resolve(){
   			malha.mlh2d[i].cel2D.vCI=CI.valV[j];
   			malha.mlh2d[i].cel2D.vC0=CI.valV[j];
   			double dh=yMaxWall-malha.mlh2d[i].cel2D.centroideElem[1];
-  			double forcaCorpo=dh*(*vg1dSP).gravVF*sinl((*vg1dSP).angY)*
+  			double forcaCorpo=dh*(*vg1dSP).gravVF*sin((*vg1dSP).angY)*
   					malha.mlh2d[i].cel2D.rho*((*vg1dSP).mulFC-1.*malha.mlh2d[i].cel2D.beta*
   							(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempRef));
   			malha.mlh2d[i].cel2D.presC=CI.pres[j]*98066.52+forcaCorpo;
@@ -2736,7 +2736,7 @@ void solv2D::resolve(){
 						else if((*(malha.mlh2d[i].vizinho[j])).holC!=malha.mlh2d[i].cel2D.holC)mono=0;
 					}
 				}
-				if(mono==0 && testeCFL>(*vg1dSP).cflG && fabsl(vazespecif)>1e-15)delt=(*vg1dSP).cflG/vazespecif;
+				if(mono==0 && testeCFL>(*vg1dSP).cflG && fabs(vazespecif)>1e-15)delt=(*vg1dSP).cflG/vazespecif;
 			}
 			else{
 				malha.mlh2d[i].dt=delt;
@@ -2807,7 +2807,7 @@ void solv2D::resolve(){
 			}
 			if((*vg1dSP).temInterface==1){
 				for(int i=0; i<malha.nele;i++){
-					if(fabsl(malha.mlh2d[i].cel2D.holC0-malha.mlh2d[i].cel2D.holC)>1e-15){
+					if(fabs(malha.mlh2d[i].cel2D.holC0-malha.mlh2d[i].cel2D.holC)>1e-15){
 						malha.mlh2d[i].cel2D.rho=malha.mlh2d[i].cel2D.holC*prop.rho[(*vg1dSP).iliq]+(1.-malha.mlh2d[i].cel2D.holC)*prop.rho[(*vg1dSP).igas];
 						if((*vg1dSP).acop==0 || viscVar==0)
 							malha.mlh2d[i].cel2D.visc=malha.mlh2d[i].cel2D.holC*prop.visc[(*vg1dSP).iliq]+(1.-malha.mlh2d[i].cel2D.holC)*prop.visc[(*vg1dSP).igas];
@@ -2832,8 +2832,8 @@ void solv2D::resolve(){
 		//acoplamento fluxo de calor
 		if((*vg1dSP).acop==1){
 			//areaLiq=areaMedParede(malha,condMed);
-			//drInt=sqrtl(dutosMRT.a*dutosMRT.a-areaLiq/Pi);
-			//condTermLiq=2*Pi*condMed/logl(dutosMRT.a/drInt);
+			//drInt=sqrt(dutosMRT.a*dutosMRT.a-areaLiq/Pi);
+			//condTermLiq=2*Pi*condMed/log(dutosMRT.a/drInt);
 			//transfer.novoHi=condTermLiq;
 			//transfer.novoHi=0.;
 			for(int i=0;i<nPar;i++)vecTransfer[i].novoHi=0.;
@@ -2864,8 +2864,8 @@ void solv2D::resolve(){
 						int kcc=0;
 						while(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]!=CC.rotuloAcop) kcc++;
 						if(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]==CC.rotuloAcop){
-							if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-									fabsl(tempMedPar-transfer.Textern1);
+							if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+									fabs(tempMedPar-transfer.Textern1);
 							else malha.mlh2d[i].ccTVN[j]=0.;
 							if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
 							else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
@@ -2933,16 +2933,16 @@ void solv2D::resolve(){
 							int kcc=0;
 							while(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]!=CC.rotuloAcop) kcc++;
 							if(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]==CC.rotuloAcop){
-								/*if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-										fabsl(tempMedPar-transfer.Textern1);
+								/*if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+										fabs(tempMedPar-transfer.Textern1);
 								else malha.mlh2d[i].ccTVN[j]=0.;
 								//malha.mlh2d[i].ccTVN[j]=fluxcal*malha.mlh2d[i].tempF[j]/transfer2.Tcamada[0][0];
 								if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
 								else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
 								//malha.mlh2d[i].ccTVN[j]=fluxcal;*/
 								int iFlux=indPar[i];
-								malha.mlh2d[i].ccTVN[j]=-0*800*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-										fabsl(60-transfer.Textern1)+1*vecFluxcal[iFlux];
+								malha.mlh2d[i].ccTVN[j]=-0*800*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+										fabs(60-transfer.Textern1)+1*vecFluxcal[iFlux];
 								if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
 								else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
 							}
@@ -3019,22 +3019,22 @@ void solv2D::resolve(){
 		    	double totalRes=0.;
 				//#pragma omp parallel for num_threads(nthrdLocal)
 		    	for(int i=0; i<malha.nele;i++){
-		    		if(maxdeno<fabsl(malha.mlh2d[i].denoResU))
-		    			maxdeno=fabsl(malha.mlh2d[i].denoResU);
-		    		if(maxdeno<fabsl(malha.mlh2d[i].denoResV))
-		    			maxdeno=fabsl(malha.mlh2d[i].denoResV);
+		    		if(maxdeno<fabs(malha.mlh2d[i].denoResU))
+		    			maxdeno=fabs(malha.mlh2d[i].denoResU);
+		    		if(maxdeno<fabs(malha.mlh2d[i].denoResV))
+		    			maxdeno=fabs(malha.mlh2d[i].denoResV);
 		    	}
 				//#pragma omp parallel for num_threads((*vg1dSP).ntrd)
 		    	double kontaFora=0.;
 		    	for(int i=0; i<malha.nele;i++){
 		    		double resiteste=maxdeno;
-		    		if(fabsl(resiteste<=1e-20))resiteste=1.;
-		    		if(maxresi<fabsl(malha.mlh2d[i].residuoU/resiteste))
-		    			maxresi=fabsl(malha.mlh2d[i].residuoU/resiteste);
-		    		if(fabsl(malha.mlh2d[i].denoResU)>1e-10)totalRes+=fabsl(malha.mlh2d[i].residuoU)/fabsl(malha.mlh2d[i].denoResU);
-		    		if(maxresi<fabsl(malha.mlh2d[i].residuoV/resiteste))
-		    			maxresi=fabsl(malha.mlh2d[i].residuoV/resiteste);
-		    		if(fabsl(malha.mlh2d[i].denoResV)>1e-10)totalRes+=fabsl(malha.mlh2d[i].residuoV)/fabsl(malha.mlh2d[i].denoResV);
+		    		if(fabs(resiteste<=1e-20))resiteste=1.;
+		    		if(maxresi<fabs(malha.mlh2d[i].residuoU/resiteste))
+		    			maxresi=fabs(malha.mlh2d[i].residuoU/resiteste);
+		    		if(fabs(malha.mlh2d[i].denoResU)>1e-10)totalRes+=fabs(malha.mlh2d[i].residuoU)/fabs(malha.mlh2d[i].denoResU);
+		    		if(maxresi<fabs(malha.mlh2d[i].residuoV/resiteste))
+		    			maxresi=fabs(malha.mlh2d[i].residuoV/resiteste);
+		    		if(fabs(malha.mlh2d[i].denoResV)>1e-10)totalRes+=fabs(malha.mlh2d[i].residuoV)/fabs(malha.mlh2d[i].denoResV);
 		    	}
 		    	maxresi=totalRes/malha.nele;
 
@@ -3072,9 +3072,9 @@ void solv2D::resolve(){
 		    	for(int i=0;i<malha.nele;i++){
 		    		if((*vg1dSP).metodoAcopPV!=2)malha.mlh2d[i].cel2D.uC=malha.vecSolv[i];
 		    		else malha.mlh2d[i].cel2D.uC=(*vg1dSP).relaxVF*malha.mlh2d[i].cel2D.uCEx+(1-(*vg1dSP).relaxVF)*malha.mlh2d[i].cel2D.uCI;
-		    		norma1+=fabsl(malha.mlh2d[i].cel2D.uC-malha.mlh2d[i].cel2D.uCI);
-		    		velmed+=fabsl(malha.mlh2d[i].cel2D.uC);
-		    		if(fabsl(malha.mlh2d[i].cel2D.uC)>velmax)velmax=fabsl(malha.mlh2d[i].cel2D.uC);
+		    		norma1+=fabs(malha.mlh2d[i].cel2D.uC-malha.mlh2d[i].cel2D.uCI);
+		    		velmed+=fabs(malha.mlh2d[i].cel2D.uC);
+		    		if(fabs(malha.mlh2d[i].cel2D.uC)>velmax)velmax=fabs(malha.mlh2d[i].cel2D.uC);
 		    	}
 
 		    	if((*vg1dSP).metodoAcopPV!=2){
@@ -3107,11 +3107,11 @@ void solv2D::resolve(){
 		    	for(int i=0;i<malha.nele;i++){
 		    		if((*vg1dSP).metodoAcopPV!=2) malha.mlh2d[i].cel2D.vC=malha.vecSolv[i];
 		    		else malha.mlh2d[i].cel2D.vC=(*vg1dSP).relaxVF*malha.mlh2d[i].cel2D.vCEx+(1-(*vg1dSP).relaxVF)*malha.mlh2d[i].cel2D.vCI;
-		    		norma1+=fabsl(malha.mlh2d[i].cel2D.vC-malha.mlh2d[i].cel2D.vCI);
-		    		velmed+=fabsl(malha.mlh2d[i].cel2D.vC);
-		    		//if(fabsl(malha.mlh2d[i].cel2D.uC)>velmax)velmax=fabsl(malha.mlh2d[i].cel2D.uC);
+		    		norma1+=fabs(malha.mlh2d[i].cel2D.vC-malha.mlh2d[i].cel2D.vCI);
+		    		velmed+=fabs(malha.mlh2d[i].cel2D.vC);
+		    		//if(fabs(malha.mlh2d[i].cel2D.uC)>velmax)velmax=fabs(malha.mlh2d[i].cel2D.uC);
 		    	}
-		    	for(int i=0;i<malha.nele;i++) if(fabsl(malha.mlh2d[i].cel2D.uC)>velmax)velmax=fabsl(malha.mlh2d[i].cel2D.uC);
+		    	for(int i=0;i<malha.nele;i++) if(fabs(malha.mlh2d[i].cel2D.uC)>velmax)velmax=fabs(malha.mlh2d[i].cel2D.uC);
 		    	velmed/=(2.*malha.nele);
 		    	norma1/=malha.nele;
 		    	norma1/=2.;
@@ -3173,8 +3173,8 @@ void solv2D::resolve(){
 			//#pragma omp parallel for num_threads((*vg1dSP).ntrd)
 #pragma omp parallel for reduction(+:norma0, presMed) num_threads(nthrdLocal)
 	    	for(int i=0;i<malha.nele;i++){
-	    		norma0+=fabsl(malha.mlh2d[i].cel2D.presCcor);
-	    		presMed+=fabsl(malha.mlh2d[i].cel2D.presC);
+	    		norma0+=fabs(malha.mlh2d[i].cel2D.presCcor);
+	    		presMed+=fabs(malha.mlh2d[i].cel2D.presC);
 	    	}
 	    	presMed/=malha.nele;
 	    	norma0/=malha.nele;
@@ -3238,9 +3238,9 @@ void solv2D::resolve(){
 	    			}
 #pragma omp parallel for reduction(+:norma1Piso, velmedPiso) num_threads(nthrdLocal)
 	    			for(int i=0;i<malha.nele;i++){
-	    				norma1Piso+=(fabsl(malha.mlh2d[i].cel2D.uC-malha.mlh2d[i].cel2D.uCEx)+
-	    						fabsl(malha.mlh2d[i].cel2D.vC-malha.mlh2d[i].cel2D.vCEx));
-	    				velmedPiso+=fabsl(malha.mlh2d[i].cel2D.uC)+fabsl(malha.mlh2d[i].cel2D.vC);
+	    				norma1Piso+=(fabs(malha.mlh2d[i].cel2D.uC-malha.mlh2d[i].cel2D.uCEx)+
+	    						fabs(malha.mlh2d[i].cel2D.vC-malha.mlh2d[i].cel2D.vCEx));
+	    				velmedPiso+=fabs(malha.mlh2d[i].cel2D.uC)+fabs(malha.mlh2d[i].cel2D.vC);
 	    				malha.mlh2d[i].cel2D.uC=malha.mlh2d[i].cel2D.uCEx;
 	    			}
 	    			velmedPiso/=(2.*malha.nele);
@@ -3302,8 +3302,8 @@ void solv2D::resolve(){
 	    				norma0=0.;
   					double presMed=0.;
   					for(int i=0;i<malha.nele;i++){
-  						norma0+=fabsl(malha.mlh2d[i].cel2D.presCcor);
-  						presMed+=fabsl(malha.mlh2d[i].cel2D.presC);
+  						norma0+=fabs(malha.mlh2d[i].cel2D.presCcor);
+  						presMed+=fabs(malha.mlh2d[i].cel2D.presC);
   					}
   					presMed/=malha.nele;
   					norma0/=malha.nele;
@@ -3374,16 +3374,16 @@ void solv2D::resolve(){
     							int kcc=0;
     							while(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]!=CC.rotuloAcop) kcc++;
     							if(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]==CC.rotuloAcop){
-    								/*if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-    										fabsl(tempMedPar-transfer.Textern1);
+    								/*if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+    										fabs(tempMedPar-transfer.Textern1);
     								else malha.mlh2d[i].ccTVN[j]=0.;
     								//malha.mlh2d[i].ccTVN[j]=fluxcal*malha.mlh2d[i].tempF[j]/transfer2.Tcamada[0][0];
     								if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
     								else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
     								//malha.mlh2d[i].ccTVN[j]=fluxcal;*/
     								int iFlux=indPar[i];
-    								malha.mlh2d[i].ccTVN[j]=-0*800*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-    										fabsl(60-transfer.Textern1)+1*vecFluxcal[iFlux];
+    								malha.mlh2d[i].ccTVN[j]=-0*800*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+    										fabs(60-transfer.Textern1)+1*vecFluxcal[iFlux];
     								if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
     								else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
     							}
@@ -3413,16 +3413,16 @@ void solv2D::resolve(){
 		    	double totalResT=0.;
 				//#pragma omp parallel for num_threads(nthrdLocal)
 		    	for(int i=0; i<malha.nele;i++){
-		    		if(maxdenoT<fabsl(malha.mlh2d[i].denoResT))
-		    			maxdenoT=fabsl(malha.mlh2d[i].denoResT);
+		    		if(maxdenoT<fabs(malha.mlh2d[i].denoResT))
+		    			maxdenoT=fabs(malha.mlh2d[i].denoResT);
 		    	}
 				//#pragma omp parallel for num_threads((*vg1dSP).ntrd)
 		    	for(int i=0; i<malha.nele;i++){
 		    		double resitesteT=maxdenoT;
-		    		if(fabsl(resitesteT<=1e-20))resitesteT=1.;
-		    		if(maxresiT<fabsl(malha.mlh2d[i].residuoT/resitesteT))
-		    			maxresiT=fabsl(malha.mlh2d[i].residuoT/resitesteT);
-		    		if(fabsl(malha.mlh2d[i].denoResT)>1e-15)totalResT+=fabsl(malha.mlh2d[i].residuoT)/fabsl(malha.mlh2d[i].denoResT);
+		    		if(fabs(resitesteT<=1e-20))resitesteT=1.;
+		    		if(maxresiT<fabs(malha.mlh2d[i].residuoT/resitesteT))
+		    			maxresiT=fabs(malha.mlh2d[i].residuoT/resitesteT);
+		    		if(fabs(malha.mlh2d[i].denoResT)>1e-15)totalResT+=fabs(malha.mlh2d[i].residuoT)/fabs(malha.mlh2d[i].denoResT);
 		    	}
 		    	if((*vg1dSP).tipoRes==1)maxresiT=totalResT/malha.nele;
 
@@ -3455,7 +3455,7 @@ void solv2D::resolve(){
 	    		for(int i=0;i<malha.nele;i++){
 	    				malha.mlh2d[i].cel2D.tempCI=malha.mlh2d[i].cel2D.tempC;
 	    				malha.mlh2d[i].cel2D.tempC=malha.vecSolv[i];
-	    				normaTemp+=fabsl(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
+	    				normaTemp+=fabs(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
 	    		}
 	    		normaTemp/=malha.nele;
 	    		iterTemp++;
@@ -3498,16 +3498,16 @@ void solv2D::resolve(){
 	    							int kcc=0;
 	    							while(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]!=CC.rotuloAcop) kcc++;
 	    							if(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]==CC.rotuloAcop){
-	    								/*if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-	    										fabsl(tempMedPar-transfer.Textern1);
+	    								/*if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+	    										fabs(tempMedPar-transfer.Textern1);
 	    								else malha.mlh2d[i].ccTVN[j]=0.;
 	    								//malha.mlh2d[i].ccTVN[j]=fluxcal*malha.mlh2d[i].tempF[j]/transfer2.Tcamada[0][0];
 	    								if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
 	    								else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
 	    								//malha.mlh2d[i].ccTVN[j]=fluxcal;*/
 	    								int iFlux=indPar[i];
-	    								malha.mlh2d[i].ccTVN[j]=-0*800*fabsl(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
-	    										fabsl(60-transfer.Textern1)+1*vecFluxcal[iFlux];
+	    								malha.mlh2d[i].ccTVN[j]=-0*800*fabs(malha.mlh2d[i].tempF[j]-transfer.Textern1)/
+	    										fabs(60-transfer.Textern1)+1*vecFluxcal[iFlux];
 	    								if(fluxcal<0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)<0.)malha.mlh2d[i].ccTVN[j]=0.;
 	    								else if(fluxcal>0. && (malha.mlh2d[i].tempF[j]-transfer.Textern1)>0.)malha.mlh2d[i].ccTVN[j]=0.;
 	    							}
@@ -3560,8 +3560,8 @@ void solv2D::resolve(){
   						int kcc=0;
   						while(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]!=CC.rotuloAcop) kcc++;
   						if(kcc<1 && malha.mlh2d[i].cel2D.ccFace[j]==CC.rotuloAcop){
-  							if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabsl(malha.mlh2d[i].cel2D.tempC-transfer.Textern1)/
-  									fabsl(tempMedPar-transfer.Textern1);
+  							if(tempMedPar!=transfer.Textern1)malha.mlh2d[i].ccTVN[j]=fluxcal*fabs(malha.mlh2d[i].cel2D.tempC-transfer.Textern1)/
+  									fabs(tempMedPar-transfer.Textern1);
   							else malha.mlh2d[i].ccTVN[j]=0.;
   						}
   					}
@@ -3594,7 +3594,7 @@ void solv2D::resolve(){
 			for(int i=0;i<malha.nele;i++){
 				malha.mlh2d[i].cel2D.tempCI=malha.mlh2d[i].cel2D.tempC;
 				malha.mlh2d[i].cel2D.tempC=malha.vecSolv[i];
-				normaTemp+=fabsl(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
+				normaTemp+=fabs(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
 			}
 			normaTemp/=malha.nele;
 			iterTemp++;
