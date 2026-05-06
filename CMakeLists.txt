@@ -21,7 +21,7 @@ set(SRC_ROOT ${CMAKE_SOURCE_DIR}/src)
 set(SRCDIR  ${SRC_ROOT}/core)
 set(FSRCDIR ${SRC_ROOT}/fortran)
 set(INCDIR  ${SRC_ROOT}/include)
-set(LIBDIR  ${SRC_ROOT}/lib)
+set(LIBDIR  ${SRC_ROOT}/thirdparty)
 set(MODDIR ${CMAKE_BINARY_DIR}/mod)
 file(MAKE_DIRECTORY ${MODDIR})
 set(CMAKE_Fortran_MODULE_DIRECTORY ${MODDIR})
@@ -67,6 +67,6 @@ set_source_files_properties(${FSRCDIR}/Newton.f90            PROPERTIES OBJECT_D
 set_source_files_properties(${FSRCDIR}/VLECalculations.f90   PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
 set_source_files_properties(${FSRCDIR}/PhaseProperties.f90   PROPERTIES OBJECT_DEPENDS "${FSRCDIR}/VLECalculations.f90;${FSRCDIR}/Constants.f90")
 
-set_target_properties(Marlim3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
+set_target_properties(Marlim3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 install(TARGETS Marlim3 DESTINATION bin)
