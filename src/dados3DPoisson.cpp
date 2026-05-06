@@ -807,7 +807,7 @@ void dadosP3D::lerPoisson(string nomeArquivoEntrada){
 					dcoor[k]=elementoO[i].objNo[j].x[k]-elementoO[i].objNo[vert[kv]].x[k];
 					aresta[kv]+=dcoor[k]*dcoor[k];
 				}
-				aresta[kv]=sqrtl(aresta[kv]);
+				aresta[kv]=sqrt(aresta[kv]);
 				if(arestaMax<aresta[kv])arestaMax=aresta[kv];
 			}
 		}
@@ -836,11 +836,11 @@ void dadosP3D::lerPoisson(string nomeArquivoEntrada){
 			prodV[2]=V1[0]*V2[1]-V1[1]*V2[0];
 			double modPV=0;
 			for(int k=0;k<3;k++)modPV+=prodV[k]*prodV[k];
-			modPV=sqrtl(modPV);
+			modPV=sqrt(modPV);
 			for(int k=0;k<3;k++)prodV[k]/=modPV;
 			double alt=0;
 			for(int k=0;k<3;k++)alt+=corda[k]*prodV[k];
-			alt=fabsl(alt);
+			alt=fabs(alt);
 			if(alt<hmin)hmin=alt;
 		}
 		elementoO[i].RAspec=arestaMax/hmin;
@@ -1574,7 +1574,7 @@ void dadosP3D::lerPoisson2(string nomeArquivoEntrada,const dadosP3D& aux){
 					dcoor[k]=elementoO[i].objNo[j].x[k]-elementoO[i].objNo[vert[kv]].x[k];
 					aresta[kv]+=dcoor[k]*dcoor[k];
 				}
-				aresta[kv]=sqrtl(aresta[kv]);
+				aresta[kv]=sqrt(aresta[kv]);
 				if(arestaMax<aresta[kv])arestaMax=aresta[kv];
 			}
 		}
@@ -1603,11 +1603,11 @@ void dadosP3D::lerPoisson2(string nomeArquivoEntrada,const dadosP3D& aux){
 			prodV[2]=V1[0]*V2[1]-V1[1]*V2[0];
 			double modPV=0;
 			for(int k=0;k<3;k++)modPV+=prodV[k]*prodV[k];
-			modPV=sqrtl(modPV);
+			modPV=sqrt(modPV);
 			for(int k=0;k<3;k++)prodV[k]/=modPV;
 			double alt=0;
 			for(int k=0;k<3;k++)alt+=corda[k]*prodV[k];
-			alt=fabsl(alt);
+			alt=fabs(alt);
 			if(alt<hmin)hmin=alt;
 		}
 		elementoO[i].RAspec=arestaMax/hmin;

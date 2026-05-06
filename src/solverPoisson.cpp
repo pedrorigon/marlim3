@@ -430,10 +430,10 @@ void solverP::indrazT(int& ind, double& raz) {
 						double dely=malha.mlh2d[iele].cel2D.coordVert[ivert+1][1]-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
 						double dxteste=xcoor-malha.mlh2d[iele].cel2D.coordVert[ivert][0];
 						double dyteste=ycoor-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
-						if(fabsl(delx)>1e-15)
+						if(fabs(delx)>1e-15)
 							ylim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][1]+(dely/delx)*dxteste;
 						else ylim[ivert]=1e20;
-						if(fabsl(dely)>1e-15)
+						if(fabs(dely)>1e-15)
 							xlim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][0]+(delx/dely)*dyteste;
 						else xlim[ivert]=1e20;
 						if((ylim[ivert]<=malha.mlh2d[iele].cel2D.coordVert[ivert][1] && ylim[ivert]>=malha.mlh2d[iele].cel2D.coordVert[ivert+1][1]) ||
@@ -448,10 +448,10 @@ void solverP::indrazT(int& ind, double& raz) {
 						double dely=malha.mlh2d[iele].cel2D.coordVert[0][1]-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
 						double dxteste=xcoor-malha.mlh2d[iele].cel2D.coordVert[ivert][0];
 						double dyteste=ycoor-malha.mlh2d[iele].cel2D.coordVert[ivert][1];
-						if(fabsl(dely)>1e-15)
+						if(fabs(dely)>1e-15)
 							ylim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][1]+(dely/delx)*dxteste;
 						else ylim[ivert]=1e20;
-						if(fabsl(dely)>1e-15)
+						if(fabs(dely)>1e-15)
 							xlim[ivert]=malha.mlh2d[iele].cel2D.coordVert[ivert][0]+(delx/dely)*dyteste;
 						else xlim[ivert]=1e20;
 						if((ylim[ivert]<=malha.mlh2d[iele].cel2D.coordVert[ivert][1] && ylim[ivert]>=malha.mlh2d[iele].cel2D.coordVert[0][1]) ||
@@ -512,7 +512,7 @@ void solverP::indrazT(int& ind, double& raz) {
 
 /*void solverP::imprimeMalhaRegular(int indTramo){
 	FullMtx<double> flut(dados.nxMH,dados.nyMH);
-	int numero = roundl((*vg1dSP).lixo5);
+	int numero = round((*vg1dSP).lixo5);
 	for(int i=0;i<dados.nxMH;i++){
 		for(int j=0;j<dados.nyMH;j++){
 			if(malhaH[i][j].buraco==0){
@@ -584,7 +584,7 @@ void solverP::permanentePoisson(){
     	for(int i=0;i<malha.nele;i++){
     		//malha.mlh2d[i].cel2D.tempC0=malha.mlh2d[i].cel2D.tempC;
     		malha.mlh2d[i].cel2D.tempC=malha.vecSolv[i];
-    		norma+=fabsl(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempC0);
+    		norma+=fabs(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempC0);
     	}
     	norma/=malha.nele;
     	if(norma>=norma0)diverge=1;
@@ -708,7 +708,7 @@ void solverP::transientePoissonDummy(double vdelt){
 				for(int i=0;i<malha.nele;i++){
 					malha.mlh2d[i].cel2D.tempCI=malha.mlh2d[i].cel2D.tempC;
 					malha.mlh2d[i].cel2D.tempC=malha.vecSolv[i];
-					norma+=fabsl(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
+					norma+=fabs(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
 				}
 				norma/=malha.nele;
 
@@ -835,7 +835,7 @@ void solverP::transientePoisson(double vdelt){
 				for(int i=0;i<malha.nele;i++){
 					malha.mlh2d[i].cel2D.tempCI=malha.mlh2d[i].cel2D.tempC;
 					malha.mlh2d[i].cel2D.tempC=malha.vecSolv[i];
-					norma+=fabsl(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
+					norma+=fabs(malha.mlh2d[i].cel2D.tempC-malha.mlh2d[i].cel2D.tempCI);
 				}
 				norma/=malha.nele;
 

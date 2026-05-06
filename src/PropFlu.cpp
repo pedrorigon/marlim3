@@ -51,7 +51,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
   D0Liv=1.00544053;D1Liv=-0.00134177;D2Liv=0.51839397;
 
 
-  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10l(147/114.7);
+  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10(147/114.7);
   SG100vb = FAC*Deng;
   if(SG100vb<0.5538)SG100vb=0.5538;
   if(API > 30){
@@ -212,8 +212,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
   bASTM2=0.;
   if((flashCompleto==0 || viscBlackOil==1)&&corrOM==0){
 	  double rhol=141.5/(131.5 + API);
-	  bASTM1 = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)));
-	  bASTM2=log10l(log10l((LVisL/1)/rhol + 0.7));
+	  bASTM1 = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)));
+	  bASTM2=log10(log10((LVisL/1)/rhol + 0.7));
   }
 
   nvecEmul=0;
@@ -440,7 +440,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
 
 
 
-  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10l(147/114.7);
+  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10(147/114.7);
   SG100vb = FAC*Deng;
   if(SG100vb<0.5538)SG100vb=0.5538;
   if(API > 30){
@@ -630,8 +630,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
  bASTM2=0.;
  if((flashCompleto==0 || viscBlackOil==1)&&corrOM==0){
 	  double rhol=141.5/(131.5 + API);
-	  bASTM1 = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)));
-	  bASTM2=log10l(log10l((LVisL/1)/rhol + 0.7));
+	  bASTM1 = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)));
+	  bASTM2=log10(log10((LVisL/1)/rhol + 0.7));
  }
 
  nvecEmul=0;
@@ -831,7 +831,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
 
 
 
-  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10l(147/114.7);
+  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10(147/114.7);
   SG100vb = FAC*Deng;
   if(SG100vb<0.5538)SG100vb=0.5538;
   if(API > 30){
@@ -1027,8 +1027,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
   bASTM2=0.;
   if((flashCompleto==0 || viscBlackOil==1)&&corrOM==0){
 	  double rhol=141.5/(131.5 + API);
-	  bASTM1 = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)));
-	  bASTM2=log10l(log10l((LVisL/1)/rhol + 0.7));
+	  bASTM1 = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)));
+	  bASTM2=log10(log10((LVisL/1)/rhol + 0.7));
   }
 
   nvecEmul=0;
@@ -1379,8 +1379,8 @@ ProFlu::ProFlu(const ProFlu& fluido):
   bASTM2=0.;
   if((flashCompleto==0 || viscBlackOil==1)&&corrOM==0){
 	  double rhol=141.5/(131.5 + API);
-	  bASTM1 = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)));
-	  bASTM2=log10l(log10l((LVisL/1)/rhol + 0.7));
+	  bASTM1 = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)));
+	  bASTM2=log10(log10((LVisL/1)/rhol + 0.7));
   }
 
   nvecEmul=fluido.nvecEmul;
@@ -1741,8 +1741,8 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
  bASTM2=0.;
  if((flashCompleto==0 || viscBlackOil==1)&&corrOM==0){
 	  double rhol=141.5/(131.5 + API);
-	  bASTM1 = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)));
-	  bASTM2=log10l(log10l((LVisL/1)/rhol + 0.7));
+	  bASTM1 = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)));
+	  bASTM2=log10(log10((LVisL/1)/rhol + 0.7));
  }
 
  nvecEmul=fluido.nvecEmul;
@@ -2001,8 +2001,8 @@ ProFlu ProFlu::operator+(const ProFlu& fluido) const{
  //temperatura mais alta, viscosidade (cp) e temperatura mais baixa e viscosidade (cp) e temperatura mais alta.
 
  //soma de duas correntes de propriedades
- if(fabsl(mascor)<1e-9)return fluido;
- else if (fabsl(fluido.mascor)<1e-9)return *this;
+ if(fabs(mascor)<1e-9)return fluido;
+ else if (fabs(fluido.mascor)<1e-9)return *this;
  else{
       //Procura correntes onde so ha injecaoo de gas,estas sao rotuladas por uma RGO negativa
       double multo1=1;
@@ -2280,7 +2280,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 }*/
 
 void ProFlu::RenovaFluido() {
-	  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10l(147/114.7);
+	  FAC = 1 + 0.5912*API*(1.8*60 + 32)*0.0001*log10(147/114.7);
 	  SG100vb = FAC*Deng;
 	  if(API > 30){
 	   Avb = 1.187;
@@ -2339,8 +2339,8 @@ void ProFlu::RenovaFluido() {
 
 	  if((flashCompleto==0 || viscBlackOil==1)&&corrOM==0){
 	 	  double rhol=141.5/(131.5 + API);
-	 	  bASTM1 = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)));
-	 	  bASTM2=log10l(log10l((LVisL/1)/rhol + 0.7));
+	 	  bASTM1 = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)));
+	 	  bASTM2=log10(log10((LVisL/1)/rhol + 0.7));
 	  }
 
 	  if(flashCompleto!=2)dStockTankVaporMassFraction=FracMass(1.0, 20.);
@@ -2396,13 +2396,13 @@ double ProFlu::VisOM(double temper) const{
 	 //ASTM
      double rhol=1*(141.5/(131.5 + API));
 
-     //double bASTM = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)))/
-    		 //log10l((TempL + 273)/(TempH + 273));
-     double bASTM = bASTM1/log10l((TempL + 273)/(TempH + 273));
+     //double bASTM = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)))/
+    		 //log10((TempL + 273)/(TempH + 273));
+     double bASTM = bASTM1/log10((TempL + 273)/(TempH + 273));
 
-     //double visASTM=rhol*(pow(10,pow(10,(bASTM*log10l((temper + 273)/
-    		 //(TempL + 273))+log10l(log10l((LVisL/1)/rhol + 0.7)))))-0.7);
-     double visASTM=rhol*(pow(10,pow(10,(bASTM*log10l((temper + 273)/
+     //double visASTM=rhol*(pow(10,pow(10,(bASTM*log10((temper + 273)/
+    		 //(TempL + 273))+log10(log10((LVisL/1)/rhol + 0.7)))))-0.7);
+     double visASTM=rhol*(pow(10,pow(10,(bASTM*log10((temper + 273)/
          		 (TempL + 273))+bASTM2)))-0.7);
      return visASTM;
    }
@@ -2784,7 +2784,7 @@ double ProFlu::RS(double pres, double temp, double varPb) const{//alteracao4
          double B;
          if(varPb<0){
         	 A = pow((IRGO/Deng),0.816)*pow(Faren(temp),0.172)*pow(API,-0.989);
-        	 B = log10l(A);
+        	 B = log10(A);
         	 pbtemp = pow(10.0,((5.17967 - pow(0.60436*B - 1.7447,2.))/1.20872));
          }
          else pbtemp=varPb;
@@ -2794,9 +2794,9 @@ double ProFlu::RS(double pres, double temp, double varPb) const{//alteracao4
 
          if(ipres>pbtemp)rstemp=IRGO;
          else{
-           A = 5.17967 - 1.20872*log10l(ipres);
+           A = 5.17967 - 1.20872*log10(ipres);
            if (A < 0) A = 0.0;
-           A =sqrtl(A);
+           A =sqrt(A);
            B  = (1.7447 - A)/0.60436;
            rstemp= Deng*pow((pow(API,0.989)*pow(10.0,B)*pow(Faren(temp),-0.172)),1.22549);
            if(rstemp<0.)rstemp=0.;
@@ -3056,7 +3056,7 @@ double ProFlu::PB(double pres, double temp) const{//alteracao4
       else{
   // Calcula a pressão de bolha (despreza o gás em solução na água)
       double A  = pow((IRGO/Deng),0.816)*pow(Faren(temp),0.172)*pow(API,-0.989);
-      double B  = log10l(A);
+      double B  = log10(A);
       pbtemp = pow(10.0,((5.17967 - pow(0.60436*B - 1.7447,2.))/1.20872));
     }
    }
@@ -3733,7 +3733,7 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 				  double titP1T1=tabDin.tit[posicP+1][posicT+1];
 				  double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 				  double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-				  if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+				  if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 					  double masesp;
 					  double ztC;
 					  int iIERT;
@@ -3843,7 +3843,7 @@ if(rDgLtemp*Deng<=100){
 }
 else{
 	double dt;
-	if(fabsl(temp)>1e-5)dt=temp*0.01;
+	if(fabs(temp)>1e-5)dt=temp*0.01;
 	else dt=0.01;
 	return (Zdran(pres, temp+dt,cordg)-Zdran(pres, temp,cordg))/(dt);
 }
@@ -3936,7 +3936,7 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{//alteracao2
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						  int iIER;
 						  double tempZ;
 						  double dZdT;
@@ -4050,7 +4050,7 @@ if(rDgLtemp*Deng<=100){
 }
 else{
 	double dp;
-	if(fabsl(pres)>1e-5)dp=pres*0.01;
+	if(fabs(pres)>1e-5)dp=pres*0.01;
 	else dp=0.01;
 	return (Zdran(pres+dp, temp,cordg)-Zdran(pres, temp,cordg))/(98066.5*dp);
 }
@@ -4142,7 +4142,7 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{//alteracao2
 				 double titP1T1=tabDin.tit[posicP+1][posicT+1];
 				 double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 				 double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-				 if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+				 if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 					  int iIER;
 					  double tempZ;
 					  double dZdT;
@@ -4424,7 +4424,7 @@ if(flashCompleto==0 || flashCompleto==3){
 					 double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					 double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					 double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					 if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					 if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						 double tempBO=1.;
 						 int iIER;
 						 Marlim_CalculateOilFormationVolumeFactor(pres, temp,
@@ -5063,7 +5063,7 @@ double ProFlu::DrholDT(double pres, double temp) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						int iIER;
 						double tempZ;
 						double dZdT;
@@ -5186,7 +5186,7 @@ double ProFlu::JTL(double pres,double temp) const{
 	double Ajt;
 	double Bjt;
 	double Cjt;
-	double temporario=API*Bvb*Cvb*IRGO*logl(10.)/(Avb*SG100*itemp*itemp);
+	double temporario=API*Bvb*Cvb*IRGO*log(10.)/(Avb*SG100*itemp*itemp);
 	double dpbdt=pow(10.,-API*Cvb/itemp);
 	dpbdt=dpbdt*temporario*pow(dpbdt*Bvb*IRGO/SG100,(1-Avb)/Avb);
 
@@ -5301,7 +5301,7 @@ double ProFlu::EntalpLiq(double pres,double temp) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						int iIER;
 						double cp;
 						Marlim_CalculatePhaseCpAndEnthalpy(pres, temp, 0,oCalculatedLiqComposition,
@@ -5408,7 +5408,7 @@ double ProFlu::EntalpGas(double pres,double temp) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						int iIER;
 						double cp;
 						Marlim_CalculatePhaseCpAndEnthalpy(pres, temp, 1,oCalculatedVapComposition,
@@ -5589,7 +5589,7 @@ double ProFlu::MasEspoleo(double pres, double temp,double varRS) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						rhol=MasEspOleoComp(pres, temp);
 					}
 					else{
@@ -5713,7 +5713,7 @@ double ProFlu::drhodt(double pres, double temp) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						int iIER;
 						double tempZ;
 						double dZdT;
@@ -5827,7 +5827,7 @@ double ProFlu::drhodp(double pres, double temp) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						int iIER;
 						double tempZ;
 						double dZdT;
@@ -5902,16 +5902,16 @@ void ProFlu::razDegD(double pres, double temp){
 	/////////////////////////////////////////////////////////////////////////
 		rDgD=SGDG/Deng;
 		double SGFG;
-		if(fabsl(RGO - rs)>1e-5)SGFG= Deng*(RGO-rDgD*rs)/(RGO - rs);
+		if(fabs(RGO - rs)>1e-5)SGFG= Deng*(RGO-rDgD*rs)/(RGO - rs);
 		else SGFG=Deng;
 		if (SGFG < 0.5538){
 			SGFG = 0.5538; // metano
-			if(fabsl(rs)>1e-5)rDgD=-(SGFG*(RGO - rs)/Deng-RGO)/rs;
+			if(fabs(rs)>1e-5)rDgD=-(SGFG*(RGO - rs)/Deng-RGO)/rs;
 			else rDgD=1.;
 		}
 		if(SGFG>Deng){
 			SGFG=Deng;
-			if(fabsl(rs)>1e-5)rDgD=-(SGFG*(RGO - rs)/Deng-RGO)/rs;
+			if(fabs(rs)>1e-5)rDgD=-(SGFG*(RGO - rs)/Deng-RGO)/rs;
 			else rDgD=1.;
 		}
 	}
@@ -5922,7 +5922,7 @@ void ProFlu::rzDegL(double pres , double temp){
 	if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
 		double rs=RS(pres, temp)* (6.29 / 35.31467);
 		double SGFG;
-		if(fabsl(RGO - rs)>1e-5)SGFG= Deng*(RGO-rDgD*rs)/(RGO - rs);
+		if(fabs(RGO - rs)>1e-5)SGFG= Deng*(RGO-rDgD*rs)/(RGO - rs);
 		else SGFG=Deng;
 		if (SGFG < 0.5538) SGFG = 0.5538; // metano
 		if(SGFG>Deng)SGFG=Deng;
@@ -5976,7 +5976,7 @@ double ProFlu::MasEspGas(double pres, double temp) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						rhog=MasEspGasComp(pres, temp);
 					}
 					else{
@@ -6153,7 +6153,7 @@ double ProFlu::MasEspLiq(double pres, double temp,double varRS) const{
 					double titP1T1=tabDin.tit[posicP+1][posicT+1];
 					double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 					double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
-					if(fabsl(multTit)<1e-15 && (fabsl(titTotal)>1e-15/*||fabsl(titTotal-2.)<1e-15||fabsl(titTotal-1.)<1e-15*/)){
+					if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
 						rhol=MasEspLiqComp(pres, temp);
 						bo=-1.;
 					}

@@ -59,26 +59,26 @@ public:
 
    estratificado& operator=(const estratificado&);
    double al(const double var,const double dia){
-             return 0.25*dia*dia*(M_PI-acosl(var)+var*sqrtl(1-var*var));
+             return 0.25*dia*dia*(M_PI-acos(var)+var*sqrt(1-var*var));
         }
    double ag(const double var,const double dia){
-             return 0.25*dia*dia*(acosl(var)-var*sqrtl(1-var*var));
+             return 0.25*dia*dia*(acos(var)-var*sqrt(1-var*var));
         }
    double sl(const double var, const double dia){
              double peri;
-             peri=dia*(M_PI-acosl(var));
+             peri=dia*(M_PI-acos(var));
              if(peri<4.*1e-20)peri=4.*1e-20;
              return peri;
         }
    double sg(const double var, const double dia){
              double peri;
-             peri=dia*acosl(var);
+             peri=dia*acos(var);
              if(peri<4.*1e-20)peri=4.*1e-20;
              return peri;
         }
    double si(const double var, const double dia){
              double peri;
-             peri=dia*sqrtl(1-var*var);
+             peri=dia*sqrt(1-var*var);
              if(peri<4.*1e-20)peri=4.*1e-20;
              return peri;
         }
@@ -101,7 +101,7 @@ public:
                  double df=4.*si(rtn,dia)/(M_PI*dia*dia);
                  double dx=f/df;
                  rtn-=dx;
-                 if(fabsl(dx)<epsn||fabsl(f)<tol||rtn<dia/50) return rtn;
+                 if(fabs(dx)<epsn||fabs(f)<tol||rtn<dia/50) return rtn;
 
                }
                throw("M�ximo n�mero de intera��es em Newton");
@@ -122,7 +122,7 @@ public:
         double reyl(double var, double dia,
                          double Ql){
           if(alNd<1e-20)alNd=1e-20;
-          return dhl(var,dia)*rl*(fabsl(Ql)/(alNd*dia*dia))/mil;
+          return dhl(var,dia)*rl*(fabs(Ql)/(alNd*dia*dia))/mil;
         }
         double reyg(double var, double dia,
                          double Qg){
@@ -131,7 +131,7 @@ public:
            //int para;
            //para++;
           }
-          return dhg(var,dia)*rg*(fabsl(Qg)/(agNd*dia*dia))/mig;
+          return dhg(var,dia)*rg*(fabs(Qg)/(agNd*dia*dia))/mig;
 
         }
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,15 +140,15 @@ public:
         double fricg(double dia,
                           double Qg, double eps);
         double tall(double vell){
-             return 0.5*fl*rl*vell*fabsl(vell);
+             return 0.5*fl*rl*vell*fabs(vell);
         }
 
         double talg(double velg){
-             return 0.5*fg*rg*velg*fabsl(velg);
+             return 0.5*fg*rg*velg*fabs(velg);
         }
 
         double tali(double velg,double vell){
-             return 0.5*fg*rg*(velg-vell)*fabsl(velg-vell);
+             return 0.5*fg*rg*(velg-vell)*fabs(velg-vell);
         }
         
         double fonteQMGas(double dia);

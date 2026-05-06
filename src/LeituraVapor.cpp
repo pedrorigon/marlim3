@@ -1582,8 +1582,8 @@ void LerVap::lerArq() {
 	celp[ncelp-1].profundiF=0;//alteracao2
 	for(int i=ncelp-1; i>=0; i--){//alteracao2
 		int iDu=celp[i].duto;
-		celp[i].profundiM=celp[i].profundiF+0.5*celp[i].dx*sinl(duto[iDu].ang);
-		if(i>0)celp[i-1].profundiF=celp[i].profundiF+celp[i].dx*sinl(duto[iDu].ang);
+		celp[i].profundiM=celp[i].profundiF+0.5*celp[i].dx*sin(duto[iDu].ang);
+		if(i>0)celp[i-1].profundiF=celp[i].profundiF+celp[i].dx*sin(duto[iDu].ang);
 	}//alteracao2
 
 // parse ipr
@@ -1701,8 +1701,8 @@ while ((lteste + celp[kontacel].dx/2.) < lverif) {
 if (kontacel == 0)
 	return kontacel;
 else {
-	if (fabsl(lteste + celp[kontacel].dx / 2. - lverif)
-			< fabsl(lteste - celp[kontacel - 1].dx / 2. - lverif))
+	if (fabs(lteste + celp[kontacel].dx / 2. - lverif)
+			< fabs(lteste - celp[kontacel - 1].dx / 2. - lverif))
 		return kontacel;
 	else
 		return kontacel - 1;
@@ -1723,8 +1723,8 @@ while ((lteste + celp[kontacel].dx) < lverif) {
 if (kontacel == 0)
 	return kontacel;
 else {
-	if (fabsl(lteste + celp[kontacel].dx - lverif)
-			< fabsl(lteste - celp[kontacel - 1].dx - lverif))
+	if (fabs(lteste + celp[kontacel].dx - lverif)
+			< fabs(lteste - celp[kontacel - 1].dx - lverif))
 		return kontacel;
 	else
 		return kontacel - 1;
@@ -1739,7 +1739,7 @@ while (comp
 		- (unidadeP[nuni].dxVar[iniSeg + 1] - unidadeP[nuni].dxVar[0])
 				* unidadeP[nuni].comp > 1e-5) {
 	iniSeg++;
-//if(fabsl(comp-(unidadeP[nuni].dxVar[iniSeg+1]-unidadeP[nuni].dxVar[0]))<1e-5 && iniSeg>=unidadeP[nuni].nponts-1)
+//if(fabs(comp-(unidadeP[nuni].dxVar[iniSeg+1]-unidadeP[nuni].dxVar[0]))<1e-5 && iniSeg>=unidadeP[nuni].nponts-1)
 	if (iniSeg >= unidadeP[nuni].nponts - 1)
 		exit(-1);
 }
@@ -1797,7 +1797,7 @@ if (evento.size() > 0)
 if (evento.size() > 1) {
 	double replica = evento[0];
 	for (int i = 1; i < evento.size(); i++) {
-		if (fabsl(replica - evento[i]) < 1e-5) {
+		if (fabs(replica - evento[i]) < 1e-5) {
 			evento.erase(evento.begin() + i);
 			i--;
 		} else
@@ -1814,7 +1814,7 @@ if (nipr > 0) {
 		if (IPRS[i].seriep > 1) {
 			for (int j = 0; j < IPRS[i].seriep; j++) {
 				if (j < IPRS[i].seriep - 1) {
-					if (fabsl(IPRS[i].pres[j] - IPRS[i].pres[j + 1]) > 1e-15) {
+					if (fabs(IPRS[i].pres[j] - IPRS[i].pres[j + 1]) > 1e-15) {
 						e.instante = IPRS[i].tpres[j];
 						e.duracao = IPRS[i].tpres[j + 1] - IPRS[i].tpres[j];
 						if (IPRS[i].pres[j] > IPRS[i].pres[j + 1])
@@ -1832,7 +1832,7 @@ if (nipr > 0) {
 		if (IPRS[i].seriet > 1) {
 			for (int j = 0; j < IPRS[i].seriet; j++) {
 				if (j < IPRS[i].seriet - 1) {
-					if (fabsl(IPRS[i].temp[j] - IPRS[i].temp[j + 1]) > 1e-15) {
+					if (fabs(IPRS[i].temp[j] - IPRS[i].temp[j + 1]) > 1e-15) {
 						e.instante = IPRS[i].ttemp[j];
 						e.duracao = IPRS[i].ttemp[j + 1] - IPRS[i].ttemp[j];
 						if (IPRS[i].temp[j] > IPRS[i].temp[j + 1])
@@ -1852,7 +1852,7 @@ if (nipr > 0) {
       	if (IPRS[i].seriejp > 1) {
 			for (int j = 0; j < IPRS[i].seriejp; j++) {
 				if (j < IPRS[i].seriejp - 1) {
-					if (fabsl(IPRS[i].jp[j] - IPRS[i].jp[j + 1]) > 1e-15) {
+					if (fabs(IPRS[i].jp[j] - IPRS[i].jp[j + 1]) > 1e-15) {
 						e.instante = IPRS[i].tjp[j];
 						e.duracao = IPRS[i].tjp[j + 1] - IPRS[i].tjp[j];
 						if (IPRS[i].jp[j] > IPRS[i].jp[j + 1])
@@ -1874,7 +1874,7 @@ if (ninjliq > 0) {
 		if (fontel[i].parserie > 1) {
 			for (int j = 0; j < fontel[i].parserie; j++) {
 				if (j < fontel[i].parserie - 1) {
-					if (fabsl(fontel[i].vazmas[j] - fontel[i].vazmas[j + 1])
+					if (fabs(fontel[i].vazmas[j] - fontel[i].vazmas[j + 1])
 							> 1e-15) {
 						e.instante = fontel[i].tempo[j];
 						e.duracao = fontel[i].tempo[j + 1] - fontel[i].tempo[j];
@@ -1895,7 +1895,7 @@ if (ninjliq > 0) {
 if (master1.parserie > 1) {
 	for (int j = 0; j < master1.parserie; j++) {
 		if (j < master1.parserie - 1) {
-			if (fabsl(master1.abertura[j] - master1.abertura[j + 1]) > 1e-15) {
+			if (fabs(master1.abertura[j] - master1.abertura[j + 1]) > 1e-15) {
 				e.instante = master1.tempo[j];
 				e.duracao = master1.tempo[j + 1] - master1.tempo[j];
 				if (master1.abertura[j] > master1.abertura[j + 1])
@@ -1913,7 +1913,7 @@ if (master1.parserie > 1) {
 if (psep.parserie > 1) {
 	for (int j = 0; j < psep.parserie; j++) {
 		if (j < psep.parserie - 1) {
-			if (fabsl(psep.pres[j] - psep.pres[j + 1]) > 1e-15) {
+			if (fabs(psep.pres[j] - psep.pres[j + 1]) > 1e-15) {
 				e.instante = psep.tempo[j];
 				e.duracao = psep.tempo[j + 1] - psep.tempo[j];
 				if (psep.pres[j] > psep.pres[j + 1])
@@ -1931,7 +1931,7 @@ if (psep.parserie > 1) {
 if (chokep.parserie > 1) {
 	for (int j = 0; j < chokep.parserie; j++) {
 		if (j < chokep.parserie - 1) {
-			if (fabsl(chokep.abertura[j + 1] - chokep.abertura[j]) > 1e-15) {
+			if (fabs(chokep.abertura[j + 1] - chokep.abertura[j]) > 1e-15) {
 				e.instante = chokep.tempo[j];
 				e.duracao = chokep.tempo[j + 1] - chokep.tempo[j];
 				if (chokep.abertura[j] > chokep.abertura[j + 1])
@@ -1952,7 +1952,7 @@ if (nbcs > 0) {
 		if (bcs[i].parserie > 1) {
 			for (int j = 0; j < bcs[i].parserie; j++) {
 				if (j < bcs[i].parserie - 1) {
-					if (fabsl(bcs[i].freq[j + 1] - bcs[i].freq[j]) > 1e-15) {
+					if (fabs(bcs[i].freq[j + 1] - bcs[i].freq[j]) > 1e-15) {
 						e.instante = bcs[i].tempo[j];
 						e.duracao = bcs[i].tempo[j + 1] - bcs[i].tempo[j];
 						if (bcs[i].freq[j] > bcs[i].freq[j + 1])
@@ -1974,7 +1974,7 @@ if (nbvol > 0) {
 		if (bvol[i].parserie > 1) {
 			for (int j = 0; j < bvol[i].parserie; j++) {
 				if (j < bvol[i].parserie - 1) {
-					if (fabsl(bvol[i].freq[j + 1] - bvol[i].freq[j]) > 1e-15) {
+					if (fabs(bvol[i].freq[j + 1] - bvol[i].freq[j]) > 1e-15) {
 						e.instante = bvol[i].tempo[j];
 						e.duracao = bvol[i].tempo[j + 1] - bvol[i].tempo[j];
 						if (bvol[i].freq[j] > bvol[i].freq[j + 1])
@@ -1996,7 +1996,7 @@ if (ndpreq > 0) {
 		if (dpreq[i].parserie > 1) {
 			for (int j = 0; j < dpreq[i].parserie; j++) {
 				if (j < dpreq[i].parserie - 1) {
-					if (fabsl(dpreq[i].dp[j] - dpreq[i].dp[j + 1]) > 1e-15) {
+					if (fabs(dpreq[i].dp[j] - dpreq[i].dp[j + 1]) > 1e-15) {
 						e.instante = dpreq[i].tempo[j];
 						e.duracao = dpreq[i].tempo[j + 1] - dpreq[i].tempo[j];
 						if (dpreq[i].dp[j] > dpreq[i].dp[j + 1])
@@ -2408,12 +2408,12 @@ for (int i = 0; i < ncelp; i++) {
 	double vkint = ( flup.CondLiq(celp[i].pres, celp[i].temp)) * vhol
 			+ flup.CondGas(celp[i].pres, celp[i].temp) * (1 - vhol);
 	double vcpint;
-	if (fabsl(jmix) > 1e-10)
+	if (fabs(jmix) > 1e-10)
 		vcpint = ((flup.CPlFunc(celp[i].pres, celp[i].temp))
-				* fabsl(celp[i].uls) * vrhol
+				* fabs(celp[i].uls) * vrhol
 				+ flup.CPgFunc(celp[i].pres, celp[i].temp)
-						* fabsl(celp[i].ugs) * vrhog)
-				/ (fabsl(celp[i].uls) * vrhol + fabsl(celp[i].ugs) * vrhog);
+						* fabs(celp[i].ugs) * vrhog)
+				/ (fabs(celp[i].uls) * vrhol + fabs(celp[i].ugs) * vrhog);
 	else
 		vcpint = (flup.CPlFunc(celp[i].pres, celp[i].temp)) * vhol
 				+ flup.CPgFunc(celp[i].pres, celp[i].temp)
@@ -2900,11 +2900,11 @@ if (nperfisp > 0) {
 		flut[i][k]=altura;
 		k++;
 		comp += celula[i].dx;
-		altura+=celula[i].dx*sinl(celula[i].duto.teta);
+		altura+=celula[i].dx*sin(celula[i].duto.teta);
 
 	}
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 	if(indTramo<0)
 	saidaP << "PERFISP" << "-" << numero << ".dat";
 	else
@@ -2981,7 +2981,7 @@ if (nperfistransp > 0) {
 		FullMtx<double> saida(n, 2);
 		saida = celula[posicn].calor.perfil();
 		ostringstream saidaP;
-		int numero = roundl(tempo);
+		int numero = round(tempo);
 		if(indTramo<0)
 		saidaP << "PERFISTRANSP" << "-" << numero << "-" << proftransp.posic[i]
 			   << ".dat";

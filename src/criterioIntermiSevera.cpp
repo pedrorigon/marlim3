@@ -71,7 +71,7 @@ critInterSev::critInterSev(Cel* celula, int vini, int vfim, int fimcota, int vti
 	for(int i=vini; i<=vfim;i++){
 		compAcumula+=celula[i].dx;
 		volumeAcumula+=celula[i].dx*celula[i].duto.area;
-		cotaAcumulo+=celula[i].dx*sinl(celula[i].duto.teta);
+		cotaAcumulo+=celula[i].dx*sin(celula[i].duto.teta);
 		double pres=celula[i].pres;
 		double temp=celula[i].temp;
 		zMed+=celula[i].flui.Zdran(pres, temp)*celula[i].dx*celula[i].duto.area;
@@ -91,7 +91,7 @@ critInterSev::critInterSev(Cel* celula, int vini, int vfim, int fimcota, int vti
 	qualidadeArranjo/=compAcumula;
 	cotaColuna=0.;
 	for(int i=vfim; i<indFim;i++){
-		cotaColuna+=celula[i].dx*sinl(celula[i].duto.teta);
+		cotaColuna+=celula[i].dx*sin(celula[i].duto.teta);
 	}
 }
 

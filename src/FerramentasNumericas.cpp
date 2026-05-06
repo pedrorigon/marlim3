@@ -427,7 +427,7 @@ template<class T, T F(T, const T* const)> T Bissecao(T a,T b, const T* const par
 }
 
 
-template<class T> T SIGN(T a,T b){return (b>=0?1.0:-1.0)*fabsl(a);}
+template<class T> T SIGN(T a,T b){return (b>=0?1.0:-1.0)*fabs(a);}
 
 
 template<class T, T F(T, const T* const)> T zriddr(T x1,T x2, const T* const par,T xacc, int maxit){
@@ -441,7 +441,7 @@ template<class T, T F(T, const T* const)> T zriddr(T x1,T x2, const T* const par
    for(int j=0;j<maxit;j++){
      T xm=0.5*(x1+xh);
      T fm=F(xm,par);
-     T s=sqrtl(fm*fm-fl*fh);
+     T s=sqrt(fm*fm-fl*fh);
      if(s==0.0) return ans;
      T xnew=xm+(xm-xl)*((fl>=fh?1.0:-1.0)*fm/s);
      if(fabs(xnew-ans)<=xacc)return ans;

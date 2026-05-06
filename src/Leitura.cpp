@@ -4763,7 +4763,7 @@ void Ler::parse_fluidos_producao(
 					for(int j=imin+1;j<ndiv;j++){
 						dp0=flup[i].rhogF[j+1][0]-flup[i].rhogF[j][0];
 						dp1=flup[i].rhogF[j+2][0]-flup[i].rhogF[j+1][0];
-						if(fabsl((dp0-dp1)/dp0)>1e-3){
+						if(fabs((dp0-dp1)/dp0)>1e-3){
 							ndp++;
 							pchange.push_back(flup[i].rhogF[j+1][0]);
 							indp.push_back(j+1);
@@ -4804,7 +4804,7 @@ void Ler::parse_fluidos_producao(
 					for(int j=imin+1;j<ndiv;j++){
 						dt0=flup[i].rhogF[0][j+1]-flup[i].rhogF[0][j];
 						dt1=flup[i].rhogF[0][j+2]-flup[i].rhogF[0][j+1];
-						if(fabsl((dt0-dt1)/dt0)>1e-3){
+						if(fabs((dt0-dt1)/dt0)>1e-3){
 							ndt++;
 							tchange.push_back(flup[i].rhogF[0][j+1]);
 							indt.push_back(j+1);
@@ -5946,7 +5946,7 @@ void Ler::parse_unidades_producao(
 				else{
 					double x1=dutos_producao_json[indAtivo].xCoor();
 					double y1=dutos_producao_json[indAtivo].yCoor();
-					if(fabsl(x1-xProd0)>1e-15){
+					if(fabs(x1-xProd0)>1e-15){
 						double tang=(y1-yProd0)/(x1-xProd0);
 						duto[ind].ang =atan(tang);
 					}
@@ -5956,7 +5956,7 @@ void Ler::parse_unidades_producao(
 						else duto[ind].ang=-M_PI/2.;
 					}
 					if (!sentidoGeometriaSegueEscoamento && reverso>0)duto[ind].ang *=(-1.);
-					lxy=sqrtl((x1-xProd0)*(x1-xProd0)+(y1-yProd0)*(y1-yProd0));
+					lxy=sqrt((x1-xProd0)*(x1-xProd0)+(y1-yProd0)*(y1-yProd0));
 					xProd0=x1;
 					yProd0=y1;
 				}
@@ -6225,7 +6225,7 @@ void Ler::parse_unidades_producao(
 				for (int j = 0; j < unidadeP[ind].ncel; j++)
 					unidadeP[ind].comp += unidadeP[ind].dx[j];
 				if(modoXY==1){
-					if(fabsl(unidadeP[ind].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
+					if(fabs(unidadeP[ind].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
 							LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, "modo de preenchimento X-Y",
 									chaveDutoIndice,
 									"'comprimento total da discretização diferente dos limites X e Y indicados"
@@ -6635,8 +6635,8 @@ void Ler::parse_unidades_producaoAmb(
 				else{
 					double x1=dutos_producao_json[indAtivo].xCoor();
 					double y1=dutos_producao_json[indAtivo].yCoor();
-					if(fabsl(x1-xProd0)>1e-15){
-						double tang=(y1-yProd0)/fabsl(x1-xProd0);
+					if(fabs(x1-xProd0)>1e-15){
+						double tang=(y1-yProd0)/fabs(x1-xProd0);
 						duto[ind].ang =atan(tang);
 					}
 					else{
@@ -6645,7 +6645,7 @@ void Ler::parse_unidades_producaoAmb(
 						else duto[ind].ang=-M_PI/2.;
 					}
 					if (!sentidoGeometriaSegueEscoamento && reverso>0)duto[ind].ang *=(-1.);
-					lxy=sqrtl((x1-xProd0)*(x1-xProd0)+(y1-yProd0)*(y1-yProd0));
+					lxy=sqrt((x1-xProd0)*(x1-xProd0)+(y1-yProd0)*(y1-yProd0));
 					xProd0=x1;
 					yProd0=y1;
 				}
@@ -6913,7 +6913,7 @@ void Ler::parse_unidades_producaoAmb(
 				for (int j = 0; j < unidadeP[ind].ncel; j++)
 					unidadeP[ind].comp += unidadeP[ind].dx[j];
 				if(modoXY==1){
-					if(fabsl(unidadeP[ind].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
+					if(fabs(unidadeP[ind].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
 							LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, "modo de preenchimento X-Y",
 									chaveDutoIndice,
 									"'comprimento total da discretização diferente dos limites X e Y indicados"
@@ -7313,8 +7313,8 @@ void Ler::parse_unidades_servico(
 					double x1=dutos_servico_json[indAtivo].xCoor();
 					double y1=dutos_servico_json[indAtivo].yCoor();
 
-					if(fabsl(x1-xServ0)>1e-15){
-						double tang=(y1-yServ0)/fabsl(x1-xServ0);
+					if(fabs(x1-xServ0)>1e-15){
+						double tang=(y1-yServ0)/fabs(x1-xServ0);
 						duto[i + nunidadep].ang =atan(tang);
 					}
 					else{
@@ -7325,7 +7325,7 @@ void Ler::parse_unidades_servico(
 
 					//double tang=(y1-yServ0)/(x1-xServ0);
 					//duto[i + nunidadep].ang =atan(tang);
-					lxy=sqrtl((x1-xServ0)*(x1-xServ0)+(y1-yServ0)*(y1-yServ0));
+					lxy=sqrt((x1-xServ0)*(x1-xServ0)+(y1-yServ0)*(y1-yServ0));
 					xServ0=x1;
 					yServ0=y1;
 				}
@@ -7502,7 +7502,7 @@ void Ler::parse_unidades_servico(
 				for (int j = 0; j < unidadeG[i].ncel; j++)
 					unidadeG[i].comp += unidadeG[i].dx[j];
 				if(modoXY==1){
-					if(fabsl(unidadeG[i].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
+					if(fabs(unidadeG[i].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
 							LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, "modo de preenchimento X-Y",
 									chaveDutoIndice,
 									"'comprimento total da discretização diferente dos limites X e Y indicados"
@@ -7825,7 +7825,7 @@ void Ler::parse_unidades_servicoAmb(
 					double x1=dutos_servico_json[indAtivo].xCoor();
 					double y1=dutos_servico_json[indAtivo].yCoor();
 
-					if(fabsl(x1-xProd0)>1e-15){
+					if(fabs(x1-xProd0)>1e-15){
 						double tang=(y1-yProd0)/(x1-xProd0);
 						duto[i + nunidadep].ang =atan(tang);
 					}
@@ -7837,7 +7837,7 @@ void Ler::parse_unidades_servicoAmb(
 
 					//double tang=(y1-yServ0)/(x1-xServ0);
 					//duto[i + nunidadep].ang =atan(tang);
-					lxy=sqrtl((x1-xServ0)*(x1-xServ0)+(y1-yServ0)*(y1-yServ0));
+					lxy=sqrt((x1-xServ0)*(x1-xServ0)+(y1-yServ0)*(y1-yServ0));
 					xServ0=x1;
 					yServ0=y1;
 				}
@@ -8014,7 +8014,7 @@ void Ler::parse_unidades_servicoAmb(
 				for (int j = 0; j < unidadeG[i].ncel; j++)
 					unidadeG[i].comp += unidadeG[i].dx[j];
 				if(modoXY==1){
-					if(fabsl(unidadeG[i].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
+					if(fabs(unidadeG[i].comp-lxy)/lxy>1e-15)	logger.log(LOGGER_FALHA,
 							LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, "modo de preenchimento X-Y",
 									chaveDutoIndice,
 									"'comprimento total da discretização diferente dos limites X e Y indicados"
@@ -14149,10 +14149,10 @@ void Ler::lerArq() {
 		for (int i = ncelp - 1; i >= 0; i--) {  //04-04-2018
 			int iDu = celp[i].duto;
 			celp[i].profundiM = celp[i].profundiF
-					+ 0.5 * celp[i].dx * sinl(duto[iDu].ang);
+					+ 0.5 * celp[i].dx * sin(duto[iDu].ang);
 			if (i > 0)
 				celp[i - 1].profundiF = celp[i].profundiF
-						+ celp[i].dx * sinl(duto[iDu].ang);
+						+ celp[i].dx * sin(duto[iDu].ang);
 		}  //04-04-2018
 
 		celdescargaP = 1e7;  //15-06-2018
@@ -14279,10 +14279,10 @@ void Ler::lerArq() {
 			for (int i = 0; i < ncelg; i++) {  //04-04-2018
 				int iDu = celg[i].duto;
 				celg[i].profundiM = celg[i].profundiF
-						+ 0.5 * celg[i].dx * sinl(-duto[iDu].ang);
+						+ 0.5 * celg[i].dx * sin(-duto[iDu].ang);
 				if (i < ncelg - 1)
 					celg[i + 1].profundiF = celg[i].profundiF
-							+ celg[i].dx * sinl(-duto[iDu].ang);
+							+ celg[i].dx * sin(-duto[iDu].ang);
 			}  //04-04-2018
 		}  //04-04-2018
 
@@ -14900,10 +14900,10 @@ void Ler::copiaArq(Ler& arqAntigo) {
 	for (int i = ncelp - 1; i >= 0; i--) {  //04-04-2018
 		int iDu = celp[i].duto;
 		celp[i].profundiM = celp[i].profundiF
-				+ 0.5 * celp[i].dx * sinl(duto[iDu].ang);
+				+ 0.5 * celp[i].dx * sin(duto[iDu].ang);
 		if (i > 0)
 			celp[i - 1].profundiF = celp[i].profundiF
-					+ celp[i].dx * sinl(duto[iDu].ang);
+					+ celp[i].dx * sin(duto[iDu].ang);
 	}  //04-04-2018
 
 	celdescargaP = 1e7;  //15-06-2018
@@ -15009,10 +15009,10 @@ void Ler::copiaArq(Ler& arqAntigo) {
 		for (int i = 0; i < ncelg; i++) {  //04-04-2018
 			int iDu = celg[i].duto;
 			celg[i].profundiM = celg[i].profundiF
-					+ 0.5 * celg[i].dx * sinl(-duto[iDu].ang);
+					+ 0.5 * celg[i].dx * sin(-duto[iDu].ang);
 			if (i < ncelg - 1)
 				celg[i + 1].profundiF = celg[i].profundiF
-						+ celg[i].dx * sinl(-duto[iDu].ang);
+						+ celg[i].dx * sin(-duto[iDu].ang);
 		}  //04-04-2018
 	}  //04-04-2018
 
@@ -15973,8 +15973,8 @@ int Ler::buscaIndiceMeioP(double lverif) {
 	if (kontacel == 0)
 		return kontacel;
 	else {
-		if (fabsl(lteste + celp[kontacel].dx / 2. - lverif)
-				< fabsl(lteste - celp[kontacel - 1].dx / 2. - lverif))
+		if (fabs(lteste + celp[kontacel].dx / 2. - lverif)
+				< fabs(lteste - celp[kontacel - 1].dx / 2. - lverif))
 			return kontacel;
 		else
 			return kontacel - 1;
@@ -15994,8 +15994,8 @@ int Ler::buscaIndiceMeioG(double lverif) {
 	if (kontacel == 0)
 		return kontacel;
 	else {
-		if (fabsl(lteste + celg[kontacel].dx / 2. - lverif)
-				< fabsl(lteste - celg[kontacel - 1].dx / 2. - lverif))
+		if (fabs(lteste + celg[kontacel].dx / 2. - lverif)
+				< fabs(lteste - celg[kontacel - 1].dx / 2. - lverif))
 			return kontacel;
 		else
 			return kontacel - 1;
@@ -16015,8 +16015,8 @@ int Ler::buscaIndiceFrontP(double lverif) {
 	if (kontacel == 0)
 		return kontacel;
 	else {
-		if (fabsl(lteste + celp[kontacel].dx - lverif)
-				< fabsl(lteste - celp[kontacel - 1].dx - lverif))
+		if (fabs(lteste + celp[kontacel].dx - lverif)
+				< fabs(lteste - celp[kontacel - 1].dx - lverif))
 			return kontacel;
 		else
 			return kontacel - 1;
@@ -16036,8 +16036,8 @@ int Ler::buscaIndiceFrontG(double lverif) {
 	if (kontacel == 0)
 		return kontacel;
 	else {
-		if (fabsl(lteste + celg[kontacel].dx - lverif)
-				< fabsl(lteste - celg[kontacel - 1].dx - lverif))
+		if (fabs(lteste + celg[kontacel].dx - lverif)
+				< fabs(lteste - celg[kontacel - 1].dx - lverif))
 			return kontacel;
 		else
 			return kontacel - 1;
@@ -16051,7 +16051,7 @@ int Ler::buscaIndiceUnidade(int iniSeg, int nuni,
 			- (unidadeP[nuni].dxVar[iniSeg + 1] - unidadeP[nuni].dxVar[0])
 					* unidadeP[nuni].comp > 1e-5) {
 		iniSeg++;
-		//if(fabsl(comp-(unidadeP[nuni].dxVar[iniSeg+1]-unidadeP[nuni].dxVar[0]))<1e-5 && iniSeg>=unidadeP[nuni].nponts-1)
+		//if(fabs(comp-(unidadeP[nuni].dxVar[iniSeg+1]-unidadeP[nuni].dxVar[0]))<1e-5 && iniSeg>=unidadeP[nuni].nponts-1)
 		if (iniSeg >= unidadeP[nuni].nponts - 1) {
 			// determinar mensagem de falha
 			string falha = string("Indice ") + to_string(iniSeg)
@@ -16178,7 +16178,7 @@ void Ler::listaevento(int inic, int extrem) {
 	if (evento.size() > 1) {
 		double replica = evento[0];
 		for (int i = 1; i < evento.size(); i++) {
-			if (fabsl(replica - evento[i]) < 1e-5) {
+			if (fabs(replica - evento[i]) < 1e-5) {
 				evento.erase(evento.begin() + i);
 				i--;
 			} else
@@ -16203,7 +16203,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (IPRS[i].seriep > 1) {
 				for (int j = 0; j < IPRS[i].seriep; j++) {
 					if (j < IPRS[i].seriep - 1) {
-						if (fabsl(IPRS[i].pres[j] - IPRS[i].pres[j + 1])
+						if (fabs(IPRS[i].pres[j] - IPRS[i].pres[j + 1])
 								> 1e-15) {
 							e.instante = IPRS[i].tpres[j];
 							e.duracao = IPRS[i].tpres[j + 1] - IPRS[i].tpres[j];
@@ -16222,7 +16222,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (IPRS[i].seriet > 1) {
 				for (int j = 0; j < IPRS[i].seriet; j++) {
 					if (j < IPRS[i].seriet - 1) {
-						if (fabsl(IPRS[i].temp[j] - IPRS[i].temp[j + 1])
+						if (fabs(IPRS[i].temp[j] - IPRS[i].temp[j + 1])
 								> 1e-15) {
 							e.instante = IPRS[i].ttemp[j];
 							e.duracao = IPRS[i].ttemp[j + 1] - IPRS[i].ttemp[j];
@@ -16243,7 +16243,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (IPRS[i].serieip > 1) {
 				for (int j = 0; j < IPRS[i].serieip; j++) {
 					if (j < IPRS[i].serieip - 1) {
-						if (fabsl(IPRS[i].ip[j] - IPRS[i].ip[j + 1]) > 1e-15) {
+						if (fabs(IPRS[i].ip[j] - IPRS[i].ip[j + 1]) > 1e-15) {
 							e.instante = IPRS[i].tip[j];
 							e.duracao = IPRS[i].tip[j + 1] - IPRS[i].tip[j];
 							if (IPRS[i].ip[j] > IPRS[i].ip[j + 1])
@@ -16263,7 +16263,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (IPRS[i].seriejp > 1) {
 				for (int j = 0; j < IPRS[i].seriejp; j++) {
 					if (j < IPRS[i].seriejp - 1) {
-						if (fabsl(IPRS[i].jp[j] - IPRS[i].jp[j + 1]) > 1e-15) {
+						if (fabs(IPRS[i].jp[j] - IPRS[i].jp[j + 1]) > 1e-15) {
 							e.instante = IPRS[i].tjp[j];
 							e.duracao = IPRS[i].tjp[j + 1] - IPRS[i].tjp[j];
 							if (IPRS[i].jp[j] > IPRS[i].jp[j + 1])
@@ -16283,7 +16283,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (IPRS[i].serieqm > 1) {
 				for (int j = 0; j < IPRS[i].serieqm; j++) {
 					if (j < IPRS[i].serieqm - 1) {
-						if (fabsl(IPRS[i].qMax[j] - IPRS[i].qMax[j + 1]) > 1e-15) {
+						if (fabs(IPRS[i].qMax[j] - IPRS[i].qMax[j + 1]) > 1e-15) {
 							e.instante = IPRS[i].tqMax[j];
 							e.duracao = IPRS[i].tqMax[j + 1] - IPRS[i].tqMax[j];
 							if (IPRS[i].qMax[j] > IPRS[i].qMax[j + 1])
@@ -16307,7 +16307,7 @@ void Ler::geraevento(int inic, int extrem) {
 			for (int j = 0; j < gasinj.parserie; j++) {
 				/* if (j < gasinj.parserie - 1) {
 				 if (gasinj.tipoCC == 0) {
-				 if (fabsl(gasinj.presinj[j] - gasinj.presinj[j + 1])
+				 if (fabs(gasinj.presinj[j] - gasinj.presinj[j + 1])
 				 > 1e-15) {
 				 e.instante = gasinj.tempo[j];
 				 e.duracao = gasinj.tempo[j + 1] - gasinj.tempo[j];
@@ -16324,7 +16324,7 @@ void Ler::geraevento(int inic, int extrem) {
 				 }
 				 } else {
 				 if (gasinj.tipoCC == 1) {
-				 if (fabsl(gasinj.vazgas[j] - gasinj.vazgas[j + 1])
+				 if (fabs(gasinj.vazgas[j] - gasinj.vazgas[j + 1])
 				 > 1e-15) {
 				 e.instante = gasinj.tempo[j];
 				 e.duracao = gasinj.tempo[j + 1] - gasinj.tempo[j];
@@ -16344,7 +16344,7 @@ void Ler::geraevento(int inic, int extrem) {
 				 }*/
 				if (controDesc == 0) {  //alteracao5
 					if (j < gasinj.parserie - 1) {
-						if (fabsl(gasinj.temperatura[j] - gasinj.temperatura[j + 1])
+						if (fabs(gasinj.temperatura[j] - gasinj.temperatura[j + 1])
 								> 1e-15) {
 							e.instante = gasinj.tempo[j];
 							e.duracao = gasinj.tempo[j + 1]
@@ -16361,7 +16361,7 @@ void Ler::geraevento(int inic, int extrem) {
 							logeventoEstat.push_back(e);
 						}
 						if (gasinj.tipoCC == 0) {
-							if (fabsl(gasinj.presinj[j] - gasinj.presinj[j + 1])
+							if (fabs(gasinj.presinj[j] - gasinj.presinj[j + 1])
 									> 1e-15) {
 								e.instante = gasinj.tempo[j];
 								e.duracao = gasinj.tempo[j + 1]
@@ -16380,7 +16380,7 @@ void Ler::geraevento(int inic, int extrem) {
 						} else {
 
 							if (gasinj.tipoCC == 1) {
-								if (fabsl(
+								if (fabs(
 										gasinj.vazgas[j] - gasinj.vazgas[j + 1])
 										> 1e-15) {
 									e.instante = gasinj.tempo[j];
@@ -16410,7 +16410,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (fonteg[i].parserie > 1) {
 				for (int j = 0; j < fonteg[i].parserie; j++) {
 					if (j < fonteg[i].parserie - 1) {
-						if (fabsl(fonteg[i].vazgas[j] - fonteg[i].vazgas[j + 1])
+						if (fabs(fonteg[i].vazgas[j] - fonteg[i].vazgas[j + 1])
 								> 1e-15) {
 							e.instante = fonteg[i].tempo[j];
 							e.duracao = fonteg[i].tempo[j + 1]
@@ -16425,7 +16425,7 @@ void Ler::geraevento(int inic, int extrem) {
 							logeventoEstat.push_back(e);
 						}
 						if(fonteg[i].seco==0){
-							if (fabsl(fonteg[i].vazcomp[j] - fonteg[i].vazcomp[j + 1])
+							if (fabs(fonteg[i].vazcomp[j] - fonteg[i].vazcomp[j + 1])
 									> 1e-15) {
 								e.instante = fonteg[i].tempo[j];
 								e.duracao = fonteg[i].tempo[j + 1]
@@ -16440,7 +16440,7 @@ void Ler::geraevento(int inic, int extrem) {
 								logeventoEstat.push_back(e);
 							}
 						}
-						if (fabsl(fonteg[i].temp[j] - fonteg[i].temp[j + 1])
+						if (fabs(fonteg[i].temp[j] - fonteg[i].temp[j + 1])
 								> 1e-15) {
 							e.instante = fonteg[i].tempo[j];
 							e.duracao = fonteg[i].tempo[j + 1]
@@ -16464,7 +16464,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (fontel[i].parserie > 1) {
 				for (int j = 0; j < fontel[i].parserie; j++) {
 					if (j < fontel[i].parserie - 1) {
-						if (fabsl(fontel[i].vazliq[j] - fontel[i].vazliq[j + 1])
+						if (fabs(fontel[i].vazliq[j] - fontel[i].vazliq[j + 1])
 								> 1e-15) {
 							e.instante = fontel[i].tempo[j];
 							e.duracao = fontel[i].tempo[j + 1]
@@ -16480,7 +16480,7 @@ void Ler::geraevento(int inic, int extrem) {
 							logevento.push_back(e);
 							logeventoEstat.push_back(e);
 						}
-						if (fabsl(fontel[i].temp[j] - fontel[i].temp[j + 1])
+						if (fabs(fontel[i].temp[j] - fontel[i].temp[j + 1])
 								> 1e-15) {
 							e.instante = fontel[i].tempo[j];
 							e.duracao = fontel[i].tempo[j + 1]
@@ -16497,7 +16497,7 @@ void Ler::geraevento(int inic, int extrem) {
 							logeventoEstat.push_back(e);
 						}
 
-						if (fabsl(fontel[i].bet[j] - fontel[i].bet[j + 1])
+						if (fabs(fontel[i].bet[j] - fontel[i].bet[j + 1])
 								> 1e-15) {
 							e.instante = fontel[i].tempo[j];
 							e.duracao = fontel[i].tempo[j + 1]
@@ -16523,7 +16523,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (fontem[i].parserie > 1) {
 				for (int j = 0; j < fontem[i].parserie; j++) {
 					if (j < fontem[i].parserie - 1) {
-						if (fabsl(fontem[i].vazMasT[j] - fontem[i].vazMasT[j + 1])
+						if (fabs(fontem[i].vazMasT[j] - fontem[i].vazMasT[j + 1])
 								> 1e-15) {
 							e.instante = fontem[i].tempo[j];
 							e.duracao = fontem[i].tempo[j + 1]
@@ -16540,7 +16540,7 @@ void Ler::geraevento(int inic, int extrem) {
 							logeventoEstat.push_back(e);
 						}
 						if(indicaBeta){
-							if (fabsl(fontem[i].vazMasC[j] - fontem[i].vazMasC[j + 1])
+							if (fabs(fontem[i].vazMasC[j] - fontem[i].vazMasC[j + 1])
 									> 1e-15) {
 								e.instante = fontem[i].tempo[j];
 								e.duracao = fontem[i].tempo[j + 1]
@@ -16558,7 +16558,7 @@ void Ler::geraevento(int inic, int extrem) {
 							}
 						}
 						if(fontem[i].condiTermo==1){
-							if (fabsl(fontem[i].vazMasG[j] - fontem[i].vazMasG[j + 1])
+							if (fabs(fontem[i].vazMasG[j] - fontem[i].vazMasG[j + 1])
 									> 1e-15) {
 								e.instante = fontem[i].tempo[j];
 								e.duracao = fontem[i].tempo[j + 1]
@@ -16584,7 +16584,7 @@ void Ler::geraevento(int inic, int extrem) {
 		for (int i = 0; i < nvalv; i++) {
 			for (int j = 0; j < valv[i].parserie; j++) {
 				if (j < valv[i].parserie - 1) {
-					if (fabsl(valv[i].abertura[j] - valv[i].abertura[j + 1])
+					if (fabs(valv[i].abertura[j] - valv[i].abertura[j + 1])
 							> 1e-15) {
 						e.instante = valv[i].tempo[j];
 						e.duracao = valv[i].tempo[j + 1] - valv[i].tempo[j];
@@ -16605,7 +16605,7 @@ void Ler::geraevento(int inic, int extrem) {
 		for (int i = 0; i < nfuro; i++) {
 			for (int j = 0; j < furo[i].parserie; j++) {
 				if (j < furo[i].parserie - 1) {
-					if (fabsl(furo[i].abertura[j] - furo[i].abertura[j + 1])
+					if (fabs(furo[i].abertura[j] - furo[i].abertura[j + 1])
 							> 1e-15) {
 						e.instante = furo[i].tempo[j];
 						e.duracao = furo[i].tempo[j + 1] - furo[i].tempo[j];
@@ -16625,7 +16625,7 @@ void Ler::geraevento(int inic, int extrem) {
 	if (master1.parserie > 1) {
 		for (int j = 0; j < master1.parserie; j++) {
 			if (j < master1.parserie - 1) {
-				if (fabsl(master1.abertura[j] - master1.abertura[j + 1])
+				if (fabs(master1.abertura[j] - master1.abertura[j + 1])
 						> 1e-15) {
 					e.instante = master1.tempo[j];
 					e.duracao = master1.tempo[j + 1] - master1.tempo[j];
@@ -16645,7 +16645,7 @@ void Ler::geraevento(int inic, int extrem) {
 		if (master2.parserie > 1) {
 			for (int j = 0; j < master2.parserie; j++) {
 				if (j < master2.parserie - 1) {
-					if (fabsl(master2.abertura[j] - master2.abertura[j + 1])
+					if (fabs(master2.abertura[j] - master2.abertura[j + 1])
 							> 1e-15) {
 						e.instante = master2.tempo[j];
 						e.duracao = master2.tempo[j + 1] - master2.tempo[j];
@@ -16665,7 +16665,7 @@ void Ler::geraevento(int inic, int extrem) {
 	/*if (psep.parserie > 1) {
 	 for (int j = 0; j < psep.parserie; j++) {
 	 if (j < psep.parserie - 1) {
-	 if (fabsl(psep.pres[j] - psep.pres[j + 1]) > 1e-15) {
+	 if (fabs(psep.pres[j] - psep.pres[j + 1]) > 1e-15) {
 	 e.instante = psep.tempo[j];
 	 e.duracao = psep.tempo[j + 1] - psep.tempo[j];
 	 if (psep.pres[j] > psep.pres[j + 1])
@@ -16684,7 +16684,7 @@ void Ler::geraevento(int inic, int extrem) {
 	 if (chokep.parserie > 1) {
 	 for (int j = 0; j < chokep.parserie; j++) {
 	 if (j < chokep.parserie - 1) {
-	 if (fabsl(chokep.abertura[j + 1] - chokep.abertura[j]) > 1e-15) {
+	 if (fabs(chokep.abertura[j + 1] - chokep.abertura[j]) > 1e-15) {
 	 e.instante = chokep.tempo[j];
 	 e.duracao = chokep.tempo[j + 1] - chokep.tempo[j];
 	 if (chokep.abertura[j] > chokep.abertura[j + 1])
@@ -16703,7 +16703,7 @@ void Ler::geraevento(int inic, int extrem) {
 		if (psep.parserie > 1) {
 			for (int j = 0; j < psep.parserie; j++) {
 				if (j < psep.parserie - 1) {
-					if (fabsl(psep.pres[j] - psep.pres[j + 1]) > 1e-15) {
+					if (fabs(psep.pres[j] - psep.pres[j + 1]) > 1e-15) {
 						e.instante = psep.tempo[j];
 						e.duracao = psep.tempo[j + 1] - psep.tempo[j];
 						if (psep.pres[j] > psep.pres[j + 1])
@@ -16722,7 +16722,7 @@ void Ler::geraevento(int inic, int extrem) {
 		/*if (chokep.parserie > 1) {
 			for (int j = 0; j < chokep.parserie; j++) {
 				if (j < chokep.parserie - 1) {
-					if (fabsl(chokep.abertura[j + 1] - chokep.abertura[j])
+					if (fabs(chokep.abertura[j + 1] - chokep.abertura[j])
 							> 1e-15) {
 						e.instante = chokep.tempo[j];
 						e.duracao = chokep.tempo[j + 1] - chokep.tempo[j];
@@ -16743,7 +16743,7 @@ void Ler::geraevento(int inic, int extrem) {
 	  if (chokep.parserie > 1) {
 		for (int j = 0; j < chokep.parserie; j++) {
 			if (j < chokep.parserie - 1) {
-				if (fabsl(chokep.abertura[j + 1] - chokep.abertura[j])
+				if (fabs(chokep.abertura[j + 1] - chokep.abertura[j])
 						> 1e-15) {
 					e.instante = chokep.tempo[j];
 					e.duracao = chokep.tempo[j + 1] - chokep.tempo[j];
@@ -16766,7 +16766,7 @@ void Ler::geraevento(int inic, int extrem) {
 		   if (chokes.parserie > 1) {
 			   for (int j = 0; j < chokes.parserie; j++) {
 				   if (j < chokes.parserie - 1) {
-					   if (fabsl(chokes.abertura[j + 1] - chokes.abertura[j])
+					   if (fabs(chokes.abertura[j + 1] - chokes.abertura[j])
 							> 1e-15) {
 						   e.instante = chokes.tempo[j];
 						   e.duracao = chokes.tempo[j + 1] - chokes.tempo[j];
@@ -16789,7 +16789,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (bcs[i].parserie > 1) {
 				for (int j = 0; j < bcs[i].parserie; j++) {
 					if (j < bcs[i].parserie - 1) {
-						if (fabsl(bcs[i].freq[j + 1] - bcs[i].freq[j])
+						if (fabs(bcs[i].freq[j + 1] - bcs[i].freq[j])
 								> 1e-15) {
 							e.instante = bcs[i].tempo[j];
 							e.duracao = bcs[i].tempo[j + 1] - bcs[i].tempo[j];
@@ -16812,7 +16812,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (bvol[i].parserie > 1) {
 				for (int j = 0; j < bvol[i].parserie; j++) {
 					if (j < bvol[i].parserie - 1) {
-						if (fabsl(bvol[i].freq[j + 1] - bvol[i].freq[j])
+						if (fabs(bvol[i].freq[j + 1] - bvol[i].freq[j])
 								> 1e-15) {
 							e.instante = bvol[i].tempo[j];
 							e.duracao = bvol[i].tempo[j + 1] - bvol[i].tempo[j];
@@ -16835,7 +16835,7 @@ void Ler::geraevento(int inic, int extrem) {
 			if (dpreq[i].parserie > 1) {
 				for (int j = 0; j < dpreq[i].parserie; j++) {
 					if (j < dpreq[i].parserie - 1) {
-						if (fabsl(dpreq[i].dp[j] - dpreq[i].dp[j + 1])
+						if (fabs(dpreq[i].dp[j] - dpreq[i].dp[j + 1])
 								> 1e-15) {
 							e.instante = dpreq[i].tempo[j];
 							e.duracao = dpreq[i].tempo[j + 1]
@@ -16889,19 +16889,19 @@ void Ler::geraevento(int inic, int extrem) {
 	}
 	if (((*vg1dSP).chaverede == 0 || inic == 1) && ConContEntrada == 1) {  //alteracao9
 		for (int i = 0; i < CCPres.parserie; i++) {
-			if ((fabsl(CCPres.pres[i] - CCPres.pres[i + 1]) > 1e-15)
-					|| (fabsl(CCPres.temperatura[i] - CCPres.temperatura[i + 1])
+			if ((fabs(CCPres.pres[i] - CCPres.pres[i + 1]) > 1e-15)
+					|| (fabs(CCPres.temperatura[i] - CCPres.temperatura[i + 1])
 							> 1e-15)
-					|| (fabsl(CCPres.tit[i] - CCPres.tit[i + 1]) > 1e-15)
-					|| (fabsl(CCPres.bet[i] - CCPres.bet[i + 1]) > 1e-15)) {
+					|| (fabs(CCPres.tit[i] - CCPres.tit[i + 1]) > 1e-15)
+					|| (fabs(CCPres.bet[i] - CCPres.bet[i + 1]) > 1e-15)) {
 				e.instante = CCPres.tempo[i];
 				e.duracao = CCPres.tempo[i + 1] - CCPres.tempo[i];
-				if (fabsl(CCPres.pres[i] - CCPres.pres[i + 1]) > (*vg1dSP).localtiny
-						|| fabsl(
+				if (fabs(CCPres.pres[i] - CCPres.pres[i + 1]) > (*vg1dSP).localtiny
+						|| fabs(
 								CCPres.temperatura[i]
 										- CCPres.temperatura[i + 1]) > (*vg1dSP).localtiny
-						|| fabsl(CCPres.tit[i] - CCPres.tit[i + 1]) > (*vg1dSP).localtiny
-						|| fabsl(CCPres.bet[i] - CCPres.bet[i + 1]) > (*vg1dSP).localtiny)
+						|| fabs(CCPres.tit[i] - CCPres.tit[i + 1]) > (*vg1dSP).localtiny
+						|| fabs(CCPres.bet[i] - CCPres.bet[i + 1]) > (*vg1dSP).localtiny)
 					e.descricao = "Alterando Coondicao de Entrada da Tubulacao";
 				e.estIni = CCPres.tempo[i];
 				e.estFim = CCPres.tempo[i + 1];
@@ -16912,19 +16912,19 @@ void Ler::geraevento(int inic, int extrem) {
 	}
 	if (((*vg1dSP).chaverede == 0 || inic == 1) && ConContEntrada == 2) {  //alteracao9
 		for (int i = 0; i < CCVPres.parserie; i++) {
-			if ((fabsl(CCVPres.pres[i] - CCVPres.pres[i + 1]) > 1e-15)
-					|| (fabsl(CCVPres.temperatura[i] - CCVPres.temperatura[i + 1])
+			if ((fabs(CCVPres.pres[i] - CCVPres.pres[i + 1]) > 1e-15)
+					|| (fabs(CCVPres.temperatura[i] - CCVPres.temperatura[i + 1])
 							> 1e-15)
-					|| (fabsl(CCVPres.mass[i] - CCVPres.mass[i + 1]) > 1e-15)
-					|| (fabsl(CCVPres.bet[i] - CCVPres.bet[i + 1]) > 1e-15)) {
+					|| (fabs(CCVPres.mass[i] - CCVPres.mass[i + 1]) > 1e-15)
+					|| (fabs(CCVPres.bet[i] - CCVPres.bet[i + 1]) > 1e-15)) {
 				e.instante = CCVPres.tempo[i];
 				e.duracao = CCVPres.tempo[i + 1] - CCVPres.tempo[i];
-				if (fabsl(CCVPres.pres[i] - CCVPres.pres[i + 1]) > (*vg1dSP).localtiny
-						|| fabsl(
+				if (fabs(CCVPres.pres[i] - CCVPres.pres[i + 1]) > (*vg1dSP).localtiny
+						|| fabs(
 								CCVPres.temperatura[i]
 										- CCVPres.temperatura[i + 1]) > (*vg1dSP).localtiny
-						|| fabsl(CCVPres.mass[i] - CCVPres.mass[i + 1]) > (*vg1dSP).localtiny
-						|| fabsl(CCVPres.bet[i] - CCVPres.bet[i + 1]) > (*vg1dSP).localtiny)
+						|| fabs(CCVPres.mass[i] - CCVPres.mass[i + 1]) > (*vg1dSP).localtiny
+						|| fabs(CCVPres.bet[i] - CCVPres.bet[i + 1]) > (*vg1dSP).localtiny)
 					e.descricao = "Alterando Coondicao de Entrada da Tubulacao";
 				e.estIni = CCVPres.tempo[i];
 				e.estFim = CCVPres.tempo[i + 1];
@@ -17147,7 +17147,7 @@ void Ler::novatrans(TransCal& transfer,
 
 	int kL = litologia;  //alteracao2
 
-	if (equilterm == 1 && fabsl(vint)<1e-15)vint=0.1;
+	if (equilterm == 1 && fabs(vint)<1e-15)vint=0.1;
 
 	transfer = TransCal(vg1dSP,geom, perm, vncamada, vdrcamada, vTcamada,
 			tint, text, 0., vint, vext, dircon, dt, ki, cpi, rhoi, visci, ke,
@@ -17477,14 +17477,14 @@ void Ler::geracelp(Cel* celula) {
 				+ flup[indfluPIni].CondGas(celp[i].pres, celp[i].temp)
 						* (1 - vhol);
 		double vcpint;
-		if (fabsl(jmix) > 1e-10)
+		if (fabs(jmix) > 1e-10)
 			vcpint = (((1 - bet)
 					* flup[indfluPIni].CalorLiq(celp[i].pres, celp[i].temp)
 					+ bet * fluc.CalorLiq(celp[i].pres, celp[i].temp))
-					* fabsl(celp[i].uls) * vrhol
+					* fabs(celp[i].uls) * vrhol
 					+ flup[indfluPIni].CalorGas(celp[i].pres, celp[i].temp)
-							* fabsl(celp[i].ugs) * vrhog)
-					/ (fabsl(celp[i].uls) * vrhol + fabsl(celp[i].ugs) * vrhog);
+							* fabs(celp[i].ugs) * vrhog)
+					/ (fabs(celp[i].uls) * vrhol + fabs(celp[i].ugs) * vrhog);
 		else
 			vcpint = ((1 - bet)
 					* flup[indfluPIni].CalorLiq(celp[i].pres, celp[i].temp)
@@ -18035,7 +18035,7 @@ void Ler::funcRazCV(double abertura,detCV* cvCurv,int ncurvaCV,double cdchk,
 		cv=cvCurv[ini].cv1+ang*(abertura-cvCurv[ini].x1);
 	}
 	double term=cv/(58860.75*cdchk*AreaTub);
-	razarea= sqrtl(term*term/(1.+term*term));
+	razarea= sqrt(term*term/(1.+term*term));
 }
 
 
@@ -18289,7 +18289,7 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 				abertura=aberinf * raz + (1 - raz) * abersup;
 				//double variavel=0.04*(rand()%100)/100.;
 				//abertura+=(variavel-0.02);
-				//abertura=abertura-0.02*sinl(2*M_PI*tempo/60.);
+				//abertura=abertura-0.02*sin(2*M_PI*tempo/60.);
 			}
 			if(valv[i].curvaCV==1){
 				double razarea;
@@ -19157,7 +19157,7 @@ void Ler::imprimeProfile(Cel* const celula,
 			flut[i][0]=comp;
 			flut[i][1] = comp+celula[i].dx/2.;
 			comp=flut[i][1];
-			//altura += celula[i].dx/2. * sinl(celula[i].duto.teta);
+			//altura += celula[i].dx/2. * sin(celula[i].duto.teta);
 			flut[i][2] = tempo;
 			int k = 3;
 			double pi=celula[i].pres;
@@ -19440,7 +19440,7 @@ void Ler::imprimeProfile(Cel* const celula,
 				k++;
 			}
 			if (profp.Fr == 1) {
-				flut[i][k] = ((celula[i].QG + celula[i].QL)/ celula[i].duto.area)/sqrtl(9.81*celula[i].duto.dia);
+				flut[i][k] = ((celula[i].QG + celula[i].QL)/ celula[i].duto.area)/sqrt(9.81*celula[i].duto.dia);
 				k++;
 			}
 			if (profp.grashi == 1) {
@@ -19582,14 +19582,14 @@ void Ler::imprimeProfile(Cel* const celula,
 			k++;
 			alturaC=altura;
 			comp += celula[i].dx/2.;
-			//altura += celula[i].dx/2. * sinl(celula[i].duto.teta);
-			altura += celula[i].dx * sinl(celula[i].duto.teta);
-			flut[i][k] = alturaC+0.5*celula[i].dx * sinl(celula[i].duto.teta);
+			//altura += celula[i].dx/2. * sin(celula[i].duto.teta);
+			altura += celula[i].dx * sin(celula[i].duto.teta);
+			flut[i][k] = alturaC+0.5*celula[i].dx * sin(celula[i].duto.teta);
 			k++;
 
 		}
 		ostringstream saidaP;
-		int numero = roundl(tempo);
+		int numero = round(tempo);
 		if (indTramo < 0 && AS==0)
 			saidaP << pathPrefixoArqSaida << "PERFISP" << "-" << numero
 					<< ".dat";
@@ -19806,7 +19806,7 @@ void Ler::imprimeProfileG(CelG* const celula,
 			flut[i][0] = comp;
 			flut[i][1] = comp+celula[i].dx0/2.;
 			comp=flut[i][1];
-			//altura+= celula[i].dx0 * sinl(celula[i].duto.teta)/2.;
+			//altura+= celula[i].dx0 * sin(celula[i].duto.teta)/2.;
 			// Comprimento a partir do fundo do Poco (m)
 			flut[i][2] = anmP + (anmG - flut[i][0]);
 			flut[i][3] = tempo;
@@ -19974,14 +19974,14 @@ void Ler::imprimeProfileG(CelG* const celula,
 			k++;
 			alturaC=altura;
 			comp += celula[i].dx0/2.;
-			//altura += celula[i].dx0 * sinl(celula[i].duto.teta)/2.;
-			altura += celula[i].dx0 * sinl(celula[i].duto.teta);
-			alturaC+=0.5*celula[i].dx0 * sinl(celula[i].duto.teta);
+			//altura += celula[i].dx0 * sin(celula[i].duto.teta)/2.;
+			altura += celula[i].dx0 * sin(celula[i].duto.teta);
+			alturaC+=0.5*celula[i].dx0 * sin(celula[i].duto.teta);
 			flut[i][k] = alturaC;
 			k++;
 		}
 		ostringstream saidaG;
-		int aproxtempo = roundl(tempo);
+		int aproxtempo = round(tempo);
 		if (indTramo < 0 && AS==0)
 			saidaG << pathPrefixoArqSaida << "PERFISG" << "-" << aproxtempo
 					<< ".dat";
@@ -20228,7 +20228,7 @@ void Ler::imprimeProfileTrans(
 			FullMtx<double> saida(n, 4);
 			saida = celula[posicn].calor.perfil();
 			ostringstream saidaP;
-			int numero = roundl(tempo);
+			int numero = round(tempo);
 			if (indTramo < 0)
 				saidaP << pathPrefixoArqSaida << "PERFISTRANSP" << "-" << numero
 						<< "-" << proftransp.posic[i] << ".dat";
@@ -20272,7 +20272,7 @@ void Ler::imprimeProfileTransG(
 			FullMtx<double> saida(n, 4);
 			saida = celula[posicn].calor.perfil();
 			ostringstream saidaG;
-			int numero = roundl(tempo);
+			int numero = round(tempo);
 			if (indTramo < 0)
 				saidaG << pathPrefixoArqSaida << "PERFISTRANSG" << "-" << numero
 						<< "-" << proftransg.posic[i] << ".dat";
@@ -20724,7 +20724,7 @@ void Ler::imprimeTrend(Cel* const celula,
 			k++;
 		}
 		if (trendp[trend].Fr == 1) {
-			flut[linha][k] =((celula[i].QG + celula[i].QL)/ celula[i].duto.area)/sqrtl(9.81*celula[i].duto.dia);
+			flut[linha][k] =((celula[i].QG + celula[i].QL)/ celula[i].duto.area)/sqrt(9.81*celula[i].duto.dia);
 			k++;
 		}
 		if (trendp[trend].grashi == 1) {

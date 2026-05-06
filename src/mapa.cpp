@@ -261,20 +261,20 @@ int arranjo::verificaArr(){
 		double Cl=0.8;
 		double gam=1.3;
 		double U0=1.53*sqrt(9.81*fator);
-		double sinbet=sinl(ang);
-		double cosbet=cosl(ang);
+		double sinbet=sin(ang);
+		double cosbet=cos(ang);
 		double crit2=0.75*0.70711*U0*U0*Cl*gam*gam*sinbet*sinbet/(9.81*dia)-cosbet;//positivo->bolha
 		double crit3=uls-ugs/3.-1.53*0.75*sqrt(9.81*fator)*sinbet;
-		if(fabsl(ugs+uls)>1e-10)crit3*=((uls+ugs))/fabsl((uls+ugs));//alfa=0.25 e positivo->bolha
+		if(fabs(ugs+uls)>1e-10)crit3*=((uls+ugs))/fabs((uls+ugs));//alfa=0.25 e positivo->bolha
 		//bolha dispersa
 		double fm=fricm();
-		double j=fabsl(uls)+fabsl(ugs);
+		double j=fabs(uls)+fabs(ugs);
 		double dcd=2*sqrt(0.4*dina/(9.81*(rl-rg)));
-		double dcb=0.375*(rl/(rl-rg))*fm*j*j/(9.81*cosl(ang));
+		double dcb=0.375*(rl/(rl-rg))*fm*j*j/(9.81*cos(ang));
 		double dc=dcd;
 		if(dcb<dc)dc=dcb;
 		double crit4;
-		if(j>0)crit4=dc-(0.725+4.15*sqrtl(fabsl(ugs)/j))*pow(dina/rl,0.6)*pow(2*fm*j*j*j/dia,-0.4);//se positivo, bolha dispersa
+		if(j>0)crit4=dc-(0.725+4.15*sqrt(fabs(ugs)/j))*pow(dina/rl,0.6)*pow(2*fm*j*j*j/dia,-0.4);//se positivo, bolha dispersa
 		else crit4=-1.;
 		//double crit5=uls-0.92308*ugs;
 		double crit5=hol-0.48;
@@ -283,10 +283,10 @@ int arranjo::verificaArr(){
 		else{
 			fl=fricl();
 			fg=fricg();
-			dpg=(4/dia)*fg*rg*ugs*fabsl(ugs)/2.;
-			dpl=(4/dia)*fl*rl*uls*fabsl(uls)/2.;
-			hidro=(rl-rg)*9.81*sinl(ang);
-			//if(fabsl(ugs+uls)>1e-10)hidro*=(ugs+uls)/fabsl(ugs+uls);
+			dpg=(4/dia)*fg*rg*ugs*fabs(ugs)/2.;
+			dpl=(4/dia)*fl*rl*uls*fabs(uls)/2.;
+			hidro=(rl-rg)*9.81*sin(ang);
+			//if(fabs(ugs+uls)>1e-10)hidro*=(ugs+uls)/fabs(ugs+uls);
 			//double alfl=zbrent(0.0001,1);
 			double alfl=hol;
 			double crit6=hidro*alfl*alfl*alfl*(1.-1.5*alfl)-(2.-1.5*alfl)*dpl;
@@ -301,30 +301,30 @@ int arranjo::verificaArr(){
 		double LocMat=1.6;
 		double fl=fricl();
 		double fg=fricg();
-		usgAnuH=fabsl(uls)*sqrtl(fl*rl)/sqrtl(LocMat*LocMat*fg*rg);
+		usgAnuH=fabs(uls)*sqrt(fl*rl)/sqrt(LocMat*LocMat*fg*rg);
 
 		double uslBolH;
-		uslBolH=9.7*sqrtl((rl-rg)*9.82/(2.*fl*rl/dia))/pow(dina/(9.82*dia*dia*(rl-rg)),-0.25);
+		uslBolH=9.7*sqrt((rl-rg)*9.82/(2.*fl*rl/dia))/pow(dina/(9.82*dia*dia*(rl-rg)),-0.25);
 
 		double uslBolV0;
 		double uslBolDV0;
-		uslBolV0=3.*fabsl(ugs)-1.15*pow(9.82*(rl-rg)*dina/(rl*rl),0.25);
+		uslBolV0=3.*fabs(ugs)-1.15*pow(9.82*(rl-rg)*dina/(rl*rl),0.25);
 		double term1=pow(dia,0.429)*pow(dina/rl,0.089)/pow(mil/rl,0.072);
 		double term2=pow(9.82*(rl-rg)/rl,0.446);
-		uslBolDV0=-fabsl(ugs)+4.*term1*term2;
+		uslBolDV0=-fabs(ugs)+4.*term1*term2;
 		double uslBolV=uslBolV0;
 		if(uslBolDV0<uslBolV)uslBolV=uslBolDV0;
 
 
 		double usgAnuV;
-		usgAnuV=3.1*pow(dina*9.82*(rl-rg),0.25)/sqrtl(rg);
+		usgAnuV=3.1*pow(dina*9.82*(rl-rg),0.25)/sqrt(rg);
 
-		double usgAnuGen=cosl(ang)*usgAnuH+sinl(ang)*usgAnuV;
-		double uslBolGen=cosl(ang)*uslBolH+sinl(ang)*uslBolV;
+		double usgAnuGen=cos(ang)*usgAnuH+sin(ang)*usgAnuV;
+		double uslBolGen=cos(ang)*uslBolH+sin(ang)*uslBolV;
 
 		if(hol>1-0.01)return 1;
-		else if(fabsl(ugs)>usgAnuGen && hol<0.2) return -2;
-		else if(fabsl(uls)>uslBolGen && hol>0.48) return 1;
+		else if(fabs(ugs)>usgAnuGen && hol<0.2) return -2;
+		else if(fabs(uls)>uslBolGen && hol>0.48) return 1;
 		else return 2;
 	}
 

@@ -75,7 +75,7 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
 	fluxCal=vfluxCal;
 	cel2D.kX=vKX;
 	cel2D.kY=vKY;
-	cel2D.kabsol=sqrtl(vKX*vKY);
+	cel2D.kabsol=sqrt(vKX*vKY);
 	cel2D.poro=vporo;
 	cel2D.compRoc=vcompresPoro;
 	cel2D.zD=vzD;
@@ -114,7 +114,7 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
 	CC=detCCPoroso();
 	if(nele>0){
 
-		if((cel2D.presC+fabsl(tRes)+flup.API)>1.){
+		if((cel2D.presC+fabs(tRes)+flup.API)>1.){
 			cel2D.vbo=flup.BOFunc(cel2D.presC, tRes);
 			cel2D.rhostd=1000.*141.5/(131.5+flup.API);
 			cel2D.rhogstd=flup.MasEspGas(1.033, 20.);
@@ -277,8 +277,8 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoP])cel2D.ccFace[j]=tipo[iNo];
     			else if(tipo[iNo]==0 || tipo[iNoP]==0)cel2D.ccFace[j]=0;
-    			else if(fabsl(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoP];
-    			else if(fabsl(atributo[iNoP]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
+    			else if(fabs(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoP];
+    			else if(fabs(atributo[iNoP]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
     			else cel2D.ccFace[j]=0;
     		}
     		else{
@@ -286,8 +286,8 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoM])cel2D.ccFace[j]=tipo[iNo];
     			else if(tipo[iNo]==0 || tipo[iNoM]==0)cel2D.ccFace[j]=0;
-    			else if(fabsl(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoM];
-    			else if(fabsl(atributo[iNoM]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
+    			else if(fabs(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoM];
+    			else if(fabs(atributo[iNoM]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
     			else cel2D.ccFace[j]=0;
     		}
     		for(int k=0; k<cel2D.dim; k++){
@@ -304,7 +304,7 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
     	}
     	if(cel2D.dim==2 && cel2D.nvert==3){
     		for(int j=0; j<cel2D.dim;j++)cel2D.centroideElem[j]=cel2D.centroElem[j];
-    		cel2D.vElem=0.5*fabsl((cel2D.coordVert[1][0]-cel2D.coordVert[0][0])*
+    		cel2D.vElem=0.5*fabs((cel2D.coordVert[1][0]-cel2D.coordVert[0][0])*
 					(cel2D.coordVert[2][1]-cel2D.coordVert[0][1])-(cel2D.coordVert[2][0]-cel2D.coordVert[0][0])*
 					(cel2D.coordVert[1][1]-cel2D.coordVert[0][1]));
     	}
@@ -314,14 +314,14 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
     		cel2D.vElem=0.;
     		for(int k=0; k<cel2D.nvert; k++){
     			if(k<cel2D.nvert-1){
-    				sT[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				sT[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k+1][1]-cel2D.centroElem[1])-(cel2D.coordVert[k+1][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     				centroT[k][0]=(cel2D.coordVert[k][0]+cel2D.coordVert[k+1][0]+cel2D.centroElem[0])/3.;
     				centroT[k][1]=(cel2D.coordVert[k][1]+cel2D.coordVert[k+1][1]+cel2D.centroElem[1])/3.;
     			}
     			else{
-    				sT[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				sT[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[0][1]-cel2D.centroElem[1])-(cel2D.coordVert[0][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     				centroT[k][0]=(cel2D.coordVert[k][0]+cel2D.coordVert[0][0]+cel2D.centroElem[0])/3.;
@@ -364,7 +364,7 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
     	for(int k=0; k<cel2D.nvert; k++){
     		cel2D.sFaceMod[k]=0.;
     		for(int j=0; j<cel2D.dim;j++)cel2D.sFaceMod[k]+=cel2D.sFace[k][j]*cel2D.sFace[k][j];
-    		cel2D.sFaceMod[k]=sqrtl(cel2D.sFaceMod[k]);
+    		cel2D.sFaceMod[k]=sqrt(cel2D.sFaceMod[k]);
     	}
     	for(int k=0; k<cel2D.nvert; k++){
     		if(k<cel2D.nvert-1){
@@ -378,7 +378,7 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
     		for(int j=0; j<cel2D.dim;j++)cel2D.dCF[k][j]=cel2D.centroideFace[k][j]-cel2D.centroideElem[j];
     		cel2D.dCFMod[k]=0.;
     		for(int j=0; j<cel2D.dim;j++)cel2D.dCFMod[k]+=cel2D.dCF[k][j]*cel2D.dCF[k][j];
-    		cel2D.dCFMod[k]=sqrtl(cel2D.dCFMod[k]);
+    		cel2D.dCFMod[k]=sqrt(cel2D.dCFMod[k]);
     	}
 	}
 	else{
@@ -1323,7 +1323,7 @@ void elem2dPoroso::faceDetalhes(){
 			}
 			cel2D.modE[i]+=cel2D.vecE[i][j]*cel2D.vecE[i][j];
 		}
-		cel2D.modE[i]=sqrtl(cel2D.modE[i]);
+		cel2D.modE[i]=sqrt(cel2D.modE[i]);
 		for(int j=0;j<cel2D.dim;j++)cel2D.vecE[i][j]=cel2D.vecE[i][j]/cel2D.modE[i];
 		cel2D.angES[i]=0.;
 		for(int j=0;j<cel2D.dim;j++){
@@ -1349,7 +1349,7 @@ void elem2dPoroso::faceDetalhes(){
 				double del=(*vizinho[i]).centroideElem[j]-cel2D.fInter[i][j];
 				cel2D.fatG[i]+=del*del;
 			}
-			cel2D.fatG[i]=sqrtl(cel2D.fatG[i]);
+			cel2D.fatG[i]=sqrt(cel2D.fatG[i]);
 			cel2D.fatG[i]/=cel2D.modE[i];
 		}
 		else cel2D.fatG[i]=0.;
@@ -1359,7 +1359,7 @@ void elem2dPoroso::faceDetalhes(){
 			cel2D.vecT[i][j]=cel2D.centroideFace[i][j]-cel2D.fInter[i][j];
 			cel2D.modT[i]+=cel2D.vecT[i][j]*cel2D.vecT[i][j];
 		}
-		cel2D.modT[i]=sqrtl(cel2D.modT[i]);
+		cel2D.modT[i]=sqrt(cel2D.modT[i]);
 
 	}
 
@@ -1552,7 +1552,7 @@ void elem2dPoroso::calSupDifu(){
 		for(int j=0; j<cel2D.dim;j++)cel2D.vecSDif[i][j]=Dmed[j]*cel2D.sFace[i][j];
 		cel2D.vecSDifMod[i]=0.;
 		for(int j=0; j<cel2D.dim;j++)cel2D.vecSDifMod[i]+=(cel2D.vecSDif[i][j]*cel2D.vecSDif[i][j]);
-		cel2D.vecSDifMod[i]=sqrtl(cel2D.vecSDifMod[i]);
+		cel2D.vecSDifMod[i]=sqrt(cel2D.vecSDifMod[i]);
 	}
 }
 
@@ -1599,7 +1599,7 @@ void elem2dPoroso::calcGradGreen(){
 				//	  (1-cel2D.fatG[i])*(*vizinho[i]).gradGreenT[j]*(cel2D.centroideFace[i][j]-cel2D.fInter[i][j]);
 			//tempF[i]+=tinter;
 			double corDistorc=1.;
-			if(fabsl(cel2D.angES[i])<0.9)corDistorc=0.;
+			if(fabs(cel2D.angES[i])<0.9)corDistorc=0.;
 
 			double gradMed [cel2D.dim];
 			for(int j=0; j<cel2D.dim;j++){
@@ -1972,7 +1972,7 @@ void elem2dPoroso::calcGradGreen(){
 double elem2dPoroso::cflA(){
 	double vazTot=0.;
 	for(int i=0;i<cel2D.nvert;i++){
-		   if(Qw[i]<0.)vazTot+=fabsl(Qw[i]);
+		   if(Qw[i]<0.)vazTot+=fabs(Qw[i]);
 	}
 	double porod=cel2D.poro*(1-cel2D.compRoc*(cel2D.presC-pRes));
 	double massCel=(cel2D.sWC)*porod*cel2D.vElem;
@@ -2007,12 +2007,12 @@ void elem2dPoroso::evoluiSW(int& reinicia){
     double localtiny=1e-5;
 
 	if(((val<=1.+localtiny)&&(val>=1.-localtiny))){
-		   //alf=fabsl(0.);
+		   //alf=fabs(0.);
 		cel2D.sWC=1.;
 	}
 	else if(val>1.+localtiny){
 	      double dtaux;
-	      if(fabsl(balanco)>1e-15)
+	      if(fabs(balanco)>1e-15)
 	      dtaux=(1.-cel2D.sWI)/(balanco);
 	      else{
 	    	  dtaux=0.;
@@ -2030,21 +2030,21 @@ void elem2dPoroso::evoluiSW(int& reinicia){
 	      }
 	}
 	else if((val<=(satConata+localtiny)&&val>=(satConata-localtiny))){
-		cel2D.sWC=fabsl(satConata);
+		cel2D.sWC=fabs(satConata);
 	}
 	else if(val<(satConata-localtiny)){
 	      double dtaux;
-	      if(fabsl(balanco)>1e-15)
+	      if(fabs(balanco)>1e-15)
 	      dtaux=(satConata-cel2D.sWI)/(balanco);
 	      else dtaux=0.;
 	      if(reinicia==0 && dtaux>1e-5){
 	        dtSW=dtaux;
 	        //reinicia=-1;
 	        reiniciaSW=-1;
-	        cel2D.sWC=fabsl(satConata);
+	        cel2D.sWC=fabs(satConata);
 	      }
 	      else{
-	    	  cel2D.sWC=fabsl(satConata);
+	    	  cel2D.sWC=fabs(satConata);
 	    	  dtSW=dt;
 	      }
 	}
@@ -2264,7 +2264,7 @@ void elem2dPoroso::GeraLocal(double relax){
 		  double poro0=cel2D.poro*(1-cel2D.compRoc*(cel2D.presC0-pRes));
 		  double poro=cel2D.poro*(1-cel2D.compRoc*(cel2D.presCI-pRes));
 		  double multTot;
-		  if(fabsl((cel2D.presCI-cel2D.presC0)/cel2D.presC0)<1e-3){
+		  if(fabs((cel2D.presCI-cel2D.presC0)/cel2D.presC0)<1e-3){
 			  double dporo=-cel2D.poro*cel2D.compRoc;
 			  double porod=cel2D.poro*(1-cel2D.compRoc*(cel2D.presC0*1.0001-pRes));
 			  double dPoroRhoo=0;

@@ -28,8 +28,8 @@
                 return ss.str();
             }
 
-//std::vector<long double> FVH_global; //chris - hidratos
-constexpr long double G_MOL_TO_KG_MOL = 1.0 / 1000.0; //não precisa mais --> Chris: desde que o user ente com g/mol.
+//std::vector<double> FVH_global; //chris - hidratos
+constexpr double G_MOL_TO_KG_MOL = 1.0 / 1000.0; //não precisa mais --> Chris: desde que o user ente com g/mol.
 
 FA_Hidrato_Servico::FA_Hidrato_Servico(const SProd& sistemaRef) : sistema(sistemaRef) {
 
@@ -43,7 +43,7 @@ FA_Hidrato_Servico::FA_Hidrato_Servico(const SProd& sistemaRef) : sistema(sistem
       //  std::cout << temperaturaCurva[i] << "\t" << pressaoCurva[i] << "\n";
     }
 
-   // V_w.assign(sistema.ncel, 0.0L);   // cria vetor com um Vw por célula
+   // V_w.assign(sistema.ncel, 0.0);   // cria vetor com um Vw por célula
     K_Hamm_Etanol = 1297; //sistema.arq.Khamm_Etanol;  //K_Etanol=1297;
     K_Hamm_MEG = 1500; //sistema.arq.Khamm_MEG; //K_MEG=1500;
     //MM_H = sistema.arq.MMH * G_MOL_TO_KG_MOL;
@@ -60,9 +60,9 @@ FA_Hidrato_Servico::FA_Hidrato_Servico(const SProd& sistemaRef) : sistema(sistem
     fracFWcarregada =sistema.arq.fracFWcarregada;
 
     //rhoH = sistema.arq.rhoH; //agora é definido pelas estruturas sI ou sII
-    long double rhoH_sI  = 930.0L;   // kg/m³
-    long double rhoH_sII = 910.0L;   // kg/m³
-    long double rhoW     = 1000.0L;  // kg/m³
+    double rhoH_sI  = 930.0;   // kg/m³
+    double rhoH_sII = 910.0;   // kg/m³
+    double rhoW     = 1000.0;  // kg/m³
 
     coefEsteq = sistema.arq.coefEsteq;
 
@@ -82,7 +82,7 @@ FA_Hidrato_Servico::FA_Hidrato_Servico(const SProd& sistemaRef) : sistema(sistem
     std::cout << "            M = " << MM_W << " g/mol\n";   //" kg/mol\n";
     std::cout << "            w = " << W_Hamm << "\n"; */
 
-    long double delta_T;
+    double delta_T;
     if (inibidor=="Etanol") {
     delta_T = (K_Hamm_Etanol * W_Hamm) / (MM_W * (1.0 - W_Hamm));
     std::cout << "[HAMMERSCHMIDT] delta_T [oC] = " << delta_T << "\n";
@@ -123,45 +123,45 @@ void FA_Hidrato_Servico::carregarCurvaHidratoG(const std::string& nomeArquivo) {
 void FA_Hidrato_Servico::salvarCurvaDeslocadaG(const std::string& nomeArquivo) {
 }
 
-std::tuple<std::vector<long double>, std::vector<long double>> FA_Hidrato_Servico::gerarCurvaComInibidorG(const std::vector<long double>& tempBase,
-	    const std::vector<long double>& pressBase,
-	    long double K, long double M, long double w) {
+std::tuple<std::vector<double>, std::vector<double>> FA_Hidrato_Servico::gerarCurvaComInibidorG(const std::vector<double>& tempBase,
+	    const std::vector<double>& pressBase,
+	    double K, double M, double w) {
 }
 
 
-bool FA_Hidrato_Servico::checkHidratoG(long double P_atual, long double T_atual) {
+bool FA_Hidrato_Servico::checkHidratoG(double P_atual, double T_atual) {
 
     return false;
 }
 
-long double FA_Hidrato_Servico::interpolarG(long double x,
-                                   const std::vector<long double>& xData,
-                                   const std::vector<long double>& yData) {
+double FA_Hidrato_Servico::interpolarG(double x,
+                                   const std::vector<double>& xData,
+                                   const std::vector<double>& yData) {
 return -100000000.;
 }
 
-long double FA_Hidrato_Servico::TurnerHidratoG(long double P, long double T, long double P_eq, long double T_eq,
-        long double A_s, long double V_h, long double V_w,
-        long double r_d, long double r_p, const std::string& estruturaHidratos,   long double A_s_input, long double &A_s_eff_out) {
+double FA_Hidrato_Servico::TurnerHidratoG(double P, double T, double P_eq, double T_eq,
+        double A_s, double V_h, double V_w,
+        double r_d, double r_p, const std::string& estruturaHidratos,   double A_s_input, double &A_s_eff_out) {
 
 
     return -100000000.;
 }
 
-long double FA_Hidrato_Servico::Euler1ordemHidratoG(long double j_H, long double taxaCinetica,
-                                           long double A, long double eta, long double MM_h, long double rho_h) {
+double FA_Hidrato_Servico::Euler1ordemHidratoG(double j_H, double taxaCinetica,
+                                           double A, double eta, double MM_h, double rho_h) {
 
 	 return -100000000.;
 }
 
-long double FA_Hidrato_Servico::Euler1ordemGasG(int i, long double j_G, long double taxaCinetica,
-                                       long double A, long double MM_g) {
+double FA_Hidrato_Servico::Euler1ordemGasG(int i, double j_G, double taxaCinetica,
+                                       double A, double MM_g) {
 
     return -100000000.;
 }
 
-long double FA_Hidrato_Servico::Euler1ordemAguaG(int i, long double j_W, long double taxaCinetica,
-                                        long double A, long double eta, long double MM_w) {
+double FA_Hidrato_Servico::Euler1ordemAguaG(int i, double j_W, double taxaCinetica,
+                                        double A, double eta, double MM_w) {
     return -100000000.;
 }
 
