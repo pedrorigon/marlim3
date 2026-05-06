@@ -259,8 +259,8 @@ class Tramo:
         if label != 'marlim3_model':
             self.label = label
 
-        with pkg_resources.path('marlim3', 
-                                executavel_name) as executavel:
+        with pkg_resources.as_file(
+                pkg_resources.files('marlim3').joinpath(executavel_name)) as executavel:
 
             filename = label+'.json'
             
