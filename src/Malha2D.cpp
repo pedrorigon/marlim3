@@ -200,7 +200,7 @@ void malha2dVF::imprimeU(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisU" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -225,7 +225,7 @@ void malha2dVF::imprimeV(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisV" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -248,12 +248,12 @@ void malha2dVF::imprimeP(double tempo){
 		flut.mx[i][1]=mlh2d[i].cel2D.centroideElem[0];
 		flut.mx[i][2]=mlh2d[i].cel2D.centroideElem[1];
 		double dh=ymaxWall-mlh2d[i].cel2D.centroideElem[1];
-		double forcaCorpo=dh*(mlh2d[i].cel2D.rho)*(*vg1dSP).gravVF*sinl((*vg1dSP).angY);
+		double forcaCorpo=dh*(mlh2d[i].cel2D.rho)*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
 		flut.mx[i][3]=(mlh2d[i].cel2D.presC+(1.-(*vg1dSP).mulFC)*forcaCorpo)/98066.52;
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisP" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -278,7 +278,7 @@ void malha2dVF::imprimeT(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisT" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -303,7 +303,7 @@ void malha2dVF::imprimePCor(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisPCor" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -328,7 +328,7 @@ void malha2dVF::imprimeHol(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisHol" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -353,7 +353,7 @@ void malha2dVF::imprimeTaxaDeform(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisTaxa" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -378,7 +378,7 @@ void malha2dVF::imprimeVisc(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PerfisVisc" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -413,7 +413,7 @@ void malha2dVF::imprimeTcont(double tempo, int nPar){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "temperaturaContorno" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();
@@ -447,7 +447,7 @@ void malha2dVF::imprimeQcont(double tempo, int nPar){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "FluxoCalorContorno" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();

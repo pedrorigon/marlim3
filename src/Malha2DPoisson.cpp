@@ -188,7 +188,7 @@ void malha2d::imprime(double tempo, int indCel, int indTramo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 	if(indTramo<0)
 		saidaP << pathPrefixoArqSaida << "PERFIST2D-"<<indCel<< "-" << numero
 				<< ".dat";

@@ -108,8 +108,8 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoP])cel2D.ccFace[j]=tipo[iNo];
     			else if(tipo[iNo]==0 || tipo[iNoP]==0)cel2D.ccFace[j]=0;
-    			else if(fabsl(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoP];
-    			else if(fabsl(atributo[iNoP]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
+    			else if(fabs(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoP];
+    			else if(fabs(atributo[iNoP]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
     			else cel2D.ccFace[j]=0;
     		}
     		else{
@@ -117,8 +117,8 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoM])cel2D.ccFace[j]=tipo[iNo];
     			else if(tipo[iNo]==0 || tipo[iNoM]==0)cel2D.ccFace[j]=0;
-    			else if(fabsl(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoM];
-    			else if(fabsl(atributo[iNoM]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
+    			else if(fabs(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoM];
+    			else if(fabs(atributo[iNoM]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
     			else cel2D.ccFace[j]=0;
     		}
     		for(int k=0; k<cel2D.dim; k++){
@@ -134,7 +134,7 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     	}
     	if(cel2D.dim==2 && cel2D.nvert==3){
     		for(int j=0; j<cel2D.dim;j++)cel2D.centroideElem[j]=cel2D.centroElem[j];
-    		cel2D.vElem=0.5*fabsl((cel2D.coordVert[1][0]-cel2D.coordVert[0][0])*
+    		cel2D.vElem=0.5*fabs((cel2D.coordVert[1][0]-cel2D.coordVert[0][0])*
 					(cel2D.coordVert[2][1]-cel2D.coordVert[0][1])-(cel2D.coordVert[2][0]-cel2D.coordVert[0][0])*
 					(cel2D.coordVert[1][1]-cel2D.coordVert[0][1]));
     	}
@@ -144,14 +144,14 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     		cel2D.vElem=0.;
     		for(int k=0; k<cel2D.nvert; k++){
     			if(k<cel2D.nvert-1){
-    				sT[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				sT[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k+1][1]-cel2D.centroElem[1])-(cel2D.coordVert[k+1][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     				centroT[k][0]=(cel2D.coordVert[k][0]+cel2D.coordVert[k+1][0]+cel2D.centroElem[0])/3.;
     				centroT[k][1]=(cel2D.coordVert[k][1]+cel2D.coordVert[k+1][1]+cel2D.centroElem[1])/3.;
     			}
     			else{
-    				sT[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				sT[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[0][1]-cel2D.centroElem[1])-(cel2D.coordVert[0][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     				centroT[k][0]=(cel2D.coordVert[k][0]+cel2D.coordVert[0][0]+cel2D.centroElem[0])/3.;
@@ -191,7 +191,7 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     	for(int k=0; k<cel2D.nvert; k++){
     		cel2D.sFaceMod[k]=0.;
     		for(int j=0; j<cel2D.dim;j++)cel2D.sFaceMod[k]+=cel2D.sFace[k][j]*cel2D.sFace[k][j];
-    		cel2D.sFaceMod[k]=sqrtl(cel2D.sFaceMod[k]);
+    		cel2D.sFaceMod[k]=sqrt(cel2D.sFaceMod[k]);
     	}
     	for(int k=0; k<cel2D.nvert; k++){
     		if(k<cel2D.nvert-1){
@@ -205,7 +205,7 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     		for(int j=0; j<cel2D.dim;j++)cel2D.dCF[k][j]=cel2D.centroideFace[k][j]-cel2D.centroideElem[j];
     		cel2D.dCFMod[k]=0.;
     		for(int j=0; j<cel2D.dim;j++)cel2D.dCFMod[k]+=cel2D.dCF[k][j]*cel2D.dCF[k][j];
-    		cel2D.dCFMod[k]=sqrtl(cel2D.dCFMod[k]);
+    		cel2D.dCFMod[k]=sqrt(cel2D.dCFMod[k]);
     	}
 	}
 	else{
@@ -739,7 +739,7 @@ void elem2dPoisson::faceDetalhes(){
 			}
 			cel2D.modE[i]+=cel2D.vecE[i][j]*cel2D.vecE[i][j];
 		}
-		cel2D.modE[i]=sqrtl(cel2D.modE[i]);
+		cel2D.modE[i]=sqrt(cel2D.modE[i]);
 		for(int j=0;j<cel2D.dim;j++)cel2D.vecE[i][j]=cel2D.vecE[i][j]/cel2D.modE[i];
 		cel2D.angES[i]=0.;
 		for(int j=0;j<cel2D.dim;j++){
@@ -773,7 +773,7 @@ void elem2dPoisson::faceDetalhes(){
 				double del=(*vizinho[i]).centroideElem[j]-cel2D.fInter[i][j];
 				cel2D.fatG[i]+=del*del;
 			}
-			cel2D.fatG[i]=sqrtl(cel2D.fatG[i]);
+			cel2D.fatG[i]=sqrt(cel2D.fatG[i]);
 			cel2D.fatG[i]/=cel2D.modE[i];
 		}
 		else cel2D.fatG[i]=0.;
@@ -783,7 +783,7 @@ void elem2dPoisson::faceDetalhes(){
 			cel2D.vecT[i][j]=cel2D.centroideFace[i][j]-cel2D.fInter[i][j];
 			cel2D.modT[i]+=cel2D.vecT[i][j]*cel2D.vecT[i][j];
 		}
-		cel2D.modT[i]=sqrtl(cel2D.modT[i]);
+		cel2D.modT[i]=sqrt(cel2D.modT[i]);
 
 	}
 
@@ -895,7 +895,7 @@ void elem2dPoisson::calcGradGreen(){
 				gradMed[j]=gradMed[j]+(deri-termoCorda)*cel2D.vecE[i][j];
 			}
 			double corDistorc=1.;
-			if(fabsl(cel2D.angES[i])<0.9)corDistorc=0.;
+			if(fabs(cel2D.angES[i])<0.9)corDistorc=0.;
 			for(int j=0; j<cel2D.dim;j++)
 			tempF[i]+=corDistorc*gradMed[j]*(cel2D.centroideFace[i][j]-cel2D.fInter[i][j]);
 			tempF[i]+=tinter;

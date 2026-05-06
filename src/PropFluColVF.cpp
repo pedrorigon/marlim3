@@ -161,7 +161,7 @@ double ProFluColVF::operator[](int i) const{//sobrecarga do operador []
  }
 
 double ProFluColVF::MasEspFlu(double pres, double temper) const{
-  if((injPoc<=1 || injPoc>3) && descarga==0)return rholStd+0.*(1.-compresT*(temper-20.))*expl((pres-1.033211)*98066.52*compresP);//alteracao2
+  if((injPoc<=1 || injPoc>3) && descarga==0)return rholStd+0.*(1.-compresT*(temper-20.))*exp((pres-1.033211)*98066.52*compresP);//alteracao2
   else if(injPoc==2 || descarga==1 || tipoF==1){
 	  double tfarAmb=Faren(20.);
 	  double ppsiAmb=psia(1.);
@@ -190,9 +190,9 @@ double ProFluColVF::VisFlu(double pres, double temper, double deform) const{
 	if(tabelaVisc==0){
 		if((injPoc<=1 || injPoc>3) && descarga==0){
 			double rhol=rholStd/1000.;
-			double bASTM = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)))/log10l((TempL + 273)/(TempH + 273));
+			double bASTM = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)))/log10((TempL + 273)/(TempH + 273));
 
-			double visASTM=rhol*(pow(10,pow(10,(bASTM*log10l((temper + 273)/(TempL + 273))+log10l(log10l((LVisL/1)/rhol + 0.7)))))-0.7);
+			double visASTM=rhol*(pow(10,pow(10,(bASTM*log10((temper + 273)/(TempL + 273))+log10(log10((LVisL/1)/rhol + 0.7)))))-0.7);
 
 			return visASTM;
 		}
@@ -265,7 +265,7 @@ double ProFluColVF::VisGas(double pres,double temp) const{
      double AK=(9.4+0.02*wg)*pow(TR,1.5)/(209.+19.*wg+TR);
      double x=3.5+(986/TR)+0.01*wg;
      double y=2.4-0.2*x;
-     double visc=AK*expl(x*pow(rhog,y))/10000.;
+     double visc=AK*exp(x*pow(rhog,y))/10000.;
      return visc;
 }
 
@@ -366,14 +366,14 @@ double ProFluColVF::calcDR(double reL){
 	double dR0;
 	double fatB;
 	if(reL>=2.82*1.e4){
-		dR0=sqrtl((2.5/100)*reL-704.156)/100.;
+		dR0=sqrt((2.5/100)*reL-704.156)/100.;
 		fatB=-1.59e-6*(reL-2.82e4);
 	}
 	else{
 		dR0=0.;
 		fatB=0.;
 	}
-	return dR0*expl(fatB*TR/60);
+	return dR0*exp(fatB*TR/60);
 }
 
 //template class ProFluColVF;

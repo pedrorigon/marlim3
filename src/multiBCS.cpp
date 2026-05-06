@@ -282,8 +282,8 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
            	 qc= vazLIni * (betaIni) * rhocIni/ rhoc;
             else qc=0.;
 
-            if((fabsl(qo) + fabsl(qw) + fabsl(qc))>0)
-           	 beta = fabsl(qc) / (fabsl(qo) + fabsl(qw) + fabsl(qc));
+            if((fabs(qo) + fabs(qw) + fabs(qc))>0)
+           	 beta = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
             else beta =0.;
 
             if(flui.flashCompleto==1 || equilTerm==1){

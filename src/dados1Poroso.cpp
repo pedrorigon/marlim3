@@ -1968,7 +1968,7 @@ void dadosPoro::parse_fluido_producao(
 					for(int j=imin+1;j<ndiv;j++){
 						dp0=flup.rhogF[j+1][0]-flup.rhogF[j][0];
 						dp1=flup.rhogF[j+2][0]-flup.rhogF[j+1][0];
-						if(fabsl((dp0-dp1)/dp0)>1e-3){
+						if(fabs((dp0-dp1)/dp0)>1e-3){
 							ndp++;
 							pchange.push_back(flup.rhogF[j+1][0]);
 							indp.push_back(j+1);
@@ -2009,7 +2009,7 @@ void dadosPoro::parse_fluido_producao(
 					for(int j=imin+1;j<ndiv;j++){
 						dt0=flup.rhogF[0][j+1]-flup.rhogF[0][j];
 						dt1=flup.rhogF[0][j+2]-flup.rhogF[0][j+1];
-						if(fabsl((dt0-dt1)/dt0)>1e-3){
+						if(fabs((dt0-dt1)/dt0)>1e-3){
 							ndt++;
 							tchange.push_back(flup.rhogF[0][j+1]);
 							indt.push_back(j+1);

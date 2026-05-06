@@ -14,59 +14,59 @@ public:
     FA_Hidrato(const SProd& sistema);
     ~FA_Hidrato();
 
-    //std::vector<long double> V_w;
-    //long double V_w;
+    //std::vector<double> V_w;
+    //double V_w;
 
     void solverHidrato();
 
-    bool checkHidrato(long double P, long double T);
+    bool checkHidrato(double P, double T);
 
-    long double TurnerHidrato(long double P, long double T, long double P_eq, long double T_eq,
-                              long double A_s, long double V_h, long double V_w,
-                              long double r_d, long double r_p,
+    double TurnerHidrato(double P, double T, double P_eq, double T_eq,
+                              double A_s, double V_h, double V_w,
+                              double r_d, double r_p,
                               const std::string& estruturaHidratos,
-                              long double A_s_input,
-                              long double &A_s_eff_out);
+                              double A_s_input,
+                              double &A_s_eff_out);
 
-    long double Euler1ordemGas(int i, long double j_G, long double taxaCinetica,
-                               long double A, long double MM_g);
+    double Euler1ordemGas(int i, double j_G, double taxaCinetica,
+                               double A, double MM_g);
 
-    long double Euler1ordemAgua(int i, long double j_W, long double taxaCinetica,
-                                long double A, long double eta, long double MM_w);
+    double Euler1ordemAgua(int i, double j_W, double taxaCinetica,
+                                double A, double eta, double MM_w);
 
-    long double Euler1ordemHidrato(long double j_H, long double taxaCinetica,
-                                   long double A, long double eta, long double MM_h, long double rho_h);
+    double Euler1ordemHidrato(double j_H, double taxaCinetica,
+                                   double A, double eta, double MM_h, double rho_h);
 
 private:
     const SProd& sistema;
 
-    std::vector<long double> temperaturaCurva;
-    std::vector<long double> pressaoCurva;
-    std::vector<long double> temperaturaCurvaDeslocada;
-    std::vector<long double> pressaoCurvaDeslocada;
+    std::vector<double> temperaturaCurva;
+    std::vector<double> pressaoCurva;
+    std::vector<double> temperaturaCurvaDeslocada;
+    std::vector<double> pressaoCurvaDeslocada;
 
-    long double K_Hamm_Etanol, K_Hamm_MEG;
-    long double MM_H, MM_G, MM_W, W_Hamm;
-    long double M_Etanol, M_MEG; //não é mais empregada, nem como input de entrada
-    long double coefEsteq;
-    long double rhoH;
-    long double r_d, r_p; //k1_sI, k2_sI, k1_sII, k2_sII,
+    double K_Hamm_Etanol, K_Hamm_MEG;
+    double MM_H, MM_G, MM_W, W_Hamm;
+    double M_Etanol, M_MEG; //não é mais empregada, nem como input de entrada
+    double coefEsteq;
+    double rhoH;
+    double r_d, r_p; //k1_sI, k2_sI, k1_sII, k2_sII,
     string inibidor; //chris - Hidratos
     string estruturaHidratos;
-    //long double V_w;
-    //std::vector<long double> Vw;
+    //double V_w;
+    //std::vector<double> Vw;
 
     void carregarCurvaHidrato(const std::string& nomeArquivo);
     void salvarCurvaDeslocada(const std::string& nomeArquivo);
 
-    //bool checkHidrato(long double P_atual, long double T_atual);
-    long double interpolar(long double x, const std::vector<long double>& xData, const std::vector<long double>& yData);
+    //bool checkHidrato(double P_atual, double T_atual);
+    double interpolar(double x, const std::vector<double>& xData, const std::vector<double>& yData);
 
 
-    std::tuple<std::vector<long double>, std::vector<long double>> gerarCurvaComInibidor(
-        const std::vector<long double>& tempBase,
-        const std::vector<long double>& pressBase,
-        long double K, long double M, long double w);
+    std::tuple<std::vector<double>, std::vector<double>> gerarCurvaComInibidor(
+        const std::vector<double>& tempBase,
+        const std::vector<double>& pressBase,
+        double K, double M, double w);
 };
 
 #endif

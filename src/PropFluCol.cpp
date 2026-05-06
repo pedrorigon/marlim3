@@ -122,7 +122,7 @@ double ProFluCol::MasEspFlu(double pres, double temper) const{
 	  double rhomist=(1-x)/rholw+x/rhosal;
 	  return 1./rhomist;
   }
-  else if((injPoc<=1 || injPoc>3) && descarga==0)return rholStd*(1.-compresT*(temper-20.))*expl((pres-1.033211)*98066.52*compresP);
+  else if((injPoc<=1 || injPoc>3) && descarga==0)return rholStd*(1.-compresT*(temper-20.))*exp((pres-1.033211)*98066.52*compresP);
   else{
 	  if(pres<1.02 && temper<20.1) return rholStd;
 	  else return interpolaVarInj(pres, temper, RhoInj);
@@ -139,9 +139,9 @@ double ProFluCol::VisFlu(double pres, double temper) const{
   }
   else if((injPoc<=1 || injPoc>3) && descarga==0){
 	  double rhol=rholStd/1000.;
-	  double bASTM = (log10l(log10l((LVisL/1)/rhol + 0.7)) - log10l(log10l((LVisH/1)/rhol + 0.7)))/log10l((TempL + 273)/(TempH + 273));
+	  double bASTM = (log10(log10((LVisL/1)/rhol + 0.7)) - log10(log10((LVisH/1)/rhol + 0.7)))/log10((TempL + 273)/(TempH + 273));
 
-	   double visASTM=rhol*(pow(10,pow(10,(bASTM*log10l((temper + 273)/(TempL + 273))+log10l(log10l((LVisL/1)/rhol + 0.7)))))-0.7);
+	   double visASTM=rhol*(pow(10,pow(10,(bASTM*log10((temper + 273)/(TempL + 273))+log10(log10((LVisL/1)/rhol + 0.7)))))-0.7);
 
     return visASTM;
   }
@@ -245,14 +245,14 @@ double ProFluCol::calcDR(double reL){
 	double dR0;
 	double fatB;
 	if(reL>=2.82*1.e4){
-		dR0=sqrtl((2.5/100)*reL-704.156)/100.;
+		dR0=sqrt((2.5/100)*reL-704.156)/100.;
 		fatB=-1.59e-6*(reL-2.82e4);
 	}
 	else{
 		dR0=0.;
 		fatB=0.;
 	}
-	return dR0*expl(fatB*TR/60);
+	return dR0*exp(fatB*TR/60);
 }
 
 //template class ProFluCol;

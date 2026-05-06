@@ -235,8 +235,8 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
         cel2D.fIfC=new double* [cel2D.nvert];
         for(int j=0; j<cel2D.nvert;j++) cel2D.fIfC[j]=new double [cel2D.dim];
         cel2D.B2Med=new double [cel2D.dim];
-        cel2D.B2Med[1]=sinl((*vg1dSP).angY)*(*vg1dSP).gravVF*cel2D.rho;
-        cel2D.B2Med[0]=sinl((*vg1dSP).angX)*(*vg1dSP).gravVF*cel2D.rho;
+        cel2D.B2Med[1]=sin((*vg1dSP).angY)*(*vg1dSP).gravVF*cel2D.rho;
+        cel2D.B2Med[0]=sin((*vg1dSP).angX)*(*vg1dSP).gravVF*cel2D.rho;
         cel2D.BMedF=new double* [cel2D.nvert];
         for(int j=0; j<cel2D.nvert;j++){
         	cel2D.BMedF[j]=new double [cel2D.dim];
@@ -268,8 +268,8 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoP])cel2D.ccFace[j]=tipo[iNo];
     			else if(tipo[iNo]==0 || tipo[iNoP]==0)cel2D.ccFace[j]=0;
-    			else if(fabsl(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoP];
-    			else if(fabsl(atributo[iNoP]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
+    			else if(fabs(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoP];
+    			else if(fabs(atributo[iNoP]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
     			else cel2D.ccFace[j]=0;
     		}
     		else{
@@ -277,8 +277,8 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoM])cel2D.ccFace[j]=tipo[iNo];
     			else if(tipo[iNo]==0 || tipo[iNoM]==0)cel2D.ccFace[j]=0;
-    			else if(fabsl(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoM];
-    			else if(fabsl(atributo[iNoM]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
+    			else if(fabs(atributo[iNo]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNoM];
+    			else if(fabs(atributo[iNoM]-1.)<1e-15)cel2D.ccFace[j]=tipo[iNo];
     			else cel2D.ccFace[j]=0;
     		}
     		for(int k=0; k<cel2D.dim; k++){
@@ -294,17 +294,17 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     	}
     	if(cel2D.dim==2 && cel2D.nvert==3){
     		for(int j=0; j<cel2D.dim;j++)cel2D.centroideElem[j]=cel2D.centroElem[j];
-    		cel2D.vElem=0.5*fabsl((cel2D.coordVert[1][0]-cel2D.coordVert[0][0])*
+    		cel2D.vElem=0.5*fabs((cel2D.coordVert[1][0]-cel2D.coordVert[0][0])*
 					(cel2D.coordVert[2][1]-cel2D.coordVert[0][1])-(cel2D.coordVert[2][0]-cel2D.coordVert[0][0])*
 					(cel2D.coordVert[1][1]-cel2D.coordVert[0][1]));
     		for(int k=0; k<cel2D.nvert; k++){
     			if(k<cel2D.nvert-1){
-    				cel2D.subVol[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				cel2D.subVol[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k+1][1]-cel2D.centroElem[1])-(cel2D.coordVert[k+1][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     			}
     			else{
-    				cel2D.subVol[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				cel2D.subVol[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[0][1]-cel2D.centroElem[1])-(cel2D.coordVert[0][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     			}
@@ -316,14 +316,14 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     		cel2D.vElem=0.;
     		for(int k=0; k<cel2D.nvert; k++){
     			if(k<cel2D.nvert-1){
-    				cel2D.subVol[k]=sT[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				cel2D.subVol[k]=sT[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k+1][1]-cel2D.centroElem[1])-(cel2D.coordVert[k+1][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     				centroT[k][0]=(cel2D.coordVert[k][0]+cel2D.coordVert[k+1][0]+cel2D.centroElem[0])/3.;
     				centroT[k][1]=(cel2D.coordVert[k][1]+cel2D.coordVert[k+1][1]+cel2D.centroElem[1])/3.;
     			}
     			else{
-    				cel2D.subVol[k]=sT[k]=0.5*fabsl((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
+    				cel2D.subVol[k]=sT[k]=0.5*fabs((cel2D.coordVert[k][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[0][1]-cel2D.centroElem[1])-(cel2D.coordVert[0][0]-cel2D.centroElem[0])*
     					(cel2D.coordVert[k][1]-cel2D.centroElem[1]));
     				centroT[k][0]=(cel2D.coordVert[k][0]+cel2D.coordVert[0][0]+cel2D.centroElem[0])/3.;
@@ -365,7 +365,7 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     	for(int k=0; k<cel2D.nvert; k++){
     		cel2D.sFaceMod[k]=0.;
     		for(int j=0; j<cel2D.dim;j++)cel2D.sFaceMod[k]+=cel2D.sFace[k][j]*cel2D.sFace[k][j];
-    		cel2D.sFaceMod[k]=sqrtl(cel2D.sFaceMod[k]);
+    		cel2D.sFaceMod[k]=sqrt(cel2D.sFaceMod[k]);
     	}
     	for(int k=0; k<cel2D.nvert; k++){
     		if(k<cel2D.nvert-1){
@@ -379,7 +379,7 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     		for(int j=0; j<cel2D.dim;j++)cel2D.dCF[k][j]=cel2D.centroideFace[k][j]-cel2D.centroideElem[j];
     		cel2D.dCFMod[k]=0.;
     		for(int j=0; j<cel2D.dim;j++)cel2D.dCFMod[k]+=cel2D.dCF[k][j]*cel2D.dCF[k][j];
-    		cel2D.dCFMod[k]=sqrtl(cel2D.dCFMod[k]);
+    		cel2D.dCFMod[k]=sqrt(cel2D.dCFMod[k]);
     	}
 	}
 	else{
@@ -1632,7 +1632,7 @@ void elem2d::faceDetalhes(){
 			}
 			cel2D.modE[i]+=cel2D.vecE[i][j]*cel2D.vecE[i][j];
 		}
-		cel2D.modE[i]=sqrtl(cel2D.modE[i]);
+		cel2D.modE[i]=sqrt(cel2D.modE[i]);
 		for(int j=0;j<cel2D.dim;j++)cel2D.vecE[i][j]=cel2D.vecE[i][j]/cel2D.modE[i];
 		cel2D.angES[i]=0.;
 		for(int j=0;j<cel2D.dim;j++){
@@ -1665,7 +1665,7 @@ void elem2d::faceDetalhes(){
 				double del=(*vizinho[i]).centroideElem[j]-cel2D.fInter[i][j];
 				cel2D.fatG[i]+=del*del;
 			}
-			cel2D.fatG[i]=sqrtl(cel2D.fatG[i]);
+			cel2D.fatG[i]=sqrt(cel2D.fatG[i]);
 			cel2D.fatG[i]/=cel2D.modE[i];
 		}
 		else cel2D.fatG[i]=0.;
@@ -1675,7 +1675,7 @@ void elem2d::faceDetalhes(){
 			cel2D.vecT[i][j]=cel2D.centroideFace[i][j]-cel2D.fInter[i][j];
 			cel2D.modT[i]+=cel2D.vecT[i][j]*cel2D.vecT[i][j];
 		}
-		cel2D.modT[i]=sqrtl(cel2D.modT[i]);
+		cel2D.modT[i]=sqrt(cel2D.modT[i]);
 
 	}
 
@@ -1685,7 +1685,7 @@ void elem2d::vazMass(double rlx,int noRelax){
 	double masTemp;
 	double difGradMed [cel2D.dim];
 	massTot=0.;
-	if(fabsl(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
+	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
 		int para;
 		para=0;
 	}
@@ -1785,8 +1785,8 @@ void elem2d::vazMass(double rlx,int noRelax){
 				vRC[face]=cel2D.vC;
 			}*/
 			else if(wall==1){
-				uRC[face]=ccWall[face]*fabsl(-cel2D.sFace[face][1]/cel2D.sFaceMod[face]);
-				vRC[face]=ccWall[face]*fabsl(cel2D.sFace[face][0]/cel2D.sFaceMod[face]);
+				uRC[face]=ccWall[face]*fabs(-cel2D.sFace[face][1]/cel2D.sFaceMod[face]);
+				vRC[face]=ccWall[face]*fabs(cel2D.sFace[face][0]/cel2D.sFaceMod[face]);
 			}
 			else if(sim==1){
 				/*double gradMed [cel2D.dim];
@@ -1990,12 +1990,12 @@ void elem2d::impliHR(int face){
 		//if(vari==0)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
 		//else
 		if(vari==1){
-			if(fabsl(uDow[face]-uUpw[face])>1e-15)
+			if(fabs(uDow[face]-uUpw[face])>1e-15)
 				phi=(uMed[face]-uUpw[face])/(uDow[face]-uUpw[face]);
 			else phi=1.1;
 		}
 		else if(vari==2){
-			if(fabsl(vDow[face]-vUpw[face])>1e-15)
+			if(fabs(vDow[face]-vUpw[face])>1e-15)
 				phi=(vMed[face]-vUpw[face])/(vDow[face]-vUpw[face]);
 			else phi=1.1;
 		}
@@ -2117,11 +2117,11 @@ void elem2d::expliHR(int face){
 		//if(vari==0)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
 		//else
 		if(vari==1){
-			if(fabsl(uDow[face]-uUpw[face])>1e-15)phi=(uMed[face]-uUpw[face])/(uDow[face]-uUpw[face]);
+			if(fabs(uDow[face]-uUpw[face])>1e-15)phi=(uMed[face]-uUpw[face])/(uDow[face]-uUpw[face]);
 			else phi=1.1;
 		}
 		else if(vari==2){
-			if(fabsl(vDow[face]-vUpw[face])>1e-15)phi=(vMed[face]-vUpw[face])/(vDow[face]-vUpw[face]);
+			if(fabs(vDow[face]-vUpw[face])>1e-15)phi=(vMed[face]-vUpw[face])/(vDow[face]-vUpw[face]);
 			else phi=1.1;
 		}
 		/*if(phi>0. && phi<1./6.){
@@ -2238,7 +2238,7 @@ void elem2d::impliHRT(int face){
 	double lLoc=0.;
 	double kLoc=0.;
 
-	if(fabsl(tDow[face]-tUpw[face])>1e-15)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
+	if(fabs(tDow[face]-tUpw[face])>1e-15)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
 	else phi=1.1;
 	switch((*vg1dSP).nvfHR){
 		case 0://upwind
@@ -2323,7 +2323,7 @@ void elem2d::expliHRT(int face){
 	double mLoc=0.;
 
 	//phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
-	if(fabsl(tDow[face]-tUpw[face])>1e-15)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
+	if(fabs(tDow[face]-tUpw[face])>1e-15)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
 	else phi=1.1;
 	switch((*vg1dSP).nvfHR){
 		case 0://upwind
@@ -2407,7 +2407,7 @@ void elem2d::expliHRHol(int face){
 	double lLoc=0.;
 	double mLoc=1.;
 
-	if(fabsl(holDow[face]-holUpw[face])>1e-15 && fabsl(CFLC)>1e-15){
+	if(fabs(holDow[face]-holUpw[face])>1e-15 && fabs(CFLC)>1e-15){
 		phi=(holMed[face]-holUpw[face])/(holDow[face]-holUpw[face]);
 		if((*vg1dSP).nvfHRHol==0){//upwind
 				lLoc=0.;
@@ -2431,12 +2431,12 @@ void elem2d::expliHRHol(int face){
 				double nInter[cel2D.dim];
 				double modGrad=0;
 				for(int k=0; k<cel2D.dim;k++)modGrad+=cel2D.gradGreenHolI[k]*cel2D.gradGreenHolI[k];
-				modGrad=sqrtl(modGrad);
+				modGrad=sqrt(modGrad);
 				for(int k=0; k<cel2D.dim;k++)nInter[k]=-cel2D.gradGreenHolI[k]/modGrad;
 				double cos=0;
 				for(int k=0; k<cel2D.dim;k++)cos+=cel2D.vecE[face][k]*nInter[k];
-				double tet=fabsl(acosl(cos));
-				gam=(1.+cosl(2.*tet))/2.;
+				double tet=fabs(acos(cos));
+				gam=(1.+::cos(2.*tet))/2.;
 				if(gam>1.)gam=1.;
 				double lCicsam;
 				double mCicsam;
@@ -2650,7 +2650,7 @@ void elem2d::calcVarFaceTemp(int face){
 	}
 
 	double corDistorc2=1.;
-	if(fabsl(cel2D.angES[face])<0.9)corDistorc2=0.;
+	if(fabs(cel2D.angES[face])<0.9)corDistorc2=0.;
 
 	if((*vg1dSP).atrasaHR==0)impliCoefHRT(face);
 	else expliCoefHRT(face);
@@ -2688,7 +2688,7 @@ void elem2d::calcVarFacePres(int face){
 	presF[face]=0.;
 
 	double corDistorc2=1.;
-	if(fabsl(cel2D.angES[face])<0.9)corDistorc2=0.;
+	if(fabs(cel2D.angES[face])<0.9)corDistorc2=0.;
 
 
 	double gradMed [cel2D.dim];
@@ -2708,10 +2708,10 @@ void elem2d::calcVarFacePres(int face){
 	presF[face]+=cel2D.fatG[face]*cel2D.presC+(1.-cel2D.fatG[face])*(*vizinho[face]).presC;
 	double forcCorp=-(cel2D.fatG[face]*cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
 				(1.-cel2D.fatG[face])*(*vizinho[face]).rho*((*vg1dSP).mulFC-
-						(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef)))*(*vg1dSP).gravVF*sinl((*vg1dSP).angY);
-	/*presF[face]-=cel2D.rho*(mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sinl(angY)*cel2D.vecE[face][1]*cel2D.modE[face]*(1.-cel2D.fatG[face])/2;
+						(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
+	/*presF[face]-=cel2D.rho*(mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angY)*cel2D.vecE[face][1]*cel2D.modE[face]*(1.-cel2D.fatG[face])/2;
 	presF[face]+=(*vizinho[face]).rho*(mulFC-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef))*
-			grav*sinl(angY)*cel2D.vecE[face][1]*cel2D.modE[face]*cel2D.fatG[face]/2;
+			grav*sin(angY)*cel2D.vecE[face][1]*cel2D.modE[face]*cel2D.fatG[face]/2;
 	presF[face]+=(cel2D.presC+(*vizinho[face]).presC)/2;*/
 
 	for(int j=0; j<cel2D.dim;j++){
@@ -2733,7 +2733,7 @@ void elem2d::calcVarFacePresCor(int face){
 		gradMed[j]=gradMed[j]+(deri-termoCorda)*cel2D.vecE[face][j];
 	}
 	double corDistorc2=1.;
-	if(fabsl(cel2D.angES[face])<0.9)corDistorc2=0.;
+	if(fabs(cel2D.angES[face])<0.9)corDistorc2=0.;
 	for(int j=0; j<cel2D.dim;j++)
 	presFcor[face]+=corDistorc2*(*vg1dSP).corrigeDistor*gradMed[j]*(cel2D.centroideFace[face][j]-cel2D.fInter[face][j]);
 	presFcor[face]+=cel2D.fatG[face]*cel2D.presCcor+(1.-cel2D.fatG[face])*(*vizinho[face]).presCcor;
@@ -2884,7 +2884,7 @@ void elem2d::atualizaCC(int i){
 	tipoCC(i, inl, out, wall, sim, kcc);
     int ind=0;
     double raz;
-	//if(fabsl(cel2D.centroElem[1]-0.03818283448917122)<1e-5){
+	//if(fabs(cel2D.centroElem[1]-0.03818283448917122)<1e-5){
 		//int para;
 		//para=0;
 	//}
@@ -2938,15 +2938,15 @@ void elem2d::atualizaCC(int i){
 	for(int i=0;i<cel2D.nvert;i++){
 		if(kvizinho[i]>=0){
 			cel2D.BMedF[i][0]=-(cel2D.fatG[i]*cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
-					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*grav*sinl(angX);
+					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*grav*sin(angX);
 			cel2D.BMedF[i][1]=-(cel2D.fatG[i]*cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
-					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*grav*sinl(angY);
+					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*grav*sin(angY);
 		}
 		else{
-			cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sinl(angX);
-			cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sinl(angY);
-			//cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sinl(angX);
-			//cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sinl(angY);
+			cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angX);
+			cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angY);
+			//cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angX);
+			//cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angY);
 		}
 		for(int j=0;j<cel2D.dim;j++){
 			if(kvizinho[i]>=0){
@@ -2954,12 +2954,12 @@ void elem2d::atualizaCC(int i){
 			}
 			else{
 				//cel2D.B2Med[j]+=cel2D.BMedF[i][j]*cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
-				if(j==1)cel2D.B2Med[j]-=(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sinl(angY)*
+				if(j==1)cel2D.B2Med[j]-=(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angY)*
 						cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
 			}
 		}
-		//cel2D.B2Med[0]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sinl(angX);
-		//cel2D.B2Med[1]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sinl(angY);
+		//cel2D.B2Med[0]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angX);
+		//cel2D.B2Med[1]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angY);
 	}
 }*/
 
@@ -2970,30 +2970,30 @@ void elem2d::calcForcCorp(){
 		if(kvizinho[i]>=0){
 			cel2D.BMedF[i][1]=-(cel2D.fatG[i]*cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
 					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1*(*vg1dSP).mulFC-
-							(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*(*vg1dSP).gravVF*sinl((*vg1dSP).angY);
+							(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
 		}
 		else{
-			cel2D.BMedF[i][1]=-(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*(*vg1dSP).gravVF*sinl((*vg1dSP).angY);
-			//cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sinl(angX);
-			//cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sinl(angY);
+			cel2D.BMedF[i][1]=-(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
+			//cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angX);
+			//cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angY);
 		}
 		if(kvizinho[i]>=0){
 			cel2D.B2Med[1]+=cel2D.fatG[i]*cel2D.BMedF[i][1]*cel2D.vecE[i][1]*cel2D.modE[i]*cel2D.sFace[i][1]/cel2D.vElem;
 			//cel2D.B2Med[j]+=cel2D.BMedF[i][j]*cel2D.subVol[i]/cel2D.vElem;
 		}
 		else{
-			//if(j==1)cel2D.B2Med[j]-=(cel2D.rho*(1*mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sinl(angY)*
+			//if(j==1)cel2D.B2Med[j]-=(cel2D.rho*(1*mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angY)*
 						//cel2D.subVol[i]/cel2D.vElem;
-			cel2D.B2Med[1]-=(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*(*vg1dSP).gravVF*sinl((*vg1dSP).angY)*
+			cel2D.B2Med[1]-=(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY)*
 						cel2D.vecE[i][1]*cel2D.modE[i]*cel2D.sFace[i][1]/cel2D.vElem;
-			//if(j==1)cel2D.B2Med[j]-=1*(cel2D.rho*(mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sinl(angY)*
+			//if(j==1)cel2D.B2Med[j]-=1*(cel2D.rho*(mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angY)*
 										//cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
 		}
-		//cel2D.B2Med[1]+=(-mulFC*cel2D.rho*grav*sinl(angY));
-		//cel2D.B2Med[0]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sinl(angX);
-		//cel2D.B2Med[1]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sinl(angY);
+		//cel2D.B2Med[1]+=(-mulFC*cel2D.rho*grav*sin(angY));
+		//cel2D.B2Med[0]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angX);
+		//cel2D.B2Med[1]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angY);
 		//for(int i=0;i<cel2D.nvert;i++){
-			//cel2D.BMedF[i][1]+=(-mulFC*cel2D.rho*grav*sinl(angY));
+			//cel2D.BMedF[i][1]+=(-mulFC*cel2D.rho*grav*sin(angY));
 		//}
 	}
 }
@@ -3001,7 +3001,7 @@ void elem2d::calcForcCorp(){
 void elem2d::calcGradGreenUV(){
 	//if(iterPresCor==0)
 		//vazMass();
-	if(fabsl(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
+	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
 		int para;
 		para=0;
 	}
@@ -3024,8 +3024,8 @@ void elem2d::calcGradGreenUV(){
 			}
 			else if(wall==1){
 				//////////////////////////////////////////////////////////////////////////////////////////////////
-				uF[i]=ccWall[i]*fabsl(-cel2D.sFace[i][1]/cel2D.sFaceMod[i]);
-				vF[i]=ccWall[i]*fabsl(cel2D.sFace[i][0]/cel2D.sFaceMod[i]);
+				uF[i]=ccWall[i]*fabs(-cel2D.sFace[i][1]/cel2D.sFaceMod[i]);
+				vF[i]=ccWall[i]*fabs(cel2D.sFace[i][0]/cel2D.sFaceMod[i]);
 			}
 			else if(sim==1 || out==1){
 				if(out==1){
@@ -3100,7 +3100,7 @@ void elem2d::calcGradGreenUV(){
 		cel2D.gradGreenV[j]/=cel2D.vElem;
 	}
 
-	cel2D.taxaDeform=sqrtl(2.*cel2D.gradGreenU[0]*cel2D.gradGreenU[0]+2.*cel2D.gradGreenV[1]*cel2D.gradGreenV[1]+
+	cel2D.taxaDeform=sqrt(2.*cel2D.gradGreenU[0]*cel2D.gradGreenU[0]+2.*cel2D.gradGreenV[1]*cel2D.gradGreenV[1]+
 			(cel2D.gradGreenU[1]+cel2D.gradGreenV[0])*(cel2D.gradGreenU[1]+cel2D.gradGreenV[0]));
 }
 
@@ -3117,7 +3117,7 @@ void elem2d::calcGradGreenPres(){
 			int kcc=0;
 			tipoCC(i, inl, out, wall, sim, kcc);
 			presF[i]=0.;
-			double forcCorp=-1*(cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*(*vg1dSP).gravVF*sinl((*vg1dSP).angY);
+			double forcCorp=-1*(cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
 			if(inl==1){
 				if((*vg1dSP).partidaVF>=0){
 					/*double vazCentro=(cel2D.uC*cel2D.sFace[i][0]+cel2D.vC*cel2D.sFace[i][1])*cel2D.rho;
@@ -3469,7 +3469,7 @@ void elem2d::calSupDifu(){
 		for(int j=0; j<cel2D.dim;j++)cel2D.vecSDif[i][j]=Dmed[j]*cel2D.sFace[i][j];
 		cel2D.vecSDifMod[i]=0.;
 		for(int j=0; j<cel2D.dim;j++)cel2D.vecSDifMod[i]+=(cel2D.vecSDif[i][j]*cel2D.vecSDif[i][j]);
-		cel2D.vecSDifMod[i]=sqrtl(cel2D.vecSDifMod[i]);
+		cel2D.vecSDifMod[i]=sqrt(cel2D.vecSDifMod[i]);
 	}
 }
 
@@ -3479,7 +3479,7 @@ void elem2d::explicitUV(){
 	int diag=achaInd(cel2D.indEle);
 	localU.mx[0][diag]=0.;
 	localV.mx[0][diag]=0.;
-	if(fabsl(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
+	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
 		int para;
 		para=0;
 	}
@@ -3668,7 +3668,7 @@ void elem2d::GeraLocalUV(double rlx){
 	int diag=achaInd(cel2D.indEle);
 	localU.mx[0][diag]=0.;
 	localV.mx[0][diag]=0.;
-	if(fabsl(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
+	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
 		int para;
 		para=0;
 	}
@@ -3707,7 +3707,7 @@ void elem2d::GeraLocalUV(double rlx){
 			gradFaceTV[0]=gradUface[i][1];
 			gradFaceTV[1]=gradVface[i][1];
 			double forcTransV=escalar(gradFaceTV,cel2D.sFace[i],cel2D.dim);
-			taxadeformFace[i]=sqrtl(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
+			taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 					(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
 
 			//gradMedTransU[0]=gradMedTransU[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][0];
@@ -3788,7 +3788,7 @@ void elem2d::GeraLocalUV(double rlx){
 						gradUface[i][j]=gradMedU[j]+(dUdE-termoCordaU)*cel2D.vecE[i][j];
 						gradVface[i][j]=gradMedV[j]+(dVdE-termoCordaV)*cel2D.vecE[i][j];
 					}
-					taxadeformFace[i]=sqrtl(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
+					taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 										(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
 					if((*vg1dSP).acop==1){
 						double pres=presF[i];
@@ -3832,7 +3832,7 @@ void elem2d::GeraLocalUV(double rlx){
 						gradMedV[j]-=termoCordaV*cel2D.vecE[i][j];
 						gradVface[i][j]=gradMedV[j];
 					}
-					taxadeformFace[i]=sqrtl(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
+					taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 										(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
 					if((*vg1dSP).acop==1){
 						double pres=presF[i];
@@ -3878,7 +3878,7 @@ void elem2d::GeraLocalUV(double rlx){
 						gradMedV[j]-=termoCordaV*cel2D.vecE[i][j];
 						gradVface[i][j]=gradMedV[j];
 					}
-					taxadeformFace[i]=sqrtl(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
+					taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 										(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
 					//if((*vg1dSP).acop==1){
 						//double pres=presF[i];
@@ -3923,7 +3923,7 @@ void elem2d::GeraLocalUV(double rlx){
 					gradUface[i][j]=gradMedU[j]+(dUdE-termoCordaU)*cel2D.vecE[i][j];
 					gradVface[i][j]=gradMedV[j]+(dVdE-termoCordaV)*cel2D.vecE[i][j];
 				}
-				taxadeformFace[i]=sqrtl(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
+				taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 									(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
 
 
@@ -3959,7 +3959,7 @@ void elem2d::GeraLocalUV(double rlx){
 	TLV[0]-=cel2D.gradGreenPres[1]*cel2D.vElem;
 	TLU[0]+=cel2D.B2Med[0]*cel2D.vElem;
 	TLV[0]+=(0.*cel2D.B2Med[1]*cel2D.vElem-
-			1.*(cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*(*vg1dSP).gravVF*sinl((*vg1dSP).angY)*cel2D.vElem);
+			1.*(cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY)*cel2D.vElem);
 	double rhoC=cel2D.rho*(1.-0*cel2D.beta*(cel2D.tempC-cel2D.tempRef));
 	if(perm==0 && trans==1){
 		//cel2D.a0U=cel2D.vElem*(cel2D.rho/dt);
@@ -4451,10 +4451,10 @@ void elem2d::explicitHol(){
 	for(int i=0;i<cel2D.nvert;i++){
 		if(kvizinho[i]>=0){
 			if(cel2D.holC0!=(*vizinho[i]).holC0)mono=0;
-			else if(fabsl(cel2D.holC0-(*vizinho[i]).holC0)<1e-15 && cel2D.holC0>1e-15 && cel2D.holC0<(1.-1e-15))mono=0;
+			else if(fabs(cel2D.holC0-(*vizinho[i]).holC0)<1e-15 && cel2D.holC0>1e-15 && cel2D.holC0<(1.-1e-15))mono=0;
 		}
-		else if(fabsl(cel2D.holC0-holF[i])<1e-15)mono=0;
-		else if(fabsl(cel2D.holC0-holF[i])<1e-15 && cel2D.holC0>1e-15 && cel2D.holC0<(1.-1e-15))mono=0;
+		else if(fabs(cel2D.holC0-holF[i])<1e-15)mono=0;
+		else if(fabs(cel2D.holC0-holF[i])<1e-15 && cel2D.holC0>1e-15 && cel2D.holC0<(1.-1e-15))mono=0;
 	}
 	if(mono==1)cel2D.holC=hol;
 	else{

@@ -2180,12 +2180,12 @@ double ProVap::energmix(double pres, double temp, double alf){
 double ProVap::entalpmix(double pres, double temp,
 		                                           double uls, double ugs){
 
-	if(fabsl(ugs)<=1e-15){
+	if(fabs(ugs)<=1e-15){
         double hl=HeLiq(pres,temp, TEMP);
         double rhol=MasEspLiq(pres,temp, TEMP);
         return rhol*hl*uls;
 	}
-	else if (fabsl(uls)<=1-1e-15){
+	else if (fabs(uls)<=1-1e-15){
 	    double hg=HeGas(pres,temp, TEMP);
 	    double rhog=MasEspGas(pres,temp, TEMP);
 	    return rhog*hg*ugs;

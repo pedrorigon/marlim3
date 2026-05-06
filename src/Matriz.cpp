@@ -2506,7 +2506,7 @@ template<class T> int SparseMtx<T>::FGMRES(Vcr<T>& x, const Vcr<T>& b, T& eps, i
     r=b-(*this)*x;
     beta=r.twonorm();
     // Dentro do loop, após calcular beta = r.twonorm()
-    razReducao = fabsl(beta / beta0);
+    razReducao = fabs(beta / beta0);
     beta0 = beta;
     if(fabs(beta)<=stp){
       conv=true;

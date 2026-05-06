@@ -209,7 +209,7 @@ void malha2dPoro::imprime(double tempo){
 	}
 
 	ostringstream saidaP;
-	int numero = roundl(tempo);
+	int numero = round(tempo);
 		saidaP << pathPrefixoArqSaida << "PERFISPoroso2D-Pres" << "-" << numero
 				<< ".dat";
 	string tmp = saidaP.str();

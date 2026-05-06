@@ -1012,7 +1012,7 @@ void WriteSnapShot(SProd& sis, double porc=10, int tramo=-1){
 
 	if (sis.arq.HISEP==0) {
   ostringstream saidaS;
-  int numero = roundl(porc);
+  int numero = round(porc);
   if(tramo<0)
        saidaS <<pathPrefixoArqSaida<<"Saida" << numero<<"-" <<arqSaidaSnapShot;
   else
@@ -1303,7 +1303,7 @@ void WriteSnapShot(SProd& sis, double porc=10, int tramo=-1){
 	} else {
 
 	  ostringstream saidaS;
-	  int numero = roundl(porc);
+	  int numero = round(porc);
 	  if(tramo<0)
 	       saidaS <<pathPrefixoArqSaida<<"Saida" << numero<<"-" <<arqSaidaSnapShot;
 	  else
@@ -1891,7 +1891,7 @@ int verificaFonteDuplaReversa(SProd* malha, int aux){
 		if(malha[aux].celula[0].acsr.tipo==1){
 			if(malha[aux].celula[1].acsr.tipo==1){
 				if(malha[aux].celula[1].acsr.injg.QGas*malha[aux].celula[0].acsr.injg.QGas<0){
-					if(fabsl(malha[aux].celula[0].acsr.injg.QGas)<fabsl(malha[aux].celula[1].acsr.injg.QGas)){
+					if(fabs(malha[aux].celula[0].acsr.injg.QGas)<fabs(malha[aux].celula[1].acsr.injg.QGas)){
   	    			  return -1;
 					}
 					else return 1;
@@ -1903,7 +1903,7 @@ int verificaFonteDuplaReversa(SProd* malha, int aux){
 		else if(malha[aux].celula[0].acsr.tipo==2){
 				if(malha[aux].celula[1].acsr.tipo==2){
 					if(malha[aux].celula[1].acsr.injl.QLiq*malha[aux].celula[0].acsr.injl.QLiq<0){
-						if(fabsl(malha[aux].celula[0].acsr.injl.QLiq)<fabsl(malha[aux].celula[1].acsr.injl.QLiq)){
+						if(fabs(malha[aux].celula[0].acsr.injl.QLiq)<fabs(malha[aux].celula[1].acsr.injl.QLiq)){
 							return -1;
 						}
 						else return 1;
@@ -1918,7 +1918,7 @@ int verificaFonteDuplaReversa(SProd* malha, int aux){
 				double mass1=malha[aux].celula[1].acsr.injm.MassC+
 	    	    			  malha[aux].celula[1].acsr.injm.MassG+malha[aux].celula[1].acsr.injm.MassP;
 				if(mass0*mass1<0){
-					if(fabsl(mass0)<fabsl(mass1)){
+					if(fabs(mass0)<fabs(mass1)){
 						return -1;
 					}
 					else return 1;
@@ -1932,7 +1932,7 @@ int trocaFonteColetor(SProd* malha, int aux){
 		if(malha[aux].celula[0].acsr.tipo==1){
 			if(malha[aux].celula[1].acsr.tipo==1){
 				if(malha[aux].celula[1].acsr.injg.QGas*malha[aux].celula[0].acsr.injg.QGas<0){
-					if(fabsl(malha[aux].celula[0].acsr.injg.QGas)<fabsl(malha[aux].celula[1].acsr.injg.QGas)){
+					if(fabs(malha[aux].celula[0].acsr.injg.QGas)<fabs(malha[aux].celula[1].acsr.injg.QGas)){
   	    			  InjGas reserva;
   	    			  reserva=malha[aux].celula[0].acsr.injg;
   	    			  malha[aux].celula[0].acsr.injg=malha[aux].celula[1].acsr.injg;
@@ -1948,7 +1948,7 @@ int trocaFonteColetor(SProd* malha, int aux){
 		else if(malha[aux].celula[0].acsr.tipo==2){
 				if(malha[aux].celula[1].acsr.tipo==2){
 					if(malha[aux].celula[1].acsr.injl.QLiq*malha[aux].celula[0].acsr.injl.QLiq<0){
-						if(fabsl(malha[aux].celula[0].acsr.injl.QLiq)<fabsl(malha[aux].celula[1].acsr.injl.QLiq)){
+						if(fabs(malha[aux].celula[0].acsr.injl.QLiq)<fabs(malha[aux].celula[1].acsr.injl.QLiq)){
 							InjLiq reserva;
 							reserva=malha[aux].celula[0].acsr.injl;
 							malha[aux].celula[0].acsr.injl=malha[aux].celula[1].acsr.injl;
@@ -1973,7 +1973,7 @@ int trocaFonteColetor(SProd* malha, int aux){
 				double mass1=malha[aux].celula[1].acsr.injm.MassC+
 	    	    			  malha[aux].celula[1].acsr.injm.MassG+malha[aux].celula[1].acsr.injm.MassP;
 				if(mass0*mass1<0){
-					if(fabsl(mass0)<fabsl(mass1)){
+					if(fabs(mass0)<fabs(mass1)){
 						InjMult reserva;
 						reserva=malha[aux].celula[0].acsr.injm;
 						malha[aux].celula[0].acsr.injm=malha[aux].celula[1].acsr.injm;
@@ -2629,8 +2629,8 @@ void CicloRedeTrans(SProd* malha,Rede& arqRede,
         				  /*if(alfCol>1-localtiny)titmist=1.;
         				  else if(alfCol<localtiny)titmist=0.;
         				  else{
-        					  double mgMod=fabsl(malha[i].celula[0].MR-malha[i].celula[0].MliqiniR);
-        					  titmist=mgMod/(fabsl(malha[i].celula[0].MliqiniR)+mgMod);
+        					  double mgMod=fabs(malha[i].celula[0].MR-malha[i].celula[0].MliqiniR);
+        					  titmist=mgMod/(fabs(malha[i].celula[0].MliqiniR)+mgMod);
         				  }*/
         			}
 
@@ -2639,8 +2639,8 @@ void CicloRedeTrans(SProd* malha,Rede& arqRede,
         				  else tempmist=malha[i].celula[0].temp;
         				  int iaflu=arqRede.malha[i].afluente[0];
         				  int iafluncel=malha[iaflu].ncel-1;
-        				  if((fabsl(Qlmist)+fabsl(QGmist))>localtiny && fabsl(QGmist)>=0)
-        					  alfmist=fabsl(QGmist)/(fabsl(Qlmist)+fabsl(QGmist));
+        				  if((fabs(Qlmist)+fabs(QGmist))>localtiny && fabs(QGmist)>=0)
+        					  alfmist=fabs(QGmist)/(fabs(Qlmist)+fabs(QGmist));
         				  else if((Qlmist+QGmist)>-localtiny && QGmist>-localtiny)alfmist=malha[iaflu].celula[iafluncel].alf;
         				  else alfmist=malha[i].celula[0].alf;
 
@@ -2795,7 +2795,7 @@ void CicloRedeTrans(SProd* malha,Rede& arqRede,
       				double normaP=0.;
       				double tempAuxQ=0;
       				double tempAux;
-      				//double qtotal=fabsl(qlmistStdAflu);
+      				//double qtotal=fabs(qlmistStdAflu);
       				double variapini=0.;
       				//int aux0=ordCol[nderiva-1];
       				//if(iterRedeT==0)
@@ -3524,7 +3524,7 @@ void corrigeVazNoBuf(SProd* malha,int ind){
 	    	  malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i]);
 
 	          for(int kontasnp=0; kontasnp<malha[i].arq.nsnp;kontasnp++){
-	              if(fabsl(lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
+	              if(fabs(lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
 	            	  WriteSnapShot(malha[i],kontasnp,i);//registro do arquivo SNP
 	              }
 	          }
@@ -3745,13 +3745,13 @@ void SolveRedeTrans(SProd* malha,Rede& arqRede,
 			}
 			for(int j=0;j<arqRede.malha[i].ncoleta;j++){
 				int indCol2=arqRede.malha[i].coleta[j];
-				if(fabsl(qg)>1e-15 || fabsl(ql)>1e-15)alfRev[indCol2]=qg/(qg+ql);
+				if(fabs(qg)>1e-15 || fabs(ql)>1e-15)alfRev[indCol2]=qg/(qg+ql);
 				else alfRev[indCol2]=1.;
 				reverse[indCol2]=1;
 			}
 			for(int j=0;j<arqRede.malha[indCol].nafluente;j++){
 				int indAflu=arqRede.malha[i].afluente[j];
-				if(fabsl(qg)>1e-15 || fabsl(ql)>1e-15)alfRev[indAflu]=qg/(qg+ql);
+				if(fabs(qg)>1e-15 || fabs(ql)>1e-15)alfRev[indAflu]=qg/(qg+ql);
 				else alfRev[indAflu]=1.;
 				reverse[indAflu]=1;
 			}
@@ -3938,8 +3938,8 @@ void SolveRedeTrans(SProd* malha,Rede& arqRede,
 
 					   for(int j=0; j<=malha[i].ncel;j++){
 						   double area=malha[i].celula[j].duto.area;
-						   double vLiqTest=fabsl(malha[i].celula[j].QL/(area));
-						   double vGasTest=fabsl(malha[i].celula[j].QG /(area));
+						   double vLiqTest=fabs(malha[i].celula[j].QL/(area));
+						   double vGasTest=fabs(malha[i].celula[j].QG /(area));
 						   double razDp=0.1;
 						   double razDp1=1;
 						   double razDT=1;
@@ -3950,7 +3950,7 @@ void SolveRedeTrans(SProd* malha,Rede& arqRede,
 								   malha[i].celula[celpos[i]].acsr.chk.AreaGarg<1e-15*malha[i].celula[celpos[i]].acsr.chk.AreaTub){
 							   razDT=1;
 						   }
-						   if((fabsl(malha[i].celula[j].dpdtIni)/malha[i].celula[j].pres<razDp) && fabsl(malha[i].celula[j].dTdtIni)<razDT){
+						   if((fabs(malha[i].celula[j].dpdtIni)/malha[i].celula[j].pres<razDp) && fabs(malha[i].celula[j].dTdtIni)<razDT){
 							   if(malha[i].TransMassModel==0)malha[i].celula[j].m2d=1.;
 							   else malha[i].celula[j].m2d=0.;
 							   malha[i].celula[j].mudaDT=1.;
@@ -4320,13 +4320,13 @@ void SolveRedeTrans(SProd* malha,Rede& arqRede,
 				}
 				for(int j=0;j<arqRede.malha[i].ncoleta;j++){
 					int indCol2=arqRede.malha[i].coleta[j];
-					if(fabsl(qg)>1e-15 || fabsl(ql)>1e-15)alfRev[indCol2]=qg/(qg+ql);
+					if(fabs(qg)>1e-15 || fabs(ql)>1e-15)alfRev[indCol2]=qg/(qg+ql);
 					else alfRev[indCol2]=malha[indCol].celula[0].alf;
 					reverse[indCol2]=1;
 				}
 				for(int j=0;j<arqRede.malha[indCol].nafluente;j++){
 					int indAflu=arqRede.malha[i].afluente[j];
-					if(fabsl(qg)>1e-15 || fabsl(ql)>1e-15)alfRev[indAflu]=qg/(qg+ql);
+					if(fabs(qg)>1e-15 || fabs(ql)>1e-15)alfRev[indAflu]=qg/(qg+ql);
 					else alfRev[indAflu]=malha[indCol].celula[0].alf;
 					reverse[indAflu]=1;
 				}
@@ -4343,7 +4343,7 @@ void SolveRedeTrans(SProd* malha,Rede& arqRede,
 	    	  }
 	    	  else malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i],nrede);
 	          for(int kontasnp=0; kontasnp<malha[i].arq.nsnp;kontasnp++){
-	              if(fabsl((*arqRede.vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
+	              if(fabs((*arqRede.vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
 	            	  WriteSnapShot(malha[i],kontasnp,i);//registro do arquivo SNP
 	              }
 	          }
@@ -4885,7 +4885,7 @@ int chutePresRede(int indprod,SProd* malha,Rede& arqRede, double chutehol,
       	}
       }
     }
-    return sqrtl(norma)/nnos;
+    return sqrt(norma)/nnos;
 }*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void totalizaCicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,int naflu, int i,int recb,
@@ -4986,7 +4986,7 @@ void totalizaCicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int ind
 						Mcomp[k]=Mliq[k]*Bet[k]*Rhocomp[k]/rholliqIS[k];
 						Qcomp[k]=Qliq[k]*Bet[k];
 						Mgas[k]=malha[ind].celula[fim+1].MC-malha[ind].celula[fim+1].Mliqini;// alteracao4
-						//if(fluidoRede==0 && fabsl(Mgas[k])<1e-15){
+						//if(fluidoRede==0 && fabs(Mgas[k])<1e-15){
 
 						//}
 						Denag[k]=malha[ind].celula[fim].flui.Denag;
@@ -5598,7 +5598,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
   			    				double mult=1.0;
   			    				if(malha[aux].arq.ConContEntrada==2)mult=-1.;
   			    				for(int icol2=0; icol2<nderiva; icol2++){
-  			    					if(fabsl(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
+  			    					if(fabs(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
   			    						ordCol[icol2]=aux;
   			    						carregado[icol2]=1;
   			    						icol2=nderiva;
@@ -5716,7 +5716,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
   		        			noConv1.qgstdTot*=86400;
   		        			//norma+=pow((malha[i].celula[1].acsr.injg.QGas-noConv1.qgstdTot)/noConv1.qgstdTot,2.);
   		        			malha[i].celula[1].acsr.injg.QGas=noConv1.qgstdTot+noConv1.qgstdTotNeg*86400.;
- 		        			if(fabsl(malha[i].celula[1].acsr.injg.QGas)>1e-15)
+ 		        			if(fabs(malha[i].celula[1].acsr.injg.QGas)>1e-15)
   		        			malha[i].celula[1].acsr.injg.razCompGas=(noConv1.qcmistStd+noConv1.qcmistStdNeg)/
   		        					                                    malha[i].celula[1].acsr.injg.QGas;
   		        			else malha[i].celula[1].acsr.injg.razCompGas=0.;
@@ -5777,7 +5777,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
   		        			noConv2.qgstdTot*=86400;
   		        			//norma+=pow((malha[col2].celula[1].acsr.injg.QGas-noConv2.qgstdTot)/noConv2.qgstdTot,2.);
   		        			malha[col2].celula[1].acsr.injg.QGas=noConv2.qgstdTot+noConv2.qgstdTotNeg*86400.;
- 		        			if(fabsl(malha[i].celula[1].acsr.injg.QGas)>1e-15)
+ 		        			if(fabs(malha[i].celula[1].acsr.injg.QGas)>1e-15)
   		        			malha[i].celula[1].acsr.injg.razCompGas=(noConv2.qcmistStd+noConv2.qcmistStdNeg)/
   		        					                                    malha[i].celula[1].acsr.injg.QGas;
   		        			else malha[i].celula[1].acsr.injg.razCompGas=0.;
@@ -5821,7 +5821,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       	            	double mult=1.0;
       	            	if(malha[aux].arq.ConContEntrada==2)mult=-1.;
       					for(int icol2=0; icol2<nderiva; icol2++){
-      					  if(fabsl(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
+      					  if(fabs(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
       						  ordCol[icol2]=aux;
       						  carregado[icol2]=1;
       						  icol2=nderiva;
@@ -5898,7 +5898,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       	      						 //(1.-relax)*malha[aux].celula[0].acsr.injl.QLiq;
       		        			malha[aux].celula[0].acsr.injg.QGas=noConv.qgstdTot+noConv.qgstdTotNeg*86400.;//+qlmistStd;???????
 
-      		        			if(fabsl(malha[aux].celula[0].acsr.injg.QGas)>1e-15)
+      		        			if(fabs(malha[aux].celula[0].acsr.injg.QGas)>1e-15)
       		        			malha[aux].celula[0].acsr.injg.razCompGas=(noConv.qcmistStd+noConv.qcmistStdNeg)/
       		        					                                    malha[aux].celula[0].acsr.injg.QGas;
       		        			else malha[aux].celula[0].acsr.injg.razCompGas=0.;
@@ -6154,7 +6154,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       		        					else{
       		        						chutemass=(noConv.qgstdTot*86400+noConv.qgstdTotNeg*86400)*
       		        						malha[aux].celula[0].duto.area/area;
-      		        						if(fabsl(chutemass)>1e-15)
+      		        						if(fabs(chutemass)>1e-15)
       		        							malha[aux].celula[0].acsr.injg.razCompGas=(noConv.qcmistStd+noConv.qcmistStdNeg)/
 												(noConv.qgstdTot*86400.+noConv.qgstdTotNeg*86400);
       		        						else malha[aux].celula[0].acsr.injg.razCompGas=0.;
@@ -6164,7 +6164,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       		        					if((*arqRede.vg1dSP).fluidoRede==1) chutemass=malha[aux].celula[0].acsr.injl.QLiq;
       		        					else if((*arqRede.vg1dSP).fluidoRede==0){
       		        						chutemass=malha[aux].celula[0].acsr.injg.QGas;
-      		        						if(fabsl(noConv.qgstdTot*86400.+noConv.qgstdTotNeg*86400)>1e-15)
+      		        						if(fabs(noConv.qgstdTot*86400.+noConv.qgstdTotNeg*86400)>1e-15)
       		        							malha[aux].celula[0].acsr.injg.razCompGas=(noConv.qcmistStd+noConv.qcmistStdNeg)/
 												(noConv.qgstdTot*86400.+noConv.qgstdTotNeg*86400);
       		        						else malha[aux].celula[0].acsr.injg.razCompGas=0.;
@@ -6222,12 +6222,12 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       		        				ciclomalha++;
       		        				if((*arqRede.vg1dSP).fluidoRede==1){
       		        					if(arqRede.malha[aux].perm==1 && malha[aux].celula[0].acsr.injl.QLiq>0.)noConv.qlmistStd-=malha[aux].celula[0].acsr.injl.QLiq;//alteracao4
-      		        					if(fabsl(malha[aux].celula[0].acsr.injl.QLiq)<1e-15)
+      		        					if(fabs(malha[aux].celula[0].acsr.injl.QLiq)<1e-15)
       		        						cout<<"#################Sem vazao no tramo : "<<aux<<endl;
       		        				}
       		        				else if((*arqRede.vg1dSP).fluidoRede==0){
       		        					if(arqRede.malha[aux].perm==1 && malha[aux].celula[0].acsr.injg.QGas>0.)noConv.qgstdTot-=malha[aux].celula[0].acsr.injg.QGas/86400.;//alteracao4
-      		        					if(fabsl(malha[aux].celula[0].acsr.injg.QGas)<1e-15)
+      		        					if(fabs(malha[aux].celula[0].acsr.injg.QGas)<1e-15)
       		        						cout<<"#################Sem vazao no tramo : "<<aux<<endl;
       		        				}
       		        				else if((*arqRede.vg1dSP).fluidoRede==2){
@@ -6249,7 +6249,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       		        						noConv.mliqmist-= ((1. - fracmasshidra)*massic+vazmassc);
       		        						noConv.mgasmist-= fracmasshidra*massic;
       		        					}
-      		        					if(fabsl(malha[aux].celula[0].acsr.injl.QLiq)<1e-15)
+      		        					if(fabs(malha[aux].celula[0].acsr.injl.QLiq)<1e-15)
       		        						cout<<"#################Sem vazao no tramo : "<<aux<<endl;
       		        				}
       		        			}
@@ -6309,7 +6309,7 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
       		        					noConv.mliqmist-= (malha[aux].celula[0].acsr.injm.MassC+malha[aux].celula[0].acsr.injm.MassP);
       		        					noConv.mgasmist-= malha[aux].celula[0].acsr.injm.MassG;
       		        				}
-      		        				if(fabsl(malha[aux].celula[0].acsr.injm.MassC+
+      		        				if(fabs(malha[aux].celula[0].acsr.injm.MassC+
       		        						malha[aux].celula[0].acsr.injm.MassP+
 											malha[aux].celula[0].acsr.injm.MassG)<1e-15)
       		        					cout<<"#################Sem vazao no tramo : "<<aux<<endl;
@@ -6327,11 +6327,11 @@ double cicloRedeComp(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,
     }
     }
 
-    if(fabsl(testaNMalha)>0){
-    	(*arqRede.vg1dSP).erroRede=fabsl(sqrtl(norma)/nnos-(*arqRede.vg1dSP).norma0)/(*arqRede.vg1dSP).norma0;
-    	// if(sqrtl(norma)/nnos>2*norma0) erroRede=0.0001;
-    	(*arqRede.vg1dSP).norma0=sqrtl(norma)/nnos;
-    	return sqrtl(norma)/nnos;
+    if(fabs(testaNMalha)>0){
+    	(*arqRede.vg1dSP).erroRede=fabs(sqrt(norma)/nnos-(*arqRede.vg1dSP).norma0)/(*arqRede.vg1dSP).norma0;
+    	// if(sqrt(norma)/nnos>2*norma0) erroRede=0.0001;
+    	(*arqRede.vg1dSP).norma0=sqrt(norma)/nnos;
+    	return sqrt(norma)/nnos;
     }
     else return 0;
 }
@@ -7452,7 +7452,7 @@ void cicloRedeCompCego(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativ
           			    			double mult=1.0;
           			    			if(malha[aux].arq.ConContEntrada==2)mult=-1.;
           			    			for(int icol2=0; icol2<nderiva; icol2++){
-          			    				if(fabsl(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
+          			    				if(fabs(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
           			    					ordCol[icol2]=aux;
           			    					carregado[icol2]=1;
           			    					icol2=nderiva;
@@ -7565,7 +7565,7 @@ void cicloRedeCompCego(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativ
       		        			//norma+=pow((malha[i].celula[1].acsr.injg.QGas-noConv1.qgstdTot)/noConv1.qgstdTot,2.);
           							malha[i].celula[1].acsr.injg.QGas=noConv1.qgstdTot+noConv1.qgstdTotNeg*86400.;
 
-          		        			if(fabsl(malha[i].celula[1].acsr.injg.QGas)>1e-15)
+          		        			if(fabs(malha[i].celula[1].acsr.injg.QGas)>1e-15)
           		        			malha[i].celula[1].acsr.injg.razCompGas=(noConv1.qcmistStd+noConv1.qcmistStdNeg)/
           		        					                                    malha[i].celula[1].acsr.injg.QGas;
           		        			else malha[i].celula[1].acsr.injg.razCompGas=0.;
@@ -7626,7 +7626,7 @@ void cicloRedeCompCego(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativ
           							noConv2.qgstdTot*=86400;
       		        			//norma+=pow((malha[col2].celula[1].acsr.injg.QGas-noConv2.qgstdTot)/noConv2.qgstdTot,2.);
           							malha[col2].celula[1].acsr.injg.QGas=noConv2.qgstdTot+noConv2.qgstdTotNeg*86400.;
-        		        			if(fabsl(malha[col2].celula[1].acsr.injg.QGas)>1e-15)
+        		        			if(fabs(malha[col2].celula[1].acsr.injg.QGas)>1e-15)
           		        			malha[col2].celula[1].acsr.injg.razCompGas=(noConv2.qcmistStd+noConv2.qcmistStdNeg)/
           		        					                                    malha[col2].celula[1].acsr.injg.QGas;
           		        			else malha[col2].celula[1].acsr.injg.razCompGas=0.;
@@ -7669,7 +7669,7 @@ void cicloRedeCompCego(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativ
     							double mult=1.0;
     							if(malha[aux].arq.ConContEntrada==2)mult=-1.;
     							for(int icol2=0; icol2<nderiva; icol2++){
-    								if(fabsl(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
+    								if(fabs(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
     									ordCol[icol2]=aux;
     									carregado[icol2]=1;
     									icol2=nderiva;
@@ -8406,11 +8406,11 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
   	        		double chutemass;
   	        		if(malha[i].celula[0].acsr.tipo==2){
   	        			chutemass=malha[i].celula[0].acsr.injl.QLiq;
-  	        			if(fabsl(chutemass)<1e-5)chutemass=100.;
+  	        			if(fabs(chutemass)<1e-5)chutemass=100.;
   	        		}
   	        		else{
   	        			chutemass=malha[i].celula[0].acsr.injg.QGas;
-  	        			if(fabsl(chutemass)<1e-5)chutemass=1000.;
+  	        			if(fabs(chutemass)<1e-5)chutemass=1000.;
   	        		}
   	  		        if(malha[i].arq.chokep.abertura[0]>0.6) malha[i].buscaProdPresPresPerm(chutemass);
   	  		        else malha[i].buscaProdPresPresPerm2(chutemass);
@@ -8503,7 +8503,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
       								double mult=1.0;
       								if(malha[aux].arq.ConContEntrada==2)mult=-1.;
       								for(int icol2=0; icol2<nderiva; icol2++){
-      									if(fabsl(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
+      									if(fabs(dcol[icol2]-malha[aux].celula[0].duto.dia*mult)<1.e-15 && carregado[icol2]==0){
       										ordCol[icol2]=aux;
       										carregado[icol2]=1;
       										icol2=nderiva;
@@ -8680,7 +8680,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
   		        			noConv1.qgstdTot*=86400.;
   		        			//norma+=pow((malha[i].celula[0].acsr.injg.QGas-noConv.qgstdTot)/noConv.qgstdTot,2.);
   		        			malha[i].celula[recb].acsr.injg.QGas=noConv1.qgstdTot+noConv1.qgstdTotNeg*86400.;
-  		        			if(fabsl(malha[i].celula[recb].acsr.injg.QGas)>1e-15)
+  		        			if(fabs(malha[i].celula[recb].acsr.injg.QGas)>1e-15)
   		        			malha[i].celula[recb].acsr.injg.razCompGas=(noConv1.qcmistStd+noConv1.qcmistStdNeg)/
   		        					                                    malha[i].celula[recb].acsr.injg.QGas;
   		        			else malha[i].celula[recb].acsr.injg.razCompGas=0.;
@@ -8765,7 +8765,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
   		        			//norma+=pow((malha[i].celula[0].acsr.injg.QGas-noConv.qgstdTot)/noConv.qgstdTot,2.);
   		        			malha[col2].celula[recb].acsr.injg.QGas=noConv2.qgstdTot+noConv2.qgstdTotNeg*86400.;
   		        			//malha[col2].celula[recb].acsr.injg.QComp=noConv2.qcmistStd+noConv2.qcmistStdNeg;
-  		        			if(fabsl(malha[col2].celula[recb].acsr.injg.QGas)>1e-15)
+  		        			if(fabs(malha[col2].celula[recb].acsr.injg.QGas)>1e-15)
   		        			malha[col2].celula[recb].acsr.injg.razCompGas=(noConv2.qcmistStd+noConv2.qcmistStdNeg)/
   		        					                                    malha[col2].celula[recb].acsr.injg.QGas;
   		        			else malha[col2].celula[recb].acsr.injg.razCompGas=0.;
@@ -8865,7 +8865,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
       		        					noConv.qgstdTotNeg*86400.;
       		        			//malha[aux].celula[0].acsr.injg.QComp=noConv.qcmistStd+noConv.qcmistStdNeg;
 
-      		        			if(fabsl(malha[aux].celula[0].acsr.injg.QGas)>1e-15)
+      		        			if(fabs(malha[aux].celula[0].acsr.injg.QGas)>1e-15)
       		        			malha[aux].celula[0].acsr.injg.razCompGas=(noConv.qcmistStd+noConv.qcmistStdNeg)/
       		        					                                    malha[aux].celula[0].acsr.injg.QGas;
       		        			else malha[aux].celula[0].acsr.injg.razCompGas=0.;
@@ -9145,7 +9145,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
       		        					else{
       		        						chutemass=(noConv.qgstdTot*86400.+
       		        						noConv.qgstdTotNeg*86400)*malha[aux].celula[0].duto.area/area;
-      		        						if(fabsl(chutemass)>1e-15)
+      		        						if(fabs(chutemass)>1e-15)
       		        							malha[aux].celula[0].acsr.injg.razCompGas=(noConv.qcmistStd+noConv.qcmistStdNeg)/
 												(noConv.qgstdTot*86400.+noConv.qgstdTotNeg*86400);
       		        						else malha[aux].celula[0].acsr.injg.razCompGas=0.;
@@ -9215,13 +9215,13 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
       		        				if((*arqRede.vg1dSP).fluidoRede==1){
       		        					if(arqRede.malha[aux].perm==1 && (malha[aux].celula[0].acsr.injl.QLiq)>0)
       		        						noConv.qlmistStd-=malha[aux].celula[0].acsr.injl.QLiq;//alteracao4
-      		        					if(fabsl(malha[aux].celula[0].acsr.injl.QLiq+2121212121)<1e-15)
+      		        					if(fabs(malha[aux].celula[0].acsr.injl.QLiq+2121212121)<1e-15)
       		        						cout<<"Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo  : "<<aux<<endl;
       		        				}
       		        				else if((*arqRede.vg1dSP).fluidoRede==0){
       		        					if(arqRede.malha[aux].perm==1 && (malha[aux].celula[0].acsr.injg.QGas)>0)
       		        						noConv.qgstdTot-=malha[aux].celula[0].acsr.injg.QGas/86400;//alteracao4
-      		        					if(fabsl(malha[aux].celula[0].acsr.injg.QGas+2121212121)<1e-15)
+      		        					if(fabs(malha[aux].celula[0].acsr.injg.QGas+2121212121)<1e-15)
       		        						cout<<"Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : "<<aux<<endl;
       		        				}
       		        				else if((*arqRede.vg1dSP).fluidoRede==2){
@@ -9243,7 +9243,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
       		        						noConv.mliqmist-= ((1. - fracmasshidra)*massic+vazmassc);
       		        						noConv.mgasmist-= fracmasshidra*massic;
       		        					}
-      		        					if(fabsl(malha[aux].celula[0].acsr.injl.QLiq+2121212121)<1e-15)
+      		        					if(fabs(malha[aux].celula[0].acsr.injl.QLiq+2121212121)<1e-15)
       		        						cout<<"Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : "<<aux<<endl;
       		        				}
       		        			}
@@ -9304,7 +9304,7 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
       		        						noConv.mliqmist-= (malha[aux].celula[0].acsr.injm.MassC+malha[aux].celula[0].acsr.injm.MassP);
       		        						noConv.mgasmist-= malha[aux].celula[0].acsr.injm.MassG;
       		        					}
-      		        					if(fabsl(malha[aux].celula[0].acsr.injm.MassC+
+      		        					if(fabs(malha[aux].celula[0].acsr.injm.MassC+
       		        							malha[aux].celula[0].acsr.injm.MassP+
 												malha[aux].celula[0].acsr.injm.MassG+2121212121)<1e-15)
       		        						cout<<"Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : "<<aux<<endl;
@@ -9322,11 +9322,11 @@ double cicloRede(SProd* malha,Rede& arqRede, Vcr<int>& inativo,int indativo,vect
     }
     }
 
-    if(fabsl(testaNMalha)>0){
-    	(*arqRede.vg1dSP).erroRede=fabsl(sqrtl(norma)/nnos-(*arqRede.vg1dSP).norma0)/(*arqRede.vg1dSP).norma0;
-    	// if(sqrtl(norma)/nnos>2*norma0) erroRede=0.0001;
-    	(*arqRede.vg1dSP).norma0=sqrtl(norma)/nnos;
-    	return sqrtl(norma)/nnos;
+    if(fabs(testaNMalha)>0){
+    	(*arqRede.vg1dSP).erroRede=fabs(sqrt(norma)/nnos-(*arqRede.vg1dSP).norma0)/(*arqRede.vg1dSP).norma0;
+    	// if(sqrt(norma)/nnos>2*norma0) erroRede=0.0001;
+    	(*arqRede.vg1dSP).norma0=sqrt(norma)/nnos;
+    	return sqrt(norma)/nnos;
     }
     else{
     	return 0;
@@ -9584,7 +9584,7 @@ double permanenteSimples(SProd& sistem1, double inichute=-1.){
        	    				sistem1.arq.gasinj.vazgas[0]/=1.05;
     	    			}
            		  //ciclo=sistem1.buscaProdPfundoPerm();
-    	    			while(fabsl(ciclo)>0.9e9 && konta<10){
+    	    			while(fabs(ciclo)>0.9e9 && konta<10){
     	    				sistem1.celulaG[0].tipoCC = 1;//mudando para condicao vazao de injecao na linha de servico,
     	    				//para se ter uma primeira estimativa da pressao de fundo
             		  //solucao permanente com vazao de injecao
@@ -9599,12 +9599,12 @@ double permanenteSimples(SProd& sistem1, double inichute=-1.){
     	    				sistem1.celulaG[0].tipoCC = 0;//voltando para a condicao pressao de injecao
             		  //com o valor da pressao de fundo desta solucao, busca-se a solucao
             		  //com condicao de contorno original, pressao de injecao
-            		//while(fabsl(ciclo)>0.9e10){
+            		//while(fabs(ciclo)>0.9e10){
     	    				ciclo=sistem1.buscaProdPfundoPerm(pref,konta);//nova tentativa de convergencia,agora com um valor de chute inicial
             		  //se nao for possivel a convergencia, faz-se uma nova estimativa de vazao
             		  //de injecao e tenta-se novamente a solucao com pressao de injecao,
             		  //aumenta-se o valor da estimativa de vazao de injecao
-    	    				if(fabsl(ciclo)>0.9e9){
+    	    				if(fabs(ciclo)>0.9e9){
     	    					//caso o valor retornado em ciclo seja maior que 0.9e9, isto é um indicativo de que a
     	    					//convergencia nao foi atingida por se ter pouco injecao de gas, neste caso
     	    					//retorna-se aa abordagem descrita anteriormente, mas aumenta-se o valor da estimativa de
@@ -9671,7 +9671,7 @@ double permanenteSimples(SProd& sistem1, double inichute=-1.){
         	    			else multVazGas=1.05;
        	    				sistem1.arq.gasinj.vazgas[0]/=1.05;
     	    			}
-    	    			while(fabsl(ciclo)>0.9e9 && konta<10){
+    	    			while(fabs(ciclo)>0.9e9 && konta<10){
     	    				sistem1.celulaG[0].tipoCC = 1;
         			  //solucao permanente com vazao de injecao
     	    				if(konta>0){
@@ -9683,14 +9683,14 @@ double permanenteSimples(SProd& sistem1, double inichute=-1.){
     	    				sistem1.celulaG[0].tipoCC = 0;//voltando para a condicao pressao de injecao
     	            		  //com o valor da pressao de fundo desta solucao, busca-se a solucao
     	            		  //com condicao de contorno original, pressao de injecao
-        			//while(fabsl(ciclo)>0.9e10){
+        			//while(fabs(ciclo)>0.9e10){
     	    				double pref=sistem1.celula[0].pres;//utilizando a pressao de fundo obtida da
     	    				//estimativa com vazao de injecao de gas-lift
     	    				ciclo=sistem1.buscaProdPfundoPerm2(pref,konta);
             		  //se nao for possivel a convergencia, faz-se uma nova estimativa de vazao
             		  //de injecao e tenta-se novamente a solucao com pressao de injecao,
             		  //aumenta-se o valor da estimativa de vazao de injecao
-    	    				if(fabsl(ciclo)>0.9e9){
+    	    				if(fabs(ciclo)>0.9e9){
     	    					//caso o valor retornado em ciclo seja maior que 0.9e9, isto é um indicativo de que a
     	    					//convergencia nao foi atingida por se ter pouco injecao de gas, neste caso
     	    					//retorna-se aa abordagem descrita anteriormente, mas aumenta-se o valor da estimativa de
@@ -10176,7 +10176,7 @@ double SolveTramoSolteiro(SProd& sistem1, double chute0=-1.){
 		string tmp = saidaT.str();
 		//ofstream escreveIni(tmpLog.c_str(), ios_base::app);
 		ofstream escreveIni(tmp.c_str(), ios_base::out);
-		if(fabsl(saida)>1e9){
+		if(fabs(saida)>1e9){
 			escreveIni << "    PROBLEMAS NA CONVERGENCIA DO PERMANENTE     " << endl;
 			logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
 			    	   "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################",
@@ -10480,7 +10480,7 @@ void leituraASparalelo(string nomeArquivoAS, string nomeArquivoLog, tipoValidaca
 		cout<<"Resolvendo Sequencia "<<iSeq<<" da analise de sensibilidade"<< endl;
 		//(*sistem2.vg1dSP).sequenciaAS=iSeq;
 		falha=SolveTramoSolteiro(sistem2);
-		if(fabsl(falha)>0.9e10){
+		if(fabs(falha)>0.9e10){
 			//caso ocorre uma falha nma busca da solucao para um caso da analise de sensibilidade
 			cout<<"----------------------------- falha no caso -------------------------------"<<endl;
 		}
@@ -10490,9 +10490,9 @@ void leituraASparalelo(string nomeArquivoAS, string nomeArquivoLog, tipoValidaca
 
 		string tmpAS = saidaAS.str();
 		ofstream escreveAS(tmpAS.c_str(), ios_base::app);*/
-		if(fabsl(falha)<1e9)indfalha[iSeq]=1;
+		if(fabs(falha)<1e9)indfalha[iSeq]=1;
 		else indfalha[iSeq]=-1;
-		//if(fabsl(falha)<1e9)escreveAS <<iSeq<<" : "<< " Resultado = " << "sucesso"<< endl;
+		//if(fabs(falha)<1e9)escreveAS <<iSeq<<" : "<< " Resultado = " << "sucesso"<< endl;
 		//else escreveAS <<iSeq<<" : "<< " Resultado = " << "falha"<< endl;
 
 		//escreveAS.close();
@@ -10746,7 +10746,7 @@ void leituraASparaleloReserva(string nomeArquivoAS, string nomeArquivoLog, tipoV
 		cout<<"Resolvendo Sequencia "<<iSeq<<" da analise de sensibilidade"<< endl;
 		(*sistem2[iSeq].vg1dSP).sequenciaAS=iSeq;
 		falha=SolveTramoSolteiro(sistem2[iSeq]);
-		if(fabsl(falha)>0.9e10){
+		if(fabs(falha)>0.9e10){
 			//caso ocorre uma falha nma busca da solucao para um caso da analise de sensibilidade
 			cout<<"----------------------------- falha no caso -------------------------------"<<endl;
 		}
@@ -10756,9 +10756,9 @@ void leituraASparaleloReserva(string nomeArquivoAS, string nomeArquivoLog, tipoV
 
 		string tmpAS = saidaAS.str();
 		ofstream escreveAS(tmpAS.c_str(), ios_base::app);*/
-		if(fabsl(falha)<1e9)indfalha[iSeq]=1;
+		if(fabs(falha)<1e9)indfalha[iSeq]=1;
 		else indfalha[iSeq]=-1;
-		//if(fabsl(falha)<1e9)escreveAS <<iSeq<<" : "<< " Resultado = " << "sucesso"<< endl;
+		//if(fabs(falha)<1e9)escreveAS <<iSeq<<" : "<< " Resultado = " << "sucesso"<< endl;
 		//else escreveAS <<iSeq<<" : "<< " Resultado = " << "falha"<< endl;
 
 		//escreveAS.close();
@@ -10949,7 +10949,7 @@ void leituraAS(string nomeArquivoAS, SProd& sistem1){
 			//se for o primeiro caso da analise de sensibilidade, não se usa nenhum valor para o chute, chute=-1
 			chute=-1.;
 			falha=SolveTramoSolteiro(sistem1,chute);
-			/*if(fabsl(falha)<0.9e10){
+			/*if(fabs(falha)<0.9e10){
 				int tipoChute=sistem1.arq.ConContEntrada;
 				if(tipoChute==0)vecChute[kontaDim]=sistem1.celula[0].pres;
 				else{
@@ -10985,18 +10985,18 @@ void leituraAS(string nomeArquivoAS, SProd& sistem1){
 				int para;
 				para=0;
 			}
-			//if(fabsl(falha)<1e9){
-			if(fabsl(falha)>1e9){
+			//if(fabs(falha)<1e9){
+			if(fabs(falha)>1e9){
 				chute=-1;
 			}
 			falha=SolveTramoSolteiro(sistem1,chute);
 				//caso a solucao com chute tenha falhado, tenta-se uma nova solucao sem o chute
-			if(fabsl(falha)>1e9 && chute>0){
+			if(fabs(falha)>1e9 && chute>0){
 					falha=SolveTramoSolteiro(sistem1);
 			}
 			//}
 			//else falha=SolveTramoSolteiro(sistem1);
-			/*if(fabsl(falha)<0.9e10){
+			/*if(fabs(falha)<0.9e10){
 				int tipoChute=sistem1.arq.ConContEntrada;
 				if(tipoChute==0)vecChute[kontaDim]=sistem1.celula[0].pres;
 				else{
@@ -11010,7 +11010,7 @@ void leituraAS(string nomeArquivoAS, SProd& sistem1){
 			kontaDim++;
 			if(kontaDim>analiseSens.dim-1)kontaDim=0;*/
 		}
-		if(fabsl(falha)>0.9e10){
+		if(fabs(falha)>0.9e10){
 			//caso ocorre uma falha nma busca da solucao para um caso da analise de sensibilidade
 			cout<<"----------------------------- falha no caso -------------------------------"<<endl;
 		}
@@ -11020,9 +11020,9 @@ void leituraAS(string nomeArquivoAS, SProd& sistem1){
 
 		string tmpAS = saidaAS.str();
 		ofstream escreveAS(tmpAS.c_str(), ios_base::app);
-		if(fabsl(falha)<1e9)indfalha[iSeq]=1;
+		if(fabs(falha)<1e9)indfalha[iSeq]=1;
 		else indfalha[iSeq]=-1;
-		if(fabsl(falha)<1e9)escreveAS <<iSeq<<" : "<< " Resultado = " << "sucesso"<< endl;
+		if(fabs(falha)<1e9)escreveAS <<iSeq<<" : "<< " Resultado = " << "sucesso"<< endl;
 		else escreveAS <<iSeq<<" : "<< " Resultado = " << "falha"<< endl;
 
 		escreveAS.close();
@@ -11056,7 +11056,7 @@ void leituraAS(string nomeArquivoAS, SProd& sistem1){
 		else{
 			//caso de construcao de tabela VFP:
 			double BHP;
-			if(fabsl(falha)<1e9)BHP=sistem1.celula[0].pres;
+			if(fabs(falha)<1e9)BHP=sistem1.celula[0].pres;
 			else BHP=-1e10;
 			analiseSens.tabelaGenerica(sistem1.ncelGas,sistem1.chokeSup, sistem1.celula, sistem1.celulaG,sistem1.arq.flup,
 					sistem1.arq.IPRS,sistem1.arq.valv,sistem1.arq.fonteg,
@@ -11155,8 +11155,8 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 			}
 			else{
 				if(arqRede.malha[i].nafluente==0 && resolvPerm[i]==0){
-					if(malha[i].celula[0].acsr.tipo==1 && fabsl(malha[i].celula[0].acsr.injg.QGas)<1e-15){
-						if(malha[i].arq.ConContEntrada!=2 || fabsl(malha[i].arq.CCVPres.mass[0])<1e-15){
+					if(malha[i].celula[0].acsr.tipo==1 && fabs(malha[i].celula[0].acsr.injg.QGas)<1e-15){
+						if(malha[i].arq.ConContEntrada!=2 || fabs(malha[i].arq.CCVPres.mass[0])<1e-15){
 							arqRede.malha[i].perm=0;
 							//malha[i].arq.tabelaDinamica=0;
 							resolvPerm[i]=1;
@@ -11164,8 +11164,8 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 							semPerm++;
 						}
 					}
-					else if(malha[i].celula[0].acsr.tipo==2 && fabsl(malha[i].celula[0].acsr.injl.QLiq)<1e-15){
-						if(malha[i].arq.ConContEntrada!=2 || fabsl(malha[i].arq.CCVPres.mass[0])<1e-15){
+					else if(malha[i].celula[0].acsr.tipo==2 && fabs(malha[i].celula[0].acsr.injl.QLiq)<1e-15){
+						if(malha[i].arq.ConContEntrada!=2 || fabs(malha[i].arq.CCVPres.mass[0])<1e-15){
 							arqRede.malha[i].perm=0;
 							//malha[i].arq.tabelaDinamica=0;
 							resolvPerm[i]=1;
@@ -11174,9 +11174,9 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 						}
 					}
 					else if(malha[i].celula[0].acsr.tipo==10 &&
-							fabsl(malha[i].celula[0].acsr.injm.MassC+malha[i].celula[0].acsr.injm.MassP+
+							fabs(malha[i].celula[0].acsr.injm.MassC+malha[i].celula[0].acsr.injm.MassP+
 									malha[i].celula[0].acsr.injm.MassG)<1e-15){
-						if(malha[i].arq.ConContEntrada!=2 || fabsl(malha[i].arq.CCVPres.mass[0])<1e-15){
+						if(malha[i].arq.ConContEntrada!=2 || fabs(malha[i].arq.CCVPres.mass[0])<1e-15){
 							arqRede.malha[i].perm=0;
 							//malha[i].arq.tabelaDinamica=0;
 							resolvPerm[i]=1;
@@ -11199,7 +11199,7 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 					}
 					if(afluPerm==arqRede.malha[i].nafluente){
 						if(ativoAflu>0){
-							if(malha[i].arq.ConContEntrada==2 && fabsl(malha[i].arq.CCVPres.mass[0])<=1e-15){
+							if(malha[i].arq.ConContEntrada==2 && fabs(malha[i].arq.CCVPres.mass[0])<=1e-15){
 								arqRede.malha[i].perm=0;
 								//malha[i].arq.tabelaDinamica=0;
 								resolvPerm[i]=1;
@@ -11213,11 +11213,11 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 						}
 						else{
 
-							if(malha[i].celula[0].acsr.tipo==1 && fabsl(malha[i].celula[0].acsr.injg.QGas)>1e-15){
+							if(malha[i].celula[0].acsr.tipo==1 && fabs(malha[i].celula[0].acsr.injg.QGas)>1e-15){
 								resolvPerm[i]=1;
 								totPerm++;
 							}
-							else if(malha[i].celula[1].acsr.tipo==1 && fabsl(malha[i].celula[1].acsr.injg.QGas)>1e-15){
+							else if(malha[i].celula[1].acsr.tipo==1 && fabs(malha[i].celula[1].acsr.injg.QGas)>1e-15){
 								resolvPerm[i]=1;
 								totPerm++;
 								if((malha[i].celula[1].acsr.injg.QGas)>1e-15){
@@ -11231,11 +11231,11 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 									}
 								}
 							}
-							else if(malha[i].celula[0].acsr.tipo==2 && fabsl(malha[i].celula[0].acsr.injl.QLiq)>1e-15){
+							else if(malha[i].celula[0].acsr.tipo==2 && fabs(malha[i].celula[0].acsr.injl.QLiq)>1e-15){
 									resolvPerm[i]=1;
 									totPerm++;
 							}
-							else if(malha[i].celula[1].acsr.tipo==2 && fabsl(malha[i].celula[1].acsr.injl.QLiq)>1e-15){
+							else if(malha[i].celula[1].acsr.tipo==2 && fabs(malha[i].celula[1].acsr.injl.QLiq)>1e-15){
 								resolvPerm[i]=1;
 								totPerm++;
 								if((malha[i].celula[1].acsr.injl.QLiq)>1e-15){
@@ -11250,13 +11250,13 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 								}
 							}
 							else if(malha[i].celula[0].acsr.tipo==10 &&
-									fabsl(malha[i].celula[0].acsr.injm.MassC+malha[i].celula[0].acsr.injm.MassP+
+									fabs(malha[i].celula[0].acsr.injm.MassC+malha[i].celula[0].acsr.injm.MassP+
 											malha[i].celula[0].acsr.injm.MassG)>1e-15){
 									resolvPerm[i]=1;
 									totPerm++;
 							}
 							else if(malha[i].celula[1].acsr.tipo==10 &&
-									fabsl(malha[i].celula[1].acsr.injm.MassC+malha[i].celula[1].acsr.injm.MassP+
+									fabs(malha[i].celula[1].acsr.injm.MassC+malha[i].celula[1].acsr.injm.MassP+
 											malha[i].celula[1].acsr.injm.MassG)>1e-15){
 								resolvPerm[i]=1;
 								totPerm++;
@@ -11284,7 +11284,7 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 								resolvPerm[i]=1;
 								totPerm++;
 							}
-							else if(malha[i].arq.ConContEntrada==2 && fabsl(malha[i].arq.CCVPres.mass[0])>1e-15){
+							else if(malha[i].arq.ConContEntrada==2 && fabs(malha[i].arq.CCVPres.mass[0])>1e-15){
 								//int indaflu=arqRede.malha[i].afluente[0];
 								//if(arqRede.malha[indaflu].ncoleta==1){
 									resolvPerm[i]=1;
@@ -11326,7 +11326,7 @@ void avaliaPerm(SProd* malha,Rede& arqRede, int narq, int& semPerm){
 				for(int icol=0;icol<arqRede.malha[indaflu].ncoleta;icol++){
 					int indacol=arqRede.malha[indaflu].coleta[icol];
 					colPerm+=arqRede.malha[indacol].perm;
-					if(malha[indacol].arq.ConContEntrada==2 && fabsl(malha[indacol].arq.CCVPres.mass[0])>1e-15){
+					if(malha[indacol].arq.ConContEntrada==2 && fabs(malha[indacol].arq.CCVPres.mass[0])>1e-15){
 						ccvp=1;
 					}
 				}
@@ -11560,7 +11560,7 @@ void preparaRedeProd(SProd* malha,Rede& arqRede, int narq,string nomeArquivoLog,
 			    	    	  malha[i].titE=val1/(rlMix+val1);
 			    	    	  malha[i].celula[0].acsr.injl.FluidoPro=fluCP;
 			  			}
-						if(fabsl(malha[i].celula[0].acsr.injl.QLiq)<1e-15)
+						if(fabs(malha[i].celula[0].acsr.injl.QLiq)<1e-15)
 						malha[i].celula[0].acsr.injl.QLiq=1000.*pow(malha[i].celula[0].duto.dia,2.)/pow(6.*2.54/100,2.);
 						malha[i].celula[0].fluiL=&malha[i].celula[0].acsr.injl.FluidoPro;
 					}
@@ -12338,7 +12338,7 @@ void RedeProd(SProd* malha,Rede& arqRede, int narq,
 			    	    	  malha[i].titE=val1/(rlMix+val1);
 			    	    	  malha[i].celula[0].acsr.injl.FluidoPro=malha[i].celula[0].flui;
 			  			}
-						if(fabsl(malha[i].celula[0].acsr.injl.QLiq)<1e-15)
+						if(fabs(malha[i].celula[0].acsr.injl.QLiq)<1e-15)
 						malha[i].celula[0].acsr.injl.QLiq=1000.*pow(malha[i].celula[0].duto.dia,2.)/pow(6.*2.54/100,2.);
 						malha[i].celula[0].fluiL=&malha[i].celula[0].acsr.injl.FluidoPro;
 					}
@@ -13046,7 +13046,7 @@ void TransAnel( int narq,int nfontes,int* indfonte,int* indtramo,int* posicfonte
 	        	kontasnp[i]++;
 	        }*/
 	          for(int kontasnp=0; kontasnp<malha[i].arq.nsnp;kontasnp++){
-	              if(fabsl((*arqRede.vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
+	              if(fabs((*arqRede.vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
 	            	  WriteSnapShot(malha[i],kontasnp,i);//registro do arquivo SNP
 	              }
 	          }
@@ -13129,8 +13129,8 @@ double calcErroGL( SProd* malha,int narq,int nfontes,int* posicfonte,int indAnel
     }
     if(malha[indAnel].arq.ConContEntrada==1)erro+=malha[indAnel].celula[0].acsr.injg.QGas;
     double divisor=1;
-    if(fabsl(malha[indAnel].celula[0].acsr.injg.QGas)>0)
-    	divisor=fabsl(malha[indAnel].celula[0].acsr.injg.QGas);
+    if(fabs(malha[indAnel].celula[0].acsr.injg.QGas)>0)
+    	divisor=fabs(malha[indAnel].celula[0].acsr.injg.QGas);
     return erro/divisor;
 }
 
@@ -13142,7 +13142,7 @@ double objetCC0( SProd* malha,int narq,int nfontes,int* indfonte,int* indtramo,i
 }
 
 double SIGN(double a, double b) {
-  return (b >= 0 ? 1.0 : -1.0) * fabsl(a);
+  return (b >= 0 ? 1.0 : -1.0) * fabs(a);
 }
 double  zriddr(SProd* malha,double x1,double x2,
 		           int narq,int nfontes,int* indfonte,int* indtramo,int* posicfonte,int indAnel,
@@ -13178,15 +13178,15 @@ double  zriddr(SProd* malha,double x1,double x2,
 		for(int j=0;j<maxit;j++){
 			double xm=0.5*(xl+xh);
 			double fm=objetCC0(malha,narq,nfontes,indfonte,indtramo,posicfonte,indAnel,xm,1,dreno);
-			double s=sqrtl(fm*fm-fl*fh);
+			double s=sqrt(fm*fm-fl*fh);
 			if(s==0.0) return ans;
 			double xnew=xm+(xm-xl)*((fl>=fh ? 1.0 : -1.0)*fm/s);
-			if(fabsl(xnew-ans)<=xacc ){
+			if(fabs(xnew-ans)<=xacc ){
 				return ans;
 			}
 			ans=xnew;
 			double fnew=objetCC0(malha,narq,nfontes,indfonte,indtramo,posicfonte,indAnel,ans,1,dreno);
-			if(fabsl(fnew)<=xacc ) return ans;
+			if(fabs(fnew)<=xacc ) return ans;
 			if(SIGN(fm, fnew)!=fm){
 				xl=xm;
 				fl=fm;
@@ -13202,14 +13202,14 @@ double  zriddr(SProd* malha,double x1,double x2,
 				fl=fnew;
 			}
 			else return -100000.;
-			if(fabsl(xh-xl)<=xacc ) return ans;
+			if(fabs(xh-xl)<=xacc ) return ans;
 
 		}
 		 return 100000.;
 	}
 	else {
-		if(fabsl(fl)<=xacc) return x1;
-		if(fabsl(fh)<=xacc) return x2;
+		if(fabs(fl)<=xacc) return x1;
+		if(fabs(fh)<=xacc) return x2;
 		return -10000.;
 	}
 }
@@ -13283,7 +13283,7 @@ double chutePresRedeParalelaSec(SProd* malha, int iP, int iS,double pchute,int i
 		  double rhomix = (1. - alfa) * rhol + alfa * rhog;
 		  double dxmed = 0.5 * (malha[iS].celula[i].dx + malha[iS].celula[i - 1].dx);
 		  //avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-		  pchute += (rhomix * 9.81 * sinl(malha[iS].celula[i].duto.teta) * dxmed) / 98066.5;
+		  pchute += (rhomix * 9.81 * sin(malha[iS].celula[i].duto.teta) * dxmed) / 98066.5;
 		  if(malha[iS].arq.usaTabela==1 && (malha[iS].arq.tabent.pmax - pchute) < (*malha[iS].vg1dSP).localtiny)
 			  pchute = 0.9*malha[iS].arq.tabent.pmax;
 	  }
@@ -13423,8 +13423,8 @@ void SolveRedeParalelaTrans(SProd* malha,Rede& arqRede, int nrede){
 				   else{
 					   for(int j=0; j<=malha[i].ncel;j++){
 						   double area=malha[i].celula[j].duto.area;
-						   double vLiqTest=fabsl(malha[i].celula[j].QL/(area));
-						   double vGasTest=fabsl(malha[i].celula[j].QG /(area));
+						   double vLiqTest=fabs(malha[i].celula[j].QL/(area));
+						   double vGasTest=fabs(malha[i].celula[j].QG /(area));
 						   double razDp=0.1;
 						   double razDp1=1;
 						   double razDT=1;
@@ -13435,7 +13435,7 @@ void SolveRedeParalelaTrans(SProd* malha,Rede& arqRede, int nrede){
 								   malha[i].celula[celpos[i]].acsr.chk.AreaGarg<1e-15*malha[i].celula[celpos[i]].acsr.chk.AreaTub){
 							   razDT=1;
 						   }
-						   if((fabsl(malha[i].celula[j].dpdtIni)/malha[i].celula[j].pres<razDp) && fabsl(malha[i].celula[j].dTdtIni)<razDT){
+						   if((fabs(malha[i].celula[j].dpdtIni)/malha[i].celula[j].pres<razDp) && fabs(malha[i].celula[j].dTdtIni)<razDT){
 							   if(malha[i].TransMassModel==0)malha[i].celula[j].m2d=1.;
 							   else malha[i].celula[j].m2d=0.;
 							   malha[i].celula[j].mudaDT=1.;
@@ -13638,7 +13638,7 @@ void SolveRedeParalelaTrans(SProd* malha,Rede& arqRede, int nrede){
 	   for(int i=0;i<narq;i++){
 		   malha[i].SolveTrans(1., 1., 0.,nrede);
 		   for(int kontasnp=0; kontasnp<malha[i].arq.nsnp;kontasnp++){
-			   if(fabsl((*arqRede.vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
+			   if(fabs((*arqRede.vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
 				   WriteSnapShot(malha[i],kontasnp,i);//registro do arquivo SNP
 			   }
 		   }
@@ -13662,7 +13662,7 @@ void SolveRedeParalelaTrans(SProd* malha,Rede& arqRede, int nrede){
 			malha[i].SolveTrans();//metodo onde se faz o avanco de tempo transiente
                 // solverHidrato.solverHidrato();
 			for(int kontasnp=0; kontasnp<malha[i].arq.nsnp;kontasnp++){
-				if(fabsl((*malha[i].vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
+				if(fabs((*malha[i].vg1dSP).lixo5-malha[i].arq.tempsnp[kontasnp])<malha[i].dt){
 					WriteSnapShot(malha[i],(*malha[i].vg1dSP).lixo5);//registro do arquivo SNP
 				}
 			}
@@ -13866,10 +13866,10 @@ void RedeParalela(SProd* malha,Rede& arqRede, int narq,
 			//resulS=malha[iS].buscaTramoSecVazPerm(malha[iP].celula[indPartidaP].pres, indPartida);
 		}
 		if(konta>0){
-			if(fabsl(resulS0)>1e-15 && fabsl(resulP0)>1e-15)erro=fabsl(resulP-resulP0)/resulP0+fabsl(resulS-resulS0)/resulS0;
-			else if(fabsl(resulP0)>1e-15)erro=fabsl(resulP-resulP0)/resulP0+fabsl(resulS-resulS0);
-			else if(fabsl(resulS0)>1e-15)erro=fabsl(resulP-resulP0)+fabsl(resulS-resulS0)/resulS0;
-			else erro=fabsl(resulP-resulP0)+fabsl(resulS-resulS0);
+			if(fabs(resulS0)>1e-15 && fabs(resulP0)>1e-15)erro=fabs(resulP-resulP0)/resulP0+fabs(resulS-resulS0)/resulS0;
+			else if(fabs(resulP0)>1e-15)erro=fabs(resulP-resulP0)/resulP0+fabs(resulS-resulS0);
+			else if(fabs(resulS0)>1e-15)erro=fabs(resulP-resulP0)+fabs(resulS-resulS0)/resulS0;
+			else erro=fabs(resulP-resulP0)+fabs(resulS-resulS0);
 		}
 		konta++;
 		(*vG1d).iterRede=konta;
@@ -14028,7 +14028,7 @@ void RedeAnelGL(SProd* malha,Rede& arqRede, int narq,
 			 else{
 				 int dimen=dreno.size();
 				 for(int j=0;j<dimen;j++){
-					 if(fabsl(dreno[j].posicmani-arqRede.malha[i].compfonte)<(*arqRede.vg1dSP).localtiny){
+					 if(fabs(dreno[j].posicmani-arqRede.malha[i].compfonte)<(*arqRede.vg1dSP).localtiny){
 						 dreno[j].nmani++;
 						 dreno[j].mani[dreno[j].nmani-1]=i;
 						 j=dimen;
@@ -14134,7 +14134,7 @@ void RedeAnelGL(SProd* malha,Rede& arqRede, int narq,
 		  for(int i=1;i<=malha[indAnel].ncel;i++){
 			  double rhog=malha[indAnel].celula[i].flui.MasEspGas(pres,temp);
 			  double tet=malha[indAnel].celula[i].duto.teta;
-			  pres=malha[indAnel].celula[i].pres=pres-rhog*9.81*malha[indAnel].celula[i].dx*sinl(tet)/98066.5;
+			  pres=malha[indAnel].celula[i].pres=pres-rhog*9.81*malha[indAnel].celula[i].dx*sin(tet)/98066.5;
 			  temp=malha[indAnel].celula[i].temp=malha[indAnel].celula[i].calor.Textern1;
 		  }
 	  }
@@ -14177,7 +14177,7 @@ void RedeAnelGL(SProd* malha,Rede& arqRede, int narq,
 		  for(int i=ncel-1;i>=0;i--){
 			  double rhog=malha[indAnel].celula[i+1].flui.MasEspGas(pres,temp);
 			  double tet=malha[indAnel].celula[i+1].duto.teta;
-			  pres=malha[indAnel].celula[i].pres=pres+rhog*9.81*malha[indAnel].celula[i+1].dx*sinl(tet)/98066.5;
+			  pres=malha[indAnel].celula[i].pres=pres+rhog*9.81*malha[indAnel].celula[i+1].dx*sin(tet)/98066.5;
 			  temp=malha[indAnel].celula[i].temp=malha[indAnel].celula[i].calor.Textern1;
 		  }
 
@@ -14225,7 +14225,7 @@ void RedeAnelGL(SProd* malha,Rede& arqRede, int narq,
 
 	  }
 	  else{
-	    while(fabsl(erro)>0.0001){
+	    while(fabs(erro)>0.0001){
 		   calcPeriAnelGL( malha,narq,nfontes,indfonte,indtramo,posicdreno,indAnel,iter,dreno);
 		   erro=calcErroGL(malha,narq,nfontes,posicdreno,indAnel,dreno);
     	   double chutemass=0.;
@@ -14616,7 +14616,7 @@ double cicloRedeInj(SProd* malha,Rede& arqRede, Vcr<int>& inativo, int indativo)
       }
     }
   }
-  return sqrtl(norma) / nnos;
+  return sqrt(norma) / nnos;
 }
 
 void RedeInj(SProd* malha,Rede& arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
@@ -15793,7 +15793,7 @@ int main(int argc, char** argv) {
         	  kontasnp++;
           }*/
           for(int kontasnp=0; kontasnp<sistem1.arq.nsnp;kontasnp++){
-              if(fabsl((*sistem1.vg1dSP).lixo5-sistem1.arq.tempsnp[kontasnp])<sistem1.dt){
+              if(fabs((*sistem1.vg1dSP).lixo5-sistem1.arq.tempsnp[kontasnp])<sistem1.dt){
             	  WriteSnapShot(sistem1,(*sistem1.vg1dSP).lixo5);//registro do arquivo SNP
               }
           }

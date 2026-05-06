@@ -136,7 +136,7 @@ elem3dPoisson::elem3dPoisson(varGlob1D* DGP3DV,
     	cel3D.vElem=0.;
     	for(int j=0; j<cel3D.dim;j++)cel3D.vElem+=v3[j]*prodVec[j];
     	cel3D.vElem/=6.;
-    	cel3D.vElem=fabsl(cel3D.vElem);
+    	cel3D.vElem=fabs(cel3D.vElem);
 
        	for(int k=0; k<cel3D.nvert; k++){
         		double vetor1[3];
@@ -175,13 +175,13 @@ elem3dPoisson::elem3dPoisson(varGlob1D* DGP3DV,
     	for(int k=0; k<cel3D.nvert; k++){
     		cel3D.sFaceMod[k]=0.;
     		for(int j=0; j<cel3D.dim;j++)cel3D.sFaceMod[k]+=cel3D.sFace[k][j]*cel3D.sFace[k][j];
-    		cel3D.sFaceMod[k]=sqrtl(cel3D.sFaceMod[k]);
+    		cel3D.sFaceMod[k]=sqrt(cel3D.sFaceMod[k]);
     	}
     	for(int k=0; k<cel3D.nvert; k++){
     		for(int j=0; j<cel3D.dim;j++)cel3D.dCF[k][j]=cel3D.centroideFace[k][j]-cel3D.centroideElem[j];
     		cel3D.dCFMod[k]=0.;
     		for(int j=0; j<cel3D.dim;j++)cel3D.dCFMod[k]+=cel3D.dCF[k][j]*cel3D.dCF[k][j];
-    		cel3D.dCFMod[k]=sqrtl(cel3D.dCFMod[k]);
+    		cel3D.dCFMod[k]=sqrt(cel3D.dCFMod[k]);
     	}
 	}
 	else{
@@ -744,7 +744,7 @@ void elem3dPoisson::faceDetalhes(){
 			}
 			cel3D.modE[i]+=cel3D.vecE[i][j]*cel3D.vecE[i][j];
 		}
-		cel3D.modE[i]=sqrtl(cel3D.modE[i]);
+		cel3D.modE[i]=sqrt(cel3D.modE[i]);
 		for(int j=0;j<cel3D.dim;j++)cel3D.vecE[i][j]=cel3D.vecE[i][j]/cel3D.modE[i];
 		cel3D.angES[i]=0.;
 		for(int j=0;j<cel3D.dim;j++){
@@ -770,7 +770,7 @@ void elem3dPoisson::faceDetalhes(){
 				double del=(*vizinho[i]).centroideElem[j]-cel3D.fInter[i][j];
 				cel3D.fatG[i]+=del*del;
 			}
-			cel3D.fatG[i]=sqrtl(cel3D.fatG[i]);
+			cel3D.fatG[i]=sqrt(cel3D.fatG[i]);
 			cel3D.fatG[i]/=cel3D.modE[i];
 		}
 		else cel3D.fatG[i]=0.;
@@ -780,7 +780,7 @@ void elem3dPoisson::faceDetalhes(){
 			cel3D.vecT[i][j]=cel3D.centroideFace[i][j]-cel3D.fInter[i][j];
 			cel3D.modT[i]+=cel3D.vecT[i][j]*cel3D.vecT[i][j];
 		}
-		cel3D.modT[i]=sqrtl(cel3D.modT[i]);
+		cel3D.modT[i]=sqrt(cel3D.modT[i]);
 
 	}
 
@@ -895,7 +895,7 @@ void elem3dPoisson::calcGradGreen(){
 				gradMed[j]=gradMed[j]+(deri-termoCorda)*cel3D.vecE[i][j];
 			}
 			double corDistorc=1.;
-			if(fabsl(cel3D.angES[i])<0*1+1*0.866)corDistorc=0.;
+			if(fabs(cel3D.angES[i])<0*1+1*0.866)corDistorc=0.;
 			else if(eleUNV.RAspec>0*1+1*2.)corDistorc=0.;
 			for(int j=0; j<cel3D.dim;j++)
 			tempF[i]+=corDistorc*gradMed[j]*(cel3D.centroideFace[i][j]-cel3D.fInter[i][j]);
