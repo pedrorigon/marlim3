@@ -18,7 +18,7 @@ WARNING_FLAGS = -Wall
 OBJDIR = obj
 
 # Flags para compilação
-CXXFLAGS = -std=c++11 $(CXX_OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) $(WARNING_FLAGS) -c -static-libgcc -static-libstdc++ -fopenmp
+CXXFLAGS = -std=c++11 $(CXX_OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) $(WARNING_FLAGS) -c -static-libgcc -static-libstdc++ -fopenmp -I include -I lib
 F90FLAGS = -J$(OBJDIR) -c $(F90_OPTIMIZATION_FLAGS) -g -fmax-errors=3 -ffree-line-length-none -fopenmp -lquadmath
 
 # Flags para linkagem
@@ -30,15 +30,15 @@ else
 endif
 
 # Arquivos fontes
-CXX_SRCS := $(wildcard *.cpp)
+CXX_SRCS := $(wildcard core/*.cpp)
 
-F90_SRCS := Constants.f90 Newton.f90 PvtSimWAXFileImport.f90 PvtSimCTMFileImport.f90 \
-            VLECalculations.f90 PhaseProperties.f90 Obsoletes.f90 FlashExtras.f90 \
-            BlackOilFromCompositional.f90 MarlimComposicional.f90 ViscosityCalculationModule.f90
+F90_SRCS := fortran/Constants.f90 fortran/Newton.f90 fortran/PvtSimWAXFileImport.f90 fortran/PvtSimCTMFileImport.f90 \
+            fortran/VLECalculations.f90 fortran/PhaseProperties.f90 fortran/Obsoletes.f90 fortran/FlashExtras.f90 \
+            fortran/BlackOilFromCompositional.f90 fortran/MarlimComposicional.f90 fortran/ViscosityCalculationModule.f90
 
 # Objetos
-CXX_OBJS := $(patsubst %.cpp,$(OBJDIR)/%.o,$(CXX_SRCS))
-F90_OBJS := $(patsubst %.f90,$(OBJDIR)/%.o,$(F90_SRCS))
+CXX_OBJS := $(patsubst core/%.cpp,$(OBJDIR)/%.o,$(CXX_SRCS))
+F90_OBJS := $(patsubst fortran/%.f90,$(OBJDIR)/%.o,$(F90_SRCS))
 OBJS := $(CXX_OBJS) $(F90_OBJS)
 
 # Executável final
@@ -59,12 +59,12 @@ release: create_obj_dir $(OBJS)
 		echo ">>> UPX não encontrado, binário não será compactado."
 
 # Compilação de C++
-$(OBJDIR)/%.o: %.cpp
+$(OBJDIR)/%.o: core/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 # Compilação de Fortran
-$(OBJDIR)/%.o: %.f90
+$(OBJDIR)/%.o: fortran/%.f90
 	@mkdir -p $(dir $@)
 	$(CF) $(F90FLAGS) -o $@ $<
 
