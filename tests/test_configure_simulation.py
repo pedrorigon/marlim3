@@ -28,7 +28,8 @@ def _executavel_disponivel():
     exe_name = "marlim3.exe" if platform.system() == "Windows" else "marlim3"
     for name in [exe_name, "Marlim3.exe" if platform.system() == "Windows" else "Marlim3"]:
         try:
-            with pkg_resources.path("marlim3", name) as p:
+            ref = pkg_resources.files("marlim3").joinpath(name)
+            with pkg_resources.as_file(ref) as p:
                 if p.exists():
                     return True
         except (FileNotFoundError, AttributeError, TypeError):

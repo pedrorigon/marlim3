@@ -64,15 +64,16 @@ def build_executable():
 
         print("  [OK] CMake build successful")
 
-        exe_path = build_dir / "Marlim3"
+        exe_name = "Marlim3.exe" if platform.system() == "Windows" else "Marlim3"
+        exe_path = build_dir / exe_name
         if not exe_path.exists():
-            for candidate in [root_dir / "Marlim3", build_dir / "Release" / "Marlim3"]:
+            for candidate in [root_dir / exe_name, build_dir / "Release" / exe_name]:
                 if candidate.exists():
                     exe_path = candidate
                     break
 
         if exe_path.exists():
-            dest = package_dir / "Marlim3"
+            dest = package_dir / exe_name
             shutil.copy2(exe_path, dest)
             exe_size = exe_path.stat().st_size / (1024 * 1024)
             print(f"  [OK] Executable copied: {exe_size:.1f} MB → {dest.relative_to(root_dir)}")

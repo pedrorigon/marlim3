@@ -384,8 +384,8 @@ with st.sidebar:
         _default_exec = ""
         _exec_candidates = [
             os.environ.get("MARLIM3_EXEC", ""),
-            r"C:\Users\cvpo\tramo\Marlim3.exe",
-            r"C:\Users\cvpo\GitHubBR\mrtr\python-pkg\marlim3\marlim3.exe",
+            os.path.join(str(PROJECT_ROOT), "build", "Marlim3"),
+            os.path.join(str(PROJECT_ROOT), "marlim3", "Marlim3"),
             os.path.join(str(PROJECT_ROOT), "build", "Marlim3.exe"),
             os.path.join(str(PROJECT_ROOT), "marlim3", "Marlim3.exe"),
         ]
