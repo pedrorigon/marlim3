@@ -1,5 +1,6 @@
 #define _USE_MATH_DEFINES // para M_PI
 
+#include "versao.h"
 #include "FA_Hidratos.h" //chris
 
 #include <math.h>
@@ -261,7 +262,7 @@ detCI CI;
 detCC CC;
 
 int nthrdMatriz=1;
-string versao="Marlim - 3.5.0";
+string versao = "Marlim - " VERSAO;
 
 time_t nowGlobIni;
 tm *ltmGlobIni;
