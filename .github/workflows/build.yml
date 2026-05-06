@@ -21,47 +21,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.12'
+          enable-cache: true
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran g++ make
+          sudo apt-get install -y gfortran g++ cmake
 
       - name: Build executable
-        working-directory: src
-        run: make all
+        run: |
+          cmake --preset gcc-release
+          cmake --build --preset gcc-release -j$(nproc)
 
       - name: Copy executable to package directory
-        run: |
-          mkdir -p marlim3
-          cp src/Marlim3 marlim3/
+        run: cp build/Marlim3 marlim3/
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install pytest flake8
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install package + dependencies
+        env:
+          MARLIM3_SKIP_BUILD: 1
+        run: uv sync --group dev
 
       - name: Lint with flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=src
-          # exit-zero treats all errors as warnings
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=src
-
-      - name: Install package (with compiled executable)
-        env:
-          MARLIM3_SKIP_BUILD: 1
-        run: |
-          pip install -e .
+          uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          uv run flake8 . --count --exit-zero --statistics
 
       - name: Run ALL tests (including simulation tests)
-        run: |
-          pytest -v --tb=short
+        run: uv run pytest -v --tb=short
 
   # ─────────────────────────────────────────────
   #  Linux  (manylinux2014 / CentOS 7 / glibc 2.17)
@@ -86,27 +75,26 @@ jobs:
           fetch-depth: 0
 
       - name: Build (release) dentro do container manylinux2014
-        # docker run monta o workspace e compila com GCC 10 (devtoolset-10).
-        # O binário resultante exige apenas glibc >= 2.17.
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             quay.io/pypa/manylinux2014_x86_64 \
             bash -c "
               source /opt/rh/devtoolset-10/enable
-              cd /workspace/src
-              make release
+              yum install -y cmake3 || true
+              cd /workspace
+              cmake3 --preset gcc-release || cmake --preset gcc-release
+              cmake3 --build --preset gcc-release -j\$(nproc) || cmake --build --preset gcc-release -j\$(nproc)
             "
 
       - name: Verificar dependência de glibc
-        # Deve exibir no máximo GLIBC_2.17 — confirma compatibilidade com o HPC.
-        run: objdump -p src/Marlim3 | grep GLIBC || true
+        run: objdump -p build/Marlim3 | grep GLIBC || true
 
       - name: Upload artefato
         uses: actions/upload-artifact@v4
         with:
           name: Marlim3-linux-x64
-          path: src/Marlim3
+          path: build/Marlim3
 
   # ─────────────────────────────────────────────
   #  Windows  (windows-latest, MSYS2/MinGW64)
@@ -133,18 +121,24 @@ jobs:
           install: >-
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-cmake
             make
 
       - name: Build (release)
-        working-directory: src
-        run: make release
+        run: |
+          cmake --preset gcc-release
+          cmake --build --preset gcc-release -j$(nproc)
+
+      - name: Verify executable
+        run: |
+          file build/Marlim3.exe
+          ./build/Marlim3.exe 2>&1 | head -3
 
       - name: Upload artefato
         uses: actions/upload-artifact@v4
         with:
           name: Marlim3-windows-x64
-          # MinGW adiciona .exe automaticamente mesmo que OUTPUT=Marlim3 no Makefile
-          path: src/Marlim3.exe
+          path: build/Marlim3.exe
 
   # ─────────────────────────────────────────────
   #  macOS  (Apple Silicon)
@@ -161,49 +155,34 @@ jobs:
           fetch-depth: 0
 
       - name: Install system dependencies
-        run: |
-          brew install gcc make
+        run: brew install gcc cmake
 
       - name: Build (release)
-        working-directory: src
         run: |
-          # Use brew-installed GNU compilers (not Apple's clang)
-          # Find the latest gcc version number installed by brew
-          if [ -d /opt/homebrew/bin ]; then
-            GCC_VERSION=$(ls /opt/homebrew/bin/gcc-[0-9]* 2>/dev/null | grep -oE 'gcc-[0-9]+$' | grep -oE '[0-9]+' | sort -n | tail -1)
-          else
-            GCC_VERSION=$(ls /usr/local/bin/gcc-[0-9]* 2>/dev/null | grep -oE 'gcc-[0-9]+$' | grep -oE '[0-9]+' | sort -n | tail -1)
-          fi
-          
+          # Find brew-installed GCC version
+          GCC_VERSION=$(ls /opt/homebrew/bin/gcc-[0-9]* 2>/dev/null | grep -oE 'gcc-[0-9]+$' | grep -oE '[0-9]+' | sort -n | tail -1)
           if [ -z "$GCC_VERSION" ]; then
             echo "Error: No GCC version found from brew"
             exit 1
           fi
-          
           echo "Using g++-${GCC_VERSION} and gfortran-${GCC_VERSION}"
-          g++-${GCC_VERSION} --version | head -1
-          gfortran-${GCC_VERSION} --version | head -1
-          
-          make release CXX="g++-${GCC_VERSION}" CF="gfortran-${GCC_VERSION}"
 
-      - name: Verify binary architecture and dependencies
-        working-directory: src
+          cmake --preset gcc-release \
+            -DCMAKE_CXX_COMPILER="g++-${GCC_VERSION}" \
+            -DCMAKE_Fortran_COMPILER="gfortran-${GCC_VERSION}"
+          cmake --build --preset gcc-release -j$(sysctl -n hw.ncpu)
+
+      - name: Verify binary
         run: |
-          echo "=== Binary architecture ==="
-          file Marlim3
-          lipo -info Marlim3
-          
-          echo "=== Dynamic library dependencies ==="
-          otool -L Marlim3
-          
-          echo "=== Checking for OpenMP support ==="
-          otool -L Marlim3 | grep -i gomp || echo "Warning: libgomp not found"
+          file build/Marlim3
+          lipo -info build/Marlim3
+          otool -L build/Marlim3
 
       - name: Upload artefato
         uses: actions/upload-artifact@v4
         with:
           name: Marlim3-macos-arm64
-          path: src/Marlim3
+          path: build/Marlim3
 
   # ─────────────────────────────────────────────
   #  Release  – Publicar binários na GitHub Release
@@ -211,6 +190,7 @@ jobs:
   release:
     name: Criar Release
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-linux, build-windows, build-macos]
     permissions:
       contents: write
