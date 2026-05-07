@@ -325,6 +325,14 @@ module FlashExtras
 
         dTwoPhaseGibbsEnergy = 10.0d0 * dLeastGibbsEnergy
 
+        ! Inicializar arrays do DEM para evitar uso de valores não-inicializados:
+        do i = 1, iNComp
+            oLnK_JustUpdated(i) = log(oK(i))
+            oLnK_From1IterationBack(i) = log(oK(i))
+            oLnK_From2IterationBack(i) = log(oK(i))
+            oLnK_From3IterationBack(i) = log(oK(i))
+        end do
+
         ! Primeira tentativa de solução do "flash": via Substituição Sucessiva.
         successiveSubstLoop: do iIter = 1, iMaxSuccessiveSubstIterations
 
