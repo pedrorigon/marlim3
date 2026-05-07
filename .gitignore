@@ -139,6 +139,7 @@ Icon
 *.dat
 *.p
 saida_testes/
+regression_output/
 *marlim3_resultados*
 *resultados*
 *RedeInterna*
