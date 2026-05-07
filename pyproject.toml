@@ -64,7 +64,8 @@ gui = [
 testpaths = ["tests"]
 addopts = "-v --tb=short --durations=0 -s"
 markers = [
-    "simulacao: testes que executam o simulador Marlim3 (requerem executável compilado)",
+    "simulacao: tests that run the Marlim3 simulator (require compiled executable)",
+    "regressao: regression tests that compare results against stored references",
 ]
 
 [tool.coverage.run]
