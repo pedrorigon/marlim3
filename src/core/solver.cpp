@@ -773,8 +773,8 @@ void solv2D::parse_Interface(
 }
 
 void solv2D::calcYInter(double x, double* y){
-	int iInter=0;
-	double val;
+//	int iInter=0;
+//	double val;
 	y[0]=-1e5;
 	y[1]=-1e5;
 	int iy=0;
@@ -795,8 +795,8 @@ void solv2D::calcYInter(double x, double* y){
 }
 
 double solv2D::calcYInterUno(double x,double ymed){
-	int iInter=0;
-	double val;
+//	int iInter=0;
+//	double val;
 	double y[2];
 	y[0]=-1e5;
 	y[1]=-1e5;
@@ -832,7 +832,7 @@ void solv2D::parse_mapProp(
 	mapprop.indProp=new int [interface.nserie];
 	mapprop.interno=new int [interface.nserie];
 	mapprop.inferior=new int [interface.nserie];
-	double yInterf[2];
+//	double yInterf[2];
 	for(int i=0;i<mapprop.parserie;i++){
 		if (mapProp_json[i].HasMember("interno"))
 			mapprop.interno[i]=mapProp_json[i]["interno"].GetBool();
@@ -964,7 +964,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 			double yInterf[2];
 			double xInterf[2];
 			int cheio=1;
-			int teste=pow(cheio,nvert);
+//			int teste=pow(cheio,nvert);
 			int tipoNo[nvert];
 			int iLiq;
 			if(prop.rho[mapprop.indProp[0]]>prop.rho[mapprop.indProp[1]])iLiq=0;
@@ -1038,8 +1038,8 @@ void solv2D::iniciaProp(malha2dVF& malha){
 			else if(cheio==-2){
 				int noSup=0;
 				int noInf[2];
-				double xInter[2];
-				double yInter[2];
+//				double xInter[2];
+//				double yInter[2];
 				int konta=0;
 				for(int k=0;k<nvert;k++){
 					if(tipoNo[k]==-2){
@@ -1110,8 +1110,8 @@ void solv2D::iniciaProp(malha2dVF& malha){
 			else if(cheio==-4){
 				int noInf=0;
 				int noSup[2];
-				double xInter[2];
-				double yInter[2];
+//				double xInter[2];
+//				double yInter[2];
 				int konta=0;
 				for(int k=0;k<nvert;k++){
 					if(tipoNo[k]==-1){
@@ -1182,8 +1182,8 @@ void solv2D::iniciaProp(malha2dVF& malha){
 			else if(cheio==-36){
 				int noExt=0;
 				int noInt[2];
-				double xInter[2];
-				double yInter[2];
+//				double xInter[2];
+//				double yInter[2];
 				int konta=0;
 				for(int k=0;k<nvert;k++){
 					if(tipoNo[k]==-4){
@@ -1254,8 +1254,8 @@ void solv2D::iniciaProp(malha2dVF& malha){
 			else if(cheio==-64){
 				int noInt;
 				int noExt[2];
-				double xInter[2];
-				double yInter[2];
+//				double xInter[2];
+//				double yInter[2];
 				int konta=0;
 				for(int k=0;k<nvert;k++){
 					if(tipoNo[k]==-3){
@@ -1324,7 +1324,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 				malha.mlh2d[iEle].cel2D.tempRef=(1.-holInt)*prop.tRef[indExt]+holInt*prop.tRef[indInt];
 			}
 			if(cheio==-1 || cheio==-8 || cheio==-27 || cheio==-64/*||(cheio==-2 || cheio==-4)*/){
-				double holint=holGenerico;
+//				double holint=holGenerico;
 				int iflui=mapprop.indProp[flui];
 				malha.mlh2d[iEle].cel2D.cond=prop.cond[iflui];
 				malha.mlh2d[iEle].cel2D.cp=prop.cp[iflui];
@@ -1335,7 +1335,7 @@ void solv2D::iniciaProp(malha2dVF& malha){
 			}
 		}
 		else{
-			double holint=holGenerico;
+//			double holint=holGenerico;
 			int iflui=mapprop.indProp[0];
 			malha.mlh2d[iEle].cel2D.cond=prop.cond[iflui];
 			malha.mlh2d[iEle].cel2D.cp=prop.cp[iflui];
@@ -1463,8 +1463,8 @@ void solv2D::malhaRegular(double& dx, double& dy, malha2dVF& malha){
 				}
 				iele++;
 				if(iele==malha.nele){
-					int para;
-					para=0;
+//					int para;
+//					para=0;
 				}
 			}
 			ycoor+=dy;
@@ -1903,7 +1903,7 @@ void solv2D::resolve(){
 			}
 			int perm = -1;
 
-			int kL = -1;  //alteracao2
+//			int kL = -1;  //alteracao2
 
 			double tInt=CI.temp[0];
 			double pInt=tempVF.pRef;
@@ -2121,7 +2121,7 @@ void solv2D::resolve(){
 		ifstream lendoUNV(eleUNV.c_str(), ios_base::in);
 
 		string chave;
-		char* tenta;
+//		char* tenta;
 		//tenta = new char[400];
 		struct cartesiano{
 			int ind;
@@ -2132,10 +2132,10 @@ void solv2D::resolve(){
 		};
 		vector<cartesiano> vecXY;
 
-		double testatok;
+//		double testatok;
 		char line[4000];
 		lendoUNV.get(line, 4000);
-		tenta = strtok(line, " ,()=");
+//		tenta = strtok(line, " ,()=");
 		lendoUNV >> chave;
 		while (chave != "2411") {
 			lendoUNV >> chave;
@@ -2563,7 +2563,7 @@ void solv2D::resolve(){
 	int ind=0;
 	double raz=0;
 	double delt;
-	int kontaTempo=0;
+//	int kontaTempo=0;
 	double norma0;
 	double norma1Antiga;
 	double norma1;
@@ -2658,8 +2658,8 @@ void solv2D::resolve(){
 	//vector<int> indPar;
 	unordered_map<int, int> indPar;
 	unordered_map<int, int> indPar2;
-	TransCal* vecTransfer;
-	double* vecFluxcal;
+	TransCal* vecTransfer = nullptr;
+	double* vecFluxcal = nullptr;
 	if((*vg1dSP).acop==1){
 		paredeContorno(malha, indPar,indPar2, nPar);
 		vecTransfer = new TransCal[nPar];
@@ -2673,18 +2673,18 @@ void solv2D::resolve(){
 
 	//parse_fluido_complementar(elementoRaiz["fluido"]);
 
-	int nvfHRBuffer=(*vg1dSP).nvfHR;
+//	int nvfHRBuffer=(*vg1dSP).nvfHR;
 	double velmax;
 	int kontaTempoProf=0;
 	int contaCicloSeg=-1;
 	int totalIter=0;
 	double deltCFL;
 	double multCiclo=1.;
-	double condMed;
-	double drInt;
-	double Pi=3.14159265359;
-	double condTermLiq;
-	double areaLiq;
+//	double condMed;
+//	double drInt;
+//	double Pi=3.14159265359;
+//	double condTermLiq;
+//	double areaLiq;
 	double fluxCalMed=0.;
 	while((*vg1dSP).tempo<=tempVF.tmax){
 		int multEps=1.0;
@@ -2896,7 +2896,7 @@ void solv2D::resolve(){
 		norma1=1e5;
 		int iterTempo=0;
 		int iterUV=0;
-		double norma0Piso;
+//		double norma0Piso;
 		double norma1Piso;
 		double velmedPiso;
 		double normaTemp=1e5;
@@ -3025,7 +3025,7 @@ void solv2D::resolve(){
 		    			maxdeno=fabs(malha.mlh2d[i].denoResV);
 		    	}
 				//#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-		    	double kontaFora=0.;
+//		    	double kontaFora=0.;
 		    	for(int i=0; i<malha.nele;i++){
 		    		double resiteste=maxdeno;
 		    		if(fabs(resiteste<=1e-20))resiteste=1.;
@@ -3204,7 +3204,7 @@ void solv2D::resolve(){
 	    	if((*vg1dSP).metodoAcopPV==4)relaxPiso=(*vg1dSP).relaxVFExpli;
 	    	if(((*vg1dSP).metodoAcopPV==3 ||(*vg1dSP).metodoAcopPV==4)  && (norma1Antiga>norma1 && (norma0>erroPres || norma1>erroV))){
 	    		for(int kontaPiso=0;kontaPiso<=nPrime;kontaPiso++){
-	    			norma0Piso=0;
+//	    			norma0Piso=0;
 	    			norma1Piso=0;
 	    			velmedPiso=0.;
 					#pragma omp parallel for num_threads(nthrdLocal)
@@ -3340,7 +3340,7 @@ void solv2D::resolve(){
     				fluxcal= transfer.transtrans()/(M_PI*dutosMRT.a);
     				//fluxcal= transfer.transperm()/(M_PI*dutosMRT.a);*/
     				tempMedPar=tempMedParede(malha);
-    				double dtp;
+    				double dtp = 0.0;
     				for(int i=0;i<nPar;i++){
     					int iFlux2=indPar2[i];
 
@@ -3467,7 +3467,7 @@ void solv2D::resolve(){
 	    				fluxcal= transfer.transtrans()/(M_PI*dutosMRT.a);
 	    				//fluxcal= transfer.transperm()/(M_PI*dutosMRT.a);*/
 	    				tempMedPar=tempMedParede(malha);
-	    				double dtp;
+//	    				double dtp = 0.0;
 	    				for(int i=0;i<nPar;i++){
 	    					int iFlux2=indPar2[i];
 
@@ -3480,7 +3480,7 @@ void solv2D::resolve(){
 	    								double contTemp=0.;
 	    								vecTransfer[i].Tint=contTemp*malha.mlh2d[iFlux2].cel2D.tempC+(1-contTemp)*malha.mlh2d[iFlux2].tempF[j];
 	    								//vecTransfer[i].Tint=malha.mlh2d[iFlux2].cel2D.tempC+0*malha.mlh2d[iFlux2].extrapSuaveCCN;
-	    								dtp=-0.0001*vecTransfer[i].Tint;
+//	    								dtp=-0.0001*vecTransfer[i].Tint;
 	    							}
 	    						}
 	    					}
@@ -3636,11 +3636,11 @@ void solv2D::resolve(){
 			velfluidmed=velMed(malha);
 
 			////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			  double JmixRef=0.;
+//			  double JmixRef=0.;
 			  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			  transfer2.Vint = 0.;
 			  transfer2.dt = delt;
-			  double condliq = prop.cond[0];
+//			  double condliq = prop.cond[0];
 			  transfer2.kint =prop.cond[0];
 			  transfer2.cpint = prop.cp[0];
 			  transfer2.rhoint = prop.rho[0];

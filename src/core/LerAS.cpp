@@ -195,7 +195,7 @@ Document ASens::parseEntrada() {
     if (jsonDoc.HasParseError()) {
 //cout << "ErrorOffset: " << determinarLinhaErro(jsonDoc.GetErrorOffset()) << endl;
       // transpor os dados  para a mensagem
-      sprintf(mensagemFalha, "Posicao = %u", jsonDoc.GetErrorOffset());
+      sprintf(mensagemFalha, "Posicao = %zu", jsonDoc.GetErrorOffset());
       // incluir falha no processo de parse
       logger.log(LOGGER_FALHA, LOG_ERR_PARSE_JSON_FORMAT_VALIDATION, "Verificar formato JSON de Analise de Sensibibildade", mensagemFalha,
           GetParseError_Pt_BR(jsonDoc.GetParseError()), 0);
@@ -1651,7 +1651,7 @@ void ASens::lerArq() {
 	    	saidaVazLiq=0;
 	    }
 
-	    int teste;
+	    // int teste;
 	    /*teste=sequenciaAS[0].PSEPpres;
 	    teste=sequenciaAS[1].PSEPpres;
 	    teste=sequenciaAS[2].PSEPpres;
@@ -3453,7 +3453,7 @@ void ASens::cabecalhoAS(int ncelG,choke& chokeSup, Cel* celula, CelG* celulaG,Pr
 
 	escreveIni <<" indice AS; "<<" Sucesso; "<<" Pressao Fundo; "<<" Temperatura Plataforma; ";
 
-	int ind;
+	// int ind;
 	if(listaV.vpsep==1){
 		escreveIni <<" Pressao Separador; ";
 	}
@@ -3603,7 +3603,7 @@ void ASens::cabecalhoAS(int ncelG,choke& chokeSup, Cel* celula, CelG* celulaG,Pr
 	if(listaV.vdpH==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLH; indBCS++){
-	    	  int icel=ASdPdLH[indBCS].indDPHidro;
+	    	  // int icel=ASdPdLH[indBCS].indDPHidro;
 	    	  if(ASdPdLH[indBCS].parserieDPHidro>0){
 	    		  escreveIni <<" Corr. Pres. Hidro; ";
 	    		  konta1++;
@@ -3613,7 +3613,7 @@ void ASens::cabecalhoAS(int ncelG,choke& chokeSup, Cel* celula, CelG* celulaG,Pr
 	if(listaV.vdpF==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLF; indBCS++){
-	    	  int icel=ASdPdLF[indBCS].indDPFric;
+	    	  // int icel=ASdPdLF[indBCS].indDPFric;
 	    	  if(ASdPdLF[indBCS].parserieDPFric>0){
 	    		  escreveIni <<" Corr. Pres. Fric; ";
 	    		  konta1++;
@@ -3623,7 +3623,7 @@ void ASens::cabecalhoAS(int ncelG,choke& chokeSup, Cel* celula, CelG* celulaG,Pr
 	if(listaV.vdt==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdTdL; indBCS++){
-	    	  int icel=ASdTdL[indBCS].indDT;
+	    	  // int icel=ASdTdL[indBCS].indDT;
 	    	  if(ASdTdL[indBCS].parserieDT>0){
 	    		  escreveIni <<" Corr. Temperatura; ";
 	    		  konta1++;
@@ -3809,7 +3809,7 @@ void ASens::cabecalhoASImex(int ncelG,choke& chokeSup, Cel* celula, CelG* celula
 
 	escreveIni <<" indice AS; "<<" Sucesso; "<<" Pressao Fundo; "<<" Temperatura Plataforma; ";
 
-	int ind;
+	// int ind;
 	if(listaV.vRGO==1){
 		escreveIni <<" RGO fluido 0; ";
 	}
@@ -3957,7 +3957,7 @@ void ASens::cabecalhoASImex(int ncelG,choke& chokeSup, Cel* celula, CelG* celula
 	if(listaV.vdpH==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLH; indBCS++){
-	    	  int icel=ASdPdLH[indBCS].indDPHidro;
+	    	  // int icel=ASdPdLH[indBCS].indDPHidro;
 	    	  if(ASdPdLH[indBCS].parserieDPHidro>0){
 	    		  escreveIni <<" Corr. Pres. Hidro; ";
 	    		  konta1++;
@@ -3967,7 +3967,7 @@ void ASens::cabecalhoASImex(int ncelG,choke& chokeSup, Cel* celula, CelG* celula
 	if(listaV.vdpF==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLF; indBCS++){
-	    	  int icel=ASdPdLF[indBCS].indDPFric;
+	    	  // int icel=ASdPdLF[indBCS].indDPFric;
 	    	  if(ASdPdLF[indBCS].parserieDPFric>0){
 	    		  escreveIni <<" Corr. Pres. Fric; ";
 	    		  konta1++;
@@ -3977,7 +3977,7 @@ void ASens::cabecalhoASImex(int ncelG,choke& chokeSup, Cel* celula, CelG* celula
 	if(listaV.vdt==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdTdL; indBCS++){
-	    	  int icel=ASdTdL[indBCS].indDT;
+	    	  // int icel=ASdTdL[indBCS].indDT;
 	    	  if(ASdTdL[indBCS].parserieDT>0){
 	    		  escreveIni <<" Corr. Temperatura; ";
 	    		  konta1++;
@@ -4182,7 +4182,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta2=0;
 		int konta3=0;
 		for (int iFG = 0; iFG < nASFG; iFG++){
-	    	  int icel=fonteg[ASFonGas[iFG].indFG].posicP;
+	    	  // int icel=fonteg[ASFonGas[iFG].indFG].posicP;
 	    	  if(ASFonGas[iFG].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].FGtemp[konta1];
 	    		  escreveIni <<"   " << ASFonGas[iFG].temp[ind]<< " ; ";
@@ -4226,7 +4226,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta3=0;
 		int konta4=0;
 	      for (int iFL = 0; iFL < nASFL; iFL++){
-	    	  int icel=fontel[ASFonLiq[iFL].indFL].posicP;
+	    	  // int icel=fontel[ASFonLiq[iFL].indFL].posicP;
 	    	  if(ASFonLiq[iFL].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].FLtemp[konta1];
 	    		  escreveIni <<"  " << ASFonLiq[iFL].temp[ind]<< " ; ";
@@ -4258,7 +4258,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta5=0;
 		int konta6=0;
 		for (int iIPR = 0; iIPR < nASIPR; iIPR++){
-	    	  int icel=IPRS[ASIPR[iIPR].indIPR].indcel;
+	    	  // int icel=IPRS[ASIPR[iIPR].indIPR].indcel;
 	    	  if(ASIPR[iIPR].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].IPRtemp[konta1];
 	    		  escreveIni <<"   " << ASIPR[iIPR].temp[ind]<< " ; ";
@@ -4299,7 +4299,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta4=0;
 		int konta5=0;
 		for (int iFM = 0; iFM < nASFM; iFM++){
-	    	  int icel=fontem[ASFonMas[iFM].indFM].posicP;
+	    	  // int icel=fontem[ASFonMas[iFM].indFM].posicP;
 	    	  if(ASFonMas[iFM].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].FMtemp[konta1];
 	    		  escreveIni <<"   " << ASFonMas[iFM].temp[ind]<< " ; ";
@@ -4330,7 +4330,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 	if(listaV.vdp==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASDP; indBCS++){
-	    	  int icel=dpreq[ASDP[indBCS].indDP].posicP;
+	    	  // int icel=dpreq[ASDP[indBCS].indDP].posicP;
 	    	  if(ASDP[indBCS].parserieDP>0){
 	    		  ind=sequenciaAS[seq].DPdp[konta1];
 	    		  escreveIni <<"   " << ASDP[indBCS].dp[ind]<< " ; ";
@@ -4341,7 +4341,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 	if(listaV.vdpH==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLH; indBCS++){
-	    	  int icel=ASdPdLH[indBCS].indDPHidro;
+	    	  // int icel=ASdPdLH[indBCS].indDPHidro;
 	    	  if(ASdPdLH[indBCS].parserieDPHidro>0){
 	    		  ind=sequenciaAS[seq].DPdLH[konta1];
 	    		  escreveIni <<"   " <<ASdPdLH[indBCS].dPHidro[ind]<< " ; ";
@@ -4352,7 +4352,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 	if(listaV.vdpF==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLF; indBCS++){
-	    	  int icel=ASdPdLF[indBCS].indDPFric;
+	    	  // int icel=ASdPdLF[indBCS].indDPFric;
 	    	  if(ASdPdLF[indBCS].parserieDPFric>0){
 	    		  ind=sequenciaAS[seq].DPdLF[konta1];
 	    		  escreveIni <<"   " <<ASdPdLF[indBCS].dPFric[ind]<< " ; ";
@@ -4363,7 +4363,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 	if(listaV.vdt==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdTdL; indBCS++){
-	    	  int icel=ASdTdL[indBCS].indDT;
+	    	  // int icel=ASdTdL[indBCS].indDT;
 	    	  if(ASdTdL[indBCS].parserieDT>0){
 	    		  ind=sequenciaAS[seq].DTdL[konta1];
 	    		  escreveIni <<"   " <<ASdTdL[indBCS].dT[ind]<< " ; ";
@@ -4376,7 +4376,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta2=0;
 		int konta3=0;
 		for (int indBCS = 0; indBCS < nASBV; indBCS++){
-	    	  int icel=bvol[ASBVOL[indBCS].indBV].posicP;
+	    	  // int icel=bvol[ASBVOL[indBCS].indBV].posicP;
 	    	  if(ASBVOL[indBCS].parserieFreq>0){
 	    		  ind=sequenciaAS[seq].BVOLfreq[konta1];
 	    		  escreveIni <<"   " <<ASBVOL[indBCS].freq[ind]<< " ; ";
@@ -4398,7 +4398,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta1=0;
 		int konta2=0;
 		for (int indBCS = 0; indBCS < nASV; indBCS++){
-	    	  int icel=valv[ASValv[indBCS].indV].posicP;
+	    	  // int icel=valv[ASValv[indBCS].indV].posicP;
 	    	  if(ASValv[indBCS].parserieAbre>0){
 	    		  ind=sequenciaAS[seq].VALVabertura[konta1];
 	    		  escreveIni << "   " << ASValv[indBCS].abertura[ind]<< " ; ";
@@ -4419,7 +4419,7 @@ void ASens::imprimeVarInteresseAS(int ncelG,choke& chokeSup, Cel* celula, CelG* 
 		int konta5=0;
 		int konta6=0;
 		for (int indBCS = 0; indBCS < nASFuro; indBCS++){
-	    	  int icel=furo[ASFuro[indBCS].indFuro].posicP;
+	    	  // int icel=furo[ASFuro[indBCS].indFuro].posicP;
 	    	  if(ASFuro[indBCS].parserieAbre>0){
 	    		  ind=sequenciaAS[seq].FUROabertura[konta1];
 	    		  escreveIni <<"   " << ASFuro[indBCS].abertura[ind]<< " ; ";
@@ -5576,7 +5576,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta3=0;
 		int konta4=0;
 	      for (int iFL = 0; iFL < nASFL; iFL++){
-	    	  int icel=fontel[ASFonLiq[iFL].indFL].posicP;
+	    	  // int icel=fontel[ASFonLiq[iFL].indFL].posicP;
 	    	  if(ASFonLiq[iFL].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].FLtemp[konta1];
 	    		  escreveIni <<"  " << ASFonLiq[iFL].temp[ind]<< " ; ";
@@ -5605,7 +5605,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta2=0;
 		int konta3=0;
 		for (int iFG = 0; iFG < nASFG; iFG++){
-	    	  int icel=fonteg[ASFonGas[iFG].indFG].posicP;
+	    	  // int icel=fonteg[ASFonGas[iFG].indFG].posicP;
 	    	  if(ASFonGas[iFG].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].FGtemp[konta1];
 	    		  escreveIni <<"   " << ASFonGas[iFG].temp[ind]<< " ; ";
@@ -5635,7 +5635,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta5=0;
 		int konta6=0;
 		for (int iIPR = 0; iIPR < nASIPR; iIPR++){
-	    	  int icel=IPRS[ASIPR[iIPR].indIPR].indcel;
+	    	  // int icel=IPRS[ASIPR[iIPR].indIPR].indcel;
 	    	  if(ASIPR[iIPR].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].IPRtemp[konta1];
 	    		  escreveIni <<"   " << ASIPR[iIPR].temp[ind]<< " ; ";
@@ -5675,7 +5675,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta4=0;
 		int konta5=0;
 		for (int iFM = 0; iFM < nASFM; iFM++){
-	    	  int icel=fontem[ASFonMas[iFM].indFM].posicP;
+	    	  // int icel=fontem[ASFonMas[iFM].indFM].posicP;
 	    	  if(ASFonMas[iFM].parserieTemp>0){
 	    		  ind=sequenciaAS[seq].FMtemp[konta1];
 	    		  escreveIni <<"   " << ASFonMas[iFM].temp[ind]<< " ; ";
@@ -5725,7 +5725,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 	if(listaV.vdp==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASDP; indBCS++){
-	    	  int icel=dpreq[ASDP[indBCS].indDP].posicP;
+	    	  // int icel=dpreq[ASDP[indBCS].indDP].posicP;
 	    	  if(ASDP[indBCS].parserieDP>0){
 	    		  ind=sequenciaAS[seq].DPdp[konta1];
 	    		  escreveIni <<"   " << ASDP[indBCS].dp[ind]<< " ; ";
@@ -5736,7 +5736,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 	if(listaV.vdpH==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASDP; indBCS++){
-	    	  int icel=dpreq[ASDP[indBCS].indDP].posicP;
+	    	  // int icel=dpreq[ASDP[indBCS].indDP].posicP;
 	    	  if(ASDP[indBCS].parserieDP>0){
 	    		  ind=sequenciaAS[seq].DPdp[konta1];
 	    		  escreveIni <<"   " << ASDP[indBCS].dp[ind]<< " ; ";
@@ -5747,7 +5747,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 	if(listaV.vdpF==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdPdLF; indBCS++){
-	    	  int icel=ASdPdLF[indBCS].indDPFric;
+	    	  // int icel=ASdPdLF[indBCS].indDPFric;
 	    	  if(ASdPdLF[indBCS].parserieDPFric>0){
 	    		  ind=sequenciaAS[seq].DPdLF[konta1];
 	    		  escreveIni <<"   " <<ASdPdLF[indBCS].dPFric[ind]<< " ; ";
@@ -5758,7 +5758,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 	if(listaV.vdt==1){
 		int konta1=0;
 		for (int indBCS = 0; indBCS < nASdTdL; indBCS++){
-	    	  int icel=ASdTdL[indBCS].indDT;
+	    	  // int icel=ASdTdL[indBCS].indDT;
 	    	  if(ASdTdL[indBCS].parserieDT>0){
 	    		  ind=sequenciaAS[seq].DTdL[konta1];
 	    		  escreveIni <<"   " <<ASdTdL[indBCS].dT[ind]<< " ; ";
@@ -5771,7 +5771,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta2=0;
 		int konta3=0;
 		for (int indBCS = 0; indBCS < nASBV; indBCS++){
-	    	  int icel=bvol[ASBVOL[indBCS].indBV].posicP;
+	    	  // int icel=bvol[ASBVOL[indBCS].indBV].posicP;
 	    	  if(ASBVOL[indBCS].parserieFreq>0){
 	    		  ind=sequenciaAS[seq].BVOLfreq[konta1];
 	    		  escreveIni <<"   " <<ASBVOL[indBCS].freq[ind]<< " ; ";
@@ -5793,7 +5793,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta1=0;
 		int konta2=0;
 		for (int indBCS = 0; indBCS < nASV; indBCS++){
-	    	  int icel=valv[ASValv[indBCS].indV].posicP;
+	    	  // int icel=valv[ASValv[indBCS].indV].posicP;
 	    	  if(ASValv[indBCS].parserieAbre>0){
 	    		  ind=sequenciaAS[seq].VALVabertura[konta1];
 	    		  escreveIni << "   " << ASValv[indBCS].abertura[ind]<< " ; ";
@@ -5814,7 +5814,7 @@ void ASens::imprimeVarInteresseASImex(int ncelG,choke& chokeSup, Cel* celula, Ce
 		int konta5=0;
 		int konta6=0;
 		for (int indBCS = 0; indBCS < nASFuro; indBCS++){
-	    	  int icel=furo[ASFuro[indBCS].indFuro].posicP;
+	    	  // int icel=furo[ASFuro[indBCS].indFuro].posicP;
 	    	  if(ASFuro[indBCS].parserieAbre>0){
 	    		  ind=sequenciaAS[seq].FUROabertura[konta1];
 	    		  escreveIni <<"   " << ASFuro[indBCS].abertura[ind]<< " ; ";
@@ -8186,7 +8186,7 @@ ofstream escreveIni2(tmp2.c_str(), ios_base::app);
 		for (int iG = 0; iG < nASGeom; iG++){
 	    	  if(ASGeom[iG].parserieA>0){
 	    		  ind=sequenciaAS[seq].GeomdA[konta1];
-	    		  int igeo=ASGeom[iG].indGeom;
+//	    		  int igeo=ASGeom[iG].indGeom;
 	    		  saidaBHP[seq][coluna]=ASGeom[iG].dA[ind];
 	    		  coluna++;
 				  escreveIni <<ASGeom[iG].dA[ind]<< " ;";
@@ -8194,7 +8194,7 @@ ofstream escreveIni2(tmp2.c_str(), ios_base::app);
 	    	  }
 	    	  if(ASGeom[iG].parserieB>0){
 	    		  ind=sequenciaAS[seq].GeomdB[konta2];
-	    		  int igeo=ASGeom[iG].indGeom;
+//	    		  int igeo=ASGeom[iG].indGeom;
 	    		  saidaBHP[seq][coluna]=ASGeom[iG].dB[ind];
 	    		  coluna++;
 				  escreveIni <<ASGeom[iG].dB[ind]<< " ;";
@@ -8202,7 +8202,7 @@ ofstream escreveIni2(tmp2.c_str(), ios_base::app);
 	    	  }
 	    	  if(ASGeom[iG].parserieRug>0){
 	    		  ind=sequenciaAS[seq].GeomdB[konta3];
-	    		  int igeo=ASGeom[iG].indGeom;
+//	    		  int igeo=ASGeom[iG].indGeom;
 	    		  saidaBHP[seq][coluna]=ASGeom[iG].rug[ind];
 	    		  coluna++;
 				  escreveIni <<ASGeom[iG].rug[ind]<< " ;";
@@ -8215,7 +8215,7 @@ ofstream escreveIni2(tmp2.c_str(), ios_base::app);
 		for (int ik = 0; ik < nASCondEquiv; ik++){
 	    	  if(ASCondEquiv[ik].parserieK>0){
 	    		  ind=sequenciaAS[seq].condEqui[konta1];
-	    		  int imat=ASCondEquiv[ik].indMat;
+//	    		  int imat=ASCondEquiv[ik].indMat;
 	    		  saidaBHP[seq][coluna]=ASCondEquiv[ik].cond[ind];
 	    		  coluna++;
 				  escreveIni <<ASCondEquiv[ik].cond[ind]<< " ;";

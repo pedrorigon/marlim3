@@ -819,9 +819,9 @@ double celrad::dFW(double satW, double satG){
 	double krog=interpolaTabela(kRelOGCel.npont, satG, kRelOGCel.satG, kRelOGCel.permRelOG);
 	double ko=krowC*(((krow/krowC)+krw)*(1.+0*(krog/krowC)+0*krg)-(krw+0*krg));
 
-	double fracO=ko/(ko+krw+krg);
+//	double fracO=ko/(ko+krw+krg);
 	double fracA=krw/(ko+krw+krg);
-	double fracG=0*krg/(ko+krow+krg);
+//	double fracG=0*krg/(ko+krow+krg);
 
 	double satwD=satW*1.001;
 	if(satwD>1)satwD=satW*0.999;
@@ -830,9 +830,9 @@ double celrad::dFW(double satW, double satG){
 	krow=interpolaTabela(kRelOACel.npont, satwD, kRelOACel.satW, kRelOACel.permRelOW);
 	ko=krowC*(((krow/krowC)+krw)*((krog/krowC)+krg)-(krw+krg));
 
-	double fracOD=ko/(ko+krw+krg);
+//	double fracOD=ko/(ko+krw+krg);
 	double fracAD=krw/(ko+krw+krg);
-	double fracGD=krg/(ko+krow+krg);
+//	double fracGD=krg/(ko+krow+krg);
 
 	double val=(fracAD-fracA)/dsatW;
 
@@ -1088,7 +1088,7 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	double val=sWini+balanco*dt;
 	if(val<satConata && sWini==satConata)val=satConata;
 	else if(val>1. && sWini==1.)val=1.;
-    double alfx=1.-val;
+//    double alfx=1.-val;
     double localtiny=1e-5;
 
 	if(((val<=sL+localtiny)&&(val>=sL-localtiny))){
@@ -1136,8 +1136,8 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	else sW=val;
 
 	if(reiniciaSW==-1){
-		int para;
-		para=0;
+//		int para;
+//		para=0;
 	}
 
 	//sW=0.13;
@@ -1151,8 +1151,8 @@ void celrad::transcel(int idisc){
 
   double cond;
   double h1;
-  double hi;
-  double vr0;
+//  double hi;
+//  double vr0;
   double vr1;
   double vr2;
   double grav=9.82/98066.22;
@@ -1324,13 +1324,13 @@ void celrad::transcel(int idisc){
 	  for(int j=0;j<11;j++)localmat[i][j]=0.;
   }
 
-  vr0=r0;
+//  vr0=r0;
   vr1=rm;
   vr2=r1;
 
   if(idisc==0 || idisc==ncel-1){
 	  cond=kabsol1*fluc.rholStd*98066.22/fluc.VisFlu(1., tRes);
-	  hi=h1=1000000000.*cond*vr1/drcamada;
+//	  hi=h1=1000000000.*cond*vr1/drcamada;
   }
 
   if(idisc>0){

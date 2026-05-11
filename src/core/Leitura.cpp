@@ -2073,9 +2073,9 @@ JSON_entrada Ler::parseEntrada() {
 	// declarar o documento raiz do arquivo entrada
 	JSON_entrada jsonDoc;
 	// definir arquivo MRT de entrada da simulacao
-	FILE *mrtInFile = NULL;
+//	FILE *mrtInFile = NULL;
 	// definir buffer de entrada da simulacao
-	char mrtInBuf[65536];
+//	char mrtInBuf[65536];
 	// realizar a leitura do arquivo MRT
 	try {
 		// atualizar a estrutura de resultado do parse do arquivo de entrada da simulacao
@@ -2091,7 +2091,7 @@ JSON_entrada Ler::parseEntrada() {
 		if (jsonDoc.HasParseError()) {
 			//cout << "ErrorOffset: " << determinarLinhaErro(jsonDoc.GetErrorOffset()) << endl;
 			// transpor os dados  para a mensagem
-			sprintf(mensagemFalha, "Posicao = %u", jsonDoc.GetErrorOffset());
+			sprintf(mensagemFalha, "Posicao = %zu", jsonDoc.GetErrorOffset());
 			// incluir falha no processo de parse
 			logger.log_write_logs_and_exit(LOGGER_FALHA,
 			LOG_ERR_PARSE_JSON_FORMAT_VALIDATION, "Verificar formato JSON",
@@ -2408,7 +2408,7 @@ int Ler::determinarLinhaErro(const char* pathChaveJson) {
 							// caso a chave atual nao seja a default
 							if (auxiliar != "#") {
 								// converter para inteiro e detectar possivel elemento de array
-								string::size_type tamanhoStr;
+//								string::size_type tamanhoStr;
 								try {
 									// eh elemento de array
 									contadorElementoArray = atoi(
@@ -3946,7 +3946,7 @@ void Ler::parse_fluidos_producao(
 	int vcorrOM = 0;
 	int vcorrOV = 0;
 	int vcorrOS = 0;
-	int fracMolarUsuario=0;
+//	int fracMolarUsuario=0;
 	double PHI100=0.765;
 	int nvecBSW=0;
 	// obter o tamanho do elemento do Json
@@ -4655,9 +4655,9 @@ void Ler::parse_fluidos_producao(
 					flup[i].npontos=tabent.npont;
 					flup[i].npontosB=tabent.npontB;
 					lendoPVTSim >> chave;
-					int lacoleitura = ndiv;
+//					int lacoleitura = ndiv;
 					int lacoleituraB = ndivB;
-					double valor;
+//					double valor;
 
 					while (chave != "BUBBLEPRESSURES") {
 						lendoPVTSim >> chave;
@@ -6155,7 +6155,7 @@ void Ler::parse_unidades_producao(
                 	unidadeP[ind].dx = new double[unidadeP[ind].ncel];
                 	for(int j=0;j<unidadeP[ind].ncel;j++){
                 		unidadeP[ind].dx[j] =dutos_producao_json[indAtivo].dxCelula()[j];
-                		int para=0;
+//                		int para=0;
                 	}
                 }
                 else{
@@ -6165,7 +6165,7 @@ void Ler::parse_unidades_producao(
                 	double dxAux=lxy/unidadeP[ind].ncel;
                 	for(int j=0;j<unidadeP[ind].ncel;j++){
                 		unidadeP[ind].dx[j] =dxAux;
-                		int para=0;
+//                		int para=0;
                 	}
                 }
 
@@ -6620,7 +6620,7 @@ void Ler::parse_unidades_producaoAmb(
 				if(tipoModeloDrift==0)unidadeP[ind].correlacaoMR2 = dutos_producao_json[indAtivo].correlacaoMR2();
 				else unidadeP[ind].correlacaoMR2 =-1;
 
-				double lxy;
+				double lxy=0.;
 				if(modoXY==0){
 					if (sentidoGeometriaSegueEscoamento /*|| origemGeometria == origemGeometria_t::*/) {
 						duto[ind].ang =
@@ -6843,7 +6843,7 @@ void Ler::parse_unidades_producaoAmb(
                 	unidadeP[ind].dx = new double[unidadeP[ind].ncel];
                 	for(int j=0;j<unidadeP[ind].ncel;j++){
                 		unidadeP[ind].dx[j] =dutos_producao_json[indAtivo].dxCelula()[j];
-                		int para=0;
+//                		int para=0;
                 	}
                 }
                 else{
@@ -6853,7 +6853,7 @@ void Ler::parse_unidades_producaoAmb(
                 	double dxAux=lxy/unidadeP[ind].ncel;
                 	for(int j=0;j<unidadeP[ind].ncel;j++){
                 		unidadeP[ind].dx[j] =dxAux;
-                		int para=0;
+//                		int para=0;
                 	}
                 }
 
@@ -7304,7 +7304,7 @@ void Ler::parse_unidades_servico(
 				}
 
 				// de-para do elemento "dutosServico" do json para o struct detduto
-				double lxy;
+				double lxy=0.;
 				if(modoXY==0){
 					duto[i + nunidadep].ang =
 							dutos_servico_json[indAtivo].angulo();
@@ -7485,7 +7485,7 @@ void Ler::parse_unidades_servico(
                 	double dxAux=lxy/unidadeG[i].ncel;
                 	for(int j=0;j<unidadeG[i].ncel;j++){
                 		unidadeG[i].dx[j] =dxAux;
-                		int para=0;
+//                		int para=0;
                 	}
                 }
 
@@ -7816,7 +7816,7 @@ void Ler::parse_unidades_servicoAmb(
 				}
 
 				// de-para do elemento "dutosServico" do json para o struct detduto
-				double lxy;
+				double lxy=0.;
 				if(modoXY==0){
 					duto[i + nunidadep].ang =
 							dutos_servico_json[indAtivo].angulo();
@@ -7997,7 +7997,7 @@ void Ler::parse_unidades_servicoAmb(
                 	double dxAux=lxy/unidadeG[i].ncel;
                 	for(int j=0;j<unidadeG[i].ncel;j++){
                 		unidadeG[i].dx[j] =dxAux;
-                		int para=0;
+//                		int para=0;
                 	}
                 }
 
@@ -8911,9 +8911,9 @@ void Ler::parse_fonte_gaslift(JSON_entrada_fonteGasLift& fonte_gaslift_json) {
 						compAcopTerm+=celp[posCol].dx;
 						posCol++;
 					}
-					int calcPossivel=0;
+//					int calcPossivel=0;
 					if(celp[posCol].acopcol==1 && posCol<ncelp){
-						calcPossivel=1;
+//						calcPossivel=1;
 						while(celp[posCol].acopcol==1){
 							compAcopTerm+=celp[posCol].dx;
 							posCol++;
@@ -14849,8 +14849,8 @@ void Ler::copiaArq(Ler& arqAntigo) {
 							* (unidadeP[i].var[1][iniSegC + 1]
 									- unidadeP[i].var[1][iniSegC]) / compC;
 			if(isnan(celp[j].temp) || isnan(celp[j].pres) || celp[j].pres>1000000){
-				int para;
-				para=0;
+//				int para;
+//				para=0;
 			}
 			celp[j].hol = unidadeP[i].var[2][iniSegC]
 					+ (posiccentro-unidadeP[i].dxVar[iniSegF] * unidadeP[i].comp)
@@ -15592,7 +15592,7 @@ void Ler::geraTabFlash(int flu, int var) {
 		tenta = strtok(NULL, " ,()=");
 	}
 	tenta = strtok(NULL, " ,()=");
-	int lacoleitura;
+	int lacoleitura=0;
 
 	int threeOrtwo = 0;
 	if (strcmp(tenta, "THREE") == 0) {
@@ -17141,8 +17141,8 @@ void Ler::novatrans(TransCal& transfer,
 	int perm = -1;
 
 	if (ambext == 1) {
-		int para;
-		para = 0;
+//		int para;
+//		para = 0;
 	}
 
 	int kL = litologia;  //alteracao2
@@ -17166,12 +17166,12 @@ void Ler::novatrans(TransCal& transfer,
 void Ler::geracelp(Cel* celula) {
 
 	if(celp[0].pres>1000000){
-		int para;
-		para=0;
+//		int para;
+//		para=0;
 	}
 	if(isnan(celp[0].temp)){
-		int para;
-		para=0;
+//		int para;
+//		para=0;
 	}
 
 	//int ColunaAnulaIni=99;
@@ -17498,8 +17498,8 @@ void Ler::geracelp(Cel* celula) {
 						* (1. - vhol);
 
 		if (i == 26) {
-			int para;
-			para = 0;
+//			int para;
+//			para = 0;
 		}
         double dxC;
         if(i==0)dxC=celp[i].dx;
@@ -18347,12 +18347,12 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 		betaE = (inf * raz + (1 - raz) * sup);
 
 		if(titE<0){
-			  double rgST=celula[0].flui.Deng*1.225;
-			  double roST=141.5*1000./(131.5+celula[0].flui.API);
-			  double rg=celula[0].flui.MasEspGas(presE,tempE);
+//			  double rgST=celula[0].flui.Deng*1.225;
+//			  double roST=141.5*1000./(131.5+celula[0].flui.API);
+//			  double rg=celula[0].flui.MasEspGas(presE,tempE);
 			  double rl=celula[0].flui.MasEspLiq(presE,tempE);
 			  double titH=celula[0].flui.FracMassHidra(presE,tempE);
-			  double rcST=celula[0].fluicol.MasEspFlu(1.01, 20.);
+//			  double rcST=celula[0].fluicol.MasEspFlu(1.01, 20.);
 			  double rc=celula[0].fluicol.MasEspFlu(presE,tempE);
 			  double rlMix=betaE*rc+(1.-betaE)*rl;
 			  double val1=((1.-betaE)*rl*titH/(1.-titH));
@@ -18374,8 +18374,8 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 	}
 
 	if (tempo > 5000.) {
-		int para;
-		para = 0;
+//		int para;
+//		para = 0;
 	}
 	indraz(ind, raz, tempo, dtmaxserie.parserie, dtmaxserie.tempo);
 	double Tinf = dtmaxserie.valor[ind];
@@ -18886,10 +18886,10 @@ double Ler::fqlst(Cel* const celula,int i, double tempo){
 	double fwi;
 	double bswi;
 	double beti;
-	double rsi;
-	double rhogst;
-	double rhoast;
-	double rhoost;
+//	double rsi;
+//	double rhogst;
+//	double rhoast;
+//	double rhoost;
 	if (celula[i].QL > 0. && i > 0) {
 		//bo= celula[i-1].flui.BOFunc(celula[i].presaux,celula[i-1].temp);
 	    double razdx;
@@ -18904,10 +18904,10 @@ double Ler::fqlst(Cel* const celula,int i, double tempo){
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i - r].bet;
 		//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
-		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
-		rhogst = celula[i - r].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
-		rhoast = 1000 * celula[i - r].flui.Denag;
+//		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+//		rhogst = celula[i - r].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
+//		rhoast = 1000 * celula[i - r].flui.Denag;
 	} else {
 		//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
 		bo = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp);
@@ -18917,11 +18917,11 @@ double Ler::fqlst(Cel* const celula,int i, double tempo){
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i].bet;
 		//rsi= celula[i].flui.RS(celula[i].presaux,celula[i].temp)*(6.29/35.31467);
-		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
-				* (6.29 / 35.31467);
-		rhogst = celula[i].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
-		rhoast = 1000 * celula[i].flui.Denag;
+//		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
+//				* (6.29 / 35.31467);
+//		rhogst = celula[i].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
+//		rhoast = 1000 * celula[i].flui.Denag;
 	}
 	//double qostd=celula[i].Mliqini*((1-fwi)*(1.-beti)*86400/bo)/(rpi*(1-beti)+rci*beti);
 	double qostd = 0.;
@@ -18937,10 +18937,10 @@ double Ler::fqlstTot(Cel* const celula,int i, double tempo){
 	double fwi;
 	double bswi;
 	double beti;
-	double rsi;
-	double rhogst;
-	double rhoast;
-	double rhoost;
+//	double rsi;
+//	double rhogst;
+//	double rhoast;
+//	double rhoost;
 	if (celula[i].QL > 0. && i > 0) {
 		//bo= celula[i-1].flui.BOFunc(celula[i].presaux,celula[i-1].temp);
 	    double razdx;
@@ -18956,10 +18956,10 @@ double Ler::fqlstTot(Cel* const celula,int i, double tempo){
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i - r].bet;
 		//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
-		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
-		rhogst = celula[i - r].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
-		rhoast = 1000 * celula[i - r].flui.Denag;
+//		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+//		rhogst = celula[i - r].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
+//		rhoast = 1000 * celula[i - r].flui.Denag;
 	} else {
 		bo = celula[i].flui.BOFunc(celula[i].pres,celula[i].temp);
 		ba = celula[i].flui.BAFunc(celula[i].pres,celula[i].temp);
@@ -18969,11 +18969,11 @@ double Ler::fqlstTot(Cel* const celula,int i, double tempo){
 		//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].teba*bswi - bswi * bo);
 		beti = celula[i].bet;
 		//rsi= celula[i].flui.RS(celula[i].presaux,celula[i].temp)*(6.29/35.31467);
-		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
-				* (6.29 / 35.31467);
-		rhogst = celula[i].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
-		rhoast = 1000 * celula[i].flui.Denag;
+//		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
+//				* (6.29 / 35.31467);
+//		rhogst = celula[i].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
+//		rhoast = 1000 * celula[i].flui.Denag;
 	}
 	//double qostd=celula[i].Mliqini*((1-fwi)*(1.-beti)*86400/bo)/(rpi*(1-beti)+rci*beti);
 	double qostd =0.;
@@ -18998,10 +18998,10 @@ double Ler::fqlwst(Cel* const celula,int i, double tempo){
 	double fwi;
 	double bswi;
 	double beti;
-	double rsi;
-	double rhogst;
-	double rhoast;
-	double rhoost;
+//	double rsi;
+//	double rhogst;
+//	double rhoast;
+//	double rhoost;
 	if (celula[i].QL > 0. && i > 0) {
 		//bo= celula[i-1].flui.BOFunc(celula[i].presaux,celula[i-1].temp);
 	    double razdx;
@@ -19017,10 +19017,10 @@ double Ler::fqlwst(Cel* const celula,int i, double tempo){
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i - r].bet;
 		//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
-		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
-		rhogst = celula[i - r].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
-		rhoast = 1000 * celula[i - r].flui.Denag;
+//		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+//		rhogst = celula[i - r].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
+//		rhoast = 1000 * celula[i - r].flui.Denag;
 	} else {
 		//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
 		bo = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp);
@@ -19030,11 +19030,11 @@ double Ler::fqlwst(Cel* const celula,int i, double tempo){
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i].bet;
 		//rsi= celula[i].flui.RS(celula[i].presaux,celula[i].temp)*(6.29/35.31467);
-		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
-				* (6.29 / 35.31467);
-		rhogst = celula[i].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
-		rhoast = 1000 * celula[i].flui.Denag;
+//		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
+//				* (6.29 / 35.31467);
+//		rhogst = celula[i].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
+//		rhoast = 1000 * celula[i].flui.Denag;
 	}
 	//double qostd=celula[i].Mliqini*((1-fwi)*(1.-beti)*86400/bo)/(rpi*(1-beti)+rci*beti);
 	double qostd=0.;
@@ -19055,9 +19055,9 @@ double Ler::fqgst(Cel* const celula,int i, double tempo){
 	double beti;
 	double rsi;
 	double dgi;
-	double rhogst;
-	double rhoast;
-	double rhoost;
+//	double rhogst;
+//	double rhoast;
+//	double rhoost;
 	if (celula[i].QL > 0. && i > 0) {
 		//bo= celula[i-1].flui.BOFunc(celula[i].presaux,celula[i-1].temp);
 		//bo = celula[i - 1].flui.BOFunc(celula[i-1].pres,
@@ -19079,9 +19079,9 @@ double Ler::fqgst(Cel* const celula,int i, double tempo){
 		//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
 		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
 		dgi = celula[i - r].flui.Deng;
-		rhogst = celula[i - r].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
-		rhoast = 1000 * celula[i - r].flui.Denag;
+//		rhogst = celula[i - r].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i - r].flui.API);
+//		rhoast = 1000 * celula[i - r].flui.Denag;
 	} else {
 		//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
 		bo = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp);
@@ -19094,9 +19094,9 @@ double Ler::fqgst(Cel* const celula,int i, double tempo){
 		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
 				* (6.29 / 35.31467);
 		dgi = celula[i].flui.Deng;
-		rhogst = celula[i].flui.Deng * 1.225;
-		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
-		rhoast = 1000 * celula[i].flui.Denag;
+//		rhogst = celula[i].flui.Deng * 1.225;
+//		rhoost = 1000 * 141.5 / (131.5 + celula[i].flui.API);
+//		rhoast = 1000 * celula[i].flui.Denag;
 	}
 	double qostd =0.;
 	if(celula[i].flui.dStockTankVaporMassFraction<1.-1e-15){
@@ -20311,8 +20311,8 @@ void Ler::imprimeTrend(Cel* const celula,
 		int i = trendp[trend].posic;
 		//if(tempo==0 && i==ncelp-1)i--;
 		if(i==ncelp-1){
-			int para;
-			para=0;
+//			int para;
+//			para=0;
 		}
 		if (trendp[trend].pres == 1) {
 			flut[linha][k] = celula[i].pres;
@@ -20431,10 +20431,10 @@ void Ler::imprimeTrend(Cel* const celula,
 			double fwi;
 			double bswi;
 			double beti;
-			double rsi;
-			double rhogst;
-			double rhoast;
-			double rhoost;
+//			double rsi;
+//			double rhogst;
+//			double rhoast;
+//			double rhoost;
 			double titStd;
 			int m=i;
 			//if(tempo<1e-15 && i==ncelp-1)m-=2;
@@ -20451,10 +20451,10 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m - 1].bet;
 				//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
-				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
-				rhogst = celula[m - 1].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
-				rhoast = 1000 * celula[m - 1].flui.Denag;
+//				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+//				rhogst = celula[m - 1].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
+//				rhoast = 1000 * celula[m - 1].flui.Denag;
 				titStd=celula[m-1].flui.dStockTankVaporMassFraction;
 			} else {
 				//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
@@ -20465,11 +20465,11 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m].bet;
 				//rsi= celula[i].flui.RS(celula[i].presaux,celula[i].temp)*(6.29/35.31467);
-				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
-						* (6.29 / 35.31467);
-				rhogst = celula[m].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
-				rhoast = 1000 * celula[m].flui.Denag;
+//				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
+//						* (6.29 / 35.31467);
+//				rhogst = celula[m].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
+//				rhoast = 1000 * celula[m].flui.Denag;
 				titStd=celula[m].flui.dStockTankVaporMassFraction;
 			}
 			//double qostd=celula[i].Mliqini*((1-fwi)*(1.-beti)*86400/bo)/(rpi*(1-beti)+rci*beti);
@@ -20487,10 +20487,10 @@ void Ler::imprimeTrend(Cel* const celula,
 			double fwi;
 			double bswi;
 			double beti;
-			double rsi;
-			double rhogst;
-			double rhoast;
-			double rhoost;
+//			double rsi;
+//			double rhogst;
+//			double rhoast;
+//			double rhoost;
 			double titStd;
 			int m=i;
 			//if(tempo<1e-15 && i==ncelp-1)m-=2;
@@ -20507,10 +20507,10 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba/ (bo + ba*bswi - bswi * bo);
 				beti = celula[m - 1].bet;
 				//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
-				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
-				rhogst = celula[m - 1].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
-				rhoast = 1000 * celula[m - 1].flui.Denag;
+//				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+//				rhogst = celula[m - 1].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
+//				rhoast = 1000 * celula[m - 1].flui.Denag;
 				titStd=celula[m-1].flui.dStockTankVaporMassFraction;
 			} else {
 				//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
@@ -20521,11 +20521,11 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m].bet;
 				//rsi= celula[i].flui.RS(celula[i].presaux,celula[i].temp)*(6.29/35.31467);
-				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
-						* (6.29 / 35.31467);
-				rhogst = celula[m].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
-				rhoast = 1000 * celula[m].flui.Denag;
+//				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
+//						* (6.29 / 35.31467);
+//				rhogst = celula[m].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
+//				rhoast = 1000 * celula[m].flui.Denag;
 				titStd=celula[m].flui.dStockTankVaporMassFraction;
 			}
 			//double qostd=celula[i].Mliqini*((1-fwi)*(1.-beti)*86400/bo)/(rpi*(1-beti)+rci*beti);
@@ -20549,10 +20549,10 @@ void Ler::imprimeTrend(Cel* const celula,
 			double fwi;
 			double bswi;
 			double beti;
-			double rsi;
-			double rhogst;
-			double rhoast;
-			double rhoost;
+//			double rsi;
+//			double rhogst;
+//			double rhoast;
+//			double rhoost;
 			double titStd;
 			if (celula[i].QL > 0. && i > 0) {
 				//bo= celula[i-1].flui.BOFunc(celula[i].presaux,celula[i-1].temp);
@@ -20567,10 +20567,10 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m - 1].bet;
 				//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
-				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
-				rhogst = celula[m - 1].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
-				rhoast = 1000 * celula[m - 1].flui.Denag;
+//				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+//				rhogst = celula[m - 1].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
+//				rhoast = 1000 * celula[m - 1].flui.Denag;
 				titStd=celula[m-1].flui.dStockTankVaporMassFraction;
 			} else {
 				//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
@@ -20581,11 +20581,11 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m].bet;
 				//rsi= celula[i].flui.RS(celula[i].presaux,celula[i].temp)*(6.29/35.31467);
-				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
-						* (6.29 / 35.31467);
-				rhogst = celula[m].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
-				rhoast = 1000 * celula[m].flui.Denag;
+//				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
+//						* (6.29 / 35.31467);
+//				rhogst = celula[m].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
+//				rhoast = 1000 * celula[m].flui.Denag;
 				titStd=celula[m].flui.dStockTankVaporMassFraction;
 			}
 			//double qostd=celula[i].Mliqini*((1-fwi)*(1.-beti)*86400/bo)/(rpi*(1-beti)+rci*beti);
@@ -20615,9 +20615,9 @@ void Ler::imprimeTrend(Cel* const celula,
 			double beti;
 			double rsi;
 			double dgi;
-			double rhogst;
-			double rhoast;
-			double rhoost;
+//			double rhogst;
+//			double rhoast;
+//			double rhoost;
 			double titStd;
 			int m=i;
 			//if(tempo<1e-15 && i==ncelp-1)m-=2;
@@ -20636,9 +20636,9 @@ void Ler::imprimeTrend(Cel* const celula,
 				//rsi= celula[i-1].flui.RS(celula[i].presaux,celula[i-1].temp)*(6.29/35.31467);
 				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
 				dgi = celula[m - 1].flui.Deng;
-				rhogst = celula[m - 1].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
-				rhoast = 1000 * celula[m - 1].flui.Denag;
+//				rhogst = celula[m - 1].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m - 1].flui.API);
+//				rhoast = 1000 * celula[m - 1].flui.Denag;
 				titStd=celula[m-1].flui.dStockTankVaporMassFraction;
 			} else {
 				//bo= celula[i].flui.BOFunc(celula[i].presaux,celula[i].temp);
@@ -20652,9 +20652,9 @@ void Ler::imprimeTrend(Cel* const celula,
 				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
 						* (6.29 / 35.31467);
 				dgi = celula[m].flui.Deng;
-				rhogst = celula[m].flui.Deng * 1.225;
-				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
-				rhoast = 1000 * celula[m].flui.Denag;
+//				rhogst = celula[m].flui.Deng * 1.225;
+//				rhoost = 1000 * 141.5 / (131.5 + celula[m].flui.API);
+//				rhoast = 1000 * celula[m].flui.Denag;
 				titStd=celula[m].flui.dStockTankVaporMassFraction;
 			}
 			double qostd=0.;
@@ -20833,22 +20833,22 @@ void Ler::imprimeTrend(Cel* const celula,
 			for(int j=0; j<ncelp-1;j++){
 				double pres=celula[j].pres;
 				double temp=celula[j].temp;
-				double bo=celula[j].flui.BOFunc(pres, temp);
-				double ba=celula[j].flui.BAFunc(pres, temp);
+//				double bo=celula[j].flui.BOFunc(pres, temp);
+//				double ba=celula[j].flui.BAFunc(pres, temp);
 				double fw=celula[j].FW;
 				double beta=celula[j].bet;
 				double tituloST=celula[j].flui.dStockTankVaporMassFraction;
 				double rhogPT=celula[j].flui.MasEspGas(pres, temp);
 				double rhogST=celula[j].flui.Deng*1.225;
 				double rhooPT=celula[j].flui.MasEspoleo(pres, temp);
-				double rhoaPT=celula[j].flui.MasEspAgua(pres, temp);
-				double rhocPT=celula[j].fluicol.MasEspFlu(pres, temp);
-				double rhocST=celula[j].fluicol.rholStd;
+//				double rhoaPT=celula[j].flui.MasEspAgua(pres, temp);
+//				double rhocPT=celula[j].fluicol.MasEspFlu(pres, temp);
+//				double rhocST=celula[j].fluicol.rholStd;
 				double hol=(1.-celula[j].alf);
 				double massg=(1.-hol)*rhogPT*celula[j].duto.area*celula[j].dx;
 				double masspO=(1.-beta)*hol*(1.-fw)*rhooPT*celula[j].duto.area*celula[j].dx;
-				double masspA=(1.-beta)*hol*fw*rhoaPT*celula[j].duto.area*celula[j].dx;
-				double massc=beta*hol*rhocPT*celula[j].duto.area*celula[j].dx;
+//				double masspA=(1.-beta)*hol*fw*rhoaPT*celula[j].duto.area*celula[j].dx;
+//				double massc=beta*hol*rhocPT*celula[j].duto.area*celula[j].dx;
 				double vg=(massg+masspO)*tituloST/rhogST;
 				voltot+=vg;
 			}
@@ -20860,13 +20860,13 @@ void Ler::imprimeTrend(Cel* const celula,
 			for(int j=0; j<ncelp-1;j++){
 				double pres=celula[j].pres;
 				double temp=celula[j].temp;
-				double bo=celula[j].flui.BOFunc(pres, temp);
-				double ba=celula[j].flui.BAFunc(pres, temp);
+//				double bo=celula[j].flui.BOFunc(pres, temp);
+//				double ba=celula[j].flui.BAFunc(pres, temp);
 				double fw=celula[j].FW;
 				double beta=celula[j].bet;
 				double tituloST=celula[j].flui.dStockTankVaporMassFraction;
 				double rhogPT=celula[j].flui.MasEspGas(pres, temp);
-				double rhogST=celula[j].flui.Deng*1.225;
+//				double rhogST=celula[j].flui.Deng*1.225;
 				double rhooPT=celula[j].flui.MasEspoleo(pres, temp);
 				double rhooST=celula[j].flui.MasEspoleo(1.01, 20.);
 				double rhoaPT=celula[j].flui.MasEspAgua(pres, temp);
@@ -21703,12 +21703,12 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 				flup[i].viscBlackOil = flash[i].visc;
 				flup[i].modelaAgua=arqAntigo.flup[i].modelaAgua;
 
-				int ndiv = tabent.npont - 1;
-				int ndivB = tabent.npontB - 1;
+//				int ndiv = tabent.npont - 1;
+//				int ndivB = tabent.npontB - 1;
 				flup[i].npontos=tabent.npont;
 				flup[i].npontosB=tabent.npontB;
-				int lacoleitura = ndiv;
-				int lacoleituraB = ndivB;
+//				int lacoleitura = ndiv;
+//				int lacoleituraB = ndivB;
 
 				flup[i].pMinEqu=arqAntigo.flup[i].pMinEqu;
 				flup[i].delpTab=arqAntigo.flup[i].delpTab;

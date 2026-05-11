@@ -178,8 +178,8 @@ double ProFluCol::DrhoDtFlu(double pres,double temp) const{
 double ProFluCol::interpolaVarInj(double pres, double temp, double** VarInj) const{
     int ipres=0;
     int itemp=0;
-    int ipmarcador;
-    int itmarcador;
+//    int ipmarcador;
+//    int itmarcador;
     double varinj=0.;
     int ndiv=npontos-1;
     if(pres<VarInj[1][0])pres=VarInj[1][0];
@@ -196,7 +196,7 @@ double ProFluCol::interpolaVarInj(double pres, double temp, double** VarInj) con
       d = ndiv+1;
       while (e <= d) {
 	      m = (e + d)/2;
-	      ipmarcador=m;
+//	      ipmarcador=m;
  	      if(m==1){
  	    	  ipres=m;
  	    	  break;
@@ -216,7 +216,7 @@ double ProFluCol::interpolaVarInj(double pres, double temp, double** VarInj) con
       d = ndiv+1;
       while (e <= d) {
  	      m = (e + d)/2;
- 	      itmarcador=m;
+// 	      itmarcador=m;
  	      if(m==1){
  	    	  itemp=m;
  	    	  break;

@@ -20,7 +20,7 @@ malha3d::malha3d(varGlob1D* DGP3DV,eleOBJ* velementoUNV, double** xcoor, int** n
 	    	mlh3d.push_back(temp);
 	    	voltot+=mlh3d[i].cel3D.vElem;
 	    	for(int j=0; j<mlh3d[i].cel3D.nvert;j++){
-	    		int indCC=mlh3d[i].eleUNV.faceCCfaceReal[j];
+//	    		int indCC=mlh3d[i].eleUNV.faceCCfaceReal[j];
 	    		if(mlh3d[i].cel3D.ccFace[j]!="interno")areatot+=mlh3d[i].cel3D.sFaceMod[j];
 	    		//if(indCC>=0)cel3D.ccFace[j]=eleUNV.objFace[indCC].condCont;
 	    	}

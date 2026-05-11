@@ -576,7 +576,7 @@ double estratificado::criterio(double hol,double qlv,double qg,double eps){
 double estratificado::zbrentUls(double x1,double x2,double qlv,double qg,double eps,
 		          double tol,
                          double epsn,int maxit){
-	double EPS=epsn;
+	 //double EPS=epsn;
 	 //double a=x1;
 	 //double b=x2;
 	 //double c=x2;
@@ -585,7 +585,7 @@ double estratificado::zbrentUls(double x1,double x2,double qlv,double qg,double 
 	 //double c=b;
 	 //double fa=criterio(a,qlv,qg,eps);
 	 //double fb=criterio(b,qlv,qg,eps);
-	 double d,e,fc,p,q,r,s,tol1,xm;
+	 //double d,e,fc,p,q,r,s,tol1,xm;
 	 double x=x1;
 	 double dx1;
 	 double fa=1;
@@ -690,7 +690,7 @@ double  estratificado::calcC0(double x1,
  double signC=1.;
  if(x1<0.)signC=-1.;
  double rtn=signC*0.5*qt;
- double area=0.25*M_PI*dia*dia;
+ //double area=0.25*M_PI*dia*dia;
  double f;
  double df;
  double dx;
@@ -839,9 +839,9 @@ double  estratificado::calcC0FC(const double x1,const double qt,
  rtna=FalsaCorda(rtna,rtnb,qt,alf,eps);
  //rtna=zbrent(rtna,rtnb,qt,mig,mil,eps);
 
- double f;
- f=equil2(rtna,qt,eps);
- double ulszero=rtna/area;
+ //double f;
+ //f=equil2(rtna,qt,eps);
+ //double ulszero=rtna/area;
 
  return ((1-coaux*alf)*qt-rtna)/(alf*area);
 
@@ -911,10 +911,10 @@ if(alf1>0.0000001){
  double du3=1*dt*9.82*cos(ang)*(area/(siNd*dia))*(alf1-alf0)/dx;
  double fonte1=dt*(((1*twg*siNd*dia)/rl-twl*swlNd*dia/rl)/(dia*dia*alNd)-
          9.82*sin(ang));
- double du2g=-dt*(1/rg)*(pR-pL)*98600/dx;
- double fonte2=dt*(((-twg*siNd*dia)/rg-twg*swgNd*dia/rg)/(dia*dia*agNd)-
-          9.82*sin(ang));
- double ugsN=(ug1+du2g+fonte2)*(alf1);
+ //double du2g=-dt*(1/rg)*(pR-pL)*98600/dx;
+ //double fonte2=dt*(((-twg*siNd*dia)/rg-twg*swgNd*dia/rg)/(dia*dia*agNd)-
+ //         9.82*sin(ang));
+ //double ugsN=(ug1+du2g+fonte2)*(alf1);
 
  double ulsN=(ul1+du1+1*du2+du3+fonte1)*(1.-alf1);
 // j=ugsN+ulsN;

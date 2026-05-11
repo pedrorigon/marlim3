@@ -448,7 +448,7 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 	    double Hbep=Fhead(BEP)/nestag;
 	    double Nrpm=freqnova*60;
 	    double Bhi=26.6*pow(visC,0.5)*pow(Hbep,0.0625)/(pow(Qbep*(42./144.),0.375)*pow(Nrpm, 0.25));
-	    double HbepV;
+	    // double HbepV;
 	    double Qw;
 	    double Cq;
 	    double CbepH;
@@ -467,7 +467,7 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 	    		Cq=pow(2.71,expoente);
 	    		Qw=Qvis/Cq;
 	    		CbepH=Cq;
-	    		HbepV=CbepH*Hbep;
+	    		// HbepV=CbepH*Hbep;
 	    		Ch=1.-((1-CbepH)*pow(Qw/BEP,0.75));
 	    		Hvis=Ch*Fhead(Qw);
 	    		expoente=-0.0547*pow(Bhi,0.69);

@@ -177,7 +177,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     double vazGIni=vazG;
     double tempIni=temp;
     double presIni=pres;
-    double alfaIni=alfa;
+//    double alfaIni=alfa;
     double betaIni=beta;
 
     ProFlu fluiL=flui;
@@ -235,7 +235,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
 
 	double delTit;
 	double novoTit;
-	double tit0;
+//	double tit0;
 
     for(int iCurva=0; iCurva<nBCS; iCurva++){
     	for(int iEstag=0; iEstag<nestagParc[iCurva]; iEstag++){

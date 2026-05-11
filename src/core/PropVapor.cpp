@@ -728,6 +728,7 @@ double ProVap::interp(double pres, double var,termprop tipo , int sai){
     	   else return tit;
        }
     }
+    return 0.0;
 }
 
 double ProVap::MasEspLiq(double pres, double var, termprop tipo){
@@ -1201,6 +1202,7 @@ double ProVap::Titulo(double pres, double var, termprop tipo){
 	           return (var-varL)/(varH-varL);
 		}
 	}
+	return 0.0;
 }
 
 double ProVap::ZFunc(double pres, double temp){
@@ -1604,12 +1606,12 @@ double ProVap::CVgFuncMod(double pres, double temp){
 
 	  double cp=CPgFunc(pres,temp);
       double cv=CVgFunc(pres,temp);
-	  double rhog=MasEspGas(pres,temp,TEMP);
+//	  double rhog=MasEspGas(pres,temp,TEMP);
 	  double dzdt=DZDTFunc(pres,temp);
 	  double dzdp=DZDPFunc(pres,temp);
 	  double zg=ZFunc(pres,temp);
-	  double dvdt=(1/rhog)*(1/(temp+273)+dzdt/zg);
-	  double dvdp=(1/rhog)*(-1/(pres*98066.5)+dzdp/zg);
+//	  double dvdt=(1/rhog)*(1/(temp+273)+dzdt/zg);
+//	  double dvdp=(1/rhog)*(-1/(pres*98066.5)+dzdp/zg);
 
 	  //double RG=(8.0465*1000)/(Deng*28.9625);
 	  double RG=cp-cv;
@@ -1722,8 +1724,8 @@ double ProVap::CPgFunc(double pres, double temp){
 
 double ProVap::CPgFuncMod(double pres, double temp){
 
-	  double cp=CPgFunc(pres,temp);
-      double cv=CVgFunc(pres,temp);
+//	  double cp=CPgFunc(pres,temp);
+//      double cv=CVgFunc(pres,temp);
 	  double rhog=MasEspGas(pres,temp,TEMP);
 	  double dzdt=DZDTFunc(pres,temp);
 	  double dzdp=DZDPFunc(pres,temp);
@@ -1731,7 +1733,7 @@ double ProVap::CPgFuncMod(double pres, double temp){
 	  double drhodp=rhog*(1/(pres*98066.5)-dzdp/zg);
 
 	 // double RG=(8.0465*1000)/(Deng*28.9625);
-	  double RG=cp-cv;
+//	  double RG=cp-cv;
 	  double rel1=zg+(temp+273)*dzdt;
 	  double rel2=zg-dzdp*(pres*98066.5);
 	  return (1/(rhog*zg))*rel2*(1-rel1/rel2)-(pres*98066.5/(rhog*rhog))*drhodp;

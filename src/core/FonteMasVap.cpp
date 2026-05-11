@@ -44,8 +44,8 @@ double IPRVap::VMas(const double& pfundo, const double& tfundo){
 
  double var;
 
- double Rhogs;
- double Rhols;
+ // double Rhogs;
+ // double Rhols;
  double multiplicador;
 
    var = ij*(Pres - pfundo);

@@ -209,6 +209,7 @@ SProdVap& SProdVap::operator =(const SProdVap& sp) {
  // extrem=sp.extrem;
 
   montasistema();
+  return *this;
 }
 
 void SProdVap::montasistema() {
@@ -567,7 +568,7 @@ void SProdVap::calctemp(int i, double tempantiga) {
   double ugmed0=0;
   double ulmed0=0;
   double ugmed=0;
-  double ulmed;
+  double ulmed=0.;
   if (celula[i].acsr.tipo == 0 && celula[i - 1].acsr.tipo == 0 && i>1) {
 
 	double dxCin=celula[i-1].dx;
@@ -615,7 +616,7 @@ void SProdVap::calctemp(int i, double tempantiga) {
   double fontemassL = 0.;
   double tfonte = celula[i].temp;
   double cpgF;
-  double razcpF;
+  double razcpF=0.;
   double cplF;
   if(celula[i].acsr.tipo==11){
 	 tfonte = celula[i].acsr.iprvap.Tres;
@@ -820,7 +821,7 @@ void SProdVap::calctemp(int i, double tempantiga) {
 
       double fontemassG = 0.;
       double fontemassL = 0.;
-      double fontemassC = 0.;
+//      double fontemassC = 0.;
       double tfonte = celula[i].temp;
       double hgF;
       double hlF;
@@ -997,6 +998,7 @@ double SProdVap::calcTempEntalp(int i,double tempantiga){
 		celula[i].temp=celula[i].flui.TempFun(pres,t0);
 	}
 
+  return celula[i].temp;
 }
 
 void SProdVap::calcTransMassTermo(int i) {
@@ -1077,7 +1079,7 @@ void SProdVap::calcTransMassTermo(int i) {
 	  double ugmed0=0;
 	  double ulmed0=0;
 	  double ugmed=0;
-	  double ulmed;
+	  double ulmed=0.;
 	  if (celula[i].acsr.tipo == 0 && celula[i - 1].acsr.tipo == 0 && i>1) {
 
 		double dxCin=celula[i-1].dx;
@@ -1125,7 +1127,7 @@ void SProdVap::calcTransMassTermo(int i) {
 	    double fontemassL = 0.;
 	    double tfonte = celula[i].temp;
 	    double cpgF;
-	    double razcpF;
+	    double razcpF=0.;
 	    double cplF;
 	    if(celula[i].acsr.tipo==11){
 	  	 tfonte = celula[i].acsr.iprvap.Tres;
@@ -1248,7 +1250,7 @@ void SProdVap::FonteValv(int ind) {
     double alfE = celula[ind].alf;
     double sense=1.;
 
-    double razao = celula[ind].acsr.chk.AreaGarg / celula[ind].duto.area;
+//    double razao = celula[ind].acsr.chk.AreaGarg / celula[ind].duto.area;
 
     double maxSup = 0.;
 
@@ -1523,7 +1525,7 @@ void SProdVap::CalcC0Ud(int ind, double& c0, double& ud) {
     else alfneg = celula[ind].alf;
 
     double pmed;
-    double pmed0;
+    double pmed0=0.;
 
     pmed = celula[ind].presaux;
     if (ind > 0) pmed0 = celula[ind - 1].presaux;
@@ -1821,7 +1823,7 @@ void SProdVap::CalcC0UdBuf(int ind, double& c0, double& ud) {
 
 
     double pmed;
-    double pmed0;
+    double pmed0=0.;
 
     pmed = razdx * celula[ind].presBuf + (1 - razdx) * celula[ind].presLBuf;
     if(ind==ncel)pmed = celula[ind].presBuf;
@@ -2091,7 +2093,7 @@ void SProdVap::CalcC0UdIni(int ind, double& c0, double& ud) {
     else alfneg = celula[ind].alf;
 
     double pmed;
-    double pmed0;
+    double pmed0=0.;
 
     pmed = presE;
     if (ind > 0) pmed0 = presE;
@@ -2319,7 +2321,7 @@ void SProdVap::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
+//    double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -2329,7 +2331,7 @@ void SProdVap::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
     else alfneg = celula[ind].alf;
 
     double pmed;
-    double pmed0;
+    double pmed0=0.;
 
     pmed = presE;
     if (ind > 0) pmed0 = presE;
@@ -2430,7 +2432,7 @@ void SProdVap::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
           if (ul0 < 0.) mult0 = 0.;
           mult1 = 0.;
           if (ul1 < 0.) mult1 = 1.;
-          double alf0E = alfE;
+//          double alf0E = alfE;
           xc0 = 1.;
 
           c0 = xc0;
@@ -2491,7 +2493,7 @@ void SProdVap::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
           c0 = (c0 * celula[ind].transic + celula[ind].c0 * (20. - celula[ind].transic)) / 20.;
           ud = (ud * celula[ind].transic + celula[ind].ud * (20. - celula[ind].transic)) / 20.;
         }
-        double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
+//        double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
             + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);
         celula[ind].arranjo = xarr1;
 
@@ -2635,8 +2637,8 @@ void  SProdVap::renovaBufferCego() {
 void SProdVap::renovaTemp() {
   for (int i = 0; i <= ncel; i++) {
     double rhol0;
-    double boL;
-    double rsL;
+//    double boL;
+//    double rsL;
     if (i != 0 && i != ncel) {
 
     	if((*vg1dSP).lixo5>=7059.9 && i==ncel-1){
@@ -2694,8 +2696,8 @@ void SProdVap::renovaTemp() {
 
       ProVap flue;
       ProVap flud;
-      double fwd;
-      double fwe;
+//      double fwd;
+//      double fwe;
 
       if (celula[i].Mliqini < 0.) {
         flud = celula[i].flui;
@@ -2716,7 +2718,7 @@ void SProdVap::renovaTemp() {
       //if(celula[i-1].VTemper<0.) tmedL=celula[i-1].temp;
       double rl;
       double rg;
-      double betI;
+//      double betI;
 
       rl = flud.MasEspLiq(celula[i].presaux, tmed);
 
@@ -2730,7 +2732,7 @@ void SProdVap::renovaTemp() {
       celula[i - 1].QLR = celula[i].QL;
       celula[i + 1].QLL = celula[i].QL;
 
-      double A1 = celula[i].dutoL.area;
+//      double A1 = celula[i].dutoL.area;
 
       tmed = celula[i - 1].temp;
       if (celula[i].VTemper < 0.) tmed = celula[i].temp;
@@ -2746,11 +2748,11 @@ void SProdVap::renovaTemp() {
       }
 
 
-      double rsf;
-      double bswf;
-      double rhostf;
-      double rhogstf;
-      double rhoastf;
+//      double rsf;
+//      double bswf;
+//      double rhostf;
+//      double rhogstf;
+//      double rhoastf;
       celula[i - 1].fontedissolv = 0.;
 
       celula[i].TMModelL = celula[i - 1].TMModel;
@@ -2962,7 +2964,7 @@ void SProdVap::renovaterm(int aflu) {
         double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
         //double betIL=celula[i-1].betL;
         //if(celula[i-1].QL<0.)betIL=celula[i-1].bet;
-        double betIL;
+        double betIL=0.;
         double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
         double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL);
         double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
@@ -3222,7 +3224,7 @@ void SProdVap::renovaterm(int aflu) {
             	  alfE=(-titE*rlmist/(titE*rg-rg-titE*rlmist))/(celula[0].c0);
 
 
-            double betI;
+//            double betI;
             double viscl1;
             double tensup1;
             //if (celula[i].QL < 0.) { testeBeta
@@ -3956,7 +3958,7 @@ void SProdVap::renovatermColIni() {
 
 	int i=0;
 
-    double razdx =0.5;
+//    double razdx =0.5;
     double pmed;
     pmed=presE;
 
@@ -3966,7 +3968,7 @@ void SProdVap::renovatermColIni() {
     else tmed = tempE;
 
 
-    double betI;
+//    double betI;
     double viscl1;
     double tensup1;
     //if (celula[i].QL < 0.) { testeBeta
@@ -4009,7 +4011,7 @@ void SProdVap::renovatermColIni() {
 
     double rmed = hns * rl + (1 - hns) * rg;
     double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-    double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
+//    double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
     double ang = celula[i].duto.teta;
     double sinal = 1.;
     if (ang < 0.) sinal = -1.;
@@ -4026,7 +4028,7 @@ void SProdVap::renovatermColIni() {
     double rgR;
     rgR= celula[i].flui.MasEspGas(pmedR, tmedR);
     double rlR = celula[i].flui.MasEspLiq(pmedR, tmedR);
-    double ugs1 = (celula[i].MRBuf - celula[i].MliqiniRBuf)/(rgR*amedR);
+//    double ugs1 = (celula[i].MRBuf - celula[i].MliqiniRBuf)/(rgR*amedR);
     double uls1 = (celula[i].MliqiniRBuf) / (rlR * amedR);
 
     int bif = 1;
@@ -4354,7 +4356,7 @@ void SProdVap::calcCCpres(double titRev, double alfRev) {//alteracao7
     masChkSup = 0;
   }
 
-  double mastotchk = fabs(celula[ncel].fontemassLR + celula[ncel].fontemassGR);
+//  double mastotchk = fabs(celula[ncel].fontemassLR + celula[ncel].fontemassGR);
 
 
   if(masChkSup==0  && (*vg1dSP).chaverede==1){//alteracao7
@@ -4474,7 +4476,7 @@ void  SProdVap::calcCCBuffer(double titRev, double alfRev){//alteracao7
     		else sinal=0.;
             double rhomistBuf=
                   celula[ncel-1].flui.MasEspLiq(celula[ncel].presBuf,celula[ncel].temp);
-            double QLbuf=celula[ncel-1].MliqiniRBuf/rhomistBuf;
+//            double QLbuf=celula[ncel-1].MliqiniRBuf/rhomistBuf;
 
  		      fontemassPRBuf=-sinal*(celula[ncel-1].MliqiniRBuf);
  		      fontemassGRBuf=-sinal*(celula[ncel-1].MRBuf-celula[ncel-1].MliqiniRBuf);
@@ -4663,7 +4665,7 @@ void  SProdVap::SolveAcopPV(){
 ///////////////////////////// alteracao7 //////////////////////////////////////////////
 
 void SProdVap::SolveTrans(double titRev, double alfRev) {//alteracao7
-  double velmaxdesc=0;//alteracao5
+//  double velmaxdesc=0;//alteracao5
 	///////////////////////////// alteracao7 //////////////////////////////////////////////
 	if((*vg1dSP).chaverede==0){
 	   determinaDT();
@@ -4758,7 +4760,7 @@ void SProdVap::SolveTrans(double titRev, double alfRev) {//alteracao7
     celula[i - 1].tempR = celula[i].temp;
   }
   presfim = celula[ncel].pres;
-  double mliqfim = celula[ncel - 1].MliqiniR;
+//  double mliqfim = celula[ncel - 1].MliqiniR;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   renovaalbetini();
@@ -5301,12 +5303,12 @@ double SProdVap::marchaProdPerm2(double pchute) {
   double masentrada = celula[ncel - 1].MR;
   double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
   double maxSup = 0.;
-  double chokemas = 0;
+//  double chokemas = 0;
 
   double tit;
   presfim = celula[ncel].pres;
   double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
-  double rholmix = rholp;
+//  double rholmix = rholp;
   tit = fabs(massgas / masentrada);
 
   double masChk;
@@ -5372,7 +5374,7 @@ double SProdVap::buscaProdPfundoPerm(double chute) {
   if(pchute>2000)pchute=2000.;
   if(chute>0) pchute=chute;
   double pchute2;
-  double pchuteAux;
+  double pchuteAux=0.;
   double val;
   val = marchaProdPerm1(pchute);
   if (val < -0.9e10) {
@@ -5429,8 +5431,8 @@ double SProdVap::buscaProdPfundoPerm(double chute) {
 
   kontaiter = 0;
   pchute2 = pchute;
-  double chuteNeg;
-  double chutePos;
+  double chuteNeg=0.;
+  double chutePos=0.;
   double chutelim = 0.;
   if(val<0.){
 	chuteNeg=pchute;
@@ -5557,7 +5559,7 @@ double SProdVap::buscaProdPfundoPerm2(double chute) {
   if(pchute>2000)pchute=2000.;
   if(chute>0) pchute=chute;
   double pchute2;
-  double pchuteAux;
+  double pchuteAux=0.;
   double val;
   val = marchaProdPerm2(pchute);
 
@@ -5613,8 +5615,8 @@ double SProdVap::buscaProdPfundoPerm2(double chute) {
   kontaiter = 0;
   pchute2 = pchute;
   double chutelim = 0.;
-  double chuteNeg;
-  double chutePos;
+  double chuteNeg=0.;
+  double chutePos=0.;
   if (val < 0.) {
 	chuteNeg=pchute;
     while (val < 0) {
@@ -5843,8 +5845,8 @@ double SProdVap::buscaProdPresPresPerm(double chute) {
   double chutelim = 0.;
   kontaiter = 0;
 
-  double chuteNeg;
-  double chutePos;
+  double chuteNeg=0.;
+  double chutePos=0.;
 
   if (val < 0.) {
 	chuteNeg=mchute;
@@ -5920,7 +5922,7 @@ double SProdVap::buscaProdPresPresPerm(double chute) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 double SProdVap::marchaProdPresPres2(double mchute) {
 
-  int corrigechute = 1;
+//  int corrigechute = 1;
 
  if (celula[0].acsr.tipo == 12) {
     celula[0].temp = celula[0].acsr.injmvap.temp;
@@ -6017,12 +6019,12 @@ double SProdVap::marchaProdPresPres2(double mchute) {
   double masentrada = celula[ncel - 1].MR;
   double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
   double maxSup = 0.;
-  double chokemas = 0;
+//  double chokemas = 0;
 
   double tit;
   presfim = celula[ncel].pres;
   double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
-  double rholmix = rholp;
+//  double rholmix = rholp;
   tit = fabs(massgas / masentrada);
 
   double masChk;
@@ -6063,8 +6065,8 @@ double SProdVap::buscaProdPresPresPerm2(double chute) {
   double chutelim = 0.;
   kontaiter = 0;
 
-  double chuteNeg;
-  double chutePos;
+  double chuteNeg=0.;
+  double chutePos=0.;
 
   if (val < 0.) {
 	  chuteNeg=mchute;
@@ -6206,7 +6208,7 @@ void SProdVap::RenovaPresPermJus(int i, int RK) {
   double area;
   double si;
   double alfmed;
-  double betmed;
+//  double betmed;
   double rhog;
   double rhol;
   double ugsmed;
@@ -6304,7 +6306,7 @@ void SProdVap::RenovaMassPerm(int i) {
   double pmed = celula[i].presaux;
   double rhog = celula[i].flui.MasEspGas(pmed, tmed);
   double rhol= celula[i].flui.MasEspLiq(pmed, tmed);
-  double raztit;
+  double raztit=0.;
   double t0=celula[i].flui.TempFun(pmed, celula[i].entalp/raztit,HENT);
 
   if(iterperm!=0){
@@ -6407,7 +6409,7 @@ void SProdVap::CalcC0UdPerm(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
+//    double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -6417,7 +6419,7 @@ void SProdVap::CalcC0UdPerm(int ind, double& c0, double& ud) {
     else alfneg = celula[ind].alf;
 
     double pmed;
-    double pmed0;
+    double pmed0=0.;
 
     pmed = celula[ind].presaux;
     if (ind > 0) pmed0 = celula[ind - 1].presaux;
@@ -6554,7 +6556,7 @@ void SProdVap::CalcC0UdPerm(int ind, double& c0, double& ud) {
           ud = sinal * (1. - alf0)
               / (alf0 + 4. * sqrt(rgm / rlm) * sqrt(9.82 * dia1 * (rlm - rgm) * (1. - alf0)) / (0.015 * rgm));
         }
-        double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
+//        double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
             + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);
         celula[ind].arranjo = xarr1;
         if(ind>0)
@@ -6725,7 +6727,7 @@ void SProdVap::CalcC0UdPerm(int ind, double& c0, double& ud) {
 
 	double rhog=celula[i].flui.MasEspGas(pres, t0);
 	double rhol=celula[i].flui.MasEspLiq(pres, t0);
-	double raztit;
+	double raztit=0.;
 	raztit=ugsL*rhog+ulsL*rhol;
 	t0=celula[i].flui.TempFun(pres, celula[i].entalp/raztit,HENT);
 	//celula[i].temp=( tmed*(celula[i].dx + celula[i].dxL)-celula[i].dxL * celula[i-1].temp)/celula[i].dx ;
@@ -6818,6 +6820,7 @@ void SProdVap::CalcC0UdPerm(int ind, double& c0, double& ud) {
     celula[i].temp=( celula[i].temp*(celula[i].dx + celula[i].dxL)-celula[i].dxL * celula[i-1].temp)/
     		         celula[i].dx ;
 
+    return celula[i].temp;
 }
 
 
@@ -6899,7 +6902,7 @@ void SProdVap::RenovaTransMassPerm(int i) {
 	  double ugmed0=0;
 	  double ulmed0=0;
 	  double ugmed=0;
-	  double ulmed;
+	  double ulmed=0.;
 	  if (celula[i].acsr.tipo == 0 && celula[i - 1].acsr.tipo == 0 && i>1) {
 
 		double dxCin=celula[i-1].dx;
@@ -6947,7 +6950,7 @@ void SProdVap::RenovaTransMassPerm(int i) {
 	    double fontemassL = 0.;
 	    double tfonte = celula[i].temp;
 	    double cpgF;
-	    double razcpF;
+	    double razcpF=0.;
 	    double cplF;
 	    if(celula[i].acsr.tipo==11){
 	  	 tfonte = celula[i].acsr.iprvap.Tres;
@@ -7069,8 +7072,8 @@ void SProdVap::calcTempFim() {	    		           //alteracao 1
     double masentrada = celula[ncel - 1].MR;
     double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
     double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
-    double rholmix = rholp;
-    double alfEF = celula[ncel].alf;
+//    double rholmix = rholp;
+//    double alfEF = celula[ncel].alf;
     double tit = fabs(massgas / masentrada);
 
 
@@ -7094,6 +7097,7 @@ double  SProdVap::multMarcha(double chute, int prod, int tipoCC){
 			if(tipoCC==0) return marchaProdPresPres1(chute);
 	}
 
+  return 0.0;
 }
 
 
@@ -7174,8 +7178,8 @@ double SProdVap::hidroreverso(double hol, double vaz) {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     double massic = rlpA * vaz;
-    double Rhogs = celula[0].flui.MasEspGas(1., 15);;    //cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
-    double Rhols = rlpA;
+//    double Rhogs = celula[0].flui.MasEspGas(1., 15);;    //cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+//    double Rhols = rlpA;
 
     massic=vaz;
     celula[0].flui.verificaFase(pchute, taux);

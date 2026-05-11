@@ -211,7 +211,7 @@ void dadosP::lerPoisson(string nomeArquivoEntrada, double vCondGlob,double vCond
 		ifstream lendoUNV(eleUNV.c_str(), ios_base::in);
 
 		string chave;
-		char* tenta;
+//		char* tenta;
 		//tenta = new char[400];
 		struct cartesiano{
 			int ind;
@@ -222,10 +222,10 @@ void dadosP::lerPoisson(string nomeArquivoEntrada, double vCondGlob,double vCond
 		};
 		vector<cartesiano> vecXY;
 
-		double testatok;
+//		double testatok;
 		char line[4000];
 		lendoUNV.get(line, 4000);
-		tenta = strtok(line, " ,()=");
+//		tenta = strtok(line, " ,()=");
 		lendoUNV >> chave;
 		while (chave != "2411") {
 			lendoUNV >> chave;

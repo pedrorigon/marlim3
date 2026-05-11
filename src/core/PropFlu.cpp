@@ -2018,17 +2018,17 @@ ProFlu ProFlu::operator+(const ProFlu& fluido) const{
                 fluido.Denag*1000*fluido.BSW/(1-fluido.BSW))
                 };
       //Vazao volumetrica de agua nas condicoes standard : m3/s
-      double qacor[] = {multo1*qocor[0]*BSW/(1-BSW),
-                multo2*qocor[1]*fluido.BSW/(1-fluido.BSW)};
+//      double qacor[] = {multo1*qocor[0]*BSW/(1-BSW),
+//                multo2*qocor[1]*fluido.BSW/(1-fluido.BSW)};
       //Vazao volumetrica de gas nas condicoes standard : m3/s
       double qgcor[] = {multo1*RGO*qocor[0]+(1-multo1)*mascor/(1.29*Deng),
                 multo2*fluido.RGO*qocor[1]+(1-multo2)*fluido.mascor/(1.29*fluido.Deng)};
       //Vazao massica de oleo morto, kg/s
-      double mocor[] = {qocor[0]*masesp[0],qocor[1]*masesp[1]};
+//      double mocor[] = {qocor[0]*masesp[0],qocor[1]*masesp[1]};
       //Vazao massica de agua kg/s
-      double macor[] = {qacor[0]*1000*Denag,qacor[1]*1000*fluido.Denag};
+//      double macor[] = {qacor[0]*1000*Denag,qacor[1]*1000*fluido.Denag};
       //Vazao massica de gas kg/s
-      double mgcor[] = {1.29*Deng*qgcor[0],1.29*fluido.Deng*qgcor[1]};
+//      double mgcor[] = {1.29*Deng*qgcor[0],1.29*fluido.Deng*qgcor[1]};
 
       //calculo do RGO da mistura
       double RGOmis;
@@ -2041,40 +2041,40 @@ ProFlu ProFlu::operator+(const ProFlu& fluido) const{
       }
       else RGOmis=-1;//quando nao ha corrente de oleo
 
-      double fracoleo[]={0,0};//fracao volumetrica de cada corrente na corrente total
+//      double fracoleo[]={0,0};//fracao volumetrica de cada corrente na corrente total
       if(RGOmis>0){
-       fracoleo[0]=qocor[0]/somao;
-       fracoleo[1]=qocor[1]/somao;
+//       fracoleo[0]=qocor[0]/somao;
+//       fracoleo[1]=qocor[1]/somao;
       }
 
-      double DENGmis=((mgcor[0]+mgcor[1])/(qgcor[0]+qgcor[1]))/1.29;//densidade do gas da mistura
-      double APImis=-1;
-      double Denagmis=-1;
-      double BSWmis=-1;
+//      double DENGmis=((mgcor[0]+mgcor[1])/(qgcor[0]+qgcor[1]))/1.29;//densidade do gas da mistura
+//      double APImis=-1;
+//      double Denagmis=-1;
+//      double BSWmis=-1;
       if(RGOmis>0){
-       APImis=1000*141.5/((mocor[0]+mocor[1])/somao)-131.5;//API da mistura
-       if(fluido.BSW>0.||BSW>0.)Denagmis=((macor[0]+macor[1])/((qacor[0]+qacor[1])*1000));//densidade da agua da mistura
-       else Denagmis=1.;
-       BSWmis=(qacor[0]+qacor[1])/(qacor[0]+qacor[1]+somao);//BSW da mistura
+//       APImis=1000*141.5/((mocor[0]+mocor[1])/somao)-131.5;//API da mistura
+//       if(fluido.BSW>0.||BSW>0.)Denagmis=((macor[0]+macor[1])/((qacor[0]+qacor[1])*1000));//densidade da agua da mistura
+//       else Denagmis=1.;
+//       BSWmis=(qacor[0]+qacor[1])/(qacor[0]+qacor[1]+somao);//BSW da mistura
       }
 
      //Calculo das viscosidades de cada fluido na corrente para as novas
      //temperaturas do metodo ASTM : viscosidade a 20 e viscosidade a 40
 
-      double vis2040A[]={0,0};
-      double vis2040B[]={0,0};
+//      double vis2040A[]={0,0};
+//      double vis2040B[]={0,0};
       if(multo1>0){
-       vis2040A[0]=VisOM(20);
-       vis2040A[1]=VisOM(40);
+//       vis2040A[0]=VisOM(20);
+//       vis2040A[1]=VisOM(40);
       }
       if(multo2>0){
-       vis2040B[0]=fluido.VisOM(20);
-       vis2040B[1]=fluido.VisOM(40);
+//       vis2040B[0]=fluido.VisOM(20);
+//       vis2040B[1]=fluido.VisOM(40);
       }
-      double TempLmis=20;
-      double TempHmis=40;
-      double LVisLmis=vis2040A[0]*fracoleo[0]+vis2040B[0]*fracoleo[1];//viscosidade da mistura obtida a partir de ponderacao volumetrica
-      double LVisHmis=vis2040A[1]*fracoleo[0]+vis2040B[1]*fracoleo[1];
+//      double TempLmis=20;
+//      double TempHmis=40;
+//      double LVisLmis=vis2040A[0]*fracoleo[0]+vis2040B[0]*fracoleo[1];//viscosidade da mistura obtida a partir de ponderacao volumetrica
+//      double LVisHmis=vis2040A[1]*fracoleo[0]+vis2040B[1]*fracoleo[1];
 
       //ProFlu somafluidos(mascor+fluido.mascor,APImis,RGOmis,DENGmis,BSWmis,Denagmis,TempLmis,LVisLmis,TempHmis,LVisHmis);
       //return somafluidos;
@@ -2084,10 +2084,10 @@ ProFlu ProFlu::operator+(const ProFlu& fluido) const{
 }
 
 double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int renovaInd*/) const{
-    int ipres;
-    int itemp;
-    int ipmarcador;
-    int itmarcador;
+    int ipres=0;
+    int itemp=0;
+//    int ipmarcador=0;
+//    int itmarcador=0;
     double varprop;
     int ndiv=npontos-1;
     if(pres<Var[1][0] || pres>=Var[ndiv+1][0] || temp<Var[0][1] || temp>=Var[0][ndiv+1]){
@@ -2110,7 +2110,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       int e, m, d;
       if(pres>=Var[indMinEquP][0] && erroP==0){
           //double pmin=Var[indMinEquP][0];
-          double delp=delpTab;
+//          double delp=delpTab;
           int busca=0;
           //int busca=(*ipresAnt);
           while(pres>pchange[busca])busca++;
@@ -2127,7 +2127,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
         ipres=d;
         while (e <= d) {
 	      m = (e + d)/2;
-	      ipmarcador=m;
+//	      ipmarcador=m;
  	      if(m==1){
  	    	  ipres=m;
  	    	  break;
@@ -2146,7 +2146,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       if(temp>=Var[0][indMinEquT] && erroT==0){
           //double tmin=Var[0][indMinEquT];
-          double delt=deltTab;
+//          double delt=deltTab;
           int busca=0;
           //int busca=(*itempAnt);
           while(temp>tchange[busca])busca++;
@@ -2163,7 +2163,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
         itemp=d;
         while (e <= d) {
  	      m = (e + d)/2;
- 	      itmarcador=m;
+// 	      itmarcador=m;
  	      if(m==1){
  	    	  itemp=m;
  	    	  break;
@@ -2197,10 +2197,10 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 
 
 /*double ProFlu::interpolaVarProd(double pres, double temp, double** Var) const{
-    int ipres;
-    int itemp;
-    int ipmarcador;
-    int itmarcador;
+    int ipres=0;
+    int itemp=0;
+    int ipmarcador=0;
+    int itmarcador=0;
     double varprop;
     int ndiv=npontos-1;
     double razpres;
@@ -2489,6 +2489,7 @@ double ProFlu::VisOM(double temper) const{
  }
 
 
+    return 0.0;
 }
 
 double ProFlu::interpolaLas1( double var)const{//alteracao4
@@ -2548,8 +2549,8 @@ double ProFlu::interpolaLas3( double var)const{//alteracao4
 
 /*double ProFlu::interpolaPB( double temp)const{//alteracao4
 
-    int itemp;
-    int itmarcador;
+    int itemp=0;
+    int itmarcador=0;
     double var;
     int ndiv=npontos-1;
     //if(temp<TBPVTSim[0] || temp>=TBPVTSim[npontos-1]) var=0.;
@@ -2612,8 +2613,8 @@ double ProFlu::interpolaLas3( double var)const{//alteracao4
 
 double ProFlu::interpolaPB( double temp)const{//alteracao4
 
-    int itemp;
-    int itmarcador;
+    int itemp=0;
+//    int itmarcador=0;
     double var;
     int ndiv=npontosB-1;
     //if(temp<TBPVTSim[0] || temp>=TBPVTSim[npontos-1]) var=0.;
@@ -2636,7 +2637,7 @@ double ProFlu::interpolaPB( double temp)const{//alteracao4
  	    	itemp=m-1;
  	    	break;
  	      }
- 	      itmarcador=m;
+// 	      itmarcador=m;
  	      if (TBPVTSim[m] > temp && TBPVTSim[m-1]<=temp){
  	    	  itemp=m-1;
  	    	  break;
@@ -2654,15 +2655,15 @@ double ProFlu::interpolaPB( double temp)const{//alteracao4
 }
 
 double ProFlu::interpolaRS( double pres, double temp)const{//alteracao4
-  int comp=npontos;
+//  int comp=npontos;
 
-  double tmax=TabRSLivia[0][npontos];
+//  double tmax=TabRSLivia[0][npontos];
   double tmin=TabRSLivia[0][1];
   double delt=TabRSLivia[0][2]-TabRSLivia[0][1];
   int itemp=floor((temp-tmin)/delt)+2;
 
   double pmax=TabRSLivia[npontos][0];
-  double pmin=TabRSLivia[1][0];
+//  double pmin=TabRSLivia[1][0];
   double delp=TabRSLivia[npontos][0]-TabRSLivia[npontos-1][0];
   int ipres=floor((pmax-pres)/delp)+1;
   ipres=npontos-ipres;
@@ -2997,7 +2998,7 @@ double ProFlu::RS(double pres, double temp, double varPb) const{//alteracao4
 	 return rstemptemp;
  }
 
-
+    return 0.0;
 }//alteracao4
 
 double ProFlu::PB(double pres, double temp) const{//alteracao4
@@ -3115,8 +3116,8 @@ double ProFlu::PB(double pres, double temp) const{//alteracao4
 		 if(tabelaDinamica==0){
 			 //pbtemp=psia(dCalculatedBubbleP/98066.52);
 
-			 int iIERT;
-			 double pbolha;
+//			 int iIERT;
+//			 double pbolha;
 			 /*Marlim_CalculateBubblePressure(temp, npseudo,
 					 fracMol, tempCrit, presCrit, fatAcent, kij, lij,
 					 TIndepPeneloux, liqModel, liqModel,
@@ -3214,7 +3215,7 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 		 else if((ipres>PBolha || (flashCompleto==2 && (iCalculatedThermodynamicCondition==0 || iCalculatedThermodynamicCondition==4))) && RGO>0.){
 
 			 double visSat=0.;
-			 double deltaVisSat=0.;
+//			 double deltaVisSat=0.;
 			 double pBolhaKGF=PBolha/(0.9678411*14.69595);
 			 ////Calculo da viscosidade na pressão de bolha:
 			 if(corrOV==0){
@@ -3340,9 +3341,9 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 	 return viso;*/
 	 if(tabelaDinamica==0){
 		 double visoP=1.;
-		 double presC=pres*98066.5;
-		 double tempC=temp+273.15;
-		 int iIER;
+//		 double presC=pres*98066.5;
+//		 double tempC=temp+273.15;
+//		 int iIER;
 		/* MarlimCalculateViscosityPedersen(presC, tempC, npseudo,tempCrit, presCrit, masMol,
 				 oCalculatedLiqComposition, &visoP, &iIER);
 		 if(isnan(visoP))*/visoP=ViscGas(pres,temp);
@@ -3368,14 +3369,14 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 		 if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
 		 		 int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
 		 		 int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
-		 		 double raztemp;
-		 		 double razpres;
-		 		 double valT0;
-		 		 double valT1;
+//		 		 double raztemp;
+//		 		 double razpres;
+//		 		 double valT0;
+//		 		 double valT1;
 		 		 posicT++;
 		 		 posicP++;
-		 		 raztemp=(temp-tabDin.viscO[0][posicT])/(tabDin.delT);
-		 		 razpres=(pres-tabDin.viscO[posicP][0])/(tabDin.delP);
+//		 		 raztemp=(temp-tabDin.viscO[0][posicT])/(tabDin.delT);
+//		 		 razpres=(pres-tabDin.viscO[posicP][0])/(tabDin.delP);
 		 		 /*if(!isnan(tabDin.viscO[posicP][posicT+1])&&!isnan(tabDin.viscO[posicP][posicT])&&
 		 				!isnan(tabDin.viscO[posicP+1][posicT+1])&&!isnan(tabDin.viscO[posicP+1][posicT])){
 		 			 valT0=raztemp*tabDin.viscO[posicP][posicT+1]+(1.-raztemp)*tabDin.viscO[posicP][posicT];
@@ -3389,9 +3390,9 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 		 }
 		 else{
 			 double visoP=1.;
-			 double presC=pres*98066.5;
-			 double tempC=temp+273.15;
-			 int iIER;
+//			 double presC=pres*98066.5;
+//			 double tempC=temp+273.15;
+//			 int iIER;
 			 /*MarlimCalculateViscosityPedersen(presC, tempC, npseudo,tempCrit, presCrit, masMol,
 					 oCalculatedLiqComposition, &visoP, &iIER);
 			 if(isnan(visoP))*/visoP=ViscGas(pres,temp);
@@ -3416,7 +3417,7 @@ double ProFlu::ViscGas(double pres,double temp) const{
    if(flashCompleto==0 || flashCompleto==2 || flashCompleto==3){
      double TF=Faren(temp);
      double TR=TF+459.67;
-     double Ppsi=psia(pres);
+//     double Ppsi=psia(pres);
      double wg=rDgL*Deng*29;
      double AK=(9.4+0.02*wg)*pow(TR,1.5)/(209.+19.*wg+TR);
      double x=3.5+(986/TR)+0.01*wg;
@@ -3595,18 +3596,18 @@ double ProFlu::ZdranOriginal(double pres, double temp, int cordg, double a, doub
 //Funcao para calcular o fator de compressibilidade,  pressao em kgf/cm2 e temperatura em Celsius
  double PCtemp;
  double TCtemp;
- double rDgDtemp;
+// double rDgDtemp;
  double rDgLtemp;
  if(cordg==-1){
 		PCtemp=PCis;
 		TCtemp=TCis;
-		rDgDtemp=rDgD;
+//		rDgDtemp=rDgD;
 		rDgLtemp=rDgL;
  }
  else{
 		PCtemp=PC;
 		TCtemp=TC;
-		rDgDtemp=1.;
+//		rDgDtemp=1.;
 		rDgLtemp=1.;
  }
  if(temp<-200.)temp=-200;
@@ -3636,19 +3637,19 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 	  if(masespG<0){
 		  double PCtemp;
 		  double TCtemp;
-		  double rDgDtemp;
-		  double rDgLtemp;
+//		  double rDgDtemp;
+//		  double rDgLtemp;
 		  if(cordg==-1){
 			  PCtemp=PCis;
 			  TCtemp=TCis;
-			  rDgDtemp=rDgD;
-			  rDgLtemp=rDgL;
+//			  rDgDtemp=rDgD;
+//			  rDgLtemp=rDgL;
 		  }
 		  else{
 			  PCtemp=PC;
 			  TCtemp=TC;
-			  rDgDtemp=1.;
-			  rDgLtemp=1.;
+//			  rDgDtemp=1.;
+//			  rDgLtemp=1.;
 		  }
 		  int interno=1;
 		  double presR=(0.9678411*14.69595*pres)/PCtemp;
@@ -3659,19 +3660,19 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 			  if(tempR>zdranP[0][1]-1e-5)interno=0;//alteracao2
 			  if(tempR<zdranP[0][npontos+1]+1e-5)interno=0;//alteracao2
 			  if(interno==1){
-				  int ipres;
-				  int itemp;
-				  int ipmarcador;
-				  int itmarcador;
+				  int ipres=0;
+				  int itemp=0;
+//				  int ipmarcador=0;
+//				  int itmarcador=0;
 				  if(tab==1){
 					  if(presR>zdranP[1][0] || presR<=zdranP[npontos+1][0] || tempR>zdranP[0][1] ||
 							  tempR<=zdranP[0][npontos+1]) zt=0.;
 					  else{
-						  double pmin=zdranP[npontos+1][0];
+//						  double pmin=zdranP[npontos+1][0];
 						  double pmax=zdranP[1][0];
 						  double delp=zdranP[1][0]-zdranP[2][0];
 						  ipres=floor((pmax-presR)/delp)+1;
-						  double tmin=zdranP[0][npontos+1];
+//						  double tmin=zdranP[0][npontos+1];
 						  double tmax=zdranP[0][1];
 						  double delt=zdranP[0][1]-zdranP[0][2];
 						  itemp=floor((tmax-tempR)/delt)+1;
@@ -3801,18 +3802,18 @@ double ProFlu::DZDTOriginal(double pres, double temp, int cordg) const{
 //Funcao para calcular a derivada de z com pressao em kgf/cm2 e temperatura em Celsius
 double PCtemp;
 double TCtemp;
-double rDgDtemp;
+//double rDgDtemp;
 double rDgLtemp;
 if(cordg==-1){
 	PCtemp=PCis;
 	TCtemp=TCis;
-	rDgDtemp=rDgD;
+//	rDgDtemp=rDgD;
 	rDgLtemp=rDgL;
 }
 else{
 	PCtemp=PC;
 	TCtemp=TC;
-	rDgDtemp=1.;
+//	rDgDtemp=1.;
 	rDgLtemp=1.;
 }
 if(rDgLtemp*Deng<=100){
@@ -3849,7 +3850,7 @@ else{
 }
 }
 double ProFlu::DZDT(double pres, double temp,double masespG)const{//alteracao2
-  double zt;
+  double zt=0.;
   if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
     int interno=1;
     double presR=(0.9678411*14.69595*pres)/PCis;
@@ -3860,19 +3861,19 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{//alteracao2
       if(tempR>dzdtP[0][1]-1e-5)interno=0;//alteracao2
       if(tempR<dzdtP[0][npontos+1]+1e-5)interno=0;//alteracao2
       if(interno==1){
-	    int ipres;
-        int itemp;
-        int ipmarcador;
-        int itmarcador;
+	    int ipres=0;
+        int itemp=0;
+//        int ipmarcador=0;
+//        int itmarcador=0;
         if(tab==1){
           if(presR>dzdtP[1][0] || presR<=dzdtP[npontos+1][0] || tempR>dzdtP[0][1] ||
              tempR<=dzdtP[0][npontos+1]) zt=0.;
           else{
-              double pmin=zdranP[npontos+1][0];
+//              double pmin=zdranP[npontos+1][0];
               double pmax=zdranP[1][0];
               double delp=zdranP[1][0]-zdranP[2][0];
               ipres=floor((pmax-presR)/delp)+1;
-              double tmin=zdranP[0][npontos+1];
+//              double tmin=zdranP[0][npontos+1];
               double tmax=zdranP[0][1];
               double delt=zdranP[0][1]-zdranP[0][2];
               itemp=floor((tmax-tempR)/delt)+1;
@@ -3904,9 +3905,9 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{//alteracao2
 			  int iIER;
 			  double tempZ;
 			  double dZdT;
-			  double drhogdT;
+			  double drhogdT=0.;
 			  double dZdp;
-			  double drhogdp;
+			  double drhogdp=0.;
 
 			  Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 					  liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -3940,9 +3941,9 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{//alteracao2
 						  int iIER;
 						  double tempZ;
 						  double dZdT;
-						  double drhogdT;
+						  double drhogdT=0.;
 						  double dZdp;
-						  double drhogdp;
+						  double drhogdp=0.;
 
 						  Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 								  liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -3965,9 +3966,9 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{//alteracao2
 				  int iIER;
 				  double tempZ;
 				  double dZdT;
-				  double drhogdT;
+				  double drhogdT=0.;
 				  double dZdp;
-				  double drhogdp;
+				  double drhogdp=0.;
 
 				  Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 						  liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -4010,18 +4011,18 @@ double ProFlu::DZDPOriginal(double pres, double temp, int cordg) const{
 //Funcao para calcular a derivada de z com a  pressao em kgf/cm2 e temperatura em Celsius
 double PCtemp;
 double TCtemp;
-double rDgDtemp;
+//double rDgDtemp;
 double rDgLtemp;
 if(cordg==-1){
 			PCtemp=PCis;
 			TCtemp=TCis;
-			rDgDtemp=rDgD;
+//			rDgDtemp=rDgD;
 			rDgLtemp=rDgL;
 }
 else{
 			PCtemp=PC;
 			TCtemp=TC;
-			rDgDtemp=1.;
+//			rDgDtemp=1.;
 			rDgLtemp=1.;
 }
 if(rDgLtemp*Deng<=100){
@@ -4056,7 +4057,7 @@ else{
 }
 }
 double ProFlu::DZDP(double pres, double temp,double masespG)const{//alteracao2
-  double zt;
+  double zt=0.;
   if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
     int interno=1;
     double presR=(0.9678411*14.69595*pres)/PCis;
@@ -4067,19 +4068,19 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{//alteracao2
       if(tempR>dzdpP[0][1]-1e-5)interno=0;//alteracao2
       if(tempR<dzdpP[0][npontos+1]+1e-5)interno=0;//alteracao2
       if(interno==1){
-	    int ipres;
-        int itemp;
-        int ipmarcador;
-        int itmarcador;
+	    int ipres=0;
+        int itemp=0;
+//        int ipmarcador=0;
+//        int itmarcador=0;
         if(tab==1){
           if(presR>dzdpP[1][0] || presR<=dzdpP[npontos+1][0] || tempR>dzdpP[0][1] ||
              tempR<=dzdpP[0][npontos+1]) zt=0.;
           else{
-              double pmin=zdranP[npontos+1][0];
+//              double pmin=zdranP[npontos+1][0];
               double pmax=zdranP[1][0];
               double delp=zdranP[1][0]-zdranP[2][0];
               ipres=floor((pmax-presR)/delp)+1;
-              double tmin=zdranP[0][npontos+1];
+//              double tmin=zdranP[0][npontos+1];
               double tmax=zdranP[0][1];
               double delt=zdranP[0][1]-zdranP[0][2];
               itemp=floor((tmax-tempR)/delt)+1;
@@ -4111,9 +4112,9 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{//alteracao2
 			  int iIER;
 			  double tempZ;
 			  double dZdT;
-			  double drhogdT;
+			  double drhogdT=0.;
 			  double dZdp;
-			  double drhogdp;
+			  double drhogdp=0.;
 
 			  Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 					  liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -4146,9 +4147,9 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{//alteracao2
 					  int iIER;
 					  double tempZ;
 					  double dZdT;
-					  double drhogdT;
+					  double drhogdT=0.;
 					  double dZdp;
-					  double drhogdp;
+					  double drhogdp=0.;
 
 					  Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 							  liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -4170,9 +4171,9 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{//alteracao2
 				  int iIER;
 				  double tempZ;
 				  double dZdT;
-				  double drhogdT;
+				  double drhogdT=0.;
 				  double dZdp;
-				  double drhogdp;
+				  double drhogdp=0.;
 
 				  Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 						  liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -4516,8 +4517,8 @@ double ProFlu::dBOSatdP(double pres, double temp)const{
 double ProFlu::interpolaCpl(double pres, double temp) const{
     int ipres=0;
     int itemp=0;
-    int ipmarcador;
-    int itmarcador;
+//    int ipmarcador=0;
+//    int itmarcador=0;
     double vcpl;
     int ndiv=npontos-1;
     if(pres<cpl[1][0] || pres>=cpl[ndiv+1][0] || temp<cpl[0][1] || temp>=cpl[0][ndiv+1]) vcpl=CalorLiqOriginal(pres, temp);
@@ -4529,7 +4530,7 @@ double ProFlu::interpolaCpl(double pres, double temp) const{
       d = ndiv+1;
       while (e <= d) {
 	      m = (e + d)/2;
-	      ipmarcador=m;
+//	      ipmarcador=m;
 	      if (cpl[m][0] > pres && cpl[m-1][0]<=pres){
 	    	  ipres=m-1;
 	    	  break;
@@ -4541,7 +4542,7 @@ double ProFlu::interpolaCpl(double pres, double temp) const{
       d = ndiv+1;
       while (e <= d) {
  	      m = (e + d)/2;
- 	      itmarcador=m;
+// 	      itmarcador=m;
  	      if (cpl[0][m] > temp && cpl[0][m-1]<=temp){
  	    	  itemp=m-1;
  	    	  break;
@@ -4592,7 +4593,7 @@ double ProFlu::CalorLiq(double pres, double temp) const{
 			vcp=interpolaVarProd(pres, temp, cplF);
 			double CPWI;
 			//double Bcp=0.06103;
-			double tempfar=Faren(temp);
+//			double tempfar=Faren(temp);
 			double tempK=temp+273.16;
 			double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
 			if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
@@ -4676,7 +4677,7 @@ double ProFlu::CalorLiq(double pres, double temp) const{
 	     }
 		double CPWI;
 		//double Bcp=0.06103;
-		double tempfar=Faren(temp);
+//		double tempfar=Faren(temp);
 		double tempK=temp+273.16;
 		double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
 		if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
@@ -4691,8 +4692,8 @@ double ProFlu::CalorLiq(double pres, double temp) const{
 double ProFlu::interpolaCpg(double pres, double temp) const{
     int ipres=0;
     int itemp=0;
-    int ipmarcador;
-    int itmarcador;
+//    int ipmarcador=0;
+//    int itmarcador=0;
     double vcpg;
     int ndiv=npontos-1;
     if(pres<cpg[1][0] || pres>=cpg[ndiv+1][0] || temp<cpg[0][1] || temp>=cpg[0][ndiv+1]) vcpg=CalorGasOriginal(pres, temp);
@@ -4704,7 +4705,7 @@ double ProFlu::interpolaCpg(double pres, double temp) const{
       d = ndiv+1;
       while (e <= d) {
 	      m = (e + d)/2;
-	      ipmarcador=m;
+//	      ipmarcador=m;
 	      if (cpg[m][0] > pres && cpg[m-1][0]<=pres){
 	    	  ipres=m-1;
 	    	  break;
@@ -4716,7 +4717,7 @@ double ProFlu::interpolaCpg(double pres, double temp) const{
       d = ndiv+1;
       while (e <= d) {
  	      m = (e + d)/2;
- 	      itmarcador=m;
+// 	      itmarcador=m;
  	      if (cpg[0][m] > temp && cpg[0][m-1]<=temp){
  	    	  itemp=m-1;
  	    	  break;
@@ -4734,10 +4735,10 @@ double ProFlu::interpolaCpg(double pres, double temp) const{
 }
 
 double ProFlu::interpolaDrholDT(double pres, double temp) const{
-    int ipres;
-    int itemp;
-    int ipmarcador;
-    int itmarcador;
+    int ipres=0;
+    int itemp=0;
+//    int ipmarcador=0;
+//    int itmarcador=0;
     double vdrholdt;
     int ndiv=npontos-1;
     if(pres<drholdT[1][0] || pres>=drholdT[ndiv+1][0] || temp<drholdT[0][1] ||
@@ -4750,7 +4751,7 @@ double ProFlu::interpolaDrholDT(double pres, double temp) const{
       d = ndiv+1;
       while (e <= d) {
 	      m = (e + d)/2;
-	      ipmarcador=m;
+//	      ipmarcador=m;
 	      if (drholdT[m][0] > pres && drholdT[m-1][0]<=pres){
 	    	  ipres=m-1;
 	    	  break;
@@ -4762,7 +4763,7 @@ double ProFlu::interpolaDrholDT(double pres, double temp) const{
       d = ndiv+1;
       while (e <= d) {
  	      m = (e + d)/2;
- 	      itmarcador=m;
+// 	      itmarcador=m;
  	      if (drholdT[0][m] > temp && drholdT[0][m-1]<=temp){
  	    	  itemp=m-1;
  	    	  break;
@@ -4955,7 +4956,7 @@ double ProFlu::CalorGasPresMod(double pres, double temp,double rhogini) const{
 	double zg=Zdran(pres,temp,rhog);
 	double drhodp=rhog*(1/(pres*98066.5)-dzdp/zg);
 
-	double RG=(8.0465*1000)/(rDgL*Deng*28.9625);
+//	double RG=(8.0465*1000)/(rDgL*Deng*28.9625);
 	double rel1=zg+(temp+273)*dzdt;
 	double rel2=zg-dzdp*(pres*98066.5);
 	return (1/(rhog*zg))*rel2*(1-rel1/rel2)-(pres*98066.5/(rhog*rhog))*drhodp;
@@ -4964,7 +4965,7 @@ double ProFlu::CalorGasPresMod(double pres, double temp,double rhogini) const{
 double ProFlu::CondLiq(double pres,double temp)const{
 	   double tempfar=Faren(temp);
        double tempK=temp+273.16;
-       double SGO=141.5/(API+131.5);
+//       double SGO=141.5/(API+131.5);
        double XKWDI;
        double XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
        double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
@@ -4976,9 +4977,9 @@ double ProFlu::CondLiq(double pres,double temp)const{
 
 double ProFlu::CondOleo(double pres,double temp)const{
 	   double tempfar=Faren(temp);
-       double tempK=temp+273.16;
-       double SGO=141.5/(API+131.5);
-       double XKWDI;
+//       double tempK=temp+273.16;
+//       double SGO=141.5/(API+131.5);
+//       double XKWDI;
        double XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
        return XKOI;
 }
@@ -5648,7 +5649,7 @@ double ProFlu::MasEspoleo(double pres, double temp,double varRS) const{
 double ProFlu::MasEspOleoComp(double pres, double temp) const{
 
 		double rhol;
-		double bo;
+//		double bo;
 		int iIER;
 		double presC=pres;
 		double tempC=temp;
@@ -5658,10 +5659,10 @@ double ProFlu::MasEspOleoComp(double pres, double temp) const{
 						tempCrit, presCrit,fatAcent,TIndepPeneloux, kij, lij,liqModel, dLiquidPhaseMW, &rhol,
 						&zfac,&iIER);
 		if(iCalculatedThermodynamicCondition==3 || iCalculatedThermodynamicCondition==4){
-					bo=1.;
+//					bo=1.;
 					rhol=900.;
 		}
-		else bo=BOFunc(pres, temp);//bo=dStockTankLiquidDensity/rhol;
+		else (void)BOFunc(pres, temp);//bo=dStockTankLiquidDensity/rhol;
 		if(rhol<1e-15) rhol=900;
 
 		if(rhol<1e-15) rhol=900;
@@ -5681,9 +5682,9 @@ double ProFlu::drhodt(double pres, double temp) const{
 				int iIER;
 				double tempZ;
 				double dZdT;
-				double drhogdT;
+				double drhogdT=0.;
 				double dZdp;
-				double drhogdp;
+				double drhogdp=0.;
 
 				Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 						liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -5698,7 +5699,7 @@ double ProFlu::drhodt(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					double drhogdT;
+					double drhogdT=0.;
 					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
 					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
 					double raztemp;
@@ -5717,9 +5718,9 @@ double ProFlu::drhodt(double pres, double temp) const{
 						int iIER;
 						double tempZ;
 						double dZdT;
-						double drhogdT;
+						double drhogdT=0.;
 						double dZdp;
-						double drhogdp;
+						double drhogdp=0.;
 
 						Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 								liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -5741,9 +5742,9 @@ double ProFlu::drhodt(double pres, double temp) const{
 					int iIER;
 					double tempZ;
 					double dZdT;
-					double drhogdT;
+					double drhogdT=0.;
 					double dZdp;
-					double drhogdp;
+					double drhogdp=0.;
 
 					Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 							liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -5755,7 +5756,7 @@ double ProFlu::drhodt(double pres, double temp) const{
 			}
 		}
 	     else{
-	    	 double drhogdT;
+	    	 double drhogdT=0.;
 			 double raztemp;
 			 double razpres;
 			 double valT0;
@@ -5795,9 +5796,9 @@ double ProFlu::drhodp(double pres, double temp) const{
 				int iIER;
 				double tempZ;
 				double dZdT;
-				double drhogdT;
+				double drhogdT=0.;
 				double dZdp;
-				double drhogdp;
+				double drhogdp=0.;
 
 				Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 						liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -5812,7 +5813,7 @@ double ProFlu::drhodp(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					double drhogdp;
+					double drhogdp=0.;
 					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
 					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
 					double raztemp;
@@ -5831,9 +5832,9 @@ double ProFlu::drhodp(double pres, double temp) const{
 						int iIER;
 						double tempZ;
 						double dZdT;
-						double drhogdT;
+						double drhogdT=0.;
 						double dZdp;
-						double drhogdp;
+						double drhogdp=0.;
 
 						Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 								liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
@@ -5855,9 +5856,9 @@ double ProFlu::drhodp(double pres, double temp) const{
 					int iIER;
 					double tempZ;
 					double dZdT;
-					double drhogdT;
+					double drhogdT=0.;
 					double dZdp;
-					double drhogdp;
+					double drhogdp=0.;
 
 					Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(pres, temp,
 							liqModel, 1,  npseudo,oCalculatedVapComposition, tempCrit,
