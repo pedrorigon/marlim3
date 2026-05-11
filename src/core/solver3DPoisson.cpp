@@ -293,8 +293,8 @@ dados(nomeArquivoEntrada),termolivre(dados.nele),matglob(dados.nele,dados.noZero
     for(int i=0;i<malha.nele;i++){
     	malha.mlh3d[i].CC=&dados.CC;
     	for(int j=0; j<dados.prop.parserie;j++){
-    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
-    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
+//    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
+//    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
     		if(malha.mlh3d[i].eleUNV.regiao==dados.prop.regiao[j]){
     			malha.mlh3d[i].cel3D.cond=dados.prop.cond[j];
     			malha.mlh3d[i].cel3D.cp=dados.prop.cp[j];
@@ -303,8 +303,8 @@ dados(nomeArquivoEntrada),termolivre(dados.nele),matglob(dados.nele,dados.noZero
     		}
     	}
     	//for(int j=0; j<dados.CI.parserie;j++){
-    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
-    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
+//    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
+//    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
     		//if(malha.mlh3d[i].eleUNV.regiao==dados.CI.regiao[j]){
     			malha.mlh3d[i].cel3D.tempC=ti;//dados.CI.temp[j];
     			malha.mlh3d[i].cel3D.tempC0=ti;//dados.CI.temp[j];
@@ -486,8 +486,8 @@ solverP3D::solverP3D(const solverP3D& vPoisson):
     for(int i=0;i<malha.nele;i++){
     	malha.mlh3d[i].CC=&dados.CC;
     	for(int j=0; j<dados.prop.parserie;j++){
-    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
-    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
+//    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
+//    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
     		if(malha.mlh3d[i].eleUNV.regiao==dados.prop.regiao[j]){
     			malha.mlh3d[i].cel3D.cond=dados.prop.cond[j];
     			malha.mlh3d[i].cel3D.cp=dados.prop.cp[j];
@@ -496,8 +496,8 @@ solverP3D::solverP3D(const solverP3D& vPoisson):
     		}
     	}
     	//for(int j=0; j<dados.CI.parserie;j++){
-    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
-    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
+//    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
+//    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
     		//if(malha.mlh3d[i].eleUNV.regiao==dados.CI.regiao[j]){
     			malha.mlh3d[i].cel3D.tempC=vPoisson.malha.mlh3d[i].cel3D.tempC;
     			malha.mlh3d[i].cel3D.tempC0=vPoisson.malha.mlh3d[i].cel3D.tempC0;
@@ -693,8 +693,8 @@ solverP3D& solverP3D::operator =(const solverP3D& vPoisson) {
 	    for(int i=0;i<malha.nele;i++){
 	    	malha.mlh3d[i].CC=&dados.CC;
 	    	for(int j=0; j<dados.prop.parserie;j++){
-	    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
-	    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
+//	    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
+//	    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
 	    		if(malha.mlh3d[i].eleUNV.regiao==dados.prop.regiao[j]){
 	    			malha.mlh3d[i].cel3D.cond=dados.prop.cond[j];
 	    			malha.mlh3d[i].cel3D.cp=dados.prop.cp[j];
@@ -703,8 +703,8 @@ solverP3D& solverP3D::operator =(const solverP3D& vPoisson) {
 	    		}
 	    	}
 	    	//for(int j=0; j<dados.CI.parserie;j++){
-	    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
-	    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
+//	    		double xc=malha.mlh3d[i].cel3D.centroideElem[0];
+//	    		double yc=malha.mlh3d[i].cel3D.centroideElem[1];
 	    		//if(malha.mlh3d[i].eleUNV.regiao==dados.prop.regiao){
 	    			malha.mlh3d[i].cel3D.tempC=vPoisson.malha.mlh3d[i].cel3D.tempC;
 	    			malha.mlh3d[i].cel3D.tempC0=vPoisson.malha.mlh3d[i].cel3D.tempC0;
@@ -887,11 +887,11 @@ int solverP3D::permanentePoisson(){
     		indsra+=dimNoZero;
     		termolivre[i]=malha.mlh3d[i].TL[0];
     	}
-    	double eps=0.00001;
-    	int iter=malha.nele;
-    	int retorna;
+//    	double eps=0.00001;
+//    	int iter=malha.nele;
+//    	int retorna;
     	for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh3d[i].cel3D.tempC;
-    	retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//    	retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
     	//retorna=matglob.CG(malha.vecSolv,termolivre,eps,iter,1);
     	//if(retorna==1)break;
     	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1053,21 +1053,21 @@ void solverP3D::transientePoisson(double vdelt){
 					indsra+=dimNoZero;
 					termolivre[i]=malha.mlh3d[i].TL[0];
 				}
-				double eps=0.0000001;
-				int iter=malha.nele;
-				int retorna;
+//				double eps=0.0000001;
+//				int iter=malha.nele;
+//				int retorna;
 				for(int i=0;i<malha.nele;i++){
 					if(i==16220){
-						int para;
-						para=0;
+//						int para;
+//						para=0;
 					}
 					malha.vecSolv[i]=malha.mlh3d[i].cel3D.tempC;
 				}
 				//int precn=4;
 				//if(itera>2 && norma>1.e-20)precn=3;
-				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
-				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
-				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
+//				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
+//				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
+//				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
 				//retorna=matglob.CG(malha.vecSolv,termolivre,eps,iter,1);
 				//if(retorna==1)break;
 				norma=0.;
@@ -1077,8 +1077,8 @@ void solverP3D::transientePoisson(double vdelt){
 					malha.mlh3d[i].cel3D.tempC=malha.vecSolv[i];
 					norma+=fabs(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI);
 					if(fabs(malha.mlh3d[i].cel3D.tempC-malha.mlh3d[i].cel3D.tempCI)>1){
-						int para;
-						para=0;
+//						int para;
+//						para=0;
 					}
 				}
 				norma/=malha.nele;
@@ -1242,14 +1242,14 @@ void solverP3D::transientePoissonDummy(double vdelt,int konta){
 					indsra+=dimNoZero;
 					termolivre[i]=malha.mlh3d[i].TL[0];
 				}
-				double eps=0.0000001;
-				int iter=malha.nele;
-				int retorna;
+//				double eps=0.0000001;
+//				int iter=malha.nele;
+//				int retorna;
 				for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh3d[i].cel3D.tempC;
 				//retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
-				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
-				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
+//				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
+//				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*(malha.nele-1));
+//				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
 				//if(retorna==1)break;
 				norma=0.;
 				for(int i=0;i<malha.nele;i++){

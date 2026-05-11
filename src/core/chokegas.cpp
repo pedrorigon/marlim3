@@ -98,7 +98,7 @@ double ChokeGas::massica(int fluido, double salin) {//alteracao2
 	  double max;
 	  double kad=flui.ConstAdG(presEstag,tempEstag);
 	  double rho0=flui.MasEspGas(presEstag,tempEstag);
-	  double rhoG=flui.MasEspGas(presGarg,tempGarg);
+//	  double rhoG=flui.MasEspGas(presGarg,tempGarg);
 	  if(tipo==0 || tipo==1){//alteracao3
 	    double rt=presEstag*98066.52/(rho0*flui.Zdran(presEstag,tempEstag));
 	    double razcrit=pow((kad+1)/2.,-kad/(kad-1));
@@ -345,7 +345,7 @@ double ChokeGas::FMachVenturi(double Mach, double kad){
 
 double ChokeGas::DeriFMachVenturi(double Mach, double kad){
 	//double kad=flui.ConstAdG(presEstag,tempEstag);
-	double razarea=areafole/areagarg;
+//	double razarea=areafole/areagarg;
 	double expre1=(1.+0.5*(kad-1)*Mach*Mach)/(0.5*(kad+1.));
     return (1/(Mach*Mach))*pow(expre1,0.5*(kad+1.)/(kad-1.))-pow(expre1,(-0.5*kad+1.5)/(kad-1.));
 }
@@ -354,7 +354,7 @@ double ChokeGas::newtonMachVenturi(double kad) {
 	double errox=100.;
 	double MachChute=0.05;
 	double errof=FMachVenturi(MachChute, kad);
-	double raiz;
+//	double raiz;
 
 	int konta=0;
 	while((fabs(errox)>1e-5 || fabs(errof)>1e-5) && konta<100){

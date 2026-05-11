@@ -245,7 +245,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     double area;
     double diameter;
     double roughness;
-    double alfmed;
+//    double alfmed;
     double betmed;
     double rhog;
     double rhol;
@@ -254,10 +254,10 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     double tmed;
     double pmed;
     double j;
-    double rhomix;
+//    double rhomix;
     double gasViscosity;
     double liquidViscosity;
-    double viscmix;
+//    double viscmix;
     double angle;
     double velocity;
     double temperature;  // Temperatura em °F
@@ -282,7 +282,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         area = celula[i].dutoL.area;
         diameter = celula[i].dutoL.dia * 100.0 / (2.54*12);
         roughness = celula[i].dutoL.rug / celula[i].dutoL.dia;
-        alfmed = celula[i - 1].alf;
+//        alfmed = celula[i - 1].alf;
         betmed = celula[i - 1].bet;
         tmed = celula[i - 1].temp;
         pmed = celula[i - 1].pres;
@@ -311,11 +311,11 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         diameter = celula[i].duto.dia * 100.0 / (2.54*12);
         roughness = celula[i].duto.rug / celula[i].duto.dia;
         if(inter!=0){
-        	alfmed = celula[i].alf;
+//        	alfmed = celula[i].alf;
         	betmed = celula[i].bet;
         }
         else{
-           	alfmed = celula[i-1].alf;
+//           	alfmed = celula[i-1].alf;
             betmed = celula[i-1].bet;
         }
         double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
@@ -343,16 +343,16 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         j = ugsmed + ulsmed;
         velocity = 3.28084 * (ugsmed + ulsmed);  
         
-        double sinalJ = 1.0;
-        if(fabs(j) > 1e-15) {
-            sinalJ = j / fabs(j);
-        }
+//        double sinalJ = 1.0;
+//        if(fabs(j) > 1e-15) {
+//            sinalJ = j / fabs(j);
+//        }
         
-        rhomix = alfmed * rhog + (1.0 - alfmed) * rhol;
+//        rhomix = alfmed * rhog + (1.0 - alfmed) * rhol;
         liquidViscosity = ((1.0 - betmed) * celula[i].flui.ViscOleo(pmed, tmed) 
                          + betmed * celula[i].fluicol.VisFlu(pmed, tmed));
         gasViscosity = celula[i].flui.ViscGas(pmed, tmed);
-        viscmix = alfmed * celula[i].flui.ViscGas(pmed, tmed) + (1.0 - alfmed) * liquidViscosity;
+//        viscmix = alfmed * celula[i].flui.ViscGas(pmed, tmed) + (1.0 - alfmed) * liquidViscosity;
         temperature = tmed * 9.0/5.0 + 32.0;     // Conversão °C para °F
     }
     
@@ -896,7 +896,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
     gasSupVel = velocity - liquidSupVel;
     double froudeNumber = (velocity * velocity) / (g_in * diameter);
     
-    double horizontalHoldup;
+    double horizontalHoldup=0.;
     double intermittentHoldup = 0.0;
     
     // Verificar fluxo monofásico
@@ -925,7 +925,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         }
         
         // Determinar holdup horizontal e coeficientes do fator C
-        double flowPatternCoefD, flowPatternCoefE, flowPatternCoefF, flowPatternCoefG;
+        double flowPatternCoefD=0., flowPatternCoefE=0., flowPatternCoefF=0., flowPatternCoefG=0.;
         double segregatedHoldup = 0.0;
         bool loopFlag = true;
         
@@ -1177,7 +1177,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         holdup = liquidFraction;
     } else {
         // Selecionar correlação de holdup líquido para escoamento horizontal
-        double horizontalHoldup;
+        double horizontalHoldup=0.;
         bool flagLoop = true;
         
         do {
@@ -1238,7 +1238,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
             
             do {
                 transitionLoop = true;
-                double coeff_d, coeff_e, coeff_f, coeff_g;
+                double coeff_d=0., coeff_e=0., coeff_f=0., coeff_g=0.;
                 
                 switch (flowPattern) {
                     case 3: // Escoamento distribuído

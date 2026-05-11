@@ -11,7 +11,7 @@ using namespace std;
 #include "PropFlu.h"
 
          //  double=20C   double=40C   double=60C   double=80C  double=100C  double=120C  double=140C  double=160C  double=180C  double=200C//alteracao3
-         static double ventCR[5][9][10] =//alteracao3
+         [[maybe_unused]] static double ventCR[5][9][10] =//alteracao3
            {{{0.6697, 0.6685, 0.6671, 0.6655, 0.6639, 0.6623, 0.6606, 0.6590, 0.6574, 0.6559},  // sgg=0.5538, P=  0 bar
             {0.7044, 0.6959, 0.6891, 0.6835, 0.6788, 0.6746, 0.6709, 0.6677, 0.6647, 0.6621},  // sgg=0.5538, P= 50 bar
             {0.7486, 0.7286, 0.7142, 0.7032, 0.6945, 0.6874, 0.6814, 0.6763, 0.6719, 0.6681},  // sgg=0.5538, P=100 bar

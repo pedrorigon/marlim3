@@ -71,7 +71,7 @@ PorosRadSimp::PorosRadSimp(string nomeArquivoEntrada,varGlob1D* Vvg1dSP){
 			vPcamada[i] = new double[vncamada[i] + 1];
 		}
 
-		int equilterm=1;
+//		int equilterm=1;
 
 		for (int i = 0; i < dutosMRT.ncamadas; i++) {
 			for (int j = 0; j <= vncamada[i]; j++)
@@ -373,7 +373,7 @@ PorosRadSimp::PorosRadSimp(const PorosRadSimp& vPorosRadSimp){
 			vPcamada[i] = new double[vncamada[i] + 1];
 		}
 
-		int equilterm=1;
+//		int equilterm=1;
 
 		for (int i = 0; i < dutosMRT.ncamadas; i++) {
 			for (int j = 0; j <= vncamada[i]; j++)
@@ -741,7 +741,7 @@ PorosRadSimp& PorosRadSimp::operator =(const PorosRadSimp& vPorosRadSimp){
   			vPcamada[i] = new double[vncamada[i] + 1];
   		}
 
-  		int equilterm=1;
+//  		int equilterm=1;
 
   		for (int i = 0; i < dutosMRT.ncamadas; i++) {
   			for (int j = 0; j <= vncamada[i]; j++)
@@ -1731,7 +1731,7 @@ void PorosRadSimp::geraTabFlash(int var) {
 		tenta = strtok(NULL, " ,()=");
 	}
 	tenta = strtok(NULL, " ,()=");
-	int lacoleitura;
+	int lacoleitura=0;
 
 	int threeOrtwo = 0;
 	if (strcmp(tenta, "THREE") == 0) {
@@ -2112,7 +2112,7 @@ void PorosRadSimp::parse_fluido_producao(
 	int vcorrOV = 0;
 	int vcorrOS = 0;
 	int corrDeng=0;
-	int fracMolarUsuario=0;
+//	int fracMolarUsuario=0;
 	double PHI100=0.765;
 	int nvecBSW=0;
 
@@ -2619,7 +2619,7 @@ void PorosRadSimp::parse_fluido_producao(
 					flup.npontos=tabent.npont;
 					lendoPVTSim >> chave;
 					int lacoleitura = ndiv;
-					double valor;
+//					double valor;
 
 					while (chave != "BUBBLEPRESSURES") {
 						lendoPVTSim >> chave;
@@ -3281,8 +3281,8 @@ void PorosRadSimp::geraCel(double** const vPcamada,double** const vsL,double** c
 	double ql=0.;
 	double qr=0.;
 	double pcamada;
-    celradSimp* vcelL=0;
-    celradSimp* vcelR=0;
+//    celradSimp* vcelL=0;
+//    celradSimp* vcelR=0;
     celula=new celradSimp [ncel];
 	int konta=0;
 	r0=geom.a/2.;
@@ -3389,9 +3389,9 @@ void PorosRadSimp::geraCel(double** const vPcamada,double** const vsL,double** c
 double PorosRadSimp::marchaperm(double mastot){
 
      double h1;
-	 double h2;
+//	 double h2;
 	 double h3;
-	 double cal;
+//	 double cal;
 
 
      hi=h1=10000000.*10000./geom.a;
@@ -3447,20 +3447,20 @@ double PorosRadSimp::transperm(double mastot){
 
 void PorosRadSimp::renovaPres(int i, double mTot){
 
-	double rhoa=celula[ncel-1].flup.MasEspAgua(presRes, tRes);
-	double rhoo=celula[ncel-1].flup.MasEspoleo(presRes, tRes);
-	double rhog=celula[ncel-1].flup.MasEspGas(presRes, tRes);
-	double multA=rhoa*(sWRes-satConata)/(1.-satConata);
-	double multO=rhoo*(sLRes-sWRes)/(1.-satConata);
-	double multG=rhog*(1.-sLRes)/(1.-satConata);
-	double qtot=mTot/(multA+multO+multG);
-	double massA=multA*qtot;
-	double massO=multO*qtot;
-	double qOstd=(massO/rhoo)/celula[ncel-1].flup.BOFunc(presRes, tRes);
-	double massOstd=celula[ncel-1].rhostd*qOstd;
-	double massG=multG*qtot;
-	double massgDisolv=qOstd*celula[ncel-1].flup.RS(presRes, tRes)*(6.29 / 35.31467)*celula[ncel-1].rhogstd;
-	double massgTot=massG+massgDisolv;
+//	double rhoa=celula[ncel-1].flup.MasEspAgua(presRes, tRes);
+//	double rhoo=celula[ncel-1].flup.MasEspoleo(presRes, tRes);
+//	double rhog=celula[ncel-1].flup.MasEspGas(presRes, tRes);
+//	double multA=rhoa*(sWRes-satConata)/(1.-satConata);
+//	double multO=rhoo*(sLRes-sWRes)/(1.-satConata);
+//	double multG=rhog*(1.-sLRes)/(1.-satConata);
+//	double qtot=mTot/(multA+multO+multG);
+//	double massA=multA*qtot;
+//	double massO=multO*qtot;
+//	double qOstd=(massO/rhoo)/celula[ncel-1].flup.BOFunc(presRes, tRes);
+//	double massOstd=celula[ncel-1].rhostd*qOstd;
+//	double massG=multG*qtot;
+//	double massgDisolv=qOstd*celula[ncel-1].flup.RS(presRes, tRes)*(6.29 / 35.31467)*celula[ncel-1].rhogstd;
+//	double massgTot=massG+massgDisolv;
 
 	if(i==ncel-1){
 		celula[i].Pcamada=celula[i].presRes;
@@ -3474,9 +3474,9 @@ void PorosRadSimp::renovaPres(int i, double mTot){
 		double miomed;
 		double migmed;
 		double miamed;
-		double kO;
-		double kG;
-		double kA;
+//		double kO;
+//		double kG;
+//		double kA;
 		double dO;
 		double dG;
 		double dA;
@@ -3499,11 +3499,11 @@ void PorosRadSimp::renovaPres(int i, double mTot){
 		migmed=celula[i+1].mig0=celula[i+1].flup.ViscGas(celula[i+1].Pcamada, tRes)/1000.;
 		miamed=celula[i+1].mia0=celula[i+1].flup.VisAgua(tRes)/1000.;
 
-		kO=celula[i+1].kmed0=celula[i+1].fkO(celula[i+1].sW, 1.-celula[i+1].sL);
-		kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-celula[i+1].sL,
-			celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
-		kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, celula[i+1].sW,
-			celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
+//		kO=celula[i+1].kmed0=celula[i+1].fkO(celula[i+1].sW, 1.-celula[i+1].sL);
+//		kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-celula[i+1].sL,
+//			celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
+//		kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, celula[i+1].sW,
+//			celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
 
 		double erro=10000.;
 		celula[i].sL=celula[i+1].sL;
@@ -3564,11 +3564,11 @@ void PorosRadSimp::renovaPres(int i, double mTot){
 
 			erro=(fabs(celula[i].sL-sLiter)+fabs(celula[i].sW-sWiter));
 
-			kO=celula[i+1].kmed0=celula[i+1].fkO(0.5*(celula[i+1].sW+celula[i].sW), 1.-0.5*(celula[i+1].sL+celula[i].sL));
-			kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-0.5*(celula[i+1].sL+celula[i].sL),
-					celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
-			kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, 0.5*(celula[i+1].sW+celula[i].sW),
-					celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
+//			kO=celula[i+1].kmed0=celula[i+1].fkO(0.5*(celula[i+1].sW+celula[i].sW), 1.-0.5*(celula[i+1].sL+celula[i].sL));
+//			kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-0.5*(celula[i+1].sL+celula[i].sL),
+//					celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
+//			kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, 0.5*(celula[i+1].sW+celula[i].sW),
+//					celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
 
 			celula[i].pcOGm=celula[i].interpolaTabela(celula[i].pcGOCel.npont, 1.-celula[i].sL, celula[i].pcGOCel.satG,
 					celula[i].pcGOCel.presCapGO);
@@ -4420,8 +4420,8 @@ double PorosRadSimp::transtrans(int perm){
 			 celula[i].Pcamada=vetliv[konta];
 			 celula[i-1].PcamadaR=vetliv[konta];
 			 celula[i].PcamadaL=celula[i-1].Pcamada;
-			 double verifica;
-			 verifica=vetliv[konta+1];
+//			 double verifica;
+//			 verifica=vetliv[konta+1];
 
 			 //Qcamada[i][j]=2.*M_PI*vetliv[konta+1];
 			 celula[i].QocamadaR=2.*M_PI*vetliv[konta+1];
@@ -4553,7 +4553,7 @@ void PorosRadSimp::pseudoTrans(int partida){
 		}*/
 	}
 	erroPermanente=1000.;
-	double erroPermanenteSW=1000.;
+//	double erroPermanenteSW=1000.;
 	int kontaItera=0;
 	while((erroPermanente>Pint/10000. /*|| erroPermanenteSW>(1./10.)*/) || kontaItera<3){
 		/*if(Pint<230){
@@ -4665,15 +4665,15 @@ void PorosRadSimp::pseudoTrans(int partida){
 			ciclo++;
 		}
 		erroPermanente=0.;
-		erroPermanenteSW=0.;
+//		erroPermanenteSW=0.;
 		for(int i=0;i<ncel;i++){
 			erroPermanente+=fabs(celula[i].Pcamada-celula[i].Pini);
 			//erroPermanenteSW+=fabs(celula[i].sW-celula[i].sWini);
 		}
 		/*for(int i=3;i<ncel;i++){
-			erroPermanenteSW+=fabs(celula[i].BSW-celula[2].BSW);
+//			erroPermanenteSW+=fabs(celula[i].BSW-celula[2].BSW);
 		}*/
-		erroPermanenteSW=fabs(celula[ncel-2].BSW-celula[2].BSW);
+//		erroPermanenteSW=fabs(celula[ncel-2].BSW-celula[2].BSW);
 		erroPermanente/=ncel;
 		atualizaIni();
 		kontaItera++;
@@ -4948,7 +4948,7 @@ void PorosRadSimp::dVazdPw(){
 
 void PorosRadSimp::solveTrans(){
 	defineDT();
-	int ind;
+	int ind=0;
 	double raz;
 	double inf;
 	double sup;
@@ -4962,12 +4962,12 @@ void PorosRadSimp::solveTrans(){
 	else
 		Pint = pW.val[ind];
 	if(Pint<338){
-		int para;
-		para=0;
+//		int para;
+//		para=0;
 	}
 	if((*vg1dSP).tempo>=43400){
-		int para;
-		para=0;
+//		int para;
+//		para=0;
 	}
 
 	indraz(ind, raz,tempoSatLRes,nsatLRes);
@@ -5312,7 +5312,7 @@ void PorosRadSimp::avancoPressao(){
 		  	  FullMtx<double> matrizsaida(nglobal,11);
 		  	  matrizsaida=perfil();
 		  	  ostringstream saida;
-		  	  int numero = round((*vg1dSP).tempo);
+//		  	  int numero = round((*vg1dSP).tempo);
 		  	  //saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << kontaTempoImp
 						//<<"-"<<posicMarlim<< ".dat";
 		  	  saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*vg1dSP).tempo

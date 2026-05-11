@@ -754,29 +754,29 @@ void CelG::GeraLocal(int ncelGas,double presiniG,double tempiniG
 		     double dxmed = 0.5 * (dx0 + dx1);
 		     //double pmed = 0.5 * (pres + presR);
 		     //double tmed = 0.5 * (temp + tempR);
-		     double pmed = pres;
-		     double tmed = temp;
+//		     double pmed = pres;
+//		     double tmed = temp;
 		     if(VGasR<0.){
-		    	 pmed = presR;
-		    	 tmed = tempR;
+//		    	 pmed = presR;
+//		    	 tmed = tempR;
 		     }
 		     double Amed = 0.5 * (duto.area + dutoR.area);
 		     //double rhomed = 0.5 * (u1L / duto.area + u1R / dutoR.area);
 		     //double compres = flui.Zdran(pmed, tmed);//alteracao2
 		     //double compres1 = flui.Zdran(pres, temp,rg);//alteracao2
 		     //double compres2 = flui.Zdran(presR, tempR,rgR);//alteracao2
-		     double RUni=(8.0465*1000)/(flui.Deng*28.9625);//alteracao2
+//		     double RUni=(8.0465*1000)/(flui.Deng*28.9625);//alteracao2
 
 		     double VGasmedL =0.5 * (VGasR + VGasL);
 		     double VGasmedR = 0.5 * (VGasR + VGasRR);
 		     double vel1 = VGasmedL / u1L;
 		     double vel2 = VGasmedR / u1R;
-		     double u1med=u1L;
-		     if(VGasR<0.)u1med=u1R;
-		     double vel0=VGasR/u1med;
+//		     double u1med=u1L;
+//		     if(VGasR<0.)u1med=u1R;
+//		     double vel0=VGasR/u1med;
 
-		     double rho1 = u1L / duto.area;
-		     double rho2 = u1R / dutoR.area;
+//		     double rho1 = u1L / duto.area;
+//		     double rho2 = u1R / dutoR.area;
 		     double re1;
 		     double re2;
 
@@ -911,14 +911,14 @@ void CelG::GeraLocal(int ncelGas,double presiniG,double tempiniG
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		  double dxmed = 0.5 * dx1;
-		  double pmed = pres;
+//		  double pmed = pres;
 		  //double tetmed=dutoR.teta;
 		  double Amed = dutoR.area;
 		  //double rhomed = u1L / dutoR.area;//0.5 * (u1L / dutoR.area + u1R / dutoR.area);
 		  //double compres = flui.Zdran(pmed, temp);
 		  //double compres1 = flui.Zdran(pres, temp,rg);//alteracao2
 		  //double compres2 = flui.Zdran(presR, tempR,rgR);//alteracao2
-		  double RUni=(8.0465*1000)/(flui.Deng*28.9625);//alteracao2
+//		  double RUni=(8.0465*1000)/(flui.Deng*28.9625);//alteracao2
 		  //double dzdp = flui.DZDP(pmed, temp);//alteracao2
 		  //double dzdt = flui.DZDT(pmed, temp);//alteracao2
 		  //double dpdrho = rhomed* (1 / (pmed * 98066.5) - (1 / compres) * dzdp);//alteracao2
@@ -929,7 +929,7 @@ void CelG::GeraLocal(int ncelGas,double presiniG,double tempiniG
 		  double vel1 = VGasmedL / u1L;
 		  double vel2 = VGasmedR / u1R;
 
-		  double rho1 = u1L / dutoR.area;
+//		  double rho1 = u1L / dutoR.area;
 
 		  double re1;
 		  if(dutoR.revest==0)re1 = Rey(dutoR.a, vel1, u1L / dutoR.area,

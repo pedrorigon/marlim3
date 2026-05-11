@@ -144,9 +144,9 @@ void fontemaschk::VMas(){
 	if(sinal!=0){
 		double masChk=chk.vazmassSachd(ypres,pfonte, tfonte,titfonte,betfonte,titfonte, fluidoPfonte,fluidocol);
 		maxSup=chk.vazmaxSachd(pfonte, tfonte, titfonte,betfonte,titfonte, fluidoPfonte,fluidocol);
-		int fluxcri=1;
+		// int fluxcri=1;
 		if(titfonte<=0.01 || fabs(ypres)>fabs(chk.razpres)){
-	         	 fluxcri=0;
+	         	 // fluxcri=0;
 	         	 maxSup=masChk;
 		}
 		if(chk.AreaGarg<(1e-5)*area ) maxSup=0.;

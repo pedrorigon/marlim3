@@ -310,14 +310,14 @@ void dadosP3D::lerPoisson(string nomeArquivoEntrada){
 	  ifstream lendoUNV(eleUNV.c_str(), ios_base::in);
 
 	  string chave;
-	  char* tenta;
+//	  char* tenta;
 	  //tenta = new char[400];
 	  //std::vector<char> tenta(400);
 	  vector<cartesiano> vecXY;
-	  double testatok;
+//	  double testatok;
 	  char line[4000];
 	  lendoUNV.get(line, 4000);
-	  tenta = strtok(line, " ,()=");
+//	  tenta = strtok(line, " ,()=");
 	  //strtok(tenta.data(), " ,()=");
 	  lendoUNV >> chave;
 	  while (chave != "2411") {
@@ -782,16 +782,16 @@ void dadosP3D::lerPoisson(string nomeArquivoEntrada){
 	ofstream escreveEle(tmpEle.c_str(), ios_base::out);
 
 	int indMaxRASpec=0;
-	int n1[4];
+//	int n1[4];
 	for(int i=0;i<nele;i++){
 		double aresta[3];
 		double arestaMax=0;
 		double hmin=1e6;
 		for(int j=0;j<4;j++){
-			int ind0=j;
-			int ind1;
-			if(j<3)ind1=j+1;
-			else ind1=0;
+//			int ind0=j;
+//			int ind1;
+//			if(j<3)ind1=j+1;
+//			else ind1=0;
 
 			int vert[3];
 			int kvT=0;

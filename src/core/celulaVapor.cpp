@@ -552,7 +552,7 @@ double CelVap::fric(double re, double eps) {
 		  ((CoefDTR+CoefDTL)/(rpC*duto.area))/ (1+CoefDTR/(rpC*duto.area))+
 		  (term1Mass/ (1+CoefDTR/(rpC*duto.area)))*dt;
 
-   double resto=0.;
+//   double resto=0.;
    if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny))){
 	   alf=fabs(0.);
    }
@@ -595,15 +595,15 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 	if (posic != 0 && posic != ncel) {
 
 		   if(posic>=95 && posic<=98){
-		   	int para;
-		   	para=0;
+//		   	int para;
+//		   	para=0;
 		   }
 
 
 	  double AL =dutoL.area;
 	  double AC =duto.area;
 	  double AR =dutoR.area;
-      double siL=dutoL.peri;
+//      double siL=dutoL.peri;
 	  double siC=duto.peri;
 	  double siR=dutoR.peri;
 	  double rhogL = flui.MasEspGas(presL,tempL,TEMP);
@@ -787,7 +787,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 		double coefDpB=0.;
 		if(acsr.tipo==4&&acsr.bcs.freqnova>1. && j1>=0.){
 		     double vazmix=j1*AC;
-		     double alf0=alf;
+//		     double alf0=alf;
 		     vazmix*=(86400/0.16);
 		     //BomCentSub bombavisc=
 		     acsr.bcs.NovaVis(viscmix1,rhomix1,vazmix);
@@ -887,7 +887,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
        else{
   		 double AL =dutoL.area;
   		 double rhogL = flui.MasEspGas(presL,tempL,TEMP);
-  		 double rholL = rpL;
+//  		 double rholL = rpL;
   	     double compres = flui.ZFunc(presL, tempL);
   		 double dzdp = flui.DZDPFunc(presL, tempL);
   		 double dpdrho = rhogL* (1 / (presL * 98066.5) - (1 / compres) * dzdp);
@@ -911,7 +911,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
   	      double dxncel=1.*dx;
   	      double AC =dutoR.area;
   		  double rhog = flui.MasEspGas(pres,temp,TEMP);
-  		  double rhol = rpC;
+//  		  double rhol = rpC;
   	      compres = flui.ZFunc(pres, temp);
   		  dzdp = flui.DZDPFunc(pres, temp);
   		  dpdrho = rhog* (1 / (pres * 98066.5) - (1 / compres) * dzdp);
@@ -957,7 +957,7 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 			  double Amed =0.5*(AC+AR);
 			  double siC=duto.peri;
 			  double rhogC = flui.MasEspGas(0.5*(presE+pres),tempE, TEMP);
-			  double rhogR = flui.MasEspGas(pres,temp,TEMP);
+//			  double rhogR = flui.MasEspGas(pres,temp,TEMP);
 			  double rholC = flui.MasEspLiq(0.5*(presE+pres),tempE,TEMP);
 
 			  double j1=(Mliqini/rholC+(MC-Mliqini)/rhogC)/AC;
@@ -977,13 +977,13 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 			  double dpfric=coefTensC*coef2C;
 			  double dphidro=9.82 * sin(duto.teta) *AC*rhomix1;
 
-			  double ugl=(MC-Mliqini)/rhogC;
-			  double ugr=(MR-MliqiniR)/rhogR;
-			  double dxm=dx;
-			  double coefacelera1L=(-(1-term1)*ugl+0.25*(ugl+ugr)*(1-term1))/dxm;
-			  double coefacelar2L=(term2*ugl-0.25*(ugl+ugr)*term2)/dxm;
-			  double coefacelera1R=(0.25*(ugl+ugr)*(1-term1R))/dxm;
-			  double coefacelar2R=(-0.25*(ugl+ugr)*term2R)/dxm;
+//			  double ugl=(MC-Mliqini)/rhogC;
+//			  double ugr=(MR-MliqiniR)/rhogR;
+//			  double dxm=dx;
+//			  double coefacelera1L=(-(1-term1)*ugl+0.25*(ugl+ugr)*(1-term1))/dxm;
+//			  double coefacelar2L=(term2*ugl-0.25*(ugl+ugr)*term2)/dxm;
+//			  double coefacelera1R=(0.25*(ugl+ugr)*(1-term1R))/dxm;
+//			  double coefacelar2R=(-0.25*(ugl+ugr)*term2R)/dxm;
 
 			  local[0][0] = 0.;
 			  local[0][1] = 0.;
@@ -1143,8 +1143,8 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 	     double fator1=1.;
 	     fator1=1./fator1;
 
-	     double razdx1=dxR/(dx+dxR);
-	     double tmed1=razdx1*tempR+(1-razdx1)*temp;
+//	     double razdx1=dxR/(dx+dxR);
+//	     double tmed1=razdx1*tempR+(1-razdx1)*temp;
 
 	     double convec=fator1*(MliqiniR-rlm*(1-alfPigDini)*velPig*duto.area)/((1.-razPig)*dx)
 				 -fator1*(fontepigL/((1.-razPig)*dx));//alteracao2
@@ -1185,8 +1185,8 @@ void CelVap::GeraLocal(double presfim, int masChkSup, int ncel, double razareati
 	     double fator1=1.;
 	     fator1=1./fator1;
 
-	     double razdx0=dx/(dx+dxL);
-	     double tmed0=razdx0*temp+(1-razdx0)*tempL;
+//	     double razdx0=dx/(dx+dxL);
+//	     double tmed0=razdx0*temp+(1-razdx0)*tempL;
 	     double convec=fator1*(rlm*(1.-alfPigEini)*velPig*duto.area-Mliqini)/(razPig*dx)
 	                     -fator1*(fontepigL/(razPig*dx));//alteracao2
 	     //double convec=0.;
