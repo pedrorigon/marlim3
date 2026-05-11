@@ -632,9 +632,9 @@ void PorosRad::geraCel(double** const vPcamada,double** const vsL,double** const
 double PorosRad::marchaperm(double mastot){
 
      double h1;
-	 double h2;
+//	 double h2;
 	 double h3;
-	 double cal;
+//	 double cal;
 
 
      hi=h1=10000000.*10000./geom.a;
@@ -690,20 +690,20 @@ double PorosRad::transperm(double mastot){
 
 void PorosRad::renovaPres(int i, double mTot){
 
-	double rhoa=celula[ncel-1].flup.MasEspAgua(presRes, tRes);
-	double rhoo=celula[ncel-1].flup.MasEspoleo(presRes, tRes);
-	double rhog=celula[ncel-1].flup.MasEspGas(presRes, tRes);
-	double multA=rhoa*(sWRes-satConata)/(1.-satConata);
-	double multO=rhoo*(sLRes-sWRes)/(1.-satConata);
-	double multG=rhog*(1.-sLRes)/(1.-satConata);
-	double qtot=mTot/(multA+multO+multG);
-	double massA=multA*qtot;
-	double massO=multO*qtot;
-	double qOstd=(massO/rhoo)/celula[ncel-1].flup.BOFunc(presRes, tRes);
-	double massOstd=celula[ncel-1].rhostd*qOstd;
-	double massG=multG*qtot;
-	double massgDisolv=qOstd*celula[ncel-1].flup.RS(presRes, tRes)*(6.29 / 35.31467)*celula[ncel-1].rhogstd;
-	double massgTot=massG+massgDisolv;
+//	double rhoa=celula[ncel-1].flup.MasEspAgua(presRes, tRes);
+//	double rhoo=celula[ncel-1].flup.MasEspoleo(presRes, tRes);
+//	double rhog=celula[ncel-1].flup.MasEspGas(presRes, tRes);
+//	double multA=rhoa*(sWRes-satConata)/(1.-satConata);
+//	double multO=rhoo*(sLRes-sWRes)/(1.-satConata);
+//	double multG=rhog*(1.-sLRes)/(1.-satConata);
+//	double qtot=mTot/(multA+multO+multG);
+//	double massA=multA*qtot;
+//	double massO=multO*qtot;
+//	double qOstd=(massO/rhoo)/celula[ncel-1].flup.BOFunc(presRes, tRes);
+//	double massOstd=celula[ncel-1].rhostd*qOstd;
+//	double massG=multG*qtot;
+//	double massgDisolv=qOstd*celula[ncel-1].flup.RS(presRes, tRes)*(6.29 / 35.31467)*celula[ncel-1].rhogstd;
+//	double massgTot=massG+massgDisolv;
 
 	if(i==ncel-1){
 		celula[i].Pcamada=celula[i].presRes;
@@ -717,9 +717,9 @@ void PorosRad::renovaPres(int i, double mTot){
 		double miomed;
 		double migmed;
 		double miamed;
-		double kO;
-		double kG;
-		double kA;
+//		double kO;
+//		double kG;
+//		double kA;
 		double dO;
 		double dG;
 		double dA;
@@ -742,11 +742,11 @@ void PorosRad::renovaPres(int i, double mTot){
 		migmed=celula[i+1].mig0=celula[i+1].flup.ViscGas(celula[i+1].Pcamada, tRes)/1000.;
 		miamed=celula[i+1].mia0=celula[i+1].flup.VisAgua(tRes)/1000.;
 
-		kO=celula[i+1].kmed0=celula[i+1].fkO(celula[i+1].sW, 1.-celula[i+1].sL);
-		kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-celula[i+1].sL,
-			celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
-		kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, celula[i+1].sW,
-			celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
+//		kO=celula[i+1].kmed0=celula[i+1].fkO(celula[i+1].sW, 1.-celula[i+1].sL);
+//		kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-celula[i+1].sL,
+//			celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
+//		kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, celula[i+1].sW,
+//			celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
 
 		double erro=10000.;
 		celula[i].sL=celula[i+1].sL;
@@ -807,11 +807,11 @@ void PorosRad::renovaPres(int i, double mTot){
 
 			erro=(fabs(celula[i].sL-sLiter)+fabs(celula[i].sW-sWiter));
 
-			kO=celula[i+1].kmed0=celula[i+1].fkO(0.5*(celula[i+1].sW+celula[i].sW), 1.-0.5*(celula[i+1].sL+celula[i].sL));
-			kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-0.5*(celula[i+1].sL+celula[i].sL),
-					celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
-			kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, 0.5*(celula[i+1].sW+celula[i].sW),
-					celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
+//			kO=celula[i+1].kmed0=celula[i+1].fkO(0.5*(celula[i+1].sW+celula[i].sW), 1.-0.5*(celula[i+1].sL+celula[i].sL));
+//			kG=celula[i+1].kmedG0=celula[i+1].interpolaTabela(celula[i+1].kRelOGCel.npont, 1.-0.5*(celula[i+1].sL+celula[i].sL),
+//					celula[i+1].kRelOGCel.satG, celula[i+1].kRelOGCel.permRelG);
+//			kA=celula[i+1].kmedA0=celula[i+1].interpolaTabela(celula[i+1].kRelOACel.npont, 0.5*(celula[i+1].sW+celula[i].sW),
+//					celula[i+1].kRelOACel.satW, celula[i+1].kRelOACel.permRelW);
 
 			celula[i].pcOGm=celula[i].interpolaTabela(celula[i].pcGOCel.npont, 1.-celula[i].sL, celula[i].pcGOCel.satG,
 					celula[i].pcGOCel.presCapGO);
@@ -1154,8 +1154,8 @@ double PorosRad::transtrans(double espessura){
 			 celula[i].Pcamada=vetliv[konta];
 			 celula[i-1].PcamadaR=vetliv[konta];
 			 celula[i].PcamadaL=celula[i-1].Pcamada;
-			 double verifica;
-			 verifica=vetliv[konta+1];
+//			 double verifica;
+//			 verifica=vetliv[konta+1];
 
 			 //Qcamada[i][j]=2.*M_PI*vetliv[konta+1];
 			 celula[i].QocamadaR=2.*M_PI*vetliv[konta+1];

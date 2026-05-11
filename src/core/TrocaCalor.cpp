@@ -1007,7 +1007,7 @@ double TransCal::hExt(double resanul, double diaRef){
 
 
 	double reyE;
-	double prE;
+	//double prE; // unused-but-set-variable
 	//double reyI;
 	double rug=geom.rug/geom.dia;
 	//double fMoo;
@@ -1033,8 +1033,8 @@ double TransCal::hExt(double resanul, double diaRef){
 		 rhoextern1=MasEspAr(tmed);
 		 kextern1=CondAr(tmed);
 		 cpextern1=CalorAr(tmed);
-		 double rho0=MasEspAr(tmed);
-		 double rhodel=MasEspAr(tmed*1.01);
+		 //double rho0=MasEspAr(tmed); // unused variable
+		 //double rhodel=MasEspAr(tmed*1.01); // unused variable
 		 betext=beta(tmed, 3);
 		/* viscextern1=1 * 1e-3;
 		 		 rhoextern1=1000;
@@ -1071,7 +1071,7 @@ double TransCal::hExt(double resanul, double diaRef){
 		 else dE=diaRef;
 		 reyE=ReyIn(Vextern1,rhoextern1*viscextern1/rhoextern1, rhoextern1, dE);
 		 //reyE=ReyIn(Vextern1,rhoextern1*viscextern1/rhoextern1, rhoextern1, 0.1778);
-		 prE=prT[nflui-1];
+		 //prE=prT[nflui-1]; // unused-but-set-variable
 		 if(dirconvExt==0)Nu3=nussChuBer(reyE, prT[nflui-1]);
 		 else Nu3=nussPet(reyE,prT[nflui-1],rug, viscextern1,1./1e3);
 		 h3=Nu3*kextern1/dE;
@@ -1083,7 +1083,7 @@ double TransCal::hExt(double resanul, double diaRef){
 		 pre=prT[nflui-1];
 	 }
 	 else{
-		 int val=0;
+		 //int val=0; // unused variable
 		 if(diaRef<=0)
 			 h3=1/(M_PI*geom.diamC[geom.ncamadas-1]*resFim);
 		 else
@@ -1111,7 +1111,7 @@ double TransCal::hInt(double resanul, double diaRef){
 	double reyI;
 	double rug=geom.rug/geom.dia;
 	if(diaRef>0)rug=geom.rug/diaRef;
-	double fMoo;
+	//double fMoo; // unused-but-set-variable
 
 	int nflui=2;
 	for(int i=0;i<geom.ncamadas;i++)if(geom.tipomat[i]!=0)nflui++;
@@ -1123,7 +1123,7 @@ double TransCal::hInt(double resanul, double diaRef){
 		reyi=reyI=ReyIn(Vint,viscint, rhoint,geom.dia);
 	else reyi=reyI=ReyIn(Vint,viscint, rhoint,diaRef);
 	pri=prT[0];
-	fMoo=fric(reyI,rug );
+	//fMoo=fric(reyI,rug ); // unused-but-set-variable
 
 	if(reyI>2400)Nu1=nussPet(reyI,prT[0],rug, viscint,1./1e3);
 	else{
@@ -1156,12 +1156,12 @@ double TransCal::condParede(double resanul){
 	double lconv=1000.;
     double graA;
 	double raA;
-	double Nu1;
+	//double Nu1; // unused variable
 	double Nu2;
-	double Nu3;
-    double h1;
+	//double Nu3; // unused variable
+    //double h1; // unused variable
 	double h2;
-	double h3;
+	//double h3; // unused variable
 	double condParedeGlob;
 
 
@@ -1248,12 +1248,12 @@ double TransCal::condParedeLocal(double resanul){
 	double lconv=1000.;
     double graA;
 	double raA;
-	double Nu1;
+	//double Nu1; // unused variable
 	double Nu2;
-	double Nu3;
-    double h1;
+	//double Nu3; // unused variable
+    //double h1; // unused variable
 	double h2;
-	double h3;
+	//double h3; // unused variable
 	double condParedeLoc;
 
 
@@ -1363,7 +1363,7 @@ double TransCal::transperm(double resanul){
 		double prE=0.;
 		double reyI;
 		double rug=geom.rug/geom.dia;
-		double fMoo;
+		//double fMoo; // unused-but-set-variable
 
 		int nflui=2;
 		for(int i=0;i<geom.ncamadas;i++)if(geom.tipomat[i]!=0)nflui++;
@@ -1383,8 +1383,8 @@ double TransCal::transperm(double resanul){
 			rhoextern1=MasEspAr(tmed);
 			kextern1=CondAr(tmed);
 			cpextern1=CalorAr(tmed);
-			double rho0=MasEspAr(tmed);
-			double rhodel=MasEspAr(tmed*1.01);
+			//double rho0=MasEspAr(tmed); // unused variable
+			//double rhodel=MasEspAr(tmed*1.01); // unused variable
 			betext=beta(tmed, 3);
 			/* viscextern1=1 * 1e-3;
 		 		 rhoextern1=1000;
@@ -1434,7 +1434,7 @@ double TransCal::transperm(double resanul){
 			definePet(Tint,Textern1);
 			reyi=reyI=ReyIn(Vint,viscint, rhoint,geom.dia);
 			pri=prT[0];
-			fMoo=fric(reyI,rug );
+			//fMoo=fric(reyI,rug ); // unused-but-set-variable
 
 			if(reyI>2400)Nu1=nussPet(reyI,prT[0],rug, viscint,1./1e3);
 			/*else{
@@ -1479,7 +1479,7 @@ double TransCal::transperm(double resanul){
 			pre=prT[nflui-1];
 		}
 		else{
-			int val=0;
+			//int val=0; // unused variable
 			h3=1/(M_PI*geom.diamC[geom.ncamadas-1]*resFim);
 		}
 
@@ -1723,7 +1723,7 @@ double TransCal::transperm(double resanul){
 
   double rho=0.;
   double cp=0.;
-  double k0;
+  //double k0; // unused-but-set-variable
   double k1=0.;
 
   double tec1=0.;
@@ -1834,7 +1834,7 @@ double TransCal::transperm(double resanul){
       }
     }
   if(icam==0 && idisc==0 && condiTparede==0){
-	  k0=geom.cond[0];
+	  //k0=geom.cond[0]; // unused-but-set-variable
 	  r0=geom.a/2.;
 	  r1=geom.a/2.+drcamada[0];
 	  definePet(Tint,Tcamada[0][1]);
@@ -2034,8 +2034,8 @@ double TransCal::transperm(double resanul){
 				for(int j=1;j<=ncamada[i];j++){
 					Tini[i][j]=Tcamada[i][j];
 					Tcamada[i][j]=vetliv[konta];
-					double verifica;
-					verifica=vetliv[konta+1];
+					//double verifica; // unused-but-set-variable
+					//verifica=vetliv[konta+1]; // unused-but-set-variable
 					Qini[i][j]=Qcamada[i][j];
 					Qcamada[i][j]=2.*M_PI*vetliv[konta+1];
 					konta+=2;

@@ -38,10 +38,10 @@ elem2dPoroso::elem2dPoroso(varGlob1D* Vvg1dSP,double** xcoor, int** noEle, int* 
 	double vporo=0.;
 	double vcompresPoro=0.;
 	double vPcentro=0;
-	double vPint=0.;
+	//double vPint=0.;
 	double vpresRes=0.;
-	double vQL=0.;
-	double vQR=0.;
+	//double vQL=0.;
+	//double vQR=0.;
 	double vtRes=0;
 	double vzD=0;
 	double vdh=1;
@@ -552,7 +552,7 @@ elem2dPoroso::elem2dPoroso(const elem2dPoroso& velem) :
 		local=velem.local;
 		cel2D.noFace=0;
 
-		cel2D.alfC;
+		//cel2D.alfC;
 		cel2D.vbo=velem.cel2D.vbo;
 		cel2D.rhostd=velem.cel2D.rhogstd;
 		cel2D.rhogstd=velem.cel2D.rhogstd;
@@ -1025,7 +1025,7 @@ elem2dPoroso& elem2dPoroso::operator =(const elem2dPoroso& velem) {
 			local=velem.local;
 			cel2D.noFace=0;
 
-			cel2D.alfC;
+			//cel2D.alfC;
 			cel2D.vbo=velem.cel2D.vbo;
 			cel2D.rhostd=velem.cel2D.rhogstd;
 			cel2D.rhogstd=velem.cel2D.rhogstd;
@@ -1561,8 +1561,8 @@ void elem2dPoroso::calcGradGreen(){
 		if(kvizinho[i]>=0){
 			double pinter=cel2D.fatG[i]*cel2D.presC+(1.-cel2D.fatG[i])*(*vizinho[i]).presC;
 			double swinter=cel2D.fatG[i]*cel2D.sWC+(1.-cel2D.fatG[i])*(*vizinho[i]).sWC;
-			double zDatumC=cel2D.zD;
-			double zDatumV=(*vizinho[i]).zD;
+			//double zDatumC=cel2D.zD;
+			//double zDatumV=(*vizinho[i]).zD;
 			/*double rhoZinter=
 					(9.82/98066.22)*(cel2D.fatG[i](cel2D.alfC*cel2D.rhogP+(1.-cel2D.alfC)*cel2D.rhoP)+
 							(1.-cel2D.fatG[i])*((*vizinho[i]).alfC*(*vizinho[i]).rhogP+(1.-(*vizinho[i]).alfC)*(*vizinho[i]).rhoP));
@@ -1993,8 +1993,8 @@ void elem2dPoroso::evoluiSW(int& reinicia){
 	for(int i=0;i<cel2D.nvert;i++){
 		   massTot+=rhoaF[i]*Qw[i];
 			if(kvizinho[i]>=0){
-				int para;
-				para=0;
+				//int para;
+				//para=0;
 			}
 	}
 
@@ -2003,7 +2003,7 @@ void elem2dPoroso::evoluiSW(int& reinicia){
 	double val=cel2D.sWI+balanco*dt;
 	if(val<satConata && cel2D.sWI==satConata)val=satConata;
 	else if(val>1. && cel2D.sWI==1.)val=1.;
-    double alfx=1.-val;
+    //double alfx=1.-val;
     double localtiny=1e-5;
 
 	if(((val<=1.+localtiny)&&(val>=1.-localtiny))){
@@ -2051,8 +2051,8 @@ void elem2dPoroso::evoluiSW(int& reinicia){
 	else cel2D.sWC=val;
 
 	if(reiniciaSW==-1){
-		int para;
-		para=0;
+		//int para;
+		//para=0;
 	}
 
 	//sW=0.13;
@@ -2138,8 +2138,8 @@ void elem2dPoroso::GeraLocal(double relax){
 			int kcc=0;
 			int acoplado;
 			tipoCC(i, diri, vn, rich,acoplado,kcc);
-		    int ind;
-		    double raz;
+		    //int ind;
+		    //double raz;
 			double mio;
 			//if(presF[i]<cel2D.pBolha-0.01)
 				mio=flup.ViscOleo(cel2D.presC, tRes)/1000.;

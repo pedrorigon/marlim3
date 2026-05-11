@@ -1507,7 +1507,7 @@ void LerVap::lerArq() {
 	celp = new detcelpVap[ncelp];
 	int tempncel = 0;
 	anmP = 0 * unidadeP[0].dx[0];
-	int para = 0;
+	// int para = 0;
 	for (int i = 0; i < nunidadep; i++) {
 		double posiccentro = 0.;
 		double posicfronteira = 0.;
@@ -2157,8 +2157,8 @@ for (int i = 0; i < geom.ncamadas; i++) {
 int perm = -1;
 
 if(ambext==1){
-	int para;
-	para=0;
+	// int para;
+	// para=0;
 }
 
 int kL=litologia;//alteracao2
@@ -2202,12 +2202,12 @@ for (int i = 0; i < ncelp; i++) {
 	double vazio;
 	double vazioL;
 	double vazioR;
-	double bet;
-	double betL;
-	double betR;
-	double bet0;
-	double betN;
-	double betP;
+//	double bet;
+//	double betL;
+//	double betR;
+	// double bet0;
+	// double betN;
+	// double betP;
 	double pmed = celp[i].pres;
 	double tmed = celp[i].temp;
 	double pmedL;
@@ -2291,13 +2291,13 @@ for (int i = 0; i < ncelp; i++) {
 		vazio = 1 - celp[i].hol;
 		vazioL = 1 - celp[i - 1].hol;
 		vazioR = 1 - celp[i + 1].hol;
-		bet0 = betL;
-		if (vQL <= 0)
-			bet0 = bet;
-		betN = betL;
-		betP = bet;
-		if (celp[i + 1].uls <= 0)
-			betP = betR;
+		// bet0 = betL;
+		// if (vQL <= 0)
+		// 	bet0 = bet;
+		// betN = betL;
+		// betP = bet;
+		// if (celp[i + 1].uls <= 0)
+		// 	betP = betR;
 		vrhol = flup.MasEspLiq(presaux, taux,TEMP);
 		vrhog = flup.MasEspGas(presaux, taux,TEMP);
 		vMC = vrhol * vQL + vrhog * vQG;
@@ -2334,13 +2334,13 @@ for (int i = 0; i < ncelp; i++) {
 		vazio = 1 - celp[i].hol;
 		vazioL = 1 - celp[i].hol;
 		vazioR = 1 - celp[i + 1].hol;
-		bet0 = betL;
-		if (vQL <= 0)
-			bet0 = bet;
-		betN = betL;
-		betP = bet;
-		if (celp[i + 1].uls <= 0)
-			betP = betR;
+		// bet0 = betL;
+		// if (vQL <= 0)
+		// 	bet0 = bet;
+		// betN = betL;
+		// betP = bet;
+		// if (celp[i + 1].uls <= 0)
+		// 	betP = betR;
 		vrhol = flup.MasEspLiq(presaux, taux,TEMP);
 		vrhog = flup.MasEspGas(presaux, taux,TEMP);
 		vMC = vrhol * vQL + vrhog * vQG;
@@ -2377,12 +2377,12 @@ for (int i = 0; i < ncelp; i++) {
 		vazio = 1 - celp[i].hol;
 		vazioL = 1 - celp[i - 1].hol;
 		vazioR = 1 - celp[i].hol;
-		if (vQL <= 0)
-			bet0 = bet;
-		betN = betL;
-		betP = bet;
-		if (celp[i + 1].uls <= 0)
-			betP = betR;
+		// if (vQL <= 0)
+		// 	bet0 = bet;
+		// betN = betL;
+		// betP = bet;
+		// if (celp[i + 1].uls <= 0)
+		// 	betP = betR;
 		vrhol = flup.MasEspLiq(presaux, taux,TEMP);
 		vrhog = flup.MasEspGas(presaux, taux,TEMP);
 		vMC = vrhol * vQL + vrhog * vQG;
@@ -2422,10 +2422,10 @@ for (int i = 0; i < ncelp; i++) {
 			+ flup.ViscGas(celp[i].pres, celp[i].temp)
 					* (1. - vhol);
 
-	if(i>120){
-		int para;
-		para=0;
-	}
+	// if(i>120){
+	// 	int para;
+	// 	para=0;
+	// }
 
 	novatrans(entrada, dutosMRT[iduto], corte[icorte].discre, celp[i].temp,
 			celp[i].textern, celp[i].vextern, jmix, celp[i].dirconv, dtmax,
@@ -2632,10 +2632,10 @@ if(ConContEntrada>0){//alteracao4
 }
 
 
-if (tempo > 7950.) {
-	int para;
-	para = 0;
-}
+// if (tempo > 7950.) {
+// 	int para;
+// 	para = 0;
+// }
 indraz(ind, raz, tempo, dtmaxserie.parserie, dtmaxserie.tempo);
 double Tinf = dtmaxserie.valor[ind];
 double Tsup;
@@ -2654,8 +2654,8 @@ dtmax = Tinf * raz + (1 - raz) * Tsup;
 if (ninjliq > 0) {
 	double vazinf;
 	double vazsup;
-	double betinf;
-	double betsup;
+	double betinf = 0.0;
+	double betsup = 0.0;
 	double tempinf;
 	double tempsup;
 	for (int i = 0; i < ninjliq; i++) {
@@ -2754,10 +2754,10 @@ chokeSup.AreaGarg = (aberinf * raz + (1 - raz) * abersup)
 
 if((*vg1dSP).chaverede==0 || extrem==1){//alteracao4
   indraz(ind, raz, tempo, psep.parserie, psep.tempo);
-  double presinf = psep.pres[ind];
-  double pressup;
-  if (ind < psep.parserie - 1)
-	pressup = psep.pres[ind + 1];
+  // double presinf = psep.pres[ind];
+  // double pressup;
+  // if (ind < psep.parserie - 1)
+  // 	pressup = psep.pres[ind + 1];
 }
 //pGSup=10.;
 

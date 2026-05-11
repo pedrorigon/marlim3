@@ -571,11 +571,11 @@ void solverP::permanentePoisson(){
     		indsra+=dimNoZero;
     		termolivre[i]=malha.mlh2d[i].TL[0];
     	}
-    	double eps=0.001;
-    	int iter=malha.nele;
-    	int retorna;
+//    	double eps=0.001;
+//    	int iter=malha.nele;
+//    	int retorna;
     	for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh2d[i].cel2D.tempC;
-    	retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//    	retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
     	//if(retorna==1)break;
     	/////////////////////////////////////////////////////////////////////////////////////////////////
     	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -698,11 +698,11 @@ void solverP::transientePoissonDummy(double vdelt){
 					indsra+=dimNoZero;
 					termolivre[i]=malha.mlh2d[i].TL[0];
 				}
-				double eps=0.00001;
-				int iter=malha.nele;
-				int retorna;
+//				double eps=0.00001;
+//				int iter=malha.nele;
+//				int retorna;
 				for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh2d[i].cel2D.tempC;
-				retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//				retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
 				//if(retorna==1)break;
 				norma=0.;
 				for(int i=0;i<malha.nele;i++){
@@ -823,13 +823,13 @@ void solverP::transientePoisson(double vdelt){
 					indsra+=dimNoZero;
 					termolivre[i]=malha.mlh2d[i].TL[0];
 				}
-				double eps=0.00001;
-				int iter=malha.nele;
-				int retorna;
+//				double eps=0.00001;
+//				int iter=malha.nele;
+//				int retorna;
 				for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh2d[i].cel2D.tempC;
-				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
+//				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
 				//if(retorna==1)break;
 				norma=0.;
 				for(int i=0;i<malha.nele;i++){

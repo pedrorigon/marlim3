@@ -368,10 +368,10 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada){
 	  parse_CC(elementoPorosoRaiz["CC"]);
 	  parse_Prop(elementoPorosoRaiz["prop"]);
 	  parse_CI(elementoPorosoRaiz["CI"]);
-	  double ki;
-	  double cpi;
-	  double rhoi;
-	  double visci;
+//	  double ki;
+//	  double cpi;
+//	  double rhoi;
+//	  double visci;
 	  if(acop==1){
 		  parse_materiais(elementoPorosoRaiz["material"]);
 		  parse_corte(elementoPorosoRaiz["secaoTransversal"]);
@@ -420,7 +420,7 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada){
 				vPcamada[i] = new double[vncamada[i] + 1];
 			}
 
-			int equilterm=1;
+//			int equilterm=1;
 
 			for (int i = 0; i < dutosMRT.ncamadas; i++) {
 				for (int j = 0; j <= vncamada[i]; j++)
@@ -480,13 +480,13 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada){
 			delete[] vsO;
 			delete[] vsW;
 
-			int ind;
-			double raz;
-			double delt;
-			double presW;
-			int kontaTempoImp=0;
-			double satAResAtual;
-			double satOResAtual;
+//			int ind;
+//			double raz;
+//			double delt;
+//			double presW;
+//			int kontaTempoImp=0;
+//			double satAResAtual;
+//			double satOResAtual;
 			/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -608,7 +608,7 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada){
 		ifstream lendoUNV(eleUNV.c_str(), ios_base::in);
 
 		string chave;
-		char* tenta;
+//		char* tenta;
 		//tenta = new char[400];
 		struct cartesiano{
 			int ind;
@@ -619,10 +619,10 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada){
 		};
 		vector<cartesiano> vecXY;
 
-		double testatok;
+//		double testatok;
 		char line[4000];
 		lendoUNV.get(line, 4000);
-		tenta = strtok(line, " ,()=");
+//		tenta = strtok(line, " ,()=");
 		lendoUNV >> chave;
 		while (chave != "2411") {
 			lendoUNV >> chave;
@@ -994,7 +994,7 @@ void dadosPoro::geraTabFlash(int var) {
 		tenta = strtok(NULL, " ,()=");
 	}
 	tenta = strtok(NULL, " ,()=");
-	int lacoleitura;
+	int lacoleitura = 0;
 
 	int threeOrtwo = 0;
 	if (strcmp(tenta, "THREE") == 0) {
@@ -1375,7 +1375,7 @@ void dadosPoro::parse_fluido_producao(
 	int vcorrOV = 0;
 	int vcorrOS = 0;
 	int corrDeng=0;
-	int fracMolarUsuario=0;
+//	int fracMolarUsuario=0;
 	double PHI100=0.765;
 	int nvecBSW=0;
 
@@ -1882,7 +1882,7 @@ void dadosPoro::parse_fluido_producao(
 					flup.npontos=tabent.npont;
 					lendoPVTSim >> chave;
 					int lacoleitura = ndiv;
-					double valor;
+//					double valor;
 
 					while (chave != "BUBBLEPRESSURES") {
 						lendoPVTSim >> chave;

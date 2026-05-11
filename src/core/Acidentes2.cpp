@@ -58,7 +58,7 @@ double VelSomH(const double pres, const double temp,const double alf, const doub
 double VelSomG(const double pres, const double temp,const ProFlu fluido){
  //double x=fluido.FracMassHidra(pres,temp);
  double k=fluido.ConstAdG(pres,temp);
- double rhog=fluido.MasEspGas(pres, temp);
+ //double rhog=fluido.MasEspGas(pres, temp);
  double Rgas=fluido.retornaR();
  double vsh2=1./(k*Rgas*(temp+273.1));
  return 1/sqrt(vsh2);
@@ -126,9 +126,9 @@ double massica(double presEstag, double presGarg, const double temp, double alf,
  double rhogE=fluido.MasEspGas(presEstag, temp);
  double rholE=(1-bet)*fluido.MasEspLiq(presEstag, temp)+bet*fluidocol.MasEspFlu(presEstag, temp);
  double Cpg=fluido.CalorGas(presEstag,temp);
- double Cpl=(1-bet)*fluido.CalorLiq(presEstag,temp)+bet*fluidocol.CalorLiq(presEstag,temp);
+// double Cpl=(1-bet)*fluido.CalorLiq(presEstag,temp)+bet*fluidocol.CalorLiq(presEstag,temp);
 // double x=rhogE*alf/(rholE*(1-alf)+rhogE*alf);
- double cpmis=(alf*rhogE*Cpg+(1-alf)*rholE*Cpl)/(rhogE*alf+(1-alf)*rholE);
+ //double cpmis=(alf*rhogE*Cpg+(1-alf)*rholE*Cpl)/(rhogE*alf+(1-alf)*rholE);
  double razpres=presEstag/presGarg;
  double t1=(temp+273.1)*pow(razpres,(1-k)/k);
  t1-=273.1;
@@ -163,7 +163,7 @@ double MasMax(double presEstag, double presGarg, const double temp, double alf, 
 	sinal=-1.;
  }
  double k=fluido.ConstAdG(presEstag,temp);
- double rhogE=fluido.MasEspGas(presEstag, temp);
+ //double rhogE=fluido.MasEspGas(presEstag, temp);
  double rhol=(1-bet)*fluido.MasEspLiq(presEstag, temp)+bet*fluidocol.MasEspFlu(presEstag, temp);
  //double x=rhogE*alf/(rhol*(1-alf)+rhogE*alf);
  double razpres=presEstag/presGarg;
@@ -193,8 +193,8 @@ double RPresH(const double pres, const double temp,const double alf,const double
     double rg1=fluido.MasEspGas(presGarg, temp);
     double masentrada=(rg1*Qg+rl1*Ql);
     double rmist=rl1*(1-alf)+rg1*alf;
-    double sensSup=1.;
-    if(masentrada<0)sensSup=-1.;
+    //double sensSup=1.;
+    //if(masentrada<0)sensSup=-1.;
     double delp=0.5*(1/rmist)*(1/pow(areaGarg,2.)-1/pow(areaTub,2.))*masentrada*masentrada;
     double presEstag=presGarg+delp/98066.5;
 
@@ -267,8 +267,8 @@ double RPresHVap(const double pres, const double temp,const double alf,
     double rg1=fluido.MasEspGas(presGarg, temp);
     double masentrada=(rg1*Qg+rl1*Ql);
     double rmist=rl1*(1-alf)+rg1*alf;
-    double sensSup=1.;
-    if(masentrada<0)sensSup=-1.;
+    //double sensSup=1.;
+    //if(masentrada<0)sensSup=-1.;
     double delp=0.5*(1/rmist)*(1/pow(areaGarg,2.)-1/pow(areaTub,2.))*masentrada*masentrada;
     double presEstag=presGarg+delp/98066.5;
 
@@ -378,8 +378,8 @@ double choke::razpresSachdF(double y, double presE, double tempE,double alf, dou
 
 	 double n=1.+(x*(Cpg-Cvg))/(x*Cvg+(1-x)*Cpl);
 
-	 double presG=y*presE;
-	 double presvol=presE*pow(Vg,n);
+	 //double presG=y*presE;
+	 //double presvol=presE*pow(Vg,n);
 	 double Vg2=pow(y, -1./n);
 	 //double Vg2=Vg*pow(y,-1./k);
 
@@ -402,7 +402,7 @@ double choke::razpresSachdZ(double a,double b, double presE, double tempE,
         //F(double)-> fun��o que se quer obter a raiz
           double u=razpresSachdF(a, presE,tempE,alf, bet,x, fluido,fluidocol);
           double e=b-a;
-          double c;
+          double c = 0.0;
 
           double v=razpresSachdF(b, presE,tempE,alf, bet,x, fluido,fluidocol);
           int inter=0;
@@ -591,8 +591,8 @@ double choke::razpresSachdFVap(double y, double presE, double tempE,double alf,d
 
 	 double n=1.+(x*(Cpg-Cvg))/(x*Cvg+(1-x)*Cpl);
 
-	 double presG=y*presE;
-	 double presvol=presE*pow(Vg,n);
+	 //double presG=y*presE;
+	 //double presvol=presE*pow(Vg,n);
 	 double Vg2=pow(y, -1./n);
 	 //double Vg2=Vg*pow(y,-1./k);
 
@@ -614,7 +614,7 @@ double choke::razpresSachdZVap(double a,double b, double presE, double tempE,dou
 
           double u=razpresSachdFVap(a, presE,tempE,alf, x);
           double e=b-a;
-          double c;
+          double c = 0.0;
 
           double v=razpresSachdFVap(b, presE,tempE,alf,x);
           int inter=0;

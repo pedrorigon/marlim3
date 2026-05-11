@@ -144,8 +144,8 @@ elem3dPoisson::elem3dPoisson(varGlob1D* DGP3DV,
         		double val;
         		if(xcoor[eleUNV.indFaceNo[k][0]][2]==xcoor[eleUNV.indFaceNo[k][1]][2] &&
         				xcoor[eleUNV.indFaceNo[k][0]][2]==xcoor[eleUNV.indFaceNo[k][2]][2]){
-        			int para;
-        			para=0;
+        			//int para;
+        			//para=0;
         		}
         		for(int j=0; j<cel3D.dim;j++)cel3D.centroideFace[k][j]=0.;
         		for(int j=0; j<cel3D.dim;j++){
@@ -1042,8 +1042,8 @@ void elem3dPoisson::GeraLocal(double relax){
 			int kcc=0;
 			int acoplado;
 			tipoCC(i, diri, vn, rich,acoplado,kcc);
-		    int ind;
-		    double raz;
+		    //int ind;
+		    //double raz;
 			if(diri==1){
 
 				double gradMed [cel3D.dim];

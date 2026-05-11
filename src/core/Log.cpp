@@ -134,7 +134,7 @@ Document Logger::parseTemplateLogOutput() {
     // caso haja erro de parse
     if (logOutDoc.HasParseError()) {
       // transpor os dados para a mensagem
-      sprintf(mensagemFalha, "Posicao = %u", logOutDoc.GetErrorOffset());
+      sprintf(mensagemFalha, "Posicao = %zu", logOutDoc.GetErrorOffset());
       // incluir falha no processo de parse
       cout << "FALHA: " << LOG_ERR_PARSE_JSON_FORMAT_VALIDATION << " - Parse Template Log Transiente - "
           << GetParseError_Pt_BR(logOutDoc.GetParseError()) << endl;

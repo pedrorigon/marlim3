@@ -139,7 +139,7 @@ Document Rede::parseEntrada() {
     if (jsonDoc.HasParseError()) {
 //cout << "ErrorOffset: " << determinarLinhaErro(jsonDoc.GetErrorOffset()) << endl;
       // transpor os dados  para a mensagem
-      sprintf(mensagemFalha, "Posicao = %u", jsonDoc.GetErrorOffset());
+      sprintf(mensagemFalha, "Posicao = %zu", jsonDoc.GetErrorOffset());
       // incluir falha no processo de parse
       logger.log(LOGGER_FALHA, LOG_ERR_PARSE_JSON_FORMAT_VALIDATION, "Verificar formato JSON", mensagemFalha,
           GetParseError_Pt_BR(jsonDoc.GetParseError()), 0);
@@ -189,7 +189,7 @@ Document Rede::parseSchema() {
     if (schemaDoc.HasParseError()) {
 //cout << "ErrorOffset: " << determinarLinhaErro(schemaDoc.GetErrorOffset()) << endl;
       // transpor os dados da falha para a mensagem
-      sprintf(mensagemFalha, "Posicao = %u", schemaDoc.GetErrorOffset());
+      sprintf(mensagemFalha, "Posicao = %zu", schemaDoc.GetErrorOffset());
       // incluir falha no processo de parse
       logger.log(LOGGER_FALHA, LOG_ERR_PARSE_JSON_FORMAT_VALIDATION, "Parse Schema-Rede", mensagemFalha,
           GetParseError_Pt_BR(schemaDoc.GetParseError()), 0);
@@ -560,7 +560,7 @@ void Rede::lerArq() {
       exit(EXIT_SUCCESS);
     }
 
-    int i = 0;
+    // int i = 0;
     // parse do documento raiz do arquivo de entrada
     Document jsonDoc = parseEntrada();
     // caso configurada opcao de termino apos validacao do formato do arquivo JSON

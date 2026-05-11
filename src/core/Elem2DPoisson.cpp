@@ -746,9 +746,9 @@ void elem2dPoisson::faceDetalhes(){
 			cel2D.angES[i]+=(cel2D.sFace[i][j]/cel2D.sFaceMod[i])*cel2D.vecE[i][j];
 		}
 
-		double ortogS [cel2D.dim];
-		ortogS[0]=-cel2D.sFace[i][1]/cel2D.sFaceMod[i];
-		ortogS[1]=cel2D.sFace[i][0]/cel2D.sFaceMod[i];
+		//double ortogS [cel2D.dim];
+		//ortogS[0]=-cel2D.sFace[i][1]/cel2D.sFaceMod[i];
+		//ortogS[1]=cel2D.sFace[i][0]/cel2D.sFaceMod[i];
 		double denf=0.;
 		double numf=0.;
 		//denf=cel2D.vecE[i][0]*ortogS[1]-cel2D.vecE[i][1]*ortogS[0];
@@ -1030,8 +1030,8 @@ void elem2dPoisson::GeraLocal(){
 			int kcc=0;
 			int acoplado;
 			tipoCC(i, diri, vn, rich,acoplado,kcc);
-		    int ind;
-		    double raz;
+		    //int ind;
+		    //double raz;
 			if(diri==1){
 
 				double gradMed [cel2D.dim];

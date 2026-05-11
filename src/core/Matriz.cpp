@@ -1257,9 +1257,9 @@ template<class T>  std::vector<int> SparseMtx<T>::coloreForwardILU() {
         //  std::cout << "O valor " << valor << " aparece " << contagem << " vezes.\n";
       //}
 
-     int corLocal;
+//     int corLocal;
      for (int i = 0; i < tamanho; ++i) {
-     	corLocal=colorMenor[i];
+//     	corLocal=colorMenor[i];
      }
      return color;
  }
@@ -1323,9 +1323,9 @@ template<class T> std::vector<int> SparseMtx<T>::coloreBackwardILU() {
      //}
 
 
-     int corLocal;
+//     int corLocal;
      for (int i = 0; i < tamanho; ++i) {
-     	corLocal=colorMenor[i];
+//     	corLocal=colorMenor[i];
      }
 
      return color;

@@ -272,11 +272,11 @@ Cel::Cel(varGlob1D* Vvg1dSP,const DadosGeo vdutoL,const DadosGeo vduto,
     cdpig=0.;//alteracao2
     indpig=-1;//alteracao2
 
-    double v1=flui.MasEspGas(pres, temp);
+    //double v1=flui.MasEspGas(pres, temp); // unused
     //double v2=flui.MasEspGas(1., 15.6);
-    double v2=1.225*flui.Deng;
-    double v3=flui.RS(pres,temp);
-    double v4=flui.BOFunc(pres,temp);
+    //double v2=1.225*flui.Deng; // unused
+    //double v3=flui.RS(pres,temp); // unused
+    //double v4=flui.BOFunc(pres,temp); // unused
 
 	VolLeveST=((alf*flui.MasEspGas(pres, temp)/(1.225*flui.Deng)/*flui.MasEspGas(1., 15.6)*/)+
 			(1.-alf)*(1-bet)*(1.-flui.BSW)*flui.RS(pres,temp)/flui.BOFunc(pres,temp));
@@ -1246,8 +1246,8 @@ void Cel::avancalf(int& reinicia, int ncel){
 		  (term1Mass/ (1+CoefDTR*fator1/(rlm*duto.area)-coefTransBet*bet*fator1/(rlm*duto.area)))*dt;*/
 
 
-    double rlm=rpC;
-    double fator1=1.;
+    //double rlm=rpC; // unused
+    //double fator1=1.; // unused
     dt1=dt;
     if(alf<=(*vg1dSP).CritCond&&transmassR<0.){
     	transmassR=0.;
@@ -1264,10 +1264,10 @@ void Cel::avancalf(int& reinicia, int ncel){
     double termoTtrans=0.;
     double termoDrholT=0.;
     double jmix=(fabs(QL)+fabs(QG))/duto.area;
-    if(posic==44){
-    	int para;
-    	para=0;
-    }
+    //if(posic==44){
+    //	int para;
+    //	para=0;
+    //}
 
     if(TMModel==0 /*&& alfini>0.1 && alfini<0.9*/){
     	termoPtrans=-(DTransDtp/rpC)*m2d*(dpdt);
@@ -1317,7 +1317,7 @@ void Cel::avancalf(int& reinicia, int ncel){
    alf=alfini+
    		  (term1Mass/ (1+CoefDTR/(rpC*duto.area)))*dt;
 
-   double resto=0.;
+   //double resto=0.; // unused
    if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny) && jmix>1e-3) ||
 		   ((alf<=1e-3)&&(alf>=-1e-3) && jmix<=1e-3)){
 	   alf=fabs(0.);
@@ -1376,21 +1376,21 @@ void Cel::avancbet(int& reinicia, int ncel){
    double term1Mass=0.;
 
    double fator1=rcC*duto.area;
-   double bet0;
+   //double bet0; // unused
    double MliqCR=QLR*betRI*rcRi;
    double MliqC=QL*betI*rcCi;
-   if((MC-Mliqini)*0+1*Mliqini>0)bet0=betLini;//duvidabeta
-   else bet0=betini;
-   double bet1;
-   if((MR-MliqiniR)*0+1*MliqiniR>0)bet1=betini;//duvidabeta
-   else bet1=betRini;
+   //if((MC-Mliqini)*0+1*Mliqini>0)bet0=betLini;//duvidabeta
+   //else bet0=betini;
+   //double bet1; // unused
+   //if((MR-MliqiniR)*0+1*MliqiniR>0)bet1=betini;//duvidabeta
+   //else bet1=betRini;
 
-   double razdx0=dx/(dx+dxL);
-   double razdx1=dxR/(dx+dxR);
-   double tmed0=razdx0*temp+(1-razdx0)*tempL;
-   double tmed1=razdx1*tempR+(1-razdx1)*temp;
-   double rc0=fluicol.MasEspFlu(presaux,tmed0);
-   double rc1=fluicol.MasEspFlu(presauxR,tmed1);
+   //double razdx0=dx/(dx+dxL); // unused
+   //double razdx1=dxR/(dx+dxR); // unused
+   //double tmed0=razdx0*temp+(1-razdx0)*tempL; // unused
+   //double tmed1=razdx1*tempR+(1-razdx1)*temp; // unused
+   //double rc0=fluicol.MasEspFlu(presaux,tmed0); // unused
+   //double rc1=fluicol.MasEspFlu(presauxR,tmed1); // unused
 
    double jmix=fabs(QL)/duto.area;
 
@@ -1431,7 +1431,7 @@ void Cel::avancbet(int& reinicia, int ncel){
 
 	   if(alfini>=1-(*vg1dSP).localtiny)bet=0.;
 
-   double resto=0.;
+   //double resto=0.; // unused
    if(((bet<=(*vg1dSP).localtiny)&&(bet>=-(*vg1dSP).localtiny))){
 	   bet=fabs(0.);
    }
@@ -1512,10 +1512,10 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  	 //if(modelo==0)deriMas=0.;
 	 if (posic != 0 && posic != ncel) {
 
- 		   if(posic>=95 && posic<=98){
- 		   	int para;
- 		   	para=0;
- 		   }
+ 		   //if(posic>=95 && posic<=98){
+ 		   //	int para;
+ 		   //	para=0;
+ 		   //}
  	    double AL=dutoL.area;
  	    double AC=AL;
  	    double AR=AL;
@@ -1524,7 +1524,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  		double siR=siL;
  		//double rhogL= (*fluiL).MasEspGas(presL,tempL);
  		double rhogL= rgL;
- 		double rholL;
+ 		double rholL = 0.0;
  		double rhogC=1.;
  		double rholC=1000.;
  		double rhogR;
@@ -1538,10 +1538,10 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
  		double corDRhol=1.-0*mudaDTL;
  		double corDRholC=1.-0*mudaDT;
 
- 	    if(posic==44){
- 	    	int para;
- 	    	para=0;
- 	    }
+ 	    //if(posic==44){
+ 	    //	int para;
+ 	    //	para=0;
+ 	    //}
 
  	  if(ciclo==0){
 
@@ -1827,7 +1827,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 		}
 		if(acsr.tipo==4&&acsr.bcs.freqnova>1. && j1>=0.){
 		     double vazmix=j1*AC;
-		     double alf0=alf;
+		     //double alf0=alf; // unused
 		     vazmix*=(86400/0.1589876);
 		     //BomCentSub bombavisc=
 		     acsr.bcs.NovaVis(viscmix1,rhomix1,vazmix);
@@ -2126,7 +2126,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
     	   double AL=dutoL.area;
     	   //double rhogL= (*fluiL).MasEspGas(presL,tempL);
     	   double rhogL= rgL;
-    	   double rholL;
+//    	   double rholL = 0.0;
     	   double compres;
     	   double dzdp;
     	   double dpdrho;
@@ -2135,7 +2135,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
     	   double multR;
     	   if(ciclo==0){
 
-  		     rholL = rpL*(1-betL)+rcL*betL;
+//  		     rholL = rpL*(1-betL)+rcL*betL;
   	         compres = (*fluiL).Zdran(presL, tempL);
   		     dzdp = (*fluiL).DZDP(presL, tempL);
   		     dpdrho = rhogL* (1 / (presL * 98066.5) - (1 / compres) * dzdp);
@@ -2177,12 +2177,12 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 		   double AC =dutoR.area;
 		   //double rhog = flui.MasEspGas(pres,temp);
 		   double rhog = rgC;
-		   double rhol;
+		   //double rhol; // unused
 		   if(ciclo==0){
 			   //deriPres*=m2d;
   	         AC =dutoR.area;
   		     rhog = flui.MasEspGas(pres,temp);
-  		     rhol = rpC*(1-bet)+rcC*bet;
+  		     //rhol = rpC*(1-bet)+rcC*bet; // unused
   	         compres = flui.Zdran(pres, temp);
   		     dzdp = flui.DZDP(pres, temp);
   		     dpdrho = rhog* (1 / (pres * 98066.5) - (1 / compres) * dzdp);
@@ -2260,11 +2260,11 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 			  double Amed =0.5*(AC+AR);
 			  double siC=duto.peri;
 			  double rhogC;
-			  double rhogR;
+//			  double rhogR;
 			  double rholC;
 			  if(flui.flashCompleto!=2 || miniTabAtraso>0){
 				  rhogC = flui.MasEspGas(0.5*(presE+pres),tempE);
-				  rhogR = flui.MasEspGas(pres,temp);
+//				  rhogR = flui.MasEspGas(pres,temp);
 				  rholC = flui.MasEspLiq(0.5*(presE+pres),tempE)*(1-betE)+
 						  fluicol.MasEspFlu(0.5*(presE+pres),tempE)*betE;
 			  }
@@ -2297,13 +2297,13 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 			  termoHidro=dphidro/AC;
               termoFric=coefTensC*j1/AC;
 
-			  double ugl=(MC-Mliqini)/rhogC;
-			  double ugr=(MR-MliqiniR)/rhogR;
-			  double dxm=dx;
-			  double coefacelera1L=(-(1-term1)*ugl+0.25*(ugl+ugr)*(1-term1))/dxm;
-			  double coefacelar2L=(term2*ugl-0.25*(ugl+ugr)*term2)/dxm;
-			  double coefacelera1R=(0.25*(ugl+ugr)*(1-term1R))/dxm;
-			  double coefacelar2R=(-0.25*(ugl+ugr)*term2R)/dxm;
+			  //double ugl=(MC-Mliqini)/rhogC; // unused
+			  //double ugr=(MR-MliqiniR)/rhogR; // unused
+			  //double dxm=dx; // unused
+			  //double coefacelera1L=(-(1-term1)*ugl+0.25*(ugl+ugr)*(1-term1))/dxm; // unused
+			  //double coefacelar2L=(term2*ugl-0.25*(ugl+ugr)*term2)/dxm; // unused
+			  //double coefacelera1R=(0.25*(ugl+ugr)*(1-term1R))/dxm; // unused
+			  //double coefacelar2R=(-0.25*(ugl+ugr)*term2R)/dxm; // unused
 
 			  local[0][1] = 0.;
 			  local[0][2] = 0.;
@@ -3081,12 +3081,13 @@ double Cel::termAdSomVel(){
 	if(QL>0)betI=bet;
 	else betI=bet;
 
-	double tempMed;
-	double raz;
-	if(posic==0)tempMed=temp;
-	else{
-		raz=dxL/(dx+dxL);
-		tempMed=(1.-raz)*tempL+raz*temp;
+	//double tempMed; // unused
+//	double raz;
+	//if(posic==0)tempMed=temp;
+	//else{
+	if(posic!=0){
+//		raz=dxL/(dx+dxL);
+		//tempMed=(1.-raz)*tempL+raz*temp;
 	}
 	if(alfI<1e-15){
 		 if(alfI<1-1e-15)val=QL/(duto.area*(1.-alfI));
@@ -3153,7 +3154,7 @@ double Cel::termAdSomVel(){
 			Sum_dCwaxdT = Sum_dCwaxdT + flui.oInterpolatedWaxConcsTDerivOutput[i];
 		}
 
-		double Re_f, Re_delta;
+		double Re_f = 0.0, Re_delta = 0.0;
 		double Fi;
 		double velOilUp=0.;
 		double velSupLiqUp;
@@ -3306,10 +3307,10 @@ void Cel::WaxDeposition(int BooleanPi, double C2_star, double C3_star, int Boole
 
 void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 
-	if(posic==186){
-		int para;
-		para=0;
-	}
+	//if(posic==186){
+	//	int para;
+	//	para=0;
+	//}
 
 
 	double BooleanPi=detalParafina.C2C3;
@@ -3354,26 +3355,26 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		rhoWaxLiq = rhoWaxLiq/SumCwaxLiq;
 		Vwax = 1.0E+3*MW_wax/rhoWaxLiq;
 
-		double Re_f, Re_delta;
+		double Re_f=0., Re_delta=0.;
 		double Fi;
 		double velOilUp=0.;
 		double velSupLiqUp;
 		double alfDn;
-		double betaDn;
+		//double betaDn; // unused
 		double areaDn;
 		double velOilDn=0.;
 		double velSupLiqDn;
 		double alfUp;
-		double betaUp;
+		//double betaUp; // unused
 		double areaUp;
 
 		if(QL>0. && posic>0){
 			areaDn=dutoL.area;
-			betaDn=betL;
+			//betaDn=betL; // unused
 		}
 		else{
 			areaDn=duto.area;
-			betaDn=bet;
+			//betaDn=bet; // unused
 		}
 		if(QG>0. && posic>0){
 			alfDn=alfL;
@@ -3383,11 +3384,11 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		}
 		if(QLR<0.&& posic<ncel){
 			areaUp=dutoR.area;
-			betaUp=betR;
+			//betaUp=betR; // unused
 		}
 		else{
 			areaUp=duto.area;
-			betaUp=bet;
+			//betaUp=bet; // unused
 		}
 		if(MR<0.&& posic<ncel){
 			alfUp=alfR;
@@ -3523,10 +3524,10 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		detParCel.kDep = ((2*flui.dInterpolatedThermCondOutput + kOil +
 						   (flui.dInterpolatedThermCondOutput - kOil)*Fi)/
 						   (2*flui.dInterpolatedThermCondOutput + kOil - 2*(flui.dInterpolatedThermCondOutput - kOil)*Fi))*kOil;
-		if(isnan(delta)){
-			int para;
-			para=0;
-		}
+		//if(isnan(delta)){
+		//	int para;
+		//	para=0;
+		//}
 		if(parafinado==0 && delta>0.){
 			duto.atualizaCamada(delta, rug, cpDep, detParCel.kDep, rhoDep);
 			calor.atualiza(duto, 1);
@@ -3633,12 +3634,13 @@ Vcr<double> Cel::flutua(){
 	 if(QL>0)betI=bet;
 	 else betI=bet;
 
-	 double tempMed;
-	 double raz;
-	 if(posic==0)tempMed=temp;
-	 else{
-		raz=dxL/(dx+dxL);
-		tempMed=(1.-raz)*tempL+raz*temp;
+	 //double tempMed; // unused
+//	 double raz;
+	 //if(posic==0)tempMed=temp;
+	 //else{
+	 if(posic!=0){
+//		raz=dxL/(dx+dxL);
+		//tempMed=(1.-raz)*tempL+raz*temp;
 	 }
 
 	 double vl;

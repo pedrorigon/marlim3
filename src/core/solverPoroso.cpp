@@ -924,8 +924,8 @@ void solverPoro::malhaRegular(double& dx, double& dy){
 				}
 				iele++;
 				if(iele==malha.nele){
-					int para;
-					para=0;
+//					int para;
+//					para=0;
 				}
 			}
 			ycoor+=dy;
@@ -982,7 +982,7 @@ void solverPoro::imprimeMalhaRegular(double minP){
 					flut[i][j]=dados.transfer.Pint;
 				}
 				else if(malhaH[i][j].buraco==3){
-					int ncel=dados.transfer.ncel;
+//					int ncel=dados.transfer.ncel;
 					flut[i][j]=dados.transfer.celula[malhaH[i][j].indEle].Pcamada;
 				}
 				else flut[i][j]=minP;
@@ -1014,7 +1014,7 @@ void solverPoro::imprimeMalhaRegularSW(){
 					flut[i][j]=dados.transfer.celula[0].sWR;
 				}
 				else if(malhaH[i][j].buraco==3){
-					int ncel=dados.transfer.ncel;
+//					int ncel=dados.transfer.ncel;
 					flut[i][j]=dados.transfer.celula[malhaH[i][j].indEle].sWL;
 				}
 			}
@@ -1043,7 +1043,7 @@ void solverPoro::imprimeMalhaRegularAlf(){
 					flut[i][j]=dados.transfer.celula[0].alf;
 				}
 				else if(malhaH[i][j].buraco==3){
-					int ncel=dados.transfer.ncel;
+//					int ncel=dados.transfer.ncel;
 					flut[i][j]=dados.transfer.celula[malhaH[i][j].indEle].alf;
 				}
 			}
@@ -1061,7 +1061,7 @@ void solverPoro::imprimeMalhaRegularAlf(){
 
 void solverPoro::imprimeMalhaRegularAux(double minP){
 	FullMtx<double> flut(dados.nxMH,dados.nyMH);
-	int numero = round((*vg1dSP).tempo);
+//	int numero = round((*vg1dSP).tempo);
 	for(int i=0;i<dados.nxMH;i++){
 		for(int j=0;j<dados.nyMH;j++){
 			if(malhaH[i][j].buraco==0){
@@ -1075,7 +1075,7 @@ void solverPoro::imprimeMalhaRegularAux(double minP){
 					flut[i][j]=dados.transfer.Pint;
 				}
 				else if(malhaH[i][j].buraco==3){
-					int ncel=dados.transfer.ncel;
+//					int ncel=dados.transfer.ncel;
 					flut[i][j]=dados.transfer.celula[malhaH[i][j].indEle].Pcamada;
 				}
 				else flut[i][j]=minP;
@@ -1094,7 +1094,7 @@ void solverPoro::imprimeMalhaRegularAux(double minP){
 
 void solverPoro::imprimeMalhaRegularSWAux(){
 	FullMtx<double> flut(dados.nxMH,dados.nyMH);
-	int numero = round((*vg1dSP).tempo);
+//	int numero = round((*vg1dSP).tempo);
 	for(int i=0;i<dados.nxMH;i++){
 		for(int j=0;j<dados.nyMH;j++){
 			if(malhaH[i][j].buraco==0){
@@ -1132,7 +1132,7 @@ void solverPoro::imprimeMalhaRegularSWAux(){
 
 void solverPoro::imprimeMalhaRegularAlfAux(){
 	FullMtx<double> flut(dados.nxMH,dados.nyMH);
-	int numero = round((*vg1dSP).tempo);
+//	int numero = round((*vg1dSP).tempo);
 	for(int i=0;i<dados.nxMH;i++){
 		for(int j=0;j<dados.nyMH;j++){
 			if(malhaH[i][j].buraco==0){
@@ -1143,7 +1143,7 @@ void solverPoro::imprimeMalhaRegularAlfAux(){
 					flut[i][j]=dados.transfer.celula[0].alf;
 				}
 				else if(malhaH[i][j].buraco==3){
-					int ncel=dados.transfer.ncel;
+//					int ncel=dados.transfer.ncel;
 					flut[i][j]=dados.transfer.celula[malhaH[i][j].indEle].alf;
 				}
 			}
@@ -2119,19 +2119,19 @@ void solverPoro::transientePoroso(double& delt){
 					indsra+=dimNoZero;
 					termolivre[i]=malha.mlh2d[i].TL[0];
 				}
-				double eps=0.000001;
-				int iter=malha.nele;
-				int retorna;
+//				double eps=0.000001;
+//				int iter=malha.nele;
+//				int retorna;
 				for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh2d[i].cel2D.presC;
-				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
+//				if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//				else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//				else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
 				//retorna=matglob.CG(malha.vecSolv,termolivre,eps,iter,1);
 				//if(retorna==1)break;
 				norma=0.;
-				double val;
-				double val2;
-				int val3;
+//				double val;
+//				double val2;
+//				int val3;
 				for(int i=0;i<malha.nele;i++){
 					malha.mlh2d[i].cel2D.presCI=malha.mlh2d[i].cel2D.presC;
 					malha.mlh2d[i].cel2D.presC=malha.vecSolv[i];
@@ -2146,9 +2146,9 @@ void solverPoro::transientePoroso(double& delt){
 							int acoplado=0;
 							malha.mlh2d[i].tipoCC(j, diri, vn, rich, acoplado, kcc);
 							if(diri==1){
-								val=malha.mlh2d[i].cel2D.presC;
-								val2=malha.mlh2d[i].Qtotal[j];
-								val3=0;
+//								val=malha.mlh2d[i].cel2D.presC;
+//								val2=malha.mlh2d[i].Qtotal[j];
+//								val3=0;
 							}
 						}
 					}
@@ -2156,7 +2156,7 @@ void solverPoro::transientePoroso(double& delt){
 				norma/=malha.nele;
 			    if(dados.acop==1){
 
-			    	double presresAux=dados.transfer.presRes2;
+//			    	double presresAux=dados.transfer.presRes2;
 			    	dados.transfer.presRes2=0.;
 					for(int i=0;i<malha.nele;i++){
 				    	for(int j=0; j<malha.mlh2d[i].cel2D.nvert;j++){
@@ -2228,8 +2228,8 @@ void solverPoro::transientePoroso(double& delt){
 			    }
 
 				if((*vg1dSP).tempo>=4040){
-						int para;
-						para=0;
+//						int para;
+//						para=0;
 
 						//imprimeMalhaRegularAux(minP);
 						//imprimeMalhaRegularSWAux();
@@ -2312,7 +2312,7 @@ void solverPoro::transientePoroso(double& delt){
 			  	  FullMtx<double> matrizsaida(dados.transfer.nglobal,11);
 			  	  matrizsaida=dados.transfer.perfil();
 			  	  ostringstream saida;
-			  	  int numero = round((*vg1dSP).tempo);
+//			  	  int numero = round((*vg1dSP).tempo);
 			  	  //saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << kontaTempoImp
 							//<<"-"<<posicMarlim<< ".dat";
 			  	  saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*vg1dSP).tempo
@@ -2351,7 +2351,7 @@ void solverPoro::imprimePseudo(){
   	  FullMtx<double> matrizsaida(dados.transfer.nglobal,11);
   	  matrizsaida=dados.transfer.perfil();
   	  ostringstream saida;
-  	  int numero = round(0);
+//  	  int numero = round(0);
   	  //saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << kontaTempoImp
 				//<<"-"<<posicMarlim<< ".dat";
   	  saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << "0"
@@ -2392,10 +2392,10 @@ void solverPoro::pseudoTransientePoroso(){
 			else
 				delt = dados.temp.dtmax[ind];*/
 
-			int ind;
-			double raz;
-			double inf;
-			double sup;
+//			int ind;
+//			double raz;
+//			double inf;
+//			double sup;
 
 			lAcopTot=0.;
 			if(dados.acop==1){
@@ -2661,17 +2661,17 @@ void solverPoro::pseudoTransientePoroso(){
 					indsra+=dimNoZero;
 					termolivre[i]=malha.mlh2d[i].TL[0];
 				}
-				double eps=0.000001;
-				int iter=malha.nele;
-				int retorna;
+//				double eps=0.000001;
+//				int iter=malha.nele;
+//				int retorna;
 				for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh2d[i].cel2D.presC;
-				retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//				retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
 				//retorna=matglob.CG(malha.vecSolv,termolivre,eps,iter,1);
 				//if(retorna==1)break;
 				norma=0.;
-				double val;
-				double val2;
-				int val3;
+//				double val;
+//				double val2;
+//				int val3;
 				for(int i=0;i<malha.nele;i++){
 					malha.mlh2d[i].cel2D.presCI=malha.mlh2d[i].cel2D.presC;
 					malha.mlh2d[i].cel2D.presC=malha.vecSolv[i];
@@ -2686,9 +2686,9 @@ void solverPoro::pseudoTransientePoroso(){
 							int acoplado=0;
 							malha.mlh2d[i].tipoCC(j, diri, vn, rich, acoplado, kcc);
 							if(diri==1){
-								val=malha.mlh2d[i].cel2D.presC;
-								val2=malha.mlh2d[i].Qtotal[j];
-								val3=0;
+//								val=malha.mlh2d[i].cel2D.presC;
+//								val2=malha.mlh2d[i].Qtotal[j];
+//								val3=0;
 							}
 						}
 					}
@@ -2696,7 +2696,7 @@ void solverPoro::pseudoTransientePoroso(){
 				norma/=malha.nele;
 			    if(dados.acop==1){
 
-			    	double presresAux=dados.transfer.presRes2;
+//			    	double presresAux=dados.transfer.presRes2;
 			    	dados.transfer.presRes2=0.;
 					for(int i=0;i<malha.nele;i++){
 				    	for(int j=0; j<malha.mlh2d[i].cel2D.nvert;j++){
@@ -2768,8 +2768,8 @@ void solverPoro::pseudoTransientePoroso(){
 			    }
 
 				if((*vg1dSP).tempo>=4040){
-						int para;
-						para=0;
+//						int para;
+//						para=0;
 
 						//imprimeMalhaRegularAux(minP);
 						//imprimeMalhaRegularSWAux();
@@ -2906,13 +2906,13 @@ void solverPoro::pseudoTransientePoroso(){
 }
 
 void solverPoro::avancoSW(double delt){
-	int indsra;
+//	int indsra;
 	reinicia=0;
 
-	int ind;
-	double raz;
-	double inf;
-	double sup;
+//	int ind;
+//	double raz;
+//	double inf;
+//	double sup;
 
 	lAcopTot=0.;
 	if(dados.acop==1){
@@ -3212,19 +3212,19 @@ void solverPoro::avancoPressao(){
 				indsra+=dimNoZero;
 				termolivre[i]=malha.mlh2d[i].TL[0];
 			}
-			double eps=0.000001;
-			int iter=malha.nele;
-			int retorna;
+//			double eps=0.000001;
+//			int iter=malha.nele;
+//			int retorna;
 #pragma omp parallel for num_threads(dados.nthrdLocal)
 			for(int i=0;i<malha.nele;i++)malha.vecSolv[i]=malha.mlh2d[i].cel2D.presC;
-			if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-			else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
-			else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
+//			if(dados.solverMat==0)retorna=matglob.GMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//			else if(dados.solverMat==1)retorna=matglob.FGMRES(malha.vecSolv,termolivre,eps,iter,precn,40+0*malha.nele-1);
+//			else retorna=matglob.BiCGStab(malha.vecSolv,termolivre,eps,iter,precn);
 			//if(retorna==1)break;
 			norma=0.;
-			double val;
-			double val2;
-			int val3;
+//			double val;
+//			double val2;
+//			int val3;
 			for(int i=0;i<malha.nele;i++){
 				malha.mlh2d[i].cel2D.presCI=malha.mlh2d[i].cel2D.presC;
 				malha.mlh2d[i].cel2D.presC=malha.vecSolv[i];
@@ -3239,9 +3239,9 @@ void solverPoro::avancoPressao(){
 						int acoplado=0;
 						malha.mlh2d[i].tipoCC(j, diri, vn, rich, acoplado, kcc);
 						if(diri==1){
-							val=malha.mlh2d[i].cel2D.presC;
-							val2=malha.mlh2d[i].Qtotal[j];
-							val3=0;
+//							val=malha.mlh2d[i].cel2D.presC;
+//							val2=malha.mlh2d[i].Qtotal[j];
+//							val3=0;
 						}
 					}
 				}
@@ -3249,7 +3249,7 @@ void solverPoro::avancoPressao(){
 			norma/=malha.nele;
 			if(dados.acop==1){
 
-			    double presresAux=dados.transfer.presRes2;
+//			    double presresAux=dados.transfer.presRes2;
 			    dados.transfer.presRes2=0.;
 				for(int i=0;i<malha.nele;i++){
 				    for(int j=0; j<malha.mlh2d[i].cel2D.nvert;j++){
@@ -3356,7 +3356,7 @@ void solverPoro::avancoPressao(){
 			  	  FullMtx<double> matrizsaida(dados.transfer.nglobal,11);
 			  	  matrizsaida=dados.transfer.perfil();
 			  	  ostringstream saida;
-			  	  int numero = round((*vg1dSP).tempo);
+//			  	  int numero = round((*vg1dSP).tempo);
 			  	  //saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << kontaTempoImp
 							//<<"-"<<posicMarlim<< ".dat";
 			  	  saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*vg1dSP).tempo

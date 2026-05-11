@@ -60,9 +60,9 @@ FA_Hidrato_Servico::FA_Hidrato_Servico(const SProd& sistemaRef) : sistema(sistem
     fracFWcarregada =sistema.arq.fracFWcarregada;
 
     //rhoH = sistema.arq.rhoH; //agora é definido pelas estruturas sI ou sII
-    double rhoH_sI  = 930.0;   // kg/m³
-    double rhoH_sII = 910.0;   // kg/m³
-    double rhoW     = 1000.0;  // kg/m³
+    // double rhoH_sI  = 930.0;   // kg/m³
+    // double rhoH_sII = 910.0;   // kg/m³
+    // double rhoW     = 1000.0;  // kg/m³
 
     coefEsteq = sistema.arq.coefEsteq;
 
@@ -82,7 +82,7 @@ FA_Hidrato_Servico::FA_Hidrato_Servico(const SProd& sistemaRef) : sistema(sistem
     std::cout << "            M = " << MM_W << " g/mol\n";   //" kg/mol\n";
     std::cout << "            w = " << W_Hamm << "\n"; */
 
-    double delta_T;
+    double delta_T = 0.0;
     if (inibidor=="Etanol") {
     delta_T = (K_Hamm_Etanol * W_Hamm) / (MM_W * (1.0 - W_Hamm));
     std::cout << "[HAMMERSCHMIDT] delta_T [oC] = " << delta_T << "\n";
@@ -126,6 +126,7 @@ void FA_Hidrato_Servico::salvarCurvaDeslocadaG(const std::string& nomeArquivo) {
 std::tuple<std::vector<double>, std::vector<double>> FA_Hidrato_Servico::gerarCurvaComInibidorG(const std::vector<double>& tempBase,
 	    const std::vector<double>& pressBase,
 	    double K, double M, double w) {
+    return {};
 }
 
 

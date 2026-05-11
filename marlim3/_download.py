@@ -118,6 +118,77 @@ def download_executable(silent=False):
         return False
 
 
+def _check_executable_runs():
+    """Check if the executable can actually run on this system (e.g. GLIBC compatibility)."""
+    import subprocess
+    exe_path = get_executable_path()
+    if not exe_path.exists():
+        return False
+    try:
+        result = subprocess.run(
+            [str(exe_path), "--help"],
+            capture_output=True, timeout=5,
+        )
+        # Even if exit code != 0, if it ran at all it's compatible
+        return True
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    except Exception:
+        return False
+
+
+def _try_build_from_source():
+    """Attempt to build the executable from source using CMake."""
+    import subprocess
+    import shutil
+
+    package_dir = Path(__file__).parent
+    root_dir = package_dir.parent
+
+    cmake_lists = root_dir / "CMakeLists.txt"
+    if not cmake_lists.exists():
+        return False
+
+    if not shutil.which("cmake"):
+        return False
+
+    cmake_preset = os.environ.get('MARLIM3_CMAKE_PRESET', 'gcc-release')
+
+    try:
+        print("[INFO] Compiling Marlim3 from source...")
+        sys.stdout.flush()
+
+        result = subprocess.run(
+            ["cmake", "--preset", cmake_preset],
+            cwd=root_dir, capture_output=True,
+        )
+        if result.returncode != 0:
+            return False
+
+        import multiprocessing
+        nproc = str(multiprocessing.cpu_count())
+        result = subprocess.run(
+            ["cmake", "--build", "--preset", cmake_preset, f"-j{nproc}"],
+            cwd=root_dir, capture_output=True,
+        )
+        if result.returncode != 0:
+            return False
+
+        exe_name = "Marlim3.exe" if platform.system() == "Windows" else "Marlim3"
+        built_exe = root_dir / "build" / exe_name
+        if built_exe.exists():
+            dest = package_dir / exe_name
+            shutil.copy2(built_exe, dest)
+            if platform.system() != "Windows":
+                dest.chmod(0o755)
+            print("[OK] Compiled and installed Marlim3 from source.")
+            return True
+    except Exception:
+        pass
+
+    return False
+
+
 def ensure_executable():
     """Ensure the executable exists, download if necessary.
     
@@ -127,10 +198,30 @@ def ensure_executable():
     if os.environ.get('MARLIM3_SKIP_BUILD'):
         return
     
-    # Check if executable exists
-    if executable_exists():
+    # Check if executable exists and works
+    if executable_exists() and _check_executable_runs():
         return
-    
+
+    if executable_exists():
+        # Exists but doesn't run (e.g. GLIBC mismatch)
+        print("\n" + "!" * 80)
+        print("[WARNING] Marlim3 executable exists but cannot run on this system.")
+        print("[WARNING] This is likely a GLIBC version mismatch.")
+        print("[INFO] Attempting to build from source...")
+        print("!" * 80)
+
+        if _try_build_from_source():
+            return
+
+        print("\n" + "!" * 80)
+        print("[WARNING] Could not build from source automatically.")
+        print("[WARNING] To fix, compile manually:")
+        print("           cmake --preset gcc-release")
+        print("           cmake --build --preset gcc-release -j$(nproc)")
+        print("           cp build/Marlim3 marlim3/")
+        print("!" * 80 + "\n")
+        return
+
     # Try to download
     print("\n" + "!" * 80)
     print("MARLIM3: Executable not found. Downloading from GitHub releases...")
@@ -143,4 +234,23 @@ def ensure_executable():
         print("[WARNING] Failed to download Marlim3 executable.")
         print("[WARNING] The package can still be imported, but simulation will not work.")
         print("[WARNING] Set MARLIM3_COMPILE_FROM_SOURCE=1 and reinstall to compile from source.")
+        print("!" * 80 + "\n")
+        return
+
+    # Verify downloaded binary actually works
+    if not _check_executable_runs():
+        print("\n" + "!" * 80)
+        print("[WARNING] Downloaded executable is not compatible with this system.")
+        print("[INFO] Attempting to build from source...")
+        print("!" * 80)
+
+        if _try_build_from_source():
+            return
+
+        print("\n" + "!" * 80)
+        print("[WARNING] Could not build from source automatically.")
+        print("[WARNING] To fix, compile manually:")
+        print("           cmake --preset gcc-release")
+        print("           cmake --build --preset gcc-release -j$(nproc)")
+        print("           cp build/Marlim3 marlim3/")
         print("!" * 80 + "\n")
