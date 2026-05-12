@@ -169,7 +169,8 @@ jobs:
 
           cmake --preset gcc-release \
             -DCMAKE_CXX_COMPILER="g++-${GCC_VERSION}" \
-            -DCMAKE_Fortran_COMPILER="gfortran-${GCC_VERSION}"
+            -DCMAKE_Fortran_COMPILER="gfortran-${GCC_VERSION}" \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3 -mcpu=native -ffp-contract=off -funroll-loops -DNDEBUG"
           cmake --build --preset gcc-release -j$(sysctl -n hw.ncpu)
 
       - name: Verify binary
