@@ -38,10 +38,26 @@ def get_platform_asset_info():
 
 
 def get_executable_path():
-    """Get the path where the executable should be located."""
+    """Get the path where the executable should be located.
+
+    Checks in order:
+    1. marlim3/ (package directory — installed or downloaded)
+    2. build/   (local CMake build, avoids needing to copy)
+    """
     package_dir = Path(__file__).parent
     asset_name, exe_name = get_platform_asset_info()
-    return package_dir / exe_name
+
+    pkg_exe = package_dir / exe_name
+    if pkg_exe.exists():
+        return pkg_exe
+
+    # Also accept the executable produced by a local CMake build
+    build_exe = package_dir.parent / 'build' / exe_name
+    if build_exe.exists():
+        return build_exe
+
+    # Default location (does not exist yet — will be downloaded)
+    return pkg_exe
 
 
 def executable_exists():
