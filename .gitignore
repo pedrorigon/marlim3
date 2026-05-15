@@ -74,6 +74,7 @@ env.bak/
 venv.bak/
 config.local.*
 .python-version
+CMakeUserPresets.json
 
 # Ferramentas Python
 profile_default/
