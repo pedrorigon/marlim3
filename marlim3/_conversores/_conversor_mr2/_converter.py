@@ -87,10 +87,12 @@ def converter_mr2_para_json(mr2_path, pvt_path=None, mr2_binary_path=None, simul
 
     # --- Apply parsers ---
 
-    # Correction factors
-    correcao = parse_correcao(resultados)
-    if correcao:
-        mr3['correcao'] = correcao
+    # Correction factors — DISABLED: MR2 correction factors don't translate
+    # correctly to MR3's thermal model (sentinels, extreme/negative values).
+    # correcao = parse_correcao(resultados)
+    # if correcao:
+    #     mr3['correcao'] = correcao
+    correcao = None
 
     # Master1 (wellhead valve)
     master1 = parse_master1(mr2_entrada, resultados)
