@@ -34,7 +34,7 @@ pip install marlim3
 
 ### Option 2: Use the executable directly
 
-You can download the `Marlim3` executable for Linux or Windows from the Releases section on GitHub. This standalone executable allows you to run simulations directly from the terminal, without the need to install the Python package. Detailed instructions are provided below.
+You can download the `Marlim3` executable for Linux, Windows or Mac from the Releases section on GitHub. This standalone executable allows you to run simulations directly from the terminal, without the need to install the Python package. Detailed instructions are provided below.
 
 ### Option 3: Developer setup (uv)
 
