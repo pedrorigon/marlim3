@@ -29,17 +29,6 @@ const double g_in=32.174;            // Aceleração da gravidade em ft/s² (sis
 // Cálculo do fator de atrito usando diagrama de Moody
 void frictionFactor(double reynolds, double roughness, double& frictionFactorValue);
 
-double interpolate(const std::vector<double>& xValues, const std::vector<double>& yValues,
-                   double xTarget, int degree, int numPoints);
-
-double interpolate2D(const std::vector<double>& verticalPoints,
-                     const std::vector<double>& horizontalPoints,
-                     const std::vector<double>& matrixValues,
-                     int numVertical, int numHorizontal,
-                     int verticalDegree, int horizontalDegree,
-                     double verticalTarget, double horizontalTarget);
-
-
 // Aceleração de convergência para cálculos iterativos
 void accelerateConvergence(double& currentValue, double& previousValue, unsigned char& convergeStatus, 
                           double tolerance, double& auxValueA, double& auxValueB);
