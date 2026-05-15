@@ -314,8 +314,7 @@ def _build_duto_producao(ind, id_duto, id_corte, id_formacao, resultados, correc
     if natureza not in {5, 7}:
         duto['ambienteExterno'] = ambiente
 
-    if corr_mr2 is not None:
-        duto['correlacaoMR2'] = corr_mr2
+    duto['correlacaoMR2'] = corr_mr2 if corr_mr2 is not None else 6
 
     return duto
 
