@@ -34,7 +34,31 @@ pip install marlim3
 
 ### Option 2: Use the executable directly
 
-You can download the `Marlim3` executable for Linux or Windows from the Releases section on GitHub. This standalone executable allows you to run simulations directly from the terminal, without the need to install the Python package. Detailed instructions are provided below.
+You can download the `Marlim3` executable for Linux, Windows or Mac from the Releases section on GitHub. This standalone executable allows you to run simulations directly from the terminal, without the need to install the Python package. Detailed instructions are provided below.
+
+### Option 3: Developer setup (uv)
+
+For development, use [uv](https://docs.astral.sh/uv/) to manage the Python environment and dependencies.
+
+**Step 1 — Install dependencies and the Python package:**
+
+```bash
+uv sync --group dev
+```
+
+This creates a `.venv` with Python 3.12+, installs all dev tools (pytest, flake8, jupyter, etc.), and installs `marlim3` in editable mode. After this step you can already use `import marlim3` in your scripts:
+
+```bash
+uv run python -c "import marlim3; print(marlim3.__version__)"
+```
+
+**Step 2 — Build and register the C++/Fortran executable** (required to run simulations):
+
+See [Compilation](#compilation) below. After building, copy `build/Marlim3` to `marlim3/` and run:
+
+```bash
+MARLIM3_SKIP_BUILD=1 uv sync
+```
 
 ## Usage
 
@@ -107,15 +131,48 @@ Compilation is only necessary if you need to rebuild the executable from source.
 
 - GCC/G++ >= 9.0
 - GFortran >= 9.0
+- CMake >= 3.16
 
 ### Build the executable
 
+The project uses [CMake presets](CMakePresets.json). Available presets: `gcc-release`, `gcc-debug`, `clang-release`, `clang-debug`.
+
 ```bash
-cd src
-make clean all
+# Configure (output goes to build/)
+cmake --preset gcc-release
+
+# Build
+cmake --build --preset gcc-release -j$(nproc)
 ```
 
-If you wish to use the new executable with the Python package, copy the generated file to the `marlim3` directory and install it locally using pip.
+The compiled executable is placed at `build/Marlim3`.
+
+To use it with the Python package, copy it to the `marlim3/` directory:
+
+```bash
+cp build/Marlim3 marlim3/
+```
+
+Then activate the package locally (skipping recompilation):
+
+```bash
+MARLIM3_SKIP_BUILD=1 uv sync
+```
+
+### Run tests
+
+```bash
+uv run pytest tests/ -v
+```
+
+### Run the GUI
+
+```bash
+uv sync --group gui
+uv run streamlit run gui/app.py
+```
+
+The GUI auto-detects the executable from `build/Marlim3`.
 
 ## Note
 

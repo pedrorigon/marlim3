@@ -241,6 +241,38 @@ class Tramo:
 
     ###########################################################################
 
+    def from_mr2(self, mr2_path, pvt_path=None, mr2_binary_path=None, simula_mr2=False):
+        """
+        Load a Marlim2 (.mr2) model by converting it to Marlim3 format.
+
+        Args:
+            mr2_path: Path to the .mr2 file.
+            pvt_path: Optional path to a PVT table file (.tab/.ctm).
+            mr2_binary_path: Optional path to the legacy MR2 simulator binary.
+                             Required only when the .mr2 file lacks embedded
+                             simulation results.
+            simula_mr2: If True, forces re-simulation even if results exist.
+        """
+        from .._conversores._conversor_mr2 import converter_mr2_para_json
+
+        data = converter_mr2_para_json(
+            mr2_path,
+            pvt_path=pvt_path,
+            mr2_binary_path=mr2_binary_path,
+            simula_mr2=simula_mr2,
+        )
+        self.from_json(data, is_string=True)
+
+        # Set label from filename
+        if not hasattr(self, 'label') or not self.label:
+            import os
+            nome = os.path.basename(mr2_path)
+            if nome.endswith('.mr2'):
+                nome = nome[:-4]
+            self.label = nome
+
+    ###########################################################################
+
     def simular(self, kind='PRODUTOR', 
                 label='marlim3_model', 
                 diretorio='marlim3_resultados',
@@ -259,8 +291,8 @@ class Tramo:
         if label != 'marlim3_model':
             self.label = label
 
-        with pkg_resources.path('marlim3', 
-                                executavel_name) as executavel:
+        with pkg_resources.as_file(
+                pkg_resources.files('marlim3').joinpath(executavel_name)) as executavel:
 
             filename = label+'.json'
             
@@ -382,8 +414,7 @@ class Tramo:
                     except FileNotFoundError:
                         pass
 
-            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log'),
-                                os.path.join(os.getcwd(),'EventosExternos.dat')]:
+            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log')]:
                 try:
                     if os.path.exists(origin_file):
                         destination_file = os.path.join(diretorio, os.path.basename(origin_file))

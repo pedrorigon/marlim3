@@ -74,6 +74,7 @@ env.bak/
 venv.bak/
 config.local.*
 .python-version
+CMakeUserPresets.json
 
 # Ferramentas Python
 profile_default/
@@ -139,11 +140,13 @@ Icon
 *.dat
 *.p
 saida_testes/
+regression_output/
 *marlim3_resultados*
 *resultados*
 *RedeInterna*
 *marlim3_model.json*
 *marlim3_rede.json*
+*mvm
 
 # Versionamento interno
 versao.h

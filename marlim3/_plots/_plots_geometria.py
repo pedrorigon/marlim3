@@ -36,20 +36,34 @@ def _plotar_geometria(tramo):
     config_inicial = getattr(tramo, "configuracaoInicial", None) or {}
     if isinstance(config_inicial, dict):
         modo_xy = config_inicial.get("modoXY", False)
+        segue_escoamento = config_inicial.get("sentidoGeometriaSegueEscoamento", True)
     else:
         modo_xy = getattr(config_inicial, "modoXY", False)
+        segue_escoamento = getattr(config_inicial, "sentidoGeometriaSegueEscoamento", True)
+
+    # When sentidoGeometriaSegueEscoamento=false:
+    # - Duct 0 is at the platform, last duct is at the reservoir
+    # - Angles are defined relative to flow direction (reservoir→platform)
+    # - For geometry plotting, we reverse ducts to traverse reservoir→platform
+    # - The -dx convention in service already mirrors the x-direction
+    if segue_escoamento:
+        dutos_prod_plot = tramo.dutosProducao
+        angle_offset_prod = 0.0
+        angle_offset_serv = 0.0
+    else:
+        dutos_prod_plot = list(reversed(tramo.dutosProducao))
+        angle_offset_prod = 0.0
+        angle_offset_serv = 0.0
 
     # Processando dutos de produção
-    for idx, duto in enumerate(tramo.dutosProducao):
+    for idx, duto in enumerate(dutos_prod_plot):
         if modo_xy and "xCoor" in duto and "yCoor" in duto:
-            # In XY mode, xCoor/yCoor represent absolute endpoint coordinates.
-            # For production ducts starting from origin, we can use them directly.
             x_coords_prod.append(float(duto["xCoor"]))
             y_coords_prod.append(float(duto["yCoor"]))
         elif "angulo" in duto:
             # Angle mode: compute displacement from angle and length
             comprimento = _get_duto_length(duto)
-            ang = float(duto["angulo"])
+            ang = float(duto["angulo"]) + angle_offset_prod
             dx = comprimento * math.cos(ang)
             dy = comprimento * math.sin(ang)
             x_coords_prod.append(x_coords_prod[-1] + dx)
@@ -63,7 +77,8 @@ def _plotar_geometria(tramo):
             f"Acoplamento Térmico: {duto.get('acoplamentoTermico', 'N/A')}"
         )
 
-    # Coordenadas iniciais da plataforma (último ponto da produção)
+    # Coordenadas iniciais da plataforma
+    # In both cases, after traversal production ends at the platform
     platform_x = x_coords_prod[-1]
     platform_y = y_coords_prod[-1]
 
@@ -74,15 +89,16 @@ def _plotar_geometria(tramo):
         y_coords_serv.append(platform_y)
 
     # Processando dutos de serviço
+    # Service flows platform→reservoir; when segue_escoamento=false, duct 0
+    # is already at the platform (our starting point), so no reversal needed.
     if tramo.dutosServico:
-        for idx, duto in enumerate(tramo.dutosServico):
+        dutos_serv_plot = tramo.dutosServico
+        for idx, duto in enumerate(dutos_serv_plot):
             if modo_xy and "xCoor" in duto and "yCoor" in duto:
-                # In XY mode, compute delta from previous duct's xCoor/yCoor
-                # (first duct's reference is origin 0,0)
                 if idx == 0:
                     prev_x, prev_y = 0.0, 0.0
                 else:
-                    prev_duto = tramo.dutosServico[idx - 1]
+                    prev_duto = dutos_serv_plot[idx - 1]
                     prev_x = float(prev_duto.get("xCoor", 0))
                     prev_y = float(prev_duto.get("yCoor", 0))
                 dx = float(duto["xCoor"]) - prev_x
@@ -90,9 +106,8 @@ def _plotar_geometria(tramo):
                 x_coords_serv.append(x_coords_serv[-1] + dx)
                 y_coords_serv.append(y_coords_serv[-1] + dy)
             elif "angulo" in duto:
-                # Angle mode: invert X direction for service ducts
                 comprimento = _get_duto_length(duto)
-                ang = float(duto["angulo"])
+                ang = float(duto["angulo"]) + angle_offset_serv
                 dx = comprimento * math.cos(ang)
                 dy = comprimento * math.sin(ang)
                 x_coords_serv.append(x_coords_serv[-1] - dx)
