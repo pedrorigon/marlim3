@@ -126,7 +126,7 @@ jobs:
 
       - name: Build (release)
         run: |
-          cmake --preset gcc-release
+          cmake --preset gcc-release -DCMAKE_EXE_LINKER_FLAGS="-static -fopenmp"
           cmake --build --preset gcc-release -j$(nproc)
 
       - name: Verify executable
