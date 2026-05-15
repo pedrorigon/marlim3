@@ -259,8 +259,8 @@ class Tramo:
         if label != 'marlim3_model':
             self.label = label
 
-        with pkg_resources.path('marlim3', 
-                                executavel_name) as executavel:
+        with pkg_resources.as_file(
+                pkg_resources.files('marlim3').joinpath(executavel_name)) as executavel:
 
             filename = label+'.json'
             
@@ -382,8 +382,7 @@ class Tramo:
                     except FileNotFoundError:
                         pass
 
-            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log'),
-                                os.path.join(os.getcwd(),'EventosExternos.dat')]:
+            for origin_file in [os.path.join(os.getcwd(), 'simulacao.log')]:
                 try:
                     if os.path.exists(origin_file):
                         destination_file = os.path.join(diretorio, os.path.basename(origin_file))
