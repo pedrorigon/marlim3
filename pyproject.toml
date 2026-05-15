@@ -30,6 +30,8 @@ dependencies = [
     "ipython",
     "jinja2",
     "requests",
+    "xmltodict",
+    "lxml"
 ]
 
 [project.urls]
