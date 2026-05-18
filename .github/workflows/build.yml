@@ -42,7 +42,7 @@ jobs:
       - name: Install package + dependencies
         env:
           MARLIM3_SKIP_BUILD: 1
-        run: uv sync --group dev
+        run: uv sync --locked --group dev
 
       - name: Lint with flake8
         run: |
@@ -126,8 +126,8 @@ jobs:
 
       - name: Build (release)
         run: |
-          cmake --preset gcc-release -DCMAKE_EXE_LINKER_FLAGS="-static -fopenmp"
-          cmake --build --preset gcc-release -j$(nproc)
+          cmake --preset mingw-release
+          cmake --build --preset mingw-release -j$(nproc)
 
       - name: Verify executable
         run: |
