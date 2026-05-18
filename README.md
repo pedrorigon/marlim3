@@ -43,7 +43,7 @@ For development, use [uv](https://docs.astral.sh/uv/) to manage the Python envir
 **Step 1 — Install dependencies and the Python package:**
 
 ```bash
-uv sync --group dev
+uv sync --locked --group dev
 ```
 
 This creates a `.venv` with Python 3.12+, installs all dev tools (pytest, flake8, jupyter, etc.), and installs `marlim3` in editable mode. After this step you can already use `import marlim3` in your scripts:
@@ -57,7 +57,7 @@ uv run python -c "import marlim3; print(marlim3.__version__)"
 See [Compilation](#compilation) below. After building, copy `build/Marlim3` to `marlim3/` and run:
 
 ```bash
-MARLIM3_SKIP_BUILD=1 uv sync
+MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
 
 ## Usage
@@ -172,7 +172,7 @@ cp build/Marlim3 marlim3/
 Then activate the package locally (skipping recompilation):
 
 ```bash
-MARLIM3_SKIP_BUILD=1 uv sync
+MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
 
 ### Run tests
