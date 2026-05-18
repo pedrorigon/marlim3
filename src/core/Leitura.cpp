@@ -5501,12 +5501,15 @@ void Ler::parse_fluido_gas(JSON_entrada_fluidoGas& fluido_gas_json) {
 	double aemul = 0.;
 	double bemul = 0.;
 	double PHI100=0.;
+	int usaFlash=0;
 
 	string chaveJson("#/fluidosGas");
 
 	// caso a propriedade "ativo" esteja habilitada
 	if (is_ativo(fluido_gas_json)) {
 		if(flashCompleto!=2){
+			if (fluido_gas_json.usaTabelaFlash().exists() && flashCompleto==1)usaFlash=fluido_gas_json.usaTabelaFlash();
+			if(usaFlash==0){
 			// de-para do elemento "fluido_gas" do json para o struct flug
 			double deng = fluido_gas_json.densidadeGas();
 			double yco2 = 0.;
@@ -5520,6 +5523,10 @@ void Ler::parse_fluido_gas(JSON_entrada_fluidoGas& fluido_gas_json) {
 			flug.dzdpP = dzdpP;  //15-06-2018
 			flug.dzdtP = dzdtP;  //15-06-2018
 			flug.npontos = npontos;
+			}
+			else if(usaFlash==1){
+				flug=flup[0];
+			}
 		}
 		else{
 			tabg=0;
@@ -13666,7 +13673,7 @@ void Ler::lerArq() {
 		parse_corte(jsonDoc.secaoTransversal());
 
 		// caso seja simulacao do sistema de producao
-		if (pocinjec == 0 || transiente==0) {
+		if (pocinjec == 0 && transiente==1) {
 			// obter os valores dos atributos do elemento "tempo" do Json
 			parse_tempo(jsonDoc.tempo());
 		} else {
@@ -13678,6 +13685,15 @@ void Ler::lerArq() {
 			dtmaxserie.tempo[0] = 0;
 			dtmaxserie.valor[0] = 1.;
 			dtmax = dtmaxserie.valor[0];
+
+			nsegrega= 1;
+			vecTSegrega = new double[nsegrega];
+			vecSegrega = new int[nsegrega];
+			vecTSegrega[0]  = 0;
+			vecSegrega[0]  = 1;
+			modoSegrega=vecSegrega[0];
+			nsnp=0;
+			tempsnp=0;
 		}
 		// caso a chave "tabela" exista ativa
 		if (contemChaveAtiva(jsonDoc, tabela)
@@ -18373,27 +18389,25 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 
 	}
 
-	if (tempo > 5000.) {
-//		int para;
-//		para = 0;
-	}
-	indraz(ind, raz, tempo, dtmaxserie.parserie, dtmaxserie.tempo);
-	double Tinf = dtmaxserie.valor[ind];
-	double Tsup;
-	if (ind < dtmaxserie.parserie - 1)
-		Tsup = dtmaxserie.valor[ind + 1];
-	else
-		Tsup = dtmaxserie.valor[ind];
-	dtmax = Tinf * raz + (1 - raz) * Tsup;
+	if (pocinjec==0 && transiente ==1) {
+		indraz(ind, raz, tempo, dtmaxserie.parserie, dtmaxserie.tempo);
+		double Tinf = dtmaxserie.valor[ind];
+		double Tsup;
+		if (ind < dtmaxserie.parserie - 1)
+			Tsup = dtmaxserie.valor[ind + 1];
+		else
+			Tsup = dtmaxserie.valor[ind];
+		dtmax = Tinf * raz + (1 - raz) * Tsup;
 
-	indraz(ind, raz, tempo,nsegrega, vecTSegrega);
-	int segInf = vecSegrega[ind];
-	int segSup;
-	if (ind < nsegrega - 1)
-		segSup = vecSegrega[ind + 1];
-	else
-		segSup = vecSegrega[ind];
-	modoSegrega = segInf * raz + (1 - raz) * segSup;
+		indraz(ind, raz, tempo,nsegrega, vecTSegrega);
+		int segInf = vecSegrega[ind];
+		int segSup;
+		if (ind < nsegrega - 1)
+			segSup = vecSegrega[ind + 1];
+		else
+			segSup = vecSegrega[ind];
+		modoSegrega = segInf * raz + (1 - raz) * segSup;
+	}
 
 	/*indraz(ind, raz, tempo,nestabCol, vecTestabCol);
 	int estabInf = vecestabCol[ind];
@@ -21922,20 +21936,20 @@ void Ler::copia_fluido_complementar(Ler& arqAntigo) {
 
 void Ler::copia_fluido_gas(Ler& arqAntigo) {
 
-	//flug=arqAntigo.flug;
+	/*//flug=arqAntigo.flug;
 	flug = ProFlu(vg1dSP, arqAntigo.flug.API, arqAntigo.flug.RGO, arqAntigo.flug.Deng,arqAntigo.flug.BSW,
 			arqAntigo.flug.Denag, arqAntigo.flug.TempL, arqAntigo.flug.LVisL, arqAntigo.flug.TempH,
 			arqAntigo.flug.LVisH, arqAntigo.flug.tipoemul, arqAntigo.flug.aemul,
 			arqAntigo.flug.bemul,arqAntigo.flug.PHI100, arqAntigo.flug.bswCorte, arqAntigo.flug.tab,
 			arqAntigo.flug.yco2,arqAntigo.flug.corrC,arqAntigo.flug.corrSat,
 			arqAntigo.flug.corrOM,arqAntigo.flug.corrOV,arqAntigo.flug.corrOS, flashCompleto,
-			arqAntigo.flug.id,npseudo);
+			arqAntigo.flug.id,npseudo);*/
+	flug=arqAntigo.flug;
 	flug.tab=tabg;
 	flug.zdranP = zdranP;  //15-06-2018
 	flug.dzdpP = dzdpP;  //15-06-2018
 	flug.dzdtP = dzdtP;  //15-06-2018
 	if(flug.npseudo>0)compLinServ = new double[flug.npseudo];
-	for(int j=0;j<flug.npseudo;j++)flug.fracMol[j]=arqAntigo.flug.fracMol[j];
 }
 
 void Ler::copia_unidades_producao(Ler& arqAntigo) {
