@@ -342,7 +342,7 @@ Regras principais:
 - `comprimentoMedido` = soma dos valores do vetor `#UL` da saída
 - `tipoIPR`:
   - Se `<entrada><fonte><modelo ipr>` = `"LINEAR"` → `tipoIPR = 0`
-  - Se `<entrada><fonte><modelo ipr>` = `"VOGEL"` → `tipoIPR = 2`
+  - Se `<entrada><fonte><modelo ipr>` = `"VOGEL"` → `tipoIPR = 1` (Vogel combinada – usa `ip` e pressão estática para montar curva linear acima da pressão de bolha e Vogel abaixo)
 - `pressaoEstatica` = `<entrada><sistema_producao><produção><fonte><pr> + 1,03323`
 - `temperaturas` = `<entrada><sistema_producao><produção><fonte><tmonf>`  
 - `ip` = `<entrada><sistema_producao><produção><fonte><dados_ipr><ip>`  
@@ -489,7 +489,7 @@ No MRT:
 - `rhoExterno`: 1000
 - `viscExterna`: 0.001
 
-- `"correlacaoMR2"` (opcional) – índice da correlação multifásica black-box usada pela unidade no MR2. Obtido de `<entrada><sistema_producao><produção><{tipo}[@seq=SAIDAXORIG]><corr @tipo>`. Mapeamento:
+- `"correlacaoMR2"` – índice da correlação multifásica black-box usada pela unidade no MR2. Obtido de `<entrada><sistema_producao><produção><{tipo}[@seq=SAIDAXORIG]><corr @tipo>`. Mapeamento:
     - `POETTMANN_CARPENTER` → `0`
     - `BAXENDELL_THOMAS` → `1`
     - `FANCHER_BROWN` → `2`
@@ -508,7 +508,21 @@ No MRT:
     - `DUKLER_MINAMI_II` → `15`
     - `SHOHAM` → `6` (placeholder, não implementada ainda)
     
-  Se a correlação não for encontrada ou o campo não existir, o campo não é incluído no duto.
+  Se a correlação não for encontrada ou o campo não existir no XML de entrada (comum em unidades de poço), usa-se o valor padrão `6` (BEGGS_BRILL).
+
+#### Fatores de correção (`correcao`) – NÃO IMPORTADOS
+
+O MR2 possui fatores de correção por unidade de produção, definidos em `<entrada><sistema_producao><producao><fatores_correcao>` com campos `<fcorrp>` (correção de pressão) e `<fcorrt>` (correção de temperatura). Estes fatores eram usados pelo Marlim Permanente para ajustar os gradientes calculados pelas correlações black-box.
+
+**Decisão de projeto:** os fatores de correção **não são importados** para o MR3. Motivos:
+1. Os fatores foram calibrados para correlações empíricas específicas do MR2 (Orkiszewski, Beggs & Brill, etc.) e não são transferíveis para o modelo mecanístico drift-flux do MR3.
+2. Valores sentinela (`-999999`) e extremos encontrados em campo causam divergência no solver permanente do MR3.
+3. O MR3 já possui seu próprio modelo de escorregamento (Bhagwat & Ghajar) que não requer calibração por fatores multiplicativos.
+
+Consequentemente:
+- Os campos `dPdLFric`, `dPdLHidro` e `dTdL` **não são escritos** nos dutos de produção/serviço.
+- O objeto `correcao` **não é incluído** no JSON de saída.
+- A função `parse_correcao` existe no código mas **não é invocada** pelo conversor.
 
 #### Formação (#FORMACAO)
 O elemento `FORMACAO` na configuração inicial do MRT representa a condição de contorno para transferência de calor dentro do poço.

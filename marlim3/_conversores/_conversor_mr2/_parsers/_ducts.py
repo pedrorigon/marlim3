@@ -294,8 +294,8 @@ def _build_duto_producao(ind, id_duto, id_corte, id_formacao, resultados, correc
     ambiente = _get_ambiente_externo_producao(natureza)
     ci = _build_condicoes_iniciais(resultados, ind, is_producao=True, mr2_entrada=mr2_entrada, ambiente_externo=ambiente)
 
-    dpdl = _get_correcao_index(correcao, resultados, ind, 'P')
-    dtdl = _get_correcao_index(correcao, resultados, ind, 'T')
+    # dpdl = _get_correcao_index(correcao, resultados, ind, 'P')
+    # dtdl = _get_correcao_index(correcao, resultados, ind, 'T')
     corr_mr2 = _get_correlacao_mr2(tree, resultados, ind)
 
     duto = {
@@ -307,18 +307,16 @@ def _build_duto_producao(ind, id_duto, id_corte, id_formacao, resultados, correc
         'acoplamentoTermico': 0,  # SEM_ACOPLAMENTO
         'condicoesIniciais': ci,
         'direcaoConveccao': 0,  # TRANSVERSAL
-        'idFormacao': id_formacao,
-        'dPdLFric': dpdl,
-        'dPdLHidro': dpdl,
-        'dTdL': dtdl,
     }
+
+    if id_formacao != -1:
+        duto['idFormacao'] = id_formacao
 
     # ambienteExterno only makes sense for lines/risers, not for well-type ducts
     if natureza not in {5, 7}:
         duto['ambienteExterno'] = ambiente
 
-    if corr_mr2 is not None:
-        duto['correlacaoMR2'] = corr_mr2
+    duto['correlacaoMR2'] = corr_mr2 if corr_mr2 is not None else 6
 
     return duto
 
@@ -341,8 +339,8 @@ def _build_duto_servico(ind, id_duto, id_corte, id_formacao, resultados, correca
     disc = _build_discretizacao(resultados, ind, is_producao=is_within_well, injecao=injecao, tree=tree, is_servico=not is_within_well)
     ci = _build_condicoes_iniciais(resultados, ind, is_producao=is_within_well, mr2_entrada=mr2_entrada, ambiente_externo=ambiente)
 
-    dpdl = _get_correcao_index(correcao, resultados, ind, 'P')
-    dtdl = _get_correcao_index(correcao, resultados, ind, 'T')
+    # dpdl = _get_correcao_index(correcao, resultados, ind, 'P')
+    # dtdl = _get_correcao_index(correcao, resultados, ind, 'T')
 
     duto = {
         'id': id_duto,
@@ -351,11 +349,9 @@ def _build_duto_servico(ind, id_duto, id_corte, id_formacao, resultados, correca
         'rotulo': rotulo,
         'discretizacao': disc,
         'condicoesIniciais': ci,
-        'idFormacao': id_formacao,
-        'dPdLFric': dpdl,
-        'dPdLHidro': dpdl,
-        'dTdL': dtdl,
     }
+    if id_formacao != -1:
+        duto['idFormacao'] = id_formacao
     # Only include non-default values (original uses exclude_defaults=True)
     if acoplamento != 0:  # SEM_ACOPLAMENTO is default
         duto['acoplamentoTermico'] = acoplamento

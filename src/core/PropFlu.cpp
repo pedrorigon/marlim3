@@ -4995,7 +4995,7 @@ double ProFlu::ConstAdG(double pres, double temp,double rhogini) const{
   double dvdt=(1/rhog)*(1/(temp+273)+dzdt/zg);
   double dvdp=(1/rhog)*(-1/(pres*98066.5)+dzdp/zg);
   double aux=cpg/(cpg+(temp+273)*dvdt*dvdt/dvdp);
-  if(aux<0.)aux=0.1;//atencao: observar esta acochambracao
+  if(aux<0.)aux=1.;//atencao: observar esta acochambracao
   return 0*cpg/(cpg-pres*98066.5/((temp+273)*rhog*zg))+aux;
 }
 

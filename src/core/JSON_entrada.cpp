@@ -741,6 +741,7 @@ JSON_entrada_parafina_FmultipWax& JSON_entrada_parafina::FmultipWax(){
 
 JSON_entrada_fluidoGas::JSON_entrada_fluidoGas(){
 	contents["ativo"] = make_shared<JSON_entrada_fluidoGas_ativo>();
+	contents["usaTabelaFlash"] = make_shared<JSON_entrada_fluidoGas_usaTabelaFlash>();
 	contents["densidadeGas"] = make_shared<JSON_entrada_fluidoGas_densidadeGas>();
 	contents["fracCO2"] = make_shared<JSON_entrada_fluidoGas_fracCO2>();
 	contents["correlacaoCritica"] = make_shared<JSON_entrada_fluidoGas_correlacaoCritica>();
@@ -750,6 +751,10 @@ JSON_entrada_fluidoGas::JSON_entrada_fluidoGas(){
 
 JSON_entrada_fluidoGas_ativo& JSON_entrada_fluidoGas::ativo(){
 	return static_cast<JSON_entrada_fluidoGas_ativo&>(*contents["ativo"].get());
+}
+
+JSON_entrada_fluidoGas_usaTabelaFlash& JSON_entrada_fluidoGas::usaTabelaFlash(){
+	return static_cast<JSON_entrada_fluidoGas_usaTabelaFlash&>(*contents["usaTabelaFlash"].get());
 }
 
 JSON_entrada_fluidoGas_densidadeGas& JSON_entrada_fluidoGas::densidadeGas(){

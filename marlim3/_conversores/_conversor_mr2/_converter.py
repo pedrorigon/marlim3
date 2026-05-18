@@ -87,10 +87,12 @@ def converter_mr2_para_json(mr2_path, pvt_path=None, mr2_binary_path=None, simul
 
     # --- Apply parsers ---
 
-    # Correction factors
-    correcao = parse_correcao(resultados)
-    if correcao:
-        mr3['correcao'] = correcao
+    # Correction factors — DISABLED: MR2 correction factors don't translate
+    # correctly to MR3's thermal model (sentinels, extreme/negative values).
+    # correcao = parse_correcao(resultados)
+    # if correcao:
+    #     mr3['correcao'] = correcao
+    correcao = None
 
     # Master1 (wellhead valve)
     master1 = parse_master1(mr2_entrada, resultados)
@@ -231,10 +233,10 @@ def _parse_arquivo_tab(mr3, tree):
     if fluido_comp:
         nome_tab = fluido_comp.get('@tabela', '')
         if nome_tab:
-            mr3.setdefault('tabela', {})['arquivoTabCtm'] = nome_tab.strip()
+            mr3.setdefault('configuracaoInicial', {})['pvtsimArq'] = nome_tab.strip()
 
         if id_fluido == fluido_comp.get('@id', None):
-            mr3.setdefault('tabela', {})['modeloFluidoTabelaFlash'] = True
+            mr3.setdefault('configuracaoInicial', {})['modeloFluidoTabelaFlash'] = True
 
 
 def _ajustar_pressao_maxima_tabela(mr3):

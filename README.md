@@ -43,7 +43,7 @@ For development, use [uv](https://docs.astral.sh/uv/) to manage the Python envir
 **Step 1 — Install dependencies and the Python package:**
 
 ```bash
-uv sync --group dev
+uv sync --locked --group dev
 ```
 
 This creates a `.venv` with Python 3.12+, installs all dev tools (pytest, flake8, jupyter, etc.), and installs `marlim3` in editable mode. After this step you can already use `import marlim3` in your scripts:
@@ -57,7 +57,7 @@ uv run python -c "import marlim3; print(marlim3.__version__)"
 See [Compilation](#compilation) below. After building, copy `build/Marlim3` to `marlim3/` and run:
 
 ```bash
-MARLIM3_SKIP_BUILD=1 uv sync
+MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
 
 ## Usage
@@ -135,15 +135,31 @@ Compilation is only necessary if you need to rebuild the executable from source.
 
 ### Build the executable
 
-The project uses [CMake presets](CMakePresets.json). Available presets: `gcc-release`, `gcc-debug`, `clang-release`, `clang-debug`.
+The project uses [CMake presets](CMakePresets.json). Available presets:
+
+| Preset | Platform | Description |
+|--------|----------|-------------|
+| `gcc-release` / `gcc-debug` | Linux / macOS | GCC with partial static linking |
+| `mingw-release` / `mingw-debug` | Windows | MinGW with full static linking |
+| `clang-release` / `clang-debug` | Linux / macOS | Clang 20 + GFortran |
+
+#### Linux / macOS
 
 ```bash
-# Configure (output goes to build/)
 cmake --preset gcc-release
-
-# Build
 cmake --build --preset gcc-release -j$(nproc)
 ```
+
+#### Windows (MSYS2 / MinGW64)
+
+Ensure `g++` and `gfortran` are in your PATH (e.g., via [MSYS2](https://www.msys2.org/) with the `mingw-w64-x86_64-gcc` and `mingw-w64-x86_64-gcc-fortran` packages).
+
+```bash
+cmake --preset mingw-release
+cmake --build --preset mingw-release -j%NUMBER_OF_PROCESSORS%
+```
+
+The resulting `build/Marlim3.exe` is fully statically linked and does not require external DLLs.
 
 The compiled executable is placed at `build/Marlim3`.
 
@@ -156,7 +172,7 @@ cp build/Marlim3 marlim3/
 Then activate the package locally (skipping recompilation):
 
 ```bash
-MARLIM3_SKIP_BUILD=1 uv sync
+MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
 
 ### Run tests

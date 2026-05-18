@@ -40,7 +40,7 @@
         },
         "equilibrioTermico": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Define estratégia para cálculo da distribuição de temperatura da seção transversal da parede da tubulação. Se true, interpola-se linearmente entre a temperatura ambiente e a temperatura do fluido. Se false, usa-se a temperatura ambiente por toda a seção transversal da parede. Usada para o caso configuracaoInicial: {condicaoInicial: 0}."
         },
         "latente": {
@@ -96,12 +96,12 @@
         },
         "trackRgo": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Se true, realiza uma atualização do RGO (além de outras variáveis como API e BSW) ao longo da tubulação utilizando regras de mistura quando correntes se encontram."
         },
         "trackDensidadeGas": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Se true, realiza uma atualização da densidade do gás (além de outras variáveis como a fração de CO2) ao longo da tubulação utilizando regras de mistura quando correntes se encontram."
         },
         "correcaoDenGasLivreBlackOil": {
@@ -469,17 +469,18 @@
             },
             "JTLiquidoSimple": {
               "type": "number",
-              "description": ""
+              "description": "Se 1, desliga o termo d_rho/dT do cálculo de Joule-Thompson de líquido. Útil para casos legados convertidos do Marlim2, em especial na coluna de produção.",
+              "default": 0
             },
             "desligaPenalizaDT": {
               "type": "boolean",
               "default": false,
-              "description": ""
+              "description": "Desliga a penalização do incremento de tempo que ocorre quando há oscilações abruptas no holdup, em especial durante processos de segregação típicos de parada de produção (função determinaDT em SisProd())."
             },
             "controleDTvalv": {
               "type": "boolean",
               "default": false,
-              "description": ""
+              "description": "Impõe uma restrição de incremento de tempo quando está em abertura ou fechamento de válvula, para evitar oscilações numéricas."
             },
             "desligaDeriTransMassDTemp": {
               "type": "boolean",
@@ -712,6 +713,11 @@
           "type": "integer",
           "enum": [1,2],
           "description": "Correlação para calcular temperatura e pressão pseudocríticas do gás. 1 --> Brown et al; 2 --> Piper et al."
+        },
+        "usaTabelaFlash": {
+          "type": "boolean",
+          "description": "Indica se o simulador deve usar uma tabela de flash para calcular as propriedades do gás na linha de serviço, quando a opção modeloFluidoTabelaFlash estiver ativo.",
+          "default": false
         },
         "fracMolarUsuario": {
           "type": "boolean",
@@ -1747,7 +1753,7 @@
             },
             "correlacaoMR2": {
               "type": "integer",
-              "description": ""
+              "description": "Correlação caixa-preta utilizada no duto, quando o modelo de drift está desabilitado (configuracaoInicial: tipoModeloDrift = false). Válida para o regime permanente. 0 = Poettmann-Carpenter; 1 = Baxendell-Thomas; 2 = Fancher-Brown; 3 = Hagedorn-Brown; 4 = Duns-Ros; 5 = Orkiszewski; 6 = Beggs & Brill; 7 = Mukherjee-Brill; 8 = Aziz; 9 = Gray; 10 = Oliemans; 11 = Dukler; 12 = Beggs & Brill com correção de Palmer; 13 = Dukler, Eaton e Flanigan;  14 = Dukler e Minami I; 15 = Dukler e Minami II."
             },
             "acoplamentoTermicoRedeParalela": {
               "type": "integer",

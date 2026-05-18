@@ -374,6 +374,7 @@ public:
 
 
 #define JSON_entrada_fluidoGas_ativo JSONBoolean
+#define JSON_entrada_fluidoGas_usaTabelaFlash JSONBoolean
 #define JSON_entrada_fluidoGas_densidadeGas JSONNumber
 #define JSON_entrada_fluidoGas_fracCO2 JSONNumber
 #define JSON_entrada_fluidoGas_correlacaoCritica JSONInteger
@@ -385,6 +386,7 @@ class JSON_entrada_fluidoGas: public JSONObject {
 public:
 	JSON_entrada_fluidoGas();
 	JSON_entrada_fluidoGas_ativo& ativo();
+	JSON_entrada_fluidoGas_usaTabelaFlash& usaTabelaFlash();
 	JSON_entrada_fluidoGas_densidadeGas& densidadeGas();
 	JSON_entrada_fluidoGas_fracCO2& fracCO2();
 	JSON_entrada_fluidoGas_correlacaoCritica& correlacaoCritica();
