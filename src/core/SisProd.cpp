@@ -21207,7 +21207,10 @@ double SProd::marchaProdPerm1(double pchute) {
       //valvulas e indica este valor para a VGL relacionada a celula de producao
       //caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
       //na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
-      if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm>0.1) IniciaVazValvGasPerm(0);
+      if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm>0.1){
+    	  if(celulaG[0].tipoCC==0)hidroLinServ();
+    	  IniciaVazValvGasPerm(0);
+      }
       i = 1;
       //inicio da marcha propriamente dita
       while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
@@ -21369,19 +21372,19 @@ double SProd::marchaProdPerm1(double pchute) {
     	calcDTPseudoTrans();
     	conectaColuna();
     	for(int kontaPseudo=0;kontaPseudo<arq.acopColAnulPermForte;kontaPseudo++){
-    		for (int i = 0; i <= ncelGas; i++)
-    		    celulaG[i].tempini=celulaG[i].temp;
-    	    for (int i = 1; i <=ncelGas; i++) {
-    	      calctempGas(i, celulaG[i-1].tempini,1);
+    		for (int iterm = 0; iterm <= ncelGas; iterm++)
+    		    celulaG[iterm].tempini=celulaG[iterm].temp;
+    	    for (int iterm = 1; iterm <=ncelGas; iterm++) {
+    	      calctempGas(iterm, celulaG[iterm-1].tempini,1);
     	    }
     	    celula[0].tempini = celula[0].temp;
     	    celula[1].tempLini=celula[1].tempL;
     	    celula[1].tempL = celula[0].temp;
-    	    for (int i = 1; i <= ncel; i++) {
-    	        celula[i].tempini = celula[i].temp;
+    	    for (int iterm = 1; iterm <= ncel; iterm++) {
+    	        celula[iterm].tempini = celula[iterm].temp;
     	    }
-    	    for (int i = 1; i <=ncel; i++) {
-    	    	calctemp(i,celula[i].tempini,1);
+    	    for (int iterm = 1; iterm <=ncel; iterm++) {
+    	    	calctemp(iterm,celula[iterm].tempini,1);
     	    }
         	atualizaProp();
         	calcDTPseudoTrans();
@@ -22147,7 +22150,10 @@ double SProd::marchaProdPerm2(double pchute) {
       //valvulas e indica este valor para a VGL relacionada a celula de producao
       //caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
       //na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
-      if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm>0.1) IniciaVazValvGasPerm(0);
+      if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm>0.1){
+    	  if(celulaG[0].tipoCC==0)hidroLinServ();
+    	  IniciaVazValvGasPerm(0);
+      }
       i = 1;
       //inicio da marcha propriamente dita
       while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
@@ -22285,19 +22291,19 @@ double SProd::marchaProdPerm2(double pchute) {
     	calcDTPseudoTrans();
     	conectaColuna();
     	for(int kontaPseudo=0;kontaPseudo<arq.acopColAnulPermForte;kontaPseudo++){
-    		for (int i = 0; i <= ncelGas; i++)
-    		    celulaG[i].tempini=celulaG[i].temp;
-    	    for (int i = 1; i <=ncelGas; i++) {
-    	      calctempGas(i, celulaG[i-1].tempini,1);
+    		for (int iterm = 0; iterm <= ncelGas; iterm++)
+    		    celulaG[iterm].tempini=celulaG[iterm].temp;
+    	    for (int iterm = 1; iterm <=ncelGas; iterm++) {
+    	      calctempGas(iterm, celulaG[iterm-1].tempini,1);
     	    }
     	    celula[0].tempini = celula[0].temp;
     	    celula[1].tempLini=celula[1].tempL;
     	    celula[1].tempL = celula[0].temp;
-    	    for (int i = 1; i <= ncel; i++) {
-    	        celula[i].tempini = celula[i].temp;
+    	    for (int iterm = 1; iterm <= ncel; iterm++) {
+    	        celula[iterm].tempini = celula[iterm].temp;
     	    }
-    	    for (int i = 1; i <=ncel; i++) {
-    	    	calctemp(i,celula[i].tempini,1);
+    	    for (int iterm = 1; iterm <=ncel; iterm++) {
+    	    	calctemp(iterm,celula[iterm].tempini,1);
     	    }
         	atualizaProp();
         	calcDTPseudoTrans();
@@ -32352,26 +32358,20 @@ void  SProd::IniciaVazValvGasPerm(int i){
 	    	else celulaG[posicVGLG[j]].massfonteCH=0.;
 	    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
 	    			                      celulaG[posGLG].flui.MasEspGas(1.,15.);
-	    	double altaVaz=5*celula[ncel-1].duto.area*celulaG[0].flui.MasEspGas(pGSup,15.)/nvalv;
+	    	/*double altaVaz=50*celula[ncel-1].duto.area*celulaG[0].flui.MasEspGas(pGSup,15.)/nvalv;
 	    	double baixaVaz=0.1*celula[ncel-1].duto.area*celulaG[0].flui.MasEspGas(pGSup,15.)/nvalv;
 	    	if(celulaG[posicVGLG[j]].massfonteCH>altaVaz){
-	    		//celula[posGLP].acsr.injg.QGas=arq.gasinj.vazgas[0]/nvalv;
 		    	vazvalv=(celula[posGLP].acsr.injg.QGas*celulaG[0].flui.MasEspGas(1.,15.)/86400.)/nvalv;
-		    	//if(vazvalv<altaVaz/2.)altaVaz/=2.;
-		    	//celulaG[posicVGLG[j]].massfonteCH=vazvalv;
 		    	celulaG[posicVGLG[j]].massfonteCH=altaVaz;
 		    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
 		    			                      celulaG[posGLG].flui.MasEspGas(1.,15.);
 	    	}
 	    	else if(celulaG[posicVGLG[j]].massfonteCH<baixaVaz){
-	    		//celula[posGLP].acsr.injg.QGas=arq.gasinj.vazgas[0]/nvalv;
 		    	vazvalv=(celula[posGLP].acsr.injg.QGas*celulaG[0].flui.MasEspGas(1.,15.)/86400.)/nvalv;
-		    	//if(vazvalv>2.*altaVaz)altaVaz*=2.;
-		    	//celulaG[posicVGLG[j]].massfonteCH=vazvalv;
 		    	celulaG[posicVGLG[j]].massfonteCH=vazvalv;
 		    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
 		    			                      celulaG[posGLG].flui.MasEspGas(1.,15.);
-	    	}
+	    	}*/
 	    	celula[posGLP].acsr.injg.temp=tempRev;
 	    	celula[posGLP].fontemassGR=celulaG[posGLG].massfonteCH;
 	    }
@@ -34351,6 +34351,23 @@ double SProd::hidroTramoSecundario(double titulo) {
     celula[i+1].temp = taux;
   }
   return pchute;
+}
+
+void SProd::hidroLinServ() {
+  double pchute=arq.gasinj.presinj[0];
+  celulaG[0].pres=pchute;
+  double taux;
+  taux = arq.celg[0].textern;
+  celula[0].temp = taux;
+  double rhog = celulaG[0].flui.MasEspGas(celulaG[0].pres, taux);
+  for (int i = 0; i < ncelGas; i++) {
+	taux = arq.celg[i].textern;
+    rhog = celulaG[i].flui.MasEspGas(pchute, taux);
+    double dxmed = 0.5 * (celulaG[i].dx0 + celulaG[i + 1].dx0);
+    pchute -= ((rhog * 9.81 * sinl(celulaG[i].duto.teta) * dxmed) / 98066.5);
+    celulaG[i + 1].pres = pchute;
+    celulaG[i+1].temp = taux;
+  }
 }
 
 double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {

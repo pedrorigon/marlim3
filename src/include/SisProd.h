@@ -1100,6 +1100,7 @@ class SProd {
   double hidroTramoSecundario(double titulo/*titulo medio na linha*/);//metodo auxiliar para redes de producao
   //permanente, paralelas, faz uma estimativa das pressoes nos nos do tramo secundario da rede paralela
   //partir de um calculo simples de hidrostatrica;
+  void hidroLinServ();
   double buscaTramoSecVazPerm(double pPartida, int indPartida);
   double marchaTramoSecVaz(double pchute,double chutemass=-1);
 
