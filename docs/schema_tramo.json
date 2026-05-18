@@ -469,17 +469,18 @@
             },
             "JTLiquidoSimple": {
               "type": "number",
-              "description": ""
+              "description": "Se 1, desliga o termo d_rho/dT do cálculo de Joule-Thompson de líquido. Útil para casos legados convertidos do Marlim2, em especial na coluna de produção.",
+              "default": 0
             },
             "desligaPenalizaDT": {
               "type": "boolean",
               "default": false,
-              "description": ""
+              "description": "Desliga a penalização do incremento de tempo que ocorre quando há oscilações abruptas no holdup, em especial durante processos de segregação típicos de parada de produção (função determinaDT em SisProd())."
             },
             "controleDTvalv": {
               "type": "boolean",
               "default": false,
-              "description": ""
+              "description": "Impõe uma restrição de incremento de tempo quando está em abertura ou fechamento de válvula, para evitar oscilações numéricas."
             },
             "desligaDeriTransMassDTemp": {
               "type": "boolean",
@@ -712,6 +713,11 @@
           "type": "integer",
           "enum": [1,2],
           "description": "Correlação para calcular temperatura e pressão pseudocríticas do gás. 1 --> Brown et al; 2 --> Piper et al."
+        },
+        "usaTabelaFlash": {
+          "type": "boolean",
+          "description": "Indica se o simulador deve usar uma tabela de flash para calcular as propriedades do gás na linha de serviço, quando a opção modeloFluidoTabelaFlash estiver ativo.",
+          "default": false
         },
         "fracMolarUsuario": {
           "type": "boolean",
