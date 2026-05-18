@@ -307,8 +307,10 @@ def _build_duto_producao(ind, id_duto, id_corte, id_formacao, resultados, correc
         'acoplamentoTermico': 0,  # SEM_ACOPLAMENTO
         'condicoesIniciais': ci,
         'direcaoConveccao': 0,  # TRANSVERSAL
-        'idFormacao': id_formacao,
     }
+
+    if id_formacao != -1:
+        duto['idFormacao'] = id_formacao
 
     # ambienteExterno only makes sense for lines/risers, not for well-type ducts
     if natureza not in {5, 7}:
@@ -347,8 +349,9 @@ def _build_duto_servico(ind, id_duto, id_corte, id_formacao, resultados, correca
         'rotulo': rotulo,
         'discretizacao': disc,
         'condicoesIniciais': ci,
-        'idFormacao': id_formacao,
     }
+    if id_formacao != -1:
+        duto['idFormacao'] = id_formacao
     # Only include non-default values (original uses exclude_defaults=True)
     if acoplamento != 0:  # SEM_ACOPLAMENTO is default
         duto['acoplamentoTermico'] = acoplamento
