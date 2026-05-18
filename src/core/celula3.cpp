@@ -1318,8 +1318,8 @@ void Cel::avancalf(int& reinicia, int ncel){
    		  (term1Mass/ (1+CoefDTR/(rpC*duto.area)))*dt;
 
    //double resto=0.; // unused
-   if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny) && jmix>1e-3) ||
-		   ((alf<=1e-3)&&(alf>=-1e-3) && jmix<=1e-3)){
+   if(((alf<=(*vg1dSP).localtiny)&&(alf>=-(*vg1dSP).localtiny) /*&& jmix>1e-2*/) ||
+		   ((alf<=1e-3)&&(alf>=-1e-3) && (fabs(QG)/duto.area)<=1e-2)){
 	   alf=fabs(0.);
    }
    else if(alf<-(*vg1dSP).localtiny){
@@ -1341,8 +1341,8 @@ void Cel::avancalf(int& reinicia, int ncel){
       }
       else alfIter=alf=fabs(0.);
    }
-   else if(((alf>=(1.-(*vg1dSP).localtiny)&&alf<=(1.+(*vg1dSP).localtiny))&& jmix>1e-3) ||
-		   ((alf>=(1.-1e-3)&&alf<=(1.+1e-3))&& jmix<=1e-3)){
+   else if(((alf>=(1.-(*vg1dSP).localtiny)&&alf<=(1.+(*vg1dSP).localtiny))/*&& jmix>1e-2*/) ||
+		   ((alf>=(1.-1e-3)&&alf<=(1.+1e-3))&& (fabs(QL)/duto.area)<=1e-2)){
 	   alf=1.;
    }
    else if(alf>(1.+(*vg1dSP).localtiny)){
