@@ -233,10 +233,10 @@ def _parse_arquivo_tab(mr3, tree):
     if fluido_comp:
         nome_tab = fluido_comp.get('@tabela', '')
         if nome_tab:
-            mr3.setdefault('tabela', {})['arquivoTabCtm'] = nome_tab.strip()
+            mr3.setdefault('configuracaoInicial', {})['pvtsimArq'] = nome_tab.strip()
 
         if id_fluido == fluido_comp.get('@id', None):
-            mr3.setdefault('tabela', {})['modeloFluidoTabelaFlash'] = True
+            mr3.setdefault('configuracaoInicial', {})['modeloFluidoTabelaFlash'] = True
 
 
 def _ajustar_pressao_maxima_tabela(mr3):
