@@ -228,7 +228,7 @@ saidaTexto[1]="                                    Memento Mori                 
 saidaSubTexto[0]="                                                                               ";
 saidaSubTexto[1]="                            J. California Cooper                               ";*/
 
-const char* saidaTexto[12]={"                          Post Coitum Omine Animal Triste Est                   ",
+const char* saidaTexto[15]={"                          Post Coitum Omine Animal Triste Est                   ",
 		"           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
 		"      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
 		"                   Infeliz e o espirito ansioso pelo futuro.                    ",
@@ -239,8 +239,11 @@ const char* saidaTexto[12]={"                          Post Coitum Omine Animal 
 "O sucesso nao e uma linha reta, e um jogo de resistencia, e cada tropeco e apenas um degrau a mais para a vitoria!",
 "                        Quem vive de navegar, o vento e quem lhe comanda                ",
 "    Uma vez me perguntaram o que achava da passagem do tempo, e eu disse: sou contra    ",
-"                 Nao importa o quanto voce va devagar, desde que nao pare                "};
-const char* saidaSubTexto[12]={
+"                 Nao importa o quanto voce va devagar, desde que nao pare                ",
+"Um simulador que resolve uma parada de producao, comeca avancando pequenos incrementos de tempo",
+"                            Nada e permanente, exceto a mudanca                           ",
+"                  Uma jornada de mil quilometros come�a com um unico passo                "};
+const char* saidaSubTexto[15]={
 "                         Galeno de Pergamo do Transiente Longo                          ",
 "                     J. California Cooper depois da simulacao divergir                  ",
 "                                Marcel Proust no CrossFit                               ",
@@ -252,7 +255,10 @@ const char* saidaSubTexto[12]={
 "                                    Mario Pascal do Insta                               ",
 "                          Seu Pereira na feira de artesanatos numericos                 ",
 "                        Luis Fernando Verissimo das Simulacoes Permanentes              ",
-"                             Confucio vendo a simulacao emperrar                       "};
+"                             Confucio vendo a simulacao emperrar                       ",
+"                               Confucio das simulacoes sem fim                         ",
+"          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
+"    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    "};
 
 
 detTempo tempVF;
@@ -1008,7 +1014,7 @@ void WriteSnapShot(SProd& sis, double porc=10, int tramo=-1){
 	//int HISEP;
 
 	  srand (time(NULL));
-	  int frase=rand() % 12;
+	  int frase=rand() % 15;
 
 	if (sis.arq.HISEP==0) {
   ostringstream saidaS;
@@ -10184,7 +10190,7 @@ double SolveTramoSolteiro(SProd& sistem1, double chute0=-1.){
 		}
 		if(sistem1.arq.saidaClassica==1){
 			  srand (time(NULL));
-			  int frase=rand() % 12;
+			  int frase=rand() % 15;
 			/*escreveIni << "*******************************************************************************" << endl;
 			escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
 			escreveIni << "           'Ouça-me. O fim quase nunca está longe em nenhum momento!'          " << endl;
@@ -12141,7 +12147,7 @@ void solveRedeProd(SProd* malha,Rede& arqRede, int narq,
 		//ofstream escreveIni(tmpLog.c_str(), ios_base::app);
 		ofstream escreveIni(tmp.c_str(), ios_base::app);
 		srand (time(NULL));
-		int frase=rand() % 12;
+		int frase=rand() % 15;
 			/*escreveIni << "*******************************************************************************" << endl;
 			escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
 			escreveIni << "           'Ouça-me. O fim quase nunca está longe em nenhum momento!'          " << endl;
@@ -14931,7 +14937,7 @@ int main(int argc, char** argv) {
    * Processamento dos argumentos de entrada
    */
   srand (time(NULL));
-  int frase=rand() % 12;
+  int frase=rand() % 15;
 //  int numthreads=1;
 
   // percorrer a lista de parametros de entrada
