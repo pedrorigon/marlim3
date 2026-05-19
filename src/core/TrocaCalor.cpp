@@ -1720,6 +1720,7 @@ double TransCal::transperm(double resanul){
 
  void TransCal::transcel(int icam, int idisc){
   double lconv=12.19;
+  const int lastLayer=geom.ncamadas-1;
 
   double rho=0.;
   double cp=0.;
@@ -1740,7 +1741,8 @@ double TransCal::transperm(double resanul){
   }
 
   if(ambext==1){// alteracao0
-		 double tmed=Tcamada[geom.ncamadas-1][ncamada[geom.ncamadas-1]];
+		 const int lastDisc=ncamada[lastLayer];
+		 double tmed=Tcamada[lastLayer][lastDisc];
 		 viscextern1=VisLiq(tmed) * 1e-3;
 		 rhoextern1=MasEspLiq(tmed);
 		 kextern1=CondLiq(tmed);
@@ -1748,7 +1750,8 @@ double TransCal::transperm(double resanul){
 		 betext=beta(tmed, 1);
   }// alteracao0
   else if(ambext==2 && formacPoc==0){// alteracao0 - ar
-		 double tmed=0.5*(Textern1+Tcamada[geom.ncamadas-1][ncamada[geom.ncamadas-1]]);
+		 const int lastDisc=ncamada[lastLayer];
+		 double tmed=0.5*(Textern1+Tcamada[lastLayer][lastDisc]);
 		 viscextern1=VisAr(tmed) * 1e-3;
 		 rhoextern1=MasEspAr(tmed);
 		 kextern1=CondAr(tmed);
@@ -1786,47 +1789,54 @@ double TransCal::transperm(double resanul){
     double prT;
     double Nu2;
    if(icam<geom.ncamadas-2 && idisc==ncamada[icam] && geom.tipomat[icam+1]!=0){
-		 if(geom.tipomat[icam+1]==2){// alteracao0
-			 double tmed=0.5*(Tcamada[icam+1][0]+Tcamada[icam+1][1]);
-			 geom.visc[icam+1]=VisLiq(tmed) * 1e-3;
-			 geom.rhoC[icam+1]=MasEspLiq(tmed);
-			 geom.cond[icam+1]=CondLiq(tmed);
-			 geom.cp[icam+1]=CalorLiq(tmed);
-			 geom.beta[icam+1]=beta(tmed, 1);
+		 const int nextCam=icam+1;
+		 if(geom.tipomat[nextCam]==2){// alteracao0
+			 double tmed=0.5*(Tcamada[nextCam][0]+Tcamada[nextCam][1]);
+			 geom.visc[nextCam]=VisLiq(tmed) * 1e-3;
+			 geom.rhoC[nextCam]=MasEspLiq(tmed);
+			 geom.cond[nextCam]=CondLiq(tmed);
+			 geom.cp[nextCam]=CalorLiq(tmed);
+			 geom.beta[nextCam]=beta(tmed, 1);
 		 }// alteracao0
-		 else if(geom.tipomat[icam+1]==3){// alteracao2
-			 double tmed=0.5*(Tcamada[icam+1][0]+Tcamada[icam+1][1]);
-			 geom.visc[icam+1]= ViscGas(tmed) * 1e-3;
-			 geom.rhoC[icam+1]=MasEspGas(tmed);
-			 geom.cond[icam+1]=CondGas(tmed);
-			 geom.cp[icam+1]=CalorGas(tmed);
-			 geom.beta[icam+1]=beta(tmed, 1);
+		 else if(geom.tipomat[nextCam]==3){// alteracao2
+			 double tmed=0.5*(Tcamada[nextCam][0]+Tcamada[nextCam][1]);
+			 geom.visc[nextCam]= ViscGas(tmed) * 1e-3;
+			 geom.rhoC[nextCam]=MasEspGas(tmed);
+			 geom.cond[nextCam]=CondGas(tmed);
+			 geom.cp[nextCam]=CalorGas(tmed);
+			 geom.beta[nextCam]=beta(tmed, 1);
 		 }// alteracao2
 	    if(fabs(Vconf)<1e-3){
+		   const double viscRatio=geom.visc[nextCam]/geom.rhoC[nextCam];
+		   const double condRatio=geom.cond[nextCam]/(geom.rhoC[nextCam]*geom.cp[nextCam]);
+		   const double diamGap=geom.diamC[nextCam]-geom.diamC[icam];
+		   const double halfGap=0.5*diamGap;
 	       //double bet=beta(0.5*(Tcamada[icam+1][0]+Tcamada[icam+1][1]),geom.tipomat[icam+1]);
            //graA=Grash(Tcamada[icam+1][0]-Tcamada[icam+1][1],1/(273.0+0.5*(Tcamada[icam+1][0]+Tcamada[icam+1][1])),
-    					      //geom.visc[icam+1]/geom.rhoC[icam+1],0.5*(geom.diamC[icam+1]-geom.diamC[icam]));
-           prT=Pr(geom.visc[icam+1]/geom.rhoC[icam+1],geom.cond[icam+1]/(geom.rhoC[icam+1]*geom.cp[icam+1]));
-           graA=Grash(Tcamada[icam+1][0]-Tcamada[icam+1][1],geom.beta[icam+1],
-               					      geom.visc[icam+1]/geom.rhoC[icam+1],0.5*(geom.diamC[icam+1]-geom.diamC[icam]));
-           raA= Ra(graA,prT);
-    	   defineConf(prT,raA);
-    	   Nu2=NussConf2(raA, lconv, 0.5*(geom.diamC[icam+1]-geom.diamC[icam]),geom.teta);
-    	   h0=Nu2*geom.cond[icam+1]/(0.5*(geom.diamC[icam+1]-geom.diamC[icam]));
-    	   tec1=M_PI*(geom.diamC[icam+1]-geom.diamC[icam])*h0/log(geom.diamC[icam+1]/geom.diamC[icam]);
-    	   k1=0.;
+     				      //geom.visc[icam+1]/geom.rhoC[icam+1],0.5*(geom.diamC[icam+1]-geom.diamC[icam]));
+	       prT=Pr(viscRatio,condRatio);
+	       graA=Grash(Tcamada[nextCam][0]-Tcamada[nextCam][1],geom.beta[nextCam],
+	            				      viscRatio,halfGap);
+	       raA= Ra(graA,prT);
+     	   defineConf(prT,raA);
+	    	   Nu2=NussConf2(raA, lconv, halfGap,geom.teta);
+	    	   h0=Nu2*geom.cond[nextCam]/halfGap;
+	    	   tec1=M_PI*diamGap*h0/log(geom.diamC[nextCam]/geom.diamC[icam]);
+	    	   k1=0.;
 	    }
 	    else{
-			double a=geom.diamC[icam+1];
+			const double viscRatio=geom.visc[nextCam]/geom.rhoC[nextCam];
+			const double condRatio=geom.cond[nextCam]/(geom.rhoC[nextCam]*geom.cp[nextCam]);
+			double a=geom.diamC[nextCam];
 			double b=geom.diamC[icam];
 			double area=M_PI*(a*a-b*b)/4.;
         	double peri=M_PI*(a+b);
         	double dia=4.*area/peri;
-        	prT=Pr(geom.visc[icam+1]/geom.rhoC[icam+1],geom.cond[icam+1]/(geom.rhoC[icam+1]*geom.cp[icam+1]));
-			double reyConf=ReyIn(Vconf,geom.visc[icam+1], geom.rhoC[icam+1], dia);
-			Nu2=nussPet(reyConf,prT,geom.rug, geom.visc[icam+1],1./1e3);
-			double h2a=Nu2*geom.cond[icam+1]/a;
-			double h2b=Nu2*geom.cond[icam+1]/b;
+	       	prT=Pr(viscRatio,condRatio);
+			double reyConf=ReyIn(Vconf,geom.visc[nextCam], geom.rhoC[nextCam], dia);
+			Nu2=nussPet(reyConf,prT,geom.rug, geom.visc[nextCam],1./1e3);
+			double h2a=Nu2*geom.cond[nextCam]/a;
+			double h2b=Nu2*geom.cond[nextCam]/b;
 			h0=1./((b/a)*(1/h2a)+(1/h2b));
 			tec1=M_PI*b*h0;
 			k1=0.;
@@ -1896,15 +1906,15 @@ double TransCal::transperm(double resanul){
 	 else hi=h1=novoHi;
   }
 
-  if(icam==geom.ncamadas-1 && idisc==ncamada[icam]){
+	if(icam==lastLayer && idisc==ncamada[icam]){
 	if(formacPoc==0){
-	  definePet(Tcamada[geom.ncamadas-1][ncamada[icam]-1],Textern1);
+	  definePet(Tcamada[lastLayer][ncamada[icam]-1],Textern1);
 	  double prT=Pr(viscextern1/rhoextern1,kextern1/(rhoextern1*cpextern1));
 	  double reyE;
-	  if(coluna==0)reyE=ReyIn(Vextern1,rhoextern1*viscextern1/rhoextern1, rhoextern1, geom.diamC[geom.ncamadas-1]);
+	  if(coluna==0)reyE=ReyIn(Vextern1,rhoextern1*viscextern1/rhoextern1, rhoextern1, geom.diamC[lastLayer]);
 	  else reyE=ReyIn(Vextern1,rhoextern1*viscextern1/rhoextern1, rhoextern1, colunaDia);
 	  double rug;
-	  if(coluna==0)rug=geom.rug/geom.diamC[geom.ncamadas-1];
+	  if(coluna==0)rug=geom.rug/geom.diamC[lastLayer];
 	  else rug=geom.rug/colunaDia;
 	  double Nu1;
 	  reye=reyE;
@@ -1912,8 +1922,8 @@ double TransCal::transperm(double resanul){
 	  if(dirconvExt==0){
 		  Nu1=nussChuBer(reyE, prT);
 		  if( reyE<=5000){
-		    	 double dteta=fabs(Textern1-Tcamada[geom.ncamadas-1][ncamada[geom.ncamadas-1]]);
-		    	 double rae=RaExt(dteta,betext, viscextern1/rhoextern1,kextern1/(rhoextern1*cpextern1));
+		  		 double dteta=fabs(Textern1-Tcamada[lastLayer][ncamada[lastLayer]]);
+		  		 double rae=RaExt(dteta,betext, viscextern1/rhoextern1,kextern1/(rhoextern1*cpextern1));
 		    	 double grase=rae/prT;
 		    	 double nusN;
 		    	 if(reye<1e-15 || grase/(reye*reye)>0.9){
@@ -1928,28 +1938,28 @@ double TransCal::transperm(double resanul){
 		  if(reyE>2400)Nu1=nussPet(reyE,prT,rug, viscextern1,1./1e3);
 		  else if(coluna==0) Nu1=3.6;
 		  else{
-	 		  double graE=Grash(fabs(Tcamada[geom.ncamadas-1][ncamada[icam]-1]-Textern2),
-	 	                   betext,viscextern1/rhoextern1,0.5*(geom.b-geom.diamC[geom.ncamadas-1]));
+	 	 	  double graE=Grash(fabs(Tcamada[lastLayer][ncamada[icam]-1]-Textern2),
+	 	                   betext,viscextern1/rhoextern1,0.5*(geom.b-geom.diamC[lastLayer]));
 	 		  grashe=graE;
 	 		  double raE= Ra(graE,prT);
 	 		  if(raE<1000. || (reyE>1e-15 && graE/(reyE*reyE)<1.))Nu1=3.6;
 	 		  else{
 			   //Textern1=Textern2;
 	 		   defineConf(prT,raE);
-	 		   Nu1=NussConf2(raE, lconv, 0.5*(geom.diamC[geom.ncamadas-1]+geom.b),geom.teta);
+	 	 	   Nu1=NussConf2(raE, lconv, 0.5*(geom.diamC[lastLayer]+geom.b),geom.teta);
 	    	   //double h0temp=Nu1/(0.5*(geom.b-geom.diamC[geom.ncamadas-1]));
 	    	   //Nu1=0.5*(geom.b-geom.diamC[geom.ncamadas-1])*h0temp/log(geom.b/geom.diamC[geom.ncamadas-1]);
-	 		  Nu1=Nu1/(0.5*log(geom.b/geom.diamC[geom.ncamadas-1]));
+	 	 	   Nu1=Nu1/(0.5*log(geom.b/geom.diamC[lastLayer]));
 	      }
 	    }
 
 	  }
-	  h1=Nu1*kextern1/geom.diamC[geom.ncamadas-1];
+	  h1=Nu1*kextern1/geom.diamC[lastLayer];
 
 	  nuse=Nu1;
 	  he=h1;
 	}
-	 else h1=1/(M_PI*geom.diamC[geom.ncamadas-1]*resFim);
+	 else h1=1/(M_PI*geom.diamC[lastLayer]*resFim);
   }
 
   if(icam>0||(icam==0 && idisc>0)){
@@ -1989,12 +1999,14 @@ double TransCal::transperm(double resanul){
 
  double TransCal::transtrans(){
 		if(difus2D==0){
+			const int totalLayers=geom.ncamadas;
+			const double twoPi=2.*M_PI;
 
 			double tintTemp=Tint;
 			double texternTemp=Textern1;
 
 			int nglob=0;
-			for(int i=0;i<geom.ncamadas;i++){
+			for(int i=0;i<totalLayers;i++){
 				nglob+=ncamada[i];
 			}
 			nglob=2*(nglob+1);
@@ -2028,28 +2040,28 @@ double TransCal::transperm(double resanul){
 			Tini[0][0]=Tcamada[0][0];
 			Tcamada[0][0]=vetliv[0];
 			Qini[0][0]=Qcamada[0][0];
-			Qcamada[0][0]=2.*M_PI*vetliv[1];
+			Qcamada[0][0]=twoPi*vetliv[1];
 			konta=2;
-			for(int i=0;i<geom.ncamadas;i++){
+			for(int i=0;i<totalLayers;i++){
 				for(int j=1;j<=ncamada[i];j++){
 					Tini[i][j]=Tcamada[i][j];
 					Tcamada[i][j]=vetliv[konta];
 					//double verifica; // unused-but-set-variable
 					//verifica=vetliv[konta+1]; // unused-but-set-variable
 					Qini[i][j]=Qcamada[i][j];
-					Qcamada[i][j]=2.*M_PI*vetliv[konta+1];
+					Qcamada[i][j]=twoPi*vetliv[konta+1];
 					konta+=2;
 				}
-				if(i<geom.ncamadas-1){
+				if(i<totalLayers-1){
 					Tini[i+1][0]=Tcamada[i+1][0];
 					Tcamada[i+1][0]=Tcamada[i][ncamada[i]];
 					Qini[i+1][0]=Qcamada[i+1][0];
 					Qcamada[i+1][0]=Qcamada[i][ncamada[i]];
 				}
 			}
-			fluxIni=2.*M_PI*vetliv[1];
+			fluxIni=twoPi*vetliv[1];
 			konta-=2;
-			fluxFim=2.*M_PI*vetliv[konta+1];
+			fluxFim=twoPi*vetliv[konta+1];
 
 			Tint=tintTemp;
 			Textern1=texternTemp;

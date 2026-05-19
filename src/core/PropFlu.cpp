@@ -1,5 +1,7 @@
 using namespace std;
 #include "PropFlu.h"
+#include <cmath>
+#include <cstring>
 //#include "MarlimComposicional.h"
 
 //extern "C" void MarlimCalculateViscosityPedersen(double dPressure, double dTemperature, int iNComp, double* oTc, double* oPc, double* oMW,
@@ -1395,13 +1397,10 @@ ProFlu::ProFlu(const ProFlu& fluido):
     fracMol=new double[npseudo];
 	oCalculatedLiqComposition=new double[npseudo];
 	oCalculatedVapComposition=new double[npseudo];
-	/*memcpy(fracMol,fluido.fracMol, npseudo*sizeof(double));
-	memcpy(oCalculatedLiqComposition,fluido.oCalculatedLiqComposition, npseudo*sizeof(double));
-	memcpy(oCalculatedVapComposition,fluido.oCalculatedVapComposition, npseudo*sizeof(double));*/
-	 for(int i=0;i<npseudo;i++){
-		 fracMol[i]=fluido.fracMol[i];
-		 oCalculatedLiqComposition[i]=fluido.oCalculatedLiqComposition[i];
-		 oCalculatedVapComposition[i]=fluido.oCalculatedVapComposition[i];
+	 if(npseudo>0){
+		 memcpy(fracMol,fluido.fracMol, npseudo*sizeof(double));
+		 memcpy(oCalculatedLiqComposition,fluido.oCalculatedLiqComposition, npseudo*sizeof(double));
+		 memcpy(oCalculatedVapComposition,fluido.oCalculatedVapComposition, npseudo*sizeof(double));
 	 }
   }
   else{
@@ -1491,29 +1490,25 @@ ProFlu::ProFlu(const ProFlu& fluido):
 			miniTabDin.valdZdP[k]=new double[dim];
 		}
 		for (int k = 0; k < dim; k++) {
-			for (int j = 0; j < dim; j++) {
-				miniTabDin.rholF[k][j] = fluido.miniTabDin.rholF[k][j];
-				miniTabDin.rhogF[k][j] = fluido.miniTabDin.rhogF[k][j];
-				miniTabDin.DrholDpF[k][j] = fluido.miniTabDin.DrholDpF[k][j];
-				miniTabDin.DrhogDpF[k][j] = fluido.miniTabDin.DrhogDpF[k][j];
-				miniTabDin.DrholDtF[k][j] = fluido.miniTabDin.DrholDtF[k][j];
-				miniTabDin.DrhogDtF[k][j] = fluido.miniTabDin.DrhogDtF[k][j];
-				miniTabDin.valBO[k][j] = fluido.miniTabDin.valBO[k][j];
-				miniTabDin.tit[k][j] = fluido.miniTabDin.tit[k][j];
-				miniTabDin.rs[k][j] = fluido.miniTabDin.rs[k][j];
-				miniTabDin.cplF[k][j] = fluido.miniTabDin.cplF[k][j];
-				miniTabDin.cpgF[k][j] = fluido.miniTabDin.cpgF[k][j];
-				miniTabDin.valZ[k][j] = fluido.miniTabDin.valZ[k][j];
-				miniTabDin.HlF[k][j] = fluido.miniTabDin.HlF[k][j];
-				miniTabDin.HgF[k][j] = fluido.miniTabDin.HgF[k][j];
-				miniTabDin.valdZdT[k][j] = fluido.miniTabDin.valdZdT[k][j];
-				miniTabDin.valdZdP[k][j] = fluido.miniTabDin.valdZdP[k][j];
-			}
+			memcpy(miniTabDin.rholF[k], fluido.miniTabDin.rholF[k], dim*sizeof(double));
+			memcpy(miniTabDin.rhogF[k], fluido.miniTabDin.rhogF[k], dim*sizeof(double));
+			memcpy(miniTabDin.DrholDpF[k], fluido.miniTabDin.DrholDpF[k], dim*sizeof(double));
+			memcpy(miniTabDin.DrhogDpF[k], fluido.miniTabDin.DrhogDpF[k], dim*sizeof(double));
+			memcpy(miniTabDin.DrholDtF[k], fluido.miniTabDin.DrholDtF[k], dim*sizeof(double));
+			memcpy(miniTabDin.DrhogDtF[k], fluido.miniTabDin.DrhogDtF[k], dim*sizeof(double));
+			memcpy(miniTabDin.valBO[k], fluido.miniTabDin.valBO[k], dim*sizeof(double));
+			memcpy(miniTabDin.tit[k], fluido.miniTabDin.tit[k], dim*sizeof(double));
+			memcpy(miniTabDin.rs[k], fluido.miniTabDin.rs[k], dim*sizeof(double));
+			memcpy(miniTabDin.cplF[k], fluido.miniTabDin.cplF[k], dim*sizeof(double));
+			memcpy(miniTabDin.cpgF[k], fluido.miniTabDin.cpgF[k], dim*sizeof(double));
+			memcpy(miniTabDin.valZ[k], fluido.miniTabDin.valZ[k], dim*sizeof(double));
+			memcpy(miniTabDin.HlF[k], fluido.miniTabDin.HlF[k], dim*sizeof(double));
+			memcpy(miniTabDin.HgF[k], fluido.miniTabDin.HgF[k], dim*sizeof(double));
+			memcpy(miniTabDin.valdZdT[k], fluido.miniTabDin.valdZdT[k], dim*sizeof(double));
+			memcpy(miniTabDin.valdZdP[k], fluido.miniTabDin.valdZdP[k], dim*sizeof(double));
 		}
-		for (int k = 0; k < dim; k++) {
-			miniTabDin.PBF[k] = fluido.miniTabDin.PBF[k];
-			miniTabDin.TBF[k] = fluido.miniTabDin.TBF[k];
-		}
+		memcpy(miniTabDin.PBF, fluido.miniTabDin.PBF, dim*sizeof(double));
+		memcpy(miniTabDin.TBF, fluido.miniTabDin.TBF, dim*sizeof(double));
 		miniTabDin.pmax=fluido.miniTabDin.pmax;
 		miniTabDin.pmin=fluido.miniTabDin.pmin;
 		miniTabDin.tmax=fluido.miniTabDin.tmax;
@@ -1582,10 +1577,6 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
 
   modelaAgua=fluido.modelaAgua;
 
-  A0Liv=6.54269213;A1Liv=2.60464618;A2Liv=1.21334544;A3Liv=0.16464125;A4Liv=1.19382967;
-  B0Liv=0.00000087;B1Liv=4.77390016;B2Liv=1.77267703;B3Liv=-0.73072038;B4Liv=1.58093857;
-  C0Liv=0.00322609;C1Liv=0.09281075;C2Liv=0.13633665;C3Liv=0.09634381;C4Liv=0.53238728;
-
 
 
   tab=fluido.tab;
@@ -1610,19 +1601,6 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
   corrDeng=fluido.corrDeng;
   ninjgas=fluido.ninjgas;
   lingas=fluido.lingas;
-
-  //alteracao4
-  BPPF[0]=0.17;BPPF[1]=0.30;BPPF[2]=0.43;BPPF[3]=0.58;BPPF[4]=0.75;BPPF[5]=0.94;BPPF[6]=1.19;BPPF[7]=1.47;BPPF[8]=1.74;
-  BPPF[9]=2.10;BPPF[10]=2.70;BPPF[11]=3.29;BPPF[12]=3.80;BPPF[13]=4.30;BPPF[14]=4.90;BPPF[15]=5.70;BPPF[16]=6.70;
-
-  GMF[0]=0.05;GMF[1]=0.10;GMF[2]=0.15;GMF[3]=0.20;GMF[4]=0.25;GMF[5]=0.30;GMF[6]=0.35;GMF[7]=0.40;GMF[8]=0.45;
-  GMF[9]=0.50;GMF[10]=0.55;GMF[11]=0.60;GMF[12]=0.65;GMF[13]=0.70;GMF[14]=0.75;GMF[15]=0.80;GMF[16]=0.85;
-
-  APIEMW[0]=5;APIEMW[1]=13;APIEMW[2]=19;APIEMW[3]=24;APIEMW[4]=28;APIEMW[5]=33;APIEMW[6]=38;
-  APIEMW[7]=44;APIEMW[8]=52; APIEMW[9]=70;
-
-  EMW[0]=600;EMW[1]=500;EMW[2]=450;EMW[3]=400;EMW[4]=350;EMW[5]=300;EMW[6]=250;EMW[7]=200;EMW[8]=150;
-  EMW[9]=100;
 
   corrSat=fluido.corrSat;
   corrOM=fluido.corrOM;
@@ -1836,13 +1814,10 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
 	 fracMol=new double[npseudo];
 	 oCalculatedLiqComposition=new double[npseudo];
 	 oCalculatedVapComposition=new double[npseudo];
-	 /*memcpy(fracMol,fluido.fracMol, npseudo*sizeof(double));
-	 memcpy(oCalculatedLiqComposition,fluido.oCalculatedLiqComposition, npseudo*sizeof(double));
-	 memcpy(oCalculatedVapComposition,fluido.oCalculatedVapComposition, npseudo*sizeof(double));*/
-	 for(int i=0;i<npseudo;i++){
-		 fracMol[i]=fluido.fracMol[i];
-		 oCalculatedLiqComposition[i]=fluido.oCalculatedLiqComposition[i];
-		 oCalculatedVapComposition[i]=fluido.oCalculatedVapComposition[i];
+	 if(npseudo>0){
+		 memcpy(fracMol,fluido.fracMol, npseudo*sizeof(double));
+		 memcpy(oCalculatedLiqComposition,fluido.oCalculatedLiqComposition, npseudo*sizeof(double));
+		 memcpy(oCalculatedVapComposition,fluido.oCalculatedVapComposition, npseudo*sizeof(double));
 	 }
  }
  else{
@@ -2089,10 +2064,12 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 //    int ipmarcador=0;
 //    int itmarcador=0;
     double varprop;
-    int ndiv=npontos-1;
-    if(pres<Var[1][0] || pres>=Var[ndiv+1][0] || temp<Var[0][1] || temp>=Var[0][ndiv+1]){
+    const int ndiv=npontos-1;
+    const int upperIndex=ndiv+1;
+    double* const tempAxis=Var[0];
+    if(pres<Var[1][0] || pres>=Var[upperIndex][0] || temp<tempAxis[1] || temp>=tempAxis[upperIndex]){
     	varprop=1.225*Deng;
-    	if(pres>=Var[ndiv+1][0]|| temp<Var[0][1] || temp>=Var[0][ndiv+1]){
+		if(pres>=Var[upperIndex][0]|| temp<tempAxis[1] || temp>=tempAxis[upperIndex]){
             // incluir falha
             string complementoFalha = string("Limite alto na tabela ") + to_string((*vg1dSP).contaExit);
             logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Pressão ou temperatura excedeu o limite máximo da tabela de Flash", "N/A",
@@ -2150,10 +2127,10 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
           int busca=0;
           //int busca=(*itempAnt);
           while(temp>tchange[busca])busca++;
-          double tmax=Var[0][itchange[busca]];
+          double tmax=tempAxis[itchange[busca]];
           //itemp=floor((temp-tmin)/delt)+indMinEquT;
           itemp=itchange[busca]-ceil((tmax-temp)/dtchange[busca]);
-          if(temp<Var[0][itemp])itemp--;
+          if(temp<tempAxis[itemp])itemp--;
       }
       else{
         e = 1;
@@ -2164,26 +2141,28 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
         while (e <= d) {
  	      m = (e + d)/2;
 // 	      itmarcador=m;
- 	      if(m==1){
- 	    	  itemp=m;
- 	    	  break;
- 	      }
- 	      else if (m==ndiv+1 && Var[0][m] == temp){
- 	    	itemp=m-1;
- 	    	break;
- 	      }
- 	      if (Var[0][m] > temp && Var[0][m-1]<=temp){
- 	    	  itemp=m-1;
- 	    	  break;
- 	      }
- 	      if (Var[0][m-1] < temp) e = m + 1;
- 	      else d = m - 1;
- 	    }
+	      if(m==1){
+	    	  itemp=m;
+	    	  break;
+	      }
+	      else if (m==ndiv+1 && tempAxis[m] == temp){
+	    	itemp=m-1;
+	    	break;
+	      }
+	      if (tempAxis[m] > temp && tempAxis[m-1]<=temp){
+	    	  itemp=m-1;
+	    	  break;
+	      }
+	      if (tempAxis[m-1] < temp) e = m + 1;
+	      else d = m - 1;
+	    }
       }
-      double razpres=(Var[ipres][0]-pres)/(Var[ipres][0]-Var[ipres+1][0]);
-      double raztemp=(Var[0][itemp]-temp)/(Var[0][itemp]-Var[0][itemp+1]);
-      double varp1=(1-razpres)*(Var[ipres][itemp])+razpres*(Var[ipres+1][itemp]);
-      double varp2=(1-razpres)*(Var[ipres][itemp+1])+razpres*(Var[ipres+1][itemp+1]);
+      double* const presRow=Var[ipres];
+      double* const nextPresRow=Var[ipres+1];
+      double razpres=(presRow[0]-pres)/(presRow[0]-nextPresRow[0]);
+      double raztemp=(tempAxis[itemp]-temp)/(tempAxis[itemp]-tempAxis[itemp+1]);
+      double varp1=(1-razpres)*presRow[itemp]+razpres*nextPresRow[itemp];
+      double varp2=(1-razpres)*presRow[itemp+1]+razpres*nextPresRow[itemp+1];
       varprop=(1-raztemp)*varp1+raztemp*varp2;
      }
    /* if(renovaInd>0){
@@ -3633,6 +3612,7 @@ double ProFlu::ZdranOriginal(double pres, double temp, int cordg, double a, doub
 
 double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{//alteracao2
   double zt=0.;
+  const double tempKelvin=temp + 273.15;
   if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
 	  if(masespG<0){
 		  double PCtemp;
@@ -3655,49 +3635,75 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 		  double presR=(0.9678411*14.69595*pres)/PCtemp;
 		  double tempR=(1.8*temp+32+460)/TCtemp;
 		  if(tab>0){
-			  if(presR>zdranP[1][0]-1e-5)interno=0;//alteracao2
-			  if(presR<zdranP[npontos+1][0]+1e-5)interno=0;//alteracao2
-			  if(tempR>zdranP[0][1]-1e-5)interno=0;//alteracao2
-			  if(tempR<zdranP[0][npontos+1]+1e-5)interno=0;//alteracao2
-			  if(interno==1){
-				  int ipres=0;
-				  int itemp=0;
-//				  int ipmarcador=0;
-//				  int itmarcador=0;
-				  if(tab==1){
-					  if(presR>zdranP[1][0] || presR<=zdranP[npontos+1][0] || tempR>zdranP[0][1] ||
-							  tempR<=zdranP[0][npontos+1]) zt=0.;
-					  else{
-//						  double pmin=zdranP[npontos+1][0];
-						  double pmax=zdranP[1][0];
-						  double delp=zdranP[1][0]-zdranP[2][0];
-						  ipres=floor((pmax-presR)/delp)+1;
-//						  double tmin=zdranP[0][npontos+1];
-						  double tmax=zdranP[0][1];
-						  double delt=zdranP[0][1]-zdranP[0][2];
-						  itemp=floor((tmax-tempR)/delt)+1;
-
-						  double razpres=(zdranP[ipres][0]-presR)/(zdranP[ipres][0]-zdranP[ipres+1][0]);
-						  double raztemp=(zdranP[0][itemp]-tempR)/(zdranP[0][itemp]-zdranP[0][itemp+1]);
-						  double latp1=(1-razpres)*(zdranP[ipres][itemp])+razpres*(zdranP[ipres+1][itemp]);
-						  double latp2=(1-razpres)*(zdranP[ipres][itemp+1])+razpres*(zdranP[ipres+1][itemp+1]);
-						  zt=(1-raztemp)*latp1+raztemp*latp2;
+			  const int upperIndex=npontos+1;
+			  bool tabelaValida = std::isfinite(presR) && std::isfinite(tempR) && npontos >= 2 &&
+					  zdranP != nullptr && zdranP[0] != nullptr && zdranP[1] != nullptr &&
+					  zdranP[2] != nullptr && zdranP[upperIndex] != nullptr &&
+					  std::isfinite(zdranP[1][0]) && std::isfinite(zdranP[2][0]) &&
+					  std::isfinite(zdranP[upperIndex][0]) && std::isfinite(zdranP[0][1]) &&
+					  std::isfinite(zdranP[0][2]) && std::isfinite(zdranP[0][upperIndex]);
+			  if(tabelaValida){
+				  double* const tempAxis=zdranP[0];
+				  if(presR>zdranP[1][0]-1e-5)interno=0;//alteracao2
+				  if(presR<zdranP[upperIndex][0]+1e-5)interno=0;//alteracao2
+				  if(tempR>tempAxis[1]-1e-5)interno=0;//alteracao2
+				  if(tempR<tempAxis[upperIndex]+1e-5)interno=0;//alteracao2
+				  if(interno==1){
+					  int ipres=0;
+					  int itemp=0;
+//					  int ipmarcador=0;
+//					  int itmarcador=0;
+					  if(tab==1){
+						  if(presR>zdranP[1][0] || presR<=zdranP[upperIndex][0] || tempR>tempAxis[1] ||
+								  tempR<=tempAxis[upperIndex]) zt=0.;
+						  else{
+//							  double pmin=zdranP[npontos+1][0];
+							  double pmax=zdranP[1][0];
+							  double delp=zdranP[1][0]-zdranP[2][0];
+//							  double tmin=zdranP[0][npontos+1];
+							  double tmax=tempAxis[1];
+							  double delt=tempAxis[1]-tempAxis[2];
+							  bool indiceValido=false;
+							  if(std::isfinite(delp) && std::isfinite(delt) && delp!=0. && delt!=0.){
+								  const double ipresD=floor((pmax-presR)/delp)+1;
+								  const double itempD=floor((tmax-tempR)/delt)+1;
+								  if(std::isfinite(ipresD) && std::isfinite(itempD) &&
+										  ipresD>=1. && ipresD<=npontos && itempD>=1. && itempD<=npontos){
+									  ipres=static_cast<int>(ipresD);
+									  itemp=static_cast<int>(itempD);
+									  indiceValido=true;
+								  }
+							  }
+							  if(!indiceValido || zdranP[ipres] == nullptr || zdranP[ipres+1] == nullptr) {
+								  zt=ZdranOriginal(pres,temp,cordg,1,10,0);
+							  }
+							  else{
+								  double* const presRow=zdranP[ipres];
+								  double* const nextPresRow=zdranP[ipres+1];
+								  double razpres=(presRow[0]-presR)/(presRow[0]-nextPresRow[0]);
+								  double raztemp=(tempAxis[itemp]-tempR)/(tempAxis[itemp]-tempAxis[itemp+1]);
+								  double latp1=(1-razpres)*presRow[itemp]+razpres*nextPresRow[itemp];
+								  double latp2=(1-razpres)*presRow[itemp+1]+razpres*nextPresRow[itemp+1];
+								  zt=(1-raztemp)*latp1+raztemp*latp2;
+							  }
+						  }
 					  }
 				  }
+				  else zt=ZdranOriginal(pres,temp,cordg,1,10,interno);
 			  }
-			  else zt=ZdranOriginal(pres,temp,cordg,1,10,interno);
+			  else zt=ZdranOriginal(pres,temp,cordg,1,10,0);
 		  }
 		  else zt=ZdranOriginal(pres,temp,cordg,1,10,interno);
 	  }
 	  else{
-		  zt=((rDgL*Deng*28.9625)*pres*98066.5)/(8.0465*1000*masespG*(temp + 273.15));
+		  zt=((rDgL*Deng*28.9625)*pres*98066.5)/(8.0465*1000*masespG*tempKelvin);
 	  }
   }
   else if(flashCompleto==1){
 	  double masesp;
 	  if(masespG<0)masesp=interpolaVarProd(pres, temp, rhogF);
 	  else masesp=masespG;
-	  zt=((Deng*28.9625)*pres*98066.5/masesp)/(8.0465*1000*(temp + 273.15));
+	  zt=((Deng*28.9625)*pres*98066.5/masesp)/(8.0465*1000*tempKelvin);
   }
   else{
 	  if((*vg1dSP).modoTransiente==0){
@@ -4335,6 +4341,7 @@ double BO;
 if(flashCompleto==0 || flashCompleto==3){
 	if(IRGO>0){
 	double kgf100= kgf(100);
+	const double tempKelvin=temp + 273.;
     double ipres=psia(pres);
     double itemp= Faren(temp);
     /*double rDgLtemp=rDgL;
@@ -4343,7 +4350,7 @@ if(flashCompleto==0 || flashCompleto==3){
     rDgL=1.;
     PCis=PC;
     TCis=TC;*/
-    double SG100 = (kgf100*293*Deng)/(Zdran(kgf100, temp,1)*(temp + 273));
+    double SG100 = (kgf100*293*Deng)/(Zdran(kgf100, temp,1)*tempKelvin);
     /*rDgL=rDgLtemp;
     PCis=PCistemp;
     TCis=TCisTemp;*/
@@ -4361,9 +4368,6 @@ if(flashCompleto==0 || flashCompleto==3){
     }
 
     double PBolhavar = PB(pres, temp);
-    double RSvar;
-    if(varRS<0)RSvar= RS(pres, temp);
-    else RSvar=varRS;
 
     if(ipres >= PBolhavar){
        double BOB=1+0.000467*IRGO + Avazbeg*Dvazbeg*0.0001 +
@@ -4373,7 +4377,12 @@ if(flashCompleto==0 || flashCompleto==3){
 
        BO=BOB*exp(-(CO*(PBolhavar - ipres)));
     }
-    else BO=1+0.000467*RSvar+Avazbeg*Dvazbeg*0.0001+Bvazbeg*RSvar*Dvazbeg*pow(10,-8);
+    else{
+	   double RSvar;
+	   if(varRS<0)RSvar= RS(pres, temp);
+	   else RSvar=varRS;
+	   BO=1+0.000467*RSvar+Avazbeg*Dvazbeg*0.0001+Bvazbeg*RSvar*Dvazbeg*pow(10,-8);
+    }
     //if(BO < 1) BO=1;
 	}
 	else{
@@ -6688,4 +6697,3 @@ ostream& operator<<(ostream& s, const ProFlu& flui){
 }
 
 //template class ProFlu;
-
