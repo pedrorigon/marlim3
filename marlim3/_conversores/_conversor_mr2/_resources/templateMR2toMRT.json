@@ -4,7 +4,6 @@
 		"transiente": false,
 		"ordemperm": 1,
 		"equilibrioTermico": true,
-		"JTLiquidoSimple": 1,
 		"latente": false,
 		"sentidoGeometriaSegueEscoamento": false,
 		"modeloCp": 0,
@@ -24,6 +23,7 @@
 			"bolhaGolfada": 1,
 			"anularChurn": 1
 		},
+		"Avancado": {"JTLiquidoSimple": 1},
 		"Formacao": {
 			"TempoProducao": 365.0,
 			"Propriedades": [
