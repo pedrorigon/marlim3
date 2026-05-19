@@ -4590,9 +4590,9 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 				celula[i].acsr.chk.AreaGarg <= (1e-3 +arq.master1.razareaativ) * celula[i].duto.area){
 			dpdx = (celula[i].pres-celula[i-1].pres) * 98066.5 / dxmed;
  	}
-		else if(i>0 && ((celula[i-1].acsr.tipo==4 && celula[i-1].acsr.bcs.freq>1) || celula[i-1].acsr.tipo==7)){
-			dpdx =  (celula[i].pres-celula[i-1].pres) * 98066.5 / dxmed;
-		}
+		//else if(i>0 && ((celula[i-1].acsr.tipo==4 && celula[i-1].acsr.bcs.freq>1) || celula[i-1].acsr.tipo==7)){
+			//dpdx =  (celula[i].pres-celula[i-1].pres) * 98066.5 / dxmed;
+		//}
 		else if(i==0)dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * 98066.5 / celula[i].dx;
 
   //celula[i].VTemper=coefdxT*area/coefTempo;//corrigir a multiplicacao pela area
@@ -14387,7 +14387,7 @@ void SProd::renovaterm(int aflu) {
 		            if (((ang != angL) && /*celula[iViz].arranjo*/ bif[iViz] != 0) ||
 		            		(celula[i].arranjo != celula[iViz].arranjo && /*celula[iViz].arranjo*/ bif[iViz] != 0)) {
 		              c0V[i] = (celula[i].dx * celula[i].c0 + celula[i + 1].dx * celula[i + 1].c0)
-		                  / (celula[i].dx + celula[i - 1].dx);
+		                  / (celula[i].dx + celula[i + 1].dx);
 		              if(ang*angL>=0)
 		              udV[i] = (celula[i].dx * celula[i].ud + celula[i + 1].dx * celula[i + 1].ud)
 		                  / (celula[i].dx + celula[i + 1].dx);
@@ -19602,7 +19602,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
     	escreveIni <<"     Versao    "<<versao<< endl;
     	if(arq.saidaClassica==1){
     		  srand (time(NULL));
-    		  int frase=rand() % 12;
+    		  int frase=rand() % 15;
     		  escreveIni << "*******************************************************************************" << endl;
     		  escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
 			  //cout << "           'Ouca-me. O fim quase nunca esta longe em nenhum momento!'          " << endl;
@@ -30997,7 +30997,7 @@ void SProd::RenovaTempPerm(int i, int RK) {
   if(fabs(ugsmed+ulsmed)>0.05 && semTermo==0){//calculo termico e feito para velocidades de mistura superiores a 0,1 m/s,
 	  //para velocidades inferiores se admite que a temperatura do fluidoÃƒÂ© igual ÃƒÂ  temperatura ambiente
 	  sinalJ=(ugsmed+ulsmed)/fabs(ugsmed+ulsmed);
-	  double pmedi = celula[i].presaux + celula[i - 1].dpB / 98066.5;
+	  double pmedi = celula[i].presaux + 0*celula[i - 1].dpB / 98066.5;
 	  double tmedi;
 	  if (iterperm != 0 && arq.AceleraConvergPerm==0)//temperatura na interface esquerda da celula
 		  //caso em que se considera que ja foi
@@ -31155,7 +31155,8 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  else{
 		  //caso tenha BCS ou incremento de pressao  utiliza-se a pressao da celulaa esquerda
 		  // e a pressao no centro de celula para o calculoi de Dp/Dx
-	     dpdx=(pmedi-celula[i-1].pres)*98600./dx;
+	     //dpdx=1*(pmedi-celula[i-1].pres)*98600./dx;
+		  dpdx = 2. * (celula[i].presaux - celula[i - 1].pres) *98066.5/ celula[i - 1].dx;
 	  }
 	  celula[i].VTemper = ulsmed;//esta velocidade so e util no caso transiente, Ã© armazenada aqui
 	  //apenas para se ter um valor quando a simulacao transiente se iniciar

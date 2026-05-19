@@ -575,7 +575,7 @@ class SProd {
   int redeParalelaP;
   int redeParalelaS;
 
-  const char* saidaTextoSis[12]={"                          Post Coitum Omine Animal Triste Est                   ",
+  const char* saidaTextoSis[15]={"                          Post Coitum Omine Animal Triste Est                   ",
 			"           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
 			"      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
 			"                   Infeliz e o espirito ansioso pelo futuro.                    ",
@@ -586,8 +586,11 @@ class SProd {
 	"O sucesso nao e uma linha reta, e um jogo de resistencia, e cada tropeco e apenas um degrau a mais para a vitoria!",
 	"                        Quem vive de navegar, o vento e quem lhe comanda                ",
 	"    Uma vez me perguntaram o que achava da passagem do tempo, e eu disse: sou contra    ",
-	"                 Nao importa o quanto voce va devagar, desde que nao pare                "};
-  const char* saidaSubTextoSis[12]={
+	"                 Nao importa o quanto voce va devagar, desde que nao pare                ",
+	"Um simulador que resolve uma parada de producao, comeca avancando pequenos incrementos de tempo",
+	"                            Nada e permanente, exceto a mudanca                           ",
+	"                  Uma jornada de mil quilometros comeca com um unico passo                "};
+  const char* saidaSubTextoSis[15]={
 		  "                         Galeno de Pergamo do Transiente Longo                          ",
 		  "                     J. California Cooper depois da simulacao divergir                  ",
 		  "                                Marcel Proust no CrossFit                               ",
@@ -599,7 +602,10 @@ class SProd {
 		  "                                    Mario Pascal do Insta                               ",
 		  "                          Seu Pereira na feira de artesanatos numericos                 ",
 		  "                        Luis Fernando Verissimo das Simulacoes Permanentes              ",
-		  "                             Confucio vendo a simulacao emperrar                       "};
+		  "                             Confucio vendo a simulacao emperrar                       ",
+		  "                               Confucio das simulacoes sem fim                         ",
+		  "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
+		  "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    "};
 
 
   SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
