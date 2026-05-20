@@ -6,27 +6,47 @@
  */
 
 #include "Log.h"
+#include <stdlib.h>
 
 using namespace rapidjson;
 
-Logger::Logger() {
+namespace {
+
+void assignString(char*& target, const string& value) {
+  char* buffer = (char*) malloc((value.size() + 1) * sizeof(char));
+  if (buffer == NULL) {
+    return;
+  }
+
+  memcpy(buffer, value.c_str(), value.size() + 1);
+  if (target != NULL) {
+    free(target);
+  }
+  target = buffer;
+}
+
+void initializeResultadoSimulacao(stResultadoSimulacao_t& resultado) {
   // status da inicação do log
-  this->stResultadoSimulacao.started = true;
+  resultado.started = false;
   // iniciar valores dos atributos
-  this->stResultadoSimulacao.sucesso = true;
-  this->stResultadoSimulacao.totalInfos = -1;
-  this->stResultadoSimulacao.totalAvisos = -1;
-  this->stResultadoSimulacao.totalFalhas = -1;
-  // alocar espaco para o nome do arquivo de log do parse
-  this->stResultadoSimulacao.nomeArqLog = (char*) malloc(TAMANHO_MAXIMO_NOME_ARQUIVO * sizeof(char));
-  // alocar espaco para o nome do arquivo de entrada do parse
-  this->stResultadoSimulacao.nomeArqEntrada = (char*) malloc(TAMANHO_MAXIMO_NOME_ARQUIVO * sizeof(char));
-  // alocar espaco para a data
-  this->stResultadoSimulacao.dataExecucao = (char*) malloc(11 * sizeof(char));
-  Logger("simulacao.log");
+  resultado.sucesso = true;
+  resultado.totalInfos = -1;
+  resultado.totalAvisos = -1;
+  resultado.totalFalhas = -1;
+  resultado.nomeArqLog = NULL;
+  resultado.nomeArqEntrada = NULL;
+  resultado.dataExecucao = NULL;
+}
+
+}
+
+Logger::Logger() {
+  initializeResultadoSimulacao(this->stResultadoSimulacao);
+  changeResultadoSimulacao(ARQUIVO_LOG_PADRAO, ARQUIVO_LOG_PADRAO);
 }
 
 Logger::Logger(const string ARQUIVO_LOG) {
+  initializeResultadoSimulacao(this->stResultadoSimulacao);
   changeResultadoSimulacao(ARQUIVO_LOG, ARQUIVO_LOG);
 }
 
@@ -41,14 +61,14 @@ Logger& Logger::operator =(const Logger& vLogger) {
 void Logger::setNomeArqEntrada(string nomeArquivoEntrada) {
   // trocar o nome do arquivo de entrada
   if(logRede==0)
-	  strcpy(this->stResultadoSimulacao.nomeArqEntrada, nomeArquivoEntrada.c_str());
-  else strcpy(this->stResultadoSimulacao.nomeArqEntrada, nomeRedePrincipal.c_str());
+	  assignString(this->stResultadoSimulacao.nomeArqEntrada, nomeArquivoEntrada);
+  else assignString(this->stResultadoSimulacao.nomeArqEntrada, nomeRedePrincipal);
 }
 
 
 void Logger::setNomeArqLog(string nomeArquivoLog) {
   // trocar o nome do arquivo do log
-  strcpy(this->stResultadoSimulacao.nomeArqLog, nomeArquivoLog.c_str());
+  assignString(this->stResultadoSimulacao.nomeArqLog, nomeArquivoLog);
 }
 
 
@@ -57,10 +77,6 @@ void Logger::changeResultadoSimulacao(const string nomeArquivoEntrada, const str
   if (nomeArquivoEntrada.size() > 0) {
 	  if (! this->stResultadoSimulacao.started) {
 //    if ((this->stResultadoSimulacao.nomeArqLog == NULL) || (strcmp(nomeArquivoLog.c_str(), this->stResultadoSimulacao.nomeArqLog) != 0)) {
-      // alocar espaco para o nome do arquivo do log
-      this->stResultadoSimulacao.nomeArqLog = (char*) malloc(TAMANHO_MAXIMO_NOME_ARQUIVO * sizeof(char));
-      // alocar espaco para o nome do arquivo de entrada do parse
-      this->stResultadoSimulacao.nomeArqEntrada = (char*) malloc(TAMANHO_MAXIMO_NOME_ARQUIVO * sizeof(char));
       // alocar espaco para a data
       this->stResultadoSimulacao.dataExecucao = (char*) malloc(11 * sizeof(char));
       // obter a data corrente
@@ -290,4 +306,3 @@ void Logger::write_logs_and_exit() {
 }
 
 //template class Logger;
-
