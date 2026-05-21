@@ -34,7 +34,7 @@ jobs:
     steps:
       - id: skip_check
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        uses: fkirc/skip-duplicate-actions@v5
+        uses: step-security/skip-duplicate-actions@v5
         with:
           concurrent_skipping: same_content_newer
           skip_after_successful_duplicate: true
@@ -59,17 +59,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7.0.0
         with:
           enable-cache: true
 
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -138,7 +138,7 @@ jobs:
           cat Marlim3.sha256
 
       - name: Upload executable + checksum
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Marlim3-linux-x64
           path: |
@@ -153,11 +153,11 @@ jobs:
       - pre_check
       - python-checks
     if: needs.pre_check.outputs.should_skip != 'true'
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -198,7 +198,7 @@ jobs:
           cat Marlim3.exe.sha256
 
       - name: Upload executable + checksum
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Marlim3-windows-x64
           path: |
@@ -217,7 +217,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -256,7 +256,7 @@ jobs:
           cat Marlim3.sha256
 
       - name: Upload executable + checksum
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Marlim3-macos-arm64
           path: |
@@ -274,17 +274,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7.0.0
         with:
           enable-cache: true
 
@@ -295,7 +295,7 @@ jobs:
         run: rm -f marlim3/Marlim3 marlim3/Marlim3.exe build/Marlim3 build/Marlim3.exe
 
       - name: Download Marlim3-linux-x64 artifact (from this run)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Marlim3-linux-x64
           path: artifact-in
@@ -332,22 +332,22 @@ jobs:
 
   test-windows:
     name: Test – Windows x64
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: build-windows
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7.0.0
         with:
           enable-cache: true
 
@@ -361,7 +361,7 @@ jobs:
           Remove-Item -Force -ErrorAction SilentlyContinue marlim3\Marlim3.exe, marlim3\Marlim3, build\Marlim3.exe, build\Marlim3
 
       - name: Download Marlim3-windows-x64 artifact (from this run)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Marlim3-windows-x64
           path: artifact-in
@@ -407,17 +407,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7.0.0
         with:
           enable-cache: true
 
@@ -428,7 +428,7 @@ jobs:
         run: rm -f marlim3/Marlim3 marlim3/Marlim3.exe build/Marlim3 build/Marlim3.exe
 
       - name: Download Marlim3-macos-arm64 artifact (from this run)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Marlim3-macos-arm64
           path: artifact-in
@@ -477,7 +477,7 @@ jobs:
 
     steps:
       - name: Download Linux executable
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Marlim3-linux-x64
           path: artifacts/linux
@@ -485,7 +485,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download Windows executable
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Marlim3-windows-x64
           path: artifacts/windows
@@ -493,7 +493,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download macOS ARM64 executable
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Marlim3-macos-arm64
           path: artifacts/macos-arm64
@@ -520,7 +520,7 @@ jobs:
           ls -la artifacts/linux artifacts/windows artifacts/macos-arm64
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             artifacts/linux/Marlim3-linux-x64
@@ -543,17 +543,17 @@ jobs:
 
     steps:
       - name: Checkout tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref_name }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7.0.0
         with:
           enable-cache: true
 
@@ -583,13 +583,13 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - windows-latest
+          - windows-2022
           - macos-14
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
