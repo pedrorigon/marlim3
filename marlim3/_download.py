@@ -24,17 +24,14 @@ def get_platform_asset_info():
     elif system == 'Linux':
         return ('Marlim3-linux-x64', 'Marlim3')
     elif system == 'Darwin':  # macOS
-        # Only ARM64 build available (Intel Macs can run via Rosetta 2)
         if machine in ['arm64', 'aarch64']:
             return ('Marlim3-macos-arm64', 'Marlim3')
         elif machine in ['x86_64', 'amd64']:
-            # Intel Mac: use ARM64 binary which will run via Rosetta 2
-            print("[INFO] Intel Mac detected. Using ARM64 binary (runs via Rosetta 2).")
-            return ('Marlim3-macos-arm64', 'Marlim3')
+            raise RuntimeError("macOS Intel is not supported by the Marlim3 prebuilt executable.")
         else:
             raise RuntimeError(f"Unsupported macOS architecture: {machine}")
     else:
-        raise RuntimeError(f"Unsupported platform: {system}. Supported: Windows, Linux, macOS.")
+        raise RuntimeError(f"Unsupported platform: {system}. Supported prebuilt platforms: Windows x64, Linux x64, macOS ARM64.")
 
 
 def get_executable_path():
@@ -215,10 +212,27 @@ def ensure_executable():
         return
     
     # Check if executable exists and works
-    if executable_exists() and _check_executable_runs():
+    try:
+        has_executable = executable_exists()
+    except RuntimeError as e:
+        print("\n" + "!" * 80)
+        print(f"[WARNING] {e}")
+        print("[INFO] Attempting to build from source...")
+        print("!" * 80)
+
+        if _try_build_from_source():
+            return
+
+        print("\n" + "!" * 80)
+        print("[WARNING] The package can still be imported, but simulation will not work.")
+        print("[WARNING] Compile Marlim3 from source to use simulations on this platform.")
+        print("!" * 80 + "\n")
         return
 
-    if executable_exists():
+    if has_executable and _check_executable_runs():
+        return
+
+    if has_executable:
         # Exists but doesn't run (e.g. GLIBC mismatch)
         print("\n" + "!" * 80)
         print("[WARNING] Marlim3 executable exists but cannot run on this system.")
@@ -243,7 +257,22 @@ def ensure_executable():
     print("MARLIM3: Executable not found. Downloading from GitHub releases...")
     print("!" * 80)
     
-    success = download_executable(silent=False)
+    try:
+        success = download_executable(silent=False)
+    except RuntimeError as e:
+        print("\n" + "!" * 80)
+        print(f"[WARNING] {e}")
+        print("[INFO] Attempting to build from source...")
+        print("!" * 80)
+
+        if _try_build_from_source():
+            return
+
+        print("\n" + "!" * 80)
+        print("[WARNING] The package can still be imported, but simulation will not work.")
+        print("[WARNING] Compile Marlim3 from source to use simulations on this platform.")
+        print("!" * 80 + "\n")
+        return
     
     if not success:
         print("\n" + "!" * 80)

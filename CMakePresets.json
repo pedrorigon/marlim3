@@ -7,15 +7,7 @@
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER":          "g++",
-                "CMAKE_Fortran_COMPILER":      "gfortran",
-                "CMAKE_CXX_FLAGS":             "-Wall -fmessage-length=0 -static-libgcc -static-libstdc++ -fopenmp",
-                "CMAKE_CXX_FLAGS_RELEASE":     "-O3 -march=native -mtune=native -ffp-contract=off -funroll-loops -DNDEBUG",
-                "CMAKE_CXX_FLAGS_DEBUG":       "-O0 -g3",
-                "CMAKE_EXE_LINKER_FLAGS":      "-static-libgcc -static-libstdc++ -fopenmp",
-                "CMAKE_Fortran_FLAGS":         "-g -fmax-errors=3 -ffree-line-length-none -fopenmp",
-                "CMAKE_Fortran_FLAGS_RELEASE": "",
-                "CMAKE_Fortran_FLAGS_DEBUG":   "-O0 -g3",
-                "MARLIM_FORTRAN_LIBS":         "gfortran"
+                "CMAKE_Fortran_COMPILER":      "gfortran"
             },
             "condition": {
                 "type": "notEquals",
@@ -30,15 +22,7 @@
             "generator": "MinGW Makefiles",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER":          "g++",
-                "CMAKE_Fortran_COMPILER":      "gfortran",
-                "CMAKE_CXX_FLAGS":             "-Wall -fmessage-length=0 -fopenmp",
-                "CMAKE_CXX_FLAGS_RELEASE":     "-O3 -march=native -mtune=native -ffp-contract=off -funroll-loops -DNDEBUG",
-                "CMAKE_CXX_FLAGS_DEBUG":       "-O0 -g3",
-                "CMAKE_EXE_LINKER_FLAGS":      "-static -fopenmp",
-                "CMAKE_Fortran_FLAGS":         "-g -fmax-errors=3 -ffree-line-length-none -fopenmp",
-                "CMAKE_Fortran_FLAGS_RELEASE": "",
-                "CMAKE_Fortran_FLAGS_DEBUG":   "-O0 -g3",
-                "MARLIM_FORTRAN_LIBS":         "gfortran"
+                "CMAKE_Fortran_COMPILER":      "gfortran"
             },
             "condition": {
                 "type": "equals",
@@ -52,15 +36,7 @@
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER":          "clang++-20",
-                "CMAKE_Fortran_COMPILER":      "gfortran",
-                "CMAKE_CXX_FLAGS":             "-Wall -fopenmp",
-                "CMAKE_CXX_FLAGS_RELEASE":     "-O3 -march=native -mtune=native -ffp-contract=off -funroll-loops -DNDEBUG",
-                "CMAKE_CXX_FLAGS_DEBUG":       "-O0 -g3",
-                "CMAKE_EXE_LINKER_FLAGS":      "-fopenmp -lstdc++ -lm",
-                "CMAKE_Fortran_FLAGS":         "-g -fmax-errors=3 -ffree-line-length-none -fopenmp",
-                "CMAKE_Fortran_FLAGS_RELEASE": "",
-                "CMAKE_Fortran_FLAGS_DEBUG":   "-O0 -g3",
-                "MARLIM_FORTRAN_LIBS":         "gfortran"
+                "CMAKE_Fortran_COMPILER":      "gfortran"
             },
             "condition": {
                 "type": "notEquals",

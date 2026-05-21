@@ -12,6 +12,10 @@ endif()
 
 project(Marlim3 VERSION ${MARLIM3_VERSION} LANGUAGES CXX Fortran)
 
+option(MARLIM_STATIC_GNU_RUNTIMES "Prefer static GNU runtimes where supported" ON)
+option(MARLIM_MINGW_STATIC "Build a fully static executable with MinGW" ON)
+set(MARLIM_FORTRAN_LIBS "" CACHE STRING "Additional Fortran runtime libraries to link explicitly")
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -58,10 +62,72 @@ set(F90_SOURCES
 
 add_executable(Marlim3 ${CXX_SOURCES} ${F90_SOURCES})
 
-set_source_files_properties(${CXX_SOURCES} PROPERTIES INCLUDE_DIRECTORIES "${INCDIR};${LIBDIR}")
-set_source_files_properties(${F90_SOURCES} PROPERTIES INCLUDE_DIRECTORIES "${MODDIR}")
+target_include_directories(Marlim3 PRIVATE
+    ${INCDIR}
+    ${LIBDIR}
+    ${MODDIR}
+)
 
-target_link_libraries(Marlim3 PRIVATE ${MARLIM_FORTRAN_LIBS})
+target_compile_options(Marlim3 PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wall>
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fmessage-length=0>
+    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-fmax-errors=3>
+    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
+    $<$<AND:$<CONFIG:Release>,$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>>:-ffp-contract=off>
+    $<$<AND:$<CONFIG:Release>,$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>>:-funroll-loops>
+    $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>>:-O0>
+    $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>>:-g3>
+    $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-O0>
+    $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-g3>
+)
+
+find_package(OpenMP REQUIRED COMPONENTS CXX)
+if(MARLIM_STATIC_GNU_RUNTIMES
+        AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+        AND UNIX
+        AND NOT APPLE)
+    target_compile_options(Marlim3 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fopenmp>)
+    target_link_libraries(Marlim3 PRIVATE -Wl,-Bstatic gomp -Wl,-Bdynamic pthread)
+else()
+    target_link_libraries(Marlim3 PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+if(MARLIM_STATIC_GNU_RUNTIMES AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(MINGW OR UNIX)
+        target_link_options(Marlim3 PRIVATE -static-libgcc -static-libstdc++)
+    endif()
+endif()
+
+if(MARLIM_STATIC_GNU_RUNTIMES
+        AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+        AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU"
+        AND UNIX)
+    target_link_options(Marlim3 PRIVATE -static-libgfortran)
+endif()
+
+if(MARLIM_STATIC_GNU_RUNTIMES AND UNIX AND NOT APPLE)
+    target_link_options(Marlim3 PRIVATE -Wl,--as-needed)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(Marlim3 PRIVATE -Wl,-Bstatic stdc++ -Wl,-Bdynamic)
+    endif()
+
+    if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(Marlim3 PRIVATE -Wl,-Bstatic gfortran quadmath -Wl,-Bdynamic)
+    endif()
+endif()
+
+if(MINGW AND MARLIM_MINGW_STATIC)
+    target_link_options(Marlim3 PRIVATE -static)
+endif()
+
+if(MINGW AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(Marlim3 PRIVATE gfortran quadmath)
+endif()
+
+if(MARLIM_FORTRAN_LIBS)
+    target_link_libraries(Marlim3 PRIVATE ${MARLIM_FORTRAN_LIBS})
+endif()
 
 set_source_files_properties(${FSRCDIR}/Newton.f90            PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
 set_source_files_properties(${FSRCDIR}/VLECalculations.f90   PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
