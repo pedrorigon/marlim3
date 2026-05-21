@@ -139,9 +139,11 @@ The project uses [CMake presets](CMakePresets.json). Available presets:
 
 | Preset | Platform | Description |
 |--------|----------|-------------|
-| `gcc-release` / `gcc-debug` | Linux / macOS | GCC with partial static linking |
-| `mingw-release` / `mingw-debug` | Windows | MinGW with full static linking |
-| `clang-release` / `clang-debug` | Linux / macOS | Clang 20 + GFortran |
+| `gcc-release` / `gcc-debug` | Linux / macOS | GCC portable build with GNU runtime linking configured by CMake |
+| `mingw-release` / `mingw-debug` | Windows | MinGW portable build with full static linking |
+| `clang-release` / `clang-debug` | Linux / macOS | Clang 20 + GFortran portable build |
+
+Release assets are built and tested for Linux x64, Windows x64, and macOS ARM64.
 
 #### Linux / macOS
 
