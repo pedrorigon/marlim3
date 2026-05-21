@@ -29,7 +29,7 @@ set(MODDIR ${CMAKE_BINARY_DIR}/mod)
 file(MAKE_DIRECTORY ${MODDIR})
 set(CMAKE_Fortran_MODULE_DIRECTORY ${MODDIR})
 
-# Auto-generate versao.h from _version.py
+# Auto-generate versao.h from _version.py.
 string(TIMESTAMP MARLIM3_BUILD_DATE "%d/%m/%Y %H:%M:%S")
 if(DEFINED ENV{USER})
     set(MARLIM3_BUILD_USER "$ENV{USER}")
@@ -59,9 +59,7 @@ set(F90_SOURCES
     ${FSRCDIR}/ViscosityCalculationModule.f90
 )
 
-# Drop gfortran/quadmath from the Fortran implicit link libraries before
-# add_executable(): CMake snapshots them into the target at creation time, and
-# the dynamic -lgfortran/-lquadmath it appends last would undo the static link.
+# Remove implicit dynamic Fortran runtimes before target creation to preserve static links.
 if(MARLIM_STATIC_GNU_RUNTIMES AND UNIX AND NOT APPLE
         AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
         AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
@@ -92,22 +90,28 @@ target_compile_options(Marlim3 PRIVATE
     $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-g3>
 )
 
+# MinGW uses compile-only -fopenmp so -static can select libgomp.a instead of libgomp.dll.a.
+if(MARLIM_STATIC_GNU_RUNTIMES AND MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(MARLIM_MINGW_STATIC_RUNTIMES ON)
+else()
+    set(MARLIM_MINGW_STATIC_RUNTIMES OFF)
+endif()
+
 find_package(OpenMP REQUIRED COMPONENTS CXX)
-if(MARLIM_LINUX_STATIC_RUNTIMES)
-    # Plain -fopenmp on this path: OpenMP::OpenMP_CXX pins the shared libstdc++
-    # on RHEL/devtoolset, which would break the static link.
+if(MARLIM_LINUX_STATIC_RUNTIMES OR MARLIM_MINGW_STATIC_RUNTIMES)
+    # Static-runtime paths use compile-only OpenMP; libgomp is linked explicitly below.
     target_compile_options(Marlim3 PRIVATE -fopenmp)
-    target_link_options(Marlim3 PRIVATE -fopenmp)
 else()
     target_link_libraries(Marlim3 PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-# Static GNU runtimes so the binary needs no `module load gfortran` on HPC hosts.
+# Static GNU runtimes keep Linux binaries independent from host compiler modules.
 if(MARLIM_LINUX_STATIC_RUNTIMES)
-    # gfortran/quadmath via -Wl,-Bstatic group (gfortran lacks -static-libquadmath).
+    # Link GNU runtimes statically; keep pthread/dl dynamic for static libgomp dependencies.
     target_link_options(Marlim3 PRIVATE -static-libgcc -static-libstdc++)
     target_link_libraries(Marlim3 PRIVATE
-        -Wl,-Bstatic gfortran quadmath -Wl,-Bdynamic)
+        -Wl,-Bstatic gfortran quadmath gomp -Wl,-Bdynamic
+        -Wl,--push-state,-Bdynamic pthread dl -Wl,--pop-state)
 
 elseif(MARLIM_STATIC_GNU_RUNTIMES AND MINGW
         AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -115,6 +119,8 @@ elseif(MARLIM_STATIC_GNU_RUNTIMES AND MINGW
     if(MARLIM_MINGW_STATIC)
         target_link_options(Marlim3 PRIVATE -static)
     endif()
+    # Link libgomp/winpthread explicitly so MinGW static builds do not import their DLLs.
+    target_link_libraries(Marlim3 PRIVATE gomp pthread)
     if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
         target_link_libraries(Marlim3 PRIVATE gfortran quadmath)
     endif()
