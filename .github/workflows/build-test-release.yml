@@ -24,25 +24,18 @@ env:
   ARTIFACT_RETENTION_DAYS: "7"
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Skip-duplicate gate: if this exact commit was already tested (e.g. PR head
-  # SHA is the same as the merge SHA), skip the rest of the workflow. This is
-  # what prevents re-running the full CI on the develop merge after the PR
-  # already passed.
-  # ---------------------------------------------------------------------------
+  # Skips the workflow when a develop merge has identical content to an
+  # already-passed PR run. Tag pushes always run (never skipped).
   pre_check:
     name: Pre-check (skip duplicates)
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.decide.outputs.should_skip }}
     steps:
-      # On tag pushes, releases must always run — never skip.
       - id: skip_check
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         uses: fkirc/skip-duplicate-actions@v5
         with:
-          # If a PR with this exact content already passed CI, skip the merge
-          # run on develop. If the previous run failed, do not skip.
           concurrent_skipping: same_content_newer
           skip_after_successful_duplicate: true
 
@@ -57,9 +50,7 @@ jobs:
             echo "should_skip=${SKIP_FROM_CHECK:-false}" >> "$GITHUB_OUTPUT"
           fi
 
-  # ---------------------------------------------------------------------------
   # Python-only checks (lint). Does not depend on the native executable.
-  # ---------------------------------------------------------------------------
   python-checks:
     name: Test Python Package
     needs: pre_check
@@ -86,9 +77,7 @@ jobs:
       - name: Lint (full report, non-blocking)
         run: uv run flake8 . --count --exit-zero --statistics
 
-  # ---------------------------------------------------------------------------
   # Build jobs: produce the native executable only. No tests here.
-  # ---------------------------------------------------------------------------
   build-linux:
     name: Build – Linux x64 (manylinux2014)
     needs: pre_check
@@ -108,6 +97,11 @@ jobs:
             quay.io/pypa/manylinux2014_x86_64 \
             bash -lc '
               set -euo pipefail
+              # devtoolset-10/enable references MANPATH/LD_LIBRARY_PATH, which
+              # are unset in the clean manylinux container; pre-initialize them
+              # so `set -u` does not abort on the unbound variable.
+              export MANPATH="${MANPATH:-}"
+              export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
               source /opt/rh/devtoolset-10/enable
               /opt/python/cp312-cp312/bin/python -m pip install "cmake>=3.27,<4"
               export PATH="/opt/python/cp312-cp312/bin:${PATH}"
@@ -257,10 +251,8 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
           if-no-files-found: error
 
-  # ---------------------------------------------------------------------------
-  # Test jobs: download the artifact built by the matching build job IN THE
-  # SAME RUN and exercise it via pytest. No build, no network download.
-  # ---------------------------------------------------------------------------
+  # Test jobs: run pytest against the artifact built by the matching build job
+  # in the SAME run. No build, no network download of the executable.
   test-linux:
     name: Test – Linux x64
     runs-on: ubuntu-latest
@@ -442,10 +434,7 @@ jobs:
       - name: Run tests
         run: uv run pytest tests/ -v --tb=short
 
-  # ---------------------------------------------------------------------------
-  # Release: publishes the SAME artifacts that the test-* jobs validated.
-  # Runs only on tag pushes.
-  # ---------------------------------------------------------------------------
+  # Publishes the same artifacts the test-* jobs validated. Tag pushes only.
   release:
     name: Create Release
     runs-on: ubuntu-latest
@@ -516,9 +505,7 @@ jobs:
           prerelease: false
           generate_release_notes: true
 
-  # ---------------------------------------------------------------------------
   # PyPI publish: runs only after the GitHub Release has been created.
-  # ---------------------------------------------------------------------------
   publish-python:
     name: Publish Python Package
     runs-on: ubuntu-latest
@@ -549,16 +536,10 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-  # ---------------------------------------------------------------------------
-  # Post-publish smoke test: install the freshly published package from PyPI on
-  # clean runners (one per OS) and confirm it can fetch the matching executable
-  # from the GitHub Release and answer `--help`. This catches packaging bugs
-  # that pre-release tests cannot, because here we are exercising the exact
-  # `.whl`/`.tar.gz` that end users will receive.
-  #
-  # Runs only on tag pushes, only for the official repository, and only after
-  # `publish-python` succeeds.
-  # ---------------------------------------------------------------------------
+  # Installs the freshly published package from PyPI on clean runners and
+  # verifies the executable resolves and answers `--help`. Catches packaging
+  # bugs that pre-release tests cannot, by exercising the exact published
+  # artifact. Tag pushes + official repository only.
   smoke-test-pypi:
     name: Smoke Test (PyPI install)
     if: startsWith(github.ref, 'refs/tags/v') && github.repository == 'petrobras/marlim3'
@@ -567,13 +548,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            exe: Marlim3
-          - os: windows-latest
-            exe: Marlim3.exe
-          - os: macos-14
-            exe: Marlim3
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-14
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -620,8 +598,6 @@ jobs:
 
       - name: Run executable --help
         shell: bash
-        env:
-          EXE_NAME: ${{ matrix.exe }}
         run: |
           set -euo pipefail
           EXE_PATH=$(python -c "from marlim3._download import get_executable_path; print(get_executable_path())")
