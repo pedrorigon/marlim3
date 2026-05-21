@@ -50,9 +50,9 @@ jobs:
             echo "should_skip=${SKIP_FROM_CHECK:-false}" >> "$GITHUB_OUTPUT"
           fi
 
-  # Python-only checks (lint). Does not depend on the native executable.
+  # Python-only package sanity. Does not depend on the native executable.
   python-checks:
-    name: Test Python Package
+    name: Python checks / package sanity
     needs: pre_check
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
@@ -63,6 +63,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -70,6 +75,9 @@ jobs:
 
       - name: Install package and dev dependencies
         run: uv sync --locked --group dev
+
+      - name: Import package
+        run: uv run python -c "import marlim3; print(marlim3.__version__)"
 
       - name: Lint (syntax / undefined names)
         run: uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -80,7 +88,9 @@ jobs:
   # Build jobs: produce the native executable only. No tests here.
   build-linux:
     name: Build – Linux x64 (manylinux2014)
-    needs: pre_check
+    needs:
+      - pre_check
+      - python-checks
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
@@ -139,7 +149,9 @@ jobs:
 
   build-windows:
     name: Build – Windows x64
-    needs: pre_check
+    needs:
+      - pre_check
+      - python-checks
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: windows-latest
 
@@ -197,7 +209,9 @@ jobs:
 
   build-macos:
     name: Build – macOS ARM64
-    needs: pre_check
+    needs:
+      - pre_check
+      - python-checks
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: macos-14
 
@@ -264,10 +278,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      - name: Install package and test dependencies
+        run: uv sync --locked --group dev
 
       - name: Remove any pre-existing executable from the workspace
         run: rm -f marlim3/Marlim3 marlim3/Marlim3.exe build/Marlim3 build/Marlim3.exe
@@ -295,9 +317,6 @@ jobs:
           file marlim3/Marlim3
           ldd marlim3/Marlim3 || true
 
-      - name: Install package and test dependencies
-        run: uv sync --locked --group dev
-
       - name: Verify the installed executable still matches the artifact hash
         run: |
           set -euo pipefail
@@ -322,10 +341,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      - name: Install package and test dependencies
+        shell: pwsh
+        run: uv sync --locked --group dev
 
       - name: Remove any pre-existing executable from the workspace
         shell: pwsh
@@ -358,10 +386,6 @@ jobs:
           if (-not (Test-Path marlim3\Marlim3.exe)) { throw "Failed to install Marlim3.exe" }
           Get-Item marlim3\Marlim3.exe | Format-List FullName, Length
 
-      - name: Install package and test dependencies
-        shell: pwsh
-        run: uv sync --locked --group dev
-
       - name: Verify the installed executable still matches the artifact hash
         shell: pwsh
         run: |
@@ -387,10 +411,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      - name: Install package and test dependencies
+        run: uv sync --locked --group dev
 
       - name: Remove any pre-existing executable from the workspace
         run: rm -f marlim3/Marlim3 marlim3/Marlim3.exe build/Marlim3 build/Marlim3.exe
@@ -418,9 +450,6 @@ jobs:
           file marlim3/Marlim3
           otool -L marlim3/Marlim3
 
-      - name: Install package and test dependencies
-        run: uv sync --locked --group dev
-
       - name: Verify the installed executable still matches the artifact hash
         run: |
           set -euo pipefail
@@ -440,7 +469,6 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
-      - python-checks
       - test-linux
       - test-windows
       - test-macos
@@ -518,6 +546,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
