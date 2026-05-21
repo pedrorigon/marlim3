@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-# ── Version: single source of truth is _version.py at the repo root ──────────
-# Re-configure automatically when _version.py changes
+# Version: single source of truth is _version.py; re-configure when it changes.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/_version.py")
 file(READ "${CMAKE_SOURCE_DIR}/_version.py" _version_py_contents)
 string(REGEX MATCH "__version__ = '([^']+)'" _version_match "${_version_py_contents}")
@@ -30,7 +29,7 @@ set(MODDIR ${CMAKE_BINARY_DIR}/mod)
 file(MAKE_DIRECTORY ${MODDIR})
 set(CMAKE_Fortran_MODULE_DIRECTORY ${MODDIR})
 
-# ── Auto-generate versao.h from _version.py ──────────────────────────────────
+# Auto-generate versao.h from _version.py
 string(TIMESTAMP MARLIM3_BUILD_DATE "%d/%m/%Y %H:%M:%S")
 if(DEFINED ENV{USER})
     set(MARLIM3_BUILD_USER "$ENV{USER}")
@@ -60,6 +59,18 @@ set(F90_SOURCES
     ${FSRCDIR}/ViscosityCalculationModule.f90
 )
 
+# Drop gfortran/quadmath from the Fortran implicit link libraries before
+# add_executable(): CMake snapshots them into the target at creation time, and
+# the dynamic -lgfortran/-lquadmath it appends last would undo the static link.
+if(MARLIM_STATIC_GNU_RUNTIMES AND UNIX AND NOT APPLE
+        AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+        AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(MARLIM_LINUX_STATIC_RUNTIMES ON)
+    list(REMOVE_ITEM CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES gfortran quadmath)
+else()
+    set(MARLIM_LINUX_STATIC_RUNTIMES OFF)
+endif()
+
 add_executable(Marlim3 ${CXX_SOURCES} ${F90_SOURCES})
 
 target_include_directories(Marlim3 PRIVATE
@@ -82,46 +93,33 @@ target_compile_options(Marlim3 PRIVATE
 )
 
 find_package(OpenMP REQUIRED COMPONENTS CXX)
-if(MARLIM_STATIC_GNU_RUNTIMES
-        AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-        AND UNIX
-        AND NOT APPLE)
-    target_compile_options(Marlim3 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fopenmp>)
-    target_link_libraries(Marlim3 PRIVATE -Wl,-Bstatic gomp -Wl,-Bdynamic pthread)
+if(MARLIM_LINUX_STATIC_RUNTIMES)
+    # Plain -fopenmp on this path: OpenMP::OpenMP_CXX pins the shared libstdc++
+    # on RHEL/devtoolset, which would break the static link.
+    target_compile_options(Marlim3 PRIVATE -fopenmp)
+    target_link_options(Marlim3 PRIVATE -fopenmp)
 else()
     target_link_libraries(Marlim3 PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-if(MARLIM_STATIC_GNU_RUNTIMES AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(MINGW OR UNIX)
-        target_link_options(Marlim3 PRIVATE -static-libgcc -static-libstdc++)
+# Static GNU runtimes so the binary needs no `module load gfortran` on HPC hosts.
+if(MARLIM_LINUX_STATIC_RUNTIMES)
+    # gfortran/quadmath via -Wl,-Bstatic group (gfortran lacks -static-libquadmath).
+    target_link_options(Marlim3 PRIVATE -static-libgcc -static-libstdc++)
+    target_link_libraries(Marlim3 PRIVATE
+        -Wl,-Bstatic gfortran quadmath -Wl,-Bdynamic)
+
+elseif(MARLIM_STATIC_GNU_RUNTIMES AND MINGW
+        AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_options(Marlim3 PRIVATE -static-libgcc -static-libstdc++)
+    if(MARLIM_MINGW_STATIC)
+        target_link_options(Marlim3 PRIVATE -static)
     endif()
-endif()
-
-if(MARLIM_STATIC_GNU_RUNTIMES
-        AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-        AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU"
-        AND UNIX)
-    target_link_options(Marlim3 PRIVATE -static-libgfortran)
-endif()
-
-if(MARLIM_STATIC_GNU_RUNTIMES AND UNIX AND NOT APPLE)
-    target_link_options(Marlim3 PRIVATE -Wl,--as-needed)
-
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_link_libraries(Marlim3 PRIVATE -Wl,-Bstatic stdc++ -Wl,-Bdynamic)
-    endif()
-
     if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-        target_link_libraries(Marlim3 PRIVATE -Wl,-Bstatic gfortran quadmath -Wl,-Bdynamic)
+        target_link_libraries(Marlim3 PRIVATE gfortran quadmath)
     endif()
-endif()
 
-if(MINGW AND MARLIM_MINGW_STATIC)
-    target_link_options(Marlim3 PRIVATE -static)
-endif()
-
-if(MINGW AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+elseif(UNIX AND NOT APPLE AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(Marlim3 PRIVATE gfortran quadmath)
 endif()
 
