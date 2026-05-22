@@ -9,15 +9,14 @@ Execução:
 """
 
 import copy
-import importlib.resources as pkg_resources
 import os
-import platform
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import marlim3
+from marlim3._download import executable_exists
 
 
 # ============================================================================
@@ -25,21 +24,12 @@ import marlim3
 # ============================================================================
 
 def _executavel_disponivel():
-    exe_name = "marlim3.exe" if platform.system() == "Windows" else "marlim3"
-    for name in [exe_name, "Marlim3.exe" if platform.system() == "Windows" else "Marlim3"]:
-        try:
-            ref = pkg_resources.files("marlim3").joinpath(name)
-            with pkg_resources.as_file(ref) as p:
-                if p.exists():
-                    return True
-        except (FileNotFoundError, AttributeError, TypeError):
-            continue
-    return False
+    return executable_exists()
 
 
 skip_sem_executavel = pytest.mark.skipif(
     not _executavel_disponivel(),
-    reason="Executável Marlim3 não encontrado no pacote",
+    reason="Executável Marlim3 não encontrado",
 )
 
 

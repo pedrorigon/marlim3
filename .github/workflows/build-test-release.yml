@@ -21,6 +21,7 @@ concurrency:
 
 env:
   MARLIM3_SKIP_BUILD: "1"
+  MARLIM3_SKIP_EXECUTABLE_RESOLUTION: "1"
   ARTIFACT_RETENTION_DAYS: "7"
 
 jobs:
@@ -586,6 +587,8 @@ jobs:
           - windows-2022
           - macos-14
     runs-on: ${{ matrix.os }}
+    env:
+      MARLIM3_SKIP_EXECUTABLE_RESOLUTION: "0"
 
     steps:
       - name: Set up Python
