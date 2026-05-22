@@ -60,6 +60,8 @@ See [Compilation](#compilation) below. After building, copy `build/Marlim3` to `
 MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
 
+`MARLIM3_SKIP_BUILD=1` skips local CMake compilation. Set `MARLIM3_SKIP_EXECUTABLE_RESOLUTION=1` only when an import must not resolve or download the executable.
+
 ## Usage
 
 ### Option 1: Python Package
@@ -176,6 +178,8 @@ Then activate the package locally (skipping recompilation):
 ```bash
 MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
+
+`MARLIM3_SKIP_BUILD=1` skips local CMake compilation; installed packages can still download the release executable on import.
 
 ### Run tests
 

@@ -11,6 +11,11 @@ import platform
 import urllib.request
 from pathlib import Path
 
+
+def _env_flag(name):
+    return os.environ.get(name, "").strip().lower() not in {"", "0", "false", "no", "off"}
+
+
 def get_platform_asset_info():
     """Determine which asset to download based on the platform.
     
@@ -155,6 +160,9 @@ def _try_build_from_source():
     import subprocess
     import shutil
 
+    if _env_flag('MARLIM3_SKIP_BUILD'):
+        return False
+
     package_dir = Path(__file__).parent
     root_dir = package_dir.parent
 
@@ -207,8 +215,7 @@ def ensure_executable():
     
     This is called automatically on package import.
     """
-    # Skip if user wants to skip
-    if os.environ.get('MARLIM3_SKIP_BUILD'):
+    if _env_flag('MARLIM3_SKIP_EXECUTABLE_RESOLUTION'):
         return
     
     # Check if executable exists and works

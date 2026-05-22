@@ -3,7 +3,7 @@ Marlim3 - Simulacao de escoamento multifasico permanente e transiente.
 """
 
 # Import version from root _version.py
-import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 # Try to import from root _version.py (for development)
@@ -12,10 +12,8 @@ try:
     if (_root_dir / '_version.py').exists():
         exec(open(_root_dir / '_version.py').read())
     else:
-        # Fallback for installed package
-        __version__ = '3.3.0'
-except:
-    # Fallback
+        __version__ = version("marlim3")
+except PackageNotFoundError:
     __version__ = '3.3.0'
 
 # Ensure executable is downloaded on first import

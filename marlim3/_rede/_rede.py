@@ -1,8 +1,9 @@
-import importlib.resources as pkg_resources
 import os
 import numpy as np
 import json 
 import shutil
+from contextlib import nullcontext
+from .._download import get_executable_path
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
 from .._plots._plots_redes import _plotar_rede
 from .._tramo._tramo import Tramo
@@ -130,17 +131,10 @@ class Rede:
                 tracker=None,
                 sanitized=False):
         
-        # Verificar o sistema operacional
-        if platform.system() == 'Windows':
-            executavel_name = 'Marlim3.exe'
-        else:
-            executavel_name = 'Marlim3'
-        
         if label != 'marlim3_rede':
             self.label = label
 
-        with pkg_resources.as_file(
-                pkg_resources.files('marlim3').joinpath(executavel_name)) as executavel:
+        with nullcontext(get_executable_path()) as executavel:
 
             filename = label+'.json'
 
