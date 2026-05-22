@@ -629,11 +629,12 @@ class SProd {
     if(arq.nperfistransg>0 && arq.lingas>0) delete [] ncelperftransg;
 
    if(arq.ntendp>0 && redeTemporario==0) {
-      for(int i=0;i<arq.ntendp;i++) {
-        for(int j=0; j<TrendLengthP[i]; j++) //if(MatTrendP[i][j]) delete [] MatTrendP[i][j];
-        	if(MatTrendP)delete [] MatTrendP[i][j];
-        //if(MatTrendP[i])delete [] MatTrendP[i];
-        if(MatTrendP)delete [] MatTrendP[i];
+      for(int i=0;i<arq.ntendp && MatTrendP && TrendLengthP;i++) {
+        if(MatTrendP[i]) {
+          for(int j=0; j<TrendLengthP[i]; j++)
+            delete [] MatTrendP[i][j];
+          delete [] MatTrendP[i];
+        }
       }
       //if(MatTrendP)delete [] MatTrendP;
       if(MatTrendP)delete [] MatTrendP;
@@ -647,11 +648,12 @@ class SProd {
     }
 
     if(arq.ntendg>0 && arq.lingas>0 && redeTemporario==0) {
-      for(int i=0;i<arq.ntendg;i++) {
-        for(int j=0; j<TrendLengthG[i]; j++) //if(MatTrendG[i][j]) delete [] MatTrendG[i][j];
-        	if(MatTrendG)delete [] MatTrendG[i][j];
-             //if(MatTrendG[i])delete [] MatTrendG[i];
-            if(MatTrendG)delete [] MatTrendG[i];
+      for(int i=0;i<arq.ntendg && MatTrendG && TrendLengthG;i++) {
+        if(MatTrendG[i]) {
+          for(int j=0; j<TrendLengthG[i]; j++)
+            delete [] MatTrendG[i][j];
+          delete [] MatTrendG[i];
+        }
       }
       //if(MatTrendG)delete [] MatTrendG;
       if(MatTrendG)delete [] MatTrendG;
@@ -664,12 +666,12 @@ class SProd {
       if(ntrendgB)delete [] ntrendgB;
     }
     if(arq.ntendtransp>0 && redeTemporario==0) {
-      for(int i=0;i<arq.ntendtransp;i++) {
-        for(int j=0; j<TrendLengthTransP[i]; j++)
-        //if(MatTrendTransP[i][j]) delete [] MatTrendTransP[i][j];
-        //if(MatTrendTransP[i])delete [] MatTrendTransP[i];
-        	if(MatTrendTransP)delete [] MatTrendTransP[i][j];
-            if(MatTrendTransP)delete [] MatTrendTransP[i];
+      for(int i=0;i<arq.ntendtransp && MatTrendTransP && TrendLengthTransP;i++) {
+        if(MatTrendTransP[i]) {
+          for(int j=0; j<TrendLengthTransP[i]; j++)
+            delete [] MatTrendTransP[i][j];
+          delete [] MatTrendTransP[i];
+        }
       }
       //if(MatTrendTransP)delete [] MatTrendTransP;
       if(MatTrendTransP)delete [] MatTrendTransP;
@@ -683,12 +685,12 @@ class SProd {
     }
 
     if(arq.ntendtransg>0 && redeTemporario==0) {
-      for(int i=0;i<arq.ntendtransg;i++) {
-        for(int j=0; j<TrendLengthTransG[i]; j++)
-        //if(MatTrendTransP[i][j]) delete [] MatTrendTransP[i][j];
-        //if(MatTrendTransP[i])delete [] MatTrendTransP[i];
-        	if(MatTrendTransG)delete [] MatTrendTransG[i][j];
-            if(MatTrendTransG)delete [] MatTrendTransG[i];
+      for(int i=0;i<arq.ntendtransg && MatTrendTransG && TrendLengthTransG;i++) {
+        if(MatTrendTransG[i]) {
+          for(int j=0; j<TrendLengthTransG[i]; j++)
+            delete [] MatTrendTransG[i][j];
+          delete [] MatTrendTransG[i];
+        }
       }
       //if(MatTrendTransP)delete [] MatTrendTransP;
       if(MatTrendTransG)delete [] MatTrendTransG;

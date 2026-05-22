@@ -3357,9 +3357,9 @@ void ASens::atualizaCompRGO(double rgo, ProFlu& flui){
 	        &iier);
 	 for(int k=0;k<npseudo;k++)flui.fracMol[k]=oGORAdjustedGlobalComp[k];
 	 flui.atualizaPropCompStandard();
-     delete GivenInitialLiqComposition;
-     delete GivenInitialVapComposition;
-     delete oGORAdjustedGlobalComp;
+     delete[] GivenInitialLiqComposition;
+     delete[] GivenInitialVapComposition;
+     delete[] oGORAdjustedGlobalComp;
 
 }
 

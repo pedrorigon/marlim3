@@ -1100,16 +1100,15 @@ Ler& Ler::operator =(const Ler& vler) {
 	       	delete [] Tempsonico;
 	    }
 
-		if(nfluP>0){
+		if(tabVisc!=0){
 			for(int i=0; i<nfluP;i++){
-				if(flup[i].corrOM==7){
-					if(tabVisc[i].parserie>0){
-						delete [] tabVisc[i].visc;
-						delete [] tabVisc[i].temp;
-					}
-					delete [] tabVisc;
+				if(tabVisc[i].parserie>0){
+					delete [] tabVisc[i].visc;
+					delete [] tabVisc[i].temp;
 				}
 			}
+			delete [] tabVisc;
+			tabVisc=0;
 		}
 
 		if(nsegrega>0){
@@ -1627,16 +1626,15 @@ void Ler::copiaSemJson(Ler& vler) {
 	       	delete [] Tempsonico;
 	    }
 
-		if(nfluP>0){
+		if(tabVisc!=0){
 			for(int i=0; i<nfluP;i++){
-				if(flup[i].corrOM==7){
-					if(tabVisc[i].parserie>0){
-						delete [] tabVisc[i].visc;
-						delete [] tabVisc[i].temp;
-					}
-					delete [] tabVisc;
+				if(tabVisc[i].parserie>0){
+					delete [] tabVisc[i].visc;
+					delete [] tabVisc[i].temp;
 				}
 			}
+			delete [] tabVisc;
+			tabVisc=0;
 		}
 
 		if(nsegrega>0){
@@ -5273,9 +5271,9 @@ void Ler::parse_fluidos_producao(
 							        &iier);
 							 for(int k=0;k<npseudo;k++)flup[i].fracMol[k]=oGORAdjustedGlobalComp[k];
 							 flup[i].atualizaPropCompStandard();
-					         delete GivenInitialLiqComposition;
-					         delete GivenInitialVapComposition;
-					         delete oGORAdjustedGlobalComp;
+					         delete[] GivenInitialLiqComposition;
+					         delete[] GivenInitialVapComposition;
+					         delete[] oGORAdjustedGlobalComp;
 						}
 					}
 

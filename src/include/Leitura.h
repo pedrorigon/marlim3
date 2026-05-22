@@ -2019,13 +2019,11 @@ class Ler{
        	  delete [] Tempsonico;
        }
 
-		if(nfluP>0){
+		if(tabVisc!=0){
 			for(int i=0; i<nfluP;i++){
-				if(flup[i].corrOM==7){
-					if(tabVisc[i].parserie>0){
-						delete [] tabVisc[i].visc;
-						delete [] tabVisc[i].temp;
-					}
+				if(tabVisc[i].parserie>0){
+					delete [] tabVisc[i].visc;
+					delete [] tabVisc[i].temp;
 				}
 			}
 			delete [] tabVisc;
