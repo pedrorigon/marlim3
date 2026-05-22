@@ -1,9 +1,10 @@
-import importlib.resources as pkg_resources
 import pandas as pd
 import json
 import os
 import shutil
 import requests
+from contextlib import nullcontext
+from .._download import get_executable_path
 from .._conversores._conversor_marlim3_tplppl import convert_to_ppl_tpl
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -282,17 +283,10 @@ class Tramo:
                 tracker=None,
                 sanitized=False):
         
-        # Verificar o sistema operacional
-        if platform.system() == 'Windows':
-            executavel_name = 'Marlim3.exe'
-        else:
-            executavel_name = 'Marlim3'
-
         if label != 'marlim3_model':
             self.label = label
 
-        with pkg_resources.as_file(
-                pkg_resources.files('marlim3').joinpath(executavel_name)) as executavel:
+        with nullcontext(get_executable_path()) as executavel:
 
             filename = label+'.json'
             
