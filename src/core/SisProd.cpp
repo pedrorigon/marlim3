@@ -2618,7 +2618,7 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 
          resettrendtrans[i] = 0;
          ntrendtrans[i] = 0;
-         ntrendtransB = new int[arq.ntendtransp];
+         ntrendtransB[i] = 0;
        }
 
      }
@@ -34722,4 +34722,3 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 }
 
 //template class SProd;
-
