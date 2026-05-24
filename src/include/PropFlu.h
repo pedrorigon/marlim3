@@ -769,8 +769,8 @@ class ProFlu{
      	   RGO=tempRGO;
      	   if(dStockTankVaporMassFraction>0 && RGO<1e-15)RGO=1e6;
      	   IRGO=RGO*35.31467/6.29;
-     	   if(nuloL==1)delete GivenInitialLiqComposition;
-     	   if(nuloV==1)delete GivenInitialVapComposition;
+     	   if(nuloL==1)delete[] GivenInitialLiqComposition;
+     	   if(nuloV==1)delete[] GivenInitialVapComposition;
        }
 
         void atualizaPropComp(double pres, double temp,double GivenInitialBeta=-1.0,
@@ -846,8 +846,8 @@ class ProFlu{
 
         		}
         	}
-        	if(nuloL==1)delete GivenInitialLiqComposition;
-        	if(nuloV==1)delete GivenInitialVapComposition;
+        	if(nuloL==1)delete[] GivenInitialLiqComposition;
+        	if(nuloV==1)delete[] GivenInitialVapComposition;
 
         }
 
@@ -877,4 +877,3 @@ ostream& operator<<(ostream& s, const ProFlu&);//saida de valores de propriedade
 
 
 #endif
-
