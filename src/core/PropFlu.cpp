@@ -1829,9 +1829,9 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){//alteracao2
  }
 
  if(flashCompleto==2 || fluido.npseudo>0){
-	 if(npseudo>0)delete fracMol;
-	 if(npseudo>0)delete oCalculatedLiqComposition;
-	 if(npseudo>0)delete oCalculatedVapComposition;
+	 if(npseudo>0)delete[] fracMol;
+	 if(npseudo>0)delete[] oCalculatedLiqComposition;
+	 if(npseudo>0)delete[] oCalculatedVapComposition;
 	 npseudo=fluido.npseudo;
 	 fracMol=new double[npseudo];
 	 oCalculatedLiqComposition=new double[npseudo];
@@ -6688,4 +6688,3 @@ ostream& operator<<(ostream& s, const ProFlu& flui){
 }
 
 //template class ProFlu;
-

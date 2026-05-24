@@ -84,6 +84,7 @@ celerybeat-schedule
 .spyderproject
 .spyproject
 .ropeproject
+marlim-batch-mr2/
 
 # Logs, temporarios e backup
 *.log
