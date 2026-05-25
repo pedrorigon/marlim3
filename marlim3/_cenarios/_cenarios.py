@@ -43,7 +43,11 @@ class Scenarios:
     # English API
     ###########################################################################
 
-    def plot_profiles(self, line='producao'):
+    def plot_profiles(self, line='production'):
+        if line == 'production':
+            line = 'producao'
+        elif line == 'service':
+            line = 'servico'
         return self.plotar_perfis(linha=line)
 
     def plot_trends(self):
