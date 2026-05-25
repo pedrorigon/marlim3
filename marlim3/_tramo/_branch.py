@@ -44,6 +44,14 @@ def _sanitize_filename(filename):
 class Branch:
     """Marlim3 production system (branch/tramo) with an all-English API."""
 
+    @property
+    def results(self):
+        return self.resultados
+
+    @results.setter
+    def results(self, value):
+        self.resultados = value
+
     def __init__(self,
                  system='MULTIFASICO',
                  jsonVersion='1.3.9',
