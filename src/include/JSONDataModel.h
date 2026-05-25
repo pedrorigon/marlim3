@@ -71,6 +71,8 @@ private:
 public:
 	void load(const char* path);
 
+	void loadFromDocument(Document& doc);
+
 	Document* getDocument();
 };
 

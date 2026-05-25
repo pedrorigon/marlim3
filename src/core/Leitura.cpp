@@ -5,6 +5,8 @@
  *      Author: bwz1
  */
 #include "Leitura.h"
+#include "JSONKeyTranslator.h"
+#include "rapidjson/filereadstream.h"
 //#include "schema.h"
 
 using namespace rapidjson;
@@ -2064,42 +2066,64 @@ void Ler::testaTipo() {
 
 /*!
  * Realizar parse do arquivo JSON de parametros da simulacao.
+ *
+ * Se o arquivo contiver a chave raiz "language": "en", as chaves em ingles
+ * sao traduzidas internamente para portugues antes de popular o esquema
+ * tipado (JSON_entrada). O comportamento padrao (sem a chave "language", ou
+ * com "language": "pt-br") e identico ao anterior.
  */
 JSON_entrada Ler::parseEntrada() {
 	// criar string para mensagem de falha
 	char mensagemFalha[5000];
 	// declarar o documento raiz do arquivo entrada
 	JSON_entrada jsonDoc;
-	// definir arquivo MRT de entrada da simulacao
-//	FILE *mrtInFile = NULL;
-	// definir buffer de entrada da simulacao
-//	char mrtInBuf[65536];
-	// realizar a leitura do arquivo MRT
 	try {
-		// atualizar a estrutura de resultado do parse do arquivo de entrada da simulacao
-		//logger.setNomeArqEntrada(impfile);
-		// realizar o parse do MRT de entrada
-		jsonDoc.load(impfile.c_str());
-
-		//rapidjson::Document& doc = *(jsonDoc.getDocument());
-		//validadorTipo testaTipo;
-		//testaTipo.validaGeral(doc);
-
-		// caso parse do MRT de entrada com erro
-		if (jsonDoc.HasParseError()) {
-			//cout << "ErrorOffset: " << determinarLinhaErro(jsonDoc.GetErrorOffset()) << endl;
-			// transpor os dados  para a mensagem
-			sprintf(mensagemFalha, "Posicao = %zu", jsonDoc.GetErrorOffset());
-			// incluir falha no processo de parse
+		// Leitura direta com RapidJSON para inspecionar a chave "language"
+		// antes de popular o esquema tipado.
+		FILE* fp = fopen(impfile.c_str(), "r");
+		if (!fp) {
 			logger.log_write_logs_and_exit(LOGGER_FALHA,
-			LOG_ERR_PARSE_JSON_FORMAT_VALIDATION, "Verificar formato JSON",
-					mensagemFalha, GetParseError_Pt_BR(jsonDoc.GetParseError()),
-					determinarLinhaErro(jsonDoc.GetErrorOffset()));
+				LOG_ERR_UNEXPECTED_EXCEPTION, "Verificar formato JSON", "",
+				"Nao foi possivel abrir o arquivo de entrada.");
 		}
+		char buf[65536];
+		rapidjson::FileReadStream stream(fp, buf, sizeof(buf));
+		rapidjson::Document rawDoc;
+		rawDoc.ParseStream(stream);
+		fclose(fp);
+
+		// Verificar erro de parse no documento bruto
+		if (rawDoc.HasParseError()) {
+			sprintf(mensagemFalha, "Posicao = %zu", rawDoc.GetErrorOffset());
+			logger.log_write_logs_and_exit(LOGGER_FALHA,
+				LOG_ERR_PARSE_JSON_FORMAT_VALIDATION, "Verificar formato JSON",
+				mensagemFalha,
+				GetParseError_Pt_BR(rawDoc.GetParseError()),
+				determinarLinhaErro(rawDoc.GetErrorOffset()));
+		}
+
+		// Verificar chave "language" e traduzir se necessario
+		if (rawDoc.IsObject() && rawDoc.HasMember("language")) {
+			std::string lang(rawDoc["language"].GetString());
+			std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
+			if (lang == "en") {
+				// Remover a chave "language" – nao faz parte do esquema interno
+				rawDoc.RemoveMember("language");
+				// Traduzir todas as chaves em ingles para portugues
+				JSONKeyTranslator::translateEnToPt(rawDoc,
+				                                   rawDoc.GetAllocator());
+			}
+			// "pt-br" (ou qualquer outro valor) segue o caminho normal
+		}
+
+		// Popular o esquema tipado a partir do documento (possivelmente traduzido)
+		jsonDoc.loadFromDocument(rawDoc);
+
 	} catch (exception& e) {
 		// incluir falha
 		logger.log_write_logs_and_exit(LOGGER_FALHA,
-		LOG_ERR_UNEXPECTED_EXCEPTION, "Verificar formato JSON", "", e.what());
+			LOG_ERR_UNEXPECTED_EXCEPTION, "Verificar formato JSON", "",
+			e.what());
 	}
 	// incluir info de conclusao do parse do mrt no log
 	logger.log(LOGGER_INFO, LOG_INFO_PARSE_PROCESS_FINISHED,
