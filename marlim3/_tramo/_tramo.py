@@ -69,6 +69,7 @@ class Tramo:
                  tendTransP=None,
                  tendTransS=None,
                  tela=None,
+                 language=None,
                  nome_tramo=None):
 
         self.sistema = sistema
@@ -135,6 +136,10 @@ class Tramo:
         self.tendTransP = tendTransP if tendTransP is not None else []
         self.tendTransS = tendTransS if tendTransS is not None else []
         self.tela = tela if tela is not None else []
+
+        # language hint: when set to "en", the C++ engine translates English
+        # JSON keys to Portuguese before processing the input file.
+        self.language = language
 
         self.json_entrada_keys = set(self.__dict__.keys())
 

@@ -22,7 +22,8 @@ ensure_executable()
 
 # Import main classes
 from ._tramo._tramo import Tramo
+from ._tramo._branch import Branch
 from ._rede._rede import Rede
 from ._cenarios._cenarios import Cenarios
 
-__all__ = ['Tramo','Rede','Cenarios', '__version__']
+__all__ = ['Tramo', 'Branch', 'Rede', 'Cenarios', '__version__']
