@@ -567,7 +567,11 @@ class Tramo:
     
         try:
             if indicar_anm:
-                posicao_anm = self.master1['comprimentoMedido']
+                mv = self.master1
+                if isinstance(mv, dict):
+                    posicao_anm = mv.get('comprimentoMedido') or mv.get('measuredLength')
+                elif isinstance(mv, list) and mv:
+                    posicao_anm = mv[0].get('comprimentoMedido') or mv[0].get('measuredLength')
         except:
             print('posição da master1 não definida no modelo!')
             
@@ -624,6 +628,43 @@ class Tramo:
 
         estilizar_df(pd.DataFrame(getattr(self, campo)).set_index('id'),
                      cols, index_cols)
+
+    ###########################################################################
+    # English API
+    ###########################################################################
+
+    def simulate(self, kind='PRODUTOR', label='marlim3_model',
+                 directory='marlim3_resultados', generate_ppl_tpl=False,
+                 simulation_id=None, websocket_handler=None,
+                 tracker=None, sanitized=False):
+        return self.simular(kind=kind, label=label, diretorio=directory,
+                            gerar_ppl_tpl=generate_ppl_tpl,
+                            simulation_id=simulation_id,
+                            websocket_handler=websocket_handler,
+                            tracker=tracker, sanitized=sanitized)
+
+    def plot_geometry(self):
+        return self.plotar_geometria()
+
+    def plot_profiles(self, line='producao', labels=None,
+                      gradient=False, indicate_anm=False):
+        return self.plotar_perfis(linha=line, rotulos=labels,
+                                  gradiente=gradient, indicar_anm=indicate_anm)
+
+    def plot_animated_profiles(self, line='producao'):
+        return self.plotar_perfis_animados(linha=line)
+
+    def plot_trends(self, line='producao', positions=None):
+        return self.plotar_tendencias(linha=line, posicoes=positions)
+
+    def display_table(self, field):
+        return self.exibir_tabela(campo=field)
+
+    def load_mr2(self, path, pvt_path=None, mr2_binary_path=None,
+                 re_simulate=False):
+        return self.from_mr2(mr2_path=path, pvt_path=pvt_path,
+                              mr2_binary_path=mr2_binary_path,
+                              simula_mr2=re_simulate)
 
 ###############################################################################
 

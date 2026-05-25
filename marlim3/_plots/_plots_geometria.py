@@ -2,19 +2,28 @@ import math
 import plotly.graph_objects as go
 
 
+def _g(d, *keys, default=None):
+    """Get value from dict trying multiple key names (PT/EN compatibility)."""
+    for k in keys:
+        if k in d:
+            return d[k]
+    return default
+
+
 def _get_duto_length(duto):
     """Calculate duct length from discretization or dxCelula."""
-    agrupamento = duto.get("agrupamento", True)
+    agrupamento = _g(duto, "agrupamento", "grouping", default=True)
     if agrupamento:
-        disc = duto.get("discretizacao", [])
+        disc = _g(duto, "discretizacao", "discretization", default=[])
         if not isinstance(disc, list) or not disc:
             return 0
         return sum(
-            (item.get("nCelulas", 0) or 0) * (item.get("comprimento", 0) or 0)
+            (_g(item, "nCelulas", "numCells", default=0) or 0) *
+            (_g(item, "comprimento", "length", default=0) or 0)
             for item in disc if isinstance(item, dict)
         )
     else:
-        dx_celula = duto.get("dxCelula", [])
+        dx_celula = _g(duto, "dxCelula", "cellDx", default=[])
         if not isinstance(dx_celula, list) or not dx_celula:
             return 0
         return sum(float(x) for x in dx_celula)
@@ -35,8 +44,9 @@ def _plotar_geometria(tramo):
     # Determine if modoXY is active
     config_inicial = getattr(tramo, "configuracaoInicial", None) or {}
     if isinstance(config_inicial, dict):
-        modo_xy = config_inicial.get("modoXY", False)
-        segue_escoamento = config_inicial.get("sentidoGeometriaSegueEscoamento", True)
+        modo_xy = _g(config_inicial, "modoXY", "xyMode", default=False)
+        segue_escoamento = _g(config_inicial, "sentidoGeometriaSegueEscoamento",
+                              "geometryFollowsFlow", default=True)
     else:
         modo_xy = getattr(config_inicial, "modoXY", False)
         segue_escoamento = getattr(config_inicial, "sentidoGeometriaSegueEscoamento", True)
@@ -57,13 +67,13 @@ def _plotar_geometria(tramo):
 
     # Processando dutos de produção
     for idx, duto in enumerate(dutos_prod_plot):
-        if modo_xy and "xCoor" in duto and "yCoor" in duto:
-            x_coords_prod.append(float(duto["xCoor"]))
-            y_coords_prod.append(float(duto["yCoor"]))
-        elif "angulo" in duto:
+        if modo_xy and (_g(duto, "xCoor", "xCoord") is not None) and (_g(duto, "yCoor", "yCoord") is not None):
+            x_coords_prod.append(float(_g(duto, "xCoor", "xCoord")))
+            y_coords_prod.append(float(_g(duto, "yCoor", "yCoord")))
+        elif _g(duto, "angulo", "angle") is not None:
             # Angle mode: compute displacement from angle and length
             comprimento = _get_duto_length(duto)
-            ang = float(duto["angulo"]) + angle_offset_prod
+            ang = float(_g(duto, "angulo", "angle")) + angle_offset_prod
             dx = comprimento * math.cos(ang)
             dy = comprimento * math.sin(ang)
             x_coords_prod.append(x_coords_prod[-1] + dx)
@@ -71,10 +81,10 @@ def _plotar_geometria(tramo):
         else:
             continue
         tooltips_prod.append(
-            f"ID: {duto.get('id', '?')}<br>"
-            f"Rótulo: {duto.get('rotulo', 'N/A')}<br>"
-            f"idCorte: {duto.get('idCorte', 'N/A')}<br>"
-            f"Acoplamento Térmico: {duto.get('acoplamentoTermico', 'N/A')}"
+            f"ID: {_g(duto, 'id', default='?')}<br>"
+            f"Rótulo: {_g(duto, 'rotulo', 'label', default='N/A')}<br>"
+            f"idCorte: {_g(duto, 'idCorte', 'crossSectionId', default='N/A')}<br>"
+            f"Acoplamento Térmico: {_g(duto, 'acoplamentoTermico', 'thermalCoupling', default='N/A')}"
         )
 
     # Coordenadas iniciais da plataforma
@@ -94,20 +104,20 @@ def _plotar_geometria(tramo):
     if tramo.dutosServico:
         dutos_serv_plot = tramo.dutosServico
         for idx, duto in enumerate(dutos_serv_plot):
-            if modo_xy and "xCoor" in duto and "yCoor" in duto:
+            if modo_xy and (_g(duto, "xCoor", "xCoord") is not None) and (_g(duto, "yCoor", "yCoord") is not None):
                 if idx == 0:
                     prev_x, prev_y = 0.0, 0.0
                 else:
                     prev_duto = dutos_serv_plot[idx - 1]
-                    prev_x = float(prev_duto.get("xCoor", 0))
-                    prev_y = float(prev_duto.get("yCoor", 0))
-                dx = float(duto["xCoor"]) - prev_x
-                dy = float(duto["yCoor"]) - prev_y
+                    prev_x = float(_g(prev_duto, "xCoor", "xCoord", default=0))
+                    prev_y = float(_g(prev_duto, "yCoor", "yCoord", default=0))
+                dx = float(_g(duto, "xCoor", "xCoord")) - prev_x
+                dy = float(_g(duto, "yCoor", "yCoord")) - prev_y
                 x_coords_serv.append(x_coords_serv[-1] + dx)
                 y_coords_serv.append(y_coords_serv[-1] + dy)
-            elif "angulo" in duto:
+            elif _g(duto, "angulo", "angle") is not None:
                 comprimento = _get_duto_length(duto)
-                ang = float(duto["angulo"]) + angle_offset_serv
+                ang = float(_g(duto, "angulo", "angle")) + angle_offset_serv
                 dx = comprimento * math.cos(ang)
                 dy = comprimento * math.sin(ang)
                 x_coords_serv.append(x_coords_serv[-1] - dx)
@@ -115,10 +125,10 @@ def _plotar_geometria(tramo):
             else:
                 continue
             tooltips_serv.append(
-                f"ID: {duto.get('id', '?')}<br>"
-                f"Rótulo: {duto.get('rotulo', 'N/A')}<br>"
-                f"idCorte: {duto.get('idCorte', 'N/A')}<br>"
-                f"Acoplamento Térmico: {duto.get('acoplamentoTermico', 'N/A')}"
+                f"ID: {_g(duto, 'id', default='?')}<br>"
+                f"Rótulo: {_g(duto, 'rotulo', 'label', default='N/A')}<br>"
+                f"idCorte: {_g(duto, 'idCorte', 'crossSectionId', default='N/A')}<br>"
+                f"Acoplamento Térmico: {_g(duto, 'acoplamentoTermico', 'thermalCoupling', default='N/A')}"
             )
 
     # Criando o gráfico interativo

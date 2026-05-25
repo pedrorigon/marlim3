@@ -1,7 +1,7 @@
 from .._plots._plots_perfis import _plotar_perfis
 from .._plots._plots_tends import _plotar_tendencias_cenarios
 
-class Cenarios:
+class Scenarios:
 
     def __init__ (self, casos = None):
 
@@ -38,3 +38,17 @@ class Cenarios:
 
         _plotar_tendencias_cenarios(tends_list,
                                     rotulos=list(self.casos.keys()))
+
+    ###########################################################################
+    # English API
+    ###########################################################################
+
+    def plot_profiles(self, line='producao'):
+        return self.plotar_perfis(linha=line)
+
+    def plot_trends(self):
+        return self.plotar_tendencias()
+
+
+# Deprecated alias
+Cenarios = Scenarios

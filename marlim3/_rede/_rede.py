@@ -15,7 +15,7 @@ import pandas as pd
 from datetime import datetime
 import platform
 
-class Rede:
+class Network:
 
     def __init__(self, 
                  versao='1.0',
@@ -501,3 +501,27 @@ class Rede:
                                  gradiente=gradiente,
                                  posicao_anm=posicao_anm)
         return fig, ax
+
+    ###########################################################################
+    # English API
+    ###########################################################################
+
+    def simulate(self, label='marlim3_rede', directory='marlim3_rede_resultados',
+                 simulation_id=None, websocket_handler=None,
+                 tracker=None, sanitized=False):
+        return self.simular(label=label, diretorio=directory,
+                            simulation_id=simulation_id,
+                            websocket_handler=websocket_handler,
+                            tracker=tracker, sanitized=sanitized)
+
+    def plot_network(self):
+        return self.plotar_rede()
+
+    def plot_profiles(self, line='producao', branches=None, labels=None,
+                      gradient=False, indicate_anm=False):
+        return self.plotar_perfis(linha=line, tramos=branches, rotulos=labels,
+                                  gradiente=gradient, indicar_anm=indicate_anm)
+
+
+# Deprecated alias
+Rede = Network
