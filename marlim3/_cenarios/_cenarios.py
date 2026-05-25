@@ -14,9 +14,9 @@ class Scenarios:
         dfs = []
 
         if linha == 'producao':
-            PERFIS = 'perfilProducao'
+            PERFIS = 'productionProfile'
         elif linha == 'servico':
-            PERFIS = 'perfilServico'
+            PERFIS = 'serviceProfile'
         else:
             print('argumento linha só pode ser producao ou servico')  
 
@@ -34,7 +34,7 @@ class Scenarios:
         tends_list = []
         
         for rotulo, caso in self.casos.items():
-            tends_list.append(caso.resultados['tendP'])
+            tends_list.append(caso.resultados['productionTrend'])
 
         _plotar_tendencias_cenarios(tends_list,
                                     rotulos=list(self.casos.keys()))

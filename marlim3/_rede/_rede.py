@@ -6,7 +6,7 @@ from contextlib import nullcontext
 from .._download import get_executable_path
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
 from .._plots._plots_redes import _plotar_rede
-from .._tramo._tramo import Tramo
+from .._tramo._branch import Branch
 import subprocess
 import time
 from threading import Thread
@@ -43,7 +43,7 @@ class Network:
         
         # Remove file extensions before creating tramos
         self.tramos = {
-            os.path.splitext(nome)[0]: Tramo(nome_tramo=os.path.splitext(nome)[0]) 
+            os.path.splitext(nome)[0]: Branch(name=os.path.splitext(nome)[0])
             for nome in self.Arquivos
         } if self.Arquivos else {}
 
@@ -118,7 +118,7 @@ class Network:
         self.layout = data.get('layout', {})
 
         self.tramos = {
-            os.path.splitext(nome)[0]: Tramo(nome_tramo=os.path.splitext(nome)[0]) 
+            os.path.splitext(nome)[0]: Branch(name=os.path.splitext(nome)[0])
             for nome in self.Arquivos
         } if self.Arquivos else {}
 
@@ -353,7 +353,7 @@ class Network:
                             try:
                                 # Verificar se o tramo já existe em self.tramos
                                 if tramo_name not in self.tramos:
-                                    self.tramos[tramo_name] = Tramo(nome_tramo=tramo_name)
+                                    self.tramos[tramo_name] = Branch(name=tramo_name)
                                     
                                 # Garantir que o objeto tramo tenha um dicionário de resultados
                                 if not hasattr(self.tramos[tramo_name], 'resultados'):
@@ -365,9 +365,9 @@ class Network:
                                 df['Tempo (s)'] = df['Tempo (s)'].astype(int)
                                 
                                 if linha == 'producao':
-                                    key = 'perfilProducao'
+                                    key = 'productionProfile'
                                 else:
-                                    key = 'perfilServico'
+                                    key = 'serviceProfile'
 
                                 # Inicializa o dicionário de resultados se necessário
                                 if key not in self.tramos[tramo_name].resultados:
@@ -387,7 +387,7 @@ class Network:
         # Agora, concatenar os DataFrames para cada tramo após processar todos os arquivos
         for tramo_name, tramo in self.tramos.items():
             if hasattr(tramo, 'resultados'):
-                for key in ['perfilProducao', 'perfilServico']:
+                for key in ['productionProfile', 'serviceProfile']:
                     if key in tramo.resultados and isinstance(tramo.resultados[key], list) and tramo.resultados[key]:
                         try:
                             temp = pd.concat(tramo.resultados[key])
@@ -462,8 +462,8 @@ class Network:
         if tramos is None:
             tramos = [nome for nome, t in self.tramos.items()
                       if hasattr(t, 'resultados')
-                         and (('perfilProducao' in t.resultados) or
-                              ('perfilServico'  in t.resultados))]
+                         and (('productionProfile' in t.resultados) or
+                              ('serviceProfile'    in t.resultados))]
 
         if not tramos:
             raise ValueError("Nenhum tramo com resultados para plotar.")
@@ -479,9 +479,9 @@ class Network:
         for nome in tramos:
             tramo = self.tramos[nome]
             if linha == 'producao':
-                key = 'perfilProducao'
+                key = 'productionProfile'
             elif linha == 'servico':
-                key = 'perfilServico'
+                key = 'serviceProfile'
             else:
                 raise ValueError("linha deve ser 'producao' ou 'servico'.")
 
@@ -492,7 +492,7 @@ class Network:
             dfs.append(df)
 
             if indicar_anm and posicao_anm is None:
-                posicao_anm = getattr(tramo, 'master1', {}).get('comprimentoMedido')
+                posicao_anm = getattr(tramo, 'masterValve', {}).get('measuredLength')
 
         # ------------------------- chama a função gráfica ----------------
         fig, ax = _plotar_perfis(dfs,

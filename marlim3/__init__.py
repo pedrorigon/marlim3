@@ -22,12 +22,7 @@ ensure_executable()
 
 # Import main classes
 from ._tramo._branch import Branch
-from ._rede._rede import Network, Rede
-from ._cenarios._cenarios import Scenarios, Cenarios
+from ._rede._rede import Network
+from ._cenarios._cenarios import Scenarios
 
-# Deprecated aliases (kept for backward compatibility)
-Tramo = Branch
-
-__all__ = ['Branch', 'Network', 'Scenarios',
-           'Tramo', 'Rede', 'Cenarios',
-           '__version__']
+__all__ = ['Branch', 'Network', 'Scenarios', '__version__']
