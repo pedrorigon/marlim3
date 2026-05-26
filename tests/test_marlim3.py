@@ -28,8 +28,8 @@ def fluido():
     return {
         "id": 0,
         "api": 32,
-        "rgo": 100,
-        "densidadeGas": 0.7,
+        "gor": 100,
+        "gasDensity": 0.7,
         "bsw": 0.0,
     }
 
@@ -39,9 +39,9 @@ def material_aco():
     """Material aço."""
     return {
         "id": 0,
-        "tipo": 0,
-        "condutividade": 58,
-        "calorEspecifico": 480,
+        "type": 0,
+        "conductivity": 58,
+        "specificHeat": 480,
         "rho": 7850,
     }
 
@@ -50,15 +50,15 @@ def material_aco():
 def secao_transversal():
     """Seção transversal com uma camada de aço."""
     camada = {
-        "idMaterial": 0,
-        "tipoMedicaoCamada": "ESPESSURA",
-        "espessura": 0.0254,
+        "materialId": 0,
+        "layerMeasurementType": "THICKNESS",
+        "thickness": 0.0254,
     }
     return {
         "id": 0,
-        "diametroInterno": 10 * 0.0254,
-        "rugosidade": 0.183e-3,
-        "camadas": [camada],
+        "innerDiameter": 10 * 0.0254,
+        "roughness": 0.183e-3,
+        "layers": [camada],
     }
 
 
@@ -66,23 +66,23 @@ def secao_transversal():
 def duto_horizontal():
     """Duto horizontal de 2500 m, 20 células."""
     ncel = 20
-    comprimento_total = 2500
+    length_total = 2500
     linha = {
-        "nCelulas": ncel,
-        "comprimento": comprimento_total / ncel,
+        "numCells": ncel,
+        "length": length_total / ncel,
     }
     condicoes_ambiente = {
-        "compInter": [0, 1],
-        "tempExterna": [40, 20],
-        "velExterna": [0.5, 0.5],
+        "measuredPositions": [0, 1],
+        "externalTemp": [40, 20],
+        "externalVel": [0.5, 0.5],
     }
     return {
         "id": 0,
-        "idCorte": 0,
-        "ambienteExterno": 2,
-        "angulo": 0,
-        "discretizacao": [linha],
-        "condicoesIniciais": condicoes_ambiente,
+        "crossSectionId": 0,
+        "externalEnvironment": 2,
+        "angle": 0,
+        "discretization": [linha],
+        "initialConditions": condicoes_ambiente,
     }
 
 
@@ -91,11 +91,11 @@ def fonte_liquido():
     """Fonte de líquido a montante – 1500 sm3/d."""
     return {
         "id": 0,
-        "indiFluidoPro": 0,
-        "comprimentoMedido": 0.1,
-        "tempo": [0],
-        "vazaoLiquido": [1500],
-        "temperatura": [40],
+        "prodFluidId": 0,
+        "measuredLength": 0.1,
+        "time": [0],
+        "liquidFlowRate": [1500],
+        "temperature": [40],
     }
 
 
@@ -103,30 +103,30 @@ def fonte_liquido():
 def separador():
     """Condição de contorno de pressão a jusante."""
     return {
-        "tempo": [0],
-        "pressao": [2],
+        "time": [0],
+        "pressure": [2],
     }
 
 
 @pytest.fixture
 def vars_saida():
     """Variáveis de saída para perfis."""
-    nomes = ["pressao", "temperatura", "holdup", "arra", "fric", "hidro"]
-    return {"tempo": [0]} | {var: True for var in nomes}
+    nomes = ["pressure", "temperature", "holdup", "flowPattern", "frictionPressure", "hydrostaticPressure"]
+    return {"time": [0]} | {var: True for var in nomes}
 
 
 @pytest.fixture
 def caso_horizontal(fluido, material_aco, secao_transversal,
                     duto_horizontal, fonte_liquido, separador, vars_saida):
     """Caso base horizontal completo (sem simulação)."""
-    caso = marlim3.Tramo()
-    caso.fluidosProducao = [fluido]
+    caso = marlim3.Branch()
+    caso.productionFluids = [fluido]
     caso.material = [material_aco]
-    caso.secaoTransversal = [secao_transversal]
-    caso.dutosProducao = [duto_horizontal]
-    caso.fonteLiquido = [fonte_liquido]
-    caso.separador = separador
-    caso.perfilProducao = vars_saida
+    caso.crossSection = [secao_transversal]
+    caso.productionDucts = [duto_horizontal]
+    caso.liquidSource = [fonte_liquido]
+    caso.separator = separador
+    caso.productionProfile = vars_saida
     return caso
 
 
@@ -134,7 +134,7 @@ def caso_horizontal(fluido, material_aco, secao_transversal,
 def caso_vertical(caso_horizontal):
     """Caso base vertical (cópia do horizontal com ângulo π/2)."""
     caso = copy.deepcopy(caso_horizontal)
-    caso.dutosProducao[0]["angulo"] = np.pi / 2
+    caso.productionDucts[0]["angle"] = np.pi / 2
     return caso
 
 
@@ -147,41 +147,40 @@ class TestTramoConstruction:
 
     def test_tramo_default(self):
         """Tramo vazio deve ter atributos padrão."""
-        t = marlim3.Tramo()
-        assert t.sistema == "MULTIFASICO"
-        assert t.versao == "1.0"
-        assert t.versaoJson == "1.3.9"
-        assert t.fluidosProducao == []
+        t = marlim3.Branch()
+        assert t.system == "MULTIFASICO"
+        assert t.jsonVersion == "1.3.9"
+        assert t.productionFluids == []
         assert t.material == []
-        assert t.secaoTransversal == []
-        assert t.dutosProducao == []
-        assert t.fonteLiquido == []
-        assert t.separador == {}
-        assert t.perfilProducao == {}
+        assert t.crossSection == []
+        assert t.productionDucts == []
+        assert t.liquidSource == []
+        assert t.separator is None
+        assert t.productionProfile == {}
         assert isinstance(t.resultados, dict)
 
     def test_tramo_default_lists_are_independent(self):
         """Listas padrão não devem ser compartilhadas entre instâncias."""
-        t1 = marlim3.Tramo()
-        t2 = marlim3.Tramo()
-        t1.fluidosProducao.append({"test": 1})
-        assert t2.fluidosProducao == []
+        t1 = marlim3.Branch()
+        t2 = marlim3.Branch()
+        t1.productionFluids.append({"test": 1})
+        assert t2.productionFluids == []
 
     def test_tramo_with_kwargs(self, fluido, material_aco):
         """Tramo pode ser criado passando kwargs no construtor."""
-        t = marlim3.Tramo(
-            fluidosProducao=[fluido],
+        t = marlim3.Branch(
+            productionFluids=[fluido],
             material=[material_aco],
         )
-        assert len(t.fluidosProducao) == 1
-        assert t.fluidosProducao[0]["api"] == 32
+        assert len(t.productionFluids) == 1
+        assert t.productionFluids[0]["api"] == 32
         assert len(t.material) == 1
-        assert t.material[0]["condutividade"] == 58
+        assert t.material[0]["conductivity"] == 58
 
-    def test_sistema_injetor(self):
-        """Tramo pode ser criado com sistema INJETOR."""
-        t = marlim3.Tramo(sistema="INJETOR")
-        assert t.sistema == "INJETOR"
+    def test_system_injetor(self):
+        """Tramo pode ser criado com system INJETOR."""
+        t = marlim3.Branch(system="INJETOR")
+        assert t.system == "INJETOR"
 
 
 # ============================================================================
@@ -192,55 +191,55 @@ class TestModelAssembly:
     """Testes que reproduzem a montagem do modelo do notebook."""
 
     def test_fluido_assignment(self, caso_horizontal, fluido):
-        assert caso_horizontal.fluidosProducao == [fluido]
-        assert caso_horizontal.fluidosProducao[0]["api"] == 32
-        assert caso_horizontal.fluidosProducao[0]["rgo"] == 100
-        assert caso_horizontal.fluidosProducao[0]["densidadeGas"] == 0.7
-        assert caso_horizontal.fluidosProducao[0]["bsw"] == 0.0
+        assert caso_horizontal.productionFluids == [fluido]
+        assert caso_horizontal.productionFluids[0]["api"] == 32
+        assert caso_horizontal.productionFluids[0]["gor"] == 100
+        assert caso_horizontal.productionFluids[0]["gasDensity"] == 0.7
+        assert caso_horizontal.productionFluids[0]["bsw"] == 0.0
 
     def test_material_assignment(self, caso_horizontal, material_aco):
         assert caso_horizontal.material == [material_aco]
 
     def test_secao_transversal(self, caso_horizontal):
-        sec = caso_horizontal.secaoTransversal[0]
-        assert sec["diametroInterno"] == pytest.approx(10 * 0.0254)
-        assert sec["rugosidade"] == pytest.approx(0.183e-3)
-        assert len(sec["camadas"]) == 1
-        assert sec["camadas"][0]["espessura"] == pytest.approx(0.0254)
+        sec = caso_horizontal.crossSection[0]
+        assert sec["innerDiameter"] == pytest.approx(10 * 0.0254)
+        assert sec["roughness"] == pytest.approx(0.183e-3)
+        assert len(sec["layers"]) == 1
+        assert sec["layers"][0]["thickness"] == pytest.approx(0.0254)
 
     def test_duto_horizontal(self, caso_horizontal):
-        duto = caso_horizontal.dutosProducao[0]
-        assert duto["angulo"] == 0
-        assert duto["ambienteExterno"] == 2
-        assert duto["discretizacao"][0]["nCelulas"] == 20
-        assert duto["discretizacao"][0]["comprimento"] == pytest.approx(125.0)
+        duto = caso_horizontal.productionDucts[0]
+        assert duto["angle"] == 0
+        assert duto["externalEnvironment"] == 2
+        assert duto["discretization"][0]["numCells"] == 20
+        assert duto["discretization"][0]["length"] == pytest.approx(125.0)
 
     def test_condicoes_ambiente(self, caso_horizontal):
-        cond = caso_horizontal.dutosProducao[0]["condicoesIniciais"]
-        assert cond["compInter"] == [0, 1]
-        assert cond["tempExterna"] == [40, 20]
-        assert cond["velExterna"] == [0.5, 0.5]
+        cond = caso_horizontal.productionDucts[0]["initialConditions"]
+        assert cond["measuredPositions"] == [0, 1]
+        assert cond["externalTemp"] == [40, 20]
+        assert cond["externalVel"] == [0.5, 0.5]
 
     def test_fonte_liquido(self, caso_horizontal):
-        fl = caso_horizontal.fonteLiquido[0]
-        assert fl["vazaoLiquido"] == [1500]
-        assert fl["temperatura"] == [40]
-        assert fl["comprimentoMedido"] == pytest.approx(0.1)
+        fl = caso_horizontal.liquidSource[0]
+        assert fl["liquidFlowRate"] == [1500]
+        assert fl["temperature"] == [40]
+        assert fl["measuredLength"] == pytest.approx(0.1)
 
     def test_separador(self, caso_horizontal):
-        assert caso_horizontal.separador["pressao"] == [2]
+        assert caso_horizontal.separator["pressure"] == [2]
 
     def test_perfil_producao_vars(self, caso_horizontal):
-        pp = caso_horizontal.perfilProducao
-        assert pp["tempo"] == [0]
-        for var in ["pressao", "temperatura", "holdup", "arra", "fric", "hidro"]:
+        pp = caso_horizontal.productionProfile
+        assert pp["time"] == [0]
+        for var in ["pressure", "temperature", "holdup", "flowPattern", "frictionPressure", "hydrostaticPressure"]:
             assert pp[var] is True
 
-    def test_comprimento_total(self, caso_horizontal):
-        """Comprimento total = nCelulas * comprimento_celula."""
-        duto = caso_horizontal.dutosProducao[0]
-        disc = duto["discretizacao"][0]
-        total = disc["nCelulas"] * disc["comprimento"]
+    def test_length_total(self, caso_horizontal):
+        """Comprimento total = numCells * length_celula."""
+        duto = caso_horizontal.productionDucts[0]
+        disc = duto["discretization"][0]
+        total = disc["numCells"] * disc["length"]
         assert total == pytest.approx(2500.0)
 
 
@@ -251,19 +250,19 @@ class TestModelAssembly:
 class TestVerticalCase:
     """Testes da criação do caso vertical a partir do horizontal."""
 
-    def test_angulo_vertical(self, caso_vertical):
-        assert caso_vertical.dutosProducao[0]["angulo"] == pytest.approx(np.pi / 2)
+    def test_angle_vertical(self, caso_vertical):
+        assert caso_vertical.productionDucts[0]["angle"] == pytest.approx(np.pi / 2)
 
     def test_deepcopy_independence(self, caso_horizontal, caso_vertical):
         """Alterar o caso vertical não altera o horizontal."""
-        assert caso_horizontal.dutosProducao[0]["angulo"] == 0
-        assert caso_vertical.dutosProducao[0]["angulo"] == pytest.approx(np.pi / 2)
+        assert caso_horizontal.productionDucts[0]["angle"] == 0
+        assert caso_vertical.productionDucts[0]["angle"] == pytest.approx(np.pi / 2)
 
     def test_vertical_preserves_other_fields(self, caso_horizontal, caso_vertical):
         """O deepcopy mantém os demais campos intactos."""
-        assert caso_vertical.fluidosProducao == caso_horizontal.fluidosProducao
+        assert caso_vertical.productionFluids == caso_horizontal.productionFluids
         assert caso_vertical.material == caso_horizontal.material
-        assert caso_vertical.separador == caso_horizontal.separador
+        assert caso_vertical.separator == caso_horizontal.separator
 
 
 # ============================================================================
@@ -278,58 +277,58 @@ class TestParameterVariation:
         casos = []
         for vazao in vazoes:
             c = copy.deepcopy(caso_horizontal)
-            c.fonteLiquido[0]["vazaoLiquido"] = [vazao]
+            c.liquidSource[0]["liquidFlowRate"] = [vazao]
             casos.append(c)
 
         for i, vazao in enumerate(vazoes):
-            assert casos[i].fonteLiquido[0]["vazaoLiquido"] == [vazao]
+            assert casos[i].liquidSource[0]["liquidFlowRate"] == [vazao]
 
         # Caso original não foi alterado
-        assert caso_horizontal.fonteLiquido[0]["vazaoLiquido"] == [1500]
+        assert caso_horizontal.liquidSource[0]["liquidFlowRate"] == [1500]
 
     def test_variacao_diametro(self, caso_horizontal):
         diametros_pol = [5, 10, 15, 20]
         casos = []
         for d in diametros_pol:
             c = copy.deepcopy(caso_horizontal)
-            c.secaoTransversal[0]["diametroInterno"] = d * 0.0254
+            c.crossSection[0]["innerDiameter"] = d * 0.0254
             casos.append(c)
 
         for i, d in enumerate(diametros_pol):
-            assert casos[i].secaoTransversal[0]["diametroInterno"] == pytest.approx(
+            assert casos[i].crossSection[0]["innerDiameter"] == pytest.approx(
                 d * 0.0254
             )
 
-    def test_variacao_rgo(self, caso_horizontal):
-        rgos = [0, 50, 200, 500, 1000, 2000]
+    def test_variacao_gor(self, caso_horizontal):
+        gors = [0, 50, 200, 500, 1000, 2000]
         casos = []
-        for rgo in rgos:
+        for gor in gors:
             c = copy.deepcopy(caso_horizontal)
-            c.fluidosProducao[0]["rgo"] = rgo
+            c.productionFluids[0]["gor"] = gor
             casos.append(c)
 
-        for i, rgo in enumerate(rgos):
-            assert casos[i].fluidosProducao[0]["rgo"] == rgo
+        for i, gor in enumerate(gors):
+            assert casos[i].productionFluids[0]["gor"] == gor
 
     def test_variacao_api(self, caso_horizontal):
         apis = [15, 20, 25]
         for api_val in apis:
             c = copy.deepcopy(caso_horizontal)
-            c.fluidosProducao[0]["api"] = api_val
-            assert c.fluidosProducao[0]["api"] == api_val
+            c.productionFluids[0]["api"] = api_val
+            assert c.productionFluids[0]["api"] == api_val
 
     def test_adicionar_camada_isolante(self, caso_horizontal):
         """Adiciona uma camada isolante à seção transversal."""
         c = copy.deepcopy(caso_horizontal)
         camada_isolante = {
-            "idMaterial": 1,
-            "tipoMedicaoCamada": "ESPESSURA",
-            "espessura": 0.05,
+            "materialId": 1,
+            "layerMeasurementType": "THICKNESS",
+            "thickness": 0.05,
         }
-        c.secaoTransversal[0]["camadas"].append(camada_isolante)
-        assert len(c.secaoTransversal[0]["camadas"]) == 2
+        c.crossSection[0]["layers"].append(camada_isolante)
+        assert len(c.crossSection[0]["layers"]) == 2
         # Original não foi alterado
-        assert len(caso_horizontal.secaoTransversal[0]["camadas"]) == 1
+        assert len(caso_horizontal.crossSection[0]["layers"]) == 1
 
 
 # ============================================================================
@@ -370,13 +369,13 @@ class TestJsonSerialization:
                 with open(os.path.join(tmpdir, "test_model.json"), "r") as f:
                     data = json.load(f)
 
-                assert "sistema" in data
-                assert "fluidosProducao" in data
+                assert "system" in data
+                assert "productionFluids" in data
                 assert "material" in data
-                assert "secaoTransversal" in data
-                assert "dutosProducao" in data
-                assert "fonteLiquido" in data
-                assert "separador" in data
+                assert "crossSection" in data
+                assert "productionDucts" in data
+                assert "liquidSource" in data
+                assert "separator" in data
             finally:
                 os.chdir(original_cwd)
 
@@ -388,16 +387,16 @@ class TestJsonSerialization:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("roundtrip")
 
-                novo = marlim3.Tramo()
+                novo = marlim3.Branch()
                 novo.from_json(os.path.join(tmpdir, "roundtrip.json"))
 
-                assert novo.sistema == caso_horizontal.sistema
-                assert novo.fluidosProducao == caso_horizontal.fluidosProducao
+                assert novo.system == caso_horizontal.system
+                assert novo.productionFluids == caso_horizontal.productionFluids
                 assert novo.material == caso_horizontal.material
-                assert novo.secaoTransversal == caso_horizontal.secaoTransversal
-                assert novo.dutosProducao == caso_horizontal.dutosProducao
-                assert novo.fonteLiquido == caso_horizontal.fonteLiquido
-                assert novo.separador == caso_horizontal.separador
+                assert novo.crossSection == caso_horizontal.crossSection
+                assert novo.productionDucts == caso_horizontal.productionDucts
+                assert novo.liquidSource == caso_horizontal.liquidSource
+                assert novo.separator == caso_horizontal.separator
             finally:
                 os.chdir(original_cwd)
 
@@ -408,9 +407,9 @@ class TestJsonSerialization:
             try:
                 os.chdir(tmpdir)
                 caso_vertical.to_json("roundtrip_v")
-                novo = marlim3.Tramo()
+                novo = marlim3.Branch()
                 novo.from_json(os.path.join(tmpdir, "roundtrip_v.json"))
-                assert novo.dutosProducao[0]["angulo"] == pytest.approx(np.pi / 2)
+                assert novo.productionDucts[0]["angle"] == pytest.approx(np.pi / 2)
             finally:
                 os.chdir(original_cwd)
 
@@ -420,12 +419,12 @@ class TestJsonSerialization:
             original_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                t = marlim3.Tramo()
+                t = marlim3.Branch()
                 t.to_json("empty_model", generate_empty_fields=True)
                 with open(os.path.join(tmpdir, "empty_model.json"), "r") as f:
                     data = json.load(f)
                 # Com generate_empty_fields=True, campos vazios devem existir
-                assert "sistema" in data
+                assert "system" in data
             finally:
                 os.chdir(original_cwd)
 
@@ -439,9 +438,9 @@ class TestJsonSerialization:
                 with open(os.path.join(tmpdir, "dict_test.json"), "r") as f:
                     data = json.load(f)
 
-                novo = marlim3.Tramo()
+                novo = marlim3.Branch()
                 novo.from_json(data, is_string=True)
-                assert novo.fluidosProducao == caso_horizontal.fluidosProducao
+                assert novo.productionFluids == caso_horizontal.productionFluids
             finally:
                 os.chdir(original_cwd)
 
@@ -454,12 +453,12 @@ class TestCenarios:
     """Testes de construção e uso da classe Cenarios."""
 
     def test_cenarios_default(self):
-        c = marlim3.Cenarios()
+        c = marlim3.Scenarios()
         assert c.casos == {}
 
     def test_cenarios_with_cases(self, caso_horizontal, caso_vertical):
         """Cenarios aceita dicionário de Tramos."""
-        cenarios = marlim3.Cenarios({
+        cenarios = marlim3.Scenarios({
             "horizontal": caso_horizontal,
             "vertical": caso_vertical,
         })
@@ -469,7 +468,7 @@ class TestCenarios:
 
     def test_cenarios_access(self, caso_horizontal):
         """Acesso ao caso dentro de Cenarios retorna o Tramo."""
-        cenarios = marlim3.Cenarios({"caso1": caso_horizontal})
+        cenarios = marlim3.Scenarios({"caso1": caso_horizontal})
         assert cenarios.casos["caso1"] is caso_horizontal
 
     def test_cenarios_multiple_vazoes(self, caso_horizontal):
@@ -478,17 +477,17 @@ class TestCenarios:
         casos = {}
         for vazao in vazoes:
             c = copy.deepcopy(caso_horizontal)
-            c.fonteLiquido[0]["vazaoLiquido"] = [vazao]
+            c.liquidSource[0]["liquidFlowRate"] = [vazao]
             casos[f"Q = {vazao} sm3/d"] = c
 
-        cenarios = marlim3.Cenarios(casos)
+        cenarios = marlim3.Scenarios(casos)
         assert len(cenarios.casos) == 4
         assert "Q = 200 sm3/d" in cenarios.casos
         assert "Q = 6000 sm3/d" in cenarios.casos
 
         for vazao in vazoes:
             label = f"Q = {vazao} sm3/d"
-            assert cenarios.casos[label].fonteLiquido[0]["vazaoLiquido"] == [vazao]
+            assert cenarios.casos[label].liquidSource[0]["liquidFlowRate"] == [vazao]
 
 
 # ============================================================================
@@ -499,7 +498,7 @@ class TestRedeConstruction:
     """Testes básicos de instanciação da classe Rede."""
 
     def test_rede_default(self):
-        r = marlim3.Rede()
+        r = marlim3.Network()
         assert r.Arquivos == []
         assert r.Conexao == []
 
@@ -514,26 +513,26 @@ class TestGeometry:
     def test_multiple_dutos(self, caso_horizontal):
         """Modelo com dois dutos concatenados."""
         c = copy.deepcopy(caso_horizontal)
-        segundo_duto = copy.deepcopy(c.dutosProducao[0])
+        segundo_duto = copy.deepcopy(c.productionDucts[0])
         segundo_duto["id"] = 1
-        segundo_duto["angulo"] = np.pi / 4  # 45°
-        c.dutosProducao.append(segundo_duto)
-        assert len(c.dutosProducao) == 2
-        assert c.dutosProducao[0]["angulo"] == 0
-        assert c.dutosProducao[1]["angulo"] == pytest.approx(np.pi / 4)
+        segundo_duto["angle"] = np.pi / 4  # 45°
+        c.productionDucts.append(segundo_duto)
+        assert len(c.productionDucts) == 2
+        assert c.productionDucts[0]["angle"] == 0
+        assert c.productionDucts[1]["angle"] == pytest.approx(np.pi / 4)
 
-    def test_discretizacao_consistency(self, caso_horizontal):
+    def test_discretization_consistency(self, caso_horizontal):
         """Verifica que a discretização é consistente."""
-        duto = caso_horizontal.dutosProducao[0]
-        disc = duto["discretizacao"][0]
-        assert disc["nCelulas"] > 0
-        assert disc["comprimento"] > 0
+        duto = caso_horizontal.productionDucts[0]
+        disc = duto["discretization"][0]
+        assert disc["numCells"] > 0
+        assert disc["length"] > 0
 
     def test_secao_diametro_positive(self, caso_horizontal):
-        assert caso_horizontal.secaoTransversal[0]["diametroInterno"] > 0
+        assert caso_horizontal.crossSection[0]["innerDiameter"] > 0
 
-    def test_secao_rugosidade_positive(self, caso_horizontal):
-        assert caso_horizontal.secaoTransversal[0]["rugosidade"] > 0
+    def test_secao_roughness_positive(self, caso_horizontal):
+        assert caso_horizontal.crossSection[0]["roughness"] > 0
 
 
 # ============================================================================
@@ -547,29 +546,29 @@ class TestInputValidation:
         """API gravity deve estar num intervalo razoável."""
         assert 5 <= fluido["api"] <= 70
 
-    def test_fluido_rgo_nonnegative(self, fluido):
-        assert fluido["rgo"] >= 0
+    def test_fluido_gor_nonnegative(self, fluido):
+        assert fluido["gor"] >= 0
 
     def test_fluido_bsw_range(self, fluido):
         assert 0.0 <= fluido["bsw"] <= 1.0
 
-    def test_fluido_densidadeGas_range(self, fluido):
-        assert 0.5 <= fluido["densidadeGas"] <= 1.5
+    def test_fluido_gasDensity_range(self, fluido):
+        assert 0.5 <= fluido["gasDensity"] <= 1.5
 
-    def test_pressao_separador_positive(self, separador):
-        assert all(p > 0 for p in separador["pressao"])
+    def test_pressure_separador_positive(self, separador):
+        assert all(p > 0 for p in separador["pressure"])
 
-    def test_temperatura_fonte_positive(self, fonte_liquido):
-        assert all(t > 0 for t in fonte_liquido["temperatura"])
+    def test_temperature_fonte_positive(self, fonte_liquido):
+        assert all(t > 0 for t in fonte_liquido["temperature"])
 
     def test_vazao_fonte_positive(self, fonte_liquido):
-        assert all(q > 0 for q in fonte_liquido["vazaoLiquido"])
+        assert all(q > 0 for q in fonte_liquido["liquidFlowRate"])
 
-    def test_material_condutividade_positive(self, material_aco):
-        assert material_aco["condutividade"] > 0
+    def test_material_conductivity_positive(self, material_aco):
+        assert material_aco["conductivity"] > 0
 
     def test_material_calor_especifico_positive(self, material_aco):
-        assert material_aco["calorEspecifico"] > 0
+        assert material_aco["specificHeat"] > 0
 
     def test_material_rho_positive(self, material_aco):
         assert material_aco["rho"] > 0
@@ -605,6 +604,6 @@ class TestDemoFiles:
         filepath = os.path.join(self.DEMO_DIR, demo_file)
         if not os.path.isfile(filepath):
             pytest.skip(f"{demo_file} não encontrado")
-        t = marlim3.Tramo()
+        t = marlim3.Branch()
         t.from_json(filepath)
-        assert t.sistema is not None
+        assert t.system is not None

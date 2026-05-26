@@ -48,6 +48,11 @@ DEMOS = {
     "injec-Liq-TempoResidencia.json":           [],
     "parada-longo-Combinado-BCS-GLC-PIG-completo.json": ["PVTSIM-MARLIM.tab"],
     "producaoSimplificado.json":                [],
+    "2zonas-2VGLs-2-Check-correcPerfTerm_en.json": ["PVTSIM-MARLIM.tab"],
+    "BCS-longo-eficMotor_en.json":                 ["PVTSIM-MARLIM.tab"],
+    "injec-Liq-TempoResidencia_en.json":           [],
+    "parada-longo-Combinado-BCS-GLC-PIG-completo_en.json": ["PVTSIM-MARLIM.tab"],
+    "producaoSimplificado_en.json":                [],
 }
 
 # ============================================================================
@@ -71,13 +76,13 @@ def test_demo_simula(json_file):
     json_path = os.path.join(DEMOS_DIR, json_file)
     label = os.path.splitext(json_file)[0]
 
-    caso = marlim3.Tramo()
+    caso = marlim3.Branch()
     caso.from_json(json_path)
 
     # Passando para permanente
-    # Reduzir tempo de simulação para acelerar os testes
-    if "transiente" in caso.configuracaoInicial:
-        caso.configuracaoInicial["transiente"] = False
+    # Reduzir time de simulação para acelerar os testes
+    if "transient" in caso.initialConfig:
+        caso.initialConfig["transient"] = False
 
     out_dir = os.path.join(OUTPUT_DIR, label)
     os.makedirs(out_dir, exist_ok=True)
@@ -95,7 +100,7 @@ def test_demo_simula(json_file):
     original_cwd = os.getcwd()
     try:
         os.chdir(out_dir)
-        caso.simular(label=label, diretorio=results_dir)
+        caso.simulate(label=label, directory=results_dir)
     finally:
         os.chdir(original_cwd)
 

@@ -88,17 +88,17 @@ ATOL = 1e-8   # tolerância absoluta para comparação numérica
 
 def _run_simulation(model_name):
     """Executa a simulação de um demo e retorna o dicionário de resultados
-    no mesmo formato que a GUI (perfilProducao, perfilServico, tendP, tendS).
+    no mesmo formato que a GUI (productionProfile, serviceProfile, productionTrend, serviceTrend).
     """
     info = DEMOS[model_name]
     json_path = os.path.join(DEMOS_DIR, info["json"])
 
-    caso = marlim3.Tramo()
+    caso = marlim3.Branch()
     caso.from_json(json_path)
 
     # Forçar modo permanente para acelerar
-    if "transiente" in (caso.configuracaoInicial or {}):
-        caso.configuracaoInicial["transiente"] = False
+    if "transient" in (caso.initialConfig or {}):
+        caso.initialConfig["transient"] = False
 
     out_dir = os.path.join(OUTPUT_DIR, model_name)
     os.makedirs(out_dir, exist_ok=True)
@@ -114,34 +114,34 @@ def _run_simulation(model_name):
     original_cwd = os.getcwd()
     try:
         os.chdir(out_dir)
-        caso.simular(label=model_name, diretorio=results_dir)
+        caso.simulate(label=model_name, directory=results_dir)
     finally:
         os.chdir(original_cwd)
 
     # Processar resultados da mesma forma que a GUI
     resultados = {}
-    cfg = caso.configuracaoInicial or {}
-    has_linha_gas = cfg.get("linhaGas", False)
+    cfg = caso.initialConfig or {}
+    has_linha_gas = cfg.get("gasLine", False)
 
-    if caso.perfilProducao is not None:
-        perfis = caso.processar_perfis(results_dir)
+    if caso.productionProfile is not None:
+        perfis = caso._process_profiles(results_dir)
         if perfis is not None:
-            resultados["perfilProducao"] = perfis
+            resultados["productionProfile"] = perfis
 
-    if has_linha_gas and caso.perfilServico is not None:
-        perfis_s = caso.processar_perfis(results_dir, linha="servico")
+    if has_linha_gas and caso.serviceProfile is not None:
+        perfis_s = caso._process_profiles(results_dir, line="service")
         if perfis_s is not None:
-            resultados["perfilServico"] = perfis_s
+            resultados["serviceProfile"] = perfis_s
 
-    if caso.tendP is not None:
-        tend = caso.processar_tendencias(results_dir)
+    if caso.productionTrend is not None:
+        tend = caso._process_trends(results_dir)
         if tend:
-            resultados["tendP"] = tend
+            resultados["productionTrend"] = tend
 
-    if has_linha_gas and caso.tendS is not None:
-        tend_s = caso.processar_tendencias(results_dir, linha="servico")
+    if has_linha_gas and caso.serviceTrend is not None:
+        tend_s = caso._process_trends(results_dir, line="service")
         if tend_s:
-            resultados["tendS"] = tend_s
+            resultados["serviceTrend"] = tend_s
 
     return resultados
 
@@ -171,6 +171,19 @@ def _load_reference(model_name):
     if not os.path.isdir(model_dir):
         return None
 
+    profile_key_map = {
+        "perfilProducao": "productionProfile",
+        "perfilServico": "serviceProfile",
+        "productionProfile": "productionProfile",
+        "serviceProfile": "serviceProfile",
+    }
+    trend_prefix_map = {
+        "tendP_": "productionTrend",
+        "tendS_": "serviceTrend",
+        "productionTrend_": "productionTrend",
+        "serviceTrend_": "serviceTrend",
+    }
+
     reference = {}
     csv_files = sorted(f for f in os.listdir(model_dir) if f.endswith(".csv"))
 
@@ -178,10 +191,9 @@ def _load_reference(model_name):
         csv_path = os.path.join(model_dir, csv_file)
         name = csv_file[:-4]  # remove .csv
 
-        # Detectar se é tendência (formato: tendP_1, tendS_2, etc.)
-        for prefix in ("tendP_", "tendS_"):
+        # Detectar se é tendência (aceita nomes antigos e novos)
+        for prefix, tend_key in trend_prefix_map.items():
             if name.startswith(prefix):
-                tend_key = prefix[:-1]  # tendP ou tendS
                 sub_key = int(name[len(prefix):])
                 df = pd.read_csv(csv_path, index_col=0)
                 if tend_key not in reference:
@@ -189,9 +201,10 @@ def _load_reference(model_name):
                 reference[tend_key][sub_key] = df
                 break
         else:
-            # É perfil (perfilProducao, perfilServico)
+            # É perfil (aceita nomes antigos e novos)
             df = pd.read_csv(csv_path, index_col=[0, 1])
-            reference[name] = df
+            mapped_name = profile_key_map.get(name, name)
+            reference[mapped_name] = df
 
     return reference if reference else None
 
