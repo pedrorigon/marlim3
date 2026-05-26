@@ -1088,7 +1088,7 @@
                     "active":  false
                 }
             ],
-    "multiBcs":  [
+    "multiEsp":  [
                      {
                          "id":  0,
                          "measuredLength":  2000.0,

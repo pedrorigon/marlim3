@@ -62,7 +62,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "hydrate",                        "hidrato" },
     { "chokeSource",                    "fonteChoke" },
     { "esp",                            "bcs" },
-    { "multiBcs",                       "multibcs" },
+    { "multiEsp",                       "multibcs" },
     { "volumetricPump",                 "bombaVolumetrica" },
     { "pressureDrop",                   "deltaPressao" },
     { "heatSource",                     "fonteCalor" },
@@ -491,7 +491,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "polyFactor",                     "fatorpoli" },
 
     // -----------------------------------------------------------------------
-    // BCS / multiBcs shared
+    // BCS / multiESP shared
     // -----------------------------------------------------------------------
     { "thermalEquilBcs",                "equilTerm" },
 

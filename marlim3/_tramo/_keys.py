@@ -29,7 +29,6 @@ PT_TO_EN = {
     "dutosServico":         "serviceDucts",
     "hidrato":              "hydrate",
     "fonteChoke":           "chokeSource",
-    "multibcs":             "multiBcs",
     "bombaVolumetrica":     "volumetricPump",
     "deltaPressao":         "pressureDrop",
     "fonteCalor":           "heatSource",
@@ -60,6 +59,7 @@ PT_TO_EN = {
     "fontePoro2D":          "porous2DSource",
     "fonteGasLift":         "gasLiftSource",
     "bcs":                  "esp",
+    "multibcs":             "multiEsp",
 
     # Shared keys (appear at multiple nesting levels)
     "ativo":                "active",
