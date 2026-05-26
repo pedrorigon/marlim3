@@ -2215,7 +2215,7 @@
                 "type": "number"
               }
             },
-            "head": {
+            "pumpHead": {
               "type": "array",
               "description": "Head values of the BCS curve.",
               "items": {
@@ -2787,21 +2787,21 @@
           "type": "boolean",
           "description": "Indicates whether the object is active."
           },
-          "dPdLHidro": {
+            "hydroGradient": {
           "type": "array",
           "description": "List of possible adjustment factors to correct hydrostatic pressure loss in production/service ducts. A factor is applied to a duct by its index (position) in this list.",
           "items": {
               "type": "number"
           }
           },
-          "dPdLFric": {
+            "fricGradient": {
           "type": "array",
           "description": "List of possible adjustment factors to correct friction pressure loss in production/service ducts. A factor is applied to a duct by its index (position) in this list.",
           "items": {
               "type": "number"
           }
           },
-          "dTdL": {
+            "tempGradient": {
           "type": "array",
           "description": "List of possible adjustment factors to correct temperature gradient in production/service ducts. A factor is applied to a duct by its index (position) in this list.",
           "items": {
@@ -3768,7 +3768,7 @@
           "type": "number",
           "description": ""
         },
-        "rugosidade": {
+        "roughness": {
           "type": "number",
           "description": "",
           "unit": "m"
