@@ -4,6 +4,7 @@ import json
 import shutil
 from contextlib import nullcontext
 from .._download import get_executable_path
+from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
 from .._plots._plots_redes import _plotar_rede
 from .._tramo._branch import Branch
@@ -362,7 +363,8 @@ class Network:
                                 # Ler o arquivo de perfil
                                 df = pd.read_csv(file_path, sep=';', skiprows=0, header=1)
                                 df.columns = [col.strip() for col in df.columns]
-                                df['Tempo (s)'] = df['Tempo (s)'].astype(int)
+                                df = normalize_time_column(df)
+                                df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(int)
                                 
                                 if linha == 'producao':
                                     key = 'productionProfile'
@@ -391,7 +393,7 @@ class Network:
                     if key in tramo.resultados and isinstance(tramo.resultados[key], list) and tramo.resultados[key]:
                         try:
                             temp = pd.concat(tramo.resultados[key])
-                            temp.set_index(['Tempo (s)', temp.index], inplace=True)
+                            temp.set_index([CANONICAL_TIME_COLUMN, temp.index], inplace=True)
                             temp = temp.loc[:, ~temp.columns.str.contains('^Unnamed')]
                             tramo.resultados[key] = temp
                         except Exception as e:

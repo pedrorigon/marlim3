@@ -21,6 +21,7 @@ import platform
 import subprocess
 import time
 from threading import Thread
+from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column, parse_trend_headers
 
 class Tramo:
 
@@ -485,7 +486,8 @@ class Tramo:
                     file_path = os.path.join(root, filename) 
                     df = pd.read_csv(file_path, sep=';', skiprows=0, header=1) 
                     df.columns = [col.strip() for col in df.columns] 
-                    df['Tempo (s)'] = df['Tempo (s)'].astype(int) 
+                    df = normalize_time_column(df)
+                    df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(int) 
                     temp_dfs.append(df) 
      
         if not temp_dfs: 
@@ -494,7 +496,7 @@ class Tramo:
      
         concatenated_df = pd.concat(temp_dfs) 
          
-        concatenated_df.set_index(['Tempo (s)', concatenated_df.index], inplace=True) 
+        concatenated_df.set_index([CANONICAL_TIME_COLUMN, concatenated_df.index], inplace=True) 
      
         concatenated_df.index.set_levels([concatenated_df.index.levels[0],  
                                           concatenated_df.index.levels[1]],  
@@ -526,15 +528,15 @@ class Tramo:
                             linha2 = f.readline().strip() 
                             linha3 = f.readline().strip() 
      
-                        comprimento = int(re.search(r'= (\d+)', linha1).group(1)) 
-                        rotulo = linha2.split('=')[1].strip() 
-                        indice_celula = int(re.search(r'= (\d+)', linha3).group(1)) 
+                        comprimento, rotulo, indice_celula = parse_trend_headers(
+                            linha1, linha2, linha3)
      
                         df = pd.read_csv(file_path, sep=';', skiprows=3, header=0) 
      
                         df.columns = [col.strip() for col in df.columns] 
-                        df['Tempo (s)'] = df['Tempo (s)'].astype(float) 
-                        df.set_index(['Tempo (s)'], inplace=True) 
+                        df = normalize_time_column(df)
+                        df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(float) 
+                        df.set_index([CANONICAL_TIME_COLUMN], inplace=True) 
                         df = df.loc[:, ~df.columns.str.contains('^Unnamed')] 
      
                         for col in df.columns: 
@@ -602,7 +604,8 @@ class Tramo:
         else:
             print('argumento linha só pode ser producao ou servico')         
 
-        fig, ax = _plotar_tendencias(self.resultados[TEND], posicoes = posicoes)
+        fig, ax = _plotar_tendencias(self.resultados[TEND], posicoes = posicoes,
+                         language='pt')
 
         return fig, ax
     

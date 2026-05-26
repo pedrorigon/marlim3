@@ -13,17 +13,15 @@ import os
 import glob 
 import sys
 
-# Lista de variáveis que devem ser ignoradas no processamento
-skip_variables = [
-    "Comprimento (m) Fronteira F",
-    "Comprimento (m) Centro Volume C",
-    "Elevacao (m) F",
-    "Elevacao (m) C",
-    "Comprimento (m) centro de Volume C",
-    "comprimento_fundoPoco (m) F",
-    "Profundidade (m) F",
-    "Profundidade (m) C"
-]
+from .._output_headers import (
+    SKIP_VARIABLES,
+    is_pressure_variable,
+    is_temperature_variable,
+    parse_trend_headers,
+    resolve_time_column,
+)
+
+skip_variables = SKIP_VARIABLES
 
 # Cabeçalho padrão para os arquivos de saída
 header_template = """'Marlim3' 
@@ -52,19 +50,9 @@ def read_tend_file(file_path):
     variable_line = lines[3] 
     data_lines = lines[4:] 
      
-    # Extract the position, Rotulo, and celula from the headers 
-    position = None 
-    rotulo = None 
-    celula = None 
-    for header in headers: 
-        if 'Comprimento a partir do Fundo de Poco (m)' in header: 
-            position = header.split('=')[-1].strip() 
-        if 'Comprimento a partir da Plataforma (m)' in header:
-            position = header.split('=')[-1].strip() 
-        if 'Rotulo' in header: 
-            rotulo = header.split('=')[-1].strip() 
-        if 'Indice da Celula' in header: 
-            celula = header.split('=')[1].strip() 
+    position, rotulo, celula = parse_trend_headers(headers[0], headers[1], headers[2])
+    position = str(position)
+    celula = str(celula)
      
     variables = variable_line.strip().split(';') 
     variables = [var.strip() for var in variables if var.strip()] 
@@ -121,9 +109,9 @@ def write_tpl_output_file(output_path, all_variables, sorted_data, position_mapp
                 rotulo, comprimento = position_mapping[(var, position, file_number)] 
                 var_type = "BOUNDARY" if var.endswith("F") else "SECTION" 
                 unit = var.split('(')[1].split(')')[0] 
-                if var.strip() == "Temperatura (C)":
+                if is_temperature_variable(var):
                     var_out = "TM"
-                elif var.strip() == "Pressao (kgf/cm2)":
+                elif is_pressure_variable(var):
                     var_out = "PT"
                 else:
                     idx = var.find('(')
@@ -146,9 +134,9 @@ def write_ppl_output_file(output_path, perfisp_variables, perfisg_variables, sor
         for var in perfisp_variables: 
             var_type = "BOUNDARY" if var.endswith("F") else "SECTION" 
             unit = var.split('(')[1].split(')')[0] 
-            if var.strip().startswith("Temperatura (C)"):
+            if is_temperature_variable(var):
                 var_out = "TM"
-            elif var.strip().startswith("Pressao (kgf/cm2)"):
+            elif is_pressure_variable(var):
                 var_out = "PT"
             else:
                 # Remove tudo a partir do primeiro parêntese (inclusive)
@@ -159,9 +147,9 @@ def write_ppl_output_file(output_path, perfisp_variables, perfisg_variables, sor
         for var in perfisg_variables: 
             var_type = "BOUNDARY" if var.endswith("F") else "SECTION" 
             unit = var.split('(')[1].split(')')[0]
-            if var.strip().startswith("Temperatura (C)"):
+            if is_temperature_variable(var):
                 var_out = "TM"
-            elif var.strip().startswith("Pressao (kgf/cm2)"):
+            elif is_pressure_variable(var):
                 var_out = "PT"
             else:
                 idx = var.find('(')
@@ -203,12 +191,14 @@ def process_tend_file(input_file, output_directory, geometry_blocks):
 
     for var in variables:
         var_name = var.strip()
-        if '(' in var_name and var_name != "Tempo (s)" and var_name not in skip_variables:
+        time_column = resolve_time_column(variables)
+        if '(' in var_name and var_name != time_column and var_name not in skip_variables:
             tpl_all_variables.append((var_name, position, file_number, celula))
             tpl_position_mapping[(var_name, position, file_number)] = (rotulo, position)
 
     for row in data:
-        time = row[variables.index("Tempo (s)")]
+        time_column = resolve_time_column(variables)
+        time = row[variables.index(time_column)]
         if time not in tpl_all_data:
             tpl_all_data[time] = []
         tpl_all_data[time].append([time])

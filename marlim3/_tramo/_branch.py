@@ -25,6 +25,7 @@ import pandas as pd
 
 from .._download import get_executable_path
 from .._conversores._conversor_marlim3_tplppl import convert_to_ppl_tpl
+from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column, parse_trend_headers
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
 from .._plots._plots_tends import _plotar_tendencias
 from .._plots._plots_geometria import _plotar_geometria
@@ -464,7 +465,8 @@ class Branch:
                     file_path = os.path.join(root, filename)
                     df = pd.read_csv(file_path, sep=';', skiprows=0, header=1)
                     df.columns = [col.strip() for col in df.columns]
-                    df['Tempo (s)'] = df['Tempo (s)'].astype(int)
+                    df = normalize_time_column(df)
+                    df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(int)
                     temp_dfs.append(df)
 
         if not temp_dfs:
@@ -472,7 +474,7 @@ class Branch:
             return None
 
         concatenated = pd.concat(temp_dfs)
-        concatenated.set_index(['Tempo (s)', concatenated.index], inplace=True)
+        concatenated.set_index([CANONICAL_TIME_COLUMN, concatenated.index], inplace=True)
         concatenated.index.set_levels(
             [concatenated.index.levels[0], concatenated.index.levels[1]],
             level=[0, 1])
@@ -501,14 +503,14 @@ class Branch:
                             line2 = fh.readline().strip()
                             line3 = fh.readline().strip()
 
-                        measured_length = int(re.search(r'= (\d+)', line1).group(1))
-                        label = line2.split('=')[1].strip()
-                        cell_index = int(re.search(r'= (\d+)', line3).group(1))
+                        measured_length, label, cell_index = parse_trend_headers(
+                            line1, line2, line3)
 
                         df = pd.read_csv(file_path, sep=';', skiprows=3, header=0)
                         df.columns = [col.strip() for col in df.columns]
-                        df['Tempo (s)'] = df['Tempo (s)'].astype(float)
-                        df.set_index(['Tempo (s)'], inplace=True)
+                        df = normalize_time_column(df)
+                        df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(float)
+                        df.set_index([CANONICAL_TIME_COLUMN], inplace=True)
                         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
                         for col in df.columns:
                             df[col] = df[col].astype(float)
@@ -565,7 +567,8 @@ class Branch:
             return None, None
 
         fig, ax = _plotar_tendencias(self.resultados[result_key],
-                                     posicoes=positions)
+                                     posicoes=positions,
+                                     language='en')
         return fig, ax
 
     def plot_geometry(self):
