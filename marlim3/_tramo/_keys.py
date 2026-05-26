@@ -14,6 +14,7 @@ when ``"language": "en"`` is present in the JSON.
 # ---------------------------------------------------------------------------
 PT_TO_EN = {
     # Root-level / top-level object keys
+    # Legacy alias kept for backward compatibility with existing inputs.
     "sistema":              "system",
     "versaoJson":           "jsonVersion",
     "versaoJSON":           "jsonVersion",
@@ -66,6 +67,7 @@ PT_TO_EN = {
     "tempo":                "time",
     "temperatura":          "temperature",
     "pressao":              "pressure",
+    "holdup":               "holdup",
     "comprimentoMedido":    "measuredLength",
     "abertura":             "opening",
     "indiFluidoPro":        "prodFluidId",
