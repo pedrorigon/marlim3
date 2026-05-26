@@ -1452,6 +1452,7 @@ class Ler{
     int saidaTela;//atributo que define como vai ser a saida na tela do computador durante a simulacao, se apenas
     //indicando a porcentagm simulada ou se usando uma saida com mais informacoes, tempo, passo de tempo e variaveis,
     //0-> saida com porcentagem, caso padrao
+	int idiomaSaida;//idioma dos textos de saida em arquivos: 0->pt-br, 1->en
 
 	double valTempChokeJus;//valor onde e armazenado a temperatura a jusante do choke de superfpicie,
     //valor meramente para gravacao em graficos de tendencia, quando solicitado

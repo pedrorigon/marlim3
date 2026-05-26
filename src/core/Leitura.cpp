@@ -6,6 +6,7 @@
  */
 #include "Leitura.h"
 #include "JSONKeyTranslator.h"
+#include "OutputI18n.h"
 #include "rapidjson/filereadstream.h"
 //#include "schema.h"
 
@@ -140,6 +141,7 @@ void Ler::iniciarVariaveis() {
 	cicloAcopTerm=0;
 
 	saidaTela=0;
+	idiomaSaida=output_i18n::kLanguagePtBr;
 
 	mapaArranjo=0;
 
@@ -441,6 +443,7 @@ void Ler::iniciarVariaveisConstrutorDefault() {
 	cicloAcopTerm=0;
 
 	saidaTela=0;
+	idiomaSaida=output_i18n::kLanguagePtBr;
 
 	mapaArranjo=0;
 
@@ -2103,15 +2106,19 @@ JSON_entrada Ler::parseEntrada() {
 		}
 
 		// Verificar chave "language" e traduzir se necessario
+		idiomaSaida = output_i18n::kLanguagePtBr;
 		if (rawDoc.IsObject() && rawDoc.HasMember("language")) {
-			std::string lang(rawDoc["language"].GetString());
-			std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
-			if (lang == "en") {
-				// Remover a chave "language" – nao faz parte do esquema interno
-				rawDoc.RemoveMember("language");
-				// Traduzir todas as chaves em ingles para portugues
-				JSONKeyTranslator::translateEnToPt(rawDoc,
-				                                   rawDoc.GetAllocator());
+			if (rawDoc["language"].IsString()) {
+				std::string lang(rawDoc["language"].GetString());
+				std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
+				if (lang == "en") {
+					idiomaSaida = output_i18n::kLanguageEn;
+					// Remover a chave "language" - nao faz parte do esquema interno
+					rawDoc.RemoveMember("language");
+					// Traduzir todas as chaves em ingles para portugues
+					JSONKeyTranslator::translateEnToPt(rawDoc,
+					                                   rawDoc.GetAllocator());
+				}
 			}
 			// "pt-br" (ou qualquer outro valor) segue o caminho normal
 		}
@@ -19185,6 +19192,9 @@ double Ler::interpolaTempEnvelope(double pres){
 void Ler::imprimeProfile(Cel* const celula,
 		FullMtx<double>& flut, double tempo, int indTramo, int nrede) {
 	if (nperfisp > 0) {
+		const auto t = [this](const char* pt, const char* en) {
+			return output_i18n::tr(this->idiomaSaida, pt, en);
+		};
 		double comp = 0.;
 		double altura = 0.;
 		double alturaC = 0.;
@@ -19646,178 +19656,179 @@ void Ler::imprimeProfile(Cel* const celula,
 
 		string tmp = saidaP.str();
 		ofstream escreveIni(tmp.c_str(), ios_base::out);
-		escreveIni << "# Passo de tempo = " << (*vg1dSP).contador << " # Posicao ANM= "<< master1.comp<< " # data e hora da simulacao "<< dataStr<< " # Versao "<< versao<<"\n";
-		escreveIni << " Comprimento (m) Fronteira F;";
-		escreveIni << " Comprimento (m) Centro Volume C;";
-		escreveIni << " Tempo (s) ;";
+		escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador
+				  << t(" # Posicao ANM= ", " # ANM position= ") << master1.comp
+				  << t(" # data e hora da simulacao ", " # simulation date and time ")
+				  << dataStr << " # " << t("Versao ", "Version ") << versao << "\n";
+		escreveIni << t(" Comprimento (m) Fronteira F;", " Length (m) Boundary F;");
+		escreveIni << t(" Comprimento (m) Centro Volume C;", " Length (m) Cell center C;");
+		escreveIni << t(" Tempo (s) ;", " Time (s) ;");
 		if (profp.pres == 1)
-			escreveIni << " Pressao (kgf/cm2) C;";
+			escreveIni << t(" Pressao (kgf/cm2) C;", " Pressure (kgf/cm2) C;");
 		if (profp.temp == 1)
-			escreveIni << " Temperatura (C) C;";
+			escreveIni << t(" Temperatura (C) C;", " Temperature (C) C;");
 		if (profp.hol == 1)
-			escreveIni << " Holdup de liquido (-) C;";
+			escreveIni << t(" Holdup de liquido (-) C;", " Liquid holdup (-) C;");
 
 		if (profp.FVH == 1) //solver de Hidratos - chris
-			escreveIni << " FVH (-) C;";
+			escreveIni << t(" FVH (-) C;", " FVH (-) C;");
 
 		if (profp.bet == 1)
-			escreveIni << " Fracao vol. de liquido complementar (-) C;";
+			escreveIni << t(" Fracao vol. de liquido complementar (-) C;", " Complementary liquid vol. fraction (-) C;");
 		if (profp.ugs == 1)
-			escreveIni << "Velocidade superficial de gas (m/s) F;";
+			escreveIni << t("Velocidade superficial de gas (m/s) F;", "Gas superficial velocity (m/s) F;");
 		if (profp.uls == 1)
-			escreveIni << " Velocidade superficial do liquido (m/s) F;";
+			escreveIni << t(" Velocidade superficial do liquido (m/s) F;", " Liquid superficial velocity (m/s) F;");
 		if (profp.ug == 1)
-			escreveIni << " Velocidade de gas (m/s) F;";
+			escreveIni << t(" Velocidade de gas (m/s) F;", " Gas velocity (m/s) F;");
 		if (profp.ul == 1)
-			escreveIni << " Velocidade do liquido (m/s) F;";
+			escreveIni << t(" Velocidade do liquido (m/s) F;", " Liquid velocity (m/s) F;");
 		if (profp.arra == 1)
-			escreveIni << " Indicador de arranjo de fases (-) F;";
+			escreveIni << t(" Indicador de arranjo de fases (-) F;", " Phase pattern indicator (-) F;");
 		if (profp.viscl == 1)
-			escreveIni << " Viscosidade do Liquido (cP) C;";
+			escreveIni << t(" Viscosidade do Liquido (cP) C;", " Liquid viscosity (cP) C;");
 		if (profp.viscg == 1)
-			escreveIni << " Viscosidade do Gas (cP) C;";
+			escreveIni << t(" Viscosidade do Gas (cP) C;", " Gas viscosity (cP) C;");
 		if (profp.rhog == 1)
-			escreveIni << " Massa Especifica do Gas (kg/m3) C;";
+			escreveIni << t(" Massa Especifica do Gas (kg/m3) C;", " Gas density (kg/m3) C;");
 		if (profp.rhol == 1)
-			escreveIni << " Massa Especifica do Liquido (kg/m3) C;";
+			escreveIni << t(" Massa Especifica do Liquido (kg/m3) C;", " Liquid density (kg/m3) C;");
 		if (profp.rhoo == 1)
-			escreveIni << " Massa Especifica do Oleo (kg/m3) C;";
+			escreveIni << t(" Massa Especifica do Oleo (kg/m3) C;", " Oil density (kg/m3) C;");
 		if (profp.rhoa == 1)
-			escreveIni << " Massa Especifica da Agua (kg/m3) C;";
+			escreveIni << t(" Massa Especifica da Agua (kg/m3) C;", " Water density (kg/m3) C;");
 		if (profp.rhoMix == 1)
-			escreveIni << " Massa Especifica da Mistura (kg/m3) C;";
+			escreveIni << t(" Massa Especifica da Mistura (kg/m3) C;", " Mixture density (kg/m3) C;");
 		if (profp.RS == 1)
-			escreveIni << " Razao de Solubilidade (Sm3/Sm3) C;";
+			escreveIni << t(" Razao de Solubilidade (Sm3/Sm3) C;", " Solubility ratio (Sm3/Sm3) C;");
 		if (profp.masg == 1)
-			escreveIni << " Vazao Massica do Gas (kg/s) F;";
+			escreveIni << t(" Vazao Massica do Gas (kg/s) F;", " Gas mass flow rate (kg/s) F;");
 		if (profp.masl == 1)
-			escreveIni << " Vazao Massica do Liquido (kg/s) F;";
+			escreveIni << t(" Vazao Massica do Liquido (kg/s) F;", " Liquid mass flow rate (kg/s) F;");
 		if (profp.c0 == 1)
-			escreveIni << " Coeficiente de distribuição: C0 (-) F;";
+			escreveIni << t(" Coeficiente de distribuicao: C0 (-) F;", " Distribution coefficient: C0 (-) F;");
 		if (profp.ud == 1)
-			escreveIni << " Velocidade de escorregamento: Ud (m/s) F;";
+			escreveIni << t(" Velocidade de escorregamento: Ud (m/s) F;", " Slip velocity: Ud (m/s) F;");
 		if (profp.RGO == 1)
 			escreveIni << " RGO (Sm3/Sm3) C;";
 		if (profp.deng == 1)
-			escreveIni << " Densidade do Gas (-) C;";
+			escreveIni << t(" Densidade do Gas (-) C;", " Gas specific gravity (-) C;");
 		if (profp.yco2 == 1)
-			escreveIni << " Fracao Molar de CO2 (-) C;";
+			escreveIni << t(" Fracao Molar de CO2 (-) C;", " CO2 molar fraction (-) C;");
 		if (profp.calor == 1)
-			escreveIni << " Fluxo de calor entre escoamento e parede (W/m) C;";
+			escreveIni << t(" Fluxo de calor entre escoamento e parede (W/m) C;", " Heat flow between flow and wall (W/m) C;");
 		if (profp.masstrans == 1)
-			escreveIni << " Transferencia de Massa entre Fases (kg / [s m]) C;";
+			escreveIni << t(" Transferencia de Massa entre Fases (kg / [s m]) C;", " Interphase mass transfer (kg / [s m]) C;");
 		if (profp.cpg == 1)
-			escreveIni
-					<< " Calor Especifico a pressao constante do Gas (J/[kg C]) C;";
+			escreveIni << t(" Calor Especifico a pressao constante do Gas (J/[kg C]) C;", " Gas specific heat at constant pressure (J/[kg C]) C;");
 		if (profp.cpl == 1)
-			escreveIni
-					<< " Calor Especifico a pressao constante do Liquido (J/[kg C]) C;";
+			escreveIni << t(" Calor Especifico a pressao constante do Liquido (J/[kg C]) C;", " Liquid specific heat at constant pressure (J/[kg C]) C;");
 		if (profp.qlst == 1)
-			escreveIni << " Vazao volumetrica standard de oleo morto (Sm3/d) F;";
+			escreveIni << t(" Vazao volumetrica standard de oleo morto (Sm3/d) F;", " Standard dead oil volumetric flow rate (Sm3/d) F;");
 		if (profp.qlwst == 1)
-			escreveIni << " Vazao volumetrica standard de oleo morto + agua (Sm3/d) F;";
+			escreveIni << t(" Vazao volumetrica standard de oleo morto + agua (Sm3/d) F;", " Standard dead oil + water volumetric flow rate (Sm3/d) F;");
 		if (profp.qlstTot == 1)
-			escreveIni << " Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) F;";
+			escreveIni << t(" Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) F;", " Standard dead oil + water + complementary liquid volumetric flow rate (Sm3/d) F;");
 		if (profp.qgst == 1)
-			escreveIni << " Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) F;";
+			escreveIni << t(" Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) F;", " Standard free + dissolved gas volumetric flow rate (Sm3/d) F;");
 		if (profp.api == 1)
-			escreveIni << " Grau API (-) C;";
+			escreveIni << t(" Grau API (-) C;", " API gravity (-) C;");
 		if (profp.bsw == 1)
 			escreveIni << " BSW (-) C;";
 		if (profp.hidro == 1)
-			escreveIni << " Termo Hidrostatico (Pa/m) F;";
+			escreveIni << t(" Termo Hidrostatico (Pa/m) F;", " Hydrostatic term (Pa/m) F;");
 		if (profp.fric == 1)
-			escreveIni << " Termo Fricao (Pa/m) F;";
+			escreveIni << t(" Termo Fricao (Pa/m) F;", " Friction term (Pa/m) F;");
 		if (profp.Term1 == 1)
-			escreveIni << " Termo de relacao de vazao massica 1 (-) F;";
+			escreveIni << t(" Termo de relacao de vazao massica 1 (-) F;", " Mass flow relation term 1 (-) F;");
 		if (profp.Term2 == 1)
-			escreveIni << " Termo de relacao de vazao massica 2 (kg/s) F;";
+			escreveIni << t(" Termo de relacao de vazao massica 2 (kg/s) F;", " Mass flow relation term 2 (kg/s) F;");
 		if (profp.dengD == 1)
-			escreveIni << " Densidade Gas Dissolvido In Situ(-) C;";
+			escreveIni << t(" Densidade Gas Dissolvido In Situ(-) C;", " In-situ dissolved gas specific gravity (-) C;");
 		if (profp.dengL == 1)
-			escreveIni << " Densidade Gas Livre In Situ(-) C;";
+			escreveIni << t(" Densidade Gas Livre In Situ(-) C;", " In-situ free gas specific gravity (-) C;");
 		if (profp.reyi == 1)
-			escreveIni << " Reynolds interno da mistura (-) F;";
+			escreveIni << t(" Reynolds interno da mistura (-) F;", " Internal mixture Reynolds (-) F;");
 		if (profp.reye == 1)
-			escreveIni << " Reynolds externo (-) F;";
+			escreveIni << t(" Reynolds externo (-) F;", " External Reynolds (-) F;");
 		if (profp.Fr == 1)
-			escreveIni << " Froud (-) F;";
+			escreveIni << t(" Froud (-) F;", " Froude (-) F;");
 		if (profp.grashi == 1)
-			escreveIni << " Grashof interno da mistura (-) F;";
+			escreveIni << t(" Grashof interno da mistura (-) F;", " Internal mixture Grashof (-) F;");
 		if (profp.grashe == 1)
-			escreveIni << " Grashof externo (-) F;";
+			escreveIni << t(" Grashof externo (-) F;", " External Grashof (-) F;");
 		if (profp.nusi == 1)
-			escreveIni << " Nusselt interno da mistura (-) F;";
+			escreveIni << t(" Nusselt interno da mistura (-) F;", " Internal mixture Nusselt (-) F;");
 		if (profp.nuse == 1)
-			escreveIni << " Nusselt externo (-) F;";
+			escreveIni << t(" Nusselt externo (-) F;", " External Nusselt (-) F;");
 		if (profp.hi == 1)
-			escreveIni << " Coeficiente de pelicula interno da mistura (W / [m2 K]) F;";
+			escreveIni << t(" Coeficiente de pelicula interno da mistura (W / [m2 K]) F;", " Internal mixture film coefficient (W / [m2 K]) F;");
 		if (profp.he == 1)
-			escreveIni << " Coeficiente de pelicula externo (W / [m2 K]) F;";
+			escreveIni << t(" Coeficiente de pelicula externo (W / [m2 K]) F;", " External film coefficient (W / [m2 K]) F;");
 		if (profp.pri == 1)
-			escreveIni << " Prandtl interno da mistura (-) F;";
+			escreveIni << t(" Prandtl interno da mistura (-) F;", " Internal mixture Prandtl (-) F;");
 		if (profp.pre == 1)
-			escreveIni << " Prandtl externo (-) F;";
+			escreveIni << t(" Prandtl externo (-) F;", " External Prandtl (-) F;");
 		if (profp.Rs == 1)
-			escreveIni << " Razao de Solubilidade (-) F;";
+			escreveIni << t(" Razao de Solubilidade (-) F;", " Solubility ratio (-) F;");
 		if (profp.Bo == 1)
-			escreveIni << " Fator Volume de Formacao (-) C;";
+			escreveIni << t(" Fator Volume de Formacao (-) C;", " Formation volume factor (-) C;");
 		if (profp.tAmb == 1)
-			escreveIni << " Temperatura Ambiente (C) C;";
+			escreveIni << t(" Temperatura Ambiente (C) C;", " Ambient temperature (C) C;");
 		if (profp.PrG == 1)
-			escreveIni << " Prandtl do Gas (-) C;";
+			escreveIni << t(" Prandtl do Gas (-) C;", " Gas Prandtl (-) C;");
 		if (profp.PrL == 1)
-			escreveIni << " Prandtl do Liquido (-) C;";
+			escreveIni << t(" Prandtl do Liquido (-) C;", " Liquid Prandtl (-) C;");
 		if (profp.pseudoL == 1 && flashCompleto==2) {
 			for(int konta=0; konta<flup[0].npseudo; konta++){
-				escreveIni << " Fracoes molares no Liquido "<<konta<<";";
+				escreveIni << t(" Fracoes molares no Liquido ", " Liquid molar fractions ") << konta << ";";
 			}
 		}
 		if (profp.pseudoG == 1 && flashCompleto==2) {
 			for(int konta=0; konta<flup[0].npseudo; konta++){
-				escreveIni << " Fracoes molares no Gas "<<konta<<";";
+				escreveIni << t(" Fracoes molares no Gas ", " Gas molar fractions ") << konta << ";";
 			}
 		}
 		if (profp.pseudoM == 1 && flashCompleto==2) {
 			for(int konta=0; konta<flup[0].npseudo; konta++){
-				escreveIni << " Fracoes molares no Liquido + Gas  "<<konta<<";";
+				escreveIni << t(" Fracoes molares no Liquido + Gas  ", " Liquid + gas molar fractions ") << konta << ";";
 			}
 		}
 		if (profp.TResi == 1)
-			escreveIni << " Tempo de Residencia-Fluido Complementar (s) C;";
+			escreveIni << t(" Tempo de Residencia-Fluido Complementar (s) C;", " Complementary-fluid residence time (s) C;");
 		if (profp.redAtrito == 1)
-			escreveIni << " Fator de reducao de friccao (-) C;";
+			escreveIni << t(" Fator de reducao de friccao (-) C;", " Friction reduction factor (-) C;");
 		if (profp.angulo == 1)
-			escreveIni << " Angulo (radiano) C;";
+			escreveIni << t(" Angulo (radiano) C;", " Angle (radian) C;");
 		if (profp.diamInt == 1)
-			escreveIni << " Diametro Interno (m) C;";
+			escreveIni << t(" Diametro Interno (m) C;", " Inner diameter (m) C;");
 		if (profp.TempParede == 1)
-			escreveIni << " Temperatura Parede Interna (C) C;";
+			escreveIni << t(" Temperatura Parede Interna (C) C;", " Internal wall temperature (C) C;");
 		if(profp.subResfria==1)
-			escreveIni << " Subresfriamento (C) C;";
+			escreveIni << t(" Subresfriamento (C) C;", " Subcooling (C) C;");
 		if (profp.dadosParafina == 1){
-			escreveIni << " TIAC (C) C;";
-			escreveIni << " Cp Parafina (J/[kg C]) C;";
-			escreveIni << " Condutividade Termica Parafina (W / [m K]) C;";
-			escreveIni << " Massa Especifica Parafina (kg/m3) C;";
-			escreveIni << " Massa molar do Liquido Parafina (kg/mol) C;";
-			escreveIni << " Espessura Radial de Parafina Depositada (m) C;";
-			escreveIni << " Termo C2 C;";
-			escreveIni << " Termo C3 C;";
-			escreveIni << " Porosidade Parafina (-) C;";
-			escreveIni << " Massa Molecular Parafina (kgMol) C;";
-			escreveIni << " Massa específica Parafina na fase liquida (kg/m3) C;";
-			escreveIni << " Derivada da concentracao da parafina com a temnperatura na fase liquida (1/K) C;";
-			escreveIni << " Difusividade M�ssica Parafina (m2/s) C;";
-			escreveIni << " Fluxo Massico de Parafina Total (kg/(m2-s)) C;";
-			escreveIni << " Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;";
-			escreveIni << " Gradiente de concentracao de parafina (1/m) C;";
-			escreveIni << " Condutividade do deposito (W/(m-K)) C;";
-			escreveIni << " Temperatura da Interface do deposito (C) C;";
+			escreveIni << t(" TIAC (C) C;", " TIAC (C) C;");
+			escreveIni << t(" Cp Parafina (J/[kg C]) C;", " Paraffin Cp (J/[kg C]) C;");
+			escreveIni << t(" Condutividade Termica Parafina (W / [m K]) C;", " Paraffin thermal conductivity (W / [m K]) C;");
+			escreveIni << t(" Massa Especifica Parafina (kg/m3) C;", " Paraffin density (kg/m3) C;");
+			escreveIni << t(" Massa molar do Liquido Parafina (kg/mol) C;", " Paraffin liquid molar mass (kg/mol) C;");
+			escreveIni << t(" Espessura Radial de Parafina Depositada (m) C;", " Deposited paraffin radial thickness (m) C;");
+			escreveIni << t(" Termo C2 C;", " Term C2 C;");
+			escreveIni << t(" Termo C3 C;", " Term C3 C;");
+			escreveIni << t(" Porosidade Parafina (-) C;", " Paraffin porosity (-) C;");
+			escreveIni << t(" Massa Molecular Parafina (kgMol) C;", " Paraffin molecular mass (kgMol) C;");
+			escreveIni << t(" Massa especifica Parafina na fase liquida (kg/m3) C;", " Paraffin density in liquid phase (kg/m3) C;");
+			escreveIni << t(" Derivada da concentracao da parafina com a temnperatura na fase liquida (1/K) C;", " Derivative of paraffin concentration with temperature in liquid phase (1/K) C;");
+			escreveIni << t(" Difusividade Massica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
+			escreveIni << t(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
+			escreveIni << t(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
+			escreveIni << t(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
+			escreveIni << t(" Condutividade do deposito (W/(m-K)) C;", " Deposit conductivity (W/(m-K)) C;");
+			escreveIni << t(" Temperatura da Interface do deposito (C) C;", " Deposit interface temperature (C) C;");
 		}
-		escreveIni << " id do duto;";
-		escreveIni << " Elevacao (m) F;";
-		escreveIni << " Elevacao (m) C;";
+		escreveIni << t(" id do duto;", " duct id;");
+		escreveIni << t(" Elevacao (m) F;", " Elevation (m) F;");
+		escreveIni << t(" Elevacao (m) C;", " Elevation (m) C;");
 		escreveIni << "\n";
 
 		escreveIni << flut;
@@ -19833,6 +19844,9 @@ void Ler::imprimeProfile(Cel* const celula,
 void Ler::imprimeProfileG(CelG* const celula,
 		FullMtx<double>& flut, double tempo, int indTramo, int nrede) {
 	if (nperfisg > 0) {
+		const auto t = [this](const char* pt, const char* en) {
+			return output_i18n::tr(this->idiomaSaida, pt, en);
+		};
 		double comp = 0;
 		double altura =0.;
 		double alturaC =0.;
@@ -20039,68 +20053,70 @@ void Ler::imprimeProfileG(CelG* const celula,
 
 		string tmp = saidaG.str();
 		ofstream escreveIni(tmp.c_str(), ios_base::out);
-		escreveIni << "# Passo de tempo = " << (*vg1dSP).contador << " # data e hora da simulacao "<< dataStr<< " # Versao "<< versao<<"\n";
-		escreveIni << " Comprimento (m) Fronteira F;";
-		escreveIni << " Comprimento (m) Centro Volume C;";
-		escreveIni << " comprimento_fundoPoco (m) F;";
-		escreveIni << " Tempo (s) ;";
+		escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador
+				  << t(" # data e hora da simulacao ", " # simulation date and time ")
+				  << dataStr << " # " << t("Versao ", "Version ") << versao << "\n";
+		escreveIni << t(" Comprimento (m) Fronteira F;", " Length (m) Boundary F;");
+		escreveIni << t(" Comprimento (m) Centro Volume C;", " Length (m) Cell center C;");
+		escreveIni << t(" comprimento_fundoPoco (m) F;", " bottomhole_length (m) F;");
+		escreveIni << t(" Tempo (s) ;", " Time (s) ;");
 		if (profg.pres == 1)
-			escreveIni << " Pressao (kgf/cm2) C;";
+			escreveIni << t(" Pressao (kgf/cm2) C;", " Pressure (kgf/cm2) C;");
 		if (profg.temp == 1)
-			escreveIni << " Temperatura (C) C;";
+			escreveIni << t(" Temperatura (C) C;", " Temperature (C) C;");
 		if (profg.ugs == 1)
-			escreveIni << " Velocidade superficial do gas (m/s) F;";
+			escreveIni << t(" Velocidade superficial do gas (m/s) F;", " Gas superficial velocity (m/s) F;");
 		if (profg.ug == 1)
-			escreveIni << " Velocidade do gas (m/s) F;";
+			escreveIni << t(" Velocidade do gas (m/s) F;", " Gas velocity (m/s) F;");
 		if (profg.tens == 1)
-			escreveIni << " Tensao Cisalhante (N/m2) F;";
+			escreveIni << t(" Tensao Cisalhante (N/m2) F;", " Shear stress (N/m2) F;");
 		if (profg.viscg == 1)
-			escreveIni << " Viscosidade do Gas (cP) C;";
+			escreveIni << t(" Viscosidade do Gas (cP) C;", " Gas viscosity (cP) C;");
 		if (profg.rhog == 1)
-			escreveIni << " Massa Especifica Gas (kg/m3) C;";
+			escreveIni << t(" Massa Especifica Gas (kg/m3) C;", " Gas density (kg/m3) C;");
 		if (profg.masg == 1)
-			escreveIni << " Vazao Massica do Gas (kg/s) F;";
+			escreveIni << t(" Vazao Massica do Gas (kg/s) F;", " Gas mass flow rate (kg/s) F;");
 		if (profg.hidro == 1)
-			escreveIni << " Termo Hidrostatico (Pa/m) F;";
+			escreveIni << t(" Termo Hidrostatico (Pa/m) F;", " Hydrostatic term (Pa/m) F;");
 		if (profg.fric == 1)
-			escreveIni << " Termo friccao (Pa/m) F;";
+			escreveIni << t(" Termo friccao (Pa/m) F;", " Friction term (Pa/m) F;");
 		if (profg.FVHG == 1)
-			escreveIni << " FVHG (-) C;"; //chris - Hidratos
+			escreveIni << t(" FVHG (-) C;", " FVHG (-) C;"); //chris - Hidratos
 		if (profg.calor == 1)
-			escreveIni << " Fluxo de Calor (W/m) C;";
+			escreveIni << t(" Fluxo de Calor (W/m) C;", " Heat flow (W/m) C;");
 		if (profg.qgst == 1)
-			escreveIni << " Vazao volumetrica standard de gas (Sm3/(d)) F;";
+			escreveIni << t(" Vazao volumetrica standard de gas (Sm3/(d)) F;", " Standard gas volumetric flow rate (Sm3/(d)) F;");
 		if (profg.reyi == 1)
-			escreveIni << " Reynolds interno (-) F;";
+			escreveIni << t(" Reynolds interno (-) F;", " Internal Reynolds (-) F;");
 		if (profg.reye == 1)
-			escreveIni << " Reynolds externo (-) F;";
+			escreveIni << t(" Reynolds externo (-) F;", " External Reynolds (-) F;");
 		if (profg.grashi == 1)
-			escreveIni << " Grashof interno (-) F;";
+			escreveIni << t(" Grashof interno (-) F;", " Internal Grashof (-) F;");
 		if (profg.grashe == 1)
-			escreveIni << " Grashof externo (-) F;";
+			escreveIni << t(" Grashof externo (-) F;", " External Grashof (-) F;");
 		if (profg.nusi == 1)
-			escreveIni << " Nusselt interno (-) F;";
+			escreveIni << t(" Nusselt interno (-) F;", " Internal Nusselt (-) F;");
 		if (profg.nuse == 1)
-			escreveIni << " Nusselt externo (-) F;";
+			escreveIni << t(" Nusselt externo (-) F;", " External Nusselt (-) F;");
 		if (profg.hi == 1)
-			escreveIni << " Coeficiente de película interno (W / [m2 K]) F;";
+			escreveIni << t(" Coeficiente de pelicula interno (W / [m2 K]) F;", " Internal film coefficient (W / [m2 K]) F;");
 		if (profg.he == 1)
-			escreveIni << " Coeficiente de película externo (W / [m2 K]) F;";
+			escreveIni << t(" Coeficiente de pelicula externo (W / [m2 K]) F;", " External film coefficient (W / [m2 K]) F;");
 		if (profg.pri == 1)
-			escreveIni << " Prandtl interno(-) F;";
+			escreveIni << t(" Prandtl interno(-) F;", " Internal Prandtl (-) F;");
 		if (profg.pre == 1)
-			escreveIni << " Prandtl externo (-) F;";
+			escreveIni << t(" Prandtl externo (-) F;", " External Prandtl (-) F;");
 		if (profg.tAmb == 1)
-			escreveIni << " Temperatura Ambiente (C) C;";
+			escreveIni << t(" Temperatura Ambiente (C) C;", " Ambient temperature (C) C;");
 		if (profg.angulo == 1)
-			escreveIni << " Angulo (radiano) C;";
+			escreveIni << t(" Angulo (radiano) C;", " Angle (radian) C;");
 		if (profg.diamInt == 1)
-			escreveIni << " DiametroInterno (m) C;";
+			escreveIni << t(" DiametroInterno (m) C;", " InnerDiameter (m) C;");
 		if (profg.TempParede == 1)
-			escreveIni << " Temperatura Interna da Parede (C) C;";
-		escreveIni << " id do duto;";
-		escreveIni << " Profundidade (m) F;";
-		escreveIni << " Profundidade (m) C;";
+			escreveIni << t(" Temperatura Interna da Parede (C) C;", " Internal wall temperature (C) C;");
+		escreveIni << t(" id do duto;", " duct id;");
+		escreveIni << t(" Profundidade (m) F;", " Depth (m) F;");
+		escreveIni << t(" Profundidade (m) C;", " Depth (m) C;");
 		escreveIni << "\n";
 		escreveIni << flut;
 		escreveIni.close();
@@ -20113,6 +20129,9 @@ void Ler::imprimeProfileG(CelG* const celula,
 }
 
 void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup, double presiniG,int indTramo, int nrede){
+	const auto t = [this](const char* pt, const char* en) {
+		return output_i18n::tr(this->idiomaSaida, pt, en);
+	};
 	ostringstream saidaR;
 	if (indTramo < 0 && AS==0)
 		saidaR << pathPrefixoArqSaida << "resumoPermanente" << ".dat";
@@ -20123,31 +20142,31 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 				<< "resumoPermanente" << ".dat";
 	string tmp = saidaR.str();
 	ofstream escreveIni(tmp.c_str(), ios_base::out);
-	escreveIni << " Vazao volumetrica standard de oleo morto (Sm3/d);";
-	escreveIni << " Vazao volumetrica standard de oleo morto + agua (Sm3/d);";
-	escreveIni << " Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d);";
-	escreveIni << " Vazao volumetrica standard de gas livre + dissolvido (Sm3/d);";
-	escreveIni << " P_INI_TUB (kgf/cm2);";
-	escreveIni << " P_ANM (kgf/cm2);";
-	escreveIni << " P_MON_CKP (kgf/cm2);";
-	escreveIni << " P_JUS_CKP (kgf/cm2);";
+	escreveIni << t(" Vazao volumetrica standard de oleo morto (Sm3/d);", " Standard dead oil flow rate (Sm3/d);");
+	escreveIni << t(" Vazao volumetrica standard de oleo morto + agua (Sm3/d);", " Standard dead oil + water flow rate (Sm3/d);");
+	escreveIni << t(" Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d);", " Standard dead oil + water + complementary liquid flow rate (Sm3/d);");
+	escreveIni << t(" Vazao volumetrica standard de gas livre + dissolvido (Sm3/d);", " Standard free + dissolved gas flow rate (Sm3/d);");
+	escreveIni << t(" P_INI_TUB (kgf/cm2);", " P_INI_TUB (kgf/cm2);");
+	escreveIni << t(" P_ANM (kgf/cm2);", " P_ANM (kgf/cm2);");
+	escreveIni << t(" P_MON_CKP (kgf/cm2);", " P_UP_CKP (kgf/cm2);");
+	escreveIni << t(" P_JUS_CKP (kgf/cm2);", " P_DOWN_CKP (kgf/cm2);");
 	if(lingas==1){
-		escreveIni << " Vazao volumetrica standard de gas injetado (Sm3/(d));";
-		escreveIni << " Pressao de injeção a montante do choke (kgf/cm2);";
-		escreveIni << " Pressao de injeção a jusante do choke (kgf/cm2);";
+		escreveIni << t(" Vazao volumetrica standard de gas injetado (Sm3/(d));", " Standard injected gas flow rate (Sm3/(d));");
+		escreveIni << t(" Pressao de injeção a montante do choke (kgf/cm2);", " Upstream injection pressure at choke (kgf/cm2);");
+		escreveIni << t(" Pressao de injeção a jusante do choke (kgf/cm2);", " Downstream injection pressure at choke (kgf/cm2);");
 	}
 	if(nbcs>0){
 		for(int ibcs=0;ibcs<nbcs;ibcs++){
-			escreveIni << " Incremento de pressao na BCS "<<ibcs<<", (kgf/cm2);";
-			escreveIni << " Potência da BCS (considerando apenas eficiencia hidraulica) "<<ibcs<<", (HP);";
-			escreveIni << " Potência da BCS (considerando apenas eficiencia do motor) "<<ibcs<<", (HP);";
-			escreveIni << " Head da BCS "<<ibcs<<", (m);";
-			escreveIni << " Vazao de oleo in situ na succao da BCS "<<ibcs<<", (m3/s);";
-			escreveIni << " Vazao de oleo + agua in situ na succao da BCS "<<ibcs<<", (m3/s);";
-			escreveIni << " Vazao de gas in situ na succao da BCS "<<ibcs<<", (m3/s);";
-			escreveIni << " Vazao de oleo in situ na descarga da BCS "<<ibcs<<", (m3/s);";
-			escreveIni << " Vazao de oleo + agua in situ na descarga da BCS "<<ibcs<<", (m3/s);";
-			escreveIni << " Vazao de gas in situ na descarga da BCS "<<ibcs<<", (m3/s);";
+			escreveIni << t(" Incremento de pressao na BCS ", " Pressure increment in ESP ") << ibcs << t(", (kgf/cm2);", ", (kgf/cm2);");
+			escreveIni << t(" Potencia da BCS (considerando apenas eficiencia hidraulica) ", " ESP power (considering only hydraulic efficiency) ") << ibcs << t(", (HP);", ", (HP);");
+			escreveIni << t(" Potencia da BCS (considerando apenas eficiencia do motor) ", " ESP power (considering only motor efficiency) ") << ibcs << t(", (HP);", ", (HP);");
+			escreveIni << t(" Head da BCS ", " ESP head ") << ibcs << t(", (m);", ", (m);");
+			escreveIni << t(" Vazao de oleo in situ na succao da BCS ", " In-situ oil flow rate at ESP suction ") << ibcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de oleo + agua in situ na succao da BCS ", " In-situ oil + water flow rate at ESP suction ") << ibcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de gas in situ na succao da BCS ", " In-situ gas flow rate at ESP suction ") << ibcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de oleo in situ na descarga da BCS ", " In-situ oil flow rate at ESP discharge ") << ibcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de oleo + agua in situ na descarga da BCS ", " In-situ oil + water flow rate at ESP discharge ") << ibcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de gas in situ na descarga da BCS ", " In-situ gas flow rate at ESP discharge ") << ibcs << t(", (m3/s);", ", (m3/s);");
 		}
 	}
 	if(nintermi>0){
@@ -20177,16 +20196,16 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 	double alfPenetra;
 	double qualidadeArranjo;
 			 */
-			escreveIni << " Criterio do teste de Intermitencia Severa "<<iintermi<<" ;";
-			escreveIni << " Qualidade do Arranjo estratificado para Trecho de Acumulacao "<<iintermi<<", (-);";
-			escreveIni << " Fator de compressibilidade medio zona de acumulo "<<iintermi<<", (-);";
-			escreveIni << " Temperatura media zona de acumulo "<<iintermi<<", (C);";
-			escreveIni << " Fracao de Vazio media zona de acumulo "<<iintermi<<", (-);";
-			escreveIni << " Vazao massica de gas inicio da zona de acumulo "<<iintermi<<", (kg/s);";
-			escreveIni << " Vazao massica de liquido inicio da zona de acumulo "<<iintermi<<", (kg/s);";
-			escreveIni << " Velocidade superficial de gas inicio da zona de acumulo "<<iintermi<<", (m/s);";
-			escreveIni << " Velocidade superficial de liquido inicio da zona de acumulo "<<iintermi<<", (m/s);";
-			escreveIni << " Indicador de estabilidade "<<iintermi<<", ;";
+			escreveIni << t(" Criterio do teste de Intermitencia Severa ", " Severe Intermittency test criterion ") << iintermi << " ;";
+			escreveIni << t(" Qualidade do Arranjo estratificado para Trecho de Acumulacao ", " Stratified pattern quality for accumulation section ") << iintermi << t(", (-);", ", (-);");
+			escreveIni << t(" Fator de compressibilidade medio zona de acumulo ", " Average compressibility factor in accumulation zone ") << iintermi << t(", (-);", ", (-);");
+			escreveIni << t(" Temperatura media zona de acumulo ", " Average temperature in accumulation zone ") << iintermi << t(", (C);", ", (C);");
+			escreveIni << t(" Fracao de Vazio media zona de acumulo ", " Average void fraction in accumulation zone ") << iintermi << t(", (-);", ", (-);");
+			escreveIni << t(" Vazao massica de gas inicio da zona de acumulo ", " Gas mass flow rate at start of accumulation zone ") << iintermi << t(", (kg/s);", ", (kg/s);");
+			escreveIni << t(" Vazao massica de liquido inicio da zona de acumulo ", " Liquid mass flow rate at start of accumulation zone ") << iintermi << t(", (kg/s);", ", (kg/s);");
+			escreveIni << t(" Velocidade superficial de gas inicio da zona de acumulo ", " Gas superficial velocity at start of accumulation zone ") << iintermi << t(", (m/s);", ", (m/s);");
+			escreveIni << t(" Velocidade superficial de liquido inicio da zona de acumulo ", " Liquid superficial velocity at start of accumulation zone ") << iintermi << t(", (m/s);", ", (m/s);");
+			escreveIni << t(" Indicador de estabilidade ", " Stability indicator ") << iintermi << ", ;";
 		}
 	}
 	escreveIni << "\n";
@@ -20242,8 +20261,8 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 					escreveIni << criterioItermitencia[i].massLiq0<<" ; ";
 					escreveIni << criterioItermitencia[i].ugs0<<" ; ";
 					escreveIni << criterioItermitencia[i].uls0<<" ; ";
-					if(estabi>0) escreveIni << "estavel"<<" ; ";
-					else escreveIni << "instavel"<<" ; ";
+					if(estabi>0) escreveIni << t("estavel", "stable") <<" ; ";
+					else escreveIni << t("instavel", "unstable") <<" ; ";
 			  }
 		}
 		delete [] criterioItermitencia;
@@ -20255,6 +20274,9 @@ void Ler::imprimeProfileTrans(
 		Cel* const celula, int* length, double tempo,
 		int indTramo, int nrede) {
 	if (nperfistransp > 0) {
+		const auto t = [this](const char* pt, const char* en) {
+			return output_i18n::tr(this->idiomaSaida, pt, en);
+		};
 		for (int i = 0; i < nperfistransp; i++) {
 			int n = length[i];
 			int posicn = proftransp.posic[i];
@@ -20275,14 +20297,14 @@ void Ler::imprimeProfileTrans(
 			string tmp = saidaP.str();
 
 			ofstream escreveIni(tmp.c_str(), ios_base::out);
-			escreveIni << "# Passo de tempo = " << (*vg1dSP).contador << "\n";
-			escreveIni << "# Tempo (s) = " << tempo << "\n";
-			escreveIni << "# Comprimento a partir do Fundo de Poco(m) = "
+			escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador << "\n";
+			escreveIni << t("# Tempo (s) = ", "# Time (s) = ") << tempo << "\n";
+			escreveIni << t("# Comprimento a partir do Fundo de Poco(m) = ", "# Length from Bottomhole (m) = ")
 					<< comprimento << "\n";
-			escreveIni << " Raio (m) ;";
-			escreveIni << " Raio (Polegada) ;";
-			escreveIni << " Temperatura (C) ;";
-			escreveIni << " Fluxo de Calor (W/m2) ;";
+			escreveIni << t(" Raio (m) ;", " Radius (m) ;");
+			escreveIni << t(" Raio (Polegada) ;", " Radius (inch) ;");
+			escreveIni << t(" Temperatura (C) ;", " Temperature (C) ;");
+			escreveIni << t(" Fluxo de Calor (W/m2) ;", " Heat flux (W/m2) ;");
 			escreveIni << "\n";
 			escreveIni << saida;
 			escreveIni.close();
@@ -20299,6 +20321,9 @@ void Ler::imprimeProfileTransG(
 		CelG* const celula, int* length, double tempo,
 		int indTramo, int nrede) {
 	if (nperfistransg > 0) {
+		const auto t = [this](const char* pt, const char* en) {
+			return output_i18n::tr(this->idiomaSaida, pt, en);
+		};
 		for (int i = 0; i < nperfistransg; i++) {
 			int posicn = proftransg.posic[i];
 			double comprimento = 0;
@@ -20318,14 +20343,14 @@ void Ler::imprimeProfileTransG(
 						<< proftransg.posic[i] << ".dat";
 			string tmp = saidaG.str();
 			ofstream escreveIni(tmp.c_str(), ios_base::out);
-			escreveIni << "# Passo de tempo = " << (*vg1dSP).contador << "\n";
-			escreveIni << "# Tempo (s) = " << tempo << "\n";
-			escreveIni << "# Comprimento a partir da Plataforma (m) = "
+			escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador << "\n";
+			escreveIni << t("# Tempo (s) = ", "# Time (s) = ") << tempo << "\n";
+			escreveIni << t("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ")
 					<< comprimento << "\n";
-			escreveIni << " Raio (m) ;";
-			escreveIni << " Raio (Polegada) ;";
-			escreveIni << " Temperatura (C) ;";
-			escreveIni << " Fluxo de Calor (W/m2) ;";
+			escreveIni << t(" Raio (m) ;", " Radius (m) ;");
+			escreveIni << t(" Raio (Polegada) ;", " Radius (inch) ;");
+			escreveIni << t(" Temperatura (C) ;", " Temperature (C) ;");
+			escreveIni << t(" Fluxo de Calor (W/m2) ;", " Heat flux (W/m2) ;");
 			escreveIni << "\n";
 			escreveIni << saida;
 			escreveIni.close();
