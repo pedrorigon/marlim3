@@ -595,9 +595,9 @@ class TestDemoFiles:
         assert len(demos) > 0, "Nenhum arquivo demo .json encontrado"
 
     @pytest.mark.parametrize("demo_file", [
-        "2zonas-2VGLs-2-Check-AS.json",
-        "BCS-longo-eficMotor.json",
-        "producaoSimplificado.json",
+        "2zones-2GLVs-2-Check-SA_en.json",
+        "extended-ESP-pumpEfic.json",
+        "simplifiedProduction.json",
     ])
     def test_load_demo_json(self, demo_file):
         """Arquivos demo devem ser carregáveis como Tramo."""

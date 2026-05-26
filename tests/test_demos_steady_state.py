@@ -42,17 +42,19 @@ skip_sem_executavel = pytest.mark.skipif(
 # ter entrada própria como chave.
 
 DEMOS = {
-   # "2zonas-2VGLs-2-Check-AS.json":            ["leituraAS.json", "PVTSIM-MARLIM.tab"],
-    "2zonas-2VGLs-2-Check-correcPerfTerm.json": ["PVTSIM-MARLIM.tab"],
-    "BCS-longo-eficMotor.json":                 ["PVTSIM-MARLIM.tab"],
-    "injec-Liq-TempoResidencia.json":           [],
-    "parada-longo-Combinado-BCS-GLC-PIG-completo.json": ["PVTSIM-MARLIM.tab"],
-    "producaoSimplificado.json":                [],
-    "2zonas-2VGLs-2-Check-correcPerfTerm_en.json": ["PVTSIM-MARLIM.tab"],
-    "BCS-longo-eficMotor_en.json":                 ["PVTSIM-MARLIM.tab"],
-    "injec-Liq-TempoResidencia_en.json":           [],
-    "parada-longo-Combinado-BCS-GLC-PIG-completo_en.json": ["PVTSIM-MARLIM.tab"],
-    "producaoSimplificado_en.json":                [],
+    # Legacy PT demos moved under demos/pt-br
+    "pt-br/2zonas-2VGLs-2-Check-correcPerfTerm.json": ["PVTSIM-MARLIM.tab"],
+    "pt-br/BCS-longo-eficMotor.json":                 ["PVTSIM-MARLIM.tab"],
+    "pt-br/injec-Liq-TempoResidencia.json":           [],
+    "pt-br/parada-longo-Combinado-BCS-GLC-PIG-completo.json": ["PVTSIM-MARLIM.tab"],
+    "pt-br/producaoSimplificado.json":                [],
+
+    # Renamed EN demos at demos/
+    "2zones-2GLVs-2-Check-correcThermProf.json": ["PVTSIM-MARLIM.tab"],
+    "extended-ESP-pumpEfic.json":                 ["PVTSIM-MARLIM.tab"],
+    "injec-Liq-ResidenceTime.json":               [],
+    "extended-shutdown-combined-ESP-CGL-PIG-complete.json": ["PVTSIM-MARLIM.tab"],
+    "simplifiedProduction.json":                  [],
 }
 
 # ============================================================================
@@ -74,7 +76,7 @@ DEMO_FILES = sorted(DEMOS.keys())
 def test_demo_simula(json_file):
     """Carrega o JSON, executa a simulação e verifica se gerou resultados."""
     json_path = os.path.join(DEMOS_DIR, json_file)
-    label = os.path.splitext(json_file)[0]
+    label = os.path.splitext(json_file)[0].replace("/", "__").replace("\\", "__")
 
     caso = marlim3.Branch()
     caso.from_json(json_path)
