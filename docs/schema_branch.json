@@ -2157,23 +2157,23 @@
           }
         }
       },
-    "bcs": {
+    "esp": {
         "type": "array",
-        "description": "Each object in this array corresponds to an ESP (BCS) pump.",
+        "description": "Each object in this array corresponds to an ESP pump.",
         "items": {
           "type": "object",
           "properties": {
             "active": {
               "type": "boolean",
-              "description": "Indicates whether the BCS is active."
+              "description": "Indicates whether the ESP is active."
             },
             "id": {
               "type": "integer",
-              "description": "BCS identifier integer."
+              "description": "ESP identifier integer."
             },
             "measuredLength": {
               "type": "number",
-              "description": "Measured length where the BCS is located in the production system.",
+              "description": "Measured length where the ESP is located in the production system.",
               "unit": "m"
             },
             "time": {
@@ -2186,7 +2186,7 @@
             },
             "frequency": {
               "type": "array",
-              "description": "BCS rotational frequency over time, defining pump operation during simulation.",
+              "description": "ESP rotational frequency over time, defining pump operation during simulation.",
               "items": {
                 "type": "number",
                 "unit": "Hz"
@@ -2194,7 +2194,7 @@
             },
             "flowRate": {
               "type": "array",
-              "description": "Flow-rate values of the BCS curve.",
+              "description": "Flow-rate values of the ESP curve.",
               "items": {
                 "type": "number",
                 "unit": "BPD"
@@ -2202,7 +2202,7 @@
             },
             "power": {
               "type": "array",
-              "description": "Power values of the BCS curve.",
+              "description": "Power values of the ESP curve.",
               "items": {
                 "type": "number",
                 "unit": "hp"
@@ -2210,14 +2210,14 @@
             },
             "efficiency": {
               "type": "array",
-              "description": "Efficiency values of the BCS curve.",
+              "description": "Efficiency values of the ESP curve.",
               "items": {
                 "type": "number"
               }
             },
             "pumpHead": {
               "type": "array",
-              "description": "Head values of the BCS curve.",
+              "description": "Head values of the ESP curve.",
               "items": {
                 "type": "number",
                 "unit": "ft"
@@ -2242,7 +2242,7 @@
             },
             "minFrequency": {
               "type": "number",
-              "description": "Minimum BCS operating frequency.",
+              "description": "Minimum ESP operating frequency.",
               "unit": "Hz"
             },
             "hiCorrection": {

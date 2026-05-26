@@ -12,7 +12,7 @@
  *   regardless of nesting level. This is safe because Portuguese sibling keys
  *   within a single object are always distinct.
  * - Keys that are already language-neutral (acronyms such as "api", "bsw",
- *   "bcs", "pig", "ipr") are kept identical in both languages.
+ *   "pig", "ipr") are kept identical in both languages.
  * - Keys added here but absent from the document are silently ignored.
  * - Unknown English keys (not in the map) are left as-is; the schema will
  *   ignore them just as it would ignore unknown Portuguese keys.
@@ -61,6 +61,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "serviceDucts",                   "dutosServico" },
     { "hydrate",                        "hidrato" },
     { "chokeSource",                    "fonteChoke" },
+    { "esp",                            "bcs" },
     { "multiBcs",                       "multibcs" },
     { "volumetricPump",                 "bombaVolumetrica" },
     { "pressureDrop",                   "deltaPressao" },

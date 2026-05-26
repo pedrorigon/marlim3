@@ -9,7 +9,7 @@ when ``"language": "en"`` is present in the JSON.
 
 # ---------------------------------------------------------------------------
 # PT_TO_EN: flat map from Portuguese JSON key → English JSON key.
-# Language-neutral keys (bcs, ipr, pig, api, bsw, rho, ip, ii, etc.) are
+# Language-neutral keys (ipr, pig, api, bsw, rho, ip, ii, etc.) are
 # intentionally omitted — they pass through unchanged.
 # ---------------------------------------------------------------------------
 PT_TO_EN = {
@@ -59,6 +59,7 @@ PT_TO_EN = {
     "fontePoroRadial":      "porousRadialSource",
     "fontePoro2D":          "porous2DSource",
     "fonteGasLift":         "gasLiftSource",
+    "bcs":                  "esp",
 
     # Shared keys (appear at multiple nesting levels)
     "ativo":                "active",
@@ -407,7 +408,7 @@ PT_TO_EN = {
     "capacidade":           "capacity",
     "fatorpoli":            "polyFactor",
 
-    # BCS
+    # ESP
     "equilTerm":            "thermalEquilBcs",
 
     # injectionWellBC (CondicaoContPocInjec)

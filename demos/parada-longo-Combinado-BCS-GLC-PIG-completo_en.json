@@ -1308,7 +1308,7 @@
                                      "prodFluidId":  0
                                  }
                              ],
-    "bcs":  [
+    "esp":  [
                 {
                     "id":  0,
                     "measuredLength":  100.0,

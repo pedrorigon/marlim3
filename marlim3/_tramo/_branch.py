@@ -82,7 +82,7 @@ class Branch:
                  injectionChoke=None,
                  masterValve=None,
                  masterValve2=None,
-                 bcs=None,
+                 esp=None,
                  volumetricPump=None,
                  pressureDrop=None,
                  pig=None,
@@ -134,7 +134,7 @@ class Branch:
         self.masterValve    = masterValve
         self.masterValve2   = masterValve2
 
-        self.bcs            = bcs            if bcs            is not None else []
+        self.esp            = esp            if esp            is not None else []
         self.volumetricPump = volumetricPump if volumetricPump is not None else []
         self.pressureDrop   = pressureDrop   if pressureDrop   is not None else []
         self.pig            = pig            if pig            is not None else []
@@ -245,7 +245,7 @@ class Branch:
         self.masterValve     = d.get('masterValve')
         self.masterValve2    = d.get('masterValve2')
 
-        self.bcs             = d.get('bcs',             [])
+        self.esp             = d.get('esp',             [])
         self.volumetricPump  = d.get('volumetricPump',  [])
         self.pressureDrop    = d.get('pressureDrop',    [])
         self.pig             = d.get('pig',             [])
