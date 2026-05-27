@@ -57,7 +57,7 @@ class Branch:
                  system='MULTIFASICO',
                  jsonVersion='1.3.9',
                  initialConfig=None,
-                 pvtTable=None,
+                 compTable=None,
                  timeSettings=None,
                  correction=None,
                  productionFluids=None,
@@ -68,6 +68,7 @@ class Branch:
                  productionDucts=None,
                  serviceDucts=None,
                  separator=None,
+                 gasInj=None,
                  gasInjection=None,
                  injectionWellBC=None,
                  ipr=None,
@@ -92,6 +93,10 @@ class Branch:
                  serviceProfile=None,
                  productionTrend=None,
                  serviceTrend=None,
+                 crossProductionProfiles=None,
+                 crossServiceProfiles=None,
+                 crossProductionTrend=None,
+                 crossServiceTrend=None,
                  transientProductionProfiles=None,
                  transientServiceProfiles=None,
                  transientProductionTrend=None,
@@ -104,7 +109,7 @@ class Branch:
         self.jsonVersion = jsonVersion
 
         self.initialConfig  = initialConfig  if initialConfig  is not None else {}
-        self.pvtTable       = pvtTable       if pvtTable       is not None else {}
+        self.compTable      = compTable      if compTable      is not None else {}
         self.timeSettings   = timeSettings
         self.correction     = correction
 
@@ -118,7 +123,7 @@ class Branch:
         self.serviceDucts    = serviceDucts    if serviceDucts    is not None else []
 
         self.separator       = separator
-        self.gasInjection    = gasInjection
+        self.gasInj          = gasInj if gasInj is not None else gasInjection
         self.injectionWellBC = injectionWellBC
         self.ipr             = ipr             if ipr             is not None else []
         self.massSource      = massSource      if massSource      is not None else []
@@ -141,20 +146,73 @@ class Branch:
         self.pig            = pig            if pig            is not None else []
         self.wax            = wax            if wax            is not None else {}
 
-        self.productionProfile          = productionProfile          if productionProfile          is not None else {}
-        self.serviceProfile             = serviceProfile             if serviceProfile             is not None else {}
-        self.productionTrend            = productionTrend            if productionTrend            is not None else []
-        self.serviceTrend               = serviceTrend               if serviceTrend               is not None else []
-        self.transientProductionProfiles = transientProductionProfiles if transientProductionProfiles is not None else {}
-        self.transientServiceProfiles   = transientServiceProfiles   if transientServiceProfiles   is not None else {}
-        self.transientProductionTrend   = transientProductionTrend   if transientProductionTrend   is not None else []
-        self.transientServiceTrend      = transientServiceTrend      if transientServiceTrend      is not None else []
+        self.productionProfile         = productionProfile         if productionProfile         is not None else {}
+        self.serviceProfile            = serviceProfile            if serviceProfile            is not None else {}
+        self.productionTrend           = productionTrend           if productionTrend           is not None else []
+        self.serviceTrend              = serviceTrend              if serviceTrend              is not None else []
+        self.crossProductionProfiles   = crossProductionProfiles if crossProductionProfiles is not None else (
+            transientProductionProfiles if transientProductionProfiles is not None else {}
+        )
+        self.crossServiceProfiles      = crossServiceProfiles if crossServiceProfiles is not None else (
+            transientServiceProfiles if transientServiceProfiles is not None else {}
+        )
+        self.crossProductionTrend      = crossProductionTrend if crossProductionTrend is not None else (
+            transientProductionTrend if transientProductionTrend is not None else []
+        )
+        self.crossServiceTrend         = crossServiceTrend if crossServiceTrend is not None else (
+            transientServiceTrend if transientServiceTrend is not None else []
+        )
         self.screenConfig               = screenConfig               if screenConfig               is not None else []
 
         self.json_entrada_keys = set(self.__dict__.keys())
 
         self.resultados = {}
         self.nome_tramo = name
+
+    @property
+    def gasInjection(self):
+        """Backward-compatible alias for gasInj."""
+        return self.gasInj
+
+    @gasInjection.setter
+    def gasInjection(self, value):
+        self.gasInj = value
+
+    @property
+    def transientProductionProfiles(self):
+        """Backward-compatible alias for crossProductionProfiles."""
+        return self.crossProductionProfiles
+
+    @transientProductionProfiles.setter
+    def transientProductionProfiles(self, value):
+        self.crossProductionProfiles = value
+
+    @property
+    def transientServiceProfiles(self):
+        """Backward-compatible alias for crossServiceProfiles."""
+        return self.crossServiceProfiles
+
+    @transientServiceProfiles.setter
+    def transientServiceProfiles(self, value):
+        self.crossServiceProfiles = value
+
+    @property
+    def transientProductionTrend(self):
+        """Backward-compatible alias for crossProductionTrend."""
+        return self.crossProductionTrend
+
+    @transientProductionTrend.setter
+    def transientProductionTrend(self, value):
+        self.crossProductionTrend = value
+
+    @property
+    def transientServiceTrend(self):
+        """Backward-compatible alias for crossServiceTrend."""
+        return self.crossServiceTrend
+
+    @transientServiceTrend.setter
+    def transientServiceTrend(self, value):
+        self.crossServiceTrend = value
 
     def to_json(self, filename='marlim3_model', generate_empty_fields=False):
         if not filename.endswith('.json'):
@@ -214,7 +272,7 @@ class Branch:
         self.system          = d.get('system',              'MULTIFASICO')
         self.jsonVersion     = d.get('jsonVersion')
         self.initialConfig   = d.get('initialConfig')       or {}
-        self.pvtTable        = d.get('pvtTable')            or {}
+        self.compTable      = d.get('compTable')            or {}
         self.timeSettings    = d.get('timeSettings')
         self.correction      = d.get('correction')
 
@@ -228,7 +286,7 @@ class Branch:
         self.serviceDucts    = d.get('serviceDucts',   [])
 
         self.separator       = d.get('separator')
-        self.gasInjection    = d.get('gasInjection')
+        self.gasInj          = d.get('gasInj', d.get('gasInjection'))
         self.injectionWellBC = d.get('injectionWellBC')
 
         self.ipr             = d.get('ipr',             [])
@@ -252,14 +310,14 @@ class Branch:
         self.pig             = d.get('pig',             [])
         self.wax             = d.get('wax')             or {}
 
-        self.productionProfile          = d.get('productionProfile')
-        self.serviceProfile             = d.get('serviceProfile')
-        self.productionTrend            = d.get('productionTrend')
-        self.serviceTrend               = d.get('serviceTrend')
-        self.transientProductionProfiles = d.get('transientProductionProfiles')
-        self.transientServiceProfiles   = d.get('transientServiceProfiles')
-        self.transientProductionTrend   = d.get('transientProductionTrend')
-        self.transientServiceTrend      = d.get('transientServiceTrend')
+        self.productionProfile         = d.get('productionProfile')
+        self.serviceProfile            = d.get('serviceProfile')
+        self.productionTrend           = d.get('productionTrend')
+        self.serviceTrend              = d.get('serviceTrend')
+        self.crossProductionProfiles   = d.get('crossProductionProfiles', d.get('transientProductionProfiles'))
+        self.crossServiceProfiles      = d.get('crossServiceProfiles', d.get('transientServiceProfiles'))
+        self.crossProductionTrend      = d.get('crossProductionTrend', d.get('transientProductionTrend'))
+        self.crossServiceTrend         = d.get('crossServiceTrend', d.get('transientServiceTrend'))
         self.screenConfig               = d.get('screenConfig')
 
     def from_mr2(self, mr2_path, pvt_path=None, mr2_binary_path=None,

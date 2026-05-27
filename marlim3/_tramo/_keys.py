@@ -19,7 +19,7 @@ PT_TO_EN = {
     "versaoJson":           "jsonVersion",
     "versaoJSON":           "jsonVersion",
     "configuracaoInicial":  "initialConfig",
-    "tabela":               "pvtTable",
+    "tabela":               "compTable",
     "correcao":             "correction",
     "fluidosProducao":      "productionFluids",
     "fluidoComplementar":   "complementaryFluid",
@@ -36,15 +36,15 @@ PT_TO_EN = {
     "master2":              "masterValve2",
     "fontePressao":         "pressureSource",
     "tendP":                "productionTrend",
-    "tendTransP":           "transientProductionTrend",
+    "tendTransP":           "crossProductionTrend",
     "tendS":                "serviceTrend",
-    "tendTransS":           "transientServiceTrend",
+    "tendTransS":           "crossServiceTrend",
     "tela":                 "screenConfig",
-    "gasInj":               "gasInjection",
+    "gasInj":               "gasInj",
     "perfilProducao":       "productionProfile",
     "perfilServico":        "serviceProfile",
-    "perfisTransP":         "transientProductionProfiles",
-    "perfisTransS":         "transientServiceProfiles",
+    "perfisTransP":         "crossProductionProfiles",
+    "perfisTransS":         "crossServiceProfiles",
     "separador":            "separator",
     "chokeSup":             "surfaceChoke",
     "chokeInj":             "injectionChoke",
@@ -112,14 +112,14 @@ PT_TO_EN = {
     "paralelizaAS":         "parallelizeSA",
     "trackRgo":             "trackGOR",
     "trackDensidadeGas":    "trackGasDensity",
-    "correcaoDenGasLivreBlackOil": "freeGasDensityCorrection",
-    "tabelaRSPB":           "rspbTable",
-    "propFluido":           "fluidProperties",
+    "correcaoDenGasLivreBlackOil": "freeGasDensityCorrectionBO",
+    "tabelaRSPB":           "srBpTable",
+    "propFluido":           "fluidProp",
     "iniFluidoP":           "initialFluidId",
     "tabG":                 "gasTable",
     "escorregamentoPermanente": "steadyStateSlip",
     "escorregamentoTransiente": "transientSlip",
-    "mapaArranjo":          "flowRegimeMap",
+    "mapaArranjo":          "flowPatternMap",
     "condicaoInicial":      "initialCondition",
     "ordemperm":            "steadyStateOrder",
     "SnapShotArq":          "snapshotFile",
@@ -136,7 +136,7 @@ PT_TO_EN = {
     "condicaoPressao":      "pressureCondition",
     "condicaoVazPres":      "flowPressureCondition",
     "correlacoesEscorregamento": "slipCorrelations",
-    "correlacoesPorArranjo": "correlationsByRegime",
+    "correlacoesPorArranjo": "correlationsByPattern",
     "Formacao":             "formation",
     "tipoFluido":           "fluidType",
     "tempReves":            "reverseTemp",
@@ -169,7 +169,7 @@ PT_TO_EN = {
     "CriterioCondensacao":  "condensationCriterion",
     "CriterioDTMin":        "minTimestepCriterion",
     "CriterioBuscaFalsaCorda": "falseCordSearchCriterion",
-    "taxaDespre":           "neglectRate",
+    "taxaDespre":           "despressRate",
     "MedSimpPresFront":     "simplePressureFrontier",
     "JTLiquidoSimple":      "liquidJTSimple",
     "limTransMass":         "massTransferLimit",
@@ -197,11 +197,11 @@ PT_TO_EN = {
 
     # pressureCondition / flowPressureCondition sub-keys
     "indFluido":            "fluidId",
-    "titulo":               "voidFraction",
-    "razaoBeta":            "waterCut",
+    "titulo":               "fluidQuality",
+    "razaoBeta":            "betaRatio",
     "VazMass":              "massFlowRate",
 
-    # correlationsByRegime sub-keys
+    # correlationsByPattern sub-keys
     "estratificado":        "stratified",
     "bolhaGolfada":         "slugBubble",
     "anularChurn":          "annularChurn",
@@ -210,7 +210,7 @@ PT_TO_EN = {
     "Propriedades":         "properties",
     "TempoProducao":        "productionTime",
 
-    # pvtTable (tabela) sub-keys
+    # compTable (tabela) sub-keys
     "nPontos":              "numPoints",
     "pressaoMaxima":        "maxPressure",
     "pressaoMinima":        "minPressure",
@@ -238,7 +238,7 @@ PT_TO_EN = {
     "BSWVec":               "bswVec",
     "fracCO2":              "co2Fraction",
     "correlacaoCritica":    "criticalCorrelation",
-    "modeloRsPb":           "rsPbModel",
+    "modeloRsPb":           "srBpModel",
     "modeloOleoMorto":      "deadOilModel",
     "tempOleoMorto":        "deadOilTemps",
     "viscOleoMorto":        "deadOilViscs",
@@ -255,8 +255,8 @@ PT_TO_EN = {
     "usaTabelaFlash":       "useFlashTable",
 
     # complementaryFluid sub-keys
-    "compP":                "pressureCompressibility",
-    "compT":                "thermalCompressibility",
+    "compP":                "compressibility",
+    "compT":                "thermalExpansivity",
     "tensup":               "surfaceTension",
     "salinidade":           "salinity",
     "tipoF":                "complementaryFluidType",
@@ -274,7 +274,7 @@ PT_TO_EN = {
     "idMaterial":           "materialId",
 
     # productionDucts / serviceDucts item
-    "correlacaoMR2":        "mr2Correlation",
+    "correlacaoMR2":        "blackBoxCorrelation",
     "angulo":               "angle",
     "idCorte":              "crossSectionId",
     "idFormacao":           "formationId",
@@ -284,8 +284,8 @@ PT_TO_EN = {
     "acoplamentoTermicoRedeParalela": "parallelNetworkThermalCoupling",
     "agrupamento":          "grouping",
     "dxCelula":             "cellDx",
-    "condicoesIniciais":    "initialConditions",
-    "condicoesIniciaisEAmbiente": "initialConditionsAndAmbient",
+    "condicoesIniciais":    "initialAndAmbientConditions",
+    "condicoesIniciaisEAmbiente": "initialAndAmbientConditions",
     "dPdLHidro":            "hydroGradient",
     "dPdLFric":             "fricGradient",
     "dTdL":                 "tempGradient",
@@ -296,13 +296,13 @@ PT_TO_EN = {
     "difusTerm3DAcop":      "diffusion3dCoupling",
     "xCoor":                "xCoord",
     "yCoor":                "yCoord",
-    "nCelulas_XY":          "cellsXY",
+    "nCelulas_XY":          "numCellsXY",
     "nCelulas":             "numCells",
     "comprimento":          "length",
 
-    # initialConditions sub-keys
+    # initialAndAmbientConditions sub-keys
     "compInter":            "measuredPositions",
-    "bet":                  "waterCutIC",
+    "bet":                  "beta",
     "uls":                  "superficialLiquidVel",
     "ugs":                  "superficialGasVel",
     "tempExterna":          "externalTemp",
@@ -326,13 +326,13 @@ PT_TO_EN = {
     "vazaoLiquido":         "liquidFlowRate",
 
     # massSource item
-    "tipoTermo":            "termType",
+    "tipoTermo":            "thermType",
     "vazaoMassT":           "totalMassFlowRate",
     "vazaoMassC":           "complementaryMassFlowRate",
-    "vazaoMassG":           "massMassFlowGas",
+    "vazaoMassG":           "gasMassFlowRate",
 
     # gasLiftSource item
-    "colunaEanular":        "annularColumn",
+    "colunaEanular":        "annularColumnFlag",
     "comprimentoMedidoProducao": "prodMeasuredLength",
     "comprimentoMedidoServico": "serviceMeasuredLength",
     "tipoValvula":          "valveType",
@@ -364,7 +364,7 @@ PT_TO_EN = {
 
     # pressureDrop item
     "tipoCompGas":          "gasCompType",
-    "fatPoli":              "polyCorrFactor",
+    "fatPoli":              "polyFacOrAdiabConst",
     "eficLiq":              "liquidEfficiency",
     "eficGas":              "gasEfficiency",
 
@@ -463,7 +463,7 @@ PT_TO_EN = {
     "QLstdTotal":           "stdTotalLiqFlowRate",
     "RGO":                  "gasOilRatioOut",
     "RS":                   "gasOilRatioStd",
-    "Rs":                   "gasSolubility",
+    "Rs":                   "gasOilRatioStd",
     "ReyExterno":           "externalReynolds",
     "ReyInterno":           "internalReynolds",
     "TResi":                "residenceTime",
@@ -471,8 +471,8 @@ PT_TO_EN = {
     "Term2":                "term2",
     "VelocidadeMaximaGarganta": "maxThroatVelocity",
     "deng":                 "gasStdDensity",
-    "dengD":                "downstreamGasDensity",
-    "dengL":                "upstreamGasDensity",
+    "dengD":                "dissolvedGasDensity",
+    "dengL":                "freeGasDensity",
     "deltaPBomba":          "pumpDeltaP",
     "head":                 "pumpHead",
     "potenciaBomba":        "pumpPower",
@@ -502,7 +502,7 @@ PT_TO_EN = {
     "volMonM1ST":           "m1ServUpstreamVol",
 
     # IPR extra
-    "indFluidoPro":         "prodFluidIndex",
+    "indFluidoPro":         "prodFluidId",
 
     # severeSlugging sub-keys
     "inicioTrechoAcumula":  "accumStartLength",
