@@ -302,7 +302,7 @@ PT_TO_EN = {
 
     # initialAndAmbientConditions sub-keys
     "compInter":            "measuredPositions",
-    "bet":                  "beta",
+    "bet":                  "waterCutIC",
     "uls":                  "superficialLiquidVel",
     "ugs":                  "superficialGasVel",
     "tempExterna":          "externalTemp",
