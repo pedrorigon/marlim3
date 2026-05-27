@@ -44,7 +44,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "jsonVersion",                    "versaoJSON" },
     { "initialConfig",                  "configuracaoInicial" },
     { "timeSettings",                   "tempo" },
-    { "pvtTable",                       "tabela" },
+    { "compTable",                      "tabela" },
     { "wax",                            "parafina" },
     { "gasFluid",                       "fluidoGas" },
     { "productionFluids",               "fluidosProducao" },
@@ -70,15 +70,15 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "masterValve2",                   "master2" },
     { "pressureSource",                 "fontePressao" },
     { "productionTrend",                "tendP" },
-    { "transientProductionTrend",       "tendTransP" },
+    { "crossProductionTrend",           "tendTransP" },
     { "serviceTrend",                   "tendS" },
-    { "transientServiceTrend",          "tendTransS" },
+    { "crossServiceTrend",              "tendTransS" },
     { "screenConfig",                   "tela" },
-    { "gasInjection",                   "gasInj" },
+  //  { "gasInj",                         "gasInj" },
     { "productionProfile",              "perfilProducao" },
     { "serviceProfile",                 "perfilServico" },
-    { "transientProductionProfiles",    "perfisTransP" },
-    { "transientServiceProfiles",       "perfisTransS" },
+    { "crossProductionProfiles",        "perfisTransP" },
+    { "crossServiceProfiles",           "perfisTransS" },
     { "separator",                      "separador" },
     { "correction",                     "correcao" },
     { "surfaceChoke",                   "chokeSup" },
@@ -114,7 +114,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "minFrequency",                   "FrequenciaMinima" },
     { "referenceFreq",                  "freqref" },
     { "hiCorrection",                   "correcHI" },
-    { "motorHeatFraction",              "fracTermMotorEfic" },
+    //{ "motorHeatFraction",              "fracTermMotorEfic" },
     { "curve",                          "curva" },
 
     // -----------------------------------------------------------------------
@@ -134,19 +134,19 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "dynamicTableModel",              "modeloTabelaDinamica" },
     { "cpModel",                        "modeloCp" },
     { "jtlModel",                       "modeloJTL" },
-    { "pressureTable",                  "tabP" },
+ // { "pressureTable",                  "tabP" },
     { "sensitivityAnalysis",            "AS" },
     { "parallelizeSA",                  "paralelizaAS" },
     { "trackGOR",                       "trackRgo" },
     { "trackGasDensity",                "trackDensidadeGas" },
-    { "freeGasDensityCorrection",       "correcaoDenGasLivreBlackOil" },
-    { "rspbTable",                      "tabelaRSPB" },
-    { "fluidProperties",                "propFluido" },
+    { "freeGasDensityCorrectionBO",     "correcaoDenGasLivreBlackOil" },
+    { "srBpTable",                      "tabelaRSPB" },
+    { "fluidProp",                      "propFluido" },
     { "initialFluidId",                 "iniFluidoP" },
-    { "gasTable",                       "tabG" },
+  //  { "gasTable",                       "tabG" },
     { "steadyStateSlip",                "escorregamentoPermanente" },
     { "transientSlip",                  "escorregamentoTransiente" },
-    { "flowRegimeMap",                  "mapaArranjo" },
+    { "flowPatternMap",                 "mapaArranjo" },
     { "initialCondition",               "condicaoInicial" },
     { "steadyStateOrder",               "ordemperm" },
     { "snapshotFile",                   "SnapShotArq" },
@@ -163,7 +163,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "pressureCondition",              "condicaoPressao" },
     { "flowPressureCondition",          "condicaoVazPres" },
     { "slipCorrelations",               "correlacoesEscorregamento" },
-    { "correlationsByRegime",           "correlacoesPorArranjo" },
+    { "correlationsByPattern",          "correlacoesPorArranjo" },
     { "formation",                      "Formacao" },
     { "fluidType",                      "tipoFluido" },
     { "reverseTemp",                    "tempReves" },
@@ -196,7 +196,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "condensationCriterion",          "CriterioCondensacao" },
     { "minTimestepCriterion",           "CriterioDTMin" },
     { "falseCordSearchCriterion",       "CriterioBuscaFalsaCorda" },
-    { "neglectRate",                    "taxaDespre" },
+    { "despressRate",                   "taxaDespre" },
     { "simplePressureFrontier",         "MedSimpPresFront" },
     { "liquidJTSimple",                 "JTLiquidoSimple" },
     { "massTransferLimit",              "limTransMass" },
@@ -224,8 +224,8 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
 
     // pressureCondition sub-keys
     { "fluidId",                        "indFluido" },
-    { "voidFraction",                   "titulo" },
-    { "waterCut",                       "razaoBeta" },
+    { "fluidQuality",                   "titulo" },
+    { "betaRatio",                      "razaoBeta" },
 
     // flowPressureCondition sub-keys
     { "massFlowRate",                   "VazMass" },
@@ -250,7 +250,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "saveSnapshot",                   "gravaMomento" },
 
     // -----------------------------------------------------------------------
-    // pvtTable (tabela)
+    // compTable (tabela)
     // -----------------------------------------------------------------------
     { "numPoints",                      "nPontos" },
     { "maxPressure",                    "pressaoMaxima" },
@@ -272,7 +272,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "bswVec",                         "BSWVec" },
     { "co2Fraction",                    "fracCO2" },
     { "criticalCorrelation",            "correlacaoCritica" },
-    { "rsPbModel",                      "modeloRsPb" },
+    { "srBpModel",                      "modeloRsPb" },
     { "deadOilModel",                   "modeloOleoMorto" },
     { "deadOilTemps",                   "tempOleoMorto" },
     { "deadOilViscs",                   "viscOleoMorto" },
@@ -292,8 +292,8 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     // -----------------------------------------------------------------------
     // complementaryFluid (fluidoComplementar)
     // -----------------------------------------------------------------------
-    { "pressureCompressibility",        "compP" },
-    { "thermalCompressibility",         "compT" },
+    { "compressibility",                "compP" },
+    { "thermalExpansivity",             "compT" },
     { "surfaceTension",                 "tensup" },
     { "salinity",                       "salinidade" },
     { "complementaryFluidType",         "tipoF" },
@@ -316,7 +316,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     // -----------------------------------------------------------------------
     // productionDucts / serviceDucts Item
     // -----------------------------------------------------------------------
-    { "mr2Correlation",                 "correlacaoMR2" },
+    { "blackBoxCorrelation",            "correlacaoMR2" },
     { "angle",                          "angulo" },
     { "crossSectionId",                 "idCorte" },
     { "formationId",                    "idFormacao" },
@@ -326,19 +326,19 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "parallelNetworkThermalCoupling", "acoplamentoTermicoRedeParalela" },
     { "grouping",                       "agrupamento" },
     { "cellDx",                         "dxCelula" },
-    { "initialConditions",              "condicoesIniciais" },
-    { "initialConditionsAndAmbient",    "condicoesIniciaisEAmbiente" },
+    { "initialAndAmbientConditions",    "condicoesIniciais" },
+    { "initialAndAmbientConditions",    "condicoesIniciaisEAmbiente" },
     { "hydroGradient",                  "dPdLHidro" },
     { "fricGradient",                   "dPdLFric" },
     { "tempGradient",                   "dTdL" },
     { "diffusion2d",                    "difusTerm2D" },
     { "diffusion2dJson",                "difusTerm2DJSON" },
     { "diffusion3d",                    "difusTerm3D" },
-    { "diffusion3dFE",                  "difusTerm3DFE" },
+   // { "diffusion3dFE",                  "difusTerm3DFE" },
     { "diffusion3dCoupling",            "difusTerm3DAcop" },
-    { "xCoord",                         "xCoor" },
-    { "yCoord",                         "yCoor" },
-    { "cellsXY",                        "nCelulas_XY" },
+   // { "xCoord",                         "xCoor" },
+  //  { "yCoord",                         "yCoor" },
+    { "numCellsXY",                        "nCelulas_XY" },
 
     // discretizacao items
     { "numCells",                       "nCelulas" },
@@ -348,7 +348,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "measuredPositions",              "compInter" },
     // "temp" is kept as-is (it's already English-style)
     { "holdup",                         "holdup" },  // same
-    { "waterCutIC",                     "bet" },
+    { "beta",                           "bet" },
     { "superficialLiquidVel",           "uls" },
     { "superficialGasVel",              "ugs" },
     { "externalTemp",                   "tempExterna" },
@@ -380,17 +380,17 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     // -----------------------------------------------------------------------
     // massSource Item
     // -----------------------------------------------------------------------
-    { "termType",                       "tipoTermo" },
+    { "thermType",                      "tipoTermo" },
     { "totalMassFlowRate",              "vazaoMassT" },
     { "complementaryMassFlowRate",      "vazaoMassC" },
     // gasMassFlowRate → vazaoMassG (already mapped above to vazaoMassicaGas
     // for service ducts; massSource uses vazaoMassG). Use separate key:
-    { "massMassFlowGas",                "vazaoMassG" },
+    { "gasMassFlowRate",                "vazaoMassG" },
 
     // -----------------------------------------------------------------------
     // gasLiftSource (fonteGasLift) Item
     // -----------------------------------------------------------------------
-    { "annularColumn",                  "colunaEanular" },
+    { "annularColumnFlag",              "colunaEanular" },
     { "prodMeasuredLength",             "comprimentoMedidoProducao" },
     { "serviceMeasuredLength",          "comprimentoMedidoServico" },
     { "valveType",                      "tipoValvula" },
@@ -434,7 +434,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     // "pressureDropValue" in English to avoid ambiguity.
     { "pressureDropValue",              "deltaPressao" },
     { "gasCompType",                    "tipoCompGas" },
-    { "polyCorrFactor",                 "fatPoli" },
+    { "polyFacOrAdiabConst",            "fatPoli" },
     { "liquidEfficiency",               "eficLiq" },
     { "gasEfficiency",                  "eficGas" },
 
@@ -454,7 +454,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "launcher",                       "lancador" },
     { "receiver",                       "recebedor" },
     { "areaGap",                        "folgaArea" },
-    { "pigDischCoef",                   "cdPig" },
+   // { "pigDischCoef",                   "cdPig" },
 
     // -----------------------------------------------------------------------
     // hydrate (hidrato)
@@ -559,7 +559,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "stdTotalLiqFlowRate",            "QLstdTotal" },
     { "gasOilRatioOut",                 "RGO" },
     { "gasOilRatioStd",                 "RS" },
-    { "gasSolubility",                  "Rs" },
+    { "gasOilRatioStd",                 "Rs" },
     { "externalReynolds",               "ReyExterno" },
     { "internalReynolds",               "ReyInterno" },
     { "residenceTime",                  "TResi" },
@@ -567,8 +567,8 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "term2",                          "Term2" },
     { "maxThroatVelocity",              "VelocidadeMaximaGarganta" },
     { "gasStdDensity",                  "deng" },
-    { "downstreamGasDensity",           "dengD" },
-    { "upstreamGasDensity",             "dengL" },
+    { "dissolvedGasDensity",            "dengD" },
+    { "freeGasDensity",                 "dengL" },
     { "pumpDeltaP",                     "deltaPBomba" },
     { "pumpHead",                       "head" },
     { "pumpPower",                      "potenciaBomba" },
@@ -605,7 +605,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     // -----------------------------------------------------------------------
     // IPR / sources — fluid index (different from indiFluidoPro)
     // -----------------------------------------------------------------------
-    { "prodFluidIndex",                 "indFluidoPro" },
+    { "prodFluidId",                 "indFluidoPro" },
 
     // -----------------------------------------------------------------------
     // Severe slugging (intermitenciaSevera)
