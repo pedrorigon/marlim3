@@ -66,9 +66,9 @@ def _plotar_geometria(tramo):
 
     # Processando dutos de produção
     for idx, duto in enumerate(dutos_prod_plot):
-        if modo_xy and (_g(duto, "xCoord") is not None) and (_g(duto, "yCoord") is not None):
-            x_coords_prod.append(float(_g(duto, "xCoord")))
-            y_coords_prod.append(float(_g(duto, "yCoord")))
+        if modo_xy and (_g(duto, "xCoor") is not None) and (_g(duto, "yCoor") is not None):
+            x_coords_prod.append(float(_g(duto, "xCoor")))
+            y_coords_prod.append(float(_g(duto, "yCoor")))
         elif _g(duto, "angle") is not None:
             # Angle mode: compute displacement from angle and length
             comprimento = _get_duto_length(duto)
@@ -103,15 +103,15 @@ def _plotar_geometria(tramo):
     if tramo.serviceDucts:
         dutos_serv_plot = tramo.serviceDucts
         for idx, duto in enumerate(dutos_serv_plot):
-            if modo_xy and (_g(duto, "xCoord") is not None) and (_g(duto, "yCoord") is not None):
+            if modo_xy and (_g(duto, "xCoor") is not None) and (_g(duto, "yCoor") is not None):
                 if idx == 0:
                     prev_x, prev_y = 0.0, 0.0
                 else:
                     prev_duto = dutos_serv_plot[idx - 1]
-                    prev_x = float(_g(prev_duto, "xCoord", default=0))
-                    prev_y = float(_g(prev_duto, "yCoord", default=0))
-                dx = float(_g(duto, "xCoord")) - prev_x
-                dy = float(_g(duto, "yCoord")) - prev_y
+                    prev_x = float(_g(prev_duto, "xCoor", default=0))
+                    prev_y = float(_g(prev_duto, "yCoor", default=0))
+                dx = float(_g(duto, "xCoor")) - prev_x
+                dy = float(_g(duto, "yCoor")) - prev_y
                 x_coords_serv.append(x_coords_serv[-1] + dx)
                 y_coords_serv.append(y_coords_serv[-1] + dy)
             elif _g(duto, "angle") is not None:

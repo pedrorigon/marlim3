@@ -179,16 +179,16 @@
       "crossSectionId": 2,
       "formationId": 0,
       "angle": 1.5707963267948966,
-      "xCoord": 0,
-      "yCoord": 200,
+      "xCoor": 0,
+      "yCoor": 200,
       "discretization": [
         {
           "numCells": 2,
           "length": 100
         }
       ],
-      "cellsXY": 2,
-      "initialConditions": {
+      "numCellsXY": 2,
+      "initialAndAmbientConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [90.0, 80.0]
       }
@@ -198,15 +198,15 @@
       "label": "Well",
       "crossSectionId": 0,
       "angle": 1.5707963267948966,
-      "xCoord": 0,
-      "yCoord": 1000,
+      "xCoor": 0,
+      "yCoor": 1000,
       "discretization": [
         {
           "numCells": 8,
           "length": 100
         }
       ],
-      "cellsXY": 8,
+      "numCellsXY": 8,
       "thermalCoupling": 1
     },
     {
@@ -215,16 +215,16 @@
       "crossSectionId": 1,
       "externalEnvironment": 1,
       "angle": 0,
-      "xCoord": 1000,
-      "yCoord": 1000,
+      "xCoor": 1000,
+      "yCoor": 1000,
       "discretization": [
         {
           "numCells": 10,
           "length": 100.0
         }
       ],
-      "cellsXY": 10,
-      "initialConditions": {
+      "numCellsXY": 10,
+      "initialAndAmbientConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [4, 4],
         "externalVel": [0.1, 0.1]
@@ -236,16 +236,16 @@
       "crossSectionId": 1,
       "externalEnvironment": 1,
       "angle": 1.5707963267948966,
-      "xCoord": 1000,
-      "yCoord": 2000,
+      "xCoor": 1000,
+      "yCoor": 2000,
       "discretization": [
         {
           "numCells": 10,
           "length": 100.0
         }
       ],
-      "cellsXY": 10,
-      "initialConditions": {
+      "numCellsXY": 10,
+      "initialAndAmbientConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [4, 20],
         "externalVel": [0.1, 1]
@@ -259,16 +259,16 @@
       "crossSectionId": 3,
       "externalEnvironment": 1,
       "angle": -1.5707963267948966,
-      "xCoord": 0,
-      "yCoord": -1000,
+      "xCoor": 0,
+      "yCoor": -1000,
       "discretization": [
         {
           "numCells": 10,
           "length": 100.0
         }
       ],
-      "cellsXY": 10,
-      "initialConditions": {
+      "numCellsXY": 10,
+      "initialAndAmbientConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [20, 4],
         "externalVel": [1, 0.1]
@@ -281,16 +281,16 @@
       "crossSectionId": 3,
       "externalEnvironment": 1,
       "angle": 0,
-      "xCoord": -1000,
-      "yCoord": -1000,
+      "xCoor": -1000,
+      "yCoor": -1000,
       "discretization": [
         {
           "numCells": 10,
           "length": 100.0
         }
       ],
-      "cellsXY": 10,
-      "initialConditions": {
+      "numCellsXY": 10,
+      "initialAndAmbientConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [4, 4],
         "externalVel": [0.1, 0.1]
@@ -303,16 +303,16 @@
       "crossSectionId": 4,
       "formationId": 0,
       "angle": -1.5707963267948966,
-      "xCoord": -1000,
-      "yCoord": -1800,
+      "xCoor": -1000,
+      "yCoor": -1800,
       "discretization": [
         {
           "numCells": 10,
           "length": 80.0
         }
       ],
-      "cellsXY": 10,
-      "initialConditions": {
+      "numCellsXY": 10,
+      "initialAndAmbientConditions": {
         "measuredPositions": [0, 0.25, 1],
         "externalTemp": [4, 50, 80.0]
       },
@@ -323,7 +323,7 @@
     "time": [0],
     "pressure": [10]
   },
-  "gasInjection": {
+  "gasInj": {
     "bcType": 1,
     "time": [0],
     "temperature": [40],
@@ -398,3 +398,4 @@
     "frictionPressure": true
   }
 }
+

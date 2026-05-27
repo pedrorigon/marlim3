@@ -55,7 +55,7 @@ def caso_base_horizontal():
     caso.productionDucts = [{
         "id": 0, "crossSectionId": 0, "externalEnvironment": 2, "angle": 0,
         "discretization": [{"numCells": 20, "length": 125.0}],
-        "initialConditions": {"measuredPositions": [0, 1], "externalTemp": [40, 20], "externalVel": [0.5, 0.5]},
+        "initialAndAmbientConditions": {"measuredPositions": [0, 1], "externalTemp": [40, 20], "externalVel": [0.5, 0.5]},
     }]
     caso.liquidSource = [{
         "id": 0, "prodFluidId": 0, "measuredLength": 0.1,

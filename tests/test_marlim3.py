@@ -82,7 +82,7 @@ def duto_horizontal():
         "externalEnvironment": 2,
         "angle": 0,
         "discretization": [linha],
-        "initialConditions": condicoes_ambiente,
+        "initialAndAmbientConditions": condicoes_ambiente,
     }
 
 
@@ -215,7 +215,7 @@ class TestModelAssembly:
         assert duto["discretization"][0]["length"] == pytest.approx(125.0)
 
     def test_condicoes_ambiente(self, caso_horizontal):
-        cond = caso_horizontal.productionDucts[0]["initialConditions"]
+        cond = caso_horizontal.productionDucts[0]["initialAndAmbientConditions"]
         assert cond["measuredPositions"] == [0, 1]
         assert cond["externalTemp"] == [40, 20]
         assert cond["externalVel"] == [0.5, 0.5]

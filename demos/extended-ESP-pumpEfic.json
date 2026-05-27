@@ -10,8 +10,8 @@
                           "latentHeat":  false,
                           "cpModel":  0,
                           "pvtFile":  "PVTSIM-MARLIM.tab",
-                          "pressureTable":  true,
-                          "gasTable":  true,
+                          "tabP":  true,
+                          "tabG":  true,
                           "trackGOR":  true,
                           "trackGasDensity":  true,
                           "permanente":  true,
@@ -114,7 +114,7 @@
                                            "condensationCriterion":  0.001,
                                            "simplePressureFrontier":  true,
                                            "slipBoundaryCell":  false,
-                                           "neglectRate":  0,
+                                           "despressRate":  0,
                                            "compModelCorrectionTime":  [
                                                                            0,
                                                                            40000,
@@ -130,7 +130,7 @@
                                            "matrixThreads":  6
                                        },
                           "slipCorrelations":  true,
-                          "correlationsByRegime":  {
+                          "correlationsByPattern":  {
                                                        "stratified":  1,
                                                        "slugBubble":  1,
                                                        "annularChurn":  1
@@ -169,7 +169,7 @@
                                              4
                                          ]
                      },
-    "pvtTable":  {
+    "compTable":  {
                      "numPoints":  21,
                      "maxPressure":  600,
                      "minPressure":  2,
@@ -198,8 +198,8 @@
                          ],
     "complementaryFluid":  {
                                "density":  1000,
-                               "pressureCompressibility":  0.0,
-                               "thermalCompressibility":  0.0,
+                               "compressibility":  0.0,
+                               "thermalExpansivity":  0.0,
                                "surfaceTension":  0.000001,
                                "specificHeat":  4000.0,
                                "conductivity":  0.14,
@@ -592,7 +592,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialConditions":  {
+                                "initialAndAmbientConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -609,7 +609,7 @@
                                                                          1.0,
                                                                          1.0
                                                                      ],
-                                                          "waterCutIC":  [
+                                                          "beta":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -661,7 +661,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialConditions":  {
+                                "initialAndAmbientConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -678,7 +678,7 @@
                                                                          1.0,
                                                                          1.0
                                                                      ],
-                                                          "waterCutIC":  [
+                                                          "beta":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -729,7 +729,7 @@
                                                            "length":  40.0
                                                        }
                                                    ],
-                                "initialConditions":  {
+                                "initialAndAmbientConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -746,7 +746,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "waterCutIC":  [
+                                                          "beta":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -797,7 +797,7 @@
                                                            "length":  40.0
                                                        }
                                                    ],
-                                "initialConditions":  {
+                                "initialAndAmbientConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -814,7 +814,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "waterCutIC":  [
+                                                          "beta":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -865,7 +865,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialConditions":  {
+                                "initialAndAmbientConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -882,7 +882,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "waterCutIC":  [
+                                                          "beta":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -933,7 +933,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialConditions":  {
+                                "initialAndAmbientConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -950,7 +950,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "waterCutIC":  [
+                                                          "beta":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -1024,7 +1024,7 @@
                                    0.0,
                                    1000.0
                                ],
-                    "prodFluidIndex":  0,
+                    "prodFluidId":  0,
                     "active":  true
                 }
             ],
@@ -1168,7 +1168,7 @@
                               "pressure":  true,
                               "temperature":  true,
                               "holdup":  true,
-                              "waterCutIC":  true,
+                              "beta":  true,
                               "superficialGasVel":  true,
                               "superficialLiquidVel":  true,
                               "gasVelocity":  false,
@@ -1273,7 +1273,7 @@
                                 "pressure":  true,
                                 "temperature":  true,
                                 "holdup":  true,
-                                "waterCutIC":  true,
+                                "beta":  true,
                                 "superficialGasVel":  true,
                                 "superficialLiquidVel":  true,
                                 "gasVelocity":  false,
@@ -1306,7 +1306,7 @@
                                 "pressure":  true,
                                 "temperature":  true,
                                 "holdup":  true,
-                                "waterCutIC":  true,
+                                "beta":  true,
                                 "superficialGasVel":  true,
                                 "superficialLiquidVel":  true,
                                 "gasVelocity":  false,
@@ -1339,7 +1339,7 @@
                                 "pressure":  true,
                                 "temperature":  true,
                                 "holdup":  true,
-                                "waterCutIC":  true,
+                                "beta":  true,
                                 "superficialGasVel":  true,
                                 "superficialLiquidVel":  true,
                                 "gasVelocity":  false,
@@ -1385,3 +1385,4 @@
                      ],
     "language":  "en"
 }
+
