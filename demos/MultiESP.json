@@ -1,7 +1,7 @@
 {
     "versao":  "1.0",
     "jsonVersion":  "1.3.9",
-    "system":  "MULTIFASICO",
+    "system":  "PROD",
     "initialConfig":  {
                           "geometryOrigin":  "POCO",
                           "gasLine":  false,
@@ -1088,13 +1088,13 @@
                     "active":  false
                 }
             ],
-    "multiEsp":  [
+    "multiESP":  [
                      {
                          "id":  0,
                          "measuredLength":  2000.0,
                          "motorEfficiency":  85,
                          "referenceFreq":  60,
-                         "thermalEquilEsp":  false,
+                         "thermalEquilESP":  false,
                          "active":  true,
                          "time":  [
                                               0,
@@ -1302,7 +1302,7 @@
                            "gasInSituDensity":  false,
                            "gasMassFlowRate":  false,
                            "shearStress":  false,
-                           "hydrostaticPressure":  false,
+                           "hydrostaticPressureGradient":  false,
                            "frictionPressureGradient":  false,
                            "heat":  false,
                            "stdGasFlowRate":  true,

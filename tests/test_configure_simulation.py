@@ -64,7 +64,7 @@ def caso_base_horizontal():
     caso.separator = {"time": [0], "pressure": [2]}
     caso.productionProfile = {
         "time": [0], "pressure": True, "temperature": True,
-        "holdup": True, "flowPattern": True, "frictionPressureGradient": True, "hydrostaticPressure": True,
+        "holdup": True, "flowPattern": True, "frictionPressureGradient": True, "hydrostaticPressureGradient": True,
     }
     return caso
 

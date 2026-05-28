@@ -6,10 +6,9 @@
     "system": {
       "type": "string",
       "enum": [
-        "MULTIFASICO",
-        "INJETOR"
+        "PROD",\n        "INJ"
       ],
-      "description": "Defines the system to be modeled: producer well (MULTIFASICO) or injector well (INJETOR)."
+      "description": "Defines the system to be modeled: producer well (PROD) or injector well (INJ)."
     },
     "jsonVersion": {
       "type": "string",
@@ -61,7 +60,7 @@
         },
         "pvtFile": {
           "type": "string",
-          "description": "Name of the .tab or .ctm PVT file, when used. Valid for producer wells (for injector wells, the file is defined in 'CondicaoContPocInjec')."
+          "description": "Name of the .tab or .ctm PVT file, when used. Valid for producer wells (for injector wells, the file is defined in 'injectionWellBC')."
         },
         "flashTableFluidModel": {
           "type": "boolean",
@@ -244,7 +243,7 @@
               "unit": "kgf/cm2",
               "description": "Minimum injection pressure during unloading control."
             },
-            "initialGasChargePressure": {
+            "initialGasDischargePressure": {
               "type": "number",
               "unit": "kgf/cm2",
               "description": "Initial pressure in the gas line at unloading start."
@@ -376,7 +375,7 @@
               "default": 0.001,
               "description": "Minimum void-fraction value for applying interphase mass-transfer modeling. Very small void fractions may lead to condensation behavior that violates physical holdup limits, forcing restrictive time-step corrections and increasing runtime. Avoid high truncation values, which can cause numerical instability or poor physical representation. Valid for transient simulations."
             },
-            "falseCordSearchCriterion": {
+            "regulaFalsiSearchCriterion": {
               "type": "number",
               "default": 0.1,
               "description": "Increment/decrement fraction applied to the objective-function input while searching for the second point in steady-state false-position solving. In scenarios with very high IPR values (common in pre-salt cases), reducing this value may help avoid numerical issues caused by excessively high rates. Valid for steady-state simulations."
@@ -579,7 +578,7 @@
             }
           }
         },
-        "flowPressureCondition": {
+        "flowRatePressureCondition": {
           "type": "object",
           "description": "Object with pressure and flow boundary-condition data at pipeline inlet. If this or another inlet boundary-condition object is not provided, the pipeline is treated as closed, and incoming fluids must be defined through sources (massSource, IPR, etc.). This boundary condition fully determines the system from inlet side, ignoring any outlet boundary condition. It is intended for steady-state only, since wave-propagation effects are not considered there (unlike transient mode, which also needs outlet information).",
           "properties": {
@@ -1562,20 +1561,19 @@
                 "layerMeasurementType": {
                   "type": "string",
                   "enum": [
-                    "ESPESSURA",
-                    "DIAMETRO"
+                    "THICKNESS",\n                    "DIAMETER"
                   ],
-                  "default": "DIAMETRO",
+                  "default": "DIAMETER",
                   "description": "Layer added-length measurement type (by radial thickness or by diameter from pipe center to the layer outer circumference)."
                 },
                 "diameter": {
                   "type": "number",
-                  "description": "Diameter from pipe center to the layer outer circumference. Valid when layerMeasurementType = DIAMETRO.",
+                  "description": "Diameter from pipe center to the layer outer circumference. Valid when layerMeasurementType = DIAMETER.",
                   "unit": "m"
                 },
                 "thickness": {
                   "type": "number",
-                  "description": "Layer radial thickness. Valid when layerMeasurementType = ESPESSURA.",
+                  "description": "Layer radial thickness. Valid when layerMeasurementType = THICKNESS.",
                   "unit": "m"
                 },
                 "discretization": {
@@ -1672,12 +1670,12 @@
             "description": "Production-duct inclination relative to horizontal axis. Valid for {initialConfig: {xyMode = false}}, which is the default.",
             "unit": "rad"
           },
-          "xCoord": {
+          "xCoor": {
             "type": "number",
             "description": "X coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
           },
-          "yCoord": {
+          "yCoor": {
             "type": "number",
             "description": "Y coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
@@ -1863,15 +1861,15 @@
           },
           "correctionFactorHydro": {
             "type": "integer",
-            "description": "Index of dPdLHidro vector element in 'correcao' object used as adjustment factor to correct hydrostatic pressure loss in this duct."
+            "description": "Index of correctionFactorHydro vector element in 'correction' object used as adjustment factor to correct hydrostatic pressure loss in this duct."
           },
           "correctionFactorFric": {
             "type": "integer",
-            "description": "Index of dPdLFric vector element in 'correcao' object used as adjustment factor to correct friction pressure loss in this duct."
+            "description": "Index of correctionFactorFric vector element in 'correction' object used as adjustment factor to correct friction pressure loss in this duct."
           },
           "correctionFactorTemp": {
             "type": "integer",
-            "description": "Index of dTdL vector element in 'correcao' object used as adjustment factor to correct temperature gradient in this duct."
+            "description": "Index of correctionFactorTemp vector element in 'correction' object used as adjustment factor to correct temperature gradient in this duct."
           },
           "diffusion2d": {
             "type": "integer",
@@ -2045,12 +2043,12 @@
             "description": "Service-duct inclination relative to horizontal axis. Valid for {initialConfig: {xyMode = false}}, which is the default.",
             "unit": "rad"
           },
-          "xCoord": {
+          "xCoor": {
             "type": "number",
             "description": "X coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
           },
-          "yCoord": {
+          "yCoor": {
             "type": "number",
             "description": "Y coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
@@ -2213,15 +2211,15 @@
           },
           "correctionFactorHydro": {
             "type": "integer",
-            "description": "Index of the dPdLHidro vector element in 'correcao' used as adjustment factor to correct hydrostatic pressure loss in this duct."
+            "description": "Index of the correctionFactorHydro vector element in 'correction' used as adjustment factor to correct hydrostatic pressure loss in this duct."
           },
           "correctionFactorFric": {
             "type": "integer",
-            "description": "Index of the dPdLFric vector element in 'correcao' used as adjustment factor to correct friction pressure loss in this duct."
+            "description": "Index of the correctionFactorFric vector element in 'correction' used as adjustment factor to correct friction pressure loss in this duct."
           },
           "correctionFactorTemp": {
             "type": "integer",
-            "description": "Index of the dTdL vector element in 'correcao' used as adjustment factor to correct temperature gradient in this duct."
+            "description": "Index of the correctionFactorTemp vector element in 'correction' used as adjustment factor to correct temperature gradient in this duct."
           }
         }
       }
@@ -2757,7 +2755,7 @@
               "unit": "s"
             }
           },
-          "ambientHoldup": {
+          "ambientFluidQuality": {
             "type": "number",
             "description": ""
           },
@@ -3101,7 +3099,7 @@
           "type": "boolean",
           "description": "In-situ mixture density (kg/m3)."
         },
-        "gasOilRatioStd": {
+        "SR": {
           "type": "boolean",
           "description": "In-situ solubility ratio (Sm3/Sm3)."
         },
@@ -3173,7 +3171,7 @@
           "type": "boolean",
           "description": "Volumetric BSW."
         },
-        "hydrostaticPressure": {
+        "hydrostaticPressureGradient": {
           "type": "boolean",
           "description": "Hydrostatic component of pressure loss (Pa/m)."
         },
@@ -3189,11 +3187,11 @@
           "type": "boolean",
           "description": "Mass-flow relation term 2 (for phase mass-flow consistency checks), kg/s."
         },
-        "downstreamGasDensity": {
+        "dissolvedGasDensity": {
           "type": "boolean",
           "description": "In-situ dissolved-gas density."
         },
-        "upstreamGasDensity": {
+        "freeGasDensity": {
           "type": "boolean",
           "description": "In-situ free-gas density."
         },
@@ -3229,7 +3227,7 @@
           "type": "boolean",
           "description": "External Prandtl number for atmospheric air, seawater, or annulus gas."
         },
-        "froudeNumber": {
+        "froude": {
           "type": "boolean",
           "description": "Froude number."
         },
@@ -3343,7 +3341,7 @@
           "type": "boolean",
           "description": "Heat flux between flow and wall (W/m)."
         },
-        "hydrostaticPressure": {
+        "hydrostaticPressureGradient": {
           "type": "boolean",
           "description": "Hydrostatic component of pressure loss (Pa/m)."
         },
@@ -3533,7 +3531,7 @@
             "type": "boolean",
             "description": "Volumetric BSW."
           },
-          "hydrostaticPressure": {
+          "hydrostaticPressureGradient": {
             "type": "boolean",
             "description": "Hydrostatic component of pressure loss (Pa/m)."
           },
@@ -3541,11 +3539,11 @@
             "type": "boolean",
             "description": "Friction component of pressure loss (Pa/m)."
           },
-          "downstreamGasDensity": {
+          "dissolvedGasDensity": {
             "type": "boolean",
             "description": "In-situ dissolved-gas density."
           },
-          "upstreamGasDensity": {
+          "freeGasDensity": {
             "type": "boolean",
             "description": "In-situ free-gas density."
           },
@@ -3581,11 +3579,11 @@
             "type": "boolean",
             "description": "External Prandtl number for atmospheric air, seawater, or annulus gas."
           },
-          "froudeNumber": {
+          "froude": {
             "type": "boolean",
             "description": "Froude number."
           },
-          "gasSolubility": {
+          "solubRatio": {
             "type": "boolean",
             "description": "In-situ solubility ratio (Sm3/Sm3)."
           },
@@ -3710,7 +3708,7 @@
             "type": "boolean",
             "description": "Gas mass flow rate (kg/s)."
           },
-          "hydrostaticPressure": {
+          "hydrostaticPressureGradient": {
             "type": "boolean",
             "description": "Hydrostatic component of pressure loss (Pa/m)."
           },
@@ -3782,7 +3780,7 @@
             "type": "boolean",
             "description": "External-fluid Prandtl number (atmospheric air, seawater, etc)."
           },
-          "froudeNumber": {
+          "froude": {
             "type": "boolean",
             "description": "Froude number."
           },
@@ -3942,7 +3940,7 @@
               4,
               5
             ],
-            "description": "If tubeColumn = true: 1 model indicator (includes liquid-density time-derivative terms), 2 temperature, 3 void fraction, 4 complementary-fluid fraction, 5 gas superficial velocity, 6 liquid superficial velocity. If tubeColumn = false: 1 pressure, 2 temperature, 3 gas velocity."
+            "description": "If tubing = true: 1 model indicator (includes liquid-density time-derivative terms), 2 temperature, 3 void fraction, 4 complementary-fluid fraction, 5 gas superficial velocity, 6 liquid superficial velocity. If tubing = false: 1 pressure, 2 temperature, 3 gas velocity."
           }
         }
       }

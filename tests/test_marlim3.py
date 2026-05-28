@@ -111,7 +111,7 @@ def separador():
 @pytest.fixture
 def vars_saida():
     """Variáveis de saída para perfis."""
-    nomes = ["pressure", "temperature", "holdup", "flowPattern", "frictionPressureGradient", "hydrostaticPressure"]
+    nomes = ["pressure", "temperature", "holdup", "flowPattern", "frictionPressureGradient", "hydrostaticPressureGradient"]
     return {"time": [0]} | {var: True for var in nomes}
 
 
@@ -232,7 +232,7 @@ class TestModelAssembly:
     def test_perfil_producao_vars(self, caso_horizontal):
         pp = caso_horizontal.productionProfile
         assert pp["time"] == [0]
-        for var in ["pressure", "temperature", "holdup", "flowPattern", "frictionPressureGradient", "hydrostaticPressure"]:
+        for var in ["pressure", "temperature", "holdup", "flowPattern", "frictionPressureGradient", "hydrostaticPressureGradient"]:
             assert pp[var] is True
 
     def test_length_total(self, caso_horizontal):

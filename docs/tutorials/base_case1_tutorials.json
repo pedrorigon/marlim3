@@ -257,7 +257,7 @@
     "holdup": true,
     "flowPattern": true,
     "frictionPressureGradient": true,
-    "hydrostaticPressure": true,
+    "hydrostaticPressureGradient": true,
     "stdLiqFlowRate": true
   }
 }

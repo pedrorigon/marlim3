@@ -1,7 +1,7 @@
 {
     "versao":  "1.0",
     "jsonVersion":  "1.3.9",
-    "system":  "MULTIFASICO",
+    "system":  "PROD",
     "initialConfig":  {
                           "gasLine":  true,
                           "screenPrint":  false,
@@ -1681,7 +1681,7 @@
                            "gasInSituDensity":  false,
                            "gasMassFlowRate":  false,
                            "shearStress":  false,
-                           "hydrostaticPressure":  false,
+                           "hydrostaticPressureGradient":  false,
                            "frictionPressureGradient":  false,
                            "heat":  false,
                            "stdGasFlowRate":  true,
@@ -1715,7 +1715,7 @@
                                 "dt":  10,
                                 "label":  "\u0027POSITION:\u0027 \u0027Poco_Tubing_fundo\u0027",
                                 "active":  true,
-                                "hydrostaticPressure":  true,
+                                "hydrostaticPressureGradient":  true,
                                 "pressure":  true,
                                 "temperature":  true
                             },
@@ -1736,7 +1736,7 @@
                       "dt":  10,
                       "label":  "\u0027POSITION:\u0027 \u0027Poco_Tubing_fundo\u0027",
                       "active":  true,
-                      "hydrostaticPressure":  true,
+                      "hydrostaticPressureGradient":  true,
                       "pressure":  true,
                       "temperature":  true
                   },

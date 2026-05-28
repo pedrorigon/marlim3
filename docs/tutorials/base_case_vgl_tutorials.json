@@ -1,6 +1,6 @@
 {
   "language": "en",
-  "system": "MULTIFASICO",
+  "system": "PROD",
   "jsonVersion": "1.3.9",
   "initialConfig": {
     "formation": {
@@ -463,7 +463,7 @@
     "holdup": true,
     "flowPattern": true,
     "frictionPressureGradient": true,
-    "hydrostaticPressure": true,
+    "hydrostaticPressureGradient": true,
     "stdLiqFlowRate": true
   },
   "serviceProfile": {
