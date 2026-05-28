@@ -141,7 +141,7 @@
                                          "boundaryCondition":  2,
                                          "salinity":  20.0,
                                          "injectionTemp":  40.0,
-                                         "liquidFlowRateSc":  1000.0,
+                                         "stdLiquidFlowRate":  1000.0,
                                          "injectionPressure":  33.91,
                                          "bottomholePressure":  339.0
                                      },
@@ -407,7 +407,7 @@
                              "outerDiameter":  0.12573,
                              "innerDiameter":  0.12573,
                              "roughness":  0.0001,
-                             "layer":  [
+                             "layers":  [
                                             {
                                                 "diameter":  0.1397,
                                                 "materialId":  0,
@@ -437,7 +437,7 @@
                              "outerDiameter":  0.12573,
                              "innerDiameter":  0.12573,
                              "roughness":  0.0001,
-                             "layer":  [
+                             "layers":  [
                                             {
                                                 "diameter":  0.1397,
                                                 "materialId":  0,
@@ -452,7 +452,7 @@
                              "outerDiameter":  0.1524,
                              "innerDiameter":  0.1524,
                              "roughness":  0.0001,
-                             "layer":  [
+                             "layers":  [
                                             {
                                                 "diameter":  0.1692,
                                                 "materialId":  3,
@@ -527,7 +527,7 @@
                              "outerDiameter":  0.1016,
                              "innerDiameter":  0.1016,
                              "roughness":  0.0001,
-                             "layer":  [
+                             "layers":  [
                                             {
                                                 "diameter":  0.1184,
                                                 "materialId":  3,
@@ -602,7 +602,7 @@
                              "outerDiameter":  0.216789,
                              "innerDiameter":  0.1397,
                              "roughness":  0.0001,
-                             "layer":  [
+                             "layers":  [
                                             {
                                                 "diameter":  0.244475,
                                                 "materialId":  0,
@@ -760,7 +760,7 @@
                                 "angle":  0.034907,
                                 "label":  "duto1a",
                                 "convectionDirection":  0,
-                                "ambientEnvironment":  0,
+                                "environment":  0,
                                 "thermalCoupling":  0,
                                 "discretization":  [
                                                        {

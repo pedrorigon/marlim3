@@ -116,17 +116,17 @@
           "default": true,
           "description": "If true, updates gas density (and other variables such as CO2 fraction) along the pipeline using mixing rules when streams merge."
         },
-        "freeGasDensityCorrection": {
+        "freeGasDensityCorrectionBO": {
           "type": "boolean",
           "default": false,
           "description": "If false, in-situ density is calculated from standard conditions. If true, in-situ deviation due to higher pressure is considered, which results in release of lighter hydrocarbons."
         },
-        "rspbTable": {
+        "srBpTable": {
           "type": "boolean",
           "default": false,
           "description": "Indicates pre-building a solubility-ratio (RS) table with a black-oil model before simulation start. This can improve performance, especially for Livia Fulchignoni's RS model, which is computationally expensive."
         },
-        "fluidProperties": {
+        "fluidProp": {
           "type": "integer",
           "default": 0,
           "enum": [
@@ -155,7 +155,7 @@
           "default": true,
           "description": "If true, the model considers slip in the transient solver."
         },
-        "flowRegimeMap": {
+        "flowPatternMap": {
           "type": "integer",
           "default": 0,
           "description": "Flow-pattern map type. 0: simplified Barnea; 1: full Barnea."
@@ -214,7 +214,7 @@
           "type": "object",
           "description": "Unloading control parameters (valid when dischargeControl == true).",
           "properties": {
-            "maxDischargeFlow": {
+            "maxDischargeFlowRate": {
               "type": "number",
               "unit": "sm3/d",
               "description": "Maximum liquid flow-rate limit at the valve, determined by erosional velocity criteria."
@@ -381,7 +381,7 @@
               "default": 0.1,
               "description": "Increment/decrement fraction applied to the objective-function input while searching for the second point in steady-state false-position solving. In scenarios with very high IPR values (common in pre-salt cases), reducing this value may help avoid numerical issues caused by excessively high rates. Valid for steady-state simulations."
             },
-            "neglectRate": {
+            "despressRate": {
               "type": "number",
               "default": 0.01,
               "unit": "kgf/(cm2.s)",
@@ -629,7 +629,7 @@
             }
           }
         },
-        "correlationsByRegime": {
+        "correlationsByPattern": {
           "type": "object",
           "description": "Slip correlations to be used for each flow pattern.",
           "properties": {
@@ -708,7 +708,7 @@
         }
       }
     },
-    "pvtTable": {
+    "compTable": {
       "type": "object",
       "description": "Parameters of pressureTable and gasTable, when requested in initialConfig.",
       "properties": {
@@ -754,7 +754,7 @@
           "type": "number",
           "description": "Gas relative density (ratio between gas density and air density, both at ambient conditions)."
         },
-        "co2Fraction": {
+        "CO2Fraction": {
           "type": "number",
           "description": "CO2 fraction.",
           "default": 0
@@ -862,14 +862,14 @@
               "type": "number"
             }
           },
-          "emulsionVect": {
+          "emulsionVec": {
             "type": "array",
             "description": "Vector of user-defined emulsion multipliers for emulsion model 6.",
             "items": {
               "type": "number"
             }
           },
-          "co2Fraction": {
+          "CO2Fraction": {
             "type": "number",
             "default": 0,
             "description": "CO2 molar fraction in the fluid. Valid for black-oil (and therefore also compositional, since black-oil is used to compute gas viscosity)."
@@ -884,7 +884,7 @@
             "default": 1,
             "description": "Correlation selector for gas critical pressure and temperature. Three correlations inherited from Marlim2 are available. Correlations 1 and 2 are more suitable for CO2-rich cases. Valid for black-oil (and therefore also compositional, since black-oil is used to compute gas viscosity)."
           },
-          "rsPbModel": {
+          "srBpModel": {
             "type": "integer",
             "default": 0,
             "enum": [
@@ -1018,12 +1018,12 @@
           "description": "Liquid density at standard conditions.",
           "unit": "kg/m3"
         },
-        "pressureCompressibility": {
+        "compressibility": {
           "type": "number",
           "description": "Liquid compressibility.",
           "unit": "1/Pa"
         },
-        "thermalCompressibility": {
+        "thermalExpansivity": {
           "type": "number",
           "description": "Liquid thermal expansivity.",
           "unit": "1/K"
@@ -1227,10 +1227,10 @@
             "description": "Measured length where the mass source is located in the production system.",
             "unit": "m"
           },
-          "termType": {
+          "thermType": {
             "type": "integer",
             "default": 0,
-            "description": "If 0, gas flow is calculated from thermodynamic equilibrium at in-situ conditions based on hydrocarbon flow (difference between totalMassFlowRate and complementaryMassFlowRate), similar to liquidSource behavior. If 1, free-gas inflow must be provided via massMassFlowGas."
+            "description": "If 0, gas flow is calculated from thermodynamic equilibrium at in-situ conditions based on hydrocarbon flow (difference between totalMassFlowRate and complementaryMassFlowRate), similar to liquidSource behavior. If 1, free-gas inflow must be provided via gasMassFlow."
           },
           "time": {
             "type": "array",
@@ -1265,7 +1265,7 @@
               "unit": "kg/s"
             }
           },
-          "massMassFlowGas": {
+          "gasMassFlow": {
             "type": "array",
             "description": "Gas mass flow rate of the source over time. Valid only when termType = 1.",
             "items": {
@@ -1402,7 +1402,7 @@
             "type": "boolean",
             "description": "Indicates whether the valve is active."
           },
-          "annularColumn": {
+          "annulusColumnFlag": {
             "type": "boolean",
             "default": true,
             "description": "If false, the user must provide service-line pressure-tap position in 'serviceMeasuredLength'. If true, this position is internally computed to be at the same elevation as the production-line pressure tap ('prodMeasuredLength')."
@@ -1418,7 +1418,7 @@
           },
           "serviceMeasuredLength": {
             "type": "number",
-            "description": "Measured length where the source (VGL) is located in the service line. Valid when annularColumn is false.",
+            "description": "Measured length where the source (VGL) is located in the service line. Valid when annulusColumnFlag is false.",
             "unit": "m"
           },
           "valveType": {
@@ -1553,7 +1553,7 @@
             "description": "Absolute roughness.",
             "unit": "m"
           },
-          "layer": {
+          "layers": {
             "type": "array",
             "description": "Each object in this array corresponds to a layer in the cross-section. Layers are assembled from inner to outer according to JSON order.",
             "items": {
@@ -1690,7 +1690,7 @@
             "type": "integer",
             "description": "ID of the formation with which the duct exchanges heat. If not informed, there is no formation; the duct then exchanges heat with thermally coupled fluid or with marine/air environment."
           },
-          "ambientEnvironment": {
+          "environment": {
             "type": "integer",
             "enum": [
               0,
@@ -1749,7 +1749,7 @@
               "unit": "m"
             }
           },
-          "cellsXY": {
+          "numCellsXY": {
             "type": "integer",
             "description": "Number of duct cells for initialConfig: {xyMode: true}."
           },
@@ -1916,7 +1916,7 @@
               "type": "string"
             }
           },
-          "initialConditionsAndAmbient": {
+          "initialAndAmbientConditions": {
             "type": "object",
             "description": "",
             "properties": {
@@ -2063,7 +2063,7 @@
             "type": "integer",
             "description": "ID of the formation with which the duct exchanges heat. If not informed, there is no formation; the duct exchanges heat only with thermally coupled fluid or marine/air environment."
           },
-          "ambientEnvironment": {
+          "environment": {
             "type": "integer",
             "enum": [
               0,
@@ -2121,7 +2121,7 @@
               "unit": "m"
             }
           },
-          "cellsXY": {
+          "numCellsXY": {
             "type": "integer",
             "description": "Number of duct cells for initialConfig: {xyMode: true}."
           },
@@ -2530,7 +2530,7 @@
             ],
             "description": "Defines gas compression process: 0 -> adiabatic, 1 -> polytropic, 2 -> isothermal."
           },
-          "polyCorrFactor": {
+          "polyFacOrAdiabConst": {
             "type": "number",
             "description": "If gasCompType==1, this is the polytropic factor; otherwise it is the adiabatic constant."
           },
@@ -2948,14 +2948,14 @@
             4,
             5
           ],
-          "description": "0: requires liquidFlowRateSc and IPR; 1: requires injectionPressure and IPR; 2: requires bottomholePressure and IPR; 3: requires injectionPressure and bottomholePressure; 4: requires liquidFlowRateSc and injectionPressure; 5: requires liquidFlowRateSc and bottomholePressure. All require injectionTemp."
+          "description": "0: requires stdLiquidFlowRate and IPR; 1: requires injectionPressure and IPR; 2: requires bottomholePressure and IPR; 3: requires injectionPressure and bottomholePressure; 4: requires stdLiquidFlowRate and injectionPressure; 5: requires stdLiquidFlowRate and bottomholePressure. All require injectionTemp."
         },
         "injectionTemp": {
           "type": "number",
           "unit": "degC",
           "description": "Injection temperature. Always required regardless of boundary-condition type."
         },
-        "liquidFlowRateSc": {
+        "stdLiquidFlowRate": {
           "type": "number",
           "unit": "sm3/d",
           "description": "Injection flow rate (required for boundaryCondition 0, 4, and 5). Name is historically liquid-oriented; gas injection is currently possible."
@@ -3121,7 +3121,7 @@
           "type": "boolean",
           "description": "Drift-flux slip velocity (m/s)."
         },
-        "gasOilRatioOut": {
+        "gasOilRatio": {
           "type": "boolean",
           "description": "Gas-oil ratio (sm3/sm3)."
         },
@@ -3149,7 +3149,7 @@
           "type": "boolean",
           "description": "Liquid specific heat at constant pressure (J/[kg C])."
         },
-        "stdLiqFlowRate": {
+        "stdLiquidFlowRate": {
           "type": "boolean",
           "description": "Standard volumetric flow rate of dead oil (Sm3/d)."
         },
@@ -3489,7 +3489,7 @@
             "type": "boolean",
             "description": "Drift-flux slip velocity (m/s)."
           },
-          "gasOilRatioOut": {
+          "gasOilRatio": {
             "type": "boolean",
             "description": "Gas-oil ratio (sm3/sm3)."
           },
@@ -3509,7 +3509,7 @@
             "type": "boolean",
             "description": "Interphase mass transfer (kg/[s m])."
           },
-          "stdLiqFlowRate": {
+          "stdLiquidFlowRate": {
             "type": "boolean",
             "description": "Standard volumetric flow rate of dead oil (Sm3/d)."
           },
@@ -3625,23 +3625,23 @@
             "type": "boolean",
             "description": "Pumping power (kW) at pump in discretization cell."
           },
-          "m1ProdUpstreamVol": {
+          "master1UpstreamVol": {
             "type": "boolean",
             "description": "In-situ liquid volume upstream of Master1 (m3)."
           },
-          "m1ProdDownstreamVol": {
+          "master1DownstreamVol": {
             "type": "boolean",
             "description": "In-situ liquid volume downstream of Master1 (m3)."
           },
-          "m1ServUpstreamVol": {
+          "master1UpstreamVolStd": {
             "type": "boolean",
             "description": "Standard liquid volume upstream of Master1 (sm3)."
           },
-          "m1ServDownstreamVol": {
+          "master1DownstreamVolStd": {
             "type": "boolean",
             "description": "Standard liquid volume downstream of Master1 (sm3)."
           },
-          "waveVelocity": {
+          "eigenVal": {
             "type": "boolean",
             "description": "Wave-family celerity (m/s) (important for advanced numerical debugging)."
           },

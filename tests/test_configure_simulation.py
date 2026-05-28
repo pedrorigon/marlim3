@@ -50,10 +50,10 @@ def caso_base_horizontal():
         "id": 0,
         "innerDiameter": 10 * 0.0254,
         "roughness": 0.183e-3,
-        "layer": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+        "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
     }]
     caso.productionPipe = [{
-        "id": 0, "crossSectionId": 0, "ambientEnvironment": 2, "angle": 0,
+        "id": 0, "crossSectionId": 0, "environment": 2, "angle": 0,
         "discretization": [{"numCells": 20, "length": 125.0}],
         "initialAndAmbientConditions": {"measuredPosition": [0, 1], "ambientTemp": [40, 20], "ambientVel": [0.5, 0.5]},
     }]

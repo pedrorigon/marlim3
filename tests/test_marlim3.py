@@ -58,7 +58,7 @@ def secao_transversal():
         "id": 0,
         "innerDiameter": 10 * 0.0254,
         "roughness": 0.183e-3,
-        "layer": [camada],
+        "layers": [camada],
     }
 
 
@@ -79,7 +79,7 @@ def duto_horizontal():
     return {
         "id": 0,
         "crossSectionId": 0,
-        "ambientEnvironment": 2,
+        "environment": 2,
         "angle": 0,
         "discretization": [linha],
         "initialAndAmbientConditions": condicoes_ambiente,
@@ -204,13 +204,13 @@ class TestModelAssembly:
         sec = caso_horizontal.crossSection[0]
         assert sec["innerDiameter"] == pytest.approx(10 * 0.0254)
         assert sec["roughness"] == pytest.approx(0.183e-3)
-        assert len(sec["layer"]) == 1
-        assert sec["layer"][0]["thickness"] == pytest.approx(0.0254)
+        assert len(sec["layers"]) == 1
+        assert sec["layers"][0]["thickness"] == pytest.approx(0.0254)
 
     def test_duto_horizontal(self, caso_horizontal):
         duto = caso_horizontal.productionPipe[0]
         assert duto["angle"] == 0
-        assert duto["ambientEnvironment"] == 2
+        assert duto["environment"] == 2
         assert duto["discretization"][0]["numCells"] == 20
         assert duto["discretization"][0]["length"] == pytest.approx(125.0)
 
@@ -325,10 +325,10 @@ class TestParameterVariation:
             "layerMeasurementType": "THICKNESS",
             "thickness": 0.05,
         }
-        c.crossSection[0]["layer"].append(camada_isolante)
-        assert len(c.crossSection[0]["layer"]) == 2
+        c.crossSection[0]["layers"].append(camada_isolante)
+        assert len(c.crossSection[0]["layers"]) == 2
         # Original não foi alterado
-        assert len(caso_horizontal.crossSection[0]["layer"]) == 1
+        assert len(caso_horizontal.crossSection[0]["layers"]) == 1
 
 
 # ============================================================================

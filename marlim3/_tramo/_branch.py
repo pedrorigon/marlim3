@@ -577,7 +577,7 @@ class Branch:
 
     def display_table(self, field):
         if field == 'crossSection':
-            cols = ['layer']
+            cols = ['layers']
             index_cols = None
         elif field in ('productionPipe', 'servicePipe'):
             cols = ['discretization', 'initialAndAmbientConditions']

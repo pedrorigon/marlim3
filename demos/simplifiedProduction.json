@@ -68,7 +68,7 @@
       "label": "Well cross-section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -100,7 +100,7 @@
       "label": "Flowline+riser cross-section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -120,7 +120,7 @@
       "label": "Well cross-section - uncoupled segment",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -134,7 +134,7 @@
       "label": "Flowline+riser cross-section [SERVICE]",
       "innerDiameter": 0.127,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -156,7 +156,7 @@
       "innerDiameter": 0.21589999999999998,
       "outerDiameter": 0.36829999999999996,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Casing steel layer",
           "materialId": 0,
@@ -213,7 +213,7 @@
       "id": 1,
       "label": "Flowline",
       "crossSectionId": 1,
-      "ambientEnvironment": 1,
+      "environment": 1,
       "angle": 0,
       "xCoor": 1000,
       "yCoor": 1000,
@@ -234,7 +234,7 @@
       "id": 2,
       "label": "Riser",
       "crossSectionId": 1,
-      "ambientEnvironment": 1,
+      "environment": 1,
       "angle": 1.5707963267948966,
       "xCoor": 1000,
       "yCoor": 2000,
@@ -257,7 +257,7 @@
       "id": 0,
       "label": "Riser [SERVICE]",
       "crossSectionId": 3,
-      "ambientEnvironment": 1,
+      "environment": 1,
       "angle": -1.5707963267948966,
       "xCoor": 0,
       "yCoor": -1000,
@@ -279,7 +279,7 @@
       "id": 1,
       "label": "Flowline [SERVICE]",
       "crossSectionId": 3,
-      "ambientEnvironment": 1,
+      "environment": 1,
       "angle": 0,
       "xCoor": -1000,
       "yCoor": -1000,

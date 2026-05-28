@@ -61,7 +61,7 @@
       "label": "Well section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -93,7 +93,7 @@
       "label": "Flowline + Riser section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layer": [
+      "layers": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -139,7 +139,7 @@
       "id": 1,
       "label": "Flowline",
       "crossSectionId": 1,
-      "ambientEnvironment": 1,
+      "environment": 1,
       "angle": 0,
       "discretization": [
         {
@@ -166,7 +166,7 @@
       "id": 2,
       "label": "Riser",
       "crossSectionId": 1,
-      "ambientEnvironment": 1,
+      "environment": 1,
       "angle": 1.5707963267948966,
       "discretization": [
         {
