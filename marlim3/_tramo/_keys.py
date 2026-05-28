@@ -5,529 +5,59 @@ the English key scheme before populating Branch attributes.
 
 The C++ engine handles the reverse direction (EN→PT) at simulation time
 when ``"language": "en"`` is present in the JSON.
+
+Both this module and the C++ JSONKeyTranslator load from the same
+source of truth: ``marlim3/translations.json``.
 """
+import json
+from pathlib import Path
+
+_TRANSLATIONS_FILE = Path(__file__).resolve().parent.parent / "translations.json"
+
+def _load_translations():
+    """Load translations.json and build the PT→EN maps."""
+    with open(_TRANSLATIONS_FILE, encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Invert EN→PT to get PT→EN.  For duplicate PT values (multiple EN keys
+    # mapping to the same PT key), keep the LAST one encountered — this gives
+    # inner/nested keys priority, matching the original hand-written dict order.
+    en_to_pt = data["keys"]
+    pt_to_en = {}
+    for en, pt in en_to_pt.items():
+        pt_to_en[pt] = en
+
+    # Legacy aliases: alternative Portuguese spellings accepted in old files.
+    pt_to_en["versaoJson"] = "jsonVersion"  # alternate casing of versaoJSON
+
+    # Identity overrides: abbreviated keys that are the same in both languages.
+    # The C++ translator maps longer EN names to these, but the Python side
+    # keeps them unchanged for backward compatibility with Branch attributes.
+    _IDENTITY_KEYS = [
+        "cdPig", "compP", "compT", "correlacoesPorArranjo",
+        "difusTerm3DFE", "fracTermMotorEfic", "mapaArranjo",
+        "tabG", "tabP", "taxaDespre", "xCoor", "yCoor",
+    ]
+    for k in _IDENTITY_KEYS:
+        pt_to_en[k] = k
+
+    # Invert value translations (C++ stores EN→PT values; Python needs PT→EN).
+    value_translations = {}
+    for en_key, mapping in data.get("values", {}).items():
+        # Find the corresponding PT key name.
+        pt_key = en_to_pt.get(en_key, en_key)
+        value_translations[pt_key] = {v: k for k, v in mapping.items()}
+
+    return pt_to_en, value_translations
+
 
 # ---------------------------------------------------------------------------
-# PT_TO_EN: flat map from Portuguese JSON key → English JSON key.
-# Language-neutral keys (ipr, pig, api, bsw, rho, ip, ii, etc.) are
-# intentionally omitted — they pass through unchanged.
+# Module-level maps (loaded once on import)
 # ---------------------------------------------------------------------------
-PT_TO_EN = {
-    # Root-level / top-level object keys
-    # Legacy alias kept for backward compatibility with existing inputs.
-    "sistema":              "system",
-    "versaoJson":           "jsonVersion",
-    "versaoJSON":           "jsonVersion",
-    "configuracaoInicial":  "initialConfig",
-    "tabela":               "compTable",
-    "correcao":             "correction",
-    "fluidosProducao":      "productionFluids",
-    "fluidoComplementar":   "complementaryFluid",
-    "fluidoGas":            "gasFluid",
-    "secaoTransversal":     "crossSection",
-    "dutosProducao":        "productionDucts",
-    "dutosServico":         "serviceDucts",
-    "hidrato":              "hydrate",
-    "fonteChoke":           "chokeSource",
-    "bombaVolumetrica":     "volumetricPump",
-    "deltaPressao":         "pressureDrop",
-    "fonteCalor":           "heatSource",
-    "master1":              "masterValve",
-    "master2":              "masterValve2",
-    "fontePressao":         "pressureSource",
-    "tendP":                "productionTrend",
-    "tendTransP":           "crossProductionTrend",
-    "tendS":                "serviceTrend",
-    "tendTransS":           "crossServiceTrend",
-    "tela":                 "screenConfig",
-    "gasInj":               "gasInj",
-    "perfilProducao":       "productionProfile",
-    "perfilServico":        "serviceProfile",
-    "perfisTransP":         "crossProductionProfiles",
-    "perfisTransS":         "crossServiceProfiles",
-    "separador":            "separator",
-    "chokeSup":             "surfaceChoke",
-    "chokeInj":             "injectionChoke",
-    "CondicaoContPocInjec": "injectionWellBC",
-    "intermitenciaSevera":  "severeSlugging",
-    "parafina":             "wax",
-    "valvula":              "valve",
-    "fonteLiquido":         "liquidSource",
-    "fonteMassa":           "massSource",
-    "fonteGas":             "gasSource",
-    "fontePoroRadial":      "porousRadialSource",
-    "fontePoro2D":          "porous2DSource",
-    "fonteGasLift":         "gasLiftSource",
-    "bcs":                  "esp",
-    "multibcs":             "multiEsp",
+PT_TO_EN, _VALUE_TRANSLATIONS = _load_translations()
 
-    # Shared keys (appear at multiple nesting levels)
-    "ativo":                "active",
-    # "tempo" as inner dict key maps to "time"; at root level it is handled
-    # separately via ROOT_PT_TO_EN (mapped to "timeSettings").
-    "tempo":                "time",
-    "temperatura":          "temperature",
-    "pressao":              "pressure",
-    "holdup":               "holdup",
-    "comprimentoMedido":    "measuredLength",
-    "abertura":             "opening",
-    "indiFluidoPro":        "prodFluidId",
-    "diametroExterno":      "outerDiameter",
-    "rugosidade":           "roughness",
-    "condutividade":        "conductivity",
-    "calorEspecifico":      "specificHeat",
-    "massaEspecifica":      "density",
-    "anular":               "annular",
-    "discretizacao":        "discretization",
-    "vazao":                "flowRate",
-    "frequencia":           "frequency",
-    "potencia":             "power",
-    "eficiencia":           "efficiency",
-    "nestag":               "stages",
-    "nestagFab":            "manufacturerStages",
-    "EficienciaMotor":      "motorEfficiency",
-    "FrequenciaMinima":     "minFrequency",
-    "freqref":              "referenceFreq",
-    "correcHI":             "hiCorrection",
-    "fracTermMotorEfic":    "fracTermMotorEfic",
-    "curva":                "curve",
-
-    # configuracaoInicial
-    "origemGeometria":      "geometryOrigin",
-    "saidaClassica":        "classicOutput",
-    "sentidoGeometriaSegueEscoamento": "geometryFollowsFlow",
-    "linhaGas":             "gasLine",
-    "saidaTela":            "screenPrint",
-    "equilibrioTermico":    "thermalEquilibrium",
-    "latente":              "latentHeat",
-    "condlatente":          "latentHeatCond",
-    "pvtsimArq":            "pvtFile",
-    "modeloFluidoTabelaFlash": "flashTableFluidModel",
-    "modeloFluidoComposicional": "compositionalFluidModel",
-    "modeloTabelaDinamica": "dynamicTableModel",
-    "modeloCp":             "cpModel",
-    "modeloJTL":            "jtlModel",
-    "tabP":                 "tabP",
-    "AS":                   "sensitivityAnalysis",
-    "paralelizaAS":         "parallelizeSA",
-    "trackRgo":             "trackGOR",
-    "trackDensidadeGas":    "trackGasDensity",
-    "correcaoDenGasLivreBlackOil": "freeGasDensityCorrectionBO",
-    "tabelaRSPB":           "srBpTable",
-    "propFluido":           "fluidProp",
-    "iniFluidoP":           "initialFluidId",
-    "tabG":                 "tabG",
-    "escorregamentoPermanente": "steadyStateSlip",
-    "escorregamentoTransiente": "transientSlip",
-    "mapaArranjo":          "mapaArranjo",
-    "condicaoInicial":      "initialCondition",
-    "ordemperm":            "steadyStateOrder",
-    "SnapShotArq":          "snapshotFile",
-    "HISEP":                "hisep",
-    "SalinidadeFluido":     "fluidSalinity",
-    "comprimentoMedidoInterfaceLinhaGas": "gasLineInterfaceLength",
-    "comprimentoMedidoInterfaceLinhaProd": "prodLineInterfaceLength",
-    "controleDescarga":     "dischargeControl",
-    "parametrosDescarga":   "dischargeParameters",
-    "transiente":           "transient",
-    "transferenciaMassa":   "massTransfer",
-    "CheckValve":           "checkValve",
-    "Avancado":             "advanced",
-    "condicaoPressao":      "pressureCondition",
-    "condicaoVazPres":      "flowPressureCondition",
-    "correlacoesEscorregamento": "slipCorrelations",
-    "correlacoesPorArranjo": "correlacoesPorArranjo",
-    "Formacao":             "formation",
-    "tipoFluido":           "fluidType",
-    "tempReves":            "reverseTemp",
-    "razCompGasReves":      "reverseGasRatio",
-    "chutePerm":            "steadyGuess",
-    "modoXY":               "xyMode",
-    "xProdInicio":          "xProdStart",
-    "yProdInicio":          "yProdStart",
-    "xServInicio":          "xServiceStart",
-    "yServInicio":          "yServiceStart",
-    "modoParafina":         "waxMode",
-    "tipoModeloDrift":      "driftModel",
-    "modoDifus3D":          "diffusion3dMode",
-    "threadP3D":            "diffusion3dThreads",
-    "modoDifus3DJson":      "diffusion3dJson",
-
-    # dischargeParameters sub-keys
-    "vazaoLimiteDescarga":  "maxDischargeFlow",
-    "pressaoLimiteDescarga": "maxDischargePressure",
-    "pressaoMinimaDescarga": "minDischargePressure",
-    "pressaoTrabalhoDescargaGas": "workGasChargePressure",
-    "pressaoLimiteDescargaGas": "maxGasChargePressure",
-    "pressaoMinimaDescargaGas": "minGasChargePressure",
-    "pressaoInicialDescargaGas": "initialGasChargePressure",
-    "temperaturaDescarga":  "dischargeTemperature",
-    "tempoLatencia":        "latencyTime",
-
-    # advanced sub-keys
-    "CriterioMonofasico":   "monophasicCriterion",
-    "CriterioCondensacao":  "condensationCriterion",
-    "CriterioDTMin":        "minTimestepCriterion",
-    "CriterioBuscaFalsaCorda": "falseCordSearchCriterion",
-    "taxaDespre":           "taxaDespre",
-    "MedSimpPresFront":     "simplePressureFrontier",
-    "JTLiquidoSimple":      "liquidJTSimple",
-    "limTransMass":         "massTransferLimit",
-    "RelaxaDTChoke":        "relaxChokeTimestep",
-    "desligaPenalizaDT":    "disablePenalizeTimestep",
-    "controleDTvalv":       "valveTimestepControl",
-    "CriterioConvergPerm":  "steadyConvergenceCriterion",
-    "AceleraConvergPerm":   "accelerateSteadyConvergence",
-    "escorregamentoCelulaContorno": "slipBoundaryCell",
-    "correcaoContracorPerm": "counterflowCorrectionSteady",
-    "estabCol":             "columnStabilization",
-    "TcorrecaoModComp":     "compModelCorrectionTime",
-    "correcaoModComp":      "compModelCorrectionFlag",
-    "desligaDeriTransMassDTemp": "disableMassTransferTempDeriv",
-    "corrigeContSep":       "correctSepCondition",
-    "acopColAnulPermForte": "strongAnnularColCoupling",
-    "mudaArea":             "areaChange",
-    "nthrd":                "threads",
-    "nthrdMatriz":          "matrixThreads",
-    "miniTabDinAtraso":     "dynTableMinDelay",
-    "miniTabDinDp":         "dynTableMinDp",
-    "miniTabDinDt":         "dynTableMinDt",
-    "Tsonico":              "sonicTimes",
-    "sonico":               "sonicFlags",
-
-    # pressureCondition / flowPressureCondition sub-keys
-    "indFluido":            "fluidId",
-    "titulo":               "fluidQuality",
-    "razaoBeta":            "betaRatio",
-    "VazMass":              "massFlowRate",
-
-    # correlationsByPattern sub-keys
-    "estratificado":        "stratified",
-    "bolhaGolfada":         "slugBubble",
-    "anularChurn":          "annularChurn",
-
-    # formation sub-keys
-    "Propriedades":         "properties",
-    "TempoProducao":        "productionTime",
-
-    # compTable (tabela) sub-keys
-    "nPontos":              "numPoints",
-    "pressaoMaxima":        "maxPressure",
-    "pressaoMinima":        "minPressure",
-    "temperaturaMaxima":    "maxTemperature",
-    "temperaturaMinima":    "minTemperature",
-
-    # timeSettings (tempo) sub-keys — NOTE: root-level "tempo" maps to
-    # "timeSettings" via ROOT_PT_TO_EN; these are the inner sub-keys.
-    "tempoFinal":           "finalTime",
-    "tempos":               "times",
-    "dtmax":                "maxTimestep",
-    "tempoSegrega":         "segregationTime",
-    "segrega":              "segregation",
-    "gravaMomento":         "saveSnapshot",
-
-    # productionFluids item
-    "rgo":                  "gor",
-    "densidadeGas":         "gasDensity",
-    "densidadeAgua":        "waterDensity",
-    "tipoEmul":             "emulsionType",
-    "coefAModeloExp":       "emulsionCoefA",
-    "coefBModeloExp":       "emulsionCoefB",
-    "PHI100":               "phi100",
-    "bswCorte":             "bswCut",
-    "BSWVec":               "bswVec",
-    "fracCO2":              "co2Fraction",
-    "correlacaoCritica":    "criticalCorrelation",
-    "modeloRsPb":           "srBpModel",
-    "modeloOleoMorto":      "deadOilModel",
-    "tempOleoMorto":        "deadOilTemps",
-    "viscOleoMorto":        "deadOilViscs",
-    "modeloOleoVivo":       "liveOilModel",
-    "modeloOleoSubSaturado": "undersaturatedOilModel",
-    "modeloViscBlackOil":   "blackOilViscModel",
-    "modeloAguaBlackOil":   "blackOilWaterModel",
-    "fracMolarUsuario":     "userMolarFraction",
-    "fracMolar":            "molarFraction",
-    "RGOCompUsuario":       "userGORComp",
-    "emulVec":              "emulsionVec",
-
-    # gasFluid sub-keys
-    "usaTabelaFlash":       "useFlashTable",
-
-    # complementaryFluid sub-keys
-    "compP":                "compP",
-    "compT":                "compT",
-    "tensup":               "surfaceTension",
-    "salinidade":           "salinity",
-    "tipoF":                "complementaryFluidType",
-    "ambienteGas":          "gasAmbient",
-
-    # material item
-    "tipo":                 "type",
-
-    # crossSection item and layers
-    "diametroInterno":      "innerDiameter",
-    "camadas":              "layers",
-    "tipoMedicaoCamada":    "layerMeasurementType",
-    "diametro":             "diameter",
-    "espessura":            "thickness",
-    "idMaterial":           "materialId",
-
-    # productionDucts / serviceDucts item
-    "correlacaoMR2":        "blackBoxCorrelation",
-    "angulo":               "angle",
-    "idCorte":              "crossSectionId",
-    "idFormacao":           "formationId",
-    "ambienteExterno":      "externalEnvironment",
-    "direcaoConveccao":     "convectionDirection",
-    "acoplamentoTermico":   "thermalCoupling",
-    "acoplamentoTermicoRedeParalela": "parallelNetworkThermalCoupling",
-    "agrupamento":          "grouping",
-    "dxCelula":             "cellDx",
-    "condicoesIniciais":    "initialConditions",
-    "condicoesIniciaisEAmbiente": "initialAndAmbientConditions",
-    "dPdLHidro":            "hydroGradient",
-    "dPdLFric":             "fricGradient",
-    "dTdL":                 "tempGradient",
-    "difusTerm2D":          "diffusion2d",
-    "difusTerm2DJSON":      "diffusion2dJson",
-    "difusTerm3D":          "diffusion3d",
-    "difusTerm3DFE":        "difusTerm3DFE",
-    "difusTerm3DAcop":      "diffusion3dCoupling",
-    "xCoor":                "xCoor",
-    "yCoor":                "yCoor",
-    "nCelulas_XY":          "numCellsXY",
-    "nCelulas":             "numCells",
-    "comprimento":          "length",
-
-    # initialAndAmbientConditions sub-keys
-    "compInter":            "measuredPositions",
-    "bet":                  "bet",
-    "uls":                  "superficialLiquidVel",
-    "ugs":                  "superficialGasVel",
-    "tempExterna":          "externalTemp",
-    "velExterna":           "externalVel",
-    "kExterna":             "externalConductivity",
-    "calorEspecificoExterno": "externalSpecificHeat",
-    "rhoExterno":           "externalDensity",
-    "viscExterna":          "externalVisc",
-    "vazaoMassicaGas":      "gasMassFlowRate",
-
-    # valve item
-    "curvaCV":              "cvCurve",
-    "curvaDinamic":         "dynamicCurve",
-
-    # gasSource item
-    "vazaoGas":             "gasFlowRate",
-    "vazaoFluidoComplementar": "complementaryFluidFlowRate",
-    "seco":                 "dry",
-
-    # liquidSource item
-    "vazaoLiquido":         "liquidFlowRate",
-
-    # massSource item
-    "tipoTermo":            "thermType",
-    "vazaoMassT":           "totalMassFlowRate",
-    "vazaoMassC":           "complementaryMassFlowRate",
-    "vazaoMassG":           "massMassFlowGas",
-
-    # gasLiftSource item
-    "colunaEanular":        "annularColumnFlag",
-    "comprimentoMedidoProducao": "prodMeasuredLength",
-    "comprimentoMedidoServico": "serviceMeasuredLength",
-    "tipoValvula":          "valveType",
-    "diametroOrificio":     "orificeDiameter",
-    "cdvgl":                "vglDischCoef",
-    "frecupera":            "recoveryFreq",
-    "cdvLiq":               "liquidDischCoef",
-    "frecuperaLiq":         "liquidRecoveryFreq",
-    "razaoArea":            "areaRatio",
-    "pressaoCalibracao":    "calibrationPressure",
-    "temperaturaCalibracao": "calibrationTemperature",
-
-    # porousRadialSource / porous2DSource
-    "arquivo":              "file",
-
-    # IPR item
-    "tipoIPR":              "iprType",
-    "pressaoEstatica":      "staticPressure",
-    "tempoPressaoEstatica": "staticPressureTime",
-    "tempoqMax":            "qMaxTime",
-    "temperaturas":         "temperatures",
-    "tempoTemperaturas":    "temperaturesTime",
-    "tempoip":              "ipTime",
-    "tempoii":              "iiTime",
-
-    # chokeSource
-    "coeficienteDescarga":  "dischargeCoefficient",
-    "modelo":               "model",
-
-    # pressureDrop item
-    "tipoCompGas":          "gasCompType",
-    "fatPoli":              "polyFacOrAdiabConst",
-    "eficLiq":              "liquidEfficiency",
-    "eficGas":              "gasEfficiency",
-
-    # heatSource
-    "calor":                "heat",
-
-    # masterValve
-    "razaoAreaAtiva":       "activeAreaRatio",
-
-    # pig item
-    "lancador":             "launcher",
-    "recebedor":            "receiver",
-    "folgaArea":            "areaGap",
-    "cdPig":                "cdPig",
-
-    # hydrate
-    "calculoInterno":       "internalCalc",
-    "modeloHidrato":        "hydrateModel",
-    "PropFluHidrato":       "hydrateFluidProps",
-    "ModeloTurner":         "TurnerModel",
-    "inibidor":             "inhibitor",
-    "fracFWcarregada":      "loadedWaterFraction",
-    "coefEsteq":            "stoichCoef",
-    "estruturaHidratos":    "hydrateStructure",
-    "tipoHmodel":           "hydrateModelType",
-
-    # wax (parafina)
-    "arquivoWax":           "waxFile",
-    "usuarioPorosidade":    "userPorosity",
-    "porosidade":           "porosity",
-    "usuarioC2C3":          "userC2C3",
-    "usuarioDifus":         "userDiffusion",
-    "alteraViscFlu":        "changeFluidVisc",
-    "difus":                "diffusivity",
-    "multVis":              "viscMultiplier",
-    "DmultipWax":           "waxMultD",
-    "EmultipWax":           "waxMultE",
-    "FmultipWax":           "waxMultF",
-
-    # volumetricPump
-    "capacidade":           "capacity",
-    "fatorpoli":            "polyFactor",
-
-    # ESP
-    "equilTerm":            "thermalEquilBcs",
-
-    # injectionWellBC (CondicaoContPocInjec)
-    "arquivoPvtsim":        "pvtsimFile",
-    "condContorno":         "boundaryCondition",
-    "tipoCC":               "bcType",
-    "presInjec":            "injectionPressure",
-    "pressaoInjecao":       "injectionPressures",
-    "chuteVazaoInjecao":    "initialFlowGuess",
-    "TipoAbertura":         "openingType",
-
-    # screenConfig (tela) item identifiers
-    "coluna":               "tubeColumn",
-    "celula":               "cellIndex",
-    "camada":               "layerIndex",
-    "variavel":             "outputVariable",
-    "rotulo":               "label",
-    "titAmb":               "ambientHoldup",
-    "tempoChk":             "chokeTime",
-
-    # Screen output boolean flags
-    "arra":                 "flowPattern",
-    "fric":                 "frictionPressure",
-    "hidro":                "hydrostaticPressure",
-    "cpgas":                "cpGas",
-    "cpliq":                "cpLiquid",
-    "masstrans":            "massTransferRate",
-    "mgFonte":              "sourceGasMassFlow",
-    "mlFonte":              "sourceLiqMassFlow",
-    "mcFonte":              "sourceCompMassFlow",
-    "autoVal":              "waveVelocity",
-    "autoVel":              "eigenVelocity",
-    "flutuacao":            "fluctuation",
-    "temperaturaAmbiente":  "ambientTemperature",
-    "yco2":                 "yCO2",
-    "RedutorAtrito":        "frictionReducer",
-    "Bo":                   "formationVolumeFactor",
-    "Froud":                "froudeNumber",
-    "GrashExterno":         "externalGrashof",
-    "GrashInterno":         "internalGrashof",
-    "Hext":                 "externalHeatCoef",
-    "Hint":                 "internalHeatCoef",
-    "NusselExterno":        "externalNusselt",
-    "NusselInterno":        "internalNusselt",
-    "PrandtlExterno":       "externalPrandtl",
-    "PrandtlGas":           "gasPrandtl",
-    "PrandtlInterno":       "internalPrandtl",
-    "PrandtlLiquido":       "liquidPrandtl",
-    "QGstd":                "stdGasFlowRate",
-    "QLWstd":               "stdLiqWaterFlowRate",
-    "QLstd":                "stdLiqFlowRate",
-    "QLstdTotal":           "stdTotalLiqFlowRate",
-    "RGO":                  "gasOilRatioOut",
-    "RS":                   "gasOilRatioStd",
-    "Rs":                   "solutionGasOilRatio",
-    "ReyExterno":           "externalReynolds",
-    "ReyInterno":           "internalReynolds",
-    "TResi":                "residenceTime",
-    "Term1":                "term1",
-    "Term2":                "term2",
-    "VelocidadeMaximaGarganta": "maxThroatVelocity",
-    "deng":                 "gasStdDensity",
-    "dengD":                "dissolvedGasDensity",
-    "dengL":                "freeGasDensity",
-    "deltaPBomba":          "pumpDeltaP",
-    "head":                 "pumpHead",
-    "potenciaBomba":        "pumpPower",
-    "presEstagVGL":         "vglStagePressure",
-    "presGargVGL":          "vglThroatPressure",
-    "presFundo":            "bottomholePressure",
-    "pseudoLiquido":        "pseudoLiquid",
-    "rhoMix":               "mixtureDensity",
-    "rhog":                 "gasInSituDensity",
-    "rhol":                 "liquidInSituDensity",
-    "tempChokeJusante":     "chokeDownstreamTemp",
-    "tempEstagVGL":         "vglStageTemp",
-    "tempGargVGL":          "vglThroatTemp",
-    "tempInj":              "injectionTemp",
-    "tensaoCisalhamento":   "shearStress",
-    "ud":                   "driftVelocity",
-    "ug":                   "gasVelocity",
-    "ul":                   "liquidVelocity",
-    "vazLiq":               "liquidFlowRateSc",
-    "vazaoMassicaLiquido":  "liquidMassFlowRate",
-    "vazaoVGL":             "vglFlowRate",
-    "viscosidadeGas":       "gasViscosity",
-    "viscosidadeLiquido":   "liquidViscosity",
-    "volJusM1PT":           "m1ProdDownstreamVol",
-    "volJusM1ST":           "m1ServDownstreamVol",
-    "volMonM1PT":           "m1ProdUpstreamVol",
-    "volMonM1ST":           "m1ServUpstreamVol",
-
-    # IPR extra
-    "indFluidoPro":         "prodFluidIndex",
-
-    # severeSlugging sub-keys
-    "inicioTrechoAcumula":  "accumStartLength",
-    "fimTrechoAcumula":     "accumEndLength",
-    "fimTrechoColuna":      "columnEndLength",
-    "fracaoVazioPenetracao": "voidFractionPenetration",
-    "criterio":             "criterion",
-}
-
-# ---------------------------------------------------------------------------
-# ROOT_PT_TO_EN: overrides for the root-level dict.
-# The key difference is "tempo" → "timeSettings" (not "time") at root level.
-# ---------------------------------------------------------------------------
+# ROOT_PT_TO_EN: at root level "tempo" → "timeSettings" (not "time").
 ROOT_PT_TO_EN = {**PT_TO_EN, "tempo": "timeSettings"}
-
-# ---------------------------------------------------------------------------
-# Value translations for specific Portuguese keys.
-# When loading a Portuguese JSON, certain string VALUES also need translation.
-# ---------------------------------------------------------------------------
-_VALUE_TRANSLATIONS = {
-    "tipoMedicaoCamada": {
-        "ESPESSURA": "THICKNESS",
-        "DIAMETRO":  "DIAMETER",
-    },
-}
 
 
 def translate(data, _root=False):

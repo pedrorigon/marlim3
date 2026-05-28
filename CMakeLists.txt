@@ -44,6 +44,16 @@ configure_file(
     @ONLY
 )
 
+# Auto-generate translations_data.h from translations.json.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/marlim3/translations.json")
+file(READ "${CMAKE_SOURCE_DIR}/marlim3/translations.json" TRANSLATIONS_JSON_CONTENT)
+configure_file(
+    ${INCDIR}/translations_data.h.in
+    ${INCDIR}/translations_data.h
+    @ONLY
+)
+
 file(GLOB CXX_SOURCES ${SRCDIR}/*.cpp)
 set(F90_SOURCES
     ${FSRCDIR}/Constants.f90
