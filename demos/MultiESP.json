@@ -146,7 +146,7 @@
                                      },
     "timeSettings":  {
                          "finalTime":  50001,
-                         "times":  [
+                         "timeArray":  [
                                        0,
                                        7000,
                                        7005,
@@ -157,7 +157,7 @@
                                        8050,
                                        8060
                                    ],
-                         "maxTimestep":  [
+                         "maxDT":  [
                                              4,
                                              4,
                                              4,
@@ -176,7 +176,7 @@
                      "maxTemperature":  200,
                      "minTemperature":  -100
                  },
-    "productionFluids":  [
+    "productionFluid":  [
                              {
                                  "id":  0,
                                  "api":  20,
@@ -189,7 +189,7 @@
                                  "temp2":  40.0,
                                  "visc2":  20.0,
                                  "emulsionType":  2,
-                                 "bswCut":  0.8,
+                                 "bswInversion":  0.8,
                                  "co2Fraction":  0.0,
                                  "criticalCorrelation":  0,
                                  "active":  true,
@@ -368,7 +368,7 @@
                              "outerDiameter":  0.12573,
                              "innerDiameter":  0.12573,
                              "roughness":  0.0001,
-                             "layers":  [
+                             "layer":  [
                                             {
                                                 "diameter":  0.1397,
                                                 "materialId":  0,
@@ -398,7 +398,7 @@
                              "outerDiameter":  0.12573,
                              "innerDiameter":  0.12573,
                              "roughness":  0.0001,
-                             "layers":  [
+                             "layer":  [
                                             {
                                                 "diameter":  0.1397,
                                                 "materialId":  0,
@@ -413,7 +413,7 @@
                              "outerDiameter":  0.1524,
                              "innerDiameter":  0.1524,
                              "roughness":  0.0001,
-                             "layers":  [
+                             "layer":  [
                                             {
                                                 "diameter":  0.1692,
                                                 "materialId":  3,
@@ -488,7 +488,7 @@
                              "outerDiameter":  0.1016,
                              "innerDiameter":  0.1016,
                              "roughness":  0.0001,
-                             "layers":  [
+                             "layer":  [
                                             {
                                                 "diameter":  0.1184,
                                                 "materialId":  3,
@@ -563,7 +563,7 @@
                              "outerDiameter":  0.216789,
                              "innerDiameter":  0.1397,
                              "roughness":  0.0001,
-                             "layers":  [
+                             "layer":  [
                                             {
                                                 "diameter":  0.244475,
                                                 "materialId":  0,
@@ -577,7 +577,7 @@
                                         ]
                          }
                      ],
-    "productionDucts":  [
+    "productionPipe":  [
                             {
                                 "id":  0,
                                 "crossSectionId":  0,
@@ -593,7 +593,7 @@
                                                        }
                                                    ],
                                 "initialConditions":  {
-                                                          "measuredPositions":  [
+                                                          "measuredPosition":  [
                                                                                     0.0,
                                                                                     1.0
                                                                                 ],
@@ -609,39 +609,39 @@
                                                                          1.0,
                                                                          1.0
                                                                      ],
-                                                          "bet":  [
+                                                          "complementaryFluidFraction":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
-                                                          "superficialLiquidVel":  [
+                                                          "usl":  [
                                                                                        0.0,
                                                                                        0.0
                                                                                    ],
-                                                          "superficialGasVel":  [
+                                                          "usg":  [
                                                                                     0.0,
                                                                                     0.0
                                                                                 ],
-                                                          "externalTemp":  [
+                                                          "ambientTemp":  [
                                                                                70.0,
                                                                                64.72
                                                                            ],
-                                                          "externalVel":  [
+                                                          "ambientVel":  [
                                                                               100.0,
                                                                               100.0
                                                                           ],
-                                                          "externalConductivity":  [
+                                                          "ambientConductivity":  [
                                                                                        0.322453,
                                                                                        0.321938
                                                                                    ],
-                                                          "externalSpecificHeat":  [
+                                                          "ambientSpecificHeat":  [
                                                                                        4182,
                                                                                        4182
                                                                                    ],
-                                                          "externalDensity":  [
+                                                          "ambientDensity":  [
                                                                                   1000.0,
                                                                                   1000.0
                                                                               ],
-                                                          "externalVisc":  [
+                                                          "ambientVisc":  [
                                                                                0.001,
                                                                                0.001
                                                                            ]
@@ -662,7 +662,7 @@
                                                        }
                                                    ],
                                 "initialConditions":  {
-                                                          "measuredPositions":  [
+                                                          "measuredPosition":  [
                                                                                     0.0,
                                                                                     1.0
                                                                                 ],
@@ -678,39 +678,39 @@
                                                                          1.0,
                                                                          1.0
                                                                      ],
-                                                          "bet":  [
+                                                          "complementaryFluidFraction":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
-                                                          "superficialLiquidVel":  [
+                                                          "usl":  [
                                                                                        0.0,
                                                                                        0.0
                                                                                    ],
-                                                          "superficialGasVel":  [
+                                                          "usg":  [
                                                                                     0.0,
                                                                                     0.0
                                                                                 ],
-                                                          "externalTemp":  [
+                                                          "ambientTemp":  [
                                                                                64.72,
                                                                                4.66
                                                                            ],
-                                                          "externalVel":  [
+                                                          "ambientVel":  [
                                                                               100.0,
                                                                               100.0
                                                                           ],
-                                                          "externalConductivity":  [
+                                                          "ambientConductivity":  [
                                                                                        0.321938,
                                                                                        0.305502
                                                                                    ],
-                                                          "externalSpecificHeat":  [
+                                                          "ambientSpecificHeat":  [
                                                                                        4182.0,
                                                                                        4182.0
                                                                                    ],
-                                                          "externalDensity":  [
+                                                          "ambientDensity":  [
                                                                                   1000.0,
                                                                                   1000.0
                                                                               ],
-                                                          "externalVisc":  [
+                                                          "ambientVisc":  [
                                                                                0.001,
                                                                                0.001
                                                                            ]
@@ -730,7 +730,7 @@
                                                        }
                                                    ],
                                 "initialConditions":  {
-                                                          "measuredPositions":  [
+                                                          "measuredPosition":  [
                                                                                     0.0,
                                                                                     1.0
                                                                                 ],
@@ -746,39 +746,39 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "bet":  [
+                                                          "complementaryFluidFraction":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
-                                                          "superficialLiquidVel":  [
+                                                          "usl":  [
                                                                                        0.0,
                                                                                        0.0
                                                                                    ],
-                                                          "superficialGasVel":  [
+                                                          "usg":  [
                                                                                     0.0,
                                                                                     0.0
                                                                                 ],
-                                                          "externalTemp":  [
+                                                          "ambientTemp":  [
                                                                                4.0,
                                                                                4.0
                                                                            ],
-                                                          "externalVel":  [
+                                                          "ambientVel":  [
                                                                               0.2,
                                                                               0.2
                                                                           ],
-                                                          "externalConductivity":  [
+                                                          "ambientConductivity":  [
                                                                                        0.305284,
                                                                                        0.305284
                                                                                    ],
-                                                          "externalSpecificHeat":  [
+                                                          "ambientSpecificHeat":  [
                                                                                        4182.0,
                                                                                        4182.0
                                                                                    ],
-                                                          "externalDensity":  [
+                                                          "ambientDensity":  [
                                                                                   1000.0,
                                                                                   1000.0
                                                                               ],
-                                                          "externalVisc":  [
+                                                          "ambientVisc":  [
                                                                                0.001,
                                                                                0.001
                                                                            ]
@@ -798,7 +798,7 @@
                                                        }
                                                    ],
                                 "initialConditions":  {
-                                                          "measuredPositions":  [
+                                                          "measuredPosition":  [
                                                                                     0.0,
                                                                                     1.0
                                                                                 ],
@@ -814,39 +814,39 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "bet":  [
+                                                          "complementaryFluidFraction":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
-                                                          "superficialLiquidVel":  [
+                                                          "usl":  [
                                                                                        0.0,
                                                                                        0.0
                                                                                    ],
-                                                          "superficialGasVel":  [
+                                                          "usg":  [
                                                                                     0.0,
                                                                                     0.0
                                                                                 ],
-                                                          "externalTemp":  [
+                                                          "ambientTemp":  [
                                                                                4.00,
                                                                                4.00
                                                                            ],
-                                                          "externalVel":  [
+                                                          "ambientVel":  [
                                                                               0.2,
                                                                               0.2
                                                                           ],
-                                                          "externalConductivity":  [
+                                                          "ambientConductivity":  [
                                                                                        0.305284,
                                                                                        0.305284
                                                                                    ],
-                                                          "externalSpecificHeat":  [
+                                                          "ambientSpecificHeat":  [
                                                                                        4182.0,
                                                                                        4182.0
                                                                                    ],
-                                                          "externalDensity":  [
+                                                          "ambientDensity":  [
                                                                                   1000.0,
                                                                                   1000.0
                                                                               ],
-                                                          "externalVisc":  [
+                                                          "ambientVisc":  [
                                                                                0.001,
                                                                                0.001
                                                                            ]
@@ -866,7 +866,7 @@
                                                        }
                                                    ],
                                 "initialConditions":  {
-                                                          "measuredPositions":  [
+                                                          "measuredPosition":  [
                                                                                     0.0,
                                                                                     1.0
                                                                                 ],
@@ -882,39 +882,39 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "bet":  [
+                                                          "complementaryFluidFraction":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
-                                                          "superficialLiquidVel":  [
+                                                          "usl":  [
                                                                                        0.0,
                                                                                        0.0
                                                                                    ],
-                                                          "superficialGasVel":  [
+                                                          "usg":  [
                                                                                     0.0,
                                                                                     0.0
                                                                                 ],
-                                                          "externalTemp":  [
+                                                          "ambientTemp":  [
                                                                                4.00,
                                                                                4.00
                                                                            ],
-                                                          "externalVel":  [
+                                                          "ambientVel":  [
                                                                               0.2,
                                                                               0.2
                                                                           ],
-                                                          "externalConductivity":  [
+                                                          "ambientConductivity":  [
                                                                                        0.305284,
                                                                                        0.305284
                                                                                    ],
-                                                          "externalSpecificHeat":  [
+                                                          "ambientSpecificHeat":  [
                                                                                        4182.0,
                                                                                        4182.0
                                                                                    ],
-                                                          "externalDensity":  [
+                                                          "ambientDensity":  [
                                                                                   1000.0,
                                                                                   1000.0
                                                                               ],
-                                                          "externalVisc":  [
+                                                          "ambientVisc":  [
                                                                                0.001,
                                                                                0.001
                                                                            ]
@@ -934,7 +934,7 @@
                                                        }
                                                    ],
                                 "initialConditions":  {
-                                                          "measuredPositions":  [
+                                                          "measuredPosition":  [
                                                                                     0.0,
                                                                                     1.0
                                                                                 ],
@@ -950,46 +950,46 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "bet":  [
+                                                          "complementaryFluidFraction":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
-                                                          "superficialLiquidVel":  [
+                                                          "usl":  [
                                                                                        0.0,
                                                                                        0.0
                                                                                    ],
-                                                          "superficialGasVel":  [
+                                                          "usg":  [
                                                                                     0.0,
                                                                                     0.0
                                                                                 ],
-                                                          "externalTemp":  [
+                                                          "ambientTemp":  [
                                                                                4.00,
                                                                                25.00
                                                                            ],
-                                                          "externalVel":  [
+                                                          "ambientVel":  [
                                                                               0.4,
                                                                               0.4
                                                                           ],
-                                                          "externalConductivity":  [
+                                                          "ambientConductivity":  [
                                                                                        0.305284,
                                                                                        0.305284
                                                                                    ],
-                                                          "externalSpecificHeat":  [
+                                                          "ambientSpecificHeat":  [
                                                                                        4182.0,
                                                                                        4182.0
                                                                                    ],
-                                                          "externalDensity":  [
+                                                          "ambientDensity":  [
                                                                                   1000.0,
                                                                                   1000.0
                                                                               ],
-                                                          "externalVisc":  [
+                                                          "ambientVisc":  [
                                                                                0.001,
                                                                                0.001
                                                                            ]
                                                       }
                             }
                         ],
-    "serviceDucts":  [
+    "servicePipe":  [
 
                      ],
     "ipr":  [
@@ -1002,7 +1002,7 @@
                     "staticPressureTime":  [
                                                0.0
                                            ],
-                    "temperatures":  [
+                    "temperatureArray":  [
                                          70.0
                                      ],
                     "temperaturesTime":  [
@@ -1083,7 +1083,7 @@
                                        50
                                    ],
                     "referenceFreq":  60,
-                    "stages":  60,
+                    "stage":  60,
                     "motorEfficiency":  85,
                     "active":  false
                 }
@@ -1094,7 +1094,7 @@
                          "measuredLength":  2000.0,
                          "motorEfficiency":  85,
                          "referenceFreq":  60,
-                         "thermalEquilBcs":  false,
+                         "thermalEquilEsp":  false,
                          "active":  true,
                          "timeSettings":  [
                                               0,
@@ -1148,7 +1148,7 @@
                                                               64,
                                                               50
                                                           ],
-                                           "stages":  60
+                                           "stage":  60
                                        }
                                    ]
                      }
@@ -1233,11 +1233,11 @@
                               "pressure":  true,
                               "temperature":  true,
                               "holdup":  true,
-                              "bet":  true,
-                              "superficialGasVel":  true,
-                              "superficialLiquidVel":  true,
-                              "gasVelocity":  false,
-                              "liquidVelocity":  false,
+                              "complementaryFluidFraction":  true,
+                              "usg":  true,
+                              "usl":  true,
+                              "ug":  false,
+                              "ul":  false,
                               "flowPattern":  true,
                               "liquidViscosity":  false,
                               "gasViscosity":  false,
@@ -1296,14 +1296,14 @@
     "serviceProfile":  {
                            "pressure":  true,
                            "temperature":  true,
-                           "superficialGasVel":  true,
-                           "gasVelocity":  false,
+                           "usg":  true,
+                           "ug":  false,
                            "gasViscosity":  false,
                            "gasInSituDensity":  false,
                            "gasMassFlowRate":  false,
                            "shearStress":  false,
                            "hydrostaticPressure":  false,
-                           "frictionPressure":  false,
+                           "frictionPressureGradient":  false,
                            "heat":  false,
                            "stdGasFlowRate":  true,
                            "timeSettings":  [
@@ -1338,11 +1338,11 @@
                                 "pressure":  true,
                                 "temperature":  true,
                                 "holdup":  true,
-                                "bet":  true,
-                                "superficialGasVel":  true,
-                                "superficialLiquidVel":  true,
-                                "gasVelocity":  false,
-                                "liquidVelocity":  false,
+                                "complementaryFluidFraction":  true,
+                                "usg":  true,
+                                "usl":  true,
+                                "ug":  false,
+                                "ul":  false,
                                 "flowPattern":  true,
                                 "liquidViscosity":  false,
                                 "gasViscosity":  false,
@@ -1371,11 +1371,11 @@
                                 "pressure":  true,
                                 "temperature":  true,
                                 "holdup":  true,
-                                "bet":  true,
-                                "superficialGasVel":  true,
-                                "superficialLiquidVel":  true,
-                                "gasVelocity":  false,
-                                "liquidVelocity":  false,
+                                "complementaryFluidFraction":  true,
+                                "usg":  true,
+                                "usl":  true,
+                                "ug":  false,
+                                "ul":  false,
                                 "flowPattern":  true,
                                 "liquidViscosity":  false,
                                 "gasViscosity":  false,
@@ -1404,11 +1404,11 @@
                                 "pressure":  true,
                                 "temperature":  true,
                                 "holdup":  true,
-                                "bet":  true,
-                                "superficialGasVel":  true,
-                                "superficialLiquidVel":  true,
-                                "gasVelocity":  false,
-                                "liquidVelocity":  false,
+                                "complementaryFluidFraction":  true,
+                                "usg":  true,
+                                "usl":  true,
+                                "ug":  false,
+                                "ul":  false,
                                 "flowPattern":  true,
                                 "liquidViscosity":  false,
                                 "gasViscosity":  false,
@@ -1433,17 +1433,17 @@
                         ],
     "screenConfig":  [
                          {
-                             "tubeColumn":  true,
+                             "tubing":  true,
                              "cellIndex":  0,
                              "outputVariable":  1
                          },
                          {
-                             "tubeColumn":  true,
+                             "tubing":  true,
                              "cellIndex":  249,
                              "outputVariable":  3
                          },
                          {
-                             "tubeColumn":  true,
+                             "tubing":  true,
                              "cellIndex":  249,
                              "outputVariable":  1
                          }

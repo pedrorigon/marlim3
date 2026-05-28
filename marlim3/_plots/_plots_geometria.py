@@ -36,7 +36,7 @@ def _plotar_geometria(tramo):
     y_coords_prod = [0]  # Coordenada Y inicial para dutos de produção
     tooltips_prod = []  # Tooltip para dutos de produção
 
-    if tramo.serviceDucts:
+    if tramo.servicePipe:
         x_coords_serv = []  # Coordenada X inicial para dutos de serviço
         y_coords_serv = []  # Coordenada Y inicial para dutos de serviço
         tooltips_serv = []  # Tooltip para dutos de serviço
@@ -56,11 +56,11 @@ def _plotar_geometria(tramo):
     # - For geometry plotting, we reverse ducts to traverse reservoir→platform
     # - The -dx convention in service already mirrors the x-direction
     if segue_escoamento:
-        dutos_prod_plot = tramo.productionDucts
+        dutos_prod_plot = tramo.productionPipe
         angle_offset_prod = 0.0
         angle_offset_serv = 0.0
     else:
-        dutos_prod_plot = list(reversed(tramo.productionDucts))
+        dutos_prod_plot = list(reversed(tramo.productionPipe))
         angle_offset_prod = 0.0
         angle_offset_serv = 0.0
 
@@ -91,7 +91,7 @@ def _plotar_geometria(tramo):
     platform_x = x_coords_prod[-1]
     platform_y = y_coords_prod[-1]
 
-    if tramo.serviceDucts:
+    if tramo.servicePipe:
         # Coordenadas iniciais para os dutos de serviço
         # (começam na plataforma)
         x_coords_serv.append(platform_x)
@@ -100,8 +100,8 @@ def _plotar_geometria(tramo):
     # Processando dutos de serviço
     # Service flows platform→reservoir; when geometryFollowsFlow=false, duct 0
     # is already at the platform (our starting point), so no reversal needed.
-    if tramo.serviceDucts:
-        dutos_serv_plot = tramo.serviceDucts
+    if tramo.servicePipe:
+        dutos_serv_plot = tramo.servicePipe
         for idx, duto in enumerate(dutos_serv_plot):
             if modo_xy and (_g(duto, "xCoor") is not None) and (_g(duto, "yCoor") is not None):
                 if idx == 0:
@@ -146,7 +146,7 @@ def _plotar_geometria(tramo):
     ))
 
     # Adicionando os dutos de serviço
-    if tramo.serviceDucts:
+    if tramo.servicePipe:
         fig.add_trace(go.Scatter(
             x=x_coords_serv,
             y=y_coords_serv,

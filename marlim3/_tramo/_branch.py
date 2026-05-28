@@ -32,6 +32,7 @@ from .._plots._plots_geometria import _plotar_geometria
 from ._keys import translate as _translate_pt_to_en
 
 
+
 def _is_empty(d):
     return all(v is None or v == {} for v in d.values())
 
@@ -60,13 +61,13 @@ class Branch:
                  compTable=None,
                  timeSettings=None,
                  correction=None,
-                 productionFluids=None,
+                 productionFluid=None,
                  complementaryFluid=None,
                  gasFluid=None,
                  material=None,
                  crossSection=None,
-                 productionDucts=None,
-                 serviceDucts=None,
+                 productionPipe=None,
+                 servicePipe=None,
                  separator=None,
                  gasInj=None,
                  injectionWellBC=None,
@@ -92,8 +93,8 @@ class Branch:
                  serviceProfile=None,
                  productionTrend=None,
                  serviceTrend=None,
-                 crossProductionProfiles=None,
-                 crossServiceProfiles=None,
+                 crossProductionProfile=None,
+                 crossServiceProfile=None,
                  crossProductionTrend=None,
                  crossServiceTrend=None,
                  screenConfig=None,
@@ -108,14 +109,14 @@ class Branch:
         self.timeSettings   = timeSettings
         self.correction     = correction
 
-        self.productionFluids   = productionFluids   if productionFluids   is not None else []
+        self.productionFluid    = productionFluid   if productionFluid   is not None else []
         self.complementaryFluid = complementaryFluid
         self.gasFluid           = gasFluid
 
         self.material        = material        if material        is not None else []
         self.crossSection    = crossSection    if crossSection    is not None else []
-        self.productionDucts = productionDucts if productionDucts is not None else []
-        self.serviceDucts    = serviceDucts    if serviceDucts    is not None else []
+        self.productionPipe  = productionPipe  if productionPipe  is not None else []
+        self.servicePipe     = servicePipe     if servicePipe     is not None else []
 
         self.separator       = separator
         self.gasInj          = gasInj
@@ -145,8 +146,8 @@ class Branch:
         self.serviceProfile          = serviceProfile          if serviceProfile          is not None else {}
         self.productionTrend         = productionTrend         if productionTrend         is not None else []
         self.serviceTrend            = serviceTrend            if serviceTrend            is not None else []
-        self.crossProductionProfiles = crossProductionProfiles if crossProductionProfiles is not None else {}
-        self.crossServiceProfiles    = crossServiceProfiles    if crossServiceProfiles    is not None else {}
+        self.crossProductionProfile  = crossProductionProfile  if crossProductionProfile  is not None else {}
+        self.crossServiceProfile     = crossServiceProfile     if crossServiceProfile     is not None else {}
         self.crossProductionTrend    = crossProductionTrend    if crossProductionTrend    is not None else []
         self.crossServiceTrend       = crossServiceTrend       if crossServiceTrend       is not None else []
         self.screenConfig               = screenConfig               if screenConfig               is not None else []
@@ -218,14 +219,14 @@ class Branch:
         self.timeSettings    = d.get('timeSettings')
         self.correction      = d.get('correction')
 
-        self.productionFluids   = d.get('productionFluids',   [])
+        self.productionFluid    = d.get('productionFluid',   [])
         self.complementaryFluid = d.get('complementaryFluid')
         self.gasFluid           = d.get('gasFluid')
 
         self.material        = d.get('material',       [])
         self.crossSection    = d.get('crossSection',   [])
-        self.productionDucts = d.get('productionDucts', [])
-        self.serviceDucts    = d.get('serviceDucts',   [])
+        self.productionPipe  = d.get('productionPipe', [])
+        self.servicePipe     = d.get('servicePipe',   [])
 
         self.separator       = d.get('separator')
         self.gasInj          = d.get('gasInj')
@@ -256,8 +257,8 @@ class Branch:
         self.serviceProfile            = d.get('serviceProfile')
         self.productionTrend           = d.get('productionTrend')
         self.serviceTrend              = d.get('serviceTrend')
-        self.crossProductionProfiles   = d.get('crossProductionProfiles')
-        self.crossServiceProfiles      = d.get('crossServiceProfiles')
+        self.crossProductionProfile    = d.get('crossProductionProfile')
+        self.crossServiceProfile       = d.get('crossServiceProfile')
         self.crossProductionTrend      = d.get('crossProductionTrend')
         self.crossServiceTrend         = d.get('crossServiceTrend')
         self.screenConfig               = d.get('screenConfig')
@@ -576,11 +577,11 @@ class Branch:
 
     def display_table(self, field):
         if field == 'crossSection':
-            cols = ['layers']
+            cols = ['layer']
             index_cols = None
-        elif field in ('productionDucts', 'serviceDucts'):
+        elif field in ('productionPipe', 'servicePipe'):
             cols = ['discretization', 'initialAndAmbientConditions']
-            index_cols = [None, 'measuredPositions']
+            index_cols = [None, 'measuredPosition']
         else:
             cols = None
             index_cols = None

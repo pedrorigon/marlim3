@@ -40,7 +40,7 @@ skip_sem_executavel = pytest.mark.skipif(
 @pytest.fixture
 def caso_base_horizontal():
     caso = marlim3.Branch()
-    caso.productionFluids = [{
+    caso.productionFluid = [{
         "id": 0, "api": 32, "gor": 100, "gasDensity": 0.7, "bsw": 0.0,
     }]
     caso.material = [{
@@ -50,12 +50,12 @@ def caso_base_horizontal():
         "id": 0,
         "innerDiameter": 10 * 0.0254,
         "roughness": 0.183e-3,
-        "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+        "layer": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
     }]
-    caso.productionDucts = [{
-        "id": 0, "crossSectionId": 0, "externalEnvironment": 2, "angle": 0,
+    caso.productionPipe = [{
+        "id": 0, "crossSectionId": 0, "ambientEnvironment": 2, "angle": 0,
         "discretization": [{"numCells": 20, "length": 125.0}],
-        "initialAndAmbientConditions": {"measuredPositions": [0, 1], "externalTemp": [40, 20], "externalVel": [0.5, 0.5]},
+        "initialAndAmbientConditions": {"measuredPosition": [0, 1], "ambientTemp": [40, 20], "ambientVel": [0.5, 0.5]},
     }]
     caso.liquidSource = [{
         "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
@@ -64,7 +64,7 @@ def caso_base_horizontal():
     caso.separator = {"time": [0], "pressure": [2]}
     caso.productionProfile = {
         "time": [0], "pressure": True, "temperature": True,
-        "holdup": True, "flowPattern": True, "frictionPressure": True, "hydrostaticPressure": True,
+        "holdup": True, "flowPattern": True, "frictionPressureGradient": True, "hydrostaticPressure": True,
     }
     return caso
 
@@ -72,7 +72,7 @@ def caso_base_horizontal():
 @pytest.fixture
 def caso_base_vertical(caso_base_horizontal):
     caso = copy.deepcopy(caso_base_horizontal)
-    caso.productionDucts[0]["angle"] = np.pi / 2
+    caso.productionPipe[0]["angle"] = np.pi / 2
     return caso
 
 
