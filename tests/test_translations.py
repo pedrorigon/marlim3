@@ -52,22 +52,18 @@ def test_no_duplicate_en_keys(translations):
 
 
 def test_known_duplicate_pt_values(translations):
-    """Known PT values that map from multiple EN keys are documented."""
+    """No PT values should map from multiple EN keys (ambiguities removed)."""
     from collections import Counter
     pt_values = list(translations["keys"].values())
     counts = Counter(pt_values)
     duplicates = {k: v for k, v in counts.items() if v > 1}
-    # Known acceptable many-to-one mappings:
-    known = {"tempo", "deltaPressao", "variavel"}
-    unexpected = set(duplicates.keys()) - known
-    assert not unexpected, f"Unexpected duplicate PT values: {unexpected}"
+    assert not duplicates, f"Unexpected duplicate PT values: {duplicates}"
 
 
 def test_python_keys_load_from_json():
     """Python _keys.py successfully loads and inverts translations.json."""
-    from marlim3._tramo._keys import PT_TO_EN, ROOT_PT_TO_EN
+    from marlim3._tramo._keys import PT_TO_EN
     assert len(PT_TO_EN) > 400
-    assert ROOT_PT_TO_EN["tempo"] == "timeSettings"
     assert PT_TO_EN["tempo"] == "time"
 
 

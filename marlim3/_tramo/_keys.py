@@ -56,26 +56,22 @@ def _load_translations():
 # ---------------------------------------------------------------------------
 PT_TO_EN, _VALUE_TRANSLATIONS = _load_translations()
 
-# ROOT_PT_TO_EN: at root level "tempo" → "timeSettings" (not "time").
-ROOT_PT_TO_EN = {**PT_TO_EN, "tempo": "timeSettings"}
-
 
 def translate(data, _root=False):
     """Recursively translate Portuguese JSON keys (and some values) to English.
 
     Args:
         data: A JSON-like structure (dict, list, or scalar).
-        _root: Internal flag — set True only for the top-level call so that
-               ``"tempo"`` maps to ``"timeSettings"`` instead of ``"time"``.
+        _root: Internal flag — kept for API compatibility but no longer
+               needed (no root-level ambiguities remain).
 
     Returns:
         A new structure with all Portuguese keys replaced by English equivalents.
     """
     if isinstance(data, dict):
-        key_map = ROOT_PT_TO_EN if _root else PT_TO_EN
         result = {}
         for k, v in data.items():
-            en_key = key_map.get(k, k)
+            en_key = PT_TO_EN.get(k, k)
             # Translate string values for specific keys
             if k in _VALUE_TRANSLATIONS and isinstance(v, str):
                 v = _VALUE_TRANSLATIONS[k].get(v.upper(), v)

@@ -1593,7 +1593,7 @@
         }
       }
     },
-    "timeSettings": {
+    "time": {
       "type": "object",
       "description": "Time configuration for the simulation.",
       "properties": {
@@ -1602,7 +1602,7 @@
           "description": "Total simulation time.",
           "unit": "s"
         },
-        "timeArray": {
+        "times": {
           "type": "array",
           "description": "Time instants associated with maxTimestep values defined in this object.",
           "items": {
@@ -2299,7 +2299,7 @@
               "unit": "s"
             }
           },
-          "temperatureArray": {
+          "temperatures": {
             "type": "array",
             "description": "Reservoir temperature over time.",
             "items": {
@@ -2512,7 +2512,7 @@
               "unit": "s"
             }
           },
-          "pressureDropValue": {
+          "pressureDrop": {
             "type": "array",
             "description": "Pressure increments over time.",
             "items": {
@@ -2808,7 +2808,7 @@
             "unit": "sm3/d"
           }
         },
-        "injectionPressureArray": {
+        "injectionPressures": {
           "type": "array",
           "description": "Injection pressures over time.",
           "items": {
@@ -3933,7 +3933,7 @@
             "type": "integer",
             "description": "Cell position for printed information."
           },
-          "outputVariable": {
+          "variable": {
             "type": "integer",
             "enum": [
               1,

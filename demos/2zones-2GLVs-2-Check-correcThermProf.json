@@ -145,9 +145,9 @@
                                          "injectionPressure":  33.91,
                                          "bottomholePressure":  339.0
                                      },
-    "timeSettings":  {
+    "time":  {
                          "finalTime":  50001,
-                         "timeArray":  [
+                         "times":  [
                                        0,
                                        50,
                                        55,
@@ -1206,7 +1206,7 @@
                     "staticPressureTime":  [
                                                0.0
                                            ],
-                    "temperatureArray":  [
+                    "temperatures":  [
                                          70.0
                                      ],
                     "temperaturesTime":  [
@@ -1239,7 +1239,7 @@
                     "staticPressureTime":  [
                                                0.0
                                            ],
-                    "temperatureArray":  [
+                    "temperatures":  [
                                          70.0
                                      ],
                     "temperaturesTime":  [
@@ -1276,7 +1276,7 @@
                                              40.0,
                                              40.0
                                          ],
-                         "injectionPressureArray":  [
+                         "injectionPressures":  [
                                                     160.0,
                                                     160.0,
                                                     160.0,
@@ -1294,7 +1294,7 @@
                                              0.0,
                                              150000.0
                                          ],
-                         "timeSettings":  [
+                         "time":  [
                                               0.0,
                                               3000.0,
                                               3060.0,
@@ -1351,7 +1351,7 @@
                                                      0,
                                                      0
                                                  ],
-                                 "timeSettings":  [
+                                 "time":  [
                                                       0,
                                                       58000,
                                                       58060,
@@ -1388,7 +1388,7 @@
                                                             1000.0,
                                                             0.0
                                                         ],
-                                     "timeSettings":  [
+                                     "time":  [
                                                           0.0,
                                                           15000.0,
                                                           15060.0,
@@ -1401,7 +1401,7 @@
     "bcs_reserva":  [
                         {
                             "measuredLength":  100.0,
-                            "timeSettings":  [
+                            "time":  [
                                                  0,
                                                  500,
                                                  501,
@@ -1458,7 +1458,7 @@
     "bombaVolumetrica_reserva":  [
                                      {
                                          "measuredLength":  4020.0,
-                                         "timeSettings":  [
+                                         "time":  [
                                                               0.0,
                                                               500.0,
                                                               560.0,
@@ -1490,7 +1490,7 @@
                                                           0.0,
                                                           0.0
                                                       ],
-                                     "timeSettings":  [
+                                     "time":  [
                                                           0.0,
                                                           7000.0,
                                                           7005.0,
@@ -1508,7 +1508,7 @@
                                         0.0,
                                         1.0
                                     ],
-                        "timeSettings":  [
+                        "time":  [
                                              0.0,
                                              7000.0,
                                              7065.0,
@@ -1525,7 +1525,7 @@
                                          0.0,
                                          1.0
                                      ],
-                         "timeSettings":  [
+                         "time":  [
                                               0.0,
                                               7000.0,
                                               7065.0,
@@ -1541,7 +1541,7 @@
                                        10.0,
                                        25.0
                                    ],
-                      "timeSettings":  [
+                      "time":  [
                                            0,
                                            7000.0,
                                            7060,
@@ -1563,7 +1563,7 @@
                                          0.2,
                                          0.2
                                      ],
-                         "timeSettings":  [
+                         "time":  [
                                               0,
                                               7000.0,
                                               7065,
@@ -1579,7 +1579,7 @@
                         {
                             "launcher":  2420.0,
                             "receiver":  7940.0,
-                            "timeSettings":  25100.0
+                            "time":  25100.0
                         }
                     ],
     "valve":  [
@@ -1588,7 +1588,7 @@
                       "measuredLength":  1000,
                       "cd":  0.84,
                       "cvCurve":  1,
-                      "timeSettings":  [
+                      "time":  [
                                            0,
                                            1000,
                                            2000
@@ -1624,7 +1624,7 @@
                                "pressure":  100,
                                "temperature":  4,
                                "openingType":  0,
-                               "timeSettings":  [
+                               "time":  [
                                                     0,
                                                     5000,
                                                     5060
@@ -1669,7 +1669,7 @@
                               "stdGasFlowRate":  true,
                               "api":  true,
                               "bsw":  true,
-                              "timeSettings":  [
+                              "time":  [
                                                    0,
                                                    63,
                                                    1000,
@@ -1752,7 +1752,7 @@
                            "frictionPressureGradient":  false,
                            "heat":  false,
                            "stdGasFlowRate":  true,
-                           "timeSettings":  [
+                           "time":  [
                                                 0.0,
                                                 1000.0,
                                                 7000.0,
@@ -1821,17 +1821,17 @@
                          {
                              "tubing":  true,
                              "cellIndex":  0,
-                             "outputVariable":  1
+                             "variable":  1
                          },
                          {
                              "tubing":  true,
                              "cellIndex":  249,
-                             "outputVariable":  3
+                             "variable":  3
                          },
                          {
                              "tubing":  true,
                              "cellIndex":  249,
-                             "outputVariable":  1
+                             "variable":  1
                          }
                      ],
     "language":  "en"

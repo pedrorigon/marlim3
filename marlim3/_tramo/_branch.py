@@ -59,7 +59,7 @@ class Branch:
                  jsonVersion='1.3.9',
                  initialConfig=None,
                  compTable=None,
-                 timeSettings=None,
+                 time=None,
                  correction=None,
                  productionFluid=None,
                  complementaryFluid=None,
@@ -106,7 +106,7 @@ class Branch:
 
         self.initialConfig  = initialConfig  if initialConfig  is not None else {}
         self.compTable      = compTable      if compTable      is not None else {}
-        self.timeSettings   = timeSettings
+        self.time           = time
         self.correction     = correction
 
         self.productionFluid    = productionFluid   if productionFluid   is not None else []
@@ -216,7 +216,7 @@ class Branch:
         self.jsonVersion     = d.get('jsonVersion')
         self.initialConfig   = d.get('initialConfig')       or {}
         self.compTable      = d.get('compTable')            or {}
-        self.timeSettings    = d.get('timeSettings')
+        self.time            = d.get('time')
         self.correction      = d.get('correction')
 
         self.productionFluid    = d.get('productionFluid',   [])
@@ -319,10 +319,10 @@ class Branch:
                     if self.wax.get('waxFile'):
                         self.wax['waxFile'] = _sanitize_filename(
                             str(self.wax['waxFile']))
-                if self.timeSettings:
-                    if self.timeSettings.get('snapshotFile'):
-                        self.timeSettings['snapshotFile'] = _sanitize_filename(
-                            str(self.timeSettings['snapshotFile']))
+                if self.time:
+                    if self.time.get('snapshotFile'):
+                        self.time['snapshotFile'] = _sanitize_filename(
+                            str(self.time['snapshotFile']))
 
             self.to_json(label)
 

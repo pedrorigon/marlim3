@@ -144,9 +144,9 @@
                                          "injectionPressure":  33.91,
                                          "bottomholePressure":  339.0
                                      },
-    "timeSettings":  {
+    "time":  {
                          "finalTime":  50001,
-                         "timeArray":  [
+                         "times":  [
                                        0,
                                        7000,
                                        7005,
@@ -1002,7 +1002,7 @@
                     "staticPressureTime":  [
                                                0.0
                                            ],
-                    "temperatureArray":  [
+                    "temperatures":  [
                                          70.0
                                      ],
                     "temperaturesTime":  [
@@ -1032,7 +1032,7 @@
                 {
                     "id":  0,
                     "measuredLength":  2000.0,
-                    "timeSettings":  [
+                    "time":  [
                                          0,
                                          500,
                                          501,
@@ -1096,7 +1096,7 @@
                          "referenceFreq":  60,
                          "thermalEquilEsp":  false,
                          "active":  true,
-                         "timeSettings":  [
+                         "time":  [
                                               0,
                                               500,
                                               501,
@@ -1162,7 +1162,7 @@
                                         1,
                                         1
                                     ],
-                        "timeSettings":  [
+                        "time":  [
                                              0,
                                              7000,
                                              7065,
@@ -1179,7 +1179,7 @@
                                          1.0,
                                          1.0
                                      ],
-                         "timeSettings":  [
+                         "time":  [
                                               0.0,
                                               7000.0,
                                               7065.0,
@@ -1195,7 +1195,7 @@
                                        15.0,
                                        15.0
                                    ],
-                      "timeSettings":  [
+                      "time":  [
                                            0,
                                            500.0,
                                            560,
@@ -1217,7 +1217,7 @@
                                          0.3,
                                          0.3
                                      ],
-                         "timeSettings":  [
+                         "time":  [
                                               0,
                                               7000.0,
                                               7065,
@@ -1258,7 +1258,7 @@
                               "stdGasFlowRate":  true,
                               "api":  true,
                               "bsw":  true,
-                              "timeSettings":  [
+                              "time":  [
                                                    0,
                                                    1000,
                                                    7000,
@@ -1306,7 +1306,7 @@
                            "frictionPressureGradient":  false,
                            "heat":  false,
                            "stdGasFlowRate":  true,
-                           "timeSettings":  [
+                           "time":  [
                                                 0.0,
                                                 1000.0,
                                                 7000.0,
@@ -1435,17 +1435,17 @@
                          {
                              "tubing":  true,
                              "cellIndex":  0,
-                             "outputVariable":  1
+                             "variable":  1
                          },
                          {
                              "tubing":  true,
                              "cellIndex":  249,
-                             "outputVariable":  3
+                             "variable":  3
                          },
                          {
                              "tubing":  true,
                              "cellIndex":  249,
-                             "outputVariable":  1
+                             "variable":  1
                          }
                      ],
     "language":  "en"

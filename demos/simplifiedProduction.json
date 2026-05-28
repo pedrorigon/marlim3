@@ -338,7 +338,7 @@
       "staticPressureTime": [0],
       "staticPressure": [150],
       "temperaturesTime": [0],
-      "temperatureArray": [90],
+      "temperatures": [90],
       "ipTime": [0],
       "ip": [200],
       "iiTime": [0],
