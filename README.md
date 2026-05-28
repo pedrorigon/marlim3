@@ -146,12 +146,22 @@ The project uses [CMake presets](CMakePresets.json). Available presets:
 | `clang-release` / `clang-debug` | Linux / macOS | Clang 20 + GFortran portable build |
 
 Release assets are built and tested for Linux x64, Windows x64, and macOS ARM64.
+Linux, Windows, and macOS ARM64 release executables are built so end users do not need GCC runtime libraries installed.
 
-#### Linux / macOS
+#### Linux
 
 ```bash
 cmake --preset gcc-release
 cmake --build --preset gcc-release -j$(nproc)
+```
+#### MacOS - Apple
+
+On macOS, install Homebrew GCC and CMake before building locally:
+
+```bash
+brew install gcc cmake
+cmake --preset gcc-release
+cmake --build --preset gcc-release -j$(sysctl -n hw.ncpu)
 ```
 
 #### Windows (MSYS2 / MinGW64)

@@ -229,15 +229,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf build
-          BREW_PREFIX=$(brew --prefix)
-          GCC_VERSION=$(ls "${BREW_PREFIX}"/bin/gcc-[0-9]* 2>/dev/null | grep -oE 'gcc-[0-9]+$' | grep -oE '[0-9]+' | sort -n | tail -1)
-          if [ -z "$GCC_VERSION" ]; then
-            echo "No Homebrew GCC version found"
-            exit 1
-          fi
-          cmake --preset gcc-release \
-            -DCMAKE_CXX_COMPILER="g++-${GCC_VERSION}" \
-            -DCMAKE_Fortran_COMPILER="gfortran-${GCC_VERSION}"
+          cmake --preset gcc-release
           cmake --build --preset gcc-release -j$(sysctl -n hw.ncpu)
 
       - name: Inspect executable
@@ -246,7 +238,10 @@ jobs:
           test -x build/Marlim3
           file build/Marlim3
           lipo -info build/Marlim3
-          otool -L build/Marlim3
+          otool -L build/Marlim3 | tee build/Marlim3.otool
+          otool -l build/Marlim3 | tee build/Marlim3.load-commands
+          ! grep -E '/opt/homebrew|libgomp|libgfortran|libquadmath|libstdc\+\+' build/Marlim3.otool
+          ! grep -E 'LC_RPATH|/opt/homebrew|libgomp|libgfortran|libquadmath|libstdc\+\+' build/Marlim3.load-commands
           ./build/Marlim3 --help >/dev/null
 
       - name: Compute SHA-256 of executable
