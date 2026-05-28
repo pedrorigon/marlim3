@@ -592,7 +592,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialAndAmbientConditions":  {
+                                "initialConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -661,7 +661,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialAndAmbientConditions":  {
+                                "initialConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -729,7 +729,7 @@
                                                            "length":  40.0
                                                        }
                                                    ],
-                                "initialAndAmbientConditions":  {
+                                "initialConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -797,7 +797,7 @@
                                                            "length":  40.0
                                                        }
                                                    ],
-                                "initialAndAmbientConditions":  {
+                                "initialConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -865,7 +865,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialAndAmbientConditions":  {
+                                "initialConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -933,7 +933,7 @@
                                                            "length":  20.0
                                                        }
                                                    ],
-                                "initialAndAmbientConditions":  {
+                                "initialConditions":  {
                                                           "measuredPositions":  [
                                                                                     0.0,
                                                                                     1.0
@@ -1024,7 +1024,7 @@
                                    0.0,
                                    1000.0
                                ],
-                    "prodFluidId":  0,
+                    "prodFluidIndex":  0,
                     "active":  true
                 }
             ],

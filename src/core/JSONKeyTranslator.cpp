@@ -326,7 +326,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "parallelNetworkThermalCoupling", "acoplamentoTermicoRedeParalela" },
     { "grouping",                       "agrupamento" },
     { "cellDx",                         "dxCelula" },
-    { "initialAndAmbientConditions",    "condicoesIniciais" },
+    { "initialConditions",              "condicoesIniciais" },
     { "initialAndAmbientConditions",    "condicoesIniciaisEAmbiente" },
     { "hydroGradient",                  "dPdLHidro" },
     { "fricGradient",                   "dPdLFric" },
@@ -383,9 +383,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "thermType",                      "tipoTermo" },
     { "totalMassFlowRate",              "vazaoMassT" },
     { "complementaryMassFlowRate",      "vazaoMassC" },
-    // gasMassFlowRate → vazaoMassG (already mapped above to vazaoMassicaGas
-    // for service ducts; massSource uses vazaoMassG). Use separate key:
-    { "gasMassFlowRate",                "vazaoMassG" },
+    { "massMassFlowGas",               "vazaoMassG" },
 
     // -----------------------------------------------------------------------
     // gasLiftSource (fonteGasLift) Item
@@ -559,7 +557,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "stdTotalLiqFlowRate",            "QLstdTotal" },
     { "gasOilRatioOut",                 "RGO" },
     { "gasOilRatioStd",                 "RS" },
-    { "gasOilRatioStd",                 "Rs" },
+    { "solutionGasOilRatio",            "Rs" },
     { "externalReynolds",               "ReyExterno" },
     { "internalReynolds",               "ReyInterno" },
     { "residenceTime",                  "TResi" },
@@ -603,9 +601,9 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "emulsionVec",                    "emulVec" },
 
     // -----------------------------------------------------------------------
-    // IPR / sources — fluid index (different from indiFluidoPro)
+    // IPR — fluid index (different spelling from indiFluidoPro in sources)
     // -----------------------------------------------------------------------
-    { "prodFluidId",                 "indFluidoPro" },
+    { "prodFluidIndex",              "indFluidoPro" },
 
     // -----------------------------------------------------------------------
     // Severe slugging (intermitenciaSevera)

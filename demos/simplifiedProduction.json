@@ -188,7 +188,7 @@
         }
       ],
       "numCellsXY": 2,
-      "initialAndAmbientConditions": {
+      "initialConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [90.0, 80.0]
       }
@@ -224,7 +224,7 @@
         }
       ],
       "numCellsXY": 10,
-      "initialAndAmbientConditions": {
+      "initialConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [4, 4],
         "externalVel": [0.1, 0.1]
@@ -245,7 +245,7 @@
         }
       ],
       "numCellsXY": 10,
-      "initialAndAmbientConditions": {
+      "initialConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [4, 20],
         "externalVel": [0.1, 1]
@@ -268,7 +268,7 @@
         }
       ],
       "numCellsXY": 10,
-      "initialAndAmbientConditions": {
+      "initialConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [20, 4],
         "externalVel": [1, 0.1]
@@ -290,7 +290,7 @@
         }
       ],
       "numCellsXY": 10,
-      "initialAndAmbientConditions": {
+      "initialConditions": {
         "measuredPositions": [0, 1],
         "externalTemp": [4, 4],
         "externalVel": [0.1, 0.1]
@@ -312,7 +312,7 @@
         }
       ],
       "numCellsXY": 10,
-      "initialAndAmbientConditions": {
+      "initialConditions": {
         "measuredPositions": [0, 0.25, 1],
         "externalTemp": [4, 50, 80.0]
       },
@@ -333,7 +333,7 @@
     {
       "id": 0,
       "iprType": 0,
-      "prodFluidId": 0,
+      "prodFluidIndex": 0,
       "measuredLength": 0.1,
       "staticPressureTime": [0],
       "staticPressure": [150],

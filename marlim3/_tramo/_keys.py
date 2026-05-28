@@ -284,7 +284,7 @@ PT_TO_EN = {
     "acoplamentoTermicoRedeParalela": "parallelNetworkThermalCoupling",
     "agrupamento":          "grouping",
     "dxCelula":             "cellDx",
-    "condicoesIniciais":    "initialAndAmbientConditions",
+    "condicoesIniciais":    "initialConditions",
     "condicoesIniciaisEAmbiente": "initialAndAmbientConditions",
     "dPdLHidro":            "hydroGradient",
     "dPdLFric":             "fricGradient",
@@ -329,7 +329,7 @@ PT_TO_EN = {
     "tipoTermo":            "thermType",
     "vazaoMassT":           "totalMassFlowRate",
     "vazaoMassC":           "complementaryMassFlowRate",
-    "vazaoMassG":           "gasMassFlowRate",
+    "vazaoMassG":           "massMassFlowGas",
 
     # gasLiftSource item
     "colunaEanular":        "annularColumnFlag",
@@ -463,7 +463,7 @@ PT_TO_EN = {
     "QLstdTotal":           "stdTotalLiqFlowRate",
     "RGO":                  "gasOilRatioOut",
     "RS":                   "gasOilRatioStd",
-    "Rs":                   "gasOilRatioStd",
+    "Rs":                   "solutionGasOilRatio",
     "ReyExterno":           "externalReynolds",
     "ReyInterno":           "internalReynolds",
     "TResi":                "residenceTime",
@@ -502,7 +502,7 @@ PT_TO_EN = {
     "volMonM1ST":           "m1ServUpstreamVol",
 
     # IPR extra
-    "indFluidoPro":         "prodFluidId",
+    "indFluidoPro":         "prodFluidIndex",
 
     # severeSlugging sub-keys
     "inicioTrechoAcumula":  "accumStartLength",
