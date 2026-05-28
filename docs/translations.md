@@ -139,4 +139,4 @@ Renaming an English key requires coordinated changes across the project:
 
 - **Never change the Portuguese value** (right side) unless the C++ engine code is also updated. The C++ `JSON_entrada` classes parse by Portuguese key name.
 - **No backward-compatibility layer** — the Python API uses attribute names directly as JSON keys. Old files with renamed keys will fail unless loaded through the PT→EN translator (which handles PT-keyed files automatically).
-- **The C++ translator is a flat map** — if you need context-dependent translation (same EN key mapping to different PT keys at different nesting levels), you'll need to add special handling (as done for `"tempo"` on the Python side).
+- **The translation map is flat and unambiguous** — each EN key maps to exactly one PT key and vice-versa. Avoid introducing duplicate PT values (multiple EN keys mapping to the same PT key), as this breaks the Python PT→EN inversion.
