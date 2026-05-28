@@ -15,7 +15,7 @@
       "productionTime": 365
     }
   },
-  "productionFluids": [
+  "productionFluid": [
     {
       "id": 0,
       "api": 20,
@@ -61,7 +61,7 @@
       "label": "Well section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -93,7 +93,7 @@
       "label": "Flowline + Riser section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -109,7 +109,7 @@
       ]
     }
   ],
-  "productionDucts": [
+  "productionPipe": [
     {
       "id": 0,
       "label": "Well",
@@ -123,12 +123,12 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           0.8,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           90,
           50,
           4
@@ -139,7 +139,7 @@
       "id": 1,
       "label": "Flowline",
       "crossSectionId": 1,
-      "externalEnvironment": 1,
+      "ambientEnvironment": 1,
       "angle": 0,
       "discretization": [
         {
@@ -148,15 +148,15 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           4,
           4
         ],
-        "externalVel": [
+        "ambientVel": [
           0.1,
           0.1
         ]
@@ -166,7 +166,7 @@
       "id": 2,
       "label": "Riser",
       "crossSectionId": 1,
-      "externalEnvironment": 1,
+      "ambientEnvironment": 1,
       "angle": 1.5707963267948966,
       "discretization": [
         {
@@ -175,15 +175,15 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           4,
           20
         ],
-        "externalVel": [
+        "ambientVel": [
           0.1,
           1
         ]
@@ -213,7 +213,7 @@
       "temperaturesTime": [
         0
       ],
-      "temperatures": [
+      "temperatureArray": [
         90
       ],
       "ipTime": [
@@ -256,7 +256,7 @@
     "temperature": true,
     "holdup": true,
     "flowPattern": true,
-    "frictionPressure": true,
+    "frictionPressureGradient": true,
     "hydrostaticPressure": true,
     "stdLiqFlowRate": true
   }

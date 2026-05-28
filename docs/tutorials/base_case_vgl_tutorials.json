@@ -16,7 +16,7 @@
     },
     "gasLine": true
   },
-  "productionFluids": [
+  "productionFluid": [
     {
       "id": 0,
       "api": 20,
@@ -65,7 +65,7 @@
       "label": "Well section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -97,7 +97,7 @@
       "label": "Flowline + Riser section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -117,7 +117,7 @@
       "label": "Well cross-section - uncoupled section",
       "innerDiameter": 0.2032,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -131,7 +131,7 @@
       "label": "Flowline+riser cross-section [SERVICE]",
       "innerDiameter": 0.127,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Inner steel layer",
           "materialId": 0,
@@ -153,7 +153,7 @@
       "innerDiameter": 0.21589999999999998,
       "outerDiameter": 0.36829999999999996,
       "roughness": 0.000183,
-      "layers": [
+      "layer": [
         {
           "label": "Casing steel layer",
           "materialId": 0,
@@ -169,7 +169,7 @@
       ]
     }
   ],
-  "productionDucts": [
+  "productionPipe": [
     {
       "id": 3,
       "label": "Well - uncoupled section",
@@ -183,11 +183,11 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           90.0,
           80.0
         ]
@@ -205,12 +205,12 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           0.8,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           90,
           50,
           4
@@ -222,7 +222,7 @@
       "id": 1,
       "label": "Flowline",
       "crossSectionId": 1,
-      "externalEnvironment": 1,
+      "ambientEnvironment": 1,
       "angle": 0,
       "discretization": [
         {
@@ -231,15 +231,15 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           4,
           4
         ],
-        "externalVel": [
+        "ambientVel": [
           0.1,
           0.1
         ]
@@ -249,7 +249,7 @@
       "id": 2,
       "label": "Riser",
       "crossSectionId": 1,
-      "externalEnvironment": 1,
+      "ambientEnvironment": 1,
       "angle": 1.5707963267948966,
       "discretization": [
         {
@@ -258,27 +258,27 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           4,
           20
         ],
-        "externalVel": [
+        "ambientVel": [
           0.1,
           1
         ]
       }
     }
   ],
-  "serviceDucts": [
+  "servicePipe": [
     {
       "id": 0,
       "label": "Riser [SERVICE]",
       "crossSectionId": 3,
-      "externalEnvironment": 1,
+      "ambientEnvironment": 1,
       "angle": -1.5707963267948966,
       "discretization": [
         {
@@ -287,15 +287,15 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           20,
           4
         ],
-        "externalVel": [
+        "ambientVel": [
           1,
           0.1
         ]
@@ -306,7 +306,7 @@
       "id": 1,
       "label": "Flowline [SERVICE]",
       "crossSectionId": 3,
-      "externalEnvironment": 1,
+      "ambientEnvironment": 1,
       "angle": 0,
       "discretization": [
         {
@@ -315,15 +315,15 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           4,
           4
         ],
-        "externalVel": [
+        "ambientVel": [
           0.1,
           0.1
         ]
@@ -343,12 +343,12 @@
         }
       ],
       "initialConditions": {
-        "measuredPositions": [
+        "measuredPosition": [
           0,
           0.25,
           1
         ],
-        "externalTemp": [
+        "ambientTemp": [
           4,
           50,
           80.0
@@ -365,7 +365,7 @@
       10
     ]
   },
-  "gasInjection": {
+  "gasInj": {
     "bcType": 1,
     "time": [
       0
@@ -392,7 +392,7 @@
       "temperaturesTime": [
         0
       ],
-      "temperatures": [
+      "temperatureArray": [
         90
       ],
       "ipTime": [
@@ -447,7 +447,7 @@
       "serviceMeasuredLength": 2800,
       "valveType": 0,
       "orificeDiameter": 0.005,
-      "recoveryFreq": 0.0,
+      "recoveryFactor": 0.0,
       "areaRatio": 0.1
     }
   ],
@@ -462,7 +462,7 @@
     "temperature": true,
     "holdup": true,
     "flowPattern": true,
-    "frictionPressure": true,
+    "frictionPressureGradient": true,
     "hydrostaticPressure": true,
     "stdLiqFlowRate": true
   },

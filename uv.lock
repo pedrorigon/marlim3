@@ -1408,6 +1408,9 @@ gui = [
     { name = "jsonschema" },
     { name = "streamlit" },
 ]
+tutorials = [
+    { name = "scipy" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1439,6 +1442,7 @@ gui = [
     { name = "jsonschema", specifier = ">=4.0.0" },
     { name = "streamlit", specifier = ">=1.35.0" },
 ]
+tutorials = [{ name = "scipy" }]
 
 [[package]]
 name = "matplotlib"
