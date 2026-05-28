@@ -348,7 +348,7 @@ static const std::unordered_map<std::string, std::string> EN_TO_PT = {
     { "measuredPositions",              "compInter" },
     // "temp" is kept as-is (it's already English-style)
     { "holdup",                         "holdup" },  // same
-    { "waterCutIC",                     "bet" }
+    { "bet",                            "bet" },     // same (complementary fluid ratio)
     { "superficialLiquidVel",           "uls" },
     { "superficialGasVel",              "ugs" },
     { "externalTemp",                   "tempExterna" },

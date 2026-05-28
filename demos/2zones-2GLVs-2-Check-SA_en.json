@@ -639,7 +639,7 @@
                                                                          1.0,
                                                                          1.0
                                                                      ],
-                                                          "beta":  [
+                                                          "bet":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -707,7 +707,7 @@
                                                                          1.0,
                                                                          1.0
                                                                      ],
-                                                          "beta":  [
+                                                          "bet":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -775,7 +775,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "beta":  [
+                                                          "bet":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -843,7 +843,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "beta":  [
+                                                          "bet":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -911,7 +911,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "beta":  [
+                                                          "bet":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -979,7 +979,7 @@
                                                                          0.5,
                                                                          0.5
                                                                      ],
-                                                          "beta":  [
+                                                          "bet":  [
                                                                              0.0,
                                                                              0.0
                                                                          ],
@@ -1577,7 +1577,7 @@
                               "pressure":  true,
                               "temperature":  true,
                               "holdup":  true,
-                              "beta":  true,
+                              "bet":  true,
                               "superficialGasVel":  true,
                               "superficialLiquidVel":  true,
                               "gasVelocity":  false,

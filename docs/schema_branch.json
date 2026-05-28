@@ -1655,7 +1655,7 @@
                     "type": "number"
                   }
                 },
-                "waterCutIC": {
+                "bet": {
                   "type": "array",
                   "description": "Initial-condition complementary-fluid volumetric fractions at duct relative positions defined in measuredPositions. Valid for transient simulations only when initialization by initial conditions is active (initialConfig: {initialCondition: 0}) and complementary fluid exists and is active.",
                   "items": {
@@ -1805,7 +1805,7 @@
                   "description": "",
                   "items": { "type": "number" }
                 },
-                "waterCutIC": {
+                "bet": {
                   "type": "array",
                   "description": "",
                   "items": { "type": "number" }
@@ -2838,7 +2838,7 @@
             "type": "boolean",
             "description": "Liquid holdup."
             },
-            "waterCutIC": {
+            "bet": {
             "type": "boolean",
             "description": "Complementary-fluid volumetric fraction relative to liquid phase."
             },
@@ -3214,7 +3214,7 @@
               "type": "boolean",
               "description": "Liquid holdup."
             },
-            "waterCutIC": {
+            "bet": {
               "type": "boolean",
               "description": "Complementary-fluid volumetric fraction relative to liquid phase."
             },
