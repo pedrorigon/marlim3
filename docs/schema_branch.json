@@ -6,7 +6,8 @@
     "system": {
       "type": "string",
       "enum": [
-        "PROD",\n        "INJ"
+        "PROD",
+        "INJ"
       ],
       "description": "Defines the system to be modeled: producer well (PROD) or injector well (INJ)."
     },
@@ -1552,7 +1553,8 @@
                 "layerMeasurementType": {
                   "type": "string",
                   "enum": [
-                    "THICKNESS",\n                    "DIAMETER"
+                    "THICKNESS",
+                    "DIAMETER"
                   ],
                   "default": "DIAMETER",
                   "description": "Layer added-length measurement type (by radial thickness or by diameter from pipe center to the layer outer circumference)."
