@@ -34,6 +34,7 @@ from ._keys import (
     translate_en_to_pt as _translate_en_to_pt,
     PT_TO_EN as _PT_TO_EN,
     EN_TO_PT as _EN_TO_PT,
+    _make_bilingual,
 )
 
 
@@ -72,11 +73,22 @@ class Branch:
         )
 
     def __setattr__(self, name, value):
-        """Allow Portuguese attribute assignment (e.g., branch.sistema = 'PROD')."""
+        """Allow Portuguese attribute assignment (e.g., branch.sistema = 'PROD').
+
+        When setting via a Portuguese name, nested dict keys and enum values
+        are also translated PT→EN so the user can build models fully in PT.
+        All dict/list values are wrapped in bilingual containers for
+        transparent PT/EN nested access.
+        """
         en_name = _PT_TO_EN.get(name)
         if en_name is not None and en_name != name:
-            object.__setattr__(self, en_name, value)
+            # Translate nested PT keys/values by wrapping in a dict
+            translated = _translate_pt_to_en({name: value})
+            object.__setattr__(self, en_name, _make_bilingual(translated[en_name]))
         else:
+            # English or internal name: wrap complex values for bilingual access
+            if isinstance(value, (dict, list)):
+                value = _make_bilingual(value)
             object.__setattr__(self, name, value)
 
     def __init__(self,

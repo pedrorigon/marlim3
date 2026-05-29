@@ -108,3 +108,119 @@ def translate_en_to_pt(data):
         return [translate_en_to_pt(item) for item in data]
     else:
         return data
+
+
+# ---------------------------------------------------------------------------
+# Bilingual containers — accept both PT and EN keys transparently
+# ---------------------------------------------------------------------------
+
+class BilingualDict(dict):
+    """Dict that transparently accepts both Portuguese and English keys.
+
+    Data is always stored under English keys internally. Lookups via
+    Portuguese keys are translated on-the-fly.
+    """
+
+    def __init__(self, data=None, **kwargs):
+        super().__init__()
+        if data is not None:
+            if isinstance(data, dict):
+                for k, v in data.items():
+                    self[k] = v
+            else:
+                for k, v in data:
+                    self[k] = v
+        for k, v in kwargs.items():
+            self[k] = v
+
+    def __getitem__(self, key):
+        en_key = PT_TO_EN.get(key, key)
+        return super().__getitem__(en_key)
+
+    def __setitem__(self, key, value):
+        en_key = PT_TO_EN.get(key, key)
+        # Translate nested PT keys/values via the translate function
+        translated = translate({key: value})
+        value = translated[en_key]
+        super().__setitem__(en_key, _make_bilingual(value))
+
+    def __contains__(self, key):
+        en_key = PT_TO_EN.get(key, key)
+        return super().__contains__(en_key)
+
+    def get(self, key, default=None):
+        en_key = PT_TO_EN.get(key, key)
+        return super().get(en_key, default)
+
+    def __delitem__(self, key):
+        en_key = PT_TO_EN.get(key, key)
+        super().__delitem__(en_key)
+
+    def pop(self, key, *args):
+        en_key = PT_TO_EN.get(key, key)
+        return super().pop(en_key, *args)
+
+    def setdefault(self, key, default=None):
+        en_key = PT_TO_EN.get(key, key)
+        if en_key not in self:
+            super().__setitem__(en_key, _make_bilingual(default))
+        return super().__getitem__(en_key)
+
+    def update(self, other=None, **kwargs):
+        if other:
+            if hasattr(other, 'items'):
+                for k, v in other.items():
+                    self[k] = v
+            else:
+                for k, v in other:
+                    self[k] = v
+        for k, v in kwargs.items():
+            self[k] = v
+
+
+class BilingualList(list):
+    """List that ensures nested dicts/lists are bilingual containers."""
+
+    def __setitem__(self, index, value):
+        if isinstance(value, (dict, list)):
+            value = translate(value)
+        super().__setitem__(index, _make_bilingual(value))
+
+    def append(self, value):
+        if isinstance(value, (dict, list)):
+            value = translate(value)
+        super().append(_make_bilingual(value))
+
+    def extend(self, values):
+        super().extend(
+            _make_bilingual(translate(v) if isinstance(v, (dict, list)) else v)
+            for v in values
+        )
+
+    def insert(self, index, value):
+        if isinstance(value, (dict, list)):
+            value = translate(value)
+        super().insert(index, _make_bilingual(value))
+
+
+def _make_bilingual(value):
+    """Recursively wrap dicts and lists in bilingual containers.
+
+    Used internally to wrap already-translated (English-keyed) data without
+    re-translating keys.
+    """
+    if isinstance(value, BilingualDict):
+        return value
+    if isinstance(value, dict):
+        bd = BilingualDict.__new__(BilingualDict)
+        dict.__init__(bd)
+        for k, v in value.items():
+            dict.__setitem__(bd, k, _make_bilingual(v))
+        return bd
+    if isinstance(value, BilingualList):
+        return value
+    if isinstance(value, list):
+        bl = BilingualList.__new__(BilingualList)
+        list.__init__(bl, [_make_bilingual(item) for item in value])
+        return bl
+    return value

@@ -868,37 +868,47 @@ class TestBilingual:
                 os.chdir(original_cwd)
 
     def test_build_model_pt(self):
-        """Build a complete model using only Portuguese attribute names."""
+        """Build a complete model using only Portuguese attribute names and keys."""
         t = marlim3.Tramo()
         t.sistema = "PROD"
-        t.fluidosProducao = [{"id": 0, "api": 30, "gor": 100, "gasDensity": 0.7, "bsw": 0.0}]
-        t.material = [{"id": 0, "type": 0, "conductivity": 58, "specificHeat": 480, "rho": 7850}]
+        t.fluidosProducao = [{"id": 0, "api": 30, "rgo": 100, "densidadeGas": 0.7, "bsw": 0.0}]
+        t.material = [{"id": 0, "tipo": 0, "condutividade": 58, "calorEspecifico": 480, "rho": 7850}]
         t.secaoTransversal = [{
             "id": 0,
-            "innerDiameter": 0.254,
-            "roughness": 0.183e-3,
-            "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+            "diametroInterno": 0.254,
+            "rugosidade": 0.183e-3,
+            "camadas": [{"idMaterial": 0, "tipoMedicaoCamada": "ESPESSURA", "espessura": 0.0254}],
         }]
         t.dutosProducao = [{
             "id": 0,
-            "crossSectionId": 0,
-            "environment": 2,
-            "angle": 0,
-            "discretization": [{"numCells": 10, "length": 100}],
+            "idCorte": 0,
+            "ambienteExterno": 2,
+            "angulo": 0,
+            "discretizacao": [{"nCelulas": 10, "comprimento": 100}],
         }]
         t.fonteLiquido = [{
-            "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
-            "time": [0], "liquidFlowRate": [1500], "temperature": [40],
+            "id": 0, "indFluidoPro": 0, "comprimentoMedido": 0.1,
+            "tempo": [0], "vazaoLiquido": [1500], "temperatura": [40],
         }]
-        t.separador = {"time": [0], "pressure": [2]}
-        t.perfilProducao = {"time": [0], "pressure": True}
+        t.separador = {"tempo": [0], "pressao": [2]}
+        t.perfilProducao = {"tempo": [0], "pressao": True}
 
         # Verify everything is set correctly via EN names
         assert t.system == "PROD"
         assert len(t.productionFluid) == 1
+        assert t.productionFluid[0]["gor"] == 100
+        assert t.productionFluid[0]["gasDensity"] == 0.7
         assert len(t.crossSection) == 1
+        assert t.crossSection[0]["innerDiameter"] == pytest.approx(0.254)
+        assert t.crossSection[0]["layers"][0]["materialId"] == 0
+        assert t.crossSection[0]["layers"][0]["layerMeasurementType"] == "THICKNESS"
         assert len(t.productionPipe) == 1
+        assert t.productionPipe[0]["crossSectionId"] == 0
+        assert t.productionPipe[0]["angle"] == 0
+        assert t.productionPipe[0]["discretization"][0]["numCells"] == 10
         assert len(t.liquidSource) == 1
+        assert t.liquidSource[0]["prodFluidId"] == 0
+        assert t.liquidSource[0]["liquidFlowRate"] == [1500]
         assert t.separator == {"time": [0], "pressure": [2]}
 
     def test_from_json_pt_dict(self):
@@ -948,6 +958,60 @@ class TestBilingual:
         t = marlim3.Branch()
         t.resultados = {"productionProfile": "test_data"}
         assert t.results == {"productionProfile": "test_data"}
+
+    def test_nested_pt_read(self):
+        """Nested dict keys can be read in Portuguese."""
+        t = marlim3.Branch()
+        t.productionPipe = [{
+            "id": 0, "crossSectionId": 1, "angle": 0.5,
+            "discretization": [{"numCells": 10, "length": 200}],
+        }]
+        # Access nested keys via PT
+        assert t.dutosProducao[0]["idCorte"] == 1
+        assert t.dutosProducao[0]["angulo"] == 0.5
+        assert t.dutosProducao[0]["discretizacao"][0]["nCelulas"] == 10
+        assert t.dutosProducao[0]["discretizacao"][0]["comprimento"] == 200
+        # EN access still works
+        assert t.productionPipe[0]["crossSectionId"] == 1
+        assert t.productionPipe[0]["discretization"][0]["numCells"] == 10
+
+    def test_nested_pt_write_persists(self):
+        """Writing via nested PT keys persists changes."""
+        t = marlim3.Branch()
+        t.liquidSource = [{
+            "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
+            "time": [0], "liquidFlowRate": [1500], "temperature": [40],
+        }]
+        # Modify via PT key
+        t.fonteLiquido[0]["vazaoLiquido"] = [2000]
+        # Verify via EN key
+        assert t.liquidSource[0]["liquidFlowRate"] == [2000]
+
+    def test_nested_pt_contains(self):
+        """'in' operator works with PT keys on nested dicts."""
+        t = marlim3.Branch()
+        t.crossSection = [{"id": 0, "innerDiameter": 0.254, "roughness": 1e-4}]
+        assert "diametroInterno" in t.crossSection[0]
+        assert "rugosidade" in t.crossSection[0]
+        assert "innerDiameter" in t.crossSection[0]
+
+    def test_nested_pt_get(self):
+        """.get() works with PT keys on nested dicts."""
+        t = marlim3.Branch()
+        t.material = [{"id": 0, "type": 0, "conductivity": 58}]
+        assert t.material[0].get("condutividade") == 58
+        assert t.material[0].get("naoExiste", 99) == 99
+
+    def test_nested_append_bilingual(self):
+        """Appending a dict to a bilingual list makes it bilingual."""
+        t = marlim3.Branch()
+        t.productionFluid = []
+        t.fluidosProducao.append({"id": 0, "api": 30, "rgo": 100, "densidadeGas": 0.7, "bsw": 0.0})
+        # Verify it was translated and wrapped
+        assert t.productionFluid[0]["gor"] == 100
+        assert t.productionFluid[0]["gasDensity"] == 0.7
+        # And accessible via PT
+        assert t.fluidosProducao[0]["rgo"] == 100
 
 
 # ============================================================================
@@ -1000,39 +1064,39 @@ def _build_simple_model_en():
 
 
 def _build_simple_model_pt():
-    """Build the same minimal model using Portuguese API."""
+    """Build the same minimal model using fully Portuguese API."""
     t = marlim3.Tramo()
     t.sistema = "PROD"
     t.fluidosProducao = [{
-        "id": 0, "api": 32, "gor": 100, "gasDensity": 0.7, "bsw": 0.0,
+        "id": 0, "api": 32, "rgo": 100, "densidadeGas": 0.7, "bsw": 0.0,
     }]
     t.material = [{
-        "id": 0, "type": 0, "conductivity": 58, "specificHeat": 480, "rho": 7850,
+        "id": 0, "tipo": 0, "condutividade": 58, "calorEspecifico": 480, "rho": 7850,
     }]
     t.secaoTransversal = [{
         "id": 0,
-        "innerDiameter": 10 * 0.0254,
-        "roughness": 0.183e-3,
-        "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+        "diametroInterno": 10 * 0.0254,
+        "rugosidade": 0.183e-3,
+        "camadas": [{"idMaterial": 0, "tipoMedicaoCamada": "ESPESSURA", "espessura": 0.0254}],
     }]
     t.dutosProducao = [{
         "id": 0,
-        "crossSectionId": 0,
-        "environment": 2,
-        "angle": 0,
-        "discretization": [{"numCells": 10, "length": 250}],
-        "initialAndAmbientConditions": {
-            "measuredPosition": [0, 1],
-            "ambientTemp": [40, 20],
-            "ambientVel": [0.5, 0.5],
+        "idCorte": 0,
+        "ambienteExterno": 2,
+        "angulo": 0,
+        "discretizacao": [{"nCelulas": 10, "comprimento": 250}],
+        "condicoesIniciaisEAmbiente": {
+            "compInter": [0, 1],
+            "tempExterna": [40, 20],
+            "velExterna": [0.5, 0.5],
         },
     }]
     t.fonteLiquido = [{
-        "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
-        "time": [0], "liquidFlowRate": [1500], "temperature": [40],
+        "id": 0, "indFluidoPro": 0, "comprimentoMedido": 0.1,
+        "tempo": [0], "vazaoLiquido": [1500], "temperatura": [40],
     }]
-    t.separador = {"time": [0], "pressure": [2]}
-    t.perfilProducao = {"time": [0], "pressure": True, "temperature": True}
+    t.separador = {"tempo": [0], "pressao": [2]}
+    t.perfilProducao = {"tempo": [0], "pressao": True, "temperatura": True}
     return t
 
 
