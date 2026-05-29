@@ -98,6 +98,12 @@ void JSONRootObject::load(const char* path) {
 	}
 }
 
+void JSONRootObject::loadFromDocument(Document& doc) {
+	JSONObject* o = dynamic_cast<JSONObject*>(this);
+	bHasParseError = false;
+	o->load(doc);
+}
+
 Document* JSONRootObject::getDocument(){
 	return &_d;
 }

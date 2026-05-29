@@ -8,12 +8,6 @@
       "enum": ["MULTIFASICO","INJETOR"],
       "description": "Define o sistema a ser modelado: poço produtor (MULTIFASICO) ou injetor (INJETOR)."
     },
-    "versaoJSON": {
-      "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "examples": ["3.0.0", "3.1.6"],
-      "description": "Versão do software referenciada por este JSON."
-    },
     "configuracaoInicial": {
       "type": "object",
       "description": "Parâmetros gerais da simulação.",

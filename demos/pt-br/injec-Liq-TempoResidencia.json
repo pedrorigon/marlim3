@@ -1,12 +1,10 @@
 {
-  "versao":"1.0",
-  "versaoJson": "1.3.9",
-  "sistema": "MULTIFASICO",
+  "sistema":"MULTIFASICO",
   "configuracaoInicial":{
-   "origemGeometria": "POCO",
-   "linhaGas":false,
-   "equilibrioTermico":true,
+   "origemGeometria":"POCO",
+   "linhaGas": true,
    "saidaTela":false,
+   "equilibrioTermico":true,
    "latente":false,
    "modeloCp":0,
    "pvtsimArq":"PVTSIM-MARLIM.tab",
@@ -14,10 +12,9 @@
    "tabG":true,
    "trackRgo":true,
    "trackDensidadeGas":true,
-   "permanente": true,
-   "condicaoInicial": 1,
+   "permanente":true,
    "ordemperm":1,
-   "transiente":true,
+   "transiente":false,
    "transferenciaMassa":0,
    "iniFluidoP":0,
   "Formacao":{
@@ -37,7 +34,7 @@
      {"id": 11,"rotulo":"Clay", "condutividade": 2.127,"massaEspecifica": 2080,"calorEspecifico": 2127 }]
    },
     "Avancado": {
-      "CriterioMonofasico": 1e-04,
+      "CriterioMonofasico": 1e-05,
       "CriterioCondensacao": 0.001,
       "MedSimpPresFront":true,
       "escorregamentoCelulaContorno":false,
@@ -45,15 +42,30 @@
       "TcorrecaoModComp":[0,40000,50001],
       "correcaoModComp":[true,true,true],
       "desligaDeriTransMassDTemp":false,
-      "nthrd":6,
-      "nthrdMatriz":6
+      "acopColAnulPermForte":20
     },
     "correlacoesEscorregamento": true,
     "correlacoesPorArranjo": {
       "estratificado": 1,
       "bolhaGolfada": 1,
-      "anularChurn": 1
-    }
+      "anularChurn": 3
+    },
+  "Formacao":{
+     "TempoProducao": 365,
+     "Propriedades":[
+     {"id": 0,"rotulo":"Marlim2","condutividade": 2.5,  "massaEspecifica": 2000,"calorEspecifico": 1250   },
+     {"id": 1,"rotulo":"Shale","condutividade": 1.6,  "massaEspecifica": 2057,"calorEspecifico": 2151   },
+     {"id": 2,"rotulo":"Marl", "condutividade": 1.38, "massaEspecifica": 1970, "calorEspecifico": 1734 },
+     {"id": 3,"rotulo":"Sandstone", "condutividade": 2.5, "massaEspecifica": 2198, "calorEspecifico": 737  },
+     {"id": 4,"rotulo":"Cementstone",  "condutividade": 1.96, "massaEspecifica": 2644,"calorEspecifico": 844  },
+     {"id": 5,"rotulo":"Halite",  "condutividade": 3.97,"massaEspecifica": 2160,"calorEspecifico": 875 },
+     {"id": 6,"rotulo":"Anhydrite",  "condutividade": 4.1,"massaEspecifica": 2980,"calorEspecifico": 819 },
+     {"id": 7,"rotulo":"Dolomite",  "condutividade": 3.56,"massaEspecifica": 2840,"calorEspecifico": 933 },
+     {"id": 8,"rotulo":"Limestone",  "condutividade": 2.19,"massaEspecifica": 2540,"calorEspecifico": 887 },
+     {"id": 9,"rotulo":"Packstone",  "condutividade": 3.23,"massaEspecifica": 2620,"calorEspecifico": 1000 },
+     {"id": 10,"rotulo":"Wackstone",  "condutividade": 3.16,"massaEspecifica": 2590,"calorEspecifico": 390 },
+     {"id": 11,"rotulo":"Clay", "condutividade": 2.127,"massaEspecifica": 2080,"calorEspecifico": 2127 }]
+   }
   },
   "CondicaoContPocInjec_reserva" :{
    "condcontorno": 2 ,
@@ -65,24 +77,23 @@
   },
   "tempo": {
     "tempoFinal": 50001,
-    "tempos": [0 , 7000 , 7005 , 7100 , 7110 , 7990 , 7995, 8050, 8060],
-    "dtmax": [ 4 ,    4 ,  4 ,   4 ,   4 ,  4 ,     4,   4,   4]
+    "tempos": [0 , 1000 , 1060 , 15800 , 15810 , 16000 , 16010 , 29990 , 30000 , 30060 , 30160],
+    "dtmax": [4 ,   4 ,     4 ,    4 ,    4  ,    4 ,  4  ,     4   ,  4 ,       4 ,   4]
   },
   "tabela": {
-    "nPontos": 21,
-    "pressaoMaxima": 600,
+    "nPontos": 31,
+    "pressaoMaxima": 700,
     "pressaoMinima": 2,
     "temperaturaMaxima": 200,
     "temperaturaMinima": -100
   },
   "fluidosProducao": [
-    { "id": 0,"api": 20,"rgo": 150,"densidadeGas": 0.7,"bsw": 0.5,"densidadeAgua": 1.0,"temp1": 20.0,"visc1": 30.0,"temp2": 40.0,"visc2": 20.0,"tipoEmul": 1,"bswCorte": 0.8,
-      "fracCO2": 0.0,"correlacaoCritica": 0,
-      "ativo": true,"modeloOleoMorto":0}
+    { "id": 0,"api": 32,"rgo": 400,"densidadeGas": 0.85,"bsw": 0.0,"densidadeAgua": 1.0,"temp1": 20.0,"visc1": 5.0,"temp2": 40.0,"visc2": 3.0,"tipoEmul": 3,"bswCorte": 0.8,
+      "fracCO2": 0.0,"correlacaoCritica": 1}
   ],
-  "fluidoComplementar": {"massaEspecifica": 1000,"compP": 0.0,"compT": 0.0,"tensup": 0.000001 ,"calorEspecifico": 4000.0,"condutividade": 0.14,"temp1": 20.0,
-    "visc1": 1.0,"temp2": 40.0,"visc2": 0.8,"salinidade" : 0.0},
-  "fluidoGas": {"densidadeGas": 0.55, "fracCO2": 0.0,"correlacaoCritica": 0},
+  "fluidoComplementar": {"id": 0,"massaEspecifica": 1000,"compP": 0.0,"compT": 0.0,"tensup": 0.000001 ,"calorEspecifico": 4000.0,"condutividade": 0.14,"temp1": 20.0,
+    "visc1": 1.0,"temp2": 40.0,"visc2": 0.8,"salinidade" : 0.0, "tipoFluido":2},
+  "fluidoGas": {"id": 0,"densidadeGas": 0.55, "fracCO2": 0.0,"correlacaoCritica": 0},
   "material":[
    {"id":0,"rotulo":"aco1","condutividade":55.0,"calorEspecifico":465.0,"rho":7833.0,"tipo":0,"visc":0.0},
    {"id":1,"rotulo":"fluido","condutividade":0.61,"calorEspecifico":4180.0,"rho":1000.0,"tipo":2,"visc":0.001},
@@ -108,7 +119,7 @@
         {"diametro": 0.1397,"idMaterial": 0,"discretizacao": 1},
         {"diametro": 0.216789,"idMaterial": 1,"discretizacao": 1},
         {"diametro": 0.244475,"idMaterial": 0,"discretizacao": 1},
-        {"diametro": 0.3,"idMaterial": 2,"discretizacao": 3}
+        {"diametro": 0.508,"idMaterial": 2,"discretizacao": 10}
       ]
     },
     {
@@ -163,7 +174,7 @@
   ],
   "dutosProducao": [
     {
-      "id": 0,"idCorte": 0,"angulo": 1.5708,"rotulo": "duto0SG","direcaoConveccao": 0,"acoplamentoTermico": 0,"formacao":true,
+      "id": 0,"idCorte": 0,"angulo": 1.5708,"rotulo": "duto0SG","direcaoConveccao": 0,"acoplamentoTermico": 0,
       "discretizacao": [
         {"nCelulas": 9,"comprimento": 20.0}
       ],
@@ -185,7 +196,7 @@
         }
     },
     {
-      "id": 1,"idCorte": 0,"angulo": 1.5708,"rotulo": "duto0CG","direcaoConveccao": 0,"acoplamentoTermico": 0,"formacao":true,
+      "id": 1,"idCorte": 1,"angulo": 1.5708,"rotulo": "duto0CG","direcaoConveccao": 1,"acoplamentoTermico": 1,
       "discretizacao": [
         {"nCelulas": 91,"comprimento": 20.0}
       ],
@@ -295,37 +306,145 @@
         }
     }
   ],
-  "dutosServico": [],
+  "dutosServico": [
+    {
+      "id": 0,"idCorte": 3,"angulo": -1.570796,"rotulo": "duto0GV","acoplamentoTermico": 0,
+      "discretizacao": [
+        {"nCelulas": 50,"comprimento": 20.0}
+      ],
+      "condicoesIniciais": 
+        {
+          "compInter": [0.0,1.0],
+          "temp": [25.0,4.0],
+          "pressao": [200.0,208.897],
+          "vazaoMassicaGas": [0.0,0.0],
+          "tempExterna": [25.0,4.0],
+          "velExterna": [1.0,1.0],
+          "kExterna": [0.0585726,0.0569396],
+          "calorEspecificoExterno": [4182.0,4182.0],
+          "rhoExterno": [1000.0,1000.0],
+          "viscExterna": [0.001,0.001]
+        }
+    },
+    {
+      "id": 1,"idCorte": 3,"angulo": 0.0,"rotulo": "duto0G","acoplamentoTermico": 0,
+      "discretizacao": [
+        {"nCelulas": 100,"comprimento": 40.0}
+      ],
+      "condicoesIniciais": 
+        {
+          "compInter": [0.0,1.0],
+          "temp": [4.0,4.0],
+          "pressao": [208.897,221.233],
+          "vazaoMassicaGas": [0.0,0.0],
+          "tempExterna": [4.0,4.0],
+          "velExterna": [0.5,0.5],
+          "kExterna": [0.0570177,0.0592117],
+          "calorEspecificoExterno": [4182.0,4182.0],
+          "rhoExterno": [1000.0,1000.0],
+          "viscExterna": [0.001,0.001]
+        }
+    },
+    {
+      "id": 2,"idCorte": 4,"angulo": -1.570796,"rotulo": "duto1G","acoplamentoTermico": 1,
+      "discretizacao": [
+        {"nCelulas": 91,"comprimento": 20.0}
+      ],
+      "condicoesIniciais": 
+        {
+          "compInter": [0.0,1.0],
+          "temp": [4.66,64.6],
+          "pressao": [222.135,265.347],
+          "vazaoMassicaGas": [0.0,0.0],
+          "tempExterna": [4.66,64.06],
+          "velExterna": [100.0,100.0],
+          "kExterna": [0.0594865,0.0770507],
+          "calorEspecificoExterno": [4182.0,4182.0],
+          "rhoExterno": [1000.0,1000.0],
+          "viscExterna": [0.001,0.001]
+        }
+    }
+  ],
   "ipr": [
     {
       "id": 0,
       "comprimentoMedido": 10.0,
-      "pressaoEstatica": [260.0],
+      "pressaoEstatica": [500.0],
       "tempoPressaoEstatica": [0.0],
       "temperaturas": [70.0],
       "tempoTemperaturas":[0.0],
-      "ip": [20.0,20.0],
+      "ip": [800.0,10.0],
       "tempoip": [0.0,1000.0],
-      "ii": [20.0,20.0],
+      "ii": [100.0,10.0],
       "tempoii": [0.0,1000.0],
-      "indFluidoPro": 0,
-      "ativo": true
+      "indFluidoPro": 0
     }
   ],
-  "bcs": [
+  "gasInj": {
+    "tipoCC": 1,
+    "temperatura": [40 , 40 , 40 , 40 , 40 , 40 , 40],
+    "pressaoInjecao": [160 , 160 , 160 , 160 , 160 , 160 , 160],
+    "vazaoGas": [100000 , 100000 , 150000 , 150000 , 0 , 0 , 150000],
+    "tempo": [0 , 3000 , 3060 , 7000 , 7065 , 30000 , 30065]
+  },
+  "fonteGasLift": [
+    {"id": 0,
+      "comprimentoMedidoProducao": 190.0,
+      "comprimentoMedidoServico": 6810,
+      "tipoValvula": 0,
+      "diametroOrificio": 0.007938,
+      "cdvgl": 1.0,
+      "frecupera": 0,
+      "razaoArea": 0.1,
+      "pressaoCalibracao": 0.2
+    }
+  ],
+  "fonteGas_reserva": [
     {
-     "id": 0,
+      "id": 0,
+      "comprimentoMedidoProducao": 2020.0,
+      "temperatura": [40 , 40 , 40 , 40 , 40],
+      "vazaoGas" : [0 , 0 ,     150000 , 150000 ,  0 ],
+      "tempo" : [0 , 21000 , 21060 , 27000 , 27060]
+    } 
+  ],
+  "fonteLiquido": [
+    {"id": 0,
+      "comprimentoMedido": 2020.0,
+      "temperatura": [40.0,40.0,40.0,40.0,40.0],
+      "beta": [1.0,1.0,1.0,1.0,1.0],
+      "vazaoLiquido": [0.9,0.9,0.9,0.9,0.9],
+      "tempo": [0.0,15000.0,15060.0,16060.0,16120.0],
+      "indiFluidoPro": 0
+    }
+  ],
+  "bcs_reserva": [
+    {
       "comprimentoMedido": 100.0,
       "tempo": [0 , 500 , 501 , 7000 , 7065 , 30060 , 30120 ],
-      "frequencia": [ 60 , 60 ,  60 ,  60 ,    0 ,    0 ,     60 ],
-      "vazao": [ 0 , 9375 , 20000 , 25000 , 29750 , 34375 ],
+      "frequencia": [ 0 , 0 , 60 , 60 , 0 , 0 , 60 ],
+      "vazao": [ 0 , 1500 , 3200 , 4000 , 4760 , 5500 ],
       "head": [ 53.5 , 47 , 39 , 34 , 26 , 17 ],
       "potencia": [ 1.2 , 1.3 , 1.5 , 1.5 , 1.5 , 1.4 ],
       "eficiencia": [ 0 , 40 , 64 , 68 , 64 , 50 ],
       "freqref": 60,
-      "nestag": 60,
-      "EficienciaMotor": 85,
-      "ativo": true
+      "nestag": 60 
+    }
+  ],
+  "bombaVolumetrica_reserva": [
+    {
+      "comprimentoMedido": 4020.0,
+      "tempo": [0.0,500.0,560.0,7000.0,7005.0,30500.0,30560.0],
+      "frequencia": [0 ,   0 ,  60 ,    60  ,   0 ,     0 ,    60],
+      "capacidade": 2000.0,
+      "fatorpoli": 1.4
+    }
+  ],
+  "deltaPressao_reserva": [
+    {
+      "comprimentoMedido": 4020.0,
+      "deltaPressao": [50 , 50 ,     0 ,     0 ,    50],
+      "tempo": [0 , 7000 , 7005 , 30500 , 30560]
     }
   ],
   "master1": {
@@ -339,15 +458,22 @@
     "tempo": [0.0,7000.0,7065.0,30000.0,30065.0]
   },
   "separador": {
-    "pressao": [15 , 15 , 6.0 , 6.0 , 15.0],
+    "pressao": [10 , 10 , 6.0 , 6.0 , 10.0],
     "tempo": [0 , 500.0 , 560 , 4000.0 , 4060.0]
   },
   "chokeSup": {
     "coeficienteDescarga": 0.84,
     "modelo": 0,
-    "abertura": [0.3 , 0.3 , 0.0 , 0.0 , 0.3 , 0.3 , 0.3 , 0.3 , 0.3],
-    "tempo": [0 , 7000.0 , 7065 , 8000.0 , 8001.0 , 8500.0 , 8565.0 , 29000.0 , 29065]
+    "abertura": [0.3 , 0.3 , 0 , 0 , 0.3 , 0.3 , 0.3 , 0.3 , 0.3],
+    "tempo": [0 , 7000.0 , 7065 , 8000.0 , 8065.0 , 8500.0 , 8565.0 , 29000.0 , 29065]
   },
+  "pig_reserva": [
+    {
+      "lancador": 2420.0,
+      "recebedor": 7940.0,
+      "tempo": 25100.0
+    }
+  ],
   "perfilProducao": {
     "pressao": true,
     "temperatura": true,
@@ -374,12 +500,15 @@
     "cpgas": true,
     "cpliq": true,
     "QLstd": true,
+    "QLstdTotal":true,
     "QGstd": true,
     "api": true,
     "bsw": true,
+    "ReyInterno":true,
+    "tempoResiLiqComp":true,
+    "RedutorAtrito":true,
     "tempo": [0 , 1000 , 7000 , 7100 , 7500 , 8000 , 10000 , 15000 , 20000 , 30000 ,  30500 , 31000 , 32500 , 33000 , 33500 , 34000 , 34500 , 35000 , 35500 , 36000 ,
-          37000 , 38000 , 39000 , 40000 , 41000 , 42000 , 43000 , 44000 , 45000 , 47000 , 50000],
-      "ativo": true
+          37000 , 38000 , 39000 , 40000 , 41000 , 42000 , 43000 , 44000 , 45000 , 47000 , 50000]
   },
   "perfilServico": {
     "pressao": true,
@@ -394,110 +523,8 @@
     "fric": false,
     "calor": false,
     "QGstd": true,
-    "tempo": [0.0,1000.0,7000.0,7100.0,7500.0,8000.0,10000.0,15000.0,20000.0,30000.0,35000.0,35100.0,36000.0,37000.0,40000.0,42000.0,44000.0,46000.0,48000.0,50000.0],
-      "ativo": true
+    "tempo": [0.0,1000.0,7000.0,7100.0,7500.0,8000.0,10000.0,15000.0,20000.0,30000.0,35000.0,35100.0,36000.0,37000.0,40000.0,42000.0,44000.0,46000.0,48000.0,50000.0]
   },
-  "tendP": [
-    {
-      "id": 0,
-      "comprimentoMedido": 50.0,
-      "dt": 20.0,
-      "pressao": true,
-      "temperatura": true,
-      "holdup": true,
-      "bet": true,
-      "ugs": true,
-      "uls": true,
-      "ug": false,
-      "ul": false,
-      "arra": true,
-      "viscosidadeLiquido": false,
-      "viscosidadeGas": false,
-      "rhog": false,
-      "rhol": false,
-      "vazaoMassicaGas": false,
-      "vazaoMassicaLiquido": false,
-      "c0": false,
-      "ud": false,
-      "RGO": false,
-      "deng": false,
-      "yco2": false,
-      "calor": false,
-      "masstrans": false,
-      "QLstd": true,
-      "QGstd": true,
-      "api": false,
-      "bsw": false,
-      "rotulo": "Fundo",
-      "ativo": true
-    },
-    {
-       "id": 1,
-      "comprimentoMedido": 1000.0,
-      "dt": 20.0,
-      "pressao": true,
-      "temperatura": true,
-      "holdup": true,
-      "bet": true,
-      "ugs": true,
-      "uls": true,
-      "ug": false,
-      "ul": false,
-      "arra": true,
-      "viscosidadeLiquido": false,
-      "viscosidadeGas": false,
-      "rhog": false,
-      "rhol": false,
-      "vazaoMassicaGas": false,
-      "vazaoMassicaLiquido": false,
-      "c0": false,
-      "ud": false,
-      "RGO": false,
-      "deng": false,
-      "yco2": false,
-      "calor": false,
-      "masstrans": false,
-      "QLstd": true,
-      "QGstd": true,
-      "api": false,
-      "bsw": false,
-      "rotulo": "Masterjus",
-      "ativo": true
-    },
-    {
-      "id": 2,
-      "comprimentoMedido": 2000.0,
-      "dt": 20.0,
-      "pressao": true,
-      "temperatura": true,
-      "holdup": true,
-      "bet": true,
-      "ugs": true,
-      "uls": true,
-      "ug": false,
-      "ul": false,
-      "arra": true,
-      "viscosidadeLiquido": false,
-      "viscosidadeGas": false,
-      "rhog": false,
-      "rhol": false,
-      "vazaoMassicaGas": false,
-      "vazaoMassicaLiquido": false,
-      "c0": false,
-      "ud": false,
-      "RGO": false,
-      "deng": false,
-      "yco2": false,
-      "calor": false,
-      "masstrans": false,
-      "QLstd": true,
-      "QGstd": true,
-      "api": false,
-      "bsw": false,
-      "rotulo": "Superficie",
-      "ativo": true
-    }
-  ],
   "tela": [
     {
       "coluna": true,

@@ -65,6 +65,16 @@ configure_file(
     @ONLY
 )
 
+# Auto-generate translations_data.h from translations.json.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/marlim3/translations.json")
+file(READ "${CMAKE_SOURCE_DIR}/marlim3/translations.json" TRANSLATIONS_JSON_CONTENT)
+configure_file(
+    ${INCDIR}/translations_data.h.in
+    ${INCDIR}/translations_data.h
+    @ONLY
+)
+
 file(GLOB CXX_SOURCES ${SRCDIR}/*.cpp)
 set(F90_SOURCES
     ${FSRCDIR}/Constants.f90
@@ -233,5 +243,13 @@ if(APPLE)
         SKIP_BUILD_RPATH TRUE
         INSTALL_RPATH "")
 endif()
+
+# Copy executable into the Python package directory after each build.
+add_custom_command(TARGET Marlim3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:Marlim3>
+        ${CMAKE_SOURCE_DIR}/marlim3/$<TARGET_FILE_NAME:Marlim3>
+    COMMENT "Copying Marlim3 executable to marlim3/ package directory"
+)
 
 install(TARGETS Marlim3 DESTINATION bin)

@@ -54,7 +54,7 @@ uv run python -c "import marlim3; print(marlim3.__version__)"
 
 **Step 2 — Build and register the C++/Fortran executable** (required to run simulations):
 
-See [Compilation](#compilation) below. After building, copy `build/Marlim3` to `marlim3/` and run:
+See [Compilation](#compilation) below. The CMake build automatically copies the executable into `marlim3/` after each successful build (via a `POST_BUILD` step), so no manual copy is needed. Then run:
 
 ```bash
 MARLIM3_SKIP_BUILD=1 uv sync --locked
@@ -71,11 +71,34 @@ Use `Marlim3` as a Python library in your scripts:
 ```python
 import marlim3
 
-# Your simulation code here
-# Example: configure and run simulations programmatically
+# Build a model in English
+branch = marlim3.Branch()
+branch.system = "PROD"
+branch.productionFluid = [{"id": 0, "api": 30, "gor": 100, "gasDensity": 0.7, "bsw": 0.0}]
+branch.simulate()
 ```
 
-For examples, refer to the tutorials available in the `docs` folder.
+The Python API is **fully bilingual** — you can use Portuguese or English interchangeably:
+
+```python
+import marlim3
+
+# Build a model entirely in Portuguese
+tramo = marlim3.Tramo()
+tramo.sistema = "PROD"
+tramo.fluidosProducao = [{"id": 0, "api": 30, "rgo": 100, "densidadeGas": 0.7, "bsw": 0.0}]
+tramo.secaoTransversal = [{"id": 0, "diametroInterno": 0.254, "rugosidade": 1.83e-4,
+                           "camadas": [{"idMaterial": 0, "tipoMedicaoCamada": "ESPESSURA", "espessura": 0.0254}]}]
+
+# Nested access also works in both languages
+tramo.fluidosProducao[0]["densidadeGas"]  # → 0.7
+tramo.productionFluid[0]["gasDensity"]    # → 0.7 (same data)
+
+# Export in Portuguese
+tramo.to_json("modelo", language='pt')
+```
+
+See [Bilingual Support](docs/translations.md) for details. For examples, refer to the tutorials in `docs/`.
 
 ### Option 2: Command-Line Executable
 
@@ -177,11 +200,7 @@ The resulting `build/Marlim3.exe` is fully statically linked and does not requir
 
 The compiled executable is placed at `build/Marlim3`.
 
-To use it with the Python package, copy it to the `marlim3/` directory:
-
-```bash
-cp build/Marlim3 marlim3/
-```
+A CMake `POST_BUILD` step automatically copies the executable to `marlim3/` after each successful build, so the Python package always picks up the latest binary. No manual copy is needed.
 
 Then activate the package locally (skipping recompilation):
 
@@ -209,3 +228,5 @@ The GUI auto-detects the executable from `build/Marlim3`.
 ## Note
 
 Several resources and portions of the source code are currently written in Portuguese. We plan to gradually translate all content into English.
+
+The Python API is fully bilingual (EN/PT) — see [docs/translations.md](docs/translations.md).
