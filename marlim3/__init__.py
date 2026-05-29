@@ -21,8 +21,10 @@ from ._download import ensure_executable
 ensure_executable()
 
 # Import main classes
-from ._tramo._tramo import Tramo
-from ._rede._rede import Rede
-from ._cenarios._cenarios import Cenarios
+from ._tramo._branch import Branch
+from ._rede._rede import Network
+from ._cenarios._cenarios import Scenarios
 
-__all__ = ['Tramo','Rede','Cenarios', '__version__']
+Tramo = Branch  # Portuguese alias
+
+__all__ = ['Branch', 'Tramo', 'Network', 'Scenarios', '__version__']

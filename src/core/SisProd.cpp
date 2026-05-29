@@ -44,6 +44,7 @@
  */
 
 #include "SisProd.h"
+#include "OutputI18n.h"
 #include <chrono>
 
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
@@ -19634,6 +19635,9 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 
 void  SProd::ImprimeTrendPCab(int i, int nrede) {
   if(arq.ntendp>0){
+    const auto t = [this](const char* pt, const char* en) {
+      return output_i18n::tr(this->arq.idiomaSaida, pt, en);
+    };
         ostringstream saidaT;
         if(indTramo<0  && arq.AS==0){
         		  saidaT << pathPrefixoArqSaida << "TENDP" << "-" << round(arq.trendp[i].comp) << ".dat";
@@ -19654,100 +19658,100 @@ void  SProd::ImprimeTrendPCab(int i, int nrede) {
          double comprimento=0;
          int posicn=arq.trendp[i].posic;
          for(int k=0; k<=posicn; k++)comprimento+=arq.celp[k].dx;
-         escreveTrend<<"# Comprimento a partir do Fundo de Poco (m) = "<<comprimento<<endl;
-         escreveTrend<<"# Rotulo = "<<arq.trendp[i].rotulo<<endl;
-         escreveTrend<<"# Indice da Celula = "<<arq.trendp[i].posic<<endl;
-         if(indTramo<0  && arq.AS==1) escreveTrend<<" Sequencia AS ;";
-         escreveTrend<<" Tempo (s) ;";
-         if(arq.trendp[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendp[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendp[i].hol==1) escreveTrend<<" Holdup de liquido (-) ;";
-                  if(arq.trendp[i].FVH==1) escreveTrend<<" Fracao Volumetrica Hidrato (-) ;"; //solver de Hidratos - chris
-         if(arq.trendp[i].bet==1) escreveTrend<<" Fracao vol. de liquido complementar (-) ;";
-         if(arq.trendp[i].ugs==1) escreveTrend<<" Velocidade superficial do gas (m/s) ;";
-         if(arq.trendp[i].uls==1) escreveTrend<<" Velocidade superficial do liquido (m/s) ;";
-         if(arq.trendp[i].ug==1) escreveTrend<<" Velocidade do gas (m/s) ;";
-         if(arq.trendp[i].ul==1) escreveTrend<<" Velocidade do liquido (m/s) ;";
-         if(arq.trendp[i].arra==1) escreveTrend<<" Indicador de arranjo de fases (-) ;";
-         if(arq.trendp[i].viscl==1) escreveTrend<<" Viscosidade do Liquido (cP) ;";
-         if(arq.trendp[i].viscg==1) escreveTrend<<" Viscosidade do Gas (cP) ;";
-         if(arq.trendp[i].rhog==1) escreveTrend<<" Massa Especifica do Gas (kg/m3) ;";
-         if(arq.trendp[i].rhol==1) escreveTrend<<" Massa Especifica do Liquido (kg/m3) ;";
-         if(arq.trendp[i].rhoMix==1) escreveTrend<<" Massa Especifica da Mistura (kg/m3) ;";
-         if(arq.trendp[i].masg==1) escreveTrend<<" Vazao Massica do Gas (kg/s) ;";
-         if(arq.trendp[i].masl==1) escreveTrend<<" Vazao Massica do Liquido (kg/s) ;";
-         if(arq.trendp[i].c0==1) escreveTrend<<" Coeficiente de distribuição: C0 (-) ;";
-         if(arq.trendp[i].ud==1) escreveTrend<<" Velocidade de escorregamento: Ud (m/s) ;";
+         escreveTrend << t("# Comprimento a partir do Fundo de Poco (m) = ", "# Length from Bottomhole (m) = ") << comprimento << endl;
+         escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendp[i].rotulo << endl;
+         escreveTrend << t("# Indice da Celula = ", "# Cell index = ") << arq.trendp[i].posic << endl;
+         if(indTramo<0  && arq.AS==1) escreveTrend << t(" Sequencia AS ;", " SA sequence ;");
+         escreveTrend << t(" Tempo (s) ;", " Time (s) ;");
+         if(arq.trendp[i].pres==1) escreveTrend << t(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
+         if(arq.trendp[i].temp==1) escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
+         if(arq.trendp[i].hol==1) escreveTrend << t(" Holdup de liquido (-) ;", " Liquid holdup (-) ;");
+         if(arq.trendp[i].FVH==1) escreveTrend << t(" Fracao Volumetrica Hidrato (-) ;", " Hydrate volumetric fraction (-) ;"); //solver de Hidratos - chris
+         if(arq.trendp[i].bet==1) escreveTrend << t(" Fracao vol. de liquido complementar (-) ;", " Complementary liquid vol. fraction (-) ;");
+         if(arq.trendp[i].ugs==1) escreveTrend << t(" Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;");
+         if(arq.trendp[i].uls==1) escreveTrend << t(" Velocidade superficial do liquido (m/s) ;", " Liquid superficial velocity (m/s) ;");
+         if(arq.trendp[i].ug==1) escreveTrend << t(" Velocidade do gas (m/s) ;", " Gas velocity (m/s) ;");
+         if(arq.trendp[i].ul==1) escreveTrend << t(" Velocidade do liquido (m/s) ;", " Liquid velocity (m/s) ;");
+         if(arq.trendp[i].arra==1) escreveTrend << t(" Indicador de arranjo de fases (-) ;", " Phase pattern indicator (-) ;");
+         if(arq.trendp[i].viscl==1) escreveTrend << t(" Viscosidade do Liquido (cP) ;", " Liquid viscosity (cP) ;");
+         if(arq.trendp[i].viscg==1) escreveTrend << t(" Viscosidade do Gas (cP) ;", " Gas viscosity (cP) ;");
+         if(arq.trendp[i].rhog==1) escreveTrend << t(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
+         if(arq.trendp[i].rhol==1) escreveTrend << t(" Massa Especifica do Liquido (kg/m3) ;", " Liquid density (kg/m3) ;");
+         if(arq.trendp[i].rhoMix==1) escreveTrend << t(" Massa Especifica da Mistura (kg/m3) ;", " Mixture density (kg/m3) ;");
+         if(arq.trendp[i].masg==1) escreveTrend << t(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
+         if(arq.trendp[i].masl==1) escreveTrend << t(" Vazao Massica do Liquido (kg/s) ;", " Liquid mass flow rate (kg/s) ;");
+         if(arq.trendp[i].c0==1) escreveTrend << t(" Coeficiente de distribuição: C0 (-) ;", " Distribution coefficient: C0 (-) ;");
+         if(arq.trendp[i].ud==1) escreveTrend << t(" Velocidade de escorregamento: Ud (m/s) ;", " Slip velocity: Ud (m/s) ;");
          if(arq.trendp[i].RGO==1) escreveTrend<<" RGO (Sm3/Sm3) ;";
-         if(arq.trendp[i].deng==1) escreveTrend<<" Densidade do Gas (-) ;";
-         if(arq.trendp[i].yco2==1) escreveTrend<<" Fracao Molar de CO2 (-) ;";
-         if(arq.trendp[i].calor==1) escreveTrend<<" Fluxo de calor entre escoamento e parede (W/m) ;";
-         if(arq.trendp[i].masstrans==1) escreveTrend<<" Transferencia de Massa entre Fases (kg / [s m]) ;";
-         if(arq.trendp[i].qlst==1) escreveTrend<<" Vazao volumetrica standard de oleo morto (Sm3/d) ;";
-		 if(arq.trendp[i].qlwst==1) escreveTrend<<" Vazao volumetrica standard de oleo morto + agua (Sm3/d) ;";
-         if(arq.trendp[i].qlstTot==1) escreveTrend<<" Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) ;";
-         if(arq.trendp[i].qgst==1) escreveTrend<<" Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) ;";
-         if(arq.trendp[i].api==1) escreveTrend<<" Grau API (-) ;";
+         if(arq.trendp[i].deng==1) escreveTrend << t(" Densidade do Gas (-) ;", " Gas specific gravity (-) ;");
+         if(arq.trendp[i].yco2==1) escreveTrend << t(" Fracao Molar de CO2 (-) ;", " CO2 molar fraction (-) ;");
+         if(arq.trendp[i].calor==1) escreveTrend << t(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
+         if(arq.trendp[i].masstrans==1) escreveTrend << t(" Transferencia de Massa entre Fases (kg / [s m]) ;", " Interphase mass transfer (kg / [s m]) ;");
+         if(arq.trendp[i].qlst==1) escreveTrend << t(" Vazao volumetrica standard de oleo morto (Sm3/d) ;", " Standard dead oil volumetric flow rate (Sm3/d) ;");
+     if(arq.trendp[i].qlwst==1) escreveTrend << t(" Vazao volumetrica standard de oleo morto + agua (Sm3/d) ;", " Standard dead oil + water volumetric flow rate (Sm3/d) ;");
+         if(arq.trendp[i].qlstTot==1) escreveTrend << t(" Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) ;", " Standard dead oil + water + complementary liquid volumetric flow rate (Sm3/d) ;");
+         if(arq.trendp[i].qgst==1) escreveTrend << t(" Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) ;", " Standard free + dissolved gas volumetric flow rate (Sm3/d) ;");
+         if(arq.trendp[i].api==1) escreveTrend << t(" Grau API (-) ;", " API gravity (-) ;");
          if(arq.trendp[i].bsw==1) escreveTrend<<" BSW (-) ;";
-         if(arq.trendp[i].hidro == 1) escreveTrend << " Termo Hidrostatico (Pa/m) ;";
-         if(arq.trendp[i].fric == 1) escreveTrend << " Termo Friccao (Pa/m) ;";
-         if(arq.trendp[i].dengD==1) escreveTrend<<" Densidade Gas Dissolvido In Situ (-) ;";
-         if(arq.trendp[i].dengL==1) escreveTrend<<" Densidade Gas Livre In Situ (-) ;";
-         if(arq.trendp[i].mlFonte == 1) escreveTrend << " Fonte massica - Liq. (Hidrocarb+Agua) (kg/s);";
-         if(arq.trendp[i].mgFonte==1) escreveTrend<<" Fonte massica - Gas (kg/s);";
-         if(arq.trendp[i].mcFonte==1) escreveTrend<<" Fonte massica - Liq. Complementar (kg/s);";
-         if(arq.trendp[i].dpB==1) escreveTrend<<" Incremento de pressao de Bombeio (kgf/cm2);";
-         if(arq.trendp[i].potB==1) escreveTrend<<" Potencia de Bombeio (kW);";
-         if(arq.trendp[i].tempChokeJus==1) escreveTrend<<" Temperatura a Jusante do Choke de Superficie (C);";
- 		 if(arq.trendp[i].reyi == 1) escreveTrend << " Reynolds interno da mistura (-) ;";
- 		 if(arq.trendp[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
- 		 if(arq.trendp[i].Fr == 1) escreveTrend << " Froud (-) ;";
- 		 if(arq.trendp[i].grashi == 1) escreveTrend << " Grashof interno da mistura (-) ;";
- 		 if(arq.trendp[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
- 		 if(arq.trendp[i].nusi == 1) escreveTrend << " Nusselt interno da mistura (-) ;";
- 		 if(arq.trendp[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
- 		 if(arq.trendp[i].hi == 1) escreveTrend << " Coeficiente de pelicula interno da mistura (W/(m2.K)) ;";
- 		 if(arq.trendp[i].he == 1) escreveTrend << " Coeficiente de pelicula externo (W/(m2.K)) ;";
- 		 if(arq.trendp[i].pri == 1) escreveTrend << " Prandtl interno da mistura (-) ;";
- 		 if(arq.trendp[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
- 		 if(arq.trendp[i].Rs == 1)	escreveTrend << " Razao de Solubilidade (-) ;";
- 		 if(arq.trendp[i].Bo == 1)	escreveTrend << " Fator Volume de Formacao (-) ;";
- 		 if(arq.trendp[i].volMonM1PT == 1) escreveTrend << " Volume de liquido a montante da Master1, a PT, m3 ;";
- 		 if(arq.trendp[i].volJusM1PT == 1)	escreveTrend << " Volume de liquido a jusante da Master1, a PT, m3 ;";
- 		 if(arq.trendp[i].volMonM1ST == 1)	escreveTrend << " Volume de liquido a montante da Master1, standard, m3 ;";
- 		 if(arq.trendp[i].volJusM1ST == 1)	escreveTrend << " Volume de liquido a jusante da Master1, standard, m3 ;";
- 		 if(arq.trendp[i].inventarioGas == 1)	escreveTrend << " Inventario de Gas em toda a tubulação, standard, m3 ;";
- 		 if(arq.trendp[i].inventarioLiq == 1)	escreveTrend << " Inventario de Liquido em toda a tubulação, standard, m3 ;";
- 		 if(arq.trendp[i].diamInt == 1)	escreveTrend << " Diametro Interno da tubulacao, m ;";
- 		 if(arq.trendp[i].TempParede == 1)	escreveTrend << " Temperatura Interna da Parede, C ;";
- 		 if(arq.trendp[i].subResfria == 1)	escreveTrend << " Subresfriamento, C ;";
+     if(arq.trendp[i].hidro == 1) escreveTrend << t(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
+     if(arq.trendp[i].fric == 1) escreveTrend << t(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
+     if(arq.trendp[i].dengD==1) escreveTrend << t(" Densidade Gas Dissolvido In Situ (-) ;", " In-situ dissolved gas specific gravity (-) ;");
+     if(arq.trendp[i].dengL==1) escreveTrend << t(" Densidade Gas Livre In Situ (-) ;", " In-situ free gas specific gravity (-) ;");
+     if(arq.trendp[i].mlFonte == 1) escreveTrend << t(" Fonte massica - Liq. (Hidrocarb+Agua) (kg/s);", " Mass source - Liq. (Hydrocarbon+Water) (kg/s);");
+     if(arq.trendp[i].mgFonte==1) escreveTrend << t(" Fonte massica - Gas (kg/s);", " Mass source - Gas (kg/s);");
+     if(arq.trendp[i].mcFonte==1) escreveTrend << t(" Fonte massica - Liq. Complementar (kg/s);", " Mass source - Complementary liquid (kg/s);");
+     if(arq.trendp[i].dpB==1) escreveTrend << t(" Incremento de pressao de Bombeio (kgf/cm2);", " Pump pressure increment (kgf/cm2);");
+     if(arq.trendp[i].potB==1) escreveTrend << t(" Potencia de Bombeio (kW);", " Pump power (kW);");
+     if(arq.trendp[i].tempChokeJus==1) escreveTrend << t(" Temperatura a Jusante do Choke de Superficie (C);", " Surface choke downstream temperature (C);");
+     if(arq.trendp[i].reyi == 1) escreveTrend << t(" Reynolds interno da mistura (-) ;", " Internal mixture Reynolds (-) ;");
+     if(arq.trendp[i].reye == 1) escreveTrend << t(" Reynolds externo (-) ;", " External Reynolds (-) ;");
+     if(arq.trendp[i].Fr == 1) escreveTrend << t(" Froud (-) ;", " Froude (-) ;");
+     if(arq.trendp[i].grashi == 1) escreveTrend << t(" Grashof interno da mistura (-) ;", " Internal mixture Grashof (-) ;");
+     if(arq.trendp[i].grashe == 1) escreveTrend << t(" Grashof externo (-) ;", " External Grashof (-) ;");
+     if(arq.trendp[i].nusi == 1) escreveTrend << t(" Nusselt interno da mistura (-) ;", " Internal mixture Nusselt (-) ;");
+     if(arq.trendp[i].nuse == 1) escreveTrend << t(" Nusselt externo (-) ;", " External Nusselt (-) ;");
+     if(arq.trendp[i].hi == 1) escreveTrend << t(" Coeficiente de pelicula interno da mistura (W/(m2.K)) ;", " Internal mixture film coefficient (W/(m2.K)) ;");
+     if(arq.trendp[i].he == 1) escreveTrend << t(" Coeficiente de pelicula externo (W/(m2.K)) ;", " External film coefficient (W/(m2.K)) ;");
+     if(arq.trendp[i].pri == 1) escreveTrend << t(" Prandtl interno da mistura (-) ;", " Internal mixture Prandtl (-) ;");
+     if(arq.trendp[i].pre == 1)	escreveTrend << t(" Prandtl externo (-) ;", " External Prandtl (-) ;");
+     if(arq.trendp[i].Rs == 1)	escreveTrend << t(" Razao de Solubilidade (-) ;", " Solubility ratio (-) ;");
+     if(arq.trendp[i].Bo == 1)	escreveTrend << t(" Fator Volume de Formacao (-) ;", " Formation volume factor (-) ;");
+     if(arq.trendp[i].volMonM1PT == 1) escreveTrend << t(" Volume de liquido a montante da Master1, a PT, m3 ;", " Liquid volume upstream of Master1, at PT, m3 ;");
+     if(arq.trendp[i].volJusM1PT == 1)	escreveTrend << t(" Volume de liquido a jusante da Master1, a PT, m3 ;", " Liquid volume downstream of Master1, at PT, m3 ;");
+     if(arq.trendp[i].volMonM1ST == 1)	escreveTrend << t(" Volume de liquido a montante da Master1, standard, m3 ;", " Liquid volume upstream of Master1, standard, m3 ;");
+     if(arq.trendp[i].volJusM1ST == 1)	escreveTrend << t(" Volume de liquido a jusante da Master1, standard, m3 ;", " Liquid volume downstream of Master1, standard, m3 ;");
+     if(arq.trendp[i].inventarioGas == 1)	escreveTrend << t(" Inventario de Gas em toda a tubulação, standard, m3 ;", " Gas inventory in whole tubing, standard, m3 ;");
+     if(arq.trendp[i].inventarioLiq == 1)	escreveTrend << t(" Inventario de Liquido em toda a tubulação, standard, m3 ;", " Liquid inventory in whole tubing, standard, m3 ;");
+     if(arq.trendp[i].diamInt == 1)	escreveTrend << t(" Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;");
+     if(arq.trendp[i].TempParede == 1)	escreveTrend << t(" Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;");
+     if(arq.trendp[i].subResfria == 1)	escreveTrend << t(" Subresfriamento, C ;", " Subcooling, C ;");
   		if (arq.trendp[i].dadosParafina == 1){
-  			escreveTrend << " TIAC (C) C;";
-  			escreveTrend << " Cp Parafina (J/[kg C]) C;";
-  			escreveTrend << " Condutividade Termica Parafina (W / [m K]) C;";
-  			escreveTrend << " Massa Especifica Parafina (kg/m3) C;";
-  			escreveTrend << " Massa molar do Liquido Parafina (kg/mol) C;";
-  			escreveTrend << " Difusividade Mássica Parafina (m2/s) C;";
-  			escreveTrend << " Fluxo Massico de Parafina Total (kg/(m2-s)) C;";
-  			escreveTrend << " Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;";
-  			escreveTrend << " Gradiente de concentracao de parafina (1/m) C;";
-  			escreveTrend << " Condutividade do deposito (W/(m-K)) C;";
-  			escreveTrend << " Temperatura da Interface do deposito (C) C;";
+      escreveTrend << t(" TIAC (C) C;", " TIAC (C) C;");
+      escreveTrend << t(" Cp Parafina (J/[kg C]) C;", " Paraffin Cp (J/[kg C]) C;");
+      escreveTrend << t(" Condutividade Termica Parafina (W / [m K]) C;", " Paraffin thermal conductivity (W / [m K]) C;");
+      escreveTrend << t(" Massa Especifica Parafina (kg/m3) C;", " Paraffin density (kg/m3) C;");
+      escreveTrend << t(" Massa molar do Liquido Parafina (kg/mol) C;", " Paraffin liquid molar mass (kg/mol) C;");
+      escreveTrend << t(" Difusividade Mássica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
+      escreveTrend << t(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
+      escreveTrend << t(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
+      escreveTrend << t(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
+      escreveTrend << t(" Condutividade do deposito (W/(m-K)) C;", " Deposit conductivity (W/(m-K)) C;");
+      escreveTrend << t(" Temperatura da Interface do deposito (C) C;", " Deposit interface temperature (C) C;");
   		}
  		 if(arq.trendp[i].autoVal == 1){
  			for(int konta1=0; konta1<3; konta1++){
- 				escreveTrend << " Celeridade, familia de onda "<<konta1<<" m/s ;";
+        escreveTrend << t(" Celeridade, familia de onda ", " Celerity, wave family ") << konta1 << t(" m/s ;", " m/s ;");
  			}
  		 }
  		 if(arq.trendp[i].autoVel == 1){
  			for(int konta1=0; konta1<3; konta1++){
  				for(int konta2=0; konta2<3; konta2++)
- 				escreveTrend << " Componente do autovetor, condicao adiabatica, familia de onda = "<<konta1<<"termo = "<<konta2<<" ;";
+        escreveTrend << t(" Componente do autovetor, condicao adiabatica, familia de onda = ", " Eigenvector component, adiabatic condition, wave family = ") << konta1 << t("termo = ", " term = ") << konta2 << " ;";
  			}
  		 }
  		 if(arq.trendp[i].flutuacao == 1){
  			for(int konta1=0; konta1<3; konta1++){
- 				escreveTrend << " Componente de flutuacao da familia de onda "<<konta1<<" ;";
+        escreveTrend << t(" Componente de flutuacao da familia de onda ", " Fluctuation component of wave family ") << konta1 << " ;";
  			}
  		 }
          escreveTrend<<endl;
@@ -20022,6 +20026,9 @@ void  SProd::ImprimeTrendP(int i, int nrede) {
 
 void  SProd::ImprimeTrendGCab(int i, int nrede) {
   if(arq.ntendg>0 && arq.lingas>0){
+    const auto t = [this](const char* pt, const char* en) {
+      return output_i18n::tr(this->arq.idiomaSaida, pt, en);
+    };
         ostringstream saidaT;
         if(indTramo<0  && arq.AS==0)
          saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
@@ -20040,43 +20047,43 @@ void  SProd::ImprimeTrendGCab(int i, int nrede) {
          double comprimento=0;
          int posicn=arq.trendg[i].posic;
          for(int k=0; k<=posicn; k++)comprimento+=arq.celg[k].dx;
-         escreveTrend<<"# Comprimento a partir da Plataforma (m) = "<<comprimento<<endl;
-         escreveTrend<<"# Rotulo = "<<arq.trendg[i].rotulo<<endl;
-         escreveTrend<<"# Indice da Celula = "<<arq.trendg[i].posic<<endl;
-         if(indTramo<0  && arq.AS==1) escreveTrend<<" Sequencia AS ;";
-         escreveTrend<<" Tempo (s) ;";
-         if(arq.trendg[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendg[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendg[i].ugs==1) escreveTrend<<" Velocidade superficial do gas (m/s) ;";
-         if(arq.trendg[i].ug==1) escreveTrend<<" Velocidade do gas (m/s) ;";
-         if(arq.trendg[i].tens==1) escreveTrend<<" Tensao Cisalhante (N/m2) ;";
-         if(arq.trendg[i].viscg==1) escreveTrend<<" Viscosidade do Gas (cP) ;";
-         if(arq.trendg[i].rhog==1) escreveTrend<<" Massa Especifica do Gas (kg/m3) ;";
-         if(arq.trendg[i].masg==1) escreveTrend<<" Vazao Massica do Gas (kg/s) ;";
-         if(arq.trendg[i].hidro==1) escreveTrend<<" Termo Hidrostatico (Pa/m) ;";
-         if(arq.trendg[i].FVHG==1) escreveTrend<<" FVHG (-) ;"; //chris - Hidratos
-         if(arq.trendg[i].fric==1) escreveTrend<<" Termo Friccao (Pa/m) ;";
-         if(arq.trendg[i].calor==1) escreveTrend<<" Fluxo de calor entre escoamento e parede (W/m) ;";
-         if(arq.trendg[i].qgst==1) escreveTrend<<" Vazao volumetrica standard de Gas (Sm3/d) ;";
-         if(arq.trendg[i].pEstagVGL==1) escreveTrend<<" Pressao de Estagnacao VGL (kgf/cm²) ;";
-         if(arq.trendg[i].tEstagVGL==1) escreveTrend<<" Temperatura de Estagnacao VGL (C) ;";
-         if(arq.trendg[i].pGargVGL==1) escreveTrend<<" Pressao na Garganta VGL (kgf/cm²) ;";
-         if(arq.trendg[i].tGargVGL==1) escreveTrend<<" Temperatura na Garganta VGL (C) ;";
-         if(arq.trendg[i].velgarg==1) escreveTrend<<" Velocidade na VGL (m/s) ;";
-         if(arq.trendg[i].qVGL==1) escreveTrend<<" Vazao volumetrica na VGL (mÂ³/s) ;";
-  		 if(arq.trendg[i].reyi == 1) escreveTrend << " Reynolds interno (-) ;";
-  		 if(arq.trendg[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
-  		 if(arq.trendg[i].grashi == 1) escreveTrend << " Grashof interno (-) ;";
-  		 if(arq.trendg[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
-  		 if(arq.trendg[i].nusi == 1) escreveTrend << " Nusselt interno (-) ;";
-  		 if(arq.trendg[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
-  		 if(arq.trendg[i].hi == 1) escreveTrend << " Coeficiente de pelicula interno (W/[m2 K]) ;";
-  		 if(arq.trendg[i].he == 1) escreveTrend << " Coeficiente de pelicula externo (W/[m2 K]) ;";
-  		 if(arq.trendg[i].pri == 1) escreveTrend << " Prandtl interno (-) ;";
-  		 if(arq.trendg[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-  		 if(arq.trendg[i].diamInt == 1)	escreveTrend << " Diametro Interno da tubulacao, m ;";
-  		 if(arq.trendg[i].TempParede == 1)	escreveTrend << " Temperatura Interna da Parede, C ;";
-  		if(arq.trendg[i].subResfria == 1)	escreveTrend << " Subresfriamento, C ;";
+         escreveTrend << t("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ") << comprimento << endl;
+         escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendg[i].rotulo << endl;
+         escreveTrend << t("# Indice da Celula = ", "# Cell index = ") << arq.trendg[i].posic << endl;
+         if(indTramo<0  && arq.AS==1) escreveTrend << t(" Sequencia AS ;", " SA sequence ;");
+         escreveTrend << t(" Tempo (s) ;", " Time (s) ;");
+        if(arq.trendg[i].pres==1) escreveTrend << t(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
+        if(arq.trendg[i].temp==1) escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
+        if(arq.trendg[i].ugs==1) escreveTrend << t(" Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;");
+        if(arq.trendg[i].ug==1) escreveTrend << t(" Velocidade do gas (m/s) ;", " Gas velocity (m/s) ;");
+        if(arq.trendg[i].tens==1) escreveTrend << t(" Tensao Cisalhante (N/m2) ;", " Shear stress (N/m2) ;");
+        if(arq.trendg[i].viscg==1) escreveTrend << t(" Viscosidade do Gas (cP) ;", " Gas viscosity (cP) ;");
+        if(arq.trendg[i].rhog==1) escreveTrend << t(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
+        if(arq.trendg[i].masg==1) escreveTrend << t(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
+        if(arq.trendg[i].hidro==1) escreveTrend << t(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
+        if(arq.trendg[i].FVHG==1) escreveTrend << t(" FVHG (-) ;", " FVHG (-) ;"); //chris - Hidratos
+        if(arq.trendg[i].fric==1) escreveTrend << t(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
+        if(arq.trendg[i].calor==1) escreveTrend << t(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
+        if(arq.trendg[i].qgst==1) escreveTrend << t(" Vazao volumetrica standard de Gas (Sm3/d) ;", " Standard gas volumetric flow rate (Sm3/d) ;");
+        if(arq.trendg[i].pEstagVGL==1) escreveTrend << t(" Pressao de Estagnacao VGL (kgf/cm²) ;", " VGL stagnation pressure (kgf/cm2) ;");
+        if(arq.trendg[i].tEstagVGL==1) escreveTrend << t(" Temperatura de Estagnacao VGL (C) ;", " VGL stagnation temperature (C) ;");
+        if(arq.trendg[i].pGargVGL==1) escreveTrend << t(" Pressao na Garganta VGL (kgf/cm²) ;", " VGL throat pressure (kgf/cm2) ;");
+        if(arq.trendg[i].tGargVGL==1) escreveTrend << t(" Temperatura na Garganta VGL (C) ;", " VGL throat temperature (C) ;");
+        if(arq.trendg[i].velgarg==1) escreveTrend << t(" Velocidade na VGL (m/s) ;", " Velocity in VGL (m/s) ;");
+        if(arq.trendg[i].qVGL==1) escreveTrend << t(" Vazao volumetrica na VGL (mÂ³/s) ;", " Volumetric flow rate in VGL (m3/s) ;");
+  		 if(arq.trendg[i].reyi == 1) escreveTrend << t(" Reynolds interno (-) ;", " Internal Reynolds (-) ;");
+  		 if(arq.trendg[i].reye == 1) escreveTrend << t(" Reynolds externo (-) ;", " External Reynolds (-) ;");
+  		 if(arq.trendg[i].grashi == 1) escreveTrend << t(" Grashof interno (-) ;", " Internal Grashof (-) ;");
+  		 if(arq.trendg[i].grashe == 1) escreveTrend << t(" Grashof externo (-) ;", " External Grashof (-) ;");
+  		 if(arq.trendg[i].nusi == 1) escreveTrend << t(" Nusselt interno (-) ;", " Internal Nusselt (-) ;");
+  		 if(arq.trendg[i].nuse == 1) escreveTrend << t(" Nusselt externo (-) ;", " External Nusselt (-) ;");
+  		 if(arq.trendg[i].hi == 1) escreveTrend << t(" Coeficiente de pelicula interno (W/[m2 K]) ;", " Internal film coefficient (W/[m2 K]) ;");
+  		 if(arq.trendg[i].he == 1) escreveTrend << t(" Coeficiente de pelicula externo (W/[m2 K]) ;", " External film coefficient (W/[m2 K]) ;");
+  		 if(arq.trendg[i].pri == 1) escreveTrend << t(" Prandtl interno (-) ;", " Internal Prandtl (-) ;");
+  		 if(arq.trendg[i].pre == 1)	escreveTrend << t(" Prandtl externo (-) ;", " External Prandtl (-) ;");
+  		 if(arq.trendg[i].diamInt == 1)	escreveTrend << t(" Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;");
+  		 if(arq.trendg[i].TempParede == 1)	escreveTrend << t(" Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;");
+  		if(arq.trendg[i].subResfria == 1)	escreveTrend << t(" Subresfriamento, C ;", " Subcooling, C ;");
          escreveTrend<<endl;
       }
       escreveTrend<<endl;
@@ -20350,6 +20357,9 @@ void  SProd::ImprimeTrendG(int i, int nrede) {
 void  SProd::ImprimeTrendTransPCab(int i) {
 
   if(arq.ntendtransp>0){
+    const auto t = [this](const char* pt, const char* en) {
+      return output_i18n::tr(this->arq.idiomaSaida, pt, en);
+    };
       int poscel=arq.trendtransp[i].comp;
       int poscam=arq.trendtransp[i].camada-1;
       int posdiscre=arq.trendtransp[i].discre-1;
@@ -20362,9 +20372,9 @@ void  SProd::ImprimeTrendTransPCab(int i) {
       ofstream escreveTrend(tmp.c_str(), ios_base::out);
         //ofstream escreveTrend(arq.trendtransp[i].rotulo.c_str(), ios_base::out);
       if(kimpT==1){
-        escreveTrend<<"# Rotulo = "<<arq.trendtransp[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
+        escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendtransp[i].rotulo << endl;
+        escreveTrend << t(" Tempo (s) ; ", " Time (s) ; ");
+        escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
         escreveTrend<<endl;
       }
         escreveTrend.close();
@@ -20626,6 +20636,9 @@ void  SProd::ImprimeTrendTransP(int i) {
 
 void  SProd::ImprimeTrendTransGCab(int i) {
   if(arq.ntendtransg>0 && arq.lingas>0){
+    const auto t = [this](const char* pt, const char* en) {
+      return output_i18n::tr(this->arq.idiomaSaida, pt, en);
+    };
       int poscel=arq.trendtransg[i].comp;
       int poscam=arq.trendtransg[i].camada-1;
       int posdiscre=arq.trendtransg[i].discre-1;
@@ -20638,9 +20651,9 @@ void  SProd::ImprimeTrendTransGCab(int i) {
       ofstream escreveTrend(tmp.c_str(), ios_base::out);
         //ofstream escreveTrend(arq.trendtransg[i].rotulo.c_str(), ios_base::out);
       if(kimpT==1){
-        escreveTrend<<"# Rotulo = "<<arq.trendtransg[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
+        escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendtransg[i].rotulo << endl;
+        escreveTrend << t(" Tempo (s) ; ", " Time (s) ; ");
+        escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
         escreveTrend<<endl;
       }
         escreveTrend.close();

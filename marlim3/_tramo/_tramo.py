@@ -21,12 +21,11 @@ import platform
 import subprocess
 import time
 from threading import Thread
+from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column, parse_trend_headers
 
 class Tramo:
 
     def __init__(self, 
-                 versao='1.0',
-                 versaoJson='1.3.9',
                  sistema='MULTIFASICO',
                  configuracaoInicial=None,
                  tabela=None,
@@ -69,11 +68,10 @@ class Tramo:
                  tendTransP=None,
                  tendTransS=None,
                  tela=None,
+                 language=None,
                  nome_tramo=None):
 
         self.sistema = sistema
-        self.versao = versao
-        self.versaoJson = versaoJson
         
         # configuracoes gerais
         self.configuracaoInicial = configuracaoInicial if configuracaoInicial is not None else {}
@@ -136,6 +134,10 @@ class Tramo:
         self.tendTransS = tendTransS if tendTransS is not None else []
         self.tela = tela if tela is not None else []
 
+        # language hint: when set to "en", the C++ engine translates English
+        # JSON keys to Portuguese before processing the input file.
+        self.language = language
+
         self.json_entrada_keys = set(self.__dict__.keys())
 
         self.resultados = {}
@@ -150,9 +152,6 @@ class Tramo:
             file_path = './' + filename + '.json'
         else:
             file_path = './' + filename
-
-        self.versao = '1.0'
-        self.versaoJson = '1.3.9'
 
         def filter_empty_objs(item):
             if isinstance(item, list):
@@ -196,8 +195,6 @@ class Tramo:
                 self.label = label
 
         self.sistema = data.get('sistema')
-        self.versao = data.get('versao')
-        self.versaoJson = data.get('versaoJson')
         self.configuracaoInicial = data.get('configuracaoInicial')
         self.tabela = data.get('tabela')
         self.tempo = data.get('tempo')
@@ -480,7 +477,8 @@ class Tramo:
                     file_path = os.path.join(root, filename) 
                     df = pd.read_csv(file_path, sep=';', skiprows=0, header=1) 
                     df.columns = [col.strip() for col in df.columns] 
-                    df['Tempo (s)'] = df['Tempo (s)'].astype(int) 
+                    df = normalize_time_column(df)
+                    df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(int) 
                     temp_dfs.append(df) 
      
         if not temp_dfs: 
@@ -489,7 +487,7 @@ class Tramo:
      
         concatenated_df = pd.concat(temp_dfs) 
          
-        concatenated_df.set_index(['Tempo (s)', concatenated_df.index], inplace=True) 
+        concatenated_df.set_index([CANONICAL_TIME_COLUMN, concatenated_df.index], inplace=True) 
      
         concatenated_df.index.set_levels([concatenated_df.index.levels[0],  
                                           concatenated_df.index.levels[1]],  
@@ -521,15 +519,15 @@ class Tramo:
                             linha2 = f.readline().strip() 
                             linha3 = f.readline().strip() 
      
-                        comprimento = int(re.search(r'= (\d+)', linha1).group(1)) 
-                        rotulo = linha2.split('=')[1].strip() 
-                        indice_celula = int(re.search(r'= (\d+)', linha3).group(1)) 
+                        comprimento, rotulo, indice_celula = parse_trend_headers(
+                            linha1, linha2, linha3)
      
                         df = pd.read_csv(file_path, sep=';', skiprows=3, header=0) 
      
                         df.columns = [col.strip() for col in df.columns] 
-                        df['Tempo (s)'] = df['Tempo (s)'].astype(float) 
-                        df.set_index(['Tempo (s)'], inplace=True) 
+                        df = normalize_time_column(df)
+                        df[CANONICAL_TIME_COLUMN] = df[CANONICAL_TIME_COLUMN].astype(float) 
+                        df.set_index([CANONICAL_TIME_COLUMN], inplace=True) 
                         df = df.loc[:, ~df.columns.str.contains('^Unnamed')] 
      
                         for col in df.columns: 
@@ -562,7 +560,11 @@ class Tramo:
     
         try:
             if indicar_anm:
-                posicao_anm = self.master1['comprimentoMedido']
+                mv = self.master1
+                if isinstance(mv, dict):
+                    posicao_anm = mv.get('comprimentoMedido') or mv.get('measuredLength')
+                elif isinstance(mv, list) and mv:
+                    posicao_anm = mv[0].get('comprimentoMedido') or mv[0].get('measuredLength')
         except:
             print('posição da master1 não definida no modelo!')
             
@@ -593,7 +595,8 @@ class Tramo:
         else:
             print('argumento linha só pode ser producao ou servico')         
 
-        fig, ax = _plotar_tendencias(self.resultados[TEND], posicoes = posicoes)
+        fig, ax = _plotar_tendencias(self.resultados[TEND], posicoes = posicoes,
+                         language='pt')
 
         return fig, ax
     
@@ -619,6 +622,43 @@ class Tramo:
 
         estilizar_df(pd.DataFrame(getattr(self, campo)).set_index('id'),
                      cols, index_cols)
+
+    ###########################################################################
+    # English API
+    ###########################################################################
+
+    def simulate(self, kind='PRODUTOR', label='marlim3_model',
+                 directory='marlim3_resultados', generate_ppl_tpl=False,
+                 simulation_id=None, websocket_handler=None,
+                 tracker=None, sanitized=False):
+        return self.simular(kind=kind, label=label, diretorio=directory,
+                            gerar_ppl_tpl=generate_ppl_tpl,
+                            simulation_id=simulation_id,
+                            websocket_handler=websocket_handler,
+                            tracker=tracker, sanitized=sanitized)
+
+    def plot_geometry(self):
+        return self.plotar_geometria()
+
+    def plot_profiles(self, line='producao', labels=None,
+                      gradient=False, indicate_anm=False):
+        return self.plotar_perfis(linha=line, rotulos=labels,
+                                  gradiente=gradient, indicar_anm=indicate_anm)
+
+    def plot_animated_profiles(self, line='producao'):
+        return self.plotar_perfis_animados(linha=line)
+
+    def plot_trends(self, line='producao', positions=None):
+        return self.plotar_tendencias(linha=line, posicoes=positions)
+
+    def display_table(self, field):
+        return self.exibir_tabela(campo=field)
+
+    def load_mr2(self, path, pvt_path=None, mr2_binary_path=None,
+                 re_simulate=False):
+        return self.from_mr2(mr2_path=path, pvt_path=pvt_path,
+                              mr2_binary_path=mr2_binary_path,
+                              simula_mr2=re_simulate)
 
 ###############################################################################
 

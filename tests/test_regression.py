@@ -19,6 +19,96 @@ import pytest
 import marlim3
 from marlim3._download import executable_exists
 
+# Compatibilidade de idioma para referências históricas em português.
+EN_TO_PT_COLUMN_MAP = {
+    "Length (m) Boundary F": "Comprimento (m) Fronteira F",
+    "Length (m) Cell center C": "Comprimento (m) Centro Volume C",
+    "Pressure (kgf/cm2) C": "Pressao (kgf/cm2) C",
+    "Temperature (C) C": "Temperatura (C) C",
+    "Liquid holdup (-) C": "Holdup de liquido (-) C",
+    "Complementary liquid vol. fraction (-) C": "Fracao vol. de liquido complementar (-) C",
+    "Gas superficial velocity (m/s) F": "Velocidade superficial de gas (m/s) F",
+    "Liquid superficial velocity (m/s) F": "Velocidade superficial do liquido (m/s) F",
+    "Gas velocity (m/s) F": "Velocidade de gas (m/s) F",
+    "Liquid velocity (m/s) F": "Velocidade do liquido (m/s) F",
+    "Phase pattern indicator (-) F": "Indicador de arranjo de fases (-) F",
+    "Liquid viscosity (cP) C": "Viscosidade do Liquido (cP) C",
+    "Gas viscosity (cP) C": "Viscosidade do Gas (cP) C",
+    "Gas density (kg/m3) C": "Massa Especifica do Gas (kg/m3) C",
+    "Liquid density (kg/m3) C": "Massa Especifica do Liquido (kg/m3) C",
+    "Oil density (kg/m3) C": "Massa Especifica do Oleo (kg/m3) C",
+    "Water density (kg/m3) C": "Massa Especifica da Agua (kg/m3) C",
+    "Mixture density (kg/m3) C": "Massa Especifica da Mistura (kg/m3) C",
+    "Solubility ratio (Sm3/Sm3) C": "Razao de Solubilidade (Sm3/Sm3) C",
+    "Gas mass flow rate (kg/s) F": "Vazao Massica do Gas (kg/s) F",
+    "Liquid mass flow rate (kg/s) F": "Vazao Massica do Liquido (kg/s) F",
+    "Distribution coefficient: C0 (-) F": "Coeficiente de distribuição: C0 (-) F",
+    "Slip velocity: Ud (m/s) F": "Velocidade de escorregamento: Ud (m/s) F",
+    "Gas specific gravity (-) C": "Densidade do Gas (-) C",
+    "CO2 molar fraction (-) C": "Fracao Molar de CO2 (-) C",
+    "Heat flow between flow and wall (W/m) C": "Fluxo de calor entre escoamento e parede (W/m) C",
+    "Interphase mass transfer (kg / [s m]) C": "Transferencia de Massa entre Fases (kg / [s m]) C",
+    "Gas specific heat at constant pressure (J/[kg C]) C": "Calor Especifico a pressao constante do Gas (J/[kg C]) C",
+    "Liquid specific heat at constant pressure (J/[kg C]) C": "Calor Especifico a pressao constante do Liquido (J/[kg C]) C",
+    "Standard dead oil volumetric flow rate (Sm3/d) F": "Vazao volumetrica standard de oleo morto (Sm3/d) F",
+    "Standard dead oil + water volumetric flow rate (Sm3/d) F": "Vazao volumetrica standard de oleo morto + agua (Sm3/d) F",
+    "Standard dead oil + water + complementary liquid volumetric flow rate (Sm3/d) F": "Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) F",
+    "Standard free + dissolved gas volumetric flow rate (Sm3/d) F": "Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) F",
+    "API gravity (-) C": "Grau API (-) C",
+    "Hydrostatic term (Pa/m) F": "Termo Hidrostatico (Pa/m) F",
+    "Friction term (Pa/m) F": "Termo Fricao (Pa/m) F",
+    "Mass flow relation term 1 (-) F": "Termo de relacao de vazao massica 1 (-) F",
+    "Mass flow relation term 2 (kg/s) F": "Termo de relacao de vazao massica 2 (kg/s) F",
+    "In-situ dissolved gas specific gravity (-) C": "Densidade Gas Dissolvido In Situ(-) C",
+    "In-situ free gas specific gravity (-) C": "Densidade Gas Livre In Situ(-) C",
+    "Internal mixture Reynolds (-) F": "Reynolds interno da mistura (-) F",
+    "External Reynolds (-) F": "Reynolds externo (-) F",
+    "Froude (-) F": "Froud (-) F",
+    "Internal mixture Grashof (-) F": "Grashof interno da mistura (-) F",
+    "External Grashof (-) F": "Grashof externo (-) F",
+    "Internal mixture Nusselt (-) F": "Nusselt interno da mistura (-) F",
+    "External Nusselt (-) F": "Nusselt externo (-) F",
+    "Internal mixture film coefficient (W / [m2 K]) F": "Coeficiente de pelicula interno da mistura (W / [m2 K]) F",
+    "External film coefficient (W / [m2 K]) F": "Coeficiente de pelicula externo (W / [m2 K]) F",
+    "Internal mixture Prandtl (-) F": "Prandtl interno da mistura (-) F",
+    "External Prandtl (-) F": "Prandtl externo (-) F",
+    "Solubility ratio (-) F": "Razao de Solubilidade (-) F",
+    "Formation volume factor (-) C": "Fator Volume de Formacao (-) C",
+    "Ambient temperature (C) C": "Temperatura Ambiente (C) C",
+    "Gas Prandtl (-) C": "Prandtl do Gas (-) C",
+    "Liquid Prandtl (-) C": "Prandtl do Liquido (-) C",
+    "Complementary-fluid residence time (s) C": "Tempo de Residencia-Fluido Complementar (s) C",
+    "Friction reduction factor (-) C": "Fator de reducao de friccao (-) C",
+    "Angle (radian) C": "Angulo (radiano) C",
+    "Inner diameter (m) C": "Diametro Interno (m) C",
+    "Internal wall temperature (C) C": "Temperatura Parede Interna (C) C",
+    "Subcooling (C) C": "Subresfriamento (C) C",
+    "duct id": "id do duto",
+    "Elevation (m) F": "Elevacao (m) F",
+    "Elevation (m) C": "Elevacao (m) C",
+    "bottomhole_length (m) F": "comprimento_fundoPoco (m) F",
+    "Depth (m) F": "Profundidade (m) F",
+    "Depth (m) C": "Profundidade (m) C",
+    "Pressure (kgf/cm2)": "Pressao (kgf/cm2)",
+    "Temperature (C)": "Temperatura (C)",
+    "Gas superficial velocity (m/s)": "Velocidade superficial do gas (m/s)",
+    "Gas velocity (m/s)": "Velocidade do gas (m/s)",
+    "Shear stress (N/m2)": "Tensao Cisalhante (N/m2)",
+    "Gas viscosity (cP)": "Viscosidade do Gas (cP)",
+    "Gas density (kg/m3)": "Massa Especifica do Gas (kg/m3)",
+    "Gas mass flow rate (kg/s)": "Vazao Massica do Gas (kg/s)",
+    "Hydrostatic term (Pa/m)": "Termo Hidrostatico (Pa/m)",
+    "Friction term (Pa/m)": "Termo Friccao (Pa/m)",
+    "Heat flow between flow and wall (W/m)": "Fluxo de calor entre escoamento e parede (W/m)",
+    "Standard gas volumetric flow rate (Sm3/d)": "Vazao volumetrica standard de gas (Sm3/d)",
+    "VGL stagnation pressure (kgf/cm2)": "Pressao de Estagnacao VGL (kgf/cm²)",
+    "VGL stagnation temperature (C)": "Temperatura de Estagnacao VGL (C)",
+    "VGL throat pressure (kgf/cm2)": "Pressao na Garganta VGL (kgf/cm²)",
+    "VGL throat temperature (C)": "Temperatura na Garganta VGL (C)",
+    "Velocity in VGL (m/s)": "Velocidade na VGL (m/s)",
+    "Volumetric flow rate in VGL (m3/s)": "Vazao volumetrica na VGL (m³/s)",
+}
+
 # ============================================================================
 # Verificação do executável
 # ============================================================================
@@ -48,27 +138,27 @@ OUTPUT_DIR = os.path.join(PROJECT_ROOT, "regression_output")
 
 DEMOS = {
     "2zonas-2VGLs-2-Check-correcPerfTerm": {
-        "json": "2zonas-2VGLs-2-Check-correcPerfTerm.json",
+        "json": "pt-br/2zonas-2VGLs-2-Check-correcPerfTerm.json",
         "aux": ["PVTSIM-MARLIM.tab"],
     },
     "BCS-longo-eficMotor": {
-        "json": "BCS-longo-eficMotor.json",
+        "json": "pt-br/BCS-longo-eficMotor.json",
         "aux": ["PVTSIM-MARLIM.tab"],
     },
     "injec-Liq-TempoResidencia": {
-        "json": "injec-Liq-TempoResidencia.json",
+        "json": "pt-br/injec-Liq-TempoResidencia.json",
         "aux": [],
     },
     # "MultiBCS": {
-    #     "json": "MultiBCS.json",
+    #     "json": "pt-br/MultiBCS.json",
     #     "aux": ["PVTSIM-MARLIM.tab"],
     # },
     "parada-longo-Combinado-BCS-GLC-PIG-completo": {
-        "json": "parada-longo-Combinado-BCS-GLC-PIG-completo.json",
+        "json": "pt-br/parada-longo-Combinado-BCS-GLC-PIG-completo.json",
         "aux": ["PVTSIM-MARLIM.tab"],
     },
     "producaoSimplificado": {
-        "json": "producaoSimplificado.json",
+        "json": "pt-br/producaoSimplificado.json",
         "aux": [],
     },
 }
@@ -88,17 +178,17 @@ ATOL = 1e-8   # tolerância absoluta para comparação numérica
 
 def _run_simulation(model_name):
     """Executa a simulação de um demo e retorna o dicionário de resultados
-    no mesmo formato que a GUI (perfilProducao, perfilServico, tendP, tendS).
+    no mesmo formato que a GUI (productionProfile, serviceProfile, productionTrend, serviceTrend).
     """
     info = DEMOS[model_name]
     json_path = os.path.join(DEMOS_DIR, info["json"])
 
-    caso = marlim3.Tramo()
+    caso = marlim3.Branch()
     caso.from_json(json_path)
 
     # Forçar modo permanente para acelerar
-    if "transiente" in (caso.configuracaoInicial or {}):
-        caso.configuracaoInicial["transiente"] = False
+    if "transient" in (caso.initialConfig or {}):
+        caso.initialConfig["transient"] = False
 
     out_dir = os.path.join(OUTPUT_DIR, model_name)
     os.makedirs(out_dir, exist_ok=True)
@@ -114,34 +204,34 @@ def _run_simulation(model_name):
     original_cwd = os.getcwd()
     try:
         os.chdir(out_dir)
-        caso.simular(label=model_name, diretorio=results_dir)
+        caso.simulate(label=model_name, directory=results_dir)
     finally:
         os.chdir(original_cwd)
 
     # Processar resultados da mesma forma que a GUI
     resultados = {}
-    cfg = caso.configuracaoInicial or {}
-    has_linha_gas = cfg.get("linhaGas", False)
+    cfg = caso.initialConfig or {}
+    has_linha_gas = cfg.get("gasLine", False)
 
-    if caso.perfilProducao is not None:
-        perfis = caso.processar_perfis(results_dir)
+    if caso.productionProfile is not None:
+        perfis = caso._process_profiles(results_dir)
         if perfis is not None:
-            resultados["perfilProducao"] = perfis
+            resultados["productionProfile"] = perfis
 
-    if has_linha_gas and caso.perfilServico is not None:
-        perfis_s = caso.processar_perfis(results_dir, linha="servico")
+    if has_linha_gas and caso.serviceProfile is not None:
+        perfis_s = caso._process_profiles(results_dir, line="service")
         if perfis_s is not None:
-            resultados["perfilServico"] = perfis_s
+            resultados["serviceProfile"] = perfis_s
 
-    if caso.tendP is not None:
-        tend = caso.processar_tendencias(results_dir)
+    if caso.productionTrend is not None:
+        tend = caso._process_trends(results_dir)
         if tend:
-            resultados["tendP"] = tend
+            resultados["productionTrend"] = tend
 
-    if has_linha_gas and caso.tendS is not None:
-        tend_s = caso.processar_tendencias(results_dir, linha="servico")
+    if has_linha_gas and caso.serviceTrend is not None:
+        tend_s = caso._process_trends(results_dir, line="service")
         if tend_s:
-            resultados["tendS"] = tend_s
+            resultados["serviceTrend"] = tend_s
 
     return resultados
 
@@ -171,6 +261,19 @@ def _load_reference(model_name):
     if not os.path.isdir(model_dir):
         return None
 
+    profile_key_map = {
+        "perfilProducao": "productionProfile",
+        "perfilServico": "serviceProfile",
+        "productionProfile": "productionProfile",
+        "serviceProfile": "serviceProfile",
+    }
+    trend_prefix_map = {
+        "tendP_": "productionTrend",
+        "tendS_": "serviceTrend",
+        "productionTrend_": "productionTrend",
+        "serviceTrend_": "serviceTrend",
+    }
+
     reference = {}
     csv_files = sorted(f for f in os.listdir(model_dir) if f.endswith(".csv"))
 
@@ -178,10 +281,9 @@ def _load_reference(model_name):
         csv_path = os.path.join(model_dir, csv_file)
         name = csv_file[:-4]  # remove .csv
 
-        # Detectar se é tendência (formato: tendP_1, tendS_2, etc.)
-        for prefix in ("tendP_", "tendS_"):
+        # Detectar se é tendência (aceita nomes antigos e novos)
+        for prefix, tend_key in trend_prefix_map.items():
             if name.startswith(prefix):
-                tend_key = prefix[:-1]  # tendP ou tendS
                 sub_key = int(name[len(prefix):])
                 df = pd.read_csv(csv_path, index_col=0)
                 if tend_key not in reference:
@@ -189,15 +291,39 @@ def _load_reference(model_name):
                 reference[tend_key][sub_key] = df
                 break
         else:
-            # É perfil (perfilProducao, perfilServico)
+            # É perfil (aceita nomes antigos e novos)
             df = pd.read_csv(csv_path, index_col=[0, 1])
-            reference[name] = df
+            mapped_name = profile_key_map.get(name, name)
+            reference[mapped_name] = df
 
     return reference if reference else None
 
 
 def _compare_dataframes(df_actual, df_ref, label):
     """Compara dois DataFrames numéricos com tolerância."""
+    # Compatibilidade de idioma: normaliza nomes de colunas EN -> PT
+    # para comparar com referências históricas em português.
+    df_actual = df_actual.rename(columns=EN_TO_PT_COLUMN_MAP)
+    df_ref = df_ref.rename(columns=EN_TO_PT_COLUMN_MAP)
+
+    # Compatibilidade adicional para variantes sem acento encontradas em saídas antigas.
+    normalize_pt_variants = {
+        "Coeficiente de distribuicao: C0 (-) F": "Coeficiente de distribuição: C0 (-) F",
+        "Velocidade superficial de gas (m/s) F": "Velocidade superficial do gas (m/s) F",
+        "Standard gas volumetric flow rate (Sm3/(d)) F": "Vazao volumetrica standard de gas (Sm3/(d)) F",
+        "Termo Fricao (Pa/m) F": "Termo friccao (Pa/m) F",
+        "Liquid holdup (-)": "Holdup de liquido (-)",
+        "Complementary liquid vol. fraction (-)": "Fracao vol. de liquido complementar (-)",
+        "Phase pattern indicator (-)": "Indicador de arranjo de fases (-)",
+        "Standard dead oil volumetric flow rate (Sm3/d)": "Vazao volumetrica standard de oleo morto (Sm3/d)",
+        "Standard free + dissolved gas volumetric flow rate (Sm3/d)": "Vazao volumetrica standard de gas livre + dissolvido (Sm3/d)",
+        "Liquid superficial velocity (m/s)": "Velocidade superficial do liquido (m/s)",
+        "Vazao volumetrica standard de gas (Sm3/d)": "Vazao volumetrica standard de Gas (Sm3/d)",
+        "Standard gas volumetric flow rate (Sm3/d)": "Vazao volumetrica standard de Gas (Sm3/d)",
+    }
+    df_actual = df_actual.rename(columns=normalize_pt_variants)
+    df_ref = df_ref.rename(columns=normalize_pt_variants)
+
     # Alinhar colunas
     common_cols = sorted(set(df_actual.columns) & set(df_ref.columns))
     missing_in_actual = set(df_ref.columns) - set(df_actual.columns)
