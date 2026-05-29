@@ -1451,7 +1451,7 @@ def _pipe_dialog(pipe_key, idx):
     ci = pipe.get("initialConditions", pipe.get("initialAndAmbientConditions", {}))
 
     # Determine the key used in the original data for initial conditions
-    _ci_key = "initialConditions" if "initialConditions" in duct else "initialAndAmbientConditions"
+    _ci_key = "initialConditions" if "initialConditions" in pipe else "initialAndAmbientConditions"
 
     def _dlg_ci_input(label, field, default_val, col, help_txt=None):
         val = ci.get(field, default_val)
