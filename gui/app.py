@@ -1001,7 +1001,7 @@ def _fluid_dialog(idx):
     st.caption("Molar fractions (same order as .ctm file)")
     frac_molar = fluid.get("molarFraction", [])
     frac_str = st.text_input(
-        "fracMolar (comma-sep)",
+        "Molar fractions (comma-sep)",
         value=", ".join(str(x) for x in frac_molar) if frac_molar else "",
         key=f"dlg_frac_molar_{idx}"
     )
@@ -1347,7 +1347,7 @@ def _pipe_dialog(pipe_key, idx):
     with c2:
         widget_number("Angle [rad]", [pipe_key, idx, "angle"], default=0.0,
                       help_text="Inclination from horizontal. Used when xyMode=false (default).")
-        widget_int("Cross-section ID (idCorte)", [pipe_key, idx, "crossSectionId"], default=0,
+        widget_int("Cross-section ID", [pipe_key, idx, "crossSectionId"], default=0,
                    help_text="ID of the cross section (from Cross Sections tab) composing this pipe.")
     with c3:
         widget_number("X end [m]", [pipe_key, idx, "xCoor"],
@@ -1355,7 +1355,7 @@ def _pipe_dialog(pipe_key, idx):
         widget_number("Y end [m]", [pipe_key, idx, "yCoor"],
                       help_text="Final Y coord (xyMode=true)")
     with c4:
-        widget_int("Formation ID (idFormacao)", [pipe_key, idx, "formationId"], default=0,
+        widget_int("Formation ID", [pipe_key, idx, "formationId"], default=0,
                    help_text="Formation for heat exchange. 0 = none.")
         widget_int("numCellsXY", [pipe_key, idx, "numCellsXY"], default=0,
                    help_text="Number of cells (xyMode=true)")
@@ -1376,7 +1376,7 @@ def _pipe_dialog(pipe_key, idx):
             0: "0 - No", 1: "1 - Yes (coupled with counterpart pipe)"
         }, default=0, help_text="If 1, pipe is thermally coupled with its counterpart. Must match in position, length, and discretization.")
     with c4:
-        widget_bool("Grouping (agrupamento)", [pipe_key, idx, "grouping"], default=True,
+        widget_bool("Grouping", [pipe_key, idx, "grouping"], default=True,
                     help_text="If true, discretization uses cell groups (nCells×length). If false, each cell length is specified individually.")
 
     # ── Production-only / Service-only fields ────────────────────────
@@ -1397,27 +1397,27 @@ def _pipe_dialog(pipe_key, idx):
             }, default=0, help_text="If 1, pipe is thermally coupled with a parallel network pipe.")
         with c3:
             widget_int("dPdLHidro correction idx", [pipe_key, idx, "correctionFactorHydro"], default=0,
-                       help_text="Index in correcao.dPdLHidro vector")
+                       help_text="Index in correction.correctionFactorHydro vector")
             widget_int("dPdLFric correction idx", [pipe_key, idx, "correctionFactorFric"], default=0,
-                       help_text="Index in correcao.dPdLFric vector")
+                       help_text="Index in correction.correctionFactorFric vector")
             widget_int("dTdL correction idx", [pipe_key, idx, "correctionFactorTemp"], default=0,
-                       help_text="Index in correcao.dTdL vector")
+                       help_text="Index in correction.correctionFactorTemp vector")
     else:
         st.markdown("**Correction Indices**")
         c1, c2, c3 = st.columns(3)
         with c1:
             widget_int("dPdLHidro correction idx", [pipe_key, idx, "correctionFactorHydro"], default=0,
-                       help_text="Index in correcao.dPdLHidro vector for hydrostatic pressure drop correction.")
+                       help_text="Index in correction.correctionFactorHydro vector for hydrostatic pressure drop correction.")
         with c2:
             widget_int("dPdLFric correction idx", [pipe_key, idx, "correctionFactorFric"], default=0,
-                       help_text="Index in correcao.dPdLFric vector for friction pressure drop correction.")
+                       help_text="Index in correction.correctionFactorFric vector for friction pressure drop correction.")
         with c3:
             widget_int("dTdL correction idx", [pipe_key, idx, "correctionFactorTemp"], default=0,
-                       help_text="Index in correcao.dTdL vector for temperature gradient correction.")
+                       help_text="Index in correction.correctionFactorTemp vector for temperature gradient correction.")
 
     # ── Discretization ───────────────────────────────────────────────
     st.markdown("**Discretization**")
-    st.caption("Used when agrupamento=true and xyMode=false")
+    st.caption("Used when grouping=true and xyMode=false")
     disc = pipe.get("discretization", [])
     disc_df = pd.DataFrame(disc) if disc else pd.DataFrame(columns=["numCells", "length"])
     edited_disc = st.data_editor(
@@ -1630,7 +1630,7 @@ def _liquid_source_dialog(idx):
         widget_int("ID", path + ["id"], default=idx,
                    help_text="Integer identifier for this liquid source.")
     with c2:
-        widget_int("Fluid ID", path + ["prodFluidIndex"], default=0,
+        widget_int("Fluid ID", path + ["prodFluidId"], default=0,
                    help_text="Production fluid ID to be produced by this source.")
     with c3:
         widget_number("Position [m]", path + ["measuredLength"],
@@ -1666,11 +1666,11 @@ def _mass_source_dialog(idx):
         widget_int("ID", path + ["id"], default=idx,
                    help_text="Integer identifier for this mass source.")
     with c2:
-        widget_int("Fluid ID", path + ["prodFluidIndex"], default=0,
+        widget_int("Fluid ID", path + ["prodFluidId"], default=0,
                    help_text="Production fluid ID to be produced by this source.")
         widget_int_select("Thermo type", path + ["thermType"], {
             0: "0 - Equilibrium", 1: "1 - User gas flow"
-        }, default=0, help_text="0: gas flow from thermodynamic equilibrium; 1: user-defined via vazaoMassG.")
+        }, default=0, help_text="0: gas flow from thermodynamic equilibrium; 1: user-defined via gasMassFlowRate.")
     with c3:
         widget_number("Position [m]", path + ["measuredLength"],
                       help_text="Position along the production line.")
@@ -1708,7 +1708,7 @@ def _gas_source_dialog(idx):
     with c2:
         widget_bool("Dry gas", path + ["dry"], default=True,
                     help_text="If true, produces dry gas. If false, rich gas requiring fluid definition.")
-        widget_int("Fluid ID", path + ["prodFluidIndex"], default=0,
+        widget_int("Fluid ID", path + ["prodFluidId"], default=0,
                    help_text="Production fluid ID. Valid when seco=false (rich gas).")
     with c3:
         widget_number("Position [m]", path + ["measuredLength"],
@@ -1727,7 +1727,7 @@ def _gas_source_dialog(idx):
 
 @st.dialog("Edit Pressure Source", width="large")
 def _pressure_source_dialog(idx):
-    """Full edit form for a single pressure source (fontePressao)."""
+    """Full edit form for a single pressure source."""
     items = get_val(["pressureSource"], [])
     if idx >= len(items):
         st.error("Pressure source not found.")
@@ -1748,11 +1748,11 @@ def _pressure_source_dialog(idx):
     with c2:
         widget_int_select("Fluid type", path + ["fluidType"], {
             0: "0 - User fluid", 1: "1 - In-pipe fluid"}, default=1,
-            help_text="1: uses in-situ hydrocarbon; 0: uses indiFluidoPro.")
-        widget_int("Fluid ID", path + ["prodFluidIndex"], default=0,
-                   help_text="External fluid ID. Valid for tipoFluido=0.")
+            help_text="1: uses in-situ hydrocarbon; 0: uses prodFluidId.")
+        widget_int("Fluid ID", path + ["prodFluidId"], default=0,
+                   help_text="External fluid ID. Valid for fluidType=0.")
         widget_bool("Gas environment", path + ["gasAmbient"], default=False,
-                    help_text="If true, only gas fraction is admitted. Valid for tipoFluido=0.")
+                    help_text="If true, only gas fraction is admitted. Valid for fluidType=0.")
     with c3:
         widget_int_select("Check type", path + ["check"], {
             0: "0 - Normal", 1: "1 - Vacuum breaker", -1: "-1 - Check valve"}, default=0,
@@ -1885,7 +1885,7 @@ def _poro_2d_dialog(idx):
 
 @st.dialog("Edit Valve", width="large")
 def _valve_dialog(idx):
-    """Full edit form for a single generic valve (valvula)."""
+    """Full edit form for a single generic valve."""
     items = get_val(["valve"], [])
     if idx >= len(items):
         st.error("Valve not found.")
@@ -1940,7 +1940,7 @@ def _valve_dialog(idx):
 
 @st.dialog("Edit Gas Lift Valve", width="large")
 def _vgl_dialog(idx):
-    """Full edit form for a single gas lift valve (fonteGasLift)."""
+    """Full edit form for a single gas lift valve."""
     items = get_val(["gasLiftSource"], [])
     if idx >= len(items):
         st.error("VGL not found.")
@@ -2027,9 +2027,9 @@ def _bcs_dialog(idx):
 
     st.markdown("**Performance Curve**")
     curve_data = {
-        "vazao [BPD]": item.get("flowRate", []),
+        "flow rate [BPD]": item.get("flowRate", []),
         "head [ft]": item.get("pumpHead", []),
-        "potencia [hp]": item.get("power", []),
+        "power [hp]": item.get("power", []),
         "efficiency": item.get("efficiency", []),
     }
     max_len = max(len(v) for v in curve_data.values()) if any(curve_data.values()) else 0
@@ -2039,9 +2039,9 @@ def _bcs_dialog(idx):
     curve_df = pd.DataFrame(curve_data)
     edited_curve = st.data_editor(curve_df, num_rows="dynamic",
                                   use_container_width=True, key=f"bcs_curve_{idx}")
-    items[idx]["flowRate"] = edited_curve["vazao [BPD]"].dropna().tolist()
+    items[idx]["flowRate"] = edited_curve["flow rate [BPD]"].dropna().tolist()
     items[idx]["pumpHead"] = edited_curve["head [ft]"].dropna().tolist()
-    items[idx]["power"] = edited_curve["potencia [hp]"].dropna().tolist()
+    items[idx]["power"] = edited_curve["power [hp]"].dropna().tolist()
     items[idx]["efficiency"] = edited_curve["efficiency"].dropna().tolist()
     set_val(["esp"], items)
 
@@ -2089,7 +2089,7 @@ def _vol_pump_dialog(idx):
 
 @st.dialog("Edit Pressure Increment", width="large")
 def _delta_p_dialog(idx):
-    """Full edit form for a single deltaPressao entry."""
+    """Full edit form for a single pressureDrop entry."""
     items = get_val(["pressureDrop"], [])
     if idx >= len(items):
         st.error("ΔP not found.")
@@ -2195,7 +2195,7 @@ with tabs[8]:
         widget_text("JSON Version", ["versaoJSON"], default="3.0.0",
                     help_text="Software version referenced by this JSON")
 
-    # configuracaoInicial
+    # initialConfig
     ci_path = ["initialConfig"]
 
     with st.expander("🔧 Basic Settings", expanded=True):
@@ -2400,7 +2400,7 @@ with tabs[8]:
 
     with st.expander("🚀 Gas-Lift Discharge"):
         ci_path = ["initialConfig"]
-        widget_number("Salinity (SalinidadeFluido)", ci_path + ["fluidSalinity"],
+        widget_number("Salinity", ci_path + ["fluidSalinity"],
                       unit="g/kg water", default=0.0,
                       help_text="Completion fluid salinity for gas-lift discharge.")
         c1, c2 = st.columns(2)
@@ -2499,7 +2499,7 @@ with tabs[8]:
         except ValueError:
             pass
 
-    with st.expander("📊 Output Configuration (perfilProducao)"):
+    with st.expander("📊 Output Profiles"):
         st.caption("Select which variables to record as profiles along the production line")
         widget_bool("Active", ["productionProfile", "active"], default=True,
                     help_text="Enable production profile recording.")
@@ -2547,7 +2547,7 @@ with tabs[8]:
             if _path_exists(["productionProfile", _pv]) or _pv_val:
                 set_val(["productionProfile", _pv], _pv_val)
 
-    with st.expander("📈 Output Trends (tendP)"):
+    with st.expander("📈 Output Trends"):
         st.caption("Configure trend (time-series) recording points on the production line")
         _tendp = get_val(["productionTrend"], [])
         if not _tendp:
@@ -3017,7 +3017,7 @@ with tabs[0]:
             _fluid_dialog(st.session_state.pop("_editing_fluid"))
 
     # --- Gas Fluid ---
-    with st.expander("💨 Gas Fluid (fluidoGas)"):
+    with st.expander("💨 Gas Fluid"):
         widget_bool("Active", ["gasFluid", "active"], default=True,
                     help_text="Gas fluid for service line or dry gas source.")
         c1, c2, c3 = st.columns(3)
@@ -3034,11 +3034,11 @@ with tabs[0]:
         st.markdown("**Compositional Options**")
         widget_bool("User molar fractions",
                     ["gasFluid", "userMolarFraction"], default=False,
-                    help_text="If true, uses fracMolar below. If false, reads from .ctm file.")
+                    help_text="If true, uses molarFraction below. If false, reads from .ctm file.")
         st.caption("Molar fractions (same order as .ctm file)")
         frac_molar_gas = get_val(["gasFluid", "molarFraction"], [])
         frac_gas_str = st.text_input(
-            "fracMolar (comma-sep)",
+            "Molar fractions (comma-sep)",
             value=", ".join(str(x) for x in frac_molar_gas) if frac_molar_gas else "",
             key=f"gas_frac_molar_v{st.session_state.get('data_version', 0)}"
         )
@@ -3050,7 +3050,7 @@ with tabs[0]:
             pass
 
     # --- Complementary Fluid ---
-    with st.expander("🧪 Complementary Fluid (fluidoComplementar)"):
+    with st.expander("🧪 Complementary Fluid"):
         widget_bool("Active", ["complementaryFluid", "active"], default=True,
                     help_text="Third liquid phase (inert, non-soluble in gas). E.g. glycol, ethanol, inhibitor, completion fluid.")
         c1, c2, c3 = st.columns(3)
@@ -3083,7 +3083,7 @@ with tabs[0]:
         widget_number("Salinity [g/kg water]", ["complementaryFluid", "salinity"],
                       help_text="Required when type is 1 (Water).")
 
-    # --- Wax Deposition (parafina) ---
+    # --- Wax Deposition ---
     with st.expander("🕯️ Wax Deposition"):
         st.caption("Wax (paraffin) deposition model parameters.")
         _wax_path = ["wax"]
@@ -3100,9 +3100,9 @@ with tabs[0]:
         _wax_options = [""] + _wax_files
         _wax_idx = _wax_options.index(_cur_wax) if _cur_wax in _wax_options else 0
         _wax_sel = st.selectbox(
-            "Wax file (arquivoWax)", _wax_options, index=_wax_idx,
+            "Wax file", _wax_options, index=_wax_idx,
             help="Wax properties file (upload in sidebar).",
-            key="parafina_arq_sel")
+            key="wax_file_sel")
         if _path_exists(_wax_path + ["waxFile"]) or _wax_sel:
             set_val(_wax_path + ["waxFile"], _wax_sel if _wax_sel else None)
 
@@ -3111,18 +3111,18 @@ with tabs[0]:
             widget_bool("User porosity", _wax_path + ["userPorosity"],
                         help_text="If true, uses user-defined porosity instead of default.")
             widget_number("Porosity", _wax_path + ["porosity"],
-                          help_text="User-defined deposit porosity (valid when usuarioPorosidade=true).")
+                          help_text="User-defined deposit porosity (valid when userPorosity=true).")
             widget_bool("User C2/C3", _wax_path + ["userC2C3"],
                         help_text="If true, uses user-defined C2 and C3 constants.")
             widget_number("C2", _wax_path + ["c2"],
-                          help_text="C2 constant (valid when usuarioC2C3=true).")
+                          help_text="C2 constant (valid when userC2C3=true).")
             widget_number("C3", _wax_path + ["c3"],
-                          help_text="C3 constant (valid when usuarioC2C3=true).")
+                          help_text="C3 constant (valid when userC2C3=true).")
         with c2:
             widget_bool("User diffusivity", _wax_path + ["userDiffusion"],
                         help_text="If true, uses user-defined diffusivity.")
             widget_number("Diffusivity", _wax_path + ["diffusivity"],
-                          help_text="User-defined diffusivity (valid when usuarioDifus=true).")
+                          help_text="User-defined diffusivity (valid when userDiffusion=true).")
             widget_bool("Alter fluid viscosity", _wax_path + ["changeFluidVisc"],
                         help_text="If true, wax deposition modifies the fluid viscosity.")
             widget_number("Roughness [m]", _wax_path + ["roughness"], unit="m",
@@ -3137,10 +3137,10 @@ with tabs[0]:
             widget_number("F multipWax", _wax_path + ["waxMultF"],
                           help_text="F parameter for wax multiplier correlation.")
 
-    # --- Table (tabela) ---
+    # --- Compressibility Table ---
     with st.expander("📊 Compressibility Table Parameters"):
         widget_bool("Active", ["compTable", "active"], default=True,
-                    help_text="Parameters for tabP and tabG tables (when requested in configuracaoInicial).")
+                    help_text="Parameters for compressibility tables (when requested in initialConfig).")
         c1, c2, c3 = st.columns(3)
         with c1:
             widget_int("N points", ["compTable", "numPoints"], default=50, min_val=2,
@@ -3292,7 +3292,7 @@ with tabs[3]:
     st.header("Rock Formation")
     st.caption("Define rock lithology properties for heat exchange with the formation")
 
-    # Only ensure structure if configuracaoInicial already exists
+    # Only ensure structure if initialConfig already exists
     if _path_exists(["initialConfig"]) and get_val(["initialConfig", "formation"], None) is None:
         set_val(["initialConfig", "formation"], {"properties": [], "productionTime": 0})
     formation = get_val(["initialConfig", "formation"], {})
@@ -3591,7 +3591,7 @@ with tabs[5]:
                 st.session_state.pop(k, None)
 
     # ─────────────────────────────────────────────────────────────────────────
-    # SOURCES: ipr, fonteLiquido, fonteMassa, fonteGas, fontePressao, fontePoroRadial, fontePoro2D
+    # SOURCES: ipr, liquidSource, massSource, gasSource, pressureSource, radialPore, 2DPore
     # ─────────────────────────────────────────────────────────────────────────
     with acc_tabs[0]:
         src_tabs = st.tabs(["IPR", "Liquid Source", "Mass Source", "Gas Source",
@@ -3658,7 +3658,7 @@ with tabs[5]:
             with col_add:
                 if st.button("➕ Add Liquid Source", key="add_liq_src"):
                     liq_srcs.append({
-                        "active": True, "id": len(liq_srcs), "prodFluidIndex": 0,
+                        "active": True, "id": len(liq_srcs), "prodFluidId": 0,
                         "measuredLength": 0.0,
                         "time": [0], "temperature": [80.0], "beta": [0.0],
                         "liquidFlowRate": [100.0],
@@ -3676,7 +3676,7 @@ with tabs[5]:
                             id_number=item.get('id', i),
                             details=[
                                 f"Pos: {item.get('measuredLength', 0)} m",
-                                f"Fluid: {item.get('prodFluidIndex', 0)}",
+                                f"Fluid: {item.get('prodFluidId', 0)}",
                             ],
                             active=item.get("active", True), icon="💧",
                         )
@@ -3705,7 +3705,7 @@ with tabs[5]:
             with col_add:
                 if st.button("➕ Add Mass Source", key="add_src"):
                     mass_srcs.append({
-                        "active": True, "id": len(mass_srcs), "prodFluidIndex": 0,
+                        "active": True, "id": len(mass_srcs), "prodFluidId": 0,
                         "measuredLength": 0.0, "thermType": 0,
                         "time": [0], "temperature": [80.0],
                         "totalMassFlowRate": [10.0], "complementaryMassFlowRate": [0.0],
@@ -3723,7 +3723,7 @@ with tabs[5]:
                             id_number=item.get('id', i),
                             details=[
                                 f"Pos: {item.get('measuredLength', 0)} m",
-                                f"Fluid: {item.get('prodFluidIndex', 0)} &nbsp; Thermo: {item.get('thermType', 0)}",
+                                f"Fluid: {item.get('prodFluidId', 0)} &nbsp; Thermo: {item.get('thermType', 0)}",
                             ],
                             active=item.get("active", True), icon="⚡",
                         )
@@ -3927,7 +3927,7 @@ with tabs[5]:
                 _poro_2d_dialog(st.session_state.pop("_editing_poro_2d"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # VALVES: valvula, fonteGasLift, master1, master2, chokeSup, chokeInj
+    # VALVES: valve, gasLiftSource, master1, master2, surfaceChoke, injectionChoke
     # ─────────────────────────────────────────────────────────────────────────
     with acc_tabs[1]:
         vlv_tabs = st.tabs(["DHSV / Generic", "Gas Lift (VGL)", "Master 1 (prod)",
@@ -4119,21 +4119,21 @@ with tabs[5]:
                                [{"name": "opening", "unit": "ratio"}])
 
     # ─────────────────────────────────────────────────────────────────────────
-    # PUMPS: bcs, bombaVolumetrica, deltaPressao
+    # PUMPS: esp, volumetricPump, pressureDrop
     # ─────────────────────────────────────────────────────────────────────────
     with acc_tabs[2]:
-        pump_tabs = st.tabs(["BCS (ESP)", "Volumetric Pump", "Delta Pressure"])
+        pump_tabs = st.tabs(["ESP", "Volumetric Pump", "Delta Pressure"])
 
-        # --- BCS ---
+        # --- ESP ---
         with pump_tabs[0]:
-            st.subheader("BCS / ESP Pumps")
+            st.subheader("ESP Pumps")
             bcs_list = get_val(["esp"], [])
             if not bcs_list:
                 bcs_list = []
 
             col_add, _ = st.columns([1, 3])
             with col_add:
-                if st.button("➕ Add BCS", key="add_bcs"):
+                if st.button("➕ Add ESP", key="add_bcs"):
                     bcs_list.append({
                         "active": True, "id": len(bcs_list), "measuredLength": 0.0,
                         "referenceFreq": 60.0, "stage": 1, "manufacturerStage": 1,
@@ -4150,7 +4150,7 @@ with tabs[5]:
                     item = bcs_list[i]
                     with cols[col_idx]:
                         render_card(
-                            title=f"{item.get('label') or f'BCS {i}'}",
+                            title=f"{item.get('label') or f'ESP {i}'}",
                             id_number=item.get('id', i),
                             details=[
                                 f"Pos: {item.get('measuredLength', 0)} m",
@@ -4347,7 +4347,7 @@ with tabs[6]:
     # --- Upstream Pressure BC ---
     with bc_tabs[2]:
         st.subheader("Upstream Pressure BC")
-        st.caption("Pressure condition at pipe upstream (from configuracaoInicial)")
+        st.caption("Pressure condition at pipe upstream (from initialConfig)")
         widget_bool("Active", ["initialConfig", "pressureCondition", "active"], default=True,
                     help_text="Whether the upstream pressure BC is active.")
         widget_time_series(
@@ -4388,7 +4388,7 @@ with tabs[6]:
             0: "0 - Injection pressure", 1: "1 - Injection flow rate"
         }, default=0, help_text="0: specifies injection pressure; 1: specifies injection flow rate.")
         widget_bool("Guess initial flow rate", ["gasInj", "initialFlowRateGuess"], default=False,
-                    help_text="For pressure BC: if true, first element of vazaoGas is used as initial guess. Helps convergence.")
+                    help_text="For pressure BC: if true, first element of gasFlowRate is used as initial guess. Helps convergence.")
         widget_time_series(
             "Gas injection schedule",
             ["gasInj"],
@@ -4470,7 +4470,7 @@ with tabs[7]:
             3: "3 - Gas-lift discharge",
         }, default=1, help_text="0: user initial conditions; 1: steady-state first; 2: from .snp file; 3: gas-lift discharge procedure.")
 
-    # Snapshot file selector (only relevant when condicaoInicial=2)
+    # Snapshot file selector (only relevant when initialCondition=2)
     _ci_val = get_val(["initialConfig", "initialCondition"], 1)
     if _ci_val == 2:
         _snp_files = [f for f in os.listdir(st.session_state["work_dir"])

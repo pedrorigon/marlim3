@@ -2231,7 +2231,7 @@
             "type": "integer",
             "description": "IPR identifier integer."
           },
-          "prodFluidIndex": {
+          "prodFluidId": {
             "type": "integer",
             "description": "ID of the production fluid produced by this source."
           },
