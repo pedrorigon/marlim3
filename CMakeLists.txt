@@ -149,4 +149,12 @@ set_source_files_properties(${FSRCDIR}/PhaseProperties.f90   PROPERTIES OBJECT_D
 
 set_target_properties(Marlim3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# Copy executable into the Python package directory after each build.
+add_custom_command(TARGET Marlim3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:Marlim3>
+        ${CMAKE_SOURCE_DIR}/marlim3/$<TARGET_FILE_NAME:Marlim3>
+    COMMENT "Copying Marlim3 executable to marlim3/ package directory"
+)
+
 install(TARGETS Marlim3 DESTINATION bin)
