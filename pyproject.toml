@@ -43,6 +43,9 @@ Homepage = "https://github.com/petrobras/marlim3"
 [tool.setuptools.packages.find]
 include = ["marlim3", "marlim3.*"]
 
+[tool.setuptools.package-data]
+marlim3 = ["translations.json"]
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Development dependencies  (uv dependency groups — not shipped to end users)
 # ──────────────────────────────────────────────────────────────────────────────
