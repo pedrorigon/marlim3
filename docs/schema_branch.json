@@ -299,7 +299,7 @@
         "xyMode": {
           "type": "boolean",
           "default": false,
-          "description": "If true, inclinations are inferred from XY coordinates of each duct endpoint. In this case, initial positions must be provided in xProdStart and yProdStart (and if initialConfig: {gasLine: true}, also xServiceStart and yServiceStart). Otherwise, inclinations are provided directly by angles in productionPipe and servicePipe."
+          "description": "If true, inclinations are inferred from XY coordinates of each pipe segment endpoint. In this case, initial positions must be provided in xProdStart and yProdStart (and if initialConfig: {gasLine: true}, also xServiceStart and yServiceStart). Otherwise, inclinations are provided directly by angles in productionPipe and servicePipe."
         },
         "xProdStart": {
           "type": "number",
@@ -1646,40 +1646,40 @@
     },
     "productionPipe": {
       "type": "array",
-      "description": "Each object in this array corresponds to a production duct. Duct changes are usually motivated by changes in diameter, pipe property, cross-section, or inclination.",
+      "description": "Each object in this array corresponds to a production pipe segment. Segment changes are usually motivated by changes in diameter, pipe property, cross-section, or inclination.",
       "items": {
         "type": "object",
         "properties": {
           "active": {
             "type": "boolean",
-            "description": "Indicates whether the duct is active."
+            "description": "Indicates whether the pipe segment is active."
           },
           "id": {
             "type": "integer",
-            "description": "Duct identifier integer."
+            "description": "Pipe-segment identifier integer."
           },
           "angle": {
             "type": "number",
-            "description": "Production-duct inclination relative to horizontal axis. Valid for {initialConfig: {xyMode = false}}, which is the default.",
+            "description": "Production-pipe inclination relative to horizontal axis. Valid for {initialConfig: {xyMode = false}}, which is the default.",
             "unit": "rad"
           },
           "xCoor": {
             "type": "number",
-            "description": "X coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
+            "description": "X coordinate of this pipe segment end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
           },
           "yCoor": {
             "type": "number",
-            "description": "Y coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
+            "description": "Y coordinate of this pipe segment end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
           },
           "crossSectionId": {
             "type": "integer",
-            "description": "ID of the cross-section used by this duct."
+            "description": "ID of the cross-section used by this pipe segment."
           },
           "formationId": {
             "type": "integer",
-            "description": "ID of the formation with which the duct exchanges heat. If not informed, there is no formation; the duct then exchanges heat with thermally coupled fluid or with marine/air environment."
+            "description": "ID of the formation with which the pipe segment exchanges heat. If not informed, there is no formation; the pipe segment then exchanges heat with thermally coupled fluid or with marine/air environment."
           },
           "environment": {
             "type": "integer",
@@ -1689,7 +1689,7 @@
               2
             ],
             "default": 0,
-            "description": "Infinite fluid with which the duct exchanges heat. 0: user-defined; 1: seawater; 2: atmosphere. Required except when a formation is defined (formationId informed) or duct is thermally coupled with annulus (thermalCoupling = 1)."
+            "description": "Infinite fluid with which the pipe segment exchanges heat. 0: user-defined; 1: seawater; 2: atmosphere. Required except when a formation is defined (formationId informed) or pipe segment is thermally coupled with annulus (thermalCoupling = 1)."
           },
           "convectionDirection": {
             "type": "integer",
@@ -1698,7 +1698,7 @@
               1
             ],
             "default": 0,
-            "description": "Indicates direction of convective attack by external fluid. 0: transversal; 1: longitudinal. Valid only when formationId is not informed. Usually 0 is used for duct immersed in infinite medium and 1 for annulus coupling."
+            "description": "Indicates direction of convective attack by external fluid. 0: transversal; 1: longitudinal. Valid only when formationId is not informed. Usually 0 is used for pipe segment immersed in infinite medium and 1 for annulus coupling."
           },
           "thermalCoupling": {
             "type": "integer",
@@ -1707,7 +1707,7 @@
               0,
               1
             ],
-            "description": "If set to 1, indicates this duct is thermally coupled with a service duct. The coupled service duct must coincide in position, length, and discretization."
+            "description": "If set to 1, indicates this pipe segment is thermally coupled with a service pipe segment. The coupled service pipe segment must coincide in position, length, and discretization."
           },
           "grouping": {
             "type": "boolean",
@@ -1716,7 +1716,7 @@
           },
           "discretization": {
             "type": "array",
-            "description": "Objects in this array specify duct discretization logic (cell count and length). Valid for grouping = true and initialConfig.xyMode = false.",
+            "description": "Objects in this array specify pipe-segment discretization logic (cell count and length). Valid for grouping = true and initialConfig.xyMode = false.",
             "items": {
               "type": "object",
               "properties": {
@@ -1742,7 +1742,7 @@
           },
           "numCellsXY": {
             "type": "integer",
-            "description": "Number of duct cells for initialConfig: {xyMode: true}."
+            "description": "Number of pipe-segment cells for initialConfig: {xyMode: true}."
           },
           "initialConditions": {
             "type": "object",
@@ -1750,14 +1750,14 @@
             "properties": {
               "measuredPosition": {
                 "type": "array",
-                "description": "Array of relative duct-length positions where this object's properties are defined. It must start at 0 and end at 1, with any number of points in between. Properties at other positions are linearly interpolated.",
+                "description": "Array of relative pipe-segment-length positions where this object's properties are defined. It must start at 0 and end at 1, with any number of points in between. Properties at other positions are linearly interpolated.",
                 "items": {
                   "type": "number"
                 }
               },
               "pressure": {
                 "type": "array",
-                "description": "Initial-condition pressures at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition pressures at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "kgf/cm2"
@@ -1765,7 +1765,7 @@
               },
               "temp": {
                 "type": "array",
-                "description": "Initial-condition temperatures at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition temperatures at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "degC"
@@ -1773,21 +1773,21 @@
               },
               "holdup": {
                 "type": "array",
-                "description": "Initial-condition holdup at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition holdup at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number"
                 }
               },
               "complementaryFluidFraction": {
                 "type": "array",
-                "description": "Initial-condition complementary-fluid volumetric fractions at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active (initialConfig: {initialCondition: 0}) and complementary fluid exists and is active.",
+                "description": "Initial-condition complementary-fluid volumetric fractions at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active (initialConfig: {initialCondition: 0}) and complementary fluid exists and is active.",
                 "items": {
                   "type": "number"
                 }
               },
               "usl": {
                 "type": "array",
-                "description": "Initial-condition superficial liquid velocities at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition superficial liquid velocities at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "m/s"
@@ -1795,7 +1795,7 @@
               },
               "usg": {
                 "type": "array",
-                "description": "Initial-condition superficial gas velocities at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition superficial gas velocities at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "m/s"
@@ -1803,7 +1803,7 @@
               },
               "ambientTemp": {
                 "type": "array",
-                "description": "Ambient temperatures at duct relative positions defined in measuredPosition. Always required except when production column is thermally coupled with annulus (thermalCoupling = 1).",
+                "description": "Ambient temperatures at pipe-segment relative positions defined in measuredPosition. Always required except when production column is thermally coupled with annulus (thermalCoupling = 1).",
                 "items": {
                   "type": "number",
                   "unit": "degC"
@@ -1811,7 +1811,7 @@
               },
               "ambientVel": {
                 "type": "array",
-                "description": "External-fluid velocities at duct relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1) or when a formation is defined (formationId informed).",
+                "description": "External-fluid velocities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1) or when a formation is defined (formationId informed).",
                 "items": {
                   "type": "number",
                   "unit": "m/s"
@@ -1819,7 +1819,7 @@
               },
               "ambientConductivity": {
                 "type": "array",
-                "description": "External-medium thermal conductivities at duct relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium thermal conductivities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "W/(m.K)"
@@ -1828,7 +1828,7 @@
               "ambientSpecificHeat": {
                 "type": "array",
                 "unit": "J/(kg.K)",
-                "description": "External-medium specific heats at duct relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium specific heats at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "J/(kg.K)"
@@ -1836,7 +1836,7 @@
               },
               "ambientDensity": {
                 "type": "array",
-                "description": "External-fluid densities at duct relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid densities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "kg/m3"
@@ -1844,7 +1844,7 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at duct relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2)."
+                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2)."
               },
               "items": {
                 "type": "number",
@@ -1854,15 +1854,15 @@
           },
           "correctionFactorHydro": {
             "type": "integer",
-            "description": "Index of correctionFactorHydro vector element in 'correction' object used as adjustment factor to correct hydrostatic pressure loss in this duct."
+            "description": "Index of correctionFactorHydro vector element in 'correction' object used as adjustment factor to correct hydrostatic pressure loss in this pipe segment."
           },
           "correctionFactorFric": {
             "type": "integer",
-            "description": "Index of correctionFactorFric vector element in 'correction' object used as adjustment factor to correct friction pressure loss in this duct."
+            "description": "Index of correctionFactorFric vector element in 'correction' object used as adjustment factor to correct friction pressure loss in this pipe segment."
           },
           "correctionFactorTemp": {
             "type": "integer",
-            "description": "Index of correctionFactorTemp vector element in 'correction' object used as adjustment factor to correct temperature gradient in this duct."
+            "description": "Index of correctionFactorTemp vector element in 'correction' object used as adjustment factor to correct temperature gradient in this pipe segment."
           },
           "diffusion2d": {
             "type": "integer",
@@ -1879,7 +1879,7 @@
           },
           "ssFlowModel": {
             "type": "integer",
-            "description": "Black-box correlation used in this duct when drift model is disabled (initialConfig: driftModel = false). Valid for steady-state mode. 0 = Poettmann-Carpenter; 1 = Baxendell-Thomas; 2 = Fancher-Brown; 3 = Hagedorn-Brown; 4 = Duns-Ros; 5 = Orkiszewski; 6 = Beggs & Brill; 7 = Mukherjee-Brill; 8 = Aziz; 9 = Gray; 10 = Oliemans; 11 = Dukler; 12 = Beggs & Brill with Palmer correction; 13 = Dukler, Eaton and Flanigan; 14 = Dukler and Minami I; 15 = Dukler and Minami II."
+            "description": "Black-box correlation used in this pipe segment when drift model is disabled (initialConfig: driftModel = false). Valid for steady-state mode. 0 = Poettmann-Carpenter; 1 = Baxendell-Thomas; 2 = Fancher-Brown; 3 = Hagedorn-Brown; 4 = Duns-Ros; 5 = Orkiszewski; 6 = Beggs & Brill; 7 = Mukherjee-Brill; 8 = Aziz; 9 = Gray; 10 = Oliemans; 11 = Dukler; 12 = Beggs & Brill with Palmer correction; 13 = Dukler, Eaton and Flanigan; 14 = Dukler and Minami I; 15 = Dukler and Minami II."
           },
           "parallelNetworkThermalCoupling": {
             "type": "integer",
@@ -2019,40 +2019,40 @@
     },
     "servicePipe": {
       "type": "array",
-      "description": "Each object in this array corresponds to a service duct. Duct changes are usually motivated by changes in diameter, pipe property, cross-section, or inclination.",
+      "description": "Each object in this array corresponds to a service pipe segment. Segment changes are usually motivated by changes in diameter, pipe property, cross-section, or inclination.",
       "items": {
         "type": "object",
         "properties": {
           "active": {
             "type": "boolean",
-            "description": "Indicates whether the duct is active."
+            "description": "Indicates whether the pipe segment is active."
           },
           "id": {
             "type": "integer",
-            "description": "Duct identifier integer."
+            "description": "Pipe-segment identifier integer."
           },
           "angle": {
             "type": "number",
-            "description": "Service-duct inclination relative to horizontal axis. Valid for {initialConfig: {xyMode = false}}, which is the default.",
+            "description": "Service-pipe inclination relative to horizontal axis. Valid for {initialConfig: {xyMode = false}}, which is the default.",
             "unit": "rad"
           },
           "xCoor": {
             "type": "number",
-            "description": "X coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
+            "description": "X coordinate of this pipe segment end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
           },
           "yCoor": {
             "type": "number",
-            "description": "Y coordinate of this duct end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
+            "description": "Y coordinate of this pipe segment end position, used for inclination inference. Valid for initialConfig: {xyMode: true} (otherwise inclination is obtained directly from 'angle').",
             "unit": "m"
           },
           "crossSectionId": {
             "type": "integer",
-            "description": "ID of the cross-section used by this duct."
+            "description": "ID of the cross-section used by this pipe segment."
           },
           "formationId": {
             "type": "integer",
-            "description": "ID of the formation with which the duct exchanges heat. If not informed, there is no formation; the duct exchanges heat only with thermally coupled fluid or marine/air environment."
+            "description": "ID of the formation with which the pipe segment exchanges heat. If not informed, there is no formation; the pipe segment exchanges heat only with thermally coupled fluid or marine/air environment."
           },
           "environment": {
             "type": "integer",
@@ -2062,7 +2062,7 @@
               2
             ],
             "default": 0,
-            "description": "Infinite fluid with which the duct exchanges heat. 0: user-defined; 1: seawater; 2: atmosphere. Required except when a formation is defined (formationId informed)."
+            "description": "Infinite fluid with which the pipe segment exchanges heat. 0: user-defined; 1: seawater; 2: atmosphere. Required except when a formation is defined (formationId informed)."
           },
           "convectionDirection": {
             "type": "integer",
@@ -2071,7 +2071,7 @@
               1
             ],
             "default": 0,
-            "description": "Indicates direction of convective attack by external fluid. 0: transversal; 1: longitudinal. Valid only when formationId is not informed. Usually 0 is used for ducts immersed in infinite medium; 1 is uncommon for service ducts."
+            "description": "Indicates direction of convective attack by external fluid. 0: transversal; 1: longitudinal. Valid only when formationId is not informed. Usually 0 is used for ducts immersed in infinite medium; 1 is uncommon for service pipe segments."
           },
           "thermalCoupling": {
             "type": "integer",
@@ -2079,7 +2079,7 @@
               0,
               1
             ],
-            "description": "If set to 1, indicates the duct is thermally coupled with a production duct."
+            "description": "If set to 1, indicates the pipe segment is thermally coupled with a production pipe segment."
           },
           "grouping": {
             "type": "boolean",
@@ -2088,7 +2088,7 @@
           },
           "discretization": {
             "type": "array",
-            "description": "Objects in this array specify duct discretization logic (cell count and length). Valid for grouping = true and initialConfig.xyMode = false.",
+            "description": "Objects in this array specify pipe-segment discretization logic (cell count and length). Valid for grouping = true and initialConfig.xyMode = false.",
             "items": {
               "type": "object",
               "properties": {
@@ -2114,7 +2114,7 @@
           },
           "numCellsXY": {
             "type": "integer",
-            "description": "Number of duct cells for initialConfig: {xyMode: true}."
+            "description": "Number of pipe-segment cells for initialConfig: {xyMode: true}."
           },
           "initialConditions": {
             "type": "object",
@@ -2122,14 +2122,14 @@
             "properties": {
               "measuredPosition": {
                 "type": "array",
-                "description": "Array defining relative duct-length positions where this object's properties are specified. It must start with 0 and end with 1. Properties at other duct positions are linearly interpolated.",
+                "description": "Array defining relative pipe-segment-length positions where this object's properties are specified. It must start with 0 and end with 1. Properties at other pipe-segment positions are linearly interpolated.",
                 "items": {
                   "type": "number"
                 }
               },
               "pressure": {
                 "type": "array",
-                "description": "Initial-condition pressures at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition pressures at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "kgf/cm2"
@@ -2137,7 +2137,7 @@
               },
               "temp": {
                 "type": "array",
-                "description": "Initial-condition temperatures at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition temperatures at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "degC"
@@ -2145,7 +2145,7 @@
               },
               "gasMassFlowRate": {
                 "type": "array",
-                "description": "Initial-condition gas mass flow rate at duct relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
+                "description": "Initial-condition gas mass flow rate at pipe-segment relative positions defined in measuredPosition. Valid for transient simulations only when initialization by initial conditions is active, i.e., initialConfig: {initialCondition: 0}.",
                 "items": {
                   "type": "number",
                   "unit": "kg/s"
@@ -2153,7 +2153,7 @@
               },
               "ambientTemp": {
                 "type": "array",
-                "description": "Ambient temperatures at duct relative positions defined by measuredPosition. Always required.",
+                "description": "Ambient temperatures at pipe-segment relative positions defined by measuredPosition. Always required.",
                 "items": {
                   "type": "number",
                   "unit": "degC"
@@ -2161,7 +2161,7 @@
               },
               "ambientVel": {
                 "type": "array",
-                "description": "External-fluid velocities at duct relative positions defined by measuredPosition. Required except when formationId is provided.",
+                "description": "External-fluid velocities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided.",
                 "items": {
                   "type": "number",
                   "unit": "m/s"
@@ -2170,7 +2170,7 @@
               "ambientConductivity": {
                 "type": "array",
                 "unit": "W/(m.K)",
-                "description": "External-medium thermal conductivities at duct relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium thermal conductivities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "W/(m.K)"
@@ -2178,7 +2178,7 @@
               },
               "ambientSpecificHeat": {
                 "type": "array",
-                "description": "External-medium specific heats at duct relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium specific heats at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "J/(kg/K)"
@@ -2186,7 +2186,7 @@
               },
               "ambientDensity": {
                 "type": "array",
-                "description": "External-fluid densities at duct relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid densities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "kg/m3"
@@ -2194,7 +2194,7 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at duct relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid viscosities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "cP"
@@ -2204,15 +2204,15 @@
           },
           "correctionFactorHydro": {
             "type": "integer",
-            "description": "Index of the correctionFactorHydro vector element in 'correction' used as adjustment factor to correct hydrostatic pressure loss in this duct."
+            "description": "Index of the correctionFactorHydro vector element in 'correction' used as adjustment factor to correct hydrostatic pressure loss in this pipe segment."
           },
           "correctionFactorFric": {
             "type": "integer",
-            "description": "Index of the correctionFactorFric vector element in 'correction' used as adjustment factor to correct friction pressure loss in this duct."
+            "description": "Index of the correctionFactorFric vector element in 'correction' used as adjustment factor to correct friction pressure loss in this pipe segment."
           },
           "correctionFactorTemp": {
             "type": "integer",
-            "description": "Index of the correctionFactorTemp vector element in 'correction' used as adjustment factor to correct temperature gradient in this duct."
+            "description": "Index of the correctionFactorTemp vector element in 'correction' used as adjustment factor to correct temperature gradient in this pipe segment."
           }
         }
       }
@@ -2659,7 +2659,7 @@
     },
     "pressureSource": {
       "type": "array",
-      "description": "Leak/entry point between production system and fluid reservoir with specified pressure and temperature. This opening may allow leakage from production duct to reservoir as well as inflow from external medium into production system.",
+      "description": "Leak/entry point between production system and fluid reservoir with specified pressure and temperature. This opening may allow leakage from production pipe segment to reservoir as well as inflow from external medium into production system.",
       "items": {
         "type": "object",
         "properties": {
@@ -2999,21 +2999,21 @@
         },
         "correctionFactorHydro": {
           "type": "array",
-          "description": "List of possible adjustment factors to correct hydrostatic pressure loss in production/service ducts. A factor is applied to a duct by its index (position) in this list.",
+          "description": "List of possible adjustment factors to correct hydrostatic pressure loss in production/service pipe segments. A factor is applied to a pipe segment by its index (position) in this list.",
           "items": {
             "type": "number"
           }
         },
         "correctionFactorFric": {
           "type": "array",
-          "description": "List of possible adjustment factors to correct friction pressure loss in production/service ducts. A factor is applied to a duct by its index (position) in this list.",
+          "description": "List of possible adjustment factors to correct friction pressure loss in production/service pipe segments. A factor is applied to a pipe segment by its index (position) in this list.",
           "items": {
             "type": "number"
           }
         },
         "correctionFactorTemp": {
           "type": "array",
-          "description": "List of possible adjustment factors to correct temperature gradient in production/service ducts. A factor is applied to a duct by its index (position) in this list.",
+          "description": "List of possible adjustment factors to correct temperature gradient in production/service pipe segments. A factor is applied to a pipe segment by its index (position) in this list.",
           "items": {
             "type": "number"
           }
@@ -3270,7 +3270,7 @@
         },
         "angle": {
           "type": "boolean",
-          "description": "Duct angle (rad)."
+          "description": "Pipe-segment angle (rad)."
         }
       }
     },
@@ -3384,7 +3384,7 @@
         },
         "angle": {
           "type": "boolean",
-          "description": "Duct angle (rad)."
+          "description": "Pipe-segment angle (rad)."
         }
       }
     },

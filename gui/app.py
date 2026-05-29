@@ -859,7 +859,7 @@ def _fluid_dialog(idx):
     with c2:
         widget_number("API", ["productionFluid", idx, "api"], default=28.0,
                       help_text="Oil API gravity. Black oil only.")
-        widget_number("RGO [Sm³/Sm³]", ["productionFluid", idx, "gor"], default=100.0,
+        widget_number("GOR [Sm³/Sm³]", ["productionFluid", idx, "gor"], default=100.0,
                       help_text="Gas-oil ratio. Valid for all 3 fluid types.")
     with c3:
         widget_number("Gas density (rel.)", ["productionFluid", idx, "gasDensity"],
@@ -992,12 +992,12 @@ def _fluid_dialog(idx):
 
     # Compositional model options
     st.markdown("**Compositional Options**")
-    widget_bool("User molar fractions (fracMolarUsuario)",
+    widget_bool("User molar fractions",
                 ["productionFluid", idx, "userMolarFraction"], default=False,
                 help_text="If false, reads from .ctm file.")
-    widget_bool("Correct RGO (RGOCompUsuario)",
+    widget_bool("Correct GOR",
                 ["productionFluid", idx, "userGORComp"], default=False,
-                help_text="If true, corrects molar fractions to match RGO value.")
+                help_text="If true, corrects molar fractions to match GOR value.")
     st.caption("Molar fractions (same order as .ctm file)")
     frac_molar = fluid.get("molarFraction", [])
     frac_str = st.text_input(
@@ -1029,7 +1029,7 @@ def _material_dialog(idx):
 
     st.subheader(f"Material {idx} (ID: {mat.get('id', idx)})")
 
-    widget_text("Label (rótulo)", ["material", idx, "label"],
+    widget_text("Label", ["material", idx, "label"],
                 help_text="Display name for this material")
 
     c1, c2 = st.columns(2)
@@ -1076,7 +1076,7 @@ def _draw_cross_section_figure(sec):
     layer_diameters = []  # list of (inner_d, outer_d) per layer
     for camada in layers:
         inner_d = current_diameter
-        if camada.get("layerMeasurementType") == "DIAMETRO":
+        if camada.get("layerMeasurementType") == "DIAMETER":
             outer_d = float(camada.get("diameter", current_diameter))
         else:
             outer_d = current_diameter + 2 * float(camada.get("thickness", 0.01))
@@ -1131,7 +1131,7 @@ def _draw_cross_section_figure(sec):
             mode='lines',
         ))
 
-    # Draw annular flow region (white/light fill between diametroInterno and diametroExterno)
+    # Draw annular flow region (white/light fill between innerDiameter and outerDiameter)
     if is_anular:
         r_ext = d_externo / 2
         x_ext = (r_ext * np.cos(theta)).tolist()
@@ -1195,7 +1195,7 @@ def _section_dialog(idx):
 
     st.subheader(f"Cross Section {idx} (ID: {sec.get('id', idx)})")
 
-    widget_text("Label (rótulo)", ["crossSection", idx, "label"],
+    widget_text("Label", ["crossSection", idx, "label"],
                 help_text="Display name for this section")
 
     c1, c2, c3, c4, c5 = st.columns(5)
@@ -1232,7 +1232,7 @@ def _section_dialog(idx):
     layers = sec.get("layers", [])
 
     if st.button("➕ Add Layer", key=f"dlg_add_layer_{idx}"):
-        layers.append({"layerMeasurementType": "ESPESSURA", "thickness": 0.01,
+        layers.append({"layerMeasurementType": "THICKNESS", "thickness": 0.01,
                        "discretization": 1, "materialId": 0})
         sec["layers"] = layers
         set_val(["crossSection"], sections)
@@ -1242,14 +1242,14 @@ def _section_dialog(idx):
         lc = st.columns([2, 2, 2, 2, 1])
         with lc[0]:
             meas_type = st.selectbox(
-                "Measurement", ["ESPESSURA", "DIAMETRO"],
-                index=0 if layer.get("layerMeasurementType", "ESPESSURA") == "ESPESSURA" else 1,
+                "Measurement", ["THICKNESS", "DIAMETER"],
+                index=0 if layer.get("layerMeasurementType", "THICKNESS") == "THICKNESS" else 1,
                 key=f"dlg_layer_meas_{idx}_{j}",
-                help="ESPESSURA: radial thickness; DIAMETRO: outer diameter from pipe center."
+                help="THICKNESS: radial thickness; DIAMETER: outer diameter from pipe center."
             )
             layers[j]["layerMeasurementType"] = meas_type
         with lc[1]:
-            if meas_type == "ESPESSURA":
+            if meas_type == "THICKNESS":
                 layers[j]["thickness"] = st.number_input(
                     "Thickness [m]", value=float(layer.get("thickness", 0.01)),
                     key=f"dlg_layer_esp_{idx}_{j}", format="%.4f",
@@ -1301,7 +1301,7 @@ def _formation_dialog(idx):
 
     st.subheader(f"Rock {idx} (ID: {rock.get('id', idx)})")
 
-    widget_text("Label (rótulo)", path + ["label"],
+    widget_text("Label", path + ["label"],
                 help_text="Display name for this rock")
 
     c1, c2 = st.columns(2)
@@ -1321,104 +1321,104 @@ def _formation_dialog(idx):
         st.rerun()
 
 
-@st.dialog("Edit Duct", width="large")
-def _duct_dialog(duct_key, idx):
-    """Full edit form for a single duct (production or service)."""
-    ducts = get_val([duct_key], [])
-    if idx >= len(ducts):
-        st.error("Duct not found.")
+@st.dialog("Edit Pipe", width="large")
+def _pipe_dialog(pipe_key, idx):
+    """Full edit form for a single pipe (production or service)."""
+    pipes = get_val([pipe_key], [])
+    if idx >= len(pipes):
+        st.error("Pipe not found.")
         return
-    duct = ducts[idx]
+    pipe = pipes[idx]
 
-    kind = "Production" if duct_key == "productionPipe" else "Service"
-    st.subheader(f"{kind} Duct {idx} (ID: {duct.get('id', idx)})")
+    kind = "Production" if pipe_key == "productionPipe" else "Service"
+    st.subheader(f"{kind} Pipe {idx} (ID: {pipe.get('id', idx)})")
 
-    widget_text("Label (rótulo)", [duct_key, idx, "label"],
-                help_text="Display name for this duct")
+    widget_text("Label", [pipe_key, idx, "label"],
+                help_text="Display name for this pipe")
 
     # ── Basic identification ─────────────────────────────────────────
     st.markdown("**Basic Properties**")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        widget_bool("Active", [duct_key, idx, "active"], default=True,
-                    help_text="Whether this duct is active in the simulation.")
-        widget_int("ID", [duct_key, idx, "id"], default=idx,
-                   help_text="Integer identifier for this duct.")
+        widget_bool("Active", [pipe_key, idx, "active"], default=True,
+                    help_text="Whether this pipe is active in the simulation.")
+        widget_int("ID", [pipe_key, idx, "id"], default=idx,
+                   help_text="Integer identifier for this pipe.")
     with c2:
-        widget_number("Angle [rad]", [duct_key, idx, "angle"], default=0.0,
-                      help_text="Inclination from horizontal. Used when modoXY=false (default).")
-        widget_int("Cross-section ID (idCorte)", [duct_key, idx, "crossSectionId"], default=0,
-                   help_text="ID of the cross section (from Cross Sections tab) composing this duct.")
+        widget_number("Angle [rad]", [pipe_key, idx, "angle"], default=0.0,
+                      help_text="Inclination from horizontal. Used when xyMode=false (default).")
+        widget_int("Cross-section ID (idCorte)", [pipe_key, idx, "crossSectionId"], default=0,
+                   help_text="ID of the cross section (from Cross Sections tab) composing this pipe.")
     with c3:
-        widget_number("X end [m]", [duct_key, idx, "xCoor"],
-                      help_text="Final X coord (modoXY=true)")
-        widget_number("Y end [m]", [duct_key, idx, "yCoor"],
-                      help_text="Final Y coord (modoXY=true)")
+        widget_number("X end [m]", [pipe_key, idx, "xCoor"],
+                      help_text="Final X coord (xyMode=true)")
+        widget_number("Y end [m]", [pipe_key, idx, "yCoor"],
+                      help_text="Final Y coord (xyMode=true)")
     with c4:
-        widget_int("Formation ID (idFormacao)", [duct_key, idx, "formationId"], default=0,
+        widget_int("Formation ID (idFormacao)", [pipe_key, idx, "formationId"], default=0,
                    help_text="Formation for heat exchange. 0 = none.")
-        widget_int("numCellsXY", [duct_key, idx, "numCellsXY"], default=0,
-                   help_text="Number of cells (modoXY=true)")
+        widget_int("numCellsXY", [pipe_key, idx, "numCellsXY"], default=0,
+                   help_text="Number of cells (xyMode=true)")
 
     # ── Heat exchange & coupling ─────────────────────────────────────
     st.markdown("**Heat Exchange & Coupling**")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        widget_int_select("External environment", [duct_key, idx, "environment"], {
+        widget_int_select("External environment", [pipe_key, idx, "environment"], {
             0: "0 - User defined", 1: "1 - Seawater", 2: "2 - Atmosphere"
-        }, default=0, help_text="Infinite fluid for heat exchange. Not needed when formation is set or duct is thermally coupled.")
+        }, default=0, help_text="Infinite fluid for heat exchange. Not needed when formation is set or pipe is thermally coupled.")
     with c2:
-        widget_int_select("Convection direction", [duct_key, idx, "convectionDirection"], {
+        widget_int_select("Convection direction", [pipe_key, idx, "convectionDirection"], {
             0: "0 - Transverse", 1: "1 - Longitudinal"
         }, default=0, help_text="0: cross-flow (immersed pipe); 1: axial flow (annular coupling). Only valid without formation.")
     with c3:
-        widget_int_select("Thermal coupling", [duct_key, idx, "thermalCoupling"], {
-            0: "0 - No", 1: "1 - Yes (coupled with counterpart duct)"
-        }, default=0, help_text="If 1, duct is thermally coupled with its counterpart. Must match in position, length, and discretization.")
+        widget_int_select("Thermal coupling", [pipe_key, idx, "thermalCoupling"], {
+            0: "0 - No", 1: "1 - Yes (coupled with counterpart pipe)"
+        }, default=0, help_text="If 1, pipe is thermally coupled with its counterpart. Must match in position, length, and discretization.")
     with c4:
-        widget_bool("Grouping (agrupamento)", [duct_key, idx, "grouping"], default=True,
+        widget_bool("Grouping (agrupamento)", [pipe_key, idx, "grouping"], default=True,
                     help_text="If true, discretization uses cell groups (nCells×length). If false, each cell length is specified individually.")
 
     # ── Production-only / Service-only fields ────────────────────────
-    if duct_key == "productionPipe":
+    if pipe_key == "productionPipe":
         st.markdown("**Advanced (Production only)**")
         c1, c2, c3 = st.columns(3)
         with c1:
-            widget_int_select("2D thermal diffusion", [duct_key, idx, "diffusion2d"], {
+            widget_int_select("2D thermal diffusion", [pipe_key, idx, "diffusion2d"], {
                 0: "0 - No", 1: "1 - Yes"
             }, default=0, help_text="If 1, uses 2D heat transfer model for buried pipe defined in the JSON file below.")
-            widget_text("2D diffusion JSON file", [duct_key, idx, "diffusion2dJson"],
+            widget_text("2D diffusion JSON file", [pipe_key, idx, "diffusion2dJson"],
                         help_text="Filename of 2D thermal model JSON")
         with c2:
-            widget_int("ssFlowModel", [duct_key, idx, "ssFlowModel"], default=0,
-                       help_text="Multiphase flow correlation override for this duct.")
-            widget_int_select("Parallel network coupling", [duct_key, idx, "parallelNetworkThermalCoupling"], {
+            widget_int("ssFlowModel", [pipe_key, idx, "ssFlowModel"], default=0,
+                       help_text="Multiphase flow correlation override for this pipe.")
+            widget_int_select("Parallel network coupling", [pipe_key, idx, "parallelNetworkThermalCoupling"], {
                 0: "0 - No", 1: "1 - Yes"
-            }, default=0, help_text="If 1, duct is thermally coupled with a parallel network duct.")
+            }, default=0, help_text="If 1, pipe is thermally coupled with a parallel network pipe.")
         with c3:
-            widget_int("dPdLHidro correction idx", [duct_key, idx, "correctionFactorHydro"], default=0,
+            widget_int("dPdLHidro correction idx", [pipe_key, idx, "correctionFactorHydro"], default=0,
                        help_text="Index in correcao.dPdLHidro vector")
-            widget_int("dPdLFric correction idx", [duct_key, idx, "correctionFactorFric"], default=0,
+            widget_int("dPdLFric correction idx", [pipe_key, idx, "correctionFactorFric"], default=0,
                        help_text="Index in correcao.dPdLFric vector")
-            widget_int("dTdL correction idx", [duct_key, idx, "correctionFactorTemp"], default=0,
+            widget_int("dTdL correction idx", [pipe_key, idx, "correctionFactorTemp"], default=0,
                        help_text="Index in correcao.dTdL vector")
     else:
         st.markdown("**Correction Indices**")
         c1, c2, c3 = st.columns(3)
         with c1:
-            widget_int("dPdLHidro correction idx", [duct_key, idx, "correctionFactorHydro"], default=0,
+            widget_int("dPdLHidro correction idx", [pipe_key, idx, "correctionFactorHydro"], default=0,
                        help_text="Index in correcao.dPdLHidro vector for hydrostatic pressure drop correction.")
         with c2:
-            widget_int("dPdLFric correction idx", [duct_key, idx, "correctionFactorFric"], default=0,
+            widget_int("dPdLFric correction idx", [pipe_key, idx, "correctionFactorFric"], default=0,
                        help_text="Index in correcao.dPdLFric vector for friction pressure drop correction.")
         with c3:
-            widget_int("dTdL correction idx", [duct_key, idx, "correctionFactorTemp"], default=0,
+            widget_int("dTdL correction idx", [pipe_key, idx, "correctionFactorTemp"], default=0,
                        help_text="Index in correcao.dTdL vector for temperature gradient correction.")
 
     # ── Discretization ───────────────────────────────────────────────
     st.markdown("**Discretization**")
-    st.caption("Used when agrupamento=true and modoXY=false")
-    disc = duct.get("discretization", [])
+    st.caption("Used when agrupamento=true and xyMode=false")
+    disc = pipe.get("discretization", [])
     disc_df = pd.DataFrame(disc) if disc else pd.DataFrame(columns=["numCells", "length"])
     edited_disc = st.data_editor(
         disc_df, num_rows="dynamic", use_container_width=True,
@@ -1426,29 +1426,29 @@ def _duct_dialog(duct_key, idx):
             "numCells": st.column_config.NumberColumn("N Cells", format="%d"),
             "length": st.column_config.NumberColumn("Length [m]", format="%.2f"),
         },
-        key=f"dlg_disc_{duct_key}_{idx}"
+        key=f"dlg_disc_{pipe_key}_{idx}"
     )
-    ducts[idx]["discretization"] = edited_disc.to_dict(orient="records")
+    pipes[idx]["discretization"] = edited_disc.to_dict(orient="records")
 
     # dxCelula
-    ci_dx = duct.get("cellDx", [])
+    ci_dx = pipe.get("cellDx", [])
     dx_str = st.text_input(
-        "dxCelula [m] (comma-sep, for agrupamento=false)",
+        "cellDx [m] (comma-sep, for grouping=false)",
         value=", ".join(str(x) for x in ci_dx) if ci_dx else "",
-        key=f"dlg_dxcel_{duct_key}_{idx}",
-        help="Individual cell lengths when agrupamento=false"
+        key=f"dlg_dxcel_{pipe_key}_{idx}",
+        help="Individual cell lengths when grouping=false"
     )
     if dx_str.strip():
         try:
-            ducts[idx]["cellDx"] = [float(x.strip()) for x in dx_str.split(",") if x.strip()]
+            pipes[idx]["cellDx"] = [float(x.strip()) for x in dx_str.split(",") if x.strip()]
         except ValueError:
             pass
-    elif "cellDx" in ducts[idx]:
-        del ducts[idx]["cellDx"]
+    elif "cellDx" in pipes[idx]:
+        del pipes[idx]["cellDx"]
 
     # ── Initial & Boundary Conditions ────────────────────────────────
     st.markdown("**Initial Conditions & External Environment**")
-    ci = duct.get("initialConditions", duct.get("initialAndAmbientConditions", {}))
+    ci = pipe.get("initialConditions", pipe.get("initialAndAmbientConditions", {}))
 
     # Determine the key used in the original data for initial conditions
     _ci_key = "initialConditions" if "initialConditions" in duct else "initialAndAmbientConditions"
@@ -1458,45 +1458,45 @@ def _duct_dialog(duct_key, idx):
         txt = col.text_input(
             label,
             value=", ".join(str(x) for x in val) if val else "",
-            key=f"dlg_ci_{field}_{duct_key}_{idx}",
+            key=f"dlg_ci_{field}_{pipe_key}_{idx}",
             help=help_txt
         )
         if txt.strip():
             try:
-                ducts[idx].setdefault(_ci_key, {})[field] = [
+                pipes[idx].setdefault(_ci_key, {})[field] = [
                     float(x.strip()) for x in txt.split(",") if x.strip()
                 ]
             except ValueError:
                 pass
 
-    st.caption("Interpolation positions (compInter: 0 → 1)")
+    st.caption("Interpolation positions (measuredPosition: 0 → 1)")
     _dlg_ci_input("measuredPosition", "measuredPosition", [], st,
-                  help_txt="Relative duct positions (must start at 0, end at 1). Other properties are linearly interpolated between these points.")
+                  help_txt="Relative pipe positions (must start at 0, end at 1). Other properties are linearly interpolated between these points.")
 
     c1, c2 = st.columns(2)
     _dlg_ci_input("Pressure [kgf/cm²]", "pressure", [], c1,
-                  help_txt="Initial pressures at compInter positions. Transient only (condicaoInicial=0).")
+                  help_txt="Initial pressures at measuredPosition points. Transient only (initialCondition=0).")
     _dlg_ci_input("Temperature [°C]", "temp", [], c2,
-                  help_txt="Initial temperatures at compInter positions. Transient only (condicaoInicial=0).")
+                  help_txt="Initial temperatures at measuredPosition points. Transient only (initialCondition=0).")
 
-    if duct_key == "productionPipe":
+    if pipe_key == "productionPipe":
         c1, c2, c3, c4 = st.columns(4)
         _dlg_ci_input("Holdup", "holdup", [], c1,
-                      help_txt="Initial liquid holdup at compInter positions. Transient only.")
+                      help_txt="Initial liquid holdup at measuredPosition points. Transient only.")
         _dlg_ci_input("Bet", "complementaryFluidFraction", [], c2,
                       help_txt="Complementary fluid volume fraction. Transient only (if complementary fluid is active).")
         _dlg_ci_input("uls [m/s]", "usl", [], c3,
-                      help_txt="Superficial liquid velocity at compInter positions. Transient only.")
+                      help_txt="Superficial liquid velocity at measuredPosition points. Transient only.")
         _dlg_ci_input("ugs [m/s]", "usg", [], c4,
-                      help_txt="Superficial gas velocity at compInter positions. Transient only.")
+                      help_txt="Superficial gas velocity at measuredPosition points. Transient only.")
     else:
         _dlg_ci_input("Gas mass flow [kg/s]", "gasMassFlowRate", [], st,
-                      help_txt="Gas mass flow rate at compInter positions. Transient only.")
+                      help_txt="Gas mass flow rate at measuredPosition points. Transient only.")
 
     st.markdown("**External environment**")
     c1, c2, c3 = st.columns(3)
     _dlg_ci_input("External T [°C]", "ambientTemp", [4.0], c1,
-                  help_txt="Ambient temperature at compInter positions. Not needed if thermally coupled.")
+                  help_txt="Ambient temperature at measuredPosition points. Not needed if thermally coupled.")
     _dlg_ci_input("External vel [m/s]", "ambientVel", [0.0], c2,
                   help_txt="External fluid velocity. Not needed if formation is set or thermally coupled.")
     _dlg_ci_input("k External [W/(m·K)]", "ambientConductivity", [], c3,
@@ -1511,49 +1511,49 @@ def _duct_dialog(duct_key, idx):
                   help_txt="External fluid viscosity. Not needed if formation is set or environment is seawater/atmosphere.")
 
     # ── 3D Thermal fields (production only) ──────────────────────────
-    if duct_key == "productionPipe":
+    if pipe_key == "productionPipe":
         st.markdown("**3D Thermal Diffusion (advanced)**")
-        dt3d = duct.get("diffusion3d", [])
+        dt3d = pipe.get("diffusion3d", [])
         dt3d_str = st.text_input(
             "difusTerm3D (int array, comma-sep)",
             value=", ".join(str(x) for x in dt3d) if dt3d else "",
-            key=f"dlg_dt3d_{duct_key}_{idx}",
-            help="3D thermal diffusion flags per duct segment."
+            key=f"dlg_dt3d_{pipe_key}_{idx}",
+            help="3D thermal diffusion flags per pipe segment."
         )
         if dt3d_str.strip():
             try:
-                ducts[idx]["diffusion3d"] = [int(x.strip()) for x in dt3d_str.split(",") if x.strip()]
+                pipes[idx]["diffusion3d"] = [int(x.strip()) for x in dt3d_str.split(",") if x.strip()]
             except ValueError:
                 pass
 
-        dt3dfe = duct.get("diffusion3dFE", [])
+        dt3dfe = pipe.get("diffusion3dFE", [])
         dt3dfe_str = st.text_input(
             "difusTerm3DFE (float array, comma-sep)",
             value=", ".join(str(x) for x in dt3dfe) if dt3dfe else "",
-            key=f"dlg_dt3dfe_{duct_key}_{idx}",
+            key=f"dlg_dt3dfe_{pipe_key}_{idx}",
             help="Finite element parameters for 3D thermal diffusion model."
         )
         if dt3dfe_str.strip():
             try:
-                ducts[idx]["diffusion3dFE"] = [float(x.strip()) for x in dt3dfe_str.split(",") if x.strip()]
+                pipes[idx]["diffusion3dFE"] = [float(x.strip()) for x in dt3dfe_str.split(",") if x.strip()]
             except ValueError:
                 pass
 
-        dt3dacop = duct.get("diffusion3dCoupling", [])
+        dt3dacop = pipe.get("diffusion3dCoupling", [])
         dt3dacop_str = st.text_input(
             "difusTerm3DAcop (string array, comma-sep filenames)",
             value=", ".join(dt3dacop) if dt3dacop else "",
-            key=f"dlg_dt3dacop_{duct_key}_{idx}",
+            key=f"dlg_dt3dacop_{pipe_key}_{idx}",
             help="JSON filenames for 3D thermally coupled segments."
         )
         if dt3dacop_str.strip():
-            ducts[idx]["diffusion3dCoupling"] = [x.strip() for x in dt3dacop_str.split(",") if x.strip()]
+            pipes[idx]["diffusion3dCoupling"] = [x.strip() for x in dt3dacop_str.split(",") if x.strip()]
 
-    set_val([duct_key], ducts)
+    set_val([pipe_key], pipes)
 
     st.markdown("---")
-    if st.button("Done", type="primary", use_container_width=True, key=f"dlg_duct_done_{duct_key}_{idx}"):
-        st.session_state.pop("_editing_duct", None)
+    if st.button("Done", type="primary", use_container_width=True, key=f"dlg_pipe_done_{pipe_key}_{idx}"):
+        st.session_state.pop("_editing_pipe", None)
         st.rerun()
 
 
@@ -1987,24 +1987,24 @@ def _vgl_dialog(idx):
         st.rerun()
 
 
-@st.dialog("Edit BCS Pump", width="large")
+@st.dialog("Edit ESP Pump", width="large")
 def _bcs_dialog(idx):
-    """Full edit form for a single BCS (ESP) pump."""
+    """Full edit form for a single ESP pump."""
     items = get_val(["esp"], [])
     if idx >= len(items):
-        st.error("BCS not found.")
+        st.error("ESP not found.")
         return
     item = items[idx]
     path = ["esp", idx]
 
-    st.subheader(f"BCS {idx} (ID: {item.get('id', idx)})")
-    widget_text("Label", path + ["label"], help_text="Display name for this BCS/ESP pump")
+    st.subheader(f"ESP {idx} (ID: {item.get('id', idx)})")
+    widget_text("Label", path + ["label"], help_text="Display name for this ESP pump")
     c1, c2, c3 = st.columns(3)
     with c1:
         widget_bool("Active", path + ["active"], default=True,
-                    help_text="Whether this BCS/ESP pump is active.")
+                    help_text="Whether this ESP pump is active.")
         widget_int("ID", path + ["id"], default=idx,
-                   help_text="Integer identifier for this BCS.")
+                   help_text="Integer identifier for this ESP.")
         widget_number("Position [m]", path + ["measuredLength"],
                       help_text="Position along the production line.")
     with c2:
@@ -2022,7 +2022,7 @@ def _bcs_dialog(idx):
         widget_bool("H-I correction", path + ["hiCorrection"], default=False,
                     help_text="Head-Impeller degradation correction.")
 
-    widget_time_series(f"BCS {idx} - Frequency", path,
+    widget_time_series(f"ESP {idx} - Frequency", path,
                        [{"name": "frequency", "unit": "Hz"}])
 
     st.markdown("**Performance Curve**")
@@ -2170,7 +2170,7 @@ tab_names = [
     "🧱 Materials",
     "⭕ Cross Sections",
     "🪨 Rock Formation",
-    "📏 Ducts",
+    "📏 Pipes",
     "🔧 Accessories",
     "🔀 Boundary Conditions",
     "⏱️ Time",
@@ -2276,19 +2276,19 @@ with tabs[8]:
                         ci_path + ["geometryFollowsFlow"], default=True,
                         help_text="If true, geometry filling direction matches the flow direction.")
             widget_number("X prod start", ci_path + ["xProdStart"], unit="m",
-                          help_text="Initial X coordinate of the production line (modoXY=true).")
+                          help_text="Initial X coordinate of the production line (xyMode=true).")
             widget_number("Y prod start", ci_path + ["yProdStart"], unit="m",
-                          help_text="Initial Y coordinate of the production line (modoXY=true).")
+                          help_text="Initial Y coordinate of the production line (xyMode=true).")
         with c2:
             widget_number("X service start", ci_path + ["xServiceStart"], unit="m",
-                          help_text="Initial X coordinate of the service line (modoXY=true).")
+                          help_text="Initial X coordinate of the service line (xyMode=true).")
             widget_number("Y service start", ci_path + ["yServiceStart"], unit="m",
-                          help_text="Initial Y coordinate of the service line (modoXY=true).")
+                          help_text="Initial Y coordinate of the service line (xyMode=true).")
 
     with st.expander("🔬 Numerical Aspects"):
         c1, c2 = st.columns(2)
         with c1:
-            widget_bool("Track RGO", ci_path + ["trackGOR"],
+            widget_bool("Track GOR", ci_path + ["trackGOR"],
                         help_text="If true, updates GOR along the pipe using mixing rules.")
             widget_bool("Track gas density", ci_path + ["trackGasDensity"],
                         help_text="If true, updates gas density along the pipe.")
@@ -2342,7 +2342,7 @@ with tabs[8]:
                         default=True, help_text="If true, considers slip at boundary cells.")
             widget_bool("Counter-current corr. (perm)", adv + ["counterflowCorrectionSteady"],
                         help_text="Counter-current correction for steady-state solver.")
-            widget_bool("Stable column (estabCol)", adv + ["columnStabilization"],
+            widget_bool("Stable column", adv + ["columnStabilization"],
                         help_text="Stabilization feature for liquid column.")
             widget_int("Threads", adv + ["threads"], default=1, min_val=1,
                        help_text="Number of computational threads.")
@@ -2451,7 +2451,7 @@ with tabs[8]:
                               pd_path + ["latencyTime"],
                               help_text="Time between simulation stabilization and start of discharge.")
 
-    with st.expander("📏 Correction Factors (correcao)"):
+    with st.expander("📏 Correction Factors"):
         widget_bool("Active", ["correction", "active"], default=True,
                     help_text="Enable correction factors for dP/dL and dT/dL.")
         st.markdown("**Hydrostatic dP/dL multipliers**")
@@ -2960,7 +2960,7 @@ with tabs[0]:
             widget_bool("Table G (gas compress.)", ci_path + ["gasTable"])
 
     # --- Production Fluids ---
-    with st.expander("🛢️ Production Fluids (fluidosProducao)", expanded=True):
+    with st.expander("🛢️ Production Fluids", expanded=True):
         fluids = get_val(["productionFluid"], [])
         if not fluids:
             fluids = []
@@ -2988,7 +2988,7 @@ with tabs[0]:
                         title=_ftitle,
                         id_number=fluid.get('id', i),
                         details=[
-                            f"API: {fluid.get('api', '—')} &nbsp;|&nbsp; RGO: {fluid.get('gor', '—')}",
+                            f"API: {fluid.get('api', '—')} &nbsp;|&nbsp; GOR: {fluid.get('gor', '—')}",
                             f"Gas dens: {fluid.get('gasDensity', '—')} &nbsp;|&nbsp; BSW: {fluid.get('bsw', '—')}",
                         ],
                         active=active,
@@ -2999,7 +2999,7 @@ with tabs[0]:
                         if st.button("✏️", key=f"edit_fluid_{i}", use_container_width=True):
                             st.session_state.pop("_editing_material", None)
                             st.session_state.pop("_editing_section", None)
-                            st.session_state.pop("_editing_duct", None)
+                            st.session_state.pop("_editing_pipe", None)
                             st.session_state["_editing_fluid"] = i
                             st.rerun()
                     with bc2:
@@ -3012,7 +3012,7 @@ with tabs[0]:
         if "_editing_fluid" in st.session_state:
             st.session_state.pop("_editing_material", None)
             st.session_state.pop("_editing_section", None)
-            st.session_state.pop("_editing_duct", None)
+            st.session_state.pop("_editing_pipe", None)
             st.session_state.pop("_editing_formation", None)
             _fluid_dialog(st.session_state.pop("_editing_fluid"))
 
@@ -3032,7 +3032,7 @@ with tabs[0]:
                 1: "1 - Brown et al", 2: "2 - Piper et al",
             }, default=1, help_text="Correlation for pseudo-critical P and T. Options 1 & 2 are better for CO2-rich gas.")
         st.markdown("**Compositional Options**")
-        widget_bool("User molar fractions (fracMolarUsuario)",
+        widget_bool("User molar fractions",
                     ["gasFluid", "userMolarFraction"], default=False,
                     help_text="If true, uses fracMolar below. If false, reads from .ctm file.")
         st.caption("Molar fractions (same order as .ctm file)")
@@ -3084,7 +3084,7 @@ with tabs[0]:
                       help_text="Required when type is 1 (Water).")
 
     # --- Wax Deposition (parafina) ---
-    with st.expander("🕯️ Wax Deposition (parafina)"):
+    with st.expander("🕯️ Wax Deposition"):
         st.caption("Wax (paraffin) deposition model parameters.")
         _wax_path = ["wax"]
 
@@ -3138,7 +3138,7 @@ with tabs[0]:
                           help_text="F parameter for wax multiplier correlation.")
 
     # --- Table (tabela) ---
-    with st.expander("📊 PVT Table Parameters (tabela)"):
+    with st.expander("📊 Compressibility Table Parameters"):
         widget_bool("Active", ["compTable", "active"], default=True,
                     help_text="Parameters for tabP and tabG tables (when requested in configuracaoInicial).")
         c1, c2, c3 = st.columns(3)
@@ -3201,7 +3201,7 @@ with tabs[1]:
                     if st.button("✏️", key=f"edit_mat_{i}", use_container_width=True):
                         st.session_state.pop("_editing_fluid", None)
                         st.session_state.pop("_editing_section", None)
-                        st.session_state.pop("_editing_duct", None)
+                        st.session_state.pop("_editing_pipe", None)
                         st.session_state["_editing_material"] = i
                         st.rerun()
                 with bc2:
@@ -3214,7 +3214,7 @@ with tabs[1]:
     if "_editing_material" in st.session_state:
         st.session_state.pop("_editing_fluid", None)
         st.session_state.pop("_editing_section", None)
-        st.session_state.pop("_editing_duct", None)
+        st.session_state.pop("_editing_pipe", None)
         st.session_state.pop("_editing_formation", None)
         _material_dialog(st.session_state.pop("_editing_material"))
 
@@ -3236,7 +3236,7 @@ with tabs[2]:
             sections.append({
                 "active": True, "id": len(sections), "annular": False,
                 "innerDiameter": 0.1, "roughness": 0.00005,
-                "layers": [{"layerMeasurementType": "ESPESSURA", "thickness": 0.01,
+                "layers": [{"layerMeasurementType": "THICKNESS", "thickness": 0.01,
                              "discretization": 1, "materialId": 0}]
             })
             set_val(["crossSection"], sections)
@@ -3267,7 +3267,7 @@ with tabs[2]:
                     if st.button("✏️", key=f"edit_sec_{i}", use_container_width=True):
                         st.session_state.pop("_editing_fluid", None)
                         st.session_state.pop("_editing_material", None)
-                        st.session_state.pop("_editing_duct", None)
+                        st.session_state.pop("_editing_pipe", None)
                         st.session_state["_editing_section"] = i
                         st.rerun()
                 with bc2:
@@ -3280,7 +3280,7 @@ with tabs[2]:
     if "_editing_section" in st.session_state:
         st.session_state.pop("_editing_fluid", None)
         st.session_state.pop("_editing_material", None)
-        st.session_state.pop("_editing_duct", None)
+        st.session_state.pop("_editing_pipe", None)
         st.session_state.pop("_editing_formation", None)
         _section_dialog(st.session_state.pop("_editing_section"))
 
@@ -3335,7 +3335,7 @@ with tabs[3]:
                         st.session_state.pop("_editing_fluid", None)
                         st.session_state.pop("_editing_material", None)
                         st.session_state.pop("_editing_section", None)
-                        st.session_state.pop("_editing_duct", None)
+                        st.session_state.pop("_editing_pipe", None)
                         st.session_state["_editing_formation"] = i
                         st.rerun()
                 with bc2:
@@ -3349,18 +3349,18 @@ with tabs[3]:
         st.session_state.pop("_editing_fluid", None)
         st.session_state.pop("_editing_material", None)
         st.session_state.pop("_editing_section", None)
-        st.session_state.pop("_editing_duct", None)
+        st.session_state.pop("_editing_pipe", None)
         _formation_dialog(st.session_state.pop("_editing_formation"))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# TAB 5: DUCTS
+# TAB 5: PIPES
 # ═══════════════════════════════════════════════════════════════════════════════
 with tabs[4]:
-    st.header("Ducts")
+    st.header("Pipes")
     st.caption("Define production and service line geometry, segments, and initial conditions")
 
-    with st.expander("⚙️ Duct Settings", expanded=True):
+    with st.expander("⚙️ Pipe Settings", expanded=True):
         ci_duct = ["initialConfig"]
         c1, c2 = st.columns(2)
         with c1:
@@ -3421,7 +3421,7 @@ with tabs[4]:
                 continue
             tooltips_prod.append(
                 f"ID: {duto.get('id', '?')}<br>"
-                f"idCorte: {duto.get('crossSectionId', 'N/A')}"
+                f"Section: {duto.get('crossSectionId', 'N/A')}"
             )
 
         # Service ducts start from end of production (platform)
@@ -3457,7 +3457,7 @@ with tabs[4]:
                 continue
             tooltips_serv.append(
                 f"ID: {duto.get('id', '?')}<br>"
-                f"idCorte: {duto.get('crossSectionId', 'N/A')}"
+                f"Section: {duto.get('crossSectionId', 'N/A')}"
             )
 
         fig = go.Figure()
@@ -3491,80 +3491,80 @@ with tabs[4]:
         fig_geo = _build_geometry_figure()
         st.plotly_chart(fig_geo, use_container_width=True)
     else:
-        st.info("Add production or service ducts to see the geometry preview.")
+        st.info("Add production or service pipes to see the geometry preview.")
 
     # ── Duct list (cards) ────────────────────────────────────────────────
     st.markdown("---")
-    duct_type = st.radio("Duct type", ["Production (dutosProducao)", "Service (dutosServico)"],
+    pipe_type = st.radio("Pipe type", ["Production", "Service"],
                          horizontal=True)
-    duct_key = "productionPipe" if "Production" in duct_type else "servicePipe"
+    pipe_key = "productionPipe" if "Production" in pipe_type else "servicePipe"
 
-    ducts = get_val([duct_key], [])
-    if not ducts:
-        ducts = []
+    pipes = get_val([pipe_key], [])
+    if not pipes:
+        pipes = []
 
     col_add, _ = st.columns([1, 3])
     with col_add:
-        if st.button("➕ Add Duct", key=f"add_duct_{duct_key}"):
-            ducts.append({
-                "active": True, "id": len(ducts), "angle": 0.0, "crossSectionId": 0,
+        if st.button("➕ Add Pipe", key=f"add_pipe_{pipe_key}"):
+            pipes.append({
+                "active": True, "id": len(pipes), "angle": 0.0, "crossSectionId": 0,
                 "environment": 0, "grouping": True,
                 "discretization": [{"numCells": 10, "length": 100.0}],
                 "initialConditions": {"ambientTemp": [4.0], "ambientVel": [0.0]}
             })
-            set_val([duct_key], ducts)
+            set_val([pipe_key], pipes)
             st.rerun()
 
-    n_ducts = len(ducts)
-    st.caption(f"{n_ducts} duct(s) defined")
+    n_pipes = len(pipes)
+    st.caption(f"{n_pipes} pipe(s) defined")
 
     # Render cards in a grid (4 per row)
-    for row_start in range(0, n_ducts, 4):
+    for row_start in range(0, n_pipes, 4):
         cols = st.columns(4)
-        for col_idx, i in enumerate(range(row_start, min(row_start + 4, n_ducts))):
-            duct = ducts[i]
+        for col_idx, i in enumerate(range(row_start, min(row_start + 4, n_pipes))):
+            pipe = pipes[i]
             with cols[col_idx]:
                 # Build summary details
-                has_xy = "xCoor" in duct and "yCoor" in duct
+                has_xy = "xCoor" in pipe and "yCoor" in pipe
                 if has_xy:
-                    geom_info = f"X: {duct.get('xCoor', 0):.0f} &nbsp; Y: {duct.get('yCoor', 0):.0f}"
+                    geom_info = f"X: {pipe.get('xCoor', 0):.0f} &nbsp; Y: {pipe.get('yCoor', 0):.0f}"
                 else:
-                    ang = duct.get("angle", 0)
+                    ang = pipe.get("angle", 0)
                     geom_info = f"Angle: {ang:.3f} rad"
-                _dtitle = duct.get("label", f"Duct {i}")
+                _dtitle = pipe.get("label", f"Pipe {i}")
                 render_card(
                     title=_dtitle,
-                    id_number=duct.get('id', i),
+                    id_number=pipe.get('id', i),
                     details=[
-                        f"Section: {duct.get('crossSectionId', '—')} &nbsp;|&nbsp; {geom_info}",
+                        f"Section: {pipe.get('crossSectionId', '—')} &nbsp;|&nbsp; {geom_info}",
                     ],
-                    active=duct.get("active", True),
+                    active=pipe.get("active", True),
                     icon="📏",
                 )
                 bc1, bc2 = st.columns(2)
                 with bc1:
-                    if st.button("✏️", key=f"edit_duct_{duct_key}_{i}", use_container_width=True):
+                    if st.button("✏️", key=f"edit_pipe_{pipe_key}_{i}", use_container_width=True):
                         st.session_state.pop("_editing_fluid", None)
                         st.session_state.pop("_editing_material", None)
                         st.session_state.pop("_editing_section", None)
-                        st.session_state["_editing_duct"] = (duct_key, i)
+                        st.session_state["_editing_pipe"] = (pipe_key, i)
                         st.rerun()
                 with bc2:
-                    if st.button("🗑️", key=f"del_duct_{duct_key}_{i}", use_container_width=True):
-                        ducts.pop(i)
-                        set_val([duct_key], ducts)
+                    if st.button("🗑️", key=f"del_pipe_{pipe_key}_{i}", use_container_width=True):
+                        pipes.pop(i)
+                        set_val([pipe_key], pipes)
                         st.rerun()
 
-    set_val([duct_key], ducts)
+    set_val([pipe_key], pipes)
 
     # Open dialog if editing (only one dialog at a time)
-    if "_editing_duct" in st.session_state:
+    if "_editing_pipe" in st.session_state:
         st.session_state.pop("_editing_fluid", None)
         st.session_state.pop("_editing_material", None)
         st.session_state.pop("_editing_section", None)
         st.session_state.pop("_editing_formation", None)
-        _dk, _di = st.session_state.pop("_editing_duct")
-        _duct_dialog(_dk, _di)
+        _dk, _di = st.session_state.pop("_editing_pipe")
+        _pipe_dialog(_dk, _di)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
