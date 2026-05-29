@@ -148,7 +148,7 @@ class TestTramoConstruction:
     def test_tramo_default(self):
         """Tramo vazio deve ter atributos padrão."""
         t = marlim3.Branch()
-        assert t.system == "MULTIFASICO"
+        assert t.system == "PROD"
         assert t.jsonVersion == "1.3.9"
         assert t.productionFluid == []
         assert t.material == []

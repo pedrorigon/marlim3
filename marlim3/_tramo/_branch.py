@@ -55,7 +55,7 @@ class Branch:
         self.resultados = value
 
     def __init__(self,
-                 system='MULTIFASICO',
+                 system='PROD',
                  jsonVersion='1.3.9',
                  initialConfig=None,
                  compTable=None,
@@ -212,7 +212,7 @@ class Branch:
 
         d = data
 
-        self.system          = d.get('system',              'MULTIFASICO')
+        self.system          = d.get('system',              'PROD')
         self.jsonVersion     = d.get('jsonVersion')
         self.initialConfig   = d.get('initialConfig')       or {}
         self.compTable      = d.get('compTable')            or {}
