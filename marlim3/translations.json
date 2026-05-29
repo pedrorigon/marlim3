@@ -1,7 +1,6 @@
 {
   "keys": {
     "system": "sistema",
-    "jsonVersion": "versaoJSON",
     "initialConfig": "configuracaoInicial",
     "material": "material",
     "ipr": "ipr",

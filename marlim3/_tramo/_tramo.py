@@ -26,8 +26,6 @@ from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column, pars
 class Tramo:
 
     def __init__(self, 
-                 versao='1.0',
-                 versaoJson='1.3.9',
                  sistema='MULTIFASICO',
                  configuracaoInicial=None,
                  tabela=None,
@@ -74,8 +72,6 @@ class Tramo:
                  nome_tramo=None):
 
         self.sistema = sistema
-        self.versao = versao
-        self.versaoJson = versaoJson
         
         # configuracoes gerais
         self.configuracaoInicial = configuracaoInicial if configuracaoInicial is not None else {}
@@ -157,9 +153,6 @@ class Tramo:
         else:
             file_path = './' + filename
 
-        self.versao = '1.0'
-        self.versaoJson = '1.3.9'
-
         def filter_empty_objs(item):
             if isinstance(item, list):
                 return [filter_empty_objs(i) for i in item] or (None if not generate_empty_fields else [])
@@ -202,8 +195,6 @@ class Tramo:
                 self.label = label
 
         self.sistema = data.get('sistema')
-        self.versao = data.get('versao')
-        self.versaoJson = data.get('versaoJson')
         self.configuracaoInicial = data.get('configuracaoInicial')
         self.tabela = data.get('tabela')
         self.tempo = data.get('tempo')

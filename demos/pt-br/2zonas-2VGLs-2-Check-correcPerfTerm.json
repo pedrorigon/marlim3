@@ -1,6 +1,4 @@
 {
-   "versao":"1.0",
-  "versaoJson":"1.3.9",
   "sistema":"MULTIFASICO",
   "configuracaoInicial":{
    "linhaGas":true,

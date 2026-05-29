@@ -1,7 +1,5 @@
 {
   "sistema": "MULTIFASICO",
-  "versao": "1.0",
-  "versaoJson": "1.3.9",
   "configuracaoInicial": {
     "Formacao": {
       "Propriedades": [

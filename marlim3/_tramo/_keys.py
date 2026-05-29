@@ -28,9 +28,6 @@ def _load_translations():
     for en, pt in en_to_pt.items():
         pt_to_en[pt] = en
 
-    # Legacy aliases: alternative Portuguese spellings accepted in old files.
-    pt_to_en["versaoJson"] = "jsonVersion"  # alternate casing of versaoJSON
-
     # Identity overrides: abbreviated keys that are the same in both languages.
     _IDENTITY_KEYS = [
         "cdPig", "compP", "compT", "correlacoesPorArranjo",

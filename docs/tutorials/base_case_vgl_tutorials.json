@@ -1,7 +1,6 @@
 {
   "language": "en",
   "system": "PROD",
-  "jsonVersion": "1.3.9",
   "initialConfig": {
     "formation": {
       "properties": [

@@ -19,14 +19,12 @@ import platform
 class Network:
 
     def __init__(self, 
-                 versao='1.0',
                  configuracaoInicial=None,
                  Arquivos = None,
                  Conexao = None,
                  layout = None,
                  nome_rede=None):
 
-        self.versao = versao
         self.configuracaoInicial = configuracaoInicial
         self.Arquivos = Arquivos if Arquivos is not None else []
         self.Conexao = Conexao if Conexao is not None else []
@@ -64,8 +62,6 @@ class Network:
             file_path = './' + filename + '.json'
         else:
             file_path = './' + filename
-
-        self.versao = '1.0'
 
         def filter_empty_objs(item):
             if isinstance(item, list):
@@ -112,7 +108,6 @@ class Network:
                     label = json_input
                 self.label = label
 
-        self.versao = data.get('versao')
         self.configuracaoInicial = data.get('configuracaoInicial',{})
         self.Arquivos = data.get('Arquivos', [])
         self.Conexao = data.get('Conexao', [])

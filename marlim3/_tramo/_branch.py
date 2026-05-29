@@ -93,7 +93,6 @@ class Branch:
 
     def __init__(self,
                  system='PROD',
-                 jsonVersion='1.3.9',
                  initialConfig=None,
                  compTable=None,
                  time=None,
@@ -139,7 +138,6 @@ class Branch:
 
         self.language = "en"
         self.system      = system
-        self.jsonVersion = jsonVersion
 
         self.initialConfig  = initialConfig  if initialConfig  is not None else {}
         self.compTable      = compTable      if compTable      is not None else {}
@@ -201,8 +199,6 @@ class Branch:
         else:
             file_path = './' + filename
 
-        self.jsonVersion = '1.3.9'
-
         def filter_empty_objs(item):
             if isinstance(item, list):
                 return [filter_empty_objs(i) for i in item] or (None if not generate_empty_fields else [])
@@ -255,7 +251,6 @@ class Branch:
         d = data
 
         self.system          = d.get('system',              'PROD')
-        self.jsonVersion     = d.get('jsonVersion')
         self.initialConfig   = d.get('initialConfig')       or {}
         self.compTable      = d.get('compTable')            or {}
         self.time            = d.get('time')
