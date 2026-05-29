@@ -607,3 +607,554 @@ class TestDemoFiles:
         t = marlim3.Branch()
         t.from_json(filepath)
         assert t.system is not None
+
+
+# ============================================================================
+# Testes de suporte bilíngue (EN/PT)
+# ============================================================================
+
+class TestBilingual:
+    """Testes de acesso via nomes em português e serialização bilíngue."""
+
+    def test_tramo_alias(self):
+        """marlim3.Tramo é alias para marlim3.Branch."""
+        assert marlim3.Tramo is marlim3.Branch
+
+    def test_getattr_pt_read(self):
+        """Atributos podem ser lidos com nomes em português."""
+        t = marlim3.Branch()
+        t.productionPipe = [{"id": 0}]
+        assert t.dutosProducao == [{"id": 0}]
+
+    def test_getattr_pt_system(self):
+        """branch.sistema retorna branch.system."""
+        t = marlim3.Branch(system="PROD")
+        assert t.sistema == "PROD"
+
+    def test_setattr_pt_write(self):
+        """Atributos podem ser escritos com nomes em português."""
+        t = marlim3.Branch()
+        t.dutosProducao = [{"id": 1, "label": "teste"}]
+        assert t.productionPipe == [{"id": 1, "label": "teste"}]
+
+    def test_setattr_pt_system(self):
+        """branch.sistema = 'INJ' atualiza branch.system."""
+        t = marlim3.Branch()
+        t.sistema = "INJ"
+        assert t.system == "INJ"
+
+    def test_getattr_invalid_raises(self):
+        """Atributo inexistente levanta AttributeError."""
+        t = marlim3.Branch()
+        with pytest.raises(AttributeError):
+            _ = t.nao_existe
+
+    def test_to_json_pt(self, caso_horizontal):
+        """to_json(language='pt') gera JSON com chaves em português."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("test_pt", language='pt')
+                with open(os.path.join(tmpdir, "test_pt.json"), "r") as f:
+                    data = json.load(f)
+
+                assert "sistema" in data
+                assert "fluidosProducao" in data
+                assert "dutosProducao" in data
+                assert "secaoTransversal" in data
+                assert "language" not in data
+                # EN keys should NOT be present
+                assert "system" not in data
+                assert "productionFluid" not in data
+            finally:
+                os.chdir(original_cwd)
+
+    def test_to_json_pt_values(self, caso_horizontal):
+        """to_json(language='pt') traduz enum values."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("test_pt_val", language='pt')
+                with open(os.path.join(tmpdir, "test_pt_val.json"), "r") as f:
+                    data = json.load(f)
+                assert data["sistema"] == "MULTIFASICO"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_roundtrip_pt(self, caso_horizontal):
+        """to_json(language='pt') → from_json preserva dados."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("roundtrip_pt", language='pt')
+
+                novo = marlim3.Branch()
+                novo.from_json(os.path.join(tmpdir, "roundtrip_pt.json"))
+
+                assert novo.system == caso_horizontal.system
+                assert novo.productionFluid == caso_horizontal.productionFluid
+                assert novo.crossSection == caso_horizontal.crossSection
+                assert novo.productionPipe == caso_horizontal.productionPipe
+            finally:
+                os.chdir(original_cwd)
+
+    def test_pt_attribute_list(self):
+        """All Branch __init__ attributes that have PT translations are accessible."""
+        t = marlim3.Branch()
+        # Spot-check a few PT names
+        assert t.secaoTransversal == []
+        assert t.fluidosProducao == []
+        assert t.perfilProducao == {}
+        assert t.dutosServico == []
+
+    def test_hasattr_pt(self):
+        """hasattr recognizes Portuguese names."""
+        t = marlim3.Branch()
+        assert hasattr(t, 'dutosProducao')
+        assert hasattr(t, 'sistema')
+        assert hasattr(t, 'secaoTransversal')
+        assert not hasattr(t, 'nao_existe_xyz')
+
+    def test_setattr_pt_no_duplicate(self):
+        """PT write should not create a separate PT-named attribute."""
+        t = marlim3.Branch()
+        t.dutosProducao = [{"id": 0}]
+        assert 'dutosProducao' not in t.__dict__
+        assert 'productionPipe' in t.__dict__
+
+    def test_identity_keys_accessible(self):
+        """Keys that are the same in both languages remain accessible."""
+        t = marlim3.Branch()
+        assert t.ipr == []
+        assert t.pig == []
+        # These are identity mapped — setting via PT name (same key) should work
+        t.ipr = [{"id": 0}]
+        assert t.ipr == [{"id": 0}]
+
+    def test_deepcopy_preserves_pt_access(self):
+        """PT attribute access works after deepcopy."""
+        t = marlim3.Branch()
+        t.productionPipe = [{"id": 0, "angle": 0}]
+        t2 = copy.deepcopy(t)
+        assert t2.dutosProducao == [{"id": 0, "angle": 0}]
+        # Modify copy — original unchanged
+        t2.dutosProducao = []
+        assert t.productionPipe == [{"id": 0, "angle": 0}]
+
+    def test_to_json_pt_nested_keys(self, caso_horizontal):
+        """to_json(language='pt') translates nested keys inside dicts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("nested_pt", language='pt')
+                with open(os.path.join(tmpdir, "nested_pt.json"), "r") as f:
+                    data = json.load(f)
+
+                # Top-level
+                assert "secaoTransversal" in data
+                sec = data["secaoTransversal"][0]
+                # Nested keys should be Portuguese
+                assert "diametroInterno" in sec
+                assert "rugosidade" in sec
+                assert "camadas" in sec
+                # Nested inside layers
+                camada = sec["camadas"][0]
+                assert "espessura" in camada
+                assert "idMaterial" in camada
+                assert "tipoMedicaoCamada" in camada
+            finally:
+                os.chdir(original_cwd)
+
+    def test_to_json_pt_nested_values(self, caso_horizontal):
+        """to_json(language='pt') translates nested enum values."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("values_pt", language='pt')
+                with open(os.path.join(tmpdir, "values_pt.json"), "r") as f:
+                    data = json.load(f)
+
+                camada = data["secaoTransversal"][0]["camadas"][0]
+                assert camada["tipoMedicaoCamada"] == "ESPESSURA"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_to_json_pt_injetor_value(self):
+        """system='INJ' → 'INJETOR' in PT output."""
+        t = marlim3.Branch(system='INJ')
+        t.productionFluid = [{"id": 0, "api": 30, "gor": 50, "gasDensity": 0.7, "bsw": 0.0}]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                t.to_json("inj_pt", language='pt')
+                with open(os.path.join(tmpdir, "inj_pt.json"), "r") as f:
+                    data = json.load(f)
+                assert data["sistema"] == "INJETOR"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_roundtrip_pt_injetor(self):
+        """Roundtrip: EN 'INJ' → PT 'INJETOR' → from_json → EN 'INJ'."""
+        t = marlim3.Branch(system='INJ')
+        t.productionFluid = [{"id": 0, "api": 30, "gor": 50, "gasDensity": 0.7, "bsw": 0.0}]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                t.to_json("rt_inj", language='pt')
+                novo = marlim3.Branch()
+                novo.from_json(os.path.join(tmpdir, "rt_inj.json"))
+                assert novo.system == "INJ"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_roundtrip_pt_full_fidelity(self, caso_horizontal):
+        """Full roundtrip preserves all nested structures."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("full_rt", language='pt')
+                novo = marlim3.Branch()
+                novo.from_json(os.path.join(tmpdir, "full_rt.json"))
+
+                assert novo.system == caso_horizontal.system
+                assert novo.productionFluid == caso_horizontal.productionFluid
+                assert novo.material == caso_horizontal.material
+                assert novo.crossSection == caso_horizontal.crossSection
+                assert novo.productionPipe == caso_horizontal.productionPipe
+                assert novo.liquidSource == caso_horizontal.liquidSource
+                assert novo.separator == caso_horizontal.separator
+                assert novo.productionProfile == caso_horizontal.productionProfile
+            finally:
+                os.chdir(original_cwd)
+
+    def test_to_json_en_explicit(self, caso_horizontal):
+        """to_json(language='en') is identical to to_json() default."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_horizontal.to_json("default_lang")
+                caso_horizontal.to_json("explicit_en", language='en')
+                with open(os.path.join(tmpdir, "default_lang.json"), "r") as f:
+                    data_default = json.load(f)
+                with open(os.path.join(tmpdir, "explicit_en.json"), "r") as f:
+                    data_en = json.load(f)
+                assert data_default == data_en
+            finally:
+                os.chdir(original_cwd)
+
+    def test_to_json_pt_generate_empty_fields(self):
+        """to_json(language='pt', generate_empty_fields=True) works."""
+        t = marlim3.Branch()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                t.to_json("empty_pt", language='pt', generate_empty_fields=True)
+                with open(os.path.join(tmpdir, "empty_pt.json"), "r") as f:
+                    data = json.load(f)
+                assert "sistema" in data
+                assert data["sistema"] == "MULTIFASICO"
+                assert "language" not in data
+            finally:
+                os.chdir(original_cwd)
+
+    def test_build_model_pt(self):
+        """Build a complete model using only Portuguese attribute names."""
+        t = marlim3.Tramo()
+        t.sistema = "PROD"
+        t.fluidosProducao = [{"id": 0, "api": 30, "gor": 100, "gasDensity": 0.7, "bsw": 0.0}]
+        t.material = [{"id": 0, "type": 0, "conductivity": 58, "specificHeat": 480, "rho": 7850}]
+        t.secaoTransversal = [{
+            "id": 0,
+            "innerDiameter": 0.254,
+            "roughness": 0.183e-3,
+            "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+        }]
+        t.dutosProducao = [{
+            "id": 0,
+            "crossSectionId": 0,
+            "environment": 2,
+            "angle": 0,
+            "discretization": [{"numCells": 10, "length": 100}],
+        }]
+        t.fonteLiquido = [{
+            "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
+            "time": [0], "liquidFlowRate": [1500], "temperature": [40],
+        }]
+        t.separador = {"time": [0], "pressure": [2]}
+        t.perfilProducao = {"time": [0], "pressure": True}
+
+        # Verify everything is set correctly via EN names
+        assert t.system == "PROD"
+        assert len(t.productionFluid) == 1
+        assert len(t.crossSection) == 1
+        assert len(t.productionPipe) == 1
+        assert len(t.liquidSource) == 1
+        assert t.separator == {"time": [0], "pressure": [2]}
+
+    def test_from_json_pt_dict(self):
+        """from_json accepts a PT-keyed dict directly."""
+        pt_data = {
+            "sistema": "MULTIFASICO",
+            "fluidosProducao": [{"id": 0, "api": 30, "rgo": 100, "densidadeGas": 0.7, "bsw": 0.0}],
+            "material": [{"id": 0, "tipo": 0, "condutividade": 58}],
+            "secaoTransversal": [{
+                "id": 0,
+                "diametroInterno": 0.254,
+                "rugosidade": 0.183e-3,
+                "camadas": [{"idMaterial": 0, "tipoMedicaoCamada": "ESPESSURA", "espessura": 0.0254}],
+            }],
+        }
+        t = marlim3.Branch()
+        t.from_json(pt_data, is_string=True)
+        assert t.system == "PROD"
+        assert t.crossSection[0]["innerDiameter"] == pytest.approx(0.254)
+        assert t.crossSection[0]["layers"][0]["layerMeasurementType"] == "THICKNESS"
+        assert t.crossSection[0]["layers"][0]["thickness"] == pytest.approx(0.0254)
+
+    def test_load_pt_demo_file(self):
+        """Load a Portuguese-language demo file if available."""
+        pt_dir = os.path.join(os.path.dirname(__file__), "..", "demos", "pt-br")
+        if not os.path.isdir(pt_dir):
+            pytest.skip("demos/pt-br/ not found")
+        pt_files = [f for f in os.listdir(pt_dir) if f.endswith(".json")]
+        if not pt_files:
+            pytest.skip("No PT demo files found")
+        filepath = os.path.join(pt_dir, pt_files[0])
+        t = marlim3.Branch()
+        t.from_json(filepath)
+        assert t.system is not None
+        assert t.productionPipe is not None
+
+    def test_alternating_en_pt_access(self):
+        """Setting via PT then reading via EN (and vice versa) is consistent."""
+        t = marlim3.Branch()
+        t.dutosProducao = [{"id": 0}]
+        assert t.productionPipe == [{"id": 0}]
+        t.productionPipe = [{"id": 1}]
+        assert t.dutosProducao == [{"id": 1}]
+
+    def test_results_property_unaffected(self):
+        """The .results property still works alongside PT aliases."""
+        t = marlim3.Branch()
+        t.resultados = {"productionProfile": "test_data"}
+        assert t.results == {"productionProfile": "test_data"}
+
+
+# ============================================================================
+# Testes de integração — build + simulate (EN e PT)
+# ============================================================================
+
+from marlim3._download import executable_exists
+
+skip_sem_executavel = pytest.mark.skipif(
+    not executable_exists(),
+    reason="Executável Marlim3 não encontrado",
+)
+
+
+def _build_simple_model_en():
+    """Build a minimal simulatable model using English API."""
+    t = marlim3.Branch()
+    t.system = "PROD"
+    t.productionFluid = [{
+        "id": 0, "api": 32, "gor": 100, "gasDensity": 0.7, "bsw": 0.0,
+    }]
+    t.material = [{
+        "id": 0, "type": 0, "conductivity": 58, "specificHeat": 480, "rho": 7850,
+    }]
+    t.crossSection = [{
+        "id": 0,
+        "innerDiameter": 10 * 0.0254,
+        "roughness": 0.183e-3,
+        "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+    }]
+    t.productionPipe = [{
+        "id": 0,
+        "crossSectionId": 0,
+        "environment": 2,
+        "angle": 0,
+        "discretization": [{"numCells": 10, "length": 250}],
+        "initialAndAmbientConditions": {
+            "measuredPosition": [0, 1],
+            "ambientTemp": [40, 20],
+            "ambientVel": [0.5, 0.5],
+        },
+    }]
+    t.liquidSource = [{
+        "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
+        "time": [0], "liquidFlowRate": [1500], "temperature": [40],
+    }]
+    t.separator = {"time": [0], "pressure": [2]}
+    t.productionProfile = {"time": [0], "pressure": True, "temperature": True}
+    return t
+
+
+def _build_simple_model_pt():
+    """Build the same minimal model using Portuguese API."""
+    t = marlim3.Tramo()
+    t.sistema = "PROD"
+    t.fluidosProducao = [{
+        "id": 0, "api": 32, "gor": 100, "gasDensity": 0.7, "bsw": 0.0,
+    }]
+    t.material = [{
+        "id": 0, "type": 0, "conductivity": 58, "specificHeat": 480, "rho": 7850,
+    }]
+    t.secaoTransversal = [{
+        "id": 0,
+        "innerDiameter": 10 * 0.0254,
+        "roughness": 0.183e-3,
+        "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+    }]
+    t.dutosProducao = [{
+        "id": 0,
+        "crossSectionId": 0,
+        "environment": 2,
+        "angle": 0,
+        "discretization": [{"numCells": 10, "length": 250}],
+        "initialAndAmbientConditions": {
+            "measuredPosition": [0, 1],
+            "ambientTemp": [40, 20],
+            "ambientVel": [0.5, 0.5],
+        },
+    }]
+    t.fonteLiquido = [{
+        "id": 0, "prodFluidId": 0, "measuredLength": 0.1,
+        "time": [0], "liquidFlowRate": [1500], "temperature": [40],
+    }]
+    t.separador = {"time": [0], "pressure": [2]}
+    t.perfilProducao = {"time": [0], "pressure": True, "temperature": True}
+    return t
+
+
+@skip_sem_executavel
+@pytest.mark.simulacao
+class TestSimulateEN:
+    """Build model in English → simulate → verify results."""
+
+    def test_build_simulate_en(self):
+        """Model built with EN names simulates and produces profiles."""
+        caso = _build_simple_model_en()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso.simulate()
+                pp = caso.resultados.get('productionProfile')
+                assert pp is not None, "productionProfile is None"
+                assert isinstance(pp, pd.DataFrame)
+                assert len(pp) > 0
+                assert pp.shape[1] >= 2  # at least time + one variable
+            finally:
+                os.chdir(original_cwd)
+
+    def test_simulate_en_results_contents(self):
+        """EN simulation results contain expected columns."""
+        caso = _build_simple_model_en()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso.simulate()
+                pp = caso.resultados['productionProfile']
+                cols = pp.columns.tolist()
+                # Should have pressure and temperature related columns
+                has_pressure = any('ress' in c.lower() for c in cols)
+                has_temp = any('emp' in c.lower() for c in cols)
+                assert has_pressure, f"No pressure column in {cols}"
+                assert has_temp, f"No temperature column in {cols}"
+            finally:
+                os.chdir(original_cwd)
+
+
+@skip_sem_executavel
+@pytest.mark.simulacao
+class TestSimulatePT:
+    """Build model in Portuguese → simulate → verify results."""
+
+    def test_build_simulate_pt(self):
+        """Model built with PT names simulates and produces profiles."""
+        caso = _build_simple_model_pt()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso.simulate()
+                pp = caso.resultados.get('productionProfile')
+                assert pp is not None, "productionProfile is None"
+                assert isinstance(pp, pd.DataFrame)
+                assert len(pp) > 0
+            finally:
+                os.chdir(original_cwd)
+
+    def test_simulate_pt_same_results_as_en(self):
+        """PT-built model produces identical results to EN-built model."""
+        caso_en = _build_simple_model_en()
+        caso_pt = _build_simple_model_pt()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_en.simulate(label='en_model', directory='res_en')
+                caso_pt.simulate(label='pt_model', directory='res_pt')
+
+                pp_en = caso_en.resultados['productionProfile']
+                pp_pt = caso_pt.resultados['productionProfile']
+
+                assert pp_en.shape == pp_pt.shape
+                pd.testing.assert_frame_equal(pp_en, pp_pt)
+            finally:
+                os.chdir(original_cwd)
+
+    def test_simulate_pt_json_roundtrip(self):
+        """Build PT → to_json(pt) → from_json → simulate → results match."""
+        caso_original = _build_simple_model_pt()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                # Simulate original
+                caso_original.simulate(label='original', directory='res_orig')
+                pp_orig = caso_original.resultados['productionProfile']
+
+                # Export as PT JSON, re-import, simulate
+                caso_original.to_json('model_pt', language='pt')
+                caso_reloaded = marlim3.Branch()
+                caso_reloaded.from_json('./model_pt.json')
+                caso_reloaded.simulate(label='reloaded', directory='res_reload')
+                pp_reload = caso_reloaded.resultados['productionProfile']
+
+                assert pp_orig.shape == pp_reload.shape
+                pd.testing.assert_frame_equal(pp_orig, pp_reload)
+            finally:
+                os.chdir(original_cwd)
+
+    def test_simulate_en_json_roundtrip(self):
+        """Build EN → to_json(en) → from_json → simulate → results match."""
+        caso_original = _build_simple_model_en()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                caso_original.simulate(label='original', directory='res_orig')
+                pp_orig = caso_original.resultados['productionProfile']
+
+                caso_original.to_json('model_en', language='en')
+                caso_reloaded = marlim3.Branch()
+                caso_reloaded.from_json('./model_en.json')
+                caso_reloaded.simulate(label='reloaded', directory='res_reload')
+                pp_reload = caso_reloaded.resultados['productionProfile']
+
+                assert pp_orig.shape == pp_reload.shape
+                pd.testing.assert_frame_equal(pp_orig, pp_reload)
+            finally:
+                os.chdir(original_cwd)

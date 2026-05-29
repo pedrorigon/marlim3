@@ -25,4 +25,6 @@ from ._tramo._branch import Branch
 from ._rede._rede import Network
 from ._cenarios._cenarios import Scenarios
 
-__all__ = ['Branch', 'Network', 'Scenarios', '__version__']
+Tramo = Branch  # Portuguese alias
+
+__all__ = ['Branch', 'Tramo', 'Network', 'Scenarios', '__version__']

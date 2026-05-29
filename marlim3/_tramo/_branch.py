@@ -1,14 +1,14 @@
 ﻿"""
-_branch.py — Standalone English-API Branch class for Marlim3.
+_branch.py — Bilingual (EN/PT) Branch class for Marlim3.
 
-``Branch`` stores all configuration under English attribute names and always
-writes ``"language": "en"`` in the JSON output.  The Marlim3 C++ engine reads
-that flag and translates every English JSON key to its Portuguese equivalent
-before simulation.
+``Branch`` stores all configuration under English attribute names internally,
+but supports transparent Portuguese access via ``__getattr__``/``__setattr__``
+(e.g., ``branch.dutosProducao`` maps to ``branch.productionPipe``).
 
-When loading an old Portuguese-keyed JSON (one without ``"language": "en"``),
-:meth:`from_json` automatically translates all keys to English via the
-Python-side translator in :mod:`._keys` before populating the attributes.
+The ``to_json()`` method accepts a ``language`` parameter ('en' or 'pt') to
+output in either language.  When loading a Portuguese-keyed JSON (one without
+``"language": "en"``), :meth:`from_json` automatically translates all keys to
+English before populating the attributes.
 """
 
 import json
@@ -29,7 +29,12 @@ from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column, pars
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
 from .._plots._plots_tends import _plotar_tendencias
 from .._plots._plots_geometria import _plotar_geometria
-from ._keys import translate as _translate_pt_to_en
+from ._keys import (
+    translate as _translate_pt_to_en,
+    translate_en_to_pt as _translate_en_to_pt,
+    PT_TO_EN as _PT_TO_EN,
+    EN_TO_PT as _EN_TO_PT,
+)
 
 
 
@@ -53,6 +58,26 @@ class Branch:
     @results.setter
     def results(self, value):
         self.resultados = value
+
+    def __getattr__(self, name):
+        """Allow Portuguese attribute access (e.g., branch.dutosProducao)."""
+        en_name = _PT_TO_EN.get(name)
+        if en_name is not None and en_name != name:
+            try:
+                return object.__getattribute__(self, en_name)
+            except AttributeError:
+                pass
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+
+    def __setattr__(self, name, value):
+        """Allow Portuguese attribute assignment (e.g., branch.sistema = 'PROD')."""
+        en_name = _PT_TO_EN.get(name)
+        if en_name is not None and en_name != name:
+            object.__setattr__(self, en_name, value)
+        else:
+            object.__setattr__(self, name, value)
 
     def __init__(self,
                  system='PROD',
@@ -157,7 +182,8 @@ class Branch:
         self.resultados = {}
         self.nome_tramo = name
 
-    def to_json(self, filename='marlim3_model', generate_empty_fields=False):
+    def to_json(self, filename='marlim3_model', language='en',
+               generate_empty_fields=False):
         if not filename.endswith('.json'):
             file_path = './' + filename + '.json'
         else:
@@ -186,6 +212,10 @@ class Branch:
                 if key in self.json_entrada_keys and value is not None
             }
             filtered_data = {k: v for k, v in filtered_data.items() if v is not None}
+
+        if language == 'pt':
+            filtered_data.pop('language', None)
+            filtered_data = _translate_en_to_pt(filtered_data)
 
         with open(file_path, 'w', encoding='utf-8') as fh:
             json.dump(filtered_data, fh, indent=2, ensure_ascii=True)
@@ -576,6 +606,7 @@ class Branch:
         _plotar_geometria(self)
 
     def display_table(self, field):
+        field = _PT_TO_EN.get(field, field)
         if field == 'crossSection':
             cols = ['layers']
             index_cols = None
