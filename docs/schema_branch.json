@@ -853,7 +853,7 @@
               "type": "number"
             }
           },
-          "emulsionVec": {
+          "emulVec": {
             "type": "array",
             "description": "Vector of user-defined emulsion multipliers for emulsion model 6.",
             "items": {

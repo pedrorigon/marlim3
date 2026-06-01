@@ -1715,11 +1715,11 @@
                 },
                 "viscExterna": {
                   "type": "array",
-                  "description": "Viscosidades do fluido externo nas posições relativas do duto definidas na variável 'compInter'. Necessário sempre, exceto quando a coluna de produção está termicamente acoplada com o anular (ou seja, se 'acoplamentoTermico = 1'), quando houver formação (ou seja, se 'idFormacao' for informado) ou quando o ambiente externo for marítimo ou aéreo (ambienteExterno = 1 ou 2)."
-                },
+                  "description": "Viscosidades do fluido externo nas posições relativas do duto definidas na variável 'compInter'. Necessário sempre, exceto quando a coluna de produção está termicamente acoplada com o anular (ou seja, se 'acoplamentoTermico = 1'), quando houver formação (ou seja, se 'idFormacao' for informado) ou quando o ambiente externo for marítimo ou aéreo (ambienteExterno = 1 ou 2).",
                 "items": {
                   "type": "number",
                   "unit": "cP"
+                }
                 }
             }
           },
