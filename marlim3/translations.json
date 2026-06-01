@@ -419,7 +419,7 @@
     "mixtureDensity": "rhoMix",
     "gasInSituDensity": "rhog",
     "liquidInSituDensity": "rhol",
-    "chokeDownstreamTemp": "tempChokeJusante",
+    "chokeDownstreamTemp": "tempChokeJus",
     "vglStageTemp": "tempEstagVGL",
     "vglThroatTemp": "tempGargVGL",
     "injectionTemp": "tempInj",
