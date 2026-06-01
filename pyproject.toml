@@ -61,6 +61,9 @@ gui = [
     "streamlit>=1.35.0",
     "jsonschema>=4.0.0",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+]
 tutorials = [
     "scipy",
 ]

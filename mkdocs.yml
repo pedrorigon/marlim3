@@ -1,0 +1,58 @@
+site_name: Marlim3 Documentation
+site_description: User documentation for the Marlim3 multiphase flow simulator
+site_author: Petrobras
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: cyan
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: cyan
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.integrate
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - User Guide:
+    - Fluids: user-guide/fluids.md
+    - Materials: user-guide/materials.md
+    - Cross Sections: user-guide/cross-sections.md
+    - Rock Formation: user-guide/rock-formation.md
+    - Pipes: user-guide/pipes.md
+    - Accessories: user-guide/accessories.md
+    - Boundary Conditions: user-guide/boundary-conditions.md
+    - Time: user-guide/time.md
+    - General: user-guide/general.md
+    - Results: user-guide/results.md
+  - Tutorials:
+    - tutorials/index.md
+  - Reference:
+    - JSON Schema: reference/json-schema.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+plugins:
+  - search
