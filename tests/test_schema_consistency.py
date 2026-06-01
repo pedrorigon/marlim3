@@ -49,33 +49,66 @@ def extract_cpp_fields(header_path: Path) -> set:
     (class-based), and correctly handles field names with underscores like
     nCelulas_XY.
     """
+    return set(extract_cpp_fields_with_paths(header_path).keys())
+
+
+def extract_cpp_fields_with_paths(header_path: Path) -> dict:
+    """Parse JSON_entrada.h to extract all Portuguese field names and their
+    full JSON paths based on the C++ class hierarchy.
+
+    Returns a dict mapping field_name -> list of paths where it's declared.
+    The path is derived from the enclosing class name, e.g.:
+        class JSON_entrada_configuracaoInicial -> path "configuracaoInicial"
+        class JSON_entrada -> path "" (root)
+    """
     content = header_path.read_text(encoding="utf-8")
 
-    fields = set()
+    # First pass: identify class boundaries and their paths
+    # Class declarations: class JSON_entrada_xxx: public JSONObject {
+    class_pattern = re.compile(
+        r'^class\s+(JSON_entrada(?:_\w+)?)\s*:', re.MULTILINE
+    )
+    # Find all class start positions
+    class_spans = []
+    for m in class_pattern.finditer(content):
+        class_name = m.group(1)
+        # Convert class name to JSON path:
+        # JSON_entrada -> ""
+        # JSON_entrada_configuracaoInicial -> "configuracaoInicial"
+        # JSON_entrada_configuracaoInicial_Avancado -> "configuracaoInicial.Avancado"
+        parts = class_name.split("_")
+        # Remove "JSON" and "entrada" prefix
+        path_parts = parts[2:]  # skip "JSON", "entrada"
+        json_path = ".".join(path_parts) if path_parts else ""
+        class_spans.append((m.start(), json_path))
 
-    # Pattern 1: Class accessor methods — lines like:
-    #   JSON_entrada_xxx& fieldName();
-    #   JSONString& fieldName();
-    # These appear inside class bodies and declare the field accessors.
-    # We want the method name (the actual JSON field name).
+    # Sort by position
+    class_spans.sort(key=lambda x: x[0])
+
+    # Accessor pattern
     accessor_pattern = re.compile(
-        r'^\s+'                           # leading whitespace (inside class)
+        r'^\s+'
         r'(?:JSON_entrada_\S+|JSONString|JSONBoolean|JSONInteger|JSONNumber)'
-        r'&\s+'                           # return type reference
-        r'(\w+)'                          # method name = field name
-        r'\s*\(\s*\)\s*;',               # ();
+        r'&\s+'
+        r'(\w+)'
+        r'\s*\(\s*\)\s*;',
         re.MULTILINE
     )
+
+    # Map each accessor to its enclosing class path
+    fields = {}
     for m in accessor_pattern.finditer(content):
-        fields.add(m.group(1))
-
-    # Pattern 2: Root-level class (JSON_entrada) accessor methods that use
-    # the same pattern but may not have JSON_entrada_ prefix in return type
-    # Already covered above.
-
-    # Pattern 3: Also extract from the root JSON_entrada class which has methods
-    # like: JSON_entrada_sistema& sistema();
-    # Already covered by pattern 1.
+        field_name = m.group(1)
+        pos = m.start()
+        # Find enclosing class (last class declared before this position)
+        enclosing_path = ""
+        for cls_pos, cls_path in class_spans:
+            if cls_pos <= pos:
+                enclosing_path = cls_path
+            else:
+                break
+        full_path = f"{enclosing_path}.{field_name}" if enclosing_path else field_name
+        fields.setdefault(field_name, []).append(full_path)
 
     return fields
 
@@ -170,6 +203,12 @@ def cpp_fields():
 
 
 @pytest.fixture(scope="module")
+def cpp_fields_paths():
+    """Dict mapping field_name -> list of full C++ paths."""
+    return extract_cpp_fields_with_paths(JSON_ENTRADA_H)
+
+
+@pytest.fixture(scope="module")
 def schema_tramo_fields(schema_tramo):
     return extract_schema_field_set(schema_tramo)
 
@@ -198,7 +237,7 @@ def schema_branch_paths(schema_branch):
 class TestCppVsSchema:
     """Check consistency between C++ engine fields and schema_tramo.json."""
 
-    def test_cpp_fields_missing_from_schema(self, cpp_fields, schema_tramo_fields):
+    def test_cpp_fields_missing_from_schema(self, cpp_fields, cpp_fields_paths, schema_tramo_fields):
         """Warn about fields read by C++ engine but not in schema_tramo.json."""
         # Known exceptions: internal fields that are not user-facing
         known_exceptions = {
@@ -206,9 +245,13 @@ class TestCppVsSchema:
         }
         missing = cpp_fields - schema_tramo_fields - known_exceptions
         if missing:
+            lines = []
+            for field in sorted(missing):
+                paths = cpp_fields_paths.get(field, [field])
+                lines.append(f"{field}  ({', '.join(paths)})")
             warnings.warn(
                 f"Fields read by C++ engine but NOT in schema_tramo.json "
-                f"({len(missing)}):\n  " + "\n  ".join(sorted(missing)),
+                f"({len(missing)}):\n  " + "\n  ".join(lines),
                 stacklevel=1,
             )
 
