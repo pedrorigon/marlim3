@@ -75,7 +75,7 @@
     "pressure": "pressao",
     "measuredLength": "comprimentoMedido",
     "opening": "abertura",
-    "prodFluidId": "indFluidoPro",
+    "prodFluidId": "indiFluidoPro",
     "outerDiameter": "diametroExterno",
     "roughness": "rugosidade",
     "conductivity": "condutividade",
@@ -437,7 +437,7 @@
     "master1UpstreamVol": "volMonM1PT",
     "master1UpstreamVolStd": "volMonM1ST",
 
-    "prodFluidIndex": "indiFluidoPro",
+    "prodFluidIndex": "indFluidoPro",
     "accumStartLength": "inicioTrechoAcumula",
     "accumEndLength": "fimTrechoAcumula",
     "columnEndLength": "fimTrechoColuna",

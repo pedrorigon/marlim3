@@ -1051,7 +1051,7 @@
             "type": "integer",
             "description": "Inteiro de identificação da fonte de líquido."
           },
-          "indFluidoPro": {
+          "indiFluidoPro": {
             "type": "integer",
             "description": "ID do fluido de produção a ser produzido pela presente fonte."
           },
@@ -1109,7 +1109,7 @@
             "type": "integer",
             "description": "Inteiro de identificação da fonte de massa."
           },
-          "indFluidoPro": {
+          "indiFluidoPro": {
             "type": "integer",
             "description": "ID do fluido de produção a ser produzido pela presente fonte."
           },
@@ -1184,9 +1184,9 @@
               "seco": {
                 "type": "boolean",
                 "default": true,
-               "description": "Se true, a fonte produz gás seco (utiliza o objeto fluidoGas). Se false, o gás é rico (situação típica de gasodutos); nesse caso, é necessário definir o fluido em fonteGas: {indfluidopro}, que poderá carregar líquido associado (cuja massa é calculada por meio de equilíbrio termodinâmico) e impurezas (definidas como o fluido complementar)."
+               "description": "Se true, a fonte produz gás seco (utiliza o objeto fluidoGas). Se false, o gás é rico (situação típica de gasodutos); nesse caso, é necessário definir o fluido em fonteGas: {indiFluidoPro}, que poderá carregar líquido associado (cuja massa é calculada por meio de equilíbrio termodinâmico) e impurezas (definidas como o fluido complementar)."
               },
-              "indfluidopro": {
+              "indiFluidoPro": {
                 "type": "integer",
                 "description": "ID do fluido de produção a ser produzido pela presente fonte. Válido para o caso fonteGas: {seco: false}."
               },
@@ -2053,9 +2053,13 @@
               "type": "integer",
               "description": "Inteiro identificador da IPR."
             },
-            "indFluidoPro": {
+            "indiFluidoPro": {
               "type": "integer",
               "description": "ID do fluido de produção a ser produzido pela presente fonte."
+            },
+            "indFluidoPro": {
+              "type": "integer",
+              "description": "(Legado, retrocompatibilidade) Mesmo que indiFluidoPro."
             },
             "comprimentoMedido": {
               "type": "number",
@@ -2486,9 +2490,9 @@
               "type": "integer",
               "enum": [0,1],
               "default": 1,
-              "description": "Se 1-> o hidrocarboneto externo ao ambiente é aquele que se encontra na tubulação no momento; se 0 -> determina-se o fluido com a variável 'indfluidopro'."
+              "description": "Se 1-> o hidrocarboneto externo ao ambiente é aquele que se encontra na tubulação no momento; se 0 -> determina-se o fluido com a variável 'indiFluidoPro'."
             },
-            "indfluidopro": {
+            "indiFluidoPro": {
               "type": "integer",
               "description": "ID do fluido de produção externo à tubulação. Válido para tipoFluido = 0."
             },

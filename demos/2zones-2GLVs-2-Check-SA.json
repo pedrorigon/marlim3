@@ -1217,7 +1217,7 @@
                                    0.0,
                                    1000.0
                                ],
-                    "prodFluidIndex":  0
+                    "prodFluidId":  0
                 },
                 {
                     "id":  1,
@@ -1250,7 +1250,7 @@
                                    0.0,
                                    1000.0
                                ],
-                    "prodFluidIndex":  1
+                    "prodFluidId":  1
                 }
             ],
     "gasInj":  {

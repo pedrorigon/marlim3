@@ -2235,6 +2235,10 @@
             "type": "integer",
             "description": "ID of the production fluid produced by this source."
           },
+          "prodFluidIndex": {
+            "type": "integer",
+            "description": "(Legacy, backward-compatibility) Same as prodFluidId."
+          },
           "measuredLength": {
             "type": "number",
             "description": "Position where the IPR is located in the production line.",
