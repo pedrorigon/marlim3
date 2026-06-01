@@ -1,125 +1,136 @@
 # Boundary Conditions
 
-Set pressure and flow boundary conditions at system inlet and outlet.
+Boundary conditions close the mathematical problem at domain limits. They define what is imposed at the inlet and outlet of the production/injection system.
 
-## Overview
+## Concept
 
-Boundary conditions define the system constraints at the pipe extremities. Different combinations are used depending on whether the system is a production well, injection well, or flowline segment.
+Internal conservation equations (mass, momentum, energy) are not sufficient to determine the solution — the solver also needs information at the domain boundaries: pressure, flow rate, temperature, or combinations thereof, possibly varying with time.
 
-In `schema_branch.json`, if no inlet BC object is provided (`pressureCondition` or `flowRatePressureCondition`), the inlet is treated as closed and inflow must come from sources (IPR, mass source, liquid source, gas source, etc.).
+**Key rule:** If no inlet boundary-condition object is present, inflow must be provided by source objects (`ipr`, `massSource`, `liquidSource`, `gasSource`, etc.) located along the pipe. If no outlet boundary is defined, the solver cannot close the pressure balance.
 
-## Downstream Pressure (Separator)
+## Inlet Boundary Strategies
 
-The most common BC for production systems — sets a pressure at the downstream end (separator/platform):
+Two mutually exclusive inlet-boundary objects can be defined inside `initialConfig`:
 
-| Parameter | Unit | Description |
-|-----------|------|-------------|
-| **Active** | — | Enable/disable this BC |
-| **Pressure schedule** | kgf/cm² | Time-varying separator pressure |
+### `pressureCondition` — Pressure-Driven Inlet
 
-The pressure can be constant or vary with time for transient simulations (e.g., slug catcher pressure oscillations).
+Imposes upstream pressure, temperature, and fluid quality as time-dependent vectors. The solver then determines the resulting flow rate from the pressure gradient along the system.
 
-## Downstream Flow
+| Vector field | Unit | Meaning |
+|-------------|------|---------|
+| `time` | s | Time schedule |
+| `pressure` | kgf/cm² | Fluid pressure at inlet |
+| `temperature` | °C | Fluid temperature at inlet |
+| `fluidQuality` | — | Ratio of free-gas mass to total associated mass (gas + oil + water) |
+| `betaRatio` | — | Volumetric ratio of complementary fluid to (complementary + oil + water) |
 
-A downstream flow or IPR boundary condition is configured by adding the corresponding accessory (mass source, liquid source, gas source, or IPR) at a small but non-zero measured depth in the **Accessories** tab.
+### `flowRatePressureCondition` — Flow-Rate + Pressure Inlet
 
-!!! info
-    No additional configuration is needed here — once the accessory is placed, it automatically acts as a boundary condition.
+Fully specifies the system from the inlet side (pressure and mass flow rate). This boundary fully determines the steady-state solution independently of the outlet. It is intended for **steady-state only**, since transient mode also needs outlet information for wave propagation.
 
-## Upstream Pressure
+| Vector field | Unit | Meaning |
+|-------------|------|---------|
+| `time` | s | Time schedule |
+| `pressure` | kgf/cm² | Fluid pressure at inlet |
+| `temperature` | °C | Fluid temperature at inlet |
+| `massFlowRate` | kg/s | Fluid mass flow rate at inlet |
+| `betaRatio` | — | Complementary-fluid volumetric ratio |
 
-Pressure condition at the pipe upstream end:
+## Outlet Boundary Objects
 
-| Parameter | Unit | Description |
-|-----------|------|-------------|
-| **Active** | — | Enable/disable this BC |
-| **Pressure** | kgf/cm² | Upstream pressure |
-| **Temperature** | °C | Upstream fluid temperature |
-| **Fluid quality** | — | Gas mass fraction at inlet |
-| **Beta ratio** | — | Water cut ratio |
+| Object | Location | Typical use |
+|--------|----------|-------------|
+| `separator` | End of production line | Downstream pressure schedule (most common outlet BC) |
+| `surfaceChoke` | End of production line | Choke-based outlet with opening schedule |
+| `checkValve` (in `initialConfig`) | End of production line | Prevents reverse gas inflow when `checkValve = 1` |
 
-## Upstream Flow + Pressure
+### `separator` Fields
 
-Fully determines the system from the upstream side (steady-state only):
+| Field | Unit | Description |
+|-------|------|-------------|
+| `active` | bool | Whether this BC is active |
+| `time` | s | Time schedule |
+| `pressure` | kgf/cm² | Downstream pressure over time |
 
-| Parameter | Unit | Description |
-|-----------|------|-------------|
-| **Pressure** | kgf/cm² | Upstream pressure |
-| **Temperature** | °C | Upstream fluid temperature |
-| **Mass flow rate** | kg/s | Total mass flow rate |
-| **Beta ratio** | — | Water cut ratio |
+## Gas Injection and Injector Cases
 
-## Gas Injection (Service Line)
+| Object | Role |
+|--------|------|
+| `gasInj` | Service-line gas injection schedule (flow rate and pressure over time) |
+| `injectionChoke` | Injection-side choke control |
+| `injectionWellBC` | Injection-well closure: six combinations of imposed variables |
 
-Boundary condition for gas-lift injection on the service line:
+### `injectionWellBC.boundaryCondition` Options
 
-| Parameter | Unit | Description |
-|-----------|------|-------------|
-| **BC type** | — | `0` — Injection pressure; `1` — Injection flow rate |
-| **Temperature** | °C | Gas injection temperature |
-| **Gas flow rate** | sm³/d | Standard gas flow rate |
-| **Injection pressure** | kgf/cm² | Gas injection pressure |
-| **Guess initial flow rate** | — | Use first element as initial guess (helps convergence) |
+The injection-well boundary supports different combinations of imposed variables:
 
-## Injection Well
+| Code | Imposed variables |
+|------|-------------------|
+| `0` | Flow rate (at surface) |
+| `1` | Injection pressure (at surface) |
+| `2` | Bottom-hole pressure |
+| `3` | Flow rate + IPR coupling |
+| `4` | Injection pressure + IPR coupling |
+| `5` | Bottom-hole pressure + IPR coupling |
 
-For injection well simulations:
+## Choosing a Strategy
 
-| Parameter | Unit | Description |
-|-----------|------|-------------|
-| **Fluid type** | — | `0` User fluid, `1` Water, `2` CO₂ flash, `3` CO₂ compositional |
-| **Salinity** | g/(kg water) | Required when fluid type = 1 |
-| **PVTSim file** | — | `.tab`/`.ctm` for CO₂ models |
-| **BC combination** | — | Specifies which pair of variables is fixed |
-| **Injection temperature** | °C | Surface injection temperature |
-| **Flow rate** | sm³/d | Injection flow rate |
-| **Injection pressure** | kgf/cm² | Surface injection pressure |
-| **Bottom-hole pressure** | kgf/cm² | Downhole pressure constraint |
+```mermaid
+graph TD
+    A[Do you know inlet pressure?] -->|Yes| B[pressureCondition]
+    A -->|No| C[Do you have reservoir data?]
+    C -->|Yes| D[Use ipr source object]
+    C -->|No| E[Use liquidSource/massSource]
+    B --> F[Add separator or surfaceChoke at outlet]
+    D --> F
+    E --> F
+```
 
-### BC Combinations
-
-| Code | Description |
-|------|-------------|
-| 0 | Flow + IPR |
-| 1 | Injection pressure + IPR |
-| 2 | Bottom pressure + IPR |
-| 3 | Injection + bottom pressure |
-| 4 | Flow + injection pressure |
-| 5 | Flow + bottom pressure |
-
-## Choke Boundary Objects
-
-Branch schema also defines dedicated choke objects for boundary restrictions:
-
-| Object | Description |
-|--------|-------------|
-| **surfaceChoke** | Production-line choke at surface/outlet with opening and coefficient controls |
-| **injectionChoke** | Injection-line choke object for injector workflows |
-
-## JSON Structure
+## Example JSON
 
 ```json
 {
   "separator": {
     "active": true,
-    "time": [0],
-    "pressure": [50.0]
+    "time": [0, 3600],
+    "pressure": [50.0, 45.0]
   },
   "initialConfig": {
     "pressureCondition": {
       "active": true,
       "time": [0],
       "pressure": [200.0],
-      "temperature": [80.0]
+      "temperature": [80.0],
+      "fluidQuality": [0.0],
+      "betaRatio": [0.0]
     }
-  },
-  "gasInj": {
-    "active": true,
-    "bcType": 0,
-    "time": [0],
-    "temperature": [40.0],
-    "gasFlowRate": [100000.0],
-    "injectionPressures": [150.0]
   }
 }
 ```
+
+### Source-Based Inlet (No Inlet Boundary)
+
+When no inlet boundary object is used, sources along the pipe provide inflow:
+
+```json
+{
+  "separator": {
+    "active": true,
+    "time": [0],
+    "pressure": [20.0]
+  },
+  "liquidSource": [
+    {
+      "id": 0,
+      "prodFluidId": 0,
+      "measuredLength": 0.1,
+      "time": [0],
+      "liquidFlowRate": [1500],
+      "temperature": [60.0]
+    }
+  ]
+}
+```
+
+!!! tip
+    Choose one primary closure strategy first (pressure-driven or flow-driven), validate it in steady-state, and then layer secondary controls such as choke schedules or time-varying boundary ramps for transient studies.

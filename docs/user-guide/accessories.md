@@ -1,159 +1,136 @@
 # Accessories
 
-Configure flow sources, valves, pumps, and pig launchers along the pipeline.
+Accessories are localized components that introduce active physical behavior — inflow, choking, pumping, pigging — at specific measured positions along the pipe.
 
-## Overview
+## Concept
 
-Accessories are devices or boundary elements placed at specific measured depths along the production pipe. They include flow sources (inlets), valves, artificial lift equipment, and pigging devices.
+Without accessories, a simulation is a passive conduit with boundary constraints only. Accessories introduce operational control and localized physics at discrete positions within the domain.
 
-## Sources
+All accessory objects share common patterns:
 
-### IPR (Inflow Performance Relationship)
+- They are located at a `measuredLength` position along the pipe.
+- Time-dependent behavior is defined via `time` arrays paired with corresponding value arrays.
+- Each object has an `id` for referencing and an `active` flag.
 
-Defines reservoir inflow using a productivity index or IPR curve:
+## Source Models
 
-- Reservoir pressure and temperature
-- Productivity index (PI)
-- IPR model type (linear, Vogel, etc.)
-- Position along the pipe (measured depth)
+Sources introduce fluid into the production system at a given position. They represent reservoir inflow, injected fluids, or prescribed rates.
 
-### Liquid Source
+| Object | Main role | Key input |
+|--------|-----------|-----------|
+| `ipr` | Reservoir inflow performance relation | Static reservoir pressure, productivity index, IPR curve type |
+| `liquidSource` | Prescribed liquid volumetric inflow (std conditions) | `liquidFlowRate` [sm³/d], `temperature` [°C], `prodFluidId` |
+| `massSource` | Prescribed total mass inflow | `massFlowRate` [kg/s], `temperature` [°C] |
+| `gasSource` | Prescribed gas inflow | Gas flow rate, temperature |
+| `pressureSource` | Local pressure-coupled exchange point | Exchange pressure, direction |
+| `porousRadialSource` | Radial porous-media inflow model | Permeability, reservoir pressure, radius |
+| `porous2DSource` | 2D porous-media inflow model | 2D permeability field |
+| `gasLiftSource` | Gas-lift valve injection device | Valve design parameters, operating pressure |
 
-Constant or time-varying liquid injection at a point along the pipe.
+!!! note
+    A `liquidSource` with given `prodFluidId` implies associated free-gas flow based on the referenced fluid's GOR and local P-T conditions.
 
-Branch schema highlights:
-
-| Field | Description |
-|-------|-------------|
-| **prodFluidId** | Production-fluid ID injected by this source |
-| **measuredLength** | Position in production line [m] |
-| **time** | Event times [s] |
-| **temperature** | Source temperature profile [degC] |
-| **beta** | Complementary-fluid fraction profile |
-| **liquidFlowRate** | Standard liquid flow profile [sm3/d] |
-
-### Mass Source
-
-Mass flow rate injection at a specified position.
-
-Branch schema highlights:
-
-| Field | Description |
-|-------|-------------|
-| **thermType** | `0`: equilibrium gas from fluid model, `1`: explicit gas mass flow |
-| **totalMassFlowRate** | Total mass-flow profile [kg/s] |
-| **complementaryMassFlowRate** | Complementary-fluid mass-flow profile [kg/s] |
-| **gasMassFlow** | Gas mass-flow profile [kg/s], valid when `thermType=1` |
-
-### Gas Source
-
-Gas injection at a specified position (e.g., for gas-lift).
-
-Branch schema highlights:
-
-| Field | Description |
-|-------|-------------|
-| **dry** | `true`: dry gas (uses gasFluid); `false`: rich gas via production fluid |
-| **prodFluidId** | Required for rich-gas source (`dry=false`) |
-| **gasFlowRate** | Gas flow profile [sm3/d] |
-| **temperature** | Source temperature profile [degC] |
-
-### Pressure Source
-
-Fixed pressure boundary at a point along the pipe.
-
-### Radial Pore
-
-Distributed inflow from the formation (radial pore model).
-
-In branch schema this object is `porousRadialSource`.
-
-### 2D Pore
-
-Two-dimensional pore inflow model for complex reservoir coupling.
-
-In branch schema this object is `porous2DSource`.
-
-## Valves
-
-### DHSV / Generic Valve
-
-Downhole safety valve or generic restriction with:
-
-- Opening/closing schedule
-- Cv (flow coefficient)
-- Position along pipe
-
-Branch schema highlights:
-
-| Field | Description |
-|-------|-------------|
-| **cvCurve** | `0`: opening as area ratio; `1`: opening via valve-stem displacement curve |
-| **opening** | Time-dependent opening profile |
-| **cd** | Discharge coefficient (Sachdeva model) |
-| **x1, cv1** | Stem-displacement vs Cv curve (when `cvCurve=1`) |
-
-### Gas Lift Valves (VGL)
-
-Gas-lift valve configuration:
-
-- Injection orifice diameter
-- Opening/closing pressures
-- Position on production and service lines
-
-### Master Valve (Production)
-
-Surface production master valve.
-
-### BCS Valve
-
-Subsurface controlled valve.
-
-## Pumps
-
-### ESP (Electrical Submersible Pump)
-
-- Performance curves (head vs. flow)
-- Speed (RPM) schedule
-- Pump efficiency
-- Position along pipe
-
-### Volumetric Pump
-
-Positive-displacement pump with fixed flow rate.
-
-### Delta Pressure
-
-Simplified pump model as a fixed pressure differential.
-
-## Pig
-
-Pigging device with:
-
-- Launch time and position
-- Pig friction/resistance characteristics
-- Detection logic
-
-## JSON Structure
+### Example: Liquid Source
 
 ```json
 {
-  "liquidSource": [...],
-  "massSource": [...],
-  "gasSource": [...],
-  "pressureSource": [...],
-  "porousRadialSource": [...],
-  "porous2DSource": [...],
-  "valve": [...],
-  "gasLiftSource": [...],
-  "esp": [...],
-  "volumetricPump": [...],
-  "pressureDrop": [...],
-  "masterValve": { ... },
-  "masterValve2": { ... },
-  "pig": [...]
+  "liquidSource": [
+    {
+      "id": 0,
+      "active": true,
+      "prodFluidId": 0,
+      "measuredLength": 2500.0,
+      "time": [0, 3600],
+      "liquidFlowRate": [1500, 1200],
+      "temperature": [60.0, 58.0]
+    }
+  ]
 }
 ```
 
-!!! warning
-    Accessory positions must fall within the pipe discretization range. Position `0` is the pipe inlet.
+## Flow-Control Devices
+
+| Object | Main role | Key fields |
+|--------|-----------|------------|
+| `valve` | Generic two-phase restriction (Sachdeva model) | `measuredLength`, `time`, `opening`, `cd` (discharge coefficient) |
+| `masterValve` | Production-tree master valve | Opening schedule, choke-like behavior |
+| `masterValve2` | Secondary master valve (service tree) | Opening schedule |
+| `surfaceChoke` | Surface choke at outlet | Opening schedule, choke sizing |
+| `injectionChoke` | Injection-side choke | Opening schedule |
+
+### Valve Opening Interpretation (`cvCurve`)
+
+| `cvCurve` | Meaning of `opening` vector |
+|-----------|------------------------------|
+| `0` | Area ratio: valve free area / pipe area (dimensionless, 0–1) |
+| `1` | Valve-stem displacement (requires `x1`/`cv1` Cv-curve) |
+
+### Example: Valve with Time Schedule
+
+```json
+{
+  "valve": [
+    {
+      "id": 0,
+      "active": true,
+      "measuredLength": 1500.0,
+      "cvCurve": 0,
+      "cd": 0.84,
+      "time": [0, 60, 120],
+      "opening": [0.0, 0.5, 1.0]
+    }
+  ]
+}
+```
+
+## Pumping Models
+
+| Object | Meaning | Key inputs |
+|--------|---------|------------|
+| `esp` | Electrical submersible pump (curve-based) | Head-flow curve, frequency, number of stages |
+| `volumetricPump` | Positive-displacement pump | Displacement volume, speed |
+| `pressureDrop` | Prescribed pressure increment/decrement | Δp value or schedule |
+
+### Example: ESP
+
+```json
+{
+  "esp": [
+    {
+      "id": 0,
+      "active": true,
+      "measuredLength": 3000.0,
+      "time": [0],
+      "frequency": [60.0],
+      "stages": 100
+    }
+  ]
+}
+```
+
+## Pigging Model
+
+`pig` represents pig launch/receive events. The pig is tracked along its measured-length position over time, creating a moving boundary that affects pressure drop and liquid displacement.
+
+```json
+{
+  "pig": [
+    {
+      "id": 0,
+      "active": true,
+      "launchTime": 100.0,
+      "launchPosition": 0.0
+    }
+  ]
+}
+```
+
+## Design Tips
+
+- **Position alignment:** Keep accessory positions consistent with the physical well/pipeline architecture (e.g., DHSV position, ESP depth).
+- **Avoid overlap:** Do not place multiple active restrictions at exactly the same measured length unless physically justified.
+- **Incremental build-up:** Introduce one active device at a time during model construction to isolate its effect on the solution.
+- **Opening ramps:** Avoid instantaneous valve openings (step from 0 to 1); use short ramps for numerical stability in transient mode.
+
+!!! tip
+    When combining gas-lift with an ESP, ensure the gas-lift source is upstream of the pump to avoid injecting gas directly into pump stages.

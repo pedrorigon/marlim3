@@ -1,109 +1,172 @@
 # Fluids
 
-Configure production fluids, PVT models, and complementary/gas fluid properties.
+This section explains how Marlim3 represents real fluids and phase behavior.
 
-## Overview
+## Why Fluid Modeling Matters
 
-The Fluids tab defines the thermodynamic fluid model used in the simulation. Marlim3 supports multiple PVT modeling approaches that can be combined depending on the system complexity.
+In multiphase simulation, nearly every governing equation depends on fluid properties: density, viscosity, enthalpy, compressibility, and phase split. Inaccurate or inconsistent fluid data propagates into pressure and temperature predictions and can dominate overall model error.
 
-## Fluid Model
+## Modeling Families
 
-| Parameter | Description |
-|-----------|-------------|
-| **Compositional model** | Uses compositional models (only when flash table is disabled) |
-| **Flash table model** | Uses PVT flash table instead of black oil or compositional |
-| **Dynamic table model** | Post-simulation table from compositional model, reusing BO P/T mapping (steady-state only). Can significantly speed up network simulations |
-| **Latent heat from PVTSim** | Uses PVTSim table interpolation for enthalpy (requires PVTSim file) |
-| **Fluid type** | `0` — Liquid dominated (black oil); `1` — Gas dominated (title ratio) |
-| **Cp model** | `0` — Black oil; `1` — PVTSim table interpolation |
-| **JTL model** | `0` — Standard; `1` — d(ρ_l)/dT from PVTSim |
-| **PVTSim file** | `.tab` or `.ctm` file with PVT data |
-| **Table P** | Compressibility table |
-| **Table G** | Gas compressibility table |
+Marlim3 supports three thermodynamic model families, selected via `initialConfig`:
 
-## Fluid Definitions
+| Model family | Key flags | Typical use | Main tradeoff |
+|--------------|-----------|-------------|---------------|
+| Black-oil | `flashTableFluidModel = false`, `compositionalFluidModel = false` | Fast engineering studies, screening | Simplified composition physics |
+| Compositional | `compositionalFluidModel = true` | Rich gas, condensate, complex PVT | Higher computational cost |
+| Flash-table | `flashTableFluidModel = true` | Precomputed lookup from PVTSim `.tab`/`.ctm` files | Accurate within table range; depends on table quality |
 
-Each fluid entry represents a complete set of properties for a given fluid. You can define multiple fluids (e.g., different wells producing different oils).
+!!! note
+    In transient simulations, black-oil is the lightest option. Consider `pressureTable = true` to pre-build compressibility tables and reduce runtime further.
 
-In branch/network schema files, this list is named `productionFluid` (instead of `fluid`).
+## Global Fluid Configuration (`initialConfig`)
 
-### Key Properties
+| Parameter | Type | Default | Meaning |
+|-----------|------|---------|---------|
+| `flashTableFluidModel` | bool | `false` | Use PVT table lookup as primary property source |
+| `compositionalFluidModel` | bool | `false` | Use compositional treatment (only if flash-table is off) |
+| `dynamicTableModel` | bool | `false` | Build local table from compositional run after initial BO pass (steady-state networks) |
+| `fluidType` | int | `0` | `0`: liquid-dominated (black-oil mass-transfer logic); `1`: gas-dominated (quality-based mass-transfer) |
+| `cpModel` | int | `0` | Specific-heat model: `0` = black-oil; `1` = PVT table interpolation |
+| `jtlModel` | int | `0` | `1`: use d(ρ_l)/dT from PVTSim table even in black-oil mode |
+| `pvtFile` | string | — | Name of `.tab` or `.ctm` PVT file |
+| `pressureTable` | bool | `false` | Pre-build compressibility table for production fluids |
+| `gasTable` | bool | `false` | Pre-build compressibility table for service-line gas |
+| `latentHeat` | bool | `false` | Use PVT table enthalpy (requires `pvtFile`) |
+| `freeGasDensityCorrectionBO` | bool | `false` | Correct in-situ gas density for pressure-dependent lighter-hydrocarbon release |
 
-- **API gravity** — Oil API density
-- **Gas specific gravity** — Gas relative density (air = 1)
-- **Water cut** — Water fraction
-- **GOR** — Gas-Oil Ratio [sm³/sm³]
-- **BSW** — Basic Sediment & Water [%]
-- **Bubble point** — Saturation pressure [kgf/cm²]
-- **Salinity** — Water salinity [g/kg]
+## Production Fluid Definition (`productionFluid`)
 
-### Extended Production-Fluid Options (Branch Schema)
+Each element in the `productionFluid` array defines one fluid that can be referenced by sources and initial conditions via its `id`.
 
-`schema_branch.json` includes additional production-fluid controls, especially for viscosity and compositional behavior:
+### Minimum Required Fields
 
-| Parameter | Description |
-|-----------|-------------|
-| **emulsionType** | Emulsion viscosity model selector |
-| **srBpModel** | RS correlation model |
-| **deadOilModel** | Dead-oil viscosity model |
-| **liveOilModel** | Live-oil viscosity model |
-| **undersaturatedOilModel** | Undersaturated-oil viscosity model |
-| **blackOilViscModel** | In flash-table mode, choose table viscosity or black-oil correlations |
-| **blackOilWaterModel** | In flash-table mode, choose Joule-Thomson treatment |
-| **userMolarFraction** | If true, read composition from input instead of .ctm |
-| **molarFraction** | User-defined pseudocomponent molar fractions |
-| **userGORComp** | Correct compositional fractions to match user GOR |
+| Field | Unit | Description |
+|-------|------|-------------|
+| `id` | — | Integer identifier (referenced by sources, `initialFluidId`, etc.) |
+| `api` | °API | Oil API gravity (black-oil models) |
+| `gasDensity` | — | Gas relative density (gas/air at standard conditions) |
+| `gor` | Sm³/Sm³ | Gas-oil ratio |
+| `bsw` | m³/m³ | Basic Sediment and Water fraction (default `0`) |
 
-## Complementary Fluid
+### Viscosity Model Selectors
 
-A secondary fluid used for specific scenarios (e.g., injection fluid, kill fluid). Configured with its own density, viscosity, and thermal properties.
+Black-oil viscosity is built from three layered correlations:
 
-In branch schema this object is `complementaryFluid`, with `complementaryFluidType`:
+| Field | Default | Options |
+|-------|---------|---------|
+| `deadOilModel` | `3` | `0`: ASTM; `1`: Beggs & Robinson; `2`: Modified B&R; `3`: Glaso; `4`: Kartoatmodjo-Schmidt; `5`: Petrosky-Farshad; `6`: Beal; `7`: user temperature-viscosity table |
+| `liveOilModel` | `0` | `0`: Beggs & Robinson; `1`: Kartoatmodjo-Schmidt; `2`: Petrosky-Farshad |
+| `undersaturatedOilModel` | `0` | `0`: Vasquez & Beggs; `1`: Kartoatmodjo-Schmidt; `2`: Petrosky-Farshad; `3`: Beal; `4`: Khan |
 
-| Type | Meaning |
-|------|---------|
-| **0** | Standard complementary fluid (full property set required) |
-| **1** | Water (salinity-based setup) |
-| **2** | Similar to type 0, with internal friction-reducer handling |
+When `deadOilModel = 0` (ASTM), provide `temp1`, `visc1`, `temp2`, `visc2`.
+When `deadOilModel = 7` (table), provide `deadOilTemp` and `deadOilVisc` arrays.
 
-## Gas Fluid
+### Solution-Gas Ratio (RS) Correlations
 
-Properties specific to the gas phase when using gas-dominated systems or gas-lift operations:
+| `srBpModel` | Correlation |
+|-------------|-------------|
+| `0` | Vazquez & Beggs (default) |
+| `1` | Lasater |
+| `2` | Standing |
+| `3` | Glaso |
+| `4` | Livia Fulchignoni |
 
-- Gas density at standard conditions
-- Gas viscosity correlations
-- Gas thermal properties
+### Emulsion Options
 
-In branch schema, `gasFluid` also includes:
+| `emulsionType` | Model | Notes |
+|----------------|-------|-------|
+| `0` | Water-quality-weighted mixture | Default |
+| `1` | Weak Woelflin | — |
+| `2` | Medium Woelflin | — |
+| `3` | Strong Woelflin | — |
+| `4` | Exponential | Requires `emulsionCoefA`, `emulsionCoefB` |
+| `5` | Pal-Rhodes | Requires `phi100` |
+| `6` | User BSW-multiplier table | Requires `bswVec`, `emulVec` |
+| `7` | Oil viscosity below saturation BSW | — |
 
-| Parameter | Description |
-|-----------|-------------|
-| **criticalCorrelation** | Gas pseudo-critical P/T model selector |
-| **useFlashTable** | Use flash table for service-line gas properties |
-| **userMolarFraction** | Use user gas composition rather than .ctm |
-| **molarFraction** | Gas pseudocomponent molar fractions |
+### Critical-Properties Correlation
 
-## Compressibility Table Configuration
+| `criticalCorrelation` | Name | Notes |
+|----------------------|------|-------|
+| `0` | Standard | — |
+| `1` | Brown et al | Better for CO₂-rich fluids |
+| `2` | Piper et al | Better for CO₂-rich fluids |
 
-When `initialConfig.pressureTable` or `initialConfig.gasTable` is enabled, branch schema defines table ranges under `compTable`:
+### Compositional Options
 
-- `numPoints`
-- `minPressure`, `maxPressure`
-- `minTemperature`, `maxTemperature`
+| Field | Description |
+|-------|-------------|
+| `userMolarFraction` | If `true`, uses `molarFraction` array; if `false`, reads from `.ctm` file |
+| `molarFraction` | Pseudocomponent molar fractions (same order as in `.ctm` file) |
+| `userGORComp` | If `true`, adjusts molar fractions to match the provided `gor` value |
 
-## JSON Structure
+## Complementary Fluid (`complementaryFluid`)
+
+A third liquid phase (besides hydrocarbons and water) that travels with the stream without dissolving in gas or slipping relative to the mixture. Examples include:
+
+- Glycol or ethanol cushions (hydrate prevention before master valve opening)
+- Chemical inhibitors
+- Completion fluids (brine)
+
+| `complementaryFluidType` | Behavior |
+|--------------------------|----------|
+| `0` | Generic user-defined fluid (requires density, compressibility, viscosity, etc.) |
+| `1` | Water-based (only `salinity` is required) |
+| `2` | Generic fluid with internal friction-reducer treatment |
+
+Key properties for type `0`:
+
+| Field | Unit |
+|-------|------|
+| `density` | kg/m³ |
+| `compressibility` | 1/Pa |
+| `thermalExpansivity` | 1/K |
+| `surfaceTension` | N/m |
+| `specificHeat` | J/(kg·K) |
+| `conductivity` | W/(m·K) |
+| `temp1`, `visc1`, `temp2`, `visc2` | °C, cP (ASTM viscosity) |
+
+## Gas Fluid (`gasFluid`)
+
+Used for dry-gas definitions in service/injection contexts (when `initialConfig.gasLine = true`):
+
+| Field | Description |
+|-------|-------------|
+| `gasDensity` | Gas relative density (gas/air at ambient conditions) |
+| `CO2Fraction` | CO₂ molar fraction (default `0`) |
+| `criticalCorrelation` | `1`: Brown et al; `2`: Piper et al |
+| `useFlashTable` | Use flash table for service-line gas properties |
+| `userMolarFraction` | Provide gas composition explicitly |
+| `molarFraction` | Pseudocomponent molar fractions |
+
+## Precomputed Property Grids (`compTable`)
+
+When `pressureTable` or `gasTable` is enabled, `compTable` defines the P-T grid for interpolation:
+
+| Field | Unit | Purpose |
+|-------|------|---------|
+| `numPoints` | — | Number of grid points in each dimension |
+| `minPressure` | kgf/cm² | Lower pressure bound |
+| `maxPressure` | kgf/cm² | Upper pressure bound |
+| `minTemperature` | °C | Lower temperature bound |
+| `maxTemperature` | °C | Upper temperature bound |
+
+!!! warning
+    Choose ranges that fully cover the expected operating envelope. Extrapolation outside the table is unreliable.
+
+## Example JSON
 
 ```json
 {
   "initialConfig": {
-    "compositionalFluidModel": false,
     "flashTableFluidModel": false,
-    "dynamicTableModel": false,
-    "latentHeat": false,
+    "compositionalFluidModel": false,
     "fluidType": 0,
     "cpModel": 0,
     "jtlModel": 0,
-    "pvtFile": "example.tab"
+    "pressureTable": true,
+    "pvtFile": "PVT_CASE.ctm"
   },
   "productionFluid": [
     {
@@ -112,30 +175,23 @@ When `initialConfig.pressureTable` or `initialConfig.gasTable` is enabled, branc
       "api": 28.0,
       "gasDensity": 0.65,
       "gor": 150.0,
-      "bsw": 0.0,
-      "srBpModel": 0,
-      "deadOilModel": 3
+      "bsw": 0.10,
+      "deadOilModel": 3,
+      "liveOilModel": 0,
+      "criticalCorrelation": 1,
+      "emulsionType": 0
     }
   ],
-  "complementaryFluid": {
-    "active": false,
-    "complementaryFluidType": 0
-  },
-  "gasFluid": {
-    "active": false,
-    "gasDensity": 0.65,
-    "criticalCorrelation": 1
-  },
   "compTable": {
-    "active": false,
-    "numPoints": 40,
+    "active": true,
+    "numPoints": 50,
     "minPressure": 1.0,
-    "maxPressure": 600.0,
+    "maxPressure": 500.0,
     "minTemperature": 4.0,
-    "maxTemperature": 180.0
+    "maxTemperature": 120.0
   }
 }
 ```
 
 !!! tip
-    For compositional simulations, ensure you have uploaded the corresponding `.tab` or `.ctm` PVTSim file in the sidebar before selecting it.
+    Start with one fluid and validate a simple steady-state case before adding advanced options (compositional corrections, emulsions, multiple fluids) incrementally.

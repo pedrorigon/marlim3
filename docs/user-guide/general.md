@@ -1,152 +1,124 @@
 # General
 
-Global settings: system type, slip models, correlations, and numerical parameters.
+This section covers global simulation settings defined in the `initialConfig` object. These control which physical models are active, how equations are solved, and how the simulation behaves.
 
-## Overview
+## Concept
 
-The General tab contains simulation-wide configuration that affects all aspects of the solver: the system type, flow correlations, heat transfer options, geometry conventions, and numerical solver tuning.
+`initialConfig` is the simulator's "physics and numerics contract". It defines which physical effects are active, which correlations are used, and how the governing equations are solved. All other objects (fluids, pipes, accessories) are interpreted in the context of these global settings.
 
-## System Type
+## System Definition
 
-| Value | Description |
-|-------|-------------|
-| **MULTIFASICO** | Production system (multiphase flow) |
-| **INJETOR** | Injection well system |
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `system` | `PROD` / `INJ` | Producer or injector system configuration |
 
-For branch/network JSON files, the equivalent values in `schema_branch.json` are:
+A producer system (`PROD`) solves multiphase flow from reservoir or source towards a separator. An injector system (`INJ`) solves single-phase or multiphase flow from surface towards the formation.
 
-| Branch schema value | Meaning |
-|---------------------|---------|
-| **PROD** | Producer system |
-| **INJ** | Injector system |
+## Flow-Model Choices
 
-## Basic Settings
-
-| Parameter | Description |
-|-----------|-------------|
-| **Sensitivity analysis** | If true, performs parameter sensitivity sweeps |
-| **Classic output** | Controls the format of simulation output |
-| **Detailed screen output** | Controls verbosity during simulation |
-
-## Slip & Correlations
-
-### Slip Models
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| **Slip in steady-state** | true | Consider phase velocity differences in steady-state |
-| **Slip in transient** | true | Consider slip in transient solver |
-| **Drift-type model** | true | Use drift-flux model (vs. black-box correlations) |
-
-### Flow Pattern Map
-
-| Code | Description |
-|------|-------------|
-| 0 | Simplified Barnea |
-| 1 | Complete Barnea |
-
-### Mass Transfer Model
-
-| Code | Description |
-|------|-------------|
-| 0 | Complete (implicit) |
-| 1 | Complete (explicit) |
-| 2 | Simplified isothermal |
-| 3 | No mass transfer |
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `steadyStateSlip` | bool | `true` | Enables interphase-slip (drift) treatment in steady-state solver |
+| `transientSlip` | bool | `true` | Enables interphase-slip treatment in transient solver |
+| `driftModel` | bool | `true` | Uses drift-flux model; if `false`, uses black-box correlations (steady-state only — transient always uses drift-flux) |
+| `flowPatternMap` | int | `0` | Flow-regime map: `0` = simplified Barnea; `1` = full Barnea |
+| `massTransfer` | int | `0` | Interphase mass-transfer model: `0` = full implicit (most stable); `1` = full explicit; `2` = simplified isothermal; `3` = none |
+| `correlationsByPattern` | object | — | Slip correlation family by flow regime (stratified, slug/bubble, annular/churn) |
 
 ### Slip Correlations by Flow Pattern
 
-| Flow Pattern | Options |
-|--------------|---------|
-| **Stratified** | `0` Choi et al, `1` Bhagwat & Ghajar, `2` França & Lahey, `4` B&G modified |
-| **Bubble/Slug** | `0` Choi et al, `1` Bhagwat & Ghajar, `4` B&G modified |
-| **Annular/Churn** | `0` Choi et al, `1` Bhagwat & Ghajar, `3` Hibiki & Ishii, `4` B&G modified |
+When drift-flux is active, different correlations can be selected per regime:
 
-## Heat Transfer
+| Flow pattern | Options |
+|-------------|---------|
+| Stratified | `0`: Choi et al; `1`: Bhagwat & Ghajar (default); `2`: Franca & Lahey; `4`: modified Bhagwat & Ghajar |
+| Slug/Bubble | `0`: Choi et al; `1`: Bhagwat & Ghajar (default); `4`: modified Bhagwat & Ghajar |
+| Annular/Churn | `0`: Choi et al; `1`: Bhagwat & Ghajar (default); `3`: Hibiki & Ishii; `4`: modified Bhagwat & Ghajar |
 
-| Parameter | Description |
-|-----------|-------------|
-| **Thermal equilibrium** | Strategy for pipe wall temperature distribution |
-| **Latent heat in condensation** | If false, disables latent heat in condensation |
-| **Mass transfer limit** | Maximum allowed mass transfer rate [kg/(s·m)] |
-| **Reverse temperature** | Gas return temperature for reverse flow [°C] |
-| **Col-annular coupling steps** | Strong coupling iterations between column and annular |
+## Thermal and Geometry Controls
 
-## Geometry & Coordinates
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `thermalEquilibrium` | bool | `true` | Wall temperature initialization: `true` = linear interpolation between ambient and fluid; `false` = ambient throughout wall |
+| `latentHeatCond` | bool | `true` | When `false`, disables condensation latent heat in energy equation (rare retrograde-condensation cases) |
+| `reverseTemp` | number | ambient | Return-gas temperature at outlet boundary during reverse flow (°C) |
+| `geometryFollowsFlow` | bool | `true` | If `true`, measured length zero is the pipe inlet; if `false`, zero is the pipe outlet |
+| `xyMode` | bool | `false` | Enables XY-coordinate-based inclination reconstruction |
+| `xProdStart`, `yProdStart` | number | `0` | Start coordinates for production line (when `xyMode = true`) |
+| `xServiceStart`, `yServiceStart` | number | `0` | Start coordinates for service line (when `xyMode = true` and `gasLine = true`) |
+| `gasLine` | bool | `false` | Indicates presence of a service/injection gas line |
 
-| Parameter | Description |
-|-----------|-------------|
-| **Geometry follows flow direction** | If true, filling direction matches flow direction |
-| **X/Y prod start** | Initial coordinates of production line (XY mode) |
-| **X/Y service start** | Initial coordinates of service line (XY mode) |
+## Numerical and Performance Controls
 
-## Numerical Aspects
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `steadyStateOrder` | int | `1` | Steady-state ODE method: `1` = first order; `2` = second-order Runge-Kutta |
+| `checkValve` | int | `0` | `1` = adds check valve at production outlet (prevents reverse flow); `0` = reverse gas inflow allowed |
+| `steadyGuess` | number | `-1` | Initial guess for steady-state closure (flow rate or pressure). Negative = auto-compute from hydrostatics |
+| `parallelizeSA` | bool | `false` | Enables parallel execution of sensitivity-analysis cases |
 
-| Parameter | Description |
-|-----------|-------------|
-| **Track GOR** | Update GOR along pipe using mixing rules |
-| **Track gas density** | Update gas density along pipe |
-| **Gas density BO correction** | Consider in-situ deviation for free gas density |
-| **RS/PB table** | Pre-build RS table using black oil before simulation |
-| **Parallelize SA** | Parallelize sensitivity analysis runs |
+## Performance Optimization Options
 
-### Additional Branch-Schema Controls
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `pressureTable` | bool | `false` | Pre-builds compressibility table for production fluids (reduces transient runtime) |
+| `gasTable` | bool | `false` | Pre-builds compressibility table for service-line gas |
+| `dynamicTableModel` | bool | `false` | Post-processes compositional table from initial BO result (steady-state networks) |
+| `srBpTable` | bool | `false` | Pre-builds solubility-ratio table (useful for expensive RS models) |
+| `trackGOR` | bool | `true` | Updates GOR, API, BSW along pipeline at stream merging points |
+| `trackGasDensity` | bool | `true` | Updates gas density and CO₂ fraction at merging points |
 
-The branch schema exposes additional controls that may not all appear in the current GUI:
+## Advanced Controls (`initialConfig.advanced`)
 
-| Parameter | Description |
-|-----------|-------------|
-| **checkValve** | Enables check valve at production outlet to block reverse flow |
-| **steadyStateOrder** | Steady-state numerical order: 1st order or 2nd order RK |
-| **steadyGuess** | User initial guess for steady-state solver objective |
-| **fluidProp** | Legacy hybrid black-oil/PVTSim property mode |
-| **diffusion3dMode** | Enables 3D thermal diffusion model |
-| **diffusion3dThreads** | Thread count for 3D diffusion |
-| **diffusion3dJson** | Input file for 3D thermal diffusion model |
-| **waxMode** | Enables wax deposition modeling |
+Expert tuning parameters for robustness and performance. These rarely need modification:
 
-### Advanced Block Highlights
+| Field | Default | Purpose |
+|-------|---------|---------|
+| `threads` | `1` | Number of execution threads |
+| `monophasicCriterion` | `1e-5` | Minimum void fraction below which flow is treated as single-phase |
+| `condensationCriterion` | `0.001` | Minimum void fraction for interphase mass-transfer activation |
+| `simplePressureFrontier` | `true` | Cell-boundary pressure: `true` = average of neighbors; `false` = full hydrostatic/friction marching |
+| `massTransferLimit` | `10 kg/(s·m)` | Disables latent heat above this mass-transfer rate |
+| `accelerateSteadyConvergence` | `true` | Simplification that accelerates and stabilizes steady-state solver |
+| `slipBoundaryCell` | `true` | Controls slip in last control volume (oscillation mitigation) |
+| `relaxChokeTimestep` | `false` | Penalizes time-step growth during choke oscillations |
+| `valveTimestepControl` | `false` | Restricts time-step increments during valve opening/closing |
+| `disablePenalizeTimestep` | `false` | Disables holdup-oscillation time-step penalization (shutdown scenarios) |
+| `sonicTime` / `sonicFlag` | — | Time windows for sonic CFL-based time-stepping (pressure-wave capture) |
+| `compModelCorrectionTime` / `compModelCorrectionFlag` | — | Time windows for full compressibility model (liquid density time derivatives) |
+| `despressRate` | `0.01 kgf/(cm²·s)` | Threshold for simplified vs. full two-step evolution |
+| `dynTableMinDelay`, `dynTableMinDp`, `dynTableMinDt` | `0` | Flash mini-table refresh for compositional transient runs |
 
-In `initialConfig.advanced`, branch schema also defines expert numerical controls such as:
-
-- `monophasicCriterion` and `condensationCriterion`
-- `regulaFalsiSearchCriterion`
-- `simplePressureFrontier`
-- `relaxChokeTimestep`, `disablePenalizeTimestep`, `valveTimestepControl`
-- `threads` and `matrixThreads`
-- Dynamic flash mini-table controls: `dynTableMinDelay`, `dynTableMinDp`, `dynTableMinDt`
-- Sonic-event controls: `sonicTime`, `sonicFlag`
-
-Use these options only when reproducing legacy cases or tuning challenging simulations.
-
-## JSON Structure
+## Example JSON
 
 ```json
 {
   "system": "PROD",
-  "versaoJSON": "3.0.0",
   "initialConfig": {
-    "sensitivityAnalysis": false,
     "steadyStateSlip": true,
     "transientSlip": true,
     "driftModel": true,
     "flowPatternMap": 0,
     "massTransfer": 0,
-    "checkValve": 0,
     "steadyStateOrder": 1,
-    "steadyGuess": -1,
+    "checkValve": 0,
+    "geometryFollowsFlow": true,
+    "gasLine": false,
+    "pressureTable": true,
     "correlationsByPattern": {
       "stratified": 1,
       "slugBubble": 1,
       "annularChurn": 1
     },
-    "thermalEquilibrium": false,
-    "geometryFollowsFlow": true,
     "advanced": {
       "threads": 1,
       "massTransferLimit": 10.0,
-      "simplePressureFrontier": true
+      "simplePressureFrontier": true,
+      "accelerateSteadyConvergence": true
     }
   }
 }
 ```
+
+!!! tip
+    Keep advanced options at their defaults until a baseline case is validated. Then tune one control at a time, comparing results against the validated baseline.
