@@ -477,7 +477,7 @@
             },
             "sonicTime": {
               "type": "array",
-              "description": "Time instants that, together with the 'sonicFlags' array, determine when the simulator uses sufficiently small time steps (according to the sonic CFL condition) to capture sonic phenomena related to pressure waves. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for such events.",
+              "description": "Time instants that, together with the 'sonicFlag' array, determine when the simulator uses sufficiently small time steps (according to the sonic CFL condition) to capture sonic phenomena related to pressure waves. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for such events.",
               "items": {
                 "type": "number",
                 "unit": "s"
@@ -485,7 +485,7 @@
             },
             "sonicFlag": {
               "type": "array",
-              "description": "Flags indicating, at times specified by 'sonicTimes', whether the simulator uses sufficiently small time steps (according to sonic CFL condition) to capture sonic pressure-wave phenomena. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for these events.",
+              "description": "Flags indicating, at times specified by 'sonicTime', whether the simulator uses sufficiently small time steps (according to sonic CFL condition) to capture sonic pressure-wave phenomena. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for these events.",
               "items": {
                 "type": "integer"
               }
@@ -1595,7 +1595,7 @@
         },
         "times": {
           "type": "array",
-          "description": "Time instants associated with maxTimestep values defined in this object.",
+          "description": "Time instants associated with maxDT values defined in this object.",
           "items": {
             "type": "number",
             "unit": "s"
@@ -1819,7 +1819,7 @@
               },
               "ambientConductivity": {
                 "type": "array",
-                "description": "External-medium thermal conductivities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium thermal conductivities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "W/(m.K)"
@@ -1828,7 +1828,7 @@
               "ambientSpecificHeat": {
                 "type": "array",
                 "unit": "J/(kg.K)",
-                "description": "External-medium specific heats at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium specific heats at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "J/(kg.K)"
@@ -1836,7 +1836,7 @@
               },
               "ambientDensity": {
                 "type": "array",
-                "description": "External-fluid densities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid densities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "kg/m3"
@@ -1844,7 +1844,7 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "cP"
@@ -2170,7 +2170,7 @@
               "ambientConductivity": {
                 "type": "array",
                 "unit": "W/(m.K)",
-                "description": "External-medium thermal conductivities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium thermal conductivities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "W/(m.K)"
@@ -2178,7 +2178,7 @@
               },
               "ambientSpecificHeat": {
                 "type": "array",
-                "description": "External-medium specific heats at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium specific heats at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "J/(kg/K)"
@@ -2186,7 +2186,7 @@
               },
               "ambientDensity": {
                 "type": "array",
-                "description": "External-fluid densities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid densities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "kg/m3"
@@ -2194,7 +2194,7 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid viscosities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "cP"
