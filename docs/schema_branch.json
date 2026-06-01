@@ -553,14 +553,14 @@
                 "unit": "degC"
               }
             },
-            "voidFraction": {
+            "fluidQuality": {
               "type": "array",
               "description": "Fluid quality at pipeline inlet over time (ratio between free-gas mass and total associated gas, oil, and water mass).",
               "items": {
                 "type": "number"
               }
             },
-            "waterCut": {
+            "betaRatio": {
               "type": "array",
               "description": "Volumetric ratio between complementary fluid and the sum complementary fluid + oil + water at pipeline inlet over time.",
               "items": {
@@ -610,7 +610,7 @@
                 "unit": "kg/s"
               }
             },
-            "waterCut": {
+            "betaRatio": {
               "type": "array",
               "description": "Volumetric ratio between complementary fluid and the sum complementary fluid + oil + water at pipeline inlet over time.",
               "items": {
@@ -1844,11 +1844,11 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2)."
-              },
-              "items": {
-                "type": "number",
-                "unit": "cP"
+                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "items": {
+                  "type": "number",
+                  "unit": "cP"
+                }
               }
             }
           },
@@ -3256,7 +3256,7 @@
           "type": "boolean",
           "description": "Chemical-species (pseudocomponent) molar fractions in vapor phase. Valid for compositional fluid models."
         },
-        "pseudoMist": {
+        "pseudoMix": {
           "type": "boolean",
           "description": "Chemical-species (pseudocomponent) molar fractions in combined liquid+vapor hydrocarbon phases. Valid for compositional fluid models."
         },
@@ -3788,7 +3788,7 @@
         }
       }
     },
-    "transientProductionProfiles": {
+    "crossProductionProfile": {
       "type": "object",
       "description": "Records radial temperature profiles at specific cross sections of production line.",
       "properties": {
@@ -3814,7 +3814,7 @@
         }
       }
     },
-    "transientServiceProfiles": {
+    "crossServiceProfile": {
       "type": "object",
       "description": "Records radial temperature profiles at specific cross sections of service line.",
       "properties": {
@@ -3840,7 +3840,7 @@
         }
       }
     },
-    "transientProductionTrend": {
+    "crossProductionTrend": {
       "type": "array",
       "description": "Specifies recording of temperature trends (time evolutions) at specific cross-sectional points in production line.",
       "items": {
@@ -3873,7 +3873,7 @@
         }
       }
     },
-    "transientServiceTrend": {
+    "crossServiceTrend": {
       "type": "array",
       "description": "Specifies recording of temperature trends (time evolutions) at specific cross-sectional points in service line.",
       "items": {
