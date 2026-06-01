@@ -1,181 +1,405 @@
 # Accessories
 
-Accessories are localized components that introduce active physical behavior — inflow, choking, pumping, pigging — at specific measured-length positions along the pipe. Without accessories, a simulation is a passive conduit constrained only at its boundaries. Accessories inject operational control and localized physics at discrete interior points.
+Accessories are localized devices and sources placed along the production or service system. They add inflow, leakage, restriction, pumping, gas lift, or pigging behavior that cannot be represented by boundary conditions alone.
+
+This page focuses on **top-level accessory objects** such as sources, valves, pumps, and pigs. Endpoint objects like `separator`, `surfaceChoke`, and `gasInj` are described in [boundary-conditions.md](boundary-conditions.md), although they are closely related.
 
 ---
 
-## Common Structure
+## Common Pattern
 
-All accessories share a consistent design:
+Most accessories share these concepts:
 
-- **Position:** Each accessory is placed at a measured-length position along the pipe.
-- **Time-dependent behavior:** A `time` array paired with value arrays defines how the accessory evolves (e.g., valve opening ramp, flow-rate schedule).
-- **Identification:** Each has an `id` (for referencing) and an `active` flag (for toggling without deletion).
+- `active` / `ativo` — enable or disable without removing the object
+- `id` / `id` — unique identifier
+- `measuredLength` / `comprimentoMedido` — location along the line
+- `time` / `tempo` — event schedule for time-varying arrays
 
----
-
-## Sources — Reservoir Inflow
-
-The most common source is an **Inflow Performance Relationship (IPR)**, representing production from a reservoir. The IPR relates well inflow to the pressure difference between the static reservoir pressure and the flowing bottomhole pressure. Production rate adjusts dynamically as system pressure changes.
-
-Key concepts:
-- **Static reservoir pressure** — far-field formation pressure driving inflow.
-- **Productivity index** — the slope of the linear IPR (rate per unit drawdown).
-- **IPR curve type** — selects the inflow model (linear, Vogel, Fetkovich, etc.).
-
-> **JSON key:** `ipr` (EN) · `fonteIPR` (PT)
+Not every accessory uses all of them. Some are arrays of objects (`valve`, `ipr`, `liquidSource`); some are single objects (`masterValve`, `surfaceChoke`).
 
 ---
 
-## Sources — Prescribed Flow Rates
+## Reservoir and Inflow Sources
 
-When reservoir coupling is not needed, fluid can be injected at prescribed rates:
+### IPR Source
+
+The IPR object defines reservoir inflow as a function of drawdown between reservoir static pressure and tubing bottomhole pressure.
+
+> **JSON key:** `ipr` (EN) · `ipr` (PT)
+
+Core geometry and fluid reference:
+
+- `prodFluidId` · `indiFluidoPro`
+- `prodFluidIndex` · `indFluidoPro` (legacy alias)
+- `measuredLength` · `comprimentoMedido`
+
+Model selector:
+
+- `iprType` · `tipoIPR`
+  - `0` = linear IPR
+  - `1` = combined Vogel
+  - `2` = Vogel
+
+Time-series groups:
+
+- Static pressure: `staticPressureTime` / `tempoPressaoEstatica`, `staticPressure` / `pressaoEstatica`
+- Reservoir temperature: `temperaturesTime` / `tempoTemperaturas`, `temperatures` / `temperaturas`
+- Productivity index: `ipTime` / `tempoip`, `ip` / `ip`
+- Maximum rate (Vogel): `qMaxTime` / `tempoqMax`, `qMax` / `qMax`
+- Injectivity index: `iiTime` / `tempoii`, `ii` / `ii`
+
+!!! note
+    `ii` is relevant for reverse-flow and injection-related cases, not only conventional production.
 
 ### Liquid Source
 
-Injects a prescribed liquid volumetric flow rate (at standard conditions) along with its associated gas (determined by the fluid's GOR and local P-T conditions). The source fluid is identified by its production-fluid index.
+Prescribed standard-condition liquid inflow. Associated free gas is inferred from the referenced production fluid and in-situ thermodynamics.
 
 > **JSON key:** `liquidSource` (EN) · `fonteLiquido` (PT)
 
+Main fields:
+
+- `prodFluidId` · `indiFluidoPro`
+- `measuredLength` · `comprimentoMedido`
+- `time` · `tempo`
+- `temperature` · `temperatura`
+- `beta` · `beta` — complementary-fluid ratio
+- `liquidFlowRate` · `vazaoLiquido`
+
 ### Mass Source
 
-Injects a prescribed total mass flow rate. Useful when the overall mass inflow is known but not the phase split.
+Prescribed total mass source with optional explicit gas split.
 
 > **JSON key:** `massSource` (EN) · `fonteMassa` (PT)
 
+Main fields:
+
+- `prodFluidId` · `indiFluidoPro`
+- `thermType` · `tipoTermo`
+  - `0` = gas fraction computed by equilibrium at in-situ conditions
+  - `1` = explicit gas mass flow must be provided
+- `totalMassFlowRate` · `vazaoMassT`
+- `complementaryMassFlowRate` · `vazaoMassC`
+- `gasMassFlow` · `vazaoMassG` (only for `thermType = 1`)
+- `temperature` · `temperatura`
+
 ### Gas Source
 
-Injects prescribed gas flow into the system — used for gas-lift injection points or surface gas injection.
+Prescribed gas inflow, either dry gas using `gasFluid` or rich gas tied to a production-fluid definition.
 
 > **JSON key:** `gasSource` (EN) · `fonteGas` (PT)
 
+Main fields:
+
+- `dry` · `seco`
+  - `true` = dry gas from `gasFluid`
+  - `false` = rich gas linked to `prodFluidId`
+- `prodFluidId` · `indiFluidoPro` (when `dry = false`)
+- `gasFlowRate` · `vazaoGas`
+- `complementaryFluidFlowRate` · `vazaoFluidoComplementar` (impurity fraction, ppm)
+- `temperature` · `temperatura`
+
+### Porous Sources
+
+Two porous-source objects delegate configuration to external JSON files:
+
+- `porousRadialSource` (EN) · `fontePoroRadial` (PT)
+- `porous2DSource` (EN) · `fontePoro2D` (PT)
+
+Both use:
+
+- `measuredLength` · `comprimentoMedido`
+- `file` · `arquivo`
+
+---
+
+## Pressure-Coupled Opening / Leak
+
 ### Pressure Source
 
-A pressure-coupled exchange point (constant-pressure reservoir analog). Flow direction depends on local vs. source pressure difference.
+`pressureSource` models a leak, opening, or exchange point between tubing and an external pressurized medium. Flow may go in either direction depending on local pressure difference and check setting.
 
 > **JSON key:** `pressureSource` (EN) · `fontePressao` (PT)
 
-### Porous Radial Source
+Fluid definition:
 
-Models radial inflow from a porous medium (Darcy-based). Used when a simplified permeability/reservoir model replaces an explicit IPR.
+- `fluidType` · `tipoFluido`
+  - `1` = external hydrocarbon assumed equal to current tubing fluid
+  - `0` = external fluid explicitly defined by `prodFluidId`
+- `prodFluidId` · `indiFluidoPro`
+- `gasAmbient` · `ambienteGas` — admit only gaseous fraction of external fluid
 
-> **JSON key:** `porousRadialSource` (EN) · `fontePorosoRadial` (PT)
+Flow-direction control:
+
+- `check` · `check`
+  - `0` = bidirectional opening
+  - `1` = vacuum breaker (only environment to tubing)
+  - `-1` = check-valve behavior (only tubing to environment)
+
+Opening definition:
+
+- `openingType` · `TipoAbertura`
+  - `0` = opening given as area ratio
+  - `1` = opening given as diameter ratio
+- `opening` · `abertura`
+- `time` · `tempo`
+- `cd` · `cd`
+
+External-medium state:
+
+- `pressure` · `pressao`
+- `temperature` · `temperatura`
+- `beta` · `beta`
+- `ambientFluidQuality` · `titAmb`
+
+---
+
+## Gas-Lift Valve Source (VGL)
 
 ### Gas-Lift Source
 
-Represents a gas-lift valve — injects gas when casing pressure exceeds tubing pressure plus the valve's opening threshold. Parameters include valve area, discharge coefficient, and operating-pressure settings.
+`gasLiftSource` defines a gas-lift valve connecting service line and production line. It is more detailed than a generic gas source because it needs both production-side and service-side tap positions and valve calibration data.
 
 > **JSON key:** `gasLiftSource` (EN) · `fonteGasLift` (PT)
 
+Geometry and tap positioning:
+
+- `annulusColumnFlag` · `colunaEanular`
+  - `true` = service tap is inferred at same elevation as production tap
+  - `false` = user must give `serviceMeasuredLength`
+- `prodMeasuredLength` · `comprimentoMedidoProducao`
+- `serviceMeasuredLength` · `comprimentoMedidoServico`
+
+Valve type:
+
+- `valveType` · `tipoValvula`
+  - `0` = orifice
+  - `1` = pressure-calibrated valve
+  - `2` = Venturi
+
+Physical parameters:
+
+- `orificeDiameter` · `diametroOrificio`
+- `outerDiameter` · `diametroExterno` — port diameter for pressure-calibrated valve
+- `vglDischCoef` · `cdvgl`
+- `liquidDischCoef` · `cdvLiq`
+- `areaRatio` · `razaoArea`
+- `calibrationPressure` · `pressaoCalibracao` [psi]
+- `calibrationTemperature` · `temperaturaCalibracao` [degF]
+
+!!! note
+    `annulusColumnFlag = true` is convenient when the service-line pressure tap should be automatically aligned by elevation with the production-side tap.
+
 ---
 
-## Flow-Control Devices — Valves and Chokes
+## Valves and Chokes
 
-Valves and chokes restrict flow by reducing the effective area available to the multiphase mixture. They create a local pressure drop governed by choke models (e.g., Sachdeva's critical/subcritical two-phase model).
+### Generic Two-Phase Valve
 
-### Generic Valve
-
-A general-purpose two-phase restriction placed at any position. Controlled by an opening schedule and characterized by a discharge coefficient.
-
-The **opening interpretation** depends on the Cv-curve mode:
-- **Area-ratio mode (0):** Opening is the fraction of valve free area relative to pipe area (0 = closed, 1 = full bore).
-- **Stem-displacement mode (1):** Opening is the physical valve stem travel; a Cv-vs-stem curve translates this to effective area.
+`valve` is an optional two-phase restriction using the Sachdeva model.
 
 > **JSON key:** `valve` (EN) · `valvula` (PT)
-> **Opening mode:** `cvCurve` (EN) · `cvCurve` (PT) — `0` = area ratio, `1` = stem displacement
 
-### Master Valve
+Main fields:
 
-The production-tree master valve (DHSV or surface tree valve). Behaves like a generic valve but is semantically distinct for operational modeling.
+- `cvCurve` · `curvaCV`
+  - `0` = opening values are area ratios
+  - `1` = opening values are stem displacement
+- `measuredLength` · `comprimentoMedido`
+- `time` · `tempo`
+- `opening` · `abertura`
+- `cd` · `cd`
+- `x1`, `cv1` for stem-displacement calibration
 
-> **JSON key:** `masterValve` (EN) · `valvulaMestra` (PT)
+### Production Master Valve
+
+`masterValve` is the production Wet Christmas Tree valve.
+
+> **JSON key:** `masterValve` (EN) · `master1` (PT)
+
+Important details from schema:
+
+- In steady-state it mainly defines position.
+- In transient mode it should always be defined when WCT operation matters.
+- Uses fixed discharge coefficient 0.84.
+- Has `activeAreaRatio` · `razaoAreaAtiva` to avoid instability near fully open state.
+
+Main fields:
+
+- `active`, `cvCurve`, `activeAreaRatio`
+- `measuredLength`
+- `time`, `opening`
+- `x1`, `cv1`
+
+### Service-Line Master Valve
+
+`masterValve2` is the simplified service-line WCT valve.
+
+> **JSON key:** `masterValve2` (EN) · `master2` (PT)
+
+Behavior is simplified/binary compared with `masterValve`.
 
 ### Surface Choke
 
-An outlet restriction at the surface, typically controlling wellhead or platform arrival pressure.
+`surfaceChoke` is a fixed-position outlet restriction analogous to a valve.
 
-> **JSON key:** `surfaceChoke` (EN) · `chokeSuperficie` (PT)
+> **JSON key:** `surfaceChoke` (EN) · `chokeSup` (PT)
 
-### Check Valve (Non-Return Valve)
+Main fields:
 
-Prevents reverse flow. When flow reversal is detected, the valve closes immediately. Commonly placed at risers or downstream of pumps.
+- `cvCurve` · `curvaCV`
+- `time` · `tempo`
+- `opening` · `abertura`
+- `dischargeCoefficient` · `coeficienteDescarga`
+- `model` · `modelo` (currently only 0 = Sachdeva)
+- `x1`, `cv1`
 
-> **JSON key:** `checkValve` (EN) · `valvulaRetencao` (PT)
+### Injection Choke
 
----
+`injectionChoke` is the service-line choke for single-phase gas.
 
-## Pumping — Electrical Submersible Pump (ESP)
+> **JSON key:** `injectionChoke` (EN) · `chokeInj` (PT)
 
-An ESP adds energy to the flow by imposing a head rise governed by pump performance curves. The key physics:
+Main fields:
 
-- **Head-flow curve** — at a reference frequency, maps volumetric flow to differential head.
-- **Frequency** — rotational speed (time-dependent for variable-speed drives). Head scales with frequency² and flow with frequency.
-- **Number of stages** — total head is per-stage head multiplied by stage count.
-- **Pump degradation** — optional efficiency or head degradation factor.
-
-> **JSON key:** `esp` (EN) · `esp` (PT)
-
----
-
-## Pumping — Positive-Displacement Pump
-
-A volumetric (positive-displacement) pump delivers a fixed volume per revolution regardless of differential pressure. It imposes a flow rate rather than a head rise.
-
-> **JSON key:** `volumetricPump` (EN) · `bombaPD` (PT)
+- `active` · `ativo`
+- `time` · `tempo`
+- `opening` · `abertura`
+- `dischargeCoefficient` · `coeficienteDescarga`
 
 ---
 
-## Pumping — Prescribed Pressure Drop/Rise
+## Pumps and Localized Pressure Devices
 
-A simplified model that imposes a fixed pressure increment (or decrement) at a position. Useful for representing an idealized booster or a known restriction without detailed pump curves.
+### ESP
 
-> **JSON key:** `pressureDrop` (EN) · `perdaCarga` (PT)
+The ESP object contains full curve data and speed scheduling.
+
+> **JSON key:** `esp` (EN) · `bcs` (PT)
+
+Main fields:
+
+- `measuredLength` · `comprimentoMedido`
+- `time` · `tempo`
+- `frequency` · `frequencia`
+- `flowRate` · `vazao` [BPD]
+- `power` · `potencia` [hp]
+- `efficiency` · `eficiencia`
+- `pumpHead` · `head` [ft]
+- `referenceFreq` · `freqref`
+- `stage` · `nestag`
+- `manufacturerStage` · `nestagFab`
+- `motorEfficiency` · `EficienciaMotor`
+- `minFrequency` · `FrequenciaMinima`
+- `hiCorrection` · `correcHI`
+
+### Volumetric Pump
+
+Positive-displacement pump using an isochoric compression model.
+
+> **JSON key:** `volumetricPump` (EN) · `bombaVolumetrica` (PT)
+
+Main fields:
+
+- `measuredLength` · `comprimentoMedido`
+- `time` · `tempo`
+- `frequency` · `frequencia`
+- `capacity` · `capacidade`
+- `polyFactor` · `fatorpoli`
+
+### Pressure Drop / Increment
+
+`pressureDrop` applies a localized pressure increment over time. It can also approximate pump behavior through gas-compression and phase-efficiency settings.
+
+> **JSON key:** `pressureDrop` (EN) · `deltaPressao` (PT)
+
+Main fields:
+
+- `pressureDrop` · `deltaPressao`
+- `gasCompType` · `tipoCompGas`
+  - `0` = adiabatic
+  - `1` = polytropic
+  - `2` = isothermal
+- `polyFacOrAdiabConst` · `fatPoli`
+- `liquidEfficiency` · `eficLiq`
+- `gasEfficiency` · `eficGas`
 
 ---
 
 ## Pigging
 
-A pig is a mechanical device launched inside the pipe that travels with the flow, sweeping liquid ahead of it. In the model, the pig is tracked as a moving boundary. It creates:
+`pig` defines launch and receive positions and the launch time.
 
-- A liquid slug ahead (displaced accumulation).
-- A pressure discontinuity (pig friction against the pipe wall).
-- A gas pocket behind (expanding as the pig advances).
+> **JSON key:** `pig` (EN/PT)
 
-The pig is characterized by its launch time, launch position, and friction properties.
+Main fields:
 
-> **JSON key:** `pig` (EN) · `pig` (PT)
+- `launcher` · `lancador`
+- `receiver` · `recebedor`
+- `time` · `tempo`
+
+!!! note
+    The current public schema documents launch position, receive position, and launch time. The parser contains some extra legacy/internal pig parameters, but they are not part of the public schema and are therefore intentionally not documented here.
 
 ---
 
 ## Practical Guidance
 
-- **Position alignment:** Accessory positions should match the physical architecture (e.g., DHSV at 50 m below wellhead, ESP at pump-set depth).
-- **Avoid overlap:** Do not place multiple active restrictions at exactly the same measured length unless physically justified.
-- **Incremental build-up:** Introduce one active device at a time during model construction to isolate its effect.
-- **Opening ramps:** Avoid instantaneous valve openings (step from 0 to 1); use short ramps (e.g., 10–60 s) for numerical stability during transients.
-- **Gas-lift + ESP sequencing:** When combining gas-lift with an ESP, ensure the gas-lift injection point is upstream of the pump intake to avoid injecting gas directly into pump stages.
+- Place accessories at physically meaningful measured lengths and verify geometry direction conventions before interpreting results.
+- Introduce one active accessory at a time while validating a model.
+- For time-varying valves/chokes, use ramps instead of instantaneous steps when possible.
+- For gas-lift valves, verify production and service tap positions carefully; elevation consistency matters.
+- For pressure sources, be explicit about allowed flow direction using `check`.
+- For rich-gas sources (`dry = false`), ensure the linked production fluid is thermodynamically consistent with the scenario.
 
 ---
 
-## Example: Liquid Source with Time Schedule
+## Example: IPR Source
 
 ```json
 {
-  "liquidSource": [
+  "ipr": [
     {
       "id": 0,
       "active": true,
       "prodFluidId": 0,
       "measuredLength": 2500.0,
-      "time": [0, 3600],
-      "liquidFlowRate": [1500, 1200],
-      "temperature": [60.0, 58.0]
+      "iprType": 1,
+      "staticPressureTime": [0],
+      "staticPressure": [320.0],
+      "temperaturesTime": [0],
+      "temperatures": [85.0],
+      "ipTime": [0],
+      "ip": [12.0],
+      "iiTime": [0],
+      "ii": [1.0]
     }
   ]
 }
 ```
 
-## Example: Valve with Opening Ramp
+## Example: Mass Source with Explicit Gas Split
+
+```json
+{
+  "massSource": [
+    {
+      "id": 0,
+      "active": true,
+      "prodFluidId": 0,
+      "measuredLength": 1500.0,
+      "thermType": 1,
+      "time": [0],
+      "temperature": [60.0],
+      "totalMassFlowRate": [20.0],
+      "complementaryMassFlowRate": [0.0],
+      "gasMassFlow": [2.0]
+    }
+  ]
+}
+```
+
+## Example: Two-Phase Valve with Opening Ramp
 
 ```json
 {
@@ -193,7 +417,7 @@ The pig is characterized by its launch time, launch position, and friction prope
 }
 ```
 
-## Example: ESP at Pump-Set Depth
+## Example: ESP
 
 ```json
 {
@@ -204,11 +428,16 @@ The pig is characterized by its launch time, launch position, and friction prope
       "measuredLength": 3000.0,
       "time": [0],
       "frequency": [60.0],
-      "stages": 100
+      "referenceFreq": 60.0,
+      "stage": 100,
+      "flowRate": [1000, 2000, 3000],
+      "pumpHead": [200, 180, 140],
+      "power": [20, 35, 50],
+      "efficiency": [0.45, 0.60, 0.52]
     }
   ]
 }
 ```
 
 !!! tip
-    When debugging a model with multiple accessories, deactivate all but one (`"active": false`) and validate in isolation before combining.
+    When debugging a complex model, deactivate all but one accessory and validate the isolated effect before combining multiple controls, sources, and pumps.
