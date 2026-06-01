@@ -3140,7 +3140,7 @@
           "type": "boolean",
           "description": "Liquid specific heat at constant pressure (J/[kg C])."
         },
-        "stdLiquidFlowRate": {
+        "stdLiqFlowRate": {
           "type": "boolean",
           "description": "Standard volumetric flow rate of dead oil (Sm3/d)."
         },
@@ -3500,7 +3500,7 @@
             "type": "boolean",
             "description": "Interphase mass transfer (kg/[s m])."
           },
-          "stdLiquidFlowRate": {
+          "stdLiqFlowRate": {
             "type": "boolean",
             "description": "Standard volumetric flow rate of dead oil (Sm3/d)."
           },
