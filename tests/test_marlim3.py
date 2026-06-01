@@ -886,7 +886,7 @@ class TestBilingual:
             "discretizacao": [{"nCelulas": 10, "comprimento": 100}],
         }]
         t.fonteLiquido = [{
-            "id": 0, "indFluidoPro": 0, "comprimentoMedido": 0.1,
+            "id": 0, "indiFluidoPro": 0, "comprimentoMedido": 0.1,
             "tempo": [0], "vazaoLiquido": [1500], "temperatura": [40],
         }]
         t.separador = {"tempo": [0], "pressao": [2]}
