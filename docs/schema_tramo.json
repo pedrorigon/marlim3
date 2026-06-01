@@ -1086,7 +1086,7 @@
           },
           "vazaoLiquido": {
             "type": "array",
-            "description": "Vazão volumétrica de líquido da fonte nas condições padrão (óleo morto) ao longo do tempo. Atentar que essa vazão de líquido implica em uma vazão in situ de gás livre associada obtida com base nas propriedades do fluido definido em indfluidopro e nas P e T in situ.",
+            "description": "Vazão volumétrica de líquido da fonte nas condições padrão (óleo morto) ao longo do tempo. Atentar que essa vazão de líquido implica em uma vazão in situ de gás livre associada obtida com base nas propriedades do fluido definido em indifluidopro e nas P e T in situ.",
             "items": {
               "type": "number",
               "unit": "sm3/d"
