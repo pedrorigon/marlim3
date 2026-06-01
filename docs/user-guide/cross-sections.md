@@ -10,9 +10,20 @@ The 1D axial equations require a flow area and a friction surface to compute vel
 
 ### Internal Diameter
 
-The inner diameter sets the flow cross-sectional area ($A = \pi d^2 / 4$) and the velocity scale. All hydraulic calculations (Reynolds number, friction factor, holdup geometry) depend on this dimension.
+The inner diameter always defines the hydraulic inner boundary of the flow region:
+
+- For non-annular flow (`annular = false`): it is the pipe internal diameter used in $A = \pi d^2 / 4$.
+- For annular flow (`annular = true`): it is the **smallest** annular-flow diameter.
+
+All hydraulic calculations (Reynolds number, friction factor, holdup geometry) depend on this dimension.
 
 > **JSON key:** `innerDiameter` (EN) · `diametroInterno` (PT) — unit: m
+
+### Outer Diameter (Annular Flow)
+
+For annular flow, the simulator needs both annulus boundaries. `outerDiameter` defines the **largest** diameter of the annular flow area.
+
+> **JSON key:** `outerDiameter` (EN) · `diametroExterno` (PT) — unit: m, valid when `annular = true`
 
 ### Wall Roughness
 
@@ -22,7 +33,10 @@ Absolute roughness of the inner pipe surface, entering the Colebrook (or Moody) 
 
 ### Annular Flow Geometry
 
-Some well configurations have production occurring in the annulus between tubing and casing rather than inside the tubing. When annular geometry is indicated, the hydraulic calculations use the annular area and equivalent diameter.
+Some well configurations have production occurring in the annulus between tubing and casing rather than inside the tubing. When annular geometry is indicated, hydraulic calculations use annular geometry built from:
+
+- `innerDiameter` = smallest annulus-flow diameter
+- `outerDiameter` = largest annulus-flow diameter
 
 > **JSON key:** `annular` (EN) · `anular` (PT) — default `false`
 
@@ -51,13 +65,15 @@ Each layer is defined by its geometric extent, radial discretization, and materi
 Two ways to specify layer size:
 
 - **By thickness** — the radial thickness of the layer, building outward from the previous boundary.
-- **By outer diameter** — the absolute outer diameter of the layer.
+- **By diameter** — the diameter from pipe center to the outer circumference of the layer.
 
 > **JSON key:** `layerMeasurementType` (EN) · `tipoMedicaoCamada` (PT)
-> Values: `"THICKNESS"` (EN) / `"ESPESSURA"` (PT) or `"OUTER_DIAMETER"` (EN) / `"DIAMETRO_EXTERNO"` (PT)
+> Values: `"THICKNESS"` (EN) / `"ESPESSURA"` (PT) or `"DIAMETER"` (EN) / `"DIAMETRO"` (PT)
 >
 > Thickness: `thickness` (EN) · `espessura` (PT) — unit: m
-> Outer diameter: `outerDiameter` (EN) · `diametroExterno` (PT) — unit: m
+> Diameter mode key: `diameter` (EN) · `diametro` (PT) — unit: m
+
+If `layerMeasurementType` is omitted, default is diameter mode.
 
 ### Radial Discretization
 
@@ -88,12 +104,34 @@ Each cross section has an integer identifier. Pipe segments reference the cross 
 
 ---
 
+## Annulus, Gas Line, and Thermal Coupling
+
+Cross-section annularity and pipe thermal coupling are related but distinct concepts:
+
+- **Cross section (`crossSection`):** defines geometry (`annular`, `innerDiameter`, `outerDiameter`, layers).
+- **Pipe segment (`productionPipe`):** defines whether that segment is thermally coupled to service line via `thermalCoupling` / `acoplamentoTermico`.
+
+Practical implications:
+
+- Setting `annular = true` changes hydraulic geometry; it does **not** by itself activate thermal coupling.
+- Thermal coupling is configured at pipe-segment level and requires a service line (`gasLine` / `linhaGas` enabled).
+- In coupled segments, production and service pipes should be coincident in position, length, and discretization for consistent exchange.
+
+> **JSON keys (pipe-level):**
+>
+> - Service-line enable: `gasLine` (EN) · `linhaGas` (PT)
+> - Segment coupling flag: `thermalCoupling` (EN) · `acoplamentoTermico` (PT)
+
+---
+
 ## Practical Guidance
 
 - **Layer consistency:** Layers must nest concentrically. When using thickness mode, the outer radius of each layer is computed cumulatively from the inner diameter outward.
+- **Annular consistency:** For annular sections, ensure `outerDiameter > innerDiameter` and both represent annulus-flow boundaries (not wall-layer diameters).
 - **Roughness calibration:** If pressure-drop predictions deviate from field data, roughness is often the first parameter to calibrate (especially in old or scaled pipes).
 - **Multiple cross sections:** Use different cross-section IDs for different pipe segments (e.g., one for the riser with thick insulation, another for the subsea flowline with concrete coating).
 - **Annular wells:** When annular geometry is active, ensure the layer structure reflects the casing/tubing arrangement correctly.
+- **Coupled annulus/column cases:** Configure thermal coupling in `productionPipe`, not in the cross-section object.
 
 ---
 
@@ -135,8 +173,9 @@ Each cross section has an integer identifier. Pipe segments reference the cross 
     {
       "id": 1,
       "active": true,
-      "annular": false,
+      "annular": true,
       "innerDiameter": 0.10,
+      "outerDiameter": 0.18,
       "roughness": 1.83e-4,
       "layers": [
         {
@@ -173,6 +212,3 @@ Where material IDs map to: `0` = steel, `1` = completion fluid (type 2), `2` = c
 
 !!! tip
     Start with 1 node per layer for steady-state validation, then increase to 2–3 in insulation/cement layers for transient cooldown studies where radial resolution matters.
-
-!!! tip
-    When in doubt about discretization, start with 1 node per layer for steady-state validation, then increase to 2–3 in insulation/cement layers for transient cooldown studies.

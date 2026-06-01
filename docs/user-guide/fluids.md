@@ -16,7 +16,7 @@ A rigorous thermodynamic model where the fluid is described by pseudocomponent m
 
 ### Flash-Table Model
 
-Precomputed PVT properties from external software (PVTSim) stored in `.tab` or `.ctm` files. The simulator interpolates properties at each P-T condition from this table. Accurate within the table range but depends entirely on the quality and coverage of the external data.
+Precomputed PVT properties from external software (PVTSim) stored in `.tab` files. The simulator interpolates properties at each P-T condition from this table. Accurate within the table range but depends entirely on the quality and coverage of the external data.
 
 > **JSON keys (inside global config):**
 >
@@ -24,10 +24,50 @@ Precomputed PVT properties from external software (PVTSim) stored in `.tab` or `
 > - Compositional mode: `compositionalFluidModel` (EN) · `modeloFluidoComposicional` (PT) — default `false`
 > - PVT file: `pvtFile` (EN) · `pvtsimArq` (PT)
 
-When both flags are `false`, the black-oil model is used.
+When both flags are `false`, the black-oil model is used. When both flags are true, the flash-table model is used.
+
+
+
+**File format convention:**
+
+- **Flash-table mode:** use a `.tab` file in `pvtFile` / `pvtsimArq`.
+- **Compositional mode:** use a `.ctm` file in `pvtFile` / `pvtsimArq`.
+
+!!! note
+    The schema accepts `.tab` or `.ctm` at key level, but model selection defines the practical file type: flash tables read tabulated `.tab` data, while compositional runs read pseudocomponent data from `.ctm`.
 
 !!! note
     In transient simulations, black-oil is the lightest option. Consider enabling precomputed property tables to reduce runtime further.
+
+## Quick Decision Flow
+
+Use this sequence to avoid mixing model-specific settings:
+
+1. **Choose the thermodynamic model**
+  - Fast engineering studies: black-oil
+  - High-fidelity compositional behavior: compositional
+  - Tabulated PVT interpolation: flash-table
+2. **Set model flags in `initialConfig`**
+  - Black-oil: `flashTableFluidModel = false`, `compositionalFluidModel = false`
+  - Compositional: `flashTableFluidModel = false`, `compositionalFluidModel = true`
+  - Flash-table: `flashTableFluidModel = true` (compositional flag is ignored)
+3. **Use the correct PVT file extension in `pvtFile`**
+  - Flash-table: `.tab`
+  - Compositional: `.ctm`
+4. **Fill only the keys relevant to the selected model**
+  - Keep black-oil correlation keys for black-oil (or flash-table overrides)
+  - Keep molar-fraction keys for compositional runs
+
+### Minimum Input Checklist by Mode
+
+| Mode | Must-have keys | Optional/conditional keys |
+|------|----------------|---------------------------|
+| Black-oil | `productionFluid` with black-oil properties, `gor`, `bsw` | `srBpModel`, viscosity model selectors and calibration points |
+| Flash-table | `flashTableFluidModel = true`, `pvtFile` with `.tab` | `blackOilViscModel`, `blackOilWaterModel`, black-oil viscosity keys only if override is enabled |
+| Compositional | `compositionalFluidModel = true`, `pvtFile` with `.ctm` | `userMolarFraction`/`molarFraction`, `userGORComp` for composition correction |
+
+!!! note
+   In flash-table mode, correlation keys such as `deadOilModel`, `liveOilModel`, and `undersaturatedOilModel` are only active when `blackOilViscModel = 1`.
 
 ## Fluid-Type Classification
 
@@ -46,14 +86,26 @@ Each simulation can define one or more production fluids. Sources, initial condi
 
 > **JSON key:** `productionFluid` (EN) · `fluidosProducao` (PT) — array of objects
 
-### Essential Properties
+### Property Applicability by Fluid Model
 
-Every production fluid requires at minimum:
+There is no single universal “required set” for all modes. Requirements depend on whether the run is black-oil, flash-table, or compositional, and on override flags.
 
-- **Oil API gravity** — characterizes oil density and correlations. *(key: `api`)*
-- **Gas-oil ratio** — volume of dissolved gas per volume of oil at standard conditions. *(key: `gor` / `rgo`, unit: Sm³/Sm³)*
-- **Gas relative density** — gas density divided by air density, both at standard conditions. *(key: `gasDensity` / `densidadeGas`)*
-- **Water cut (BSW)** — volumetric fraction of water in the liquid stream. *(key: `bsw`, unit: m³/m³, default: 0)*
+| Property / option | Black-oil | Flash-table | Compositional | Notes |
+|-------------------|-----------|-------------|---------------|-------|
+| `gor` / `rgo` | used | used | used | Valid in all models |
+| `bsw` | used | used | used | Valid in all models |
+| `waterDensity` / `densidadeAgua` | used | used | used | Valid in all models |
+| `emulsionType` and emulsion parameters | used | used | used | Valid in all models |
+| `api` | used | not primary | not primary | Schema marks it as black-oil only |
+| `srBpModel` / `modeloRsPb` | used | not used | not used | Black-oil RS correlation |
+| `gasDensity`, `CO2Fraction`, `criticalCorrelation` | used | conditional | used | In flash mode, mainly relevant when black-oil correlations are enabled |
+| `deadOilModel`, `liveOilModel`, `undersaturatedOilModel` | used | conditional | used | In flash mode, used only with `blackOilViscModel = 1` |
+| `temp1`, `visc1`, `temp2`, `visc2`, `deadOilTemp`, `deadOilVisc` | conditional | conditional | conditional | Needed only for selected viscosity models |
+| `molarFraction`, `userMolarFraction` | not used | not used | used | Compositional-only keys |
+| `userGORComp` / `RGOCompUsuario` | not used | not used | optional | Corrects composition to match GOR |
+
+!!! note
+  The schema keeps most fields optional at syntax level. Practical requirements are enforced by the selected model and correlation choices during parsing and runtime.
 
 ### Dead-Oil Viscosity
 
@@ -74,7 +126,7 @@ For the ASTM model (0), provide two calibration points: temperature and viscosit
 
 > **JSON keys:** `deadOilModel` (EN) · `modeloOleoMorto` (PT)
 > ASTM points: `temp1`, `visc1`, `temp2`, `visc2`
-> Table: `deadOilTemp` / `deadOilVisc`
+> Table: `deadOilTemp` / `tempOleoMorto`, `deadOilVisc` / `viscOleoMorto`
 
 ### Live-Oil and Undersaturated-Oil Viscosity
 
@@ -103,6 +155,9 @@ Live-oil viscosity modifies dead-oil viscosity to account for dissolved gas. Und
 > - Live oil: `liveOilModel` (EN) · `modeloOleoVivo` (PT)
 > - Undersaturated: `undersaturatedOilModel` (EN) · `modeloOleoSubSaturado` (PT)
 
+!!! note
+    In flash-table and compositional modes, viscosity correlations are only used when `blackOilViscModel` / `modeloViscBlackOil` is set to `1`.
+
 ### Solution-Gas Ratio (Bubble-Point Behavior)
 
 The solution-gas ratio (RS) determines how much gas is dissolved in oil at a given pressure and temperature. At the bubble point, RS equals the specified GOR.
@@ -115,7 +170,10 @@ The solution-gas ratio (RS) determines how much gas is dissolved in oil at a giv
 | 3 | Glaso |
 | 4 | Livia Fulchignoni |
 
-> **JSON key:** `srBpModel` (EN) · `modeloRsPb` (PT)
+> **JSON key:** `srBpModel` (EN) · `modeloRsPb` (PT) — default `0`
+
+!!! note
+    The Livia Fulchignoni model (4) is computationally expensive. Consider enabling `srBpTable` / `tabelaRSPB` to pre-build a lookup table for performance.
 
 ### Gas Critical Properties
 
@@ -123,11 +181,14 @@ Gas compressibility calculations require pseudo-critical temperature and pressur
 
 | Option | Correlation | Notes |
 |--------|-------------|-------|
-| 0 | Standard | General purpose |
-| 1 | Brown et al | Better for CO₂-rich gases |
+| 0 | Standard (inherited from Marlim2) | General purpose |
+| 1 | Brown et al | Better for CO₂-rich gases (default) |
 | 2 | Piper et al | Better for CO₂-rich gases |
 
 > **JSON key:** `criticalCorrelation` (EN) · `correlacaoCritica` (PT) — default `1`
+
+!!! note
+    For the `gasFluid` object (service line), only options 1 and 2 are valid.
 
 ### Emulsion Effects
 
@@ -144,8 +205,8 @@ When water and oil flow together, emulsions can dramatically increase apparent v
 | 6 | User table | BSW and multiplier vectors |
 | 7 | Below-saturation BSW model | — |
 
-> **JSON key:** `emulsionType` (EN) · `tipoEmulsao` (PT)
-> Additional: `emulsionCoefA` / `emulsionCoefB`, `phi100`, `bswVec` / `emulVec`, `bswInversion`
+> **JSON key:** `emulsionType` (EN) · `tipoEmul` (PT)
+> Additional: `emulsionCoefA` / `coefAModeloExp`, `emulsionCoefB` / `coefBModeloExp`, `phi100` / `PHI100`, `bswVec` / `BSWVec`, `emulVec` / `emulVec`, `bswInversion` / `bswCorte`
 
 ### Compositional Fluid Options
 
@@ -153,9 +214,23 @@ When compositional mode is active, the fluid can be defined by molar fractions o
 
 > **JSON keys:**
 >
-> - User provides composition: `userMolarFraction` (EN) · `fracaoMolarUsuario` (PT) — default `false`
-> - Molar fractions: `molarFraction` (EN) · `fracaoMolar` (PT) — array
-> - Correct composition to match GOR: `userGORComp` (EN) · `rgoCompUsuario` (PT) — default `false`
+> - User provides composition: `userMolarFraction` (EN) · `fracMolarUsuario` (PT) — default `false`
+> - Molar fractions: `molarFraction` (EN) · `fracMolar` (PT) — array
+> - Correct composition to match GOR: `userGORComp` (EN) · `RGOCompUsuario` (PT) — default `false`
+
+### Flash-Table Viscosity Override
+
+When using flash-table mode, viscosities normally come from the PVT table. However, in some cases the table viscosities may be inaccurate or unavailable for the conditions of interest. Enabling the black-oil viscosity override uses the dead-oil / live-oil / undersaturated-oil correlations instead of table values.
+
+> **JSON key:** `blackOilViscModel` (EN) · `modeloViscBlackOil` (PT) — default `0`
+> Values: `0` = use table viscosities; `1` = use black-oil viscosity correlations
+
+### Flash-Table Water/JT Override
+
+Similarly, the Joule-Thomson coefficient for the water phase can be computed from black-oil water correlations instead of using the table value.
+
+> **JSON key:** `blackOilWaterModel` (EN) · `modeloAguaBlackOil` (PT) — default `1`
+> Values: `0` = use table JT coefficient; `1` = use black-oil water correlations
 
 ---
 
@@ -177,14 +252,14 @@ The type determines how properties are computed:
 - **Water-based (1):** Only salinity is required — correlations handle the rest.
 - **Friction-reducer (2):** Like generic, but with internal friction-reduction treatment.
 
-> **JSON key:** `complementaryFluidType` (EN) · `tipoFluidoComplementar` (PT)
+> **JSON key:** `complementaryFluidType` (EN) · `tipoF` (PT)
 
 For the generic type, the following properties define the fluid:
 
-- **Density** at standard conditions [kg/m³] *(key: `density` / `densidade`)*
-- **Compressibility** [1/Pa] *(key: `compressibility` / `compressibilidade`)*
-- **Thermal expansivity** [1/K] *(key: `thermalExpansivity` / `expansividadeTermica`)*
-- **Surface tension** [N/m] *(key: `surfaceTension` / `tensaoSuperficial`)*
+- **Density** at standard conditions [kg/m³] *(key: `density` / `massaEspecifica`)*
+- **Compressibility** [1/Pa] *(key: `compressibility` / `compP`)*
+- **Thermal expansivity** [1/K] *(key: `thermalExpansivity` / `compT`)*
+- **Surface tension** [N/m] *(key: `surfaceTension` / `tensup`)*
 - **Specific heat** [J/(kg·K)] *(key: `specificHeat` / `calorEspecifico`)*
 - **Conductivity** [W/(m·K)] *(key: `conductivity` / `condutividade`)*
 - **Viscosity** via two ASTM points *(keys: `temp1`, `visc1`, `temp2`, `visc2`)*
@@ -204,10 +279,10 @@ When a service/injection gas line is present, the gas properties must be defined
 Key concepts:
 
 - **Gas relative density** — same convention as production fluid gas. *(key: `gasDensity` / `densidadeGas`)*
-- **CO₂ fraction** — molar fraction of CO₂ in the gas. *(key: `CO2Fraction` / `fracaoCO2`, default: 0)*
-- **Critical-property correlation** — `1`: Brown et al; `2`: Piper et al. *(key: `criticalCorrelation` / `correlacaoCritica`)*
-- **Flash-table usage** — whether to use the flash table for service-line gas when flash-table mode is active globally. *(key: `useFlashTable` / `usarTabelaFlash`, default: `false`)*
-- **Composition** — explicit molar fractions for compositional runs. *(keys: `userMolarFraction`, `molarFraction`)*
+- **CO₂ fraction** — molar fraction of CO₂ in the gas. *(key: `CO2Fraction` / `fracCO2`, default: 0)*
+- **Critical-property correlation** — selects the pseudo-critical correlations: `1` = Brown et al; `2` = Piper et al (both better for CO₂-rich gases). *(key: `criticalCorrelation` / `correlacaoCritica`)*
+- **Flash-table usage** — whether to use the flash table for service-line gas when flash-table mode is active globally. *(key: `useFlashTable` / `usaTabelaFlash`, default: `false`)*
+- **Composition** — explicit molar fractions for compositional runs. *(keys: `userMolarFraction` / `fracMolarUsuario`, `molarFraction` / `fracMolar`)*
 
 ---
 
@@ -238,21 +313,66 @@ By default, in-situ gas density is computed from standard-condition values. When
 
 > **JSON key:** `freeGasDensityCorrectionBO` (EN) · `correcaoDenGasLivreBlackOil` (PT) — default `false`
 
+## Latent-Heat Condensation Control
+
+In rare cases of extreme retrograde condensation (exotic compositional fluids), latent heat from condensation mass transfer can cause numerical instabilities. This flag disables latent heat specifically in condensation processes within the energy equation.
+
+> **JSON key:** `latentHeatCond` (EN) · `condlatente` (PT) — default `true` (enabled)
+
+## Dynamic Compositional Table
+
+For steady-state compositional simulations with multiple mixing zones (e.g., networks), repeating flash calculations at every iteration is expensive. When enabled, this option first runs a black-oil simulation to obtain a P-T map, then builds a posterior compositional table for each composition zone. Subsequent iterations interpolate from this table instead of computing full flashes.
+
+> **JSON key:** `dynamicTableModel` (EN) · `modeloTabelaDinamica` (PT) — default `false`
+
+## RS Pre-Table
+
+The Lívia Fulchignoni RS correlation is computationally expensive. When enabled, the simulator pre-builds a solution-gas-ratio lookup table before starting the time loop, significantly improving performance.
+
+> **JSON key:** `srBpTable` (EN) · `tabelaRSPB` (PT) — default `false`
+
+## Fluid Tracking Along the Pipeline
+
+When multiple sources inject different fluids into the same line, properties evolve along the pipeline as streams mix. Two tracking flags control whether mixing-rule updates are applied:
+
+- **GOR tracking** — updates GOR, API, and BSW along the line via mixing rules when streams merge.
+- **Gas-density tracking** — updates gas relative density and CO₂ fraction along the line.
+
+> **JSON keys:**
+>
+> - `trackGOR` (EN) · `trackRgo` (PT) — default `true`
+> - `trackGasDensity` (EN) · `trackDensidadeGas` (PT) — default `true`
+
+## Legacy Hybrid Model
+
+A legacy option that selects a hybrid black-oil model where enthalpies, phase Cps, and liquid Joule-Thomson values are read from PVTSim files while other properties remain black-oil. Superseded by the more flexible `cpModel`, `jtlModel`, and `latentHeat` options.
+
+> **JSON key:** `fluidProp` (EN) · `propFluido` (PT) — default `0` (pure black-oil); `1` = hybrid
+
 ---
 
 ## Precomputed Property Tables
 
 Computing compressibility and its derivatives at every iteration can be expensive in transient simulations. Marlim3 can pre-build interpolation tables spanning a user-defined pressure-temperature grid before the simulation starts.
 
-The grid is defined separately:
+Two boolean flags enable the table generation:
 
-> **JSON key:** `compTable` (EN) · `tabelaComp` (PT)
+- **Production-line table** — covers all declared production fluids.
+- **Service-line gas table** — covers the gas fluid.
 
-Required grid parameters:
+The grid dimensions and bounds are defined in a separate object.
 
-- **Number of points** in each dimension *(key: `numPoints` / `numPontos`)*
-- **Pressure range** [kgf/cm²] *(keys: `minPressure` / `maxPressure` · `pressaoMin` / `pressaoMax`)*
-- **Temperature range** [°C] *(keys: `minTemperature` / `maxTemperature` · `temperaturaMin` / `temperaturaMax`)*
+> **JSON key (grid object):** `compTable` (EN) · `tabela` (PT)
+>
+> **JSON key (enable for production line):** `pressureTable` (EN) · `tabP` (PT) — boolean, inside initialConfig
+>
+> **JSON key (enable for service gas):** `gasTable` (EN) · `tabG` (PT) — boolean, inside initialConfig
+
+Required grid parameters (inside `compTable` / `tabela`):
+
+- **Number of points** in each dimension *(key: `numPoints` / `nPontos`)*
+- **Pressure range** [kgf/cm²] *(keys: `minPressure` / `maxPressure` · `pressaoMinima` / `pressaoMaxima`)*
+- **Temperature range** [°C] *(keys: `minTemperature` / `maxTemperature` · `temperaturaMinima` / `temperaturaMaxima`)*
 
 !!! warning
     The grid must fully cover the expected operating envelope. Extrapolation outside the table bounds is unreliable and can cause numerical errors.
@@ -270,7 +390,7 @@ Required grid parameters:
     "cpModel": 0,
     "jtlModel": 0,
     "pressureTable": true,
-    "pvtFile": "PVT_CASE.ctm"
+    "pvtFile": "PVT_CASE.tab"
   },
   "productionFluid": [
     {
@@ -280,9 +400,13 @@ Required grid parameters:
       "gasDensity": 0.65,
       "gor": 150.0,
       "bsw": 0.10,
+      "waterDensity": 1.02,
+      "CO2Fraction": 0.03,
       "deadOilModel": 3,
       "liveOilModel": 0,
+      "undersaturatedOilModel": 0,
       "criticalCorrelation": 1,
+      "srBpModel": 0,
       "emulsionType": 0
     }
   ],
@@ -294,6 +418,28 @@ Required grid parameters:
     "minTemperature": 4.0,
     "maxTemperature": 120.0
   }
+}
+```
+
+## Example JSON (Compositional with .ctm)
+
+```json
+{
+  "initialConfig": {
+    "flashTableFluidModel": false,
+    "compositionalFluidModel": true,
+    "pvtFile": "PVT_CASE.ctm"
+  },
+  "productionFluid": [
+    {
+      "id": 0,
+      "active": true,
+      "gor": 180.0,
+      "bsw": 0.05,
+      "userMolarFraction": true,
+      "molarFraction": [0.35, 0.20, 0.15, 0.30]
+    }
+  ]
 }
 ```
 

@@ -38,7 +38,7 @@ Marlim3 simulates coupled fluid-flow and heat-transfer problems in well/pipeline
 |-----------|---------|
 | [JSON Schema Reference](reference/json-schema.md) | Complete input-file structure, field catalog, and units |
 | [Tutorials](tutorials/index.md) | Step-by-step Jupyter notebook workflows |
-| [Bilingual Support](translations.md) | English ↔ Portuguese key translation system |
+| [Bilingual Support](dev-guide/translations.md) | English ↔ Portuguese key translation system |
 
 ## Suggested Reading Order
 

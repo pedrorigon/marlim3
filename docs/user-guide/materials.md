@@ -3,6 +3,7 @@
 Materials define the thermal properties of the solid (or fluid) layers that surround the flow area. They are the bridge between geometry and temperature: they determine how fast heat moves through walls, how much energy walls can store, and ultimately how fluid temperature evolves along the system.
 
 > **JSON key:** `material` (EN) · `material` (PT) — top-level array
+> Common fields: `active` / `ativo`, `id` / `id`, `label` / `rotulo`
 
 ---
 
@@ -46,16 +47,26 @@ Standard solid: steel, concrete, polymer insulation, cement. All three thermal p
 
 A stagnant or quasi-stagnant fluid layer (e.g., a fluid-filled annulus where convection is not explicitly modeled). Properties must be provided by the user.
 
+For type 1, the following are required:
+
+- `conductivity` / `condutividade`
+- `specificHeat` / `calorEspecifico`
+- `rho` / `rho`
+- `visc` / `visc` (viscosity, cP)
+- `beta` / `beta` (thermal expansivity, 1/K)
+
 ### Water (Type 2)
 
-An internal water model computes temperature-dependent properties automatically. Only the material type needs to be specified — no manual property input is needed. Use this for completion-fluid annuli, water-filled gaps, or seawater layers.
+An internal water model is used by the simulator. Only the material type needs to be specified — no manual property input is needed. Use this for completion-fluid annuli, water-filled gaps, or seawater layers.
 
 ### Air (Type 3)
 
-An internal air model computes properties automatically. Use this for gas-filled annuli or atmospheric gaps.
+An internal air model is used by the simulator. Use this for gas-filled annuli or atmospheric gaps.
 
 > **JSON key:** `type` (EN) · `tipo` (PT)
 > Values: `0` = solid, `1` = user fluid, `2` = water, `3` = air
+
+> **JSON keys for type 1 extras:** `visc` (EN) · `visc` (PT), `beta` (EN) · `beta` (PT)
 
 !!! note
     For types 2 and 3, properties are computed internally from correlations. Only `id`, `type`, and optionally `label` need to be specified.
@@ -79,6 +90,7 @@ An internal air model computes properties automatically. Use this for gas-filled
 
 - **Realistic insulation values:** Over-optimistic conductivity (< 0.02 W/(m·°C)) strongly distorts cooldown predictions. Use manufacturer-rated wet/aged values for subsea applications.
 - **Reuse material IDs:** Define materials once in the top-level array and reference them by ID across multiple cross sections. Avoids duplication and inconsistency.
+- **Reference in cross sections:** Layers reference materials by ID (`materialId` in EN JSON, `idMaterial` in PT JSON).
 - **Completion fluids:** Use `type: 2` (water) for water-based completion-fluid annuli rather than manually specifying properties.
 - **Unit consistency:** All values follow the schema convention (SI-like: W/(m·°C), J/(kg·°C), kg/m³).
 
@@ -110,11 +122,22 @@ An internal air model computes properties automatically. Use this for gas-filled
     {
       "id": 2,
       "active": true,
+      "label": "Annulus test fluid",
+      "type": 1,
+      "conductivity": 0.12,
+      "specificHeat": 2200.0,
+      "rho": 980.0,
+      "visc": 12.0,
+      "beta": 0.00045
+    },
+    {
+      "id": 3,
+      "active": true,
       "label": "Completion fluid",
       "type": 2
     },
     {
-      "id": 3,
+      "id": 4,
       "active": true,
       "label": "Cement",
       "type": 0,

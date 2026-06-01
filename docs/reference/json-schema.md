@@ -16,7 +16,7 @@ Marlim3 uses JSON input files to define simulations. Two schema variants are ava
 
 Marlim3 accepts both English and Portuguese keys at all levels. When the root-level key `"language": "en"` is present, the C++ engine translates English keys to Portuguese internally. The Python API always stores data in English and can export in either language via `to_json(language='pt')`.
 
-See [Bilingual Support](../translations.md) for the full key-mapping reference.
+See [Bilingual Support](../dev-guide/translations.md) for the full key-mapping reference.
 
 ## Top-Level Structure
 
