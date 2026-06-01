@@ -175,8 +175,20 @@ def schema_tramo_fields(schema_tramo):
 
 
 @pytest.fixture(scope="module")
+def schema_tramo_paths(schema_tramo):
+    """Dict mapping field_name -> list of full paths in schema_tramo."""
+    return extract_schema_fields_recursive(schema_tramo)
+
+
+@pytest.fixture(scope="module")
 def schema_branch_fields(schema_branch):
     return extract_schema_field_set(schema_branch)
+
+
+@pytest.fixture(scope="module")
+def schema_branch_paths(schema_branch):
+    """Dict mapping field_name -> list of full paths in schema_branch."""
+    return extract_schema_fields_recursive(schema_branch)
 
 
 # ============================================================================
@@ -200,7 +212,9 @@ class TestCppVsSchema:
                 stacklevel=1,
             )
 
-    def test_schema_fields_not_read_by_cpp(self, cpp_fields, schema_tramo_fields):
+    def test_schema_fields_not_read_by_cpp(
+        self, cpp_fields, schema_tramo_fields, schema_tramo_paths
+    ):
         """Warn about fields in schema_tramo.json not read by C++ engine."""
         # Known exceptions: metadata or documentation-only fields
         known_exceptions = {
@@ -208,9 +222,13 @@ class TestCppVsSchema:
         }
         not_read = schema_tramo_fields - cpp_fields - known_exceptions
         if not_read:
+            lines = []
+            for field in sorted(not_read):
+                paths = schema_tramo_paths.get(field, [field])
+                lines.append(f"{field}  ({', '.join(paths)})")
             warnings.warn(
                 f"Fields in schema_tramo.json NOT read by C++ engine "
-                f"({len(not_read)}):\n  " + "\n  ".join(sorted(not_read)),
+                f"({len(not_read)}):\n  " + "\n  ".join(lines),
                 stacklevel=1,
             )
 
@@ -218,7 +236,9 @@ class TestCppVsSchema:
 class TestTranslationsCoverage:
     """Check that translations.json covers all schema_tramo.json fields."""
 
-    def test_schema_fields_untranslated(self, schema_tramo_fields, translations):
+    def test_schema_fields_untranslated(
+        self, schema_tramo_fields, schema_tramo_paths, translations
+    ):
         """Warn about schema_tramo.json fields not found in translations.json."""
         # translations["keys"] maps EN -> PT; we need the PT values to check coverage
         pt_values = set(translations["keys"].values())
@@ -233,10 +253,14 @@ class TestTranslationsCoverage:
                 untranslated.add(field)
 
         if untranslated:
+            lines = []
+            for field in sorted(untranslated):
+                paths = schema_tramo_paths.get(field, [field])
+                lines.append(f"{field}  ({', '.join(paths)})")
             warnings.warn(
                 f"Fields in schema_tramo.json WITHOUT translation in "
                 f"translations.json ({len(untranslated)}):\n  "
-                + "\n  ".join(sorted(untranslated)),
+                + "\n  ".join(lines),
                 stacklevel=1,
             )
 
@@ -245,7 +269,7 @@ class TestSchemaBranchConsistency:
     """Check schema_branch.json consistency with schema_tramo.json + translations."""
 
     def test_branch_fields_match_translations(
-        self, schema_branch_fields, schema_tramo_fields, translations
+        self, schema_branch_fields, schema_branch_paths, schema_tramo_fields, translations
     ):
         """Warn about schema_branch.json fields that don't correspond to any
         English key in translations.json or that map to a PT key not in
@@ -261,37 +285,44 @@ class TestSchemaBranchConsistency:
         unknown_en_fields -= meta_keys
 
         if unknown_en_fields:
+            lines = []
+            for field in sorted(unknown_en_fields):
+                paths = schema_branch_paths.get(field, [field])
+                lines.append(f"{field}  ({', '.join(paths)})")
             warnings.warn(
                 f"Fields in schema_branch.json NOT recognized as English keys "
                 f"in translations.json ({len(unknown_en_fields)}):\n  "
-                + "\n  ".join(sorted(unknown_en_fields)),
+                + "\n  ".join(lines),
                 stacklevel=1,
             )
 
     def test_branch_translated_fields_in_schema_tramo(
-        self, schema_branch_fields, schema_tramo_fields, translations
+        self, schema_branch_fields, schema_branch_paths, schema_tramo_fields, translations
     ):
         """Warn about EN fields in schema_branch whose PT equivalent is missing
         from schema_tramo.json.
         """
         en_to_pt = translations["keys"]
         missing_pt = []
-        for en_field in schema_branch_fields:
+        for en_field in sorted(schema_branch_fields):
             if en_field in en_to_pt:
                 pt_field = en_to_pt[en_field]
                 if pt_field not in schema_tramo_fields:
-                    missing_pt.append(f"{en_field} -> {pt_field}")
+                    paths = schema_branch_paths.get(en_field, [en_field])
+                    missing_pt.append(
+                        f"{en_field} -> {pt_field}  ({', '.join(paths)})"
+                    )
 
         if missing_pt:
             warnings.warn(
                 f"Fields in schema_branch.json whose PT translation is NOT in "
                 f"schema_tramo.json ({len(missing_pt)}):\n  "
-                + "\n  ".join(sorted(missing_pt)),
+                + "\n  ".join(missing_pt),
                 stacklevel=1,
             )
 
     def test_schema_tramo_fields_in_branch(
-        self, schema_branch_fields, schema_tramo_fields, translations
+        self, schema_branch_fields, schema_tramo_fields, schema_tramo_paths, translations
     ):
         """Warn about schema_tramo.json fields that have a translation but are
         missing from schema_branch.json.
@@ -299,17 +330,20 @@ class TestSchemaBranchConsistency:
         pt_to_en = {v: k for k, v in translations["keys"].items()}
 
         missing_from_branch = []
-        for pt_field in schema_tramo_fields:
+        for pt_field in sorted(schema_tramo_fields):
             if pt_field in pt_to_en:
                 en_field = pt_to_en[pt_field]
                 if en_field not in schema_branch_fields:
-                    missing_from_branch.append(f"{pt_field} -> {en_field}")
+                    paths = schema_tramo_paths.get(pt_field, [pt_field])
+                    missing_from_branch.append(
+                        f"{pt_field} -> {en_field}  ({', '.join(paths)})"
+                    )
 
         if missing_from_branch:
             warnings.warn(
                 f"Fields in schema_tramo.json (with translation) NOT present in "
                 f"schema_branch.json ({len(missing_from_branch)}):\n  "
-                + "\n  ".join(sorted(missing_from_branch)),
+                + "\n  ".join(missing_from_branch),
                 stacklevel=1,
             )
 
