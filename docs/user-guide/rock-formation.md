@@ -1,62 +1,83 @@
 # Rock Formation
 
-Formation properties control long-term thermal interactions between the wellbore/pipeline and surrounding geological media.
+The formation surrounding a wellbore or buried pipeline acts as a large thermal reservoir. Heat diffuses into (or from) the rock during production, and this exchange controls long-term thermal behavior: cooldown rates during shutdowns, warmup during restarts, and steady-state temperature profiles in deep wells.
 
-## Why Formation Matters
+> **JSON key:** `initialConfig.formation` (EN) · `configuracaoInicial.formacao` (PT)
 
-Transient thermal response extends beyond the pipe wall. Heat diffuses into surrounding rock, which acts as a large thermal reservoir. This determines:
+---
 
-- **Cooldown rate** during shutdowns (formation supplies or absorbs heat)
-- **Warmup behavior** during restarts
-- **Steady-state temperature profiles** in deep wells (geothermal gradient coupling)
+## Prior Production Time
 
-The formation model in Marlim3 uses an analytical/numerical approach based on prior production time to estimate the thermally disturbed radius around the wellbore.
+The formation around a producing well is not at virgin temperature — years of production have heated a radial zone around the wellbore. The **production time** estimates the radius of this thermally disturbed region. A wider heated zone means the near-wellbore formation is warmer and cooldown starts from a higher baseline.
 
-## Configuration
+- **Short production time** (new well, 1–30 days): Small heated zone → rapid initial cooldown.
+- **Long production time** (mature well, 365+ days): Wide heated zone → more thermal inertia → slower cooldown.
 
-Formation properties are defined inside `initialConfig.formation`:
+> **JSON key:** `productionTime` (EN) · `tempoProducao` (PT) — unit: days
 
-```json
-"initialConfig": {
-  "formation": {
-    "productionTime": 365,
-    "properties": [...]
-  }
-}
-```
+---
 
-Each pipe segment references a formation entry via `formationId`.
+## Formation Thermal Properties
 
-## Key Parameters
+Each formation zone is characterized by three properties that together determine heat conduction and storage:
 
-| Field | Unit | Meaning | Impact |
-|-------|------|---------|--------|
-| `productionTime` | days | Prior continuous operating duration | Longer time → wider heated zone → milder initial cooldown rates |
-| `conductivity` | W/(m·°C) | Heat propagation speed in rock | Higher → faster heat dissipation to formation |
-| `specificHeat` | J/(kg·°C) | Thermal storage capacity per unit mass | Higher → more thermal inertia |
-| `density` | kg/m³ | Rock mass density | Higher → more thermal inertia |
+### Thermal Conductivity
 
-**Thermal diffusivity** $\alpha = k / (\rho \cdot C_p)$ governs how fast the thermal front advances into the formation.
+How easily heat flows through the rock. Higher conductivity means heat dissipates faster from the wellbore into the far field, leading to more heat loss during steady production but also faster thermal equilibration.
+
+> **JSON key:** `conductivity` (EN) · `condutividade` (PT) — unit: W/(m·°C)
+
+### Specific Heat
+
+How much energy the rock can absorb per unit mass per degree of temperature change. Higher specific heat means the formation stores more energy and responds more slowly to temperature changes.
+
+> **JSON key:** `specificHeat` (EN) · `calorEspecifico` (PT) — unit: J/(kg·°C)
+
+### Density
+
+Rock mass density. Together with specific heat, determines the volumetric heat capacity ($\rho \cdot C_p$) — the energy stored per unit volume per degree.
+
+> **JSON key:** `density` (EN) · `densidade` (PT) — unit: kg/m³
+
+### Thermal Diffusivity
+
+The combination $\alpha = k / (\rho \cdot C_p)$ is the thermal diffusivity of the formation. It governs how fast temperature fronts propagate into the rock:
+
+- High diffusivity (e.g., salt): temperature changes penetrate deep, quickly.
+- Low diffusivity (e.g., shale): temperature changes are confined near the wellbore.
+
+---
+
+## Multiple Formation Zones
+
+Different lithologies along a well or pipeline are represented by multiple formation entries, each with its own ID. Pipe segments reference the appropriate formation via their formation ID, allowing property variation with depth or position.
+
+> **JSON key:** `properties` (EN) · `propriedades` (PT) — array inside formation object
+> Each element has: `id`, `conductivity`, `specificHeat`, `density`
+
+---
 
 ## Common Rock Properties
 
-| Rock type | `conductivity` | `specificHeat` | `density` |
-|-----------|---------------|---------------|-----------|
+| Rock type | Conductivity [W/(m·°C)] | Specific Heat [J/(kg·°C)] | Density [kg/m³] |
+|-----------|------------------------|--------------------------|-----------------|
 | Sandstone | 2.0–4.0 | 800–1000 | 2200–2600 |
 | Shale | 1.0–2.5 | 800–1000 | 2300–2700 |
 | Limestone | 2.5–3.5 | 850–950 | 2500–2700 |
 | Salt | 5.0–6.0 | 850 | 2200 |
 
-## Modeling Guidance
+---
 
-- **Depth consistency:** Use lithology-appropriate properties at each depth zone. Assign different `formationId` values to pipe segments crossing different rock layers.
-- **Avoid underestimation:** Unrealistically low conductivity exaggerates thermal insulation from the formation, leading to optimistic cooldown predictions.
-- **Production time calibration:** For new wells, use a short `productionTime` (e.g., 1–30 days). For mature wells, use actual production history (e.g., 365+ days). This significantly affects early transient thermal behavior.
-- **ID synchronization:** Each `productionPipe` segment with `environment = 0` (buried/formation) should have a valid `formationId` pointing to an entry in the `properties` array.
+## Practical Guidance
 
-## Example JSON
+- **Depth consistency:** Assign different formation IDs to pipe segments crossing different rock layers. A sandstone reservoir section and a shale overburden section should have distinct properties.
+- **Avoid underestimation:** Unrealistically low conductivity exaggerates insulation from the formation, leading to optimistic (slow) cooldown predictions.
+- **Production-time sensitivity:** For cooldown studies, production time interacts strongly with formation conductivity. Vary both together to understand sensitivity.
+- **Pipeline vs. well:** For buried pipelines, formation represents the surrounding soil. For exposed subsea lines, formation is not used — set the pipe environment to water or atmosphere instead.
 
-### Single Formation
+---
+
+## Example: Single Formation
 
 ```json
 {
@@ -77,7 +98,7 @@ Each pipe segment references a formation entry via `formationId`.
 }
 ```
 
-### Multiple Formation Zones
+## Example: Multiple Formation Zones
 
 ```json
 {
@@ -106,4 +127,4 @@ Each pipe segment references a formation entry via `formationId`.
 ```
 
 !!! tip
-    For cooldown sensitivity studies, vary `productionTime` and formation `conductivity` together — they interact strongly in determining early thermal transient rates.
+    For cooldown sensitivity studies, vary production time and formation conductivity together — they interact strongly in determining early thermal transient rates.

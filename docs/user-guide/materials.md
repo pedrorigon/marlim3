@@ -1,54 +1,88 @@
 # Materials
 
-Materials define the thermal properties of solid layers and media used in heat-transfer calculations between the flowing fluid, pipe wall, and surrounding environment.
+Materials define the thermal properties of the solid (or fluid) layers that surround the flow area. They are the bridge between geometry and temperature: they determine how fast heat moves through walls, how much energy walls can store, and ultimately how fluid temperature evolves along the system.
 
-## Concept
+> **JSON key:** `material` (EN) · `material` (PT) — top-level array
 
-Marlim3 computes radial heat conduction through concentric layers (defined in `crossSection`). Each layer references a `material` entry that provides thermal conductivity, heat capacity, and density. These properties determine:
+---
 
-- How quickly heat penetrates the wall (thermal diffusivity = k / (ρ·Cp))
-- How much energy the wall can store (thermal inertia = ρ·Cp·V)
-- The equilibrium temperature profile across layers
+## Thermal Conductivity
+
+Conductivity describes how easily heat flows through the material by conduction. High conductivity means the material transmits heat quickly (e.g., steel); low conductivity means the material resists heat flow (e.g., insulation foam).
+
+In practice, conductivity controls the **steady-state temperature gradient** across a layer: higher conductivity → smaller temperature difference across the layer.
+
+> **JSON key:** `conductivity` (EN) · `condutividade` (PT) — unit: W/(m·°C)
+
+## Specific Heat
+
+Specific heat describes how much energy is needed to raise the temperature of one kilogram of the material by one degree. Materials with high specific heat absorb more energy before their temperature changes.
+
+In practice, specific heat (together with density) controls the **thermal inertia** — how long it takes for temperature changes to propagate through the layer during transient events (cooldown, warmup, restart).
+
+> **JSON key:** `specificHeat` (EN) · `calorEspecifico` (PT) — unit: J/(kg·°C)
+
+## Density
+
+Mass density contributes to thermal inertia. Combined with specific heat, it determines the volumetric heat capacity ($\rho \cdot C_p$) — the energy stored per unit volume per degree.
+
+> **JSON key:** `rho` (EN) · `rho` (PT) — unit: kg/m³
+
+## Thermal Diffusivity
+
+The combination $\alpha = k / (\rho \cdot C_p)$ is the thermal diffusivity — it governs how fast temperature fronts propagate through the material. High diffusivity means rapid equilibration; low diffusivity means slow response.
+
+---
 
 ## Material Types
 
-| `type` | Meaning | Required properties |
-|--------|---------|---------------------|
-| `0` | Solid (steel, concrete, polymer insulation, cement) | `conductivity`, `specificHeat`, `rho` |
-| `1` | User-defined fluid-like layer (stagnant fluid annulus) | `conductivity`, `specificHeat`, `rho` |
-| `2` | Water (properties computed internally from correlations) | None (auto-computed) |
-| `3` | Air (properties computed internally from correlations) | None (auto-computed) |
+Not all layers are solids with user-specified properties. Marlim3 supports four material types:
+
+### Solid Material (Type 0)
+
+Standard solid: steel, concrete, polymer insulation, cement. All three thermal properties (conductivity, specific heat, density) must be specified.
+
+### User-Defined Fluid Layer (Type 1)
+
+A stagnant or quasi-stagnant fluid layer (e.g., a fluid-filled annulus where convection is not explicitly modeled). Properties must be provided by the user.
+
+### Water (Type 2)
+
+An internal water model computes temperature-dependent properties automatically. Only the material type needs to be specified — no manual property input is needed. Use this for completion-fluid annuli, water-filled gaps, or seawater layers.
+
+### Air (Type 3)
+
+An internal air model computes properties automatically. Use this for gas-filled annuli or atmospheric gaps.
+
+> **JSON key:** `type` (EN) · `tipo` (PT)
+> Values: `0` = solid, `1` = user fluid, `2` = water, `3` = air
 
 !!! note
-    For types `2` and `3`, internal correlations provide temperature-dependent properties. Only `id`, `type`, and optionally `label` need to be specified.
+    For types 2 and 3, properties are computed internally from correlations. Only `id`, `type`, and optionally `label` need to be specified.
 
-## Key Thermal Properties (Type 0 and 1)
+---
 
-| Property | Unit | Physical interpretation | Typical range |
-|----------|------|-------------------------|---------------|
-| `conductivity` | W/(m·°C) | Rate of heat flow through the material | Steel: 50; PU foam: 0.03; Cement: 0.6 |
-| `specificHeat` | J/(kg·°C) | Energy to raise 1 kg by 1°C | Steel: 500; Insulation: 1500; Cement: 1000 |
-| `rho` | kg/m³ | Mass density (thermal mass contribution) | Steel: 7800; PU foam: 60; Cement: 500–2000 |
+## Common Material Properties
 
-**Thermal diffusivity** $\alpha = k / (\rho \cdot C_p)$ controls how fast temperature fronts propagate. High-conductivity, low-density materials equilibrate faster.
+| Material | Conductivity [W/(m·°C)] | Specific Heat [J/(kg·°C)] | Density [kg/m³] |
+|----------|------------------------|--------------------------|-----------------|
+| Carbon steel | 50 | 500 | 7800 |
+| Stainless steel | 15 | 500 | 8000 |
+| PU insulation (foam) | 0.03 | 1500 | 60 |
+| Polypropylene (solid) | 0.22 | 1800 | 900 |
+| Cement | 0.6 | 1000 | 500–2000 |
+| Concrete weight coating | 1.5 | 880 | 2300 |
 
-## Common Material Library
+---
 
-| Material | `conductivity` | `specificHeat` | `rho` | Notes |
-|----------|---------------|---------------|-------|-------|
-| Carbon steel | 50 | 500 | 7800 | — |
-| Stainless steel | 15 | 500 | 8000 | — |
-| PU insulation | 0.03 | 1500 | 60 | Sensitive to water ingress |
-| Polypropylene | 0.22 | 1800 | 900 | Solid insulation |
-| Cement | 0.6 | 1000 | 500–2000 | Varies with formulation |
-| Concrete coating | 1.5 | 880 | 2300 | Weight coating |
+## Practical Guidance
 
-## Engineering Guidance
+- **Realistic insulation values:** Over-optimistic conductivity (< 0.02 W/(m·°C)) strongly distorts cooldown predictions. Use manufacturer-rated wet/aged values for subsea applications.
+- **Reuse material IDs:** Define materials once in the top-level array and reference them by ID across multiple cross sections. Avoids duplication and inconsistency.
+- **Completion fluids:** Use `type: 2` (water) for water-based completion-fluid annuli rather than manually specifying properties.
+- **Unit consistency:** All values follow the schema convention (SI-like: W/(m·°C), J/(kg·°C), kg/m³).
 
-- **Consistent units:** All values use SI convention as per schema (W/(m·°C), J/(kg·°C), kg/m³).
-- **Realistic insulation:** Over-optimistic insulation conductivity (< 0.02 W/(m·°C)) strongly distorts cooldown predictions. Use manufacturer-rated wet values for subsea applications.
-- **Reuse material IDs:** Share material definitions across cross sections to avoid duplication and inconsistency. A single material array serves the entire model.
-- **Completion fluids:** Use `type: 2` (water) for completion-fluid annuli rather than manually specifying water properties.
+---
 
 ## Example JSON
 
@@ -93,4 +127,4 @@ Marlim3 computes radial heat conduction through concentric layers (defined in `c
 ```
 
 !!! tip
-    For cooldown and restart studies, verify that insulation and cement conductivity values reflect actual field conditions (aged, wet, or damaged), not ideal lab values.
+    For cooldown and restart studies, verify that insulation and cement conductivity values reflect actual field conditions (aged, wet, or damaged), not ideal laboratory values.

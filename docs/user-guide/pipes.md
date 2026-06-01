@@ -1,82 +1,125 @@
 # Pipes
 
-This section defines the axial geometry of the production and service lines solved by Marlim3.
+Pipes define the axial geometry of the system — the path along which the 1D conservation equations are solved. Each pipe is composed of segments, and each segment is discretized into computational cells where mass, momentum, and energy balances are evaluated.
 
-## Concept
+---
 
-Each pipe is discretized into a sequence of axial segments. For each segment, the solver needs:
+## Production and Service Lines
 
-- **Geometry:** Radial structure (via `crossSectionId`), inclination, and length.
-- **Thermal environment:** External temperature and formation properties.
-- **Discretization:** Cell count and cell lengths that control numerical resolution.
+Two parallel line families can exist in a model:
 
-Two line families exist in the model:
+- **Production line** — the main multiphase flow path (wellbore, riser, flowline, pipeline). Always present.
+- **Service line** — a secondary line for gas injection or gas circulation (gas-lift systems). Present only when the service-line feature is enabled in global settings.
 
-| Line | Object | Purpose |
-|------|--------|---------|
-| Production line | `productionPipe` | Main multiphase flow path (wellbore, riser, flowline) |
-| Service line | `servicePipe` | Gas injection/service line (when `initialConfig.gasLine = true`) |
+> **JSON keys:**
+>
+> - Production: `productionPipe` (EN) · `dutosProducao` (PT) — array of segments
+> - Service: `servicePipe` (EN) · `dutosServico` (PT) — array of segments
 
-## Segment-Level Fields
+---
 
-| Field | Unit | Purpose |
-|-------|------|---------|
-| `id` | — | Segment identifier |
-| `active` | — | Whether this segment is part of the simulation |
-| `crossSectionId` | — | Links to radial geometry and roughness |
-| `formationId` | — | Links to surrounding formation thermal properties |
-| `inclination` | deg | Pipe inclination from horizontal (positive = upward flow); used when `xyMode = false` |
-| `angle` | rad | Alternative inclination in radians (Python API convention) |
-| `externalTemperature` | °C | Ambient/sea/formation temperature at this segment |
-| `environment` | int | External environment type (`0`: buried/formation; `1`: water; `2`: atmosphere) |
+## Pipe Inclination and Gravity
 
-## Coordinate Strategies
+Inclination determines the hydrostatic pressure component — the dominant pressure contribution in vertical wells and risers. It also affects flow-pattern transitions (stratified flow only occurs at near-horizontal inclinations).
 
-Marlim3 supports two equivalent geometry definitions:
+Two approaches exist:
 
-### 1. Direct Inclination (`xyMode = false`, default)
+### Direct Angle Specification
 
-Each segment specifies its inclination angle directly. This is the simplest approach for conceptual models.
+Each segment declares its inclination directly. Positive angles mean upward flow; negative means downward flow. Zero is horizontal.
 
-### 2. XY-Based Reconstruction (`xyMode = true`)
+> **JSON key:** `inclination` (EN) · `inclinacao` (PT) — unit: degrees (from horizontal)
+> Python API alternative: `angle` — unit: radians
 
-Inclinations are computed from endpoint coordinates. Requires:
+### Coordinate-Based Reconstruction (XY Mode)
 
-- `initialConfig.xProdStart`, `initialConfig.yProdStart` (production line start)
-- `initialConfig.xServiceStart`, `initialConfig.yServiceStart` (service line, if present)
-- Each segment provides endpoint XY coordinates
+Instead of specifying angles, you provide endpoint coordinates for each segment. The simulator computes inclinations from the geometry. This is natural when working from well-survey or pipeline-route data.
 
-Use XY mode when trajectory data comes from well surveys or pipeline route coordinates.
+> See [General](general.md) for XY-mode configuration.
 
-## Discretization
+---
 
-Discretization controls numerical resolution, gradient capture, and runtime cost:
+## Radial Structure (Cross-Section Reference)
 
-| Approach | Fields | When to use |
-|----------|--------|-------------|
-| Grouped cells | `grouping: true`, array of `{numCells, length}` | Uniform segments (most common) |
-| Explicit cells | `grouping: false`, explicit `dx` arrays | Non-uniform mesh refinement |
+Each pipe segment references a cross section (by integer ID) that defines its internal diameter, roughness, and concentric wall layers. Multiple segments can share the same cross section.
 
-**Trade-offs:**
+> **JSON key:** `crossSectionId` (EN) · `idSecaoTransversal` (PT)
 
-- **Fine mesh** (small cells): Better thermal/pressure gradient resolution, more accurate wave propagation, higher runtime.
-- **Coarse mesh** (large cells): Faster execution, less local detail, adequate for screening studies.
+---
 
-**Rule of thumb:** Start with 10–20 m cell length for flowlines, 5–10 m for risers and wellbores where gradients are steeper.
+## Thermal Environment
 
-## Initial Conditions Along the Pipe
+Each pipe segment has an external thermal boundary condition defined by:
 
-Each pipe segment can carry initial-condition profiles:
+### External Temperature
 
-| Field | Description |
-|-------|-------------|
-| `initialConditions.measuredPosition` | Normalized positions (0–1) along segment |
-| `initialConditions.ambientTemp` | External temperature profile [°C] |
-| `initialConditions.ambientVel` | External convection velocity [m/s] |
+The temperature of the medium surrounding the pipe at this segment's position. For subsea flowlines this is seawater temperature; for wellbores it may follow a geothermal gradient.
 
-## Example JSON
+> **JSON key:** `externalTemperature` (EN) · `temperaturaExterna` (PT) — unit: °C
 
-### Simple Horizontal Pipeline
+### Environment Type
+
+The nature of the external medium affects the heat-transfer coefficient at the outer boundary:
+
+- **Buried / formation (0)** — heat conducts into surrounding rock (uses formation model).
+- **Water (1)** — external convection by seawater or river water.
+- **Atmosphere (2)** — external convection by air.
+
+> **JSON key:** `environment` (EN) · `ambiente` (PT)
+> Values: `0` = buried, `1` = water, `2` = atmosphere
+
+### Formation Reference
+
+For buried segments, a formation ID links to the formation thermal properties (conductivity, density, specific heat) that control long-term heat exchange.
+
+> **JSON key:** `formationId` (EN) · `idFormacao` (PT)
+
+### Variable External Conditions
+
+When ambient temperature or external convection velocity varies along a segment, initial-condition profiles can be specified at normalized positions (0 to 1):
+
+- **Ambient temperature profile** — external temperature distribution along the segment.
+- **External velocity** — convection velocity of the surrounding medium (seawater current, wind speed).
+
+> **JSON keys (inside `initialConditions`):**
+>
+> - Position: `measuredPosition` (EN) · `posicaoMedida` (PT)
+> - Temperature: `ambientTemp` (EN) · `temperaturaAmbiente` (PT) — unit: °C
+> - Velocity: `ambientVel` (EN) · `velocidadeAmbiente` (PT) — unit: m/s
+
+---
+
+## Discretization (Mesh)
+
+Each pipe segment is subdivided into computational cells. The cell length determines numerical resolution:
+
+- **Fine mesh** (small cells): Better resolution of thermal/pressure gradients and wave propagation. Higher computational cost.
+- **Coarse mesh** (large cells): Faster execution, adequate for screening and steady-state validation. Less local detail in transient mode.
+
+### Grouped Cells (Recommended)
+
+Define blocks of uniform cells with a given count and individual cell length. Multiple blocks can compose a segment with variable resolution.
+
+> **JSON keys:** `grouping: true`, then `discretization` array with objects containing:
+>
+> - `numCells` (EN) · `numCelulas` (PT) — number of cells in this block
+> - `length` (EN) · `comprimento` (PT) — individual cell length [m]
+
+### Explicit Cells
+
+For non-uniform meshes, provide explicit cell-length arrays directly.
+
+> **JSON key:** `grouping: false`, with explicit `dx` vectors
+
+**Rules of thumb:**
+
+- Flowlines: 10–20 m cells for general studies.
+- Risers and wellbores: 5–10 m cells where gradients are steeper.
+- Near accessories (valves, pumps, ESPs): consider local refinement.
+
+---
+
+## Example: Simple Horizontal Pipeline
 
 ```json
 {
@@ -102,7 +145,7 @@ Each pipe segment can carry initial-condition profiles:
 }
 ```
 
-### Multi-Segment Well (Vertical + Horizontal)
+## Example: Multi-Segment Well (Vertical + Horizontal)
 
 ```json
 {

@@ -1,99 +1,125 @@
 # Time
 
-Time configuration controls how the simulator initializes state, advances in time, and stores intermediate results.
+Time configuration governs three fundamental aspects of a transient simulation: how the initial state is constructed, how the solver advances through time, and when intermediate results are stored for restart or analysis.
 
-## Concept
+---
 
-Transient simulations require two fundamental decisions:
+## Steady-State vs. Transient Mode
 
-1. **Initialization:** How to define the starting state (from scratch, from steady-state, or from a previous snapshot).
-2. **Time-stepping:** How large each time step is allowed to be during evolution, balancing accuracy against runtime.
+The simulation mode determines whether the solver computes a single equilibrium state or evolves the system through time:
 
-These decisions strongly influence stability, runtime, and physical fidelity of results.
+- **Steady-state:** Solves for the equilibrium condition given fixed boundary values. No time evolution — produces spatial profiles only.
+- **Transient:** Advances the conservation equations in time, capturing dynamic phenomena (startup, shutdown, slugging, valve events).
 
-## Core Fields
+> **JSON key:** `transient` (EN) · `transiente` (PT) — inside global config, default `false`
 
-| Field | Type | Default | Meaning |
-|-------|------|---------|---------|
-| `initialConfig.transient` | bool | `false` | `true` = transient simulation; `false` = steady-state only |
-| `initialConfig.initialCondition` | int | `1` | Initialization strategy selector (see below) |
-| `initialConfig.initialFluidId` | int | `0` | Fluid ID that initially fills the production line |
-| `time.finalTime` | number | — | End of simulation horizon [s] |
+---
 
-## Initialization Strategies
+## Initialization Strategy
 
-| Code | Strategy | When to use |
-|------|----------|-------------|
-| `0` | User-defined initial state | Controlled academic/synthetic scenarios with known initial profiles |
-| `1` | Start from steady-state solution | **Most common.** Natural starting point for transient field studies |
-| `2` | Load from snapshot file (`.snp`) | Restart and continuation studies from a previous simulation |
-| `3` | Gas-lift unloading setup | Specialized unloading analyses with gas/liquid interface positions |
+Every transient simulation starts from an initial condition. The strategy determines where this initial state comes from:
 
-### Strategy 0: User-Defined
+### From Steady-State Solution (Strategy 1 — Recommended)
 
-Requires specifying initial pressure, temperature, and holdup profiles along the pipe. Useful for benchmarking and verification.
+The solver first converges a steady-state solution using the boundary conditions at time zero, then uses that result as the starting point for transient evolution. This ensures physical consistency and is the most common approach.
 
-### Strategy 1: Steady-State Initialization (Recommended)
+### From User-Defined State (Strategy 0)
 
-The solver first converges a steady-state solution with the initial boundary conditions, then uses that as the transient starting point. This ensures physical consistency.
+The user provides explicit initial profiles (pressure, temperature, holdup) along the pipe. Useful for academic benchmarks, synthetic test cases, and controlled verification scenarios.
 
-### Strategy 2: Snapshot Restart
+### From Snapshot File (Strategy 2)
 
-Loads a binary `.snp` file (saved from a previous run) to continue a simulation. Requires `initialConfig.snapshotFile` to specify the file name.
+Loads a binary restart file (`.snp`) saved from a previous simulation. This enables continuation studies: run a shutdown for 1 hour, save a snapshot, then later resume from that state with different conditions.
 
-### Strategy 3: Gas-Lift Unloading
+A snapshot file name must be provided.
 
-Specialized mode that sets up a gas/completion-fluid interface at specified positions for unloading simulation. Additional fields become relevant:
+> **JSON key (snapshot file):** `snapshotFile` (EN) · `SnapShotArq` (PT)
 
-| Field | Unit | Meaning |
-|-------|------|---------|
-| `initialConfig.gasLineInterfaceLength` | m | Interface position in service line (from platform) |
-| `initialConfig.prodLineInterfaceLength` | m | Interface position in production line (from platform) |
-| `initialConfig.fluidSalinity` | g/(kg water) | Completion-fluid salinity |
-| `initialConfig.dischargeControl` | bool | Enable automatic erosion-velocity-limited unloading |
+### Gas-Lift Unloading (Strategy 3)
+
+A specialized mode for gas-lift unloading analysis. It sets up a system with gas/completion-fluid interfaces at specified measured-length positions in both production and service lines, then evolves the unloading process.
+
+Additional settings become relevant:
+
+- **Gas-line interface position** — where the gas/fluid interface sits in the service line [m].
+- **Production-line interface position** — where the gas/fluid interface sits in the production line [m].
+- **Completion-fluid salinity** — for property estimation of the completion brine [g/(kg water)].
+- **Discharge control** — when enabled, automatically regulates gas injection to avoid erosional velocities at gas-lift valves during unloading.
+
+> **JSON keys (unloading):**
+>
+> - Gas-line interface: `gasLineInterfaceLength` (EN) · `comprimentoMedidoInterfaceLinhaGas` (PT)
+> - Production interface: `prodLineInterfaceLength` (EN) · `comprimentoMedidoInterfaceLinhaProd` (PT)
+> - Salinity: `fluidSalinity` (EN) · `SalinidadeFluido` (PT)
+> - Control: `dischargeControl` (EN) · `controleDescarga` (PT)
+
+> **JSON key (strategy selector):** `initialCondition` (EN) · `condicaoInicial` (PT) — default `1`
+> Values: `0` = user-defined, `1` = steady-state, `2` = snapshot, `3` = unloading
+
+---
+
+## Initial Fluid Assignment
+
+When initializing from user-defined conditions (strategy 0), the production line is filled with a specific fluid from the production-fluid array.
+
+> **JSON key:** `initialFluidId` (EN) · `iniFluidoP` (PT) — default `0`
+
+---
+
+## Simulation Horizon
+
+The total duration of the transient simulation, measured from time zero.
+
+> **JSON key:** `finalTime` (EN) · `tempoFinal` (PT) — unit: seconds, inside the time object
+
+---
 
 ## Time-Step Scheduling
 
-The `time` object defines a piecewise schedule for the maximum allowed time step:
+The transient solver uses adaptive time stepping bounded by a user-defined maximum. A **piecewise schedule** defines how this maximum evolves over time:
 
-| Field | Unit | Description |
-|-------|------|-------------|
-| `time.times` | s | Breakpoints defining time-step schedule |
-| `time.maxDT` | s | Maximum allowed Δt in each interval |
-| `time.finalTime` | s | Simulation end time |
-
-The schedule works as follows: between `times[i]` and `times[i+1]`, the maximum time step is `maxDT[i]`. The actual step may be smaller due to internal stability criteria (CFL, holdup oscillation, valve events, etc.).
+- Between breakpoint `times[i]` and `times[i+1]`, the maximum allowed time step is `maxDT[i]`.
+- The actual step may be smaller due to internal stability criteria (CFL condition, holdup oscillation penalization, valve events, sonic constraints, etc.).
 
 **Design principles:**
 
-- Use small `maxDT` early to capture fast startup transients.
-- Relax `maxDT` at later times when the system approaches quasi-steady behavior.
-- Use small `maxDT` around planned events (valve operations, pump start/stop).
+- Use small `maxDT` during early transients (startup, initial valve movements) to capture fast dynamics.
+- Progressively relax `maxDT` as the system approaches quasi-steady behavior.
+- Tighten `maxDT` again around planned events (valve operations, pump trips, choke changes).
 
-## Snapshot Storage
+> **JSON keys (inside time object):**
+>
+> - Breakpoints: `times` (EN) · `tempos` (PT) — array [s]
+> - Maximum step: `maxDT` (EN) · `maxDT` (PT) — array [s]
 
-`time.saveSnapshot` defines time instants at which the simulator writes `.snp` restart files:
+---
 
-```json
-"saveSnapshot": [1800, 3600, 7200]
-```
+## Snapshot Storage (Restart Files)
 
-These files can be loaded later via `initialCondition = 2` for continuation runs.
+At specified time instants, the simulator can write binary snapshot files (`.snp`) containing the complete system state. These files enable:
 
-## Segregation Controls
+- Restarting a simulation from an intermediate point (via strategy 2).
+- Branching: running multiple scenarios from the same intermediate state.
+- Checkpointing long simulations for robustness.
 
-For shutdown/segregation studies, specialized time windows control model behavior:
+> **JSON key:** `saveSnapshot` (EN) · `salvarSnapshot` (PT) — array of time instants [s], inside time object
 
-| Field | Unit | Description |
-|-------|------|-------------|
-| `time.segregationTime` | s | Time breakpoints for segregation control |
-| `time.segregation` | int | `0` = normal mode; `1` = segregation mode active |
+---
 
-Segregation mode adjusts internal model behavior for phase-separation dynamics during extended shutdowns.
+## Segregation Mode
 
-## Example JSON
+During extended shutdowns, gas and liquid phases separate vertically (segregation). The physical behavior during segregation differs from normal flowing conditions — the segregation mode adjusts internal model behavior to handle phase-separation dynamics more robustly.
 
-### Standard Transient (Initialize from Steady-State)
+Segregation is controlled by time windows: at each breakpoint, the mode can be activated or deactivated.
+
+> **JSON keys (inside time object):**
+>
+> - Breakpoints: `segregationTime` (EN) · `tempoSegregacao` (PT) — array [s]
+> - Mode flags: `segregation` (EN) · `segregacao` (PT) — array (0 = normal, 1 = segregation active)
+
+---
+
+## Example: Standard Transient (Initialize from Steady-State)
 
 ```json
 {
@@ -111,7 +137,7 @@ Segregation mode adjusts internal model behavior for phase-separation dynamics d
 }
 ```
 
-### Extended Shutdown with Segregation
+## Example: Extended Shutdown with Segregation
 
 ```json
 {
@@ -131,7 +157,7 @@ Segregation mode adjusts internal model behavior for phase-separation dynamics d
 }
 ```
 
-### Restart from Snapshot
+## Example: Restart from Snapshot
 
 ```json
 {
