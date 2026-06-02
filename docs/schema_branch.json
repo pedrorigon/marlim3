@@ -112,7 +112,7 @@
           "default": false,
           "description": "If false, in-situ density is calculated from standard conditions. If true, in-situ deviation due to higher pressure is considered, which results in release of lighter hydrocarbons."
         },
-        "srBpTable": {
+        "RsPbTable": {
           "type": "boolean",
           "default": false,
           "description": "Indicates pre-building a solubility-ratio (RS) table with a black-oil model before simulation start. This can improve performance, especially for Livia Fulchignoni's RS model, which is computationally expensive."
@@ -875,7 +875,7 @@
             "default": 1,
             "description": "Correlation selector for gas critical pressure and temperature. Three correlations inherited from Marlim2 are available. Correlations 1 and 2 are more suitable for CO2-rich cases. Valid for black-oil (and therefore also compositional, since black-oil is used to compute gas viscosity)."
           },
-          "srBpModel": {
+          "RsPbModel": {
             "type": "integer",
             "default": 0,
             "enum": [

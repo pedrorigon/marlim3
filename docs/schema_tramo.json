@@ -2497,7 +2497,7 @@
               "type": "integer",
               "description": "ID do fluido de produção externo à tubulação. Válido para tipoFluido = 0."
             },
-            "ambienteGas": {
+            "ambGas": {
               "type": "boolean",
               "default": false,
               "description": "Se true, apenas a fração gasosa do fluido de produção externo é admitido para a tubulação. Válido para tipoFluido = 0."
