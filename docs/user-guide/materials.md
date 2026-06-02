@@ -11,7 +11,7 @@ Materials define the thermal properties of the solid (or fluid) layers that surr
 
 Conductivity describes how easily heat flows through the material by conduction. High conductivity means the material transmits heat quickly (e.g., steel); low conductivity means the material resists heat flow (e.g., insulation foam).
 
-In practice, conductivity controls the **steady-state temperature gradient** across a layer: higher conductivity → smaller temperature difference across the layer.
+Conductivity controls the **steady-state temperature gradient** across a layer: higher conductivity → smaller temperature difference across the layer.
 
 > **JSON key:** `conductivity` (EN) · `condutividade` (PT) — unit: W/(m·°C)
 
@@ -29,11 +29,35 @@ Mass density contributes to thermal inertia. Combined with specific heat, it det
 
 > **JSON key:** `rho` (EN) · `rho` (PT) — unit: kg/m³
 
+## Viscosity
+
+Viscosity describes a fluid's resistance to flow — more precisely, its internal friction when layers of fluid move relative to each other. For type 1 materials, viscosity is required to allow the simulator to characterize the fluid's convective behavior within a stagnant or quasi-stagnant annular layer.
+
+In the context of a fluid-filled annulus, viscosity (together with thermal expansivity and density) governs the **Rayleigh number** — the dimensionless parameter that controls whether natural convection develops within the layer and, if so, how intensely. High viscosity suppresses convection; low viscosity promotes it.
+
+> **JSON key:** `visc` (EN) · `visc` (PT) — unit: cP
+> Required only for **Type 1** (user-defined fluid).
+
+## Thermal Expansivity
+
+Thermal expansivity (also called the coefficient of thermal expansion, β) quantifies how much the fluid's density changes with temperature at constant pressure. Fluids with higher expansivity become more buoyant as they are heated, which drives stronger natural convection cells within a confined layer.
+
+Together with viscosity, density, and specific heat, β feeds directly into the **Rayleigh number**:
+
+\$\$Ra = \frac{g \, \beta \, \Delta T \, L^3},{\nu \, \alpha}\$\$
+
+where \$\nu\$ is the kinematic viscosity and \$\alpha\$ is the thermal diffusivity. A higher Rayleigh number indicates stronger buoyancy-driven convection, which increases the effective heat transfer across the fluid layer beyond pure conduction.
+
+> **JSON key:** `beta` (EN) · `beta` (PT) — unit: 1/K
+> Required only for **Type 1** (user-defined fluid).
+
+!!! note
+    `visc` and `beta` are **only meaningful for Type 1** materials. They are ignored for solids (Type 0) and are not required for the built-in water (Type 2) or air (Type 3) models, whose transport properties are computed internally.
+
 ## Thermal Diffusivity
 
 The combination $\alpha = k / (\rho \cdot C_p)$ is the thermal diffusivity — it governs how fast temperature fronts propagate through the material. High diffusivity means rapid equilibration; low diffusivity means slow response.
 
----
 
 ## Material Types
 
@@ -92,7 +116,6 @@ An internal air model is used by the simulator. Use this for gas-filled annuli o
 - **Reuse material IDs:** Define materials once in the top-level array and reference them by ID across multiple cross sections. Avoids duplication and inconsistency.
 - **Reference in cross sections:** Layers reference materials by ID (`materialId` in EN JSON, `idMaterial` in PT JSON).
 - **Completion fluids:** Use `type: 2` (water) for water-based completion-fluid annuli rather than manually specifying properties.
-- **Unit consistency:** All values follow the schema convention (SI-like: W/(m·°C), J/(kg·°C), kg/m³).
 
 ---
 
