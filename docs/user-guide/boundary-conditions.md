@@ -10,7 +10,10 @@ The solver needs a closure strategy for the production system:
 
 - **Inlet-boundary driven**: use `pressureCondition` or `flowRatePressureCondition` inside `initialConfig`.
 - **Source-driven**: omit inlet boundary objects and inject fluid through source accessories (`ipr`, `liquidSource`, `massSource`, `gasSource`, etc.).
-- **Service-line driven**: if gas line exists, use `gasInj` for service-line inlet conditions.
+
+For the gas injection system:
+
+- **Service-line**: if gas line exists, use `gasInj` for service-line inlet conditions.
 
 If no inlet boundary object is provided, the line is treated as closed at the endpoint and inflow must come from sources inside the system.
 
@@ -66,7 +69,7 @@ What is imposed over time:
 
 ## Inlet by Sources (No Inlet Boundary Object)
 
-Instead of imposing conditions at the first endpoint, fluid can enter through sources positioned along the production line. This is common for wells where inflow enters at a reservoir-coupled location rather than at pipe coordinate zero.
+Instead of imposing conditions at the first endpoint, fluid can enter through sources positioned along the production line. This is useful for wells where inflow enters at a reservoir-coupled location rather than at pipe coordinate zero.
 
 Typical source-based inlet choices:
 
@@ -91,7 +94,7 @@ The standard outlet boundary is a downstream pressure schedule representing sepa
 
 ## Outlet: Surface Choke
 
-The surface choke is a fixed-position outlet restriction. Instead of imposing outlet pressure directly, you impose choke opening over time and the solver computes the resulting pressure-flow relation.
+The surface choke is a fixed-position outlet restriction, before the separator.
 
 > **JSON key:** `surfaceChoke` (EN) · `chokeSup` (PT)
 
@@ -131,9 +134,6 @@ Main fields:
 - `gasFlowRate` / `vazaoGas`
 - `injectionPressures` / `pressaoInjecao`
 - `initialFlowRateGuess` / `chuteVazaoInjecao`
-
-!!! note
-    In gas-lift unloading with automatic unloading control, the simulator can define service-line boundary conditions internally without requiring a `gasInj` object.
 
 ---
 
@@ -183,26 +183,11 @@ This is a single-phase gas choke with:
 
 ---
 
-## Choosing a Boundary Strategy
-
-```mermaid
-graph TD
-    A[Do you know inlet pressure?] -->|Yes| B[Use pressureCondition]
-    A -->|No| C[Do you know inlet mass flow too?]
-    C -->|Yes, steady only| D[Use flowRatePressureCondition]
-    C -->|No| E[Use sources along the pipe]
-    B --> F[Use separator or surfaceChoke at outlet]
-    D --> G[Outlet may be ignored in steady-state one-sided closure]
-    E --> F
-```
-
-Rules of thumb:
+## Tips for choosing a Boundary Strategy
 
 - Use `pressureCondition` when upstream pressure is the natural control variable.
 - Use `flowRatePressureCondition` only for steady-state one-sided closure studies.
 - Use `ipr` when inflow depends on reservoir drawdown.
-- Use `separator` for simplest outlet pressure control.
-- Use `surfaceChoke` when outlet restriction behavior matters.
 
 ---
 
