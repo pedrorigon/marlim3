@@ -2,19 +2,13 @@
 	<img src="img/logo_marlim3.svg" alt="Marlim3 logo" width="320"/>
 </h1>
 
-# Marlim3 Documentation
-
-Marlim3 is a 1D multiphase-flow simulator developed by Petrobras for production and injection systems in oil and gas applications.
-
-This documentation is concept-oriented and workflow-agnostic: you can use it for JSON input authoring, Python scripting, command-line execution, or GUI-driven studies.
+Marlim3 is a transient 1D multiphase-flow simulator developed by Petrobras for production and injection systems in oil and gas applications.
 
 ## Core Capabilities
 
-Marlim3 supports steady-state and transient simulations for:
-
-- **Production systems**
-- **Injection systems** (water or gas)
-- **Network systems**
+- **Production wells**
+- **Injection wells** (water or gas)
+- **Network**
 	- Production networks
 	- Injection networks
 	- Gas-lift loops
@@ -23,20 +17,20 @@ Marlim3 supports steady-state and transient simulations for:
 	- ESP pumps
 	- Volumetric pumps
 
-## Advanced Modeling Scope
+## Advanced modeling
 
-- **Thermal diffusion**: coupled 2D/3D diffusion models integrated with 1D flow
-- **Natural convection**: 2D cross-section analysis for shutdown and segregation scenarios
-- **Fluid frameworks**: black-oil, flash-table, and compositional models
-- **Near-wellbore effects**: support for radial and 2D source-style modeling strategies
-- **Operational events**: valves, chokes, pressure-drop devices, pigging, and control schedules
+- **Natural convection**: 2D solutions for natural convection analysis in confined spaces (single-phase or two-phase), such as pipeline cross-sections during production shutdowns
+- **Compositional fluid model library**
+- **Near wellbore model**: radial and 2D models to consider phenomena such as water coning
+- **Thermal diffusion**: 2D and 3D coupled to the 1D flow model
 
 ## How You Can Use Marlim3
 
+- **Streamlit GUI** for interactive model setup and result inspection
 - **Python package** for automation, integration, and parametric studies
 - **Command-line executable** for direct simulation workflows
-- **Streamlit GUI** for interactive model setup and result inspection
-- **Bilingual keys** in English and Portuguese for input and API usage
+
+For installation instructions and usage guidelines in any of these settings, please refer to the [official repository](https://github.com/petrobras/marlim3).
 
 ## User Guide Map
 

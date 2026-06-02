@@ -359,7 +359,7 @@
           "properties": {
             "monophasicCriterion": {
               "type": "number",
-              "default": 1e-05,
+              "default": 1e-04,
               "description": "Minimum void-fraction value below which the system is treated as single-phase. Very small void fractions may cause numerical problems, so this threshold helps stabilization. Avoid excessively high truncation values because they may artificially remove mass. Valid for transient simulations."
             },
             "condensationCriterion": {

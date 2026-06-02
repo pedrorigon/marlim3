@@ -330,7 +330,7 @@
           "properties": {
             "CriterioMonofasico": {
               "type": "number",
-              "default": 1e-5,
+              "default": 1e-4,
               "description": "Menor valor de fração de vazio em que se considera um sistema monofásico. Frações de vazio muito pequenas podem dar origem a problemas numéricos, por isso é útil estabelecer um valor partir do qual o sistema é considerado monofásico. Atentar para não usar valores de truncamentos muito altos, pois pode-se retirar massa artificialmente do sistema. Válido para simulações transientes."
             },
             "CriterioCondensacao": {
@@ -2246,8 +2246,8 @@
             },
             "correcHI": {
               "type": "boolean",
-              "default": false,
-              "description": ""
+              "default": true,
+              "description": "Correção da curva devido à degradação do head por meio da norma do Hydraulic Institute."
             }
           }
         }
