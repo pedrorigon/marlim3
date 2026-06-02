@@ -1,115 +1,116 @@
 # Time
 
-Time configuration controls three things:
+Simulation time controls how the model evolves in time — from preparation of the initial state, to advanced scheduling of solver steps, to generating restart points. The time configuration defines:
 
-- How the initial transient state is built.
-- How the maximum time-step cap evolves.
-- When snapshots are saved for restart.
+- How the simulation starts (initial conditions)
+- How the solver adapts the time-step limits throughout the run
+- When the simulator saves snapshot files for restart or post-processing
+- The final simulation time
+
+> **JSON key:** `time` (EN/PT) · `tempo` (PT) — top-level object
 
 ---
-
 ## Simulation Mode
+Choose between steady-state or transient simulation.
 
-`transient` switches between steady-state and transient solve.
+- `transient: false` → run only steady-state calculation and stop
+- `transient: true` → start with transient simulation
 
-> **JSON key:** `initialConfig.transient` (EN) · `configuracaoInicial.transiente` (PT)
+> **JSON key:** `initialConfig.transient` (EN) · `configuracaoInicial.transiente` (PT)  
 > Default: `false`
 
 ---
-
 ## Initial Condition Strategy
+Controls how the initial state is established:
 
-`initialCondition` chooses the startup method:
+| Value | Meaning                                 |
+|-------|-----------------------------------------|
+| 0     | User-defined initial fields             |
+| 1     | Initialize from steady-state solution   |
+| 2     | Restart from snapshot file (`.snp`)     |
+| 3     | Gas-lift unloading initialization       |
 
-- `0`: user-defined initial fields
-- `1`: initialize from steady-state solution
-- `2`: initialize from snapshot file
-- `3`: gas-lift unloading initialization
-
-> **JSON key:** `initialConfig.initialCondition` (EN) · `configuracaoInicial.condicaoInicial` (PT)
+> **JSON key:** `initialConfig.initialCondition` (EN) · `configuracaoInicial.condicaoInicial` (PT)  
 > Default: `1`
 
-### Strategy 0: User-Defined Initial State
-
-Use explicit initial fields in pipe cells. The initial production fluid is selected with:
+### Option 0: User-Defined Initial State
+Explicitly set initial fluid fields in pipe cells.
 
 > **JSON key:** `initialConfig.initialFluidId` (EN) · `configuracaoInicial.iniFluidoP` (PT)
 
-### Strategy 2: Snapshot Restart
-
-Loads a `.snp` state file.
+### Option 2: Snapshot Restart
+Initialize the simulation from a snapshot state file.
 
 > **JSON key:** `initialConfig.snapshotFile` (EN) · `configuracaoInicial.SnapShotArq` (PT)
 
-Parser behavior: if mode 2 is selected and file does not exist, parsing fails.
+!!! warning
+    If `initialCondition` = 2 is selected and the snapshot file does not exist, parsing fails.
 
-### Strategy 3: Gas-Lift Unloading
-
-Requires unloading interface information:
+### Option 3: Gas-Lift Unloading
+Specialized initialization for gas-lift operations. Requires:
 
 - `gasLineInterfaceLength` · `comprimentoMedidoInterfaceLinhaGas`
 - `prodLineInterfaceLength` · `comprimentoMedidoInterfaceLinhaProd`
-- `fluidSalinity` · `SalinidadeFluido`
+- `fluidSalinity` · `SalinidadeFluido`  
 
-Optional control:
+Optionally:  
 
 - `dischargeControl` · `controleDescarga`
 - `dischargeParameters` · `parametrosDescarga`
 
 ---
+## Time Scheduling
 
-## Time Object
-
-> **JSON key:** `time` (EN/PT)
+Define how the solver advances in time, controls adaptive time-step size, and sets simulation stop conditions.
 
 Core fields:
 
-- `finalTime` · `tempoFinal` [s]
-- `times` · `tempos` [s]
-- `maxDT` · `dtmax` [s]
+- `finalTime` · `tempoFinal` [s]: Total simulated time (when to stop)
+- `times` · `tempos` [s]: Time points where the time-step schedule changes  
+- `maxDT` · `dtmax` [s]: Maximum allowed step size for solver between each time interval
 
-`times` and `maxDT` define a piecewise max-step schedule. The solver may still take smaller steps for stability.
+The schedule allows piecewise control: between `times[i]` and `times[i+1]`, the solver will not exceed `maxDT[i]`, though it may choose smaller steps internally for stability.
 
-Parser checks:
+> **JSON key:** `time.finalTime`, `time.times`, `time.maxDT`
 
-- `times` must be increasing.
-- `times` and `maxDT` must have the same size.
+**Parser checks:**
 
-Parser defaults when omitted:
+- `times` must be monotonically increasing and start at 0
+- `times` and `maxDT` arrays must be the same size
 
-- `times = [0]`
-- `maxDT = [5]`
+**Defaults:**
+
+- If missing, `times = [0]` and `maxDT = [5]`
 
 ---
 
 ## Segregation Scheduling
 
-For shutdown/segregation scenarios, mode windows can be scheduled in the time object.
+Schedules time windows for special “segregation” mode, used in shutdown or fallback scenarios.
 
-> **JSON keys:**
->
-> - `segregationTime` (EN) · `tempoSegrega` (PT)
-> - `segregation` (EN) · `segrega` (PT)
+- `segregationTime` (EN) · `tempoSegrega` (PT): array (s), when mode changes apply
+- `segregation` (EN) · `segrega` (PT): array, mode indicator (0 = normal, 1 = segregation)
 
-Values:
+**Behavior:**  
 
-- `0` = normal mode
-- `1` = segregation mode
-
-Parser behavior: if these arrays are omitted, it creates a default segmentation schedule at `t=0` with mode `1`.
+If these are omitted, a default schedule is created at `t = 0` in segregation mode.
 
 ---
-
 ## Snapshot Save Times
 
-Snapshot-write times are defined in `time`:
+Controls when the simulation saves `.snp` or `.snt` snapshot files for restart or analysis.
 
 > **JSON key:** `saveSnapshot` (EN) · `gravaMomento` (PT)
-
-Each entry is a simulation time [s] to write a snapshot file for future restart.
+Each entry is a time [s] at which a snapshot is saved.
 
 ---
+## Practical Guidance
 
+- **Adaptive scheduling:** Define short timesteps for fast transients (startup, shut-down), then relax time-step for slower phases.
+- **Restarts:** Use `saveSnapshot` to schedule checkpoint writes — especially useful before events requiring operator review or slow, manual steps.
+- **Segregation windows:** For simulations with production shutdowns, use segregation scheduling to better control step size and convergence during sensitive transitions.
+
+---
 ## Example: Standard Transient
 
 ```json
@@ -128,6 +129,7 @@ Each entry is a simulation time [s] to write a snapshot file for future restart.
 }
 ```
 
+---
 ## Example: Restart from Snapshot
 
 ```json
@@ -145,6 +147,7 @@ Each entry is a simulation time [s] to write a snapshot file for future restart.
 }
 ```
 
+---
 ## Example: Segregation Window
 
 ```json
