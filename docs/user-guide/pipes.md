@@ -8,7 +8,7 @@ Pipes define axial geometry: where flow moves, where gravity acts, and where hea
 
 Two segment arrays can be present:
 
-- **Production line**: main multiphase path (wellbore, riser, flowline).
+- **Production line**: main multiphase path (wellbore, flow line, riser).
 - **Service line**: auxiliary gas/service path (gas-lift, circulation).
 
 > **JSON keys:**
@@ -24,7 +24,7 @@ Common segment fields:
 
 ## Inclination
 
-Inclination controls hydrostatic pressure and strongly influences flow regimes.
+Inclination controls hydrostatic pressure and strongly influences flow patterns.
 
 ### Direct Angle Mode
 
@@ -83,7 +83,7 @@ Engine/validation behavior:
 
 ## Initial and Ambient Profiles per Segment
 
-Profiles inside `initialConditions` / `condicoesIniciais` are defined at relative positions from 0 to 1.
+Profiles inside `initialAndAmbientConditions` / `condicoesIniciaisEAmbiente` are defined at relative positions from 0 to 1.
 
 > **Position key:** `measuredPosition` (EN) · `compInter` (PT)
 
