@@ -131,6 +131,12 @@ Both control whether to enable slip (phase velocity difference) modeling in the 
   Temperature to use for reverse gas inflow at the last system boundary in transient simulations.
   If not provided, ambient temperature is assumed.
 
+- `initialFluidId` · `iniFluidoP`
+  ID of the fluid that initially fills the production system.
+  Only relevant when `initialCondition: 0` (user-defined initial conditions).
+  If not provided, defaults to `0`.
+
+
 ---
 
 ## 6. Fluid Modeling Flags
@@ -230,10 +236,10 @@ Populate each with relevant vectors:
 
 ## 11. Output & Display
 
-- `classicalOutput` · `saidaClassica`:
+- `classicOutput` · `saidaClassica`:
   Cosmetic flag for the style of final text output (no impact on results).
 
-- `screenOutput` · `saidaTela`:
+- `screenPrint` · `saidaTela`:
   If `true`, shows detailed simulation progress (time, time step, variables).
   If `false` (default), only the completion percentage is shown.
 
@@ -419,7 +425,6 @@ These parameters are applicable to transient simulations with compositional flui
 
 - `matrixThreads` · `nthrdMatriz`
   **Default:** `1`
-  Number of threads allocated for matrix operations.
 
 ---
 
@@ -435,7 +440,6 @@ These parameters are applicable to transient simulations with compositional flui
 
 - `disableMassTransferTempDeriv` · `desligaDeriTransMassDTemp`
   **Default:** `false`
-  Disables temperature-derivative terms in mass-transfer calculations. Edge-case control; leave at default unless specifically required.
 
 - `minTimestepCriterion` · `CriterioDTMin`
   Minimum allowable time step. Leave unset unless you have a specific reason to enforce a hard lower bound.
