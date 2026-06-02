@@ -4,6 +4,15 @@ A cross section defines the radial structure of the pipe: the flow area where fl
 
 ---
 
+## Cross-Section Identity
+
+Each cross section has an integer identifier. Pipe segments reference the cross section they use via this ID, allowing multiple pipe segments to share the same radial geometry.
+
+> **JSON key:** `crossSection` (EN) · `secaoTransversal` (PT) — top-level array
+> Each element: `id` — integer identifier
+
+---
+
 ## Flow Area and Hydraulic Resistance
 
 The 1D axial equations require a flow area and a friction surface to compute velocities and pressure losses. Two properties define this:
@@ -79,12 +88,6 @@ If `layerMeasurementType` is omitted, default is diameter mode.
 
 Each layer is subdivided into radial nodes for the heat-conduction calculation. More nodes provide better resolution of temperature gradients within the layer, at the cost of additional computation.
 
-**Guidelines:**
-
-- Thin steel walls (< 15 mm): 1 node is sufficient.
-- Thick insulation layers (> 30 mm): Use 2–4 nodes to capture transient thermal response during cooldown/warmup.
-- Completion-fluid annuli: 2–3 nodes for thermal coupling resolution.
-
 > **JSON key:** `discretization` (EN) · `discretizacao` (PT) — default `1`
 
 ### Material Reference
@@ -92,15 +95,6 @@ Each layer is subdivided into radial nodes for the heat-conduction calculation. 
 Each layer references a material entry (by integer ID) that provides the thermal properties (conductivity, specific heat, density) for heat-conduction calculations.
 
 > **JSON key:** `materialId` (EN) · `idMaterial` (PT)
-
----
-
-## Cross-Section Identity
-
-Each cross section has an integer identifier. Pipe segments reference the cross section they use via this ID, allowing multiple pipe segments to share the same radial geometry.
-
-> **JSON key:** `crossSection` (EN) · `secaoTransversal` (PT) — top-level array
-> Each element: `id` — integer identifier
 
 ---
 
@@ -117,16 +111,16 @@ Practical implications:
 - Thermal coupling is configured at pipe-segment level and requires a service line (`gasLine` / `linhaGas` enabled).
 - In coupled segments, production and service pipes should be coincident in position, length, and discretization for consistent exchange.
 
-> **JSON keys (pipe-level):**
+> **JSON keys:**
 >
-> - Service-line enable: `gasLine` (EN) · `linhaGas` (PT)
-> - Segment coupling flag: `thermalCoupling` (EN) · `acoplamentoTermico` (PT)
+> - Service-line enable: `initialConfig.gasLine` (EN) · `configuracaoInicial.linhaGas` (PT)
+> - Segment coupling flag (pipe-level key): `thermalCoupling` (EN) · `acoplamentoTermico` (PT)
 
 ---
 
 ## Practical Guidance
 
-- **Layer consistency:** Layers must nest concentrically. When using thickness mode, the outer radius of each layer is computed cumulatively from the inner diameter outward.
+- **Layer consistency:** Layers nest concentrically. When using thickness mode, the outer radius of each layer is computed cumulatively from the inner diameter outward.
 - **Annular consistency:** For annular sections, ensure `outerDiameter > innerDiameter` and both represent annulus-flow boundaries (not wall-layer diameters).
 - **Roughness calibration:** If pressure-drop predictions deviate from field data, roughness is often the first parameter to calibrate (especially in old or scaled pipes).
 - **Multiple cross sections:** Use different cross-section IDs for different pipe segments (e.g., one for the riser with thick insulation, another for the subsea flowline with concrete coating).
