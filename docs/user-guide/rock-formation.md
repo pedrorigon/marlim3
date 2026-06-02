@@ -55,7 +55,6 @@ Higher $\alpha$ propagates temperature fronts faster into the formation.
 
 - Use different formation IDs where lithology changes materially along depth/length.
 - Avoid unrealistically low conductivity, which can over-insulate the line and overpredict retained heat.
-- For cooldown studies, vary `productionTime` and conductivity together in sensitivity runs.
 - Buried lines often use formation coupling; exposed subsea lines often rely on seawater environment instead.
 
 ---
