@@ -205,7 +205,7 @@
                                  "bswInversion":  0.8,
                                  "co2Fraction":  0,
                                  "criticalCorrelation":  1,
-                                 "srBpModel":  0,
+                                 "RsPbModel":  0,
                                  "active":  true,
                                  "deadOilModel":  0
                              },
@@ -224,7 +224,7 @@
                                  "bswInversion":  0.8,
                                  "co2Fraction":  0,
                                  "criticalCorrelation":  1,
-                                 "srBpModel":  0,
+                                 "RsPbModel":  0,
                                  "active":  true,
                                  "deadOilModel":  0
                              }

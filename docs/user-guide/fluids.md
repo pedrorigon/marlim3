@@ -54,7 +54,7 @@ When both flags are `false`, the black-oil model is used. When both flags are `t
 
 | Mode | Must-have keys | Optional/conditional keys |
 |------|----------------|---------------------------|
-| Black-oil | `productionFluid` defined with black-oil properties, `gor`, `api`, `gasDensity` | `srBpModel`, viscosity and emulsion model selectors |
+| Black-oil | `productionFluid` defined with black-oil properties, `gor`, `api`, `gasDensity` | `RsPbModel`, viscosity and emulsion model selectors |
 | Flash-table | `productionFluid` defined, `flashTableFluidModel = true`, `pvtFile` with `.tab` | `blackOilViscModel`, `blackOilWaterModel`, viscosity and emulsion model selectors |
 | Compositional | `productionFluid` defined, `compositionalFluidModel = true`, `pvtFile` with `.ctm` | `userMolarFraction`/`molarFraction`, `userGORComp` for composition correction, viscosity and emulsion model selectors |
 
@@ -83,7 +83,7 @@ There is no single universal “required set” for all modes. Requirements depe
 | `waterDensity` / `densidadeAgua` | used | used | used | Valid in all models |
 | `emulsionType` and emulsion parameters | used | used | used | Valid in all models |
 | `api` | used | not primary | not primary | Black-oil only |
-| `srBpModel` / `modeloRsPb` | used | not used | not used | Black-oil RS correlation |
+| `RsPbModel` / `modeloRsPb` | used | not used | not used | Black-oil RS correlation |
 | `gasDensity`, `CO2Fraction`, `criticalCorrelation` | used | conditional | used | In flash-table mode, mainly relevant when black-oil correlations are enabled |
 | `deadOilModel`, `liveOilModel`, `undersaturatedOilModel` | used | conditional | used | In flash-table mode, used only with `blackOilViscModel = 1` |
 | `temp1`, `visc1`, `temp2`, `visc2`, `deadOilTemp`, `deadOilVisc` | conditional | conditional | conditional | Needed only for selected viscosity models |
@@ -272,7 +272,7 @@ For steady-state compositional simulations with multiple mixing zones (e.g., net
 
 The Lívia Fulchignoni RS correlation is computationally expensive. When enabled, the simulator pre-builds a solution-gas-ratio lookup table before starting the time loop, significantly improving performance.
 
-> **JSON key:** `srBpTable` (EN) · `tabelaRSPB` (PT) — default `false`
+> **JSON key:** `RsPbTable` (EN) · `tabelaRSPB` (PT) — default `false`
 
 ## Fluid Tracking Along the Pipeline
 
@@ -401,7 +401,7 @@ Key concepts:
       "liveOilModel": 0,
       "undersaturatedOilModel": 0,
       "criticalCorrelation": 1,
-      "srBpModel": 0,
+      "RsPbModel": 0,
       "emulsionType": 0
     }
   ],
