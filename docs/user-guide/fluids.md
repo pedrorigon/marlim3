@@ -4,19 +4,19 @@ Fluid modeling is the thermodynamic foundation of the simulation. Nearly every g
 
 ## Thermodynamic Model Family
 
-Marlim3 supports three approaches to compute fluid properties, each with different fidelity and cost:
+Marlim3 supports three approaches to compute fluid properties, each with different fidelity and numerical cost:
 
 ### Black-Oil Model
 
 The simplest and fastest approach. Fluid behavior is characterized by correlations that depend on API gravity, GOR, gas density, and BSW. Phase split is determined by a solution-gas-ratio (RS) correlation.
 
-### Flash-Table Model
+### Table File
 
-Precomputed PVT properties from external software (PVTSim) stored in `.tab` files. The simulator interpolates properties at each P-T condition from this table. Accurate within the table range but depends entirely on the quality and coverage of the external data.
+Precomputed fluid properties from external software (PVTsim, Multiflash) stored in `.tab` files. The simulator interpolates properties at each P-T condition from this table. Accurate within the table range but depends entirely on the quality and coverage of the external data.
 
 ### Compositional Model
 
-A rigorous thermodynamic model where the fluid is described by pseudocomponent molar fractions and equilibrium is computed via flash calculations. Required for rich-gas/condensate systems or when composition changes significantly along the flow path. More expensive computationally.
+A rigorous thermodynamic model where the fluid is described by pseudocomponent molar fractions and equilibrium is computed via flash calculations. Required for rich-gas/condensate systems or when composition changes significantly along the simulation. More expensive computationally.
 
 > **JSON keys (inside global config):**
 >
@@ -62,7 +62,7 @@ When both flags are `false`, the black-oil model is used. When both flags are `t
    In flash-table mode, correlation keys such as `deadOilModel`, `liveOilModel`, and `undersaturatedOilModel` are only active when `blackOilViscModel = 1`.
 
 !!! note
-  In compositional mode, black-oil correlations are used to compute gas viscosities, therefore black oil properties are needed.
+    In compositional mode, black-oil correlations are used to compute gas viscosities, therefore black oil properties are needed.
 
 ---
 
