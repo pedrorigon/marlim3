@@ -2,7 +2,7 @@
 	<img src="img/logo_marlim3.svg" alt="Marlim3 logo" width="320"/>
 </h1>
 
-Marlim3 is a transient 1D multiphase-flow simulator developed by Petrobras for production and injection systems in oil and gas applications.
+Marlim3 is a transient 1D multiphase-flow simulator for production and injection systems in oil and gas applications.
 
 ## Core Capabilities
 

@@ -82,4 +82,5 @@ nav:
     - Black Box Correlations: tutorials/4_black_box_correlations.ipynb
   - Reference:
     - JSON Schema: reference/json-schema.md
+    - Bilingual Support: dev-guide/translations.md
 
