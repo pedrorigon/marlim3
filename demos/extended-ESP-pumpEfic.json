@@ -1022,7 +1022,7 @@
                                    0.0,
                                    1000.0
                                ],
-                    "prodFluidIndex":  0,
+                    "prodFluidId":  0,
                     "active":  true
                 }
             ],

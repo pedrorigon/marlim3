@@ -60,6 +60,7 @@ using namespace std;
 #include "variaveisGlobais1D.h"
 #include "criterioIntermiSevera.h"
 #include "validaTipoJson.h"
+#include "JSONKeyTranslator.h"
 
 //#define VERSAO_SCHEMA_JSON "1.3.9"
 //#define ARQUIVO_SCHEMA_JSON "schema_1_3_9.json"

@@ -112,7 +112,7 @@
           "default": false,
           "description": "If false, in-situ density is calculated from standard conditions. If true, in-situ deviation due to higher pressure is considered, which results in release of lighter hydrocarbons."
         },
-        "srBpTable": {
+        "RsPbTable": {
           "type": "boolean",
           "default": false,
           "description": "Indicates pre-building a solubility-ratio (RS) table with a black-oil model before simulation start. This can improve performance, especially for Livia Fulchignoni's RS model, which is computationally expensive."
@@ -359,7 +359,7 @@
           "properties": {
             "monophasicCriterion": {
               "type": "number",
-              "default": 1e-05,
+              "default": 1e-04,
               "description": "Minimum void-fraction value below which the system is treated as single-phase. Very small void fractions may cause numerical problems, so this threshold helps stabilization. Avoid excessively high truncation values because they may artificially remove mass. Valid for transient simulations."
             },
             "condensationCriterion": {
@@ -477,7 +477,7 @@
             },
             "sonicTime": {
               "type": "array",
-              "description": "Time instants that, together with the 'sonicFlags' array, determine when the simulator uses sufficiently small time steps (according to the sonic CFL condition) to capture sonic phenomena related to pressure waves. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for such events.",
+              "description": "Time instants that, together with the 'sonicFlag' array, determine when the simulator uses sufficiently small time steps (according to the sonic CFL condition) to capture sonic phenomena related to pressure waves. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for such events.",
               "items": {
                 "type": "number",
                 "unit": "s"
@@ -485,7 +485,7 @@
             },
             "sonicFlag": {
               "type": "array",
-              "description": "Flags indicating, at times specified by 'sonicTimes', whether the simulator uses sufficiently small time steps (according to sonic CFL condition) to capture sonic pressure-wave phenomena. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for these events.",
+              "description": "Flags indicating, at times specified by 'sonicTime', whether the simulator uses sufficiently small time steps (according to sonic CFL condition) to capture sonic pressure-wave phenomena. Since Marlim3 uses first-order models, this is mainly a mitigation mechanism to reduce representation error for these events.",
               "items": {
                 "type": "integer"
               }
@@ -553,14 +553,14 @@
                 "unit": "degC"
               }
             },
-            "voidFraction": {
+            "fluidQuality": {
               "type": "array",
               "description": "Fluid quality at pipeline inlet over time (ratio between free-gas mass and total associated gas, oil, and water mass).",
               "items": {
                 "type": "number"
               }
             },
-            "waterCut": {
+            "betaRatio": {
               "type": "array",
               "description": "Volumetric ratio between complementary fluid and the sum complementary fluid + oil + water at pipeline inlet over time.",
               "items": {
@@ -610,7 +610,7 @@
                 "unit": "kg/s"
               }
             },
-            "waterCut": {
+            "betaRatio": {
               "type": "array",
               "description": "Volumetric ratio between complementary fluid and the sum complementary fluid + oil + water at pipeline inlet over time.",
               "items": {
@@ -853,7 +853,7 @@
               "type": "number"
             }
           },
-          "emulsionVec": {
+          "emulVec": {
             "type": "array",
             "description": "Vector of user-defined emulsion multipliers for emulsion model 6.",
             "items": {
@@ -875,7 +875,7 @@
             "default": 1,
             "description": "Correlation selector for gas critical pressure and temperature. Three correlations inherited from Marlim2 are available. Correlations 1 and 2 are more suitable for CO2-rich cases. Valid for black-oil (and therefore also compositional, since black-oil is used to compute gas viscosity)."
           },
-          "srBpModel": {
+          "RsPbModel": {
             "type": "integer",
             "default": 0,
             "enum": [
@@ -1595,7 +1595,7 @@
         },
         "times": {
           "type": "array",
-          "description": "Time instants associated with maxTimestep values defined in this object.",
+          "description": "Time instants associated with maxDT values defined in this object.",
           "items": {
             "type": "number",
             "unit": "s"
@@ -1819,7 +1819,7 @@
               },
               "ambientConductivity": {
                 "type": "array",
-                "description": "External-medium thermal conductivities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium thermal conductivities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "W/(m.K)"
@@ -1828,7 +1828,7 @@
               "ambientSpecificHeat": {
                 "type": "array",
                 "unit": "J/(kg.K)",
-                "description": "External-medium specific heats at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium specific heats at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "J/(kg.K)"
@@ -1836,7 +1836,7 @@
               },
               "ambientDensity": {
                 "type": "array",
-                "description": "External-fluid densities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid densities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "kg/m3"
@@ -1844,11 +1844,11 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when externalEnvironment is marine/air (1 or 2)."
-              },
-              "items": {
-                "type": "number",
-                "unit": "cP"
+                "description": "External-fluid viscosities at pipe-segment relative positions defined in measuredPosition. Required except when production column is thermally coupled with annulus (thermalCoupling = 1), when formation is defined (formationId informed), or when environment is marine/air (1 or 2).",
+                "items": {
+                  "type": "number",
+                  "unit": "cP"
+                }
               }
             }
           },
@@ -2170,7 +2170,7 @@
               "ambientConductivity": {
                 "type": "array",
                 "unit": "W/(m.K)",
-                "description": "External-medium thermal conductivities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium thermal conductivities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "W/(m.K)"
@@ -2178,7 +2178,7 @@
               },
               "ambientSpecificHeat": {
                 "type": "array",
-                "description": "External-medium specific heats at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-medium specific heats at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "J/(kg/K)"
@@ -2186,7 +2186,7 @@
               },
               "ambientDensity": {
                 "type": "array",
-                "description": "External-fluid densities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid densities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "kg/m3"
@@ -2194,7 +2194,7 @@
               },
               "ambientVisc": {
                 "type": "array",
-                "description": "External-fluid viscosities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or externalEnvironment is marine/air (1 or 2).",
+                "description": "External-fluid viscosities at pipe-segment relative positions defined by measuredPosition. Required except when formationId is provided or environment is marine/air (1 or 2).",
                 "items": {
                   "type": "number",
                   "unit": "cP"
@@ -2234,6 +2234,10 @@
           "prodFluidId": {
             "type": "integer",
             "description": "ID of the production fluid produced by this source."
+          },
+          "prodFluidIndex": {
+            "type": "integer",
+            "description": "(Legacy, backward-compatibility) Same as prodFluidId."
           },
           "measuredLength": {
             "type": "number",
@@ -3140,7 +3144,7 @@
           "type": "boolean",
           "description": "Liquid specific heat at constant pressure (J/[kg C])."
         },
-        "stdLiquidFlowRate": {
+        "stdLiqFlowRate": {
           "type": "boolean",
           "description": "Standard volumetric flow rate of dead oil (Sm3/d)."
         },
@@ -3256,7 +3260,7 @@
           "type": "boolean",
           "description": "Chemical-species (pseudocomponent) molar fractions in vapor phase. Valid for compositional fluid models."
         },
-        "pseudoMist": {
+        "pseudoMix": {
           "type": "boolean",
           "description": "Chemical-species (pseudocomponent) molar fractions in combined liquid+vapor hydrocarbon phases. Valid for compositional fluid models."
         },
@@ -3500,7 +3504,7 @@
             "type": "boolean",
             "description": "Interphase mass transfer (kg/[s m])."
           },
-          "stdLiquidFlowRate": {
+          "stdLiqFlowRate": {
             "type": "boolean",
             "description": "Standard volumetric flow rate of dead oil (Sm3/d)."
           },
@@ -3788,7 +3792,7 @@
         }
       }
     },
-    "transientProductionProfiles": {
+    "crossProductionProfile": {
       "type": "object",
       "description": "Records radial temperature profiles at specific cross sections of production line.",
       "properties": {
@@ -3814,7 +3818,7 @@
         }
       }
     },
-    "transientServiceProfiles": {
+    "crossServiceProfile": {
       "type": "object",
       "description": "Records radial temperature profiles at specific cross sections of service line.",
       "properties": {
@@ -3840,7 +3844,7 @@
         }
       }
     },
-    "transientProductionTrend": {
+    "crossProductionTrend": {
       "type": "array",
       "description": "Specifies recording of temperature trends (time evolutions) at specific cross-sectional points in production line.",
       "items": {
@@ -3873,7 +3877,7 @@
         }
       }
     },
-    "transientServiceTrend": {
+    "crossServiceTrend": {
       "type": "array",
       "description": "Specifies recording of temperature trends (time evolutions) at specific cross-sectional points in service line.",
       "items": {

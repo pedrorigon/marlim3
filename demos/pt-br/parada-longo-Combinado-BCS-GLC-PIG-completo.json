@@ -361,7 +361,7 @@
       "tempoip": [0.0,1000.0],
       "ii": [10.0,10.0],
       "tempoii": [0.0,1000.0],
-      "indFluidoPro": 0
+      "indiFluidoPro": 0
     }
   ],
   "gasInj": {

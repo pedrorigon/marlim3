@@ -331,7 +331,7 @@
     {
       "id": 0,
       "iprType": 0,
-      "prodFluidIndex": 0,
+      "prodFluidId": 0,
       "measuredLength": 0.1,
       "staticPressureTime": [0],
       "staticPressure": [150],

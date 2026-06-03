@@ -66,16 +66,100 @@ MARLIM3_SKIP_BUILD=1 uv sync --locked
 
 ### Option 1: Python Package
 
-Use `Marlim3` as a Python library in your scripts:
+Use `Marlim3` as a Python library in your scripts or notebooks.
+
+#### GUI
+
+Marlim3 also includes a **Streamlit-based GUI** for interactively building inputs, running simulations, and visualizing results in the browser.
+
+From a local clone:
+
+```bash
+uv sync --group gui
+uv run streamlit run gui/app.py
+```
+
+The GUI auto-detects an executable from `build/` or `marlim3/` under the repository root. If neither is available, provide the executable path manually in the app.
+
+The GUI provides forms for defining fluids, geometry, boundary conditions, and output variables, launches simulations, and displays profile plots — all in the browser.
+
+#### Scripting
+
+For automated workflows, parametric studies, or integration with other tools, use the Python API directly:
 
 ```python
+import numpy as np
 import marlim3
 
-# Build a model in English
 branch = marlim3.Branch()
-branch.system = "PROD"
-branch.productionFluid = [{"id": 0, "api": 30, "gor": 100, "gasDensity": 0.7, "bsw": 0.0}]
+
+# 1. Production fluid (black-oil)
+branch.productionFluid = [{
+    "id": 0,
+    "api": 32,
+    "gor": 100,
+    "gasDensity": 0.7,
+    "bsw": 0.0,
+}]
+
+# 2. Material (steel)
+branch.material = [{
+    "id": 0,
+    "type": 0,
+    "conductivity": 58,       # W/m.K
+    "specificHeat": 480,      # J/kg.K
+    "rho": 7850,              # kg/m3
+}]
+
+# 3. Cross-section (10" ID, single steel layer)
+branch.crossSection = [{
+    "id": 0,
+    "innerDiameter": 10 * 0.0254,  # m
+    "roughness": 0.183e-3,          # m
+    "layers": [{"materialId": 0, "layerMeasurementType": "THICKNESS", "thickness": 0.0254}],
+}]
+
+# 4. Pipe (2500 m horizontal pipeline, 20 cells)
+n_cells = 20
+total_length = 2500  # m
+branch.productionPipe = [{
+    "id": 0,
+    "crossSectionId": 0,
+    "environment": 2,  # atmosphere
+    "angle": 0,        # rad (0 = horizontal)
+    "discretization": [{"numCells": n_cells, "length": total_length / n_cells}],
+    "initialConditions": {
+        "measuredPosition": [0, 1],
+        "ambientTemp": [40, 20],   # degC
+        "ambientVel": [0.5, 0.5],  # m/s
+    },
+}]
+
+# 5. Boundary conditions
+branch.liquidSource = [{
+    "id": 0,
+    "prodFluidId": 0,
+    "measuredLength": 0.1,
+    "time": [0],
+    "liquidFlowRate": [1500],  # sm3/d
+    "temperature": [40],       # degC
+}]
+branch.separator = {"time": [0], "pressure": [2]}  # kgf/cm2
+
+# 6. Output specification
+branch.productionProfile = {
+    "time": [0],
+    "pressure": True,
+    "temperature": True,
+    "holdup": True,
+    "flowPattern": True,
+    "frictionPressureGradient": True,
+    "hydrostaticPressureGradient": True,
+}
+
+# 7. Simulate and plot
 branch.simulate()
+branch.plot_profiles()
 ```
 
 The Python API is **fully bilingual** — you can use Portuguese or English interchangeably:
@@ -215,15 +299,6 @@ MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```bash
 uv run pytest tests/ -v
 ```
-
-### Run the GUI
-
-```bash
-uv sync --group gui
-uv run streamlit run gui/app.py
-```
-
-The GUI auto-detects the executable from `build/Marlim3`.
 
 ## Note
 

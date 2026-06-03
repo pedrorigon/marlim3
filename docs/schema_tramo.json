@@ -326,10 +326,11 @@
         },
         "Avancado": {
           "type": "object",
+          "description": "Configurações avançadas da simulação.",
           "properties": {
             "CriterioMonofasico": {
               "type": "number",
-              "default": 1e-5,
+              "default": 1e-4,
               "description": "Menor valor de fração de vazio em que se considera um sistema monofásico. Frações de vazio muito pequenas podem dar origem a problemas numéricos, por isso é útil estabelecer um valor partir do qual o sistema é considerado monofásico. Atentar para não usar valores de truncamentos muito altos, pois pode-se retirar massa artificialmente do sistema. Válido para simulações transientes."
             },
             "CriterioCondensacao": {
@@ -889,9 +890,9 @@
           },
           "fracMolar": {
             "type": "array",
+              "description": "Frações molares dos pseudocomponentes (mesma sequência informado no arquivo .ctm fornecido na variável configuracaoInicial: {pvtsimArq}). Válido apenas para simulações composicionais.",
             "items": {
-              "type": "number",
-              "description": "Frações molares dos pseudocomponentes (mesma sequência informado no arquivo .ctm fornecido na variável configuracaoInicial: {pvtsimArq}). Válido apenas para simulações composicionais."
+              "type": "number"
             }
           },
           "RGOCompUsuario": {
@@ -1021,16 +1022,16 @@
           },
           "x1": {
             "type": "array",
+              "description": "Abcissa da curva CV (porcentagem do deslocamento da haste da válvula). Válido para curvaCV = 1.",
             "items": {
-              "type": "number",
-              "description": "Abcissa da curva CV (porcentagem do deslocamento da haste da válvula). Válido para curvaCV = 1."
+              "type": "number"
             }
           },
           "cv1": {
             "type": "array",
+            "description": "Ordenada da curva CV (coeficiente de válvula; capacidade de vazão de válvula para uma unidade de pressão tomando-se como referência a água). Usada para correlacionar deslocamento de haste com abertura de válvula. Válido para curvaCV = 1.",
             "items": {
               "type": "number",
-              "description": "Ordenada da curva CV (coeficiente de válvula; capacidade de vazão de válvula para uma unidade de pressão tomando-se como referência a água). Usada para correlacionar deslocamento de haste com abertura de válvula. Válido para curvaCV = 1.",
               "unit": "(gal/min)/(psi)"
             }
           }
@@ -1492,34 +1493,34 @@
           },
           "dtmax": {
             "type": "array",
+            "description": "Máximos incrementos de tempo associados aos instantes definidos no objeto 'tempos'.",
             "items": {
               "type": "number",
-              "description": "Máximos incrementos de tempo associados aos instantes definidos no objeto 'tempos'.",
               "unit": "s"
             },
             "default": [5]
           },
           "tempoSegrega": {
             "type": "array",
+            "description": "Instantes de tempo associados aos 'segrega' definidos neste objeto. Opcional.",
             "unit": "s",
             "items": {
-              "type": "number",
-              "description": "Instantes de tempo associados aos 'segrega' definidos neste objeto. Opcional."
+              "type": "number"
             }
           },
           "segrega": {
             "type": "array",
+            "description": "Se 1, o simulador utiliza um modo especial de controle de tempo associado à parada de produção (útil quando se observa dificuldades na simulação de processos de segregação). Opcional.",
             "items": {
               "type": "integer",
-              "enum": [0,1],
-              "description": "Se 1, o simulador utiliza um modo especial de controle de tempo associado à parada de produção (útil quando se observa dificuldades na simulação de processos de segregação). Opcional."
+              "enum": [0,1]
             }
           },
           "gravaMomento": {
             "type": "array",
+            "description": "Instantes de tempo para gravação dos arquivos snapshot (.snt).",
             "items": {
               "type": "number",
-              "description": "Instantes de tempo para gravação dos arquivos snapshot (.snt).",
               "unit": "s"
             }
           }
@@ -1715,11 +1716,11 @@
                 },
                 "viscExterna": {
                   "type": "array",
-                  "description": "Viscosidades do fluido externo nas posições relativas do duto definidas na variável 'compInter'. Necessário sempre, exceto quando a coluna de produção está termicamente acoplada com o anular (ou seja, se 'acoplamentoTermico = 1'), quando houver formação (ou seja, se 'idFormacao' for informado) ou quando o ambiente externo for marítimo ou aéreo (ambienteExterno = 1 ou 2)."
-                },
-                "items": {
-                  "type": "number",
-                  "unit": "cP"
+                  "description": "Viscosidades do fluido externo nas posições relativas do duto definidas na variável 'compInter'. Necessário sempre, exceto quando a coluna de produção está termicamente acoplada com o anular (ou seja, se 'acoplamentoTermico = 1'), quando houver formação (ou seja, se 'idFormacao' for informado) ou quando o ambiente externo for marítimo ou aéreo (ambienteExterno = 1 ou 2).",
+                  "items": {
+                    "type": "number",
+                    "unit": "cP"
+                  }
                 }
             }
           },
@@ -2053,9 +2054,13 @@
               "type": "integer",
               "description": "Inteiro identificador da IPR."
             },
-            "indFluidoPro": {
+            "indiFluidoPro": {
               "type": "integer",
               "description": "ID do fluido de produção a ser produzido pela presente fonte."
+            },
+           "indFluidoPro": {
+              "type": "integer",
+              "description": "(Legado, retrocompatibilidade) Mesmo que indiFluidoPro."
             },
             "comprimentoMedido": {
               "type": "number",
@@ -2241,8 +2246,8 @@
             },
             "correcHI": {
               "type": "boolean",
-              "default": false,
-              "description": ""
+              "default": true,
+              "description": "Correção da curva devido à degradação do head por meio da norma do Hydraulic Institute."
             }
           }
         }
@@ -2392,16 +2397,16 @@
           },
           "x1": {
             "type": "array",
+            "description": "Abcissa da curva CV (porcentagem do deslocamento da haste da válvula). Válido para curvaCV = 1.",
             "items": {
-              "type": "number",
-              "description": "Abcissa da curva CV (porcentagem do deslocamento da haste da válvula). Válido para curvaCV = 1."
+              "type": "number"
             }
           },
           "cv1": {
             "type": "array",
+            "description": "Ordenada da curva CV (coeficiente de válvula; capacidade de vazão de válvula para uma unidade de pressão tomando-se como referência a água). Usada para correlacionar deslocamento de haste com abertura de válvula. Válido para curvaCV = 1.",
             "items": {
               "type": "number",
-              "description": "Ordenada da curva CV (coeficiente de válvula; capacidade de vazão de válvula para uma unidade de pressão tomando-se como referência a água). Usada para correlacionar deslocamento de haste com abertura de válvula. Válido para curvaCV = 1.",
               "unit": "(gal/min)/(psi)"
             }
           }
@@ -2492,7 +2497,7 @@
               "type": "integer",
               "description": "ID do fluido de produção externo à tubulação. Válido para tipoFluido = 0."
             },
-            "ambienteGas": {
+            "ambGas": {
               "type": "boolean",
               "default": false,
               "description": "Se true, apenas a fração gasosa do fluido de produção externo é admitido para a tubulação. Válido para tipoFluido = 0."
@@ -2653,16 +2658,17 @@
             },
             "x1": {
               "type": "array",
+              "description": "Abcissa da curva CV (porcentagem do deslocamento da haste da válvula). Válido para curvaCV = 1."
+              ,
               "items": {
-                "type": "number",
-                "description": "Abcissa da curva CV (porcentagem do deslocamento da haste da válvula). Válido para curvaCV = 1."
+                "type": "number"
               }
             },
             "cv1": {
               "type": "array",
+              "description": "Ordenada da curva CV (coeficiente de válvula; capacidade de vazão de válvula para uma unidade de pressão tomando-se como referência a água). Usada para correlacionar deslocamento de haste com abertura de válvula. Válido para curvaCV = 1.",
               "items": {
                 "type": "number",
-                "description": "Ordenada da curva CV (coeficiente de válvula; capacidade de vazão de válvula para uma unidade de pressão tomando-se como referência a água). Usada para correlacionar deslocamento de haste com abertura de válvula. Válido para curvaCV = 1.",
                 "unit": "(gal/min)/(psi)"
               }
             }
@@ -2674,7 +2680,7 @@
         "properties": {
             "ativo": {
               "type": "boolean",
-              "description": ""
+              "description": "Indica se a choke de injeção está ou não ativa."
             },
             "tempo": {
               "type": "array",
@@ -3388,7 +3394,7 @@
             "type": "boolean",
             "description": "Vazão mássica de fluido complementar (kg/s) oriunda de fonte na célula de discretização."
             },
-            "tempChokeJusante": {
+            "tempChokeJus": {
             "type": "boolean",
             "description": "Temperatura (degC) à jusante da choke de superfície (final do sistema de produção)."
             },
@@ -3720,38 +3726,39 @@
           },
     "parafina": {
       "type": "object",
-      "description": "",
+      "description": "Parâmetros do modelo de deposição de parafinas. Este modelo é ativado se configuracaoInicial.modoParafina for true.",
       "properties": {
         "arquivoWax": {
           "type": "string",
-          "description": ""
+          "description": "Arquivo .wax utilizado."
         },
         "usuarioPorosidade": {
           "type": "boolean",
           "default": false,
-          "description": ""
+          "description": "Indica se o usuário irá informar a porosidade."
         },
         "porosidade": {
           "type": "number",
-          "description": ""
+          "description": "Porosidade do depósito de parafinas."
         },
         "usuarioC2C3": {
           "type": "boolean",
           "default": false,
-          "description": ""
+          "description": "Indica se o usuário irá informar os coeficientes C2 e C3."
         },
         "c2": {
           "type": "number",
-          "description": ""
+          "description": "Constante para cálculo da erosão por cisalhamento ('shear stripping')"
         },
         "c3": {
           "type": "number",
-          "description": ""
+          "description": "Constante para cálculo da erosão por cisalhamento ('shear stripping')"
         },
         "usuarioDifus": {
           "type": "boolean",
           "default": false,
-          "description": ""
+          "description": "Indica se o usuário irá informar o valor da difusividade do depósito."
+
         },
         "alteraViscFlu": {
           "type": "boolean",
@@ -3760,16 +3767,16 @@
         },
         "difus": {
           "type": "number",
-          "description": ""
+          "description": "Multiplicador da difusividade das parafinas dissolvidas."
         },
         "rugosidade": {
           "type": "number",
-          "description": "",
+          "description": "Rugosidade absoluta do depósito de parafinas. Obs: na indisponibilidade de um valor, recomenda-se utilizar o valor da rugosidade da tubulação.",
           "unit": "m"
         },
         "multVis": {
           "type": "number",
-          "description": ""
+          "description": "'Multiplicador da viscosidade da fase líquida para considerar os efeitos da suspensão de parafinas."
         },
         "DmultipWax": {
           "type": "number",
