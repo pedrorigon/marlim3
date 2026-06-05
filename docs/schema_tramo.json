@@ -3061,7 +3061,24 @@
             "angulo": {
             "type": "boolean",
             "description": "Ângulo do duto (rad)."
-            }
+            },
+            "tempParede": {
+            "type": "boolean",
+            "description": "Temperatura da parede (degC)."
+            },  
+            "diametroInterno": {
+            "type": "boolean",
+            "description": "Diâmetro interno da tubulação (m)."
+            },  
+            "dadosParafina": {
+            "type": "boolean",
+            "description": "Dados do modelo de deposição de parafinas."
+            },  
+            "subResfria": {
+            "type": "boolean",
+            "description": "Diferencial de temperatura em relação ao envelope de hidratos (subresfriamento)."
+
+            }            
         }
         },
     "perfilServico": {
