@@ -1943,7 +1943,7 @@ module FlashExtras
         logical :: bIgnoreNewtonOutcomeAndResume
 
         ! ------------------ CONSTANTES:
-        integer, parameter :: iSuccessiveSubstitutionMaxAttempts = 30       ! Limite máximo de iterações para Substituição Sucessiva
+        integer, parameter :: iSuccessiveSubstitutionMaxAttempts = 45       ! Limite máximo de iterações para Substituição Sucessiva
                                                                             ! (caso se deseje reverter: era 30 o valor original de "iSuccessiveSubstitutionMaxAttempts")
                                                                             ! (caso se deseje reverter: era 60 o valor anterior de "iSuccessiveSubstitutionMaxAttempts")
                                                                             ! (caso se deseje reverter: era 3 o valor anterior de "iSuccessiveSubstitutionMaxAttempts")

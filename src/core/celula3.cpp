@@ -3336,7 +3336,7 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 	if(calor.Tcamada[0][0]<flui.dCloudPointTOutput && fracOil>1.0E-2 && calor.fluxIni<0.){
 
 		int comp=flui.npseudoWax;
-		MW_wax = 0.0;
+		/*MW_wax = 0.0;
 		rhoWaxLiq = 0.0;
 		double SumZwaxLiq = 0.0;
 		double SumCwaxLiq = 0.0;
@@ -3353,7 +3353,28 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		}
 		MW_wax = MW_wax/SumZwaxLiq;
 		rhoWaxLiq = rhoWaxLiq/SumCwaxLiq;
+		Vwax = 1.0E+3*MW_wax/rhoWaxLiq;*/
+		MW_wax = 0.0;
+		rhoWaxLiq = 0.0;
+		double SumZwaxLiq = 0.0;
+		double SumCwaxLiq = 0.0;
+		double sumDen = 0.0; // Incluir Variável - Samuel 27/05/26
+		double Vwax;
+		double vecCwaxLiq[comp];
+		for (int i = 0; i < comp; i++){
+		    //MW_wax = MW_wax + vecZwaxLiq[i]*flui.oMolecularWeightsOfWaxComponentsOut[i];
+		    MW_wax = MW_wax + flui.oInterpolatedWaxConcs[i]*flui.oMolecularWeightsOfWaxComponentsOut[i];
+		    SumZwaxLiq = SumZwaxLiq + flui.oInterpolatedWaxConcs[i];
+		    vecCwaxLiq[i] = flui.oInterpolatedWaxConcs[i]*flui.oMolecularWeightsOfWaxComponentsOut[i];
+		    SumCwaxLiq = SumCwaxLiq + vecCwaxLiq[i];
+		    sumDen = sumDen + vecCwaxLiq[i]/flui.oLiquidDensitiesOfWaxComponents[i];
+		    // rhoWaxLiq = rhoWaxLiq + vecCwaxLiq[i]*flui.oLiquidDensitiesOfWaxComponents[i];
+		}
+		MW_wax = MW_wax/SumZwaxLiq;
+		// rhoWaxLiq = rhoWaxLiq/SumCwaxLiq;
+		rhoWaxLiq = SumCwaxLiq/sumDen; // Variável corrigida - Samuel 27/05/26
 		Vwax = 1.0E+3*MW_wax/rhoWaxLiq;
+
 
 		double Re_f=0., Re_delta=0.;
 		double Fi;
@@ -3469,7 +3490,8 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 
 		double Tint=calor.Tcamada[0][0] + 273.15;
 		double MwOil=flui.dInterpolatedLiqMWOutput;
-		detParCel.difusividadeParafina= Dparaffin = MultipDwax*7.4E-12*Tint*pow(AssocParam*MwOil,0.5)/((muOilf*1e-3)*pow(Vwax,0.6));//imprimir nova saida
+		//detParCel.difusividadeParafina= Dparaffin = MultipDwax*7.4E-12*Tint*pow(AssocParam*MwOil,0.5)/((muOilf*1e-3)*pow(Vwax,0.6));//imprimir nova saida
+		detParCel.difusividadeParafina= Dparaffin = MultipDwax*7.4E-12*Tint*pow(AssocParam*MwOil,0.5)/(muOilf*pow(Vwax,0.6));//imprimir nova saida
 		for (int i = 0; i < comp; i++){
 			Sum_dCwaxdT = Sum_dCwaxdT + flui.oInterpolatedMassWaxConcsTDerivOutput[i];
 		}
@@ -3521,9 +3543,12 @@ void Cel::WaxDeposition(dadosParafina& detalParafina, int ncel){
 		double rhoDep = Fi*rhoOil + (1.0-Fi)*rhoWaxSolid;
 		double cpDep = flui.dInterpolatedCPWaxOutput;
 
+		//detParCel.kDep = ((2*flui.dInterpolatedThermCondOutput + kOil +
+		//				   (flui.dInterpolatedThermCondOutput - kOil)*Fi)/
+		//				   (2*flui.dInterpolatedThermCondOutput + kOil - 2*(flui.dInterpolatedThermCondOutput - kOil)*Fi))*kOil;
 		detParCel.kDep = ((2*flui.dInterpolatedThermCondOutput + kOil +
-						   (flui.dInterpolatedThermCondOutput - kOil)*Fi)/
-						   (2*flui.dInterpolatedThermCondOutput + kOil - 2*(flui.dInterpolatedThermCondOutput - kOil)*Fi))*kOil;
+			       (flui.dInterpolatedThermCondOutput - kOil)*(1.0-Fi))/
+			       (2*flui.dInterpolatedThermCondOutput + kOil - 2*(flui.dInterpolatedThermCondOutput - kOil)*(1.0-Fi)))*kOil;
 		//if(isnan(delta)){
 		//	int para;
 		//	para=0;

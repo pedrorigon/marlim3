@@ -2114,6 +2114,7 @@ class Ler{
 				  double dx/*comprimento da celula vinculada ao objeto de transcal*/);//metodo que monta o objeto do tipo
 		//TransCal que sera carregado nos objetos do tipo celula
 
+		int retornaNTab();
 		void geracelp(Cel* celula);//metodo qiue gera o vetor de objetos celulas de producao que sera usado em SisProd
 		void geracelg(CelG* celula);//metodo qiue gera o vetor de objetos celulas de gas que sera usado em SisProd
 		int coluanulini();//metodo que define onde se inicia na linha de producao o acoplamento teprmico com
