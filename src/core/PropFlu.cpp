@@ -4,6 +4,18 @@ using namespace std;
 #include <cstring>
 //#include "MarlimComposicional.h"
 
+namespace {
+inline double interpolaTabela2D(double x, double y, double** tabela, int ix, int iy, double* const eixoY) {
+	double* const linhaX=tabela[ix];
+	double* const proxLinhaX=tabela[ix+1];
+	double razx=(linhaX[0]-x)/(linhaX[0]-proxLinhaX[0]);
+	double razy=(eixoY[iy]-y)/(eixoY[iy]-eixoY[iy+1]);
+	double valx1=(1-razx)*linhaX[iy]+razx*proxLinhaX[iy];
+	double valx2=(1-razx)*linhaX[iy+1]+razx*proxLinhaX[iy+1];
+	return (1-razy)*valx1+razy*valx2;
+}
+}
+
 //extern "C" void MarlimCalculateViscosityPedersen(double dPressure, double dTemperature, int iNComp, double* oTc, double* oPc, double* oMW,
 //        double* oComposition, double* dEta, int* iIER);
 
@@ -2067,9 +2079,13 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
     const int ndiv=npontos-1;
     const int upperIndex=ndiv+1;
     double* const tempAxis=Var[0];
-    if(pres<Var[1][0] || pres>=Var[upperIndex][0] || temp<tempAxis[1] || temp>=tempAxis[upperIndex]){
+    const double presMin=Var[1][0];
+    const double presMax=Var[upperIndex][0];
+    const double tempMin=tempAxis[1];
+    const double tempMax=tempAxis[upperIndex];
+    if(pres<presMin || pres>=presMax || temp<tempMin || temp>=tempMax){
     	varprop=1.225*Deng;
-		if(pres>=Var[upperIndex][0]|| temp<tempAxis[1] || temp>=tempAxis[upperIndex]){
+		if(pres>=presMax|| temp<tempMin || temp>=tempMax){
             // incluir falha
             string complementoFalha = string("Limite alto na tabela ") + to_string((*vg1dSP).contaExit);
             logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Pressão ou temperatura excedeu o limite máximo da tabela de Flash", "N/A",
@@ -2157,13 +2173,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
           else d = m - 1;
         }
       }
-      double* const presRow=Var[ipres];
-      double* const nextPresRow=Var[ipres+1];
-      double razpres=(presRow[0]-pres)/(presRow[0]-nextPresRow[0]);
-      double raztemp=(tempAxis[itemp]-temp)/(tempAxis[itemp]-tempAxis[itemp+1]);
-      double varp1=(1-razpres)*presRow[itemp]+razpres*nextPresRow[itemp];
-      double varp2=(1-razpres)*presRow[itemp+1]+razpres*nextPresRow[itemp+1];
-      varprop=(1-raztemp)*varp1+raztemp*varp2;
+      varprop=interpolaTabela2D(pres,temp,Var,ipres,itemp,tempAxis);
      }
    /* if(renovaInd>0){
     	(*itempAnt)=itemp;
@@ -3678,13 +3688,7 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 								  zt=ZdranOriginal(pres,temp,cordg,1,10,0);
 							  }
 							  else{
-								  double* const presRow=zdranP[ipres];
-								  double* const nextPresRow=zdranP[ipres+1];
-								  double razpres=(presRow[0]-presR)/(presRow[0]-nextPresRow[0]);
-								  double raztemp=(tempAxis[itemp]-tempR)/(tempAxis[itemp]-tempAxis[itemp+1]);
-								  double latp1=(1-razpres)*presRow[itemp]+razpres*nextPresRow[itemp];
-								  double latp2=(1-razpres)*presRow[itemp+1]+razpres*nextPresRow[itemp+1];
-								  zt=(1-raztemp)*latp1+raztemp*latp2;
+								  zt=interpolaTabela2D(presR,tempR,zdranP,ipres,itemp,tempAxis);
 							  }
 						  }
 					  }
@@ -3706,19 +3710,22 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 	  zt=((Deng*28.9625)*pres*98066.5/masesp)/(8.0465*1000*tempKelvin);
   }
   else{
+	  const auto calculaZComposicional = [&]() -> double {
+		  double masesp;
+		  double ztC;
+		  int iIERT;
+		  Marlim_CalculatePhaseDensity(pres, temp, 1,
+				  oCalculatedVapComposition, npseudo,  tempCrit, presCrit,
+				  fatAcent, TIndepPeneloux, kij, lij,
+				  liqModel,dVaporPhaseMW, &masesp,
+				  &ztC, &iIERT);
+		  if(iCalculatedThermodynamicCondition==0 || iCalculatedThermodynamicCondition==1)ztC=1.;
+		  return ztC;
+	  };
 	  if((*vg1dSP).modoTransiente==0){
 		  if(tabelaDinamica==0){
-			  double masesp;
-			  double ztC;
-			  int iIERT;
-			  Marlim_CalculatePhaseDensity(pres, temp, 1,
-					  oCalculatedVapComposition, npseudo,  tempCrit, presCrit,
-					  fatAcent, TIndepPeneloux, kij, lij,
-					  liqModel,dVaporPhaseMW, &masesp,
-					  &ztC, &iIERT);
-			  if(iCalculatedThermodynamicCondition==0 || iCalculatedThermodynamicCondition==1)ztC=1.;
 			  //if(dVaporMassFraction<1e-15)ztC=1.;
-			  zt=ztC;
+			  zt=calculaZComposicional();
 		  }
 		  else{
 			  if(temp<tabDin.tmin)temp=tabDin.tmin;
@@ -3741,17 +3748,8 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 				  double titTotal=titP0T0+titP0T1+titP1T0+titP1T1;
 				  double multTit=titP0T0*titP0T1*titP1T0*titP1T1;
 				  if(fabs(multTit)<1e-15 && (fabs(titTotal)>1e-15/*||fabs(titTotal-2.)<1e-15||fabs(titTotal-1.)<1e-15*/)){
-					  double masesp;
-					  double ztC;
-					  int iIERT;
-					  Marlim_CalculatePhaseDensity(pres, temp, 1,
-							  oCalculatedVapComposition, npseudo,  tempCrit, presCrit,
-							  fatAcent, TIndepPeneloux, kij, lij,
-							  liqModel,dVaporPhaseMW, &masesp,
-							  &ztC, &iIERT);
-					  if(iCalculatedThermodynamicCondition==0 || iCalculatedThermodynamicCondition==1)ztC=1.;
 					  //if(dVaporMassFraction<1e-15)ztC=1.;
-					  zt=ztC;
+					  zt=calculaZComposicional();
 				  }
 				  else{
 					  raztemp=(temp-tabDin.valZ[0][posicT])/(tabDin.delT);
@@ -3763,17 +3761,8 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{/
 
 			  }
 			  else{
-				  double masesp;
-				  double ztC;
-				  int iIERT;
-				  Marlim_CalculatePhaseDensity(pres, temp, 1,
-						  oCalculatedVapComposition, npseudo,  tempCrit, presCrit,
-						  fatAcent, TIndepPeneloux, kij, lij,
-						  liqModel,dVaporPhaseMW, &masesp,
-						  &ztC, &iIERT);
-				  if(iCalculatedThermodynamicCondition==0 || iCalculatedThermodynamicCondition==1)ztC=1.;
 				  //if(dVaporMassFraction<1e-15)ztC=1.;
-				  zt=ztC;
+				  zt=calculaZComposicional();
 			  }
 		  }
 	  }
