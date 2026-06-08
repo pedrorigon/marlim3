@@ -1721,6 +1721,8 @@ double TransCal::transperm(double resanul){
  void TransCal::transcel(int icam, int idisc){
   double lconv=12.19;
   const int lastLayer=geom.ncamadas-1;
+  const int layerDiscCount=ncamada[icam];
+  const int lastDisc=ncamada[lastLayer];
 
   double rho=0.;
   double cp=0.;
@@ -1741,7 +1743,6 @@ double TransCal::transperm(double resanul){
   }
 
   if(ambext==1){// alteracao0
-		 const int lastDisc=ncamada[lastLayer];
 		 double tmed=Tcamada[lastLayer][lastDisc];
 		 viscextern1=VisLiq(tmed) * 1e-3;
 		 rhoextern1=MasEspLiq(tmed);
@@ -1750,7 +1751,6 @@ double TransCal::transperm(double resanul){
 		 betext=beta(tmed, 1);
   }// alteracao0
   else if(ambext==2 && formacPoc==0){// alteracao0 - ar
-		 const int lastDisc=ncamada[lastLayer];
 		 double tmed=0.5*(Textern1+Tcamada[lastLayer][lastDisc]);
 		 viscextern1=VisAr(tmed) * 1e-3;
 		 rhoextern1=MasEspAr(tmed);
@@ -1768,8 +1768,8 @@ double TransCal::transperm(double resanul){
     if(icam>0){
 	    r0=geom.diamC[icam-1]/2.+(idisc-1)*drcamada[icam];
 	    r1=geom.diamC[icam-1]/2.+idisc*drcamada[icam];
-	    if(idisc<ncamada[icam])r2=geom.diamC[icam-1]/2.+(idisc+1)*drcamada[icam];
-	    else if(icam<geom.ncamadas-1) r2=geom.diamC[icam]/2.+drcamada[icam+1];
+	    if(idisc<layerDiscCount)r2=geom.diamC[icam-1]/2.+(idisc+1)*drcamada[icam];
+	    else if(icam<lastLayer) r2=geom.diamC[icam]/2.+drcamada[icam+1];
 	    else r2=r1;
     }
     else{
@@ -1780,15 +1780,15 @@ double TransCal::transperm(double resanul){
     }
     rho=geom.rhoC[icam];
     cp=geom.cp[icam];
-    if(idisc<ncamada[icam]) k1=geom.cond[icam];
-    else if(icam<geom.ncamadas-1)k1=geom.cond[icam+1];
+    if(idisc<layerDiscCount) k1=geom.cond[icam];
+    else if(icam<lastLayer)k1=geom.cond[icam+1];
     else k1=geom.cond[icam];
 
     double graA;
     double raA;
     double prT;
     double Nu2;
-   if(icam<geom.ncamadas-2 && idisc==ncamada[icam] && geom.tipomat[icam+1]!=0){
+   if(icam<lastLayer-1 && idisc==layerDiscCount && geom.tipomat[icam+1]!=0){
 		 const int nextCam=icam+1;
 		 if(geom.tipomat[nextCam]==2){// alteracao0
 			 double tmed=0.5*(Tcamada[nextCam][0]+Tcamada[nextCam][1]);
@@ -1906,9 +1906,9 @@ double TransCal::transperm(double resanul){
 	 else hi=h1=novoHi;
   }
 
-	if(icam==lastLayer && idisc==ncamada[icam]){
+	if(icam==lastLayer && idisc==layerDiscCount){
 	if(formacPoc==0){
-	  definePet(Tcamada[lastLayer][ncamada[icam]-1],Textern1);
+	  definePet(Tcamada[lastLayer][lastDisc-1],Textern1);
 	  double prT=Pr(viscextern1/rhoextern1,kextern1/(rhoextern1*cpextern1));
 	  double reyE;
 	  if(coluna==0)reyE=ReyIn(Vextern1,rhoextern1*viscextern1/rhoextern1, rhoextern1, geom.diamC[lastLayer]);
@@ -1922,7 +1922,7 @@ double TransCal::transperm(double resanul){
 	  if(dirconvExt==0){
 		  Nu1=nussChuBer(reyE, prT);
 		  if( reyE<=5000){
-		     double dteta=fabs(Textern1-Tcamada[lastLayer][ncamada[lastLayer]]);
+		     double dteta=fabs(Textern1-Tcamada[lastLayer][lastDisc]);
 		     double rae=RaExt(dteta,betext, viscextern1/rhoextern1,kextern1/(rhoextern1*cpextern1));
 		    	 double grase=rae/prT;
 		    	 double nusN;
@@ -1938,7 +1938,7 @@ double TransCal::transperm(double resanul){
 		  if(reyE>2400)Nu1=nussPet(reyE,prT,rug, viscextern1,1./1e3);
 		  else if(coluna==0) Nu1=3.6;
 		  else{
-		      double graE=Grash(fabs(Tcamada[lastLayer][ncamada[icam]-1]-Textern2),
+		      double graE=Grash(fabs(Tcamada[lastLayer][lastDisc-1]-Textern2),
 		                   betext,viscextern1/rhoextern1,0.5*(geom.b-geom.diamC[lastLayer]));
 	 		  grashe=graE;
 	 		  double raE= Ra(graE,prT);
@@ -1969,7 +1969,7 @@ double TransCal::transperm(double resanul){
 	  localmat[0][3]=-(1/(0.5*(r1+r0)))/(r1-r0);
 	  //localmat[0][3]=-(1/r1)/(r1-r0);
 	  localvet[0]=Tcamada[icam][idisc]*(rho*cp)/dt;
-	  if(icam<geom.ncamadas-1 || (icam==geom.ncamadas-1 && idisc<ncamada[icam])){
+	  if(icam<lastLayer || (icam==lastLayer && idisc<layerDiscCount)){
 		  double ciL;
 		  ciL=(tec1/(2.*M_PI)+0.5*k1*(r1+r2)/(r2-r1));
 		  //ciL=(tec1/(2.*M_PI)+0.5*k1*(r1)/(0.5*(r2-r0)));
@@ -2020,7 +2020,7 @@ double TransCal::transperm(double resanul){
 			matglob[1][-1]=localmat[1][2];
 			matglob[1][0]=localmat[1][3];
 			int konta=2;
-			for(int i=0;i<geom.ncamadas;i++){
+			for(int i=0;i<totalLayers;i++){
 				for(int j=1;j<=ncamada[i];j++){
 					transcel(i,j);
 					vetliv[konta]=localvet[0];
