@@ -769,19 +769,18 @@ template<class T> void FullMtx<T>::LU(Vcr<T>& bb) const{
       for(int j=-bwlef;j<=bwrit;j++)bdmx[i][j]=t[i][j];//aten��o, observe que  t � armazenado da mesma maneira que bdmx
   }
 
-  template<class T> BandMtx<T>::BandMtx(int n, int p,int r, T t){//construtor onde todos os termos t�m o valor t
+template<class T> BandMtx<T>::BandMtx(int n, int p,int r, T t){//construtor onde todos os termos t�m o valor t
     this->nrows=n; //n�mero de equa��es a ser resolvidas
     bwlef=p;//range de elementos n�o-zero � esquerda
     bwrit=r;//range de elementos n�o-zero � direita
+    const int bandWidth=bwlef+bwrit+1;
 
     bdmx= new T* [this->nrows];
     for(int i=0;i<this->nrows;i++){
-      bdmx[i]=new T[bwlef+bwrit+1];//armazena o termo da diagonal principal, os termos n�o-zeros � esquerda e � direita da diagonal
-      bdmx[i]+=bwlef;//offset, agora os termos na diagonal principal t�m �ndice i=0
+      T* row = new T[bandWidth];//armazena o termo da diagonal principal, os termos n�o-zeros � esquerda e � direita da diagonal
+      for(int j=0;j<bandWidth;j++)row[j]=t;
+      bdmx[i]=row+bwlef;//offset, agora os termos na diagonal principal t�m �ndice i=0
     }
-
-    for(int i=0;i<this->nrows;i++)
-      for(int j=-bwlef;j<=bwrit;j++)bdmx[i][j]=t;
   }
 
 
@@ -806,19 +805,18 @@ template<class T> void FullMtx<T>::LU(Vcr<T>& bb) const{
     }
   }
 
-  template<class T> BandMtx<T>::BandMtx(const BandMtx& bd){//construtor c�pia
+template<class T> BandMtx<T>::BandMtx(const BandMtx& bd){//construtor c�pia
     this->nrows=bd.nrows; //n�mero de equa��es a ser resolvidas
     bwlef=bd.bwlef; //range de elementos n�o-zero � esquerda
     bwrit=bd.bwrit; //range de elementos n�o-zero � direita
+    const int bandWidth=bwlef+bwrit+1;
 
     bdmx=new T* [this->nrows];
     for(int i=0;i<this->nrows;i++){
-      bdmx[i]=new T[bwlef+bwrit+1];//armazena o termo da diagonal principal, os termos n�o-zeros � esquerda e � direita da diagonal
-      bdmx[i]+=bwlef;//offset, agora os termos na diagonal principal t�m �ndice i=0
+      T* row = new T[bandWidth];//armazena o termo da diagonal principal, os termos n�o-zeros � esquerda e � direita da diagonal
+      bdmx[i]=row+bwlef;//offset, agora os termos na diagonal principal t�m �ndice i=0
+      for(int j=0;j<bandWidth;j++)row[j]=bd[i][j-bwlef];
     }
-
-    for(int i=0;i<this->nrows;i++)
-      for(int j=-bwlef;j<=bwrit;j++)bdmx[i][j]=bd[i][j];
  }  
 
 
@@ -1015,22 +1013,22 @@ template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz
   if(this->nrows!=bb.size())error("tamanho de matriz e vetor n�o confere, erro ocorrido na rotina LU com pivoteamento parcial para matriz banda");
 
   BandMtx<T> tx(this->nrows,bwlef,min(this->nrows-1,bwlef+bwrit));
-#pragma omp parallel for num_threads(nthrdMatriz)
   for(int i=0;i<this->nrows;i++)
-    for(int j=-bwlef;j<=bwrit;j++)tx[i][j]=bdmx[i][j];//a princ�pio, isto poderia ser feito automaticamente pelo assignment tx=*this
-
-  Vcr<int> pvt(this->nrows);
+    for(int j=-bwlef;j<=bwrit;j++)tx[i][j]=bdmx[i][j];
+  int* pvt=new int[this->nrows];
 
   const int nrowsmone=tx.nrows-1;
   for(int k=0;k<nrowsmone;k++){
+    T* const txk=tx[k];
     int kbrow=min(nrowsmone-k, tx.bwlef);
     int kbcol=min(nrowsmone-k,tx.bwrit);
 
     int pc=k;
-    double aet=fabs(tx[k][0]);
+    double aet=fabs(txk[0]);
     for(int i=1;i<=kbrow;i++){
-      if(fabs(tx[k+i][-i])>aet){
-        aet=fabs(tx[k+i][-i]);
+      T* const txki=tx[k+i];
+      if(fabs(txki[-i])>aet){
+        aet=fabs(txki[-i]);
         pc=k+i;
       }
     }
@@ -1038,17 +1036,18 @@ template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz
     pvt[k]=pc;
 
     if(pc!=k){
-      for(int j=0;j<=kbcol;j++) swap(tx[pc][k+j-pc],tx[k][j]);
+      T* const txpc=tx[pc];
+      for(int j=0;j<=kbcol;j++) swap(txpc[k+j-pc],txk[j]);
     }
 
-//#pragma omp parallel for num_threads(nthrdMatriz)
     for(int i=1;i<=kbrow;i++){
       int kpi=k+i;
-      if(tx[kpi][-i]!=0){
-        T dmul=tx[kpi][-i]/tx[k][0];
-        tx[kpi][-i]=dmul;
+      T* const txkpi=tx[kpi];
+      if(txkpi[-i]!=0){
+        T dmul=txkpi[-i]/txk[0];
+        txkpi[-i]=dmul;
         for(int j=1;j<=kbcol;j++)
-          tx[kpi][j-i]-=dmul*tx[k][j];
+          txkpi[j-i]-=dmul*txk[j];
       }
     }
   }
@@ -1072,6 +1071,7 @@ template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz
     for(int j=1;j<=kb;j++)bb[k]-=tx[k][j]*bb[k+j];
     bb[k]/=tx[k][0];
   }
+  delete[] pvt;
  }
 
 
