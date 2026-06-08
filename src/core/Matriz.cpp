@@ -1012,10 +1012,14 @@ template<class T> void BandMtx<T>::GaussElim(Vcr<T>& bb)const{//LU para matriz b
 template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz banda com pivoteamento parcial
   if(this->nrows!=bb.size())error("tamanho de matriz e vetor n�o confere, erro ocorrido na rotina LU com pivoteamento parcial para matriz banda");
 
-  BandMtx<T> tx(this->nrows,bwlef,min(this->nrows-1,bwlef+bwrit));
-  for(int i=0;i<this->nrows;i++)
-    for(int j=-bwlef;j<=bwrit;j++)tx[i][j]=bdmx[i][j];
-  int* pvt=new int[this->nrows];
+  const int nrows=this->nrows;
+  BandMtx<T> tx(nrows,bwlef,min(nrows-1,bwlef+bwrit));
+  for(int i=0;i<nrows;i++){
+    T* const txi=tx[i];
+    T* const src=bdmx[i];
+    for(int j=-bwlef;j<=bwrit;j++)txi[j]=src[j];
+  }
+  int* pvt=new int[nrows];
 
   const int nrowsmone=tx.nrows-1;
   for(int k=0;k<nrowsmone;k++){
@@ -1027,8 +1031,9 @@ template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz
     double aet=fabs(txk[0]);
     for(int i=1;i<=kbrow;i++){
       T* const txki=tx[k+i];
-      if(fabs(txki[-i])>aet){
-        aet=fabs(txki[-i]);
+      const double aetCandidate=fabs(txki[-i]);
+      if(aetCandidate>aet){
+        aet=aetCandidate;
         pc=k+i;
       }
     }
@@ -1060,7 +1065,10 @@ template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz
     int pvtk=pvt[k];
     T sb=bb[pvtk];
     if(k!=pvtk)swap(bb[k],bb[pvtk]);
-    for(int j=1;j<=kbrow;j++) bb[k+j]-=tx[k+j][-j]*sb;
+    for(int j=1;j<=kbrow;j++){
+      T* const txkj=tx[k+j];
+      bb[k+j]-=txkj[-j]*sb;
+    }
   }
 
   //backward substitution
@@ -1068,8 +1076,9 @@ template<class T> void BandMtx<T>::GaussElimPP(Vcr<T>& bb)const{//LU para matriz
     //int kb=min(this->nrowsmone-k,tx.bwrit);
   for(int k=nrowsmone;k>=0;k--){
     int kb=min(nrowsmone-k,tx.bwrit);
-    for(int j=1;j<=kb;j++)bb[k]-=tx[k][j]*bb[k+j];
-    bb[k]/=tx[k][0];
+    T* const txk=tx[k];
+    for(int j=1;j<=kb;j++)bb[k]-=txk[j]*bb[k+j];
+    bb[k]/=txk[0];
   }
   delete[] pvt;
  }
