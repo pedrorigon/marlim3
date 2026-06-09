@@ -11,73 +11,61 @@
 
 using std::vector;
 
-// ============================================================================
-// FUNÇÕES AUXILIARES
-// ============================================================================
 
 /*
 ==============================================================================
-frictionFactor: Calcula o fator de atrito monofásico de Moody usando a equação
-                de Colebrook-White, com tratamento para regime laminar e turbulento.
+frictionFactor: Calculates the single-phase Moody friction factor using the
+                Colebrook-White equation, with treatment for laminar and
+                turbulent flow regimes.
 
-Referências:
+References:
      1.  Moody, L. F.: "Friction Factors for Pipe Flow," Transactions of the ASME,
          Vol. 66, No. 8 (1944) 671-684.
      2.  Colebrook, C. F.: "Turbulent Flow in Pipes, with Particular Reference to
          the Transition Region Between the Smooth and Rough Pipe Laws," Journal of
          the Institution of Civil Engineers, Vol. 11, No. 4 (1939) 133-156.
 
-Método:
-- Regime laminar (Re ≤ 2100): f = 64/Re (equação de Hagen-Poiseuille)
-- Regime turbulento (Re > 2100): Aproximação iterativa de Serghides para
-  a equação implícita de Colebrook-White
+Method:
+- Laminar regime (Re <= 2100): f = 64/Re (Hagen-Poiseuille equation)
+- Turbulent regime (Re > 2100): Iterative Serghides approximation for the
+  implicit Colebrook-White equation
 
-Dicionário de variáveis:
-- reynolds           : Número de Reynolds (adimensional) - entrada
-- roughness          : Rugosidade relativa (ε/D, adimensional) - entrada
-- frictionFactorValue: Fator de atrito de Moody-Darcy (adimensional) - saída
-- normalizedRoughness: Rugosidade normalizada (roughness/3.7)
-- reynoldsProduct    : Produto de Reynolds e rugosidade normalizada
-- logRoughness       : Logaritmo da rugosidade normalizada
-- termA, termB, termC: Termos auxiliares da aproximação de Serghides
+Variable dictionary:
+- reynolds           : Reynolds number (dimensionless) - input
+- roughness          : Relative roughness (epsilon/D, dimensionless) - input
+- frictionFactorValue: Moody-Darcy friction factor (dimensionless) - output
+- normalizedRoughness: Normalized roughness (roughness/3.7)
+- reynoldsProduct    : Product of the Reynolds number and normalized roughness
+- logRoughness       : Logarithm of the normalized roughness
+- termA, termB, termC: Auxiliary terms used in the Serghides approximation
 ==============================================================================
 */
+
 void frictionFactor(double reynolds, double roughness, double& frictionFactorValue) {
     
-    // ========================================
     // Flow Regime Constants
-    // ========================================
     static constexpr double LAMINAR_TRANSITION_REYNOLDS = 2100.0;  // Laminar-turbulent transition
     static constexpr double LAMINAR_FRICTION_COEFFICIENT = 64.0;   // Hagen-Poiseuille coefficient
     
-    // ========================================
     // Colebrook-White Equation Constants
-    // ========================================
     static constexpr double COLEBROOK_ROUGHNESS_FACTOR = 3.7;      // Roughness normalization factor
     static constexpr double COLEBROOK_CONSTANT_A = 12.0;           // First iteration constant
     static constexpr double COLEBROOK_CONSTANT_B = 5.02;           // Second iteration constant
     static constexpr double FRICTION_MULTIPLIER = 0.25;            // Friction factor multiplier (1/4)
     
-    // ========================================
     // Convergence Criteria
-    // ========================================
     static constexpr double CONVERGENCE_TOLERANCE = 1.0E-06;       // Iteration convergence threshold
     
-    // ========================================
     // Laminar Flow Regime (Re ≤ 2100)
-    // ========================================
     // Direct analytical solution: f = 64/Re
     if (reynolds <= LAMINAR_TRANSITION_REYNOLDS) {
         frictionFactorValue = LAMINAR_FRICTION_COEFFICIENT / reynolds;
         return;
     }
     
-    // ========================================
     // Turbulent Flow Regime (Re > 2100)
-    // ========================================
     // Serghides approximation for Colebrook-White implicit equation:
     // 1/√f = -2.0 * log10(ε/D/3.7 + 2.51/(Re*√f))
-    //
     // Iterative solution using successive substitution with Aitken acceleration
     
     // Step 1: Normalize roughness
@@ -141,25 +129,19 @@ Convergence States:
 - CONVERGE_DONE      (2): Converged within tolerance
 ==============================================================================
 */
-void accelerateConvergence(double& currentValue, double& previousValue, unsigned char& convergeStatus, 
+void accelerateConvergence(double& currentValue, double& previousValue, unsigned char& convergeStatus,
                           double tolerance, double& auxValueA, double& auxValueB) {
     
-    // ========================================
     // Convergence State Constants
-    // ========================================
     static constexpr unsigned char CONVERGE_INIT = 0;       // First iteration
     static constexpr unsigned char CONVERGE_ITERATING = 1;  // Actively iterating
     static constexpr unsigned char CONVERGE_DONE = 2;       // Converged
     
-    // ========================================
     // Wegstein Method Constants
-    // ========================================
     static constexpr double ZERO_DENOMINATOR_THRESHOLD = 1.0E-10;  // Near-singular denominator
     static constexpr double AVERAGE_DIVISOR = 2.0;                 // Simple averaging fallback
     
-    // ========================================
     // State 1: Initialization
-    // ========================================
     // First iteration: store initial values and use direct substitution
     if (convergeStatus == CONVERGE_INIT) {
         auxValueA = currentValue;      // Store f(x_0)
@@ -169,9 +151,7 @@ void accelerateConvergence(double& currentValue, double& previousValue, unsigned
         return;
     }
     
-    // ========================================
     // State 2: Convergence Check
-    // ========================================
     // Check if iteration has converged: |f(x) - x| < tolerance
     const double iterationError = std::abs(currentValue - previousValue);
     
@@ -181,12 +161,9 @@ void accelerateConvergence(double& currentValue, double& previousValue, unsigned
         return;
     }
     
-    // ========================================
     // State 3: Wegstein Acceleration
-    // ========================================
     // Compute Wegstein acceleration factor using history
     // Formula: x_{n+1} = (auxValueA * x_n - auxValueB * f(x_n)) / deltaSum
-    // where deltaSum = f(x_{n-1}) - f(x_n) + x_n - x_{n-1}
     
     const double deltaSum = auxValueA - currentValue + previousValue - auxValueB;
     
@@ -208,41 +185,41 @@ void accelerateConvergence(double& currentValue, double& previousValue, unsigned
     }
 }
 
-
-// ==============================================================================
 // FUNÇÃO PARA EXECUÇÃO DE CORRELAÇÕES
-// ==============================================================================
 
 /*
 ==============================================================================
-executarCorrelacao: Função que extrai parâmetros da estrutura celula
-                    e executa uma correlação de escoamento especificada por número.
+executarCorrelacao: Extracts parameters from the celula structure and executes
+                    the flow correlation specified by its numeric identifier.
 
-Parâmetros:
-- celula              : Ponteiro para array de células
-- i                   : Índice da célula atual
-- inter               : Flag indicando interface (1) ou não (0)
-- AceleraConvergPerm  : Flag de aceleração de convergência
-- correlacao          : Número da correlação a ser executada
-                        0 = Poettmann-Carpenter
-                        1 = Baxendell-Thomas
-                        2 = Fancher-Brown
-                        3 = Hagedorn-Brown
-                        4 = Duns-Ros
-                        5 = Orkiszewski
-                        6 = Beggs & Brill
-                        7 = Mukherjee-Brill
-                        8 = Aziz
-                        9 = Gray
-                        10 = Oliemans
-                        11 = Dukler
-                        12 = Beggs & Brill com correção de Palmer
-                        13 = Dukler, Eaton e Flanigan 
-                        14 = Dukler e Minami I
-                        15 = Dukler e Minami II
+Parameters:
+- celula             : Pointer to the cell array
+- i                  : Index of the current cell
+- inter              : Flag indicating whether the cell is at an interface
+                       (1) or not (0)
+- AceleraConvergPerm : Convergence acceleration flag
+- correlacao         : Identifier of the correlation to be executed
+                       0  = Poettmann-Carpenter
+                       1  = Baxendell-Thomas
+                       2  = Fancher-Brown
+                       3  = Hagedorn-Brown
+                       4  = Duns-Ros
+                       5  = Orkiszewski
+                       6  = Beggs & Brill
+                       7  = Mukherjee-Brill
+                       8  = Aziz
+                       9  = Gray
+                       10 = Oliemans
+                       11 = Dukler
+                       12 = Beggs & Brill with Palmer correction
+                       13 = Dukler, Eaton, and Flanigan
+                       14 = Dukler and Minami I
+                       15 = Dukler and Minami II
 
 ==============================================================================
 */
+
+
 void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
                        int correlacao,
                        double& holdup, double& frictionGrad, double& gravityGrad, double& totalGrad,
@@ -267,15 +244,13 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     long double viscmix;
     long double angle;
     long double velocity;
-    long double temperature;  // Temperatura em °F
+    long double temperature;  // Temperature - °F
 	long double compressibilityFactor;
 	long double surfaceTension;
 	long double productionRate;
 	long double waterFraction;
 	long double oilSurfaceTension;
 	long double waterSurfaceTension;
-
-    
     
     if(inter == 1) {
         angle = celula[i].dutoL.teta * 180 / M_PI;
@@ -304,16 +279,15 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         rhog = celula[i - 1].flui.MasEspGas(pmed, tmed);
         rhol = (1.0 - betmed) * celula[i - 1].flui.MasEspLiq(pmed, tmed)
              + betmed * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-        liquidViscosity = ((1.0 - betmed) * celula[i - 1].flui.ViscOleo(pmed, tmed) 
+        liquidViscosity = ((1.0 - betmed) * celula[i - 1].flui.ViscOleo(pmed, tmed)
                          + betmed * celula[i - 1].fluicol.VisFlu(pmed, tmed));
         gasViscosity = celula[i].flui.ViscGas(pmed, tmed);
         ugsmed = (celula[i - 1].MC - celula[i - 1].Mliqini) / (area * rhog);
         ulsmed = celula[i - 1].Mliqini / (area * rhol);
         j = ugsmed + ulsmed;
-        velocity = 3.28084 * (ugsmed + ulsmed);  
-        temperature = tmed * 9.0/5.0 + 32.0;     // Conversão °C para °F
+        velocity = 3.28084 * (ugsmed + ulsmed);
+        temperature = tmed * 9.0/5.0 + 32.0;     // Conversion °C to °F
     } else {
-        // Não interface
         area = celula[i].duto.area;
         diameter = celula[i].duto.dia * 100.0 / (2.54*12);
         roughness = celula[i].duto.rug / celula[i].duto.dia;
@@ -348,7 +322,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         ugsmed = celula[i].QG / area;
         ulsmed = celula[i].QL / area;
         j = ugsmed + ulsmed;
-        velocity = 3.28084 * (ugsmed + ulsmed);  
+        velocity = 3.28084 * (ugsmed + ulsmed);
         
         long double sinalJ = 1.0;
         if(fabsl(j) > 1e-15) {
@@ -356,11 +330,11 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
         }
         
         rhomix = alfmed * rhog + (1.0 - alfmed) * rhol;
-        liquidViscosity = ((1.0 - betmed) * celula[i].flui.ViscOleo(pmed, tmed) 
+        liquidViscosity = ((1.0 - betmed) * celula[i].flui.ViscOleo(pmed, tmed)
                          + betmed * celula[i].fluicol.VisFlu(pmed, tmed));
         gasViscosity = celula[i].flui.ViscGas(pmed, tmed);
         viscmix = alfmed * celula[i].flui.ViscGas(pmed, tmed) + (1.0 - alfmed) * liquidViscosity;
-        temperature = tmed * 9.0/5.0 + 32.0;     // Conversão °C para °F
+        temperature = tmed * 9.0/5.0 + 32.0;     // Conversion °C to °F
     }
     
     
@@ -368,10 +342,10 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     long double liquidFraction;
     if(fabsl(j)>1e-15)liquidFraction= fabsl(ulsmed / j);
     else liquidFraction=1.-celula[i-1].alf;
-    long double gasDensity = 0.06243 * rhog;      
-    long double liquidDensity = 0.06243 * rhol;   
+    long double gasDensity = 0.06243 * rhog;
+    long double liquidDensity = 0.06243 * rhol;
     
-    // Variáveis adicionais para correlações que retornam mais parâmetros
+    // Additional variables for correlations that return more parameters
     double accelGrad = 0.0;
     unsigned char criticalFlag = 0;
     unsigned char convergeFlag = 0;
@@ -380,16 +354,15 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     unsigned char correlationFlag = 0;
     unsigned char transitionFlag = 0;
     
-    // Inicializa holdup
+    // Initialize holdup
     holdup = 0.0;
-    
     
     if (correlacao == 0) {
         // 0 = Poettmann-Carpenter
         poettmannCarpenter(angle, diameter, velocity, liquidFraction,
                           gasDensity, liquidDensity, gasViscosity, liquidViscosity, roughness,
                           holdup, frictionGrad, gravityGrad, totalGrad, reynolds, flowType);
-    } 
+    }
     else if (correlacao == 1) {
         // 1 = Baxendell-Thomas
         baxendellThomas(angle, diameter, velocity, liquidFraction,
@@ -458,7 +431,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
             reynolds, flowPattern, criticalFlag);
     }
     else if (correlacao == 10) {
-        // 10 = Oliemans 
+        // 10 = Oliemans
         correlationFlag = 1;
         olie(angle, diameter, roughness, pmed, velocity, liquidFraction,
             gasDensity, liquidDensity, gasViscosity, liquidViscosity,
@@ -476,7 +449,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
                          reynolds, flowPattern, correlationFlag, transitionFlag, criticalFlag);
     }
     else if (correlacao == 12) {
-        // 12 = Beggs & Brill com correção de Palmer
+        // 12 = Beggs & Brill with Palmer's correction
         palmerFlag = 1;
         beggsAndBrill(angle, diameter, roughness, pmed, velocity, liquidFraction,
                      gasDensity, liquidDensity, gasViscosity, liquidViscosity, surfaceTension,
@@ -513,62 +486,57 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
 }
 
 
-// ============================================================================
-// CORRELAÇÕES DE ESCOAMENTO
-// ============================================================================
+// FLOW CORRELATIONS
 
 /*
 ==============================================================================
-poettmannCarpenter: Calcula gradientes de pressão em escoamento bifásico vertical
-                    usando correlações de Poettmann e Carpenter.
+poettmannCarpenter: Calculates pressure gradients in vertical two-phase flow
+                    using the Poettmann and Carpenter correlation.
 
-Referências:
+References:
      1.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-         (Feb. 1984) 3-4 thru. 3-10.
+         (Feb. 1984), Sections 3-4 through 3-10.
      2.  Poettmann, F. H. and Carpenter, P. G.: "The Multiphase Flow
-         of Gas, Oil, and Water Through Vertical Flow String with
-         Application to the Design of Gas-Lift Installation,
-         Drilling and Production Practice, API (1952) 257-317.
+         of Gas, Oil, and Water Through Vertical Flow Strings with
+         Application to the Design of Gas-Lift Installations,"
+         Drilling and Production Practice, API (1952), 257-317.
 
-Dicionário de variáveis:
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- velocity      : Velocidade média do escoamento (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade da fase gás (lb/ft³)
-- liquidDensity : Densidade da fase líquida (lb/ft³)
-- gasViscosity  : Viscosidade da fase gás (cP)
-- liquidViscosity: Viscosidade da fase líquida (cP)
-- roughness     : Rugosidade relativa do tubo (adimensional)
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão devido à gravidade (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds (adimensional)
-- flowType      : Indicador do tipo de fluxo (1 = líquido, 2 = gás, 3 = misto)
-- logFlowArray  : Array de valores de logaritmo de fluxo usado na correlação
-- frictionArray : Array de valores da função correlacionada
-- angleRad      : Ângulo em radianos
-- mixtureRho    : Densidade aparente do escoamento, ponderada pela fração de líquido/gás
-- frictionFactor: Fator de fricção
-- xParam        : Parâmetro intermediário (produto de densidade, velocidade e diâmetro)
-- logX          : Logaritmo de xParam 
+Variable dictionary:
+- angle          : Pipe inclination angle (degrees)
+- diameter       : Pipe inner diameter (inches)
+- velocity       : Average flow velocity (ft/s)
+- liquidFraction : Liquid volumetric fraction
+- gasDensity     : Gas-phase density (lb/ft3)
+- liquidDensity  : Liquid-phase density (lb/ft3)
+- gasViscosity   : Gas-phase viscosity (cP)
+- liquidViscosity: Liquid-phase viscosity (cP)
+- roughness      : Pipe relative roughness (dimensionless)
+- frictionGrad   : Frictional pressure gradient (psi/ft)
+- gravityGrad    : Gravitational pressure gradient (psi/ft)
+- totalGrad      : Total pressure gradient (psi/ft)
+- reynolds       : Reynolds number (dimensionless)
+- flowType       : Flow-type indicator (1 = liquid, 2 = gas, 3 = mixed)
+- logFlowArray   : Array of logarithmic flow values used by the correlation
+- frictionArray  : Array of correlated function values
+- angleRad       : Angle in radians
+- mixtureRho     : Apparent mixture density weighted by the liquid and gas fractions
+- frictionFactor : Friction factor
+- xParam         : Intermediate parameter defined as the product of density,
+                   velocity, and diameter
+- logX           : Logarithm of xParam
 ==============================================================================
 */
 
 
 void poettmannCarpenter(double angle, double diameter, double velocity, double liquidFraction,
-                       double gasDensity, double liquidDensity, double gasViscosity, 
+                       double gasDensity, double liquidDensity, double gasViscosity,
                        double liquidViscosity, double roughness, double& holdup,
-                       double& frictionGrad, double& gravityGrad, double& totalGrad, double& reynolds, 
+                       double& frictionGrad, double& gravityGrad, double& totalGrad, double& reynolds,
                        unsigned char& flowType) {
     
-    // ========================================================================
     // CORRELATION DATA (replaced by analytical fits in CorrelationFits.h)
-    // ========================================================================
     
-    // ========================================================================
     // PHYSICAL CONSTANTS
-    // ========================================================================
     static constexpr double REYNOLDS_FACTOR = 1488.0;  // Field units conversion (lb/ft³)(ft/s)(in)/(cP)
     static constexpr double PSF_TO_PSI = 144.0;        // Pressure conversion factor (in²/ft²)
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
@@ -579,16 +547,12 @@ void poettmannCarpenter(double angle, double diameter, double velocity, double l
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_TWOPHASE = 3;
     
-    // ========================================================================
     // INPUT PROCESSING
-    // ========================================================================
     const double angleRad = angle * DEG_TO_RAD;
     const double sinAngle = sin(angleRad);
     const bool isStaticFlow = (fabs(velocity) < MIN_VELOCITY_THRESHOLD);
     
-    // ========================================================================
     // FLOW REGIME IDENTIFICATION
-    // ========================================================================
     double mixtureDensity;
     
     if (liquidFraction >= 1.0) {
@@ -602,9 +566,7 @@ void poettmannCarpenter(double angle, double diameter, double velocity, double l
         mixtureDensity = liquidDensity * liquidFraction + gasDensity * (1.0 - liquidFraction);
     }
     
-    // ========================================================================
     // FRICTION FACTOR CALCULATION
-    // ========================================================================
     double frictionFactorValue = 0.0;
     reynolds = 0.0;
     
@@ -626,15 +588,13 @@ void poettmannCarpenter(double angle, double diameter, double velocity, double l
         }
     }
     
-    // ========================================================================
     // PRESSURE GRADIENT COMPONENTS
-    // ========================================================================
     // Frictional pressure drop (Darcy-Weisbach)
     if (isStaticFlow) {
         frictionGrad = 0.0;
     } else {
         const double velocitySquared = velocity * velocity;
-        frictionGrad = (frictionFactorValue * mixtureDensity * velocitySquared) / 
+        frictionGrad = (frictionFactorValue * mixtureDensity * velocitySquared) /
                        (2.0 * g_in * diameter * PSF_TO_PSI);
     }
     
@@ -644,62 +604,61 @@ void poettmannCarpenter(double angle, double diameter, double velocity, double l
     // Total gradient
     totalGrad = frictionGrad + gravityGrad;
     
-    // ========================================================================
     // HOLDUP (NO-SLIP MODEL)
-    // ========================================================================
     // Poettmann-Carpenter assumes no slip between phases
     holdup = liquidFraction;
 }
 
 /*
 ==============================================================================
-baxendellThomas: Calcula gradientes de pressão para escoamento bifásico vertical
-                 usando correlação de Baxendell & Thomas.
+baxendellThomas: Calculates pressure gradients for vertical two-phase flow
+                 using the Baxendell and Thomas correlation.
 
-Referências:
+References:
      1.  Baxendell, P. B. and Thomas, R.: "The Calculation of
          Pressure Gradients in High-Rate Flowing Wells," Journal
-         of Petroleum Technology (Oct., 1961) 1023-1028.
+         of Petroleum Technology (Oct. 1961), 1023-1028.
      2.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-         (Feb. 1984) 3-4 thru. 3-10.
+         (Feb. 1984), Sections 3-4 through 3-10.
 
-Dicionário de variáveis:
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- velocity      : Velocidade média do escoamento (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade do gás (lb/ft³)
-- liquidDensity : Densidade do líquido (lb/ft³)
-- gasViscosity  : Viscosidade do gás (cP)
-- liquidViscosity: Viscosidade do líquido (cP)
-- roughness     : Rugosidade relativa do tubo (adimensional)
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão devido à gravidade (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds (adimensional)
-- flowType      : Indicador do tipo de fluxo (1 = líquido, 2 = gás, 3 = misto)
-- logFlowArray  : Array de valores de logaritmo de fluxo usado na correlação (constante interna)
-- baxendellArray: Array de valores da função correlacionada de Baxendell & Thomas (constante interna)
-- angleRad      : Ângulo em radianos
-- mixtureRho    : Densidade aparente do escoamento (ponderada pela fração de líquido/gás)
-- frictionFactor: Fator de fricção
-- xParam        : Parâmetro intermediário (produto de densidade, velocidade e diâmetro)
-- logX          : Logaritmo de xParam 
+Variable dictionary:
+- angle          : Pipe inclination angle (degrees)
+- diameter       : Pipe inner diameter (inches)
+- velocity       : Average flow velocity (ft/s)
+- liquidFraction : Liquid volumetric fraction
+- gasDensity     : Gas density (lb/ft3)
+- liquidDensity  : Liquid density (lb/ft3)
+- gasViscosity   : Gas viscosity (cP)
+- liquidViscosity: Liquid viscosity (cP)
+- roughness      : Pipe relative roughness (dimensionless)
+- frictionGrad   : Frictional pressure gradient (psi/ft)
+- gravityGrad    : Gravitational pressure gradient (psi/ft)
+- totalGrad      : Total pressure gradient (psi/ft)
+- reynolds       : Reynolds number (dimensionless)
+- flowType       : Flow-type indicator (1 = liquid, 2 = gas, 3 = mixed)
+- logFlowArray   : Array of logarithmic flow values used by the correlation
+                   (internal constant)
+- baxendellArray : Array of values from the Baxendell and Thomas correlated
+                   function (internal constant)
+- angleRad       : Angle in radians
+- mixtureRho     : Apparent mixture density weighted by the liquid and gas
+                   fractions
+- frictionFactor : Friction factor
+- xParam         : Intermediate parameter defined as the product of density,
+                   velocity, and diameter
+- logX           : Logarithm of xParam
 ==============================================================================
 */
-void baxendellThomas(double angle, double diameter, double velocity, double liquidFraction, 
-                    double gasDensity, double liquidDensity, double gasViscosity, 
+
+void baxendellThomas(double angle, double diameter, double velocity, double liquidFraction,
+                    double gasDensity, double liquidDensity, double gasViscosity,
                     double liquidViscosity, double roughness, double& holdup,
-                    double& frictionGrad, double& gravityGrad, double& totalGrad, double& reynolds, 
+                    double& frictionGrad, double& gravityGrad, double& totalGrad, double& reynolds,
                     unsigned char& flowType) {
     
-    // ========================================================================
     // CORRELATION DATA (replaced by analytical fits in CorrelationFits.h)
-    // ========================================================================
     
-    // ========================================================================
     // PHYSICAL CONSTANTS
-    // ========================================================================
     static constexpr double REYNOLDS_FACTOR = 1488.0;  // Field units conversion (lb/ft³)(ft/s)(in)/(cP)
     static constexpr double PSF_TO_PSI = 144.0;        // Pressure conversion factor (in²/ft²)
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
@@ -710,16 +669,12 @@ void baxendellThomas(double angle, double diameter, double velocity, double liqu
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_TWOPHASE = 3;
     
-    // ========================================================================
     // INPUT PROCESSING
-    // ========================================================================
     const double angleRad = angle * DEG_TO_RAD;
     const double sinAngle = sin(angleRad);
     const bool isStaticFlow = (fabs(velocity) < MIN_VELOCITY_THRESHOLD);
     
-    // ========================================================================
     // FLOW REGIME IDENTIFICATION
-    // ========================================================================
     double mixtureDensity;
     
     if (liquidFraction >= 1.0) {
@@ -733,9 +688,7 @@ void baxendellThomas(double angle, double diameter, double velocity, double liqu
         mixtureDensity = liquidDensity * liquidFraction + gasDensity * (1.0 - liquidFraction);
     }
     
-    // ========================================================================
     // FRICTION FACTOR CALCULATION
-    // ========================================================================
     double frictionFactorValue = 0.0;
     reynolds = 0.0;
     
@@ -757,15 +710,13 @@ void baxendellThomas(double angle, double diameter, double velocity, double liqu
         }
     }
     
-    // ========================================================================
     // PRESSURE GRADIENT COMPONENTS
-    // ========================================================================
     // Frictional pressure drop (Darcy-Weisbach)
     if (isStaticFlow) {
         frictionGrad = 0.0;
     } else {
         const double velocitySquared = velocity * velocity;
-        frictionGrad = (frictionFactorValue * mixtureDensity * velocitySquared) / 
+        frictionGrad = (frictionFactorValue * mixtureDensity * velocitySquared) /
                        (2.0 * g_in * diameter * PSF_TO_PSI);
     }
     
@@ -775,70 +726,72 @@ void baxendellThomas(double angle, double diameter, double velocity, double liqu
     // Total gradient
     totalGrad = frictionGrad + gravityGrad;
     
-    // ========================================================================
     // HOLDUP (NO-SLIP MODEL)
-    // ========================================================================
     // Baxendell-Thomas assumes no slip between phases
     holdup = liquidFraction;
 }
 
 /*
 ==============================================================================
-fancherBrown: Calcula gradientes de pressão para escoamento bifásico vertical
-              usando correlação de Fancher & Brown, com validação de entradas.
+fancherBrown: Calculates pressure gradients for vertical two-phase flow using
+              the Fancher-Brown correlation, with input validation.
 
-Referências:
+References:
       1.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-          (Feb. 1984) 3-4 thru. 3-10.
+          (Feb. 1984), Sections 3-4 through 3-10.
       2.  Fancher, G. H. and Brown, K. E.: "Prediction of Pressure
           Gradients for Multiphase Flow in Tubing," Society of
-          Petroleum Engineers Journal (March, 1963) 59-69.
+          Petroleum Engineers Journal (March 1963), 59-69.
 
-Dicionário de variáveis:
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- productionRate: Taxa de produção Gás/Líquido (SCF/STB)
-- velocity      : Velocidade média do escoamento (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade do gás (lb/ft³)
-- liquidDensity : Densidade do líquido (lb/ft³)
-- gasViscosity  : Viscosidade do gás (cP)
-- liquidViscosity: Viscosidade do líquido (cP)
-- roughness     : Rugosidade relativa do tubo (adimensional)
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão devido à gravidade (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds (adimensional)
-- flowType      : Indicador do tipo de fluxo (1 = líquido, 2 = gás, 3 = misto)
-- rateArray     : Dados de GLR
-- logFlowArray  : Array de valores de logaritmo de fluxo usado nas correlações (constante interna)
-- fancherMatrix : Matriz de valores da função correlacionada Fancher & Brown
-- angleRad      : Ângulo em radianos (calculado internamente)
-- mixtureRho    : Densidade aparente do escoamento (ponderada pela fração de líquido/gás)
-- frictionFactor: Fator de fricção calculado pela correlação ou função frictionFactor
-- xParam        : Parâmetro intermediário (produto de densidade, velocidade e diâmetro)
-- logX          : Logaritmo de xParam (usado nas correlações)
-- tempArray     : Vetor auxiliar para interpolação 1D nos casos extremos de productionRate
-- i, j          : Variáveis de controle de laço para seleção de linhas/colunas na matriz fancherMatrix
+Variable dictionary:
+- angle          : Pipe inclination angle (degrees)
+- diameter       : Pipe inner diameter (inches)
+- productionRate : Gas-to-liquid production ratio (SCF/STB)
+- velocity       : Average flow velocity (ft/s)
+- liquidFraction : Liquid volumetric fraction
+- gasDensity     : Gas-phase density (lb/ft3)
+- liquidDensity  : Liquid-phase density (lb/ft3)
+- gasViscosity   : Gas-phase viscosity (cP)
+- liquidViscosity: Liquid-phase viscosity (cP)
+- roughness      : Pipe relative roughness (dimensionless)
+- frictionGrad   : Frictional pressure gradient (psi/ft)
+- gravityGrad    : Gravitational pressure gradient (psi/ft)
+- totalGrad      : Total pressure gradient (psi/ft)
+- reynolds       : Reynolds number (dimensionless)
+- flowType       : Flow-type indicator (1 = liquid, 2 = gas, 3 = mixed)
+- rateArray      : Gas-liquid ratio (GLR) data
+- logFlowArray   : Array of logarithmic flow values used by the correlations
+                   (internal constant)
+- fancherMatrix  : Matrix of Fancher-Brown correlation function values
+- angleRad       : Angle in radians (calculated internally)
+- mixtureRho     : Apparent mixture density weighted by the liquid and gas
+                   fractions
+- frictionFactor : Friction factor calculated by the correlation or by the
+                   frictionFactor function
+- xParam         : Intermediate parameter defined as the product of density,
+                   velocity, and diameter
+- logX           : Logarithm of xParam used by the correlations
+- tempArray      : Auxiliary array used for one-dimensional interpolation at
+                   the extreme productionRate values
+- i, j           : Loop-control variables used to select rows and columns in
+                   the fancherMatrix
 ==============================================================================
 */
-void fancherBrown(double angle, double diameter, double productionRate, double velocity, 
-                 double liquidFraction, double gasDensity, double liquidDensity, 
-                 double gasViscosity, double liquidViscosity, double roughness, 
-                 double& holdup, double& frictionGrad, double& gravityGrad, double& totalGrad, 
+
+
+void fancherBrown(double angle, double diameter, double productionRate, double velocity,
+                 double liquidFraction, double gasDensity, double liquidDensity,
+                 double gasViscosity, double liquidViscosity, double roughness,
+                 double& holdup, double& frictionGrad, double& gravityGrad, double& totalGrad,
                  double& reynolds, unsigned char& flowType) {
     
-    // ========================================================================
     // CORRELATION DATA (replaced by analytical fits in CorrelationFits.h)
-    // ========================================================================
     
     // GLR range bounds
     static constexpr double GLR_MIN = 1500.0;
     static constexpr double GLR_MAX = 3000.0;
     
-    // ========================================================================
     // PHYSICAL CONSTANTS
-    // ========================================================================
     static constexpr double REYNOLDS_FACTOR = 1488.0;  // Field units conversion
     static constexpr double PSF_TO_PSI = 144.0;        // Pressure conversion factor
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
@@ -849,16 +802,12 @@ void fancherBrown(double angle, double diameter, double productionRate, double v
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_TWOPHASE = 3;
     
-    // ========================================================================
     // INPUT PROCESSING
-    // ========================================================================
     const double angleRad = angle * DEG_TO_RAD;
     const double sinAngle = sin(angleRad);
     const bool isStaticFlow = (fabs(velocity) < MIN_VELOCITY_THRESHOLD);
     
-    // ========================================================================
     // FLOW REGIME IDENTIFICATION
-    // ========================================================================
     double mixtureDensity;
     
     if (liquidFraction >= 1.0) {
@@ -872,9 +821,7 @@ void fancherBrown(double angle, double diameter, double productionRate, double v
         mixtureDensity = liquidDensity * liquidFraction + gasDensity * (1.0 - liquidFraction);
     }
     
-    // ========================================================================
     // FRICTION FACTOR CALCULATION
-    // ========================================================================
     double frictionFactorValue = 0.0;
     reynolds = 0.0;
     
@@ -896,15 +843,13 @@ void fancherBrown(double angle, double diameter, double productionRate, double v
         }
     }
     
-    // ========================================================================
     // PRESSURE GRADIENT COMPONENTS
-    // ========================================================================
     // Frictional pressure drop (Darcy-Weisbach)
     if (isStaticFlow) {
         frictionGrad = 0.0;
     } else {
         const double velocitySquared = velocity * velocity;
-        frictionGrad = (frictionFactorValue * mixtureDensity * velocitySquared) / 
+        frictionGrad = (frictionFactorValue * mixtureDensity * velocitySquared) /
                        (2.0 * g_in * diameter * PSF_TO_PSI);
     }
     
@@ -914,74 +859,70 @@ void fancherBrown(double angle, double diameter, double productionRate, double v
     // Total gradient
     totalGrad = frictionGrad + gravityGrad;
     
-    // ========================================================================
     // HOLDUP (NO-SLIP MODEL)
-    // ========================================================================
     // Fancher-Brown assumes no slip between phases
     holdup = liquidFraction;
 }
 
 /*
 ==============================================================================
-hagedornBrown: Calcula gradientes de pressão, holdup de líquido e propriedades
-               de escoamento bifásico vertical pela correlação de Hagedorn & Brown.
+hagedornBrown: Calculates pressure gradients, liquid holdup, and vertical
+               two-phase flow properties using the Hagedorn-Brown correlation.
 
-Referências:
+References:
       1.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-          (Feb. 1984) 3-11 thru. 3-19.
+          (Feb. 1984), Sections 3-11 through 3-19.
       2.  Duns, H., Jr. and Ros, N. C. J.: "Vertical Flow of Gas and
           Liquid Mixtures in Wells," Proc., 6th World Petroleum
-          Congress (1963) 451.
+          Congress (1963), 451.
       3.  Griffith, P. and Wallis, G. B.: "Two Phase Slug Flow,"
-          Journal of Heat Transfer; Trans., ASME (Aug, 1961) 307-320.
+          Journal of Heat Transfer; Trans., ASME (Aug. 1961), 307-320.
       4.  Hagedorn, A. R. and Brown, K. E.: "Experimental Study of
           Pressure Gradients Occurring During Continuous Two Phase
           Flow in Small-Diameter Vertical Conduits," Journal of
-          Petroleum Technology (April, 1965) 475-484.
+          Petroleum Technology (April 1965), 475-484.
 
-Dicionário de variáveis:
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- roughness     : Rugosidade relativa do tubo
-- pressure      : Pressão (psi)
-- velocity      : Velocidade média do escoamento (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade do gás (lb/ft³)
-- liquidDensity : Densidade do líquido (lb/ft³)
-- gasViscosity  : Viscosidade do gás (cP)
-- liquidViscosity: Viscosidade do líquido (cP)
-- liquidViscNumber: Parâmetro relacionado ao holdup de líquido
-- liquidVelNumber: Parâmetro auxiliar para cálculo de holdup
-- gasVelNumber  : Parâmetro auxiliar para cálculo de holdup
-- diameterNumber: Parâmetro auxiliar para cálculo de holdup
-- holdup        : Holdup de líquido calculado
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad     : Gradiente de pressão aceleracional (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds
-- flowType      : Indicador do tipo de fluxo (1=líquido, 2=gás, 3=bolha, 4=intermitente)
-- griffithFlag  : Indicador de correlação Griffith & Wallis para fluxo bolha
-- holdupFlag    : Indicador para ajuste de holdup mínimo
-- criticalFlag  : Indicador de fluxo crítico
-- calcInj       : Flag global para modo de cálculo
+Variable dictionary:
+- angle           : Pipe inclination angle (degrees)
+- diameter        : Pipe inner diameter (inches)
+- roughness       : Pipe relative roughness
+- pressure        : Pressure (psi)
+- velocity        : Average flow velocity (ft/s)
+- liquidFraction  : Liquid volumetric fraction
+- gasDensity      : Gas-phase density (lb/ft3)
+- liquidDensity   : Liquid-phase density (lb/ft3)
+- gasViscosity    : Gas-phase viscosity (cP)
+- liquidViscosity : Liquid-phase viscosity (cP)
+- liquidViscNumber: Parameter related to liquid holdup
+- liquidVelNumber : Auxiliary parameter used to calculate liquid holdup
+- gasVelNumber    : Auxiliary parameter used to calculate liquid holdup
+- diameterNumber  : Auxiliary parameter used to calculate liquid holdup
+- holdup          : Calculated liquid holdup
+- frictionGrad    : Frictional pressure gradient (psi/ft)
+- gravityGrad     : Gravitational pressure gradient (psi/ft)
+- accelGrad       : Accelerational pressure gradient (psi/ft)
+- totalGrad       : Total pressure gradient (psi/ft)
+- reynolds        : Reynolds number
+- flowType        : Flow-type indicator
+                    (1 = liquid, 2 = gas, 3 = bubble, 4 = intermittent)
+- griffithFlag    : Indicates the use of the Griffith-Wallis correlation
+                    for bubble flow
+- holdupFlag      : Indicates whether the minimum holdup adjustment is applied
+- criticalFlag    : Critical-flow indicator
+- calcInj         : Global flag that controls the calculation mode
 ==============================================================================
 */
-void hagedornBrown(double angle, double diameter, double roughness, double pressure, double velocity, 
-                  double liquidFraction, double gasDensity, double liquidDensity, 
+void hagedornBrown(double angle, double diameter, double roughness, double pressure, double velocity,
+                  double liquidFraction, double gasDensity, double liquidDensity,
                   double gasViscosity, double liquidViscosity, double surfaceTension,
                   double temperature, double compressibilityFactor,
                   double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad,
-                  double& totalGrad, double& reynolds, unsigned char& flowType, 
+                  double& totalGrad, double& reynolds, unsigned char& flowType,
                   unsigned char& criticalFlag, unsigned char& convergeFlag) {
     
-    // ========================================================================
     // CORRELATION DATA (replaced by analytical fits in CorrelationFits.h)
-    // ========================================================================
     
-    // ========================================================================
     // PHYSICAL CONSTANTS
-    // ========================================================================
     static constexpr double REYNOLDS_FACTOR = 1488.0;  // Field units conversion
     static constexpr double PSF_TO_PSI = 144.0;        // Pressure conversion
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
@@ -1013,9 +954,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
     static constexpr bool USE_GRIFFITH_WALLIS = true;   // Use Griffith-Wallis for bubble flow
     static constexpr bool ENFORCE_NO_SLIP_MINIMUM = true;  // Enforce holdup >= liquid fraction
     
-    // ========================================================================
     // INITIALIZATION
-    // ========================================================================
     flowType = 0;
     criticalFlag = 0;
     convergeFlag = 0;
@@ -1024,15 +963,11 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
     const double sinAngle = sin(angleRad);
     const bool isStaticFlow = (fabs(velocity) < MIN_VELOCITY_THRESHOLD);
     
-    // ========================================================================
     // SUPERFICIAL VELOCITIES
-    // ========================================================================
     const double liquidSuperficialVel = velocity * liquidFraction;
     const double gasSuperficialVel = velocity * (1.0 - liquidFraction);
     
-    // ========================================================================
     // DIMENSIONLESS NUMBERS (Hagedorn-Brown)
-    // ========================================================================
     const double densityRatio = liquidDensity / surfaceTension;
     const double sqrtDensityRatio = sqrt(densityRatio);
     const double fourthRootDensityRatio = sqrt(sqrtDensityRatio);
@@ -1044,9 +979,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
     const double viscNumberDenom = pow(liquidDensity * surfaceTension * surfaceTension * surfaceTension, 0.25);
     const double liquidViscNumber = COEFF_VISC_NUMBER * liquidViscosity / viscNumberDenom;
     
-    // ========================================================================
     // SINGLE-PHASE FLOW HANDLING
-    // ========================================================================
     if (liquidFraction >= 1.0) {
         // Single-phase liquid
         flowType = FLOW_LIQUID;
@@ -1057,7 +990,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
             reynolds = REYNOLDS_FACTOR * noSlipDensity * velocity * diameter / liquidViscosity;
             double frictionFactorValue;
             frictionFactor(reynolds, roughness, frictionFactorValue);
-            frictionGrad = (frictionFactorValue * noSlipDensity * velocity * velocity) / 
+            frictionGrad = (frictionFactorValue * noSlipDensity * velocity * velocity) /
                           (2.0 * g_in * diameter * PSF_TO_PSI);
         } else {
             reynolds = 0.0;
@@ -1080,7 +1013,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
             reynolds = REYNOLDS_FACTOR * noSlipDensity * velocity * diameter / gasViscosity;
             double frictionFactorValue;
             frictionFactor(reynolds, roughness, frictionFactorValue);
-            frictionGrad = (frictionFactorValue * noSlipDensity * velocity * velocity) / 
+            frictionGrad = (frictionFactorValue * noSlipDensity * velocity * velocity) /
                           (2.0 * g_in * diameter * PSF_TO_PSI);
         } else {
             reynolds = 0.0;
@@ -1093,9 +1026,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         return;
     }
     
-    // ========================================================================
     // TWO-PHASE FLOW: BUBBLE REGIME CHECK
-    // ========================================================================
     const double gasFraction = 1.0 - liquidFraction;
     double bubbleFlowLimit = BUBBLE_LIMIT_BASE - BUBBLE_LIMIT_COEFF * velocity * velocity / diameter;
     if (bubbleFlowLimit < BUBBLE_LIMIT_MIN) {
@@ -1103,9 +1034,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
     }
     
     if (gasFraction <= bubbleFlowLimit && USE_GRIFFITH_WALLIS) {
-        // ====================================================================
         // BUBBLE FLOW: Griffith-Wallis Correlation
-        // ====================================================================
         flowType = FLOW_BUBBLE;
         
         if (!isStaticFlow) {
@@ -1130,7 +1059,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
                 frictionFactor(reynolds, roughness, frictionFactorValue);
                 
                 const double liquidVelSquared = liquidVelInSlug * liquidVelInSlug;
-                frictionGrad = (frictionFactorValue * liquidDensity * liquidVelSquared) / 
+                frictionGrad = (frictionFactorValue * liquidDensity * liquidVelSquared) /
                               (2.0 * g_in * diameter * PSF_TO_PSI);
             } else {
                 reynolds = 0.0;
@@ -1152,9 +1081,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         return;
     }
     
-    // ========================================================================
     // TWO-PHASE FLOW: SLUG/CHURN REGIME (Hagedorn-Brown Correlation)
-    // ========================================================================
     flowType = FLOW_SLUG_CHURN;
     
     // Calculate liquid holdup using Hagedorn-Brown correlation
@@ -1168,8 +1095,8 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         const double viscosityFactor = exp(logViscFactor);
         
         // Primary holdup parameter
-        const double holdupParam = (liquidVelNumber * viscosityFactor) / 
-                                   (pow(gasVelNumber, 0.575) * diameterNumber) * 
+        const double holdupParam = (liquidVelNumber * viscosityFactor) /
+                                   (pow(gasVelNumber, 0.575) * diameterNumber) *
                                    pow(pressure / ATM_PRESSURE_PSI, 0.1);
         const double logHoldupParam = log(holdupParam);
         
@@ -1197,9 +1124,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         }
     }
     
-    // ========================================================================
     // MIXTURE PROPERTIES
-    // ========================================================================
     const double noSlipDensity = liquidDensity * liquidFraction + gasDensity * gasFraction;
     const double slipDensity = liquidDensity * holdup + gasDensity * (1.0 - holdup);
     
@@ -1211,9 +1136,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         effectiveViscosity = liquidViscosity * holdup + gasViscosity * (1.0 - holdup);
     }
     
-    // ========================================================================
     // PRESSURE GRADIENT CALCULATIONS
-    // ========================================================================
     double frictionFactorValue = 0.0;
     
     if (!isStaticFlow) {
@@ -1221,7 +1144,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         frictionFactor(reynolds, roughness, frictionFactorValue);
         
         const double velocitySquared = velocity * velocity;
-        frictionGrad = (frictionFactorValue * noSlipDensity * noSlipDensity * velocitySquared) / 
+        frictionGrad = (frictionFactorValue * noSlipDensity * noSlipDensity * velocitySquared) /
                       (2.0 * g_in * diameter * slipDensity * PSF_TO_PSI);
     } else {
         reynolds = 0.0;
@@ -1232,7 +1155,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
     gravityGrad = slipDensity * sinAngle / PSF_TO_PSI;
     
     // Acceleration gradient
-    double accelParameter = slipDensity * velocity * gasSuperficialVel / 
+    double accelParameter = slipDensity * velocity * gasSuperficialVel /
                            (g_in * pressure * PSF_TO_PSI);
     
     // Check for critical flow
@@ -1248,58 +1171,56 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
 
 /*
 ==============================================================================
-dunsRos: Calcula gradientes de pressão, holdup de líquido e propriedades
-         de escoamento bifásico vertical pela correlação de Duns & Ros.
+dunsRos: Calculates pressure gradients, liquid holdup, and vertical two-phase
+         flow properties using the Duns-Ros correlation.
 
-Referências:
+References:
       1.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-          (Feb. 1984) 3-20 thru. 3-33.
+          (Feb. 1984), Sections 3-20 through 3-33.
       2.  Duns, H., Jr. and Ros, N. C. J.: "Vertical Flow of Gas and
           Liquid Mixtures in Wells," Proc., 6th World Petroleum
-          Congress (1963) 451.
+          Congress (1963), 451.
 
-Dicionário de variáveis:
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- roughness     : Rugosidade relativa do tubo
-- pressure      : Pressão (psi)
-- velocity      : Velocidade média do escoamento (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade do gás (lb/ft³)
-- liquidDensity : Densidade do líquido (lb/ft³)
-- gasViscosity  : Viscosidade do gás (cP)
-- liquidViscosity: Viscosidade do líquido (cP)
-- surfaceTension: Tensão superficial (dyn/cm)
-- liquidViscNumber: Número adimensional de viscosidade do líquido
-- liquidVelNumber: Número adimensional de velocidade do líquido
-- gasVelNumber  : Número adimensional de velocidade do gás
-- diameterNumber: Número adimensional de diâmetro do tubo
-- holdup        : Holdup de líquido calculado
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad     : Gradiente de pressão aceleracional (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds do líquido
-- flowType      : Indicador do tipo de fluxo (1=líquido, 2=gás, 3=bolha, 4=slug, 5=névoa, 6=transição)
-- criticalFlag  : Indicador de fluxo crítico
-- convergeFlag  : Indicador de convergência
+Variable dictionary:
+- angle           : Pipe inclination angle (degrees)
+- diameter        : Pipe inner diameter (inches)
+- roughness       : Pipe relative roughness
+- pressure        : Pressure (psi)
+- velocity        : Average flow velocity (ft/s)
+- liquidFraction  : Liquid volumetric fraction
+- gasDensity      : Gas-phase density (lb/ft3)
+- liquidDensity   : Liquid-phase density (lb/ft3)
+- gasViscosity    : Gas-phase viscosity (cP)
+- liquidViscosity : Liquid-phase viscosity (cP)
+- surfaceTension  : Surface tension (dyn/cm)
+- liquidViscNumber: Dimensionless liquid viscosity number
+- liquidVelNumber : Dimensionless liquid velocity number
+- gasVelNumber    : Dimensionless gas velocity number
+- diameterNumber  : Dimensionless pipe diameter number
+- holdup          : Calculated liquid holdup
+- frictionGrad    : Frictional pressure gradient (psi/ft)
+- gravityGrad     : Gravitational pressure gradient (psi/ft)
+- accelGrad       : Accelerational pressure gradient (psi/ft)
+- totalGrad       : Total pressure gradient (psi/ft)
+- reynolds        : Liquid Reynolds number
+- flowType        : Flow-type indicator
+                    (1 = liquid, 2 = gas, 3 = bubble, 4 = slug,
+                     5 = mist, 6 = transition)
+- criticalFlag    : Critical-flow indicator
+- convergeFlag    : Convergence indicator
 ==============================================================================
 */
-void dunsRos(double angle, double diameter, double roughness, double pressure, double velocity, 
-             double liquidFraction, double gasDensity, double liquidDensity, 
+void dunsRos(double angle, double diameter, double roughness, double pressure, double velocity,
+             double liquidFraction, double gasDensity, double liquidDensity,
              double gasViscosity, double liquidViscosity, double surfaceTension,
              double temperature, double compressibilityFactor,
              double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad,
-             double& totalGrad, double& reynolds, unsigned char& flowType, 
+             double& totalGrad, double& reynolds, unsigned char& flowType,
              unsigned char& criticalFlag, unsigned char& convergeFlag) {
     
-    // ========================================================================
     // DUNS-ROS CORRELATION DATA (replaced by analytical fits in CorrelationFits.h)
-    // ========================================================================
     
-    // ========================================================================
     // DUNS-ROS CONSTANTS
-    // ========================================================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_BUBBLE = 3;
@@ -1340,9 +1261,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
     static constexpr double REYNOLDS_SCALE = 1488.0;            // Reynolds number scale
     static constexpr double DEG_TO_RAD = M_PI / 180.0;          // Degrees to radians
     
-    // ========================================================================
     // INITIALIZATION
-    // ========================================================================
     criticalFlag = 0;
     convergeFlag = 0;
     
@@ -1350,9 +1269,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
     const double liquidSuperficialVel = velocity * liquidFraction;
     const double gasSuperficialVel = velocity - liquidSuperficialVel;
     
-    // ========================================================================
     // SINGLE-PHASE LIQUID FLOW
-    // ========================================================================
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
         flowType = FLOW_LIQUID;
         holdup = liquidFraction;
@@ -1365,7 +1282,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = liquidSuperficialVel * liquidSuperficialVel;
-            frictionGrad = frictionFactorValue * liquidDensity * velocitySquared / 
+            frictionGrad = frictionFactorValue * liquidDensity * velocitySquared /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -1377,9 +1294,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         return;
     }
     
-    // ========================================================================
     // SINGLE-PHASE GAS FLOW
-    // ========================================================================
     if (liquidFraction < SINGLE_PHASE_GAS_THRESHOLD) {
         flowType = FLOW_GAS;
         holdup = liquidFraction;
@@ -1391,7 +1306,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
             frictionFactor(gasReynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = gasSuperficialVel * gasSuperficialVel;
-            frictionGrad = frictionFactorValue * gasDensity * velocitySquared / 
+            frictionGrad = frictionFactorValue * gasDensity * velocitySquared /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
             
             double accelParam = gasDensity * velocitySquared / (g_in * pressure * PRESSURE_CONVERSION);
@@ -1415,9 +1330,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         return;
     }
     
-    // ========================================================================
     // TWO-PHASE FLOW - DIMENSIONLESS NUMBERS
-    // ========================================================================
     const double densitySurfaceTensionRoot = pow(liquidDensity / surfaceTension, 0.25);
     const double liquidVelocityNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * liquidSuperficialVel;
     const double gasVelocityNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * gasSuperficialVel;
@@ -1427,9 +1340,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
     const double viscosityNumberRoot = pow(1.0 / (liquidDensity * surfaceTensionCubed), 0.25);
     const double liquidViscosityNumber = VISC_NUMBER_SCALE * liquidViscosity * viscosityNumberRoot;
     
-    // ========================================================================
     // FLOW REGIME DETERMINATION
-    // ========================================================================
     const double slugFlowLimit = SLUG_BASE_LIMIT + SLUG_SLOPE * liquidVelocityNumber;
     const double mistFlowLimit = MIST_BASE_LIMIT + MIST_SLOPE * pow(liquidVelocityNumber, MIST_EXPONENT);
     
@@ -1443,9 +1354,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
     double slugFrictionGrad = 0.0;
     double slugGravityGrad = 0.0;
     
-    // ========================================================================
     // BUBBLE FLOW REGIME
-    // ========================================================================
     if (gasVelocityNumber <= bubbleToSlugLimit) {
         flowType = FLOW_BUBBLE;
         
@@ -1459,9 +1368,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         const double gasVelRatio = gasVelocityNumber / (1.0 + liquidVelocityNumber);
         slipNumber = f1 + f2 * liquidVelocityNumber + f4 * gasVelRatio * gasVelRatio;
     }
-    // ========================================================================
     // SLUG FLOW REGIME (OR TRANSITION TO MIST)
-    // ========================================================================
     else if (gasVelocityNumber <= mistFlowLimit) {
         flowType = FLOW_SLUG;
         
@@ -1481,9 +1388,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         slipNumber = (1.0 + f5) * (gasVelPower + f6Prime) / liquidVelFactor;
     }
     
-    // ========================================================================
     // BUBBLE/SLUG FLOW CALCULATIONS
-    // ========================================================================
     if (gasVelocityNumber <= mistFlowLimit) {
         double frictionFactorValue = 0.0;
         
@@ -1493,7 +1398,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
             
             // Apply two-phase friction correction
             const double velocityRatio = gasSuperficialVel / liquidSuperficialVel;
-            const double frictionParam = frictionFactorValue * velocityRatio * 
+            const double frictionParam = frictionFactorValue * velocityRatio *
                                         pow(diameterNumber, DIAMETER_EXPONENT);
             const double logFrictionParam = log(frictionParam);
             
@@ -1505,7 +1410,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
             reynolds = 0.0;
         }
         
-        frictionGrad = frictionFactorValue * liquidDensity * liquidSuperficialVel * velocity / 
+        frictionGrad = frictionFactorValue * liquidDensity * liquidSuperficialVel * velocity /
                       (2.0 * g_in * diameter * PRESSURE_CONVERSION);
         
         // Calculate slip velocity and holdup
@@ -1513,7 +1418,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         
         if (fabs(slipVelocity) > VELOCITY_TOLERANCE) {
             const double velocityDiff = velocity - slipVelocity;
-            const double discriminant = velocityDiff * velocityDiff + 
+            const double discriminant = velocityDiff * velocityDiff +
                                        4.0 * liquidSuperficialVel * slipVelocity;
             holdup = (-velocityDiff + sqrt(discriminant)) / (2.0 * slipVelocity);
         } else {
@@ -1539,9 +1444,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         slugGravityGrad = gravityGrad;
     }
     
-    // ========================================================================
     // MIST FLOW REGIME
-    // ========================================================================
     flowType = FLOW_MIST;
     
     // Calculate effective roughness for mist flow
@@ -1551,20 +1454,20 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         const double roughnessDiameter = roughness * diameter;
         const double velocitySquared = gasSuperficialVel * gasSuperficialVel;
         
-        const double webberNumber = WEBBER_SCALE * gasDensity * velocitySquared * 
+        const double webberNumber = WEBBER_SCALE * gasDensity * velocitySquared *
                                    roughnessDiameter / surfaceTension;
-        const double viscosityParameter = VISC_PARAM_SCALE * liquidViscosity * liquidViscosity / 
+        const double viscosityParameter = VISC_PARAM_SCALE * liquidViscosity * liquidViscosity /
                                          (liquidDensity * surfaceTension * roughnessDiameter);
         const double parameterProduct = webberNumber * viscosityParameter;
         
         if (parameterProduct > WEBBER_THRESHOLD) {
-            const double c2 = 0.3713 * surfaceTension / (gasDensity * velocitySquared * diameter) * 
+            const double c2 = 0.3713 * surfaceTension / (gasDensity * velocitySquared * diameter) *
                             pow(parameterProduct, 0.302);
             
             if (c2 > 0.001 && c2 < 3.45) {
                 const double zeta = log(c2);
                 mistRoughness = exp(-1.1117597 + zeta * (0.42096466 + zeta * (-8.0206350e-2 +
-                               zeta * (7.2551561e-3 + zeta * (2.4853674e-3 + 
+                               zeta * (7.2551561e-3 + zeta * (2.4853674e-3 +
                                zeta * (1.2567230e-4 - 3.2648140e-6 * zeta))))));
             } else if (c2 < 0.001) {
                 mistRoughness = c2;
@@ -1572,7 +1475,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
                 mistRoughness = MAX_MIST_ROUGHNESS;
             }
         } else {
-            const double c1 = gasDensity * velocitySquared * diameter / 
+            const double c1 = gasDensity * velocitySquared * diameter /
                             (SURFACE_TENSION_SCALE * surfaceTension);
             const double discriminantHelper = sqrt(-4.0 / (3.0 * c1) + 0.25);
             const double aux = c1 * c1 * discriminantHelper;
@@ -1606,14 +1509,14 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         double frictionFactorValue;
         if (mistRoughness >= HIGH_ROUGHNESS_THRESHOLD) {
             const double logTerm = log10(0.27 * mistRoughness);
-            frictionFactorValue = 4.0 * (1.0 / pow(4.0 * logTerm, 2.0) + 
+            frictionFactorValue = 4.0 * (1.0 / pow(4.0 * logTerm, 2.0) +
                                         0.067 * pow(mistRoughness, 1.73));
         } else {
             frictionFactor(gasReynolds, mistRoughness, frictionFactorValue);
         }
         
         const double correctedVelSquared = correctedGasVel * correctedGasVel;
-        mistFrictionGrad = frictionFactorValue * gasDensity * correctedVelSquared / 
+        mistFrictionGrad = frictionFactorValue * gasDensity * correctedVelSquared /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
     } else {
         gasReynolds = 0.0;
@@ -1626,7 +1529,7 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
     double accelParam;
     if (fabs(gasSuperficialVel) > VELOCITY_TOLERANCE) {
         const double correctedGasVel = gasSuperficialVel / pow(1.0 - mistRoughness, 2.0);
-        accelParam = mixtureDensity * velocity * correctedGasVel / 
+        accelParam = mixtureDensity * velocity * correctedGasVel /
                     (g_in * pressure * PRESSURE_CONVERSION);
         
         if (accelParam > ACCEL_CRITICAL_LIMIT) {
@@ -1647,12 +1550,10 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
         return;
     }
     
-    // ========================================================================
     // TRANSITION REGIME (SLUG-TO-MIST BLENDING)
-    // ========================================================================
     flowType = FLOW_TRANSITION;
     
-    const double mistTotalGrad = (mistFrictionGrad + mistGravityGrad * gasVelocityNumber / mistFlowLimit) / 
+    const double mistTotalGrad = (mistFrictionGrad + mistGravityGrad * gasVelocityNumber / mistFlowLimit) /
                                 (1.0 - accelParam);
     const double mistAccelGrad = accelParam * mistTotalGrad;
     
@@ -1668,63 +1569,61 @@ void dunsRos(double angle, double diameter, double roughness, double pressure, d
 
 /*
 ==============================================================================
-orkiszewski: Calcula gradientes de pressão, holdup de líquido e propriedades
-             de escoamento bifásico vertical pela correlação de Orkiszewski.
+orkiszewski: Calculates pressure gradients, liquid holdup, and vertical
+             two-phase flow properties using the Orkiszewski correlation.
 
-Referências:
+References:
       1.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-          (Feb. 1984) 3-33 thru. 3-42.
+          (Feb. 1984), Sections 3-33 through 3-42.
       2.  Orkiszewski, J.: "Predicting Two Phase Pressure Drops in
           Vertical Pipes," Journal of Petroleum Technology
-          (June, 1967) 829-838.
+          (June 1967), 829-838.
 
-Dicionário de variáveis:
-- numEntrCorr   : Número de entradas (ou cenário de correlação)
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- roughness     : Rugosidade relativa do tubo
-- pressure      : Pressão (psi)
-- velocity      : Velocidade média do escoamento (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade do gás (lb/ft³)
-- liquidDensity : Densidade do líquido (lb/ft³)
-- gasViscosity  : Viscosidade do gás (cP)
-- liquidViscosity: Viscosidade do líquido (cP)
-- surfaceTension: Tensão superficial (dyn/cm)
-- liquidVelNumber: Número adimensional de velocidade do líquido
-- gasVelNumber  : Número adimensional de velocidade do gás
-- waterFraction : Fração em massa de água na fase líquida
-- holdup        : Holdup de líquido calculado
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad     : Gradiente de pressão aceleracional (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds do líquido
-- liquidDistrib : Coeficiente de distribuição de líquido entre fases
-- gasSupVel     : Velocidade superficial de gás
-- gasSupVelCorr : Velocidade superficial de gás corrigida para névoa
-- liquidSupVel  : Velocidade superficial de líquido
-- flowType      : Indicador do tipo de fluxo (1=líquido, 2=gás, 3=bolha, 4=slug, 5=névoa, 6=transição)
-- criticalFlag  : Indicador de fluxo crítico
-- convergeFlag  : Indicador de convergência
-- isigFlag      : Flag para ajustes de liquidDistrib
+Variable dictionary:
+- numEntrCorr    : Number of inputs or correlation scenario
+- angle          : Pipe inclination angle (degrees)
+- diameter       : Pipe inner diameter (inches)
+- roughness       : Pipe relative roughness
+- pressure        : Pressure (psi)
+- velocity        : Average flow velocity (ft/s)
+- liquidFraction  : Liquid volumetric fraction
+- gasDensity      : Gas-phase density (lb/ft3)
+- liquidDensity   : Liquid-phase density (lb/ft3)
+- gasViscosity    : Gas-phase viscosity (cP)
+- liquidViscosity : Liquid-phase viscosity (cP)
+- surfaceTension  : Surface tension (dyn/cm)
+- liquidVelNumber : Dimensionless liquid velocity number
+- gasVelNumber    : Dimensionless gas velocity number
+- waterFraction   : Water mass fraction in the liquid phase
+- holdup          : Calculated liquid holdup
+- frictionGrad    : Frictional pressure gradient (psi/ft)
+- gravityGrad     : Gravitational pressure gradient (psi/ft)
+- accelGrad       : Accelerational pressure gradient (psi/ft)
+- totalGrad       : Total pressure gradient (psi/ft)
+- reynolds        : Liquid Reynolds number
+- liquidDistrib   : Liquid distribution coefficient between phases
+- gasSupVel       : Superficial gas velocity
+- gasSupVelCorr   : Superficial gas velocity corrected for mist flow
+- liquidSupVel    : Superficial liquid velocity
+- flowType        : Flow-type indicator
+                    (1 = liquid, 2 = gas, 3 = bubble, 4 = slug,
+                     5 = mist, 6 = transition)
+- criticalFlag    : Critical-flow indicator
+- convergeFlag    : Convergence indicator
+- isigFlag        : Flag used for liquidDistrib adjustments
 ==============================================================================
 */
-void orkiszewski(double angle, double diameter, double roughness, 
-                double pressure, double velocity, double liquidFraction, double gasDensity, 
-                double liquidDensity, double gasViscosity, double liquidViscosity, 
+void orkiszewski(double angle, double diameter, double roughness,
+                double pressure, double velocity, double liquidFraction, double gasDensity,
+                double liquidDensity, double gasViscosity, double liquidViscosity,
                 double surfaceTension, double temperature, double compressibilityFactor, double waterFraction,
                 double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad,
-                double& totalGrad, double& reynolds, unsigned char& flowType, 
+                double& totalGrad, double& reynolds, unsigned char& flowType,
                 unsigned char& criticalFlag, unsigned char& convergeFlag, unsigned char& isigFlag) {
     
-    // ========================================================================
     // ORKISZEWSKI CORRELATION DATA (replaced by analytical fits in CorrelationFits.h)
-    // ========================================================================
     
-    // ========================================================================
     // ORKISZEWSKI CONSTANTS
-    // ========================================================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_BUBBLE = 3;
@@ -1803,9 +1702,7 @@ void orkiszewski(double angle, double diameter, double roughness,
     static constexpr double REYNOLDS_SCALE = 1488.0;         // Reynolds number scale
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
     
-    // ========================================================================
     // INITIALIZATION
-    // ========================================================================
     flowType = 0;
     criticalFlag = 0;
     convergeFlag = 0;
@@ -1814,9 +1711,7 @@ void orkiszewski(double angle, double diameter, double roughness,
     const double liquidSuperficialVel = velocity * liquidFraction;
     const double gasSuperficialVel = velocity * (1.0 - liquidFraction);
     
-    // ========================================================================
     // DIMENSIONLESS NUMBERS
-    // ========================================================================
     const double densitySurfaceTensionRoot = pow(liquidDensity / surfaceTension, 0.25);
     const double liquidVelocityNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * liquidSuperficialVel;
     const double gasVelocityNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * gasSuperficialVel;
@@ -1833,9 +1728,7 @@ void orkiszewski(double angle, double diameter, double roughness,
         reynoldsGas = REYNOLDS_SCALE * gasDensity * gasSuperficialVel * diameter / gasViscosity;
     }
     
-    // ========================================================================
     // SINGLE-PHASE LIQUID FLOW
-    // ========================================================================
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
         flowType = FLOW_LIQUID;
         holdup = liquidFraction;
@@ -1848,7 +1741,7 @@ void orkiszewski(double angle, double diameter, double roughness,
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = liquidSuperficialVel * liquidSuperficialVel;
-            frictionGrad = (frictionFactorValue * liquidDensity * velocitySquared) / 
+            frictionGrad = (frictionFactorValue * liquidDensity * velocitySquared) /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -1860,9 +1753,7 @@ void orkiszewski(double angle, double diameter, double roughness,
         return;
     }
     
-    // ========================================================================
     // SINGLE-PHASE GAS FLOW
-    // ========================================================================
     if (liquidFraction < SINGLE_PHASE_GAS_THRESHOLD) {
         flowType = FLOW_GAS;
         holdup = liquidFraction;
@@ -1874,7 +1765,7 @@ void orkiszewski(double angle, double diameter, double roughness,
             frictionFactor(reynoldsGas, roughness, frictionFactorValue);
             
             const double velocitySquared = gasSuperficialVel * gasSuperficialVel;
-            frictionGrad = (frictionFactorValue * gasDensity * velocitySquared) / 
+            frictionGrad = (frictionFactorValue * gasDensity * velocitySquared) /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
             
             double accelParam = (gasDensity * velocitySquared) / (g_in * pressure * PRESSURE_CONVERSION);
@@ -1898,9 +1789,7 @@ void orkiszewski(double angle, double diameter, double roughness,
         return;
     }
     
-    // ========================================================================
     // TWO-PHASE FLOW - REGIME DETERMINATION
-    // ========================================================================
     const double slugFlowLimit = SLUG_BASE_LIMIT + SLUG_SLOPE * liquidVelocityNumber;
     const double mistFlowLimit = MIST_BASE_LIMIT + MIST_SLOPE * pow(liquidVelocityNumber, MIST_EXPONENT);
     
@@ -1921,9 +1810,7 @@ void orkiszewski(double angle, double diameter, double roughness,
     double slugFrictionGrad = 0.0;
     double slugGravityGrad = 0.0;
     
-    // ========================================================================
     // BUBBLE FLOW REGIME (Griffith-Wallis)
-    // ========================================================================
     if (gasFraction < bubbleFlowLimit) {
         flowType = FLOW_BUBBLE;
         
@@ -1950,7 +1837,7 @@ void orkiszewski(double angle, double diameter, double roughness,
                 frictionFactor(reynoldsBubble, roughness, frictionFactorValue);
                 
                 const double liquidVelSquared = liquidVelInSlug * liquidVelInSlug;
-                frictionGrad = (frictionFactorValue * liquidDensity * liquidVelSquared) / 
+                frictionGrad = (frictionFactorValue * liquidDensity * liquidVelSquared) /
                               (2.0 * g_in * diameter * PRESSURE_CONVERSION);
                 reynolds = reynoldsBubble;
             } else {
@@ -1974,9 +1861,7 @@ void orkiszewski(double angle, double diameter, double roughness,
         return;
     }
     
-    // ========================================================================
     // SLUG FLOW REGIME
-    // ========================================================================
     if (gasVelocityNumber < mistFlowLimit) {
         flowType = FLOW_SLUG;
         
@@ -1984,15 +1869,13 @@ void orkiszewski(double angle, double diameter, double roughness,
             inTransitionRegion = true;
         }
         
-        // ====================================================================
         // LIQUID DISTRIBUTION COEFFICIENT
-        // ====================================================================
         // Determine continuous phase (oil or water)
         const bool isWaterContinuous = (waterFraction >= WATER_THRESHOLD);
         const bool isHighVelocity = (velocity > VEL_DISTRIB_THRESHOLD);
         
         // Common terms
-        const double viscTerm = DISTRIB_VISC_COEFF * log10(liquidViscosity + 1.0) * 
+        const double viscTerm = DISTRIB_VISC_COEFF * log10(liquidViscosity + 1.0) *
                                pow(diameter, DISTRIB_DIAM_EXP_1);
         const double x2Term = viscTerm + DISTRIB_OFFSET_1 + DISTRIB_DIAM_COEFF_1 * log10(diameter);
         const double x3Term = -log10(velocity) * x2Term;
@@ -2038,9 +1921,7 @@ void orkiszewski(double angle, double diameter, double roughness,
             }
         }
         
-        // ====================================================================
         // BUBBLE RISE VELOCITY (Iterative Calculation)
-        // ====================================================================
         const double sqrtGravDiam = sqrt(g_in * diameter);
         double bubbleVelocity = 0.5 * sqrtGravDiam;  // Initial guess
         double bubbleVelCalculated = bubbleVelocity;  // Store calculated value
@@ -2061,7 +1942,7 @@ void orkiszewski(double angle, double diameter, double roughness,
             } else {
                 // Use transition equations for high Reynolds numbers
                 const double transTerm = (BUBBLE_VEL_TRANS_BASE + BUBBLE_VEL_TRANS_SLOPE * reynoldsMixture) * sqrtGravDiam;
-                const double viscTerm = (BUBBLE_VEL_VISC_COEFF * liquidViscosity) / 
+                const double viscTerm = (BUBBLE_VEL_VISC_COEFF * liquidViscosity) /
                                        (liquidDensity * sqrt(diameter));
                 
                 bubbleVelCalculated = 0.5 * (transTerm + sqrt(transTerm * transTerm + viscTerm));
@@ -2077,7 +1958,7 @@ void orkiszewski(double angle, double diameter, double roughness,
                     // Linear interpolation in low Re transition
                     const double bubbleVel1 = 0.5 * (transTerm + sqrt(transTerm * transTerm + viscTerm));
                     const double bubbleVel2 = (BUBBLE_VEL_LOW_RE + BUBBLE_VEL_TRANS_SLOPE * reynoldsMixture) * sqrtGravDiam;
-                    const double weight = (reynoldsBubble - RE_BUBBLE_LOW_START) / 
+                    const double weight = (reynoldsBubble - RE_BUBBLE_LOW_START) /
                                          (RE_BUBBLE_LOW_END - RE_BUBBLE_LOW_START);
                     bubbleVelCalculated = bubbleVel2 * (1.0 - weight) + bubbleVel1 * weight;
                     
@@ -2085,7 +1966,7 @@ void orkiszewski(double angle, double diameter, double roughness,
                     // Linear interpolation in high Re transition
                     const double bubbleVel1 = 0.5 * (transTerm + sqrt(transTerm * transTerm + viscTerm));
                     const double bubbleVel2 = (BUBBLE_VEL_HIGH_RE + BUBBLE_VEL_TRANS_SLOPE * reynoldsMixture) * sqrtGravDiam;
-                    const double weight = (reynoldsBubble - RE_BUBBLE_HIGH_START) / 
+                    const double weight = (reynoldsBubble - RE_BUBBLE_HIGH_START) /
                                          (RE_BUBBLE_HIGH_END - RE_BUBBLE_HIGH_START);
                     bubbleVelCalculated = bubbleVel2 * weight + bubbleVel1 * (1.0 - weight);
                 }
@@ -2107,22 +1988,20 @@ void orkiszewski(double angle, double diameter, double roughness,
         // Use the final calculated value for all subsequent calculations
         const double finalBubbleVel = bubbleVelCalculated;
         
-        // ====================================================================
         // MIXTURE DENSITY WITH LIQUID DISTRIBUTION
-        // ====================================================================
         double mixtureDensity;
         bool needsDistribAdjustment = true;
         unsigned char ksigFlag = 0;
         
         while (needsDistribAdjustment) {
             if (fabs(velocity + finalBubbleVel) > VELOCITY_TOLERANCE) {
-                mixtureDensity = (liquidDensity * (liquidSuperficialVel + finalBubbleVel) + 
-                                 gasDensity * gasSuperficialVel) / (velocity + finalBubbleVel) + 
+                mixtureDensity = (liquidDensity * (liquidSuperficialVel + finalBubbleVel) +
+                                 gasDensity * gasSuperficialVel) / (velocity + finalBubbleVel) +
                                 liquidDensity * liquidDistribCoeff;
                 
                 // Check if adjustment needed for high velocity
                 if (isHighVelocity && isigFlag <= 0) {
-                    const double minDistribForDensity = -finalBubbleVel * (1.0 - mixtureDensity / liquidDensity) / 
+                    const double minDistribForDensity = -finalBubbleVel * (1.0 - mixtureDensity / liquidDensity) /
                                                         (velocity + finalBubbleVel);
                     
                     if (liquidDistribCoeff <= minDistribForDensity && ksigFlag != 1) {
@@ -2143,9 +2022,7 @@ void orkiszewski(double angle, double diameter, double roughness,
         // Calculate holdup from mixture density
         holdup = (mixtureDensity - gasDensity) / (liquidDensity - gasDensity);
         
-        // ====================================================================
         // PRESSURE GRADIENTS FOR SLUG FLOW
-        // ====================================================================
         gravityGrad = mixtureDensity * sinAngle / PRESSURE_CONVERSION;
         
         if (fabs(velocity) > VELOCITY_TOLERANCE) {
@@ -2155,9 +2032,9 @@ void orkiszewski(double angle, double diameter, double roughness,
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             if (fabs(velocity + finalBubbleVel) > VELOCITY_TOLERANCE) {
-                const double frictionMultiplier = (liquidSuperficialVel + finalBubbleVel) / 
+                const double frictionMultiplier = (liquidSuperficialVel + finalBubbleVel) /
                                                   (velocity + finalBubbleVel) + liquidDistribCoeff;
-                frictionGrad = (frictionFactorValue * liquidDensity * velocity * velocity * frictionMultiplier) / 
+                frictionGrad = (frictionFactorValue * liquidDensity * velocity * velocity * frictionMultiplier) /
                               (2.0 * g_in * diameter * PRESSURE_CONVERSION);
             } else {
                 frictionGrad = 0.0;
@@ -2179,9 +2056,7 @@ void orkiszewski(double angle, double diameter, double roughness,
         slugGravityGrad = gravityGrad;
     }
     
-    // ========================================================================
     // MIST FLOW REGIME
-    // ========================================================================
     flowType = FLOW_MIST;
     
     // Calculate effective roughness for mist flow (same algorithm as Duns-Ros)
@@ -2191,20 +2066,20 @@ void orkiszewski(double angle, double diameter, double roughness,
         const double roughnessDiameter = roughness * diameter;
         const double velocitySquared = gasSuperficialVel * gasSuperficialVel;
         
-        const double webberNumber = WEBBER_SCALE * gasDensity * velocitySquared * 
+        const double webberNumber = WEBBER_SCALE * gasDensity * velocitySquared *
                                    roughnessDiameter / surfaceTension;
-        const double viscosityParameter = VISC_PARAM_SCALE * liquidViscosity * liquidViscosity / 
+        const double viscosityParameter = VISC_PARAM_SCALE * liquidViscosity * liquidViscosity /
                                          (liquidDensity * surfaceTension * roughnessDiameter);
         const double parameterProduct = webberNumber * viscosityParameter;
         
         if (parameterProduct > WEBBER_THRESHOLD) {
-            const double c2 = 0.3713 * surfaceTension / (gasDensity * velocitySquared * diameter) * 
+            const double c2 = 0.3713 * surfaceTension / (gasDensity * velocitySquared * diameter) *
                             pow(parameterProduct, 0.302);
             
             if (c2 > 0.001 && c2 < 3.45) {
                 const double zeta = log(c2);
                 mistRoughness = exp(-1.1117597 + zeta * (0.42096466 + zeta * (-8.0206350e-2 +
-                               zeta * (7.2551561e-3 + zeta * (2.4853674e-3 + 
+                               zeta * (7.2551561e-3 + zeta * (2.4853674e-3 +
                                zeta * (1.2567230e-4 - 3.2648140e-6 * zeta))))));
             } else if (c2 < 0.001) {
                 mistRoughness = c2;
@@ -2212,7 +2087,7 @@ void orkiszewski(double angle, double diameter, double roughness,
                 mistRoughness = MAX_MIST_ROUGHNESS;
             }
         } else {
-            const double c1 = gasDensity * velocitySquared * diameter / 
+            const double c1 = gasDensity * velocitySquared * diameter /
                             (SURFACE_TENSION_SCALE * surfaceTension);
             const double discriminantHelper = sqrt(-4.0 / (3.0 * c1) + 0.25);
             const double aux = c1 * c1 * discriminantHelper;
@@ -2246,14 +2121,14 @@ void orkiszewski(double angle, double diameter, double roughness,
         double frictionFactorValue;
         if (mistRoughness >= HIGH_ROUGHNESS_THRESHOLD) {
             const double logTerm = log10(0.27 * mistRoughness);
-            frictionFactorValue = 4.0 * (1.0 / pow(4.0 * logTerm, 2.0) + 
+            frictionFactorValue = 4.0 * (1.0 / pow(4.0 * logTerm, 2.0) +
                                         0.067 * pow(mistRoughness, 1.73));
         } else {
             frictionFactor(reynoldsGasCorr, mistRoughness, frictionFactorValue);
         }
         
         const double correctedVelSquared = correctedGasVel * correctedGasVel;
-        mistFrictionGrad = (frictionFactorValue * gasDensity * correctedVelSquared) / 
+        mistFrictionGrad = (frictionFactorValue * gasDensity * correctedVelSquared) /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
     } else {
         correctedGasVel = 0.0;
@@ -2265,7 +2140,7 @@ void orkiszewski(double angle, double diameter, double roughness,
     
     double accelParam;
     if (fabs(gasSuperficialVel) > VELOCITY_TOLERANCE) {
-        accelParam = (mixtureDensity * velocity * correctedGasVel) / 
+        accelParam = (mixtureDensity * velocity * correctedGasVel) /
                     (g_in * pressure * PRESSURE_CONVERSION);
         
         if (accelParam > ACCEL_CRITICAL_LIMIT) {
@@ -2286,12 +2161,10 @@ void orkiszewski(double angle, double diameter, double roughness,
         return;
     }
     
-    // ========================================================================
     // TRANSITION REGIME (SLUG-TO-MIST BLENDING)
-    // ========================================================================
     flowType = FLOW_TRANSITION;
     
-    const double mistTotalGrad = (mistFrictionGrad + mistGravityGrad * gasVelocityNumber / mistFlowLimit) / 
+    const double mistTotalGrad = (mistFrictionGrad + mistGravityGrad * gasVelocityNumber / mistFlowLimit) /
                                 (1.0 - accelParam);
     const double mistAccelGrad = accelParam * mistTotalGrad;
     
@@ -2307,49 +2180,50 @@ void orkiszewski(double angle, double diameter, double roughness,
 
 /*
 ==============================================================================
-beggsAndBrill: Calcula gradientes de pressão, holdup de líquido e propriedades
-               de escoamento bifásico pela correlação de Beggs & Brill.
+beggsAndBrill: Calculates pressure gradients, liquid holdup, and two-phase
+               flow properties using the Beggs-Brill correlation.
 
-Referências:
-      1.  Beggs, H.D. and Brill, J.P.: "A Study of Two-Phase Flow in
-          Inclined Pipes," Journal of Petroleum Technology (May,1973),
+References:
+      1.  Beggs, H. D. and Brill, J. P.: "A Study of Two-Phase Flow in
+          Inclined Pipes," Journal of Petroleum Technology (May 1973),
           607-617.
       2.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-          (Feb. 1984) 3-53 thru. 3-64.
+          (Feb. 1984), Sections 3-53 through 3-64.
 
-Dicionário de variáveis:
-- angle         : Ângulo de inclinação do tubo (graus)
-- diameter      : Diâmetro interno do tubo (polegadas)
-- roughness     : Rugosidade relativa do tubo
-- pressure      : Pressão (psi)
-- velocity      : Velocidade superficial total (ft/s)
-- liquidFraction: Fração volumétrica de líquido
-- gasDensity    : Densidade do gás (lb/ft³)
-- liquidDensity : Densidade do líquido (lb/ft³)
-- gasViscosity  : Viscosidade do gás (cP)
-- liquidViscosity: Viscosidade do líquido (cP)
-- surfaceTension: Tensão superficial (dyn/cm)
-- holdup        : Holdup de líquido calculado
-- frictionGrad  : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad   : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad     : Gradiente de pressão aceleracional (psi/ft)
-- totalGrad     : Gradiente de pressão total (psi/ft)
-- reynolds      : Número de Reynolds da mistura
-- flowType      : Indicador do padrão de fluxo (1=líquido, 2=gás, 3=distribuído, 4=intermitente, 5=segregado, 6=transição)
-- palmerFlag    : Indicador de uso de fator de correção de Palmer (0=sem correção, 1=com correção)
-- criticalFlag  : Indicador de fluxo crítico (0=normal, 1=crítico)
+Variable dictionary:
+- angle          : Pipe inclination angle (degrees)
+- diameter       : Pipe inner diameter (inches)
+- roughness      : Pipe relative roughness
+- pressure       : Pressure (psi)
+- velocity       : Total superficial velocity (ft/s)
+- liquidFraction : Liquid volumetric fraction
+- gasDensity     : Gas-phase density (lb/ft3)
+- liquidDensity  : Liquid-phase density (lb/ft3)
+- gasViscosity   : Gas-phase viscosity (cP)
+- liquidViscosity: Liquid-phase viscosity (cP)
+- surfaceTension : Surface tension (dyn/cm)
+- holdup         : Calculated liquid holdup
+- frictionGrad   : Frictional pressure gradient (psi/ft)
+- gravityGrad    : Gravitational pressure gradient (psi/ft)
+- accelGrad      : Accelerational pressure gradient (psi/ft)
+- totalGrad      : Total pressure gradient (psi/ft)
+- reynolds       : Mixture Reynolds number
+- flowType       : Flow-pattern indicator
+                   (1 = liquid, 2 = gas, 3 = distributed,
+                    4 = intermittent, 5 = segregated, 6 = transition)
+- palmerFlag     : Indicates whether the Palmer correction factor is used
+                   (0 = without correction, 1 = with correction)
+- criticalFlag   : Critical-flow indicator (0 = normal, 1 = critical)
 ==============================================================================
 */
-void beggsAndBrill(double angle, double diameter, double roughness, double pressure, double velocity, 
-                   double liquidFraction, double gasDensity, double liquidDensity, 
+void beggsAndBrill(double angle, double diameter, double roughness, double pressure, double velocity,
+                   double liquidFraction, double gasDensity, double liquidDensity,
                    double gasViscosity, double liquidViscosity, double surfaceTension,
                    double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad,
-                   double& totalGrad, double& reynolds, unsigned char& flowType, 
+                   double& totalGrad, double& reynolds, unsigned char& flowType,
                    unsigned char palmerFlag, unsigned char& criticalFlag) {
     
-    // ========================================================================
     // CONSTANTS
-    // ========================================================================
     
     // Single-phase flow thresholds
     static constexpr double SINGLE_PHASE_LIQUID_THRESHOLD = 0.99999;
@@ -2447,9 +2321,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
     // Critical flow
     static constexpr double ACCEL_CRITICAL_LIMIT = 0.95;
     
-    // ========================================================================
     // INITIALIZATION
-    // ========================================================================
     flowType = FLOW_SEGREGATED;  // Default for two-phase
     criticalFlag = 0;
     
@@ -2462,9 +2334,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
     const double liquidVelocityNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * liquidSuperficialVel;
     const double froudeNumber = (velocity * velocity) / (g_in * diameter);
     
-    // ========================================================================
     // SINGLE-PHASE LIQUID FLOW
-    // ========================================================================
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
         flowType = FLOW_LIQUID;
         holdup = liquidFraction;
@@ -2478,7 +2348,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = velocity * velocity;
-            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) / 
+            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -2491,9 +2361,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         return;
     }
     
-    // ========================================================================
     // SINGLE-PHASE GAS FLOW
-    // ========================================================================
     if (liquidFraction < SINGLE_PHASE_GAS_THRESHOLD) {
         flowType = FLOW_GAS;
         holdup = liquidFraction;
@@ -2507,7 +2375,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = velocity * velocity;
-            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) / 
+            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) /
                           (2.0 * g_in * diameter * PRESSURE_CONVERSION);
             
             double accelParam = (noSlipDensity * velocitySquared) / (g_in * pressure * PRESSURE_CONVERSION);
@@ -2530,9 +2398,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         return;
     }
     
-    // ========================================================================
     // TWO-PHASE FLOW - FLOW PATTERN DETERMINATION
-    // ========================================================================
     
     // Calculate transition boundaries
     const double transitionBoundary1 = TRANSITION_A_COEFF * pow(liquidFraction, TRANSITION_A_EXP);
@@ -2568,9 +2434,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         }
     }
     
-    // ========================================================================
     // HORIZONTAL HOLDUP CALCULATION
-    // ========================================================================
     
     double horizontalHoldup;
     double cCoeffD, cCoeffE, cCoeffF, cCoeffG;
@@ -2578,8 +2442,8 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
     // Calculate horizontal holdup based on flow pattern
     if (fabs(froudeNumber) > FROUDE_TOLERANCE) {
         if (flowType == FLOW_DISTRIBUTED) {
-            horizontalHoldup = DISTRIBUTED_COEFF * 
-                              pow(liquidFraction, DISTRIBUTED_LAMBDA_EXP) * 
+            horizontalHoldup = DISTRIBUTED_COEFF *
+                              pow(liquidFraction, DISTRIBUTED_LAMBDA_EXP) *
                               pow(froudeNumber, DISTRIBUTED_FROUDE_EXP);
             cCoeffD = C_COEFF_D_DISTRIBUTED;
             cCoeffE = C_COEFF_E_DISTRIBUTED;
@@ -2587,8 +2451,8 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             cCoeffG = C_COEFF_G_DISTRIBUTED;
             
         } else if (flowType == FLOW_INTERMITTENT) {
-            horizontalHoldup = INTERMITTENT_COEFF * 
-                              pow(liquidFraction, INTERMITTENT_LAMBDA_EXP) * 
+            horizontalHoldup = INTERMITTENT_COEFF *
+                              pow(liquidFraction, INTERMITTENT_LAMBDA_EXP) *
                               pow(froudeNumber, INTERMITTENT_FROUDE_EXP);
             cCoeffD = C_COEFF_D_INTERMITTENT;
             cCoeffE = C_COEFF_E_INTERMITTENT;
@@ -2596,8 +2460,8 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             cCoeffG = C_COEFF_G_INTERMITTENT;
             
         } else {  // FLOW_SEGREGATED
-            horizontalHoldup = SEGREGATED_COEFF * 
-                              pow(liquidFraction, SEGREGATED_LAMBDA_EXP) * 
+            horizontalHoldup = SEGREGATED_COEFF *
+                              pow(liquidFraction, SEGREGATED_LAMBDA_EXP) *
                               pow(froudeNumber, SEGREGATED_FROUDE_EXP);
             cCoeffD = C_COEFF_D_SEGREGATED;
             cCoeffE = C_COEFF_E_SEGREGATED;
@@ -2618,9 +2482,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         horizontalHoldup = liquidFraction;
     }
     
-    // ========================================================================
     // INCLINED FLOW CORRECTION
-    // ========================================================================
     
     double segregatedHoldup = 0.0;
     double intermittentHoldup = 0.0;
@@ -2642,9 +2504,9 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         // Calculate C-factor
         double cFactor = 0.0;
         if (fabs(froudeNumber) > FROUDE_TOLERANCE) {
-            cFactor = (1.0 - liquidFraction) * 
-                     log(cCoeffD * pow(liquidFraction, cCoeffE) * 
-                         pow(liquidVelocityNumber, cCoeffF) * 
+            cFactor = (1.0 - liquidFraction) *
+                     log(cCoeffD * pow(liquidFraction, cCoeffE) *
+                         pow(liquidVelocityNumber, cCoeffF) *
                          pow(froudeNumber, cCoeffG));
             if (cFactor < 0.0) {
                 cFactor = 0.0;
@@ -2653,7 +2515,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         
         // Calculate angle correction factor
         const double angleParameter = sin(ANGLE_SCALE_FACTOR * angle * DEG_TO_RAD);
-        const double angleFactor = 1.0 + cFactor * 
+        const double angleFactor = 1.0 + cFactor *
                                   (angleParameter - ANGLE_CUBIC_COEFF * angleParameter * angleParameter * angleParameter);
         
         // Apply angle correction to horizontal holdup
@@ -2680,9 +2542,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         }
     }
     
-    // ========================================================================
     // TRANSITION REGION BLENDING
-    // ========================================================================
     
     if (inTransitionRegion) {
         // Store segregated holdup
@@ -2690,8 +2550,8 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         
         // Recalculate for intermittent flow
         if (fabs(froudeNumber) > FROUDE_TOLERANCE) {
-            horizontalHoldup = INTERMITTENT_COEFF * 
-                              pow(liquidFraction, INTERMITTENT_LAMBDA_EXP) * 
+            horizontalHoldup = INTERMITTENT_COEFF *
+                              pow(liquidFraction, INTERMITTENT_LAMBDA_EXP) *
                               pow(froudeNumber, INTERMITTENT_FROUDE_EXP);
         } else {
             horizontalHoldup = liquidFraction;
@@ -2713,9 +2573,9 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             
             double cFactor = 0.0;
             if (fabs(froudeNumber) > FROUDE_TOLERANCE) {
-                cFactor = (1.0 - liquidFraction) * 
-                         log(cCoeffD * pow(liquidFraction, cCoeffE) * 
-                             pow(liquidVelocityNumber, cCoeffF) * 
+                cFactor = (1.0 - liquidFraction) *
+                         log(cCoeffD * pow(liquidFraction, cCoeffE) *
+                             pow(liquidVelocityNumber, cCoeffF) *
                              pow(froudeNumber, cCoeffG));
                 if (cFactor < 0.0) {
                     cFactor = 0.0;
@@ -2723,7 +2583,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
             }
             
             const double angleParameter = sin(ANGLE_SCALE_FACTOR * angle * DEG_TO_RAD);
-            const double angleFactor = 1.0 + cFactor * 
+            const double angleFactor = 1.0 + cFactor *
                                       (angleParameter - ANGLE_CUBIC_COEFF * angleParameter * angleParameter * angleParameter);
             
             if (angleFactor >= 0.0) {
@@ -2747,7 +2607,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         }
         
         // Blend segregated and intermittent holdups
-        const double aWeight = (transitionBoundary3 - froudeNumber) / 
+        const double aWeight = (transitionBoundary3 - froudeNumber) /
                               (transitionBoundary3 - transitionBoundary2);
         const double bWeight = 1.0 - aWeight;
         
@@ -2755,17 +2615,13 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         flowType = FLOW_TRANSITION;
     }
     
-    // ========================================================================
     // MIXTURE PROPERTIES
-    // ========================================================================
     
     const double noSlipDensity = liquidDensity * liquidFraction + gasDensity * (1.0 - liquidFraction);
     const double slipDensity = liquidDensity * holdup + gasDensity * (1.0 - holdup);
     const double noSlipViscosity = liquidViscosity * liquidFraction + gasViscosity * (1.0 - liquidFraction);
     
-    // ========================================================================
     // REYNOLDS NUMBER AND FRICTION FACTOR
-    // ========================================================================
     
     double frictionFactorValue = 0.0;
     
@@ -2780,9 +2636,9 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         const double xQuartic = xSquared * xSquared;
         
         // Calculate S-parameter using polynomial correlation
-        double sParam = xParam / (FRICTION_S_COEFF_A + 
-                                 FRICTION_S_COEFF_B * xParam + 
-                                 FRICTION_S_COEFF_C * xSquared + 
+        double sParam = xParam / (FRICTION_S_COEFF_A +
+                                 FRICTION_S_COEFF_B * xParam +
+                                 FRICTION_S_COEFF_C * xSquared +
                                  FRICTION_S_COEFF_D * xQuartic);
         
         // Override with special case correlation for narrow range
@@ -2796,14 +2652,12 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
         reynolds = 0.0;
     }
     
-    // ========================================================================
     // PRESSURE GRADIENTS
-    // ========================================================================
     
     frictionGrad = 0.0;
     if (fabs(velocity) > VELOCITY_TOLERANCE) {
         const double velocitySquared = velocity * velocity;
-        frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) / 
+        frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) /
                       (2.0 * g_in * diameter * PRESSURE_CONVERSION);
     }
     
@@ -2811,7 +2665,7 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
     
     double accelParam = 0.0;
     if (fabs(gasSuperficialVel) > VELOCITY_TOLERANCE) {
-        accelParam = (slipDensity * velocity * gasSuperficialVel) / 
+        accelParam = (slipDensity * velocity * gasSuperficialVel) /
                     (g_in * pressure * PRESSURE_CONVERSION);
         
         if (accelParam > ACCEL_CRITICAL_LIMIT) {
@@ -2826,21 +2680,29 @@ void beggsAndBrill(double angle, double diameter, double roughness, double press
 
 /*
 ==============================================================================
-holdupInterpolation: Função auxiliar para correlação de Dukler
-Esta subrotina realiza interpolação log-log entre o holdup de líquido sem escorregamento
-e o de Dukler, em função do número de Reynolds.
-Dicionário de variáveis:
-- columnIndex  : Índice da coluna a ser usada na matriz de dados (1 a 11)
-- inputValue   : Valor para o qual se deseja interpolar o holdup (entre 0 e 1)
-- outputValue  : Holdup de líquido interpolado (saída)
-Matrizes de dados:
-- inputMatrix[9][11]: Matriz de valores de X usados para interpolação (cada coluna corresponde a um valor de columnIndex)
-- outputMatrix[9][11]: Matriz de valores de holdup de líquido para cada X (cada coluna corresponde a um valor de columnIndex)
-Variáveis auxiliares:
-- interpolationFlag : Indicador se a interpolação já foi realizada (flag de parada)
-- arrayIndex        : Índice ajustado para acesso baseado em zero (columnIndex-1)
-- rowIndex          : Índice de linha para percorrer as matrizes
-- lowerIndex, upperIndex : Índices para interpolação entre dois pontos
+holdupInterpolation: Auxiliary function used by the Dukler correlation.
+
+This routine performs log-log interpolation between the no-slip liquid holdup
+and the Dukler liquid holdup as a function of the Reynolds number.
+
+Variable dictionary:
+- columnIndex : Index of the column used in the data matrices (1 to 11)
+- inputValue  : Value for which the liquid holdup is interpolated (between 0 and 1)
+- outputValue : Interpolated liquid holdup (output)
+
+Data matrices:
+- inputMatrix[9][11] : Matrix of X values used for interpolation
+                       (each column corresponds to a columnIndex value)
+- outputMatrix[9][11]: Matrix of liquid holdup values for each X
+                       (each column corresponds to a columnIndex value)
+
+Auxiliary variables:
+- interpolationFlag      : Indicates whether the interpolation has already
+                           been performed and the search should stop
+- arrayIndex             : Zero-based index used to access the matrices
+                           (columnIndex - 1)
+- rowIndex               : Row index used to iterate through the matrices
+- lowerIndex, upperIndex : Indices of the two points used for interpolation
 ==============================================================================
 */
 void holdupInterpolation(int columnIndex, double inputValue, double& outputValue) {
@@ -2851,52 +2713,48 @@ void holdupInterpolation(int columnIndex, double inputValue, double& outputValue
 
 /*
 ==============================================================================
-holdupLiquidFraction: Calcula o holdup de líquido usando correlações de 
-                      Eaton ou Dukler com solução iterativa
+holdupLiquidFraction: Calculates liquid holdup using the Eaton or Dukler
+                      correlation with an iterative solution.
 
-Referências:
+References:
      1.  Eaton, B. A. et al.: "The Prediction of Flow Patterns, Liquid
          Holdup and Pressure Losses Occurring During Continuous Two-Phase
          Flow in Horizontal Pipelines," Journal of Petroleum Technology
-         (June, 1967) 815-828.
+         (June 1967), 815-828.
      2.  Dukler, A. E., Wicks, M., and Cleveland, R. G.: "Frictional
          Pressure Drop in Two-Phase Flow: A. A Comparison of Existing
          Correlations for Pressure Loss and Holdup," AIChE Journal,
-         Vol. 10, No. 1 (1964) 38-43.
+         Vol. 10, No. 1 (1964), 38-43.
 
-Dicionário de variáveis:
-- liquidFraction   : Fração volumétrica de líquido sem escorregamento (0-1)
-- liquidViscosity  : Viscosidade do líquido (cP)
-- liquidDensity    : Densidade do líquido (lb/ft³)
-- gasDensity       : Densidade do gás (lb/ft³)
-- diameter         : Diâmetro interno do tubo (polegadas)
-- velocity         : Velocidade superficial total (ft/s)
-- pressure         : Pressão (psi)
-- liquidNumber     : Número adimensional de velocidade do líquido
-- liquidViscNumber : Número adimensional de viscosidade do líquido
-- gasVelNumber     : Número adimensional de velocidade do gás
-- tubeNumber       : Número adimensional de diâmetro do tubo
-- holdup           : Holdup de líquido calculado (saída)
-- reynoldsMixture  : Número de Reynolds da mistura (saída)
-- densityMixture   : Densidade da mistura (saída)
-- correlationFlag  : Flag de escolha da correlação (0=Dukler, 1=Eaton)
+Variable dictionary:
+- liquidFraction   : No-slip liquid volumetric fraction (0-1)
+- liquidViscosity  : Liquid viscosity (cP)
+- liquidDensity    : Liquid density (lb/ft3)
+- gasDensity       : Gas density (lb/ft3)
+- diameter         : Pipe inner diameter (inches)
+- velocity         : Total superficial velocity (ft/s)
+- pressure         : Pressure (psi)
+- liquidNumber     : Dimensionless liquid velocity number
+- liquidViscNumber : Dimensionless liquid viscosity number
+- gasVelNumber     : Dimensionless gas velocity number
+- tubeNumber       : Dimensionless pipe diameter number
+- holdup           : Calculated liquid holdup (output)
+- reynoldsMixture  : Mixture Reynolds number (output)
+- densityMixture   : Mixture density (output)
+- correlationFlag  : Correlation selection flag (0 = Dukler, 1 = Eaton)
 ==============================================================================
 */
-void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double liquidDensity, 
+void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double liquidDensity,
                          double gasDensity, double diameter, double velocity, double pressure,
                          double liquidNumber, double liquidViscNumber, double gasVelNumber, double tubeNumber,
-                         double& holdup, double& reynoldsMixture, double& densityMixture, 
+                         double& holdup, double& reynoldsMixture, double& densityMixture,
                          unsigned char correlationFlag) {
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double ATM_PRESSURE_PSI = 14.69595;      // Standard atmospheric pressure
     static constexpr double REYNOLDS_SCALE = 1488.0;          // Reynolds number scaling factor
     
-    // ========================================
     // Eaton Correlation Constants
-    // ========================================
     static constexpr double EATON_BNL_COEFFICIENT = 0.00226;  // Baseline viscosity number for Eaton
     static constexpr double EATON_LIQUID_EXPONENT = 0.575;    // Liquid number exponent
     static constexpr double EATON_TUBE_EXPONENT = 0.0277;     // Tube number exponent
@@ -2904,43 +2762,31 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
     static constexpr double EATON_VISC_EXPONENT = 0.1;        // Viscosity ratio exponent
     static constexpr double EATON_LOW_MULTIPLIER = 3.0;       // Multiplier for low xe values
     
-    // ========================================
     // Iteration Control Constants
-    // ========================================
     static constexpr double HOLDUP_CONVERGENCE_TOLERANCE = 0.001;  // Convergence criterion
     static constexpr int MAX_HOLDUP_ITERATIONS = 40;               // Maximum iteration count
     static constexpr double ZERO_VELOCITY_TOLERANCE = 1e-15;       // Near-zero velocity cutoff
     
-    // ========================================
     // Correlation Selection Flags
-    // ========================================
     static constexpr unsigned char CORRELATION_DUKLER = 0;
     static constexpr unsigned char CORRELATION_EATON = 1;
     
-    // ========================================
     // Eaton Correlation Data (replaced by analytical fits in CorrelationFits.h)
-    // ========================================
     static constexpr double EATON_LOG_X_MIN = -6.90776;
     static constexpr double EATON_LOW_MULTIPLIER_THRESHOLD = -6.90776;
     
-    // ========================================
     // Dukler Correlation Data: Reynolds Number Ranges
-    // ========================================
     static const double REYNOLDS_VALUES[11] = {
         100, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 200000, 10000000
     };
     
     static constexpr int NUM_REYNOLDS_POINTS = 11;
     
-    // ========================================
     // Initialization
-    // ========================================
     double holdupGuess = liquidFraction;
     int iterationCount = 0;
     
-    // ========================================
     // EATON CORRELATION (correlationFlag == 1)
-    // ========================================
     if (correlationFlag == CORRELATION_EATON) {
         // Handle zero gas velocity case
         if (fabs(gasVelNumber) <= ZERO_VELOCITY_TOLERANCE) {
@@ -2954,9 +2800,9 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
         const double pressureRatio = pressure / ATM_PRESSURE_PSI;
         const double viscosityRatio = liquidViscNumber / EATON_BNL_COEFFICIENT;
         
-        const double xe_value = pow(liquidNumber, EATON_LIQUID_EXPONENT) / 
+        const double xe_value = pow(liquidNumber, EATON_LIQUID_EXPONENT) /
                                (gasVelNumber * pow(tubeNumber, EATON_TUBE_EXPONENT)) *
-                               pow(pressureRatio, EATON_PRESSURE_EXPONENT) * 
+                               pow(pressureRatio, EATON_PRESSURE_EXPONENT) *
                                pow(viscosityRatio, EATON_VISC_EXPONENT);
         const double xe = log(xe_value);
         
@@ -2977,24 +2823,20 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
         holdupGuess = holdup;
     }
     
-    // ========================================
     // Calculate Mixture Density
-    // ========================================
     // Weighted density accounting for slip between phases
     if (holdupGuess == 1.0) {
         // Special case: avoid division by zero
         densityMixture = liquidDensity * liquidFraction * liquidFraction;
     } else {
-        densityMixture = liquidDensity * liquidFraction * liquidFraction / holdupGuess + 
+        densityMixture = liquidDensity * liquidFraction * liquidFraction / holdupGuess +
                         gasDensity * (1.0 - liquidFraction) * (1.0 - liquidFraction) / (1.0 - holdupGuess);
     }
     
     // Calculate mixture Reynolds number
     reynoldsMixture = REYNOLDS_SCALE * diameter * velocity * densityMixture / liquidViscosity;
     
-    // ========================================
     // DUKLER CORRELATION (correlationFlag == 0)
-    // ========================================
     // Iterative solution using 2D interpolation tables
     if (correlationFlag == CORRELATION_DUKLER) {
         do {
@@ -3029,14 +2871,12 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
                     holdupInterpolation(j, liquidFraction, e1);
                     
                     // Logarithmic interpolation in Reynolds number
-                    holdup = e1 + (log(reynoldsMixture) - log(REYNOLDS_VALUES[j - 1])) / 
+                    holdup = e1 + (log(reynoldsMixture) - log(REYNOLDS_VALUES[j - 1])) /
                             (log(REYNOLDS_VALUES[k - 1]) - log(REYNOLDS_VALUES[j - 1])) * (e2 - e1);
                 }
             }
             
-            // ========================================
             // Convergence Check
-            // ========================================
             if (std::abs(holdup - holdupGuess) <= HOLDUP_CONVERGENCE_TOLERANCE) {
                 // Converged: enforce physical constraint and return
                 if (holdup > liquidFraction) {
@@ -3058,7 +2898,7 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
                     if (holdupGuess == 1.0) {
                         densityMixture = liquidDensity * liquidFraction * liquidFraction;
                     } else {
-                        densityMixture = liquidDensity * liquidFraction * liquidFraction / holdupGuess + 
+                        densityMixture = liquidDensity * liquidFraction * liquidFraction / holdupGuess +
                                         gasDensity * (1.0 - liquidFraction) * (1.0 - liquidFraction) / (1.0 - holdupGuess);
                     }
                     
@@ -3075,56 +2915,53 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
 
 /*
 ==============================================================================
-holdupMinami: Calcula holdup de líquido usando correlações de Minami I/II
-              com correção de inclinação de Beggs & Brill
+holdupMinami: Calculates liquid holdup using the Minami I/II correlations
+              with the Beggs-Brill inclination correction.
 
-Referências:
-     1.  Minami, K. et al.: "Correlações para Cálculo de Holdup de
-         Líquido em Escoamento Bifásico Horizontal e Inclinado,"
-         Relatório Técnico PETROBRAS (1985).
-     2.  Beggs, H. D. and Brill, J. P.: "A Study of Two-Phase Flow 
-         in Inclined Pipes," Journal of Petroleum Technology 
-         (May, 1973) 607-617.
+References:
+     1.  Minami, K. et al.: "Correlations for Calculating Liquid
+         Holdup in Horizontal and Inclined Two-Phase Flow,"
+         PETROBRAS Technical Report (1985).
+     2.  Beggs, H. D. and Brill, J. P.: "A Study of Two-Phase Flow
+         in Inclined Pipes," Journal of Petroleum Technology
+         (May 1973), 607-617.
      3.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-         (Feb. 1984) 4-11 thru 4-17.
+         (Feb. 1984), Sections 4-11 through 4-17.
 
-Dicionário de variáveis:
-- angle            : Ângulo de inclinação do tubo (graus)
-- diameter         : Diâmetro interno do tubo (polegadas)
-- pressure         : Pressão (psi)
-- velocity         : Velocidade da mistura (ft/s)
-- liquidFraction   : Fração volumétrica de líquido sem escorregamento (0-1)
-- gasVelNumber     : Número adimensional de velocidade do gás
-- liquidViscNumber : Número adimensional de viscosidade do líquido
-- tubeNumber       : Número adimensional de diâmetro do tubo
-- liquidNumber     : Número adimensional de velocidade do líquido
-- correlationFlag  : Flag de correlação (2=Minami I, 3=Minami II)
-- transitionFlag   : Flag de transição fora da aplicabilidade (saída)
-- flowPattern      : Padrão de escoamento (saída): 1=líquido, 2=gás, 3=distribuído, 4=intermitente, 5=segregado, 6=transição
-- holdup           : Holdup de líquido calculado (saída)
+Variable dictionary:
+- angle            : Pipe inclination angle (degrees)
+- diameter         : Pipe inner diameter (inches)
+- pressure         : Pressure (psi)
+- velocity         : Mixture velocity (ft/s)
+- liquidFraction   : No-slip liquid volumetric fraction (0-1)
+- gasVelNumber     : Dimensionless gas velocity number
+- liquidViscNumber : Dimensionless liquid viscosity number
+- tubeNumber       : Dimensionless pipe diameter number
+- liquidNumber     : Dimensionless liquid velocity number
+- correlationFlag  : Correlation flag (2 = Minami I, 3 = Minami II)
+- transitionFlag   : Flag indicating conditions outside the correlation's
+                     range of applicability (output)
+- flowPattern      : Flow pattern (output):
+                     1 = liquid, 2 = gas, 3 = distributed,
+                     4 = intermittent, 5 = segregated, 6 = transition
+- holdup           : Calculated liquid holdup (output)
 ==============================================================================
 */
-void holdupMinami(double angle, double diameter, double pressure, double velocity, 
-                 double liquidFraction, double gasVelNumber, double liquidViscNumber, 
+void holdupMinami(double angle, double diameter, double pressure, double velocity,
+                 double liquidFraction, double gasVelNumber, double liquidViscNumber,
                  double tubeNumber, double liquidNumber, unsigned char correlationFlag,
                  unsigned char& transitionFlag, unsigned char& flowPattern, double& holdup) {
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double ATM_PRESSURE_PSI = 14.69595;     // Standard atmospheric pressure
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
     
-    // ========================================
     // Flow Regime Thresholds
-    // ========================================
     static constexpr double SINGLE_PHASE_LIQUID_THRESHOLD = 0.99999;
     static constexpr double SINGLE_PHASE_GAS_THRESHOLD = 0.00001;
     static constexpr double ZERO_VELOCITY_TOLERANCE = 1e-15;
     
-    // ========================================
     // Flow Pattern Identifiers
-    // ========================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_DISTRIBUTED = 3;
@@ -3132,15 +2969,11 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
     static constexpr unsigned char FLOW_SEGREGATED = 5;
     static constexpr unsigned char FLOW_TRANSITION = 6;
     
-    // ========================================
     // Correlation Selection Flags
-    // ========================================
     static constexpr unsigned char MINAMI_I = 2;
     static constexpr unsigned char MINAMI_II = 3;
     
-    // ========================================
     // Minami Correlation I Constants (wet gas flow)
-    // ========================================
     static constexpr double MINAMI_I_LIQUID_EXP = 0.8945;
     static constexpr double MINAMI_I_TUBE_EXP = 0.0796;
     static constexpr double MINAMI_I_VEL_EXP = -0.4076;
@@ -3153,9 +2986,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
     static constexpr double MINAMI_I_COEFF_C = 65.22;
     static constexpr double MINAMI_I_COEFF_D = -0.00952;
     
-    // ========================================
     // Minami Correlation II Constants (general flow - Eaton-based)
-    // ========================================
     static constexpr double MINAMI_II_SCALE = 1.84;
     static constexpr double MINAMI_II_LIQUID_EXP = 0.575;
     static constexpr double MINAMI_II_PRESSURE_EXP = 0.05;
@@ -3168,9 +2999,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
     static constexpr double MINAMI_II_LOG_SCALE = 8.7115;
     static constexpr double MINAMI_II_POWER = 4.3374;
     
-    // ========================================
     // Beggs & Brill Flow Pattern Map Constants
-    // ========================================
     // Transition boundaries: XL = coeff * λ^exp
     static constexpr double BB_XL1_COEFF = 316.0;
     static constexpr double BB_XL1_EXP = 0.302;
@@ -3184,9 +3013,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
     static constexpr double BB_LIQUID_FRAC_THRESHOLD_LOW = 0.01;
     static constexpr double BB_LIQUID_FRAC_THRESHOLD_HIGH = 0.4;
     
-    // ========================================
     // Beggs & Brill Inclination Correction Constants
-    // ========================================
     // Coefficients for C = (1-λ) * ln(d * λ^e * NL^f * NFr^g)
     
     // Distributed flow (upward)
@@ -3221,15 +3048,11 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
     static constexpr double MIN_HOLDUP = 0.00001;
     static constexpr double MAX_HOLDUP = 1.0;
     
-    // ========================================
     // Pre-computed Angle and Froude Number
-    // ========================================
     const double angleRad = angle * DEG_TO_RAD;
     const double froudeNumber = velocity * velocity / (g_in * diameter);
     
-    // ========================================
     // Single-Phase Flow Check
-    // ========================================
     flowPattern = FLOW_SEGREGATED;  // Default pattern
     
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
@@ -3244,17 +3067,13 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         return;
     }
     
-    // ========================================
     // Two-Phase Flow: Check for Static Conditions
-    // ========================================
     if (fabs(velocity) <= ZERO_VELOCITY_TOLERANCE) {
         holdup = liquidFraction;
         return;
     }
     
-    // ========================================
     // Step 1: Calculate Horizontal Holdup Using Selected Minami Correlation
-    // ========================================
     double horizontalHoldup;
     bool correlationLoop = true;
     
@@ -3262,11 +3081,9 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         correlationLoop = true;
         
         if (correlationFlag == MINAMI_I) {
-            // ====================================
             // MINAMI CORRELATION I (Wet Gas Flow)
-            // ====================================
-            const double yParam = pow(liquidFraction, MINAMI_I_LIQUID_EXP) * 
-                                 pow(tubeNumber, MINAMI_I_TUBE_EXP) * 
+            const double yParam = pow(liquidFraction, MINAMI_I_LIQUID_EXP) *
+                                 pow(tubeNumber, MINAMI_I_TUBE_EXP) *
                                  pow(liquidNumber, MINAMI_I_VEL_EXP);
             
             if (yParam < MINAMI_I_Y_MIN) {
@@ -3284,20 +3101,18 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
                 // Within range: polynomial correlation
                 const double ySquared = yParam * yParam;
                 const double yFourth = ySquared * ySquared;
-                horizontalHoldup = MINAMI_I_COEFF_A * yParam + 
-                                  MINAMI_I_COEFF_B * ySquared + 
-                                  MINAMI_I_COEFF_C * yFourth + 
+                horizontalHoldup = MINAMI_I_COEFF_A * yParam +
+                                  MINAMI_I_COEFF_B * ySquared +
+                                  MINAMI_I_COEFF_C * yFourth +
                                   MINAMI_I_COEFF_D;
             }
             
         } else {
-            // ====================================
             // MINAMI CORRELATION II (General Flow - Eaton-based)
-            // ====================================
             const double pressureRatio = pressure / ATM_PRESSURE_PSI;
-            const double eatonNumber = MINAMI_II_SCALE * 
-                                      pow(liquidNumber, MINAMI_II_LIQUID_EXP) * 
-                                      pow(pressureRatio, MINAMI_II_PRESSURE_EXP) * 
+            const double eatonNumber = MINAMI_II_SCALE *
+                                      pow(liquidNumber, MINAMI_II_LIQUID_EXP) *
+                                      pow(pressureRatio, MINAMI_II_PRESSURE_EXP) *
                                       pow(liquidViscNumber, MINAMI_II_VISC_EXP) /
                                       (gasVelNumber * pow(tubeNumber, MINAMI_II_TUBE_EXP));
             
@@ -3314,9 +3129,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         
     } while (!correlationLoop);
     
-    // ========================================
     // Step 2: Apply Inclination Correction
-    // ========================================
     if (angle == 0.0) {
         // Horizontal flow: no correction needed
         holdup = horizontalHoldup;
@@ -3328,9 +3141,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         horizontalHoldup = liquidFraction;
     }
     
-    // ========================================
     // Step 3: Determine Flow Pattern Using Beggs & Brill Map
-    // ========================================
     unsigned char transitionType = 0;
     
     const double xl1 = BB_XL1_COEFF * pow(liquidFraction, BB_XL1_EXP);
@@ -3362,9 +3173,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         }
     }
     
-    // ========================================
     // Step 4: Apply Beggs & Brill Inclination Correction
-    // ========================================
     double holdupSegregated = 0.0;
     double holdupIntermittent = 0.0;
     bool transitionLoop = true;
@@ -3407,8 +3216,8 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
         }
         
         // Calculate C factor
-        const double logArg = coeff_d * pow(liquidFraction, coeff_e) * 
-                             pow(liquidNumber, coeff_f) * 
+        const double logArg = coeff_d * pow(liquidFraction, coeff_e) *
+                             pow(liquidNumber, coeff_f) *
                              pow(froudeNumber, coeff_g);
         double cFactor = (1.0 - liquidFraction) * log(logArg);
         
@@ -3437,9 +3246,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
             holdup = MIN_HOLDUP;
         }
         
-        // ====================================
         // Handle Transition Region (Segregated ↔ Intermittent)
-        // ====================================
         if (transitionType == 1) {
             if (flowPattern == FLOW_SEGREGATED) {
                 // First pass: calculate segregated holdup
@@ -3461,131 +3268,137 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
 
 /*
 ==============================================================================
-duklerCorrelation: Calcula holdup de líquido e gradiente de pressão usando
-                  correlação de Dukler com gradiente de elevação de Flanigan
+duklerCorrelation: Calculates liquid holdup and pressure gradients using the
+                   Dukler correlation with the Flanigan elevation-gradient
+                   correction.
 
-Referências:
+References:
      1.  Brill, J. P. and Beggs, H. D.: Two-Phase Flow in Pipes
-         (Feb. 1984) 4-11 thru 4-17.
-     2.  Dukler, A.E. et al.: "Gas-Liquid Flow in Pipelines, I.
-         Research Results," AGA-API Project NX-28 (May, 1969)
+         (Feb. 1984), Sections 4-11 through 4-17.
+     2.  Dukler, A. E. et al.: "Gas-Liquid Flow in Pipelines, I.
+         Research Results," AGA-API Project NX-28 (May 1969).
      3.  Duns, H., Jr. and Ros, N. C. J.: "Vertical Flow of Gas and
-         Liquid Mixtures in Wells." Proceedings, Sixth World
+         Liquid Mixtures in Wells," Proceedings, Sixth World
          Petroleum Congress (1963), 451.
-     4.  Eaton, B.A.: "The Prediction of Flow Patterns, Liquid Holdup
-         and Pressure Losses Occurring During Continuous Two Phase
+     4.  Eaton, B. A.: "The Prediction of Flow Patterns, Liquid Holdup
+         and Pressure Losses Occurring During Continuous Two-Phase
          Flow in Horizontal Pipelines," Ph.D. Dissertation, The
-         University of Texas, Austin (1965)
-     5.  Eaton, B.A. et al.: "The Prediction of Flow Patterns, Liquid
+         University of Texas, Austin (1965).
+     5.  Eaton, B. A. et al.: "The Prediction of Flow Patterns, Liquid
          Holdup and Pressure Losses Occurring During Continuous
-         Two Phase Flow in Horizontal Pipelines," Transactions of
-         AIME (1967), 815
-     6.  Flanigan, O.: "Effect of Uphill Flow on Pressure Drop in De-
-         sign of Two Phase Gathering Systems," Oil and Gas Journal
-         (March 10, 1958), 56
+         Two-Phase Flow in Horizontal Pipelines," Transactions of
+         AIME (1967), 815.
+     6.  Flanigan, O.: "Effect of Uphill Flow on Pressure Drop in
+         Design of Two-Phase Gathering Systems," Oil and Gas Journal
+         (March 10, 1958), 56.
 
-Dicionário de variáveis:
-- angle             : Ângulo de inclinação do tubo (graus)
-- diameter          : Diâmetro interno do tubo (polegadas)
-- roughness         : Rugosidade relativa (adimensional)
-- pressure          : Pressão (psi)
-- velocity          : Velocidade da mistura (ft/s)
-- liquidFraction    : Fração volumétrica de líquido sem escorregamento (0-1)
-- gasDensity        : Densidade do gás (lb/ft³)
-- liquidDensity     : Densidade do líquido (lb/ft³)
-- gasViscosity      : Viscosidade do gás (cP)
-- liquidViscosity   : Viscosidade do líquido (cP)
-- liquidNumber      : Número adimensional de viscosidade do líquido
-- liquidViscNumber  : Número adimensional de velocidade do líquido
-- gasVelNumber      : Número adimensional de velocidade do gás
-- tubeNumber        : Número adimensional de diâmetro do tubo
-- holdup            : Holdup de líquido calculado (saída)
-- frictionGrad      : Gradiente de pressão por atrito (psi/ft)
-- gravityGrad       : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad         : Gradiente de pressão por aceleração (psi/ft)
-- totalGrad         : Gradiente de pressão total (psi/ft)
-- reynolds          : Número de Reynolds (saída)
-- flowPattern       : Padrão de escoamento (1=líquido, 2=gás, 3=bifásico)
-- correlationFlag   : Flag de correlação de holdup (0=Dukler, 1=Eaton, 2=Minami I, 3=Minami II)
-- transitionFlag    : Flag de transição fora da faixa de aplicabilidade
-- criticalFlag      : Flag de fluxo crítico (1=crítico)
+Variable dictionary:
+- angle             : Pipe inclination angle (degrees)
+- diameter          : Pipe inner diameter (inches)
+- roughness         : Relative roughness (dimensionless)
+- pressure          : Pressure (psi)
+- velocity          : Mixture velocity (ft/s)
+- liquidFraction    : No-slip liquid volumetric fraction (0-1)
+- gasDensity        : Gas density (lb/ft3)
+- liquidDensity     : Liquid density (lb/ft3)
+- gasViscosity      : Gas viscosity (cP)
+- liquidViscosity   : Liquid viscosity (cP)
+- liquidNumber      : Dimensionless liquid viscosity number
+- liquidViscNumber  : Dimensionless liquid velocity number
+- gasVelNumber      : Dimensionless gas velocity number
+- tubeNumber        : Dimensionless pipe diameter number
+- holdup            : Calculated liquid holdup (output)
+- frictionGrad      : Frictional pressure gradient (psi/ft)
+- gravityGrad       : Gravitational pressure gradient (psi/ft)
+- accelGrad         : Accelerational pressure gradient (psi/ft)
+- totalGrad         : Total pressure gradient (psi/ft)
+- reynolds          : Reynolds number (output)
+- flowPattern       : Flow pattern (1 = liquid, 2 = gas, 3 = two-phase)
+- correlationFlag   : Holdup correlation flag
+                      (0 = Dukler, 1 = Eaton, 2 = Minami I, 3 = Minami II)
+- transitionFlag    : Flag indicating conditions outside the correlation's
+                      range of applicability
+- criticalFlag      : Critical-flow flag (1 = critical)
 
-Arrays internos:
-- phiFlanigan[16]   : Fator de correção de densidade para gradiente de elevação (Flanigan)
-- vsgFlanigan[16]   : Velocidades superficiais de gás para correlação de Flanigan
-- lambdaValues[15]  : Valores de fração de líquido para fator de atrito
-- logLambda[15]     : Logaritmos das frações de líquido
-- frictionRatio[15] : Razões de fator de atrito bifásico/monofásico
+Internal arrays:
+- phiFlanigan[16]   : Density correction factors for the Flanigan elevation
+                      gradient
+- vsgFlanigan[16]   : Superficial gas velocities used by the Flanigan
+                      correlation
+- lambdaValues[15]  : Liquid-fraction values used to calculate the friction
+                      factor
+- logLambda[15]     : Logarithms of the liquid-fraction values
+- frictionRatio[15] : Two-phase-to-single-phase friction-factor ratios
 ==============================================================================
 */
+
 /*
 ==============================================================================
-duklerCorrelation: Calcula gradientes de pressão usando a correlação de Dukler,
-                   Eaton e Flanigan, com seleção de sub-correlações para holdup
+duklerCorrelation: Calculates pressure gradients using the Dukler, Eaton, and
+                   Flanigan correlations, with selectable subcorrelations for
+                   liquid holdup.
 
-Referências:
+References:
      1.  Dukler, A. E., Wicks, M., and Cleveland, R. G.: "Frictional
          Pressure Drop in Two-Phase Flow: A. A Comparison of Existing
          Correlations for Pressure Loss and Holdup," AIChE Journal,
-         Vol. 10, No. 1 (1964) 38-43.
+         Vol. 10, No. 1 (1964), 38-43.
      2.  Eaton, B. A. et al.: "The Prediction of Flow Patterns, Liquid
          Holdup and Pressure Losses Occurring During Continuous Two-Phase
          Flow in Horizontal Pipelines," Journal of Petroleum Technology
-         (June, 1967) 815-828.
+         (June 1967), 815-828.
      3.  Flanigan, O.: "Effect of Uphill Flow on Pressure Drop in Design
          of Two-Phase Gathering Systems," Oil and Gas Journal
-         (March 10, 1958) 132-141.
+         (March 10, 1958), 132-141.
 
-Dicionário de variáveis:
-- angle             : Ângulo de inclinação do tubo (graus)
-- diameter          : Diâmetro interno do tubo (polegadas)
-- roughness         : Rugosidade relativa (adimensional)
-- pressure          : Pressão absoluta (psia)
-- velocity          : Velocidade superficial da mistura (ft/s)
-- liquidFraction    : Fração volumétrica de líquido sem escorregamento (0-1)
-- gasDensity        : Densidade do gás (lb/ft³)
-- liquidDensity     : Densidade do líquido (lb/ft³)
-- gasViscosity      : Viscosidade do gás (cP)
-- liquidViscosity   : Viscosidade do líquido (cP)
-- surfaceTension    : Tensão superficial (dyn/cm)
-- temperature       : Temperatura (°F)
-- compressibilityFactor : Fator de compressibilidade do gás (adimensional)
-- holdup            : Holdup de líquido calculado (saída)
-- frictionGrad      : Gradiente de pressão por fricção (psi/ft) - saída
-- gravityGrad       : Gradiente de pressão gravitacional (psi/ft) - saída
-- accelGrad         : Gradiente de pressão aceleracional (psi/ft) - saída
-- totalGrad         : Gradiente de pressão total (psi/ft) - saída
-- reynolds          : Número de Reynolds (saída)
-- flowPattern       : Indicador de padrão de fluxo (saída): 1=líquido, 2=gás, 3=bifásico
-- correlationFlag   : Flag de seleção de correlação de holdup:
-                      0=Dukler, 1=Eaton, 2=Minami I, 3=Minami II
-- transitionFlag    : Indicador de transição de padrão (saída)
-- criticalFlag      : Indicador de fluxo crítico (saída)
+Variable dictionary:
+- angle                 : Pipe inclination angle (degrees)
+- diameter              : Pipe inner diameter (inches)
+- roughness             : Relative roughness (dimensionless)
+- pressure              : Absolute pressure (psia)
+- velocity              : Mixture superficial velocity (ft/s)
+- liquidFraction        : No-slip liquid volumetric fraction (0-1)
+- gasDensity            : Gas density (lb/ft3)
+- liquidDensity         : Liquid density (lb/ft3)
+- gasViscosity          : Gas viscosity (cP)
+- liquidViscosity       : Liquid viscosity (cP)
+- surfaceTension        : Surface tension (dyn/cm)
+- temperature           : Temperature (degrees F)
+- compressibilityFactor : Gas compressibility factor (dimensionless)
+- holdup                : Calculated liquid holdup (output)
+- frictionGrad          : Frictional pressure gradient (psi/ft) - output
+- gravityGrad           : Gravitational pressure gradient (psi/ft) - output
+- accelGrad             : Accelerational pressure gradient (psi/ft) - output
+- totalGrad             : Total pressure gradient (psi/ft) - output
+- reynolds              : Reynolds number (output)
+- flowPattern           : Flow-pattern indicator (output):
+                          1 = liquid, 2 = gas, 3 = two-phase
+- correlationFlag       : Holdup correlation selection flag:
+                          0 = Dukler, 1 = Eaton,
+                          2 = Minami I, 3 = Minami II
+- transitionFlag        : Flow-pattern transition indicator (output)
+- criticalFlag          : Critical-flow indicator (output)
 ==============================================================================
 */
-void duklerCorrelation(double angle, double diameter, double roughness, double pressure, 
-                      double velocity, double liquidFraction, double gasDensity, 
+void duklerCorrelation(double angle, double diameter, double roughness, double pressure,
+                      double velocity, double liquidFraction, double gasDensity,
                       double liquidDensity, double gasViscosity, double liquidViscosity,
                       double surfaceTension, double temperature, double compressibilityFactor,
                       double& holdup, double& frictionGrad, double& gravityGrad,
                       double& accelGrad, double& totalGrad, double& reynolds, unsigned char& flowPattern,
-                      unsigned char correlationFlag, unsigned char& transitionFlag, 
+                      unsigned char correlationFlag, unsigned char& transitionFlag,
                       unsigned char& criticalFlag) {
     
-    // ========================================
     // Correlation Data (replaced by analytical fits in CorrelationFits.h)
-    // ========================================
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double REYNOLDS_SCALE = 1488.0;          // Reynolds number scaling factor
     static constexpr double PSI_CONVERSION = 144.0;           // Pressure conversion (in²/ft²)
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
     
     // Dimensionless number coefficients
     static constexpr double VEL_NUMBER_SCALE = 1.938;         // Velocity number coefficient
-    static constexpr double DIAM_NUMBER_SCALE = 120.872;      // Diameter number coefficient  
+    static constexpr double DIAM_NUMBER_SCALE = 120.872;      // Diameter number coefficient
     static constexpr double VISC_NUMBER_SCALE = 0.15726;      // Viscosity number coefficient
     
     // Flow regime thresholds
@@ -3613,29 +3426,21 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
     static constexpr double BLASIUS_EXPONENT = -0.32;
     static constexpr double BLASIUS_MULTIPLIER = 4.0;
     
-    // ========================================
     // Initialization
-    // ========================================
     criticalFlag = 0;
     flowPattern = FLOW_TWOPHASE;  // Default: two-phase flow
     
-    // ========================================
     // Pre-computed Geometric Properties
-    // ========================================
     const double angleRad = angle * DEG_TO_RAD;
     const double sinAngle = sin(angleRad);
     const double area = 0.25 * M_PI * diameter * diameter;
     
-    // ========================================
     // Superficial Velocities
-    // ========================================
     const double liquidSupVel = velocity * liquidFraction;
     const double gasSupVel = velocity - liquidSupVel;
     const double gasVolumeFlow = gasSupVel * area;
     
-    // ========================================
     // Dimensionless Numbers
-    // ========================================
     const double densitySurfaceTensionRoot = pow(liquidDensity / surfaceTension, 0.25);
     const double liquidNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * liquidSupVel;
     const double gasVelNumber = VEL_NUMBER_SCALE * densitySurfaceTensionRoot * gasSupVel;
@@ -3645,9 +3450,7 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
     const double viscNumberDenom = pow(1.0 / (liquidDensity * surfaceTensionCubed), 0.25);
     const double liquidViscNumber = VISC_NUMBER_SCALE * liquidViscosity * viscNumberDenom;
     
-    // ========================================
     // CASE 1: Single-Phase Liquid Flow
-    // ========================================
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
         flowPattern = FLOW_LIQUID;
         holdup = liquidFraction;
@@ -3658,7 +3461,7 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = liquidSupVel * liquidSupVel;
-            frictionGrad = frictionFactorValue * liquidDensity * velocitySquared / 
+            frictionGrad = frictionFactorValue * liquidDensity * velocitySquared /
                           (2.0 * g_in * diameter * PSI_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -3675,9 +3478,7 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
         return;
     }
     
-    // ========================================
     // CASE 2: Single-Phase Gas Flow
-    // ========================================
     if (liquidFraction < SINGLE_PHASE_GAS_THRESHOLD) {
         flowPattern = FLOW_GAS;
         holdup = liquidFraction;
@@ -3690,10 +3491,10 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = gasSupVel * gasSupVel;
-            frictionGrad = frictionFactorValue * gasDensity * velocitySquared / 
+            frictionGrad = frictionFactorValue * gasDensity * velocitySquared /
                           (2.0 * g_in * diameter * PSI_CONVERSION);
             
-            accelerationParam = gasDensity * velocitySquared / 
+            accelerationParam = gasDensity * velocitySquared /
                                (g_in * pressure * PSI_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -3716,27 +3517,23 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
         return;
     }
     
-    // ========================================
     // CASE 3: Two-Phase Flow
-    // ========================================
     flowPattern = FLOW_TWOPHASE;
     
-    // ========================================
     // Step 3.1: Calculate Holdup Using Selected Correlation
-    // ========================================
     const double mixtureViscosity = liquidViscosity * liquidFraction + gasViscosity * (1.0 - liquidFraction);
     double reynoldsMixture, densityMixture;
     
     if ((correlationFlag == HOLDUP_DUKLER) || (correlationFlag == HOLDUP_EATON)) {
         // Use Dukler or Eaton holdup correlation
-        holdupLiquidFraction(liquidFraction, mixtureViscosity, liquidDensity, gasDensity, 
-                           diameter, velocity, pressure, liquidNumber, liquidViscNumber, 
-                           gasVelNumber, tubeNumber, holdup, reynoldsMixture, densityMixture, 
+        holdupLiquidFraction(liquidFraction, mixtureViscosity, liquidDensity, gasDensity,
+                           diameter, velocity, pressure, liquidNumber, liquidViscNumber,
+                           gasVelNumber, tubeNumber, holdup, reynoldsMixture, densityMixture,
                            correlationFlag);
     } else {
         // Use Minami I or Minami II holdup correlation
-        holdupMinami(angle, diameter, pressure, velocity, liquidFraction, 
-                    gasVelNumber, liquidViscNumber, tubeNumber, liquidNumber, 
+        holdupMinami(angle, diameter, pressure, velocity, liquidFraction,
+                    gasVelNumber, liquidViscNumber, tubeNumber, liquidNumber,
                     correlationFlag, transitionFlag, flowPattern, holdup);
         
         densityMixture = liquidDensity * liquidFraction + gasDensity * (1.0 - liquidFraction);
@@ -3748,9 +3545,7 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
         }
     }
     
-    // ========================================
     // Step 3.2: Calculate Friction Gradient
-    // ========================================
     double frictionFactorValue;
     
     if (fabs(velocity) > MIN_VELOCITY_THRESHOLD) {
@@ -3759,22 +3554,20 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
         const double frictionFactorRatio = CorrelationFits::duklerFrictionRatio(logLiquidFraction);
         
         // Blasius friction factor for smooth pipe
-        const double singlePhaseFriction = BLASIUS_MULTIPLIER * 
+        const double singlePhaseFriction = BLASIUS_MULTIPLIER *
                                           (BLASIUS_INTERCEPT + BLASIUS_COEFFICIENT * pow(reynoldsMixture, BLASIUS_EXPONENT));
         
         frictionFactorValue = frictionFactorRatio * singlePhaseFriction;
         
         const double velocitySquared = velocity * velocity;
-        frictionGrad = frictionFactorValue * densityMixture * velocitySquared / 
+        frictionGrad = frictionFactorValue * densityMixture * velocitySquared /
                       (2.0 * g_in * diameter * PSI_CONVERSION);
     } else {
         frictionFactorValue = 0.0;
         frictionGrad = 0.0;
     }
     
-    // ========================================
     // Step 3.3: Calculate Gravity Gradient (Flanigan Correlation)
-    // ========================================
     const double phiFactor = CorrelationFits::flaniganPhi(gasSupVel);
     
     gravityGrad = liquidDensity * sinAngle * phiFactor / PSI_CONVERSION;
@@ -3784,10 +3577,8 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
         gravityGrad = gasDensity * sinAngle / PSI_CONVERSION;
     }
     
-    // ========================================
     // Step 3.4: Calculate Acceleration Gradient
-    // ========================================
-    double accelerationParam = densityMixture * velocity * gasSupVel / 
+    double accelerationParam = densityMixture * velocity * gasSupVel /
                               (g_in * pressure * PSI_CONVERSION);
     
     // Check for critical flow
@@ -3796,112 +3587,98 @@ void duklerCorrelation(double angle, double diameter, double roughness, double p
         criticalFlag = 1;
     }
     
-    // ========================================
     // Step 3.5: Total Gradient
-    // ========================================
     totalGrad = (frictionGrad + gravityGrad) / (1.0 - accelerationParam);
     accelGrad = 0.0;  // Note: Dukler correlation sets this to zero for two-phase
 }
 
 /*
 ==============================================================================
-mukherjeeeBrillFlowPattern: Determina o padrão de escoamento bifásico usando
-                           a correlação de Mukherjee & Brill
+mukherjeeeBrillFlowPattern: Determines the two-phase flow pattern using the
+                           Mukherjee-Brill correlation.
 
-Dicionário de variáveis:
-- liquidViscNumber  : Número adimensional de velocidade do líquido
-- gasVelNumber      : Número adimensional de velocidade do gás
-- liquidNumber      : Número adimensional de viscosidade do líquido
-- angle             : Ângulo de inclinação do tubo (graus)
-- flowPattern       : Padrão de escoamento determinado
-                      3=bolhas, 4=golfadas, 5=névoa, 6=estratificado
+Variable dictionary:
+- liquidViscNumber : Dimensionless liquid velocity number
+- gasVelNumber     : Dimensionless gas velocity number
+- liquidNumber     : Dimensionless liquid viscosity number
+- angle            : Pipe inclination angle (degrees)
+- flowPattern      : Determined flow pattern
+                     3 = bubble, 4 = slug, 5 = mist, 6 = stratified
 
-Variáveis auxiliares:
-- angleRad          : Ângulo em radianos
-- sinAngle          : Seno do ângulo de inclinação
-- absAngle          : Valor absoluto do ângulo
-- gasVelMist        : Fronteira para escoamento de névoa
-- liquidVelBubble   : Fronteira para escoamento de bolhas
-- liquidVelStrat    : Fronteira para escoamento estratificado
-- gasVelBubble      : Fronteira para regime de bolhas vs estratificado
+Auxiliary variables:
+- angleRad         : Angle in radians
+- sinAngle         : Sine of the pipe inclination angle
+- absAngle         : Absolute value of the angle
+- gasVelMist       : Boundary for mist flow
+- liquidVelBubble  : Boundary for bubble flow
+- liquidVelStrat   : Boundary for stratified flow
+- gasVelBubble     : Boundary between bubble and stratified flow
 
-Padrões de escoamento:
-- 3: Escoamento de bolhas
-- 4: Escoamento de golfadas (slug)
-- 5: Escoamento de névoa (mist)
-- 6: Escoamento estratificado
+Flow patterns:
+- 3: Bubble flow
+- 4: Slug flow
+- 5: Mist flow
+- 6: Stratified flow
 ==============================================================================
 */
-void mukherjeeeBrillFlowPattern(double liquidViscNumber, double gasVelNumber, double liquidNumber, 
+void mukherjeeeBrillFlowPattern(double liquidViscNumber, double gasVelNumber, double liquidNumber,
                                double angle, unsigned char& flowPattern) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_BUBBLE     = 3;
     static constexpr unsigned char FLOW_SLUG       = 4;
     static constexpr unsigned char FLOW_MIST       = 5;
     static constexpr unsigned char FLOW_STRATIFIED = 6;
     
-    // ========================================
     // Flow Pattern Boundary Thresholds
-    // ========================================
     static constexpr double DOWNWARD_ANGLE_THRESHOLD = 30.0;  // degrees
     
-    // ========================================
     // Pre-computed Angle Properties
-    // ========================================
     const double angleRad = angle * M_PI / 180.0;
     const double sinAngle = sin(angleRad);
     const double sinAngleSquared = sinAngle * sinAngle;
     const double absoluteAngle = fabs(angle);
     
-    // ========================================
     // Pre-computed Logarithms
-    // ========================================
     const double log10GasVelNumber = log10(gasVelNumber);
     const double log10LiquidViscNumber = log10(liquidViscNumber);
     const double log10GasVelNumberSquared = log10GasVelNumber * log10GasVelNumber;
     const double log10LiquidViscNumberSquared = log10LiquidViscNumber * log10LiquidViscNumber;
     
-    // ========================================
     // Flow Pattern Boundary Calculations
-    // ========================================
     
     // Mist flow boundary: gasVelNumber vs liquidNumber
-    const double mistBoundaryExponent = 1.400575 
-                                       - 2.694 * liquidNumber 
+    const double mistBoundaryExponent = 1.400575
+                                       - 2.694 * liquidNumber
                                        + 0.521084 * pow(liquidViscNumber, 0.329066);
     const double mistFlowBoundary = pow(10.0, mistBoundaryExponent);
     
     // Bubble flow boundary: liquidViscNumber vs other parameters (upward flow)
-    const double bubbleBoundaryExponent = 0.94 
-                                         + 0.074 * sinAngle 
-                                         - 0.855 * sinAngleSquared 
-                                         + 3.695 * liquidNumber 
+    const double bubbleBoundaryExponent = 0.94
+                                         + 0.074 * sinAngle
+                                         - 0.855 * sinAngleSquared
+                                         + 3.695 * liquidNumber
                                          + log10GasVelNumber;
     const double bubbleFlowBoundary = pow(10.0, bubbleBoundaryExponent);
     
     // Stratified flow boundary: liquidViscNumber vs other parameters
-    const double stratifiedBoundaryExponent = 0.321 
-                                             - 0.017 * gasVelNumber 
-                                             - 4.267 * sinAngle 
+    const double stratifiedBoundaryExponent = 0.321
+                                             - 0.017 * gasVelNumber
+                                             - 4.267 * sinAngle
                                              - 2.972 * liquidNumber
-                                             - 0.033 * log10GasVelNumberSquared 
+                                             - 0.033 * log10GasVelNumberSquared
                                              - 3.925 * sinAngleSquared;
     const double stratifiedFlowBoundary = pow(10.0, stratifiedBoundaryExponent);
     
     // Bubble vs stratified boundary: gasVelNumber threshold (downward flow)
-    const double bubbleVsStratifiedExponent = 0.431 
-                                             + 1.132 * sinAngle 
-                                             - 3.003 * liquidNumber 
+    const double bubbleVsStratifiedExponent = 0.431
+                                             + 1.132 * sinAngle
+                                             - 3.003 * liquidNumber
                                              - 1.138 * log10LiquidViscNumber * sinAngle
                                              - 0.429 * log10LiquidViscNumberSquared * sinAngle;
     const double bubbleVsStratifiedBoundary = pow(10.0, bubbleVsStratifiedExponent);
     
-    // ========================================
     // Flow Pattern Determination
-    // ========================================
     
     // Check mist flow first (applies to all angles)
     if (gasVelNumber >= mistFlowBoundary) {
@@ -3945,35 +3722,32 @@ void mukherjeeeBrillFlowPattern(double liquidViscNumber, double gasVelNumber, do
 
 /*
 ==============================================================================
-mukherjeeeBrillHoldup: Calcula o holdup de líquido pela correlação de
-                      Mukherjee & Brill
+mukherjeeeBrillHoldup: Calculates liquid holdup using the Mukherjee-Brill
+                      correlation.
 
-Dicionário de variáveis:
-- liquidViscNumber  : Número adimensional de velocidade do líquido
-- gasVelNumber      : Número adimensional de velocidade do gás
-- liquidNumber      : Número adimensional de viscosidade do líquido
-- angle             : Ângulo de inclinação do tubo (graus)
-- flowPattern       : Padrão de escoamento (3=bolhas, 4=golfadas, 5=névoa, 6=estratificado)
-- holdup            : Holdup de líquido calculado (saída)
+Variable dictionary:
+- liquidViscNumber : Dimensionless liquid velocity number
+- gasVelNumber     : Dimensionless gas velocity number
+- liquidNumber     : Dimensionless liquid viscosity number
+- angle            : Pipe inclination angle (degrees)
+- flowPattern      : Flow pattern
+                     (3 = bubble, 4 = slug, 5 = mist, 6 = stratified)
+- holdup           : Calculated liquid holdup (output)
 
-Variáveis auxiliares:
-- angleRad          : Ângulo em radianos
-- sinAngle          : Seno do ângulo de inclinação
-- exponentExp       : Expoente da expressão para holdup
-- exponentResult    : Resultado da expressão exponencial
+Auxiliary variables:
+- angleRad         : Angle in radians
+- sinAngle         : Sine of the pipe inclination angle
+- exponentExp      : Exponent used in the liquid holdup expression
+- exponentResult   : Result of the exponential expression
 ==============================================================================
 */
-void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double liquidNumber, 
+void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double liquidNumber,
                           double angle, unsigned char flowPattern, double& holdup) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_STRATIFIED = 6;
     
-    // ========================================
     // Holdup Correlation Coefficients
-    // ========================================
     
     // Upward/horizontal flow coefficients
     static constexpr double UPWARD_C0 = -0.380113;
@@ -3999,17 +3773,13 @@ void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double 
     static constexpr double DOWNWARD_EXP_GAS = 0.371771;
     static constexpr double DOWNWARD_EXP_LIQ = -0.393952;
     
-    // ========================================
     // Pre-computed Angle Properties
-    // ========================================
     const double angleRad = angle * M_PI / 180.0;
     const double sinAngle = sin(angleRad);
     const double sinAngleSquared = sinAngle * sinAngle;
     const double liquidNumberSquared = liquidNumber * liquidNumber;
     
-    // ========================================
     // Pre-computed Power Terms
-    // ========================================
     const double gasVelPowerUpward = pow(gasVelNumber, UPWARD_EXP_GAS);
     const double liquidViscPowerUpward = pow(liquidViscNumber, UPWARD_EXP_LIQ);
     const double gasVelPowerStrat = pow(gasVelNumber, STRAT_EXP_GAS);
@@ -4017,18 +3787,16 @@ void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double 
     const double gasVelPowerDownward = pow(gasVelNumber, DOWNWARD_EXP_GAS);
     const double liquidViscPowerDownward = pow(liquidViscNumber, DOWNWARD_EXP_LIQ);
     
-    // ========================================
     // Holdup Calculation
-    // ========================================
     
     double exponentBase;
     double exponentMultiplier;
     
     // Upward or horizontal flow (all patterns use same correlation)
     if (angle >= 0.0) {
-        exponentBase = UPWARD_C0 
-                      + UPWARD_C1 * sinAngle 
-                      + UPWARD_C2 * sinAngleSquared 
+        exponentBase = UPWARD_C0
+                      + UPWARD_C1 * sinAngle
+                      + UPWARD_C2 * sinAngleSquared
                       + UPWARD_C3 * liquidNumberSquared;
         exponentMultiplier = gasVelPowerUpward * liquidViscPowerUpward;
         holdup = exp(exponentBase * exponentMultiplier);
@@ -4037,9 +3805,9 @@ void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double 
     
     // Downward flow: stratified pattern
     if (flowPattern == FLOW_STRATIFIED) {
-        exponentBase = STRAT_C0 
-                      + STRAT_C1 * sinAngle 
-                      + STRAT_C2 * sinAngleSquared 
+        exponentBase = STRAT_C0
+                      + STRAT_C1 * sinAngle
+                      + STRAT_C2 * sinAngleSquared
                       + STRAT_C3 * liquidNumberSquared;
         exponentMultiplier = gasVelPowerStrat * liquidViscPowerStrat;
         holdup = exp(exponentBase * exponentMultiplier);
@@ -4047,9 +3815,9 @@ void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double 
     }
     
     // Downward flow: bubble, slug, or mist patterns
-    exponentBase = DOWNWARD_C0 
-                  + DOWNWARD_C1 * sinAngle 
-                  + DOWNWARD_C2 * sinAngleSquared 
+    exponentBase = DOWNWARD_C0
+                  + DOWNWARD_C1 * sinAngle
+                  + DOWNWARD_C2 * sinAngleSquared
                   + DOWNWARD_C3 * liquidNumberSquared;
     exponentMultiplier = gasVelPowerDownward * liquidViscPowerDownward;
     holdup = exp(exponentBase * exponentMultiplier);
@@ -4057,62 +3825,57 @@ void mukherjeeeBrillHoldup(double liquidViscNumber, double gasVelNumber, double 
 
 /*
 ==============================================================================
-mukherjeeeBrillStratifiedFlow: Calcula gradientes de pressão para escoamento
-                              estratificado pela correlação de Mukherjee & Brill
+mukherjeeeBrillStratifiedFlow: Calculates pressure gradients for stratified
+                              flow using the Mukherjee-Brill correlation.
 
-Dicionário de variáveis:
-- angleRad          : Ângulo de inclinação do tubo (radianos)
-- velocity          : Velocidade superficial total (ft/s)
-- liquidFraction    : Fração volumétrica de líquido sem escorregamento (0-1)
-- holdup            : Holdup de líquido calculado (0-1)
-- diameter          : Diâmetro interno do tubo (polegadas)
-- roughness         : Rugosidade relativa (adimensional)
-- gasDensity        : Densidade do gás (lb/ft³)
-- gasViscosity      : Viscosidade do gás (cP)
-- frictionGrad      : Gradiente de pressão por atrito (psi/ft) - saída
-- gravityGrad       : Gradiente de pressão gravitacional (psi/ft) - saída
-- totalGrad         : Gradiente de pressão total (psi/ft) - saída
-- convergeFlag      : Flag de convergência (0=convergiu, 1=não convergiu) - saída
+Variable dictionary:
+- angleRad            : Pipe inclination angle (radians)
+- velocity            : Total superficial velocity (ft/s)
+- liquidFraction      : No-slip liquid volumetric fraction (0-1)
+- holdup              : Calculated liquid holdup (0-1)
+- diameter            : Pipe inner diameter (inches)
+- roughness           : Relative roughness (dimensionless)
+- gasDensity          : Gas density (lb/ft3)
+- gasViscosity        : Gas viscosity (cP)
+- frictionGrad        : Frictional pressure gradient (psi/ft) - output
+- gravityGrad         : Gravitational pressure gradient (psi/ft) - output
+- totalGrad           : Total pressure gradient (psi/ft) - output
+- convergeFlag        : Convergence flag
+                        (0 = converged, 1 = did not converge) - output
 
-Variáveis auxiliares:
-- convergeStatus    : Status de convergência da iteração
-- chordAngle        : Ângulo subtendido pela corda de líquido
-- iterations        : Contador de iterações
-- gamma             : Variável auxiliar para solução iterativa
-- auxiliarX, auxiliarY : Variáveis auxiliares para aceleração de convergência
-- hydraulicDiameter : Diâmetro hidráulico da fase gasosa
-- effectiveDiameter : Diâmetro hidráulico efetivo
-- liquidVelocity    : Velocidade superficial do líquido
-- gasVelocity       : Velocidade superficial do gás
-- realGasVelocity   : Velocidade real do gás
-- reynolds          : Número de Reynolds da fase gasosa
-- frictionFactorValue : Fator de atrito de Moody
+Auxiliary variables:
+- convergeStatus      : Iteration convergence status
+- chordAngle          : Angle subtended by the liquid chord
+- iterations          : Iteration counter
+- gamma               : Auxiliary variable used by the iterative solution
+- auxiliarX, auxiliarY: Auxiliary variables used to accelerate convergence
+- hydraulicDiameter   : Gas-phase hydraulic diameter
+- effectiveDiameter   : Effective hydraulic diameter
+- liquidVelocity      : Superficial liquid velocity
+- gasVelocity         : Superficial gas velocity
+- realGasVelocity     : Actual gas velocity
+- reynolds            : Gas-phase Reynolds number
+- frictionFactorValue : Moody friction factor
 ==============================================================================
 */
-void mukherjeeeBrillStratifiedFlow(double angleRad, double velocity, double liquidFraction, 
-                                 double holdup, double diameter, double roughness, double gasDensity, 
-                                 double gasViscosity, double& frictionGrad, double& gravityGrad, 
+void mukherjeeeBrillStratifiedFlow(double angleRad, double velocity, double liquidFraction,
+                                 double holdup, double diameter, double roughness, double gasDensity,
+                                 double gasViscosity, double& frictionGrad, double& gravityGrad,
                                  double& totalGrad, unsigned char& convergeFlag) {
     
-    // ========================================
     // Iteration Control Constants
-    // ========================================
     static constexpr unsigned char MAX_ITERATIONS = 20;
     static constexpr double CONVERGENCE_TOLERANCE = 0.01;
     static constexpr double INITIAL_CHORD_ANGLE = 0.001;
     static constexpr double ZERO_TOLERANCE = 1e-15;
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double TWO_PI = 6.283186;                 // 2π
     static constexpr double REYNOLDS_FACTOR = 1488.0;          // ft-lbm/cp-psi conversion
     static constexpr double GRAVITY_ACCEL = 64.4;              // ft/s²
     static constexpr double PSI_CONVERSION = 144.0;            // in²/ft²
     
-    // ========================================
     // Iterative Solution for Chord Angle
-    // ========================================
     unsigned char convergeStatus = 0;
     double chordAngle = INITIAL_CHORD_ANGLE;
     unsigned char iterations = 0;
@@ -4120,7 +3883,7 @@ void mukherjeeeBrillStratifiedFlow(double angleRad, double velocity, double liqu
     
     do {
         gamma = TWO_PI * holdup + sin(chordAngle);
-        accelerateConvergence(chordAngle, gamma, convergeStatus, CONVERGENCE_TOLERANCE, 
+        accelerateConvergence(chordAngle, gamma, convergeStatus, CONVERGENCE_TOLERANCE,
                             auxiliarX, auxiliarY);
         iterations++;
     } while ((iterations <= MAX_ITERATIONS) && (convergeStatus <= 1));
@@ -4128,9 +3891,7 @@ void mukherjeeeBrillStratifiedFlow(double angleRad, double velocity, double liqu
     // Set convergence flag (0=converged, 1=did not converge)
     convergeFlag = (iterations > MAX_ITERATIONS) ? 1 : 0;
     
-    // ========================================
     // Hydraulic Diameter Calculation
-    // ========================================
     
     // Calculate wetted perimeter terms
     const double gammaMinusSinGamma = gamma - sin(gamma);
@@ -4143,23 +3904,19 @@ void mukherjeeeBrillStratifiedFlow(double angleRad, double velocity, double liqu
     const double hydraulicDiameterRatio = numerator / denominator;
     const double effectiveDiameter = hydraulicDiameterRatio * diameter;
     
-    // ========================================
     // Superficial Velocities
-    // ========================================
     const double liquidVelocity = velocity * liquidFraction;
     const double gasVelocity = velocity - liquidVelocity;
     const double gasHoldup = 1.0 - holdup;
     
-    // ========================================
     // Friction Gradient (Gas Phase Based)
-    // ========================================
     
     if ((fabs(gasHoldup) > ZERO_TOLERANCE) && (fabs(gasVelocity) > ZERO_TOLERANCE)) {
         // Real gas velocity through available cross-section
         const double realGasVelocity = gasVelocity / gasHoldup;
         
         // Reynolds number for gas phase
-        const double reynolds = REYNOLDS_FACTOR * effectiveDiameter * realGasVelocity 
+        const double reynolds = REYNOLDS_FACTOR * effectiveDiameter * realGasVelocity
                                * gasDensity / gasViscosity;
         
         // Moody friction factor
@@ -4167,102 +3924,94 @@ void mukherjeeeBrillStratifiedFlow(double angleRad, double velocity, double liqu
         frictionFactor(reynolds, roughness, frictionFactorValue);
         
         // Friction pressure gradient (psi/ft)
-        frictionGrad = frictionFactorValue * realGasVelocity * realGasVelocity * gasDensity 
+        frictionGrad = frictionFactorValue * realGasVelocity * realGasVelocity * gasDensity
                       / (GRAVITY_ACCEL * effectiveDiameter * PSI_CONVERSION);
     } else {
         frictionGrad = 0.0;
     }
     
-    // ========================================
     // Gravity Gradient
-    // ========================================
     gravityGrad = gasDensity * sin(angleRad) / PSI_CONVERSION;
     
-    // ========================================
     // Total Gradient
-    // ========================================
     totalGrad = frictionGrad + gravityGrad;
 }
 
 /*
 ==============================================================================
-mukherjeeeBrill: Calcula holdup de líquido, padrão de escoamento e gradiente
-                de pressão usando a correlação completa de Mukherjee & Brill
+mukherjeeeBrill: Calculates liquid holdup, flow pattern, and pressure gradients
+                 using the complete Mukherjee-Brill correlation.
 
-Referências:
-     1.  Mukherjee, H. and Brill, J.P.: "Empirical Equations to Predict 
-         Flow Patterns in Two Phase Inclined Flow," International Journal 
+References:
+     1.  Mukherjee, H. and Brill, J. P.: "Empirical Equations to Predict
+         Flow Patterns in Two Phase Inclined Flow," International Journal
          of Multiphase Flow, Vol. 11, No. 3 (May-June 1985), 299-315.
-     2.  Mukherjee, H.: "An Experimental Study of Inclined Two Phase Flow," 
+     2.  Mukherjee, H.: "An Experimental Study of Inclined Two Phase Flow,"
          Ph.D. Dissertation, The University of Tulsa (1979).
-     3.  Mukherjee, H. and Brill, J.P.: "Liquid Holdup Correlations for 
-         Inclined Two Phase Flow," Journal of Petroleum Technology (May 1983), 1003-1008.
-     4.  Mukherjee, H. and Brill, J.P.: "Pressure Drop Correlations for 
-         Inclined Two Phase Flow," Journal of Energy Resources Technology, 
+     3.  Mukherjee, H. and Brill, J. P.: "Liquid Holdup Correlations for
+         Inclined Two Phase Flow," Journal of Petroleum Technology
+         (May 1983), 1003-1008.
+     4.  Mukherjee, H. and Brill, J. P.: "Pressure Drop Correlations for
+         Inclined Two Phase Flow," Journal of Energy Resources Technology,
          Vol. 107 (Dec. 1985), 549-554.
 
-Dicionário de variáveis:
-- angle             : Ângulo de inclinação do tubo (graus)
-- diameter          : Diâmetro interno do tubo (polegadas)
-- roughness         : Rugosidade relativa (adimensional)
-- pressure          : Pressão (psi)
-- velocity          : Velocidade da mistura (ft/s)
-- liquidFraction    : Fração volumétrica de líquido sem escorregamento (0-1)
-- gasDensity        : Densidade do gás (lb/ft³)
-- liquidDensity     : Densidade do líquido (lb/ft³)
-- gasViscosity      : Viscosidade do gás (cP)
-- liquidViscosity   : Viscosidade do líquido (cP)
-- liquidViscNumber  : Número adimensional de velocidade do líquido
-- gasVelNumber      : Número adimensional de velocidade do gás
-- liquidNumber      : Número adimensional de viscosidade do líquido
-- holdup            : Holdup de líquido calculado (saída)
-- frictionGrad      : Gradiente de pressão por atrito (psi/ft)
-- gravityGrad       : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad         : Gradiente de pressão por aceleração (psi/ft)
-- totalGrad         : Gradiente de pressão total (psi/ft)
-- reynolds          : Número de Reynolds (saída)
-- flowPattern       : Padrão de escoamento (saída)
-- criticalFlag      : Flag de fluxo crítico (saída)
-- convergeFlag      : Flag de convergência (saída)
+Variable dictionary:
+- angle             : Pipe inclination angle (degrees)
+- diameter          : Pipe inner diameter (inches)
+- roughness         : Relative roughness (dimensionless)
+- pressure          : Pressure (psi)
+- velocity          : Mixture velocity (ft/s)
+- liquidFraction    : No-slip liquid volumetric fraction (0-1)
+- gasDensity        : Gas density (lb/ft3)
+- liquidDensity     : Liquid density (lb/ft3)
+- gasViscosity      : Gas viscosity (cP)
+- liquidViscosity   : Liquid viscosity (cP)
+- liquidViscNumber  : Dimensionless liquid velocity number
+- gasVelNumber      : Dimensionless gas velocity number
+- liquidNumber      : Dimensionless liquid viscosity number
+- holdup            : Calculated liquid holdup (output)
+- frictionGrad      : Frictional pressure gradient (psi/ft)
+- gravityGrad       : Gravitational pressure gradient (psi/ft)
+- accelGrad         : Accelerational pressure gradient (psi/ft)
+- totalGrad         : Total pressure gradient (psi/ft)
+- reynolds          : Reynolds number (output)
+- flowPattern       : Flow pattern (output)
+- criticalFlag      : Critical-flow flag (output)
+- convergeFlag      : Convergence flag (output)
 
-Arrays de dados:
-- frictionRatio[9]  : Razão de fator de atrito para escoamento de névoa
-- holdupRatio[9]    : Razão de holdup para escoamento de névoa
+Data arrays:
+- frictionRatio[9]  : Friction-factor ratio for mist flow
+- holdupRatio[9]    : Liquid-holdup ratio for mist flow
 
-Subprogramas utilizados:
-- mukherjeeeBrillFlowPattern    : Determina padrão de escoamento
-- mukherjeeeBrillHoldup         : Calcula holdup de líquido
-- mukherjeeeBrillStratifiedFlow : Calcula gradientes para escoamento estratificado
+Subroutines used:
+- mukherjeeeBrillFlowPattern    : Determines the flow pattern
+- mukherjeeeBrillHoldup         : Calculates liquid holdup
+- mukherjeeeBrillStratifiedFlow : Calculates pressure gradients for
+                                  stratified flow
 ==============================================================================
 */
-void mukherjeeeBrill(double angle, double diameter, double roughness, double pressure, 
-                    double velocity, double liquidFraction, double gasDensity, 
+void mukherjeeeBrill(double angle, double diameter, double roughness, double pressure,
+                    double velocity, double liquidFraction, double gasDensity,
                     double liquidDensity, double gasViscosity, double liquidViscosity,
                     double surfaceTension, double temperature, double compressibilityFactor,
                     double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad,
                     double& totalGrad, double& reynolds, unsigned char& flowPattern,
                     unsigned char& criticalFlag, unsigned char& convergeFlag) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS    = 2;
     static constexpr unsigned char FLOW_MIST   = 5;
     static constexpr unsigned char FLOW_STRATIFIED = 6;
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double DIMENSIONLESS_VEL_FACTOR = 1.938;     // Velocity dimensionless number factor
     static constexpr double DIMENSIONLESS_VISC_FACTOR = 0.15726;  // Viscosity dimensionless number factor
     static constexpr double REYNOLDS_FACTOR = 1488.0;             // ft-lbm/cp-psi conversion
     static constexpr double GRAVITY_ACCEL = 64.4;                 // ft/s²
     static constexpr double PSI_CONVERSION = 144.0;               // in²/ft²
     
-    // ========================================
     // Flow Regime Thresholds
-    // ========================================
     static constexpr double SINGLE_PHASE_LIQUID_THRESHOLD = 0.9999;
     static constexpr double SINGLE_PHASE_GAS_THRESHOLD = 0.0001;
     static constexpr double ZERO_VELOCITY_TOLERANCE = 1e-15;
@@ -4270,13 +4019,9 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
     static constexpr double MIST_HOLDUP_THRESHOLD = 0.60;
     static constexpr double CRITICAL_FLOW_LIMIT = 0.95;
     
-    // ========================================
     // Mist Flow Correlation (replaced by analytical fits in CorrelationFits.h)
-    // ========================================
     
-    // ========================================
     // Pre-computed Values
-    // ========================================
     const double angleRad = angle * M_PI / 180.0;
     const double sinAngle = sin(angleRad);
     const double velocitySquared = velocity * velocity;
@@ -4292,16 +4037,14 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
     const double liquidViscNumber = DIMENSIONLESS_VEL_FACTOR * densitySurfaceTensionRoot * liquidSupVel;
     const double gasVelNumber = DIMENSIONLESS_VEL_FACTOR * densitySurfaceTensionRoot * gasSupVel;
     const double surfaceTensionCubed = surfaceTension * surfaceTension * surfaceTension;
-    const double liquidNumber = DIMENSIONLESS_VISC_FACTOR * liquidViscosity 
+    const double liquidNumber = DIMENSIONLESS_VISC_FACTOR * liquidViscosity
                                * pow(1.0 / (liquidDensity * surfaceTensionCubed), 0.25);
     
     // Initialize output flags
     criticalFlag = 0;
     convergeFlag = 0;
     
-    // ========================================
     // Single-Phase Flow Check
-    // ========================================
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
         flowPattern = FLOW_LIQUID;
         holdup = liquidFraction;
@@ -4316,9 +4059,7 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
         return;
     }
     
-    // ========================================
     // Two-Phase Flow Pattern and Holdup
-    // ========================================
     
     // Check for zero velocity
     if (fabs(velocity) <= ZERO_VELOCITY_TOLERANCE) {
@@ -4326,11 +4067,11 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
         holdup = liquidFraction;
     } else {
         // Determine flow pattern using dimensionless numbers
-        mukherjeeeBrillFlowPattern(liquidViscNumber, gasVelNumber, liquidNumber, angle, 
+        mukherjeeeBrillFlowPattern(liquidViscNumber, gasVelNumber, liquidNumber, angle,
                                   flowPattern);
         
         // Calculate liquid holdup
-        mukherjeeeBrillHoldup(liquidViscNumber, gasVelNumber, liquidNumber, angle, 
+        mukherjeeeBrillHoldup(liquidViscNumber, gasVelNumber, liquidNumber, angle,
                              flowPattern, holdup);
         
         // For upward flow, holdup cannot be less than no-slip liquid fraction
@@ -4343,11 +4084,9 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
             holdup = liquidFraction;
         }
         
-        // ========================================
         // Stratified Flow Special Treatment
-        // ========================================
         if (flowPattern == FLOW_STRATIFIED) {
-            mukherjeeeBrillStratifiedFlow(angleRad, velocity, liquidFraction, holdup, 
+            mukherjeeeBrillStratifiedFlow(angleRad, velocity, liquidFraction, holdup,
                                          diameter, roughness, gasDensity, gasViscosity,
                                          frictionGrad, gravityGrad, totalGrad, convergeFlag);
             // Acceleration gradient is zero for stratified flow in this model
@@ -4357,23 +4096,19 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
         }
     }
     
-    // ========================================
     // Mixture Properties
-    // ========================================
-    const double mixtureNoSlipDensity = liquidDensity * liquidFraction 
+    const double mixtureNoSlipDensity = liquidDensity * liquidFraction
                                        + gasDensity * (1.0 - liquidFraction);
-    const double mixtureSlipDensity = liquidDensity * holdup 
+    const double mixtureSlipDensity = liquidDensity * holdup
                                      + gasDensity * (1.0 - holdup);
-    const double mixtureNoSlipViscosity = liquidViscosity * liquidFraction 
+    const double mixtureNoSlipViscosity = liquidViscosity * liquidFraction
                                          + gasViscosity * (1.0 - liquidFraction);
     
-    // ========================================
     // Friction Gradient (Non-Stratified Flows)
-    // ========================================
     
     if (fabs(velocity) > ZERO_VELOCITY_TOLERANCE) {
         // Reynolds number for mixture
-        reynolds = REYNOLDS_FACTOR * diameter * mixtureNoSlipDensity * velocity 
+        reynolds = REYNOLDS_FACTOR * diameter * mixtureNoSlipDensity * velocity
                   / mixtureNoSlipViscosity;
         
         // Moody friction factor
@@ -4386,14 +4121,14 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
                 // Calculate holdup ratio and interpolate friction multiplier
                 const double holdupRatioValue = log10(liquidFraction / holdup);
                 const double frictionMultiplier = CorrelationFits::mukherjeeFrictionRatio(holdupRatioValue);
-                frictionGrad = frictionMultiplier * frictionFactorValue * velocitySquared 
+                frictionGrad = frictionMultiplier * frictionFactorValue * velocitySquared
                               * mixtureNoSlipDensity / (GRAVITY_ACCEL * diameter);
             } else {
                 frictionGrad = 0.0;
             }
         } else {
             // Standard friction gradient for bubble and slug flows
-            frictionGrad = frictionFactorValue * velocitySquared * mixtureSlipDensity 
+            frictionGrad = frictionFactorValue * velocitySquared * mixtureSlipDensity
                           / (GRAVITY_ACCEL * diameter);
         }
     } else {
@@ -4404,15 +4139,11 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
     // Convert friction gradient to psi/ft
     frictionGrad = frictionGrad / PSI_CONVERSION;
     
-    // ========================================
     // Gravity Gradient
-    // ========================================
     gravityGrad = mixtureSlipDensity * sinAngle / PSI_CONVERSION;
     
-    // ========================================
     // Acceleration Effects
-    // ========================================
-    double accelerationParam = mixtureSlipDensity * velocity * gasSupVel 
+    double accelerationParam = mixtureSlipDensity * velocity * gasSupVel
                               / (g_in * pressure * PSI_CONVERSION);
     
     // Check for critical flow conditions
@@ -4421,9 +4152,7 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
         criticalFlag = 1;
     }
     
-    // ========================================
     // Total Gradient
-    // ========================================
     totalGrad = (gravityGrad + frictionGrad) / (1.0 - accelerationParam);
     accelGrad = accelerationParam * totalGrad;
 }
@@ -4431,34 +4160,33 @@ void mukherjeeeBrill(double angle, double diameter, double roughness, double pre
 
 /*
 ==============================================================================
-azizRegimeMap: Predição de padrão de fluxo usando mapa de Govier, Redford e Dunn
-               para correlação de Aziz et al.
+azizRegimeMap: Predicts the flow pattern using the Govier, Redford, and Dunn
+               flow map for the Aziz et al. correlation.
 
-Dicionário de variáveis:
-- liquidSupVel  : Velocidade superficial do líquido (ft/s)
-- gasSupVel     : Velocidade superficial do gás (ft/s)
-- liquidDensity : Densidade do líquido (lbm/ft³)
-- gasDensity    : Densidade do gás (lbm/ft³)
-- surfaceTension: Tensão superficial (lbm/s²)
-- liquidFraction: Fração de holdup do líquido sem escorregamento
-- surfaceTensionWaterAir : Tensão superficial água-ar (lbm/s²)
-- bubbleToSlugBoundary      : Fronteira bolha-pistão
-- slugToTransitionBoundary  : Fronteira pistão-transição
-- transitionToMistBoundary  : Fronteira transição-névoa
-- flowMapCoordinateX        : Coordenada X no mapa de padrão de fluxo
-- flowMapCoordinateY        : Coordenada Y no mapa de padrão de fluxo
-- flowPattern   : Indicador de padrão de fluxo
-                 1-Líquido, 2-Gás, 3-Bolhas, 4-Pistão, 5-Névoa, 6-Transição
+Variable dictionary:
+- liquidSupVel             : Superficial liquid velocity (ft/s)
+- gasSupVel                : Superficial gas velocity (ft/s)
+- liquidDensity            : Liquid density (lbm/ft3)
+- gasDensity               : Gas density (lbm/ft3)
+- surfaceTension           : Surface tension (lbm/s2)
+- liquidFraction           : No-slip liquid fraction
+- surfaceTensionWaterAir   : Water-air surface tension (lbm/s2)
+- bubbleToSlugBoundary     : Bubble-to-slug flow boundary
+- slugToTransitionBoundary : Slug-to-transition flow boundary
+- transitionToMistBoundary : Transition-to-mist flow boundary
+- flowMapCoordinateX       : X-coordinate in the flow-pattern map
+- flowMapCoordinateY       : Y-coordinate in the flow-pattern map
+- flowPattern              : Flow-pattern indicator
+                             1 = liquid, 2 = gas, 3 = bubble,
+                             4 = slug, 5 = mist, 6 = transition
 ==============================================================================
 */
-void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, double gasDensity, 
+void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, double gasDensity,
                   double surfaceTension, double liquidFraction,
                   double& bubbleToSlugBoundary, double& slugToTransitionBoundary, double& transitionToMistBoundary,
                   double& flowMapCoordinateX, double& flowMapCoordinateY, unsigned char& flowPattern) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_BUBBLE = 3;
@@ -4466,9 +4194,7 @@ void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, 
     static constexpr unsigned char FLOW_MIST = 5;
     static constexpr unsigned char FLOW_TRANSITION = 6;
     
-    // ========================================
     // Reference Constants (Govier-Redford-Dunn Map)
-    // ========================================
     static constexpr double WATER_AIR_SURFACE_TENSION = 0.162;  // lbm/s² at standard conditions
     static constexpr double WATER_DENSITY_REFERENCE = 62.4;     // lbm/ft³ at standard conditions
     static constexpr double AIR_DENSITY_REFERENCE = 0.0806;     // lbm/ft³ at standard conditions
@@ -4493,18 +4219,14 @@ void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, 
     static constexpr double SINGLE_PHASE_LIQUID_THRESHOLD = 0.99999;
     static constexpr double SINGLE_PHASE_GAS_THRESHOLD = 0.00001;
     
-    // ========================================
     // Initialization
-    // ========================================
     flowMapCoordinateX = 0.0;
     flowMapCoordinateY = 0.0;
     bubbleToSlugBoundary = 0.0;
     slugToTransitionBoundary = 0.0;
     transitionToMistBoundary = 0.0;
     
-    // ========================================
     // Single-Phase Flow Check
-    // ========================================
     if (liquidFraction > SINGLE_PHASE_LIQUID_THRESHOLD) {
         flowPattern = FLOW_LIQUID;
         return;
@@ -4515,12 +4237,10 @@ void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, 
         return;
     }
     
-    // ========================================
     // Two-Phase Flow: Govier-Redford-Dunn Map Coordinates
-    // ========================================
     
     // Dimensionless density scaling factors
-    const double densityRatio = liquidDensity * WATER_AIR_SURFACE_TENSION / 
+    const double densityRatio = liquidDensity * WATER_AIR_SURFACE_TENSION /
                                (WATER_DENSITY_REFERENCE * surfaceTension);
     const double fourthRootDensityRatio = pow(densityRatio, 0.25);
     
@@ -4540,12 +4260,10 @@ void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, 
         flowMapCoordinateX = MIN_FLOW_MAP_X;
     }
     
-    // ========================================
     // Flow Pattern Determination
-    // ========================================
     
     // Bubble-to-slug boundary
-    bubbleToSlugBoundary = BUBBLE_BOUNDARY_COEFF * 
+    bubbleToSlugBoundary = BUBBLE_BOUNDARY_COEFF *
                           pow(BUBBLE_SCALE_FACTOR * flowMapCoordinateY, BUBBLE_BOUNDARY_EXPONENT);
     
     // Check bubble flow first
@@ -4573,7 +4291,7 @@ void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, 
     }
     
     // Check transition-to-mist boundary
-    transitionToMistBoundary = TRANSITION_MIST_COEFF * 
+    transitionToMistBoundary = TRANSITION_MIST_COEFF *
                                pow(BUBBLE_SCALE_FACTOR * flowMapCoordinateY, TRANSITION_MIST_EXPONENT);
     
     if (flowMapCoordinateX <= transitionToMistBoundary) {
@@ -4585,41 +4303,39 @@ void azizRegimeMap(double liquidSupVel, double gasSupVel, double liquidDensity, 
 
 /*
 ==============================================================================
-azizDensity: Calcula holdup de líquido e densidade deslizante para correlação
-                         de Aziz, Govier & Fogarasi
+azizDensity: Calculates liquid holdup and slip density for the Aziz, Govier,
+             and Fogarasi correlation.
 
-Dicionário de variáveis:
-- gasSupVel      : Velocidade superficial do gás (ft/s)
-- velocity       : Velocidade superficial da mistura (ft/s) 
-- surfaceTension : Tensão superficial (unidades do código)
-- liquidDensity  : Densidade do líquido (lbm/ft³)
-- gasDensity     : Densidade do gás (lbm/ft³)
-- diameter       : Diâmetro interno do tubo (ft)
-- liquidViscosity: Viscosidade do líquido (cp)
-- transitionToMistBoundary : Limite X - fronteira transição-névoa
-- flowMapCoordinateX: Coordenada X no mapa de padrão de fluxo
-- slugToTransitionBoundary: Limite X - fronteira pistão-transição
-- flowPattern    : Indicador do padrão de fluxo
-                   1-Líquido, 2-Gás, 3-Bolhas, 4-Pistão, 5-Névoa, 6-Transição
+Variable dictionary:
+- gasSupVel               : Superficial gas velocity (ft/s)
+- velocity                : Mixture superficial velocity (ft/s)
+- surfaceTension          : Surface tension (code units)
+- liquidDensity           : Liquid density (lbm/ft3)
+- gasDensity              : Gas density (lbm/ft3)
+- diameter                : Pipe inner diameter (ft)
+- liquidViscosity         : Liquid viscosity (cP)
+- transitionToMistBoundary: X-limit for the transition-to-mist boundary
+- flowMapCoordinateX      : X-coordinate in the flow-pattern map
+- slugToTransitionBoundary: X-limit for the slug-to-transition boundary
+- flowPattern             : Flow-pattern indicator
+                            1 = liquid, 2 = gas, 3 = bubble,
+                            4 = slug, 5 = mist, 6 = transition
 
-Saídas / Variáveis de retorno:
-- holdup            : Fração de holdup do líquido
-- bubbleLength      : Comprimento da bolha (ft) 
-- slugLength        : Comprimento da golfada (ft) 
-- slipDensity       : Densidade deslizante (lbm/ft³)
-- slugLiquidDensity : Densidade deslizante da golfada de líquido (lbm/ft³)
+Output and return variables:
+- holdup            : Liquid holdup fraction
+- bubbleLength      : Bubble length (ft)
+- slugLength        : Slug length (ft)
+- slipDensity       : Slip density (lbm/ft3)
+- slugLiquidDensity : Liquid-slug slip density (lbm/ft3)
 ==============================================================================
 */
-
 void azizDensity(double gasSupVel, double velocity, double surfaceTension,
                  double liquidDensity, double gasDensity, double diameter, double liquidViscosity,
                  double transitionToMistBoundary, double flowMapCoordinateX, double slugToTransitionBoundary, unsigned char flowPattern,
                  double& holdup, double& bubbleLength, double& slugLength,
                  double& slipDensity, double& slugLiquidDensity) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_BUBBLE = 3;
@@ -4627,16 +4343,12 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
     static constexpr unsigned char FLOW_MIST = 5;
     static constexpr unsigned char FLOW_TRANSITION = 6;
     
-    // ========================================
     // Bubble Flow Constants
-    // ========================================
     static constexpr double BUBBLE_RISE_COEFF = 1.41;        // Bubble rise velocity coefficient
     static constexpr double BUBBLE_RISE_EXPONENT = 0.25;     // Quarter power for buoyancy
     static constexpr double EFFECTIVE_VEL_MULTIPLIER = 1.25; // Drift velocity multiplier
     
-    // ========================================
     // Slug Flow Constants
-    // ========================================
     static constexpr double SLUG_NUMBER_SCALE = 1488.0;      // Aziz slug number scaling
     static constexpr double SLUG_LENGTH_FACTOR = 10.0;       // Slug length = 10 * diameter
     static constexpr double EFFECTIVE_SLUG_VEL_MULT = 1.2;   // Slug velocity multiplier
@@ -4662,25 +4374,19 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
     static constexpr double BUBBLE_LENGTH_OFFSET = 0.526;
     static constexpr double GAS_FRACTION_SINGULARITY = 0.913;
     
-    // ========================================
     // Tolerances
-    // ========================================
     static constexpr double ZERO_VELOCITY_TOLERANCE = 1e-15;
     static constexpr double ZERO_DIFFERENCE_TOLERANCE = 1e-15;
     static constexpr double DEFAULT_HOLDUP_EQUAL_DENSITY = 0.5;
     
-    // ========================================
     // Initialization
-    // ========================================
     bubbleLength = 0.0;
     slipDensity = 0.0;
     slugLiquidDensity = 0.0;
     holdup = 0.0;
     slugLength = 0.0;
     
-    // ========================================
     // Single-Phase Flow Patterns
-    // ========================================
     if (flowPattern == FLOW_LIQUID) {
         slipDensity = liquidDensity;
         holdup = 1.0;
@@ -4693,13 +4399,11 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
         return;
     }
     
-    // ========================================
     // Bubble Flow Pattern
-    // ========================================
     if (flowPattern == FLOW_BUBBLE) {
         // Bubble rise velocity in stagnant liquid (Harmathy correlation)
         const double densityDifference = liquidDensity - gasDensity;
-        const double buoyancyTerm = (surfaceTension * g_in * densityDifference) / 
+        const double buoyancyTerm = (surfaceTension * g_in * densityDifference) /
                                    (liquidDensity * liquidDensity);
         const double bubbleRiseVelocity = BUBBLE_RISE_COEFF * pow(buoyancyTerm, BUBBLE_RISE_EXPONENT);
         
@@ -4718,28 +4422,22 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
         return;
     }
     
-    // ========================================
     // Slug or Transition Flow Patterns
-    // ========================================
     if (flowPattern == FLOW_SLUG || flowPattern == FLOW_TRANSITION) {
-        // ====================================================================
         // Dimensionless Numbers for Slug Flow
-        // ====================================================================
         const double densityDifference = liquidDensity - gasDensity;
         
         // Aziz slug number (modified Froude number)
         // Note: Compute inline to match original precision exactly
-        const double azizSlugNumber = SLUG_NUMBER_SCALE * 
-                                     sqrt(pow(diameter, 3) * g_in * (liquidDensity - gasDensity) * liquidDensity) / 
+        const double azizSlugNumber = SLUG_NUMBER_SCALE *
+                                     sqrt(pow(diameter, 3) * g_in * (liquidDensity - gasDensity) * liquidDensity) /
                                      liquidViscosity;
         
         // Eötvös number (ratio of buoyancy to surface tension forces)
         // Note: Compute inline to match original precision exactly
         const double eotvosNumber = g_in * (liquidDensity - gasDensity) * (diameter * diameter) / surfaceTension;
         
-        // ====================================================================
         // Parameter M (empirical correlation based on slug number)
-        // ====================================================================
         double parameterM;
         if (azizSlugNumber <= SLUG_NUM_THRESHOLD_LOW) {
             parameterM = M_PARAM_LOW;
@@ -4749,9 +4447,7 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
             parameterM = M_PARAM_HIGH;
         }
         
-        // ====================================================================
         // Bubble Rise Velocity Correction Factors
-        // ====================================================================
         
         // Coefficient 1: viscosity effect (saturates for high slug numbers)
         const double expArg1 = EXP_COEFF1_NUMER * azizSlugNumber / EXP_COEFF1_DENOM;
@@ -4764,17 +4460,13 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
         // Combined correction factor
         const double correctionFactor = BUBBLE_RISE_BASE * coeff1 * coeff2;
         
-        // ====================================================================
         // Bubble Rise and Effective Velocities
-        // ====================================================================
         // Note: Compute inline to match original precision exactly
-        const double bubbleRiseVelocity = correctionFactor * 
+        const double bubbleRiseVelocity = correctionFactor *
                                          sqrt(g_in * diameter * (liquidDensity - gasDensity) / liquidDensity);
         const double effectiveBubbleVelocity = EFFECTIVE_SLUG_VEL_MULT * velocity + bubbleRiseVelocity;
         
-        // ====================================================================
         // Slug Unit Geometry
-        // ====================================================================
         double gasFraction = 0.0;
         double gasFractionInSlug = 0.0;
         
@@ -4783,7 +4475,7 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
             gasFractionInSlug = pow(gasFraction, GAS_FRACTION_EXPONENT);
             
             // Bubble length (length of gas pockets between slugs)
-            const double bubbleLengthTerm = BUBBLE_LENGTH_COEFF * (gasFractionInSlug - gasFraction) - 
+            const double bubbleLengthTerm = BUBBLE_LENGTH_COEFF * (gasFractionInSlug - gasFraction) -
                                            BUBBLE_LENGTH_OFFSET;
             const double fractionDenominator = gasFraction - GAS_FRACTION_SINGULARITY;
             
@@ -4794,7 +4486,7 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
             }
             
             // Slug liquid body density (density of liquid slug with entrained gas)
-            slugLiquidDensity = gasFractionInSlug * gasDensity + 
+            slugLiquidDensity = gasFractionInSlug * gasDensity +
                                (1.0 - gasFractionInSlug) * liquidDensity;
         } else {
             gasFraction = 0.0;
@@ -4803,23 +4495,19 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
             slugLiquidDensity = liquidDensity;
         }
         
-        // ====================================================================
         // Slug Unit Average Density
-        // ====================================================================
         slugLength = SLUG_LENGTH_FACTOR * diameter;
         const double totalUnitLength = bubbleLength + slugLength;
         
         double slugMixtureDensity;
         if (fabs(totalUnitLength) > ZERO_DIFFERENCE_TOLERANCE) {
-            slugMixtureDensity = (gasDensity * bubbleLength + slugLiquidDensity * slugLength) / 
+            slugMixtureDensity = (gasDensity * bubbleLength + slugLiquidDensity * slugLength) /
                                 totalUnitLength;
         } else {
             slugMixtureDensity = liquidDensity;
         }
         
-        // ====================================================================
         // Transition vs. Pure Slug Flow
-        // ====================================================================
         if (flowPattern == FLOW_TRANSITION) {
             // Mist flow density (no slip between phases)
             double mistGasFraction;
@@ -4829,7 +4517,7 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
                 mistGasFraction = 0.0;
             }
             
-            const double mistMixtureDensity = (1.0 - mistGasFraction) * liquidDensity + 
+            const double mistMixtureDensity = (1.0 - mistGasFraction) * liquidDensity +
                                              mistGasFraction * gasDensity;
             
             // Weighted average between slug and mist densities
@@ -4857,9 +4545,7 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
         return;
     }
     
-    // ========================================
     // Mist Flow Pattern
-    // ========================================
     if (flowPattern == FLOW_MIST) {
         // Gas fraction (no slip between phases)
         double gasFraction;
@@ -4877,43 +4563,51 @@ void azizDensity(double gasSupVel, double velocity, double surfaceTension,
 
 /*
 ==============================================================================
-azizFriction: calcula o gradiente de atrito segundo a correlação de Aziz et al.
+azizFriction: Calculates the frictional pressure gradient using the Aziz et al.
+              correlation.
 
-Dicionário de variáveis:
-- diameter                    : diâmetro interno do tubo (ft)
-- velocity                    : velocidade superficial da mistura (ft/s)
-- gasSupVel                   : velocidade superficial do gás (ft/s)
-- liquidDensity               : densidade do líquido (lbm/ft³)
-- gasDensity                  : densidade do gás (lbm/ft³)
-- liquidViscosity             : viscosidade do líquido (cP)
-- gasViscosity                : viscosidade do gás (cP)
-- surfaceTension              : tensão superficial (unidades do código)
-- roughness                   : rugosidade relativa (adimensional)
-- mixtureDensity              : densidade da mistura (no-slip) (lbm/ft³)
-- slugMixtureDensity          : densidade média da mistura na região slug (lbm/ft³)
-- bubbleLength                : comprimento da bolha (ft)
-- slugLength                  : comprimento da golfada (ft)
-- transitionToMistBoundary    : coordenada X de transição (limite slug->mist)
-- flowMapCoordinateX          : coordenada X usada no mapa de fluxo (adimensional)
-- slugToTransitionBoundary    : coordenada X do limite slug->transição
-- reynolds                    : número de Reynolds calculado (retornado por referência)
-- flowPattern                 : indicador do padrão de fluxo (1=líquido,2=gás,3=bolhas,4=slug,5=névoa,6=transição)
+Variable dictionary:
+- diameter                 : Pipe inner diameter (ft)
+- velocity                 : Mixture superficial velocity (ft/s)
+- gasSupVel                : Superficial gas velocity (ft/s)
+- liquidDensity            : Liquid density (lbm/ft3)
+- gasDensity               : Gas density (lbm/ft3)
+- liquidViscosity          : Liquid viscosity (cP)
+- gasViscosity             : Gas viscosity (cP)
+- surfaceTension           : Surface tension (code units)
+- roughness                : Relative roughness (dimensionless)
+- mixtureDensity           : No-slip mixture density (lbm/ft3)
+- slugMixtureDensity       : Average mixture density in the slug region
+                             (lbm/ft3)
+- bubbleLength             : Bubble length (ft)
+- slugLength               : Slug length (ft)
+- transitionToMistBoundary : X-coordinate of the slug-to-mist transition
+                             boundary
+- flowMapCoordinateX       : X-coordinate used in the flow-pattern map
+                             (dimensionless)
+- slugToTransitionBoundary : X-coordinate of the slug-to-transition boundary
+- reynolds                 : Calculated Reynolds number (returned by reference)
+- flowPattern              : Flow-pattern indicator
+                             (1 = liquid, 2 = gas, 3 = bubble,
+                              4 = slug, 5 = mist, 6 = transition)
 
-Saídas / parâmetros de saída:
-- frictionGrad                : gradiente de pressão por atrito (psi/ft)
-- reynolds                    : número de Reynolds calculado (por referência
+Output parameters:
+- frictionGrad             : Frictional pressure gradient (psi/ft)
+- reynolds                 : Calculated Reynolds number (returned by reference)
 
-
-Variáveis locais principais:
-- frictionFactorValue         : fator de atrito de Darcy/Moody (adimensional)
-- reynoldsGas                 : número de Reynolds do gás (quando aplicado)
-- mistRoughnessParameter      : parâmetro auxiliar usado para cálculo de rugosidade efetiva na névoa
-- effectiveRoughness          : rugosidade relativa efetiva usada no cálculo do fator de atrito (adimensional)
-- slugFrictionTerm            : gradiente de atrito como valor médio ponderado para golfadas(psi/ft)
-- mistFrictionTerm            : gradiente de atrito como valor médio ponderado para névoa (psi/ft)
+Main local variables:
+- frictionFactorValue      : Darcy-Moody friction factor (dimensionless)
+- reynoldsGas              : Gas Reynolds number, when applicable
+- mistRoughnessParameter   : Auxiliary parameter used to calculate the
+                             effective roughness for mist flow
+- effectiveRoughness       : Effective relative roughness used to calculate
+                             the friction factor (dimensionless)
+- slugFrictionTerm         : Weighted-average frictional pressure gradient
+                             for slug flow (psi/ft)
+- mistFrictionTerm         : Weighted-average frictional pressure gradient
+                             for mist flow (psi/ft)
 ==============================================================================
 */
-
 void azizFriction(double diameter, double velocity, double gasSupVel,
                   double liquidDensity, double gasDensity, double liquidViscosity,
                   double gasViscosity, double surfaceTension, double roughness,
@@ -4923,9 +4617,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
                   double& reynolds, unsigned char flowPattern,
                   double& frictionGrad) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_BUBBLE = 3;
@@ -4933,9 +4625,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
     static constexpr unsigned char FLOW_MIST = 5;
     static constexpr unsigned char FLOW_TRANSITION = 6;
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double REYNOLDS_SCALE = 1488.0;         // Reynolds number scaling factor
     static constexpr double GRAVITY_ACCEL = 32.174;          // ft/s²
     static constexpr double PSI_CONVERSION = 144.0;          // in²/ft²
@@ -4949,21 +4639,15 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
     static constexpr double MIST_ROUGHNESS_MIN = 0.001;
     static constexpr double MIST_ROUGHNESS_MAX = 0.5;
     
-    // ========================================
     // Tolerances
-    // ========================================
     static constexpr double ZERO_VELOCITY_TOLERANCE = 1e-15;
     static constexpr double ZERO_LENGTH_TOLERANCE = 1e-15;
     
-    // ========================================
     // Initialization
-    // ========================================
     frictionGrad = 0.0;
     reynolds = 0.0;
     
-    // ========================================
     // Liquid or Bubble Flow
-    // ========================================
     if (flowPattern == FLOW_LIQUID || flowPattern == FLOW_BUBBLE) {
         if (fabs(velocity) <= ZERO_VELOCITY_TOLERANCE) {
             return;
@@ -4975,14 +4659,12 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
         frictionFactor(reynolds, roughness, frictionFactorValue);
         
         const double velocitySquared = velocity * velocity;
-        frictionGrad = (0.5 * frictionFactorValue * velocitySquared * mixtureDensity) / 
+        frictionGrad = (0.5 * frictionFactorValue * velocitySquared * mixtureDensity) /
                       (g_in * diameter * PSI_CONVERSION);
         return;
     }
     
-    // ========================================
     // Slug or Transition Flow
-    // ========================================
     if (flowPattern == FLOW_SLUG || flowPattern == FLOW_TRANSITION) {
         // Slug component friction
         double slugFrictionGrad = 0.0;
@@ -4996,8 +4678,8 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
             const double totalUnitLength = bubbleLength + slugLength;
             if (fabs(totalUnitLength) > ZERO_LENGTH_TOLERANCE) {
                 const double velocitySquared = velocity * velocity;
-                slugFrictionGrad = (0.5 * frictionFactorValue * velocitySquared * 
-                                  slugMixtureDensity * slugLength) / 
+                slugFrictionGrad = (0.5 * frictionFactorValue * velocitySquared *
+                                  slugMixtureDensity * slugLength) /
                                   (g_in * diameter * totalUnitLength * PSI_CONVERSION);
             }
         }
@@ -5016,9 +4698,9 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
             
             // Calculate effective roughness for mist flow
             // Note: Compute inline to match original precision exactly
-            const double mistRoughnessParam = MIST_ROUGHNESS_SCALE * 
-                                             (gasSupVel * liquidViscosity / surfaceTension) * 
-                                             (gasSupVel * liquidViscosity / surfaceTension) * 
+            const double mistRoughnessParam = MIST_ROUGHNESS_SCALE *
+                                             (gasSupVel * liquidViscosity / surfaceTension) *
+                                             (gasSupVel * liquidViscosity / surfaceTension) *
                                              gasDensity / liquidDensity;
             
             double effectiveRoughness;
@@ -5027,7 +4709,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
             if (mistRoughnessParam <= MIST_ROUGHNESS_THRESHOLD) {
                 effectiveRoughness = MIST_ROUGHNESS_LOW_COEFF * surfaceTension / denominator;
             } else {
-                effectiveRoughness = MIST_ROUGHNESS_HIGH_COEFF * surfaceTension * 
+                effectiveRoughness = MIST_ROUGHNESS_HIGH_COEFF * surfaceTension *
                                    pow(mistRoughnessParam, MIST_ROUGHNESS_HIGH_EXP) / denominator;
             }
             
@@ -5038,7 +4720,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
             double frictionFactorValue;
             frictionFactor(reynoldsGas, effectiveRoughness, frictionFactorValue);
             
-            mistFrictionGrad = 0.5 * frictionFactorValue * gasDensity * gasSupVel * gasSupVel / 
+            mistFrictionGrad = 0.5 * frictionFactorValue * gasDensity * gasSupVel * gasSupVel /
                               (g_in * diameter * PSI_CONVERSION);
         }
         
@@ -5055,9 +4737,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
         return;
     }
     
-    // ========================================
     // Mist Flow
-    // ========================================
     if (flowPattern == FLOW_MIST) {
         if (fabs(gasSupVel) <= ZERO_VELOCITY_TOLERANCE) {
             return;
@@ -5067,9 +4747,9 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
         
         // Calculate effective roughness for mist flow
         // Note: Compute inline to match original precision exactly
-        const double mistRoughnessParam = MIST_ROUGHNESS_SCALE * 
-                                         (gasSupVel * liquidViscosity / surfaceTension) * 
-                                         (gasSupVel * liquidViscosity / surfaceTension) * 
+        const double mistRoughnessParam = MIST_ROUGHNESS_SCALE *
+                                         (gasSupVel * liquidViscosity / surfaceTension) *
+                                         (gasSupVel * liquidViscosity / surfaceTension) *
                                          gasDensity / liquidDensity;
         
         double effectiveRoughness;
@@ -5078,7 +4758,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
         if (mistRoughnessParam <= MIST_ROUGHNESS_THRESHOLD) {
             effectiveRoughness = MIST_ROUGHNESS_LOW_COEFF * surfaceTension / denominator;
         } else {
-            effectiveRoughness = MIST_ROUGHNESS_HIGH_COEFF * surfaceTension * 
+            effectiveRoughness = MIST_ROUGHNESS_HIGH_COEFF * surfaceTension *
                                pow(mistRoughnessParam, MIST_ROUGHNESS_HIGH_EXP) / denominator;
         }
         
@@ -5089,14 +4769,12 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
         double frictionFactorValue;
         frictionFactor(reynoldsGas, effectiveRoughness, frictionFactorValue);
         
-        frictionGrad = 0.5 * frictionFactorValue * gasDensity * gasSupVel * gasSupVel / 
+        frictionGrad = 0.5 * frictionFactorValue * gasDensity * gasSupVel * gasSupVel /
                       (g_in * diameter * PSI_CONVERSION);
         return;
     }
     
-    // ========================================
     // Single-Phase Gas Flow
-    // ========================================
     if (flowPattern == FLOW_GAS) {
         if (fabs(gasSupVel) <= ZERO_VELOCITY_TOLERANCE) {
             return;
@@ -5107,7 +4785,7 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
         double frictionFactorValue;
         frictionFactor(reynoldsGas, roughness, frictionFactorValue);
         
-        frictionGrad = 0.5 * frictionFactorValue * gasDensity * gasSupVel * gasSupVel / 
+        frictionGrad = 0.5 * frictionFactorValue * gasDensity * gasSupVel * gasSupVel /
                       (g_in * diameter * PSI_CONVERSION);
         return;
     }
@@ -5115,28 +4793,28 @@ void azizFriction(double diameter, double velocity, double gasSupVel,
 
 /*
 ==============================================================================
-aziz: Implementa a lógica principal da correlação de Aziz, Govier & Fogarasi
+aziz: Implements the main logic of the Aziz, Govier, and Fogarasi correlation.
 
-Dicionário de variáveis:
-- angle          : ângulo de inclinação do tubo (graus)
-- diameter       : diâmetro interno do tubo (ft)
-- roughness      : rugosidade relativa (adimensional)
-- pressure       : pressão (psia)
-- velocity       : velocidade superficial da mistura (ft/s)
-- liquidFraction : fração de holdup no-slip (ENS)
-- gasDensity     : densidade do gás (lbm/ft³)
-- liquidDensity  : densidade do líquido (lbm/ft³)
-- gasViscosity   : viscosidade do gás (cP)
-- liquidViscosity: viscosidade do líquido (cP)
-- surfaceTension : tensão superficial gás-líquido
-- holdup               : fração de holdup calculada
-- frictionGrad         : gradiente por fricção
-- gravityGrad          : gradiente por gravidade 
-- accelerationGrad     : gradiente por aceleração
-- totalGrad            : gradiente total
-- reynolds             : número de Reynolds calculado
-- flowPattern          : padrão de fluxo
-- criticalFlag         : indicador de escoamento crítico
+Variable dictionary:
+- angle            : Pipe inclination angle (degrees)
+- diameter         : Pipe inner diameter (ft)
+- roughness        : Relative roughness (dimensionless)
+- pressure         : Pressure (psia)
+- velocity         : Mixture superficial velocity (ft/s)
+- liquidFraction   : No-slip liquid fraction (ENS)
+- gasDensity       : Gas density (lbm/ft3)
+- liquidDensity    : Liquid density (lbm/ft3)
+- gasViscosity     : Gas viscosity (cP)
+- liquidViscosity  : Liquid viscosity (cP)
+- surfaceTension   : Gas-liquid surface tension
+- holdup           : Calculated liquid holdup fraction
+- frictionGrad     : Frictional pressure gradient
+- gravityGrad      : Gravitational pressure gradient
+- accelerationGrad : Accelerational pressure gradient
+- totalGrad        : Total pressure gradient
+- reynolds         : Calculated Reynolds number
+- flowPattern      : Flow pattern
+- criticalFlag     : Critical-flow indicator
 ==============================================================================
 */
 void aziz(double angle, double diameter, double roughness, double pressure, double velocity, double liquidFraction,
@@ -5144,27 +4822,19 @@ void aziz(double angle, double diameter, double roughness, double pressure, doub
           double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad, double& totalGrad,
           double& reynolds, unsigned char& flowPattern, unsigned char& criticalFlag) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_MIST = 5;
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double SURFACE_TENSION_CONVERSION = 2.2046e-3;  // Convert dyn/cm to lbm/s²
     static constexpr double PSI_CONVERSION = 144.0;                  // in²/ft²
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
     static constexpr double ACCEL_CRITICAL_LIMIT = 0.95;
     
-    // ========================================
     // Initialization
-    // ========================================
     criticalFlag = 0;
     
-    // ========================================
     // Pre-computed Values
-    // ========================================
     const double angleRad = angle * DEG_TO_RAD;
     const double sinAngle = sin(angleRad);
     
@@ -5175,44 +4845,34 @@ void aziz(double angle, double diameter, double roughness, double pressure, doub
     const double liquidSupVel = velocity * liquidFraction;
     const double gasSupVel = velocity - liquidSupVel;
     
-    // ========================================
     // Flow Regime Determination
-    // ========================================
     double bubbleToSlugBoundary, slugToTransitionBoundary, transitionToMistBoundary;
     double flowMapCoordinateX, flowMapCoordinateY;
     
-    azizRegimeMap(liquidSupVel, gasSupVel, liquidDensity, gasDensity, 
+    azizRegimeMap(liquidSupVel, gasSupVel, liquidDensity, gasDensity,
                   surfaceTensionConverted, liquidFraction,
                   bubbleToSlugBoundary, slugToTransitionBoundary, transitionToMistBoundary,
                   flowMapCoordinateX, flowMapCoordinateY, flowPattern);
     
-    // ========================================
     // Holdup and Slip Density Calculation
-    // ========================================
     double bubbleLength, slugLength, slipDensity, slugLiquidDensity;
     
-    azizDensity(gasSupVel, velocity, surfaceTensionConverted, liquidDensity, gasDensity, 
+    azizDensity(gasSupVel, velocity, surfaceTensionConverted, liquidDensity, gasDensity,
                 diameter, liquidViscosity,
                 transitionToMistBoundary, flowMapCoordinateX, slugToTransitionBoundary, flowPattern,
                 holdup, bubbleLength, slugLength, slipDensity, slugLiquidDensity);
     
-    // ========================================
     // Gravity Gradient
-    // ========================================
     gravityGrad = slipDensity * sinAngle / PSI_CONVERSION;
     
-    // ========================================
     // Friction Gradient
-    // ========================================
     azizFriction(diameter, velocity, gasSupVel, liquidDensity, gasDensity, liquidViscosity,
                  gasViscosity, surfaceTensionConverted, roughness, slipDensity, slugLiquidDensity,
-                 bubbleLength, slugLength, transitionToMistBoundary, flowMapCoordinateX, 
+                 bubbleLength, slugLength, transitionToMistBoundary, flowMapCoordinateX,
                  slugToTransitionBoundary,
                  reynolds, flowPattern, frictionGrad);
     
-    // ========================================
     // Acceleration Effects (Mist Flow Only)
-    // ========================================
     double accelParam = 0.0;
     
     if (flowPattern == FLOW_MIST) {
@@ -5224,62 +4884,62 @@ void aziz(double angle, double diameter, double roughness, double pressure, doub
         }
     }
     
-    // ========================================
     // Total Gradient
-    // ========================================
     totalGrad = (frictionGrad + gravityGrad) / (1.0 - accelParam);
     accelGrad = accelParam * totalGrad;
 }
 
 /*
 ==============================================================================
-olie: Calcula gradientes de pressão usando a correlação de Oliemans com
-      correção de escorregamento baseada em Dukler
+olie: Calculates pressure gradients using the Oliemans correlation with a
+      slip correction based on the Dukler correlation.
 
-Referências:
-     1.  Oliemans, R.V.A.: "Two-Phase Flow in Gas-Transmission Pipelines,"
+References:
+     1.  Oliemans, R. V. A.: "Two-Phase Flow in Gas-Transmission Pipelines,"
          ASME Paper 76-Pet-25, presented at the ASME Petroleum Division
          Conference, Mexico City (Sept. 1976).
-     2.  Oliemans, R.V.A. et al.: "Modelling of Annular Dispersed Two-Phase
+     2.  Oliemans, R. V. A. et al.: "Modelling of Annular Dispersed Two-Phase
          Flow in Vertical Pipes," International Journal of Multiphase Flow,
          Vol. 12, No. 5 (1986), 711-732.
 
-Dicionário de variáveis:
-- angle             : Ângulo de inclinação do tubo (graus)
-- diameter          : Diâmetro interno do tubo (polegadas)
-- roughness         : Rugosidade relativa (adimensional)
-- pressure          : Pressão absoluta (psia)
-- velocity          : Velocidade superficial da mistura (ft/s)
-- liquidFraction    : Fração volumétrica de líquido sem escorregamento (0-1)
-- gasDensity        : Densidade do gás (lb/ft³)
-- liquidDensity     : Densidade do líquido (lb/ft³)
-- gasViscosity      : Viscosidade do gás (cP)
-- liquidViscosity   : Viscosidade do líquido (cP)
-- surfaceTension    : Tensão superficial (dyn/cm)
-- temperature       : Temperatura (°F)
-- compressibilityFactor : Fator de compressibilidade do gás (adimensional)
-- holdup            : Holdup de líquido calculado (saída)
-- frictionGrad      : Gradiente de pressão por fricção (psi/ft) - saída
-- gravityGrad       : Gradiente de pressão gravitacional (psi/ft) - saída
-- totalGrad         : Gradiente de pressão total (psi/ft) - saída
-- reynolds          : Número de Reynolds bifásico (saída)
-- flowPattern       : Indicador de padrão de fluxo (saída)
-- correlationFlag   : Flag de seleção de correlação de holdup (0=Dukler, 1=Eaton, 2=Minami I, 3=Minami II)
-- criticalFlag      : Indicador de fluxo crítico (saída)
+Variable dictionary:
+- angle                 : Pipe inclination angle (degrees)
+- diameter              : Pipe inner diameter (inches)
+- roughness             : Relative roughness (dimensionless)
+- pressure              : Absolute pressure (psia)
+- velocity              : Mixture superficial velocity (ft/s)
+- liquidFraction        : No-slip liquid volumetric fraction (0-1)
+- gasDensity            : Gas density (lb/ft3)
+- liquidDensity         : Liquid density (lb/ft3)
+- gasViscosity          : Gas viscosity (cP)
+- liquidViscosity       : Liquid viscosity (cP)
+- surfaceTension        : Surface tension (dyn/cm)
+- temperature           : Temperature (degrees F)
+- compressibilityFactor : Gas compressibility factor (dimensionless)
+- holdup                : Calculated liquid holdup (output)
+- frictionGrad          : Frictional pressure gradient (psi/ft) - output
+- gravityGrad           : Gravitational pressure gradient (psi/ft) - output
+- totalGrad             : Total pressure gradient (psi/ft) - output
+- reynolds              : Two-phase Reynolds number (output)
+- flowPattern           : Flow-pattern indicator (output)
+- correlationFlag       : Holdup correlation selection flag
+                          (0 = Dukler, 1 = Eaton,
+                           2 = Minami I, 3 = Minami II)
+- criticalFlag          : Critical-flow indicator (output)
 
-Variáveis auxiliares:
-- area              : Área da seção transversal do tubo (in²)
-- liquidSupVel      : Velocidade superficial do líquido (ft/s)
-- gasSupVel         : Velocidade superficial do gás (ft/s)
-- massFlowRate      : Fluxo de massa total (lbm/s)
-- betaL             : Parâmetro de escorregamento (holdup - liquidFraction)
-- slipDensity       : Densidade com escorregamento (lb/ft³)
-- massFlux          : Fluxo de massa corrigido pelo escorregamento (lbm/(s·ft²))
-- effectiveDiameter : Diâmetro efetivo corrigido pelo escorregamento (in)
-- noSlipDensity     : Densidade corrigida pelo escorregamento (lb/ft³)
-- noSlipViscosity   : Viscosidade corrigida pelo escorregamento (cP)
-- reynoldsTp        : Número de Reynolds bifásico (adimensional)
-- effectiveRoughness: Rugosidade relativa efetiva (adimensional)
+Auxiliary variables:
+- area                  : Pipe cross-sectional area (in2)
+- liquidSupVel          : Superficial liquid velocity (ft/s)
+- gasSupVel             : Superficial gas velocity (ft/s)
+- massFlowRate          : Total mass flow rate (lbm/s)
+- betaL                 : Slip parameter (holdup - liquidFraction)
+- slipDensity           : Slip-corrected density (lb/ft3)
+- massFlux              : Slip-corrected mass flux (lbm/(s*ft2))
+- effectiveDiameter     : Slip-corrected effective diameter (inches)
+- noSlipDensity         : Slip-corrected density (lb/ft3)
+- noSlipViscosity       : Slip-corrected viscosity (cP)
+- reynoldsTp            : Two-phase Reynolds number (dimensionless)
+- effectiveRoughness    : Effective relative roughness (dimensionless)
 ==============================================================================
 */
 void olie(double angle, double diameter, double roughness, double pressure, double velocity, double liquidFraction,
@@ -5289,15 +4949,11 @@ void olie(double angle, double diameter, double roughness, double pressure, doub
           double& totalGrad, double& reynolds, unsigned char& flowPattern, unsigned char correlationFlag,
           unsigned char& criticalFlag) {
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double REYNOLDS_SCALE = 1488.0;      // Reynolds number scaling factor
     static constexpr double ZERO_REYNOLDS_TOLERANCE = 1e-15;  // Near-zero Reynolds cutoff
     
-    // ========================================
     // Step 1: Pre-computed Geometric and Flow Properties
-    // ========================================
     
     criticalFlag = 0;
     
@@ -5311,24 +4967,20 @@ void olie(double angle, double diameter, double roughness, double pressure, doub
     // Total mass flow rate
     const double massFlowRate = (liquidSupVel * liquidDensity + gasSupVel * gasDensity) * area;
     
-    // ========================================
     // Step 2: Baseline Calculation Using Dukler Correlation
-    // ========================================
     // Dukler provides initial holdup, gravity gradient, and flow pattern
     
     unsigned char transitionFlag = 0;
     double accelGrad;
     
-    duklerCorrelation(angle, diameter, roughness, pressure, velocity, liquidFraction, 
-                     gasDensity, liquidDensity, gasViscosity, liquidViscosity, 
+    duklerCorrelation(angle, diameter, roughness, pressure, velocity, liquidFraction,
+                     gasDensity, liquidDensity, gasViscosity, liquidViscosity,
                      surfaceTension, temperature, compressibilityFactor,
                      holdup, frictionGrad, gravityGrad, accelGrad,
-                     totalGrad, reynolds, flowPattern, correlationFlag, 
+                     totalGrad, reynolds, flowPattern, correlationFlag,
                      transitionFlag, criticalFlag);
     
-    // ========================================
     // Step 3: Oliemans Slip Correction Parameters
-    // ========================================
     // Calculate slip parameter and corrected properties
     
     const double betaL = holdup - liquidFraction;
@@ -5338,22 +4990,16 @@ void olie(double angle, double diameter, double roughness, double pressure, doub
     const double noSlipDensity = (liquidDensity * liquidFraction + gasDensity * (1.0 - holdup)) / (1.0 - betaL);
     const double noSlipViscosity = (liquidViscosity * liquidFraction + gasViscosity * (1.0 - holdup)) / (1.0 - betaL);
     
-    // ========================================
     // Step 4: Two-Phase Reynolds Number
-    // ========================================
     
-    const double reynoldsTp = REYNOLDS_SCALE * diameter * massFlowRate / 
+    const double reynoldsTp = REYNOLDS_SCALE * diameter * massFlowRate /
                              (area * noSlipViscosity * std::sqrt(1.0 - betaL));
     
-    // ========================================
     // Step 5: Effective Roughness
-    // ========================================
     
     const double effectiveRoughness = roughness * diameter / effectiveDiameter;
     
-    // ========================================
     // Step 6: Friction Gradient Calculation
-    // ========================================
     
     if (fabs(reynoldsTp) > ZERO_REYNOLDS_TOLERANCE) {
         // Moody friction factor with corrected Reynolds and roughness
@@ -5361,123 +5007,122 @@ void olie(double angle, double diameter, double roughness, double pressure, doub
         frictionFactor(reynoldsTp, effectiveRoughness, frictionFactorValue);
         
         // Oliemans friction gradient formula
-        frictionGrad = (frictionFactorValue * massFlux * massFlux) / 
+        frictionGrad = (frictionFactorValue * massFlux * massFlux) /
                       (2.0 * 144.0 * effectiveDiameter * noSlipDensity * g_in);
     } else {
         frictionGrad = 0.0;
     }
     
-    // ========================================
     // Step 7: Total Gradient
-    // ========================================
     
     totalGrad = frictionGrad + gravityGrad;
 }
 
 /*
 ==============================================================================
-gray: Correlação de Gray para poços de gás com produção de líquido
+gray: Gray correlation for gas wells with liquid production.
 
-Referências:
-      1. Gray, H.E.: "Vertical Flow Correlation in Gas Wells"
-         User's Manual for API 14B, Subsurface Controlled Safety Valve Sizing Computer Program
-         Appendix B (June 1974).
+References:
+      1. Gray, H. E.: "Vertical Flow Correlation in Gas Wells,"
+         User's Manual for API 14B, Subsurface Controlled Safety Valve
+         Sizing Computer Program, Appendix B (June 1974).
 
-Dicionário de variáveis:
-- angle              : Ângulo de escoamento em relação à horizontal (graus)
-- diameter           : Diâmetro interno da tubulação (polegadas)
-- roughness          : Rugosidade relativa da tubulação (adimensional)
-- pressure           : Pressão absoluta (psia)
-- velocity           : Velocidade superficial da mistura (ft/s)
-- liquidFraction     : Fração de holdup de líquido no-slip (adimensional, 0-1)
-- waterFraction      : Fração mássica de água na fase líquida (adimensional, 0-1)
-- gasDensity         : Densidade do gás (lb/ft³)
-- liquidDensity      : Densidade do líquido (lb/ft³)
-- gasViscosity       : Viscosidade do gás (cP)
-- liquidViscosity    : Viscosidade do líquido (cP)
-- oilSurfaceTension  : Tensão superficial do óleo (dyn/cm)
-- waterSurfaceTension: Tensão superficial da água (dyn/cm)
-- holdup             : Fração de holdup de líquido calculada (adimensional, 0-1). Saída.
-- frictionGrad       : Gradiente de pressão por atrito (psi/ft). Saída.
-- gravityGrad        : Gradiente de pressão gravitacional (psi/ft). Saída.
-- accelerationGrad   : Gradiente de pressão de aceleração (psi/ft). Saída.
-- totalGrad          : Gradiente de pressão total (psi/ft). Saída.
-- reynolds           : Número de Reynolds (adimensional). Saída.
-- flowPattern        : Indicador de padrão de escoamento. Saída.
-                       1 - líquido monofásico, 2 - gás monofásico, 3 - bifásico
-- criticalFlag       : Indicador de escoamento crítico. Saída.
-                       0 - se accelParam <= 0.95, 1 - se accelParam > 0.95
+Variable dictionary:
+- angle              : Flow angle relative to the horizontal (degrees)
+- diameter           : Pipe inner diameter (inches)
+- roughness          : Pipe relative roughness (dimensionless)
+- pressure           : Absolute pressure (psia)
+- velocity           : Mixture superficial velocity (ft/s)
+- liquidFraction     : No-slip liquid holdup fraction (dimensionless, 0-1)
+- waterFraction      : Water mass fraction in the liquid phase
+                       (dimensionless, 0-1)
+- gasDensity         : Gas density (lb/ft3)
+- liquidDensity      : Liquid density (lb/ft3)
+- gasViscosity       : Gas viscosity (cP)
+- liquidViscosity    : Liquid viscosity (cP)
+- oilSurfaceTension  : Oil surface tension (dyn/cm)
+- waterSurfaceTension: Water surface tension (dyn/cm)
+- holdup             : Calculated liquid holdup fraction
+                       (dimensionless, 0-1). Output.
+- frictionGrad       : Frictional pressure gradient (psi/ft). Output.
+- gravityGrad        : Gravitational pressure gradient (psi/ft). Output.
+- accelerationGrad   : Accelerational pressure gradient (psi/ft). Output.
+- totalGrad          : Total pressure gradient (psi/ft). Output.
+- reynolds           : Reynolds number (dimensionless). Output.
+- flowPattern        : Flow-pattern indicator. Output.
+                       1 = single-phase liquid, 2 = single-phase gas,
+                       3 = two-phase flow
+- criticalFlag       : Critical-flow indicator. Output.
+                       0 if accelParam <= 0.95,
+                       1 if accelParam > 0.95
 
-
-Variáveis internas:
-- angleRad           : Ângulo de escoamento em relação à horizontal (radianos)
-- liquidSupVel       : Velocidade superficial do líquido (ft/s)
-- gasSupVel          : Velocidade superficial do gás (ft/s)
-- noSlipDensity      : Densidade da mistura no-slip (lb/ft³)
-- slipDensity        : Densidade da mistura com escorregamento (lb/ft³)
-- liquidSurfTension  : Tensão superficial do líquido (dyn/cm)
-- effectiveRoughness : Rugosidade efetiva para escoamento bifásico (adimensional)
-- velocityNumber     : Número adimensional de velocidade (Nv)
-- pipeNumber         : Número adimensional do tubo (Np)
-- liquidGasRatio     : Razão de velocidades líquido/gás (R)
-- exponentB          : Expoente B da correlação de holdup
-- pseudoRoughness    : Pseudo-rugosidade baseada em tensão superficial (ft)
-- transitionRoughness: Rugosidade de transição calculada (ft)
-- effectiveViscosity : Viscosidade efetiva da mistura (cP)
-- frictionFactor     : Fator de atrito de Moody (adimensional)
-- accelParam         : Termo de energia cinética/aceleração (adimensional)
+Internal variables:
+- angleRad           : Flow angle relative to the horizontal (radians)
+- liquidSupVel       : Superficial liquid velocity (ft/s)
+- gasSupVel          : Superficial gas velocity (ft/s)
+- noSlipDensity      : No-slip mixture density (lb/ft3)
+- slipDensity        : Mixture density accounting for slip (lb/ft3)
+- liquidSurfTension  : Liquid surface tension (dyn/cm)
+- effectiveRoughness : Effective roughness for two-phase flow (dimensionless)
+- velocityNumber     : Dimensionless velocity number (Nv)
+- pipeNumber         : Dimensionless pipe number (Np)
+- liquidGasRatio     : Liquid-to-gas velocity ratio (R)
+- exponentB          : Exponent B used by the holdup correlation
+- pseudoRoughness    : Surface-tension-based pseudo-roughness (ft)
+- transitionRoughness: Calculated transition roughness (ft)
+- effectiveViscosity : Effective mixture viscosity (cP)
+- frictionFactor     : Moody friction factor (dimensionless)
+- accelParam         : Kinetic-energy/acceleration term (dimensionless)
 ==============================================================================
 */
+
 /*
 ==============================================================================
-gray: Calcula gradientes de pressão para escoamento bifásico usando a 
-      correlação de Gray.
+gray: Calculates pressure gradients for two-phase flow using the Gray
+      correlation.
 
-Referências:
+References:
       1.  Gray, H. E.: "Vertical Flow Correlation in Gas Wells,"
           User's Manual for API 14B, Subsurface Controlled Safety Valve
-          Sizing Computer Program, Appendix B (June, 1974).
+          Sizing Computer Program, Appendix B (June 1974).
 
-Dicionário de variáveis:
-- angle                : Ângulo de inclinação do tubo (graus)
-- diameter             : Diâmetro interno do tubo (polegadas)
-- roughness            : Rugosidade relativa do tubo (adimensional)
-- pressure             : Pressão (psia)
-- velocity             : Velocidade superficial da mistura (ft/s)
-- liquidFraction       : Fração volumétrica de líquido
-- waterFraction        : Fração mássica de água na fase líquida
-- gasDensity           : Densidade do gás (lb/ft³)
-- liquidDensity        : Densidade do líquido (lb/ft³)
-- gasViscosity         : Viscosidade do gás (cP)
-- liquidViscosity      : Viscosidade do líquido (cP)
-- oilSurfaceTension    : Tensão superficial óleo-gás (dyn/cm)
-- waterSurfaceTension  : Tensão superficial água-gás (dyn/cm)
-- holdup               : Holdup de líquido calculado
-- frictionGrad         : Gradiente de pressão por fricção (psi/ft)
-- gravityGrad          : Gradiente de pressão gravitacional (psi/ft)
-- accelGrad            : Gradiente de pressão aceleracional (psi/ft)
-- totalGrad            : Gradiente de pressão total (psi/ft)
-- reynolds             : Número de Reynolds calculado
-- flowPattern          : Indicador do padrão de fluxo (1=líquido, 2=gás, 3=bifásico)
-- criticalFlag         : Indicador de fluxo crítico
+Variable dictionary:
+- angle               : Pipe inclination angle (degrees)
+- diameter            : Pipe inner diameter (inches)
+- roughness           : Pipe relative roughness (dimensionless)
+- pressure            : Pressure (psia)
+- velocity            : Mixture superficial velocity (ft/s)
+- liquidFraction      : Liquid volumetric fraction
+- waterFraction       : Water mass fraction in the liquid phase
+- gasDensity          : Gas density (lb/ft3)
+- liquidDensity       : Liquid density (lb/ft3)
+- gasViscosity        : Gas viscosity (cP)
+- liquidViscosity     : Liquid viscosity (cP)
+- oilSurfaceTension   : Oil-gas surface tension (dyn/cm)
+- waterSurfaceTension : Water-gas surface tension (dyn/cm)
+- holdup              : Calculated liquid holdup
+- frictionGrad        : Frictional pressure gradient (psi/ft)
+- gravityGrad         : Gravitational pressure gradient (psi/ft)
+- accelGrad           : Accelerational pressure gradient (psi/ft)
+- totalGrad           : Total pressure gradient (psi/ft)
+- reynolds            : Calculated Reynolds number
+- flowPattern         : Flow-pattern indicator
+                        (1 = liquid, 2 = gas, 3 = two-phase)
+- criticalFlag        : Critical-flow indicator
 ==============================================================================
 */
-void gray(double angle, double diameter, double roughness, double pressure, double velocity, 
-          double liquidFraction, double waterFraction, double gasDensity, double liquidDensity, 
+void gray(double angle, double diameter, double roughness, double pressure, double velocity,
+          double liquidFraction, double waterFraction, double gasDensity, double liquidDensity,
           double gasViscosity, double liquidViscosity, double oilSurfaceTension, double waterSurfaceTension,
           double& holdup, double& frictionGrad, double& gravityGrad, double& accelGrad,
           double& totalGrad, double& reynolds, unsigned char& flowPattern, unsigned char& criticalFlag) {
     
-    // ========================================
     // Named Flow Pattern Constants
-    // ========================================
     static constexpr unsigned char FLOW_LIQUID = 1;
     static constexpr unsigned char FLOW_GAS = 2;
     static constexpr unsigned char FLOW_TWOPHASE = 3;
     
-    // ========================================
     // Physical Constants
-    // ========================================
     static constexpr double REYNOLDS_SCALE = 1488.0;        // Reynolds number scaling factor
     static constexpr double PSI_CONVERSION = 144.0;         // in²/ft²
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
@@ -5505,21 +5150,15 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
     // Acceleration parameter limit
     static constexpr double MAX_ACCEL_PARAMETER = 0.95;              // Critical flow acceleration limit
     
-    // ========================================
     // Tolerances
-    // ========================================
     static constexpr double ZERO_VELOCITY_TOLERANCE = 1e-15;
     static constexpr double ZERO_VISCOSITY_TOLERANCE = 1e-15;
     
-    // ========================================
     // Initialization
-    // ========================================
     criticalFlag = 0;
     flowPattern = FLOW_TWOPHASE;
     
-    // ========================================
     // Pre-computed Values
-    // ========================================
     const double angleRad = angle * DEG_TO_RAD;
     const double sinAngle = sin(angleRad);
     
@@ -5530,18 +5169,14 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
     // No-slip mixture density
     double noSlipDensity = liquidDensity * liquidFraction + gasDensity * (1.0 - liquidFraction);
     
-    // ========================================
     // Liquid Surface Tension Calculation
-    // ========================================
     // Blends oil and water surface tensions based on water fraction
     // Accounts for non-ideal mixing behavior
-    const double liquidSurfaceTension = (oilSurfaceTension * (1.0 - waterFraction) + 
-                                        WATER_TENSION_COEFF * waterSurfaceTension * waterFraction) / 
+    const double liquidSurfaceTension = (oilSurfaceTension * (1.0 - waterFraction) +
+                                        WATER_TENSION_COEFF * waterSurfaceTension * waterFraction) /
                                        (1.0 - WATER_FRACTION_DENOM * waterFraction);
     
-    // ========================================
     // Single-Phase Flow Handling
-    // ========================================
     if (liquidFraction >= 1.0) {
         // Single-phase liquid flow
         flowPattern = FLOW_LIQUID;
@@ -5550,7 +5185,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
         
         const double slipDensity = liquidDensity;
         
-        if (fabs(velocity) > ZERO_VELOCITY_TOLERANCE && 
+        if (fabs(velocity) > ZERO_VELOCITY_TOLERANCE &&
             fabs(liquidViscosity) > ZERO_VISCOSITY_TOLERANCE) {
             reynolds = REYNOLDS_SCALE * noSlipDensity * velocity * diameter / liquidViscosity;
             
@@ -5558,7 +5193,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = velocity * velocity;
-            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) / 
+            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) /
                           (2.0 * g_in * diameter * PSI_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -5579,7 +5214,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
         
         const double slipDensity = gasDensity;
         
-        if (fabs(velocity) > ZERO_VELOCITY_TOLERANCE && 
+        if (fabs(velocity) > ZERO_VELOCITY_TOLERANCE &&
             fabs(gasViscosity) > ZERO_VISCOSITY_TOLERANCE) {
             reynolds = REYNOLDS_SCALE * noSlipDensity * velocity * diameter / gasViscosity;
             
@@ -5587,7 +5222,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
             frictionFactor(reynolds, roughness, frictionFactorValue);
             
             const double velocitySquared = velocity * velocity;
-            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) / 
+            frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) /
                           (2.0 * g_in * diameter * PSI_CONVERSION);
         } else {
             reynolds = 0.0;
@@ -5599,7 +5234,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
         // Gas flow acceleration effect
         double accelParameter = 0.0;
         if (fabs(pressure) > ZERO_VELOCITY_TOLERANCE) {
-            accelParameter = slipDensity * velocity * gasSuperficialVel / 
+            accelParameter = slipDensity * velocity * gasSuperficialVel /
                            (g_in * pressure * PSI_CONVERSION);
             
             if (accelParameter > MAX_ACCEL_PARAMETER) {
@@ -5613,36 +5248,30 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
         return;
     }
     
-    // ========================================
     // Two-Phase Flow: Gray Correlation
-    // ========================================
     flowPattern = FLOW_TWOPHASE;
     
-    // ====================================================================
     // Dimensionless Numbers
-    // ====================================================================
     const double densityDifference = liquidDensity - gasDensity;
     const double velocitySquared = velocity * velocity;
     
     // Gray velocity number: characterizes flow inertia relative to buoyancy
-    const double velocityNumber = VELOCITY_NUMBER_COEFF * 
+    const double velocityNumber = VELOCITY_NUMBER_COEFF *
                                  (noSlipDensity * velocitySquared * noSlipDensity * velocitySquared) /
                                  (densityDifference * liquidSurfaceTension);
     
     // Gray pipe number: characterizes pipe geometry relative to surface tension
-    const double pipeNumber = PIPE_NUMBER_COEFF * densityDifference * 
+    const double pipeNumber = PIPE_NUMBER_COEFF * densityDifference *
                              diameter * diameter / liquidSurfaceTension;
     
-    // ====================================================================
     // Liquid-Gas Ratio and Holdup Calculation
-    // ====================================================================
     double liquidGasRatio;
     
     if (fabs(gasSuperficialVel) > ZERO_VELOCITY_TOLERANCE) {
         liquidGasRatio = liquidSuperficialVel / gasSuperficialVel;
         
         // Exponent B: empirical correlation based on liquid-gas ratio
-        const double logTerm = log(1.0 + EXPONENT_B_LOG_SCALE * liquidGasRatio / 
+        const double logTerm = log(1.0 + EXPONENT_B_LOG_SCALE * liquidGasRatio /
                                   (1.0 + liquidGasRatio));
         const double exponentB = EXPONENT_B_SCALE * (1.0 - EXPONENT_B_LOG_COEFF * logTerm);
         
@@ -5658,15 +5287,13 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
         holdup = liquidFraction;
     }
     
-    // ====================================================================
     // Effective Roughness Calculation
-    // ====================================================================
     // Two-phase flow roughness depends on surface tension effects
     
     double pseudoRoughness;
     if (fabs(velocity) > ZERO_VELOCITY_TOLERANCE) {
         // Pseudo-roughness: characteristic length scale based on surface tension
-        pseudoRoughness = PSEUDO_ROUGHNESS_COEFF * liquidSurfaceTension / 
+        pseudoRoughness = PSEUDO_ROUGHNESS_COEFF * liquidSurfaceTension /
                          (noSlipDensity * velocitySquared);
     } else {
         pseudoRoughness = roughness * diameter;
@@ -5692,18 +5319,14 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
     
     const double effectiveRoughness = transitionRoughness / diameter;
     
-    // ====================================================================
     // Mixture Properties
-    // ====================================================================
     const double slipDensity = liquidDensity * holdup + gasDensity * (1.0 - holdup);
     const double effectiveViscosity = liquidViscosity * holdup + gasViscosity * (1.0 - holdup);
     
-    // ====================================================================
     // Pressure Gradient Calculations
-    // ====================================================================
     
     // Friction gradient
-    if (fabs(effectiveViscosity) > ZERO_VISCOSITY_TOLERANCE && 
+    if (fabs(effectiveViscosity) > ZERO_VISCOSITY_TOLERANCE &&
         fabs(velocity) > ZERO_VELOCITY_TOLERANCE) {
         
         reynolds = REYNOLDS_SCALE * noSlipDensity * velocity * diameter / effectiveViscosity;
@@ -5711,7 +5334,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
         double frictionFactorValue;
         frictionFactor(reynolds, effectiveRoughness, frictionFactorValue);
         
-        frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) / 
+        frictionGrad = (frictionFactorValue * noSlipDensity * velocitySquared) /
                       (2.0 * g_in * diameter * PSI_CONVERSION);
     } else {
         reynolds = 0.0;
@@ -5722,7 +5345,7 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
     gravityGrad = slipDensity * sinAngle / PSI_CONVERSION;
     
     // Acceleration gradient (kinetic energy change)
-    double accelParameter = slipDensity * velocity * gasSuperficialVel / 
+    double accelParameter = slipDensity * velocity * gasSuperficialVel /
                            (g_in * pressure * PSI_CONVERSION);
     
     // Check for critical flow condition
@@ -5735,4 +5358,3 @@ void gray(double angle, double diameter, double roughness, double pressure, doub
     totalGrad = (gravityGrad + frictionGrad) / (1.0 - accelParameter);
     accelGrad = totalGrad * accelParameter;
 }
-

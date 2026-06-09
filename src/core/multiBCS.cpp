@@ -177,7 +177,6 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     double vazGIni=vazG;
     double tempIni=temp;
     double presIni=pres;
-//    double alfaIni=alfa;
     double betaIni=beta;
 
     ProFlu fluiL=flui;
@@ -235,7 +234,6 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
 
 	double delTit;
 	double novoTit;
-//	double tit0;
 
     for(int iCurva=0; iCurva<nBCS; iCurva++){
     	for(int iEstag=0; iEstag<nestagParc[iCurva]; iEstag++){
@@ -247,8 +245,6 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
 
     	    vpotB = BCSinterno[iCurva].Pvis * 745.7;
     	    potB+=vpotB;
-    	    //if(BCSinterno[iCurva].Evis>0.) potB*=(100./BCSinterno[iCurva].Evis);
-    	    //else potB=0.;
     	    coefdxT = (rhol * vazL * cpl + rhog * vazG * cpg);
 
     	    temp+=(1.-BCSinterno[iCurva].Evis/100.)*vpotB/coefdxT;
@@ -315,7 +311,3 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     potBT = (1. + 100. * (1. - eficM / 100.) / eficM) * potB;
     else potBT = 0.;
 }
-
-
-
-
