@@ -2931,7 +2931,7 @@ void Ler::parse_configuracao_inicial(
 			// caso as opcoes flashCompleto, latente, modeloCp ou modeloJTL tenham sido marcadas
 			if (flashCompleto == 1 || latente == 1 || modelcp == 1
 					|| modelJTL == 1) {
-				if (pvtsimarq.length() == 0) {
+				if (pvtsimarq.length() == 0 ) {
 					// RN-042: Chave "pvtsimArq" requerida em caso de "modeloFluidoTabelaFlash", "latente" ou "modeloCp" ou "modeloJTL"
 					// incluir falha
 					logger.log(LOGGER_FALHA,
@@ -15106,6 +15106,68 @@ void Ler::copiaArq(Ler& arqAntigo) {
 }
 
 
+int Ler::retornaNTab(){
+	string dadosMRPre;
+    dadosMRPre = pvtsimarq;
+	ifstream lendoPVTSimPre(dadosMRPre.c_str(), ios_base::in);
+	string chave;
+	char* tenta;
+	double testatok;
+	char line[50000];
+	lendoPVTSimPre >> chave;
+	while (chave != "PRESSURE") {
+		lendoPVTSimPre >> chave;
+		if(lendoPVTSimPre.eof( )){
+			logger.log_write_logs_and_exit(LOGGER_FALHA,
+			LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+					"Arquivo PVTSIM com problemas", "busca de número de pontos na tabela flash",
+					"pvtsimArq");
+			break;
+		}
+	}
+
+
+
+	// Lê novamente linha com quebra e monta linha unificada
+	std::string linha_completa = ler_linha_continua(lendoPVTSimPre);
+	strcpy(line, linha_completa.c_str());
+
+	int ntab=0;
+	tenta = strtok(line, " ,()=");
+	chave=std::string(tenta);
+	while(tenta != nullptr && (chave!="Pa" && chave!="PA")){
+		ntab++;
+		tenta = strtok(NULL, " ,)/");
+		chave=std::string(tenta);
+
+		if(lendoPVTSimPre.eof( )){
+			logger.log_write_logs_and_exit(LOGGER_FALHA,
+			LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+					"Arquivo PVTSIM com problemas",  "busca de número de pontos na tabela flash",
+					"pvtsimArq");
+		}
+
+		if(chave=="\r"){
+			tenta = strtok(NULL, " ,)/");
+			if(lendoPVTSimPre.eof( )){
+				logger.log_write_logs_and_exit(LOGGER_FALHA,
+				LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+						"Arquivo PVTSIM com problemas",  "busca de número de pontos na tabela flash",
+						"pvtsimArq");
+			}
+			tenta = strtok(NULL, " ,)/");
+			if(lendoPVTSimPre.eof( )){
+				logger.log_write_logs_and_exit(LOGGER_FALHA,
+				LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+						"Arquivo PVTSIM com problemas",  "busca de número de pontos na tabela flash",
+						"pvtsimArq");
+			}
+		}
+	}
+	lendoPVTSimPre.close();
+	return ntab;
+}
+
 
 void Ler::geraTabCp() {
 	// Caso o arquivo pvtsim inexista
@@ -15126,7 +15188,7 @@ void Ler::geraTabCp() {
 	char* tenta;
 	//tenta = new char[400];
 	double testatok;
-	int ndiv = tabent.npont - 1;
+	int ndiv = retornaNTab() - 1;
 	//double pteste = tabent.pmin;
 	//double tteste = tabent.tmin;
 	// double dpteste = (tabent.pmax - pteste) / ndiv;
@@ -15241,7 +15303,7 @@ void Ler::geraTabDrholDt() {
 	char* tenta;
 	//tenta = new char[400];
 	double testatok;
-	int ndiv = tabent.npont - 1;
+	int ndiv = retornaNTab() - 1;
 	//double pteste = tabent.pmin;
 	//double tteste = tabent.tmin;
 	//double dpteste = (tabent.pmax - pteste) / ndiv;
@@ -20169,6 +20231,20 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 			escreveIni << t(" Vazao de gas in situ na descarga da BCS ", " In-situ gas flow rate at ESP discharge ") << ibcs << t(", (m3/s);", ", (m3/s);");
 		}
 	}
+	if(nmultibcs>0){
+		for(int ibcs=0;ibcs<nmultibcs;ibcs++){
+			escreveIni << t(" Incremento de pressao na BCS ", " Pressure increment in ESP ") << ibcs+nbcs << t(", (kgf/cm2);", ", (kgf/cm2);");
+			escreveIni << t(" Potencia da BCS (considerando apenas eficiencia hidraulica) ", " ESP power (considering only hydraulic efficiency) ") << ibcs+nbcs << t(", (HP);", ", (HP);");
+			escreveIni << t(" Potencia da BCS (considerando apenas eficiencia do motor) ", " ESP power (considering only motor efficiency) ") << ibcs+nbcs << t(", (HP);", ", (HP);");
+			escreveIni << t(" Head da BCS ", " ESP head ") << ibcs+nbcs << t(", (m);", ", (m);");
+			escreveIni << t(" Vazao de oleo in situ na succao da BCS ", " In-situ oil flow rate at ESP suction ") << ibcs+nbcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de oleo + agua in situ na succao da BCS ", " In-situ oil + water flow rate at ESP suction ") << ibcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de gas in situ na succao da BCS ", " In-situ gas flow rate at ESP suction ") << ibcs+nbcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de oleo in situ na descarga da BCS ", " In-situ oil flow rate at ESP discharge ") << ibcs+nbcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de oleo + agua in situ na descarga da BCS ", " In-situ oil + water flow rate at ESP discharge ") << ibcs+nbcs << t(", (m3/s);", ", (m3/s);");
+			escreveIni << t(" Vazao de gas in situ na descarga da BCS ", " In-situ gas flow rate at ESP discharge ") << ibcs+nbcs << t(", (m3/s);", ", (m3/s);");
+		}
+	}
 	if(nintermi>0){
 		for(int iintermi=0;iintermi<nintermi;iintermi++){
 			/*
@@ -20229,10 +20305,31 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 	if(nbcs>0){
 		for(int ibcs=0;ibcs<nbcs;ibcs++){
 			int iposp = bcs[ibcs].posicP;
-			escreveIni << celula[iposp].dpB<<" ; ";
-			escreveIni << celula[iposp].potB<<" ; ";
-			escreveIni << celula[iposp].potBT<<" ; ";
-			escreveIni << celula[iposp].acsr.bcs.Hvis<<" ; ";
+			escreveIni << celula[iposp].dpB/98066.52<<" ; ";
+			escreveIni << celula[iposp].potB/745.7<<" ; ";
+			escreveIni << celula[iposp].potBT/745.7<<" ; ";
+			escreveIni << celula[iposp].acsr.bcs.Hvis*0.3048<<" ; ";
+			escreveIni << celula[iposp].QL*(1-celula[iposp].FW)<<" ; ";
+			escreveIni << celula[iposp].QL<<" ; ";
+			escreveIni << celula[iposp].QG<<" ; ";
+			escreveIni << celula[iposp+1].QL*(1-celula[iposp+1].FW)<<" ; ";
+			escreveIni << celula[iposp+1].QL<<" ; ";
+			escreveIni << celula[iposp+1].QG<<" ; ";
+
+		}
+	}
+	if(nmultibcs>0){
+		for(int ibcs=0;ibcs<nmultibcs;ibcs++){
+			int iposp = multiBcs[ibcs].posicP;
+			escreveIni << celula[iposp].dpB/98066.52<<" ; ";
+			escreveIni << celula[iposp].potB/745.7<<" ; ";
+			escreveIni << celula[iposp].potBT/745.7<<" ; ";
+		    long double alfmed = celula[iposp - 1].alf;
+		    long double betmed = celula[iposp - 1].bet;
+			double rhol = (1. - betmed) * celula[iposp].rpCi + betmed * celula[iposp].rcCi;
+		    double rhog =celula[iposp].rgCi;
+			long double rhomix=alfmed*rhog+(1-alfmed)*rhol;
+			escreveIni << (celula[iposp].dpB)/(rhomix*9.82)<<" ; ";
 			escreveIni << celula[iposp].QL*(1-celula[iposp].FW)<<" ; ";
 			escreveIni << celula[iposp].QL<<" ; ";
 			escreveIni << celula[iposp].QG<<" ; ";

@@ -899,7 +899,7 @@ def _fluid_dialog(idx):
                               4: "4 - Khan",
                           }, default=0, help_text="Under-saturated oil viscosity correlation.")
     with c2:
-        widget_int_select("RS/Pb model", ["productionFluid", idx, "srBpModel"], {
+        widget_int_select("RS/Pb model", ["productionFluid", idx, "RsPbModel"], {
             0: "0 - Vázquez/Beggs", 1: "1 - Lasater", 2: "2 - Standing",
             3: "3 - Glaso", 4: "4 - Lívia Fulchignoni",
         }, default=0, help_text="Solution gas-oil ratio / bubble point correlation. Black oil only.")
@@ -2294,7 +2294,7 @@ with tabs[8]:
                         help_text="If true, updates gas density along the pipe.")
             widget_bool("Gas density BO correction", ci_path + ["freeGasDensityCorrectionBO"],
                         help_text="If true, considers in-situ deviation for free gas density.")
-            widget_bool("RS/PB table", ci_path + ["srBpTable"],
+            widget_bool("RS/PB table", ci_path + ["RsPbTable"],
                         help_text="Pre-builds RS table using BO before simulation.")
             widget_bool("Parallelize AS", ci_path + ["parallelizeSA"],
                         help_text="If true, parallelizes sensitivity analysis runs.")

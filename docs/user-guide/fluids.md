@@ -4,19 +4,19 @@ Fluid modeling is the thermodynamic foundation of the simulation. Nearly every g
 
 ## Thermodynamic Model Family
 
-Marlim3 supports three approaches to compute fluid properties, each with different fidelity and cost:
+Marlim3 supports three approaches to compute fluid properties, each with different fidelity and numerical cost:
 
 ### Black-Oil Model
 
 The simplest and fastest approach. Fluid behavior is characterized by correlations that depend on API gravity, GOR, gas density, and BSW. Phase split is determined by a solution-gas-ratio (RS) correlation.
 
-### Flash-Table Model
+### Table File
 
-Precomputed PVT properties from external software (PVTSim) stored in `.tab` files. The simulator interpolates properties at each P-T condition from this table. Accurate within the table range but depends entirely on the quality and coverage of the external data.
+Precomputed fluid properties from external software (PVTsim, Multiflash) stored in `.tab` files. The simulator interpolates properties at each P-T condition from this table. Accurate within the table range but depends entirely on the quality and coverage of the external data.
 
 ### Compositional Model
 
-A rigorous thermodynamic model where the fluid is described by pseudocomponent molar fractions and equilibrium is computed via flash calculations. Required for rich-gas/condensate systems or when composition changes significantly along the flow path. More expensive computationally.
+A rigorous thermodynamic model where the fluid is described by pseudocomponent molar fractions and equilibrium is computed via flash calculations. Required for rich-gas/condensate systems or when composition changes significantly along the simulation. More expensive computationally.
 
 > **JSON keys (inside global config):**
 >
@@ -54,7 +54,7 @@ When both flags are `false`, the black-oil model is used. When both flags are `t
 
 | Mode | Must-have keys | Optional/conditional keys |
 |------|----------------|---------------------------|
-| Black-oil | `productionFluid` defined with black-oil properties, `gor`, `api`, `gasDensity` | `srBpModel`, viscosity and emulsion model selectors |
+| Black-oil | `productionFluid` defined with black-oil properties, `gor`, `api`, `gasDensity` | `RsPbModel`, viscosity and emulsion model selectors |
 | Flash-table | `productionFluid` defined, `flashTableFluidModel = true`, `pvtFile` with `.tab` | `blackOilViscModel`, `blackOilWaterModel`, viscosity and emulsion model selectors |
 | Compositional | `productionFluid` defined, `compositionalFluidModel = true`, `pvtFile` with `.ctm` | `userMolarFraction`/`molarFraction`, `userGORComp` for composition correction, viscosity and emulsion model selectors |
 
@@ -62,7 +62,7 @@ When both flags are `false`, the black-oil model is used. When both flags are `t
    In flash-table mode, correlation keys such as `deadOilModel`, `liveOilModel`, and `undersaturatedOilModel` are only active when `blackOilViscModel = 1`.
 
 !!! note
-  In compositional mode, black-oil correlations are used to compute gas viscosities, therefore black oil properties are needed.
+    In compositional mode, black-oil correlations are used to compute gas viscosities, therefore black oil properties are needed.
 
 ---
 
@@ -83,7 +83,7 @@ There is no single universal “required set” for all modes. Requirements depe
 | `waterDensity` / `densidadeAgua` | used | used | used | Valid in all models |
 | `emulsionType` and emulsion parameters | used | used | used | Valid in all models |
 | `api` | used | not primary | not primary | Black-oil only |
-| `srBpModel` / `modeloRsPb` | used | not used | not used | Black-oil RS correlation |
+| `RsPbModel` / `modeloRsPb` | used | not used | not used | Black-oil RS correlation |
 | `gasDensity`, `CO2Fraction`, `criticalCorrelation` | used | conditional | used | In flash-table mode, mainly relevant when black-oil correlations are enabled |
 | `deadOilModel`, `liveOilModel`, `undersaturatedOilModel` | used | conditional | used | In flash-table mode, used only with `blackOilViscModel = 1` |
 | `temp1`, `visc1`, `temp2`, `visc2`, `deadOilTemp`, `deadOilVisc` | conditional | conditional | conditional | Needed only for selected viscosity models |
@@ -272,7 +272,7 @@ For steady-state compositional simulations with multiple mixing zones (e.g., net
 
 The Lívia Fulchignoni RS correlation is computationally expensive. When enabled, the simulator pre-builds a solution-gas-ratio lookup table before starting the time loop, significantly improving performance.
 
-> **JSON key:** `srBpTable` (EN) · `tabelaRSPB` (PT) — default `false`
+> **JSON key:** `RsPbTable` (EN) · `tabelaRSPB` (PT) — default `false`
 
 ## Fluid Tracking Along the Pipeline
 
@@ -401,7 +401,7 @@ Key concepts:
       "liveOilModel": 0,
       "undersaturatedOilModel": 0,
       "criticalCorrelation": 1,
-      "srBpModel": 0,
+      "RsPbModel": 0,
       "emulsionType": 0
     }
   ],

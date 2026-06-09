@@ -9162,6 +9162,11 @@ void SProd::renovaTemp() {
         else if (celula[i - 1].acsr.tipo == 2 || celula[i - 1].acsr.tipo == 3|| celula[i - 1].acsr.tipo == 9
         		|| celula[i - 1].acsr.tipo == 15 || celula[i - 1].acsr.tipo == 16)
         	celula[i - 1].TMModel = 3;
+        if(arq.flashCompleto==2){
+        	double titTeste=
+        			celula[i - 1].flui.FracMass(celula[i - 1].pres, celula[i - 1].temp);
+        	if(titTeste>1.0-1e-2 || titTeste<1e-2)celula[i - 1].TMModel = 3;
+        }
         //else if(celula[i-1].acsr.tipo==4)celula[i-1].TMModel=3;
         // else if(celula[i-1].bet>localtiny && celula[i-1].alf<(1.-localtiny)&&TransMassModel==0)celula[i-1].TMModel=1;
         else if (i >= 2) {
@@ -19731,7 +19736,7 @@ void  SProd::ImprimeTrendPCab(int i, int nrede) {
       escreveTrend << t(" Condutividade Termica Parafina (W / [m K]) C;", " Paraffin thermal conductivity (W / [m K]) C;");
       escreveTrend << t(" Massa Especifica Parafina (kg/m3) C;", " Paraffin density (kg/m3) C;");
       escreveTrend << t(" Massa molar do Liquido Parafina (kg/mol) C;", " Paraffin liquid molar mass (kg/mol) C;");
-      escreveTrend << t(" Difusividade Mássica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
+      escreveTrend << t(" Difusividade Massica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
       escreveTrend << t(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
       escreveTrend << t(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
       escreveTrend << t(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
