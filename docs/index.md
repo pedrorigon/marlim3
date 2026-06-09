@@ -55,17 +55,6 @@ For installation instructions and usage guidelines in any of these settings, ple
 | [Tutorials](tutorials/index.md) | Practical notebook-based workflows |
 | [Bilingual Support](dev-guide/translations.md) | English ↔ Portuguese key mapping and usage |
 
-## Recommended Reading Path
-
-For a first model:
-
-1. **Fluids**
-2. **Materials** and **Cross Sections**
-3. **Pipes**
-4. **Boundary Conditions** and **Accessories**
-5. **Time** and **General**
-6. **Results**
-
 ## Build This Documentation
 
 ```bash
