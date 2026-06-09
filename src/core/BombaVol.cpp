@@ -82,5 +82,3 @@ void BomVol::vazmass(double pres, double pres1,double temp,
 	}
 
 }
-
-//template class BomVol;

@@ -1,432 +1,475 @@
 /*
  * elem2dPoroso.h
  *
- *  Created on: 22 de jun. de 2022
- *      Author: Eduardo
+ * Created on: June 22, 2022
+ * Author: Eduardo
  */
 
 #ifndef elem2dPorosoPOISSON_H_
 #define elem2dPorosoPOISSON_H_
+#define _USE_MATH_DEFINES // Enable mathematical constants such as M_PI.
 
-#define _USE_MATH_DEFINES // para M_PI
-#include <math.h>
-#include <algorithm>
-#include <fstream>
-#include <complex>
-#include <vector>
-using namespace std;
-#include "Vetor.h"
 #include "Matriz.h"
-#include "celRad.h"
-#include "estruturasPoroso.h"
-#include "estruturaTabDin.h"
-#include "PropFluCol.h"
 #include "PropFlu.h"
+#include "PropFluCol.h"
+#include "Vetor.h"
+#include "celRad.h"
+#include "estruturaTabDin.h"
+#include "estruturasPoroso.h"
 #include "variaveisGlobais1D.h"
+#include <algorithm>
+#include <complex>
+#include <fstream>
+#include <math.h>
+#include <vector>
 
-//extern detTempoPoroso temp;
-//extern detCCPoroso CC;
+using namespace std;
 
-//extern double tempo;
+/*!
+ * Store the geometry, state variables, gradients, and porous-medium
+ * properties associated with a two-dimensional finite-volume element.
+ */
+struct elementoPoroso {
+    int nvert;              // Number of vertices.
+    int dim;                // Spatial dimension of the problem.
+    int indEle;             // Element index.
+    int nele;               // Total number of elements in the discretization.
+    int *noElem;            // Indices of the element nodes.
+    int *indFace;           // Indices of neighboring elements associated with each face.
+    int *ccFace;            // Boundary-condition identifiers associated with each face.
+    vector<int> indVizCres; // Neighbor indices sorted in ascending order.
+    double *orientFace;     // Face-orientation correction factors that ensure
+    // every face normal points outward from the element.
+    double *centroElem;     // Coordinates of the element geometric center.
+    double *centroideElem;  // Coordinates of the element centroid.
+    double **centroideFace; // Coordinates of each face centroid.
+    double **coordVert;     // Coordinates of each element vertex.
+    double **dCF;           // Vectors from the element centroid to each face center.
+    double *dCFMod;         // Magnitudes of the dCF vectors.
+    double vElem;           // Element volume or area.
+    int **noFace;           // Node indices associated with each face.
+    double **sFace;         // Face-area vectors.
+    double *sFaceMod;       // Magnitudes of the face-area vectors.
+    double *ownFace;        // Indicates whether the element owns each face-area vector.
+    double **vecE;          // Unit vectors from the element centroid toward neighboring centroids.
+    double *modE;           // Distances between the element centroid and neighboring centroids.
+    double **vecT;          // Unit vectors normal to vecE.
+    double *modT;           // Magnitudes associated with vecT.
+    double *fatG;           // Ratio between the face-intersection-to-centroid distance and
+    // the distance between two neighboring element centroids.
+    double *angES;   // Angle between the centroid-connecting line and the face-area vector.
+    double **fInter; // Coordinates where the centroid-connecting line intersects each face.
+    double **fIfC;   // Vectors from each intersection point to the corresponding face centroid.
 
-struct elementoPoroso{
-    int nvert;//numero de vertices
-    int dim;//dimensao do problema
-    int indEle;//indice do elementoPoroso
-    int nele;//numero de elementoPorosos da discretizacao
-    int* noElem;//vetor com o indice dos nos
-    int* indFace;//vetor com o indice do elementoPoroso vizinho para uma das faces do elementoPoroso
-    int* ccFace;//vetor indicando a condicao de contorno de uma face
-    vector<int> indVizCres;
-    double* orientFace;//vetor corrigindo a orientacao da face de um elementoPoroso,
-    //para garantir que sempre esteja apontada para fora
-    double* centroElem;//coordenadas do centro geométrico do elementoPoroso
-    double* centroideElem;//coordenadas do centro de massa do elementoPoroso
-    double** centroideFace;//coordenadas com o centro de massa da face
-    double** coordVert;//coordenadas de cada vertice do elemnto
-    double** dCF;//vetor apontando do centroide do elemnto para o centro da face
-    double* dCFMod;//modulo do vetor
-    double vElem;//volume/area do elemnto
-    int** noFace;
-    double** sFace;//vetor da área da face
-    double* sFaceMod;//modulo do vetor
-    double* ownFace;//vetor indicando se o elementoPoroso é ou não "dono" do vetor area
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    double** vecE;//vetor unitario na orientacao entre o centroide de do elementoPoroso e um dos seus vizinhos
-    double* modE;//distancia entre o centroide do elementoPoroso e um dos seus vizinho
-    double** vecT;//vetor unitario normal a vecE
-    double* modT;
-    double* fatG;//razao de distancia entre a intersecao da face e o centroide e a
-    //distancia de dois centroides de elementoPorosos
-    double* angES;//angulo entre a corda dos dois centroides e o vetor da area da face
-    double** fInter;//coordenadas da intersecao da corda entre os centroides dos elementoPorosos e a face do elementoPoroso
-    double** fIfC;//vetor entre a intersecao e o centroide da face
+    double **vecSDif;   // Diffusive surface vectors.
+    double *vecSDifMod; // Magnitudes of the diffusive surface vectors.
 
-	double** vecSDif;
-	double* vecSDifMod;
+    double presC;  // Cell-centered pressure.
+    double presCI; // Pressure stored for the previous or intermediate iteration.
+    double presC0; // Pressure at the previous time level.
 
-    double presC;
-	double presCI;
-	double presC0;
+    double *gradGreenP;        // Green-Gauss pressure gradient.
+    double *gradGreenPI;       // Pressure gradient stored for the previous or intermediate iteration.
+    double *gradGreenZdatum;   // Green-Gauss datum-elevation gradient.
+    double *gradGreenZdatumI;  // Datum-elevation gradient stored for the previous or intermediate iteration.
+    double *gradGreenAZdatum;  // Green-Gauss gradient of the elevation-related auxiliary term.
+    double *gradGreenAZdatumI; // Previous or intermediate gradient of the elevation-related auxiliary term.
+    double *gradGreenPcOG;     // Green-Gauss oil-gas capillary-pressure gradient.
+    double *gradGreenPcAO;     // Green-Gauss water-oil capillary-pressure gradient.
+    double *gradGreenPcAOI;    // Previous or intermediate water-oil capillary-pressure gradient.
+    double *gradGreenSw;       // Green-Gauss water-saturation gradient.
+    double *gradGreenSwI;      // Water-saturation gradient stored for the previous or intermediate iteration.
 
-	double* gradGreenP;
-	double* gradGreenPI;
-	double* gradGreenZdatum;
-	double* gradGreenZdatumI;
-	double* gradGreenAZdatum;
-	double* gradGreenAZdatumI;
-	double* gradGreenPcOG;
-	double* gradGreenPcAO;
-	double* gradGreenPcAOI;
-	double* gradGreenSw;
-	double* gradGreenSwI;
+    double kY;      // Permeability in the y-direction.
+    double kX;      // Permeability in the x-direction.
+    double poro;    // Porosity.
+    double compRoc; // Rock compressibility.
 
-	double kY;
-	double kX;
-	double poro;
-	double compRoc;
+    double sLC; // Current liquid saturation.
+    double sLI; // Previous or intermediate liquid saturation.
+    double sWC; // Current water saturation.
+    double sWI; // Previous or intermediate water saturation.
 
-	double sLC;
-	double sLI;
-	double sWC;
-	double sWI;
+    double alfC;  // Current gas or phase fraction.
+    double alfC0; // Gas or phase fraction at the previous time level.
 
-	double alfC;
-	double alfC0;
+    double vbo;     // Oil formation-volume-factor-related value.
+    double rhostd;  // Oil density at standard conditions.
+    double rhogstd; // Gas density at standard conditions.
+    double rhoastd; // Water density at standard conditions.
 
-	double vbo;
-	double rhostd;
-	double rhogstd;
-	double rhoastd;
+    double rhoP;  // Oil density at current conditions.
+    double rhogP; // Gas density at current conditions.
+    double rhoaP; // Water density at current conditions.
 
-	double rhoP;
-	double rhogP;
-	double rhoaP;
+    double rhoP0;  // Oil density at the previous time level.
+    double rhogP0; // Gas density at the previous time level.
+    double rhoaP0; // Water density at the previous time level.
 
-	double rhoP0;
-	double rhogP0;
-	double rhoaP0;
+    double pcOG; // Oil-gas capillary pressure.
+    double pcAO; // Water-oil capillary pressure.
 
-	double pcOG;
-	double pcAO;
+    double kabsol; // Absolute permeability.
+    double zD;     // Datum elevation.
 
-	double kabsol;
-	double zD;
+    int tipoModelOleo; // Oil-model selection.
+    double compOleo;   // Oil compressibility.
+    double rhoRef;     // Reference oil density.
+    double pBolha;     // Bubble-point pressure.
 
-	int tipoModelOleo;
-	double compOleo;
-	double rhoRef;
-	double pBolha;
+    //! Initialize all pointers and state variables with default values.
+    elementoPoroso() {
+        nvert = 0;      // Number of vertices.
+        dim = 0;        // Spatial dimension of the problem.
+        indEle = 0;     // Element index.
+        nele = 0;       // Total number of elements in the discretization.
+        noElem = 0;     // Node-index array.
+        indFace = 0;    // Neighbor-element index array.
+        ccFace = 0;     // Face boundary-condition array.
+        orientFace = 0; // Face-orientation correction array.
+        // Ensures that every face normal points outward from the element.
+        centroElem = 0;    // Element geometric-center coordinates.
+        centroideElem = 0; // Element centroid coordinates.
+        indVizCres = vector<int>(0);
+        centroideFace = 0; // Face-centroid coordinates.
+        coordVert = 0;     // Element-vertex coordinates.
+        dCF = 0;           // Vectors from the element centroid to each face center.
+        dCFMod = 0;        // Magnitudes of the dCF vectors.
+        vElem = 0;         // Element volume or area.
+        noFace = 0;
+        sFace = 0;    // Face-area vectors.
+        sFaceMod = 0; // Magnitudes of the face-area vectors.
+        ownFace = 0;  // Face-area vector ownership flags.
+        vecE = 0;     // Unit vectors from the element centroid toward neighboring centroids.
+        modE = 0;     // Distances between the element centroid and neighboring centroids.
+        vecT = 0;     // Unit vectors normal to vecE.
+        modT = 0;
+        fatG = 0; // Face-intersection geometric weighting factors.
+        // Based on the distance between two neighboring element centroids.
+        angES = 0;  // Angles between centroid-connecting lines and face-area vectors.
+        fInter = 0; // Face-intersection coordinates.
+        fIfC = 0;   // Vectors from face-intersection points to face centroids.
 
-	elementoPoroso(){
-	    nvert=0;//numero de vertices
-	    dim=0;//dimensao do problema
-	    indEle=0;//indice do elementoPoroso
-	    nele=0;//numero de elementoPorosos da discretizacao
-	    noElem=0;//vetor com o indice dos nos
-	    indFace=0;//vetor com o indice do elementoPoroso vizinho para uma das faces do elementoPoroso
-	    ccFace=0;//vetor indicando a condicao de contorno de uma face
-	    orientFace=0;//vetor corrigindo a orientacao da face de um elementoPoroso,
-	    //para garantir que sempre esteja apontada para fora
-	    centroElem=0;//coordenadas do centro geométrico do elementoPoroso
-	    centroideElem=0;//coordenadas do centro de massa do elementoPoroso
-	    indVizCres=vector<int>(0);
-	    centroideFace=0;//coordenadas com o centro de massa da face
-	    coordVert=0;//coordenadas de cada vertice do elemnto
-	    dCF=0;//vetor apontando do centroide do elemnto para o centro da face
-	    dCFMod=0;//modulo do vetor
-	    vElem=0;//volume/area do elemnto
-	    noFace=0;
-	    sFace=0;//vetor da área da face
-	    sFaceMod=0;//modulo do vetor
-	    ownFace=0;//vetor indicando se o elementoPoroso é ou não "dono" do vetor area
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	    vecE=0;//vetor unitario na orientacao entre o centroide de do elementoPoroso e um dos seus vizinhos
-	    modE=0;//distancia entre o centroide do elementoPoroso e um dos seus vizinho
-	    vecT=0;//vetor unitario normal a vecE
-	    modT=0;
-	    fatG=0;//razao de distancia entre a intersecao da face e o centroide e a
-	    //distancia de dois centroides de elementoPorosos
-	    angES=0;//angulo entre a corda dos dois centroides e o vetor da area da face
-	    fInter=0;//coordenadas da intersecao da corda entre os centroides dos elementoPorosos e a face do elementoPoroso
-	    fIfC=0;//vetor entre a intersecao e o centroide da face
+        vecSDif = 0;
+        vecSDifMod = 0;
 
-		vecSDif=0;
-		vecSDifMod=0;
+        presC = 0;
+        presCI = 0;
+        presC0 = 0;
 
-	    presC=0;
-		presCI=0;
-		presC0=0;
+        gradGreenP = 0;
+        gradGreenPI = 0;
+        gradGreenZdatum = 0;
+        gradGreenZdatumI = 0;
+        gradGreenAZdatum = 0;
+        gradGreenAZdatumI = 0;
+        gradGreenPcOG = 0;
+        gradGreenPcAO = 0;
+        gradGreenPcAOI = 0;
+        gradGreenSw = 0;
+        gradGreenSwI = 0;
 
-		gradGreenP=0;
-		gradGreenPI=0;
-		gradGreenZdatum=0;
-		gradGreenZdatumI=0;
-		gradGreenAZdatum=0;
-		gradGreenAZdatumI=0;
-		gradGreenPcOG=0;
-		gradGreenPcAO=0;
-		gradGreenPcAOI=0;
-		gradGreenSw=0;
-		gradGreenSwI=0;
+        kY = 0;
+        kX = 0;
+        poro = 0;
+        compRoc = 0;
 
-		kY=0;
-		kX=0;
-		poro=0;
-		compRoc=0;
+        sLC = 0;
+        sLI = 0;
+        sWC = 0;
+        sWI = 0;
 
-		sLC=0;
-		sLI=0;
-		sWC=0;
-		sWI=0;
+        alfC = 0;
+        alfC0 = 0;
 
-		alfC=0;
-		alfC0=0;
+        vbo = 0;
+        rhostd = 0;
+        rhogstd = 0;
+        rhoastd = 0;
 
-		vbo=0;
-		rhostd=0;
-		rhogstd=0;
-		rhoastd=0;
+        rhoP = 0;
+        rhogP = 0;
+        rhoaP = 0;
 
-		rhoP=0;
-		rhogP=0;
-		rhoaP=0;
+        rhoP0 = 0;
+        rhogP0 = 0;
+        rhoaP0 = 0;
 
-		rhoP0=0;
-		rhogP0=0;
-		rhoaP0=0;
+        pcOG = 0;
+        pcAO = 0;
 
-		pcOG=0;
-		pcAO=0;
+        kabsol = 0;
+        zD = 0;
 
-		kabsol=0;
-		zD=0;
-
-		pBolha=1000.;
-		tipoModelOleo=1;
-		compOleo=1e-5;
-		rhoRef=900;
-	}
-
+        pBolha = 1000.;
+        tipoModelOleo = 1;
+        compOleo = 1e-5;
+        rhoRef = 900;
+    }
 };
 
-class elem2dPoroso{
-	public:
-	detCCPoroso CC;
-	elementoPoroso cel2D;
-	int nvizinho;
-	elementoPoroso** vizinho;
-	int* kvizinho;
-	varGlob1D* vg1dSP;
-	/*elem2dPoroso(double** xcoor=0, int** noEle=0, int* tipo=0,double* atributo=0,int nVert=0, int nele=0, int nno=0,
-			int vperm=1, int vtrans=0,int i=0,double vfluxCal=0.,double vdt=0.,double vKX=0.,
-			double vKY=0.,double vporo=0.,double vcompresPoro=0.,double vPcentro=0,double vPint=0.,
-			double vpresRes=0.,double vQL=0., double vQR=0, double vtRes=0,double vzD=0,
-			double vdh=1,double vsW=0,double vsWRes=0,
-			double vsatConata=0,const double vip=1.,tabelaPemRelOA vkRelOA=tabelaPemRelOA(),tabelaPemRelOG vkRelOG=tabelaPemRelOG(),
-			tabelaPresCapOA vpcOA=tabelaPresCapOA(),tabelaPresCapGO vpcGO=tabelaPresCapGO(),
-			ProFluCol vfluc=ProFluCol(), ProFlu vflup=ProFlu());*/
-	elem2dPoroso(varGlob1D* Vvg1dSP=0,double** xcoor=0, int** noEle=0, int* tipo=0,double* atributo=0,int nVert=0, int nele=0, int nno=0,
-				int vperm=0, int vtrans=1,int i=0,ProFlu vflup=ProFlu(),tabelaPemRelOA vkRelOA=tabelaPemRelOA(),tabelaPemRelOG vkRelOG=tabelaPemRelOG(),
-				tabelaPresCapOA vpcOA=tabelaPresCapOA(),tabelaPresCapGO vpcGO=tabelaPresCapGO());
-	elem2dPoroso(const elem2dPoroso&); //construtor por copia
-	elem2dPoroso& operator=(const elem2dPoroso&);
+/*!
+ * Represent and assemble a two-dimensional finite-volume element for
+ * multiphase flow in a porous medium.
+ *
+ * The class manages neighboring elements, face pressures and saturations,
+ * phase flow rates, densities, viscosities, mobilities, Darcy velocities,
+ * capillary-pressure gradients, boundary conditions, CFL restrictions,
+ * and the local linear system.
+ */
+class elem2dPoroso {
+  public:
+    detCCPoroso CC;           // Porous-medium boundary-condition data.
+    elementoPoroso cel2D;     // Data associated with the current porous element.
+    int nvizinho;             // Number of neighboring elements.
+    elementoPoroso **vizinho; // Pointers to neighboring elements.
+    int *kvizinho;            // Local face or neighbor-index mapping.
+    varGlob1D *vg1dSP;        // Pointer to shared one-dimensional global variables.
 
-	double deriFonteT;
-	double FonteT;
+    //! Construct and initialize a two-dimensional porous-medium element.
+    elem2dPoroso(varGlob1D *Vvg1dSP = 0, double **xcoor = 0, int **noEle = 0, int *tipo = 0, double *atributo = 0, int nVert = 0, int nele = 0, int nno = 0,
+                 int vperm = 0, int vtrans = 1, int i = 0, ProFlu vflup = ProFlu(), tabelaPemRelOA vkRelOA = tabelaPemRelOA(), tabelaPemRelOG vkRelOG = tabelaPemRelOG(),
+                 tabelaPresCapOA vpcOA = tabelaPresCapOA(), tabelaPresCapGO vpcGO = tabelaPresCapGO());
 
-	double* presF;
-	double* swF;
-	double* alfF;
-	double* Qtotal;
-	double* Qw;
-	double* Qoleo;
-	double* Qgas;
-	double* rhoF;
-	double* rhogF;
-	double* rhoaF;
-	double* rhoZF;
-	double* rhoaZF;
-	double* mioF;
-	double* migF;
-	double* miaF;
-	double* kmedF;
-	double* kmedGF;
-	double* kmedAF;
-	double* darcyOF;
-	double* darcyGF;
-	double* darcyAF;
-	double* pcAOF;
+    //! Copy constructor.
+    elem2dPoroso(const elem2dPoroso &);
 
-	double fluxCal;
-	double dt;
-    double dtSL;
-    double dtSW;
-	double dh;
-	int reiniciaSL;
-	int reiniciaSW;
+    //! Copy-assignment operator.
+    elem2dPoroso &operator=(const elem2dPoroso &);
 
-	double** gradPface;
-	double** gradZface;
-	double** gradPcOGface;
-	double** gradPcAOface;
+    double deriFonteT; // Derivative of the source term.
+    double FonteT;     // Source term.
 
-	int perm;
-	int trans;
-	double* ccPD;
-	double* ccSat;
-	double* ccPVN;
-	double* ccHR;
-	double* ccPambR;
-	double* coefTHRC;
-	double* coefTHRV;
-	double* fonteTHR;
-	ProFluCol fluc;
-	ProFlu flup;
-	tabelaPemRelOA kRelOACel;
-	tabelaPemRelOG kRelOGCel;
-	tabelaPresCapOA pcOACel;
-	tabelaPresCapGO pcGOCel;
+    double *presF;   // Face pressures.
+    double *swF;     // Face water saturations.
+    double *alfF;    // Face gas or phase fractions.
+    double *Qtotal;  // Total face flow rates.
+    double *Qw;      // Water face flow rates.
+    double *Qoleo;   // Oil face flow rates.
+    double *Qgas;    // Gas face flow rates.
+    double *rhoF;    // Oil densities at the faces.
+    double *rhogF;   // Gas densities at the faces.
+    double *rhoaF;   // Water densities at the faces.
+    double *rhoZF;   // Elevation-weighted density terms at the faces.
+    double *rhoaZF;  // Elevation-weighted water-density terms at the faces.
+    double *mioF;    // Oil viscosities at the faces.
+    double *migF;    // Gas viscosities at the faces.
+    double *miaF;    // Water viscosities at the faces.
+    double *kmedF;   // Effective oil permeabilities at the faces.
+    double *kmedGF;  // Effective gas permeabilities at the faces.
+    double *kmedAF;  // Effective water permeabilities at the faces.
+    double *darcyOF; // Oil Darcy velocities at the faces.
+    double *darcyGF; // Gas Darcy velocities at the faces.
+    double *darcyAF; // Water Darcy velocities at the faces.
+    double *pcAOF;   // Water-oil capillary pressures at the faces.
 
-	double satConata;
-	double ip;
-	double tRes;
-	double sLRes;
-	double sWRes;
-	double pRes;
+    double fluxCal; // Heat flux.
+    double dt;      // Main time-step increment.
+    double dtSL;    // Time-step restriction associated with liquid saturation.
+    double dtSW;    // Time-step restriction associated with water saturation.
+    double dh;      // Elevation difference or hydraulic-head increment.
+    int reiniciaSL; // Liquid-saturation restart or time-step correction flag.
+    int reiniciaSW; // Water-saturation restart or time-step correction flag.
 
-    Vcr<double> TL;//vetor livre da matriz local;
-    FullMtx<double> local;//matriz local;
+    double **gradPface;    // Pressure gradients at the faces.
+    double **gradZface;    // Elevation gradients at the faces.
+    double **gradPcOGface; // Oil-gas capillary-pressure gradients at the faces.
+    double **gradPcAOface; // Water-oil capillary-pressure gradients at the faces.
 
-	~elem2dPoroso(){
-		if(cel2D.nvert>0){
-			//if(cel2D.indEle==909){
-		//		int para;
-		//		para=0;
-			//}
-			delete[] cel2D.noElem;
-			delete[] cel2D.indFace;
-			delete[] cel2D.ccFace;
-			delete[] cel2D.orientFace;
-			delete[] cel2D.centroElem;
-			delete[] cel2D.centroideElem;
-			delete[] cel2D.dCFMod;
-			delete[] cel2D.sFaceMod;
-			delete[] cel2D.ownFace;
-			delete[] ccPD;
-			delete[] ccSat;
-			delete[] ccPVN;
-			delete[] ccHR;
-			delete[] ccPambR;
-			delete[] cel2D.vecSDifMod;
-			for(int i=0;i<cel2D.nvert;i++){
-				delete[] cel2D.centroideFace[i];
-				delete[] cel2D.coordVert[i];
-				delete[] cel2D.dCF[i];
-				delete[] cel2D.sFace[i];
-				///////////////////////////////////////////////////////////
-				delete[] cel2D.vecE[i];
-				delete[] cel2D.vecT[i];
-				delete[] cel2D.fInter[i];
-				delete[] cel2D.fIfC[i];
-				///////////////////////////////////////////////////////////
-				delete[] gradPface[i];
-				delete[] gradZface[i];
-				delete[] gradPcOGface[i];
-				delete[] gradPcAOface[i];
+    int perm;  // Permanent or steady-state model flag.
+    int trans; // Transient-model flag.
 
-				delete[] cel2D.vecSDif[i];
-			}
-			delete[] cel2D.centroideFace;
-			delete[] cel2D.coordVert;
-			delete[] cel2D.dCF;
-			delete[] cel2D.sFace;
-			delete[] vizinho;
-			delete[] kvizinho;
-			///////////////////////////////////////////////////////////////////////////////
-			delete[] cel2D.vecE;
-			delete[] cel2D.modE;
-			delete[] cel2D.vecT;
-			delete[] cel2D.modT;
-			delete[] cel2D.fatG;
-			delete[] cel2D.angES;
-			delete[] cel2D.fInter;
-			delete[] cel2D.fIfC;
-			delete[] cel2D.gradGreenP;
-			delete[] cel2D.gradGreenPI;
-			delete[] cel2D.gradGreenZdatum;
-			delete[] cel2D.gradGreenZdatumI;
-			delete[] cel2D.gradGreenAZdatum;
-			delete[] cel2D.gradGreenAZdatumI;
-			delete[] cel2D.gradGreenPcOG;
-			delete[] cel2D.gradGreenPcAO;
-			delete[] cel2D.gradGreenPcAOI;
-			delete[] cel2D.gradGreenSw;
-			delete[] cel2D.gradGreenSwI;
-			//////////////////////////////////////////////////////////////////////////////////
-			delete[] presF;
-			delete[] swF;
-			delete[] alfF;
-			delete[] Qtotal;
-			delete[] Qw;
-			delete[] Qoleo;
-			delete[] Qgas;
-			delete[] rhoF;
-			delete[] rhogF;
-			delete[] rhoaF;
-			delete[] rhoZF;
-			delete[] rhoaZF;
-			delete[] mioF;
-			delete[] migF;
-			delete[] miaF;
-			delete[] kmedF;
-			delete[] kmedGF;
-			delete[] kmedAF;
-			delete[] darcyOF;
-			delete[] darcyGF;
-			delete[] darcyAF;
-			delete[] pcAOF;
-			delete[] gradPface;
-			delete[] gradZface;
-			delete[] gradPcOGface;
-			delete[] gradPcAOface;
+    // Pressure and saturation boundary-condition data.
+    double *ccPD;
+    double *ccSat;
+    double *ccPVN;
+    double *ccHR;
+    double *ccPambR;
 
+    // High-resolution coefficients and source terms.
+    double *coefTHRC;
+    double *coefTHRV;
+    double *fonteTHR;
 
-			delete[] coefTHRC;
-			delete[] coefTHRV;
-			delete[] fonteTHR;
+    ProFluCol fluc;           // Complementary-fluid properties.
+    ProFlu flup;              // Production-fluid properties.
+    tabelaPemRelOA kRelOACel; // Oil-water relative-permeability table.
+    tabelaPemRelOG kRelOGCel; // Oil-gas relative-permeability table.
+    tabelaPresCapOA pcOACel;  // Oil-water capillary-pressure table.
+    tabelaPresCapGO pcGOCel;  // Gas-oil capillary-pressure table.
 
-			delete[] cel2D.vecSDif;
-		}
-		/*if(nvizinho>0){
-			delete[] vizinho;
-			delete[] kvizinho;
-		}*/
-	}
+    double satConata; // Connate-water saturation.
+    double ip;        // Well productivity or injectivity index.
+    double tRes;      // Reservoir temperature.
+    double sLRes;     // Reservoir liquid saturation.
+    double sWRes;     // Reservoir water saturation.
+    double pRes;      // Reservoir pressure.
 
-	void buscaVizinho(int** noEle,int* face,int elem,int nVert, int nEle);
-	void menorIndViz();
-	void faceDetalhes();
-	double interpolaTabela(int nserie, double valx, double* x, double* y);
-	double fkO(double satW, double satG);
-	void tipoCC(int i,int& diri, int& vn, int& rich, int& acoplado,int& kcc);
-	void atualizaCC(int i);
-	void calcGradGreen();
-	double cflA();
-	void evoluiSW(int& reinicia);
-	double escalar(double* v1, double* v2, int dimV);
-	int achaInd(int i);
-	void calSupDifu();
-	void GeraLocal(double relax);
-	void indraz(int& ind/*valor retornado do momento na serie de tempo logo anterior ao momento que se quer avaliar*/,
-			double& raz/*posicao relativa de tempo, entre a posicao ind e ind+1*/,
-			double tempo/*momento que se quer avaliar na serie de tempo para se fazer a interpolacao*/,
-			int parserie/*tamanho da serie de tempo*/,
-			double* serietemp/*vetor com os tempos da serie de tempo*/);//metodo que obtem o valor interpolado
-	//de uma variavel de uma serie de tempo
+    Vcr<double> TL;        // Right-hand-side vector of the local system.
+    FullMtx<double> local; // Local system matrix.
 
+    //! Release all dynamically allocated geometric, phase, gradient, and solver data.
+    ~elem2dPoroso() {
+        if (cel2D.nvert > 0) {
+            delete[] cel2D.noElem;
+            delete[] cel2D.indFace;
+            delete[] cel2D.ccFace;
+            delete[] cel2D.orientFace;
+            delete[] cel2D.centroElem;
+            delete[] cel2D.centroideElem;
+            delete[] cel2D.dCFMod;
+            delete[] cel2D.sFaceMod;
+            delete[] cel2D.ownFace;
+            delete[] ccPD;
+            delete[] ccSat;
+            delete[] ccPVN;
+            delete[] ccHR;
+            delete[] ccPambR;
+            delete[] cel2D.vecSDifMod;
+            for (int i = 0; i < cel2D.nvert; i++) {
+                delete[] cel2D.centroideFace[i];
+                delete[] cel2D.coordVert[i];
+                delete[] cel2D.dCF[i];
+                delete[] cel2D.sFace[i];
+                delete[] cel2D.vecE[i];
+                delete[] cel2D.vecT[i];
+                delete[] cel2D.fInter[i];
+                delete[] cel2D.fIfC[i];
+                delete[] gradPface[i];
+                delete[] gradZface[i];
+                delete[] gradPcOGface[i];
+                delete[] gradPcAOface[i];
 
+                delete[] cel2D.vecSDif[i];
+            }
+            delete[] cel2D.centroideFace;
+            delete[] cel2D.coordVert;
+            delete[] cel2D.dCF;
+            delete[] cel2D.sFace;
+            delete[] vizinho;
+            delete[] kvizinho;
+            delete[] cel2D.vecE;
+            delete[] cel2D.modE;
+            delete[] cel2D.vecT;
+            delete[] cel2D.modT;
+            delete[] cel2D.fatG;
+            delete[] cel2D.angES;
+            delete[] cel2D.fInter;
+            delete[] cel2D.fIfC;
+            delete[] cel2D.gradGreenP;
+            delete[] cel2D.gradGreenPI;
+            delete[] cel2D.gradGreenZdatum;
+            delete[] cel2D.gradGreenZdatumI;
+            delete[] cel2D.gradGreenAZdatum;
+            delete[] cel2D.gradGreenAZdatumI;
+            delete[] cel2D.gradGreenPcOG;
+            delete[] cel2D.gradGreenPcAO;
+            delete[] cel2D.gradGreenPcAOI;
+            delete[] cel2D.gradGreenSw;
+            delete[] cel2D.gradGreenSwI;
+            delete[] presF;
+            delete[] swF;
+            delete[] alfF;
+            delete[] Qtotal;
+            delete[] Qw;
+            delete[] Qoleo;
+            delete[] Qgas;
+            delete[] rhoF;
+            delete[] rhogF;
+            delete[] rhoaF;
+            delete[] rhoZF;
+            delete[] rhoaZF;
+            delete[] mioF;
+            delete[] migF;
+            delete[] miaF;
+            delete[] kmedF;
+            delete[] kmedGF;
+            delete[] kmedAF;
+            delete[] darcyOF;
+            delete[] darcyGF;
+            delete[] darcyAF;
+            delete[] pcAOF;
+            delete[] gradPface;
+            delete[] gradZface;
+            delete[] gradPcOGface;
+            delete[] gradPcAOface;
 
+            delete[] coefTHRC;
+            delete[] coefTHRV;
+            delete[] fonteTHR;
+
+            delete[] cel2D.vecSDif;
+        }
+    }
+
+    //! Identify the neighboring element associated with a face.
+    void buscaVizinho(int **noEle, int *face, int elem, int nVert, int nEle);
+
+    //! Determine the smallest neighboring-element index.
+    void menorIndViz();
+
+    //! Compute and store geometric details for each face.
+    void faceDetalhes();
+
+    /*!
+     * Interpolate a value from a tabulated data series.
+     * \param nserie Number of table entries.
+     * \param valx Independent-variable value to be evaluated.
+     * \param x Independent-variable array.
+     * \param y Dependent-variable array.
+     * \return Interpolated dependent-variable value.
+     */
+    double interpolaTabela(int nserie, double valx, double *x, double *y);
+
+    /*!
+     * Calculate the oil fractional-flow or mobility-related function.
+     * \param satW Water saturation.
+     * \param satG Gas saturation.
+     * \return Oil fractional-flow or mobility-related value.
+     */
+    double fkO(double satW, double satG);
+
+    //! Identify the porous-medium boundary-condition type associated with a face.
+    void tipoCC(int i, int &diri, int &vn, int &rich, int &acoplado, int &kcc);
+
+    //! Update the porous-medium boundary-condition values.
+    void atualizaCC(int i);
+
+    //! Calculate the Green-Gauss gradients.
+    void calcGradGreen();
+
+    //! Calculate the water-phase CFL restriction.
+    double cflA();
+
+    //! Advance the water-saturation equation and report whether a restart is required.
+    void evoluiSW(int &reinicia);
+
+    //! Calculate the dot product of two vectors.
+    double escalar(double *v1, double *v2, int dimV);
+
+    //! Locate the internal index associated with a given identifier.
+    int achaInd(int i);
+
+    //! Calculate the diffusive surface contribution.
+    void calSupDifu();
+
+    //! Assemble the local porous-medium system.
+    void GeraLocal(double relax);
+
+    /*!
+     * Locate an interval in a time series and calculate the interpolation ratio.
+     *
+     * \param ind Index of the time-series value immediately before the requested time.
+     * \param raz Relative position of the requested time between entries ind and ind + 1.
+     * \param tempo Time at which the series must be evaluated.
+     * \param parserie Number of entries in the time series.
+     * \param serietemp Array containing the time-series time values.
+     */
+    void indraz(int &ind /* Index of the time-series value immediately before the requested time. */,
+                double &raz /* Relative position between entries ind and ind + 1. */,
+                double tempo /* Time at which the series must be evaluated. */,
+                int parserie /* Number of entries in the time series. */,
+                double *serietemp /* Array containing the time-series time values. */);
 };
 
 #endif /* elem2dPorosoPOISSON_H_ */
