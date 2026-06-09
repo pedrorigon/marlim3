@@ -4,45 +4,10 @@
  *  Created on: 21 de dez de 2016
  *      Author: Eduardo
  */
-
 #define _USE_MATH_DEFINES // para M_PI
 #include <math.h>
-
-#include "FA_Hidratos.h" //chris - Hidratos
-#include "FA_Hidratos_Servico.h" //chris - Hidratos
-
-/* 
- #include <iostream>
- #include <string>
- #include <fstream>
- #include <sstream>
- #include <vector>
- #include <ctime>
- using namespace std;
- //#include <ctime.h>
- #include <stdio.h>
- #include <string.h>
- #include "Vetor.h"
- #include "Matriz.h"
- #include "FerramentasNumericas.h"
- #include "chokegas.h"
- #include "PropFlu.h"
- #include "PropFluCol.h"
- #include "Geometria.h"
- #include "celula3.h"
- #include "estrat.h"
- #include "FonteMas.h"
- #include "FonteMassCHK.h"
- #include "Bcsm2.h"
- #include "BombaVol.h"
- #include "Acidentes2.h"
- #include "acessorios.h"
- #include "celulaGash.h"
- #include "TrocaCalor.h"
- #include "Leitura.h"
- #include "mapa.h"
- */
-
+#include "FA_Hidratos.h"
+#include "FA_Hidratos_Servico.h"
 #include "SisProd.h"
 #include "OutputI18n.h"
 #include <chrono>
@@ -54,17 +19,9 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
      flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1+1+1), matglobP(2 * arq.ncelp, 3, 2), termolivreP(
         2 * arq.ncelp), matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg) {
 
-
-
-	//simulaTransiente=arq.transiente;
   zdranP = 0;
-  //zdranG=0;//alteracao2
   dzdpP = 0;
-  //dzdpG=0;//alteracao2
   dzdtP = 0;
-  //dzdtG=0;//alteracao2
-  //dengG=0.7;//alteracao2
-  //dengP=0.7;//alteracao2
   cpg = 0;
   cpl = 0;
   drholdT = 0;
@@ -87,9 +44,9 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
   celula = 0;
   celInter = 1e7;
   dtInter = 0.;
-  velInter = 0.;    //alteracao2
-  celInterIni=celInter;//alteracao2
-  dtInterIni=dtInter;//alteracao2
+  velInter = 0.;
+  celInterIni=celInter;
+  dtInterIni=dtInter;
   velInterIni=velInter;
 
   ncelperftransg = 0;
@@ -119,33 +76,32 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
   TBPVTSim=0;
   RSLivia=0;
   lerRS=0;
-  noextremo=1;//alteracao7
-  noinicial=1;//alteracao7
+  noextremo=1;
+  noinicial=1;
   derivaAnel=-1;
 
-  fontemassPRBuf=0.;//alteracao7
-  fontemassCRBuf=0.;//alteracao7
-  fontemassGRBuf=0.;//alteracao7
+  fontemassPRBuf=0.;
+  fontemassCRBuf=0.;
+  fontemassGRBuf=0.;
 
-  presE=-1;//alteracao4
-  tempE=-1;//alteracao4
-  titE=-1;//alteracao4
-  betaE=-1;//alteracao4
+  presE=-1;
+  tempE=-1;
+  titE=-1;
+  betaE=-1;
   alfE=-1;
-  presEini=-1;//alteracao4
-  tempEini=-1;//alteracao4
-  titEini=-1;//alteracao4
-  betaEini=-1;//alteracao4
+  presEini=-1;
+  tempEini=-1;
+  titEini=-1;
+  betaEini=-1;
   alfEini=-1;
 
-  tempMedContDesc=10.;//alteracao5
-  maxVecContDesc=1000;//alteracao5
-  vazmedDesc=0;//alteracao5
-  tempmedDEsc=0;//alteracao5
+  tempMedContDesc=10.;
+  maxVecContDesc=1000;
+  vazmedDesc=0;
+  tempmedDEsc=0;
 
   tGSup=0.;
   tGSupIni=0.;
-  //extrem=1;
   redeTemporario=temporario;
 
   betaRev=0;
@@ -215,7 +171,6 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
   redeParalelaCCsecundario=-1;
   redeParalelaP=-1;
   redeParalelaS=-1;
-  //poisson3D=solverP3D();
   montasistema(compfonte,posicfonte, nfontes);
 }
 SProd::SProd() :
@@ -241,13 +196,8 @@ SProd::SProd() :
 	nabreM1=0;
 	nfechaM1=0;
   zdranP=0;
-  //zdranG=0;//alteracao2
   dzdpP=0;
-  //dzdpG=0;//alteracao2
   dzdtP=0;
-  //dzdtG=0;//alteracao2
-  //dengG=0.7;//alteracao2
-  //dengP=0.7;//alteracao2
   cpg=0;
   cpl=0;
   drholdT=0;
@@ -261,13 +211,13 @@ SProd::SProd() :
   abreM1=0;
   celulaG=0;
   celula=0;
-  celInter=1e7;//alteracao2
-  dtInter=0.;//alteracao2
-  velInter=0.;//alteracao2
+  celInter=1e7;
+  dtInter=0.;
+  velInter=0.;
 
-    celInterIni=0.;//alteracao2
-    dtInterIni=0.;//alteracao2
-    velInterIni=0.;//alteracao2
+    celInterIni=0.;
+    dtInterIni=0.;
+    velInterIni=0.;
 
   ModelCp=0;
   Modeljtl=0;
@@ -363,32 +313,32 @@ SProd::SProd() :
     RSLivia=0;
     lerRS=0;
 
-    noextremo=1;//alteracao7
-    noinicial=1;//alteracao7
+    noextremo=1;
+    noinicial=1;
     derivaAnel=-1;
 
-	fontemassPRBuf=0.;//alteracao7
-	fontemassCRBuf=0.;//alteracao7
-	fontemassGRBuf=0.;//alteracao7
+	fontemassPRBuf=0.;
+	fontemassCRBuf=0.;
+	fontemassGRBuf=0.;
 
-    presE=-1;//alteracao4
-    tempE=-1;//alteracao4
-    titE=-1;//alteracao4
-    betaE=-1;//alteracao4
+    presE=-1;
+    tempE=-1;
+    titE=-1;
+    betaE=-1;
     alfE=-1;
-    presEini=-1;//alteracao4
-    tempEini=-1;//alteracao4
-    titEini=-1;//alteracao4
-    betaEini=-1;//alteracao4
-    alfEini=-1;//alteracao4
+    presEini=-1;
+    tempEini=-1;
+    titEini=-1;
+    betaEini=-1;
+    alfEini=-1;
 
     titRev=1.;
     titRevini=1.;
 
-    tempMedContDesc=10.;//alteracao5
-    maxVecContDesc=1000;//alteracao5
-    vazmedDesc=0;//alteracao5
-    tempmedDEsc=0;//alteracao5
+    tempMedContDesc=10.;
+    maxVecContDesc=1000;
+    vazmedDesc=0;
+    tempmedDEsc=0;
     betaRev=0.;
     betaRevini=1.;
     redeTemporario=0;
@@ -401,10 +351,7 @@ SProd::SProd() :
     dtSimTotal=0.;
     dtauxCFL=0.;
     dtauxFinal=0.;
-    //chokeSup=choke(1., 1.);
-    //chokeInj=ChokeGas();
 
-    //extrem=1;
 
     kimpT=0.;
 
@@ -460,7 +407,6 @@ SProd::SProd() :
     redeParalelaP=-1;
     redeParalelaS=-1;
 
-    //poisson3D=solverP3D();
 
 }
 
@@ -479,16 +425,11 @@ SProd& SProd::operator =(const SProd& sp) {
     for(int i=0;i<arq.ntendp;i++) {
       for(int j=0; j<TrendLengthP[i]; j++) //if(MatTrendP[i][j]) delete [] MatTrendP[i][j];
       	delete [] MatTrendP[i][j];
-      //if(MatTrendP[i])delete [] MatTrendP[i];
       delete [] MatTrendP[i];
     }
-    //if(MatTrendP)delete [] MatTrendP;
     delete [] MatTrendP;
-    //if(TrendLengthP) delete [] TrendLengthP;
     delete [] TrendLengthP;
-    //if(resettrend) delete [] resettrend;
     delete [] resettrend;
-    //if(ntrend) delete [] ntrend;
     delete [] ntrend;
     delete [] ntrendB;
   }
@@ -497,34 +438,23 @@ SProd& SProd::operator =(const SProd& sp) {
     for(int i=0;i<arq.ntendg;i++) {
       for(int j=0; j<TrendLengthG[i]; j++) //if(MatTrendG[i][j]) delete [] MatTrendG[i][j];
       	delete [] MatTrendG[i][j];
-      //if(MatTrendG[i])delete [] MatTrendG[i];
           delete [] MatTrendG[i];
     }
-    //if(MatTrendG)delete [] MatTrendG;
     delete [] MatTrendG;
-    //if(TrendLengthG) delete [] TrendLengthG;
     delete [] TrendLengthG;
-    //if(resettrendg) delete [] resettrendg;
     delete [] resettrendg;
-    //if(ntrendg) delete [] ntrendg;
     delete [] ntrendg;
     delete [] ntrendgB;
   }
   if(arq.ntendtransp>0) {
     for(int i=0;i<arq.ntendtransp;i++) {
       for(int j=0; j<TrendLengthTransP[i]; j++)
-      //if(MatTrendTransP[i][j]) delete [] MatTrendTransP[i][j];
-      //if(MatTrendTransP[i])delete [] MatTrendTransP[i];
       	delete [] MatTrendTransP[i][j];
           delete [] MatTrendTransP[i];
     }
-    //if(MatTrendTransP)delete [] MatTrendTransP;
     delete [] MatTrendTransP;
-    //if(TrendLengthTransP) delete [] TrendLengthTransP;
     delete [] TrendLengthTransP;
-    //if(resettrendtrans) delete [] resettrendtrans;
     delete [] resettrendtrans;
-    //if(ntrendtrans) delete [] ntrendtrans;
     delete [] ntrendtrans;
     delete [] ntrendtransB;
   }
@@ -532,18 +462,12 @@ SProd& SProd::operator =(const SProd& sp) {
   if(arq.ntendtransg>0) {
     for(int i=0;i<arq.ntendtransg;i++) {
       for(int j=0; j<TrendLengthTransG[i]; j++)
-      //if(MatTrendTransP[i][j]) delete [] MatTrendTransP[i][j];
-      //if(MatTrendTransP[i])delete [] MatTrendTransP[i];
       	delete [] MatTrendTransG[i][j];
           delete [] MatTrendTransG[i];
     }
-    //if(MatTrendTransP)delete [] MatTrendTransP;
     delete [] MatTrendTransG;
-    //if(TrendLengthTransP) delete [] TrendLengthTransP;
     delete [] TrendLengthTransG;
-    //if(resettrendtrans) delete [] resettrendtrans;
     delete [] resettrendtransg;
-    //if(ntrendtrans) delete [] ntrendtrans;
     delete [] ntrendtransg;
     delete [] ntrendtransgB;
   }
@@ -566,53 +490,10 @@ SProd& SProd::operator =(const SProd& sp) {
   if (npig > 0) delete[] receb;
 
   if(arq.tabelaDinamica==1){
-  	/*for(int i=0;i<ntabDin;i++){
-  		for(int j=0; j<tabDin[i].npontosP+1;j++){
-  			delete[] tabDin[i].rhogF[j];
-  			delete[] tabDin[i].rholF[j];
-  			delete[] tabDin[i].DrhogDpF[j];
-  			delete[] tabDin[i].DrhogDtF[j];
-  			delete[] tabDin[i].DrholDpF[j];
-  			delete[] tabDin[i].DrholDtF[j];
-  			delete[] tabDin[i].valBO[j];
-  			delete[] tabDin[i].HgF[j];
-  			delete[] tabDin[i].HlF[j];
-  			delete[] tabDin[i].cpgF[j];
-  			delete[] tabDin[i].cplF[j];
-  			delete[] tabDin[i].valZ[j];
-  			delete[] tabDin[i].valdZdT[j];
-  			delete[] tabDin[i].valdZdP[j];
-  			delete[] tabDin[i].tit[j];
-  			delete[] tabDin[i].rs[j];
-  			delete[] tabDin[i].viscG[j];
-  			delete[] tabDin[i].viscO[j];
-  		}
-  		delete [] tabDin[i].rhogF;
-		delete[] tabDin[i].rholF;
-		delete[] tabDin[i].DrhogDpF;
-		delete[] tabDin[i].DrhogDtF;
-		delete[] tabDin[i].DrholDpF;
-		delete[] tabDin[i].DrholDtF;
-		delete[] tabDin[i].valBO;
-		delete[] tabDin[i].HgF;
-		delete[] tabDin[i].HlF;
-		delete[] tabDin[i].cpgF;
-		delete[] tabDin[i].cplF;
-		delete[] tabDin[i].valZ;
-		delete[] tabDin[i].valdZdT;
-		delete[] tabDin[i].valdZdP;
-		delete[] tabDin[i].tit;
-		delete[] tabDin[i].rs;
-		delete[] tabDin[i].viscG;
-		delete[] tabDin[i].viscO;
-  		delete [] tabDin[i].TBF;
-  		delete [] tabDin[i].PBF;
-  	}*/
 	  tabDin.clear();
   }
 
   arq = sp.arq;
-  //simulaTransiente=arq.transiente;
   flut = sp.flut;
   flutG = sp.flutG;
   matglobP = sp.matglobP;
@@ -651,11 +532,11 @@ SProd& SProd::operator =(const SProd& sp) {
   abreM1 = 0;
   celulaG = 0;
   celula = 0;
-  celInter = 1e7;    //alteracao2
-  dtInter = 0.;    //alteracao2
-  velInter = 0.;    //alteracao2
-  celInterIni=celInter;//alteracao2
-  dtInterIni=dtInter;//alteracao2
+  celInter = 1e7;
+  dtInter = 0.;
+  velInter = 0.;
+  celInterIni=celInter;
+  dtInterIni=dtInter;
   velInterIni=velInter;
 
   ncelperftransg = 0;
@@ -681,34 +562,34 @@ SProd& SProd::operator =(const SProd& sp) {
   ntrendtrans = 0;
   ntrendtransB = 0;
 
-  noextremo=sp.noextremo;//alteracao7
-  noinicial=sp.noinicial;//alteracao7
+  noextremo=sp.noextremo;
+  noinicial=sp.noinicial;
   derivaAnel=sp.derivaAnel;
 
-  fontemassPRBuf=0.;//alteracao7
-  fontemassCRBuf=0.;//alteracao7
-  fontemassGRBuf=0.;//alteracao7
+  fontemassPRBuf=0.;
+  fontemassCRBuf=0.;
+  fontemassGRBuf=0.;
 
-  presE=-1;//alteracao4
-  tempE=-1;//alteracao4
-  titE=-1;//alteracao4
-  betaE=-1;//alteracao4
+  presE=-1;
+  tempE=-1;
+  titE=-1;
+  betaE=-1;
   alfE=-1;
-  presEini=-1;//alteracao4
-  tempEini=-1;//alteracao4
-  titEini=-1;//alteracao4
-  betaEini=-1;//alteracao4
-  alfEini=-1;//alteracao4
+  presEini=-1;
+  tempEini=-1;
+  titEini=-1;
+  betaEini=-1;
+  alfEini=-1;
 
   betaRev=sp.betaRev;
   betaRevini=sp.betaRevini;
   titRev=sp.titRev;
   titRevini=sp.titRevini;
 
-  tempMedContDesc=10.;//alteracao5
-  maxVecContDesc=1000;//alteracao5
-  vazmedDesc=0;//alteracao5
-  tempmedDEsc=0;//alteracao5
+  tempMedContDesc=10.;
+  maxVecContDesc=1000;
+  vazmedDesc=0;
+  tempmedDEsc=0;
 
   tGSup=0.;
   tGSupIni=0.;
@@ -790,8 +671,6 @@ SProd& SProd::operator =(const SProd& sp) {
   fonteMcRedeParalelaIni.clear();
   fonteMgRedeParalelaIni.clear();
 
- // extrem=sp.extrem;
-  //poisson3D=solverP3D();
   montasistema();
 
   return *this;
@@ -814,16 +693,11 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
     for(int i=0;i<arq.ntendp;i++) {
       for(int j=0; j<TrendLengthP[i]; j++) //if(MatTrendP[i][j]) delete [] MatTrendP[i][j];
       	delete [] MatTrendP[i][j];
-      //if(MatTrendP[i])delete [] MatTrendP[i];
       delete [] MatTrendP[i];
     }
-    //if(MatTrendP)delete [] MatTrendP;
     delete [] MatTrendP;
-    //if(TrendLengthP) delete [] TrendLengthP;
     delete [] TrendLengthP;
-    //if(resettrend) delete [] resettrend;
     delete [] resettrend;
-    //if(ntrend) delete [] ntrend;
     delete [] ntrend;
     delete [] ntrendB;
   }
@@ -832,34 +706,23 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
     for(int i=0;i<arq.ntendg;i++) {
       for(int j=0; j<TrendLengthG[i]; j++) //if(MatTrendG[i][j]) delete [] MatTrendG[i][j];
       	delete [] MatTrendG[i][j];
-      //if(MatTrendG[i])delete [] MatTrendG[i];
           delete [] MatTrendG[i];
     }
-    //if(MatTrendG)delete [] MatTrendG;
     delete [] MatTrendG;
-    //if(TrendLengthG) delete [] TrendLengthG;
     delete [] TrendLengthG;
-    //if(resettrendg) delete [] resettrendg;
     delete [] resettrendg;
-    //if(ntrendg) delete [] ntrendg;
     delete [] ntrendg;
     delete [] ntrendgB;
   }
   if(arq.ntendtransp>0) {
     for(int i=0;i<arq.ntendtransp;i++) {
       for(int j=0; j<TrendLengthTransP[i]; j++)
-      //if(MatTrendTransP[i][j]) delete [] MatTrendTransP[i][j];
-      //if(MatTrendTransP[i])delete [] MatTrendTransP[i];
       	delete [] MatTrendTransP[i][j];
           delete [] MatTrendTransP[i];
     }
-    //if(MatTrendTransP)delete [] MatTrendTransP;
     delete [] MatTrendTransP;
-    //if(TrendLengthTransP) delete [] TrendLengthTransP;
     delete [] TrendLengthTransP;
-    //if(resettrendtrans) delete [] resettrendtrans;
     delete [] resettrendtrans;
-    //if(ntrendtrans) delete [] ntrendtrans;
     delete [] ntrendtrans;
     delete [] ntrendtransB;
   }
@@ -867,18 +730,12 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
   if(arq.ntendtransg>0) {
     for(int i=0;i<arq.ntendtransg;i++) {
       for(int j=0; j<TrendLengthTransG[i]; j++)
-      //if(MatTrendTransP[i][j]) delete [] MatTrendTransP[i][j];
-      //if(MatTrendTransP[i])delete [] MatTrendTransP[i];
       	delete [] MatTrendTransG[i][j];
           delete [] MatTrendTransG[i];
     }
-    //if(MatTrendTransP)delete [] MatTrendTransP;
     delete [] MatTrendTransG;
-    //if(TrendLengthTransP) delete [] TrendLengthTransP;
     delete [] TrendLengthTransG;
-    //if(resettrendtrans) delete [] resettrendtrans;
     delete [] resettrendtransg;
-    //if(ntrendtrans) delete [] ntrendtrans;
     delete [] ntrendtransg;
     delete [] ntrendtransgB;
   }
@@ -905,7 +762,6 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
   }
 
   arq.copiaSemJson(sp);
-  //simulaTransiente=arq.transiente;
   flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + 2 + 1 + 1+1+1);
   flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1+1+1);
   matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2);
@@ -944,11 +800,11 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
   abreM1 = 0;
   celulaG = 0;
   celula = 0;
-  celInter = 1e7;    //alteracao2
-  dtInter = 0.;    //alteracao2
-  velInter = 0.;    //alteracao2
-  celInterIni=celInter;//alteracao2
-  dtInterIni=dtInter;//alteracao2
+  celInter = 1e7;
+  dtInter = 0.;
+  velInter = 0.;
+  celInterIni=celInter;
+  dtInterIni=dtInter;
   velInterIni=velInter;
 
   ncelperftransg = 0;
@@ -974,34 +830,34 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
   ntrendtrans = 0;
   ntrendtransB = 0;
 
-  noextremo=vnoextremo;//alteracao7
-  noinicial=vnoinicial;//alteracao7
+  noextremo=vnoextremo;
+  noinicial=vnoinicial;
   derivaAnel=vderivaAnel;
 
-  fontemassPRBuf=0.;//alteracao7
-  fontemassCRBuf=0.;//alteracao7
-  fontemassGRBuf=0.;//alteracao7
+  fontemassPRBuf=0.;
+  fontemassCRBuf=0.;
+  fontemassGRBuf=0.;
 
-  presE=-1;//alteracao4
-  tempE=-1;//alteracao4
-  titE=-1;//alteracao4
-  betaE=-1;//alteracao4
+  presE=-1;
+  tempE=-1;
+  titE=-1;
+  betaE=-1;
   alfE=-1;
-  presEini=-1;//alteracao4
-  tempEini=-1;//alteracao4
-  titEini=-1;//alteracao4
-  betaEini=-1;//alteracao4
-  alfEini=-1;//alteracao4
+  presEini=-1;
+  tempEini=-1;
+  titEini=-1;
+  betaEini=-1;
+  alfEini=-1;
 
   betaRev=vbetaRev;
   betaRevini=vbetaRevini;
   titRev=vtitRev;
   titRevini=vtitRevini;
 
-  tempMedContDesc=10.;//alteracao5
-  maxVecContDesc=1000;//alteracao5
-  vazmedDesc=0;//alteracao5
-  tempmedDEsc=0;//alteracao5
+  tempMedContDesc=10.;
+  maxVecContDesc=1000;
+  vazmedDesc=0;
+  tempmedDEsc=0;
 
   tGSup=0.;
   tGSupIni=0.;
@@ -1067,20 +923,16 @@ void SProd::copiaSemJson(Ler& sp, int vnoextremo, int vnoinicial, int vderivaAne
   redeParalelaS=-1;
 
 
- // extrem=sp.extrem;
-  //poisson3D=solverP3D();
   montasistema();
 }
 
 
-void SProd::HidroDescargaG() {    //alteracao2
+void SProd::HidroDescargaG() {
   celulaG[0].massfonteCH = 0;
   double pmed;
   double tmed;
-  //if (arq.gasinj.tipoCC == 0) pmed = arq.gasinj.presinj[0];
-  //else pmed = 10.;
 
-  if(arq.gasinj.tipoCC==0 && arq.controDesc==0) pmed=arq.gasinj.presinj[0];//alteracao5
+  if(arq.gasinj.tipoCC==0 && arq.controDesc==0) pmed=arq.gasinj.presinj[0];
   else{
   	pmed=10.;
   	if(arq.controDesc==1){
@@ -1136,9 +988,9 @@ void SProd::HidroDescargaG() {    //alteracao2
       celulaG[i + 1].VGasL = 0;
     }
   }
-}    //alteracao2
+}
 
-void SProd::HidroDescargaP() {    //alteracao2
+void SProd::HidroDescargaP() {
   celula[0].massfonteCH = 0;
   celula[0].fontemassCL = 0;
   celula[0].fontemassLL = 0;
@@ -1249,31 +1101,25 @@ void SProd::HidroDescargaP() {    //alteracao2
     celula[i].temp = tmed;
     celula[i - 1].tempR = tmed;
     celula[i].tempini = tmed;
-    //celula[i+1].tempL=tmed;
 
     celula[i].FW = 0;
     celula[i].FWini = 0;
     celula[i].arranjo = 0;
     celula[i].QL = 0;
-    //celula[i+1].QLL=celula[i].QLL;
     celula[i - 1].QLR = celula[i].QL;
     celula[i].QG = 0;
     celula[i].rpL = rho1;
     celula[i].rpC = rho1;
-    //celula[i+1].rpL=celula[i].rpC;
     celula[i - 1].rpR = celula[i].rpC;
     celula[i].rcL = rho1;
     celula[i].rcC = rho1;
-    //celula[i+1].rcL=celula[i].rcC;
     celula[i - 1].rcR = celula[i].rcC;
 
     double rhoaux;
     if (i <= arq.celdescargaP) rhoaux = celula[i].fluicol.MasEspFlu(celula[i].presaux, taux);
     else rhoaux = celula[0].flui.MasEspGas(celula[i].presaux, taux);
-    //celula[i+1].rpLi=rho1;
     celula[i].rpCi = rhoaux;
     celula[i - 1].rpRi = rhoaux;
-    //celula[i+1].rcLi=rho1;
     celula[i].rcCi = rhoaux;
     celula[i - 1].rcRi = rhoaux;
 
@@ -1298,15 +1144,10 @@ void SProd::HidroDescargaP() {    //alteracao2
       celula[i].betPigD = celula[i].bet;
       celula[i].alfPigE = celula[i].alf;
       celula[i].betPigE = celula[i].bet;
-      //celula[i+1].alfL=celula[i].alf;
       celula[i - 1].alfR = celula[i].alf;
       celula[i - 1].alfRini = celula[i].alf;
-      //celula[i+1].betL=celula[i].bet;
       celula[i - 1].betR = celula[i].bet;
       celula[i - 1].betRini = celula[i].bet;
-      //celula[i+1].betLI=celula[i].bet;
-      //celula[i+1].alfLini=celula[i].alf;
-      //celula[i+1].betLini=celula[i].bet;
     } else {
       celula[i].alf = 1.;
       celula[i].bet = 0.;
@@ -1323,13 +1164,8 @@ void SProd::HidroDescargaP() {    //alteracao2
       celula[i].betPigE = celula[i].bet;
       celula[i - 1].alfR = celula[i].alf;
       celula[i - 1].alfRini = celula[i].alf;
-      //celula[i+1].alfL=celula[i].alf;
-      //celula[i+1].betL=celula[i].bet;
       celula[i - 1].betR = celula[i].bet;
       celula[i - 1].betRini = celula[i].bet;
-      //celula[i+1].betLI=celula[i].bet;
-      //celula[i+1].alfLini=celula[i].alf;
-      //celula[i+1].betLini=celula[i].bet;
     }
 
     if (i < ncel) {
@@ -1346,12 +1182,9 @@ void SProd::HidroDescargaP() {    //alteracao2
       celula[i + 1].betLini = celula[i].bet;
     }
   }
-}        	//alteracao2
+}
 
 void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
-  //cout<<"Arquivo MRT: "<<nomeArquivoEntrada<<endl;
-  //arq(nomeArquivoEntrada);
-  //arq=Ler(nomeArquivoEntrada);
 
   try {
   indTramo = -1;
@@ -1365,7 +1198,7 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   masChkSup = 0;
   dt = arq.dtmax;
   dtini = arq.dtmax;
-  dtInter = arq.dtmax;    //alteracao2
+  dtInter = arq.dtmax;
   tfinal = arq.tfinal;
   TransMassModel = 0;
   indpigP = 0;
@@ -1419,23 +1252,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   //dzdpG=arq.dzdpG;//alteracao2
   dzdtP = arq.dzdtP;
   //dzdtG=arq.dzdtG;//alteracao2
-  /* if(arq.ninjgas>0 || arq.lingas>0){//alteracao2
-   if(nfluP>1){
-   double denGminP=arq.flup[arq.iminDG].Deng;
-   dengG=arq.flug.Deng;
-   if(denGminP<dengG)dengG=denGminP;
-   }
-   else dengG=arq.flug.Deng;
-   dengP=arq.flup[arq.imaxDG].Deng;
-   }
-   else if(nfluP>1){
-   dengG=arq.flup[arq.iminDG].Deng;
-   dengP=arq.flup[arq.imaxDG].Deng;
-   }
-   else{
-   dengG=arq.flup[0].Deng;
-   dengP=arq.flup[0].Deng;
-   }*///alteracao2
   fluiRevRede=arq.flup[0];
   if(arq.flashCompleto==2)fluiRevRede.atualizaPropCompStandard();
   for (int i = 0; i < arq.nfluP; i++) {
@@ -1468,7 +1284,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   arq.geraduto();
   ncel = arq.ncelp - 1;
   temperatura = arq.celp[0].textern;
-  //tempRev=arq.celp[ncel].textern;
   tempRev=arq.tempReves;
   celula = new Cel [ncel + 1];
   arq.geracelp(celula);
@@ -1482,7 +1297,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 		celula[iposp].acsr.tipo = 1;
 		celula[iposp].acsr.injg = injgasMRT;
   }
-  //arq.ninjgas+=nfontes;
   if (arq.ninjliq > 0) arq.gerafliqFonte(celula);
   if (arq.ninjmass > 0) arq.gerafmassFonte(celula);
   if (arq.nfuro > 0) arq.geraFuro(celula);
@@ -1495,37 +1309,14 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
           "Foi escolhida uma condicao de contorno de pressao no inicio da tubulacao e foi colocada uma fonte de massa neste inicio, isto pode causar inconsistencias",
           "", "");
   }
-//  if (arq.perm == 1 && celula[0].acsr.tipo == 0) {
-  //  InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-  //  celula[0].acsr.tipo = 2;
-  //  celula[0].acsr.injl = injliqMRT;
-//  }
-  if((arq.perm==1||(*vg1dSP).chaverede>0) && celula[0].acsr.tipo==0){//alteracao4
- /* 	if((arq.ConContEntrada==0 && nfontes==0 && ((*vg1dSP).chaverede>0 && (*vg1dSP).fluidoRede==1)) ||
-  	   (arq.ConContEntrada==1 && arq.CCPres.tit[0]<(1-localtiny))){
-  	  	  InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-  	  	  celula[0].acsr.tipo = 2;
-  	  	  celula[0].acsr.injl = injliqMRT;
-  		}
-  		  	else if(nfontes==0 || arq.ConContEntrada==1 || (arq.ConContEntrada==0 && nfontes==0 && ((*vg1dSP).chaverede>0 && (*vg1dSP).fluidoRede==0))){
-	  		InjGas injgasMRT(0, 0, celula[0].flui);
-	  		celula[0].acsr.tipo = 1;
-	  		celula[0].acsr.injg = injgasMRT;
-	  	}*/
+  if((arq.perm==1||(*vg1dSP).chaverede>0) && celula[0].acsr.tipo==0){
 	    if((arq.ConContEntrada==0 && nfontes==0 && (*vg1dSP).chaverede==0)){
 	    	NumError("O simulador pede calculo de permanente com condicao de vazao na entrada, mas sem nenhuma fonte na entrada");
 	    }
 	  	if((arq.ConContEntrada==0 && nfontes==0 && (*vg1dSP).chaverede>0) || arq.CCPres.tit[0]<(1-(*vg1dSP).localtiny)){
-	  		//if(arq.ConContEntrada==0){
-	  			//if((*vg1dSP).fluidoRede==0)celula[0].acsr.tipo = 1;
 	  			if(arq.tipoFluido==1)celula[0].acsr.tipo = 1;
-	  			//else if((*vg1dSP).fluidoRede==1)celula[0].acsr.tipo = 2;
 	  			else if(arq.tipoFluido==0)celula[0].acsr.tipo = 2;
 	  			else celula[0].acsr.tipo = 10;
-	  		//}
-	  		//else{
-	  			//celula[0].acsr.tipo = 2;
-	  		//}
 	  		InjMult injmassMRT(0, 0, 0,celula[0].temp, celula[0].flui, celula[0].fluicol);
 	  		celula[0].acsr.injm.condTermo=1;
 	  		celula[0].acsr.injm = injmassMRT;
@@ -1537,23 +1328,18 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 	 	else if(nfontes==0 || arq.ConContEntrada==1){
 	    	InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
 	    	injgasMRT.seco=0;
-	    	//celula[0].acsr.tipo = 1;
 	    	celula[0].acsr.injg = injgasMRT;
 	    	InjMult injmassMRT(0, 0, 0,celula[0].temp, celula[0].flui, celula[0].fluicol);
 	    	celula[0].acsr.injm.condTermo=1;
 		  	celula[0].acsr.injm = injmassMRT;
 		  	InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
 		  	celula[0].acsr.injl = injliqMRT;
-  			//if((*vg1dSP).fluidoRede==0)celula[0].acsr.tipo = 1;
   			if(arq.tipoFluido==1)celula[0].acsr.tipo = 1;
-  			//else if((*vg1dSP).fluidoRede==1)celula[0].acsr.tipo = 2;
   			else if(arq.tipoFluido==0)celula[0].acsr.tipo = 2;
   			else celula[0].acsr.tipo = 10;
 	  	}
   }
   if(bloq==1 && celula[1].acsr.tipo==0){
-		//if(arq.ConContEntrada==0)celula[1].acsr.tipo = 10;
-		//else celula[1].acsr.tipo = 2;
 		if((*vg1dSP).fluidoRede==1)celula[1].acsr.tipo = 2;
 		else if((*vg1dSP).fluidoRede==0)celula[1].acsr.tipo = 1;
 		else celula[1].acsr.tipo = 10;
@@ -1604,7 +1390,7 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   else if (arq.lingas > 0) {
     ncelGas = arq.ncelg;
     ncelGas--;
-    celInter = arq.celdescarga;    //alteracao2
+    celInter = arq.celdescarga;
     celulaG = new CelG [ncelGas + 1];
     arq.geracelg(celulaG);
     arq.geraMaster2(celulaG);
@@ -1622,15 +1408,15 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
       posicVGLP[i] = arq.valvgl[i].posicP;
       posicVGLG[i] = arq.valvgl[i].posicG;
       celulaG[posicVGLG[i]].vgl=1;
-      if (arq.valvgl[i].tipo == 2) {    //alteracao3
+      if (arq.valvgl[i].tipo == 2) {
         arq.valvgl[i].frec = 0.;
         arq.valvgl[i].cd = 1.;
-      }    //alteracao3
+      }
       chokeVGL[i] = ChokeGas(arq.flug, M_PI * diaG * diaG / 4.,
     	  arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
           tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
 		  (M_PI * diaG * diaG / 4.) / arq.valvgl[i].razarea,
-          arq.valvgl[i].pcali, arq.valvgl[i].tcali,arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);    //alteracao2
+          arq.valvgl[i].pcali, arq.valvgl[i].tcali,arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
       celulaG[posicVGLG[i]].pEstag=chokeVGL[i].presEstag;
       celulaG[posicVGLG[i]].tEstag=chokeVGL[i].tempEstag;
       celulaG[posicVGLG[i]].pGarg=chokeVGL[i].presGarg;
@@ -1638,20 +1424,15 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
       celulaG[posicVGLG[i]].qGarg=chokeVGL[i].qGarg;
       celulaG[posicVGLG[i]].areaGarg=chokeVGL[i].areagarg;
 
-       /*if(arq.valvgl[i].tipo==1){//alteracao2
-       chokeVGL[i].tipo=2;
-       chokeVGL[i].areaventuri=chokeVGL[i].areagarg/arq.valvgl[i].razarea;
-       chokeVGL[i].pcalib=arq.valvgl[i].pcali;
-       }*///alteracao2
     }
     for (int i = 0; i <= ncelGas; i++) {
-      celulaG[i].celInter = &celInter;    //alteracao2
-      celulaG[i].razInter = 1.;    //alteracao2
-      celulaG[i].razInterIni = 1.;    //alteracao2
-      if (i >= celInter) {    //alteracao2
-        celulaG[i].razInter = 0.;    //alteracao2
-        celulaG[i].razInterIni = 0.;    //alteracao2
-      }    //alteracao2
+      celulaG[i].celInter = &celInter;
+      celulaG[i].razInter = 1.;
+      celulaG[i].razInterIni = 1.;
+      if (i >= celInter) {
+        celulaG[i].razInter = 0.;
+        celulaG[i].razInterIni = 0.;
+      }
     }
   }
   if (celula[0].acsr.tipo != 1 && celula[0].acsr.tipo != 2 && celula[0].acsr.tipo != 3 && celula[0].acsr.tipo != 10
@@ -1669,20 +1450,15 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
     }
   }
 
-  if (arq.descarga == 1 && celula[0].acsr.tipo != 3) {    //alteracao2
+  if (arq.descarga == 1 && celula[0].acsr.tipo != 3) {
     NumError(
         "Nao existe nenhuma IPR na primeira celula do sistema de producao, no modo descarga de gas lift esta e uma condicao necessaria");
-  }    //alteracao2
-  if (arq.descarga == 1) {    //alteracao2
+  }
+  if (arq.descarga == 1) {
     HidroDescargaG();
     HidroDescargaP();
-  }    //alteracao2
+  }
 
- /* arq.listaevento(noinicial,noextremo);
-  if(arq.saidaClassica==1){
-	  for (int i = 0; i < arq.evento.size(); i++)
-		  cout << i << "  " << arq.evento[i] << endl;
-  }*/
   arq.geraevento(noinicial,noextremo);
   if(arq.saidaClassica==1 && (arq.transiente==1 || (*vg1dSP).chaveredeT==1)){
 	  cout<<"------------------------------------------   Eventos no Tramo -------------------------------------------"<< endl;
@@ -1701,73 +1477,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   if((celula[ncel].acsr.tipo != 0 || celula[ncel-1].acsr.tipo != 0) && arq.transiente==1){
 	  NumError("As duas celulas finais não devem ter acessorios, estas duas celulas devem ser preservadas, principalmente para simulacoes transientes ");
   }
- /*if(arq.perm == 1 && arq.ConContEntrada==1 && arq.chokep.abertura[0]<1e-15 && celula[ncel].acsr.tipo != 0){
-	  celula[ncel-1].acsr.tipo=celula[ncel].acsr.tipo;
-	  celula[ncel].acsr.tipo=0;
-	  if(celula[ncel-1].acsr.tipo==1){
-		  celula[ncel-1].acsr.injg=celula[ncel].acsr.injg;
-		  for(int igas=0;igas<arq.ninjgas;igas++){
-			  if(arq.fonteg[igas].posicP==ncel){
-				  arq.fonteg[igas].posicP=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-	  else if(celula[ncel-1].acsr.tipo==2){
-		  celula[ncel-1].acsr.injl=celula[ncel].acsr.injl;
-		  for(int iliq=0;iliq<arq.ninjliq;iliq++){
-			  if(arq.fontel[iliq].posicP==ncel){
-				  arq.fontel[iliq].posicP=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-	  if(celula[ncel-1].acsr.tipo==3){
-		  celula[ncel-1].acsr.ipr=celula[ncel].acsr.ipr;
-		  for(int iipr=0;iipr<arq.nipr;iipr++){
-			  if(arq.IPRS[iipr].indcel==ncel){
-				  arq.IPRS[iipr].indcel=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-	  if(celula[ncel-1].acsr.tipo==9){
-		  celula[ncel-1].acsr.fontechk=celula[ncel].acsr.fontechk;
-		  for(int ifuro=0;ifuro<arq.nfuro;ifuro++){
-			  if(arq.furo[ifuro].posicP==ncel){
-				  arq.furo[ifuro].posicP=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-	  if(celula[ncel-1].acsr.tipo==10){
-		  celula[ncel-1].acsr.injm=celula[ncel].acsr.injm;
-		  for(int imas=0;imas<arq.ninjmass;imas++){
-			  if(arq.fontem[imas].posicP==ncel){
-				  arq.fontem[imas].posicP=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-	  if(celula[ncel-1].acsr.tipo==15){
-		  celula[ncel-1].acsr.radialPoro=celula[ncel].acsr.radialPoro;
-		  for(int ipr=0;ipr<arq.nPoroRad;ipr++){
-			  if(arq.porosoRad[ipr].posicP==ncel){
-				  arq.porosoRad[ipr].posicP=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-	  if(celula[ncel-1].acsr.tipo==16){
-		  celula[ncel-1].acsr.poroso2D=celula[ncel].acsr.poroso2D;
-		  for(int ipr=0;ipr<arq.nPoro2D;ipr++){
-			  if(arq.poroso2D[ipr].posicP==ncel){
-				  arq.poroso2D[ipr].posicP=ncel-1;
-				  break;
-			  }
-		  }
-	  }
-  }*/
 
   (*vg1dSP).lixo5 = 0.;
   (*vg1dSP).contador = 0;
@@ -1775,7 +1484,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
     arq.atualiza(noinicial,noextremo, derivaAnel, chokeSup,chokeInj, celula, celulaG, pGSup, temperatura, presiniG,
     		     tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5,dt);
     pGSupIni=pGSup;
-    //arq.atualiza(noextremo,chokeSup,celula,celulaG,pGSup,temperatura,
   		     //presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//alteracao7
     if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area){
     	aberto = 1;
@@ -1820,10 +1528,10 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 	  temp.PBF=0;
 	  tabDin.push_back(temp);
 	  for(int i=1;i<ncel;i++){
-		  if((celula[i].acsr.tipo==1 /*&& (celula[i].acsr.injg.QGas>0 || i==0)*/) ||
-				  (celula[i].acsr.tipo==2 /*&& (celula[i].acsr.injl.QLiq>0 || i==0)*/) ||
+		  if((celula[i].acsr.tipo==1 ) ||
+				  (celula[i].acsr.tipo==2 ) ||
 				  celula[i].acsr.tipo==3 ||
-		     (celula[i].acsr.tipo==10 /*&& ((celula[i].acsr.injm.MassC+celula[i].acsr.injm.MassG+celula[i].acsr.injm.MassP)>0 || i==0)*/)
+		     (celula[i].acsr.tipo==10 )
 			 || celula[i].acsr.tipo==9 || celula[i].acsr.tipo==15 || celula[i].acsr.tipo==16){
 			  tabelaDinamica temp;
 			  temp.npontosP=minNPontos;
@@ -1837,7 +1545,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 	  tabDin[ntabDin-1].celFim=ncel;
   }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   celula[0].angEsq=celula[0].duto.teta;
   for(int i=1;i<=ncel;i++){
@@ -1852,16 +1559,10 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //ModelCp=arq.modelcp;
-  //if(arq.modelcp>0)arq.geraTabCp();
-  //Modeljtl=arq.modelJTL;
-  //if(arq.modelJTL>0)arq.geraTabDrholDt();
   CalcLat = arq.latente;
   if (arq.latente > 0) {
 	if(arq.flashCompleto==0){
       string impfile;
-      //impfile="PVTSIM-MARLIM.tab";
       impfile = arq.pvtsimarq;
       string dadosMR = impfile;
       ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
@@ -1870,15 +1571,10 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
       tenta = new char[400];
       double testatok;
       int ndiv = arq.tabent.npont - 1;
-      //double pteste = arq.tabent.pmin;
-      //double tteste = arq.tabent.tmin;
-      //double dpteste = (arq.tabent.pmax - pteste) / ndiv;
-      //double dtteste = (arq.tabent.tmax - tteste) / ndiv;
       Vcr<double> presPVTSim(ndiv+1,0.);
       Vcr<double> tempPVTSim(ndiv+1,0.);
 
       FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
-      //for(int i=0;i<6;i++) lendoPVTSim>>chave;
       char line[4000];
       lendoPVTSim.get(line, 4000);
       tenta = strtok(line, " ,()=");
@@ -1910,7 +1606,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
         HLatTemp[i][0] = presPVTSim[i-1];
         for (int j = 1; j <= ndiv + 1; j++) {
           HLatTemp[0][j] = tempPVTSim[j-1];
-          //HLatTemp[i][j]=arq.flup.EntalpGasIsoT(pteste,tteste)-arq.flup.EntalpLiqIsoT(pteste,tteste);
           while (chave != "POINT")
             lendoPVTSim >> chave;
           lendoPVTSim.get(line, 4000);
@@ -1925,13 +1620,10 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
           tenta = strtok(NULL, " ,");
           testatok = atof(tenta);
           HLatTemp[i][j] -= testatok;
-          //tteste += dtteste;
           if (i == ndiv + 1 && j == ndiv + 1) break;
           while (chave != "PVTTABLE")
             lendoPVTSim >> chave;
         }
-        //pteste += dpteste;
-        //tteste = arq.tabent.tmin;
       }
       lendoPVTSim.close();
       HLat = new double*[ndiv + 2];
@@ -1946,7 +1638,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
       ofstream escreveMass(tmp.c_str(), ios_base::out);
       escreveMass << HLatTemp;
       escreveMass.close();
-      //delete [] tenta;//alteracao2
       // caso nao seja simulacao POCO_INJETOR
       if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
         arqRelatorioPerfis << tmp.c_str() << endl;
@@ -1955,78 +1646,8 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
     }
   }
 
-  /*if(celula[0].flui.corrSat==-4){
-	    LerPB=1;
-	    int ndiv = arq.tabent.npont - 1;
-	    PBPVTSim = new double[ndiv + 1];
-	    TBPVTSim = new double[ndiv + 1];
 
-	    string impfile;
-	    //impfile="PVTSIM-MARLIM.tab";
-	    impfile = arq.pvtsimarq;
-	    string dadosMR = impfile;
-	    ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
-	    string chave;
-	    char* tenta;
-	    tenta = new char[100];
-	    double testatok;
-	    char line[1000];
-	    lendoPVTSim.get(line, 1000);
-	    tenta = strtok(line, " ,()=");
-        while (chave != "BUBBLEPRESSURES"){
-          lendoPVTSim >> chave;
-	    }
-        int lacoleitura=ndiv;
-        lendoPVTSim.get(line, 1000);
-        tenta = strtok(line, " ,()=");
-        PBPVTSim[0]=atof(tenta)*0.00014503773800722;
-        double valor;
-        for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-          tenta = strtok(NULL, " ,");
-          testatok = atof(tenta);
-          PBPVTSim[kontaPVT]=testatok*0.00014503773800722;
-        }
-        while (chave != "BUBBLETEMPERATURES"){
-          lendoPVTSim >> chave;
-	    }
-        lendoPVTSim.get(line, 1000);
-        tenta = strtok(line, " ,()=");
-        TBPVTSim[0]=atof(tenta);
-        for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-          tenta = strtok(NULL, " ,");
-          testatok = atof(tenta);
-          TBPVTSim[kontaPVT]=testatok;
-        }
-        for(int i=0;i<=ncel;i++){
-        	celula[i].flui.PBPVTSim=PBPVTSim;
-        	celula[i].flui.TBPVTSim=TBPVTSim;
-        	celula[i].flui.corrSat=4;
-        	//double val=celula[i].flui.PB(1,70);
-        	//val=0;
-        	if(celula[i].acsr.tipo==2){
-        		celula[i].acsr.injl.FluidoPro.PBPVTSim=PBPVTSim;
-        		celula[i].acsr.injl.FluidoPro.TBPVTSim=TBPVTSim;
-        		celula[i].acsr.injl.FluidoPro.corrSat=4;
-        	}
-        	if(celula[i].acsr.tipo==3){
-        		celula[i].acsr.ipr.FluidoPro.PBPVTSim=PBPVTSim;
-        		celula[i].acsr.ipr.FluidoPro.TBPVTSim=TBPVTSim;
-        		celula[i].acsr.ipr.FluidoPro.corrSat=4;
-        	}
-        }
 
-        FullMtx<double> BolhaTemp( ndiv + 2,2);
-        for(int i=0;i<=ndiv; i++){
-        	BolhaTemp[i][0]=TBPVTSim[i];
-        	BolhaTemp[i][1]=PBPVTSim[i];
-        }
-        ostringstream saidaBolha;
-        saidaBolha << pathPrefixoArqSaida << "perfilBolha";
-        string tmp = saidaBolha.str();
-        ofstream escreveMass(tmp.c_str(), ios_base::out);
-        escreveMass << BolhaTemp;
-        escreveMass.close();
-  }*/
   if(celula[0].flui.corrSat==-4){
 	    LerPB=1;
 	    int ndiv = arq.tabent.npont - 1;
@@ -2036,7 +1657,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 	    PresPVTSim = new double[ndiv + 1];
 
 	    string impfile;
-	    //impfile="PVTSIM-MARLIM.tab";
 	    impfile = arq.pvtsimarq;
 	    string dadosMR = impfile;
 	    ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
@@ -2078,19 +1698,15 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
         lendoPVTSim.get(line, 4000);
         tenta = strtok(line, " ,()=");
         TBPVTSim[0]=atof(tenta);
-        //PBPVTSim[0]=celula[0].flui.PB(1.,TBPVTSim[0]);
         for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
           tenta = strtok(NULL, " ,");
           testatok = atof(tenta);
           TBPVTSim[kontaPVT]=testatok;
-          //PBPVTSim[kontaPVT]=celula[0].flui.PB(1.,TBPVTSim[kontaPVT]);
         }
         for(int i=0;i<=ncel;i++){
         	celula[i].flui.PBPVTSim=PBPVTSim;
         	celula[i].flui.TBPVTSim=TBPVTSim;
         	celula[i].flui.corrSat=4;
-        	//double val=celula[i].flui.PB(1,70);
-        	//val=0;
         	if(celula[i].acsr.tipo==2){
         		celula[i].acsr.injl.FluidoPro.PBPVTSim=PBPVTSim;
         		celula[i].acsr.injl.FluidoPro.TBPVTSim=TBPVTSim;
@@ -2159,8 +1775,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
         		if(TBPVTSim[j-1]>-10){
         		  double a1,a2,a3;
         		  double TFa=1.8*TBPVTSim[j-1]+32;
-//        		  double prB;
-//        		  double pcorB;
 
         		  double A0,A1,A2,A3,A4;
         		  double B0,B1,B2,B3,B4;
@@ -2177,7 +1791,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
                   double yco2=celula[0].flui.yco2;
                   double Deng=celula[0].flui.Deng;
                   double API=celula[0].flui.API;
-//                  double IRGO=celula[0].flui.RGO*35.31467/6.29;
         		  double multCor=(D0+D1*yco2*pow(TFa,D2));
         		  double pbtemp=PBPVTSim[j-1];
 
@@ -2369,7 +1982,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   	  LerPB=1;
   	  lerRS=1;
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////////
   for(int i=0;i<=ncel;i++){
      if(arq.corrDeng==0){
   	   celula[i].flui.rDgD=1.;
@@ -2481,31 +2093,9 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 	   }
    }
 
-   /*if(arq.modoDifus3D==1){
-	   poisson3D=solverP3D(arq.modoDifus3DJson,vg1dSP, arq.nacop, arq.geoAcop);
-	   if(arq.nacop!=poisson3D.dados.CC.nAcop)
-		   NumError(
-		         "O numero de acoplamentos indicados no json principal é diferente do numero de acoplamentos indicados no parse do solver 3D");
-	   else{
-		   //vector<int> acertaIndAcop;
-		   for(int iacop0=0;iacop0<arq.nacop;iacop0++){
-			   int inexistente=1;
-			   for(int iacop1=0;iacop1<arq.nacop;iacop1++){
-				   if(arq.celAcop[iacop0].rotulo==poisson3D.dados.CC.rotuloAcop[iacop1]){
-					   inexistente=0;
-					   acertaIndAcop.push_back(iacop1);
-					   poisson3D.dados.comp[iacop1]=arq.celAcop[iacop0].comp;
-					   break;
-				   }
-			   }
-			   if(inexistente==1)NumError("Rotulo de acoplamento indicado mas não encontrado");
-		   }
-	   }
 
 
-   }*/
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   nabreM1 = arq.eventoabre;
   nfechaM1 = arq.eventofecha;
@@ -2516,12 +2106,9 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   for (int i = 0; i < nfechaM1; i++)
     fechaM1[i] = arq.Teventof[i];
 
-  //FullMtx<double> flut(ncel+1,arq.nvarprofp+2+1,0.);
   int ntempGas = 0;
   if (arq.lingas > 0) ntempGas = ncelGas;
-  //FullMtx<double> flutG(ntempGas+1,arq.nvarprofg+2+1+1,0.);
 
-  //int* ncelperftransp;
   if (arq.nperfistransp > 0) {
     ncelperftransp = new int[arq.nperfistransp];
     for (int i = 0; i < arq.nperfistransp; i++) {
@@ -2529,7 +2116,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
       ncelperftransp[i] = celula[posiccel].calor.nglobal;
     }
   }
-  //int* ncelperftransg;
   if (arq.nperfistransg > 0 && arq.lingas > 0) {
     ncelperftransg = new int[arq.nperfistransg];
     for (int i = 0; i < arq.nperfistransg; i++) {
@@ -2540,15 +2126,11 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 
    if((*vg1dSP).chaverede==0) (*vg1dSP).TmaxR=arq.tfinal;
    if(redeTemporario==0){
-     //int* TrendLengthP;
      if (arq.ntendp > 0) {
        TrendLengthP = new int[arq.ntendp];
        for (int i = 0; i < arq.ntendp; i++)
          TrendLengthP[i] = 1+1+ceil((*vg1dSP).TmaxR/ arq.trendp[i].dt);//round(arq.tfinal / arq.trendp[i].dt);
      }
-     //double*** MatTrendP;
-     //double* resettrend;
-     //int* ntrend;
      if (arq.ntendp > 0) {
        resettrend = new double[arq.ntendp];
        ntrend = new int[arq.ntendp];
@@ -2568,15 +2150,11 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 
      }
 
-     //int* TrendLengthG;
      if (arq.ntendg > 0) {
        TrendLengthG = new int[arq.ntendg];
        for (int i = 0; i < arq.ntendg; i++)
          TrendLengthG[i] = 1+1+ceil((*vg1dSP).TmaxR/ arq.trendg[i].dt);//round(arq.tfinal / arq.trendg[i].dt);
      }
-     //double*** MatTrendG;
-     //double* resettrendg;
-     //int* ntrendg;
      if (arq.ntendg > 0) {
        resettrendg = new double[arq.ntendg];
        ntrendg = new int[arq.ntendg];
@@ -2595,15 +2173,11 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
        }
 
      }
-     // int* TrendLengthTransP;
      if (arq.ntendtransp > 0) {
        TrendLengthTransP = new int[arq.ntendtransp];
        for (int i = 0; i < arq.ntendtransp; i++)
          TrendLengthTransP[i] = 1+1+ceil((*vg1dSP).TmaxR/ arq.trendtransp[i].dt);//round(arq.tfinal / arq.trendtransp[i].dt);
      }
-     //double*** MatTrendTransP;
-     //double* resettrendtrans;
-     //int* ntrendtrans;
      if (arq.ntendtransp > 0) {
        resettrendtrans = new double[arq.ntendtransp];
        ntrendtrans = new int[arq.ntendtransp];
@@ -2623,15 +2197,11 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
        }
 
      }
-     //int* TrendLengthTransG;
      if (arq.ntendtransg > 0 && arq.lingas > 0) {
        TrendLengthTransG = new int[arq.ntendtransg];
        for (int i = 0; i < arq.ntendtransg; i++)
          TrendLengthTransG[i] = 1+1+ceil((*vg1dSP).TmaxR/ arq.trendtransg[i].dt);//round(arq.tfinal / arq.trendtransg[i].dt);
      }
-     //double*** MatTrendTransG;
-     //double* resettrendtransg;
-     //int* ntrendtransg;
      if (arq.ntendtransg > 0) {
        resettrendtransg = new double[arq.ntendtransg];
        ntrendtransg = new int[arq.ntendtransg];
@@ -2653,16 +2223,8 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
      }
   }
 
-  //BandMtx<double> matglobP(2 * (ncel + 1), 2, 2);
-  //Vcr<double> termolivreP(2 * (ncel + 1), 0.);
 
-  //BandMtx<double> matglobG(3 * (ncelGas + 1), 5, 5,0.);
-  //Vcr<double> termolivreG(3 * (ncelGas + 1), 0.);
 
-  // int  AnulaColunaIni;
-  //int AnulaColunaFim;
-  //int ColunaAnulaIni;
-  //int ColunaAnulaFim;
   verificaAcop = 0;
 
   if (arq.lingas > 0) {
@@ -2684,8 +2246,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   PrimSecIniRedeP = 0;
   PrimSecFimRedeP = 0;
 
-  //double velaux, dtaux;
-  //double lixo1,lixo2,lixo3,lixo4;
 
   kontaTempoProf = 0;
   kontaTempoProfG = 0;
@@ -2709,7 +2269,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
   }
 
 
-   //ostringstream saidaLog;
    saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
    tmpLog = saidaLog.str();
    // caso nao seja simulacao POCO_INJETOR
@@ -2738,8 +2297,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
    }
   }
 
-//  double masCL,masCG;
-//  double gasinj;
 
   menorDx = 1e10;
   for (int i = 0; i <= ncel; i++){
@@ -2770,43 +2327,6 @@ void SProd::montasistema(double* compfonte,int* posicfonte, int nfontes) {
 
 ////Subrotina para linha de gÃƒÆ’Ã‚Â¡s///////////////////////////////////////////////////////////////////
 
-/*void SProd::renovaGas() {
-  for (int i = 0; i <= ncelGas; i++) {
-    if (i != 0 && i != ncelGas) {
-      celulaG[i].u1L = termolivreG[3 * i];
-      celulaG[i].u1LL = termolivreG[3 * i - 3];
-      celulaG[i].u1R = termolivreG[3 * i + 3];
-      celulaG[i].VGasR = termolivreG[3 * i + 1];
-      celulaG[i].VGasL = termolivreG[3 * i - 2];
-      celulaG[i].VGasRR = termolivreG[3 * i + 4];
-      celulaG[i].presL = celulaG[i - 1].pres;
-      celulaG[i].pres = celulaG[i - 1].presR;
-      if (i < celInter) {    //alteracao2
-        double auxpres = celulaG[i].presR;
-        double rhog = celulaG[i].u1R / celulaG[i].dutoR.area;
-        celulaG[i].presR = celulaG[i].flui.PreRog(auxpres * 0.2, auxpres * 2., rhog, celulaG[i + 1].temp);
-        if (celulaG[i].labelchk == 1) celulaG[i].massfonteCH = celulaG[i - 1].massfonteCH;
-      }    //alteracao2
-    } else if (i == 0) {
-      celulaG[i].u1L = termolivreG[3 * i];
-      celulaG[i].u1R = termolivreG[3 * i + 3];
-      celulaG[i].VGasR = termolivreG[3 * i + 1];
-      celulaG[i].VGasRR = termolivreG[3 * i + 4];
-      double auxpres = celulaG[i].presR;
-      double rhog = celulaG[i].u1R / celulaG[i].dutoR.area;
-      celulaG[i].presR = celulaG[i].flui.PreRog(auxpres * 0.2, auxpres * 2., rhog, celulaG[i + 1].temp);
-      auxpres = celulaG[i].pres;
-      rhog = celulaG[i].u1L / celulaG[i].dutoR.area;
-      celulaG[i].pres = celulaG[i].flui.PreRog(auxpres * 0.2, auxpres * 2., rhog, celulaG[i].temp);
-    } else {
-      celulaG[i].u1L = termolivreG[3 * i];
-      celulaG[i].VGasR = termolivreG[3 * i + 1];
-      celulaG[i].VGasL = termolivreG[3 * i - 2];
-      celulaG[i].pres = celulaG[i - 1].presR;
-      celulaG[i].presR = celulaG[i].pres;
-    }
-  }
-}*/
 
 void SProd::renovaGas() {
   for (int i = 0; i <= ncelGas; i++) {
@@ -2817,14 +2337,6 @@ void SProd::renovaGas() {
       celulaG[i].VGasR = termolivreG[3 * i + 1];
       celulaG[i].VGasL = termolivreG[3 * i - 2];
       celulaG[i].VGasRR = termolivreG[3 * i + 4];
-      /*celulaG[i].presL = celulaG[i - 1].pres;
-      celulaG[i].pres = celulaG[i - 1].presR;
-      if (i < celInter) {    //alteracao2
-        double auxpres = celulaG[i].presR;
-        double rhog = celulaG[i].u1R / celulaG[i].dutoR.area;
-        celulaG[i].presR = celulaG[i].flui.PreRog(auxpres * 0.2, auxpres * 2., rhog, celulaG[i + 1].temp);
-        if (celulaG[i].labelchk == 1) celulaG[i].massfonteCH = celulaG[i - 1].massfonteCH;
-      }    //alteracao2*/
     } else if (i == 0) {
       celulaG[i].pres = termolivreG[3 * i];
       celulaG[i].presL =celulaG[i].pres;
@@ -2832,17 +2344,11 @@ void SProd::renovaGas() {
       celulaG[i].VGasR = termolivreG[3 * i + 1];
       celulaG[i].VGasRR = termolivreG[3 * i + 4];
       double auxpres = celulaG[i].presR;
-      /*double rhog = celulaG[i].u1R / celulaG[i].dutoR.area;
-      celulaG[i].presR = celulaG[i].flui.PreRog(auxpres * 0.2, auxpres * 2., rhog, celulaG[i + 1].temp);
-      auxpres = celulaG[i].pres;
-      rhog = celulaG[i].u1L / celulaG[i].dutoR.area;
-      celulaG[i].pres = celulaG[i].flui.PreRog(auxpres * 0.2, auxpres * 2., rhog, celulaG[i].temp);*/
     } else {
       celulaG[i].pres = termolivreG[3 * i];
       celulaG[i].presL = termolivreG[3 * i - 3];
       celulaG[i].VGasR = termolivreG[3 * i + 1];
       celulaG[i].VGasL = termolivreG[3 * i - 2];
-      //celulaG[i].pres = celulaG[i - 1].presR;
       celulaG[i].presR = celulaG[i].pres;
     }
   }
@@ -2870,7 +2376,6 @@ double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
 
 
   double PB80 = PCal * (1 - Rvalv);    //????????alteracao2
-  //double PB80=PCal;//alteracao2
   PB80=(PB80+14.6959488)*(80+460.67)/(TCal*1.8+491.67)-14.6959488;
   double PBT = PB80 * (1 + 0.00215 * (Temp - 80));
   double compara = PVO * (1 - Rvalv) + PT * Rvalv;
@@ -2887,8 +2392,6 @@ double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
   // SE VALVULA ESTIVER FECHADA, QG = 0
   if (XMVS <= 0.0) abertura=0.;
 
-  //{ CALCULA A AREA ABERTA AO ESCOAMENTO. ESTA AREA POR HIPOTESE EH  }
-  //{ A LATERAL DO TRONCO DE CONE FORMADO APOS ABERTURA DA VALVULA    }
   double DP=sqrt(areagarg*4./M_PI);
   double RP  = DP/2.0;
   double RB  = sqrt(areafol/M_PI);
@@ -2896,7 +2399,6 @@ double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
   APE = APE/sqrt((XMVS + sqrt(RB*RB - RP*RP))*(XMVS + sqrt(RB*RB - RP*RP)) + RP*RP);
   if (APE > areagarg)APE = areagarg;
   abertura= APE/areagarg;
-  //////////////////////////////////////////////////////////////////////////////////////////////
 
   return abertura;
 
@@ -2907,21 +2409,18 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
   if(semTermo==0){
 	  double dx = celulaG[i].dx0;
 	  double dxmed = 0.5 * (celulaG[i].dx0 + celulaG[i - 1].dx0);
-  //double dia=celula[i].duto.dia;
 	  double area = celulaG[i].duto.area;
 	  double ugsmed;
 	  if (i < ncelGas) ugsmed = celulaG[i].VGasR / celulaG[i].u1L;
 	  else {
 		  ugsmed = celulaG[i].VGasL / celulaG[i].u1L;
 	  }
-  //double rhog = celulaG[i].flui.MasEspGas(celulaG[i].presini, celulaG[i].tempini);
 	  double rhog = celulaG[i].rg;
 	  double cpg = celulaG[i].flui.CalorGas(celulaG[i].presini, celulaG[i].tempini);
 	  double cvg = celulaG[i].flui.CalorGasVolMod(celulaG[i].presini, celulaG[i].tempini);
 	  double jtg = celulaG[i].flui.JTG(celulaG[i].presini, celulaG[i].tempini);
 	  double hidro = (rhog * ugsmed) * area * 9.82 * sin(celulaG[i].duto.teta);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  celulaG[i].calor.Tint = celulaG[i].tempini;
 	  celulaG[i].calor.dtL = celulaG[i].tempini-celulaG[i-1].tempini;
@@ -2943,17 +2442,14 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
 		  celulaG[i].fluxcal -= celula[iconecte].calor.fluxFim;
 	  }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double razdx;
 	  if (i < ncelGas) razdx = dx / (dx + celulaG[i + 1].dx0);
 	  else razdx = dx / (dx + celulaG[i - 1].dx0);
 	  double coefTempo = rhog * cvg * area;
-	  double coefPresTempo = celulaG[i].flui.CalorGasPresMod(celulaG[i].presini, celulaG[i].tempini,celulaG[i].rg) *    //alteracao2
+	  double coefPresTempo = celulaG[i].flui.CalorGasPresMod(celulaG[i].presini, celulaG[i].tempini,celulaG[i].rg) *
 			  (rhog * area);
 
-  //double coefPresTempo;
-  //coefPresTempo=-celula[i].flui.CalorGasPresMod(celula[i].pres,celula[i].temp)*(rhog*alfmed*area);
 
 	  double coefdxT = rhog * ugsmed * cpg * area;
 	  double coefdxP = rhog * ugsmed * jtg * area;
@@ -2965,7 +2461,6 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
 	  if (i < ncelGas) if (ugsmed < 0) dtdx = (celulaG[i + 1].tempini - celulaG[i].tempini) / dxmed;
 	  if ((i == 1 && ugsmed <= 0) || (i == ncelGas && ugsmed <= 0)) dtdx = 0.;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double cinetico;
 	  double deljmix = 0.;
@@ -2974,15 +2469,13 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
 	  deljmix = (ugsmed - ugsmed0) / dx;
 
 	  cinetico = rhomix * area * ugsmed * ugsmed * deljmix;
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double fontemassG = 0.;
 	  double fontemassL = 0.;
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	  double fator = 1.;    //alteracao2
-	  if ((*vg1dSP).lixo5 < 1000.) fator = 1.;    //alteracao2
+	  double fator = 1.;
+	  if ((*vg1dSP).lixo5 < 1000.) fator = 1.;
 
 	  celulaG[i].temp = ((coefTempo / celulaG[i].dt) * celulaG[i].temp
 			  - (fator) * (coefPresTempo * (celulaG[i].pres - celulaG[i].presini) * 98066.5 / celulaG[i].dt) +celulaG[i].dTdLCor*(- coefdxT * dtdx
@@ -3003,11 +2496,9 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
 
 }
 
-void SProd::resolveDescarga() {    //alteracao2
+void SProd::resolveDescarga() {
   int nvalv = arq.nvalvgas;
   for (int i = celInter; i <= ncelGas; i++) {
-    //double razInter;
-    //double razInterIni;
     double dx0 = 0.5 * celulaG[i].dxL;
     double dx1 = 0.5 * celulaG[i].dx0;
     double RgasR = 1.;
@@ -3047,7 +2538,6 @@ void SProd::resolveDescarga() {    //alteracao2
       double dhid = 4 * celulaG[i - 1].duto.area / celulaG[i - 1].duto.peri;
       re1G = celulaG[i - 1].Rey(dhid, vel1, rhoG, viscG);
     }
-    //double vel2=celulaG[i].VGasR/(rhoG*celulaG[i].duto.area);
     if (celulaG[i].duto.revest == 0) re2G = celulaG[i].Rey(celulaG[i].duto.a, vel2, rhoG, viscG);
     else {
       double dhid = 4 * celulaG[i].duto.area / celulaG[i].duto.peri;
@@ -3075,59 +2565,7 @@ void SProd::resolveDescarga() {    //alteracao2
     celulaG[i - 1].u1R = celulaG[i].u1L;
     celulaG[i].u1LL = celulaG[i - 1].u1L;
 
-    /*		  celulaG[i].massfonteCH=0.;
-     if(celulaG[i].razInter<0.5){
-     for(int j=0;j<nvalv;j++){
-     if(i==posicVGLG[j]){
-     chokeVGL[j].presEstag=celulaG[posicVGLG[j]].pres;
-     chokeVGL[j].presGarg=(celula[posicVGLP[j]].pres-chokeVGL[j].presEstag*chokeVGL[j].frecliq)/
-     (1.-chokeVGL[j].frecliq);
-     chokeVGL[j].tempEstag=celulaG[posicVGLG[j]].temp;
-     if(celula[posicVGLP[j]].pres<celulaG[posicVGLG[j]].pres)
-     celulaG[posicVGLG[j]].massfonteCH =chokeVGL[j].massica(1,arq.salinDescarga);
-     else celulaG[posicVGLG[j]].massfonteCH=0.;
-     if(chokeVGL[j].tipo==1){
-     //areaValvCali(double PCal,double PVO, double PT, double Rvalv, double Temp)
-     double abre=areaValvCali(chokeVGL[j].pcalib*14.223595,(chokeVGL[j].presEstag-1.033211)*14.223595,
-     (chokeVGL[j].presGarg-1.033211)*14.223595, chokeVGL[j].areagarg/
-     chokeVGL[j].areaventuri,
-     1.8*chokeVGL[j].tempEstag+32);//alteracao2
-     celulaG[posicVGLG[j]].massfonteCH*=abre;
-     }
-     }
-     }
-     }
-     else{
-     for(int j=0;j<nvalv;j++){
-     if(i==posicVGLG[j]){
-     chokeVGL[j].presEstag=celulaG[posicVGLG[j]].pres;
-     chokeVGL[j].presGarg=(celula[posicVGLP[j]].pres-chokeVGL[j].presEstag*chokeVGL[j].frec)/
-     (1.-chokeVGL[j].frec);
-     chokeVGL[j].tempEstag=celulaG[posicVGLG[j]].temp;
-     if(celula[posicVGLP[j]].pres<celulaG[posicVGLG[j]].pres)
-     celulaG[posicVGLG[j]].massfonteCH =chokeVGL[j].massica();
-     else celulaG[posicVGLG[j]].massfonteCH=0.;
-     if(chokeVGL[j].tipo==1){
-     //areaValvCali(double PCal,double PVO, double PT, double Rvalv, double Temp)
-     double abre=areaValvCali(chokeVGL[j].pcalib*14.223595,(chokeVGL[j].presEstag-1.033211)*14.223595,
-     (chokeVGL[j].presGarg-1.033211)*14.223595, chokeVGL[j].areagarg/
-     chokeVGL[j].areaventuri,
-     1.8*chokeVGL[j].tempEstag+32);//alteracao2
-     celulaG[posicVGLG[j]].massfonteCH*=abre;
-     }
-     }
-     }
-     }*/
 
-    /* if(i<ncelGas){
-     double Qaux=celulaG[i].VGasL/rhoL;
-     double qfonte=celulaG[i].massfonteCH/rhoL;
-     if(celulaG[i].razInter>localtiny)Qaux=celulaG[i].VGasL/rhoG;
-     if(celulaG[i].razInter>0.5)qfonte=celulaG[i].massfonteCH/rhoG;
-     celulaG[i+1].VGasL=(Qaux-qfonte)*rhoL;
-     celulaG[i].VGasR=celulaG[i+1].VGasL;
-     celulaG[i-1].VGasRR=celulaG[i].VGasL;
-     }*/
   }
 
   double Qtotal = 0.;
@@ -3136,9 +2574,7 @@ void SProd::resolveDescarga() {    //alteracao2
     double pres = celulaG[i].pres;
     double rhoL = celulaG[i].MasEspFlu(pres, temp);
     double rhoG = celulaG[i].flui.MasEspGas(pres, temp);
-    //double Qaux=celulaG[i].VGasL/rhoL;
     double qfonte = celulaG[i].massfonteCH / rhoL;
-    //if(celulaG[i].razInter>localtiny)Qaux=celulaG[i].VGasL/rhoG;
     if (celulaG[i].razInter > 0.5) qfonte = celulaG[i].massfonteCH / rhoG;
     Qtotal += qfonte;
   }
@@ -3168,10 +2604,9 @@ void SProd::resolveDescarga() {    //alteracao2
       / (celulaG[celInter + 1].MasEspFlu(celulaG[celInter + 1].pres, celulaG[celInter + 1].temp)
           * celulaG[celInter].duto.area);
 
-}          //alteracao2
+}
 
-void SProd::tempDescarga(int i) {          //alteracao2
-  //double dx=celula[i].dx;
+void SProd::tempDescarga(int i) {
   double dx0 = 0.5 * celulaG[i].dxL;
   double dx1 = 0.5 * celulaG[i].dx0;
   double RgasR = 0.;
@@ -3196,13 +2631,10 @@ void SProd::tempDescarga(int i) {          //alteracao2
   double vel1 = celulaG[i].VGasL / (celulaG[i].MasEspFlu(pres, temp) * celulaG[i - 1].duto.area);
   if (celulaG[i].razInter > (*vg1dSP).localtiny) vel1 = celulaG[i].VGasL
       / (celulaG[i].flui.MasEspGas(pres, temp) * celulaG[i - 1].duto.area);
-  //double vel2=celulaG[i-1].VGasR/(rho*celulaG[i].duto.area);
   double cpl = ((LLiqL + LLiqR) * celulaG[i].CalorLiq(pres, temp)
       + (LGasL + LGasR) * celulaG[i].flui.CalorGas(pres, temp)) / LTotal;
 
-//  double hidro = (rho * vel1) * area * 9.82 * sin(celulaG[i - 1].duto.teta);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   celulaG[i - 1].calor.Tint = temp;
   celulaG[i - 1].calor.Vint = vel1;
@@ -3222,22 +2654,15 @@ void SProd::tempDescarga(int i) {          //alteracao2
     fluxcal -= celula[iconecte].calor.fluxFim;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//  double coefdxT = (rho * vel1 * cpl) * area;
-//  double dtdx = (-celulaG[i - 1].temp) / (dx0 + dx1);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  //if(fabs(coefdxT)>localtiny) celulaG[i].temp=(dx0+dx1)*(-coefdxT*dtdx-(hidro)+fluxcal)/coefdxT;
   celulaG[i - 1].tempR = celulaG[i].temp;
   celulaG[i].tempL = celulaG[i - 1].temp;
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}    //alteracao2
+}
 
-void SProd::avancInter() {    //alteracao2
+void SProd::avancInter() {
 
   celulaG[celInter].razInter = (celulaG[celInter].razInterIni * celulaG[celInter].dx0 + velInter * dt)
       / celulaG[celInter].dx0;
@@ -3275,24 +2700,9 @@ void SProd::avancInter() {    //alteracao2
     celInter = 1e7;
     arq.descarga = 0;
   }
-  /*if(celInter==(ncelGas) && celulaG[celInter].razInter>=0.49){
 
-   celulaG[celInter].razInter=1.0;
-   celulaG[celInter+1].razInter=1.0;
 
-   double pmed=celulaG[celInter].pres;
-   double tmed=celulaG[celInter].temp;
-   double A1=celulaG[celInter].duto.area;
-   double rho1=celulaG[celInter].flui.MasEspGas(pmed,tmed);
-   double rhoL=celulaG[celInter].MasEspFlu(pmed,tmed);
-   celulaG[celInter].VGasR=celulaG[celInter].VGasR*rho1/rhoL;
-   celulaG[celInter].u1L=A1*rho1;
-   celulaG[celInter-1].u1R=celulaG[celInter].u1L;
-   celulaG[celInter-1].VGasRR=celulaG[celInter].VGasR;
 
-   celInter=1e7;
-   arq.descarga=0;
-   }*/
 
   if (arq.descarga == 1) {
     if (((celulaG[celInter].razInter <= (*vg1dSP).localtiny) && (celulaG[celInter].razInter >= -(*vg1dSP).localtiny))) celulaG[celInter].razInter =
@@ -3302,7 +2712,6 @@ void SProd::avancInter() {    //alteracao2
       dtaux = -celulaG[celInter].razInterIni * celulaG[celInter].dx0 / velInter;
       if (dtaux > (*vg1dSP).localtiny) {
         dtInter = dtaux;
-        //reinicia=-1;
         celulaG[celInter].razInter = fabs(0.);
       } else celulaG[celInter].razInter = fabs(0.);
     } else if ((celulaG[celInter].razInter >= (1. - (*vg1dSP).localtiny) && celulaG[celInter].razInter <= (1. + (*vg1dSP).localtiny))) {
@@ -3312,7 +2721,6 @@ void SProd::avancInter() {    //alteracao2
       dtaux = (1. - celulaG[celInter].razInterIni) * celulaG[celInter].dx0 / velInter;
       if (dtaux > (*vg1dSP).localtiny) {
         dtInter = dtaux;
-        //reinicia=-1;
         celulaG[celInter].razInter = 1.;
       } else celulaG[celInter].razInter = 1.;
     }
@@ -3332,11 +2740,10 @@ void SProd::avancInter() {    //alteracao2
     }
   }
 
-}    //alteracao2
+}
 
-double SProd::TempDescGL(int igl) {    //alteracao2
+double SProd::TempDescGL(int igl) {
   int passo = floor((chokeVGL[igl].presEstag - chokeVGL[igl].presGarg) / 50) + 1;
-  //passo=0;
   double deltaP = -(chokeVGL[igl].presEstag - chokeVGL[igl].presGarg) / passo;
   double PD0 = chokeVGL[igl].presEstag;
   double PD = chokeVGL[igl].presEstag + deltaP;
@@ -3361,13 +2768,13 @@ double SProd::TempDescGL(int igl) {    //alteracao2
     TD0 -= jtg * (chokeVGL[igl].presEstag - chokeVGL[igl].presGarg) * 98066.52;
   }
   return TD0;
-}    //alteracao2
+}
 
 void SProd::ValvGasTrans() {
   int nvalv = arq.nvalvgas;
   int posicM2 = arq.master2.posic;
   for (int i = 0; i < nvalv; i++) {
-    if (posicVGLG[i] < celInter) {    //alteracao2
+    if (posicVGLG[i] < celInter) {
       chokeVGL[i].presEstag = celulaG[posicVGLG[i]].pres;
       chokeVGL[i].presGarg = (celula[posicVGLP[i]].pres - chokeVGL[i].presEstag * chokeVGL[i].frec)
           / (1. - chokeVGL[i].frec);
@@ -3379,10 +2786,10 @@ void SProd::ValvGasTrans() {
         //areaValvCali(double PCal,double PVO, double PT, double Rvalv, double Temp)
         double abre = areaValvCali(chokeVGL[i].pcalib* 14.223595,chokeVGL[i].tcalib, (chokeVGL[i].presEstag - 1.033211) * 14.223595,
             (chokeVGL[i].presGarg - 1.033211) * 14.223595,chokeVGL[i].dextern,chokeVGL[i].areagarg, chokeVGL[i].areagarg / chokeVGL[i].areafole,
-            1.8 * chokeVGL[i].tempEstag + 32);    //alteracao2
+            1.8 * chokeVGL[i].tempEstag + 32);
         celulaG[posicVGLG[i]].massfonteCH *= abre;
       }
-    }    //alteracao2
+    }
   }
   for (int i = celInter; i <= ncelGas; i++) {
 
@@ -3401,7 +2808,7 @@ void SProd::ValvGasTrans() {
             //areaValvCali(double PCal,double PVO, double PT, double Rvalv, double Temp)
             double abre = areaValvCali(chokeVGL[j].pcalib * 14.223595,chokeVGL[j].tcalib,
                 (chokeVGL[j].presEstag - 1.033211) * 14.223595, (chokeVGL[j].presGarg - 1.033211) * 14.223595,chokeVGL[j].dextern,
-				chokeVGL[j].areagarg, chokeVGL[j].areagarg / chokeVGL[j].areafole, 1.8 * chokeVGL[j].tempEstag + 32);    //alteracao2
+				chokeVGL[j].areagarg, chokeVGL[j].areagarg / chokeVGL[j].areafole, 1.8 * chokeVGL[j].tempEstag + 32);
             celulaG[posicVGLG[j]].massfonteCH *= abre;
           }
         }
@@ -3420,7 +2827,7 @@ void SProd::ValvGasTrans() {
             //areaValvCali(double PCal,double PVO, double PT, double Rvalv, double Temp)
             double abre = areaValvCali(chokeVGL[j].pcalib * 14.223595,chokeVGL[j].tcalib,
                 (chokeVGL[j].presEstag - 1.033211) * 14.223595, (chokeVGL[j].presGarg - 1.033211) * 14.223595,chokeVGL[j].dextern,
-				chokeVGL[j].areagarg,chokeVGL[j].areagarg / chokeVGL[j].areafole, 1.8 * chokeVGL[j].tempEstag + 32);    //alteracao2
+				chokeVGL[j].areagarg,chokeVGL[j].areagarg / chokeVGL[j].areafole, 1.8 * chokeVGL[j].tempEstag + 32);
             celulaG[posicVGLG[j]].massfonteCH *= abre;
           }
         }
@@ -3428,34 +2835,12 @@ void SProd::ValvGasTrans() {
     }
   }
 
-  /*double areamenor = celulaG[posicM2].duto.area;
-  if (areamenor > celulaG[posicM2].dutoR.area) areamenor = celulaG[posicM2].dutoR.area;
-  if (celulaG[posicM2].chkcell.areagarg <= 0.0001 * areamenor
-      && celulaG[posicM2].chkcell.areagarg >= 1e-5 * areamenor) {
-    celulaG[posicM2].chkcell.presEstag = celulaG[posicM2].pres;
-    celulaG[posicM2].chkcell.presGarg = celulaG[posicM2 + 1].pres;
-    celulaG[posicM2].chkcell.tempEstag = celulaG[posicM2].temp;
-    if (celulaG[posicM2 + 1].pres < celulaG[posicM2].pres) celulaG[posicM2].fonteM2 =
-        -celulaG[posicM2].chkcell.massica();
-    else {
-      celulaG[posicM2].chkcell.presEstag = celulaG[posicM2 + 1].pres;
-      celulaG[posicM2].chkcell.presGarg = celulaG[posicM2].pres;
-      celulaG[posicM2].chkcell.tempEstag = celulaG[posicM2 + 1].temp;
-      celulaG[posicM2].fonteM2 = celulaG[posicM2].chkcell.massica();
-    }
-    celulaG[posicM2 + 1].fonteM2 = -celulaG[posicM2].fonteM2;
-  } else {
-    celulaG[posicM2].fonteM2 = 0.;
 
-    celulaG[posicM2 + 1].fonteM2 = 0.;
-  }*/
 
   double areamenor=celulaG[posicM2].duto.area;
   if(areamenor>celulaG[posicM2].dutoR.area)areamenor=celulaG[posicM2].dutoR.area;
     if(celulaG[posicM2].chkcell.areagarg<=0.01*areamenor &&
-  		  celulaG[posicM2].chkcell.areagarg>=1e-5*areamenor){//alteracao7
-  	  //celulaG[posicM2].chkcell.presEstag=celulaG[posicM2].pres;
-  	  //celulaG[posicM2].chkcell.presGarg=celulaG[posicM2+1].pres;
+  		  celulaG[posicM2].chkcell.areagarg>=1e-5*areamenor){
   	  celulaG[posicM2].chkcell.tempEstag=celulaG[posicM2].temp;
   	  double rhoM=celulaG[posicM2].flui.MasEspGas(celulaG[posicM2].pres,celulaG[posicM2].temp);
   	  double rhoJ=celulaG[posicM2+1].flui.MasEspGas(celulaG[posicM2+1].pres,celulaG[posicM2+1].temp);
@@ -3470,7 +2855,7 @@ void SProd::ValvGasTrans() {
 	    	  celulaG[posicM2].chkcell.presGarg=celulaG[posicM2].pres;
 	    	  celulaG[posicM2].chkcell.tempEstag=celulaG[posicM2+1].temp;
 	    	  celulaG[posicM2].fonteM2 = celulaG[posicM2].chkcell.massica();
-		  }//alteracao7
+		  }
 		  celulaG[posicM2+1].fonteM2=-celulaG[posicM2].fonteM2;
   }
   else{
@@ -3481,327 +2866,66 @@ void SProd::ValvGasTrans() {
 }
 
 
-/*double SProd::prescordesc(double vazmax,int ivalv, double fator,int sinal){//alteracao5
-
-
-	double rho0;
-	rho0=celula[ncel-1].bet*celula[ncel-1].fluicol.MasEspFlu(celula[ncel-1].pres,celula[ncel-1].temp)+
-			(1.-celula[ncel-1].bet)*celula[ncel-1].flui.MasEspLiq(celula[ncel-1].pres,celula[ncel-1].temp);
-	double massica=(fator*arq.vazDescControl-vazmax)*rho0;
-	double dm;
-	int nvalv=arq.nvalvgas;
-    Vcr<double> mult(nvalv);
-    double multTot=1.;
-    int fim;
-    for(int j=ivalv;j<nvalv;j++){
-    	int iG=posicVGLG[j];
-    	int iP=posicVGLP[j];
-    	chokeVGL[j].presEstag=celulaG[iG].pres;
-    	chokeVGL[j].tempEstag=celulaG[iG].temp;
-    	double pmed=celula[iP].pres;
-    	rho0=celulaG[iG].MasEspFlu(chokeVGL[j].presEstag,chokeVGL[j].tempEstag);
-    	//if(pmed<celulaG[iG].pres){
-    		mult[j]=(1./chokeVGL[ivalv].areagarg,2.)/sqrt(2.*rho0*98066.52);
-    		fim=j;
-    	//}
-    	//else mult[j]=-1;
-    	if(j>0 && mult[j-1]>0. && mult[j]>0.)multTot*=sqrt(mult[j]/mult[j-1]);
-    }
-    if(fim==ivalv){
-    	multTot=0;
-    	mult[fim]=1.;
-    }
-	double precorr=0.;
-	precorr = mult[fim]*pow(massica,2.)/(1+multTot);
-	return sinal*precorr;
-
-
-}
-
-double  SProd::CalcPresValvDesc(double vazGarg,int ivalv){//alteracao5
-
-
-	double velmax=0;
-	double laz=0.1;
-	double laz2=0.4;
-	  //return velmax;
-
-
-	    double pmed;
-		double tmed;
-		//double velmax=0.;
-		double massica;
-		pmed=pGSup;
-		arq.presMaxDesc=100000.;
-		for (int i = ncel; i >= 0; i--){
-			if(i==33){
-				int para;
-				para=0;
-			}
-
-				  double tmed=celula[i].temp;
-				  double A1=celula[i].duto.area;
-				  double S1=celula[i].duto.peri;
-				  double dx1=celula[i].dx;
-		          double rhoG=celula[i].flui.MasEspGas(pmed,tmed);
-		          double rhoP=celula[i].flui.MasEspLiq(pmed,tmed);
-		          double rhoC=celula[i].fluicol.MasEspFlu(pmed,tmed);
-		          double viscG=celula[i].flui.ViscGas(pmed,tmed);
-		          double viscP=celula[i].flui.ViscOleo(pmed,tmed);
-		          double viscC=celula[i].fluicol.VisFlu(pmed,tmed);
-		          double alf=celula[i].alf;
-		          double bet=celula[i].bet;
-		          double rholiq=bet*rhoC+(1.-bet)*rhoP;
-		          double viscliq=bet*viscC+(1.-bet)*viscP;
-		          double rhomix=alf*rhoG+(1.-alf)*rholiq;
-		          double viscmix=alf*viscG+(1.-alf)*viscliq;
-			      double vel1=celula[i].QL/(A1*rholiq)+celula[i].QG/(A1*rhoG);
-			      double re1;
-			      if(fabs(vel1)>1e-15){
-				    if(celula[i].duto.revest==0)re1 = celula[i].Rey(celula[i].duto.a, vel1, rhomix,viscmix);
-				    else{
-					    double dhid=4* A1/S1;
-					    re1 = celula[i].Rey(dhid, vel1, rhomix,viscmix);
-				    }
-			      }
-				  double f1;
-				  if(fabs(vel1)>1e-15) f1= celula[i].fric(re1, celula[i].duto.rug / celula[i].duto.a);
-				  else f1=0.;
-				  double tens1=f1*rhomix*vel1*fabs(vel1)/2.;
-				  pmed-=(-9.82*rhomix*sin(celula[i].duto.teta)-tens1*S1/A1)*dx1/98066.5;
-				  if(celula[i].acsr.tipo==3){
-					  double auxpresmax=celula[i].acsr.ipr.Pres-(pmed-pGSup);
-					  if(auxpresmax<arq.presMaxDesc)arq.presMaxDesc=auxpresmax;
-				  }
 
 
 
 
 
-		}
-		if(pGSup>=arq.presMaxDesc*0.9999999 && vazGarg>=(1-laz)*arq.vazDescControl && celulaG[0].VGasR>0.){
-		//int sai=1;
-		//while(velGarg>0.5*arq.velDescControl && sai){
-	    double precorr=prescordesc(vazGarg,ivalv,(1-laz),-1);
-		if(fabs(precorr)>0.01*presiniG*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*presiniG*celula[0].dt;
-		presiniG+=precorr;
-		if(presiniG<arq.presMinDescG){
-			presiniG=arq.presMinDescG;
-			//sai=0;
-		}
-
-		}
-		else if(vazGarg<(1-laz2)*arq.vazDescControl && pGSup<=arq.presMinDesc*1.0000001){
-		    double precorr=prescordesc(vazGarg,ivalv,1-laz2,1);
-			if(fabs(precorr)>0.01*presiniG*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*presiniG*celula[0].dt;
-			presiniG+=precorr;
-			if(presiniG>arq.presMaxDescG){
-				presiniG=arq.presMaxDescG;
-				//sai=0;
-			}
-		}
-
-
-
-		return velmax;
-}
-
-double  SProd::BuscaPresInjDesc(){//alteracao5
-	double vazmax=0;
-	double vazmaxinst=0;
 
 
 
 
-	double pGSupAux=pGSup;
 
-	if(arq.descarga==1){
-	  double presDescini=celula[ncel].pres;
-	  vazmax=celula[ncel-1].QL;
-	  int nvalv=arq.nvalvgas;
-	  int ivalv=0;
-	  for(int j=0;j<nvalv-1;j++){
-	     if(posicVGLG[j]<celInter) ivalv=j+1;
-	  }
-	  if(posicVGLG[nvalv-1]<celInter) ivalv=-1;
-	  if((*vg1dSP).lixo5>arq.tempoLatenciaDesc){
-	  double laz=0.1;
-	  double laz2=0.4;
-	  if(dtDesc.size()>maxVecContDesc || tempmedDEsc>tempMedContDesc){
-	    tempmedDEsc-=dtDesc[0];
-	    dtDesc.erase(dtDesc.begin());
-	    vazmedDesc-=vazmaxMedDesc[0];
-	    vazmaxMedDesc.erase(vazmaxMedDesc.begin());
-	  }
 
-	  vazmaxMedDesc.push_back(vazmax*dt);
-	  vazmedDesc+=vazmax*dt;
-	  dtDesc.push_back(dt);
-	  tempmedDEsc+=dt;
 
-	  double pondera=0.5;
-	  vazmaxinst=vazmax;
-	  vazmax=pondera*vazmax+(1.-pondera)*vazmedDesc/tempmedDEsc;
-	  CalcPresValvDesc(vazmax,ivalv);
-	  //if(posicVGLG[ivalv]>=celInter){
-	  if(ivalv>=0){
-		if(celula[ncel-1].MC>0.0){
-	    if(vazmax>=(1-laz)*arq.vazDescControl){
 
-			double precorr=0.;
-			//if(chokeVGL[ivalv].presEstag>chokeVGL[ivalv].presGarg && pGSup<arq.presMaxDesc)
-			precorr=prescordesc(vazmax,ivalv,(1-laz),-1);
-			if(fabs(precorr)>0.01*pGSup*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*pGSup*celula[0].dt;
-			pGSup-=precorr;
-			if(pGSup>arq.presMaxDesc)pGSup=arq.presMaxDesc;
-	    }
-	    else if(vazmax<(1-laz2)*arq.vazDescControl){
 
-			double precorr=0.;
-			//if(chokeVGL[ivalv].presEstag>chokeVGL[ivalv].presGarg && pGSup>10.)
-			precorr=prescordesc(vazmax,ivalv,1-laz2,1);
-			if(fabs(precorr)>0.01*pGSup*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*pGSup*celula[0].dt;
-			pGSup-=precorr;
-			if(pGSup<arq.presMinDesc)pGSup=arq.presMinDesc;
-	    }
-	  }
-		else{
-			pGSup*=(1-0.01*dt);
-			if(pGSup<arq.presMinDesc)pGSup=arq.presMinDesc;
-		}
-	  }
-		  }
-		  else{
-			  if((*vg1dSP).lixo5<0.5*arq.tempoLatenciaDesc)
-			      pGSup=presDescini-(presDescini-arq.presMinDesc)*celula[0].dt/(0.5*arq.tempoLatenciaDesc-(*vg1dSP).lixo5);
-			  else
-				  pGSup=arq.presMinDesc;
-			  presiniG=arq.presIniDescG;
-		  }
-	}
-	  else{
-		  pGSup*=0.95;
-		  if(pGSup<arq.presMinDesc)pGSup=arq.presMinDesc;
-		  if(presiniG>arq.presIniDesc){
-			  presiniG*=0.95;
-			  if(presiniG<arq.presIniDesc)presiniG=arq.presIniDesc;
-		  }
-		  else if(presiniG<arq.presIniDesc){
-			  presiniG*=1.05;
-			  if(presiniG>arq.presIniDesc)presiniG=arq.presIniDesc;
-		  }
-	  }
 
-	return vazmaxinst;
 
-}*/
 
-double SProd::prescordesc(double vazmax,int ivalv, double fator,int sinal){//alteracao5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+double SProd::prescordesc(double vazmax,int ivalv, double fator,int sinal){
 	int iG=posicVGLG[ivalv];
 	int iP=posicVGLP[ivalv];
 	double pmed=celula[iP].pres;
 	chokeVGL[ivalv].presEstag=celulaG[iG].pres;
 	chokeVGL[ivalv].tempEstag=celulaG[iG].temp;
 	double rho0=celulaG[iG].MasEspFlu(chokeVGL[ivalv].presEstag,chokeVGL[ivalv].tempEstag);
-	double massica=(fator*arq.vazDescControl-vazmax)*rho0/*chokeVGL[ivalv].areagarg*/;
+	double massica=(fator*arq.vazDescControl-vazmax)*rho0;
 	//,arq.salinDescarga
 	double precorr=0.;
-	//if(chokeVGL[ivalv].presEstag>chokeVGL[ivalv].presGarg && pGSup<arq.presMaxDesc)
-	//precorr=
-	//(chokeVGL[ivalv].presGarg+pow(massica/chokeVGL[ivalv].areagarg,2.)/(2.*rho0*98066.52)-chokeVGL[ivalv].presEstag);
 	precorr=
 	pow(massica/chokeVGL[ivalv].areagarg,2.)/(2.*rho0*98066.52);
 	return sinal*precorr;
 }
 
-double  SProd::CalcPresValvDesc(double vazGarg,int ivalv){//alteracao5
+double  SProd::CalcPresValvDesc(double vazGarg,int ivalv){
 
-	/*double pmed;
-	double tmed;
-	double velmax=0.;
-	double massica;
-	pmed=presiniG;
-	for (int i = 0; i <= ncelGas; i++){
-		if(i<celInter){
-			  double tmed=celulaG[i].temp;
-			  double A1=celulaG[i].duto.area;
-			  double S1=celulaG[i].duto.peri;
-			  double dx1=celulaG[i].dx0;
-	          double rho1=celulaG[i].flui.MasEspGas(pmed,tmed);
-	          double visc1=celulaG[i].flui.ViscGas(pmed,tmed);
-		      double vel1=celulaG[i].VGasR/(A1*rho1);
-		      double re1;
-		      if(fabs(vel1)>1e-15){
-			    if(celulaG[i].duto.revest==0)re1 = celulaG[i].Rey(celulaG[i].duto.a, vel1, rho1,visc1);
-			    else{
-				    double dhid=4* A1/S1;
-				    re1 = celulaG[i].Rey(dhid, vel1, rho1,visc1);
-			    }
-		      }
-			  double f1;
-			  if(fabs(vel1)>1e-15) f1= celulaG[i].fric(re1, celulaG[i].duto.rug / celulaG[i].duto.a);
-			  else f1=0.;
-			  double tens1=f1*rho1*vel1*fabs(vel1)/2.;
-			  pmed+=(-9.82*rho1*sin(celulaG[i].duto.teta)-tens1*S1/A1)*dx1/98066.5;
-		}
-		else{
-			  double tmed=celulaG[i].temp;
-			  double A1=celulaG[i].duto.area;
-			  double S1=celulaG[i].duto.peri;
-			  double dx1=celulaG[i].dx0;
-	          double rho1=celulaG[i].MasEspFlu(pmed,tmed);
-	          double visc1=celulaG[i].VisFlu(pmed,tmed);
-		      double vel1=celulaG[i].VGasR/(A1*rho1);
-		      double re1;
-		      if(fabs(vel1)>1e-15){
-			    if(celulaG[i].duto.revest==0)re1 = celulaG[i].Rey(celulaG[i].duto.a, vel1, rho1,visc1);
-			    else{
-				    double dhid=4* A1/S1;
-				    re1 = celulaG[i].Rey(dhid, vel1, rho1,visc1);
-			    }
-		      }
-			  double f1;
-			  if(fabs(vel1)>1e-15) f1= celulaG[i].fric(re1, celulaG[i].duto.rug / celulaG[i].duto.a);
-			  else f1=0.;
-			  double tens1=f1*rho1*vel1*fabs(vel1)/2.;
-			  pmed+=(-9.82*rho1*sin(celulaG[i].duto.teta)-tens1*S1/A1)*dx1/98066.5;
-			  int nvalv=arq.nvalvgas;
-			  for(int j=0;j<nvalv;j++){
-					if(posicVGLG[j]==i){
-					  chokeVGL[j].presEstag=pmed;
-				      chokeVGL[j].presGarg=(celula[posicVGLP[j]].pres-chokeVGL[j].presEstag*chokeVGL[j].frec)/
-				    		              (1.-chokeVGL[j].frec);
-					  chokeVGL[j].tempEstag=tmed;
-					  if(celula[posicVGLP[j]].pres<pmed)
-						massica =chokeVGL[j].massica();
-					  else massica=0.;
-					  if(chokeVGL[j].tipo==1){
 
-						  double abre=areaValvCali(chokeVGL[j].pcalib,(chokeVGL[j].presEstag-1.033211)*14.223595,
-								                      (chokeVGL[j].presGarg-1.033211)*14.223595, chokeVGL[j].areagarg/
-													  chokeVGL[j].areaventuri,
-													  1.8*chokeVGL[j].tempEstag+32);
-						  massica*=abre;
-					  }
-					  double velmaxAux=massica/(rho1*chokeVGL[j].areagarg);
-					  if(velmaxAux>velmax)velmax=velmaxAux;
 
-					}
-				}
-			 }
 
-	}
 
-	return velmax;*/
 	double velmax=0;
 	double laz1=0.1;
 	double laz2=0.4;
-	  //return velmax;
 
 
 	    double pmed;
 		double tmed;
-		//double velmax=0.;
 		double massica;
 		pmed=pGSup;
 		arq.presMaxDesc=100000.;
@@ -3844,98 +2968,28 @@ double  SProd::CalcPresValvDesc(double vazGarg,int ivalv){//alteracao5
 
 
 
-			  /*int nvalv=arq.nvalvgas;
-			  for(int j=0;j<nvalv;j++){
-				  int iG=posicVGLG[j];
-				  int iP=posicVGLP[j];
-				  if(i==iP){
-				      double rho1=celulaG[iG].MasEspFlu(celulaG[iG].pres,celulaG[iG].temp);
-				      chokeVGL[j].presEstag=celulaG[iG].pres;
-				      chokeVGL[j].presGarg=(pmed-chokeVGL[j].presEstag*chokeVGL[j].frec)/
-				    		              (1.-chokeVGL[j].frec);
-					  chokeVGL[j].tempEstag=celulaG[iG].temp;
-					  double massica;
-					  if(pmed<celulaG[iG].pres)
-						massica =chokeVGL[j].massica(1,arq.salinDescarga);
-					  else massica=0.;
-					  if(chokeVGL[j].tipo==1){
-
-						  double abre=areaValvCali(chokeVGL[j].pcalib,(chokeVGL[j].presEstag-1.033211)*14.223595,
-								                      (chokeVGL[j].presGarg-1.033211)*14.223595, chokeVGL[j].areagarg/
-													  chokeVGL[j].areaventuri,
-													  1.8*chokeVGL[j].tempEstag+32);
-						  massica*=abre;
-					  }
-					  double velmaxAux=massica/(rho1*chokeVGL[j].areagarg);
-					  if(velmaxAux>velmax)velmax=velmaxAux;
 
 
-				}
-			  }*/
+
 
 		}
 		if(pGSup>=arq.presMaxDesc*0.9999999 && vazGarg>(1-laz1)*arq.vazDescControl && celulaG[0].VGasR>0.){
-		//int sai=1;
-		//while(velGarg>0.5*arq.velDescControl && sai){
 	    double precorr=prescordesc(vazGarg,ivalv,(1-laz1),-1);
 		if(fabs(precorr)>0.01*presiniG*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*presiniG*celula[0].dt;
 		presiniG+=precorr;
 		if(presiniG<arq.presMinDescG){
 			presiniG=arq.presMinDescG;
-			//sai=0;
 		}
-		/*else if(presiniG>arq.presMaxDescG){
-			presiniG=arq.presMaxDescG;
-			//sai=0;
-		}*/
-		/*subtempoGas();
-		  int nvalv=arq.nvalvgas;
-		  for(int j=0;j<nvalv;j++){
-			  int iG=posicVGLG[j];
-			  int iP=posicVGLP[j];
-			  if(iG>celInter){
-			      double rho1=celulaG[iG].MasEspFlu(celulaG[iG].pres,celulaG[iG].temp);
-			      chokeVGL[j].presEstag=celulaG[iG].pres;
-			      chokeVGL[j].presGarg=(celula[iP].pres-chokeVGL[j].presEstag*chokeVGL[j].frec)/
-			    		              (1.-chokeVGL[j].frec);
-				  chokeVGL[j].tempEstag=celulaG[iG].temp;
-				  double massica;
-				  if(celula[posicVGLP[j]].pres<celulaG[iG].pres)
-					massica =chokeVGL[j].massica(1,arq.salinDescarga);
-				  else massica=0.;
-				  if(chokeVGL[j].tipo==1){
-
-					  double abre=areaValvCali(chokeVGL[j].pcalib,(chokeVGL[j].presEstag-1.033211)*14.223595,
-							                      (chokeVGL[j].presGarg-1.033211)*14.223595, chokeVGL[j].areagarg/
-												  chokeVGL[j].areaventuri,
-												  1.8*chokeVGL[j].tempEstag+32);
-					  massica*=abre;
-				  }
-				  double velmaxAux=massica/(rho1*chokeVGL[j].areagarg);
-				  if(velmaxAux>velmax)velmax=velmaxAux;
 
 
-			}
-		  }
-		  for (int i = 0; i <= ncelGas; i++)celulaG[i].FeiticoDoTempo();
-			if(arq.descarga==1){
-			  celInter=celInterIni;
-			  dtInter=dtInterIni;
-			  velInter=velInterIni;
-			}*/
-		//}
+
 		}
 		else if(vazGarg<=(1-laz2)*arq.vazDescControl && pGSup<=arq.presMinDesc*1.0000001){
 		    double precorr=prescordesc(vazGarg,ivalv,1-laz2,1);
 			if(fabs(precorr)>0.01*presiniG*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*presiniG*celula[0].dt;
 			presiniG+=precorr;
-			/*if(presiniG<arq.presMinDescG){
-				presiniG=arq.presMinDescG;
-				//sai=0;
-			}
-			else*/ if(presiniG>arq.presMaxDescG){
+ if(presiniG>arq.presMaxDescG){
 				presiniG=arq.presMaxDescG;
-				//sai=0;
 			}
 		}
 
@@ -3944,41 +2998,10 @@ double  SProd::CalcPresValvDesc(double vazGarg,int ivalv){//alteracao5
 		return velmax;
 }
 
-double  SProd::BuscaPresInjDesc(){//alteracao5
+double  SProd::BuscaPresInjDesc(){
 	double vazmax=0;
 	double vazmaxinst=0;
 
-	/*if((*vg1dSP).lixo5>645){
-		int para;
-		para=0;
-	}
-	double presinigAux=presiniG;
-	int sai=0;
-	if(arq.descarga==1){
-	  double avanc=0.001;
-	  if((*vg1dSP).lixo5>600.){
-	   double velmax=CalcPresValvDesc();
-	    if(velmax>0.5*arq.velDescControl){
-	      while(velmax>0.5*arq.velDescControl && presiniG>(presinigAux-0.1*presinigAux*celula[0].dt) &&
-	    		  presiniG>10.+0.*arq.presMaxDesc*0.7 && sai==0){
-		    presiniG*=(1.-avanc);
-		    velmax=CalcPresValvDesc();
-	      }
-	    }
-	    else if(velmax<0.4*arq.velDescControl && (1.+avanc)*presiniG<arq.presMaxDesc){
-		      while(velmax<0.4*arq.velDescControl && (1.+avanc)*presiniG<arq.presMaxDesc
-		    		  && presiniG<(presinigAux+0.01*presinigAux*celula[0].dt) && sai==0){
-			    presiniG*=(1.+avanc);
-			    velmax=CalcPresValvDesc();
-			    if(velmax>0.95*arq.velDescControl){
-			    	presiniG/=(1.+avanc);
-			    	sai=1;
-			    }
-		      }
-	    }
-	  }
-	  else presiniG=10.;
-	}*/
 
 	if((*vg1dSP).lixo5>1000){
 			int para;
@@ -3987,32 +3010,6 @@ double  SProd::BuscaPresInjDesc(){//alteracao5
 	double pGSupAux=pGSup;
 	double laz1=0.1;
 	double laz2=0.4;
-	/*int sai=0;
-	if(arq.descarga==1){
-	  double avanc=0.001;
-	  if((*vg1dSP).lixo5>600.){
-	   double velmax=CalcPresValvDesc();
-	    if(velmax>0.5*arq.velDescControl){
-	      while(velmax>0.5*arq.velDescControl && pGSup<(pGSupAux+0.1*pGSupAux*celula[0].dt) &&
-	    		  pGSup<arq.presMaxDesc && sai==0){
-		    pGSup*=(1.+avanc);
-		    velmax=CalcPresValvDesc();
-	      }
-	    }
-	    else if(velmax<0.4*arq.velDescControl && pGSup>10.){
-		      while(velmax<0.4*arq.velDescControl && pGSup>10.
-		    		  && pGSup<(pGSupAux-0.01*pGSupAux*celula[0].dt) && sai==0){
-			    pGSup*=(1.-avanc);
-			    velmax=CalcPresValvDesc();
-			    if(velmax>0.95*arq.velDescControl){
-			    	pGSup/=(1.-avanc);
-			    	sai=1;
-			    }
-		      }
-	    }
-	  }
-	  else pGSup=10.;
-	}*/
 	if(arq.descarga==1){
 		double presDescini=celula[ncel].pres;
 		  if((*vg1dSP).lixo5>arq.tempoLatenciaDesc){
@@ -4040,34 +3037,13 @@ double  SProd::BuscaPresInjDesc(){//alteracao5
 											  1.8*chokeVGL[j].tempEstag+32);
 				  massica*=abre;
 			  }
-			  double vazmaxAux=massica/(rho1/*chokeVGL[j].areagarg*/);
+			  double vazmaxAux=massica/(rho1);
 			  if(vazmaxAux>vazmax){
 				  vazmax=vazmaxAux;
 				  ivalv=j;
 			  }
 		}
 	  }
-/*
- * 	jVet.push_back(jtemporario*dt);
-	alfVet.push_back(celula[ncel-1].alf*dt);
-	ktMedMov+=dt;
-	pTotal+=presfim*dt;
-	jTotal+=jtemporario*dt;
-	alfTotal+=celula[ncel-1].alf*dt;
-	if((*vg1dSP).lixo5>tMedMov){
-		pTotal-=presVet.front();
-		presVet.erase(presVet.begin());
-		jTotal-=jVet.front();
-		jVet.erase(jVet.begin());
-		alfTotal-=alfVet.front();
-		alfVet.erase(alfVet.begin());
-		ktMedMov-=tVet.front();,double abertura
-		tVet.erase(tVet.begin());
-		presMedMov=pTotal/ktMedMov;
-		jMedMov=jTotal/ktMedMov;
-		alfMedMov=alfTotal/ktMedMov;
-	}
- */
 	  if(dtDesc.size()>maxVecContDesc || tempmedDEsc>tempMedContDesc){
 	    tempmedDEsc-=dtDesc[0];
 	    dtDesc.erase(dtDesc.begin());
@@ -4089,7 +3065,6 @@ double  SProd::BuscaPresInjDesc(){//alteracao5
 	    if(vazmax>(1.-laz1)*arq.vazDescControl){
 
 			double precorr=0.;
-			//if(chokeVGL[ivalv].presEstag>chokeVGL[ivalv].presGarg && pGSup<arq.presMaxDesc)
 			precorr=prescordesc(vazmax,ivalv,1.-laz1,-1);
 			if(fabs(precorr)>0.01*pGSup*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*pGSup*celula[0].dt;
 			pGSup-=precorr;
@@ -4098,7 +3073,6 @@ double  SProd::BuscaPresInjDesc(){//alteracao5
 	    else if(vazmax<=(1-laz2)*arq.vazDescControl){
 
 			double precorr=0.;
-			//if(chokeVGL[ivalv].presEstag>chokeVGL[ivalv].presGarg && pGSup>10.)
 			precorr=prescordesc(vazmax,ivalv,1.-laz2,1);
 			if(fabs(precorr)>0.01*pGSup*celula[0].dt) precorr=(fabs(precorr)/precorr)*0.01*pGSup*celula[0].dt;
 			pGSup-=precorr;
@@ -4136,83 +3110,29 @@ double  SProd::BuscaPresInjDesc(){//alteracao5
 
 }
 
-/*void SProd::subtempoGas() {
 
 
-  for (int i = 0; i <= ncelGas; i++)
-    celulaG[i].DeVoltaParaoFuturo();
-  dtInter = dt;    //alteracao2
-  if (arq.descarga == 1) {
-    celInterIni = celInter;
-    dtInterIni = dtInter;
-    velInterIni = velInter;
-    avancInter();    //alteracao2
-  }
-  if (dtInter < dt) {
-    dt = dtInter;    //alteracao2
-    for (int i = 0; i <= ncel; i++) {
-      celula[i].dt = dt;
-      celula[i].dt2 = dt;
-      celula[i].dtPig = dt;
-    }
-  }
 
-  for (int i = 0; i <= ncelGas; i++) {
-    celulaG[i].dt = dt;
-    //celulaG[i].razInterIni=celulaG[i].razInter;
-  }
-  for (int i = 0; i <= ncelGas; i++) {
-    celulaG[i].GeraLocal(ncelGas, presiniG, tempiniG);
-    for (int j = 0; j < 9; j++) {
-      matglobG[3 * i][j - 3] = celulaG[i].local[0][j];
-      matglobG[3 * i + 1][j - 4] = celulaG[i].local[1][j];
-      matglobG[3 * i + 2][j - 5] = celulaG[i].local[2][j];
-    }
-    termolivreG[3 * i] = celulaG[i].TL[0];
-    termolivreG[3 * i + 1] = celulaG[i].TL[1];
-    termolivreG[3 * i + 2] = celulaG[i].TL[2];
-  }
-  matglobG.GaussElimPP(termolivreG);
-  renovaGas();
 
-  double tempantiga;
-  double verifica = celulaG[0].pres;
-  tempantiga = celulaG[0].temp;
-  celulaG[0].temp = tempiniG;
-  if (celulaG[ncelGas].VGasR < 0.) celulaG[ncelGas].temp = 20.;
-  int celLimi;
-  if (celInter <= ncelGas) celLimi = celInter - 1;
-  else celLimi = ncelGas + 1;
-  //for(int i=1;i<=ncelGas;i++){
-  for (int i = 1; i < celLimi; i++) {
-    double buffer = celulaG[i].temp;
-    calctempGas(i, tempantiga);
-    tempantiga = buffer;
-  }
 
-  //resolveDescarga();
 
-  for (int i = 0; i <= ncelGas; i++)
-    celulaG[i].presini = celulaG[i].pres;    //aletracao2
 
-  if (arq.descarga == 1) resolveDescarga();
 
-}*/
 
 void SProd::subtempoGas() {
 
 
   for (int i = 0; i <= ncelGas; i++)
     celulaG[i].DeVoltaParaoFuturo();
-  dtInter = dt;    //alteracao2
+  dtInter = dt;
   if (arq.descarga == 1) {
     celInterIni = celInter;
     dtInterIni = dtInter;
     velInterIni = velInter;
-    avancInter();    //alteracao2
+    avancInter();
   }
   if (dtInter < dt) {
-    dt = dtInter;    //alteracao2
+    dt = dtInter;
     for (int i = 0; i <= ncel; i++) {
       celula[i].dt = dt;
       celula[i].dt2 = dt;
@@ -4222,7 +3142,6 @@ void SProd::subtempoGas() {
 
   for (int i = 0; i <= ncelGas; i++) {
     celulaG[i].dt = dt;
-    //celulaG[i].razInterIni=celulaG[i].razInter;
   }
 
   int celLimi;
@@ -4245,17 +3164,7 @@ void SProd::subtempoGas() {
 	        }
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
     for (int i = 0; i <= ncelGas; i++) {
-     /* double abertoChk=1.;
-     if(i==0 && celulaG[0].tipoCC==0){
-    		abertoChk=chokeInj.areagarg/celulaG[0].duto.area;
-    		if(abertoChk<0.2){
-    			chokeInj.presEstag=presiniG;
-    			chokeInj.tempEstag=tempiniG;
-    			chokeInj.presGarg=celulaG[0].pres;
-    			celulaG[0].massfonteCH=chokeInj.massica();
-    		}
 
-      }*/
       celulaG[i].GeraLocal(ncelGas, presiniG, tempiniG,abertoChk);
       for (int j = 0; j < 9; j++) {
         matglobG[3 * i][j - 3] = celulaG[i].local[0][j];
@@ -4269,19 +3178,14 @@ void SProd::subtempoGas() {
     matglobG.GaussElimPP(termolivreG);
     renovaGas();
 
-    //double tempantiga;
     double verifica = celulaG[0].pres;
-    //tempantiga = celulaG[0].temp;
     celulaG[0].temp = tempiniG;
     celulaG[0].dTdt=(celulaG[0].temp-celulaG[0].tempini)/dt;
     if (celulaG[ncelGas].VGasR < 0.) celulaG[ncelGas].temp = 20.;
-    //for(int i=1;i<=ncelGas;i++){
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
     for (int i = 1; i < celLimi; i++) {
-      //double buffer = celulaG[i].temp;
       calctempGas(i, celulaG[i-1].tempini);
       celulaG[i].dTdt=(celulaG[i].temp-celulaG[i].tempini)/dt;
-      //tempantiga = buffer;
     }
     if(ciclo<ciclomax)for (int k = 0; k <= ncelGas; k++) celulaG[k].FeiticoDoTempo();
   }
@@ -4290,7 +3194,6 @@ void SProd::subtempoGas() {
   for (int i = 0; i < celLimi; i++) celulaG[i].rg=celulaG[i].flui.MasEspGas(celulaG[i].pres,celulaG[i].temp);
 
   for (int i = 0; i < celLimi; i++) {
-	  //celulaG[i].rg=celulaG[i].flui.MasEspGas(celulaG[i].pres,celulaG[i].temp);
 	  if(i>0)celulaG[i-1].rgR=celulaG[i].rg;
       celulaG[i].u1L = celulaG[i].rg*celulaG[i].duto.area;
       if(i==0)celulaG[i].u1LL = celulaG[i].u1L;
@@ -4302,7 +3205,6 @@ void SProd::subtempoGas() {
       }
   }
 
-  //resolveDescarga();
 
   for (int i = 0; i <= ncelGas; i++)
     celulaG[i].presini = celulaG[i].pres;    //aletracao2
@@ -4328,17 +3230,7 @@ void SProd::subtempoGasBuf() {
   }
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
   for (int i = 0; i <= ncelGas; i++) {
-     /* double abertoChk=1.;
-      if(i==0 && celulaG[0].tipoCC==0){
-    		abertoChk=chokeInj.areagarg/celulaG[0].duto.area;
-    		if(abertoChk<0.2){
-    			chokeInj.presEstag=presiniG;
-    			chokeInj.tempEstag=tempiniG;
-    			chokeInj.presGarg=celulaG[0].pres;
-    			celulaG[0].massfonteCH=chokeInj.massica();
-    		}
 
-      }*/
       celulaG[i].GeraLocal(ncelGas, presiniG, tempiniG,abertoChk);
       for (int j = 0; j < 9; j++) {
         matglobG[3 * i][j - 3] = celulaG[i].local[0][j];
@@ -4354,14 +3246,12 @@ void SProd::subtempoGasBuf() {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SProd::conectaColuna() {
   for (int i = ColunaAnulaIni; i >= ColunaAnulaFim; i--) {
     int j = ColunaAnulaIni + AnulaColunaIni - i;
     celula[i].calor.Textern2=celulaG[j].calor.Tcamada[0][0];
     celula[i].calor.betext=celulaG[j].calor.betint;
-    //celula[i].calor.Textern2 = celulaG[j].temp;
     int icam = celula[i].calor.geom.ncamadas - 1;
     int idisc = celula[i].calor.ncamada[icam] - 1;
     celulaG[j].calor.Tint2 = celula[i].calor.Tcamada[icam][idisc];
@@ -4370,7 +3260,7 @@ void SProd::conectaColuna() {
 
     celula[i].calor.Textern1 = celulaG[j].temp;
     celula[i].calor.Vextern1 = celulaG[j].VGasR / celulaG[j].u1L;
-    if (j < celInter) {    //alteracao2
+    if (j < celInter) {
       double cpg = celulaG[j].flui.CalorGas(celulaG[j].pres, celulaG[j].temp);
       double rhog = celulaG[j].flui.MasEspGas(celulaG[j].pres, celulaG[j].temp);
       celula[i].calor.kextern1 = celulaG[j].flui.CondGas(celulaG[j].pres, celulaG[j].temp);
@@ -4385,10 +3275,9 @@ void SProd::conectaColuna() {
       celula[i].calor.rhoextern1 = rhog;
       celula[i].calor.viscextern1 = celulaG[j].VisFlu(celulaG[j].pres, celulaG[j].temp) * 1.e-3;
     }
-  }    //alteracao2
+  }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 double SProd::interpolaHLatente(double pres, double temp) {
   int ndiv = arq.tabent.npont - 1;
@@ -4463,38 +3352,24 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 		double betmed = celula[i].bet;
 		double ugsmed;
 		double ulsmed;
-  //if(i<ncel)ugsmed=celula[i].QG/area;
-  //else ugsmed=celula[i].QG/area;
 		if (i>0 && (celula[i-1].acsr.tipo != 5 ||
 				celula[i-1].acsr.chk.AreaGarg > (1e-3 +arq.master1.razareaativ) * celula[i-1].duto.area)){
 			if (celula[i].alf > (*vg1dSP).localtiny) ugsmed = celula[i].QG / area;
 			else {
-      //if(i<ncel)ugsmed=celula[i+1].QG/area;
-      //else ugsmed=celula[i].QG/area;
 				ugsmed = 0.;
 			}
-    //if(i<ncel)ulsmed=celula[i].QL/area;
-    //else ulsmed=celula[i].QL/area;
 			if (celula[i].alf < 1. - (*vg1dSP).localtiny) ulsmed = celula[i].QL / area;
 			else {
-      //if(i<ncel)ulsmed=celula[i+1].QL/area;
-      //else ulsmed=celula[i].QL/area;
 				ulsmed = 0.;
 			}
 		}
 		else{
 			if (celula[i].alf > (*vg1dSP).localtiny) ugsmed = celula[i+1].QG / area;
 			else {
-	      //if(i<ncel)ugsmed=celula[i+1].QG/area;
-	      //else ugsmed=celula[i].QG/area;
 				ugsmed = 0.;
 			}
-	    //if(i<ncel)ulsmed=celula[i].QL/area;
-	    //else ulsmed=celula[i].QL/area;
 			if (celula[i].alf < 1. - (*vg1dSP).localtiny) ulsmed = celula[i+1].QL / area;
 			else {
-	      //if(i<ncel)ulsmed=celula[i+1].QL/area;
-	      //else ulsmed=celula[i].QL/area;
 				ulsmed = 0.;
 			}
 		}
@@ -4505,16 +3380,13 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 		double rhog = celula[i].rgC;//celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
 		double cpl =(1. - betmed) * celula[i].flui.CalorLiq(celula[i].presini, celula[i].temp)
     	    		 + betmed * celula[i].fluicol.CalorLiq(celula[i].presini, celula[i].temp); //(1. - betmed) * celula[i].flui.CalorLiq(celula[i].pres, celula[i].temp)
-     //+ betmed * celula[i].fluicol.CalorLiq(celula[i].pres, celula[i].temp);
 		double cvl = cpl;
 		double cpg = celula[i].flui.CalorGas(celula[i].presini,celula[i].temp);//celula[i].flui.CalorGas(celula[i].pres, celula[i].temp);
 		double cvg = celula[i].flui.CalorGasVolMod(celula[i].presini, celula[i].temp,celula[i].rgC);//celula[i].flui.CalorGasVolMod(celula[i].pres, celula[i].temp);
-  //double razcp=celula[i].flui.ConstAdG(pres[i],celula[i].tr);
 		double jtl = (1. - betmed) * celula[i].flui.JTL(celula[i].presini, celula[i].temp) - betmed / rc;//(1. - betmed) * celula[i].flui.JTL(celula[i].pres, celula[i].temp) - betmed / rc;
 		double jtg = celula[i].flui.JTG(celula[i].presini, celula[i].temp,celula[i].rgC);//celula[i].flui.JTG(celula[i].pres, celula[i].temp);
 		double hidro = (rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(celula[i].duto.teta);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		double fluxcal=0.;
 		celula[i].calor.Tint = celula[i].temp;
@@ -4524,23 +3396,19 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 		celula[i].calor.dt = celula[i].dt;
 		double condliq = (1. - betmed) * celula[i].flui.CondLiq(celula[i].presini, celula[i].temp)
 	    		  + betmed * celula[i].fluicol.CondLiq(celula[i].presini, celula[i].temp);//(1. - betmed) * celula[i].flui.CondLiq(celula[i].pres, celula[i].temp)
-  //+ betmed * celula[i].fluicol.CondLiq(celula[i].pres, celula[i].temp);
 		celula[i].calor.kint =condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].presini, celula[i].temp) * alfmed;// condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].pres, celula[i].temp) * alfmed;
 		celula[i].calor.cpint = cpl * (1 - alfmed) + cpg * alfmed;
 		celula[i].calor.rhoint = rhol * (1 - alfmed) + rhog * alfmed;
 //(1. - betmed) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp)
-  //+ betmed * celula[i].fluicol.VisFlu(celula[i].pres, celula[i].temp);
 		double viscliq = (1. - betmed) * celula[i].mipC
 				+ betmed * celula[i].micC;
 //viscliq * (1 - alfmed) * 1.e-3
-  //+ celula[i].flui.ViscGas(celula[i].pres, celula[i].temp) * alfmed * 1.e-3;
 		celula[i].calor.viscint = viscliq * (1 - alfmed) * 1.e-3
 				+ celula[i].migC * alfmed * 1.e-3;
 		double dtemp=celula[i].temp*0.01;
 		if(fabs(celula[i].temp)<1e-15)dtemp=0.1;
 		double rholdT=(1. - betmed) * celula[i].flui.MasEspLiq(celula[i].presini, celula[i].temp+dtemp) +
 				betmed * celula[i].fluicol.MasEspFlu(celula[i].presini, celula[i].temp+dtemp)-rhol;//(1. - betmed) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp+dtemp) +
-	             //betmed * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp+dtemp)-rhol;
 		double rhogdT=celula[i].flui.MasEspGas(celula[i].presini, celula[i].temp+dtemp)-rhog;//celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp+dtemp)-rhog;
 		celula[i].calor.betint= -(1/celula[i].calor.rhoint)*(rholdT * (1 - alfmed) + rhogdT * alfmed)/(dtemp);
 		if(arq.modoDifus3D==0 || modoPerm!=0){
@@ -4549,7 +3417,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 			if(verificaAcopRedeS==1 && i>=SecPrimIniRedeP && i<=SecPrimFimRedeP){
 					fluxcal-=celula[i].fluxcalAcopRedeP;
 			}
-  //double fluxcal = celula[i].calor.transperm();
 		}
 		else if(arq.modoDifus3D==1){
 			int acoplado=-1;
@@ -4570,7 +3437,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 
 		celula[i].fluxcalmed=fluxcal;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		double coefTempo = (rhol * (1 - alfmed) * cvl + rhog * alfmed * cvg) * area;
 		double coefPresTempo;
@@ -4582,8 +3448,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 		else if(i == ncel-1 && chokeSup.AreaGarg > 0.5 * celula[ncel - 1].duto.area)
 			dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * 98066.5 / celula[i].dx;
 		else dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
-  //if (celula[i].acsr.tipo == 5 && celula[i].acsr.chk.AreaGarg <= (1e-3 +arq.master1.razareaativ) * celula[i].duto.area) dpdx = 2.
-      // * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
 		if (i >0 && celula[i-1].acsr.tipo == 5 &&
 				celula[i-1].acsr.chk.AreaGarg <= (1e-3 +arq.master1.razareaativ) * celula[i].duto.area)
 			dpdx = 2.* (celula[i+1].presaux-celula[i].pres) * 98066.5 / celula[i].dx;
@@ -4591,20 +3455,15 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 				celula[i].acsr.chk.AreaGarg <= (1e-3 +arq.master1.razareaativ) * celula[i].duto.area){
 			dpdx = (celula[i].pres-celula[i-1].pres) * 98066.5 / dxmed;
  	}
-		//else if(i>0 && ((celula[i-1].acsr.tipo==4 && celula[i-1].acsr.bcs.freq>1) || celula[i-1].acsr.tipo==7)){
-			//dpdx =  (celula[i].pres-celula[i-1].pres) * 98066.5 / dxmed;
-		//}
 		else if(i==0)dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * 98066.5 / celula[i].dx;
 
   //celula[i].VTemper=coefdxT*area/coefTempo;//corrigir a multiplicacao pela area
 		celula[i].VTemper = coefdxT / coefTempo;
 		if((i==0 && celula[i].VTemper<0.) || (((i<ncel || celula[i].VTemper>=0.) && i>0) ||
 				(i==ncel && masChkSup==1) || (i==ncel && arq.chkv==1))){
-	  //double dtdx=(celula[i].tr-celula[i-1].tr)/dxmed;
 			double dtdx=0.;
 			if(i>0)dtdx= (celula[i].temp - celula[i-1].tempini) / dxmed;
 
-	  //if(i==ncel && chokeSup.AreaGarg < 0.5 * celula[ncel - 1].duto.area)dtdx = 0.;
 
 			if (i < ncel) if (celula[i].VTemper < 0) dtdx = (celula[i + 1].tempini - celula[i].temp)
     				  / (0.5 * (celula[i + 1].dx + celula[i].dx));
@@ -4617,10 +3476,8 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 			if ((i <= 1 && celula[i].VTemper <= 0) || (i == ncel && celula[i].VTemper <= 0)) dtdx = 0.;
 			if (celula[i].acsr.tipo == 8 && celula[i].acsr.bvol.freq > 1.) {
 				dpdx = (celula[i].pres - celula[i - 1].pres) * 98066.5 / dxmed;
-		  //dtdx=0.;
 			}
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double cinetico=0;
 			double ugmed0=0;
@@ -4665,7 +3522,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 				if (alf0 < 1. - 1e-3){
 					ulmed0 = celula[i].QL / (areaaux);
 					ulmed0/=(1.-alf0);
-			  //if(ulmed0>10)ulmed0=10.;
 				}
 
 				if (alf > 1e-3){
@@ -4677,7 +3533,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 				if (alf< 1. - 1e-3){
 					ulmed = ulsmed ;
 					ulmed/=(1.-alf);
-			  //if(ulmed>10)ulmed=10.;
 
 				}
 
@@ -4702,7 +3557,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 			}
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double fontemassG = 0.;
 			double fontemassL = 0.;
@@ -4718,13 +3572,10 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 				cplF = 0.;
 			} else if (celula[i].acsr.tipo == 2) {
 				tfonte = celula[i].acsr.injl.temp;
-		  //cpgF = 0.;
-		  //razcpF = 1.;
 				cpgF = celula[i].acsr.injl.FluidoPro.CalorGas(celula[i].presini, celula[i].temp);//celula[i].acsr.injl.FluidoPro.CalorGas(celula[i].pres, celula[i].temp);
 		        razcpF = celula[i].acsr.injl.FluidoPro.CalorGas(celula[i].presini, celula[i].temp);//celula[i].acsr.injl.FluidoPro.ConstAdG(celula[i].pres, celula[i].temp);
 		        cplF = (1. - celula[i].acsr.injl.bet) * celula[i].acsr.injl.FluidoPro.CalorLiq(celula[i].presini, celula[i].temp)
                 		+ celula[i].acsr.injl.bet * celula[i].acsr.injl.fluidocol.CalorLiq(celula[i].presini, celula[i].temp);//(1. - celula[i].acsr.injl.bet) * celula[i].acsr.injl.FluidoPro.CalorLiq(celula[i].pres, celula[i].temp)
-        		//+ celula[i].acsr.injl.bet * celula[i].acsr.injl.fluidocol.CalorLiq(celula[i].pres, celula[i].temp);
 			}
 			else if(celula[i].acsr.tipo==10){
 				tfonte=celula[i].acsr.injm.temp;
@@ -4735,8 +3586,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 					cplF=(1.-titbet)*
 					  celula[i].acsr.injl.FluidoPro.CalorLiq(celula[i].presini,celula[i].temp)+
 					  titbet*celula[i].acsr.injl.fluidocol.CalorLiq(celula[i].presini,celula[i].temp);//(1.-titbet)*
-					  //celula[i].acsr.injl.FluidoPro.CalorLiq(celula[i].pres,celula[i].temp)+
-					  //titbet*celula[i].acsr.injl.fluidocol.CalorLiq(celula[i].pres,celula[i].temp);
 				}
 				else cplF=0.;
 			}
@@ -4762,13 +3611,12 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 				razcpF = celula[i].acsr.fontechk.fluidoPamb.ConstAdG(pamb, tamb);
 				tfonte = celula[i].acsr.fontechk.tamb;
 			} else if (celula[i].acsrL != 0 && i<ncel) {
-				if ((*celula[i].acsrL).tipo == 5 && (celula[i].fontemassLR +celula[i].fontemassCR + celula[i].fontemassGR)>0.) {    //alteracao2
+				if ((*celula[i].acsrL).tipo == 5 && (celula[i].fontemassLR +celula[i].fontemassCR + celula[i].fontemassGR)>0.) {
 					if ((*celula[i].acsrL).chk.AreaGarg < arq.master1.razareaativ * celula[i].dutoL.area
-							&& (*celula[i].acsrL).chk.AreaGarg > 1e-5 * celula[i].dutoL.area) {//alteracao8
+							&& (*celula[i].acsrL).chk.AreaGarg > 1e-5 * celula[i].dutoL.area) {
 						double tE = celula[i - 1].tempini;
 						double alfE = celula[i - 1].alf;
 						double betE = celula[i - 1].bet;
-				  //double tit=(celula[i-1].MC-celula[i-1].Mliqini)/celula[i-1].MC;
 
 						double rholp = celula[i - 1].rpC;//celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
 						double rholc = celula[i - 1].rcC;//celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
@@ -4780,39 +3628,30 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 						double rholcJ = celula[i].rcC;//celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
 						double rholmixJ = (1 - betJ) * rholpJ + betJ * rholcJ;
 
-				  //double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx)
             		// * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp))
-					// * 9.82 / 98600.;
 						double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx)
 				              		* (rholmix * (1 - alfE) + alfE * celula[i - 1].rgC)
 				  					* 9.82 / 98600.;
-				  //double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx)
-            		// * (rholmixJ * (1 - alfJ) + alfJ * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp)) * 9.82 / 98600.;
 						double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx)
 				              		* (rholmixJ * (1 - alfJ) + alfJ * celula[i].rgC) * 9.82 / 98600.;
-				  //double tit = alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp)
-            		/// (celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp) * alfE + rholmix * (1. - alfE));
 						double tit = alfE * celula[i - 1].rgC
 				              		/ (celula[i - 1].rgC * alfE + rholmix * (1. - alfE));
 						cpgF = celula[i - 1].flui.CalorGas(celula[i - 1].presini, celula[i - 1].tempini);//celula[i - 1].flui.CalorGas(celula[i - 1].pres, celula[i - 1].temp);
 						cplF =(1 - celula[i - 1].bet) * celula[i - 1].flui.CalorLiq(celula[i - 1].presini, celula[i - 1].tempini)
                     		 + celula[i - 1].bet * celula[i - 1].fluicol.CalorLiq(celula[i - 1].presini, celula[i - 1].tempini); //(1 - celula[i - 1].bet) * celula[i - 1].flui.CalorLiq(celula[i - 1].pres, celula[i - 1].temp)
-            		 //+ celula[i - 1].bet * celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, celula[i - 1].temp);
 						double jtlM =(1. - betE) * celula[i - 1].flui.JTL(celula[i - 1].presini - hidroM, celula[i - 1].tempini)
                     				- betE / rholcJ; //(1. - betE) * celula[i - 1].flui.JTL(celula[i - 1].pres - hidroM, celula[i - 1].temp)
-            		//- betE / rholcJ;
 						double jtgM = celula[i - 1].flui.JTG(celula[i - 1].presini - hidroM, celula[i - 1].tempini);//celula[i - 1].flui.JTG(celula[i - 1].pres - hidroM, celula[i - 1].temp);
 						tfonte = tE + ((1. - tit) * jtlM/cplF + tit * jtgM/cpgF) *
 								(celula[i].pres + hidroJ - celula[i - 1].pres - hidroM) * 98066.52;
 
 						razcpF = celula[i - 1].flui.ConstAdG(celula[i - 1].presini, celula[i - 1].tempini);//celula[i - 1].flui.ConstAdG(celula[i - 1].pres, celula[i - 1].temp);
 
-					}    //alteracao2
-					else {//alteracao8
+					}
+					else {
 						cpgF = celula[i - 1].flui.CalorGas(celula[i - 1].presini, celula[i - 1].tempini);//celula[i - 1].flui.CalorGas(celula[i - 1].pres, celula[i - 1].temp);
 						cplF = (1 - celula[i - 1].bet) * celula[i - 1].flui.CalorLiq(celula[i - 1].presini, celula[i - 1].tempini)
                     		+ celula[i - 1].bet * celula[i - 1].fluicol.CalorLiq(celula[i - 1].presini, celula[i - 1].tempini);//(1 - celula[i - 1].bet) * celula[i - 1].flui.CalorLiq(celula[i - 1].pres, celula[i - 1].temp)
-            		//+ celula[i - 1].bet * celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, celula[i - 1].temp);
 						tfonte = celula[i].temp;
 						razcpF = celula[i - 1].flui.ConstAdG(celula[i - 1].presini, celula[i - 1].tempini);//celula[i - 1].flui.ConstAdG(celula[i - 1].pres, celula[i - 1].temp);
 					}
@@ -4821,7 +3660,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 					cpgF = celula[i - 1].flui.CalorGas(celula[i - 1].presini, celula[i - 1].tempini);//celula[i - 1].flui.CalorGas(celula[i - 1].pres, celula[i - 1].temp);
 					cplF = (1. - betM) * celula[i - 1].flui.CalorLiq(celula[i - 1].presini, celula[i - 1].tempini)
                 		  + betM * celula[i - 1].fluicol.CalorLiq(celula[i - 1].presini, celula[i - 1].tempini);//(1. - betM) * celula[i - 1].flui.CalorLiq(celula[i - 1].pres, celula[i - 1].temp)
-        		  //+ betM * celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, celula[i - 1].temp);
 					razcpF = celula[i - 1].flui.ConstAdG(celula[i - 1].presini, celula[i - 1].tempini);//celula[i - 1].flui.ConstAdG(celula[i - 1].pres, celula[i - 1].temp);
 					double n = (*celula[i].acsrL).bvol.npoli;
 					double ypres = (celula[i].pres) / (celula[i - 1].pres);
@@ -4840,7 +3678,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 						(celula[i].fontemassCR+celula[i].fontemassLR);
 				cplF = (1. - betM) * celula[i].flui.CalorLiq(celula[i].presini, tfonte)
 	    	          + betM * celula[i].fluicol.CalorLiq(celula[i].presini, tfonte);//(1. - betM) * celula[i].flui.CalorLiq(celula[i].pres, tfonte)
-	         // + betM * celula[i].fluicol.CalorLiq(celula[i].pres, tfonte);
 				razcpF = celula[i].flui.ConstAdG(celula[i].pres, tfonte);
 			}
 			else{
@@ -4858,7 +3695,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 			if (fontemassG > 0.) fontemassG *= (cpgF / razcpF) * (tfonte - celula[i].temp);
 			else fontemassG = 0;
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double latente;
 			double valTransMass=fabs(celula[i].FonteMudaFase);
@@ -4872,7 +3708,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 			else if((arq.flashCompleto==1 || arq.flashCompleto==2) && CalcLat > 0)
 				latente=(celula[i].flui.EntalpGas(celula[i].presini, celula[i].temp)-
 		          celula[i].flui.EntalpLiq(celula[i].presini, celula[i].temp))*valTransMass;//(celula[i].flui.EntalpGas(celula[i].pres, celula[i].temp)-
-	          //celula[i].flui.EntalpLiq(celula[i].pres, celula[i].temp))*celula[i].FonteMudaFase;
 			else latente = 0;
 
 			if(arq.latente==0)latente=0.;
@@ -4907,8 +3742,6 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 			}
 
 			if(fabs(celula[i].temp-celula[i].tempini)/celula[i].dt>10.){
-		  //if(fabs(celula[i].VTemper)>10*JmixRef)celula[i].temp=celula[i].tempini;
-		  //else
 				celula[i].temp=celula[i].tempini+
 						(fabs(celula[i].temp-celula[i].tempini)/(celula[i].temp-celula[i].tempini))*10*celula[i].dt;
 			}
@@ -4983,7 +3816,6 @@ double SProd::calcHmix(int i){
       double rhoc=celula[i].fluicol.MasEspFlu(pmed0,tmed);
       double rhog1=celula[i].flui.MasEspGas(pmed,tmed);
       double rhop1=celula[i].flui.MasEspLiq(pmed,tmed);
-//      double rhoc1=celula[i].fluicol.MasEspFlu(pmed,tmed);
       double hg=celula[i].flui.EntalpGas(pmed0,tmed);
       double hp=celula[i].flui.EntalpLiq(pmed0,tmed);
       double hc=celula[i].fluicol.CalorLiq(pmed0,tmed)*tmed;//corrigir entalpia
@@ -5035,13 +3867,12 @@ double SProd::calcHmix(int i){
         hlF = celula[i].acsr.ipr.FluidoPro.EntalpLiq(celula[i].pres,tfonte);
         hcF=0;
       } else if (celula[i].acsrL != 0) {
-        if ((*celula[i].acsrL).tipo == 5) {    //alteracao2
+        if ((*celula[i].acsrL).tipo == 5) {
           if ((*celula[i].acsrL).chk.AreaGarg < arq.master1.razareaativ * celula[i].dutoL.area
               && (*celula[i].acsrL).chk.AreaGarg > 1e-5 * celula[i].dutoL.area) {
             double tE = celula[i - 1].temp;
             double alfE = celula[i - 1].alf;
             double betE = celula[i - 1].bet;
-            //double tit=(celula[i-1].MC-celula[i-1].Mliqini)/celula[i-1].MC;
 
             double rholp = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
             double rholc = celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
@@ -5062,19 +3893,7 @@ double SProd::calcHmix(int i){
             double tit = alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp)
                 / (celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp) * alfE + rholmix * (1. - alfE));
 
-            /*double ypres=(celula[i].pres+hidroJ)/(celula[i-1].pres-hidroM);
 
-             double kmed=celula[i-1].flui.ConstAdG(celula[i-1].pres-hidroM,celula[i-1].temp);
-             //kmed=0.5*(kmed+celula[i].flui.ConstAdG((celula[i].pres-hidroM)*ypres,celula[i].temp*pow(ypres,(kmed-1)/kmed)));
-             razcpF=kmed;
-             double CpgE=celula[i-1].flui.CalorGas(celula[i-1].pres-hidroM,celula[i-1].temp);
-             double CplE=(1.-betE)*celula[i-1].flui.CalorLiq(celula[i-1].pres-hidroM,celula[i-1].temp)+
-             betE*celula[i-1].fluicol.CalorLiq(celula[i-1].pres-hidroM,celula[i-1].temp);
-             double CvgE=CpgE/kmed;
-             cpgF=CpgE;
-             cplF=CplE;
-             double n=1.+(tit*(CpgE-CvgE))/(tit*CvgE+(1-tit)*CplE);
-             tfonte=celula[i-1].temp*pow(ypres,(n-1)/n);*/
             double jtlM = (1. - betE) * celula[i - 1].flui.JTL(celula[i - 1].pres - hidroM, celula[i - 1].temp)
                 - betE / rholcJ;
             double jtgM = celula[i - 1].flui.JTG(celula[i - 1].pres - hidroM, celula[i - 1].temp);
@@ -5085,7 +3904,7 @@ double SProd::calcHmix(int i){
             hcF= celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, tfonte)*tfonte;
             /*entalpia fluido complementar a ser corrigida*/
 
-          }    //alteracao2
+          }
           else {
         	tfonte = celula[i].temp;
             hgF = celula[i - 1].flui.EntalpGas(celula[i - 1].pres, celula[i - 1].temp);
@@ -5245,7 +4064,6 @@ void SProd::calcTransMassTermo(int i) {
 	  double jtg = celula[i].flui.JTG(celula[i].pres, celula[i].temp);
 	  double hidro = (rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(celula[i].duto.teta);
 
-	  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  celula[i].calor.Tint = celula[i].temp;
 	  celula[i].calor.Vint = ugsmed + ulsmed;
@@ -5261,7 +4079,6 @@ void SProd::calcTransMassTermo(int i) {
 	      + celula[i].flui.ViscGas(celula[i].pres, celula[i].temp) * alfmed * 1.e-3;
 	  double fluxcal = celula[i].calor.transtrans();
 
-	  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double coefTempo = (rhol * (1 - alfmed) * cvl + rhog * alfmed * cvg) * area;
 	  double coefPresTempo;
@@ -5292,7 +4109,6 @@ void SProd::calcTransMassTermo(int i) {
 	    dpdx = 0.;
 	  }
 
-	  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double cinetico=0;
 	  double ugmed0=0;
@@ -5340,11 +4156,9 @@ void SProd::calcTransMassTermo(int i) {
 	  }
 
 
-	  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double fontemassG = 0.;
 	  double fontemassL = 0.;
-//	  double fontemassC = 0.;
 	  double tfonte = celula[i].temp;
 	  double cpgF;
 	  double razcpF=0.;
@@ -5439,7 +4253,6 @@ void SProd::calcTransMassTermo(int i) {
 	  if (fontemassG > 0.) fontemassG *= (cpgF / razcpF) * (tfonte - celula[i].temp);
 	  else fontemassG = 0;
 
-	  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double latente;
 	  if (CalcLat > 0 && arq.flashCompleto==0){
@@ -5482,14 +4295,13 @@ void SProd::calcTransMassTermo(int i) {
 
 void SProd::FonteValv(int ind) {
   if (celula[ind].acsr.chk.AreaGarg < (1e-3 + arq.master1.razareaativ) * celula[ind].duto.area
-      && celula[ind].acsr.chk.AreaGarg > 1e-3 * celula[ind].duto.area /*&&
-       celula[ind].pres>celula[ind+1].pres*/) {
+      && celula[ind].acsr.chk.AreaGarg > 1e-3 * celula[ind].duto.area
+) {
     double tE = celula[ind].temp;
     double alfE = celula[ind].alf;
     double betE = celula[ind].bet;
     double sense=1.;
 
-//    double razao = celula[ind].acsr.chk.AreaGarg / celula[ind].duto.area;
 
     double maxSup = 0.;
 
@@ -5510,14 +4322,10 @@ void SProd::FonteValv(int ind) {
         * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp))
         * 9.82 / 98600.;
 
-    //double tit = alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp)
-      //  / (celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp) * alfE + rholmix * (1. - alfE));
 
     double masentrada = celula[ind].MC;
     double massgas = celula[ind].MC - celula[ind].Mliqini;
     double tit;
-    //if(alfE<0.05)tit=0.;
-    //else
     	if(fabs(masentrada<1e-9) && fabs(massgas<1e-9)){
         tit = alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp)
             / (celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp) * alfE + rholmix * (1. - alfE));
@@ -5528,7 +4336,7 @@ void SProd::FonteValv(int ind) {
         else if (massgas <= 0 && celula[ind].Mliqini > 0)
           tit = 0.;
         else if (masentrada < 0)
-            tit = 1.;      //alteracao7
+            tit = 1.;
         else
             tit = fabs(massgas / masentrada);
         if (tit > 1)
@@ -5537,12 +4345,10 @@ void SProd::FonteValv(int ind) {
 
 
     double masChk;
-    //masChk=celula[ind].acsr.chk.vazmass(celula[ind].pres-hidroM, celula[ind+1].pres+hidroJ, tE, alfE,betE,tit, celula[ind].flui,celula[ind].fluicol);
-    //maxSup=celula[ind].acsr.chk.maxmass(celula[ind].pres-hidroM, celula[ind+1].pres+hidroJ, tE, alfE,betE,tit, celula[ind].flui,celula[ind].fluicol);
 
     double ypres = (celula[ind + 1].pres + hidroJ) / (celula[ind].pres - hidroM);
-    int check=1;//alteracao8
-    if(ypres<1. || check==1){//alteracao8
+    int check=1;
+    if(ypres<1. || check==1){
         if((*vg1dSP).lixo5>7059){
         	int para;
         	para=1;
@@ -5552,7 +4358,7 @@ void SProd::FonteValv(int ind) {
       maxSup = celula[ind].acsr.chk.vazmaxSachd(celula[ind].pres - hidroM, tE, alfE,
     		  betE, tit, celula[ind].flui,celula[ind].fluicol);
     }
-    else{//alteracao8
+    else{
         tE = celula[ind+1].temp;
         alfE = celula[ind+1].alf;
         betE = celula[ind+1].bet;
@@ -5568,11 +4374,10 @@ void SProd::FonteValv(int ind) {
             celula[ind+1].fluicol);
     }
 
-    //if(fabs(masChk)<fabs(maxSup))maxSup=masChk;
     if (fabs(ypres) > fabs(celula[ind].acsr.chk.razpres)) maxSup = masChk;
 
     if (celula[ind].acsr.chk.AreaGarg < (1e-3) * celula[ind].duto.area || (celula[ind].pres < celula[ind + 1].pres && check==1)) maxSup =
-        0.;//alteracao8
+        0.;
 
     double masliq;
     double masgas;
@@ -5613,10 +4418,10 @@ void SProd::renovaFonte(int ind) {
     }
   }
   
-  double agua_consumida_Mw=0.; //Alteracao Hidratos
-  double gas_consumido_Mg=0.; //Alteracao Hidratos
+  double agua_consumida_Mw=0.;
+  double gas_consumido_Mg=0.;
 
-  if (arq.calculaEnvelope==1 && arq.tipoHmodel==2 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+  if (arq.calculaEnvelope==1 && arq.tipoHmodel==2 && (*vg1dSP).lixo5>0.01) {
 
 	    agua_consumida_Mw  = celula[ind].agua_consumida_massa_step;
 
@@ -5634,11 +4439,8 @@ void SProd::renovaFonte(int ind) {
 
       double BSW = celula[ind].flui.BSW;
 	  celula[ind].flui.BSW=Vagua_new/(Voil+Vagua_new);
-	  //celula[ind].FW=celula[ind].flui.BSW;
-// if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
-	  //if (ind==3) system("pause");
 
-  } //Alteracao Hidratos
+  }
   
   if (celula[ind].acsr.tipo == 1) {
     if (celula[ind].acsr.injg.tipoflu == 0) {
@@ -5650,7 +4452,6 @@ void SProd::renovaFonte(int ind) {
     	  celula[ind].fontemassCR = 0.;
       }
       else{
-    	 //double tit=celula[ind].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
     	  double tit;
 		 if(arq.flashCompleto!=2)tit=celula[ind].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		 else tit=celula[ind].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -5668,14 +4469,8 @@ void SProd::renovaFonte(int ind) {
     }
   }
   if (celula[ind].acsr.tipo == 2) {
-    //double rlp=cel[ind].acsr.injl.FluidoPro.MasEspLiq(pr,tr);
-    //double rlc=cel[ind].acsr.injl.fluidocol.MasEspFlu(pr,tr);
-//    double rlpA = celula[ind].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
     double rlcA = celula[ind].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-    //cel[ind].fontemassLR=(rlp/rlpA)*cel[ind].acsr.injl.VMas(0.,0.)*(1.-cel[ind].acsr.injl.bet);
-    //cel[ind].fontemassCR=(rlc/rlcA)*cel[ind].acsr.injl.VMas(0.,0.)*cel[ind].acsr.injl.bet;
     celula[ind].fontemassCR += rlcA * celula[ind].acsr.injl.QLiq * celula[ind].acsr.injl.bet / 86400;
-    //////////////////////////////////////////////////////////////////////////////////////////////
     double massic = celula[ind].acsr.injl.QLiq * (1. - celula[ind].acsr.injl.bet) / 86400;
     double Rhogs = celula[ind].acsr.injl.FluidoPro.Deng * 1.225;		 //cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
     double Rhols = (1000 * 141.5 / (131.5 + celula[ind].acsr.injl.FluidoPro.API))
@@ -5689,15 +4484,12 @@ void SProd::renovaFonte(int ind) {
     celula[ind].fontemassGR += fracmasshidra * massic;
   }
   if (celula[ind].acsr.tipo == 3) {
-//    int teste = 0;
     if (pr < celula[ind].acsr.ipr.Pres) {
       celula[ind].fontemassLR += celula[ind].acsr.ipr.MasL(pr, tr);
       celula[ind].fontemassCR = 0.;
       celula[ind].fontemassGR += celula[ind].acsr.ipr.MasG(pr, tr);
     } else {
     	double tit;
-    	/*if(fabs(celula[ind+1].MC)>0) tit=fabs(celula[ind+1].MC-celula[ind+1].Mliqini)/fabs(celula[ind+1].MC);
-    	else*/
     	tit=celula[ind].alf*celula[ind].flui.MasEspGas(pr, tr)/
     			(celula[ind].alf*celula[ind].flui.MasEspGas(pr, tr)+
     			(1. - celula[ind].alf) * (1. - celula[ind].bet)* celula[ind].flui.MasEspLiq(pr, tr)+
@@ -5712,17 +4504,6 @@ void SProd::renovaFonte(int ind) {
           * celula[ind].flui.MasEspLiq(pr, tr);
       celula[ind].acsr.ipr.deriC *= (1. - celula[ind].alf) * celula[ind].bet * celula[ind].fluicol.MasEspFlu(pr, tr);
       celula[ind].acsr.ipr.deriG *= 1 * celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr);
-		 /*double Rhogs = celula[ind].acsr.ipr.FluidoPro.Deng*1.225;//this->FluidoPro.MasEspGas(1, 15);
-		 double Rhols = ((1000*141.5/(131.5 + celula[ind].acsr.ipr.FluidoPro[1]))*(1-celula[ind].acsr.ipr.FluidoPro[4])+
-				 1000.*celula[ind].acsr.ipr.FluidoPro[5]*celula[ind].acsr.ipr.FluidoPro[4]);
-		 double multiplicador =(Rhols +
-				 celula[ind].acsr.ipr.FluidoPro[2]*Rhogs*(1-celula[ind].acsr.ipr.FluidoPro[4]));
-    	celula[ind].fontemassLR += (1. - tit) * (1. - celula[ind].bet) * celula[ind].acsr.ipr.VMas(pr, tr)*multiplicador;
-    	celula[ind].fontemassCR += (1. - tit) * celula[ind].bet * celula[ind].acsr.ipr.VMas(pr, tr)*multiplicador;
-    	celula[ind].fontemassGR += tit * celula[ind].acsr.ipr.VMas(pr, tr)*multiplicador;
-    	celula[ind].acsr.ipr.deriP *= (1. - tit) * (1. - celula[ind].bet)*multiplicador;
-    	celula[ind].acsr.ipr.deriC *= (1. - tit) * celula[ind].bet*multiplicador;
-    	celula[ind].acsr.ipr.deriG *= 1 * tit*multiplicador;*/
 
     }
   }
@@ -5798,7 +4579,7 @@ void SProd::renovaFonte(int ind) {
 		  }
 	  }
   }
-  if(celula[ind].acsr.tipo==10){//alteracao7
+  if(celula[ind].acsr.tipo==10){
 	  if(celula[ind].acsr.injm.condTermo==1){
 		celula[ind].fontemassLR=celula[ind].acsr.injm.MassP;
 		celula[ind].fontemassCR=celula[ind].acsr.injm.MassC;
@@ -5882,14 +4663,8 @@ void SProd::renovaFonte(int ind) {
 		  celula[ind].fontemassGR=celula[ind].acsr.poroso2D.dados.transfer.fluxIniG;
 	  }
   }
-  /*if(arq.ConContEntrada==1 && ind==0){
-		celula[ind].fontemassLR=0.;
-		celula[ind].fontemassCR=0;
-		celula[ind].fontemassGR=-(celula[ind].MR-celula[ind].MliqiniR-
-				celula[ind].MC+celula[ind].Mliqini);
-  }*/
   
-  if (arq.calculaEnvelope==1 && arq.tipoHmodel==2 && celula[ind].flui.BSW>1e-12 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+  if (arq.calculaEnvelope==1 && arq.tipoHmodel==2 && celula[ind].flui.BSW>1e-12 && (*vg1dSP).lixo5>0.01) {
   celula[ind].fontemassLR -= (agua_consumida_Mw / (*vg1dSP).lixo5);
   celula[ind].fontemassGR -= (gas_consumido_Mg / (*vg1dSP).lixo5);
   }
@@ -5941,28 +4716,24 @@ void SProd::renovaalbetini() {
 
     if(i>0)celula[i-1].alfPigER =celula[i].alfPigE;
     if(i==ncel)celula[i].alfPigER =celula[i].alf;
-    celula[i].DelPig = 0.;		   //alteracao2
-    celula[i].RazAreaPig = 0.;		   //alteracao2
-    celula[i].cdpig = 1.;		   //alteracao2
+    celula[i].DelPig = 0.;
+    celula[i].RazAreaPig = 0.;
+    celula[i].cdpig = 1.;
     if (celula[i].estadoPig == 1) {
       indpigP++;
-      int ipig = celula[i].indpig;		   //alteracao2
-      celula[i].DelPig = arq.pig[ipig].delpres;		   //alteracao2
-      celula[i].RazAreaPig = arq.pig[ipig].razarea;		   //alteracao2
-      celula[i].cdpig = arq.pig[ipig].cdPig;		   //alteracao2
+      int ipig = celula[i].indpig;
+      celula[i].DelPig = arq.pig[ipig].delpres;
+      celula[i].RazAreaPig = arq.pig[ipig].razarea;
+      celula[i].cdpig = arq.pig[ipig].cdPig;
       double AC = celula[i].duto.area;
-      //double rhogR = celula[i].flui.MasEspGas(celula[i].presR,celula[i].tempR);
       double jL = (celula[i].QL + celula[i].QG) / AC;
-      //double jR=(celula[i].QLR+((celula[i].MR-celula[i].MliqiniR)/rhogR))/AC;
       double jR;
       if (i < ncel) jR = (celula[i + 1].QL + celula[i + 1].QG) / AC;
       else jR = (celula[i].QL + celula[i].QG) / AC;
       celula[i].velPigini = celula[i].velPig;
       celula[i].velPig = jL * celula[i].razPig + jR * (1. - celula[i].razPig) - celula[i].VazaPig / AC;
-      //celula[i].velPigini = celula[i].velPig;
       for (int j = 0; j < npig; j++) {
         if (receb[j] == i) {
-          //if(i==ncel-1){
           celula[i].velPig = 0.;
           celula[i].estadoPig = 0;
           celula[i].razPig = 0.;
@@ -5985,12 +4756,6 @@ void SProd::renovaalbetini() {
     }
     celula[i].razPigini = celula[i].razPig;
   }
-  //celula[ncel].alfini=celula[ncel].alf;
-  //celula[ncel-1].alfRini=celula[ncel].alfini;
-  //celula[ncel].alfRini=celula[ncel].alfR;
-  //celula[ncel].betini=celula[ncel].bet;
-  //celula[ncel-1].betRini=celula[ncel].betini;
-  //celula[ncel].betRini=celula[ncel].betR;
   celula[ncel].alfRini = celula[ncel].alfini;
   celula[ncel].betRini = celula[ncel].betini;
 }
@@ -6015,12 +4780,7 @@ void SProd::renovaMasEsp() {
   celula[0].migC = celula[0].flui.ViscGas(celula[0].pres, celula[0].temp/*,1*/);
   celula[0].micC = celula[0].fluicol.VisFlu(celula[0].pres, celula[0].temp);
 
-  //celula[0].drhogdt = celula[0].flui.drhodt(p, t);
 
-  /*double vbo = celula[0].flui.BOFunc(p, t);
-  double vba = celula[0].flui.BAFunc(p, t);
-  double vbsw = celula[0].flui.BSW;
-  celula[0].FW = vbsw / (vbo + vbsw - vbsw * vbo);*/
   ////#pragma omp parallel for num_threads(numthreads)
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
   for (int i = 1; i <= ncel; i++) {
@@ -6047,15 +4807,7 @@ void SProd::renovaMasEsp() {
 
   }
   for (int i = 1; i <= ncel; i++) {
-    /*p = celula[i].pres;
-    t = celula[i].temp;
-    celula[i].rpC = celula[i].flui.MasEspLiq(p, t);
-    celula[i].rgC = celula[i].flui.MasEspGas(p, t);
-    celula[i].rcC = celula[i].fluicol.MasEspFlu(p, t);
 
-    celula[i].mipC = celula[i].flui.ViscOleo(p, t);
-    celula[i].migC = celula[i].flui.ViscGas(p, t);
-    celula[i].micC = celula[i].fluicol.VisFlu(p, t);*/
 
     celula[i - 1].rpR = celula[i].rpC;
     celula[i - 1].rgR = celula[i].rgC;
@@ -6068,14 +4820,6 @@ void SProd::renovaMasEsp() {
     celula[i-1].migR = celula[i].migC;
     celula[i-1].micR = celula[i].micC;
 
-    /*double tmed = celula[i - 1].temp;
-    if (celula[i].VTemper < 0.) tmed = celula[i].temp;
-    ProFlu flu;
-    if (celula[i].QL < 0.) flu = celula[i].flui;
-    else flu = celula[i - 1].flui;
-    celula[i].rpCi = flu.MasEspLiq(celula[i].presaux, tmed);
-    celula[i].rgCi = flu.MasEspGas(celula[i].presaux, tmed);
-    celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);*/
 
     celula[i - 1].rpRi = celula[i].rpCi;
     celula[i - 1].rgRi = celula[i].rgCi;
@@ -6084,13 +4828,6 @@ void SProd::renovaMasEsp() {
     celula[i].rgLi = celula[i - 1].rgCi;
     celula[i].rcLi = celula[i - 1].rcCi;
 
-    /*vbo = celula[i].flui.BOFunc(p, t);
-    vba = celula[i].flui.BAFunc(p, t);
-    vbsw = celula[i].flui.BSW;
-    celula[i].FWini = celula[i].FW;
-    if(vbo>1e-15 &&vbsw>1e-15)
-    celula[i].FW = vbsw*vba/ (vbo + vba*vbsw - vbsw * vbo);
-    else celula[i].FW =0.;*/
   }
   celula[ncel].rpR = celula[ncel].rpC;
   celula[ncel].rgR = celula[ncel].rgC;
@@ -6121,7 +4858,6 @@ void SProd::BhagwatGhajar(double rhol, double rhog, double tensup, double alf, d
 
 	double rmed=alf*rhog+(1.-alf)*rhol;
 	Froude=sqrt(rhog/(rhol-rhog))*((ug1)/A1)/sqrt(9.81*dia*sinal*cos(tet));
-	//MassQuality=(alf*rhog+(1-alf)*rhol)/rmed;
 	MassQuality=(rhog*fabs(ug1)/A1)/((rhog*fabs(ug1)/A1)+(rhol*fabs(ul1)/A1));
 	Beta=(fabs(ug1)/A1)/((fabs(ug1)/A1)+(fabs(ul1)/A1));
 
@@ -6152,7 +4888,6 @@ void SProd::BhagwatGhajar(double rhol, double rhog, double tensup, double alf, d
 	double reymix2=reymix/1000;
 	reymix2*=reymix2;
 	termo1=(2-rgrl2)/(1+reymix2);
-	//termo2=(pow(pow(((1+pow((rhog/rhol),2)*sinal*cos(tet))/(1+cos(tet)))),(1-alf)),2/5))/(1+pow((1000/reymixL),2));
 	termo2=(pow(((1+rgrl2*sinal*cos(tet))/(1+cos(tet))),(1-alf)/5.))/
 			(1+1/reymix2);
 	C1=0.2; //duto circular ou anular. Retangular seria 0.4.
@@ -6166,26 +4901,20 @@ void SProd::BhagwatGhajar(double rhol, double rhog, double tensup, double alf, d
 	termoud2=sqrt((9.81*dia*(rhol-rhog)/rhol))*sqrt(1-alf);
 	if (viscl1/0.001>10) {
 		C2=pow((0.434/(log10(viscl1/0.001))),0.15);
-		//C2=1.;
 	} else {
 		C2=1.0;
 	}
 	La=sqrt(tensup/(9.81*(rhol-rhog)))/dia;
 	if (La<0.025) {
 		C3=pow((La/0.025),0.90);
-		//C3=1.;
 	} else {
 		C3=1.0;;
 	}
 	C4=1.0;
 	if (tet>=-(50*M_PI/180.)&&tet<0&&Froude<=0.1) C4=-1.0;
-	//if(tet<0)C4=-1.0;
 	ud=correcHor*termoud1*termoud2*C2*C3*C4; //Calculo da Velocidade de Deslizamento.
 	if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet>0. && ud<0.)ud=fabs(ud);
 	else if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet<0. && ud>0.)ud=-fabs(ud);
-    /*if (tet < 0.) sinal = -1.;
-	ud = sinal * 0.0246 * cos(tet)
-	        + 1.606 * pow(9.82 * tensup *(rhol - rhog) / (rhol * rhol), 0.25) * sin(tet);*/
 }
 
 void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf, double reymix
@@ -6206,7 +4935,6 @@ void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf
 
 	double rmed=alf*rhog+(1.-alf)*rhol;
 	Froude=sqrt(rhog/(rhol-rhog))*((ug1)/A1)/sqrt(9.81*dia*sinal*cos(tet));
-	//MassQuality=(alf*rhog+(1-alf)*rhol)/rmed;
 	MassQuality=(rhog*fabs(ug1)/A1)/((rhog*fabs(ug1)/A1)+(rhol*fabs(ul1)/A1));
 	Beta=(fabs(ug1)/A1)/((fabs(ug1)/A1)+(fabs(ul1)/A1));
 
@@ -6237,7 +4965,6 @@ void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf
 	double reymix2=reymixL/1000;
 	reymix2*=reymix2;
 	termo1=(2-rgrl2)/(1+reymix2);
-	//termo2=(pow(pow(((1+pow((rhog/rhol),2)*sinal*cos(tet))/(1+cos(tet)))),(1-alf)),2/5))/(1+pow((1000/reymixL),2));
 	termo2=(pow(((1+rgrl2*sinal*cos(tet))/(1+cos(tet))),(1-alf)/5.))/
 			(1+1/reymix2);
 	C1=0.2; //duto circular ou anular. Retangular seria 0.4.
@@ -6251,27 +4978,21 @@ void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf
 	termoud2=sqrt((9.81*dia*(rhol-rhog)/rhol))*sqrt(1-alf);
 	if (viscl1/0.001>10) {
 		C2=pow((0.434/(log10(viscl1/0.001))),0.15);
-		//C2=1.;
 	} else {
 		C2=1.0;
 	}
 	La=sqrt(tensup/(9.81*(rhol-rhog)))/dia;
 	if (La<0.025) {
 		C3=pow((La/0.025),0.90);
-		//C3=1.;
 	} else {
 		C3=1.0;;
 	}
 	C4=1.0;
 	if (tet>=-(50*M_PI/180.)&&tet<0&&Froude<=0.1) C4=-1.0;
-	//if(tet<0)C4=-1.0;
 	ud=correcHor*termoud1*termoud2*C2*C3*C4; //Calculo da Velocidade de Deslizamento.
 	if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet>0. && ud<0.)ud=fabs(ud);
 	else if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet<0. && ud>0.)ud=-fabs(ud);
 
-    /*if (tet < 0.) sinal = -1.;
-	ud = sinal * 0.0246 * cos(tet)
-	        + 1.606 * pow(9.82 * tensup *(rhol - rhog) / (rhol * rhol), 0.25) * sin(tet);*/
 }
 
 void SProd::Choi(double rhol, double rhog, double tensup, double alf, double reymix
@@ -6288,7 +5009,6 @@ void SProd::Choi(double rhol, double rhog, double tensup, double alf, double rey
 	              + (1.2 - 0.2 * sqrt(rhog / rhol) * (1 - exp(-18 * alf))) / (1 + pow(1000. / reymix, 2.));
 	if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet>0. && ud<0.)ud=fabs(ud);
 	else if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet<0. && ud>0.)ud=-fabs(ud);
-	//cout<<(reymix-reymixL)<<endl;
 }
 
 void SProd::HibikiIshii(double rhol, double rhog, double tensup, double alf, double reymix
@@ -6296,7 +5016,6 @@ void SProd::HibikiIshii(double rhol, double rhog, double tensup, double alf, dou
 		double ug1, double ul1, double dia,double rug, double tet, double& c0,
 		double& ud,double correcHor){
 
-    //if(alf<0.94){
  double sinal = 1.;
     if (tet < 0.){
     	sinal = -1.;
@@ -6309,28 +5028,6 @@ void SProd::HibikiIshii(double rhol, double rhog, double tensup, double alf, dou
 	else if((fabs(ug1/A1)+fabs(ul1/A1))<0.01 && tet<0. && ud>0.)ud=-fabs(ud);
 
 
-   /* double sinal = 1.;
-    if (tet < 0.) sinal = -1.;
-    c0 = 1. + (1. - alf) / (alf + 4. * sqrt(rhog / rhol));
-    ud = sinal * (1. - alf)
-         / (alf + 4. * sqrt(rhog / rhol) * sqrt(9.82 * dia * (rhol - rhog) * (1. - alf)) / (0.015 * rhog));*/
-    /*}
-    else{
- 	    double sinal = 1.;
-        if (tet < 0.) sinal = -1.;
-        c0 = 1. + (1. - 0.94) / (0.94 + 4. * sqrt(rhog / rhol));
-        ud = sinal * (1. - 0.94)
-          / (0.94 + 4. * sqrt(rhog / rhol) * sqrt(9.82 * dia * (rhol - rhog) * (1. - 0.94)) / (0.015 * rhog));
-        if(alf<0.96){
-        	double razalf=1-(alf-0.94)/0.02;
-        	c0=razalf*c0+(1-razalf)*1.;
-        	ud=razalf*ud;
-        }
-        else{
-        	c0=1.;
-        	ud=0.;
-        }
-    }*/
 }
 
 void SProd::FrancaLahey(double rhol, double rhog, double tensup, double alf, double reymix
@@ -6352,7 +5049,6 @@ void SProd::C0UdDisperso(double rhol, double rhog, double tensup, double alf, do
 		double ug1, double ul1, double dia,double rug, double tet, double& c0,
 		double& ud,double correcHor,int estabCol){
 
-	//switch(estabCol){
 		//case 0:
 			switch(arq.CorreDisper){
 				case 0: Choi(rhol, rhog, tensup, alf, reymix,reymixL, ug1, ul1, dia,rug, tet, c0,
@@ -6381,12 +5077,7 @@ void SProd::C0UdDisperso(double rhol, double rhog, double tensup, double alf, do
 						}
 					break;
 			}
-			//break;
 
-		//case 1: Choi(rhol, rhog, tensup, alf, reymix,reymixL, ug1, ul1, dia,rug, tet, c0,
-			//ud, correcHor);
-		//break;
-	//}
 
 }
 void SProd::C0UdAnularChurn(double rhol, double rhog, double tensup, double alf, double reymix
@@ -6429,7 +5120,6 @@ void SProd::C0UdEstratificado(double rhol, double rhog, double tensup, double al
 		, double reymixL,
 		double ug1, double ul1, double dia,double rug, double tet, double& c0,
 		double& ud,double correcHor,int estabCol){
-	//switch(estabCol){
 		//case 0:
 			switch(arq.CorreEstrat){
 				case(2):FrancaLahey(rhol, rhog, tensup, alf, reymix,reymixL,  ug1, ul1, dia,rug, tet,
@@ -6461,15 +5151,9 @@ void SProd::C0UdEstratificado(double rhol, double rhog, double tensup, double al
 						}
 					break;
 			}
-			//break;
-			//case 1: FrancaLahey(rhol, rhog, tensup, alf, reymix,reymixL,  ug1, ul1, dia,rug, tet,
-			//c0, ud,correcHor);
-			//break;
-		//}
 }
 
 void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
-//  double razMudaArra=1;
   int timeStep=20;
   celula[ind].transic0=celula[ind].transic;
   if(celula[ind].dt<0.8)timeStep*=(0.8/celula[ind].dt);
@@ -6490,7 +5174,7 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
     celula[ind - 1].perdaEstratL = 0.;
     celula[ind - 1].perdaEstratG = 0.;
   } else if ((celula[ind].acsr.tipo != 4 || celula[ind].acsr.bcs.freqnova <= 1.)
-  /*&&(celula[ind].acsr.tipo!=8 || celula[ind].acsr.bvol.freq<=1.)*/) {
+  ) {
     double hns;
     double razdx = celula[ind].dxL / (celula[ind].dx + celula[ind].dxL);
     double razdx0;
@@ -6522,7 +5206,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    //double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -6535,20 +5218,16 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
       alfneg = celula[ind].alf;
 
     double betI = celula[ind].betL;
-    //if(cel[ind].QL<0.)betI=cel[ind].bet;
     if (ind > 0)
       betI = celula[ind - 1].betPigD;
-    //if (celula[ind].QL < 0.) betI = celula[ind].betPigE; testeBeta
     if (((0.*celula[ind].QG+1*celula[ind].QL) < 0.))
       betI = celula[ind].betPigE;  //duvidabeta
 
     double betneg;
     if (ind > 0) {
       betneg = celula[ind - 1].betL;
-      //if(cel[ind-1].QL<0.)betneg=cel[ind-1].bet;
       if (ind > 1)
         betneg = celula[ind - 2].betPigD;
-      //if (celula[ind - 1].QL < 0.) betneg = celula[ind - 1].betPigE; teteBeta
       if ((0.99*celula[ind-1].QG+0.01*celula[ind-1].QL)< 0.)
         betneg = celula[ind - 1].betPigE;  //duvidabeta
 
@@ -6574,7 +5253,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
       tmed0 = razdx0 * celula[ind - 1].temp + (1 - razdx0) * celula[ind - 1].tempL;
     else
       tmed0 = tmed;
-    //tmed = celula[ind].temp;
     if (ind < ncel)
       tmed = celula[ind].temp;
     else
@@ -6596,7 +5274,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
     double viscl1;
     double tensup1;
     if (celula[ind].QL < 0.) { //testeBeta
-    //if (celula[ind].QG < 0.) {
       if(ind==0 || ind==ncel)rlm = (1 - betI) * celula[ind].flui.MasEspLiq(pmed, tmed) + betI * celula[ind].fluicol.MasEspFlu(pmed, tmed);
       else rlm = (1 - betI) * celula[ind].rpCi + betI * celula[ind].rcCi;
       viscl1 = (1 - betI) * celula[ind].flui.ViscOleo(pmed, tmed) + betI * celula[ind].fluicol.VisFlu(pmed, tmed);
@@ -6623,7 +5300,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
       viscg1 = celula[ind - 1].flui.ViscGas(pmed, tmed);
     }
 
-    //if(cel[ind+1].estadoPig==1)tensup1=0.07;
 
     double ug1 = (celula[ind].MC - celula[ind].Mliqini) / rgm;
     double ul1 = celula[ind].Mliqini / rlm;
@@ -6631,7 +5307,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
     if (ind > 0 && ug1 >= 0)
       dia1 = celula[ind - 1].duto.a;
 
-    //if (celula[ind].duto.a != celula[ind].dutoL.a)  dia1=0.5*(celula[ind - 1].duto.a+celula[ind].duto.a);
 
     double A1 = M_PI * dia1 * dia1 / 4.;
 
@@ -6641,11 +5316,10 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
     double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1/1000.);
 
     int xarr1 = 1;
-    double dtot = celula[ind].dxL + celula[ind].dx /*+ 0 * celula[ind].dxR*/;
+    double dtot = celula[ind].dxL + celula[ind].dx ;
     double razL = celula[ind].dx;
     double raz = celula[ind].dxL;
-    //double razR = 0 * celula[ind].dxR;
-    double ang = (razL * celula[ind].dutoL.teta + raz * celula[ind].duto.teta /*+ razR * celula[ind].dutoR.teta*/)
+    double ang = (razL * celula[ind].dutoL.teta + raz * celula[ind].duto.teta )
         / dtot;
     if (ind >= 2) {
       if (celula[ind - 2].acsr.tipo == 5 && celula[ind - 2].acsr.chk.AreaGarg <= (1e-3)) {
@@ -6660,15 +5334,8 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
           ang = celula[ind].duto.teta;
       }
     }
-    /*double sinal = 1.;
-    if (ang < 0.)
-      sinal = -1.;
-    double xc0 = 2.;
-    double xud = sinal * 0.0246 * cos(ang)
-        + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
 
     double atenua=20;
-    //if(dt<=2.)atenua*=(2./dt);
 
     if (nrey > 1e-30) {
       if (fabs(0 * ang + 1 * celula[ind].duto.teta) < 45. * M_PI / 180. && hol0 < 0.99 && hol0 > 0.01
@@ -6679,11 +5346,9 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
         ug1 = (celula[ind].MC - celula[ind].Mliqini) / rgm;
         ul1 = celula[ind].Mliqini / rlm;
 
-        //ug0 = (celula[ind - 1].MC - celula[ind - 1].Mliqini) / celula[ind].flui.MasEspGas(pmed0, tmed0);
         ug0 = (celula[ind - 1].MC - celula[ind - 1].Mliqini) / celula[ind].rgLi;
         //ul0 = celula[ind - 1].Mliqini
            // / ((1 - betneg) * celula[ind].flui.MasEspLiq(pmed0, tmed0)
-             //   + betneg * celula[ind].fluicol.MasEspFlu(pmed0, tmed0));
         ul0 = celula[ind - 1].Mliqini / ((1 - betneg) * celula[ind].rpLi + betneg * celula[ind].rcLi);
 
         estratificado testamapa(dia1, ul1, ug1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
@@ -6693,11 +5358,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
         else testamapa.mapaTD(1);
 
         xarr1 = testamapa.arr;
-        /*if((celula[ind].duto.teta) < 5. * M_PI / 180. && (celula[ind].duto.teta) >-5. * M_PI / 180.&&
-        		hol0 < 0.99 && hol0 > 0.01){
-        	xarr1=-1;
-        	testamapa.arr=-1;
-        }*/
 
         if (xarr1 == -1) {
           if (celula[ind].arranjo != 0) {
@@ -6714,13 +5374,6 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
           celula[ind - 1].arranjoR = testamapa.arr;
           celula[ind - 1].perdaEstratL = testamapa.fatorperdaLiq;
           celula[ind - 1].perdaEstratG = testamapa.fatorperdaGas;
-          /*sinal = 1.;
-          if (ang < 0.)
-            sinal = -1.;
-          double xc0C = 2. / (1 + pow(nrey / 1000., 2.))
-              + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
-          double udC = sinal * 0.0246 * cos(ang)
-              + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
           double c0D;
           double udD;
           double c0E;
@@ -6740,16 +5393,10 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
           if (ul1 < 0.)
             mult1 = 1.;
           double alf0E = celula[ind - 1].alf;
-          /*xc0 = 1.;
 
-          c0 = xc0;
 
-          c0 = xc0 = 1.;
-          ud = xud;*/
           double jmax=0.05;
           double jmin=0.005;
-          //double jmax=0.5;
-          //double jmin=0.1;
           if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
             c0 = c0E;
             ud = udE;
@@ -6762,16 +5409,7 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
             ud = ((1. - raz) * udE + raz * udD);
           }
 
-          /*if (EstadoMaster1 == 0) {
-            if (contaMaster1 > 19) {
-              c0 = c0D;
-              ud = udD;
-            } else {
-              c0 = (c0D * contaMaster1 + celula[ind].c0 * (20. - contaMaster1)) / 20.;
-              ud = (udD * contaMaster1 + celula[ind].ud * (20. - contaMaster1)) / 20.;
-            }
-          }*/
-          if (celula[ind].transic > 0 /*&& EstadoMaster1 == 1*/) {
+          if (celula[ind].transic > 0 ) {
             c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
             ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
           }
@@ -6783,29 +5421,15 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
             celula[ind].duto.teta, tensup1, arq.mapaArranjo,vg1dSP);
         xarr1 = testamapa2.verificaArr();
 
-        /*double sinal = 1.;
-        if (ang < 0.) sinal = -1.;
 
-        c0 = 2. / (1 + pow(nrey / 1000., 2.))
-            + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
 
-        ud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
         C0UdDisperso(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         		c0, ud, correcHor,celula[ind].estabCol);
-        //if(xarr1==-2)xarr1=celula[ind].arranjo ;
 
         if (xarr1 == -2) {
-          /*c0 = 1. + (1. - alf0) / (alf0 + 4. * sqrt(rgm / rlm));
-          ud = sinal * (1. - alf0)
-              / (alf0 + 4. * sqrt(rgm / rlm) * sqrt(9.82 * dia1 * (rlm - rgm) * (1. - alf0)) / (0.015 * rgm));*/
         	C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         			c0, ud, correcHor,celula[ind].estabCol);
         }
-        //double atenua=20;
-        //int AnulDisp=0;
-        //if((xarr1==-2 && celula[ind].arranjo!=-2) ||(xarr1!=-2 && celula[ind].arranjo==-2))AnulDisp=1;
-        //if(arq.CorreAnular==3 && arq.CorreDisper==1 && AnulDisp==1) atenua=2000;
-        //atenua=200;
         if(fabs(ug1/celula[ind].duto.area)>5. && alf0>=0.75){
         	atenua =20;
         	if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
@@ -6825,63 +5449,11 @@ void SProd::CalcC0Ud(int ind, double& c0, double& ud) {
           c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
           ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
         }
-        /*double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
-            + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);*/
         celula[ind].arranjo = xarr1;
         celula[ind - 1].arranjoR = xarr1;
       }
       celula[ind].c0Spare = c0;
       celula[ind].udSpare = ud;
-     /* if (ind > 0) {
-        if ((celula[ind].arranjo != celula[ind - 1].arranjo && celula[ind - 1].arranjo != 0)
-        		) {
-          double c0M;
-          double udM;
-          if(celula[ind - 1].arranjo==1 || celula[ind - 1].arranjo==2)
-        	  C0UdDisperso(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
-        	          		c0M, udM, correcHor,celula[ind].estabCol);
-          else if(celula[ind - 1].arranjo==-2)
-        	  C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
-        	          			c0M, udM, correcHor,celula[ind].estabCol);
-          else if(celula[ind - 1].arranjo==-1)
-        	  C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
-        	         		  c0M, udM, correcHor,celula[ind].estabCol);
-          c0 = (celula[ind].dx * c0 + celula[ind - 1].dx * celula[ind - 1].c0Spare)
-              / (celula[ind].dx + celula[ind - 1].dx);
-          ud = (celula[ind].dx * ud + celula[ind - 1].dx * celula[ind - 1].udSpare)
-              / (celula[ind].dx + celula[ind - 1].dx);
-        } else if (ind > 2) {
-          if (celula[ind - 2].acsr.tipo == 5 && celula[ind - 2].acsr.chk.AreaGarg <= (1e-3)) {
-            if (celula[ind].QG >= 0)
-              ang = celula[ind].duto.teta;
-            else
-              ang = celula[ind].dutoR.teta;
-          } else {
-            if (celula[ind].QG >= 0)
-              ang = celula[ind].dutoL.teta;
-            else
-              ang = celula[ind].duto.teta;
-          }
-          double angL;
-          if (celula[ind - 3].acsr.tipo == 5 && celula[ind - 3].acsr.chk.AreaGarg <= (1e-3)) {
-            if (celula[ind - 1].QG >= 0)
-              angL = celula[ind - 1].duto.teta;
-            else
-              angL = celula[ind - 1].dutoR.teta;
-          } else {
-            if (celula[ind - 1].QG >= 0)
-              angL = celula[ind - 1].dutoL.teta;
-            else
-              angL = celula[ind - 1].duto.teta;
-          }
-          if (ang != angL) {
-            c0 = (celula[ind].dx * c0 + celula[ind - 1].dx * celula[ind - 1].c0Spare)
-                / (celula[ind].dx + celula[ind - 1].dx);
-            ud = (celula[ind].dx * ud + celula[ind - 1].dx * celula[ind - 1].udSpare)
-                / (celula[ind].dx + celula[ind - 1].dx);
-          }
-        }
-      }*/
     }
   }
   if (arq.escorregaTran == 0) {
@@ -6921,7 +5493,7 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
     celula[ind - 1].perdaEstratL = 0.;
     celula[ind - 1].perdaEstratG = 0.;
   } else if ((celula[ind].acsr.tipo != 4 || celula[ind].acsr.bcs.freqnova <= 1.)
-  /*&&(celula[ind].acsr.tipo!=8 || celula[ind].acsr.bvol.freq<=1.)*/) {
+  ) {
     double hns;
     double razdx = celula[ind].dxL / (celula[ind].dx + celula[ind].dxL);
     double razdx0;
@@ -6953,7 +5525,6 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    //double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -6966,20 +5537,16 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
       alfneg = celula[ind].alf;
 
     double betI = celula[ind].betL;
-    //if(cel[ind].QL<0.)betI=cel[ind].bet;
     if (ind > 0)
       betI = celula[ind - 1].betPigD;
     if ((celula[ind].MliqiniBuf) < 0.) betI = celula[ind].betPigE; //testeBeta
-    //if ((celula[ind].MC - celula[ind].MliqiniBuf)*0.99+0.01*celula[ind].MliqiniBuf < 0.)
       betI = celula[ind].betPigE;        //duvidabeta
     double betneg;
     if (ind > 0) {
       betneg = celula[ind - 1].betL;
-      //if(cel[ind-1].QL<0.)betneg=cel[ind-1].bet;
       if (ind > 1)
         betneg = celula[ind - 2].betPigD;
       if (celula[ind].MliqiniLBuf < 0.) betneg = celula[ind - 1].betPigE; //testeBeta
-      //if ((celula[ind].MC - celula[ind].MliqiniLBuf)*0.99+0.01*celula[ind].MliqiniLBuf < 0.)
         betneg = celula[ind - 1].betPigE;        //duvidabeta
     } else
       betneg = celula[ind].bet;
@@ -6998,7 +5565,6 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
         tmed = celula[ind].temp;
       else
         tmed = tGSup;
-      //tmed = celula[ind].temp;
 
     }
     double tmed0;
@@ -7023,7 +5589,6 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
     double viscl1;
     double tensup1;
     if ((celula[ind].MliqiniBuf) < 0.) { //testeBeta
-    //if ((celula[ind].MC - celula[ind].MliqiniBuf) < 0.) {
       rlm = (1 - betI) * celula[ind].flui.MasEspLiq(pmed, tmed) + betI * celula[ind].fluicol.MasEspFlu(pmed, tmed);
       viscl1 = (1 - betI) * celula[ind].flui.ViscOleo(pmed, tmed) + betI * celula[ind].fluicol.VisFlu(pmed, tmed);
       tensup1 = (1 - betI) * celula[ind].flui.TensSuper(pmed, tmed) + betI * celula[ind].fluicol.TensSuper(pmed, tmed);
@@ -7046,7 +5611,6 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
       viscg1 = celula[ind - 1].flui.ViscGas(pmed, tmed);
     }
 
-    //if(cel[ind+1].estadoPig==1)tensup1=0.07;
 
     double ug1 = (celula[ind].MCBuf - celula[ind].MliqiniBuf) / rgm;
     double ul1 = (celula[ind].MliqiniBuf) / rlm;
@@ -7061,11 +5625,10 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
     double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) /  (viscl1/1000.);
 
     int xarr1 = 1;
-    double dtot = celula[ind].dxL + celula[ind].dx /*+ 0 * celula[ind].dxR*/;
+    double dtot = celula[ind].dxL + celula[ind].dx ;
     double razL = celula[ind].dxL;
     double raz = celula[ind].dx;
-    //double razR = 0 * celula[ind].dxR;
-    double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta /*+ razR * celula[ind].dutoR.teta*/)
+    double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta )
         / dtot;
     if (ind >= 2) {
       if (celula[ind - 2].acsr.tipo == 5 && celula[ind - 2].acsr.chk.AreaGarg <= (1e-3)) {
@@ -7080,12 +5643,6 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
           ang = celula[ind].duto.teta;
       }
     }
-    /*double sinal = 1.;
-    if (ang < 0.)
-      sinal = -1.;
-    double xc0 = 2.;
-    double xud = sinal * 0.0246 * cos(ang)
-        + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
     double atenua=20;
     if (nrey > 1e-30) {
       if (fabs(0 * ang + 1 * celula[ind].duto.teta) < 45. * M_PI / 180. && hol0 < 0.99 && hol0 > 0.01
@@ -7093,9 +5650,6 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
         double ug0;
         double ul0;
 
-        /*         ug1=(cel[ind].MC-cel[ind].Mliqini)/cel[ind].flui.MasEspGas(pmed,tmed);
-         ul1=cel[ind].Mliqini/
-         ((1-betI)*cel[ind].flui.MasEspLiq(pmed,tmed)+betI*cel[ind].fluicol.MasEspFlu(pmed,tmed));*/
         ug1 = (celula[ind].MCBuf - celula[ind].MliqiniBuf) / rgm;
         ul1 = (celula[ind].MliqiniBuf) / rlm;
 
@@ -7104,20 +5658,11 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
             / ((1 - betneg) * celula[ind].flui.MasEspLiq(pmed0, tmed0)
                 + betneg * celula[ind].fluicol.MasEspFlu(pmed0, tmed0));
 
-        /*estratificado testamapa(dia1, ul1, ug1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
-            celula[ind].duto.teta, celula[ind].duto.rug / dia1);
 
 
-        testamapa.mapaTD();
 
-        //xarr1 = testamapa.arr;
-        testamapa.arr=celula[ind].arranjo;*/
         xarr1=celula[ind].arranjo ;
         if (xarr1 == -1) {
-          /*celula[ind].arranjo = xarr1 = testamapa.arr;
-          celula[ind - 1].arranjoR = testamapa.arr;
-          celula[ind - 1].perdaEstratL = testamapa.fatorperdaLiq;
-          celula[ind - 1].perdaEstratG = testamapa.fatorperdaGas;*/
 
 
           double c0D;
@@ -7137,16 +5682,10 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
           if (ul1 < 0.)
             mult1 = 1.;
           double alf0E = celula[ind - 1].alf;
-          /*xc0 = 1.;
 
-          c0 = xc0;
 
-          c0 = xc0 = 1.;
-          ud = xud;*/
           double jmax=0.05;
           double jmin=0.005;
-          //double jmax=0.5;
-          //double jmin=0.1;
           if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
             c0 = c0E;
             ud = udE;
@@ -7159,16 +5698,7 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
             ud = ((1. - raz) *udE + raz * udD);
           }
 
-          /*if (EstadoMaster1 == 0) {
-            if (contaMaster1 > 19) {
-              c0 = c0D;
-              ud = udD;
-            } else {
-              c0 = (c0D * contaMaster1 + celula[ind].c0 * (20. - contaMaster1)) / 20.;
-              ud = (udD * contaMaster1 + celula[ind].ud * (20. - contaMaster1)) / 20.;
-            }
-          }*/
-          if (celula[ind].transic > 0 /*&& EstadoMaster1 == 1*/) {
+          if (celula[ind].transic > 0 ) {
             c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
             ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
           }
@@ -7176,34 +5706,14 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
       }
       if(xarr1!=-1) {
 
-        /*arranjo testamapa2(dia1, ul1 / A1, ug1 / A1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
-            celula[ind].duto.teta, tensup1);
-        xarr1 = testamapa2.verificaArr();*/
-    	  //xarr1 = celula[ind].arranjo ;
 
-        /*double sinal = 1.;
-        if (ang < 0.)
-          sinal = -1.;
-        c0 = 2. / (1 + pow(nrey / 1000., 2.))
-            + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
 
-        ud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
         C0UdDisperso(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         		c0, ud, correcHor,celula[ind].estabCol);
-        // if(alf0>0.9999 && xarr1!=-2){
-        //c0=1.-localtiny;
-        //ud=0.;
-        //xarr1=4;
-        // }
         if (xarr1 == -2) {
-          /*c0 = 1. + (1. - alf0) / (alf0 + 4. * sqrt(rgm / rlm));
-          ud = sinal * (1. - alf0)
-              / (alf0 + 4. * sqrt(rgm / rlm) * sqrt(9.82 * dia1 * (rlm - rgm) * (1. - alf0)) / (0.015 * rgm));*/
         	C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         			c0, ud, correcHor,celula[ind].estabCol);
         }
-        //double atenua=20;
-        //if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
         if(fabs(ug1/celula[ind].duto.area)>5. && alf0>=0.75){
         	atenua =20;
         	if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
@@ -7213,51 +5723,11 @@ void SProd::CalcC0UdBuf(int ind, double& c0, double& ud) {
           c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
           ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
         }
-        /*double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
-            + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);*/
         celula[ind].arranjo = xarr1;
         celula[ind - 1].arranjoR = xarr1;
       }
       celula[ind].c0Spare = c0;
       celula[ind].udSpare = ud;
-      /*if (ind > 0) {
-        if ((celula[ind].arranjo != celula[ind - 1].arranjo && celula[ind - 1].arranjo != 0)) {
-          c0 = (celula[ind].dx * c0 + celula[ind - 1].dx * celula[ind - 1].c0Spare)
-              / (celula[ind].dx + celula[ind - 1].dx);
-          ud = (celula[ind].dx * ud + celula[ind - 1].dx * celula[ind - 1].udSpare)
-              / (celula[ind].dx + celula[ind - 1].dx);
-        } else if (ind > 2) {
-          if (celula[ind - 2].acsr.tipo == 5 && celula[ind - 2].acsr.chk.AreaGarg <= (1e-3)) {
-            if ((celula[ind].MCBuf - celula[ind].MliqiniBuf) >= 0)
-              ang = celula[ind].duto.teta;
-            else
-              ang = celula[ind].dutoR.teta;
-          } else {
-            if ((celula[ind].MCBuf - celula[ind].MliqiniBuf) >= 0)
-              ang = celula[ind].dutoL.teta;
-            else
-              ang = celula[ind].duto.teta;
-          }
-          double angL;
-          if (celula[ind - 3].acsr.tipo == 5 && celula[ind - 3].acsr.chk.AreaGarg <= (1e-3)) {
-            if ((celula[ind - 1].MCBuf - celula[ind - 1].MliqiniBuf) >= 0)
-              angL = celula[ind - 1].duto.teta;
-            else
-              angL = celula[ind - 1].dutoR.teta;
-          } else {
-            if ((celula[ind - 1].MCBuf - celula[ind - 1].MliqiniBuf) >= 0)
-              angL = celula[ind - 1].dutoL.teta;
-            else
-              angL = celula[ind - 1].duto.teta;
-          }
-          if (ang != angL) {
-            c0 = (celula[ind].dx * c0 + celula[ind - 1].dx * celula[ind - 1].c0Spare)
-                / (celula[ind].dx + celula[ind - 1].dx);
-            ud = (celula[ind].dx * ud + celula[ind - 1].dx * celula[ind - 1].udSpare)
-                / (celula[ind].dx + celula[ind - 1].dx);
-          }
-        }
-      }*/
     }
   }
   if (arq.escorregaTran == 0) {
@@ -7288,7 +5758,7 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
     celula[ind].arranjo = 1.;
 
   } else if ((celula[ind].acsr.tipo != 4 || celula[ind].acsr.bcs.freqnova <= 1.)
-  /*&&(celula[ind].acsr.tipo!=8 || celula[ind].acsr.bvol.freq<=1.)*/) {
+  ) {
     double hns;
 
     hns = 1 - alfE;
@@ -7311,7 +5781,6 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    //double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -7324,11 +5793,9 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
       alfneg = celula[ind].alf;
 
     double betI = celula[ind].betL;
-    //if(cel[ind].QL<0.)betI=cel[ind].bet;
     if (ind > 0)
       betI = betaE;
     if (celula[ind].QL < 0.) betI = celula[ind].betPigE; //testeBeta
-    //if (celula[ind].QG*0.99+celula[ind].QL*0.01 < 0.)
       betI = celula[ind].betPigE;        //duvidabeta
     double betneg;
     if (ind > 0) {
@@ -7368,7 +5835,6 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
     double viscl1;
     double tensup1;
     if (celula[ind].QL < 0.) { //testeBeta
-    //if (celula[ind].QG < 0.) {
       rlm = (1 - betI) * celula[ind].flui.MasEspLiq(pmed, tmed) + betI * celula[ind].fluicol.MasEspFlu(pmed, tmed);
       viscl1 = (1 - betI) * celula[ind].flui.ViscOleo(pmed, tmed) + betI * celula[ind].fluicol.VisFlu(pmed, tmed);
       tensup1 = (1 - betI) * celula[ind].flui.TensSuper(pmed, tmed) + betI * celula[ind].fluicol.TensSuper(pmed, tmed);
@@ -7391,7 +5857,6 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
       viscg1 = (*celula[ind].fluiL).ViscGas(pmed, tmed);
     }
 
-    //if(cel[ind+1].estadoPig==1)tensup1=0.07;
 
     double ug1 = (celula[ind].MC - celula[ind].Mliqini) / rgm;
     double ul1 = celula[ind].Mliqini / rlm;
@@ -7406,18 +5871,11 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
     double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) /  (viscl1/1000.);
 
     int xarr1 = 1;
-    double dtot = celula[ind].dxL + celula[ind].dx /*+ 0 * celula[ind].dxR*/;
+    double dtot = celula[ind].dxL + celula[ind].dx ;
     double razL = celula[ind].dxL;
     double raz = celula[ind].dx;
-    //double razR = 0 * celula[ind].dxR;
-    double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta /*+ razR * celula[ind].dutoR.teta*/)
+    double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta )
         / dtot;
-   /* double sinal = 1.;
-    if (ang < 0.)
-      sinal = -1.;
-    double xc0 = 2.;
-    double xud = sinal * 0.0246 * cos(ang)
-        + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
     double atenua=20.;
     if (nrey > 1e-30) {
       if (fabs(0 * ang + 1 * celula[ind].duto.teta) < 45. * M_PI / 180. && hol0 < 0.99 && hol0 > 0.01
@@ -7425,9 +5883,6 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
         double ug0;
         double ul0;
 
-        /*         ug1=(cel[ind].MC-cel[ind].Mliqini)/cel[ind].flui.MasEspGas(pmed,tmed);
-         ul1=cel[ind].Mliqini/
-         ((1-betI)*cel[ind].flui.MasEspLiq(pmed,tmed)+betI*cel[ind].fluicol.MasEspFlu(pmed,tmed));*/
         ug1 = (celula[ind].MC - celula[ind].Mliqini) / rgm;
         ul1 = celula[ind].Mliqini / rlm;
 
@@ -7439,16 +5894,8 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
         estratificado testamapa(dia1, ul1, ug1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
             celula[ind].duto.teta, celula[ind].duto.rug / dia1);
 
-        /*if((*vg1dSP).lixo5>7141.){
-         int para;
-         para=0;
-         }*/
         testamapa.mapaTD();
-        //testamapa.mapa(dia1,1.-hol0);
-        //double chute=testamapa.mapa2(celula[ind].chutearranjo);
-        //celula[ind].chutearranjo=chute;
         xarr1 = testamapa.arr;
-        //xarr1=1;
         if (xarr1 == -1) {
           if (celula[ind].arranjo != 0) {
             if (((celula[ind].arranjo != xarr1) || celula[ind].transic > 0)) {
@@ -7461,13 +5908,6 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
           } else
             celula[ind].transic = 0;
           celula[ind].arranjo = xarr1 = testamapa.arr;
-          /*sinal = 1.;
-          if (ang < 0.)
-            sinal = -1.;
-          double xc0C = 2. / (1 + pow(nrey / 1000., 2.))
-              + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
-          double udC = sinal * 0.0246 * cos(ang)
-              + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
           double c0D;
           double udD;
           double c0E;
@@ -7484,16 +5924,10 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
           if (ul1 < 0.)
             mult1 = 1.;
           double alf0E = alfE;
-          /*xc0 = 1.;
 
-          c0 = xc0;
 
-          c0 = xc0 = 1.;
-          ud = xud;*/
           double jmax=0.05;
           double jmin=0.005;
-          //double jmax=0.5;
-          //double jmin=0.1;
           if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
             c0 = c0E;
             ud = udE;
@@ -7506,16 +5940,7 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
             ud = ((1. - raz) * udE + raz * udD);
           }
 
-         /* if (EstadoMaster1 == 0) {
-            if (contaMaster1 > 19) {
-              c0 = c0D;
-              ud = udD;
-            } else {
-              c0 = (c0D * contaMaster1 + celula[ind].c0 * (20. - contaMaster1)) / 20.;
-              ud = (udD * contaMaster1 + celula[ind].ud * (20. - contaMaster1)) / 20.;
-            }
-          }*/
-          if (celula[ind].transic > 0 /*&& EstadoMaster1 == 1*/) {
+          if (celula[ind].transic > 0 ) {
             c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
             ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
           }
@@ -7527,30 +5952,14 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
             celula[ind].duto.teta, tensup1, arq.mapaArranjo,vg1dSP);
         xarr1 = testamapa2.verificaArr();
 
-        /*double sinal = 1.;
-        if (ang < 0.)
-          sinal = -1.;
-        c0 = 2. / (1 + pow(nrey / 1000., 2.))
-            + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
 
-        ud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
         C0UdDisperso(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         		c0, ud, correcHor,celula[ind].estabCol);
-        // if(alf0>0.9999 && xarr1!=-2){
-        //c0=1.-localtiny;
-        //ud=0.;
-        //xarr1=4;
-        // }
         if (xarr1 == -2) {
-          /*c0 = 1. + (1. - alf0) / (alf0 + 4. * sqrt(rgm / rlm));
-          ud = sinal * (1. - alf0)
-              / (alf0 + 4. * sqrt(rgm / rlm) * sqrt(9.82 * dia1 * (rlm - rgm) * (1. - alf0)) / (0.015 * rgm));*/
         	C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         			c0, ud, correcHor,celula[ind].estabCol);
         }
 
-        //double atenua=20;
-        //if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
         if(fabs(ug1/celula[ind].duto.area)>5. && alf0>=0.75){
         	atenua =20;
         	if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
@@ -7569,8 +5978,6 @@ void SProd::CalcC0UdIni(int ind, double& c0, double& ud) {
           c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
           ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
         }
-        /*double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
-            + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);*/
         celula[ind].arranjo = xarr1;
 
       }
@@ -7607,7 +6014,7 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
     celula[ind].arranjo = 1.;
 
   } else if ((celula[ind].acsr.tipo != 4 || celula[ind].acsr.bcs.freqnova <= 1.)
-  /*&&(celula[ind].acsr.tipo!=8 || celula[ind].acsr.bvol.freq<=1.)*/) {
+  ) {
     double hns;
 
     hns = 1 - alfE;
@@ -7630,7 +6037,6 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    //double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -7643,11 +6049,9 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
       alfneg = celula[ind].alf;
 
     double betI = celula[ind].betL;
-    //if(cel[ind].QL<0.)betI=cel[ind].bet;
     if (ind > 0)
       betI = betaE;
     if (celula[ind].QL < 0.) betI = celula[ind].betPigE; //testeBeta
-    //if (celula[ind].QG*0.99+celula[ind].QL*0.01  < 0.)
       betI = celula[ind].betPigE;        //duvidabeta
     double betneg;
     if (ind > 0) {
@@ -7685,7 +6089,6 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
     double viscl1;
     double tensup1;
     if (celula[ind].MliqiniBuf < 0.) { //testeBeta
-    //if (celula[ind].MC - celula[ind].MliqiniBuf < 0.) {
       rlm = (1 - betI) * celula[ind].flui.MasEspLiq(pmed, tmed) + betI * celula[ind].fluicol.MasEspFlu(pmed, tmed);
       viscl1 = (1 - betI) * celula[ind].flui.ViscOleo(pmed, tmed) + betI * celula[ind].fluicol.VisFlu(pmed, tmed);
       tensup1 = (1 - betI) * celula[ind].flui.TensSuper(pmed, tmed) + betI * celula[ind].fluicol.TensSuper(pmed, tmed);
@@ -7708,7 +6111,6 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
       viscg1 = (*celula[ind].fluiL).ViscGas(pmed, tmed);
     }
 
-    //if(cel[ind+1].estadoPig==1)tensup1=0.07;
 
     double ug1 = (celula[ind].MCBuf - celula[ind].MliqiniBuf) / rgm;
     double ul1 = celula[ind].MliqiniBuf / rlm;
@@ -7723,18 +6125,11 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
     double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) /  (viscl1/1000.);
 
     int xarr1 = 1;
-    double dtot = celula[ind].dxL + celula[ind].dx /*+ 0 * celula[ind].dxR*/;
+    double dtot = celula[ind].dxL + celula[ind].dx ;
     double razL = celula[ind].dxL;
     double raz = celula[ind].dx;
-   // double razR = 0 * celula[ind].dxR;
-    double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta /*+ razR * celula[ind].dutoR.teta*/)
+    double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta )
         / dtot;
-    /*double sinal = 1.;
-    if (ang < 0.)
-      sinal = -1.;
-    double xc0 = 2.;
-    double xud = sinal * 0.0246 * cos(ang)
-        + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
     double atenua=20.;
     if (nrey > 1e-30) {
       if (fabs(0 * ang + 1 * celula[ind].duto.teta) < 45. * M_PI / 180. && hol0 < 0.99 && hol0 > 0.01
@@ -7742,9 +6137,6 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
         double ug0;
         double ul0;
 
-        /*         ug1=(cel[ind].MC-cel[ind].Mliqini)/cel[ind].flui.MasEspGas(pmed,tmed);
-         ul1=cel[ind].Mliqini/
-         ((1-betI)*cel[ind].flui.MasEspLiq(pmed,tmed)+betI*cel[ind].fluicol.MasEspFlu(pmed,tmed));*/
         ug1 = (celula[ind].MCBuf - celula[ind].MliqiniBuf) / rgm;
         ul1 = celula[ind].MliqiniBuf / rlm;
 
@@ -7753,18 +6145,13 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
             / ((1 - betneg) * (*celula[ind].fluiL).MasEspLiq(pmed0, tmed0)
                 + betneg * celula[ind].fluicol.MasEspFlu(pmed0, tmed0));
 
-        /*estratificado testamapa(dia1, ul1, ug1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
-            celula[ind].duto.teta, celula[ind].duto.rug / dia1);
 
 
-        testamapa.mapaTD();
 
-        xarr1 = testamapa.arr;*/
 
 
         xarr1=celula[ind].arranjo;
         if (xarr1 == -1) {
-          //celula[ind].arranjo = xarr1 = testamapa.arr;
 
           double c0D;
           double udD;
@@ -7781,17 +6168,10 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
           mult1 = 0.;
           if (ul1 < 0.)
             mult1 = 1.;
-//          double alf0E = alfE;
-         /* xc0 = 1.;
 
-          c0 = xc0;
 
-          c0 = xc0 = 1.;
-          ud = xud;*/
           double jmax=0.05;
           double jmin=0.005;
-          //double jmax=0.5;
-          //double jmin=0.1;
           if ((fabs(ug1) + fabs(ul1)) / A1 >jmax) {
             c0 = c0E;
             ud = udE;
@@ -7804,16 +6184,7 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
             ud = ((1. - raz) * udE + raz * udD);
           }
 
-          /*if (EstadoMaster1 == 0) {
-            if (contaMaster1 > 19) {
-              c0 = c0D;
-              ud = udD;
-            } else {
-              c0 = (c0D * contaMaster1 + celula[ind].c0 * (20. - contaMaster1)) / 20.;
-              ud = (udD * contaMaster1 + celula[ind].ud * (20. - contaMaster1)) / 20.;
-            }
-          }*/
-          if (celula[ind].transic > 0 /*&& EstadoMaster1 == 1*/) {
+          if (celula[ind].transic > 0 ) {
             c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
             ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
           }
@@ -7821,33 +6192,14 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
       }
       if(xarr1!=-1){
 
-        /*arranjo testamapa2(dia1, ul1 / A1, ug1 / A1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
-            celula[ind].duto.teta, tensup1);
-        xarr1 = testamapa2.verificaArr();*/
 
-        /*double sinal = 1.;
-        if (ang < 0.)
-          sinal = -1.;
-        c0 = 2. / (1 + pow(nrey / 1000., 2.))
-            + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
 
-        ud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
         C0UdDisperso(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1,dia1,celula[ind].duto.rug, ang,
         		c0, ud, correcHor,celula[ind].estabCol);
-        // if(alf0>0.9999 && xarr1!=-2){
-        //c0=1.-localtiny;
-        //ud=0.;
-        //xarr1=4;
-        // }
         if (xarr1 == -2) {
-          /*c0 = 1. + (1. - alf0) / (alf0 + 4. * sqrt(rgm / rlm));
-          ud = sinal * (1. - alf0)
-              / (alf0 + 4. * sqrt(rgm / rlm) * sqrt(9.82 * dia1 * (rlm - rgm) * (1. - alf0)) / (0.015 * rgm));*/
         	C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         			c0, ud, correcHor,celula[ind].estabCol);
         }
-        //double atenua=20;
-        //if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
         if(fabs(ug1/celula[ind].duto.area)>5. && alf0>=0.75){
         	atenua =20;
         	if(arq.CorreAnular==3 && arq.CorreDisper==1) atenua=200;
@@ -7857,8 +6209,6 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
           c0 = (c0 * celula[ind].transic + celula[ind].c0 * (atenua - celula[ind].transic)) / atenua;
           ud = (ud * celula[ind].transic + celula[ind].ud * (atenua - celula[ind].transic)) / atenua;
         }
-       /* double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
-            + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);*/
         celula[ind].arranjo = xarr1;
 
       }
@@ -7885,7 +6235,6 @@ void SProd::CalcC0UdIniBuf(int ind, double& c0, double& ud) {
 }
 
 void SProd::correcHidroFric(int i, double& hidro, double& fric){
-	///////////////////////////////////////////////////////////////////////////////////////
 
     double dx = 0.5 * celula[i].dx;
     double dia = celula[i].duto.a;
@@ -7895,8 +6244,6 @@ void SProd::correcHidroFric(int i, double& hidro, double& fric){
     double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
     double rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp)
           + celula[i].bet * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    //double ugsmed = (celula[i].QG) / (area);
-    //double ulsmed = celula[i].QL / (area);
     double ugsmed = (celula[i].MC-celula[i].Mliqini) / (area*rhog);
     double ulsmed = celula[i].Mliqini / (area*rhol);
     double j = ugsmed + ulsmed;
@@ -7928,8 +6275,6 @@ void SProd::auxMiniTab(ProFlu& flui) {
 						  fluC.oCalculatedVapComposition,arq.pocinjec);
 	else
 	fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmin,-1,NULL,NULL,arq.pocinjec);
-	//fluC.atualizaPropComp(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin,
-			//-1,NULL,NULL,arq.pocinjec);
 	flui.miniTabDin.rholF[0][0] =
 			fluC.MasEspoleo(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
 	flui.miniTabDin.rhogF[0][0] =
@@ -7962,7 +6307,6 @@ void SProd::auxMiniTab(ProFlu& flui) {
 			fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
 	flui.miniTabDin.PBF[0]  =
 			fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-	///////////////////////////////////////////////////////////////////////////////////////////////
 	if(fluC.dCalculatedBeta>0. && fluC.dCalculatedBeta<1.)
 	fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmax,
 						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
@@ -8001,7 +6345,6 @@ void SProd::auxMiniTab(ProFlu& flui) {
 			fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
 	flui.miniTabDin.PBF[1]  =
 			fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-	///////////////////////////////////////////////////////////////////////////////////////////////
 	if(fluC.dCalculatedBeta>0. && fluC.dCalculatedBeta<1.)
 	fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin,
 						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
@@ -8038,7 +6381,6 @@ void SProd::auxMiniTab(ProFlu& flui) {
 			fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
 	flui.miniTabDin.HgF[1][0] =
 			fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-	///////////////////////////////////////////////////////////////////////////////////////////////
 	if(fluC.dCalculatedBeta>0. && fluC.dCalculatedBeta<1.)
 	fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmax,
 						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
@@ -8078,8 +6420,6 @@ void SProd::auxMiniTab(ProFlu& flui) {
 }
 
 void SProd::geraMiniTabFlu() {
-	//double delp;
-	//double delt;
 	(*vg1dSP).modoTransiente=0;
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
 	for (int i = 0; i <= ncel; i++) {
@@ -8096,8 +6436,6 @@ void SProd::geraMiniTabFlu() {
 			celula[i].flui.miniTabDin.pmax=celula[i].pres+delp;
 			celula[i].flui.miniTabDin.pmin=celula[i].pres-delp;
 		}
-		//delt=0.5*celula[i].temp;
-		//if(delt>arq.miniTabDt)delt=arq.miniTabDt;
 		delt=arq.miniTabDt;
 		celula[i].flui.miniTabDin.tmax=celula[i].temp+delt;
 		celula[i].flui.miniTabDin.tmin=celula[i].temp-delt;
@@ -8178,156 +6516,12 @@ void SProd::geraMiniTabFlu() {
 			celula[i].acsr.injm.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 			auxMiniTab(celula[i].acsr.injm.FluidoPro);
 		}
-		/*ProFlu fluC;
-		fluC=celula[i].flui;
-    	fluC.atualizaPropCompStandard();
-    	fluC.atualizaPropComp(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin,
-    						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-							  fluC.oCalculatedVapComposition,arq.pocinjec);
-    	//fluC.atualizaPropComp(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin,
-    			//-1,NULL,NULL,arq.pocinjec);
-    	celula[i].flui.miniTabDin.rholF[0][0] =
-    			fluC.MasEspoleo(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.rhogF[0][0] =
-    			fluC.MasEspGas(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.DrhogDpF[0][0] =
-    			fluC.drhodp(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.DrholDtF[0][0] =
-    			fluC.DrholDT(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.DrhogDtF[0][0] =
-    			fluC.drhodt(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valBO[0][0] =
-    			fluC.BOFunc(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valZ[0][0] =
-    			fluC.Zdran(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valdZdT[0][0] =
-    			fluC.DZDT(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valdZdP[0][0] =
-    			fluC.DZDP(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.tit[0][0] =
-    			fluC.FracMass(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.rs[0][0] =
-    			fluC.RS(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.cplF[0][0] =
-    			fluC.CalorLiq(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.cpgF[0][0] =
-    			fluC.CalorGas(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.HlF[0][0] =
-    			fluC.EntalpLiq(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.HgF[0][0] =
-    			fluC.EntalpGas(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.PBF[0]  =
-    			fluC.PB(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmin);
-    	///////////////////////////////////////////////////////////////////////////////////////////////
-    	fluC.atualizaPropComp(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax,
-    						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-							  fluC.oCalculatedVapComposition,arq.pocinjec);
-    	celula[i].flui.miniTabDin.rholF[0][1] =
-    			fluC.MasEspoleo(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.rhogF[0][1] =
-    			fluC.MasEspGas(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.DrhogDpF[0][1] =
-    			fluC.drhodp(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.DrholDtF[0][1] =
-    			fluC.DrholDT(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.DrhogDtF[0][1] =
-    			fluC.drhodt(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valBO[0][1] =
-    			fluC.BOFunc(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valZ[0][1] =
-    			fluC.Zdran(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valdZdT[0][1] =
-    			fluC.DZDT(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valdZdP[0][1] =
-    			fluC.DZDP(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.tit[0][1] =
-    			fluC.FracMass(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.rs[0][1] =
-    			fluC.RS(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.cplF[0][1] =
-    			fluC.CalorLiq(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.cpgF[0][1] =
-    			fluC.CalorGas(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.HlF[0][1] =
-    			fluC.EntalpLiq(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.HgF[0][1] =
-    			fluC.EntalpGas(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.PBF[1]  =
-    			fluC.PB(celula[i].flui.miniTabDin.pmin, celula[i].flui.miniTabDin.tmax);
-    	///////////////////////////////////////////////////////////////////////////////////////////////
-    	fluC.atualizaPropComp(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin,
-    						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-							  fluC.oCalculatedVapComposition,arq.pocinjec);
-    	celula[i].flui.miniTabDin.rholF[1][0] =
-    			fluC.MasEspoleo(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.rhogF[1][0] =
-    			fluC.MasEspGas(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.DrhogDpF[1][0] =
-    			fluC.drhodp(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.DrholDtF[1][0] =
-    			fluC.DrholDT(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.DrhogDtF[1][0] =
-    			fluC.drhodt(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valBO[1][0] =
-    			fluC.BOFunc(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valZ[1][0] =
-    			fluC.Zdran(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valdZdT[1][0] =
-    			fluC.DZDT(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.valdZdP[1][0] =
-    			fluC.DZDP(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.tit[1][0] =
-    			fluC.FracMass(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.rs[1][0] =
-    			fluC.RS(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.cplF[1][0] =
-    			fluC.CalorLiq(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.cpgF[1][0] =
-    			fluC.CalorGas(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.HlF[1][0] =
-    			fluC.EntalpLiq(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	celula[i].flui.miniTabDin.HgF[1][0] =
-    			fluC.EntalpGas(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmin);
-    	///////////////////////////////////////////////////////////////////////////////////////////////
-    	fluC.atualizaPropComp(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax,
-    						  fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-							  fluC.oCalculatedVapComposition,arq.pocinjec);
-    	celula[i].flui.miniTabDin.rholF[1][1] =
-    			fluC.MasEspoleo(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.rhogF[1][1] =
-    			fluC.MasEspGas(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.DrhogDpF[1][1] =
-    			fluC.drhodp(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.DrholDtF[1][1] =
-    			fluC.DrholDT(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.DrhogDtF[1][1] =
-    			fluC.drhodt(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valBO[1][1] =
-    			fluC.BOFunc(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valZ[1][1] =
-    			fluC.Zdran(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valdZdT[1][1] =
-    			fluC.DZDT(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.valdZdP[1][1] =
-    			fluC.DZDP(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.tit[1][1] =
-    			fluC.FracMass(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.rs[1][1] =
-    			fluC.RS(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.cplF[1][1] =
-    			fluC.CalorLiq(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.cpgF[1][1] =
-    			fluC.CalorGas(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.HlF[1][1] =
-    			fluC.EntalpLiq(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);
-    	celula[i].flui.miniTabDin.HgF[1][1] =
-    			fluC.EntalpGas(celula[i].flui.miniTabDin.pmax, celula[i].flui.miniTabDin.tmax);*/
 
 	}
 	(*vg1dSP).modoTransiente=1;
 }
 
-void  SProd::renova(int expli) {//alteracao7
+void  SProd::renova(int expli) {
 	for (int i = 0; i <= ncel; i++) {
 		if (i != 0 && i != ncel) {
 			celula[i].presini = celula[i].pres;
@@ -8335,7 +6529,6 @@ void  SProd::renova(int expli) {//alteracao7
 			if(isnan(celula[i].pres))NumError("Pressao na linha com valor NaN");
 			celula[i].d2pdt2=celula[i].dpdt;
 			celula[i].dpdt=0.*(celula[i].pres-celula[i].presini)/celula[i].dt;
-			//celula[i].d2pdt2=(celula[i].dpdt-celula[i].d2pdt2)/celula[i].dt;
 			celula[i].MCini =celula[i].MC;
 			if(expli==0)celula[i].MC = termolivreP[2 * i];
 			if(isnan(celula[i].MC))NumError("Vazao massica da mistura na linha com valor NaN");
@@ -8353,7 +6546,6 @@ void  SProd::renova(int expli) {//alteracao7
 			celula[i+1].MliqiniL=celula[i-1].MliqiniR=celula[i].Mliqini;
 
 
-			///////////////////////////////////////////////////////////////////////////////////////
 
 		    double dx = 0.5 * celula[i].dx;
 		    double dia = celula[i].duto.a;
@@ -8363,8 +6555,6 @@ void  SProd::renova(int expli) {//alteracao7
 		    double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
 		    double rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp)
 		          + celula[i].bet * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-		    //double ugsmed = (celula[i].QG) / (area);
-		    //double ulsmed = celula[i].QL / (area);
 		    double ugsmed = (celula[i].MC-celula[i].Mliqini) / (area*rhog);
 		    double ulsmed = celula[i].Mliqini / (area*rhol);
 		    double j = ugsmed + ulsmed;
@@ -8393,7 +6583,6 @@ void  SProd::renova(int expli) {//alteracao7
 		    celula[i].presauxini=celula[i].presaux;
 		    celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
 		    celula[i].dpresaux=0.5*(gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-		    ////////////////////////////////////////////////////////////////////////////////////////////////////
 		    dx = 0.5 * celula[i].dxL;
 		    dia = celula[i-1].duto.a;
 		    area = 0.25 * M_PI * dia * dia;
@@ -8402,8 +6591,6 @@ void  SProd::renova(int expli) {//alteracao7
 		    rhog = celula[i-1].flui.MasEspGas(celula[i-1].pres, celula[i-1].temp);
 		    rhol = (1 - celula[i-1].bet) * celula[i-1].flui.MasEspLiq(celula[i-1].pres, celula[i-1].temp)
 		          + celula[i-1].bet * celula[i-1].fluicol.MasEspFlu(celula[i-1].pres, celula[i-1].temp);
-		    //ugsmed = (celula[i-1].QG) / (area);
-		    //ulsmed = celula[i-1].QL / (area);
 		    ugsmed = (celula[i-1].MC-celula[i-1].Mliqini) / (area*rhog);
 		    ulsmed = celula[i-1].Mliqini / (area*rhol);
 		    j = ugsmed + ulsmed;
@@ -8428,9 +6615,6 @@ void  SProd::renova(int expli) {//alteracao7
 		    		celula[i].presaux = 0.5*(celula[i].presaux)+
 		    							0.5*(celula[i-1].pres - (gradfric + gradhidro) / 98066.5);
 		    celula[i].dpresaux-=0.5*(gradfric + gradhidro) / 98066.5;
-		    /*if(celula[i].presaux<celula[i].pres && celula[i].presaux<celula[i-1].pres)
-		    	celula[i].presaux=
-		    	(celula[i-1].dx*celula[i].pres+celula[i].dx*celula[i-1].pres)/(celula[i].dx+celula[i-1].dx);*/
 		    celula[i - 1].presauxRini=celula[i - 1].presauxR;
 		    celula[i - 1].presauxR = celula[i].presaux;
 		    if(i<ncel){
@@ -8475,7 +6659,7 @@ void  SProd::renova(int expli) {//alteracao7
 		    	celula[i].MC=celula[i].Mliqini;
 		    	celula[i+1].ML=celula[i-1].MR=celula[i].MC;
 		    }
-		    celula[i-1].QLRini=celula[i-1].QLR;// alteracao7
+		    celula[i-1].QLRini=celula[i-1].QLR;
 		    celula[i - 1].QLR = celula[i].QL;
 		    if(i<ncel){
 		    	  celula[i + 1].QLLini=celula[i + 1].QLL;
@@ -8488,7 +6672,6 @@ void  SProd::renova(int expli) {//alteracao7
 			if(expli==0)celula[0].pres = termolivreP[1];
 			celula[i].d2pdt2=celula[i].dpdt;
 			celula[i].dpdt=0*(celula[i].pres-celula[i].presini)/celula[i].dt;
-			//celula[i].d2pdt2=(celula[i].dpdt-celula[i].d2pdt2)/celula[i].dt;
 			celula[0].presauxini=celula[0].presaux;
 			celula[0].presaux=celula[0].pres;
 			celula[0].dpresaux=0.;
@@ -8529,7 +6712,6 @@ void  SProd::renova(int expli) {//alteracao7
 			celula[ncel].MCini=celula[ncel].MC;
 			if(expli==0)celula[ncel].MC = termolivreP[2 * ncel];
 			//teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			//celula[ncel].MC=celula[ncel-1].MC;
 			//teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			celula[ncel-1].presRini=celula[ncel-1].presR;
 			celula[ncel-1].presR= celula[ncel].pres;
@@ -8540,13 +6722,12 @@ void  SProd::renova(int expli) {//alteracao7
 
 			celula[ncel].Mliqini0=celula[ncel].Mliqini;
 			celula[ncel].Mliqini=celula[ncel].term1*celula[ncel].MC+celula[ncel].term2;
-			celula[i-1].MliqiniR0=celula[i-1].MliqiniR;// alteracao4
+			celula[i-1].MliqiniR0=celula[i-1].MliqiniR;
 			celula[ncel-1].MliqiniR=celula[ncel].Mliqini;
 			celula[ncel].MliqiniR0=celula[ncel].MliqiniR;
 			celula[ncel].MliqiniR=celula[ncel].Mliqini;
 
 
-			///////////////////////////////////////////////////////////////////////////////////////
 		    double dx = 0.5 * celula[i].dx;
 		    double dia = celula[i].duto.a;
 		    double area = 0.25 * M_PI * dia * dia;
@@ -8574,18 +6755,12 @@ void  SProd::renova(int expli) {//alteracao7
 		    }
 		    double f1 = celula[i].fric(re1, celula[i].duto.rug / dia);
 		    double medpres=0;
-		    /*if(arq.MedSimpPresFront==0){
-		    	if(celula[i].presaux<=10)medpres=1;
-		    	else medpres=0.;
-		    }
-		    else medpres=1;*/
 		    double gradfric =(1-medpres)*0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
 		    double gradhidro = (1-medpres)*9.82 * sin(celula[i].duto.teta) * rhomix * dx;
 
 		    celula[i].presauxini=celula[i].presaux;
 		    celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
 		    celula[i].dpresaux=0.5*(gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-		    ////////////////////////////////////////////////////////////////////////////////////////////////////
 		    dx = 0.5 * celula[i].dxL;
 		    dia = celula[i-1].duto.a;
 		    area = 0.25 * M_PI * dia * dia;
@@ -8594,8 +6769,6 @@ void  SProd::renova(int expli) {//alteracao7
 		    rhog = celula[i-1].flui.MasEspGas(celula[i-1].pres, celula[i-1].temp);
 		    rhol = (1 - celula[i-1].bet) * celula[i-1].flui.MasEspLiq(celula[i-1].pres, celula[i-1].temp)
 		          + celula[i-1].bet * celula[i-1].fluicol.MasEspFlu(celula[i-1].pres, celula[i-1].temp);
-		    //ugsmed = (celula[i-1].QG) / (area);
-		    //ulsmed = celula[i-1].QL / (area);
 		    ugsmed = (celula[i-1].MC-celula[i-1].Mliqini) / (area*rhog);
 		    ulsmed = celula[i-1].Mliqini / (area*rhol);
 		    j = ugsmed + ulsmed;
@@ -8618,9 +6791,6 @@ void  SProd::renova(int expli) {//alteracao7
 		    celula[i].presaux = 0.5*(celula[i].presaux)+
 		    		0.5*(celula[i-1].pres - (gradfric + gradhidro) / 98066.5);
 		    celula[i].dpresaux-=0.5*(gradfric + gradhidro) / 98066.5;
-		    /*if(celula[i].presaux<celula[i].pres && celula[i].presaux<celula[i-1].pres)
-		    	celula[i].presaux=
-		    	(celula[i-1].dx*celula[i].pres+celula[i].dx*celula[i-1].pres)/(celula[i].dx+celula[i-1].dx);*/
 		    celula[i - 1].presauxRini=celula[i - 1].presauxR;
 		    celula[i - 1].presauxR = celula[i].presaux;
 		    if(i<ncel){
@@ -8652,16 +6822,14 @@ void  SProd::renova(int expli) {//alteracao7
 		}
 	}
 }
-////////////////////////////////////////////////////////////////////////////////////////
 
-void  SProd::renovaVaz() {//alteracao7
+void  SProd::renovaVaz() {
 	for (int i = 0; i <= ncel; i++) {
 		if (i != 0 && i != ncel) {
 			celula[i].Mliqini=celula[i].term1*celula[i].MC+celula[i].term2;
 			celula[i+1].MliqiniL=celula[i-1].MliqiniR=celula[i].Mliqini;
 
 
-			///////////////////////////////////////////////////////////////////////////////////////
 		    double tmed = celula[i - 1].temp;
 		    if (celula[i].VTemper < 0.) tmed = celula[i].temp;
 		    ProFlu flud;
@@ -8709,7 +6877,6 @@ void  SProd::renovaVaz() {//alteracao7
 			celula[ncel].MliqiniR=celula[ncel].Mliqini;
 
 
-			///////////////////////////////////////////////////////////////////////////////////////
 
 		    double tmed = celula[i - 1].temp;
 		    if (celula[i].VTemper < 0.) tmed = celula[i].temp;
@@ -8736,7 +6903,6 @@ void  SProd::renovaVaz() {//alteracao7
 	}
 }
 
-///////////////////////////// alteracao7 //////////////////////////////////////////////
 void  SProd::renovaBuffer() {
 
 	celula[0].presBuf = termolivreP[1];
@@ -8770,20 +6936,12 @@ void  SProd::renovaBuffer() {
 	celula[ncel-1].MliqiniRBuf=celula[ncel].MliqiniBuf;
 	celula[ncel].MliqiniRBuf=celula[ncel].MliqiniBuf;
 
-/*	 if(celula[ncel-1].MliqiniRBuf<0 ){
 
-		   celula[ncel-1].MRBuf=celula[ncel-1].MRBuf-celula[ncel-1].MliqiniRBuf;
-		   celula[ncel-1].MliqiniRBuf=0;
 
-		   celula[ncel].MCBuf=celula[ncel].MCBuf-celula[ncel].MliqiniBuf;
-		   celula[ncel].MliqiniBuf=0;
 
-	 }*/
 
 }
-///////////////////////////////////////////////////////////////////////////
 
-///////////////////////////// alteracao8 //////////////////////////////////////////////
 void  SProd::renovaBufferCego() {
 
 	celula[0].presBuf = celula[0].pres;
@@ -8823,7 +6981,6 @@ void  SProd::renovaBufferCego() {
     fontemassGRBuf=celula[fim+1].fontemassGR;
 
 }
-///////////////////////////// alteracao8 //////////////////////////////////////////////
 
 
 int SProd::sign(double var) {
@@ -8855,11 +7012,8 @@ void SProd::renovaTemp() {
         celula[i + 1].fontemassCL = celula[i].fontemassCR;
         celula[i + 1].fontemassGL = celula[i].fontemassGR;
       }
-      //celula[i].tempini=celula[i].temp;
-      //celula[i+1].tempL= celula[i-1].tempR= celula[i].temp;
       double razdx = celula[i-1].dx / (celula[i].dx + celula[i].dxL);
       double razdxL = celula[i].dx / (celula[i - 1].dx + celula[i - 1].dxL);
-//      double pmed = razdx * celula[i].pres + (1 - razdx) * celula[i].presL;
       double tmed = razdx * celula[i].temp + (1 - razdx) * celula[i - 1].temp;
       double tmedL = razdxL * celula[i].tempL + (1 - razdxL) * celula[i - 1].tempL;
       tmed = celula[i - 1].temp;
@@ -8867,45 +7021,15 @@ void SProd::renovaTemp() {
       tmedL = celula[i - 1].tempL;
       if (celula[i - 1].VTemper < 0.) tmedL = celula[i - 1].temp;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /*double dx = 0.5 * celula[i].dx;*/
       double dia = celula[i].duto.a;
       double area = 0.25 * M_PI * dia * dia;
-      /*double si = celula[i].duto.peri;
-      double alfmed = celula[i].alf;
-      double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
-      double rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp)
-          + celula[i].bet * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);*/
       double ugsmed = (celula[i].QG) / (area);
       double ulsmed = celula[i].QL / (area);
       double j = ugsmed + ulsmed;
       double ABSjL = (fabs(celula[i - 1].QG) + fabs(celula[i - 1].QL)) / celula[i - 1].duto.area;
 
-      /*double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-      double viscmix = alfmed * celula[i].flui.ViscGas(celula[i].pres, celula[i].temp)
-          + (1 - alfmed)
-              * ((1 - celula[i].bet) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp)
-                  + celula[i].bet * celula[i].fluicol.VisFlu(celula[i].pres, celula[i].temp));
 
-      double re1;
-      if (celula[i].duto.revest == 0) re1 = celula[i].Rey(celula[i].duto.a, j, rhomix, viscmix);
-      else {
-        double dhid = 4 * area / si;
-        re1 = celula[i].Rey(dhid, j, rhomix, viscmix);
-      }
-      double f1 = celula[i].fric(re1, celula[i].duto.rug / dia);
-      double gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-      double gradhidro = 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
 
-      celula[i].presauxini=celula[i].presaux;
-      celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-      celula[i - 1].presauxRini=celula[i - 1].presauxR;
-      celula[i - 1].presauxR = celula[i].presaux;
-      if(i<ncel){
-    	 celula[i + 1].presauxLini=celula[i + 1].presauxL;
-         celula[i + 1].presauxL = celula[i].presaux;
-      }*/
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       ProFlu flue;
       ProFlu flud;
@@ -8916,26 +7040,17 @@ void SProd::renovaTemp() {
       double fwC = celula[i - 1].flui.BSW*baC/ (boC + baC*celula[i - 1].flui.BSW - celula[i - 1].flui.BSW * boC);
       if (celula[i].Mliqini < 0.) {
         flud = celula[i].flui;
-        //fwd=celula[i].FW;
-        //double bo1=flud.BOFunc(celula[i].presaux,tmed);
-        //fwd=flud.BSW/(bo1+flud.BSW-flud.BSW*bo1);
         double bo1 = flud.BOFunc(celula[i].pres, celula[i].temp);
         double ba1 = flud.BAFunc(celula[i].pres, celula[i].temp);
         fwd = flud.BSW*ba1 / (bo1 + ba1*flud.BSW - flud.BSW * bo1);
       } else {
         flud = celula[i - 1].flui;
-        //fwd=celula[i-1].FW;
-        //double bo1=flud.BOFunc(celula[i].presaux,tmed);
-        //fwd=flud.BSW/(bo1+flud.BSW-flud.BSW*bo1);
         double bo1 = flud.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
         double ba1 = flud.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
         fwd = flud.BSW*ba1 / (bo1 + ba1*flud.BSW - flud.BSW * bo1);
       }
       if (celula[i - 1].Mliqini < 0) {
         flue = celula[i - 1].flui;
-        //fwe=celula[i-1].FW;
-        //double bo0=flue.BOFunc(celula[i-1].presaux,tmedL);
-        //fwe=flue.BSW/(bo0+flue.BSW-flue.BSW*bo0);
         double bo0 = flue.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
         double ba0 = flue.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
         fwe = flue.BSW*ba0 / (bo0 + ba0*flue.BSW - flue.BSW * bo0);
@@ -8943,58 +7058,39 @@ void SProd::renovaTemp() {
       } else {
         if (i > 1) {
           flue = celula[i - 2].flui;
-          //fwe=celula[i-2].FW;
-          //double bo0=flue.BOFunc(celula[i-2].presaux,tmedL);
-          //fwe=flue.BSW/(bo0+flue.BSW-flue.BSW*bo0);
           double bo0 = flue.BOFunc(celula[i - 2].pres, celula[i - 2].temp);
           double ba0 = flue.BAFunc(celula[i - 2].pres, celula[i - 2].temp);
           fwe = flue.BSW*ba0/ (bo0 + ba0*flue.BSW - flue.BSW * bo0);
         } else {
           flue = celula[i - 1].flui;
-          //fwe=celula[i-1].FW;
-          //double bo0=flue.BOFunc(celula[i-1].presaux,tmedL);
-          //fwe=flue.BSW/(bo0+flue.BSW-flue.BSW*bo0);
           double bo0 = flue.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
           double ba0 = flue.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
           fwe = flue.BSW*ba0 / (bo0 + ba0*flue.BSW - flue.BSW * bo0);
         }
       }
 
-      //if(celula[i-1].VTemper<0.) tmedL=celula[i-1].temp;
       double rl;
       double rg;
       double betI;
 
      //casoComp
-      /*if(arq.flashCompleto==2){
-      	 flud.atualizaPropComp(celula[i].presaux, tmed,flud.dCalculatedBeta,
-      			 	 	 	 	  flud.oCalculatedLiqComposition,
- 								  flud.oCalculatedVapComposition,arq.pocinjec);
-      }*/
 
 
       rl = flud.MasEspLiq(celula[i].presaux, tmed);
-      //rl = celula[i].rpCi;
       if (celula[i].Mliqini < 0) betI = celula[i].bet; //testeBeta
-      //if (((celula[i].MC-celula[i].Mliqini)*0.99+0.01*celula[i].Mliqini) < 0) betI = celula[i].bet;//duvidabeta
       else betI = celula[i].betL;
 
       rg = flud.MasEspGas(celula[i].presaux, tmed);
-      //rg = celula[i].rgCi;
 
       double betL = celula[i - 1].betL;
       if (celula[i - 1].Mliqini < 0) betL = celula[i - 1].bet; //testeBeta
-      //if ((celula[i - 1].MC-celula[i - 1].Mliqini)*0.99+0.01*celula[i - 1].Mliqini < 0) betL = celula[i - 1].bet;//duvidabeta
 
       if (i > 0) betI = celula[i - 1].betPigD;
       if (celula[i].Mliqini < 0) betI = celula[i].betPigE; //testeBeta
-      //if ((celula[i].MC-celula[i].Mliqini)*0.99+0.01*celula[i].Mliqini < 0) betI = celula[i].betPigE;//duvidabeta
       if (i > 1) betL = celula[i - 2].betPigD;
       if (celula[i - 1].Mliqini < 0) betL = celula[i - 1].betPigE; //testebeta
-      //if ((celula[i-1].MC-celula[i - 1].Mliqini)*0.99+0.01*celula[i - 1].Mliqini < 0) betL = celula[i - 1].betPigE;//duvidabeta
 
       double rhol = (1 - betI) * rl + betI * celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-      //double rhol = (1 - betI) * rl + betI * celula[i].rcCi;
       double boR;
       double rsR;
       double boR0;
@@ -9022,9 +7118,6 @@ void SProd::renovaTemp() {
       if(arq.flashCompleto!=2 || arq.miniTabAtraso>0){
           boM = celula[i - 1].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
           rsM = celula[i - 1].flui.RS(celula[i - 1].pres, celula[i - 1].temp);
-          //double boM0 = celula[i - 1].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp*0.999);
-          //double rsM0 = celula[i - 1].flui.RS(celula[i - 1].pres, celula[i - 1].temp*0.999);
-          //double DRsBoM=(rsM/boM-rsM0/boM0)/(celula[i-1].temp*0.001);
           boM0 = celula[i - 1].flui.BOFunc(celula[i - 1].pres*0.999, celula[i - 1].temp);
           rsM0 = celula[i - 1].flui.RS(celula[i - 1].pres*0.999, celula[i - 1].temp);
       }
@@ -9058,22 +7151,11 @@ void SProd::renovaTemp() {
       	  DRsBoMT=(rsM/boM-rsM0T/boM0T)/(celula[i-1].temp*0.001);
       }
       double ativa=1.;
-      //if((celula[i - 1].pres<-10. || (celula[i - 1].pres<10. && (*vg1dSP).lixo5>450000))|| TransMassModel==2) ativa=0.;
       double limipres=10;
       if(modeloCompleto==1)limipres=0;
       if(celula[i - 1].pres<limipres || TransMassModel!=0) ativa=0.;
       double acop=1.;
       if(i<2 || i==ncel)acop=0;
-      /*celula[i].QLini=celula[i].QL;
-      celula[i].QL = celula[i].Mliqini / rhol;
-      celula[i].QGini=celula[i].QG;
-      celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rg;
-      celula[i-1].QLRini=celula[i-1].QLR;// alteracao7
-      celula[i - 1].QLR- = celula[i].QL;
-      if(i<ncel){
-    	  celula[i + 1].QLLini=celula[i + 1].QLL;
-    	  celula[i + 1].QLL = celula[i].QL;
-      }*/
 
       double A1 = celula[i].dutoL.area;
       celula[i-1].ativaDeri=ativa;
@@ -9143,22 +7225,11 @@ void SProd::renovaTemp() {
 
       celula[i - 1].TMModel = TransMassModel;
       if (TransMassModel != 3) {
-        if ((((celula[i - 1].alf < 0.001 /*&& (celula[i-1].d2pdt2>-1e-15 || modeloCompleto==0)*/) ||
-        	  (celula[i - 1].alf > 0.999 /*&& (celula[i-1].d2pdt2<1e-15 || modeloCompleto==0)*/)
+        if ((((celula[i - 1].alf < 0.001 ) ||
+        	  (celula[i - 1].alf > 0.999 )
             || (celula[i - 1].bet > 0.999 && celula[i - 1].alf < 0.999)) && ABSjL < 0.1)
             || celula[i - 1].flui.RGO >= (*vg1dSP).RGOMax) celula[i - 1].TMModel = 3;
         else if (celula[i - 1].estadoPig == 1) celula[i - 1].TMModel = 3;
-       // else if(celula[i].alf> 1-1e-15 || (i>=2 && celula[i-2].alf> 1-1e-15))celula[i - 1].TMModel = 3;
-        //////////////////////////////////////////////////////////////////////////////
-        //else if((celula[i-1].alf>(1-localtiny) && celula[i].alf<(1-localtiny))||
-        //(celula[i].alf>(1-localtiny) && celula[i-1].alf<(1-localtiny)))celula[i-1].TMModel=3;
-        //////////////////////////////////////////////////////////////////////////////
-        //else if((celula[i-1].alf>(localtiny) && celula[i].alf<(localtiny))||
-        //(celula[i].alf>(localtiny) && celula[i-1].alf<(localtiny)))celula[i-1].TMModel=3;
-        //////////////////////////////////////////////////////////////////////////////
-        // else if((celula[i-1].alf>(1-localtiny) && celula[i-1].alfL<(1-localtiny))||
-        //(celula[i-1].alfL>(1-localtiny) && celula[i-1].alf<(1-localtiny)))celula[i-1].TMModel=3;
-        /////////////////////////////////////////////////////////////////////////////
         else if (celula[i - 1].acsr.tipo == 2 || celula[i - 1].acsr.tipo == 3|| celula[i - 1].acsr.tipo == 9
         		|| celula[i - 1].acsr.tipo == 15 || celula[i - 1].acsr.tipo == 16)
         	celula[i - 1].TMModel = 3;
@@ -9167,8 +7238,6 @@ void SProd::renovaTemp() {
         			celula[i - 1].flui.FracMass(celula[i - 1].pres, celula[i - 1].temp);
         	if(titTeste>1.0-1e-2 || titTeste<1e-2)celula[i - 1].TMModel = 3;
         }
-        //else if(celula[i-1].acsr.tipo==4)celula[i-1].TMModel=3;
-        // else if(celula[i-1].bet>localtiny && celula[i-1].alf<(1.-localtiny)&&TransMassModel==0)celula[i-1].TMModel=1;
         else if (i >= 2) {
           if (celula[i - 2].acsr.tipo == 5 &&
         	(celula[i - 2].acsr.chk.AreaGarg < (1e-3 + arq.master1.razareaativ) * celula[i - 2].duto.area))
@@ -9178,16 +7247,10 @@ void SProd::renovaTemp() {
         }
       }
       if (celula[i - 1].TMModel == 0 && celula[i - 1].alf <= (*vg1dSP).CritCond) celula[i - 1].TMModel = 1;
-      //if(celula[i-1].TMModel==0 && celula[i-1].alf<=1e-2 && (*(celula[i-1].acsrL)).tipo==4)celula[i-1].TMModel=1;
       if(celula[i - 1].TMModel==0 && i==ncel)celula[i - 1].TMModel=1;
       if(i==ncel) celula[i].FonteMudaFase =0.;
 
 
-//      double rsf;
-//      double bswf;
-//      double rhostf;
-//      double rhogstf;
-//      double rhoastf;
       celula[i - 1].fontedissolv = 0.;
 
       celula[i - 1].transmassRini=celula[i - 1].transmassR;
@@ -9218,13 +7281,9 @@ void SProd::renovaTemp() {
         celula[i - 1].FonteMudaFase = celula[i - 1].transmassR-
         		celula[i-1].DTransDtp*celula[i-1].d2pdt2-celula[i-1].DTransDtT*celula[i-1].dTdtIni;
         if (celula[i - 1].TMModel == 1) {
-          //celula[i-1].transmassR-=((1.-celula[i-1].bet)*(1.-celula[i-1].alf)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*
-          //rsM*(6.29/35.31467)/boM)/celula[i-1].dt;
           celula[i - 1].transmassR -= ativa*((1. - celula[i - 1].bet) * (1. - celula[i - 1].alf) * (1. - fwC) * A1
               *(celula[i - 1].flui.rDgD)* celula[i - 1].flui.Deng * 1.225 * rsM * (6.29 / 35.31467) / boM) /
 			  celula[i - 1].dt;
-          //celula[i-1].transmassR+=((1.-celula[i-1].betini)*(1.-celula[i-1].alfini)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*
-          //rsM*(6.29/35.31467)/boM)/celula[i-1].dt;
           celula[i - 1].transmassR += ativa*((1. - celula[i - 1].betini) * (1. - celula[i - 1].alfini) * (1. - fwC) * A1
               *(celula[i - 1].flui.rDgD)*  celula[i - 1].flui.Deng * 1.225 * rsM * (6.29 / 35.31467) / boM) /
 			  celula[i - 1].dt;
@@ -9262,38 +7321,21 @@ void SProd::renovaTemp() {
           celula[i].DTransDxLp=acop*celula[i - 1].QL *
         		  ((1 - betL) *(flue.rDgD)* flue.Deng * 1.225 * (1. - fwe)* (6.29 / 35.31467)*0.5*DRsBoL)
                       / (celula[i - 1].dx);
-          //celula[i].DTransDt1=-((1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*rsM*(6.29/35.31467)/boM);
           celula[i].DTransDt1 = -ativa*((1. - fwC) * A1 *(celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * rsM *
         		  (6.29 / 35.31467) / boM);
           celula[i].DTransDt0 = -celula[i].DTransDt1;
 
 
-          /*//celula[i-1].CoefDTR=-((1.-celula[i-1].bet)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*rsM*(6.29/35.31467)/boM);
-          celula[i - 1].CoefDTR = (flud.rDgD)*flud.Deng * 1.225 * (1. - fwd) * rsR
-                  * (6.29 / 35.31467) / boR;
-          celula[i - 1].CoefDTL = (flue.rDgD)*flue.Deng * 1.225 * (1. - fwe) * rsL * (6.29 / 35.31467) / boL;
-          //celula[i-1].coefTransBet=((1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*rsM*(6.29/35.31467)/boM);
-          celula[i - 1].coefTransBet =((1. - fwC) * (celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * rsM *
-        		  (6.29 / 35.31467)
-              / boM);*/
-          //celula[i-1].CoefDTR=-((1.-celula[i-1].bet)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*rsM*(6.29/35.31467)/boM);
-          //celula[i-1].CoefDTR=-((1.-celula[i-1].bet)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*rsM*(6.29/35.31467)/boM);
           celula[i - 1].CoefDTR = -((1. - celula[i - 1].bet) * (1. - fwC) * A1 *
         		  (celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * rsM
               * (6.29 / 35.31467) / boM);
           celula[i - 1].CoefDTL = -celula[i - 1].CoefDTR;
-          //celula[i-1].coefTransBet=((1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*rsM*(6.29/35.31467)/boM);
           celula[i - 1].coefTransBet = ((1. - fwC) * A1 * (celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * rsM * (6.29 / 35.31467)
               / boM);
 
           //celula[i-1].DTransDtp=((1. - celula[i - 1].bet) * (1. - celula[i - 1].alf) * (1. - fwC)*A1
-                 // * (celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * DRsBoM * (6.29 / 35.31467));
-          //celula[i].transmassL-=((1.-celula[i-1].bet)*(1.-celula[i-1].alf)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*
-          //rsM*(6.29/35.31467)/boM)/celula[i-1].dt;
           celula[i].transmassL -= ativa*((1. - celula[i - 1].bet) * (1. - celula[i - 1].alf) * (1. - fwC) * A1
               * (celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * rsM * (6.29 / 35.31467) / boM) / celula[i - 1].dt;
-          //celula[i].transmassL+=((1.-celula[i-1].betini)*(1.-celula[i-1].alfini)*(1.-celula[i-1].FW)*A1*celula[i-1].flui.Deng*1.225*
-          //rsM*(6.29/35.31467)/boM)/celula[i-1].dt;
           celula[i].transmassL += ativa*((1. - celula[i - 1].betini) * (1. - celula[i - 1].alfini) * (1. - fwC) * A1
               * (celula[i - 1].flui.rDgD)*celula[i - 1].flui.Deng * 1.225 * rsM * (6.29 / 35.31467) / boM) / celula[i - 1].dt;
 
@@ -9310,8 +7352,6 @@ void SProd::renovaTemp() {
           celula[i - 1].CoefDTR = 0.;
           celula[i - 1].CoefDTL = 0.;
           celula[i - 1].coefTransBet = 0.;
-          //celula[i-1].DTransDtp=0;
-          //celula[i].DTransDtpL=celula[i-1].DTransDtp;
         }
 
       }
@@ -9341,10 +7381,6 @@ void SProd::renovaTemp() {
         celula[i - 1].CoefDTR = 0.;
         celula[i - 1].CoefDTL = 0.;
         celula[i - 1].coefTransBet = 0.;
-        //celula[i-1].DTransDtT=0;
-        //celula[i].DTransDtTL=0.;
-        //celula[i-1].DTransDtp=0;
-        //celula[i].DTransDtpL=celula[i-1].DTransDtp;
       }
       if (celula[i - 1].TMModel == 3) {
         celula[i].transmassL = celula[i - 1].transmassR = 0.;
@@ -9361,8 +7397,6 @@ void SProd::renovaTemp() {
       	  celula[i-1].DTransDtT=0;
       	  celula[i].DTransDtTL=0.;
         }
-        //celula[i-1].DTransDtp=0;
-        //celula[i].DTransDtpL=celula[i-1].DTransDtp;
       }
       if (celula[i - 1].transmassR > 0 && (celula[i].alfL > (1. - (*vg1dSP).localtiny) || celula[i].betL > (1. - (*vg1dSP).localtiny))) {
         celula[i].transmassL = celula[i - 1].transmassR = -(*vg1dSP).localtiny;
@@ -9379,8 +7413,6 @@ void SProd::renovaTemp() {
       	  celula[i-1].DTransDtT=0;
       	  celula[i].DTransDtTL=0.;
         }
-        //celula[i-1].DTransDtp=0;
-        //celula[i].DTransDtpL=celula[i-1].DTransDtp;
       }
       if (celula[i - 1].transmassR < 0 && celula[i].alfL < (*vg1dSP).localtiny) {
         celula[i].transmassL = celula[i - 1].transmassR = (*vg1dSP).localtiny;
@@ -9397,36 +7429,14 @@ void SProd::renovaTemp() {
       	  celula[i-1].DTransDtT=0;
       	  celula[i].DTransDtTL=0.;
         }
-        //celula[i-1].DTransDtp=0;
-        //celula[i].DTransDtpL=celula[i-1].DTransDtp;
       }
       rhol0 = rhol;
       boL = boR;
       rsL = rsR;
       DRsBoL=DRsBoR;
 
-      /*if(fabs(celula[i - 1].FonteMudaFase)>0.01*rhol*A1/celula[i - 1].dx){
-    	  celula[i - 1].TMModel =3;
-    	  celula[i - 1].FonteMudaFase=0.;
-          celula[i].transmassL = celula[i - 1].transmassR = 0.;
-           celula[i].DTransDxR = 0.;
-           celula[i].DTransDxL = 0.;
-           celula[i].DTransDt1 = 0.;
-           celula[i].DTransDt0 = 0.;
-           celula[i - 1].CoefDTR = 0.;
-           celula[i - 1].CoefDTL = 0.;
-           celula[i - 1].coefTransBet = 0.;
-      }*/
 
     } else if (i == 0) {
-      //celula[0].tempini=celula[0].temp;
-      //celula[1].tempL= celula[0].temp;
-    	/*celula[0].QLini=celula[0].QL;
-		celula[0].QL=0.;
-		celula[1].QLLini=celula[1].QLL;
-		celula[1].QLL=celula[0].QL;
-		celula[0].QGini=celula[0].QG;
-		celula[0].QG=0.;*/
 		celula[0].transmassLini=celula[0].transmassL;
 		celula[0].transmassL=0.;
 		renovaFonte(i);
@@ -9436,7 +7446,6 @@ void SProd::renovaTemp() {
 		celula[1].fontemassCL=celula[0].fontemassCR;
 		celula[1].fontemassGLini=celula[1].fontemassGL;
 		celula[1].fontemassGL=celula[0].fontemassGR;
-		//celula[1].transmassL=celula[0].transmassR=0.;
 		rhol0 = (1-celula[i].bet)*celula[i].flui.MasEspLiq(celula[i].pres,celula[i].temp)+
 				celula[i].bet*celula[i].fluicol.MasEspFlu(celula[i].pres,celula[i].temp);
 		boL=celula[i].flui.BOFunc(celula[i].pres,celula[i].temp);
@@ -9458,64 +7467,9 @@ void SProd::renovaTemp() {
 	    ProFlu flutemp = celula[i].flui;
 
 
-		/*if(arq.ConContEntrada>0){
-		    double rhogC = celula[i].flui.MasEspGas(presE,tempE);
-		    double rhopC = celula[i].flui.MasEspLiq(presE,tempE);
-		    double rhocC = celula[i].fluicol.MasEspFlu(presE,tempE);
-		    double rholC = rhopC*(1-betaE)+rhocC*betaE;
-			celula[0].QL=celula[0].Mliqini/rholC;
-			celula[1].QLL=celula[0].QL;
-			celula[0].QG=(celula[0].MC-celula[0].Mliqini)/rhogC;
-		}*/
-    } /*else {
-      //celula[i].tempini=celula[i].temp;
-      //celula[i-1].tempR= celula[i].temp;
-      renovaFonte(i);
+    }
 
-      double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
-      double pmed = razdx * celula[i].pres + (1 - razdx) * celula[i].presL;
-      double tmed = razdx * celula[i].temp + (1 - razdx) * celula[i - 1].temp;
-      //tmed=celula[i-1].temp;
-      //if(celula[i].VTemper<0.)tmed=celula[i].temp;
-      //double tmedL=celula[i-1].tempL;
-      //if(celula[i-1].VTemper<0.) tmedL=celula[i-1].temp;
-      double rl = celula[i].flui.MasEspLiq(pmed, tmed);
-      double rg = celula[i].flui.MasEspGas(pmed, tmed);
-      double betI = celula[i].betL;
-      //if (celula[i].Mliqini < 0) betI = celula[i].bet; testeBeta
-      if (celula[i].MC-celula[i].Mliqini < 0) betI = celula[i].bet;//duvidabeta
-      double rhol = (1 - betI) * rl + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-      celula[i].presaux = pmed;
-      celula[i].QL = celula[i].Mliqini / rhol;
-      celula[i-1].QLRini=celula[i-1].QLR;//alteracao7
-      celula[i - 1].QLR = celula[i].QL;
-      celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rg;
 
-      double A1 = celula[i].dutoL.area;
-      double veltit;
-      if (celula[i].alfL > localtiny && betI < (1. - localtiny)) veltit = (celula[i].QG * rg
-          + celula[i].QL * (1. - betI) * rl) / (A1 * (celula[i].alfL * rg + (1. - celula[i].alfL) * (1. - betI) * rl));
-      else veltit = 0.;
-      double tit = celula[i - 1].flui.FracMassHidra(celula[i - 1].pres, celula[i - 1].temp);
-      double raz = 0.999;
-      double dtit = (tit - celula[i - 1].flui.FracMassHidra(celula[i - 1].pres * raz, celula[i - 1].temp))
-          / ((1 - raz) * celula[i - 1].pres);
-      double dpres;
-      dpres = (celula[i].presaux - celula[i - 1].presaux) / celula[i].dxL;
-      celula[i - 1].TMModel = 2;
-      celula[i - 1].transmassR = 0 * (celula[i].alfL * rg + (1. - celula[i].alfL) * (1. - betI) * rl) * (veltit * dpres)
-          * dtit * A1;
-      celula[i].transmassL = celula[i - 1].transmassR;
-      celula[i - 1].FonteMudaFase = celula[i - 1].transmassR;
-      celula[i].FonteMudaFase =0.;
-      celula[i].DTransDxR = 0.;
-      celula[i].DTransDxL = 0.;
-      celula[i].DTransDt1 = 0.;
-      celula[i].DTransDt0 = 0.;
-      celula[i - 1].CoefDTR = 0.;
-      celula[i - 1].CoefDTL = 0.;
-      celula[i - 1].coefTransBet = 0.;
-    }*/
   }
 
 }
@@ -9545,7 +7499,7 @@ void SProd::avaliaParafina(){
 	}
 }
 
-void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
+void SProd::renovaRGOdgYco2(ProFlu fluiRev) {
   Vcr<double> rgo(ncel);
   Vcr<double> dg(ncel);
   Vcr<double> yco2(ncel);
@@ -9572,10 +7526,8 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
   for (int i = imin; i < ncel; i++) {
 		double MultOe;
 		double MultOd;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double at = celula[i].duto.area;
     double dx = celula[i].dx;
-//    double pi0 = celula[i].presaux;
     double ti0;
     if (celula[i].VTemper < 0.)
       ti0 = celula[i].temp;
@@ -9587,13 +7539,11 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
       else
         ti0 = celula[i].temp;
     }
-//    double pi1 = celula[i + 1].presaux;
     double ti1 = celula[i].temp;
     if (celula[i + 1].VTemper < 0.)
       ti1 = celula[i + 1].temp;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    double rgo0;      //alteracao7
+    double rgo0;
     double betI0;
     double bo0;
     double ba0;
@@ -9621,7 +7571,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
         betI0 = celula[i].betPigE;
 
     }
-    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QL >= 0.) {      //alteracao7
+    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QL >= 0.) {
       double pe;
       double te;
       if (i > 0) {
@@ -9633,18 +7583,14 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
         te = tempE;
       }
       rgo0 = (*celula[i].fluiL).RGO;
-      //double bsw0=celula[i-1].FW;
       if(arq.ConContEntrada == 0)
       betI0=celula[i-1].betPigD; //testeBeta
       else betI0=betaE; //testeBeta
       rs0 = (*celula[i].fluiL).RS(pe, te);
       bo0 = (*celula[i].fluiL).BOFunc(pe, te,rs0);
       ba0 = (*celula[i].fluiL).BAFunc(pe, te);
-      //double bo0=celula[i-1].flui.BOFunc(pi0,ti0);
-      //double bsw0=celula[i-1].flui.BSW;
       bsw0 = (*celula[i].fluiL).BSW*ba0 / (bo0 + ba0*(*celula[i].fluiL).BSW - (*celula[i].fluiL).BSW * bo0);
       rs0 = rs0 * 6.29 / 35.31467;
-      //double rs0=celula[i-1].flui.RS(pi0,ti0)*6.29/35.31467;
       dg0O = (*celula[i].fluiL).Deng;
       razdgd0=1/(*celula[i].fluiL).rDgD;
       razdgl0=1/(*celula[i].fluiL).rDgL;
@@ -9655,18 +7601,14 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
       viscL0 = 0 * 30 + 1 * (*celula[i].fluiL).VisOM(tL);
       viscH0 = 0 * 20 + 1 * (*celula[i].fluiL).VisOM(tH);
     }
-    else {	     //alteracao7
+    else {
       betI0=celula[i].betPigE; //testebeta
       rgo0 = celula[i].flui.RGO;
-      //bsw0=celula[i].FW;
       rs0 = celula[i].flui.RS(celula[i].pres, celula[i].temp);
       bo0 = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp,rs0);
       ba0 = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-      //bo0=celula[i].flui.BOFunc(pi0,ti0);
-      //bsw0=celula[i].flui.BSW;
       bsw0 = celula[i].flui.BSW*ba0 / (bo0 + ba0*celula[i].flui.BSW - celula[i].flui.BSW * bo0);
       rs0 = rs0 * 6.29 / 35.31467;
-      //rs0=celula[i].flui.RS(pi0,ti0)*6.29/35.31467;
       dg0O = celula[i].flui.Deng;
       razdgd0=1/celula[i].flui.rDgD;
       razdgl0=1/celula[i].flui.rDgL;
@@ -9680,17 +7622,12 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     if(bo0<1e-15)bo0=1e-15;
 
     double rgo1 = celula[i].flui.RGO;
-    //double bsw1=celula[i].FW;
-    //double bsw1=celula[i].flui.BSW;
     double betI1 = celula[i].betPigD;
     double rs1 = celula[i].flui.RS(celula[i].pres, celula[i].temp);
     double bo1 = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp,rs1);
     double ba1 = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-    //double bo1=celula[i].flui.BOFunc(pi1,ti1);
-    //double bsw1=celula[i].flui.BSW;
     double bsw1 = celula[i].flui.BSW*ba1 / (bo1 + ba1*celula[i].flui.BSW - celula[i].flui.BSW * bo1);
     rs1 = rs1 * 6.29 / 35.31467;
-    //double rs1=celula[i].flui.RS(pi1,ti1)*6.29/35.31467;
     double dg1O = celula[i].flui.Deng;
     double yco21O = celula[i].flui.yco2;
     double API1 = celula[i].flui.API;
@@ -9701,21 +7638,15 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     double razdgd1=1/celula[i].flui.rDgD;
     double razdgl1=1/celula[i].flui.rDgL;
 
-    //if (celula[i + 1].QG*0.99+0.01*celula[i + 1].QL < 0.)
       //betI1 = celula[i + 1].betPigE;    //duvidabeta
     if (celula[i + 1].QL < 0.) {
       betI1 = celula[i + 1].betPigE; //testeBeta
       rgo1 = celula[i + 1].flui.RGO;
-      //bsw1=celula[i+1].FW;
-      //bsw1=celula[i+1].flui.BSW;
       rs1 = celula[i + 1].flui.RS(celula[i + 1].pres, celula[i + 1].temp);
       bo1 = celula[i + 1].flui.BOFunc(celula[i + 1].pres, celula[i + 1].temp,rs1);
       ba1 = celula[i + 1].flui.BAFunc(celula[i + 1].pres, celula[i + 1].temp);
-      //bo1=celula[i+1].flui.BOFunc(ti1,ti1);
-      //bsw1=celula[i+1].flui.BSW;
       bsw1 = celula[i + 1].flui.BSW*ba1 / (bo1 + ba1*celula[i + 1].flui.BSW - celula[i + 1].flui.BSW * bo1);
       rs1 = rs1 * 6.29 / 35.31467;
-      //rs1=celula[i+1].flui.RS(pi1,ti1)*6.29/35.31467;
       dg1O = celula[i + 1].flui.Deng;
       razdgd1=1/celula[i + 1].flui.rDgD;
       razdgl1=1/celula[i + 1].flui.rDgL;
@@ -9727,13 +7658,12 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
       viscH1 = 0 * 20 + 1 * celula[i + 1].flui.VisOM(tH);
     }
     if(bo1<1e-15)bo1=1e-15;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    double rhog0;      //alteracao7
+    double rhog0;
     double rhogST0;
     double dg0G;
     double yco20G;
-    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QG > 0) {      //alteracao7
+    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QG > 0) {
       double pe;
       double te;
       if (i > 0) {
@@ -9744,61 +7674,39 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
         pe = presE;
         te = tempE;
       }
-      //rhog0 = (*celula[i].fluiL).MasEspGas(pe, te);
       rhog0 = celula[i].rgL;
-      //double rhog0=celula[i-1].flui.MasEspGas(pi0,ti0);
-      //double rhogST0=celula[i-1].flui.MasEspGas(1.,15.6);
       rhogST0 = (*celula[i].fluiL).Deng * 1.225;
       dg0G = (*celula[i].fluiL).Deng;
       yco20G = (*celula[i].fluiL).yco2;
     }
-    else {	   //alteracao7
-      //rhog0 = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
+    else {
       rhog0 = celula[i].rgC;
-      //rhog0=celula[i].flui.MasEspGas(pi0,ti0);
-      //rhogST0=celula[i].flui.MasEspGas(1.,15.6);
       rhogST0 = celula[i].flui.Deng * 1.225;
       dg0G = celula[i].flui.Deng;
       yco20G = celula[i].flui.yco2;
     }
 
-    //double rhog1 = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
     double rhog1 = celula[i].rgC;
-    //double rhog1=celula[i].flui.MasEspGas(pi1,ti1);
-    //double rhogST1=celula[i].flui.MasEspGas(1.,15.6);
     double rhogST1 = celula[i].flui.Deng * 1.225;
     double dg1G = celula[i].flui.Deng;
     double yco21G = celula[i].flui.yco2;
     if (celula[i + 1].QG <= 0.) {
-      //rhog1 = celula[i + 1].flui.MasEspGas(celula[i + 1].pres, celula[i + 1].temp);
       rhog1 = celula[i].rgR;
-      //rhog1=celula[i+1].flui.MasEspGas(pi1,ti1);
-      //rhogST0=celula[i+1].flui.MasEspGas(1.,15.6);
       rhogST1 = celula[i + 1].flui.Deng * 1.225;
       dg1G = celula[i + 1].flui.Deng;
       yco21G = celula[i + 1].flui.yco2;
     }
 
-    if(i==237 /*&& (*vg1dSP).lixo5>30000*/){
+    if(i==237 ){
     	int para;
     	para=0;
     }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double hol = 1. - celula[i].alf;
     double bet = celula[i].bet;
-//    double holini = 1. - celula[i].alfini;
-//    double betini = celula[i].betini;
-//    double bswini = celula[i].FWini;
-    //double bswini=celula[i].flui.BSW;
-    //double rhol = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-//    double rhol = celula[i].rpC;
-    //double rholST=celula[i].flui.MasEspLiq(1.,15.6);
     double rholST = (1 - celula[i].flui.BSW) * (1000 * 141.5 / (131.5 + celula[i].flui.API))
         + celula[i].flui.BSW * 1000 * celula[i].flui.Denag;
-    //double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
     double rhog = celula[i].rgC;
-    //double rhogST=celula[i].flui.MasEspGas(1.,15.6);
     double rhogST = celula[i].flui.Deng * 1.225;
     double rs = celula[i].flui.RS(celula[i].pres, celula[i].temp);
     double razdgd=1/celula[i].flui.rDgD;
@@ -9807,8 +7715,6 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     double ba = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
     double bsw = celula[i].flui.BSW*ba / (bo + ba*celula[i].flui.BSW - celula[i].flui.BSW * bo);
     rs = rs* 6.29 / 35.31467;
-    //double bsw=celula[i].FW;
-    //double bsw=celula[i].flui.BSW;
 
     double dgini = celula[i].flui.Deng;
     double yco2ini = celula[i].flui.yco2;
@@ -9841,10 +7747,6 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     if (celula[i].acsr.tipo == 1 && celula[i].acsr.injg.seco==1) {
       if(celula[i].acsr.injg.QGas>0.)fluF=celula[i].acsr.injg.FluidoPro;
       else fluF=celula[i].flui;
-      /*dgFG = celula[i].acsr.injg.FluidoPro.Deng;
-      yco2FG = celula[i].acsr.injg.FluidoPro.yco2;
-      //rhogSTF=celula[i].acsr.injg.FluidoPro.MasEspGas(1.,15.6);
-      rhogSTF = celula[i].acsr.injg.FluidoPro.Deng * 1.225;*/
       dgFG = fluF.Deng;
       yco2FG = fluF.yco2;
       rhogSTF = fluF.Deng * 1.225;
@@ -9852,47 +7754,8 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     else if (celula[i].acsr.tipo == 1 && celula[i].acsr.injg.seco==0) {
         if(celula[i].acsr.injg.QGas>0.)fluF=celula[i].acsr.injg.FluidoPro;
         else fluF=celula[i].flui;
-    	/*titFonte=celula[i].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-        dgFO = celula[i].acsr.injg.FluidoPro.Deng;
-        yco2FO = celula[i].acsr.injg.FluidoPro.yco2;
-        rgoFO = celula[i].acsr.injg.FluidoPro.RGO;
 
-        double rsF = celula[i].acsr.injg.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
-        razdgdF=1/celula[i].acsr.injg.FluidoPro.rDgD;
-        razdglF=1/celula[i].acsr.injg.FluidoPro.rDgL;
-        if(celula[i].acsr.injg.FluidoPro.BSW<1-(*vg1dSP).localtiny)
-        rholSTF = (1 - celula[i].acsr.injg.FluidoPro.BSW) * (1000 * 141.5 / (131.5 + celula[i].acsr.injg.FluidoPro.API))
-            + celula[i].acsr.injg.FluidoPro.BSW * 1000 * celula[i].acsr.injg.FluidoPro.Denag
-            + celula[i].acsr.injg.FluidoPro.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.injg.FluidoPro.BSW);
-        else rholSTF = celula[i].acsr.injg.FluidoPro.BSW * 1000 * celula[i].acsr.injg.FluidoPro.Denag;
-        //fonteO*=(rgoFO*(1.-celula[i].acsr.injl.FluidoPro.BSW)/rholSTF);
-        fonteO = (fonteO + fonteG)
-            *razdgdF* (celula[i].acsr.injg.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467)
-                * (1. - celula[i].acsr.injg.FluidoPro.BSW) / rholSTF);
 
-        if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
-          double bswaux = celula[i].acsr.injg.FluidoPro.BSW;
-          double contrabsw = 1. - bswaux;
-          if (contrabsw < (*vg1dSP).localtiny)
-            contrabsw = 0.9 * (*vg1dSP).localtiny;
-          double rhoPSTF;
-          if(contrabsw > (*vg1dSP).localtiny)rhoPSTF= (1000 * 141.5 / (131.5 + celula[i].acsr.injg.FluidoPro.API))
-              + (bswaux / contrabsw) * 1000 * celula[i].acsr.injg.FluidoPro.Denag
-              + celula[i].acsr.injg.FluidoPro.Deng * 1.225 * rsF;
-          else rhoPSTF= 1000 * celula[i].acsr.injg.FluidoPro.Denag;
-          if (contrabsw > (*vg1dSP).localtiny) {
-            fonteP *= (1. / rhoPSTF);
-            fonteA *= ((bswaux / contrabsw) / rhoPSTF);
-          } else {
-            fonteP = 0.;
-            fonteA *= (1 / (celula[i].acsr.injg.FluidoPro.BSW * 1000 * celula[i].acsr.injg.FluidoPro.Denag));
-          }
-          APIF = celula[i].acsr.injg.FluidoPro.API;
-          BSWF = celula[i].acsr.injg.FluidoPro.BSW;
-          denagF = celula[i].acsr.injg.FluidoPro.Denag;
-          viscLF = 0 * 30 + 1 * celula[i].acsr.injg.FluidoPro.VisOM(tL);
-          viscHF = 0 * 20 + 1 * celula[i].acsr.injg.FluidoPro.VisOM(tH);
-        }*/
         titFonte=fluF.dStockTankVaporMassFraction;
         dgFO = fluF.Deng;
         yco2FO = fluF.yco2;
@@ -9938,47 +7801,8 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
         if(celula[i].acsr.injl.QLiq>0.)fluF=celula[i].acsr.injl.FluidoPro;
         else fluF=celula[i].flui;
 
-     /* titFonte=celula[i].acsr.injl.FluidoPro.dStockTankVaporMassFraction;
-      dgFO = celula[i].acsr.injl.FluidoPro.Deng;
-      yco2FO = celula[i].acsr.injl.FluidoPro.yco2;
-      rgoFO = celula[i].acsr.injl.FluidoPro.RGO;
 
-      double rsF = celula[i].acsr.injl.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
-      razdgdF=1/celula[i].acsr.injl.FluidoPro.rDgD;
-      razdglF=1/celula[i].acsr.injl.FluidoPro.rDgL;
-      if(celula[i].acsr.injl.FluidoPro.BSW<1-(*vg1dSP).localtiny)
-      rholSTF = (1 - celula[i].acsr.injl.FluidoPro.BSW) * (1000 * 141.5 / (131.5 + celula[i].acsr.injl.FluidoPro.API))
-          + celula[i].acsr.injl.FluidoPro.BSW * 1000 * celula[i].acsr.injl.FluidoPro.Denag
-          + celula[i].acsr.injl.FluidoPro.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.injl.FluidoPro.BSW);
-      else rholSTF = celula[i].acsr.injl.FluidoPro.BSW * 1000 * celula[i].acsr.injl.FluidoPro.Denag;
-      //fonteO*=(rgoFO*(1.-celula[i].acsr.injl.FluidoPro.BSW)/rholSTF);
-      fonteO = (fonteO + fonteG)
-          *razdgdF* (celula[i].acsr.injl.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467)
-              * (1. - celula[i].acsr.injl.FluidoPro.BSW) / rholSTF);
 
-      if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
-        double bswaux = celula[i].acsr.injl.FluidoPro.BSW;
-        double contrabsw = 1. - bswaux;
-        if (contrabsw < (*vg1dSP).localtiny)
-          contrabsw = 0.9 * (*vg1dSP).localtiny;
-        double rhoPSTF;
-        if(contrabsw > (*vg1dSP).localtiny)rhoPSTF= (1000 * 141.5 / (131.5 + celula[i].acsr.injl.FluidoPro.API))
-            + (bswaux / contrabsw) * 1000 * celula[i].acsr.injl.FluidoPro.Denag
-            + celula[i].acsr.injl.FluidoPro.Deng * 1.225 * rsF;
-        else rhoPSTF= 1000 * celula[i].acsr.injl.FluidoPro.Denag;
-        if (contrabsw > (*vg1dSP).localtiny) {
-          fonteP *= (1. / rhoPSTF);
-          fonteA *= ((bswaux / contrabsw) / rhoPSTF);
-        } else {
-          fonteP = 0.;
-          fonteA *= (1 / (celula[i].acsr.injl.FluidoPro.BSW * 1000 * celula[i].acsr.injl.FluidoPro.Denag));
-        }
-        APIF = celula[i].acsr.injl.FluidoPro.API;
-        BSWF = celula[i].acsr.injl.FluidoPro.BSW;
-        denagF = celula[i].acsr.injl.FluidoPro.Denag;
-        viscLF = 0 * 30 + 1 * celula[i].acsr.injl.FluidoPro.VisOM(tL);
-        viscHF = 0 * 20 + 1 * celula[i].acsr.injl.FluidoPro.VisOM(tH);
-      }*/
         	titFonte=fluF.dStockTankVaporMassFraction;
              dgFO = fluF.Deng;
              yco2FO = fluF.yco2;
@@ -10020,50 +7844,11 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
                viscHF = 0 * 20 + 1 * fluF.VisOM(tH);
              }
     }
-    else if (celula[i].acsr.tipo == 10) {    //alteracao7
+    else if (celula[i].acsr.tipo == 10) {
         if((celula[i].acsr.injm.MassC+celula[i].acsr.injm.MassG+celula[i].acsr.injm.MassP)>0.)fluF=celula[i].acsr.injm.FluidoPro;
         else fluF=celula[i].flui;
-      /*titFonte=celula[i].acsr.injm.FluidoPro.dStockTankVaporMassFraction;
-      dgFO = celula[i].acsr.injm.FluidoPro.Deng;
-      yco2FO = celula[i].acsr.injm.FluidoPro.yco2;
-      rgoFO = celula[i].acsr.injm.FluidoPro.RGO;
 
-      double rsF = celula[i].acsr.injm.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
-      razdgdF=1/celula[i].acsr.injm.FluidoPro.rDgD;
-      razdglF=1/celula[i].acsr.injm.FluidoPro.rDgL;
-      rholSTF = (1 - celula[i].acsr.injm.FluidoPro.BSW) * (1000 * 141.5 / (131.5 + celula[i].acsr.injm.FluidoPro.API)) +
-          celula[i].acsr.injm.FluidoPro.BSW * 1000 *
-              celula[i].acsr.injm.FluidoPro.Denag +
-          celula[i].acsr.injm.FluidoPro.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.injm.FluidoPro.BSW);
-      //fonteO*=(rgoFO*(1.-celula[i].acsr.injl.FluidoPro.BSW)/rholSTF);
-      fonteO = (fonteO + fonteG) *razdgdF* (celula[i].acsr.injm.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467) *
-          (1. - celula[i].acsr.injm.FluidoPro.BSW) / rholSTF);
 
-      if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
-        double bswaux = celula[i].acsr.injm.FluidoPro.BSW;
-        double contrabsw = 1. - bswaux;
-        if (contrabsw < (*vg1dSP).localtiny)
-          contrabsw = 0.9 * (*vg1dSP).localtiny;
-        double rhoPSTF;
-        if(contrabsw>(*vg1dSP).localtiny)rhoPSTF= (1000 * 141.5 / (131.5 + celula[i].acsr.injm.FluidoPro.API)) +
-            (bswaux / contrabsw) * 1000 *
-                celula[i].acsr.injm.FluidoPro.Denag +
-            celula[i].acsr.injm.FluidoPro.Deng * 1.225 * rsF;
-        else rhoPSTF= 1000 *celula[i].acsr.injm.FluidoPro.Denag;
-        if (contrabsw > (*vg1dSP).localtiny) {
-          fonteP *= (1. / rhoPSTF);
-          fonteA *= ((bswaux / contrabsw) / rhoPSTF);
-        }
-        else {
-          fonteP = 0.;
-          fonteA *= (1 / (celula[i].acsr.injm.FluidoPro.BSW * 1000 * celula[i].acsr.injm.FluidoPro.Denag));
-        }
-        APIF = celula[i].acsr.injm.FluidoPro.API;
-        BSWF = celula[i].acsr.injm.FluidoPro.BSW;
-        denagF = celula[i].acsr.injm.FluidoPro.Denag;
-        viscLF = 0 * 30 + 1 * celula[i].acsr.injm.FluidoPro.VisOM(tL);
-        viscHF = 0 * 20 + 1 * celula[i].acsr.injm.FluidoPro.VisOM(tH);
-      }*/
         	  titFonte=fluF.dStockTankVaporMassFraction;
               dgFO = fluF.Deng;
               yco2FO = fluF.yco2;
@@ -10109,44 +7894,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
         if((celula[i].acsr.ipr.Pres)>celula[i].pres)fluF=celula[i].acsr.ipr.FluidoPro;
         else fluF=celula[i].flui;
 
-      /*titFonte=celula[i].acsr.ipr.FluidoPro.dStockTankVaporMassFraction;
-      dgFO = celula[i].acsr.ipr.FluidoPro.Deng;
-      yco2FO = celula[i].acsr.ipr.FluidoPro.yco2;
-      rgoFO = celula[i].acsr.ipr.FluidoPro.RGO;
 
-      rholSTF = (1 - celula[i].acsr.ipr.FluidoPro.BSW) * (1000 * 141.5 / (131.5 + celula[i].acsr.ipr.FluidoPro.API))
-          + celula[i].acsr.ipr.FluidoPro.BSW * 1000 * celula[i].acsr.ipr.FluidoPro.Denag
-          + celula[i].acsr.ipr.FluidoPro.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.ipr.FluidoPro.BSW);
-      //fonteO*=(rgoFO*(1.-celula[i].acsr.ipr.FluidoPro.BSW)/rholSTF);
-      double rsF = celula[i].acsr.ipr.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
-      razdgdF=1/celula[i].acsr.ipr.FluidoPro.rDgD;
-      razdglF=1/celula[i].acsr.ipr.FluidoPro.rDgL;
-      fonteO = (fonteO + fonteG)
-          *razdgdF* (celula[i].acsr.ipr.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467)
-              * (1. - celula[i].acsr.ipr.FluidoPro.BSW) / rholSTF);
-      if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
-        double bswaux = celula[i].acsr.ipr.FluidoPro.BSW;
-        double contrabsw = 1. - bswaux;
-        if (contrabsw <= (*vg1dSP).localtiny)
-          contrabsw = 0.9 * (*vg1dSP).localtiny;
-        double rhoPSTF;
-        if(contrabsw>0) rhoPSTF= (1000 * 141.5 / (131.5 + celula[i].acsr.ipr.FluidoPro.API))
-            + (bswaux / contrabsw) * 1000 * celula[i].acsr.ipr.FluidoPro.Denag
-            + celula[i].acsr.ipr.FluidoPro.Deng * 1.225 * rsF;
-        else  rhoPSTF= 1000 * celula[i].acsr.ipr.FluidoPro.Denag;
-        if (contrabsw > (*vg1dSP).localtiny) {
-          fonteP *= (1. / rhoPSTF);
-          fonteA *= ((bswaux / contrabsw) / rhoPSTF);
-        } else {
-          fonteP = 0.;
-          fonteA *= (1 / (celula[i].acsr.ipr.FluidoPro.BSW * 1000 * celula[i].acsr.ipr.FluidoPro.Denag));
-        }
-        APIF = celula[i].acsr.ipr.FluidoPro.API;
-        BSWF = celula[i].acsr.ipr.FluidoPro.BSW;
-        denagF = celula[i].acsr.ipr.FluidoPro.Denag;
-        viscLF = 0 * 30 + 1 * celula[i].acsr.ipr.FluidoPro.VisOM(tL);
-        viscHF = 0 * 20 + 1 * celula[i].acsr.ipr.FluidoPro.VisOM(tH);
-      }*/
 
          titFonte=fluF.dStockTankVaporMassFraction;
          dgFO = fluF.Deng;
@@ -10239,44 +7987,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     	if((celula[i].fontemassLR+celula[i].fontemassGR)>1e-15)fluF=celula[i].acsr.radialPoro.flup;
     	else fluF=celula[i].flui;
 
-     /* titFonte=celula[i].acsr.radialPoro.flup.dStockTankVaporMassFraction;
-      dgFO = celula[i].acsr.radialPoro.flup.Deng;
-      yco2FO = celula[i].acsr.radialPoro.flup.yco2;
-      rgoFO = celula[i].acsr.radialPoro.flup.RGO;
 
-      rholSTF = (1 - celula[i].acsr.radialPoro.BSW) * (1000 * 141.5 / (131.5 + celula[i].acsr.radialPoro.flup.API))
-          + celula[i].acsr.radialPoro.BSW * 1000 * celula[i].acsr.radialPoro.flup.Denag
-          + celula[i].acsr.radialPoro.flup.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.radialPoro.BSW);
-      //fonteO*=(rgoFO*(1.-celula[i].acsr.ipr.FluidoPro.BSW)/rholSTF);
-      double rsF = celula[i].acsr.radialPoro.flup.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
-      razdgdF=1/celula[i].acsr.radialPoro.flup.rDgD;
-      razdglF=1/celula[i].acsr.radialPoro.flup.rDgL;
-      fonteO = (fonteO + fonteG)
-          *razdgdF* (celula[i].acsr.radialPoro.flup.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467)
-              * (1. - celula[i].acsr.radialPoro.BSW) / rholSTF);
-      if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
-        double bswaux = celula[i].acsr.radialPoro.BSW;
-        double contrabsw = 1. - bswaux;
-        if (contrabsw <= (*vg1dSP).localtiny)
-          contrabsw = 0.9 * (*vg1dSP).localtiny;
-        double rhoPSTF;
-        if(contrabsw>0) rhoPSTF= (1000 * 141.5 / (131.5 + celula[i].acsr.radialPoro.flup.API))
-            + (bswaux / contrabsw) * 1000 * celula[i].acsr.radialPoro.flup.Denag
-            + celula[i].acsr.radialPoro.flup.Deng * 1.225 * rsF;
-        else  rhoPSTF= 1000 * celula[i].acsr.radialPoro.flup.Denag;
-        if (contrabsw > (*vg1dSP).localtiny) {
-          fonteP *= (1. / rhoPSTF);
-          fonteA *= ((bswaux / contrabsw) / rhoPSTF);
-        } else {
-          fonteP = 0.;
-          fonteA *= (1 / (celula[i].acsr.radialPoro.BSW * 1000 * celula[i].acsr.radialPoro.flup.Denag));
-        }
-        APIF = celula[i].acsr.radialPoro.flup.API;
-        BSWF = celula[i].acsr.radialPoro.BSW;
-        denagF = celula[i].acsr.radialPoro.flup.Denag;
-        viscLF = 0 * 30 + 1 * celula[i].acsr.radialPoro.flup.VisOM(tL);
-        viscHF = 0 * 20 + 1 * celula[i].acsr.radialPoro.flup.VisOM(tH);
-      }*/
         titFonte=fluF.dStockTankVaporMassFraction;
         dgFO = fluF.Deng;
         yco2FO = fluF.yco2;
@@ -10319,44 +8030,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
        	if((celula[i].fontemassLR+celula[i].fontemassGR)>1e-15)fluF=celula[i].acsr.radialPoro.flup;
         else fluF=celula[i].flui;
 
-      /*titFonte=celula[i].acsr.poroso2D.dados.flup.dStockTankVaporMassFraction;
-      dgFO = celula[i].acsr.poroso2D.dados.flup.Deng;
-      yco2FO = celula[i].acsr.poroso2D.dados.flup.yco2;
-      rgoFO = celula[i].acsr.poroso2D.dados.flup.RGO;
 
-      rholSTF = (1 - celula[i].acsr.poroso2D.dados.transfer.BSW) * (1000 * 141.5 / (131.5 + celula[i].acsr.poroso2D.dados.flup.API))
-          + celula[i].acsr.poroso2D.dados.transfer.BSW * 1000 * celula[i].acsr.poroso2D.dados.flup.Denag
-          + celula[i].acsr.poroso2D.dados.flup.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.poroso2D.dados.transfer.BSW);
-      //fonteO*=(rgoFO*(1.-celula[i].acsr.ipr.FluidoPro.BSW)/rholSTF);
-      double rsF = celula[i].acsr.poroso2D.dados.flup.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
-      razdgdF=1/celula[i].acsr.poroso2D.dados.flup.rDgD;
-      razdglF=1/celula[i].acsr.poroso2D.dados.flup.rDgL;
-      fonteO = (fonteO + fonteG)
-          *razdgdF* (celula[i].acsr.poroso2D.dados.flup.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467)
-              * (1. - celula[i].acsr.poroso2D.dados.transfer.BSW) / rholSTF);
-      if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
-        double bswaux = celula[i].acsr.poroso2D.dados.transfer.BSW;
-        double contrabsw = 1. - bswaux;
-        if (contrabsw <= (*vg1dSP).localtiny)
-          contrabsw = 0.9 * (*vg1dSP).localtiny;
-        double rhoPSTF;
-        if(contrabsw>0) rhoPSTF= (1000 * 141.5 / (131.5 + celula[i].acsr.poroso2D.dados.flup.API))
-            + (bswaux / contrabsw) * 1000 * celula[i].acsr.poroso2D.dados.flup.Denag
-            + celula[i].acsr.poroso2D.dados.flup.Deng * 1.225 * rsF;
-        else  rhoPSTF= 1000 * celula[i].acsr.poroso2D.dados.flup.Denag;
-        if (contrabsw > (*vg1dSP).localtiny) {
-          fonteP *= (1. / rhoPSTF);
-          fonteA *= ((bswaux / contrabsw) / rhoPSTF);
-        } else {
-          fonteP = 0.;
-          fonteA *= (1 / (celula[i].acsr.poroso2D.dados.transfer.BSW * 1000 * celula[i].acsr.poroso2D.dados.flup.Denag));
-        }
-        APIF = celula[i].acsr.poroso2D.dados.flup.API;
-        BSWF = celula[i].acsr.poroso2D.dados.transfer.BSW;
-        denagF = celula[i].acsr.poroso2D.dados.flup.Denag;
-        viscLF = 0 * 30 + 1 * celula[i].acsr.poroso2D.dados.flup.VisOM(tL);
-        viscHF = 0 * 20 + 1 * celula[i].acsr.poroso2D.dados.flup.VisOM(tH);
-      }*/
 
         titFonte=fluF.dStockTankVaporMassFraction;
         dgFO = fluF.Deng;
@@ -10366,7 +8040,6 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
         rholSTF = (1 - celula[i].acsr.poroso2D.dados.transfer.BSW) * (1000 * 141.5 / (131.5 + fluF.API))
             + celula[i].acsr.poroso2D.dados.transfer.BSW * 1000 * fluF.Denag
             + fluF.Deng * 1.225 * rgoFO * (1. - celula[i].acsr.poroso2D.dados.transfer.BSW);
-        //fonteO*=(rgoFO*(1.-celula[i].acsr.ipr.FluidoPro.BSW)/rholSTF);
         double rsF = fluF.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
         razdgdF=1/fluF.rDgD;
         razdglF=1/fluF.rDgL;
@@ -10428,10 +8101,10 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
           viscHF = 0 * 20 + 1 * celula[i].flui.VisOM(tH);
         }
       } else if ((*celula[i].acsrL).tipo == 5 || (*celula[i].acsrL).tipo == 8) {
-        double rholiq;    //alteracao7
+        double rholiq;
         double rhogas;
 
-        if (i > 0) {    //alteracao7
+        if (i > 0) {
           dgFO = celula[i - 1].flui.Deng;
           yco2FO = celula[i - 1].flui.yco2;
           rgoFO = celula[i - 1].flui.RGO;
@@ -10439,12 +8112,8 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
               celula[i - 1].flui.BSW * 1000 * celula[i - 1].flui.Denag;
           rhogas = celula[i - 1].flui.Deng * 1.225;
           titFonte=celula[i-1].flui.dStockTankVaporMassFraction;
-          //rholSTF=celula[i-1].flui.MasEspLiq(1.,15.6)+
-          // celula[i-1].flui.MasEspGas(1.,15.6)*rgoFO*(1.-celula[i-1].flui.BSW);
-          //rhogSTF=celula[i-1].flui.MasEspGas(1.,15.6);
           rholSTF = rholiq + rhogas * rgoFO * (1. - celula[i - 1].flui.BSW);
           rhogSTF = rhogas;
-          //fonteO*=(rgoFO*(1.-celula[i-1].flui.BSW)/rholSTF);
           double rsF=celula[i - 1].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
           razdgdF=1/celula[i - 1].flui.rDgD;
           razdglF=1/celula[i - 1].flui.rDgL;
@@ -10463,7 +8132,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
             viscHF = 0 * 20 + 1 * celula[i - 1].flui.VisOM(tH);
           }
         }
-        else {	         //alteracao7
+        else {
           dgFO = celula[i].flui.Deng;
           yco2FO = celula[i].flui.yco2;
           rgoFO = celula[i].flui.RGO;
@@ -10471,12 +8140,8 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
               celula[i].flui.BSW * 1000 * celula[i].flui.Denag;
           rhogas = celula[i].flui.Deng * 1.225;
           titFonte=celula[i].flui.dStockTankVaporMassFraction;
-          //rholSTF=celula[i-1].flui.MasEspLiq(1.,15.6)+
-          // celula[i-1].flui.MasEspGas(1.,15.6)*rgoFO*(1.-celula[i-1].flui.BSW);
-          //rhogSTF=celula[i-1].flui.MasEspGas(1.,15.6);
           rholSTF = rholiq + rhogas * rgoFO * (1. - celula[i].flui.BSW);
           rhogSTF = rhogas;
-          //fonteO*=(rgoFO*(1.-celula[i-1].flui.BSW)/rholSTF);
           double rsF=celula[i].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
           razdgdF=1/celula[i].flui.rDgD;
           razdglF=1/celula[i].flui.rDgL;
@@ -10498,13 +8163,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
       }
     }
     fonteG *= (razdglF/(rhogSTF));
-    //fonteO=0.;
-    //fonteG=0.;
 
-    //double MultOini=holini*(1-betini)*(1-bswini)*at/bo;
-    //double MultO=hol*(1-bet)*(1-bsw)*at/bo;
-    //double MultGini=(1-holini)*rhog*at/rhogST+holini*(1-betini)*(1-bswini)*rs*at/bo;
-    //double MultG=(1-hol)*rhog*at/rhogST+hol*(1-bet)*(1-bsw)*rs*at/bo;
 
     if(titFonte>1.-1e-15){
     	fonteO =0.;
@@ -10523,13 +8182,8 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     double volleveFim = (((1 - hol) * rhog*razdgl / (rhogST)) + hol * (1 - bet) * (1. - bsw) * rs*razdgd / (bo));
     if (volleveFim < 1e-15)
       volleveFim = 0.;
-    //if((*vg1dSP).lixo5<1e-15){
-    	//double holSemEscorrega=fabs(celula[i].QL)/(fabs(celula[i].QL)+fabs(celula[i].QG));
-    	//celula[i].VolLeveST=(((1 - holSemEscorrega) * rhog / rhogST) + holSemEscorrega * (1 - bet) * (1. - bsw) * rs / bo);
-    //}
     double residuo = (volleveFim - celula[i].VolLeveST) * at / dt + (MultOd - MultOe) / dx + (MultGd - MultGe) / dx
         - (fonteO / dx + fonteG / dx);
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double volpesFim = hol * (1 - bet) * (1 - bsw) / bo;
     double volaguaFim = hol * (1 - bet) * bsw;//nao deveria ser dividido por Bo???????????
     double MultPe=0.;
@@ -10554,13 +8208,9 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     	  MultAd= celula[i + 1].QL * (1 - betI1) * bsw1 / bo1;
       residuoA = (volaguaFim - celula[i].VolAguaST) * at / dt + (MultAd - MultAe) / dx - fonteA / dx;
     }
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     rgo[i] = (*vg1dSP).RGOMax;
     if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny)) {
-      //if(hol<0.99)
       rgo[i] = (volleveFim - residuo * dt / at) * bo / (hol * (1 - bet) * (1 - bsw));
-      //else
-      //  rgo[i]=(((1-bet)*(1.-bsw)*rs/bo)-residuo*dt/at)*bo/(hol*(1-bet)*(1-bsw));
       if (rgo[i] > (*vg1dSP).RGOMax)
         rgo[i] = (*vg1dSP).RGOMax;
     } else if (bet >= (1. - (*vg1dSP).localtiny) || bsw >= (1. - (*vg1dSP).localtiny))
@@ -10568,7 +8218,6 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     else
       rgo[i] = (*vg1dSP).RGOMax;
 
-    // if(celula[i].acsr.tipo==2)rgo[i]=celula[i].acsr.injl.FluidoPro.RGO;
 
     if (volleveFim > 1e-5 && arq.flashCompleto == 0 && ((fonteG>=0 || fonteO>0)||
     		                                           ((MultGd<0 || MultGe>0)||(MultOd<0 || MultOe>0)))) {
@@ -10629,8 +8278,6 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     celula[i].VolLeveST = volleveFim;
     celula[i].VolPesaST = volpesFim;
     celula[i].VolAguaST = volaguaFim;
-    //if((*vg1dSP).lixo5<1000.)dg[i]=celula[i].flui.Deng;
-    //yco2[i]=celula[i].flui.yco2;
   }
   for (int i = imin; i <= ncel - 1; i++) {
     if (trackRGO > 0 && celula[i].flui.corrSat!=4)
@@ -10657,7 +8304,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
       corrDeng(i);
   }
 
-  if ((*vg1dSP).chaverede == 0 || noextremo == 1 || celula[ncel].Mliqini > -(*vg1dSP).localtiny /*|| celula[ncel].Mliqini<localtiny*/) {    //alteracao7
+  if ((*vg1dSP).chaverede == 0 || noextremo == 1 || celula[ncel].Mliqini > -(*vg1dSP).localtiny ) {
     if (trackRGO > 0 && celula[ncel].flui.corrSat!=4)
       celula[ncel].flui.RGO = rgo[ncel - 1];
     if (trackDeng > 0 && arq.flashCompleto==0) {
@@ -10676,7 +8323,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
     	}
     }
   }
-  else {    //alteracao7
+  else {
     celula[ncel].flui.RGO = fluiRev.RGO;
     celula[ncel].flui.Deng = fluiRev.Deng;
     celula[ncel].flui.yco2 = fluiRev.yco2;
@@ -10703,1048 +8350,42 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {      //alteracao7
   }
 }
 
-/*void  SProd::renovaRGOdgYco2(ProFlu fluiRev){//alteracao4
- Vcr<double> rgo(ncel);
- Vcr<double> dg(ncel);
- Vcr<double> yco2(ncel);
- Vcr<double> API(ncel);
- Vcr<double> BSW(ncel);
- Vcr<double> VISCL(ncel);
- Vcr<double> VISCH(ncel);
- double dt= celula[1].dt;
- double MultOe;
- double MultOd;
- double tL=0.;
- double tH=70.;
- int imin=1;
- if((*vg1dSP).chaverede!=0 && celula[0].acsr.tipo==10) imin=0;
- for(int i=imin;i<ncel;i++){
- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- double at=celula[i].duto.area;
- double dx=celula[i].dx;
- double pi0=celula[i].presaux;
- double ti0=celula[i].temp;
- if(i>0) ti0=celula[i-1].temp;
- if(celula[i].VTemper<0.)ti0=celula[i].temp;
- double pi1=celula[i+1].presaux;
- double ti1=celula[i].temp;
- if(celula[i+1].VTemper<0.)ti1=celula[i+1].temp;
- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- double rgo0;//alteracao4
- double betI0;
- double bo0;
- double bsw0;
- double rs0;
- double dg0O;
- double yco20O;
- double API0;
- double BSW0;
- double viscL0;
- double viscH0;
- if(i>0 && celula[i].QL>=0.){//alteracao4
- rgo0=celula[i-1].flui.RGO;
- //double bsw0=celula[i-1].FW;
- betI0=celula[i-1].betPigD;
- bo0=celula[i-1].flui.BOFunc(celula[i-1].pres,celula[i-1].temp);
- //double bo0=celula[i-1].flui.BOFunc(pi0,ti0);
- //double bsw0=celula[i-1].flui.BSW;
- bsw0=celula[i-1].flui.BSW/(bo0+celula[i-1].flui.BSW-celula[i-1].flui.BSW*bo0);
- rs0=celula[i-1].flui.RS(celula[i-1].pres,celula[i-1].temp)*6.29/35.31467;
- //double rs0=celula[i-1].flui.RS(pi0,ti0)*6.29/35.31467;
- dg0O=celula[i-1].flui.Deng;
- yco20O=celula[i-1].flui.yco2;
- API0=celula[i-1].flui.API;
- BSW0=celula[i-1].flui.BSW;
- viscL0=0*30+1*celula[i-1].flui.VisOM(tL);
- viscH0=0*20+1*celula[i-1].flui.VisOM(tH);
- }
- else{//alteracao4
- betI0=celula[i].betPigE;
- rgo0=celula[i].flui.RGO;
- //bsw0=celula[i].FW;
- bo0=celula[i].flui.BOFunc(celula[i].pres,celula[i].temp);
- //bo0=celula[i].flui.BOFunc(pi0,ti0);
- //bsw0=celula[i].flui.BSW;
- bsw0=celula[i].flui.BSW/(bo0+celula[i].flui.BSW-celula[i].flui.BSW*bo0);
- rs0=celula[i].flui.RS(celula[i].pres,celula[i].temp)*6.29/35.31467;
- //rs0=celula[i].flui.RS(pi0,ti0)*6.29/35.31467;
- dg0O=celula[i].flui.Deng;
- yco20O=celula[i].flui.yco2;
- API0=celula[i].flui.API;
- BSW0=celula[i].flui.BSW;
- viscL0=0*30+1*celula[i].flui.VisOM(tL);
- viscH0=0*20+1*celula[i].flui.VisOM(tH);
- }
- double rgo1=celula[i].flui.RGO;
- //double bsw1=celula[i].FW;
- //double bsw1=celula[i].flui.BSW;
- double betI1=celula[i].betPigD;
- double bo1=celula[i].flui.BOFunc(celula[i].pres,celula[i].temp);
- //double bo1=celula[i].flui.BOFunc(pi1,ti1);
- //double bsw1=celula[i].flui.BSW;
- double bsw1=celula[i].flui.BSW/(bo1+celula[i].flui.BSW-celula[i].flui.BSW*bo1);
- double rs1=celula[i].flui.RS(celula[i].pres,celula[i].temp)*6.29/35.31467;
- //double rs1=celula[i].flui.RS(pi1,ti1)*6.29/35.31467;
- double dg1O=celula[i].flui.Deng;
- double yco21O=celula[i].flui.yco2;
- double API1=celula[i].flui.API;
- double BSW1=celula[i].flui.BSW;
- double viscL1=0*30+1*celula[i].flui.VisOM(tL);
- double viscH1=0*20+1*celula[i].flui.VisOM(tH);
- if(celula[i+1].QL<0.){
- betI1=celula[i+1].betPigE;
- rgo1=celula[i+1].flui.RGO;
- //bsw1=celula[i+1].FW;
- //bsw1=celula[i+1].flui.BSW;
- bo1=celula[i+1].flui.BOFunc(celula[i+1].pres,celula[i+1].temp);
- //bo1=celula[i+1].flui.BOFunc(ti1,ti1);
- //bsw1=celula[i+1].flui.BSW;
- bsw1=celula[i+1].flui.BSW/(bo1+celula[i+1].flui.BSW-celula[i+1].flui.BSW*bo1);
- rs1=celula[i+1].flui.RS(celula[i+1].pres,celula[i+1].temp)*6.29/35.31467;
- //rs1=celula[i+1].flui.RS(pi1,ti1)*6.29/35.31467;
- dg1O=celula[i+1].flui.Deng;
- yco21O=celula[i+1].flui.yco2;
- API1=celula[i+1].flui.API;
- BSW1=celula[i+1].flui.BSW;
- viscL1=0*30+1*celula[i+1].flui.VisOM(tL);
- viscH1=0*20+1*celula[i+1].flui.VisOM(tH);
- }
- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- double rhog0;//alteracao4
- double rhogST0;
- double dg0G;
- double yco20G;
- if(i>0 && celula[i].QG>0){//alteracao4
- rhog0=celula[i-1].flui.MasEspGas(celula[i-1].pres,celula[i-1].temp);
- //double rhog0=celula[i-1].flui.MasEspGas(pi0,ti0);
- //double rhogST0=celula[i-1].flui.MasEspGas(1.,15.6);
- rhogST0=celula[i-1].flui.Deng*1.225;
- dg0G=celula[i-1].flui.Deng;
- yco20G=celula[i-1].flui.yco2;
- }
- else{//alteracao4
- rhog0=celula[i].flui.MasEspGas(celula[i].pres,celula[i].temp);
- //rhog0=celula[i].flui.MasEspGas(pi0,ti0);
- //rhogST0=celula[i].flui.MasEspGas(1.,15.6);
- rhogST0=celula[i].flui.Deng*1.225;
- dg0G=celula[i].flui.Deng;
- yco20G=celula[i].flui.yco2;
- }
- double rhog1=celula[i].flui.MasEspGas(celula[i].pres,celula[i].temp);
- //double rhog1=celula[i].flui.MasEspGas(pi1,ti1);
- //double rhogST1=celula[i].flui.MasEspGas(1.,15.6);
- double rhogST1=celula[i].flui.Deng*1.225;
- double dg1G=celula[i].flui.Deng;
- double yco21G=celula[i].flui.yco2;
- if(celula[i+1].QG<=0.){
- rhog1=celula[i+1].flui.MasEspGas(celula[i+1].pres,celula[i+1].temp);
- //rhog1=celula[i+1].flui.MasEspGas(pi1,ti1);
- //rhogST0=celula[i+1].flui.MasEspGas(1.,15.6);
- rhogST1=celula[i+1].flui.Deng*1.225;
- dg1G=celula[i+1].flui.Deng;
- yco21G=celula[i+1].flui.yco2;
- }
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
- double hol=1.-celula[i].alf;
- double bet=celula[i].bet;
- double holini=1.-celula[i].alfini;
- double betini=celula[i].betini;
- double bswini=celula[i].FWini;
- //double bswini=celula[i].flui.BSW;
- double rhol=celula[i].flui.MasEspLiq(celula[i].pres,celula[i].temp);
- //double rholST=celula[i].flui.MasEspLiq(1.,15.6);
- double rholST=(1-celula[i].flui.BSW)*(1000*141.5/(131.5 + celula[i].flui.API))+celula[i].flui.BSW*1000*celula[i].flui.Denag;
- double rhog=celula[i].flui.MasEspGas(celula[i].pres,celula[i].temp);
- //double rhogST=celula[i].flui.MasEspGas(1.,15.6);
- double rhogST=celula[i].flui.Deng*1.225;
- double rs=celula[i].flui.RS(celula[i].pres,celula[i].temp)*6.29/35.31467;
- double bo=celula[i].flui.BOFunc(celula[i].pres,celula[i].temp);
- double bsw=celula[i].flui.BSW/(bo+celula[i].flui.BSW-celula[i].flui.BSW*bo);
- //double bsw=celula[i].FW;
- //double bsw=celula[i].flui.BSW;
- double dgini=celula[i].flui.Deng;
- double yco2ini=celula[i].flui.yco2;
- double rgoini=celula[i].flui.RGO;
- double fonteO=celula[i].fontemassLR;
- double fonteG=celula[i].fontemassGR;
- double fonteP=celula[i].fontemassLR;
- double fonteA=celula[i].fontemassLR;
- double APIini=celula[i].flui.API;
- double BSWini=celula[i].flui.BSW;
- double APIF=APIini;
- double BSWF=BSWini;
- double dgFO=dgini;
- double dgFG=dgini;
- double yco2FO=yco2ini;
- double yco2FG=yco2ini;
- double rgoFO=rgoini;
- double viscLini=0*30+1*celula[i].flui.VisOM(tL);
- double viscHini=0*20+1*celula[i].flui.VisOM(tH);
- double viscLF=viscLini;
- double viscHF=viscHini;
- double rholSTF=rholST;
- double rhogSTF=rhogST;
- if(celula[i].acsr.tipo==1){
- dgFG=celula[i].acsr.injg.FluidoPro.Deng;
- yco2FG=celula[i].acsr.injg.FluidoPro.yco2;
- //rhogSTF=celula[i].acsr.injg.FluidoPro.MasEspGas(1.,15.6);
- rhogSTF=celula[i].acsr.injg.FluidoPro.Deng*1.225;
- }
- else if(celula[i].acsr.tipo==2){
- dgFO=celula[i].acsr.injl.FluidoPro.Deng;
- yco2FO=celula[i].acsr.injl.FluidoPro.yco2;
- rgoFO=celula[i].acsr.injl.FluidoPro.RGO;
-
- double rsF=celula[i].acsr.injl.FluidoPro.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467);
- rholSTF=(1-celula[i].acsr.injl.FluidoPro.BSW)*(1000*141.5/(131.5 + celula[i].acsr.injl.FluidoPro.API))+
- celula[i].acsr.injl.FluidoPro.BSW*1000*
- celula[i].acsr.injl.FluidoPro.Denag+
- celula[i].acsr.injl.FluidoPro.Deng*1.225*rgoFO*(1.-celula[i].acsr.injl.FluidoPro.BSW);
- //fonteO*=(rgoFO*(1.-celula[i].acsr.injl.FluidoPro.BSW)/rholSTF);
- fonteO=(fonteO+fonteG)*(celula[i].acsr.injl.FluidoPro.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467)*
- (1.-celula[i].acsr.injl.FluidoPro.BSW)/rholSTF);
-
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- double bswaux=celula[i].acsr.injl.FluidoPro.BSW;
- double contrabsw=1.-bswaux;
- if(contrabsw<localtiny)contrabsw=0.9*localtiny;
- double rhoPSTF=(1000*141.5/(131.5 + celula[i].acsr.injl.FluidoPro.API))+
- (bswaux/contrabsw)*1000*
- celula[i].acsr.injl.FluidoPro.Denag+
- celula[i].acsr.injl.FluidoPro.Deng*1.225*rsF;// alteracao4
- if(contrabsw>localtiny){
- fonteP*=(1./rhoPSTF);
- fonteA*=((bswaux/contrabsw)/rhoPSTF);
- }
- else{
- fonteP=0.;
- fonteA*=(1/celula[i].acsr.injl.FluidoPro.BSW*1000*celula[i].acsr.injl.FluidoPro.Denag);// alteracao4
- }
- APIF=celula[i].acsr.injl.FluidoPro.API;
- BSWF=celula[i].acsr.injl.FluidoPro.BSW;
- viscLF=0*30+1*celula[i].acsr.injl.FluidoPro.VisOM(tL);
- viscHF=0*20+1*celula[i].acsr.injl.FluidoPro.VisOM(tH);
- }
- }
- else if(celula[i].acsr.tipo==10){
- dgFO=celula[i].acsr.injm.FluidoPro.Deng;
- yco2FO=celula[i].acsr.injm.FluidoPro.yco2;
- rgoFO=celula[i].acsr.injm.FluidoPro.RGO;
-
- double rsF=celula[i].acsr.injm.FluidoPro.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467);
- rholSTF=(1-celula[i].acsr.injm.FluidoPro.BSW)*(1000*141.5/(131.5 + celula[i].acsr.injm.FluidoPro.API))+
- celula[i].acsr.injm.FluidoPro.BSW*1000*
- celula[i].acsr.injm.FluidoPro.Denag+
- celula[i].acsr.injm.FluidoPro.Deng*1.225*rgoFO*(1.-celula[i].acsr.injm.FluidoPro.BSW);
- //fonteO*=(rgoFO*(1.-celula[i].acsr.injl.FluidoPro.BSW)/rholSTF);
- fonteO=(fonteO+fonteG)*(celula[i].acsr.injm.FluidoPro.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467)*
- (1.-celula[i].acsr.injm.FluidoPro.BSW)/rholSTF);
-
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- double bswaux=celula[i].acsr.injm.FluidoPro.BSW;
- double contrabsw=1.-bswaux;
- if(contrabsw<localtiny)contrabsw=0.9*localtiny;
- double rhoPSTF=(1000*141.5/(131.5 + celula[i].acsr.injm.FluidoPro.API))+
- (bswaux/contrabsw)*1000*
- celula[i].acsr.injm.FluidoPro.Denag+
- celula[i].acsr.injm.FluidoPro.Deng*1.225*rsF;
- if(contrabsw>localtiny){
- fonteP*=(1./rhoPSTF);
- fonteA*=((bswaux/contrabsw)/rhoPSTF);
- }
- else{
- fonteP=0.;
- fonteA*=(1/celula[i].acsr.injm.FluidoPro.BSW*1000*celula[i].acsr.injm.FluidoPro.Denag);
- }
- APIF=celula[i].acsr.injm.FluidoPro.API;
- BSWF=celula[i].acsr.injm.FluidoPro.BSW;
- viscLF=0*30+1*celula[i].acsr.injm.FluidoPro.VisOM(tL);
- viscHF=0*20+1*celula[i].acsr.injm.FluidoPro.VisOM(tH);
- }
- }
- else if(celula[i].acsr.tipo==3){
- dgFO=celula[i].acsr.ipr.FluidoPro.Deng;
- yco2FO=celula[i].acsr.ipr.FluidoPro.yco2;
- rgoFO=celula[i].acsr.ipr.FluidoPro.RGO;
-
- rholSTF=(1-celula[i].acsr.ipr.FluidoPro.BSW)*(1000*141.5/(131.5 + celula[i].acsr.ipr.FluidoPro.API))+celula[i].acsr.ipr.FluidoPro.BSW*1000*
- celula[i].acsr.ipr.FluidoPro.Denag+
- celula[i].acsr.ipr.FluidoPro.Deng*1.225*rgoFO*(1.-celula[i].acsr.ipr.FluidoPro.BSW);
- //fonteO*=(rgoFO*(1.-celula[i].acsr.ipr.FluidoPro.BSW)/rholSTF);
- double rsF=celula[i].acsr.ipr.FluidoPro.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467);
- fonteO=(fonteO+fonteG)*(celula[i].acsr.ipr.FluidoPro.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467)*
- (1.-celula[i].acsr.ipr.FluidoPro.BSW)/rholSTF);
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- double bswaux=celula[i].acsr.ipr.FluidoPro.BSW;
- double contrabsw=1.-bswaux;
- if(contrabsw<=localtiny)contrabsw=0.9*localtiny;
- double rhoPSTF=(1000*141.5/(131.5 + celula[i].acsr.ipr.FluidoPro.API))+
- (bswaux/contrabsw)*1000*
- celula[i].acsr.ipr.FluidoPro.Denag+
- celula[i].acsr.ipr.FluidoPro.Deng*1.225*rsF;
- if(contrabsw>localtiny){
- fonteP*=(1./rhoPSTF);
- fonteA*=((bswaux/contrabsw)/rhoPSTF);
- }
- else{
- fonteP=0.;
- fonteA*=(1/celula[i].acsr.ipr.FluidoPro.BSW*1000*celula[i].acsr.ipr.FluidoPro.Denag);
- }
- APIF=celula[i].acsr.ipr.FluidoPro.API;
- BSWF=celula[i].acsr.ipr.FluidoPro.BSW;
- viscLF=0*30+1*celula[i].acsr.ipr.FluidoPro.VisOM(tL);
- viscHF=0*20+1*celula[i].acsr.ipr.FluidoPro.VisOM(tH);
- }
- }
- else if((fabs(fonteO)>localtiny && celula[i].acsr.tipo!=2 && celula[i].acsr.tipo!=3) ||
- (fabs(fonteG)>localtiny && celula[i].acsr.tipo!=1 && celula[i].acsr.tipo!=2 && celula[i].acsr.tipo!=3)){
- if(celula[i].acsr.tipo==5 || celula[i].acsr.tipo==8){
- dgFO=celula[i].flui.Deng;
- yco2FO=celula[i].flui.yco2;
- rgoFO=celula[i].flui.RGO;
- double rholiq=(1-celula[i].flui.BSW)*(1000*141.5/(131.5 + celula[i].flui.API))+celula[i].flui.BSW*1000*celula[i].flui.Denag;
- double rhogas=celula[i].flui.Deng*1.225;
- rholSTF=rholiq+rhogas*rgoFO*(1.-celula[i].flui.BSW);
- rhogSTF=rhogas;
-
- fonteO=(fonteO+fonteG)*(celula[i].flui.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467)*(1.-celula[i].flui.BSW)/rholSTF);
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- double rhoPSTF=(1-celula[i].flui.BSW)*(1000*141.5/(131.5 + celula[i].flui.API))+
- celula[i].flui.BSW*1000*
- celula[i].flui.Denag;
- fonteP*=((1-celula[i].flui.BSW)/rhoPSTF);
- fonteA*=(celula[i].flui.BSW/rhoPSTF);
- APIF=celula[i].flui.API;
- BSWF=celula[i].flui.BSW;
- viscLF=0*30+1*celula[i].flui.VisOM(tL);
- viscHF=0*20+1*celula[i].flui.VisOM(tH);
- }
- }
- else if((*celula[i].acsrL).tipo==5 || (*celula[i].acsrL).tipo==8){
- double rholiq;//alteracao4
- double rhogas;
- if(i>0){
- dgFO=celula[i-1].flui.Deng;
- yco2FO=celula[i-1].flui.yco2;
- rgoFO=celula[i-1].flui.RGO;
- rholiq=(1-celula[i-1].flui.BSW)*(1000*141.5/(131.5 + celula[i-1].flui.API))+
- celula[i-1].flui.BSW*1000*celula[i-1].flui.Denag;
- rhogas=celula[i-1].flui.Deng*1.225;
- //rholSTF=celula[i-1].flui.MasEspLiq(1.,15.6)+
- // celula[i-1].flui.MasEspGas(1.,15.6)*rgoFO*(1.-celula[i-1].flui.BSW);
- //rhogSTF=celula[i-1].flui.MasEspGas(1.,15.6);
- rholSTF=rholiq+rhogas*rgoFO*(1.-celula[i-1].flui.BSW);
- rhogSTF=rhogas;
- //fonteO*=(rgoFO*(1.-celula[i-1].flui.BSW)/rholSTF);
- fonteO=(fonteO+fonteG)*(celula[i-1].flui.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467)*
- (1.-celula[i-1].flui.BSW)/rholSTF);
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- double rhoPSTF=(1-celula[i-1].flui.BSW)*(1000*141.5/(131.5 + celula[i-1].flui.API))+
- celula[i-1].flui.BSW*1000*
- celula[i-1].flui.Denag;
- fonteP*=((1-celula[i-1].flui.BSW)/rhoPSTF);
- fonteA*=(celula[i-1].flui.BSW/rhoPSTF);
- APIF=celula[i-1].flui.API;
- BSWF=celula[i-1].flui.BSW;
- viscLF=0*30+1*celula[i-1].flui.VisOM(tL);
- viscHF=0*20+1*celula[i-1].flui.VisOM(tH);
- }
- }
- else{
- dgFO=celula[i].flui.Deng;
- yco2FO=celula[i].flui.yco2;
- rgoFO=celula[i].flui.RGO;
- rholiq=(1-celula[i].flui.BSW)*(1000*141.5/(131.5 + celula[i].flui.API))+
- celula[i].flui.BSW*1000*celula[i].flui.Denag;
- rhogas=celula[i].flui.Deng*1.225;
- //rholSTF=celula[i-1].flui.MasEspLiq(1.,15.6)+
- // celula[i-1].flui.MasEspGas(1.,15.6)*rgoFO*(1.-celula[i-1].flui.BSW);
- //rhogSTF=celula[i-1].flui.MasEspGas(1.,15.6);
- rholSTF=rholiq+rhogas*rgoFO*(1.-celula[i].flui.BSW);
- rhogSTF=rhogas;
- //fonteO*=(rgoFO*(1.-celula[i-1].flui.BSW)/rholSTF);
- fonteO=(fonteO+fonteG)*(celula[i].flui.RS(celula[i].pres,celula[i].temp)*(6.29/35.31467)*
- (1.-celula[i].flui.BSW)/rholSTF);
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- double rhoPSTF=(1-celula[i].flui.BSW)*(1000*141.5/(131.5 + celula[i].flui.API))+
- celula[i].flui.BSW*1000*
- celula[i].flui.Denag;
- fonteP*=((1-celula[i].flui.BSW)/rhoPSTF);
- fonteA*=(celula[i].flui.BSW/rhoPSTF);
- APIF=celula[i].flui.API;
- BSWF=celula[i].flui.BSW;
- viscLF=0*30+1*celula[i].flui.VisOM(tL);
- viscHF=0*20+1*celula[i].flui.VisOM(tH);
- }
- }
- }
- }
- fonteG/=rhogSTF;
- //fonteO=0.;
- //fonteG=0.;
-
- //double MultOini=holini*(1-betini)*(1-bswini)*at/bo;
- //double MultO=hol*(1-bet)*(1-bsw)*at/bo;
- //double MultGini=(1-holini)*rhog*at/rhogST+holini*(1-betini)*(1-bswini)*rs*at/bo;
- //double MultG=(1-hol)*rhog*at/rhogST+hol*(1-bet)*(1-bsw)*rs*at/bo;
-
- MultOe=celula[i].QL*(1-betI0)*(1-bsw0)*rs0/bo0;
- MultOd=celula[i+1].QL*(1-betI1)*(1-bsw1)*rs1/bo1;
- double MultGe=(celula[i].MC-celula[i].Mliqini)/rhogST0;
- double MultGd=(celula[i+1].MC-celula[i+1].Mliqini)/rhogST1;
- double volleveFim=(((1-hol)*rhog/rhogST)+hol*(1-bet)*(1.-bsw)*rs/bo);
- if(volleveFim<1e-15)volleveFim=0.;
- double residuo=(volleveFim-celula[i].VolLeveST)*at/dt+(MultOd-MultOe)/dx+(MultGd-MultGe)/dx-(fonteO/dx+fonteG/dx);
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- double volpesFim=hol*(1-bet)*(1-bsw)/bo;
- double volaguaFim=hol*(1-bet)*bsw;
- double MultPe;
- double MultPd=0.;
- double residuoP;
- double MultAe=0.;
- double MultAd;
- double residuoA;
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- MultPe=celula[i].QL*(1-betI0)*(1-bsw0)/bo0;
- MultPd=celula[i+1].QL*(1-betI1)*(1-bsw1)/bo1;
- residuoP=(volpesFim-celula[i].VolPesaST)*at/dt+(MultPd-MultPe)/dx-fonteP/dx;
- MultAe=celula[i].QL*(1-betI0)*bsw0/bo0;
- MultAd=celula[i+1].QL*(1-betI1)*bsw1/bo1;
- residuoA=(volaguaFim-celula[i].VolAguaST)*at/dt+(MultAd-MultAe)/dx-fonteA/dx;
- }
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- rgo[i]=(*vg1dSP).RGOMax;
- if(hol>localtiny && bet<(1.-localtiny) && bsw<(1.-localtiny)){
- //if(hol<0.99)
- rgo[i]=(volleveFim-residuo*dt/at)*bo/(hol*(1-bet)*(1-bsw));
- //else
- //  rgo[i]=(((1-bet)*(1.-bsw)*rs/bo)-residuo*dt/at)*bo/(hol*(1-bet)*(1-bsw));
- if(rgo[i]>(*vg1dSP).RGOMax)rgo[i]=(*vg1dSP).RGOMax;
- }
- else if(bet>=(1.-localtiny) && bsw>=(1.-localtiny))rgo[i]=0.;
- else rgo[i]=(*vg1dSP).RGOMax;
- // if(celula[i].acsr.tipo==2)rgo[i]=celula[i].acsr.injl.FluidoPro.RGO;
 
 
- if(volleveFim>1e-5){
- dg[i]=(dt*(dgFO*fonteO/dx+dgFG*fonteG/dx+dgini*residuo-(dg1O*MultOd-dg0O*MultOe)/dx-(dg1G*MultGd-dg0G*MultGe)/dx)
- +dgini*celula[i].VolLeveST*at)/(volleveFim*at);
- yco2[i]=(dt*(yco2FO*fonteO/dx+yco2FG*fonteG/dx+yco2ini*residuo-(yco21O*MultOd-yco20O*MultOe)/dx-(yco21G*MultGd-yco20G*MultGe)/dx)
- +yco2ini*celula[i].VolLeveST*at)/(volleveFim*at);
- }
- else{
- dg[i]=dgini;
- yco2[i]=yco2ini;
- }
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- if(volpesFim>1e-3){
- API[i]=(dt*(APIF*fonteP/dx+APIini*residuoP-(API1*MultPd-API0*MultPe)/dx)
- +APIini*celula[i].VolPesaST*at)/(volpesFim*at);
- VISCL[i]=(dt*(viscLF*fonteP/dx+viscLini*residuoP-(viscL1*MultPd-viscL0*MultPe)/dx)
- +viscLini*celula[i].VolPesaST*at)/(volpesFim*at);
- VISCH[i]=(dt*(viscHF*fonteP/dx+viscHini*residuoP-(viscH1*MultPd-viscH0*MultPe)/dx)
- +viscHini*celula[i].VolPesaST*at)/(volpesFim*at);
- }
- else{
- API[i]=APIini;
- VISCL[i]=viscLini;
- VISCH[i]=viscHini;
- }
 
- if((volaguaFim+volpesFim)>1e-3)
- BSW[i]=(dt*(BSWF*(fonteA+fonteP)/dx+BSWini*(residuoA+residuoP)-
- (BSW1*(MultAd+MultPd)-BSW0*(MultAe+MultPe))/dx)
- +BSWini*(celula[i].VolAguaST+celula[i].VolPesaST)*at)/((volaguaFim+volpesFim)*at);
- else  BSW[i]=BSWini;
- }
- celula[i].VolLeveST=volleveFim;
- celula[i].VolPesaST=volpesFim;
- celula[i].VolAguaST=volaguaFim;
- //if((*vg1dSP).lixo5<1000.)dg[i]=celula[i].flui.Deng;
- //yco2[i]=celula[i].flui.yco2;
- }
- for(int i=imin;i<=ncel-1;i++){
- if(trackRGO>0)celula[i].flui.RGO=rgo[i];
- if(trackDeng>0){
- celula[i].flui.Deng=dg[i];
- celula[i].flui.yco2=yco2[i];
- }
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- celula[i].flui.API=API[i];
- celula[i].flui.BSW=BSW[i];
- celula[i].flui.LVisL=VISCL[i];
- celula[i].flui.LVisH=VISCH[i];
- celula[i].flui.TempL=tL;
- celula[i].flui.TempH=tH;
- }
- celula[i].flui.RenovaFluido();
- }
- if((*vg1dSP).chaverede==0 || noextremo==1 || celula[ncel].Mliqini>-localtiny){//alteracao4
- if(trackRGO>0)celula[ncel].flui.RGO=rgo[ncel-1];
- if(trackDeng>0){
- celula[ncel].flui.Deng=dg[ncel-1];
- celula[ncel].flui.yco2=yco2[ncel-1];
- }
- if(arq.nfluP>1 || (*vg1dSP).chaverede!=0){
- celula[ncel].flui.API=API[ncel-1];
- celula[ncel].flui.BSW=BSW[ncel-1];
- celula[ncel].flui.LVisL=VISCL[ncel-1];
- celula[ncel].flui.LVisH=VISCH[ncel-1];
- celula[ncel].flui.TempL=tL;
- celula[ncel].flui.TempH=tH;
- }
- }
- else{
- celula[ncel].flui.RGO=fluiRev.RGO;
- celula[ncel].flui.Deng=fluiRev.Deng;
- celula[ncel].flui.yco2=fluiRev.yco2;
- celula[ncel].flui.API=fluiRev.API;
- celula[ncel].flui.BSW=fluiRev.BSW;
- celula[ncel].flui.LVisL=fluiRev.LVisL;
- celula[ncel].flui.LVisH=fluiRev.LVisH;
- celula[ncel].flui.TempL=fluiRev.TempL;
- celula[ncel].flui.TempH=fluiRev.TempH;
- }
- celula[ncel].flui.RenovaFluido();
- }*/
+
+
+
+
+
+
+
+
 
 /*** alteracao4 ***/
-/*void SProd::renovaterm() {
- for (int i = 0; i <= ncel; i++) {
- celula[i].presini = celula[i].pres;
- if (i != 0 && i != ncel) {
- celula[i - 1].alfR = celula[i + 1].alfL = celula[i].alf;
- celula[i - 1].betR = celula[i + 1].betL = celula[i].bet;
- int master = 1;
- if (celula[i - 1].acsr.tipo == 5 || celula[i - 1].acsr.tipo == 8) {
- //alteracao4
- if ((*celula[i].acsrL).tipo == 5 && (*celula[i].acsrL).chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) master =
- 0;//alteracao4
- if ((*celula[i].acsrL).tipo == 8 && fabs((*celula[i].acsrL).bvol.freq) > 1) master = 0;
- }
- if (master == 1) {
- double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
- double pmed = celula[i].presaux;
- double tmed = celula[i].temp * razdx + celula[i - 1].temp * (1. - razdx);
- tmed = celula[i - 1].temp;
- if (celula[i].VTemper < 0.) tmed = celula[i].temp;
- //double betI=celula[i].betL;
- //if(celula[i].QL<0.)betI=celula[i].bet;
- double betI = celula[i - 1].betPigD;
- double rl;
- double viscl1;
- double tensup1;
- if (celula[i].QL < 0.) {
- betI = celula[i].betPigE;
- rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
- viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
- tensup1 = (1 - betI) * celula[i].flui.TensSuper(pmed, tmed) + betI * celula[i].fluicol.TensSuper(pmed, tmed);
- } else {
- betI = celula[i - 1].betPigD;
- rl = (1 - betI) * celula[i - 1].flui.MasEspLiq(pmed, tmed)
- + betI * celula[i - 1].fluicol.MasEspFlu(pmed, tmed);
- viscl1 = (1 - betI) * celula[i - 1].flui.ViscOleo(pmed, tmed)
- + betI * celula[i - 1].fluicol.VisFlu(pmed, tmed);
- tensup1 = (1 - betI) * celula[i - 1].flui.TensSuper(pmed, tmed)
- + betI * celula[i - 1].fluicol.TensSuper(pmed, tmed);
- }
- double rg;
- double viscg1;
- double amed;
- double hns;
- if (celula[i].QG >= 0) {
- amed = celula[i].dutoL.area;
- hns = 1. - celula[i].alfL;
- rg = celula[i - 1].flui.MasEspGas(pmed, tmed);
- viscg1 = celula[i - 1].flui.ViscGas(pmed, tmed);
- } else {
- rg = celula[i].flui.MasEspGas(pmed, tmed);
- viscg1 = celula[i].flui.ViscGas(pmed, tmed);
- amed = celula[i].duto.area;
- hns = 1. - celula[i].alf;
- }
- double ugs = celula[i].QG / (amed);
- double uls = celula[i].QL / (amed);
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- double dia1 = celula[i].duto.a;
- if (ugs >= 0) dia1 = celula[i - 1].duto.a;
-
- double rmed = hns * rl + (1 - hns) * rg;
- double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
- double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
- double ang = celula[i].duto.teta;
- if (i >= 2) {
- if (celula[i - 2].acsr.tipo == 5 && celula[i - 2].acsr.chk.AreaGarg <= (1e-3)) {
- if (celula[i].QG >= 0) ang = celula[i].duto.teta;
- else ang = celula[i].dutoR.teta;
- } else {
- if (celula[i].QG >= 0) ang = celula[i].dutoL.teta;
- else ang = celula[i].duto.teta;
- }
- }
- double sinal = 1.;
- if (ang < 0.) sinal = -1.;
- double xc0 = 2.;
- double xud = sinal * 0.0246 * cos(ang)
- + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
- double amedL = celula[i].dutoL.area;
- double razdxL = celula[i - 1].dx / (celula[i - 1].dx + celula[i - 1].dxL);
- double pmedL = celula[i - 1].presaux;
- double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
- //double betIL=celula[i-1].betL;
- //if(celula[i-1].QL<0.)betIL=celula[i-1].bet;
- double betIL=0.;
- if (i < 2) betIL = celula[i - 1].betL;
- else betIL = celula[i - 2].betPigD;
- if (celula[i - 1].QL < 0.) betIL = celula[i - 1].betPigE;
- double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
- double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
- + betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
- double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
- double uls0 = (celula[i].MliqiniL) / (rlL * amedL);
-
- double amedR = celula[i].dutoR.area;
- double razdxR = celula[i + 1].dx / (celula[i + 1].dx + celula[i + 1].dxL);
- double pmedR = celula[i + 1].presaux;
- double tmedR = celula[i].temp * razdxR + celula[i].tempL * (1. - razdxR);
- //double betIR=celula[i].bet;
- //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
- double betIR = celula[i].betPigD;
- if (celula[i + 1].QL < 0.) {
- if (i > ncel - 2) betIR = celula[i + 1].bet;
- else betIR = celula[i + 1].betPigE;
- }
- double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
- double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
- + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
- double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
- double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
-
- int bif = 1;
-
- if((*vg1dSP).lixo5>29900){
- int para;
- para=0;
- }
-
- if (celula[i - 1].alfPigD <= localtiny && celula[i].alfPigE <= localtiny
- && celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=0;
- bif = 0;
- celula[i].c0 =1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;
- }
- else if (celula[i - 1].alfPigD >= (1. - localtiny) && celula[i].alfPigE >= (1. - localtiny)
- && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
- && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=1;
- bif = 0;
- celula[i].c0 =1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;
- }
- else if (celula[i - 1].acsr.tipo == 5 && celula[i - 1].acsr.chk.AreaGarg <= (1e-3)) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- bif = 0;
- celula[i].c0 = 1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;
- }
-
- else if (ugs >= 0 && celula[i - 1].alfPigD <= localtiny
- && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5)) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=2;
- bif = 0;
- celula[i].c0 = 1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;//alteracao4
- if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - localtiny) && uls < 0 && uls0 < 0 && celula[i].duto.teta >0) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=2;
- bif = 0;
- }//alteracao4
- if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - localtiny) && celula[i].duto.teta <0) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=2;
- bif = 1;
- }
- if (fabs(ugs) <= 1e-15 && celula[i].alf >= celula[i + 1].alf && ugs1 < 0) {
- bif = 1;
- }
- }
- else if (ugs <= 0 && celula[i].alfPigE <= localtiny
- && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5)) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=3;
- bif = 0;
- celula[i].c0 = 1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;
- if (fabs(ugs) <= 1e-15 && celula[i - 1].alfPigD > (1. - localtiny) && uls > 0 && uls1 > 0 ) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=3;
- bif = 0;
- }
- if (fabs(ugs) <= 1e-15 && celula[i].alfL >= celula[i - 1].alfL && ugs0 > 0) {
- bif = 1;
- }
- }
- else if (uls >= 0 && celula[i - 1].alfPigD >= 1. - localtiny
- && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
- && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=4;
- bif = 0;
- celula[i].c0 = 1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;
- if (fabs(uls) <= 1e-15 && celula[i].alfPigE < localtiny && uls1 < 0) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=4;
- bif = 0;
- } else if (fabs(uls1) < localtiny) {
- if (fabs(uls) < localtiny && celula[i].alfPigE < localtiny && celula[i].fontemassGR >= localtiny * 1e-5) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- bif = 0;
- }
- }
- else if (fabs(uls) < 1e-15  && uls1 < 0
- && ((celula[i].alfPigE <=( 1-localtiny+.0 * celula[i + 1].alfPigE) && celula[i + 1].alfPigE < 1-localtiny)
- || celula[i].alfPigE <= 0.7)) bif = 1;
-
- //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
- }
- else if (uls <= 0 && celula[i].alfPigE >= 1. - localtiny
- && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
- && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=5;
- bif = 0;
- celula[i].c0 = 1+0*xc0;
- celula[i].ud = 0*xud;
- celula[i].arranjo = 0;
- if (fabs(uls) <= localtiny && celula[i - 1].alfPigD < localtiny && uls0 > 0) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=5;
- bif = 0;
- }
-
- if (fabs(uls0) < localtiny) {
- if (fabs(uls) < localtiny && celula[i - 1].alfPigD < localtiny
- && celula[i - 1].fontemassGR >= localtiny * 1e-5) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- bif = 0;
- }
- } else if (i>1 && fabs(uls) < localtiny && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0//alteracao4
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
- || celula[i - 1].alfPigD < 0.7)) bif = 1;
- else if (i>1 && fabs(uls) < localtiny && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0//alteracao4
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
- || celula[i - 1].alfPigD < 0.7)) bif = 1;
- else {
- if ( fabs(uls) < localtiny && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) bif = 1;
- else if (fabs(uls) < localtiny && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) bif = 1;
- }
-
- }
-
- if (bif == 1) {
- double alfmed;
- alfmed = celula[i - 1].alfPigD;
- if (ugs < 0) alfmed = celula[i].alfPigE;
- double c0 = 1.2;
- double dmed = celula[i].duto.a;
- if (celula[i].MC >= 0) dmed = celula[i].dutoL.a;
- double sinal=1.;//alteracao4
- if(celula[i].duto.teta<0.)sinal=-1.;//alteracao4
- double ud = sinal * 0.32 * sqrt(9.82 * dmed);
- //if((celula[i-1].alfPigD>localtiny && celula[i].alfPigE>localtiny) &&
- //(celula[i-1].alfPigD<(1.-localtiny) && celula[i].alfPigE<(1.-localtiny)))
- if (((alfmed > localtiny) && (alfmed < (1. - localtiny)))) CalcC0Ud(i, c0, ud);
- else {
- c0 = 1.;
- ud = sinal*0.001;//alteracao4
- alfmed=0.5*(celula[i - 1].alfPigD+celula[i].alfPigE);//alteracao4
- }
- celula[i].c0 = c0;
- celula[i].ud = ud;
- double num = (1. - alfmed * c0);
- double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
- celula[i].term1 = num / den;
- celula[i].term2 = (-amed * alfmed * rg * ud) / den;
- if (celula[i - 1].acsr.tipo == 5
- && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {//alteracao4
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- }
- //celula[i].transic=-1;
- }
- celula[i].term1L = celula[i - 1].term1;
- celula[i].term2L = celula[i - 1].term2;
- celula[i - 1].term1R = celula[i].term1;
- celula[i - 1].term2R = celula[i].term2;
- } else {
- celula[i].c0 = 1.;
- celula[i].ud = 0.;
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=-1;
- celula[i].term1L = celula[i - 1].term1;
- celula[i].term2L = celula[i - 1].term2;
- celula[i - 1].term1R = celula[i].term1;
- celula[i - 1].term2R = celula[i].term2;
- }
- } else if (i == 0) {
- if(arq.ConContEntrada==0){
- celula[1].alfL = celula[0].alf;
- celula[0].alfL = celula[0].alf;
- celula[1].betL = celula[0].bet;
- celula[0].betL = celula[0].bet;
- celula[0].term1 = 0.;
- celula[0].term2 = 0.;
- celula[0].term1L = 0.;
- celula[0].term2L = 0.;
- //celula[i].transic=-2;
- }
- else{
- if(titE<1){
- int para;
- para=0;
- }
- celula[1].alfL = celula[0].alf;
- celula[0].alfL = celula[0].alf;
- celula[1].betL = celula[0].bet;
- celula[0].betL = celula[0].bet;
- celula[0].term1 = 1.-titE;
- celula[0].term2 = 0.;
- celula[0].term1L = 1-titE;
- celula[0].term2L = 0.;
- }
- } else {
- //celula[ncel].alf=celula[ncel-1].alf;
- celula[ncel - 1].alfR = celula[ncel].alf;
- celula[ncel].alfR = celula[ncel].alf;
- celula[ncel - 1].betR = celula[ncel].bet;
- celula[ncel].betR = celula[ncel].bet;
-
- double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
- double pmed = celula[i].presaux;
- double tmed = celula[i].temp * razdx + celula[i - 1].temp * (1. - razdx);
- double betI = celula[i].betL;
- if (celula[i].QL < 0.) betI = celula[i].bet;
- double rg = celula[i].flui.MasEspGas(pmed, tmed);
- double rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed)
- + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
- double amed = celula[i].duto.area;
- if (celula[i].MC >= 0) amed = celula[i].dutoL.area;
- double ugs = celula[i].QG / (amed);
- double uls = celula[i].QL / (amed);
-
- double amedL = celula[i].dutoL.area;
- double razdxL = celula[i - 1].dx / (celula[i - 1].dx + celula[i - 1].dxL);
- double pmedL = celula[i - 1].presaux;
- double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].temp * (1. - razdxL);
- double betIL = celula[i - 1].betL;
- if (celula[i - 1].QL < 0.) betIL = celula[i - 1].bet;
- double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
- double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
- + betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
- double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
- double uls0 = (celula[i].MliqiniL) / (rlL * amedL);
-
- double amedR = celula[i].dutoR.area;
- double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
- double pmedR = celula[i].pres;
- double tmedR = celula[i].temp * razdxR + celula[i].temp * (1. - razdxR);
- double betIR = celula[i].bet;
- double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
- double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
- + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
- double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
- double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
-
- int bif = 1;
-
- if (celula[i].alfL <= localtiny && celula[i].alf <= localtiny && celula[i].fontemassGL <= 0
- && celula[i].fontemassGR <= 0) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=0;
- bif = 0;
- celula[i].c0 = 1. - localtiny;
- celula[i].ud = 0.;
- celula[i].arranjo = 0;
- } else if (celula[i].alfL >= (1. - localtiny) && celula[i].alf >= (1. - localtiny) && celula[i].fontemassLL <= 0
- && celula[i].fontemassLR <= 0) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=1;
- bif = 0;
- celula[i].c0 = 1. - localtiny;
- celula[i].ud = 0.;
- celula[i].arranjo = 0;
- } else if (ugs > 0 && celula[i].alfL <= localtiny
- && (celula[i].fontemassGL <= 0. && celula[i].fontemassGR <= 0.)) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=2;
- bif = 0;
- celula[i].c0 = 1. - localtiny;
- celula[i].ud = 0.;
- celula[i].arranjo = 0;
- if (fabs(ugs) <= 1e-15 && celula[i].alf > (1. - localtiny) && uls < 0 && uls0 < 0) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=2;
- bif = 0;
- }
- } else if (ugs < 0 && celula[i].alf <= localtiny
- && (celula[i].fontemassGL <= 0. && celula[i].fontemassGR <= 0.)) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=3;
- bif = 0;
- celula[i].c0 = 1. - localtiny;
- celula[i].ud = 0.;
- celula[i].arranjo = 0;
- if (fabs(ugs) <= 1e-15 && celula[i].alfL > (1. - localtiny) && uls > 0 && uls1 > 0) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=3;
- bif = 0;
- }
- }
- else if (uls >= 0 && celula[i - 1].alf >= 1. - localtiny
- && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
- && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=4;
- bif = 0;
- celula[i].c0 = 1;
- celula[i].ud = 0;
- celula[i].arranjo = 0;
- if (fabs(uls) <= 1e-15 && celula[i].alf < localtiny && uls1 < 0) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=4;
- bif = 0;
- } else if (fabs(uls1) < localtiny) {
- if (fabs(uls) < localtiny && celula[i].alf < localtiny && celula[i].fontemassGR >= localtiny * 1e-5) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- bif = 0;
- }
- }
- else if (fabs(uls) < 1e-15 && uls1 < 0
- && celula[i].alf <=( 1-localtiny) ) bif = 1;
- }
-
- else if (uls <= 0 && celula[i].alf >= 1. - localtiny
- && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
- && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
- celula[i].term1 = 0.;
- celula[i].term2 = 0.;
- //celula[i].transic=5;
- bif = 0;
- celula[i].c0 = 1;
- celula[i].ud = 0;
- celula[i].arranjo = 0;
- if (fabs(uls) <= localtiny && celula[i - 1].alf < localtiny && uls0 > 0) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- //celula[i].transic=5;
- bif = 0;
- }
- if (fabs(uls0) < localtiny) {
- if (fabs(uls) < localtiny && celula[i - 1].alf < localtiny
- && celula[i - 1].fontemassGR >= localtiny * 1e-5) {
- celula[i].term1 = 1.;
- celula[i].term2 = 0.;
- bif = 0;
- }
- } else if (fabs(uls) < localtiny && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
- || celula[i - 1].alfPigD < 0.7)) bif = 1;
- else if (fabs(uls) < localtiny && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
- || celula[i - 1].alfPigD < 0.7)) bif = 1;
- else {
- if (fabs(uls) < localtiny && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) bif = 1;
- else if (fabs(uls) < localtiny && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
- && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) bif = 1;
- }
-
- }
-
- else if (bif == 1) {
- double alfmed;
- alfmed = celula[i].alfL;
- double c0 = 1.2;
- double dmed = celula[i].duto.a;
- if (celula[i].MC >= 0) dmed = celula[i].dutoL.a;
- // CalcC0Ud(i, c0, ud);
- double sinal=1.;//alteracao4
- if(celula[i].duto.teta<0.)sinal=1.;//alteracao4
- double ud = sinal * 0.32 * sqrt(9.82 * dmed);
- if (((alfmed > localtiny) && (alfmed < (1. - localtiny)))) CalcC0Ud(i, c0, ud);
- else {
- c0 = 1.;
- ud = sinal*0.001;//alteracao4
- }
- celula[i].c0 = c0;
- celula[i].ud = ud;
- double num = (1. - alfmed * c0);
- double den = 1. + alfmed * (rg / rl) * c0 - alfmed * c0;
- celula[i].term1 = num / den;
- celula[i].term2 = (-amed * alfmed * rg * ud) / den;
- //celula[i].transic=-1;
- }
- celula[i].term1L = celula[i - 1].term1;
- celula[i].term2L = celula[i - 1].term2;
- celula[i - 1].term1R = celula[i].term1;
- celula[i - 1].term2R = celula[i].term2;
- }
- }
-
- //celula[0].alfini=celula[0].alf;
- //celula[1].alfLini=celula[0].alfini;
- //for (int i = 0; i <= ncel; i++){
- //celula[i].alfini=celula[i].alf;
- //if(i>0)celula[i-1].alfRini=celula[i].alfini;
- //if(i<ncel)celula[i+1].alfLini=celula[i].alfini;
- //}
- //celula[ncel-1].alfR=celula[ncel].alf;
- //celula[ncel].alfini=celula[ncel].alf;
- //celula[ncel-1].alfRini=celula[ncel].alfini;
- //celula[ncel].alfRini=celula[ncel].alfR;
- }*/
 
 
-void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void SProd::renovaFracMol(ProFlu fluiRev) {
   Vcr<double> BSW(ncel);
   Vcr<double> VISCL(ncel);
   Vcr<double> VISCH(ncel);
@@ -11769,10 +8410,8 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
   if ((*vg1dSP).chaverede != 0 && (celula[0].acsr.tipo == 10 || arq.ConContEntrada > 0))
     imin = 0;
   for (int i = imin; i < ncel; i++) {
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double at = celula[i].duto.area;
     double dx = celula[i].dx;
-//    double pi0 = celula[i].presaux;
     double ti0;
     if (celula[i].VTemper < 0.)
       ti0 = celula[i].temp;
@@ -11784,13 +8423,10 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
       else
         ti0 = celula[i].temp;
     }
-//    double pi1 = celula[i + 1].presaux;
     double ti1 = celula[i].temp;
     if (celula[i + 1].VTemper < 0.)
       ti1 = celula[i + 1].temp;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//    int mudaRGO=1;
     double titF=0.;
     ProFlu fluF;
 
@@ -11800,7 +8436,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     double rhoOF=900.;
     double rhoWF=1000.;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     double betI0;
     double bo0;
@@ -11822,7 +8457,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
         betI0 = celula[i].betPigE;
 
     }
-    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QL >= 0.) {      //alteracao7
+    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QL >= 0.) {
       double pe;
       double te;
       if (i > 0) {
@@ -11839,20 +8474,16 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
       double rs0 = (*celula[i].fluiL).RS(pe, te);
       bo0 = (*celula[i].fluiL).BOFunc(pe, te,rs0);
       ba0 = (*celula[i].fluiL).BAFunc(pe, te);
-      //double bo0=celula[i-1].flui.BOFunc(pi0,ti0);
-      //double bsw0=celula[i-1].flui.BSW;
       bsw0 = (*celula[i].fluiL).BSW*ba0 / (bo0 + ba0*(*celula[i].fluiL).BSW - (*celula[i].fluiL).BSW * bo0);
       BSW0 = (*celula[i].fluiL).BSW;
       viscL0 = 0 * 30 + 1 * (*celula[i].fluiL).VisOM(tL);
       viscH0 = 0 * 20 + 1 * (*celula[i].fluiL).VisOM(tH);
     }
-    else {	     //alteracao7
+    else {
       betI0=celula[i].betPigE; //testebeta
       double rs0 = celula[i].flui.RS(celula[i].pres, celula[i].temp);
       bo0 = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp,rs0);
       ba0 = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-      //bo0=celula[i].flui.BOFunc(pi0,ti0);
-      //bsw0=celula[i].flui.BSW;
       bsw0 = celula[i].flui.BSW*ba0 / (bo0 + ba0*celula[i].flui.BSW - celula[i].flui.BSW * bo0);
       BSW0 = celula[i].flui.BSW;
       viscL0 = 0 * 30 + 1 * celula[i].flui.VisOM(tL);
@@ -11861,37 +8492,27 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     if(bo0<1e-15)bo0=1e-15;
 
 
-//    double rgo1 = celula[i].flui.RGO;
-    //double bsw1=celula[i].FW;
-    //double bsw1=celula[i].flui.BSW;
     double betI1 = celula[i].betPigD;
     double rs1 = celula[i].flui.RS(celula[i].pres, celula[i].temp);
     double bo1 = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp,rs1);
     double ba1 = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-    //double bo1=celula[i].flui.BOFunc(pi1,ti1);
-    //double bsw1=celula[i].flui.BSW;
     double bsw1 = celula[i].flui.BSW*ba1 / (bo1 + ba1*celula[i].flui.BSW - celula[i].flui.BSW * bo1);
     double BSW1 = celula[i].flui.BSW;
     double viscL1 = 0 * 30 + 1 * celula[i].flui.VisOM(tL);
     double viscH1 = 0 * 20 + 1 * celula[i].flui.VisOM(tH);
 
-    //if (celula[i + 1].QG*0.99+0.01*celula[i + 1].QL < 0.)
       //betI1 = celula[i + 1].betPigE;    //duvidabeta
     if (celula[i + 1].QL < 0.) {
       betI1 = celula[i + 1].betPigE; //testeBet
       rs1 = celula[i + 1].flui.RS(celula[i + 1].pres, celula[i + 1].temp);
       bo1 = celula[i + 1].flui.BOFunc(celula[i + 1].pres, celula[i + 1].temp,rs1);
       ba1 = celula[i + 1].flui.BAFunc(celula[i + 1].pres, celula[i + 1].temp);
-      //bo1=celula[i+1].flui.BOFunc(ti1,ti1);
-      //bsw1=celula[i+1].flui.BSW;
       bsw1 = celula[i + 1].flui.BSW*ba1 / (bo1 + ba1*celula[i + 1].flui.BSW - celula[i + 1].flui.BSW * bo1);
       BSW1 = celula[i + 1].flui.BSW;
       viscL1 = 0 * 30 + 1 * celula[i + 1].flui.VisOM(tL);
       viscH1 = 0 * 20 + 1 * celula[i + 1].flui.VisOM(tH);
     }
     if(bo1<1e-15)bo1=1e-15;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double titV0;
     double titV1;
     double vazMasLiq0=celula[i].MliqiniL;
@@ -11902,7 +8523,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
 	for(int kfrac=0;kfrac<ncomp;kfrac++){
 		pesoMolC+=celula[i].flui.masMol[kfrac]*celula[i].flui.fracMol[kfrac];
 	}
-    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].MC >= 0.) {      //alteracao7
+    if ((i > 0 || arq.ConContEntrada == 1) && celula[i].MC >= 0.) {
         double pe;
         double te;
         if (i > 0) {
@@ -11925,7 +8546,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     		pesoMol0+=(*celula[i].fluiL).masMol[kfrac]*(*celula[i].fluiL).fracMol[kfrac];
     	}
     }
-    else {	     //alteracao7
+    else {
         double fwV=bsw0;
     	double rhoOV=celula[i].flui.MasEspoleo(celula[i].pres, celula[i].temp);
     	double rhoWV=celula[i].flui.MasEspAgua(celula[i].pres, celula[i].temp);
@@ -11938,7 +8559,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     		pesoMol0+=celula[i].flui.masMol[kfrac]*celula[i].flui.fracMol[kfrac];
     	}
     }
-    if (celula[i+1].MC >= 0.) {      //alteracao7
+    if (celula[i+1].MC >= 0.) {
         double fwV=bsw1;
     	double rhoOV=celula[i].flui.MasEspoleo(celula[i].pres, celula[i].temp);
     	double rhoWV=celula[i].flui.MasEspAgua(celula[i].pres, celula[i].temp);
@@ -11951,7 +8572,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     		pesoMol1+=celula[i].flui.masMol[kfrac]*celula[i].flui.fracMol[kfrac];
     	}
     }
-    else {	     //alteracao7
+    else {
         double fwV=bsw1;
     	double rhoOV=celula[i+1].flui.MasEspoleo(celula[i+1].pres, celula[i+1].temp);
     	double rhoWV=celula[i+1].flui.MasEspAgua(celula[i+1].pres, celula[i+1].temp);
@@ -11964,7 +8585,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     		pesoMol1+=celula[i + 1].flui.masMol[kfrac]*celula[i + 1].flui.fracMol[kfrac];
     	}
     }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double fonteO = celula[i].fontemassLR;
     double fonteG = celula[i].fontemassGR;
     double fonteP = celula[i].fontemassLR;
@@ -11973,7 +8593,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     if(celula[i].acsr.tipo == 1){
       		celula[i].acsr.injg.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
       				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      		//celula[i].acsr.injg.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
       		if(celula[i].acsr.injg.QGas>0.)fluF=celula[i].acsr.injg.FluidoPro;
       		else fluF=celula[i].flui;
       		fwF=0.;
@@ -11982,7 +8601,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     else if(celula[i].acsr.tipo == 2){
       	  	celula[i].acsr.injl.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
       	  			celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      	  	//celula[i].acsr.injl.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
       		if(celula[i].acsr.injl.QLiq>0.)fluF=celula[i].acsr.injl.FluidoPro;
       		else fluF=celula[i].flui;
       	  	boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -11995,8 +8613,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     else if(celula[i].acsr.tipo == 3){
       		celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
       				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      		//celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
-      		//fluF=celula[i].acsr.ipr.FluidoPro;
       		if((celula[i].acsr.ipr.Pres)>celula[i].pres)fluF=celula[i].acsr.ipr.FluidoPro;
       		else fluF=celula[i].flui;
       		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12009,7 +8625,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     else if(celula[i].acsr.tipo == 10){
     		celula[i].acsr.injm.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
     				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-    		//celula[i].acsr.injm.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
             if((celula[i].acsr.injm.MassC+celula[i].acsr.injm.MassG+celula[i].acsr.injm.MassP)>0.)fluF=celula[i].acsr.injm.FluidoPro;
             else fluF=celula[i].flui;
     		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12022,10 +8637,8 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     else if (celula[i].acsr.tipo == 9 && celula[i].acsr.fontechk.abertura> 1e-6) {
       		celula[i].acsr.fontechk.fluidoP.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
       				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      		//celula[i].acsr.fontechk.fluidoP.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
       		celula[i].acsr.fontechk.fluidoPamb.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
       				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      		//celula[i].acsr.fontechk.fluidoPamb.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
       		if(celula[i].acsr.fontechk.presT>celula[i].acsr.fontechk.pamb){
       			fluF=celula[i].acsr.fontechk.fluidoP;
       		}
@@ -12043,8 +8656,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	    double tRes=celula[i].acsr.radialPoro.tRes;
       		celula[i].acsr.radialPoro.flup.atualizaPropComp(celula[i].pres, tRes,celula[i].flui.dCalculatedBeta,
       				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      		//celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
-      		//fluF=celula[i].acsr.radialPoro.flup;
         	if((celula[i].fontemassLR+celula[i].fontemassGR)>1e-15)fluF=celula[i].acsr.radialPoro.flup;
         	else fluF=celula[i].flui;
       		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12058,8 +8669,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	    double tRes=celula[i].acsr.poroso2D.dados.tRes;
       		celula[i].acsr.poroso2D.dados.flup.atualizaPropComp(celula[i].pres, tRes,celula[i].flui.dCalculatedBeta,
       				celula[i].flui.oCalculatedLiqComposition,celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-      		//celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
-      		//fluF=celula[i].acsr.poroso2D.dados.flup;
            	if((celula[i].fontemassLR+celula[i].fontemassGR)>1e-15)fluF=celula[i].acsr.poroso2D.dados.flup;
             else fluF=celula[i].flui;
       		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12073,7 +8682,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     pesoMolF=0;
     for(int j=0; j<ncomp; j++)pesoMolF+=fluF.masMol[j]*fluF.fracMol[j];
     fonteO*=titF;
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double tempMol;
     fluC[i]=celula[i].flui;
     for(int corrige=0; corrige<2; corrige++){
@@ -12093,13 +8701,11 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	fluC[i].atualizaPropComp(celula[i].pres, celula[i].temp,fluC[i].dCalculatedBeta,
     			fluC[i].oCalculatedLiqComposition,
 		fluC[i].oCalculatedVapComposition,arq.pocinjec);
-    	//fluC[i].atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
     }
     celula[i].nMol=(fluC[i].MasEspoleo(celula[i].pres, celula[i].temp)*(1-celula[i].alf)+
         					fluC[i].MasEspGas(celula[i].pres, celula[i].temp)*
     						celula[i].alf)*celula[i].duto.area/pesoMolC;
     fluC[i].Pmol=pesoMolC;
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double hol = 1. - celula[i].alf;
     double bet = celula[i].bet;
 
@@ -12139,7 +8745,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
         viscHF = 0 * 20 + 1 * celula[i].acsr.injl.FluidoPro.VisOM(tH);
       }
     }
-    else if (celula[i].acsr.tipo == 10) {    //alteracao7
+    else if (celula[i].acsr.tipo == 10) {
       double rsF = celula[i].acsr.injm.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
       if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
         double bswaux = celula[i].acsr.injm.FluidoPro.BSW;
@@ -12278,7 +8884,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
           viscHF = 0 * 20 + 1 * celula[i].flui.VisOM(tH);
         }
       } else if ((*celula[i].acsrL).tipo == 5 || (*celula[i].acsrL).tipo == 8) {
-        if (i > 0) {    //alteracao7
+        if (i > 0) {
           double rsF=celula[i - 1].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
           if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
             double rhoPSTF = (1 - celula[i - 1].flui.BSW) * (1000 * 141.5 / (131.5 + celula[i - 1].flui.API)) +
@@ -12291,7 +8897,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
             viscHF = 0 * 20 + 1 * celula[i - 1].flui.VisOM(tH);
           }
         }
-        else {	         //alteracao
+        else {
           double rsF=celula[i].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
           if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
             double rhoPSTF = (1 - celula[i].flui.BSW) * (1000 * 141.5 / (131.5 + celula[i].flui.API)) +
@@ -12312,7 +8918,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	fonteA =0.;
     }
 
-   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double volpesFim = hol * (1 - bet) * (1 - bsw) / bo;
     double volaguaFim = hol * (1 - bet) * bsw;//nao deveria ser dividido por Bo???????????
     double MultPe;
@@ -12337,7 +8942,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	  MultAd= celula[i + 1].QL * (1 - betI1) * bsw1 / bo1;
       residuoA = (volaguaFim - celula[i].VolAguaST) * at / dt + (MultAd - MultAe) / dx - fonteA / dx;
     }
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if ((arq.nfluP > 1 && (arq.flashCompleto == 0 || celula[i].flui.viscBlackOil==1)) || (*vg1dSP).chaverede != 0) {
       if (volpesFim > 1e-3 && (fonteP>0|| (MultPd<0 || MultPe>0))) {
         VISCL[i] = (dt * (viscLF * fonteP / dx + viscLini * residuoP - (viscL1 * MultPd - viscL0 * MultPe) / dx)
@@ -12378,7 +8982,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
       corrDeng(i);
   }
 
-  if ((*vg1dSP).chaverede == 0 || noextremo == 1 || celula[ncel].Mliqini > (*vg1dSP).localtiny /*|| celula[ncel].Mliqini<localtiny*/){    //alteracao7
+  if ((*vg1dSP).chaverede == 0 || noextremo == 1 || celula[ncel].Mliqini > (*vg1dSP).localtiny ){
     if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
     	celula[ncel].flui=celula[ncel-1].flui;
         celula[ncel].flui.BSW = BSW[ncel - 1];
@@ -12390,7 +8994,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	}
     }
   }
-  else {    //alteracao7
+  else {
 	celula[ncel].flui=fluiRev;
     celula[ncel].flui.BSW = fluiRev.BSW;
     celula[ncel].flui.LVisL = fluiRev.LVisL;
@@ -12402,7 +9006,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
 }
 
 
- void SProd::renovaFracMol2(ProFlu fluiRev) {      //alteracao7
+ void SProd::renovaFracMol2(ProFlu fluiRev) {
    Vcr<double> BSW(ncel);
    Vcr<double> denag(ncel);
    Vcr<double> VISCL(ncel);
@@ -12421,14 +9025,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
 	   celula[0].flui.BSW=celula[0].acsr.radialPoro.BSW;
    else if (celula[0].acsr.tipo == 16 && (celula[0].fontemassCR+celula[0].fontemassGR+celula[0].fontemassLR)>0.)
 	   celula[0].flui.BSW=celula[0].acsr.poroso2D.dados.transfer.BSW;
-   /*double pesoMol0;
-   double pesoMol1;
-   double pesoMol0O;
-   double pesoMol1O;
-   double pesoMol0G;
-   double pesoMol1G;
-   double pesoMolF;
-   double pesoMolC;*/
    double dt = celula[1].dt;
    double tL= 0.;
    double tH= 70.;
@@ -12446,10 +9042,8 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
 	 double pesoMol1G;
 	 double pesoMolF;
 	 double pesoMolC;
- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      double at = celula[i].duto.area;
      double dx = celula[i].dx;
-//     double pi0 = celula[i].presaux;
      double ti0;
      if (celula[i].VTemper < 0.)
        ti0 = celula[i].temp;
@@ -12461,13 +9055,10 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
        else
          ti0 = celula[i].temp;
      }
-//     double pi1 = celula[i + 1].presaux;
      double ti1 = celula[i].temp;
      if (celula[i + 1].VTemper < 0.)
        ti1 = celula[i + 1].temp;
- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//     int mudaRGO=1;
      double titF=0.;
      ProFlu fluF;
 
@@ -12477,7 +9068,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      double rhoOF=900.;
      double rhoWF=1000.;
 
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
      double betI0;
      double bo0;
@@ -12500,7 +9090,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
          betI0 = celula[i].betPigE;
 
      }
-     if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QL >= 0.) {      //alteracao7
+     if ((i > 0 || arq.ConContEntrada == 1) && celula[i].QL >= 0.) {
        double pe;
        double te;
        if (i > 0) {
@@ -12517,21 +9107,17 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
        double rs0 = (*celula[i].fluiL).RS(pe, te);
        bo0 = (*celula[i].fluiL).BOFunc(pe, te,rs0);
        ba0 = (*celula[i].fluiL).BAFunc(pe, te);
-       //double bo0=celula[i-1].flui.BOFunc(pi0,ti0);
-       //double bsw0=celula[i-1].flui.BSW;
        bsw0 = (*celula[i].fluiL).BSW*ba0 / (bo0 + ba0*(*celula[i].fluiL).BSW - (*celula[i].fluiL).BSW * bo0);
        BSW0 = (*celula[i].fluiL).BSW;
        denag0 = (*celula[i].fluiL).Denag;
        viscL0 = 0 * 30 + 1 * (*celula[i].fluiL).VisOM(tL);
        viscH0 = 0 * 20 + 1 * (*celula[i].fluiL).VisOM(tH);
      }
-     else {	     //alteracao7
+     else {
        betI0=celula[i].betPigE; //testebeta
        double rs0 = celula[i].flui.RS(celula[i].pres, celula[i].temp);
        bo0 = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp,rs0);
        ba0 = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-       //bo0=celula[i].flui.BOFunc(pi0,ti0);
-       //bsw0=celula[i].flui.BSW;
        bsw0 = celula[i].flui.BSW*ba0 / (bo0 + ba0*celula[i].flui.BSW - celula[i].flui.BSW * bo0);
        BSW0 = celula[i].flui.BSW;
        denag0 = celula[i].flui.Denag;
@@ -12541,30 +9127,22 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      if(bo0<1e-15)bo0=1e-15;
 
 
-//     double rgo1 = celula[i].flui.RGO;
-     //double bsw1=celula[i].FW;
-     //double bsw1=celula[i].flui.BSW;
      double betI1 = celula[i].betPigD;
      double rs1 = celula[i].flui.RS(celula[i].pres, celula[i].temp);
      double bo1 = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp,rs1);
      double ba1 = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-     //double bo1=celula[i].flui.BOFunc(pi1,ti1);
-     //double bsw1=celula[i].flui.BSW;
      double bsw1 = celula[i].flui.BSW*ba1 / (bo1 + ba1*celula[i].flui.BSW - celula[i].flui.BSW * bo1);
      double BSW1 = celula[i].flui.BSW;
      double denag1 = celula[i].flui.Denag;
      double viscL1 = 0 * 30 + 1 * celula[i].flui.VisOM(tL);
      double viscH1 = 0 * 20 + 1 * celula[i].flui.VisOM(tH);
 
-     //if (celula[i + 1].QG*0.99+0.01*celula[i + 1].QL < 0.)
        //betI1 = celula[i + 1].betPigE;    //duvidabeta
      if (celula[i + 1].QL < 0.) {
        betI1 = celula[i + 1].betPigE; //testeBet
        rs1 = celula[i + 1].flui.RS(celula[i + 1].pres, celula[i + 1].temp);
        bo1 = celula[i + 1].flui.BOFunc(celula[i + 1].pres, celula[i + 1].temp,rs1);
        ba1 = celula[i + 1].flui.BAFunc(celula[i + 1].pres, celula[i + 1].temp);
-       //bo1=celula[i+1].flui.BOFunc(ti1,ti1);
-       //bsw1=celula[i+1].flui.BSW;
        bsw1 = celula[i + 1].flui.BSW*ba1 / (bo1 + ba1*celula[i + 1].flui.BSW - celula[i + 1].flui.BSW * bo1);
        BSW1 = celula[i + 1].flui.BSW;
        denag1 = celula[i + 1].flui.Denag;
@@ -12572,8 +9150,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
        viscH1 = 0 * 20 + 1 * celula[i + 1].flui.VisOM(tH);
      }
      if(bo1<1e-15)bo1=1e-15;
- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
      double titV0;
      double titV1;
      double vazMasLiq0=celula[i].Mliqini;
@@ -12585,8 +9161,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
  		pesoMolC+=celula[i].flui.masMol[kfrac]*celula[i].flui.fracMol[kfrac];
  	}
 
- 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-     if ((i > 0 || arq.ConContEntrada == 1) && celula[i].Mliqini>= 0. /*celula[i].MC*/) {      //alteracao7
+     if ((i > 0 || arq.ConContEntrada == 1) && celula[i].Mliqini>= 0. ) {
          double pe;
          double te;
          if (i > 0) {
@@ -12609,7 +9184,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      		 pesoMol0O+=(*celula[i].fluiL).masMol[kfrac]*(*celula[i].fluiL).oCalculatedLiqComposition[kfrac];
      	 }
      }
-     else {	     //alteracao7
+     else {
          double fwV=bsw0;
      	 double rhoOV=celula[i].flui.MasEspoleo(celula[i].pres, celula[i].temp);
      	 double rhoWV=celula[i].flui.MasEspAgua(celula[i].pres, celula[i].temp);
@@ -12622,7 +9197,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      		 pesoMol0O+=celula[i].flui.masMol[kfrac]*celula[i].flui.oCalculatedLiqComposition[kfrac];
      	 }
      }
-     if (celula[i+1].Mliqini>= 0./*celula[i+1].MC*/) {      //alteracao7
+     if (celula[i+1].Mliqini>= 0.) {
          double fwV=bsw1;
      	 double rhoOV=celula[i].flui.MasEspoleo(celula[i].pres, celula[i].temp);
      	 double rhoWV=celula[i].flui.MasEspAgua(celula[i].pres, celula[i].temp);
@@ -12635,7 +9210,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      		 pesoMol1O+=celula[i].flui.masMol[kfrac]*celula[i].flui.oCalculatedLiqComposition[kfrac];
      	 }
      }
-     else {	     //alteracao7
+     else {
          double fwV=bsw1;
      	 double rhoOV=celula[i+1].flui.MasEspoleo(celula[i+1].pres, celula[i+1].temp);
      	 double rhoWV=celula[i+1].flui.MasEspAgua(celula[i+1].pres, celula[i+1].temp);
@@ -12648,30 +9223,29 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      		 pesoMol1O+=celula[i + 1].flui.masMol[kfrac]*celula[i + 1].flui.oCalculatedLiqComposition[kfrac];
      	 }
      }
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-     if ((i > 0 || arq.ConContEntrada == 1) && (celula[i].MC-celula[i].Mliqini) >= 0.) {      //alteracao7
+     if ((i > 0 || arq.ConContEntrada == 1) && (celula[i].MC-celula[i].Mliqini) >= 0.) {
      	pesoMol0G=0;
      	for(int kfrac=0;kfrac<ncomp;kfrac++){
      		fracMol0G[kfrac]=(*celula[i].fluiL).oCalculatedVapComposition[kfrac];
      		pesoMol0G+=(*celula[i].fluiL).masMol[kfrac]*(*celula[i].fluiL).oCalculatedVapComposition[kfrac];
      	}
      }
-     else {	     //alteracao7
+     else {
      	pesoMol0G=0;
      	for(int kfrac=0;kfrac<ncomp;kfrac++){
      		fracMol0G[kfrac]=celula[i].flui.oCalculatedVapComposition[kfrac];
      		pesoMol0G+=celula[i].flui.masMol[kfrac]*celula[i].flui.oCalculatedVapComposition[kfrac];
      	}
      }
-     if ((celula[i+1].MC-celula[i+1].Mliqini) >= 0.) {      //alteracao7
+     if ((celula[i+1].MC-celula[i+1].Mliqini) >= 0.) {
      	pesoMol1G=0;
      	for(int kfrac=0;kfrac<ncomp;kfrac++){
      		fracMol1G[kfrac]=celula[i].flui.oCalculatedVapComposition[kfrac];
      		pesoMol1G+=celula[i].flui.masMol[kfrac]*celula[i].flui.oCalculatedVapComposition[kfrac];
      	}
      }
-     else {	     //alteracao7
+     else {
      	pesoMol1G=0;
      	for(int kfrac=0;kfrac<ncomp;kfrac++){
      		fracMol1G[kfrac]=celula[i + 1].flui.oCalculatedVapComposition[kfrac];
@@ -12679,30 +9253,29 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      	}
      }
 
-     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-     if ((i > 0 || arq.ConContEntrada == 1) && /*celula[i].MC >= 0.*/(vazMasLiq0+vazMasGas0)>=0) {      //alteracao7
+     if ((i > 0 || arq.ConContEntrada == 1) && (vazMasLiq0+vazMasGas0)>=0) {
      	 pesoMol0=0;
      	 for(int kfrac=0;kfrac<ncomp;kfrac++){
      		 fracMol0[kfrac]=(*celula[i].fluiL).fracMol[kfrac];
      		 pesoMol0+=(*celula[i].fluiL).masMol[kfrac]*(*celula[i].fluiL).fracMol[kfrac];
      	 }
      }
-     else {	     //alteracao7
+     else {
      	 pesoMol0=0;
      	 for(int kfrac=0;kfrac<ncomp;kfrac++){
      		 fracMol0[kfrac]=celula[i].flui.fracMol[kfrac];
      		 pesoMol0+=celula[i].flui.masMol[kfrac]*celula[i].flui.fracMol[kfrac];
      	 }
      }
-     if (/*celula[i+1].MC >= 0.*/(vazMasLiq1+vazMasGas1)>=0) {      //alteracao7
+     if ((vazMasLiq1+vazMasGas1)>=0) {
      	 pesoMol1=0;
      	 for(int kfrac=0;kfrac<ncomp;kfrac++){
      		 fracMol1[kfrac]=celula[i].flui.fracMol[kfrac];
      		 pesoMol1+=celula[i].flui.masMol[kfrac]*celula[i].flui.fracMol[kfrac];
      	 }
      }
-     else {	     //alteracao7
+     else {
      	 pesoMol1=0;
      	 for(int kfrac=0;kfrac<ncomp;kfrac++){
      		 fracMol1[kfrac]=celula[i + 1].flui.fracMol[kfrac];
@@ -12710,38 +9283,30 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      	 }
      }
 
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
      double fonteO = celula[i].fontemassLR;
      double fonteG = celula[i].fontemassGR;
      double fonteP = celula[i].fontemassLR;
      double fonteA = celula[i].fontemassLR;
 
      if(celula[i].acsr.tipo == 1){
-       		//celula[i].acsr.injg.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
-    	 //cout<<"Estou aqui 1"<<endl;
     	    if(celula[i].acsr.injg.FluidoPro.dCalculatedBeta<0. || celula[i].acsr.injg.FluidoPro.dCalculatedBeta>1.)
     	    	celula[i].acsr.injg.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 		    else
     	 	celula[i].acsr.injg.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,
     	 			celula[i].acsr.injg.FluidoPro.dCalculatedBeta,celula[i].acsr.injg.FluidoPro.oCalculatedLiqComposition,
 					celula[i].acsr.injg.FluidoPro.oCalculatedVapComposition,arq.pocinjec);
-    	 	//cout<<"Estou aqui 2"<<endl;
-       		//fluF=celula[i].acsr.injg.FluidoPro;
       		if(celula[i].acsr.injg.QGas>0.)fluF=celula[i].acsr.injg.FluidoPro;
       		else fluF=celula[i].flui;
-       		//cout<<"Estou aqui 3"<<endl;
        		fwF=0.;
        		titF=1.;
      }
      else if(celula[i].acsr.tipo == 2){
-       	  	//celula[i].acsr.injl.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
  	        if(celula[i].acsr.injl.FluidoPro.dCalculatedBeta<0. || celula[i].acsr.injl.FluidoPro.dCalculatedBeta>1.)
  	        	celula[i].acsr.injl.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
  	        else
     	    celula[i].acsr.injl.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,
     	    		celula[i].acsr.injl.FluidoPro.dCalculatedBeta,celula[i].acsr.injl.FluidoPro.oCalculatedLiqComposition,
 					celula[i].acsr.injl.FluidoPro.oCalculatedVapComposition,arq.pocinjec);
-       	  	//fluF=celula[i].acsr.injl.FluidoPro;
       		if(celula[i].acsr.injl.QLiq>0.)fluF=celula[i].acsr.injl.FluidoPro;
       		else fluF=celula[i].flui;
        	  	boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12752,14 +9317,12 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
        	  	titF=(1-fwF)*rhoOF/((1-fwF)*rhoOF+fwF*rhoWF);
      }
      else if(celula[i].acsr.tipo == 3){
-       		//celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        if(celula[i].acsr.ipr.FluidoPro.dCalculatedBeta<0. || celula[i].acsr.ipr.FluidoPro.dCalculatedBeta>1.)
 	        	celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        else
     	    celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,
     	    		celula[i].acsr.ipr.FluidoPro.dCalculatedBeta,celula[i].acsr.ipr.FluidoPro.oCalculatedLiqComposition,
 					celula[i].acsr.ipr.FluidoPro.oCalculatedVapComposition,arq.pocinjec);
-       		//fluF=celula[i].acsr.ipr.FluidoPro;
       		if((celula[i].acsr.ipr.Pres)>celula[i].pres)fluF=celula[i].acsr.ipr.FluidoPro;
       		else fluF=celula[i].flui;
        		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12770,14 +9333,12 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
        		titF=(1-fwF)*rhoOF/((1-fwF)*rhoOF+fwF*rhoWF);
      }
      else if(celula[i].acsr.tipo == 10){
-     		//celula[i].acsr.injm.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        if(celula[i].acsr.injm.FluidoPro.dCalculatedBeta<0. || celula[i].acsr.injm.FluidoPro.dCalculatedBeta>1.)
 	        	celula[i].acsr.injm.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        else
   		    celula[i].acsr.injm.FluidoPro.atualizaPropComp(celula[i].pres,celula[i].temp,
   		    		celula[i].acsr.injm.FluidoPro.dCalculatedBeta,celula[i].acsr.injm.FluidoPro.oCalculatedLiqComposition,
 					celula[i].acsr.injm.FluidoPro.oCalculatedVapComposition,arq.pocinjec);
-     		//fluF=celula[i].acsr.injm.FluidoPro;
             if((celula[i].acsr.injm.MassC+celula[i].acsr.injm.MassG+celula[i].acsr.injm.MassP)>0.)fluF=celula[i].acsr.injm.FluidoPro;
             else fluF=celula[i].flui;
      		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12788,14 +9349,12 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      		titF=(1-fwF)*rhoOF/((1-fwF)*rhoOF+fwF*rhoWF);
      }
      else if (celula[i].acsr.tipo == 9 && celula[i].acsr.fontechk.abertura> 1e-6) {
-       		//celula[i].acsr.fontechk.fluidoP.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        if(celula[i].acsr.fontechk.fluidoP.dCalculatedBeta<0. || celula[i].acsr.fontechk.fluidoP.dCalculatedBeta>1.)
 	        	celula[i].acsr.fontechk.fluidoP.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        else
     		celula[i].acsr.fontechk.fluidoP.atualizaPropComp(celula[i].pres, celula[i].temp,
     				celula[i].acsr.fontechk.fluidoP.dCalculatedBeta,celula[i].acsr.fontechk.fluidoP.oCalculatedLiqComposition,
 					celula[i].acsr.fontechk.fluidoP.oCalculatedVapComposition,arq.pocinjec);
-       		//celula[i].acsr.fontechk.fluidoPamb.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        if(celula[i].acsr.fontechk.fluidoPamb.dCalculatedBeta<0. || celula[i].acsr.fontechk.fluidoPamb.dCalculatedBeta>1.)
 	        	celula[i].acsr.fontechk.fluidoPamb.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        else
@@ -12817,14 +9376,12 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      }
      else if(celula[i].acsr.tipo == 15){
     	     double tRes=celula[i].acsr.radialPoro.tRes;
-       		//celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        if(celula[i].acsr.radialPoro.flup.dCalculatedBeta<0. || celula[i].acsr.radialPoro.flup.dCalculatedBeta>1.)
 	        	celula[i].acsr.radialPoro.flup.atualizaPropComp(celula[i].pres, tRes,-1,NULL,NULL,arq.pocinjec);
 	        else
     	    celula[i].acsr.radialPoro.flup.atualizaPropComp(celula[i].pres, tRes,
     	    		celula[i].acsr.radialPoro.flup.dCalculatedBeta,celula[i].acsr.radialPoro.flup.oCalculatedLiqComposition,
 					celula[i].acsr.radialPoro.flup.oCalculatedVapComposition,arq.pocinjec);
-       		//fluF=celula[i].acsr.radialPoro.flup;
         	if((celula[i].fontemassLR+celula[i].fontemassGR)>1e-15)fluF=celula[i].acsr.radialPoro.flup;
         	else fluF=celula[i].flui;
        		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12836,14 +9393,12 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      }
      else if(celula[i].acsr.tipo == 16){
     	     double tRes=celula[i].acsr.poroso2D.dados.tRes;
-       		//celula[i].acsr.ipr.FluidoPro.atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
 	        if(celula[i].acsr.poroso2D.dados.flup.dCalculatedBeta<0. || celula[i].acsr.poroso2D.dados.flup.dCalculatedBeta>1.)
 	        	celula[i].acsr.poroso2D.dados.flup.atualizaPropComp(celula[i].pres, tRes,-1,NULL,NULL,arq.pocinjec);
 	        else
     	    celula[i].acsr.poroso2D.dados.flup.atualizaPropComp(celula[i].pres, tRes,
     	    		celula[i].acsr.poroso2D.dados.flup.dCalculatedBeta,celula[i].acsr.poroso2D.dados.flup.oCalculatedLiqComposition,
 					celula[i].acsr.poroso2D.dados.flup.oCalculatedVapComposition,arq.pocinjec);
-       		//fluF=celula[i].acsr.poroso2D.dados.flup;
            	if((celula[i].fontemassLR+celula[i].fontemassGR)>1e-15)fluF=celula[i].acsr.poroso2D.dados.flup;
             else fluF=celula[i].flui;
        		boF = fluF.BOFunc(celula[i].pres, celula[i].temp);
@@ -12863,7 +9418,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
     	 pesoMolF+=fluF.masMol[j]*fluF.fracMol[j];
      }
      fonteO*=titF;
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
      double tempMol;
      fluC[i]=celula[i].flui;
      double betIV;
@@ -12875,7 +9429,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
  	 double rhoWVol;
  	 double titVol;
  	 int limCorrige=1;
- 	 //double alfNS=fabs(celula[i].QG)/(fabs(celula[i].QG)+fabs(celula[i].QL));
  	 if(kontaRenovaComp==arq.miniTabAtraso)limCorrige=2;
      for(int corrige=0; corrige<limCorrige; corrige++){
 
@@ -12893,10 +9446,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
 
      	 double menorFrac=0.;
      	 for(int kfrac=0;kfrac<ncomp;kfrac++){
-     		 /*fluC[i].fracMol[kfrac]=(celula[i].nMolIni*celula[i].flui.fracMol[kfrac]+
-     				((fonteO+fonteG)*fluF.fracMol[kfrac]/pesoMolF-
-     				(vazMasLiq1*fracMol1O[kfrac]/pesoMol1O+vazMasGas1*fracMol1G[kfrac]/pesoMol1G)+
- 					(vazMasLiq0*fracMol0O[kfrac]/pesoMol0O+vazMasGas0*fracMol0G[kfrac]/pesoMol0G))*dt)/tempMol;*/
      		fluC[i].fracMol[kfrac]=(celula[i].nMolIni*celula[i].flui.fracMol[kfrac]+
      		     				((fonteO+fonteG)*fluF.fracMol[kfrac]/pesoMolF-
      		     				(vazMasLiq1+vazMasGas1)*fracMol1[kfrac]/pesoMol1+
@@ -12907,9 +9456,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      	 }
      	 double fracTot=0.;
      	 for(int kfrac=0;kfrac<ncomp;kfrac++)fluC[i].fracMol[kfrac]-=menorFrac;
-     	 //for(int kfrac=0;kfrac<ncomp;kfrac++){
-     		//if(fluC[i].fracMol[kfrac]<0./100.)fluC[i].fracMol[kfrac]=0./100.;
-     	//}
      	 for(int kfrac=0;kfrac<ncomp;kfrac++)fracTot+=fluC[i].fracMol[kfrac];
      	 for(int kfrac=0;kfrac<ncomp;kfrac++)fluC[i].fracMol[kfrac]/=fracTot;
      	 pesoMolC=0;
@@ -12923,7 +9469,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      		 fluC[i].atualizaPropComp(celula[i].pres, celula[i].temp,fluC[i].dCalculatedBeta,
      			 	 	 	 	  fluC[i].oCalculatedLiqComposition,
 								  fluC[i].oCalculatedVapComposition,arq.pocinjec);
-     		 //fluC[i].atualizaPropComp(celula[i].pres, celula[i].temp,-1,NULL,NULL,arq.pocinjec);
      		if(fluC[i].iIER!=0){
      			int para;
      			para=0;
@@ -12942,7 +9487,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
          					fluC[i].MasEspGas(celula[i].pres, celula[i].temp)*
 							celula[i].alf)*celula[i].duto.area*celula[i].dx/pesoMolC;
      fluC[i].Pmol=pesoMolC;
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
      double hol = 1. - celula[i].alf;
      double bet = celula[i].bet;
 
@@ -12985,7 +9529,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
          viscHF = 0 * 20 + 1 * celula[i].acsr.injl.FluidoPro.VisOM(tH);
        }
      }
-     else if (celula[i].acsr.tipo == 10) {    //alteracao7
+     else if (celula[i].acsr.tipo == 10) {
        double rsF = celula[i].acsr.injm.FluidoPro.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
        if (arq.nfluP > 0 || (*vg1dSP).chaverede != 0) {
          double bswaux = celula[i].acsr.injm.FluidoPro.BSW;
@@ -13130,7 +9674,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
            viscHF = 0 * 20 + 1 * celula[i].flui.VisOM(tH);
          }
        } else if ((*celula[i].acsrL).tipo == 5 || (*celula[i].acsrL).tipo == 8) {
-         if (i > 0) {    //alteracao7
+         if (i > 0) {
            double rsF=celula[i - 1].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
            if (arq.nfluP > 0 || (*vg1dSP).chaverede != 0) {
              double rhoPSTF = (1 - celula[i - 1].flui.BSW) * (1000 * 141.5 / (131.5 + celula[i - 1].flui.API)) +
@@ -13144,7 +9688,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
              viscHF = 0 * 20 + 1 * celula[i - 1].flui.VisOM(tH);
            }
          }
-         else {	         //alteracao
+         else {
            double rsF=celula[i].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
            if (arq.nfluP > 0 || (*vg1dSP).chaverede != 0) {
              double rhoPSTF = (1 - celula[i].flui.BSW) * (1000 * 141.5 / (131.5 + celula[i].flui.API)) +
@@ -13166,7 +9710,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      	fonteA =0.;
      }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      double volpesFim = hol * (1 - bet) * (1 - bsw) / bo;
      double volaguaFim = hol * (1 - bet) * bsw/bo;//nao deveria ser dividido por Bo???????????
      double MultPe;
@@ -13195,9 +9738,8 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      	  MultAd= celula[i + 1].QL * (1 - betI1) * bsw1 / bo1;
        residuoA = (volaguaFim - celula[i].VolAguaST) * at / dt + (MultAd - MultAe) / dx - fonteA / dx;
      }
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-     if ((arq.nfluP > 1 /*&& (arq.flashCompleto == 0 || celula[i].flui.viscBlackOil==1)*/) || (*vg1dSP).chaverede != 0) {
-       if (((/*(volpesFim * at-1.*residuoP*dt) > 1e-3*at &&*/ volpesFim>1e-3) && (fonteP>0|| (MultPd<0 || MultPe>0)))&&arq.nfluP > 0) {
+     if ((arq.nfluP > 1 ) || (*vg1dSP).chaverede != 0) {
+       if ((( volpesFim>1e-3) && (fonteP>0|| (MultPd<0 || MultPe>0)))&&arq.nfluP > 0) {
          VISCL[i] = (dt * (viscLF * fonteP / dx + 1.*viscLini * residuoP - (viscL1 * MultPd - viscL0 * MultPe) / dx)
              + viscLini * celula[i].VolPesaST * at) / (volpesFim * at-0.*residuoP*dt);
          VISCH[i] = (dt * (viscHF * fonteP / dx + 1.*viscHini * residuoP - (viscH1 * MultPd - viscH0 * MultPe) / dx)
@@ -13208,8 +9750,8 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
        }
      }
      if (arq.nfluP > 1  || (*vg1dSP).chaverede != 0) {
-       if ((/*((volaguaFim + volpesFim) * at-
-            1.*dt* (residuoA + residuoP))> 1e-3*at && */(volaguaFim + volpesFim)>1e-3) && ((fonteP>0 || fonteA>0)||
+       if ((
+(volaguaFim + volpesFim)>1e-3) && ((fonteP>0 || fonteA>0)||
      		                                 ((MultPd<0 || MultPe>0)||(MultAd<0 || MultAe>0)))){
          BSW[i] = (dt
              * (BSWF * (fonteA + fonteP) / dx + 1.*BSWini * (residuoA + residuoP)
@@ -13237,7 +9779,6 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
    for (int i = imin; i <= ncel - 1; i++) {
      if (arq.nfluP > 0 || (*vg1dSP).chaverede != 0) {
        celula[i].flui=fluC[i];
-       //if(arq.flashCompleto==0 || celula[i].flui.viscBlackOil==1){
        if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
     	  celula[i].flui.BSW = BSW[i];
     	  celula[i].flui.Denag = denag[i];
@@ -13249,13 +9790,12 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      }
    }
 
-   if ((*vg1dSP).chaverede == 0 || noextremo == 1 || celula[ncel].Mliqini > -(*vg1dSP).localtiny ){    //alteracao7
+   if ((*vg1dSP).chaverede == 0 || noextremo == 1 || celula[ncel].Mliqini > -(*vg1dSP).localtiny ){
      if (arq.nfluP > 0 || (*vg1dSP).chaverede != 0) {
      	celula[ncel].flui=celula[ncel-1].flui;
      	if (arq.nfluP > 1 || (*vg1dSP).chaverede != 0) {
      		celula[ncel].flui.BSW = BSW[ncel - 1];
      		celula[ncel].flui.Denag = denag[ncel - 1];
-     	//if(arq.flashCompleto==0){
             celula[ncel].flui.LVisL = VISCL[ncel - 1];
             celula[ncel].flui.LVisH = VISCH[ncel - 1];
             celula[ncel].flui.TempL = tL;
@@ -13263,7 +9803,7 @@ void SProd::renovaFracMol(ProFlu fluiRev) {      //alteracao7
      	}
      }
    }
-   else {    //alteracao7
+   else {
  	celula[ncel].flui=fluiRev;
      celula[ncel].flui.BSW = fluiRev.BSW;
      celula[ncel].flui.Denag = fluiRev.Denag;
@@ -13284,7 +9824,6 @@ void SProd::renovaterm(int aflu) {
   int imax = ncel;
   if (aflu == 1) imax = ncel + 1;
   for (int i = 0; i <= ncel; i++) {
-    //celula[i].presini = celula[i].pres;
 	celula[i].c0ini=celula[i].c0;
 	celula[i].udini=celula[i].ud;
     if (i == ncel && aflu == 1 && (*vg1dSP).lixo5 >= 1560) {
@@ -13303,9 +9842,8 @@ void SProd::renovaterm(int aflu) {
       }
       valv[i] = 1;
       if (celula[i - 1].acsr.tipo == 5 || celula[i - 1].acsr.tipo == 8) {
-        //alteracao4
         if ((*celula[i].acsrL).tipo == 5 && (*celula[i].acsrL).chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area)
-          valv[i] = 0;    //alteracao4
+          valv[i] = 0;
         if ((*celula[i].acsrL).tipo == 8 && fabs((*celula[i].acsrL).bvol.freq) > 1)
           valv[i] = 0;
       }
@@ -13321,62 +9859,42 @@ void SProd::renovaterm(int aflu) {
           tmed = celula[i].temp * razdx + celula[i - 1].temp * (1. - razdx);
         else
           tmed = tGSup;
-        //tmed = celula[i - 1].temp;
         if (celula[i].VTemper < 0.) {
           if (i < ncel)
             tmed = celula[i].temp;
           else
             tmed = tGSup;
         }
-        //double betI=celula[i].betL;
-        //if(celula[i].QL<0.)betI=celula[i].bet;
         double betI = celula[i - 1].betPigD;
         double rl;
-        //double viscl1;
-        //double tensup1;
         if (celula[i].QL < 0.) { //testeBeta
-        //if (celula[i].QG*0.99+0.01*celula[i].QL < 0.) {        //duvidabeta
           betI = celula[i].betPigE;
-          //rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
           rl = (1 - betI) * celula[i].rpCi + betI * celula[i].rcCi;
-          //viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-          //tensup1 = (1 - betI) * celula[i].flui.TensSuper(pmed, tmed) + betI * celula[i].fluicol.TensSuper(pmed, tmed);
         } else {
           betI = celula[i - 1].betPigD;
-          //rl = (1 - betI) * celula[i - 1].flui.MasEspLiq(pmed, tmed)+ betI * celula[i - 1].fluicol.MasEspFlu(pmed, tmed);
           rl = (1 - betI) * celula[i - 1].rpCi+ betI * celula[i - 1].rcCi;
           //viscl1 = (1 - betI) * celula[i - 1].flui.ViscOleo(pmed, tmed)
-              //+ betI * celula[i - 1].fluicol.VisFlu(pmed, tmed);
           //tensup1 = (1 - betI) * celula[i - 1].flui.TensSuper(pmed, tmed)
-              //+ betI * celula[i - 1].fluicol.TensSuper(pmed, tmed);
         }
         double rg;
-        //double viscg1;
         double amed;
         double hns;
         if (celula[i].QG >= 0) {
           amed = celula[i].dutoL.area;
           hns = 1. - celula[i].alfL;
-          //rg = celula[i - 1].flui.MasEspGas(pmed, tmed);
           rg = celula[i - 1].rgCi;
-          //viscg1 = celula[i - 1].flui.ViscGas(pmed, tmed);
         } else {
-          //rg = celula[i].flui.MasEspGas(pmed, tmed);
           rg = celula[i].rgCi;
-          //viscg1 = celula[i].flui.ViscGas(pmed, tmed);
           amed = celula[i].duto.area;
           hns = 1. - celula[i].alf;
         }
         double ugs = celula[i].QG / (amed);
         double uls = celula[i].QL / (amed);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         double dia1 = celula[i].duto.a;
         if (ugs >= 0)
           dia1 = celula[i - 1].duto.a;
 
         double rmed = hns * rl + (1 - hns) * rg;
-        //double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        //double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
         double ang = celula[i].duto.teta;
         if (i >= 2) {
           if (celula[i - 2].acsr.tipo == 5 && celula[i - 2].acsr.chk.AreaGarg <= (1e-3)) {
@@ -13394,29 +9912,17 @@ void SProd::renovaterm(int aflu) {
         double sinal = 1.;
         if (ang < 0.)
           sinal = -1.;
-        //double xc0 = 2.;
-        //double xud = sinal * 0.0246 * cos(ang)
-            //+ 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         double amedL = celula[i].dutoL.area;
         double razdxL = celula[i - 1].dxL / (celula[i - 1].dx + celula[i - 1].dxL);
-//        double pmedL = celula[i - 1].presaux;
-//        double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
-        //double betIL=celula[i-1].betL;
-        //if(celula[i-1].QL<0.)betIL=celula[i-1].bet;
         double betIL=0.;
         if (i < 2)
           betIL = celula[i - 1].betL;
         else
           betIL = celula[i - 2].betPigD;
         if (celula[i - 1].QL < 0.) betIL = celula[i - 1].betPigE; //testeBeta
-        //if (celula[i - 1].QG*0.99+0.01*celula[i - 1].QL < 0.)
           //betIL = celula[i - 1].betPigE;        //duvidabeta
-        //double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
         double rgL = celula[i].rgLi;
-        //double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
-            //+ betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
         double rlL = (1 - betIL) * celula[i].rpLi+ betIL * celula[i].rcLi;
         double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
         double uls0 = (celula[i].MliqiniL) / (rlL * amedL);
@@ -13425,20 +9931,14 @@ void SProd::renovaterm(int aflu) {
         double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
         double pmedR = celula[i].presauxR;
         double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-        //double betIR=celula[i].bet;
-        //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
         double betIR = celula[i].betPigD;
         if (celula[i ].QLR < 0.) { //testeBeta
-        //if ((celula[i].MR - celula[i].MliqiniR)*0.99+0.01*celula[i].MliqiniR < 0.) {        //duvidabeta
           if (i > ncel - 2)
             betIR = celula[i].betR;
           else
             betIR = celula[i + 1].betPigE;
         }
-        //double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
         double rgR = celula[i].rgRi;
-        //double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
-            //+ betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
         double rlR = (1 - betIR) * celula[i].rpRi+ betIR * celula[i].rcRi;
         double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
         double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
@@ -13454,7 +9954,6 @@ void SProd::renovaterm(int aflu) {
             && celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=0;
           bif[i] = 0;
           celula[i].c0 = 1;
           celula[i].ud = 0;
@@ -13465,7 +9964,6 @@ void SProd::renovaterm(int aflu) {
                 && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=1;
           bif[i] = 0;
           celula[i].c0 = 1;
           celula[i].ud = 0 ;
@@ -13484,21 +9982,18 @@ void SProd::renovaterm(int aflu) {
             && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=2;
           bif[i] = 0;
           celula[i].c0 = 1;
           celula[i].ud = 0;
-          celula[i].arranjo = 0;        //alteracao4
+          celula[i].arranjo = 0;
           if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - (*vg1dSP).localtiny) && uls < 0 && uls0 < 0 && celula[i].duto.teta > 0) {
             celula[i].term1 = 0.;
             celula[i].term2 = 0.;
-            //celula[i].transic=2;
             bif[i] = 0;
-          }        //alteracao4
+          }
           if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 10 * (*vg1dSP).localtiny) && celula[i].duto.teta < 0) {
             celula[i].term1 = 0.;
             celula[i].term2 = 0.;
-            //celula[i].transic=2;
             bif[i] = 1;
           }
           if (fabs(ugs) <= 1e-15 && celula[i].alf >= celula[i + 1].alf && ugs1 < 0) {
@@ -13509,7 +10004,6 @@ void SProd::renovaterm(int aflu) {
             && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=3;
           bif[i] = 0;
           celula[i].c0 = 1;
           celula[i].ud = 0;
@@ -13517,7 +10011,6 @@ void SProd::renovaterm(int aflu) {
           if (fabs(ugs) <= 1e-15 && celula[i - 1].alfPigD > (1. - (*vg1dSP).localtiny) && uls > 0 && uls1 > 0) {
             celula[i].term1 = 0.;
             celula[i].term2 = 0.;
-            //celula[i].transic=3;
             bif[i] = 0;
           }
           if (fabs(ugs) <= 1e-15 && celula[i].alfL >= celula[i - 1].alfL && ugs0 > 0) {
@@ -13532,7 +10025,6 @@ void SProd::renovaterm(int aflu) {
                 && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=4;
           bif[i] = 0;
           celula[i].c0 = 1;
           celula[i].ud = 0;
@@ -13540,7 +10032,6 @@ void SProd::renovaterm(int aflu) {
           if (fabs(uls) <= 1e-15 && celula[i].alfPigE < (*vg1dSP).localtiny && uls1 < 0) {//ATENCAO!!!!!!!!!!!!!!! não teria de ser bifásico, mono-liq só seo ângulo fosse negativo, não?
             celula[i].term1 = 1.;
             celula[i].term2 = 0.;
-            //celula[i].transic=4;
             bif[i] = 0;
           } else if (fabs(uls1) < (*vg1dSP).localtiny * 1e-5) {
             if (fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].alfPigE < (*vg1dSP).localtiny && celula[i].fontemassGR >= (*vg1dSP).localtiny * 1e-5) {//ATENCAO!!!!!!!!!!!!!!!  sem sentido isto aqui
@@ -13554,24 +10045,21 @@ void SProd::renovaterm(int aflu) {
             if (fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].alfPigE < (*vg1dSP).localtiny && celula[i].duto.teta<0){//ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
                 celula[i].term1 = 0.;
                 celula[i].term2 = 0.;
-                //celula[i].transic=4;
                 bif[i] = 0;
              }
           }
           else if ((fabs(uls) < 1e-15 && (uls1 < 0 || celula[i].duto.teta>0)//ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, estava || mudado para &&
               && ((celula[i].alfPigE <= (1 - 10 * (*vg1dSP).localtiny + .0 * celula[i].alfPigER) &&
                   celula[i].alfPigER < 1 - 1 * (*vg1dSP).localtiny)
-                  || celula[i].alfPigE <= 0.7)) /*&& (ugs<=0 || celula[i].duto.teta>0)*/)
+                  || celula[i].alfPigE <= 0.7)) )
             bif[i] = 1;
 
-          //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
         }
         else if (uls <= 0 && celula[i].alfPigE >= 1. - (*vg1dSP).localtiny
             && ((celula[i].fontemassLL + celula[i].fontemassCL) <= (*vg1dSP).localtiny * 1e-5
                 && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=5;
           bif[i] = 0;
           celula[i].c0 = 1;
           celula[i].ud = 0;
@@ -13579,7 +10067,6 @@ void SProd::renovaterm(int aflu) {
           if (fabs(uls) <= (*vg1dSP).localtiny * 1e-5 && celula[i - 1].alfPigD < (*vg1dSP).localtiny && uls0 > 0) {
             celula[i].term1 = 1.;
             celula[i].term2 = 0.;
-            //celula[i].transic=5;
             bif[i] = 0;
           }
 
@@ -13590,11 +10077,11 @@ void SProd::renovaterm(int aflu) {
               celula[i].term2 = 0.;
               bif[i] = 0;
             }
-          } else if ((i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
+          } else if ((i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
           && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
               || celula[i - 1].alfPigD < 0.7)) && ugs>=0.)
             bif[i] = 1;
-          else if ((i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
+          else if ((i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
           && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
               || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
             bif[i] = 1;
@@ -13612,7 +10099,6 @@ void SProd::renovaterm(int aflu) {
         }
 
 
-        // if(i==ncel && ugs<=0 && celula[i ].alf>localtiny && celula[i].alf<1.-localtiny) bif=1;
 
         if (bif[i] == 1) {
 
@@ -13620,20 +10106,17 @@ void SProd::renovaterm(int aflu) {
           double ud;
           double alfmed;
 
-          //if(aflu==0 || i<ncel){
 
           alfmed = celula[i - 1].alfPigD;
           if (ugs < 0)
             alfmed = celula[i].alfPigE;
-          //if (alfmed < localtiny || alfmed > 1. - localtiny)
-        	  //alfmed = 0.5 * (celula[i].alfPigE + celula[i - 1].alfPigD);
           c0 = 1.2;
           double dmed = celula[i].duto.a;
           if (celula[i].MC >= 0)
             dmed = celula[i].dutoL.a;
-          double sinal = 1.;        //alteracao4
+          double sinal = 1.;
           if (celula[i].duto.teta < 0.)
-            sinal = -1.;        //alteracao4
+            sinal = -1.;
           ud = sinal * 0.32 * sqrt(9.82 * dmed);
           if (fabs(rgR) / rlR > 0.9) {
             c0 = 1.;
@@ -13646,17 +10129,6 @@ void SProd::renovaterm(int aflu) {
           }
           else
           CalcC0Ud(i, c0, ud);
-          /*else if (((alfmed > localtiny) && (alfmed < (1. - localtiny))) || i==1) CalcC0Ud(i, c0, ud);
-           else {
-           c0 = 1.;
-           ud = sinal*0.001;//alteracao4
-           alfmed=0.5*(celula[i - 1].alfPigD+celula[i].alfPigE);//alteracao4
-           }*/
-          //}
-          //else{
-          //	  c0=1.;
-          //  ud=0.;
-          //}
           celula[i].c0 = c0;
           celula[i].ud = ud;
           if(i==ncel){
@@ -13666,33 +10138,26 @@ void SProd::renovaterm(int aflu) {
         	  celula[i].term2 = (-amed * alfmed * rg * ud) / den;
         	  double jlTeste0=(ugs-alfmed*ud)/(alfmed*c0)-ugs;
         	  double jlTeste=(ugs+uls)*(1.-c0*alfmed)-alfmed*ud;
-        	  if(/*ugs<0 &&*/ (jlTeste>0.|| jlTeste0>0.) && celula[i - 1].alfPigD>1-1e-15){
+        	  if( (jlTeste>0.|| jlTeste0>0.) && celula[i - 1].alfPigD>1-1e-15){
         		  celula[i].term1 = 0.;
               celula[i].term2 = 0.;
         	  }
-        	  if(/*ugs>0 &&*/ (jlTeste<0.|| jlTeste0<0.) && celula[i].alfPigE>1-1e-15){
+        	  if( (jlTeste<0.|| jlTeste0<0.) && celula[i].alfPigE>1-1e-15){
         		  celula[i].term1 = 0.;
         		  celula[i].term2 = 0.;
         	  }
         	  if (celula[i - 1].acsr.tipo == 5
-        			  && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {          //alteracao4
+        			  && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {
         		  celula[i].term1 = 0.;
         		  celula[i].term2 = 0.;
         	  }
           }
         }
-        /*if(bif[i]==0 || i==ncel){
-        	celula[i].term1L = celula[i - 1].term1;
-        	celula[i].term2L = celula[i - 1].term2;
-        	celula[i - 1].term1R = celula[i].term1;
-        	celula[i - 1].term2R = celula[i].term2;
-        }*/
       } else {
         celula[i].c0 = 1.;
         celula[i].ud = 0.;
         celula[i].term1 = 0.;
         celula[i].term2 = 0.;
-        //celula[i].transic=-1;
         celula[i].term1L = celula[i - 1].term1;
         celula[i].term2L = celula[i - 1].term2;
         celula[i - 1].term1R = celula[i].term1;
@@ -13708,7 +10173,6 @@ void SProd::renovaterm(int aflu) {
         celula[0].term2 = 0.;
         celula[0].term1L = 0.;
         celula[0].term2L = 0.;
-        //celula[i].transic=-2;
       }
       else {
         if (titE < 1) {
@@ -13731,17 +10195,12 @@ void SProd::renovaterm(int aflu) {
         double rcis = celula[0].fluicol.MasEspFlu(presE, tempE);
 
         double rlmist = betaE * rcis + (1 - betaE) * rl;
-        //double jmix=fabs(celula[0].QL+celula[0].QG)/celula[0].duto.area;
-        //if(jmix>localtiny)
-        //alfE=(-titE*rlmist/(titE*rg-rg-titE*rlmist))/(celula[0].c0-celula[0].ud/jmix);
-        //else
         alfE = (-titE * rlmist / (titE * rg - rg - titE * rlmist)) / (celula[0].c0);
 
         double betI;
         double viscl1;
         double tensup1;
         if (celula[i].QL < 0.) { //testeBeta
-        //if (celula[i].QG*0.99+0.01*celula[i].QL < 0.) {              //duvidabeta
           betI = celula[i].betPigE;
           rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
           viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
@@ -13772,12 +10231,10 @@ void SProd::renovaterm(int aflu) {
         }
         double ugs = celula[i].QG / (amed);
         double uls = celula[i].QL / (amed);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         double dia1 = celula[i].duto.a;
 
         double rmed = hns * rl + (1 - hns) * rg;
         double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-//        double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
         double ang = celula[i].duto.teta;
         double sinal = 1.;
         if (ang < 0.)
@@ -13785,17 +10242,13 @@ void SProd::renovaterm(int aflu) {
         double xc0 = 2.;
         double xud = sinal * 0.0246 * cos(ang)
             + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         double amedR = celula[i].dutoR.area;
         double razdxR = celula[i].dx / (celula[i].dxR + celula[i].dx);
         double pmedR = celula[i].presauxR;
         double tmedR = celula[i].temp * razdxR + celula[i].tempL * (1. - razdxR);
-        //double betIR=celula[i].bet;
-        //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
         double betIR = celula[i].betPigD;
         if (celula[i ].QLR < 0.) //testeBeta
-        //if ((celula[i].MR - celula[i].MliqiniR)*0.99+0.01*celula[i].MliqiniR< 0.)            //duvidabeta
           betIR = celula[i + 1].betPigE;
 
         double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
@@ -13815,7 +10268,6 @@ void SProd::renovaterm(int aflu) {
             && celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=0;
           bif[i] = 0;
           celula[i].c0 = 1 + 0 * xc0;
           celula[i].ud = 0 * xud;
@@ -13826,7 +10278,6 @@ void SProd::renovaterm(int aflu) {
                 && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=1;
           bif[i] = 0;
           celula[i].c0 = 1 + 0 * xc0;
           celula[i].ud = 0 * xud;
@@ -13836,21 +10287,18 @@ void SProd::renovaterm(int aflu) {
             && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=2;
           bif[i] = 0;
           celula[i].c0 = 1 + 0 * xc0;
           celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;            //alteracao4
+          celula[i].arranjo = 0;
           if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - (*vg1dSP).localtiny) && uls < 0 && celula[i].duto.teta > 0) {
             celula[i].term1 = 0.;
             celula[i].term2 = 0.;
-            //celula[i].transic=2;
             bif[i] = 0;
-          }            //alteracao4
+          }
           if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 1 * (*vg1dSP).localtiny) && celula[i].duto.teta < 0 && uls > 0) {
             celula[i].term1 = 0.;
             celula[i].term2 = 0.;
-            //celula[i].transic=2;
             bif[i] = 1;
           }
           if (fabs(ugs) <= 1e-15 && celula[i].alf >= alfE && uls < 0) {
@@ -13861,7 +10309,6 @@ void SProd::renovaterm(int aflu) {
             && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=3;
           bif[i] = 0;
           celula[i].c0 = 1 + 0 * xc0;
           celula[i].ud = 0 * xud;
@@ -13869,7 +10316,6 @@ void SProd::renovaterm(int aflu) {
           if (fabs(ugs) <= 1e-15 && alfE > (1. - (*vg1dSP).localtiny) && uls > 0) {
             celula[i].term1 = 0.;
             celula[i].term2 = 0.;
-            //celula[i].transic=3;
             bif[i] = 0;
           }
           if (fabs(ugs) <= 1e-15 && alfE > (*vg1dSP).localtiny && uls > 0) {
@@ -13881,7 +10327,6 @@ void SProd::renovaterm(int aflu) {
                 && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=4;
           bif[i] = 0;
           celula[i].c0 = 1 + 0 * xc0;
           celula[i].ud = 0 * xud;
@@ -13889,7 +10334,6 @@ void SProd::renovaterm(int aflu) {
           if (fabs(uls) <= 1e-15 && celula[i].alfPigE < (*vg1dSP).localtiny && uls1 < 0) {
             celula[i].term1 = 1.;
             celula[i].term2 = 0.;
-            //celula[i].transic=4;
             bif[i] = 0;
           } else if (fabs(uls1) < (*vg1dSP).localtiny * 1e-5) {
             if (fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].alfPigE < (*vg1dSP).localtiny && celula[i].fontemassGR >= (*vg1dSP).localtiny * 1e-5) {
@@ -13903,14 +10347,12 @@ void SProd::renovaterm(int aflu) {
                   || celula[i].alfPigE <= 0.7))
             bif[i] = 1;
 
-          //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
         }
         else if (uls <= 0 && celula[i].alfPigE >= 1. - (*vg1dSP).localtiny
             && ((celula[i].fontemassLL + celula[i].fontemassCL) <= (*vg1dSP).localtiny * 1e-5
                 && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=5;
           bif[i] = 0;
           celula[i].c0 = 1 + 0 * xc0;
           celula[i].ud = 0 * xud;
@@ -13918,7 +10360,6 @@ void SProd::renovaterm(int aflu) {
           if (fabs(uls) <= (*vg1dSP).localtiny * 1e-5 && alfE < (*vg1dSP).localtiny && uls1 < 0) {
             celula[i].term1 = 1.;
             celula[i].term2 = 0.;
-            //celula[i].transic=5;
             bif[i] = 0;
           }
 
@@ -13960,7 +10401,6 @@ void SProd::renovaterm(int aflu) {
           double ud;
           double alfmed;
 
-          //if(aflu==0 || i<ncel){
 
           alfmed = alfE;
           if (ugs < 0)
@@ -13969,26 +10409,15 @@ void SProd::renovaterm(int aflu) {
           double dmed = celula[i].duto.a;
           if (celula[i].MC >= 0)
             dmed = celula[i].dutoL.a;
-          double sinal = 1.;            //alteracao4
+          double sinal = 1.;
           if (celula[i].duto.teta < 0.)
-            sinal = -1.;            //alteracao4
+            sinal = -1.;
           ud = sinal * 0.32 * sqrt(9.82 * dmed);
           if (fabs(rgR) / rlR > 0.9) {
             c0 = 1.;
             ud = 0.;
           }
           CalcC0UdIni(i, c0, ud);
-          /*else if (((alfmed > localtiny) && (alfmed < (1. - localtiny))) || i==1) CalcC0Ud(i, c0, ud);
-           else {
-           c0 = 1.;
-           ud = sinal*0.001;//alteracao4
-           alfmed=0.5*(celula[i - 1].alfPigD+celula[i].alfPigE);//alteracao4
-           }*/
-          //}
-          //else{
-          //	  c0=1.;
-          //  ud=0.;
-          //}
           celula[i].c0 = c0;
           celula[i].ud = ud;
           double num = (1. - alfmed * c0);
@@ -13997,8 +10426,6 @@ void SProd::renovaterm(int aflu) {
           celula[i].term2 = (-amed * alfmed * rg * ud) / den;
 
         }
-        //celula[i].term1 = (1-titE);
-        //celula[i].term2 = 0.;
         celula[1].term1L = celula[i].term1;
         celula[1].term2L = celula[i].term2;
 
@@ -14010,7 +10437,6 @@ void SProd::renovaterm(int aflu) {
       }
 
     } else if (aflu == 0) {
-      //celula[ncel].alf=celula[ncel-1].alf;
       celula[ncel - 1].alfR = celula[ncel].alf;
       celula[ncel].alfR = celula[ncel].alf;
       celula[ncel - 1].betR = celula[ncel].bet;
@@ -14021,7 +10447,6 @@ void SProd::renovaterm(int aflu) {
       double tmed = celula[i].temp * razdx + celula[i - 1].temp * (1. - razdx);
       double betI = celula[i].betL;
       if (celula[i].QL < 0.) betI = celula[i].bet; //testeBeta
-      //if (celula[i].QG*0.99+ 0.01*celula[i].QL< 0.)
         //betI = celula[i].bet;            //duvidabeta
       double rg = celula[i].flui.MasEspGas(pmed, tmed);
       double rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed)
@@ -14038,12 +10463,10 @@ void SProd::renovaterm(int aflu) {
       double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
       double betIL = celula[i - 1].betL;
       if (celula[i - 1].QL < 0.) betIL = celula[i - 1].bet; //testeBeta
-      //if (celula[i - 1].QG*0.99+0.01*celula[i - 1].QL < 0.)
         //betIL = celula[i - 1].bet;            //duvidabeta
       double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
       double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
           + betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
-//      double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
       double uls0 = (celula[i].MliqiniL) / (rlL * amedL);
 
       double amedR = celula[i].dutoR.area;
@@ -14054,7 +10477,6 @@ void SProd::renovaterm(int aflu) {
       double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
       double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
           + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
-//      double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
       double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
 
       bif[i] = 1;
@@ -14063,7 +10485,6 @@ void SProd::renovaterm(int aflu) {
           && celula[i].fontemassGR <= 0) {
         celula[i].term1 = 1.;
         celula[i].term2 = 0.;
-        //celula[i].transic=0;
         bif[i] = 0;
         celula[i].c0 = 1. - (*vg1dSP).localtiny;
         celula[i].ud = 0.;
@@ -14072,7 +10493,6 @@ void SProd::renovaterm(int aflu) {
           && celula[i].fontemassLR <= 0) {
         celula[i].term1 = 0.;
         celula[i].term2 = 0.;
-        //celula[i].transic=1;
         bif[i] = 0;
         celula[i].c0 = 1. - (*vg1dSP).localtiny;
         celula[i].ud = 0.;
@@ -14081,7 +10501,6 @@ void SProd::renovaterm(int aflu) {
           && (celula[i].fontemassGL <= 0. && celula[i].fontemassGR <= 0.)) {
         celula[i].term1 = 1.;
         celula[i].term2 = 0.;
-        //celula[i].transic=2;
         bif[i] = 0;
         celula[i].c0 = 1. - (*vg1dSP).localtiny;
         celula[i].ud = 0.;
@@ -14089,14 +10508,12 @@ void SProd::renovaterm(int aflu) {
         if (fabs(ugs) <= 1e-15 && celula[i].alf > (1. - (*vg1dSP).localtiny) && uls < 0 && uls0 < 0) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=2;
           bif[i] = 0;
         }
       } else if (ugs < 0 && celula[i].alf <= (*vg1dSP).localtiny
           && (celula[i].fontemassGL <= 0. && celula[i].fontemassGR <= 0.)) {
         celula[i].term1 = 1.;
         celula[i].term2 = 0.;
-        //celula[i].transic=3;
         bif[i] = 0;
         celula[i].c0 = 1. - (*vg1dSP).localtiny;
         celula[i].ud = 0.;
@@ -14104,7 +10521,6 @@ void SProd::renovaterm(int aflu) {
         if (fabs(ugs) <= 1e-15 && celula[i].alfL > (1. - (*vg1dSP).localtiny) && uls > 0 && uls1 > 0) {
           celula[i].term1 = 0.;
           celula[i].term2 = 0.;
-          //celula[i].transic=3;
           bif[i] = 0;
         }
       }
@@ -14113,7 +10529,6 @@ void SProd::renovaterm(int aflu) {
               && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
         celula[i].term1 = 0.;
         celula[i].term2 = 0.;
-        //celula[i].transic=4;
         bif[i] = 0;
         celula[i].c0 = 1;
         celula[i].ud = 0;
@@ -14121,7 +10536,6 @@ void SProd::renovaterm(int aflu) {
         if (fabs(uls) <= 1e-15 && celula[i].alf < (*vg1dSP).localtiny && uls1 < 0) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=4;
           bif[i] = 0;
         } else if (fabs(uls1) < (*vg1dSP).localtiny * 1e-5) {
           if (fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].alf < (*vg1dSP).localtiny && celula[i].fontemassGR >= (*vg1dSP).localtiny * 1e-5) {
@@ -14140,7 +10554,6 @@ void SProd::renovaterm(int aflu) {
               && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
         celula[i].term1 = 0.;
         celula[i].term2 = 0.;
-        //celula[i].transic=5;
         bif[i] = 0;
         celula[i].c0 = 1;
         celula[i].ud = 0;
@@ -14148,7 +10561,6 @@ void SProd::renovaterm(int aflu) {
         if (fabs(uls) <= (*vg1dSP).localtiny * 1e-5 && celula[i - 1].alf < (*vg1dSP).localtiny && uls0 > 0) {
           celula[i].term1 = 1.;
           celula[i].term2 = 0.;
-          //celula[i].transic=5;
           bif[i] = 0;
         }
         if (fabs(uls0) < (*vg1dSP).localtiny * 1e-5) {
@@ -14175,36 +10587,9 @@ void SProd::renovaterm(int aflu) {
             bif[i] = 1;
         }
 
-        /*if (fabs(uls0) < localtiny * 1e-5) {
-          if (fabs(uls) < localtiny * 1e-5 && celula[i - 1].alfPigD < localtiny
-              && celula[i - 1].fontemassGR >= localtiny * 1e-5) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            bif = 0;
-          }
-        } else if ((i > 1 && fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
-        && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-            || celula[i - 1].alfPigD < 0.7)) && ugs>=0.)
-          bif = 1;
-        else if ((i > 1 && fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
-        && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-            || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-          bif = 1;
-        else {
-          if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
-              && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-            bif = 1;
-          else if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
-              && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-            bif = 1;
-          else if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2.
-              && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>0)
-            bif = 1;
-        }*/
 
       }
 
-     // else if (bif == 1) {
       if (bif[i] == 1) {
         double alfmed;
         alfmed = celula[i].alfL;
@@ -14212,20 +10597,14 @@ void SProd::renovaterm(int aflu) {
         double dmed = celula[i].duto.a;
         if (celula[i].MC >= 0)
           dmed = celula[i].dutoL.a;
-        // CalcC0Ud(i, c0, ud);
-        double sinal = 1.;            //alteracao4
+        double sinal = 1.;
         if (celula[i].duto.teta < 0.)
-          sinal = 1.;            //alteracao4
+          sinal = 1.;
         double ud = sinal * 0.32 * sqrt(9.82 * dmed);
         if (fabs(rgR) / rlR > 0.9) {
           c0 = 1.;
           ud = 0.;
         }
-        /* else if (((alfmed > localtiny) && (alfmed < (1. - localtiny)))) CalcC0Ud(i, c0, ud);
-         else {
-         c0 = 1.;
-         ud = sinal*0.001;//alteracao4
-         }*/
         CalcC0Ud(i, c0, ud);
         if(arq.escorregamentoCelulaContorno==0){
         	c0=1.;
@@ -14239,77 +10618,10 @@ void SProd::renovaterm(int aflu) {
         celula[i].term2 = (-amed * alfmed * rg * ud) / den;
 
         //teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //celula[i].term1 = celula[i-1].term1;
-        //celula[i].term2 =celula[i-1].term2 ;
         //teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        /*double jlTeste=(ugs-alfmed*ud)/(alfmed*c0)-ugs;
-         if(jlTeste>0. && celula[i - 1].alfPigD>1-1e-15){
-             celula[i].term1 = 0.;
-             celula[i].term2 = 0.;
-         }
-         if(jlTeste<0. && celula[i].alfPigE>1-1e-15){
-             celula[i].term1 = 0.;
-             celula[i].term2 = 0.;
-         }*/
 
-        //celula[i].transic=-1;
       }
 
-      ///////////////////////////////////////////////////////////////////////////////////////////////////
-		/*double dxmed = 0.5 * (celula[i].dx + celula[i].dxL);
-		double Amed =(celula[i].dx*celula[i].duto.area+celula[i].dxL*celula[i].dutoL.area)/
-				(celula[i].dx + celula[i].dxL);
-		double delpres=(Amed*98066.5/dxmed)*(celula[i].pres-celula[i].presL);
-		double varMasGas=-(celula[i].MC-celula[i].Mliqini)/celula[i].dt;
- 	    double rhogC = celula[i].rgC;
- 	    double rholC = celula[i].rpC*(1-celula[i].bet)+celula[i].rcC*celula[i].bet;
-
- 	    double rhogL = celula[i].rgL;
- 	    double rholL = celula[i].rpL*(1-celula[i].betL)+celula[i].rcL*celula[i].betL;
-
-		double j2=(celula[i].Mliqini/rholC+(celula[i].MC-celula[i].Mliqini)/rhogC)/celula[i].duto.area;
-		double j1=(celula[i].Mliqini/rholL+(celula[i].MC-celula[i].Mliqini)/rhogL)/celula[i].dutoL.area;
-		double rhomix1;
-		double rhomix2;
-		rhomix2=celula[i].alf*rhogC+(1-celula[i].alf)*rholC;
-		rhomix1=celula[i].alfL*rhogL+(1-celula[i].alfL)*rholL;
-		double viscmix1;
-		double viscmix2;
-		viscmix2=celula[i].alf*celula[i].flui.ViscGas(celula[i].pres,celula[i].temp)+
-				(1-celula[i].alf)*((1-celula[i].bet)*celula[i].flui.ViscOleo(celula[i].pres,celula[i].temp)+
-				celula[i].bet*celula[i].fluicol.VisFlu(celula[i].pres,celula[i].temp));
-		viscmix1=celula[i].alfL*celula[i-1].flui.ViscGas(celula[i].presL,celula[i].tempL)+
-				(1-celula[i].alfL)*((1-celula[i].betL)*celula[i-1].flui.ViscOleo(celula[i].presL,celula[i].tempL)+
-						celula[i].betL*celula[i].fluicol.VisFlu(celula[i].presL,celula[i].tempL));
-		double re1;
-		double re2;
-
-		if(celula[i].dutoL.revest==0)re2 = celula[i].Rey(celula[i].duto.a, j1, rhomix1,viscmix1);
-		else{
-			double dhid=4* celula[i].duto.area/celula[i].duto.peri;
-			re2 = celula[i].Rey(dhid, j1, rhomix1,viscmix1);
-		}
-		if(celula[i].dutoL.revest==0)re1 = celula[i].Rey(celula[i].dutoL.a, j2, rhomix2,viscmix2);
-		else{
-			double dhid=4* celula[i].dutoL.area/celula[i].dutoL.peri;
-			re1 = celula[i].Rey(dhid, j2, rhomix2,viscmix2);
-		}
-		double f2 = celula[i].fric(re1, celula[i].duto.rug / celula[i].duto.a);
-		double f1 = celula[i].fric(re2, celula[i].dutoL.rug / celula[i].dutoL.a,-1);
-
-		double razdxe = celula[i].dx / (celula[i].dxL + celula[i].dx);
-		double coefTensC=0.5 * f1*rhomix1*( fabs(j1)) * celula[i].dutoL.peri * razdxe;
-		double dpfric=coefTensC*j1;
-		double coefTensR=0.5 * f2*rhomix2*( fabs(j2)) * celula[i].duto.peri * (1.-razdxe);
-		dpfric+=coefTensR*j2;
-		double dphidro=9.82 * sin(celula[i].dutoL.teta) *celula[i].dutoL.area*rhomix1* razdxe;
-		dphidro+=9.82 * sin(celula[i].duto.teta) *celula[i].duto.area*rhomix2* (1.-razdxe);
-		double vazMasGas=0.;
-		vazMasGas-=(dpfric+dphidro+delpres+varMasGas)*celula[i].dt;
-		if(fabs(celula[i].MC)>1e-15){
-			celula[i].term2=0.;
-			celula[i].term1=(celula[i].MC-vazMasGas)/celula[i].MC;
-		}*/
 
 
 
@@ -14318,7 +10630,10 @@ void SProd::renovaterm(int aflu) {
 
 
 
-      ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 
 
@@ -14347,17 +10662,8 @@ void SProd::renovaterm(int aflu) {
 		  	iViz=i+1;
 		  	iViz2=i;
 		  }
-		  /*if((fabs(celula[i-1].alf-celula[i+1].alf)<fabs(celula[i].alf-celula[i-1].alf)
-		  	||fabs(celula[i-1].alf-celula[i+1].alf)<fabs(celula[i].alf-celula[i+1].alf)) &&
-		    (celula[i-1].acsr.tipo == 0 && celula[i+1].acsr.tipo == 0) &&
-			(bif[i-1] != 0 && bif[i+1] != 0)){
-	            c0V[i] = (celula[i].dx * celula[i+1].c0 + celula[i-1].dx * celula[i-1].c0)
-	                / (celula[i].dx + celula[i-1].dx);
-	            udV[i] = (celula[i].dx * celula[i+1].ud + celula[i-1].dx * celula[i-1].ud)
-	                / (celula[i].dx + celula[i-1].dx);
-		  }
-		  else*/ if ((celula[iViz].acsr.tipo == 0 && (celula[iViz2].acsr.tipo != 5 || celula[iViz2].acsr.chk.AreaGarg > (1e-3)))&&
-		      (celula[i].arranjo != celula[iViz].arranjo && /*celula[iViz].arranjo*/ bif[iViz] != 0)) {
+ if ((celula[iViz].acsr.tipo == 0 && (celula[iViz2].acsr.tipo != 5 || celula[iViz2].acsr.chk.AreaGarg > (1e-3)))&&
+		      (celula[i].arranjo != celula[iViz].arranjo &&  bif[iViz] != 0)) {
 	            c0V[i] = (celula[i].dx * celula[i].c0 + celula[iViz].dx * celula[iViz].c0)
 	                / (celula[i].dx + celula[iViz].dx);
 	            if(celula[i].duto.teta*celula[iViz].duto.teta>=0)
@@ -14375,8 +10681,8 @@ void SProd::renovaterm(int aflu) {
 	            	angL = celula[i - 1].duto.teta;
 	            	dia = celula[i].duto.dia;
 	            	diaL = celula[i - 1].duto.dia;
-		            if (((ang != angL) && /*celula[iViz].arranjo*/ bif[iViz] != 0) ||
-		            		(celula[i].arranjo != celula[iViz].arranjo && /*celula[iViz].arranjo*/ bif[iViz]!= 0)) {
+		            if (((ang != angL) &&  bif[iViz] != 0) ||
+		            		(celula[i].arranjo != celula[iViz].arranjo &&  bif[iViz]!= 0)) {
 		              c0V[i] = (celula[i].dx * celula[i].c0 + celula[i - 1].dx * celula[i - 1].c0)
 		                  / (celula[i].dx + celula[i - 1].dx);
 		              if(ang*angL>=0)
@@ -14390,8 +10696,8 @@ void SProd::renovaterm(int aflu) {
 	            	angL = celula[i + 1].duto.teta;
 	            	dia = celula[i].duto.dia;
 	            	diaL = celula[i + 1].duto.dia;
-		            if (((ang != angL) && /*celula[iViz].arranjo*/ bif[iViz] != 0) ||
-		            		(celula[i].arranjo != celula[iViz].arranjo && /*celula[iViz].arranjo*/ bif[iViz] != 0)) {
+		            if (((ang != angL) &&  bif[iViz] != 0) ||
+		            		(celula[i].arranjo != celula[iViz].arranjo &&  bif[iViz] != 0)) {
 		              c0V[i] = (celula[i].dx * celula[i].c0 + celula[i + 1].dx * celula[i + 1].c0)
 		                  / (celula[i].dx + celula[i + 1].dx);
 		              if(ang*angL>=0)
@@ -14452,7 +10758,7 @@ void SProd::renovaterm(int aflu) {
 			  celula[i].term2 = 0.;
 		  }
 		  if (celula[i - 1].acsr.tipo == 5
-				  && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {          //alteracao4
+				  && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {
 			  celula[i].term1 = 0.;
 			  celula[i].term2 = 0.;
 		  }
@@ -14462,20 +10768,11 @@ void SProd::renovaterm(int aflu) {
 			((1.-celula[i].alfL)/**fabs(sin(celula[i-1].duto.teta))*/<(1.-celula[i].alf)/**fabs(sin(celula[i].duto.teta))*/)){
 			  celula[i].term2 = 0.;
 		  }
-		  /*if((jlTeste>0.|| jlTeste0>0.) && celula[i - 1].alfPigD>celula[i].alfPigE && MLTeste<0 && (celula[i].duto.teta>0 && celula[i-1].duto.teta<=0)
-				  && celula[i - 1].alfPigD>1-1e-15 && parada==1 ){
-			  celula[i].term1 = num / den;
-			  celula[i].term2 = (-amed * alfmed * rg * celula[i].ud) / den;
-		  }*/
-		  if(celula[i].duto.teta>0 && MGTeste<0 /*&& MLTeste>0*/ && ((parada==1 && arq.modoSegrega==1) /*&&
-				  (fabs(ugs)+fabs(uls))<5*/) && celula[i].alfPigE>1-1e-15){
+		  if(celula[i].duto.teta>0 && MGTeste<0  && ((parada==1 && arq.modoSegrega==1)
+) && celula[i].alfPigE>1-1e-15){
 			  celula[i].term1 = 0.;
 			  celula[i].term2 = 0.;
 		  }
-		 /* if((jlTeste>0.|| jlTeste0>0.) && (celula[i].duto.teta>0 && celula[i-1].duto.teta<=0) && (MLTeste>0 && celula[i].term2>0)&&
-			(celula[i].alfL>celula[i].alf)  ){
-			  celula[i].term2 = 0.;
-		  }*/
 	  }
   }
   for(int i=1;i<=ncel;i++){
@@ -14485,17 +10782,6 @@ void SProd::renovaterm(int aflu) {
       celula[i - 1].term2R = celula[i].term2;
   }
 
-  //celula[0].alfini=celula[0].alf;
-  //celula[1].alfLini=celula[0].alfini;
-  //for (int i = 0; i <= ncel; i++){
-  //celula[i].alfini=celula[i].alf;
-  //if(i>0)celula[i-1].alfRini=celula[i].alfini;
-  //if(i<ncel)celula[i+1].alfLini=celula[i].alfini;
-  //}
-  //celula[ncel-1].alfR=celula[ncel].alf;
-  //celula[ncel].alfini=celula[ncel].alf;
-  //celula[ncel-1].alfRini=celula[ncel].alfini;
-  //celula[ncel].alfRini=celula[ncel].alfR;
 }
 
 void SProd::renovatermAfluFim() {
@@ -14503,20 +10789,16 @@ void SProd::renovatermAfluFim() {
   int i = ncel;
 
   double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
-  //double pmed = razdx * celula[i].presBuf + (1 - razdx) * celula[i].presLBuf;
   double pmed = celula[i].presBuf;
   double tmed = tGSup;
   tmed = celula[i - 1].temp;
   if (celula[i].VTemper < 0.)
     tmed = tGSup;
-  //double betI=celula[i].betL;
-  //if(celula[i].QL<0.)betI=celula[i].bet;
   double betI = celula[i - 1].betPigD;
   double rl;
   double viscl1;
   double tensup1;
   if (celula[i].MliqiniBuf < 0.) { //testeBeta
-  //if (celula[i].MCBuf - celula[i].MliqiniBuf < 0.) {
     betI = celula[i].betPigE;
     rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
     viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
@@ -14547,7 +10829,6 @@ void SProd::renovatermAfluFim() {
   }
   double ugs = (celula[i].MCBuf - celula[i].MliqiniBuf) / (rg * amed);
   double uls = (celula[i].MliqiniBuf) / (rl * amed);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   double dia1 = celula[i].duto.a;
   if (ugs >= 0)
     dia1 = celula[i - 1].duto.a;
@@ -14575,21 +10856,17 @@ void SProd::renovatermAfluFim() {
   double xc0 = 2.;
   double xud = sinal * 0.0246 * cos(ang)
       + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   double amedL = celula[i].dutoL.area;
   double razdxL = celula[i - 1].dxL / (celula[i - 1].dx + celula[i - 1].dxL);
   double pmedL = celula[i - 1].presaux;
   double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
-  //double betIL=celula[i-1].betL;
-  //if(celula[i-1].QL<0.)betIL=celula[i-1].bet;
   double betIL=0.;
   if (i < 2)
     betIL = celula[i - 1].betL;
   else
     betIL = celula[i - 2].betPigD;
   if (celula[i-1].MliqiniBuf < 0.) betIL = celula[i - 1].betPigE; //testeBeta
-  //if ((celula[i - 1].MCBuf - celula[i - 1].MliqiniBuf)*0.99+0.01*celula[i - 1].MliqiniBuf < 0.)
     //betIL = celula[i - 1].betPigE;    //duvidabeta
   double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
   double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
@@ -14601,11 +10878,8 @@ void SProd::renovatermAfluFim() {
   double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
   double pmedR = celula[i].presRBuf;
   double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-  //double betIR=celula[i].bet;
-  //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
   double betIR = celula[i].betPigD;
   if (celula[i].MliqiniRBuf < 0.) { //testeBeta
-  //if ((celula[i].MRBuf - celula[i].MliqiniRBuf)*0.99+0.01*celula[i].MliqiniRBuf < 0.) {    //duvidabeta
     if (i > ncel - 2)
       betIR = celula[i].betR;
     else
@@ -14628,7 +10902,6 @@ void SProd::renovatermAfluFim() {
       && celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5) {
     celula[i].term1 = 1.;
     celula[i].term2 = 0.;
-    //celula[i].transic=0;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14639,7 +10912,6 @@ void SProd::renovatermAfluFim() {
           && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 0.;
     celula[i].term2 = 0.;
-    //celula[i].transic=1;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14658,21 +10930,18 @@ void SProd::renovatermAfluFim() {
       && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 1.;
     celula[i].term2 = 0.;
-    //celula[i].transic=2;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;    //alteracao4
+    celula[i].arranjo = 0;
     if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. -(*vg1dSP).localtiny) && uls < 0 && uls0 < 0 && celula[i].duto.teta > 0) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
-      //celula[i].transic=2;
       bif = 0;
-    }    //alteracao4
+    }
     if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 10 * (*vg1dSP).localtiny) && celula[i].duto.teta < 0) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
-      //celula[i].transic=2;
       bif = 1;
     }
     if (fabs(ugs) <= 1e-15 && celula[i].alf >= celula[i + 1].alf && ugs1 < 0) {
@@ -14683,7 +10952,6 @@ void SProd::renovatermAfluFim() {
       && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 1.;
     celula[i].term2 = 0.;
-    //celula[i].transic=3;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14691,7 +10959,6 @@ void SProd::renovatermAfluFim() {
     if (fabs(ugs) <= 1e-15 && celula[i - 1].alfPigD > (1. - (*vg1dSP).localtiny) && uls > 0 && uls1 > 0) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
-      //celula[i].transic=3;
       bif = 0;
     }
     if (fabs(ugs) <= 1e-15 && celula[i].alfL >= celula[i - 1].alfL && ugs0 > 0) {
@@ -14703,7 +10970,6 @@ void SProd::renovatermAfluFim() {
           && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 0.;
     celula[i].term2 = 0.;
-    //celula[i].transic=4;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14711,7 +10977,6 @@ void SProd::renovatermAfluFim() {
     if (fabs(uls) <= 1e-15 && celula[i].alfPigE < (*vg1dSP).localtiny && uls1 < 0) {
       celula[i].term1 = 1.;
       celula[i].term2 = 0.;
-      //celula[i].transic=4;
       bif = 0;
     } else if (fabs(uls1) < (*vg1dSP).localtiny * 1e-5) {
       if (fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].alfPigE < (*vg1dSP).localtiny && celula[i].fontemassGR >= (*vg1dSP).localtiny * 1e-5) {
@@ -14725,14 +10990,12 @@ void SProd::renovatermAfluFim() {
             || celula[i].alfPigE <= 0.7))
       bif = 1;
 
-    //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
   }
   else if (uls <= 0 && celula[i].alfPigE >= 1. - (*vg1dSP).localtiny
       && ((celula[i].fontemassLL + celula[i].fontemassCL) <= (*vg1dSP).localtiny * 1e-5
           && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 0.;
     celula[i].term2 = 0.;
-    //celula[i].transic=5;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14740,7 +11003,6 @@ void SProd::renovatermAfluFim() {
     if (fabs(uls) <= (*vg1dSP).localtiny * 1e-5 && celula[i - 1].alfPigD < (*vg1dSP).localtiny && uls0 > 0) {
       celula[i].term1 = 1.;
       celula[i].term2 = 0.;
-      //celula[i].transic=5;
       bif = 0;
     }
 
@@ -14751,11 +11013,11 @@ void SProd::renovatermAfluFim() {
         celula[i].term2 = 0.;
         bif = 0;
       }
-    } else if (i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0    //alteracao4
+    } else if (i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
     && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
         || celula[i - 1].alfPigD < 0.7))
       bif = 1;
-    else if (i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0    //alteracao4
+    else if (i > 1 && fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
     && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
         || celula[i - 1].alfPigD < 0.7))
       bif = 1;
@@ -14779,7 +11041,6 @@ void SProd::renovatermAfluFim() {
     double ud;
     double alfmed;
 
-    //if(aflu==0 || i<ncel){
 
     alfmed = celula[i - 1].alfPigD;
     if (ugs < 0)
@@ -14788,9 +11049,9 @@ void SProd::renovatermAfluFim() {
     double dmed = celula[i].duto.a;
     if (celula[i].MC >= 0)
       dmed = celula[i].dutoL.a;
-    double sinal = 1.;    //alteracao4
+    double sinal = 1.;
     if (celula[i].duto.teta < 0.)
-      sinal = -1.;    //alteracao4
+      sinal = -1.;
     ud = sinal * 0.32 * sqrt(9.82 * dmed);
     if (fabs(rgR) / rlR > 0.9) {
       c0 = 1.;
@@ -14801,14 +11062,12 @@ void SProd::renovatermAfluFim() {
     	c0=1.;
     	ud=0.;
     }
-    //celula[i].c0 = c0;
-    //celula[i].ud = ud;
     double num = (1. - alfmed * c0);
     double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
     celula[i].term1 = num / den;
     celula[i].term2 = (-amed * alfmed * rg * ud) / den;
     if (celula[i - 1].acsr.tipo == 5
-        && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {      //alteracao4
+        && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
     }
@@ -14842,7 +11101,6 @@ void SProd::renovatermColIni() {
   double betI;
   double viscl1;
   double tensup1;
-  //if (celula[i].QL < 0.) { //testeBeta
   double rg = celula[0].flui.MasEspGas(presE, tempE);
   double rl = celula[0].flui.MasEspLiq(presE, tempE);
   double rcis = celula[0].fluicol.MasEspFlu(presE, tempE);
@@ -14880,14 +11138,12 @@ void SProd::renovatermColIni() {
   }
   double ugs = (celula[i].MCBuf - celula[i].MliqiniBuf) / (rg * amed);
   double uls = celula[i].MliqiniBuf / (rl * amed);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   double dia1 = celula[i].duto.a;
   if (ugs >= 0)
     dia1 = celula[i].duto.a;
 
   double rmed = hns * rl + (1 - hns) * rg;
   double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-//  double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
   double ang = celula[i].duto.teta;
   double sinal = 1.;
   if (ang < 0.)
@@ -14895,17 +11151,13 @@ void SProd::renovatermColIni() {
   double xc0 = 2.;
   double xud = sinal * 0.0246 * cos(ang)
       + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   double amedR = celula[i].dutoR.area;
   double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
   double pmedR = celula[i].presRBuf * razdxR + celula[i].presBuf * (1. - razdxR);
   double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-  //double betIR=celula[i].bet;
-  //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
   double betIR = celula[i].betPigD;
   if (celula[i ].QLR < 0.) //testeBeta
-  //if ((celula[i].MR - celula[i].MliqiniR)*0.99+0.01*celula[i].Mliqini < 0.)    //duvidabeta
     betIR = celula[i + 1].betPigE;
 
   double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
@@ -14925,7 +11177,6 @@ void SProd::renovatermColIni() {
       && celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5) {
     celula[i].term1 = 1.;
     celula[i].term2 = 0.;
-    //celula[i].transic=0;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14936,7 +11187,6 @@ void SProd::renovatermColIni() {
           && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 0.;
     celula[i].term2 = 0.;
-    //celula[i].transic=1;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14946,21 +11196,18 @@ void SProd::renovatermColIni() {
       && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 1.;
     celula[i].term2 = 0.;
-    //celula[i].transic=2;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;    //alteracao4
+    celula[i].arranjo = 0;
     if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - (*vg1dSP).localtiny) && uls < 0 && celula[i].duto.teta > 0) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
-      //celula[i].transic=2;
       bif = 0;
-    }    //alteracao4
+    }
     if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 1 * (*vg1dSP).localtiny) && celula[i].duto.teta < 0 && uls > 0) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
-      //celula[i].transic=2;
       bif = 1;
     }
     if (fabs(ugs) <= 1e-15 && celula[i].alf >= alfE && uls < 0) {
@@ -14971,7 +11218,6 @@ void SProd::renovatermColIni() {
       && (celula[i].fontemassGL <= (*vg1dSP).localtiny * 1e-5 && celula[i].fontemassGR <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 1.;
     celula[i].term2 = 0.;
-    //celula[i].transic=3;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14979,7 +11225,6 @@ void SProd::renovatermColIni() {
     if (fabs(ugs) <= 1e-15 && alfE > (1. - (*vg1dSP).localtiny) && uls > 0) {
       celula[i].term1 = 0.;
       celula[i].term2 = 0.;
-      //celula[i].transic=3;
       bif = 0;
     }
     if (fabs(ugs) <= 1e-15 && alfE > (*vg1dSP).localtiny && uls > 0) {
@@ -14991,7 +11236,6 @@ void SProd::renovatermColIni() {
           && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 0.;
     celula[i].term2 = 0.;
-    //celula[i].transic=4;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -14999,7 +11243,6 @@ void SProd::renovatermColIni() {
     if (fabs(uls) <= 1e-15 && celula[i].alfPigE < (*vg1dSP).localtiny && uls1 < 0) {
       celula[i].term1 = 1.;
       celula[i].term2 = 0.;
-      //celula[i].transic=4;
       bif = 0;
     } else if (fabs(uls1) < (*vg1dSP).localtiny * 1e-5) {
       if (fabs(uls) < (*vg1dSP).localtiny * 1e-5 && celula[i].alfPigE < (*vg1dSP).localtiny && celula[i].fontemassGR >= (*vg1dSP).localtiny * 1e-5) {
@@ -15013,14 +11256,12 @@ void SProd::renovatermColIni() {
             || celula[i].alfPigE <= 0.7))
       bif = 1;
 
-    //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
   }
   else if (uls <= 0 && celula[i].alfPigE >= 1. - (*vg1dSP).localtiny
       && ((celula[i].fontemassLL + celula[i].fontemassCL) <= (*vg1dSP).localtiny * 1e-5
           && (celula[i].fontemassLR + celula[i].fontemassCR) <= (*vg1dSP).localtiny * 1e-5)) {
     celula[i].term1 = 0.;
     celula[i].term2 = 0.;
-    //celula[i].transic=5;
     bif = 0;
     celula[i].c0 = 1 + 0 * xc0;
     celula[i].ud = 0 * xud;
@@ -15028,7 +11269,6 @@ void SProd::renovatermColIni() {
     if (fabs(uls) <= (*vg1dSP).localtiny * 1e-5 && alfE < (*vg1dSP).localtiny && uls1 < 0) {
       celula[i].term1 = 1.;
       celula[i].term2 = 0.;
-      //celula[i].transic=5;
       bif = 0;
     }
 
@@ -15060,7 +11300,6 @@ void SProd::renovatermColIni() {
     double ud;
     double alfmed;
 
-    //if(aflu==0 || i<ncel){
 
     alfmed = alfE;
     if (ugs < 0)
@@ -15069,1821 +11308,198 @@ void SProd::renovatermColIni() {
     double dmed = celula[i].duto.a;
     if (celula[i].MC >= 0)
       dmed = celula[i].dutoL.a;
-    double sinal = 1.;    //alteracao4
+    double sinal = 1.;
     if (celula[i].duto.teta < 0.)
-      sinal = -1.;    //alteracao4
-    ud = sinal * 0.32 * sqrt(9.82 * dmed);
-    if (fabs(rgR) / rlR > 0.9) {
-      c0 = 1.;
-      ud = 0.;
-    }
-    CalcC0UdIniBuf(i, c0, ud);
-
-    //celula[i].c0 = c0;
-    //celula[i].ud = ud;
-    double num = (1. - alfmed * c0);
-    double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
-    celula[i].term1 = num / den;
-    celula[i].term2 = (-amed * alfmed * rg * ud) / den;
-
-  }
-  celula[1].term1L = celula[i].term1;
-  celula[1].term2L = celula[i].term2;
-
-}
-
-
-/*void SProd::renovaterm(int aflu) {
-  for (int i = 0; i <= ncel; i++) {
-    //celula[i].presini = celula[i].pres;
-	celula[i].c0ini=celula[i].c0;
-	celula[i].udini=celula[i].ud;
-    int imax = ncel;
-    if (aflu == 1)
-      imax = ncel + 1;
-    if (i == ncel && aflu == 1 && (*vg1dSP).lixo5 >= 1560) {
-      int para;
-      para = 0;
-    }
-    if (i != 0 && i != imax) {
-
-      if (i < ncel) {
-        celula[i - 1].alfR = celula[i + 1].alfL = celula[i].alf;
-        celula[i - 1].betR = celula[i + 1].betL = celula[i].bet;
-      }
-      else {
-        celula[i - 1].alfR = celula[i].alf;
-        celula[i - 1].betR = celula[i].bet;
-      }
-      int master = 1;
-      if (celula[i - 1].acsr.tipo == 5 || celula[i - 1].acsr.tipo == 8) {
-        //alteracao4
-        if ((*celula[i].acsrL).tipo == 5 && (*celula[i].acsrL).chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area)
-          master =
-              0;    //alteracao4
-        if ((*celula[i].acsrL).tipo == 8 && fabs((*celula[i].acsrL).bvol.freq) > 1)
-          master = 0;
-      }
-      if (master == 1) {
-        double razdx = celula[i].dxL / (celula[i].dx + celula[i].dxL);
-        double pmed;
-        if (i < ncel)
-          pmed = celula[i].presaux;
-        else
-          pmed = celula[i].pres;
-        double tmed;
-        if (i < ncel)
-          tmed = celula[i].temp * razdx + celula[i - 1].temp * (1. - razdx);
-        else
-          tmed = tGSup;
-        //tmed = celula[i - 1].temp;
-        if (celula[i].VTemper < 0.) {
-          if (i < ncel)
-            tmed = celula[i].temp;
-          else
-            tmed = tGSup;
-        }
-        //double betI=celula[i].betL;
-        //if(celula[i].QL<0.)betI=celula[i].bet;
-        double betI = celula[i - 1].betPigD;
-        double rl;
-        //double viscl1;
-        //double tensup1;
-        if (celula[i].QL < 0.) { //testeBeta
-        //if (celula[i].QG*0.99+0.01*celula[i].QL < 0.) {        //duvidabeta
-          betI = celula[i].betPigE;
-          //rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-          rl = (1 - betI) * celula[i].rpCi + betI * celula[i].rcCi;
-          //viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-          //tensup1 = (1 - betI) * celula[i].flui.TensSuper(pmed, tmed) + betI * celula[i].fluicol.TensSuper(pmed, tmed);
-        } else {
-          betI = celula[i - 1].betPigD;
-          //rl = (1 - betI) * celula[i - 1].flui.MasEspLiq(pmed, tmed)+ betI * celula[i - 1].fluicol.MasEspFlu(pmed, tmed);
-          rl = (1 - betI) * celula[i - 1].rpCi+ betI * celula[i - 1].rcCi;
-          //viscl1 = (1 - betI) * celula[i - 1].flui.ViscOleo(pmed, tmed)
-              //+ betI * celula[i - 1].fluicol.VisFlu(pmed, tmed);
-          //tensup1 = (1 - betI) * celula[i - 1].flui.TensSuper(pmed, tmed)
-              //+ betI * celula[i - 1].fluicol.TensSuper(pmed, tmed);
-        }
-        double rg;
-        //double viscg1;
-        double amed;
-        double hns;
-        if (celula[i].QG >= 0) {
-          amed = celula[i].dutoL.area;
-          hns = 1. - celula[i].alfL;
-          //rg = celula[i - 1].flui.MasEspGas(pmed, tmed);
-          rg = celula[i - 1].rgCi;
-          //viscg1 = celula[i - 1].flui.ViscGas(pmed, tmed);
-        } else {
-          //rg = celula[i].flui.MasEspGas(pmed, tmed);
-          rg = celula[i].rgCi;
-          //viscg1 = celula[i].flui.ViscGas(pmed, tmed);
-          amed = celula[i].duto.area;
-          hns = 1. - celula[i].alf;
-        }
-        double ugs = celula[i].QG / (amed);
-        double uls = celula[i].QL / (amed);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        double dia1 = celula[i].duto.a;
-        if (ugs >= 0)
-          dia1 = celula[i - 1].duto.a;
-
-        double rmed = hns * rl + (1 - hns) * rg;
-        //double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        //double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
-        double ang = celula[i].duto.teta;
-        if (i >= 2) {
-          if (celula[i - 2].acsr.tipo == 5 && celula[i - 2].acsr.chk.AreaGarg <= (1e-3)) {
-            if (celula[i].QG >= 0)
-              ang = celula[i].duto.teta;
-            else
-              ang = celula[i].dutoR.teta;
-          } else {
-            if (celula[i].QG >= 0)
-              ang = celula[i].dutoL.teta;
-            else
-              ang = celula[i].duto.teta;
-          }
-        }
-        double sinal = 1.;
-        if (ang < 0.)
-          sinal = -1.;
-        //double xc0 = 2.;
-        //double xud = sinal * 0.0246 * cos(ang)
-            //+ 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        double amedL = celula[i].dutoL.area;
-        double razdxL = celula[i - 1].dxL / (celula[i - 1].dx + celula[i - 1].dxL);
-        double pmedL = celula[i - 1].presaux;
-        double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
-        //double betIL=celula[i-1].betL;
-        //if(celula[i-1].QL<0.)betIL=celula[i-1].bet;
-        double betIL=0.;
-        if (i < 2)
-          betIL = celula[i - 1].betL;
-        else
-          betIL = celula[i - 2].betPigD;
-        if (celula[i - 1].QL < 0.) betIL = celula[i - 1].betPigE; //testeBeta
-        //if (celula[i - 1].QG*0.99+0.01*celula[i - 1].QL < 0.)
-          //betIL = celula[i - 1].betPigE;        //duvidabeta
-        //double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
-        double rgL = celula[i].rgLi;
-        //double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
-            //+ betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
-        double rlL = (1 - betIL) * celula[i].rpLi+ betIL * celula[i].rcLi;
-        double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
-        double uls0 = (celula[i].MliqiniL) / (rlL * amedL);
-
-        double amedR = celula[i].dutoR.area;
-        double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
-        double pmedR = celula[i].presauxR;
-        double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-        //double betIR=celula[i].bet;
-        //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
-        double betIR = celula[i].betPigD;
-        if (celula[i ].QLR < 0.) { //testeBeta
-        //if ((celula[i].MR - celula[i].MliqiniR)*0.99+0.01*celula[i].MliqiniR < 0.) {        //duvidabeta
-          if (i > ncel - 2)
-            betIR = celula[i].betR;
-          else
-            betIR = celula[i + 1].betPigE;
-        }
-        //double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
-        double rgR = celula[i].rgRi;
-        //double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
-            //+ betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
-        double rlR = (1 - betIR) * celula[i].rpRi+ betIR * celula[i].rcRi;
-        double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
-        double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
-
-        int bif = 1;
-
-        if ((*vg1dSP).lixo5 > 29900) {
-          int para;
-          para = 0;
-        }
-        if (celula[i - 1].alfPigD <= localtiny && celula[i].alfPigE <= localtiny
-            && celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5 &&
-			(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0) &&
-			(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=0;
-          bif = 0;
-          celula[i].c0 = 1;
-          celula[i].ud = 0;
-          celula[i].arranjo = 0;
-        }
-        else if (celula[i - 1].alfPigD >= (1. - localtiny) && celula[i].alfPigE >= (1. - localtiny)
-            && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-                && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5) &&
-				(celula[i].FonteMudaFase>-1e-15 || modeloCompleto==0) &&
-				(celula[i-1].FonteMudaFase>-1e-15 || modeloCompleto==0)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=1;
-          bif = 0;
-          celula[i].c0 = 1;
-          celula[i].ud = 0 ;
-          celula[i].arranjo = 0;
-        }
-        else if (celula[i - 1].acsr.tipo == 5 && celula[i - 1].acsr.chk.AreaGarg <= (1e-3)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          bif = 0;
-          celula[i].c0 = 1;
-          celula[i].ud = 0;
-          celula[i].arranjo = 0;
-        }
-
-        else if (ugs >= 0 && celula[i - 1].alfPigD <= localtiny
-            && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) &&
-			(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0) &&
-			(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-        		celula[i].term1 = 1.;
-        		celula[i].term2 = 0.;
-        		//celula[i].transic=2;
-        		bif = 0;
-        		celula[i].c0 = 1;
-        		celula[i].ud = 0;
-        		celula[i].arranjo = 0;        //alteracao4
-        	if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - localtiny) && (uls < 0 ||
-        			(fabs(uls) <= 1e-15 && uls0 < 0) ||
-        			(fabs(uls) <= 1e-15 && fabs(uls0) <= 1e-15 && celula[i].duto.teta > 0))) {
-        		celula[i].term1 = 0.;
-        		celula[i].term2 = 0.;
-        		//celula[i].transic=2;
-        		bif = 0;
-        	}        //alteracao4
-        	else if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 10 * localtiny) && celula[i].duto.teta < 0) {
-        		celula[i].term1 = 0.;
-        		celula[i].term2 = 0.;
-        		//celula[i].transic=2;
-        		bif = 1;
-        	}
-        	else if (fabs(ugs) <= 1e-15 && celula[i].alf >= celula[i + 1].alf && ugs1 < 0) {
-        		bif = 1;
-        	}
-        }
-        else if (ugs <= 0 && celula[i].alfPigE <= localtiny
-            && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) &&
-			(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0) &&
-			(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-        		celula[i].term1 = 1.;
-        		celula[i].term2 = 0.;
-        		//celula[i].transic=3;
-        		bif = 0;
-        		celula[i].c0 = 1;
-        		celula[i].ud = 0;
-        		celula[i].arranjo = 0;
-        	if (fabs(ugs) <= 1e-15 && celula[i - 1].alfPigD > (1. - localtiny) && (uls > 0 ||
-        			(fabs(uls) <= 1e-15 && uls1 > 0) ||
-					(fabs(uls) <= 1e-15 && fabs(uls1) <= 1e-15 && celula[i].duto.teta < 0))) {
-        		celula[i].term1 = 0.;
-        		celula[i].term2 = 0.;
-        		//celula[i].transic=3;
-        		bif = 0;
-        	}
-        	else if (fabs(ugs) <= 1e-15 && celula[i-1].alfPigD > (1. - 10 * localtiny) &&
-        			celula[i].duto.teta > 0) {
-        		celula[i].term1 = 0.;
-        		celula[i].term2 = 0.;
-        		//celula[i].transic=2;
-        		bif = 1;
-        	}
-        	else if (fabs(ugs) <= 1e-15 && celula[i].alfL >= celula[i - 1].alfL && ugs0 > 0) {
-        		bif = 1;
-        	}
-        }
-        else if (uls >= 0 && celula[i - 1].alfPigD >= 1. - 1 * localtiny
-            && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-                && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=4;
-          bif = 0;
-          celula[i].c0 = 1;
-          celula[i].ud = 0;
-          celula[i].arranjo = 0;
-          if (fabs(uls) <= 1e-15 && celula[i].alfPigE < localtiny && uls1 < 0
-        		  && (celula[i].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=4;
-            bif = 0;
-          }
-          else if ((fabs(uls) < 1e-15 && (uls1 < 0|| celula[i].duto.teta>0)
-              && ((celula[i].alfPigE <= (1 - 10 * localtiny + .0 * celula[i].alfPigER) &&
-                  celula[i].alfPigER < 1 - 1 * localtiny)
-                  || celula[i].alfPigE <= 0.7)))
-            bif = 1;
-
-          //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
-        }
-        else if (uls <= 0 && celula[i].alfPigE >= 1. - localtiny
-            && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-                && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=5;
-          bif = 0;
-          celula[i].c0 = 1;
-          celula[i].ud = 0;
-          celula[i].arranjo = 0;
-          if (fabs(uls) <= localtiny * 1e-5 && celula[i - 1].alfPigD < localtiny && uls0 > 0 &&
-					(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=5;
-            bif = 0;
-          }
-
-          else if ((i > 1 && fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
-          && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-              || celula[i - 1].alfPigD < 0.7)) && ugs>=0.){
-            bif = 1;
-            if(celula[i - 1].alfPigD <=localtiny && celula[i].duto.teta >0.
-            		&& celula[i - 1].fontemassGR <= localtiny * 1e-5 &&
-    				(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)){
-                celula[i].term1 = 1.;
-                celula[i].term2 = 0.;
-                bif = 0;
-            }
-          }
-          else if ((i > 1 && fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
-          && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-              || celula[i - 1].alfPigD < 0.7)) && ugs>=0){
-            bif = 1;
-            if(celula[i - 1].alfPigD <=localtiny && celula[i].duto.teta >0.
-            		&& celula[i - 1].fontemassGR <= localtiny * 1e-5 &&
-    				(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)){
-                celula[i].term1 = 1.;
-                celula[i].term2 = 0.;
-                bif = 0;
-            }
-          }
-          else {
-            if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
-                && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-              bif = 1;
-            else if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
-                && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-              bif = 1;
-            else if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2.
-                && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>0)
-              bif = 1;
-          }
-        }
-
-
-        // if(i==ncel && ugs<=0 && celula[i ].alf>localtiny && celula[i].alf<1.-localtiny) bif=1;
-
-        if (bif == 1) {
-
-          double c0;
-          double ud;
-          double alfmed;
-
-          //if(aflu==0 || i<ncel){
-
-          alfmed = celula[i - 1].alfPigD;
-          if (ugs < 0)
-            alfmed = celula[i].alfPigE;
-          //if (alfmed < localtiny || alfmed > 1. - localtiny)
-        	  //alfmed = 0.5 * (celula[i].alfPigE + celula[i - 1].alfPigD);
-          c0 = 1.2;
-          double dmed = celula[i].duto.a;
-          if (celula[i].MC >= 0)
-            dmed = celula[i].dutoL.a;
-          double sinal = 1.;        //alteracao4
-          if (celula[i].duto.teta < 0.)
-            sinal = -1.;        //alteracao4
-          ud = sinal * 0.32 * sqrt(9.82 * dmed);
-          if (fabs(rgR) / rlR > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-          }
-          CalcC0Ud(i, c0, ud);
-
-          //}
-          //else{
-          //	  c0=1.;
-          //  ud=0.;
-          //}
-          celula[i].c0 = c0;
-          celula[i].ud = ud;
-          if(arq.escorregamentoCelulaContorno==0 && i==ncel){
-          	c0=1.;
-          	ud=0.;
-          }
-          double num = (1. - alfmed * c0);
-          double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
-          celula[i].term1 = num / den;
-          celula[i].term2 = (-amed * alfmed * rg * ud) / den;
-          double jlTeste0=(ugs-alfmed*ud)/(alfmed*c0)-ugs;
-          double jlTeste=(ugs+uls)*(1.-c0*alfmed)-alfmed*ud;
-          if((jlTeste>=0.|| jlTeste0>=0.) && celula[i - 1].alfPigD>1-1e-15){
-              celula[i].term1 = 0.;
-              celula[i].term2 = 0.;
-          }
-          if((jlTeste<=0.|| jlTeste0<=0.) && celula[i].alfPigE>1-1e-15){
-              celula[i].term1 = 0.;
-              celula[i].term2 = 0.;
-          }
-          if (celula[i - 1].acsr.tipo == 5
-              && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {          //alteracao4
-            celula[i].term1 = 0.;
-            celula[i].term2 = 0.;
-          }
-
-        }
-        celula[i].term1L = celula[i - 1].term1;
-        celula[i].term2L = celula[i - 1].term2;
-        celula[i - 1].term1R = celula[i].term1;
-        celula[i - 1].term2R = celula[i].term2;
-      } else {
-        celula[i].c0 = 1.;
-        celula[i].ud = 0.;
-        celula[i].term1 = 0.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=-1;
-        celula[i].term1L = celula[i - 1].term1;
-        celula[i].term2L = celula[i - 1].term2;
-        celula[i - 1].term1R = celula[i].term1;
-        celula[i - 1].term2R = celula[i].term2;
-      }
-    } else if (i == 0) {
-      if (arq.ConContEntrada == 0) {
-        celula[1].alfL = celula[0].alf;
-        celula[0].alfL = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[0].betL = celula[0].bet;
-        celula[0].term1 = 0.;
-        celula[0].term2 = 0.;
-        celula[0].term1L = 0.;
-        celula[0].term2L = 0.;
-        //celula[i].transic=-2;
-      }
-      else {
-        if (titE < 1) {
-          int para;
-          para = 0;
-        }
-
-        double razdx = 0.5;
-        double pmed;
-        pmed = presE;
-
-        double tmed;
-        if (celula[0].QL < 0.)
-          tmed = celula[i].temp;
-        else
-          tmed = tempE;
-
-        double rg = celula[0].flui.MasEspGas(presE, tempE);
-        double rl = celula[0].flui.MasEspLiq(presE, tempE);
-        double rcis = celula[0].fluicol.MasEspFlu(presE, tempE);
-
-        double rlmist = betaE * rcis + (1 - betaE) * rl;
-        //double jmix=fabs(celula[0].QL+celula[0].QG)/celula[0].duto.area;
-        //if(jmix>localtiny)
-        //alfE=(-titE*rlmist/(titE*rg-rg-titE*rlmist))/(celula[0].c0-celula[0].ud/jmix);
-        //else
-        alfE = (-titE * rlmist / (titE * rg - rg - titE * rlmist)) / (celula[0].c0);
-
-        double betI;
-        double viscl1;
-        double tensup1;
-        if (celula[i].QL < 0.) { //testeBeta
-        //if (celula[i].QG*0.99+0.01*celula[i].QL < 0.) {              //duvidabeta
-          betI = celula[i].betPigE;
-          rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-          viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-          tensup1 = (1 - betI) * celula[i].flui.TensSuper(pmed, tmed) + betI * celula[i].fluicol.TensSuper(pmed, tmed);
-        } else {
-          betI = betaE;
-          rl = (1 - betI) * (*celula[i].fluiL).MasEspLiq(pmed, tmed)
-              + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-          viscl1 = (1 - betI) * (*celula[i].fluiL).ViscOleo(pmed, tmed)
-              + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-          tensup1 = (1 - betI) * (*celula[i].fluiL).TensSuper(pmed, tmed)
-              + betI * celula[i].fluicol.TensSuper(pmed, tmed);
-        }
-
-        double viscg1;
-        double amed;
-        double hns;
-        if (celula[i].QG >= 0) {
-          amed = celula[i].dutoL.area;
-          rg = (*celula[i].fluiL).MasEspGas(pmed, tmed);
-          viscg1 = (*celula[i].fluiL).ViscGas(pmed, tmed);
-          hns = 1. - alfE;
-        } else {
-          rg = celula[i].flui.MasEspGas(pmed, tmed);
-          viscg1 = celula[i].flui.ViscGas(pmed, tmed);
-          amed = celula[i].duto.area;
-          hns = 1. - celula[i].alf;
-        }
-        double ugs = celula[i].QG / (amed);
-        double uls = celula[i].QL / (amed);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        double dia1 = celula[i].duto.a;
-
-        double rmed = hns * rl + (1 - hns) * rg;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
-        double ang = celula[i].duto.teta;
-        double sinal = 1.;
-        if (ang < 0.)
-          sinal = -1.;
-        double xc0 = 2.;
-        double xud = sinal * 0.0246 * cos(ang)
-            + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        double amedR = celula[i].dutoR.area;
-        double razdxR = celula[i].dx / (celula[i].dxR + celula[i].dx);
-        double pmedR = celula[i].presauxR;
-        double tmedR = celula[i].temp * razdxR + celula[i].tempL * (1. - razdxR);
-        //double betIR=celula[i].bet;
-        //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
-        double betIR = celula[i].betPigD;
-        if (celula[i ].QLR < 0.) //testeBeta
-        //if ((celula[i].MR - celula[i].MliqiniR)*0.99+0.01*celula[i].MliqiniR< 0.)            //duvidabeta
-          betIR = celula[i + 1].betPigE;
-
-        double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
-        double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
-            + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
-        double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
-        double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
-
-        int bif = 1;
-
-        if ((*vg1dSP).lixo5 > 29900) {
-          int para;
-          para = 0;
-        }
-
-        if (alfE < localtiny && celula[i].alfPigE <= localtiny
-            && celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=0;
-          bif = 0;
-          celula[i].c0 = 1 + 0 * xc0;
-          celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;
-        }
-        else if (alfE >= (1. - localtiny) && celula[i].alfPigE >= (1. - localtiny)
-            && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-                && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=1;
-          bif = 0;
-          celula[i].c0 = 1 + 0 * xc0;
-          celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;
-        }
-        else if (ugs >= 0 && alfE <= localtiny
-            && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5)) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=2;
-          bif = 0;
-          celula[i].c0 = 1 + 0 * xc0;
-          celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;            //alteracao4
-          if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - localtiny) && uls < 0 && celula[i].duto.teta > 0) {
-            celula[i].term1 = 0.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=2;
-            bif = 0;
-          }            //alteracao4
-          if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 1 * localtiny) && celula[i].duto.teta < 0 && uls > 0) {
-            celula[i].term1 = 0.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=2;
-            bif = 1;
-          }
-          if (fabs(ugs) <= 1e-15 && celula[i].alf >= alfE && uls < 0) {
-            bif = 1;
-          }
-        }
-        else if (ugs <= 0 && celula[i].alfPigE <= localtiny
-            && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5)) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=3;
-          bif = 0;
-          celula[i].c0 = 1 + 0 * xc0;
-          celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;
-          if (fabs(ugs) <= 1e-15 && alfE > (1. - localtiny) && uls > 0) {
-            celula[i].term1 = 0.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=3;
-            bif = 0;
-          }
-          if (fabs(ugs) <= 1e-15 && alfE > localtiny && uls > 0) {
-            bif = 1;
-          }
-        }
-        else if (uls >= 0 && alfE >= 1. - localtiny
-            && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-                && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=4;
-          bif = 0;
-          celula[i].c0 = 1 + 0 * xc0;
-          celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;
-          if (fabs(uls) <= 1e-15 && celula[i].alfPigE < localtiny && uls1 < 0) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=4;
-            bif = 0;
-          } else if (fabs(uls1) < localtiny * 1e-5) {
-            if (fabs(uls) < localtiny * 1e-5 && celula[i].alfPigE < localtiny && celula[i].fontemassGR >= localtiny * 1e-5) {
-              celula[i].term1 = 1.;
-              celula[i].term2 = 0.;
-              bif = 0;
-            }
-          }
-          else if (fabs(uls) < 1e-15 && uls1 < 0
-              && ((celula[i].alfPigE <= (1 - 1 * localtiny + .0 * celula[i].alfPigER) && celula[i].alfPigER < 1 - 1 * localtiny)
-                  || celula[i].alfPigE <= 0.7))
-            bif = 1;
-
-          //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
-        }
-        else if (uls <= 0 && celula[i].alfPigE >= 1. - localtiny
-            && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-                && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=5;
-          bif = 0;
-          celula[i].c0 = 1 + 0 * xc0;
-          celula[i].ud = 0 * xud;
-          celula[i].arranjo = 0;
-          if (fabs(uls) <= localtiny * 1e-5 && alfE < localtiny && uls1 < 0) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            //celula[i].transic=5;
-            bif = 0;
-          }
-
-          if (fabs(uls1) < localtiny * 1e-5) {
-            if (fabs(uls) < localtiny * 1e-5 && alfE < localtiny) {
-              celula[i].term1 = 1.;
-              celula[i].term2 = 0.;
-              bif = 0;
-            }
-          }
-          else {
-            if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && ugs < 0
-                && (alfE < 0.7))
-              bif = 1;
-            else if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && ugs < 0
-                && (alfE < 0.7))
-              bif = 1;
-          }
-
-        }
-        if (uls > 0 && fabs(ugs) <= localtiny * 1e-5 && alfE > localtiny && alfE < 1 - localtiny)
-          bif = 1;
-        if (ugs > 0 && fabs(uls) <= localtiny * 1e-5 && alfE > localtiny && alfE < 1 - localtiny)
-          bif = 1;
-        if (uls >= 0 && alfE > 1 - localtiny) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          bif = 0;
-        }
-        if (ugs >= 0 && alfE < localtiny) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          bif = 0;
-        }
-
-        if (bif == 1) {
-
-          double c0;
-          double ud;
-          double alfmed;
-
-          //if(aflu==0 || i<ncel){
-
-          alfmed = alfE;
-          if (ugs < 0)
-            alfmed = celula[i].alfPigE;
-          c0 = 1.2;
-          double dmed = celula[i].duto.a;
-          if (celula[i].MC >= 0)
-            dmed = celula[i].dutoL.a;
-          double sinal = 1.;            //alteracao4
-          if (celula[i].duto.teta < 0.)
-            sinal = -1.;            //alteracao4
-          ud = sinal * 0.32 * sqrt(9.82 * dmed);
-          if (fabs(rgR) / rlR > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-          }
-          CalcC0UdIni(i, c0, ud);
-          //}
-          //else{
-          //	  c0=1.;
-          //  ud=0.;
-          //}
-          celula[i].c0 = c0;
-          celula[i].ud = ud;
-          double num = (1. - alfmed * c0);
-          double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
-          celula[i].term1 = num / den;
-          celula[i].term2 = (-amed * alfmed * rg * ud) / den;
-
-        }
-        //celula[i].term1 = (1-titE);
-        //celula[i].term2 = 0.;
-        celula[1].term1L = celula[i].term1;
-        celula[1].term2L = celula[i].term2;
-
-        celula[1].alfL = celula[0].alf;
-        celula[0].alfL = alfE;
-        celula[1].betL = celula[0].bet;
-        celula[0].betL = betaE;
-
-      }
-
-    } else if (aflu == 0) {
-      //celula[ncel].alf=celula[ncel-1].alf;
-      celula[ncel - 1].alfR = celula[ncel].alf;
-      celula[ncel].alfR = celula[ncel].alf;
-      celula[ncel - 1].betR = celula[ncel].bet;
-      celula[ncel].betR = celula[ncel].bet;
-
-      double razdx = celula[i].dxL / (celula[i].dx + celula[i].dxL);
-      double pmed = celula[i].presaux;
-      double tmed = celula[i].temp * razdx + celula[i - 1].temp * (1. - razdx);
-      double betI = celula[i].betL;
-      if (celula[i].QL < 0.) betI = celula[i].bet; //testeBeta
-      //if (celula[i].QG*0.99+ 0.01*celula[i].QL< 0.)
-        //betI = celula[i].bet;            //duvidabeta
-      double rg = celula[i].flui.MasEspGas(pmed, tmed);
-      double rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed)
-          + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-      double amed = celula[i].duto.area;
-      if (celula[i].MC >= 0)
-        amed = celula[i].dutoL.area;
-      double ugs = celula[i].QG / (amed);
-      double uls = celula[i].QL / (amed);
-
-      double amedL = celula[i].dutoL.area;
-      double razdxL = celula[i - 1].dxL / (celula[i - 1].dx + celula[i - 1].dxL);
-      double pmedL = celula[i - 1].presaux;
-      double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
-      double betIL = celula[i - 1].betL;
-      if (celula[i - 1].QL < 0.) betIL = celula[i - 1].bet; //testeBeta
-      //if (celula[i - 1].QG*0.99+0.01*celula[i - 1].QL < 0.)
-        //betIL = celula[i - 1].bet;            //duvidabeta
-      double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
-      double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
-          + betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
-      double ugs0 = (celula[i].ML - celula[i].MliqiniL) / (rgL * amedL);
-      double uls0 = (celula[i].MliqiniL) / (rlL * amedL);
-
-      double amedR = celula[i].dutoR.area;
-      double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
-      double pmedR = celula[i].pres;
-      double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-      double betIR = celula[i].bet;
-      double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
-      double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
-          + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
-      double ugs1 = (celula[i].MR - celula[i].MliqiniR) / (rgR * amedR);
-      double uls1 = (celula[i].MliqiniR) / (rlR * amedR);
-
-      int bif = 1;
-
-      if (celula[i].alfL <= localtiny && celula[i].alf <= localtiny && celula[i].fontemassGL <= 0
-          && celula[i].fontemassGR <= 0) {
-        celula[i].term1 = 1.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=0;
-        bif = 0;
-        celula[i].c0 = 1. - localtiny;
-        celula[i].ud = 0.;
-        celula[i].arranjo = 0;
-      } else if (celula[i].alfL >= (1. - localtiny) && celula[i].alf >= (1. - localtiny) && celula[i].fontemassLL <= 0
-          && celula[i].fontemassLR <= 0) {
-        celula[i].term1 = 0.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=1;
-        bif = 0;
-        celula[i].c0 = 1. - localtiny;
-        celula[i].ud = 0.;
-        celula[i].arranjo = 0;
-      } else if (ugs > 0 && celula[i].alfL <= localtiny
-          && (celula[i].fontemassGL <= 0. && celula[i].fontemassGR <= 0.)) {
-        celula[i].term1 = 1.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=2;
-        bif = 0;
-        celula[i].c0 = 1. - localtiny;
-        celula[i].ud = 0.;
-        celula[i].arranjo = 0;
-        if (fabs(ugs) <= 1e-15 && celula[i].alf > (1. - localtiny) && uls < 0 && uls0 < 0) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=2;
-          bif = 0;
-        }
-      } else if (ugs < 0 && celula[i].alf <= localtiny
-          && (celula[i].fontemassGL <= 0. && celula[i].fontemassGR <= 0.)) {
-        celula[i].term1 = 1.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=3;
-        bif = 0;
-        celula[i].c0 = 1. - localtiny;
-        celula[i].ud = 0.;
-        celula[i].arranjo = 0;
-        if (fabs(ugs) <= 1e-15 && celula[i].alfL > (1. - localtiny) && uls > 0 && uls1 > 0) {
-          celula[i].term1 = 0.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=3;
-          bif = 0;
-        }
-      }
-      else if (uls >= 0 && celula[i - 1].alf >= 1. - localtiny
-          && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-              && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-        celula[i].term1 = 0.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=4;
-        bif = 0;
-        celula[i].c0 = 1;
-        celula[i].ud = 0;
-        celula[i].arranjo = 0;
-        if (fabs(uls) <= 1e-15 && celula[i].alf < localtiny && uls1 < 0) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=4;
-          bif = 0;
-        } else if (fabs(uls1) < localtiny * 1e-5) {
-          if (fabs(uls) < localtiny * 1e-5 && celula[i].alf < localtiny && celula[i].fontemassGR >= localtiny * 1e-5) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            bif = 0;
-          }
-        }
-        else if (fabs(uls) < 1e-15 && uls1 < 0
-            && celula[i].alf <= (1 - 1 * localtiny))
-          bif = 1;
-      }
-
-      else if (uls <= 0 && celula[i].alf >= 1. - localtiny
-          && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-              && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-        celula[i].term1 = 0.;
-        celula[i].term2 = 0.;
-        //celula[i].transic=5;
-        bif = 0;
-        celula[i].c0 = 1;
-        celula[i].ud = 0;
-        celula[i].arranjo = 0;
-        if (fabs(uls) <= localtiny * 1e-5 && celula[i - 1].alf < localtiny && uls0 > 0) {
-          celula[i].term1 = 1.;
-          celula[i].term2 = 0.;
-          //celula[i].transic=5;
-          bif = 0;
-        }
-        if (fabs(uls0) < localtiny * 1e-5) {
-          if (fabs(uls) < localtiny * 1e-5 && celula[i - 1].alf < localtiny
-              && celula[i - 1].fontemassGR >= localtiny * 1e-5) {
-            celula[i].term1 = 1.;
-            celula[i].term2 = 0.;
-            bif = 0;
-          }
-        } else if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
-            && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-                || celula[i - 1].alfPigD < 0.7))
-          bif = 1;
-        else if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
-            && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-                || celula[i - 1].alfPigD < 0.7))
-          bif = 1;
-        else {
-          if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
-              && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7))
-            bif = 1;
-          else if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
-              && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7))
-            bif = 1;
-        }
-
-      }
-
-     // else if (bif == 1) {
-      if (bif == 1) {
-        double alfmed;
-        alfmed = celula[i].alfL;
-        double c0 = 1.2;
-        double dmed = celula[i].duto.a;
-        if (celula[i].MC >= 0)
-          dmed = celula[i].dutoL.a;
-        // CalcC0Ud(i, c0, ud);
-        double sinal = 1.;            //alteracao4
-        if (celula[i].duto.teta < 0.)
-          sinal = 1.;            //alteracao4
-        double ud = sinal * 0.32 * sqrt(9.82 * dmed);
-        if (fabs(rgR) / rlR > 0.9) {
-          c0 = 1.;
-          ud = 0.;
-        }
-
-        CalcC0Ud(i, c0, ud);
-        if(arq.escorregamentoCelulaContorno==0){
-        	c0=1.;
-        	ud=0.;
-        }
-        celula[i].c0 = c0;
-        celula[i].ud = ud;
-        double num = (1. - alfmed * c0);
-        double den = 1. + alfmed * (rg / rl) * c0 - alfmed * c0;
-        celula[i].term1 = num / den;
-        celula[i].term2 = (-amed * alfmed * rg * ud) / den;
-
-        //teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //celula[i].term1 = celula[i-1].term1;
-        //celula[i].term2 =celula[i-1].term2 ;
-        //teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //celula[i].transic=-1;
-      }
-
-      ///////////////////////////////////////////////////////////////////////////////////////////////////
-      ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-      celula[i].term1L = celula[i - 1].term1;
-      celula[i].term2L = celula[i - 1].term2;
-      celula[i - 1].term1R = celula[i].term1;
-      celula[i - 1].term2R = celula[i].term2;
-    }
-  }
-
-  //celula[0].alfini=celula[0].alf;
-  //celula[1].alfLini=celula[0].alfini;
-  //for (int i = 0; i <= ncel; i++){
-  //celula[i].alfini=celula[i].alf;
-  //if(i>0)celula[i-1].alfRini=celula[i].alfini;
-  //if(i<ncel)celula[i+1].alfLini=celula[i].alfini;
-  //}
-  //celula[ncel-1].alfR=celula[ncel].alf;
-  //celula[ncel].alfini=celula[ncel].alf;
-  //celula[ncel-1].alfRini=celula[ncel].alfini;
-  //celula[ncel].alfRini=celula[ncel].alfR;
-}
-
-void SProd::renovatermAfluFim() {
-
-  int i = ncel;
-
-  double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
-  //double pmed = razdx * celula[i].presBuf + (1 - razdx) * celula[i].presLBuf;
-  double pmed = celula[i].presBuf;
-  double tmed = tGSup;
-  tmed = celula[i - 1].temp;
-  if (celula[i].VTemper < 0.)
-    tmed = tGSup;
-  //double betI=celula[i].betL;
-  //if(celula[i].QL<0.)betI=celula[i].bet;
-  double betI = celula[i - 1].betPigD;
-  double rl;
-  double viscl1;
-  double tensup1;
-  if (celula[i].MliqiniBuf < 0.) { //testeBeta
-  //if (celula[i].MCBuf - celula[i].MliqiniBuf < 0.) {
-    betI = celula[i].betPigE;
-    rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-    viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-    tensup1 = (1 - betI) * celula[i].flui.TensSuper(pmed, tmed) + betI * celula[i].fluicol.TensSuper(pmed, tmed);
-  } else {
-    betI = celula[i - 1].betPigD;
-    rl = (1 - betI) * celula[i - 1].flui.MasEspLiq(pmed, tmed)
-        + betI * celula[i - 1].fluicol.MasEspFlu(pmed, tmed);
-    viscl1 = (1 - betI) * celula[i - 1].flui.ViscOleo(pmed, tmed)
-        + betI * celula[i - 1].fluicol.VisFlu(pmed, tmed);
-    tensup1 = (1 - betI) * celula[i - 1].flui.TensSuper(pmed, tmed)
-        + betI * celula[i - 1].fluicol.TensSuper(pmed, tmed);
-  }
-  double rg;
-  double viscg1;
-  double amed;
-  double hns;
-  if ((celula[i].MCBuf - celula[i].MliqiniBuf) >= 0) {
-    amed = celula[i].dutoL.area;
-    hns = 1. - celula[i].alfL;
-    rg = celula[i - 1].flui.MasEspGas(pmed, tmed);
-    viscg1 = celula[i - 1].flui.ViscGas(pmed, tmed);
-  } else {
-    rg = celula[i].flui.MasEspGas(pmed, tmed);
-    viscg1 = celula[i].flui.ViscGas(pmed, tmed);
-    amed = celula[i].duto.area;
-    hns = 1. - celula[i].alf;
-  }
-  double ugs = (celula[i].MCBuf - celula[i].MliqiniBuf) / (rg * amed);
-  double uls = (celula[i].MliqiniBuf) / (rl * amed);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  double dia1 = celula[i].duto.a;
-  if (ugs >= 0)
-    dia1 = celula[i - 1].duto.a;
-
-  double rmed = hns * rl + (1 - hns) * rg;
-  double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-  double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
-  double ang = celula[i].duto.teta;
-  if (i >= 2) {
-    if (celula[i - 2].acsr.tipo == 5 && celula[i - 2].acsr.chk.AreaGarg <= (1e-3)) {
-      if ((celula[i].MCBuf - celula[i].MliqiniBuf) >= 0)
-        ang = celula[i].duto.teta;
-      else
-        ang = celula[i].dutoR.teta;
-    } else {
-      if ((celula[i].MCBuf - celula[i].MliqiniBuf) >= 0)
-        ang = celula[i].dutoL.teta;
-      else
-        ang = celula[i].duto.teta;
-    }
-  }
-  double sinal = 1.;
-  if (ang < 0.)
-    sinal = -1.;
-  double xc0 = 2.;
-  double xud = sinal * 0.0246 * cos(ang)
-      + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  double amedL = celula[i].dutoL.area;
-  double razdxL = celula[i - 1].dxL / (celula[i - 1].dx + celula[i - 1].dxL);
-  double pmedL = celula[i - 1].presaux;
-  double tmedL = celula[i - 1].temp * razdxL + celula[i - 1].tempL * (1. - razdxL);
-  //double betIL=celula[i-1].betL;
-  //if(celula[i-1].QL<0.)betIL=celula[i-1].bet;
-  double betIL=0.;
-  if (i < 2)
-    betIL = celula[i - 1].betL;
-  else
-    betIL = celula[i - 2].betPigD;
-  if (celula[i-1].MliqiniBuf < 0.) betIL = celula[i - 1].betPigE; //testeBeta
-  //if ((celula[i - 1].MCBuf - celula[i - 1].MliqiniBuf)*0.99+0.01*celula[i - 1].MliqiniBuf < 0.)
-    //betIL = celula[i - 1].betPigE;    //duvidabeta
-  double rgL = celula[i].flui.MasEspGas(pmedL, tmedL);
-  double rlL = (1 - betIL) * celula[i].flui.MasEspLiq(pmedL, tmedL)
-      + betIL * celula[i].fluicol.MasEspFlu(pmedL, tmedL);
-  double ugs0 = (celula[i].MLBuf - celula[i].MliqiniLBuf) / (rgL * amedL);
-  double uls0 = (celula[i].MliqiniLBuf) / (rlL * amedL);
-
-  double amedR = celula[i].dutoR.area;
-  double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
-  double pmedR = celula[i].presRBuf;
-  double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-  //double betIR=celula[i].bet;
-  //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
-  double betIR = celula[i].betPigD;
-  if (celula[i].MliqiniRBuf < 0.) { //testeBeta
-  //if ((celula[i].MRBuf - celula[i].MliqiniRBuf)*0.99+0.01*celula[i].MliqiniRBuf < 0.) {    //duvidabeta
-    if (i > ncel - 2)
-      betIR = celula[i].betR;
-    else
-      betIR = celula[i + 1].betPigE;
-  }
-  double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
-  double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
-      + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
-  double ugs1 = (celula[i].MRBuf - celula[i].MliqiniRBuf) / (rgR * amedR);
-  double uls1 = (celula[i].MliqiniRBuf) / (rlR * amedR);
-
-  int bif = 1;
-
-  if ((*vg1dSP).lixo5 > 29900) {
-    int para;
-    para = 0;
-  }
-
-  if (celula[i - 1].alfPigD <= localtiny && celula[i].alfPigE <= localtiny
-      && celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5 &&
-		(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0) &&
-		(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-    celula[i].term1 = 1.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=0;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-  }
-  else if (celula[i - 1].alfPigD >= (1. - localtiny) && celula[i].alfPigE >= (1. - localtiny)
-      && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-          && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5) &&
-			(celula[i].FonteMudaFase>-1e-15 || modeloCompleto==0) &&
-			(celula[i-1].FonteMudaFase>-1e-15 || modeloCompleto==0)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=1;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-  }
-  else if (celula[i - 1].acsr.tipo == 5 && celula[i - 1].acsr.chk.AreaGarg <= (1e-3)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-  }
-
-  else if (ugs >= 0 && celula[i - 1].alfPigD <= localtiny
-      && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) &&
-		(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0) &&
-		(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-    celula[i].term1 = 1.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=2;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;    //alteracao4
-
-    if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - localtiny) && (uls < 0 ||
-            			(fabs(uls) <= 1e-15 && uls0 < 0) ||
-            			(fabs(uls) <= 1e-15 && fabs(uls0) <= 1e-15 && celula[i].duto.teta > 0))) {
-       celula[i].term1 = 0.;
-       celula[i].term2 = 0.;
-       //celula[i].transic=2;
-       bif = 0;
-    }
-    if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 10 * localtiny) && celula[i].duto.teta < 0) {
-      celula[i].term1 = 0.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=2;
-      bif = 1;
-    }
-    if (fabs(ugs) <= 1e-15 && celula[i].alf >= celula[i + 1].alf && ugs1 < 0) {
-      bif = 1;
-    }
-  }
-  else if (ugs <= 0 && celula[i].alfPigE <= localtiny
-      && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) &&
-		(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0) &&
-		(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-    celula[i].term1 = 1.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=3;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-	if (fabs(ugs) <= 1e-15 && celula[i - 1].alfPigD > (1. - localtiny) && (uls > 0 ||
-			(fabs(uls) <= 1e-15 && uls1 > 0) ||
-			(fabs(uls) <= 1e-15 && fabs(uls1) <= 1e-15 && celula[i].duto.teta < 0))) {
-		celula[i].term1 = 0.;
-		celula[i].term2 = 0.;
-		//celula[i].transic=3;
-		bif = 0;
-	}
-	else if (fabs(ugs) <= 1e-15 && celula[i-1].alfPigD > (1. - 10 * localtiny) &&
-			celula[i].duto.teta > 0) {
-		celula[i].term1 = 0.;
-		celula[i].term2 = 0.;
-		//celula[i].transic=2;
-		bif = 1;
-	}
-    if (fabs(ugs) <= 1e-15 && celula[i].alfL >= celula[i - 1].alfL && ugs0 > 0) {
-      bif = 1;
-    }
-  }
-  else if (uls >= 0 && celula[i - 1].alfPigD >= 1. - localtiny
-      && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-          && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=4;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-    if (fabs(uls) <= 1e-15 && celula[i].alfPigE < localtiny && uls1 < 0
-    		&& (celula[i].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-      celula[i].term1 = 1.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=4;
-      bif = 0;
-    }
-    else if ((fabs(uls) < 1e-15 && (uls1 < 0|| celula[i].duto.teta>0)
-        && ((celula[i].alfPigE <= (1 - 10 * localtiny + .0 * celula[i].alfPigER) &&
-            celula[i].alfPigER < 1 - 1 * localtiny)
-            || celula[i].alfPigE <= 0.7)))
-      bif = 1;
-    //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
-  }
-  else if (uls <= 0 && celula[i].alfPigE >= 1. - localtiny
-      && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-          && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=5;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-    if (fabs(uls) <= localtiny * 1e-5 && celula[i - 1].alfPigD < localtiny && uls0 > 0) {
-      celula[i].term1 = 1.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=5;
-      bif = 0;
-    }
-
-    if (fabs(uls0) < localtiny * 1e-5) {
-      if (fabs(uls) < localtiny * 1e-5 && celula[i - 1].alfPigD < localtiny
-          && celula[i - 1].fontemassGR >= localtiny * 1e-5 &&
-			(celula[i].FonteMudaFase<1e-15 || modeloCompleto==0)) {
-        celula[i].term1 = 1.;
-        celula[i].term2 = 0.;
-        bif = 0;
-      }
-    }
-    else if ((i > 1 && fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0        //alteracao4
-              && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 2].alfPigD && celula[i - 2].alfPigD < 0.99)
-                  || celula[i - 1].alfPigD < 0.7)) && ugs>=0.){
-           bif = 1;
-           if(celula[i - 1].alfPigD <=localtiny && celula[i].duto.teta >0.
-                		&& celula[i - 1].fontemassGR <= localtiny * 1e-5 &&
-        				(celula[i-1].FonteMudaFase<1e-15 || modeloCompleto==0)){
-                celula[i].term1 = 1.;
-                celula[i].term2 = 0.;
-                bif = 0;
-          }
-    }
-
-    else {
-      if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0
-          && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-        bif = 1;
-      else if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0
-          && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>=0)
-        bif = 1;
-      else if ((fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2.
-          && ((celula[i - 1].alfPigD <= 1.0 * celula[i - 1].alfL) || celula[i - 1].alfPigD < 0.7)) && ugs>0)
-        bif = 1;
-    }
-
-  }
-
-  //if (ugs < 0 && celula[i].alf > localtiny && celula[i].alf < 1. - localtiny)  bif = 1;
-
-  if (bif == 1) {
-
-    double c0;
-    double ud;
-    double alfmed;
-
-    //if(aflu==0 || i<ncel){
-
-    alfmed = celula[i - 1].alfPigD;
-    if (ugs < 0)
-      alfmed = celula[i].alfPigE;
-    c0 = 1.2;
-    double dmed = celula[i].duto.a;
-    if (celula[i].MC >= 0)
-      dmed = celula[i].dutoL.a;
-    double sinal = 1.;    //alteracao4
-    if (celula[i].duto.teta < 0.)
-      sinal = -1.;    //alteracao4
-    ud = sinal * 0.32 * sqrt(9.82 * dmed);
-    if (fabs(rgR) / rlR > 0.9) {
-      c0 = 1.;
-      ud = 0.;
-    }
-    CalcC0UdBuf(i, c0, ud);
-    if(arq.escorregamentoCelulaContorno==0){
-    	c0=1.;
-    	ud=0.;
-    }
-    //celula[i].c0 = c0;
-    //celula[i].ud = ud;
-    double num = (1. - alfmed * c0);
-    double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
-    celula[i].term1 = num / den;
-    celula[i].term2 = (-amed * alfmed * rg * ud) / den;
-    if (celula[i - 1].acsr.tipo == 5
-        && celula[i - 1].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area) {      //alteracao4
-      celula[i].term1 = 0.;
-      celula[i].term2 = 0.;
-    }
-
-  }
-  celula[i].term1L = celula[i - 1].term1;
-  celula[i].term2L = celula[i - 1].term2;
-  celula[i - 1].term1R = celula[i].term1;
-  celula[i - 1].term2R = celula[i].term2;
-}
-
-void SProd::renovatermColIni() {
-
-  if (titE < 1) {
-    int para;
-    para = 0;
-  }
-
-  int i = 0;
-
-  double razdx = 0.5;
-  double pmed;
-  pmed = presE;
-
-  double tmed;
-  if (celula[0].MliqiniBuf < 0.)
-    tmed = celula[i].temp;
-  else
-    tmed = tempE;
-
-  double betI;
-  double viscl1;
-  double tensup1;
-  //if (celula[i].QL < 0.) { //testeBeta
-  double rg = celula[0].flui.MasEspGas(presE, tempE);
-  double rl = celula[0].flui.MasEspLiq(presE, tempE);
-  double rcis = celula[0].fluicol.MasEspFlu(presE, tempE);
-
-  double rlmist = betaE * rcis + (1 - betaE) * rl;
-  alfE = (-titE * rlmist / (titE * rg - rg - titE * rlmist)) / (celula[0].c0);
-
-  if ((celula[i].MCBuf - celula[0].MliqiniBuf)*0+1*celula[0].MliqiniBuf < 0.) {      //duvidabeta
-    betI = celula[i].betPigE;
-    rl = (1 - betI) * celula[i].flui.MasEspLiq(pmed, tmed) + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-    viscl1 = (1 - betI) * celula[i].flui.ViscOleo(pmed, tmed) + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-    tensup1 = (1 - betI) * celula[i].flui.TensSuper(pmed, tmed) + betI * celula[i].fluicol.TensSuper(pmed, tmed);
-  } else {
-    betI = betaE;
-    rl = (1 - betI) * (*celula[i].fluiL).MasEspLiq(pmed, tmed)
-        + betI * celula[i].fluicol.MasEspFlu(pmed, tmed);
-    viscl1 = (1 - betI) * (*celula[i].fluiL).ViscOleo(pmed, tmed)
-        + betI * celula[i].fluicol.VisFlu(pmed, tmed);
-    tensup1 = (1 - betI) * (*celula[i].fluiL).TensSuper(pmed, tmed)
-        + betI * celula[i].fluicol.TensSuper(pmed, tmed);
-  }
-  double viscg1;
-  double amed;
-  double hns;
-  if (celula[i].MCBuf - celula[0].MliqiniBuf >= 0) {
-    amed = celula[i].dutoL.area;
-    rg = (*celula[i].fluiL).MasEspGas(pmed, tmed);
-    viscg1 = (*celula[i].fluiL).ViscGas(pmed, tmed);
-    hns = 1. - alfE;
-  } else {
-    rg = celula[i].flui.MasEspGas(pmed, tmed);
-    viscg1 = celula[i].flui.ViscGas(pmed, tmed);
-    amed = celula[i].duto.area;
-    hns = 1. - celula[i].alf;
-  }
-  double ugs = (celula[i].MCBuf - celula[i].MliqiniBuf) / (rg * amed);
-  double uls = celula[i].MliqiniBuf / (rl * amed);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  double dia1 = celula[i].duto.a;
-  if (ugs >= 0)
-    dia1 = celula[i].duto.a;
-
-  double rmed = hns * rl + (1 - hns) * rg;
-  double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-  double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
-  double ang = celula[i].duto.teta;
-  double sinal = 1.;
-  if (ang < 0.)
-    sinal = -1.;
-  double xc0 = 2.;
-  double xud = sinal * 0.0246 * cos(ang)
-      + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  double amedR = celula[i].dutoR.area;
-  double razdxR = celula[i].dxR / (celula[i].dxR + celula[i].dx);
-  double pmedR = celula[i].presRBuf * razdxR + celula[i].presBuf * (1. - razdxR);
-  double tmedR = celula[i].temp * razdxR + celula[i].tempR * (1. - razdxR);
-  //double betIR=celula[i].bet;
-  //if(celula[i+1].QL<0.)betIR=celula[i+1].bet;
-  double betIR = celula[i].betPigD;
-  if (celula[i ].QLR < 0.) //testeBeta
-  //if ((celula[i].MR - celula[i].MliqiniR)*0.99+0.01*celula[i].Mliqini < 0.)    //duvidabeta
-    betIR = celula[i + 1].betPigE;
-
-  double rgR = celula[i].flui.MasEspGas(pmedR, tmedR);
-  double rlR = (1 - betIR) * celula[i].flui.MasEspLiq(pmedR, tmedR)
-      + betIR * celula[i].fluicol.MasEspFlu(pmedR, tmedR);
-  double ugs1 = (celula[i].MRBuf - celula[i].MliqiniRBuf) / (rgR * amedR);
-  double uls1 = (celula[i].MliqiniRBuf) / (rlR * amedR);
-
-  int bif = 1;
-
-  if ((*vg1dSP).lixo5 > 29900) {
-    int para;
-    para = 0;
-  }
-
-  if (alfE < localtiny && celula[i].alfPigE <= localtiny
-      && celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5) {
-    celula[i].term1 = 1.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=0;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-  }
-  else if (alfE >= (1. - localtiny) && celula[i].alfPigE >= (1. - localtiny)
-      && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-          && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=1;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-  }
-  else if (ugs >= 0 && alfE <= localtiny
-      && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5)) {
-    celula[i].term1 = 1.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=2;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;    //alteracao4
-    if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - localtiny) && uls < 0 && celula[i].duto.teta > 0) {
-      celula[i].term1 = 0.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=2;
-      bif = 0;
-    }    //alteracao4
-    if (fabs(ugs) <= 1e-15 && celula[i].alfPigE > (1. - 1 * localtiny) && celula[i].duto.teta < 0 && uls > 0) {
-      celula[i].term1 = 0.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=2;
-      bif = 1;
-    }
-    if (fabs(ugs) <= 1e-15 && celula[i].alf >= alfE && uls < 0) {
-      bif = 1;
-    }
-  }
-  else if (ugs <= 0 && celula[i].alfPigE <= localtiny
-      && (celula[i].fontemassGL <= localtiny * 1e-5 && celula[i].fontemassGR <= localtiny * 1e-5)) {
-    celula[i].term1 = 1.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=3;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-    if (fabs(ugs) <= 1e-15 && alfE > (1. - localtiny) && uls > 0) {
-      celula[i].term1 = 0.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=3;
-      bif = 0;
-    }
-    if (fabs(ugs) <= 1e-15 && alfE > localtiny && uls > 0) {
-      bif = 1;
-    }
-  }
-  else if (uls >= 0 && alfE >= 1. - localtiny
-      && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-          && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=4;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-    if (fabs(uls) <= 1e-15 && celula[i].alfPigE < localtiny && uls1 < 0) {
-      celula[i].term1 = 1.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=4;
-      bif = 0;
-    } else if (fabs(uls1) < localtiny * 1e-5) {
-      if (fabs(uls) < localtiny * 1e-5 && celula[i].alfPigE < localtiny && celula[i].fontemassGR >= localtiny * 1e-5) {
-        celula[i].term1 = 1.;
-        celula[i].term2 = 0.;
-        bif = 0;
-      }
-    }
-    else if (fabs(uls) < 1e-15 && uls1 < 0
-        && ((celula[i].alfPigE <= (1 - 1 * localtiny + .0 * celula[i].alfPigER) && celula[i].alfPigER < 1 - 1 * localtiny)
-            || celula[i].alfPigE <= 0.7))
-      bif = 1;
-
-    //else if (fabs(uls) < 1e-15 && celula[i].duto.teta > 0 && celula[i].alfPigE <= 0.999) bif = 1;
-  }
-  else if (uls <= 0 && celula[i].alfPigE >= 1. - localtiny
-      && ((celula[i].fontemassLL + celula[i].fontemassCL) <= localtiny * 1e-5
-          && (celula[i].fontemassLR + celula[i].fontemassCR) <= localtiny * 1e-5)) {
-    celula[i].term1 = 0.;
-    celula[i].term2 = 0.;
-    //celula[i].transic=5;
-    bif = 0;
-    celula[i].c0 = 1 + 0 * xc0;
-    celula[i].ud = 0 * xud;
-    celula[i].arranjo = 0;
-    if (fabs(uls) <= localtiny * 1e-5 && alfE < localtiny && uls1 < 0) {
-      celula[i].term1 = 1.;
-      celula[i].term2 = 0.;
-      //celula[i].transic=5;
-      bif = 0;
-    }
-
-    if (fabs(uls1) < localtiny * 1e-5) {
-      if (fabs(uls) < localtiny * 1e-5 && alfE < localtiny) {
-        celula[i].term1 = 1.;
-        celula[i].term2 = 0.;
-        bif = 0;
-      }
-    }
-    else {
-      if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta < 0.95 * M_PI / 2. && ugs < 0
-          && (alfE < 0.7))
-        bif = 1;
-      else if (fabs(uls) < localtiny * 1e-5 && celula[i].duto.teta >= 0.95 * M_PI / 2. && ugs < 0
-          && (alfE < 0.7))
-        bif = 1;
-    }
-
-  }
-  if (uls > 0 && fabs(ugs) <= localtiny * 1e-5 && alfE > localtiny && alfE < 1 - localtiny)
-    bif = 1;
-  if (ugs > 0 && fabs(uls) <= localtiny * 1e-5 && alfE > localtiny && alfE < 1 - localtiny)
-    bif = 1;
-
-  if (bif == 1) {
-
-    double c0;
-    double ud;
-    double alfmed;
-
-    //if(aflu==0 || i<ncel){
-
-    alfmed = alfE;
-    if (ugs < 0)
-      alfmed = celula[i].alfPigE;
-    c0 = 1.2;
-    double dmed = celula[i].duto.a;
-    if (celula[i].MC >= 0)
-      dmed = celula[i].dutoL.a;
-    double sinal = 1.;    //alteracao4
-    if (celula[i].duto.teta < 0.)
-      sinal = -1.;    //alteracao4
-    ud = sinal * 0.32 * sqrt(9.82 * dmed);
-    if (fabs(rgR) / rlR > 0.9) {
-      c0 = 1.;
-      ud = 0.;
-    }
-    CalcC0UdIniBuf(i, c0, ud);
-
-    //celula[i].c0 = c0;
-    //celula[i].ud = ud;
-    double num = (1. - alfmed * c0);
-    double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
-    celula[i].term1 = num / den;
-    celula[i].term2 = (-amed * alfmed * rg * ud) / den;
-
-  }
-  celula[1].term1L = celula[i].term1;
-  celula[1].term2L = celula[i].term2;
-
-}*/
-
-
-/*void SProd::calcCCpres(double titRev, double alfRev, double betRev) {      //alteracao7
-
-  double tESup = celula[ncel].temp;
-  double alfSup = celula[ncel].alf;
-  double betSup = celula[ncel].bet;
-
-  double masentrada = celula[ncel - 1].MR;
-  double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-  double maxSup = 0.;
-  double chokemas = 0;
-
-
-  double rholp = celula[ncel].rpC;
-  double rholc = celula[ncel].rcC;
-  double rholmix = (1 - betSup) * rholp + betSup * rholc;
-  double romix = alfSup * celula[ncel].rgC + (1 - alfSup) * rholmix;
-
-  double tit;
-  if(fabs(masentrada)<1e-15)tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
-  else{
-	  tit = fabs(massgas / masentrada);
-	  if (tit > 1)
-		  tit = 1;
-	  if (presfim < pGSup) {
-		  //tit = 1.;
-		  if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-			  tit = 1.;      //alteracao7
-		  else {      //alteracao7
-			  tit = titRev;
-			  alfSup = alfRev;
-			  betSup = betRev;
-		  }
-	  }
-  }
-
-  if(tit==0 && alfSup>0.95)
-	  tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
-  else if(tit==1 && alfSup<0.05)
-	  tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
-
-  romix = tit *(1./ celula[ncel].rgC) + (1 - tit) * (1./rholmix);
-  romix=1/romix;
-
-  double masChk;
-
-  double sinal = 1.;
-  double pmon = presfim;
-
-  double ypres = pGSup / presfim;
-  if(chokeSup.AreaGarg> (1e-3) * celula[ncel - 1].duto.area && ypres < 1.){
-     double cplM = (1. - betSup) * celula[ncel].flui.CalorLiq(presfim, tESup)-
-		             betSup*celula[ncel].fluicol.CalorLiq(presfim, tESup);
-     double jtlM = (1. - betSup) * celula[ncel].flui.JTL(presfim, tESup)- betSup / rholc;
-     double cpg =  celula[ncel].flui.CalorGas(presfim, tESup);
-     double jtgM = celula[ncel].flui.JTG(presfim, tESup);
-     arq.valTempChokeJus = tESup + ((1. - tit) * jtlM/cplM + tit * jtgM/cpg) * (pGSup - presfim) * 98066.52;
-  }
-
-  if (ypres > 1.) {
-    if (arq.chkv == 0)
       sinal = -1.;
-    else
-      sinal = 0.;
-    //tit=1.;
-    if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao7
-      tit = titRev;
-      alfSup = alfRev;
-      betSup = betRev;
+    ud = sinal * 0.32 * sqrt(9.82 * dmed);
+    if (fabs(rgR) / rlR > 0.9) {
+      c0 = 1.;
+      ud = 0.;
     }
-    pmon = pGSup;
-    ypres = 1. / ypres;
-  }
+    CalcC0UdIniBuf(i, c0, ud);
 
-  masChk = chokeSup.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-      celula[ncel - 1].fluicol);
-  maxSup = chokeSup.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui, celula[ncel - 1].fluicol);
-
-  int fluxcri = 1;
-  if (tit<=0.01 || fabs(ypres) > fabs(chokeSup.razpres)) {
-    fluxcri = 0;
-    maxSup = masChk;
-  }
-  if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
-    maxSup = 0.;
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  double sinal2 = 1.;
-  pmon = presfim * 1.0001;
-  ypres = pGSup / pmon;
-  if (ypres > 1.) {
-    sinal2 = -1.;
-    tit = 1;
-    pmon = pGSup;
-    ypres = 1. / ypres;
-    if (arq.chkv == 0)
-      sinal2 = -1.;
-    else
-      sinal2 = 0.;
-  }
-
-  double masChk2 = chokeSup.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-      celula[ncel - 1].fluicol);
-  double maxSup2 = chokeSup.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-      celula[ncel - 1].fluicol);
-
-  fluxcri = 1;
-  if (tit<=0.01 || fabs(ypres) > fabs(chokeSup.razpres)) {
-    fluxcri = 0;
-    maxSup2 = masChk2;
-  }
-  if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
-    maxSup2 = 0.;
-  double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (presfim * 0.0001);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  double masliq;
-  double masgas;
-  int abertoini = aberto;
-  double delp;
-  if(chokeSup.AreaGarg> (1e-3) * celula[ncel - 1].duto.area)delp= (0.5 / 98066.5) * (1 / romix)
-      * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg*chokeSup.cdchk*chokeSup.cdchk))
-      *masChk*masChk;
-  else delp=0;
-
-  int masChkSup0=masChkSup;
-  mudaModoChk=0;
-
-  double difdelp=presfim-pGSup;
-  if((fluxcri==0 ) && fabs(difdelp)<2.5 &&  delp<5 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area){
-	  aberto = 1;
-      double sens = 1.;
-      if (masentrada < 0. && celula[ncel - 1].MliqiniR <= 0)
-        sens = 0.;
-	  presfim = pGSup + sens * delp;
-	  masChkSup = 0;
-	  if(masChkSup!=masChkSup0)mudaModoChk=1;
-  }
-
-  else {
-	  	  if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area && ((((*vg1dSP).lixo5-2*arq.dtmax> tMedMov  || arq.perm == 2)&& fabs(presMedMov - pGSup)/presMedMov < 0.05 && fabs(jMedMov) < 0.5)
-              ||(((*vg1dSP).lixo5-2*arq.dtmax > tMedMov  || arq.perm == 2) && fabs(presMedMov - pGSup) < (0.05 * pGSup) && fabs(jMedMov) < 5.&& delp < 0.1 * pGSup)
-			  ||(((*vg1dSP).lixo5-2*arq.dtmax > tMedMov  || arq.perm == 2) && (pGSup - presMedMov)/presMedMov > 0.001)
-              ||(fabs(delp) < 0.1 && (presfim - pGSup)/presfim < 0.05 && arq.chkv==0 )))
-	     //if(condicional)
-	  	  {
-	  		  aberto = 1;
-	  		  if (abertoini != aberto) tempoaberto = 1;
-	  	  } else {
-	  		  aberto = 0;
-	  		  if (tempoaberto > 60)	tempoaberto = 0;
-	  	  }
-	  	  if ((((tit > -0.01 && celula[ncel].alf > -0.01) || chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
-	  			  && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area
-				  && (aberto == 0 && (tempoaberto == 0 || tempoaberto > 60)))) {
-
-	  		  aberto = 0;
-	  		  tempoaberto = 0;
-	  		  masliq = sinal * maxSup * (1. - tit);
-	  		  masgas = sinal * maxSup * tit;
-
-	  		  celula[ncel].DmasschokeG = -1*(1. - tit) * dmaxsup;
-	  		  celula[ncel].DmasschokeL = -1*tit * ((1 - betSup) * rholp / rholmix) * dmaxsup;
-	  		  celula[ncel].DmasschokeC = -1*tit * (betSup * rholc / rholmix) * dmaxsup;
-
-	  		  masChkSup = 1;
-	  		  if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  		  celula[ncel].fontemassLR = -masliq * (1 - betSup) * rholp / rholmix;
-	  		  celula[ncel].fontemassCR = -masliq * betSup * rholc / rholmix;
-	  		  celula[ncel].fontemassGR = -masgas;
-
-	  	  } else {
-	  		  if (tempoaberto != 0)
-	  			  tempoaberto++;
-	  		  if (chokeSup.AreaGarg >= 0.601 * celula[ncel - 1].duto.area)
-	  			  presfim = pGSup;
-	  		  else {
-
-	  			aberto=1;
-	  			masChkSup = 0;
-	  			if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  			//if(fabs(presfim-pGSup-delp)<0.5*fabs(presfim-pGSup) && fabs(presfim-pGSup)/presfim<0.1)presfim = pGSup+delp;
-	  			//else
-	  			presfim = pGSup;
-	  		  }
-	  		  aberto=1;
-	  		  masChkSup = 0;
-	  		  if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  	  }
-  }
-
-  double mastotchk = fabs(celula[ncel].fontemassLR + celula[ncel].fontemassCR + celula[ncel].fontemassGR);
-
-  if (masChkSup == 0 && (*vg1dSP).chaverede == 1) {      //alteracao7
-    double betloc;
-    if ((celula[ncel - 1].MR - celula[ncel - 1].MliqiniR)*0+1*celula[ncel - 1].MliqiniR > 0.)
-      betloc = celula[ncel - 1].bet;      //testeBeta//duvidabeta
-    else
-      betloc = betRev;
-
-    if (arq.chkv == 0 || celula[ncel - 1].MR > 0.)
-      sinal = 1.;
-    else
-      sinal = 0.;
-
-    celula[ncel].fontemassCR = -sinal * celula[ncel - 1].QLR * (betloc) * celula[ncel - 1].rcC;
-    celula[ncel].fontemassLR = -sinal * (celula[ncel - 1].MliqiniR + celula[ncel].fontemassCR);
-    celula[ncel].fontemassGR = -sinal * (celula[ncel - 1].MR - celula[ncel - 1].MliqiniR);
-
-    double fontemassCini = celula[ncel - 1].QLRini * (betloc) * celula[ncel - 1].rcC;
+    double num = (1. - alfmed * c0);
+    double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
+    celula[i].term1 = num / den;
+    celula[i].term2 = (-amed * alfmed * rg * ud) / den;
 
   }
-}*/
+  celula[1].term1L = celula[i].term1;
+  celula[1].term2L = celula[i].term2;
 
-/*void SProd::calcCCpres(double titRev, double alfRev, double betRev) {      //alteracao7
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
 
   double tESup = celula[ncel].temp;
   double alfSup = celula[ncel].alf;
@@ -16894,13 +11510,9 @@ void SProd::renovatermColIni() {
   double maxSup = 0.;
   double chokemas = 0;
 
-  //double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
   double rholp = celula[ncel].rpC;
-  //double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
   double rholc = celula[ncel].rcC;
   double rholmix = (1 - betSup) * rholp + betSup * rholc;
-  //double romix = alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)
-      //+ (1 - alfSup) * rholmix;
   double romix = alfSup * celula[ncel].rgC + (1 - alfSup) * rholmix;
 
   double tit;
@@ -16910,17 +11522,14 @@ void SProd::renovatermColIni() {
     tit = 0.;
   else if (masentrada < 0) {
     tit = 1.;
-
   }
   else if(fabs(masentrada)<1e-15)tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
   else
     tit = fabs(massgas / masentrada);
-	  //tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
   if (tit > 1)
     tit = 1;
   if (presfim < pGSup) {
     tit = 1.;
-
   }
 
   if(tit==0 && alfSup>0.05)
@@ -16949,7 +11558,6 @@ void SProd::renovatermColIni() {
     else
       sinal = 0.;
     tit=1.;
-
     pmon = pGSup;
     ypres = 1. / ypres;
   }
@@ -16966,7 +11574,6 @@ void SProd::renovatermColIni() {
   if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
     maxSup = 0.;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   double sinal2 = 1.;
   pmon = presfim * 1.0001;
   ypres = pGSup / pmon;
@@ -16994,7 +11601,10 @@ void SProd::renovatermColIni() {
   if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
     maxSup2 = 0.;
   double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (presfim * 0.0001);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
   double masliq;
    double masgas;
@@ -17013,7 +11623,8 @@ void SProd::renovatermColIni() {
  		  (tit  < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
  		  fabs(difdelp)/delp<1.2 && fabs(difdelp)/delp>0.8 &&
  		  ((fabs(maxSup)>0 && fabs((masentrada-maxSup)/maxSup)<0.2) ||
- 		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2))))){
+ 		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2))))
+){
  	  aberto = 1;
        double sens = 1.;
        if (masentrada < 0. && celula[ncel - 1].MliqiniR <= 0)
@@ -17032,7 +11643,6 @@ void SProd::renovatermColIni() {
 			  ||(((*vg1dSP).lixo5-2*arq.dtmax > tMedMov  || arq.perm == 2) && (pGSup - presMedMov)/presMedMov > 0.001
 				  && arq.chkv==0)
               ||(fabs(delp) < 0.1 && (presfim - pGSup)/presfim < 0.05 && arq.chkv==0 )))
-	     //if(condicional)
 	  	  {
 	  		  aberto = 1;
 	  		  if (abertoini != aberto) tempoaberto = 1;
@@ -17069,10 +11679,7 @@ void SProd::renovatermColIni() {
 	  			aberto=1;
 	  			masChkSup = 0;
 	  			if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  			//if(fabs(presfim-pGSup-delp)<0.5*fabs(presfim-pGSup) && fabs(presfim-pGSup)/presfim<0.1)presfim = pGSup+delp;
-	  			//else
 	  			presfim = pGSup;
-
 	  		  }
 	  		  aberto=1;
 	  		  masChkSup = 0;
@@ -17080,9 +11687,8 @@ void SProd::renovatermColIni() {
 	  	  }
   }
 
-  double mastotchk = fabs(celula[ncel].fontemassLR + celula[ncel].fontemassCR + celula[ncel].fontemassGR);
 
-  if (masChkSup == 0 && (*vg1dSP).chaverede == 1) {      //alteracao7
+  if (masChkSup == 0 && (*vg1dSP).chaverede == 1) {
     double betloc;
     if ((celula[ncel - 1].MR - celula[ncel - 1].MliqiniR)*0+1*celula[ncel - 1].MliqiniR > 0.)
       betloc = celula[ncel - 1].bet;      //testeBeta//duvidabeta
@@ -17098,302 +11704,13 @@ void SProd::renovatermColIni() {
     celula[ncel].fontemassLR = -sinal * (celula[ncel - 1].MliqiniR + celula[ncel].fontemassCR);
     celula[ncel].fontemassGR = -sinal * (celula[ncel - 1].MR - celula[ncel - 1].MliqiniR);
 
-    double fontemassCini = celula[ncel - 1].QLRini * (betloc) * celula[ncel - 1].rcC;
-
-  }
-}*/
-
-
-
-void SProd::calcCCpres(double titRev, double alfRev, double betRev) {      //alteracao7
-
-  double tESup = celula[ncel].temp;
-  double alfSup = celula[ncel].alf;
-  double betSup = celula[ncel].bet;
-
-  double masentrada = celula[ncel - 1].MR;
-  double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-  double maxSup = 0.;
-  double chokemas = 0;
-
-  //double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
-  double rholp = celula[ncel].rpC;
-  //double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
-  double rholc = celula[ncel].rcC;
-  double rholmix = (1 - betSup) * rholp + betSup * rholc;
-  //double romix = alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)
-      //+ (1 - alfSup) * rholmix;
-  double romix = alfSup * celula[ncel].rgC + (1 - alfSup) * rholmix;
-
-  double tit;
-  if ((massgas >= 0 && celula[ncel - 1].MliqiniR <= 0) || (massgas < 0 && celula[ncel - 1].MliqiniR == 0))
-    tit = 1.;
-  else if (massgas <= 0 && celula[ncel - 1].MliqiniR > 0)
-    tit = 0.;
-  else if (masentrada < 0) {
-    tit = 1.;
-    /*if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao7
-      tit = titRev;
-      alfSup = alfRev;
-      betSup = betRev;
-    }*/
-  }
-  else if(fabs(masentrada)<1e-15)tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
-  else
-    tit = fabs(massgas / masentrada);
-	  //tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
-  if (tit > 1)
-    tit = 1;
-  if (presfim < pGSup) {
-    tit = 1.;
-    /*if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao7
-      tit = titRev;
-      alfSup = alfRev;
-      betSup = betRev;
-    }*/
-  }
-
-  if(tit==0 && alfSup>0.05)
-	  tit=alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp)/romix;
-
-  romix = tit *(1./ celula[ncel].rgC) + (1 - tit) * (1./rholmix);
-  romix=1/romix;
-
-  double masChk;
-
-  double sinal = 1.;
-  double pmon = presfim;
-
-  double ypres = pGSup / presfim;
-  if(chokeSup.AreaGarg> (1e-3) * celula[ncel - 1].duto.area && ypres < 1.){
-     double cplM = (1. - betSup) * celula[ncel].flui.CalorLiq(presfim, tESup)-
-		             betSup*celula[ncel].fluicol.CalorLiq(presfim, tESup);
-     double jtlM = (1. - betSup) * celula[ncel].flui.JTL(presfim, tESup)- betSup / rholc;
-     double cpg =  celula[ncel].flui.CalorGas(presfim, tESup);
-     double jtgM = celula[ncel].flui.JTG(presfim, tESup);
-     arq.valTempChokeJus = tESup + ((1. - tit) * jtlM/cplM + tit * jtgM/cpg) * (pGSup - presfim) * 98066.52;
-  }
-  if (ypres > 1.) {
-    if (arq.chkv == 0)
-      sinal = -1.;
-    else
-      sinal = 0.;
-    tit=1.;
-    /*if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao7
-      tit = titRev;
-      alfSup = alfRev;
-      betSup = betRev;
-    }*/
-    pmon = pGSup;
-    ypres = 1. / ypres;
-  }
-
-  masChk = chokeSup.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-      celula[ncel - 1].fluicol);
-  maxSup = chokeSup.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui, celula[ncel - 1].fluicol);
-
-  int fluxcri = 1;
-  if (tit<=0.01 || fabs(ypres) > fabs(chokeSup.razpres)) {
-    fluxcri = 0;
-    maxSup = masChk;
-  }
-  if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
-    maxSup = 0.;
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  double sinal2 = 1.;
-  pmon = presfim * 1.0001;
-  ypres = pGSup / pmon;
-  if (ypres > 1.) {
-    sinal2 = -1.;
-    tit = 1;
-    pmon = pGSup;
-    ypres = 1. / ypres;
-    if (arq.chkv == 0)
-      sinal2 = -1.;
-    else
-      sinal2 = 0.;
-  }
-
-  double masChk2 = chokeSup.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-      celula[ncel - 1].fluicol);
-  double maxSup2 = chokeSup.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-      celula[ncel - 1].fluicol);
-
-  fluxcri = 1;
-  if (tit<=0.01 || fabs(ypres) > fabs(chokeSup.razpres)) {
-    fluxcri = 0;
-    maxSup2 = masChk2;
-  }
-  if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
-    maxSup2 = 0.;
-  double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (presfim * 0.0001);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  /*double masliq;
-  double masgas;
-  int abertoini = aberto;
-  double delp;
-  //double vazentrada=celula[ncel].fontemassLR+celula[ncel].fontemassCR+celula[ncel].fontemassGR;
-  double vazTeste=masChk;
-  if(masentrada>0 && masentrada>vazTeste && fabs(vazTeste-masentrada)/masentrada>0.5)vazTeste=masentrada;
-  if(chokeSup.AreaGarg> (1e-3) * celula[ncel - 1].duto.area )delp= (0.5 / 98066.5) * (1 / romix)
-      * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg*chokeSup.cdchk*chokeSup.cdchk))
-      *vazTeste*vazTeste;
-  else delp=0;
-
-  int masChkSup0=masChkSup;
-  mudaModoChk=0;
-
-  if(fabs(difdelp)>1e-15 && fabs(delp-difdelp)/fabs(difdelp)>5)delp=difdelp;
-  if(fluxcri==0 && (((tit<1e-7 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area) ||
-		  (tit  < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
-		  fabs(difdelp)/delp<1.2 && fabs(difdelp)/delp>0.8 &&
-		  ((fabs(maxSup)>0 && fabs((masentrada-maxSup)/maxSup)<0.2) ||
-		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2)))))){
-	  //if(fabs(difdelp)>1e-15 && fabs(delp-difdelp)/fabs(difdelp)>5)delp=difdelp;
-	  aberto = 1;
-      double sens = 1.;
-      if (masentrada < 0. && celula[ncel - 1].MliqiniR <= 0)
-        sens = 0.;
-	  presfim = pGSup + sens * delp;
-	  masChkSup = 0;
-	  if(masChkSup!=masChkSup0)mudaModoChk=1;
-
-  }*/
- /* double difdelp=presfim-pGSup;
-
-  if((fluxcri==0) && fabs(difdelp)<2.5 &&  delp<5 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area){
-	  aberto = 1;
-      double sens = 1.;
-      if (masentrada < 0. && celula[ncel - 1].MliqiniR <= 0)
-        sens = 0.;
-	  presfim = pGSup + sens * delp;
-	  masChkSup = 0;
-	  if(masChkSup!=masChkSup0)mudaModoChk=1;
-  }*/
-  double masliq;
-   double masgas;
-   int abertoini = aberto;
-   double delp;
-   if(chokeSup.AreaGarg> (1e-3) * celula[ncel - 1].duto.area)delp= (0.5 / 98066.5) * (1 / romix)
-       * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg*chokeSup.cdchk*chokeSup.cdchk))
-       *masentrada*masentrada;
-   else delp=0;
-
-   int masChkSup0=masChkSup;
-   mudaModoChk=0;
-
-   double difdelp=presfim-pGSup;
-   if(((tit<1e-7 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area) ||
- 		  (tit  < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
- 		  fabs(difdelp)/delp<1.2 && fabs(difdelp)/delp>0.8 &&
- 		  ((fabs(maxSup)>0 && fabs((masentrada-maxSup)/maxSup)<0.2) ||
- 		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2))))/*||
- 		  (fabs(difdelp)<0.1*pGSup && delp<0.1*pGSup && fabs(delp-difdelp)<0.5*fabs(difdelp))*/){
- 	  aberto = 1;
-       double sens = 1.;
-       if (masentrada < 0. && celula[ncel - 1].MliqiniR <= 0)
-         sens = 0.;
- 	  presfim = pGSup + sens * delp;
- 	  masChkSup = 0;
- 	  if(masChkSup!=masChkSup0)mudaModoChk=1;
-
-   }
-  else {
-	  	  if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
-	  			((((*vg1dSP).lixo5-2*arq.dtmax> tMedMov  || arq.perm == 2)&&
-	  				fabs(presMedMov - pGSup)/presMedMov < 0.05 && fabs(jMedMov) < 0.5)
-              ||(((*vg1dSP).lixo5-2*arq.dtmax > tMedMov  || arq.perm == 2) &&
-            		  fabs(presMedMov - pGSup) < (0.05 * pGSup) && fabs(jMedMov) < 5.&& delp < 0.01 * pGSup)
-			  ||(((*vg1dSP).lixo5-2*arq.dtmax > tMedMov  || arq.perm == 2) && (pGSup - presMedMov)/presMedMov > 0.001
-				  && arq.chkv==0)
-              ||(fabs(delp) < 0.1 && (presfim - pGSup)/presfim < 0.05 && arq.chkv==0 )))
-	     //if(condicional)
-	  	  {
-	  		  aberto = 1;
-	  		  if (abertoini != aberto) tempoaberto = 1;
-	  	  } else {
-	  		  aberto = 0;
-	  		  if (tempoaberto > 60)	tempoaberto = 0;
-	  	  }
-	  	  if ((((tit > -0.01 && celula[ncel].alf > -0.01) || chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
-	  			  && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area
-				  && (aberto == 0 && (tempoaberto == 0 || tempoaberto > 60)))) {
-
-	  		  aberto = 0;
-	  		  tempoaberto = 0;
-	  		  masliq = sinal * maxSup * (1. - tit);
-	  		  masgas = sinal * maxSup * tit;
-
-	  		  celula[ncel].DmasschokeG = -1*(1. - tit) * dmaxsup;
-	  		  celula[ncel].DmasschokeL = -1*tit * ((1 - betSup) * rholp / rholmix) * dmaxsup;
-	  		  celula[ncel].DmasschokeC = -1*tit * (betSup * rholc / rholmix) * dmaxsup;
-
-	  		  masChkSup = 1;
-	  		  if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  		  celula[ncel].fontemassLR = -masliq * (1 - betSup) * rholp / rholmix;
-	  		  celula[ncel].fontemassCR = -masliq * betSup * rholc / rholmix;
-	  		  celula[ncel].fontemassGR = -masgas;
-
-	  	  } else {
-	  		  if (tempoaberto != 0)
-	  			  tempoaberto++;
-	  		  if (chokeSup.AreaGarg >= 0.601 * celula[ncel - 1].duto.area)
-	  			  presfim = pGSup;
-	  		  else {
-
-	  			aberto=1;
-	  			masChkSup = 0;
-	  			if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  			//if(fabs(presfim-pGSup-delp)<0.5*fabs(presfim-pGSup) && fabs(presfim-pGSup)/presfim<0.1)presfim = pGSup+delp;
-	  			//else
-	  			presfim = pGSup;
-	  			/*double sens = 1.;
-	  			if (masentrada < 0.){
-	  				sens = -1;
-	  				if(arq.chkv==1)sens=0;
-	  			}
-	  			presfim = pGSup + sens * delp;*/
-	  		  }
-	  		  aberto=1;
-	  		  masChkSup = 0;
-	  		  if(masChkSup!=masChkSup0)mudaModoChk=1;
-	  	  }
-  }
-
-//  double mastotchk = fabs(celula[ncel].fontemassLR + celula[ncel].fontemassCR + celula[ncel].fontemassGR);
-
-  if (masChkSup == 0 && (*vg1dSP).chaverede == 1) {      //alteracao7
-    double betloc;
-    if ((celula[ncel - 1].MR - celula[ncel - 1].MliqiniR)*0+1*celula[ncel - 1].MliqiniR > 0.)
-      betloc = celula[ncel - 1].bet;      //testeBeta//duvidabeta
-    else
-      betloc = betRev;
-
-    if (arq.chkv == 0 || celula[ncel - 1].MR > 0.)
-      sinal = 1.;
-    else
-      sinal = 0.;
-
-    celula[ncel].fontemassCR = -sinal * celula[ncel - 1].QLR * (betloc) * celula[ncel - 1].rcC;
-    celula[ncel].fontemassLR = -sinal * (celula[ncel - 1].MliqiniR + celula[ncel].fontemassCR);
-    celula[ncel].fontemassGR = -sinal * (celula[ncel - 1].MR - celula[ncel - 1].MliqiniR);
-
-//    double fontemassCini = celula[ncel - 1].QLRini * (betloc) * celula[ncel - 1].rcC;
 
   }
 }
 
 
 
-void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //alteracao7
+void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
 
   double tESup = celula[ncel].temp;
   double alfSup = celula[ncel].alf;
@@ -17402,7 +11719,6 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
   double masentrada = celula[ncel - 1].MRBuf;
   double massgas = celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf;
   double maxSup = 0.;
-//  double chokemas = 0;
 
   double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].presBuf, celula[ncel].temp);
   double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].presBuf, celula[ncel].temp);
@@ -17416,8 +11732,8 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
     tit = 0.;
   else if (masentrada < 0) {
     if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao4
+      tit = 1.;
+    else {
       tit = titRev;
       alfSup = alfRev;
       betSup = betRev;
@@ -17430,8 +11746,8 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
     tit = 1;
   if (celula[ncel].presBuf < pGSup) {
     if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao4
+      tit = 1.;
+    else {
       tit = titRev;
       alfSup = alfRev;
       betSup = betRev;
@@ -17446,8 +11762,6 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
   romix=1/romix;
 
 
-  //double delp = (0.5 / 98066.5) * (1 / romix) * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg) -
-      //1 / (celula[ncel - 1].duto.area * celula[ncel - 1].duto.area)) * masentrada * masentrada;
   double masChk;
 
   double sinal = 1.;
@@ -17460,8 +11774,8 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
     else
       sinal = 0.;
     if ((*vg1dSP).chaverede == 0 || noextremo == 1)
-      tit = 1.;      //alteracao7
-    else {      //alteracao7
+      tit = 1.;
+    else {
       tit = titRev;
       alfSup = alfRev;
       betSup = betRev;
@@ -17483,66 +11797,12 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
   if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
     maxSup = 0.;
 
- /* double masliq;
-  double masgas;
-  int abertoini = aberto;
-
-  double delp;
-  double vazTeste=masChk;
-  if(masentrada>0 && masentrada>vazTeste && fabs(vazTeste-masentrada)/masentrada>0.5)vazTeste=masentrada;
-  if(chokeSup.AreaGarg> (1e-3) * celula[ncel - 1].duto.area)delp= (0.5 / 98066.5) * (1 / romix)*
-		  (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg*chokeSup.cdchk*chokeSup.cdchk))*vazTeste*vazTeste;
-  else delp=0.;*/
 
 
-  /*double difdelp=fabs(fabs(celula[ncel].presBuf-pGSup)-delp);
-  if(fabs(difdelp)>1e-15 && fabs(delp-difdelp)/fabs(difdelp)>5)delp=difdelp;
-  if(((tit<1e-7 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area ) ||
-     (tit  < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
-		  difdelp/delp<0.2 &&
-		  ((fabs(maxSup)>0 && fabs((masentrada-maxSup)/maxSup)<0.2) ||
-		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2))))){
-	  aberto = 1;
-	  if (arq.chkv == 0 || celula[ncel - 1].MRBuf > 0.)
-			  sinal = 1.;
-	  else
-			  sinal = 0.;
-	  double betloc;
-	  if ((celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf)*0+1*celula[ncel - 1].MliqiniRBuf > 0.)
-			  betloc = celula[ncel - 1].bet;      //testeBeta//duvidabeta
-	  else
-			  betloc = betRev;
-	  double rhomistBuf = betloc *
-				  celula[ncel - 1].fluicol.MasEspFlu(celula[ncel].presBuf, celula[ncel].temp) +
-			  (1. - betloc) * celula[ncel - 1].flui.MasEspLiq(celula[ncel].presBuf, celula[ncel].temp);
-	  double QLbuf = celula[ncel - 1].MliqiniRBuf / rhomistBuf;
 
-	  fontemassCRBuf = -sinal * QLbuf * (betloc) * celula[ncel - 1].rcC;
-	  fontemassPRBuf = -sinal * (celula[ncel - 1].MliqiniRBuf + fontemassCRBuf);
-	  fontemassGRBuf = -sinal * (celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf);
-  }*/
-  /*double difdelp=presfim-pGSup;
-  if((fluxcri==0 ) && fabs(difdelp)<2.5 &&  delp<5 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area){
-	  aberto = 1;
-	  if (arq.chkv == 0 || celula[ncel - 1].MRBuf > 0.)
-			  sinal = 1.;
-	  else
-			  sinal = 0.;
-	  double betloc;
-	  if ((celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf)*0+1*celula[ncel - 1].MliqiniRBuf > 0.)
-			  betloc = celula[ncel - 1].bet;      //testeBeta//duvidabeta
-	  else
-			  betloc = betRev;
-	  double rhomistBuf = betloc *
-				  celula[ncel - 1].fluicol.MasEspFlu(celula[ncel].presBuf, celula[ncel].temp) +
-			  (1. - betloc) * celula[ncel - 1].flui.MasEspLiq(celula[ncel].presBuf, celula[ncel].temp);
-	  double QLbuf = celula[ncel - 1].MliqiniRBuf / rhomistBuf;
 
-	  fontemassCRBuf = -sinal * QLbuf * (betloc) * celula[ncel - 1].rcC;
-	  fontemassPRBuf = -sinal * (celula[ncel - 1].MliqiniRBuf + fontemassCRBuf);
-	  fontemassGRBuf = -sinal * (celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf);
 
-  }*/
+
   double masliq;
    double masgas;
    int abertoini = aberto;
@@ -17557,8 +11817,8 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
       (tit  < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
  		  difdelp/delp<0.2 &&
  		  ((fabs(maxSup)>0 && fabs((masentrada-maxSup)/maxSup)<0.2) ||
- 		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2))))/*||
- 		  (difdelp<0.1*pGSup && delp<0.1*pGSup)*/){
+ 		   (fabs(masentrada)>0 && fabs((masentrada-maxSup)/masentrada)<0.2))))
+){
  	  aberto = 1;
  	  if (arq.chkv == 0 || celula[ncel - 1].MRBuf > 0.)
  			  sinal = 1.;
@@ -17587,15 +11847,9 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
 	  ||(((*vg1dSP).lixo5-2*arq.dtmax > tMedMov  || arq.perm == 2) && (pGSup - presMedMov) > 0.01
 			  && arq.chkv==0)
 	  ||(fabs(delp) < 0.1 && (celula[ncel].presBuf - pGSup)/celula[ncel].presBuf < 0.05 && arq.chkv==0
-			  /*&& alfSup > 0.95*/ ))) {
-	  	/*aberto = 1;
-        if (abertoini != aberto)
-    	tempoaberto = 1;*/
+			   ))) {
   	  }
   	  else {
-	  /*aberto = 0;
-    	if (tempoaberto > 60)
-    	tempoaberto = 0;*/
   		  abertoini=aberto;
   	  }
   	  if (((tit > -0.01 && celula[ncel].alf > -0.01) || chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area) &&
@@ -17608,7 +11862,7 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
     	fontemassGRBuf = -masgas;
 
   	  }
-  	  if (masChkSup == 1 && (*vg1dSP).chaverede == 1) {      //alteracao7
+  	  if (masChkSup == 1 && (*vg1dSP).chaverede == 1) {
 	    celula[ncel].fontemassCR = fontemassCRBuf;
     	celula[ncel].fontemassLR = fontemassPRBuf;
     	celula[ncel].fontemassGR = fontemassGRBuf;
@@ -17617,7 +11871,7 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
     	celula[ncel].DmasschokeL = 0.;
     	celula[ncel].DmasschokeC = 0.;
   	  }
-  	  else if (masChkSup == 0 && (*vg1dSP).chaverede == 1) {      //alteracao4
+  	  else if (masChkSup == 0 && (*vg1dSP).chaverede == 1) {
   		  if (arq.chkv == 0 || celula[ncel - 1].MRBuf > 0.)
   			  sinal = 1.;
   		  else
@@ -17636,45 +11890,12 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {      //a
   		  fontemassPRBuf = -sinal * (celula[ncel - 1].MliqiniRBuf + fontemassCRBuf);
   		  fontemassGRBuf = -sinal * (celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf);
 
-  		  //aberto = 1;
-    /* if(titRev>1-localtiny){
-     fontemassCRBuf=0;
-     fontemassPRBuf=0;
-     celula[ncel-1].MliqiniRBuf=0;
-     celula[ncel].MliqiniBuf=0.;
-     }
-     else if(titRev<localtiny){
-     fontemassGRBuf=0.;
-     celula[ncel-1].MRBuf=celula[ncel-1].MliqiniRBuf;
-     celula[ncel].MCBuf=celula[ncel].MliqiniBuf;
-     }*/
 
-    /* if((titRev<1.-localtiny && titRev>localtiny) || (celula[ncel-1].MliqiniRBuf>=0. &&
-     (celula[ncel-1].MRBuf-celula[ncel-1].MliqiniRBuf)>=0)){
-     fontemassCRBuf=-sinal*QLbuf*(betloc)*celula[ncel-1].rcC;
-     fontemassPRBuf=-sinal*(celula[ncel-1].MliqiniRBuf-fontemassCRBuf);
-     fontemassGRBuf=-sinal*(celula[ncel-1].MRBuf-celula[ncel-1].MliqiniRBuf);
-     }
-     else if(titRev>=1.-localtiny && celula[ncel-1].MliqiniRBuf<=0.){
-     fontemassCRBuf=0.;
-     fontemassPRBuf=0.;
-     fontemassGRBuf=-sinal*(celula[ncel-1].MRBuf-celula[ncel-1].MliqiniRBuf);
-     }
-     else if((celula[ncel-1].MRBuf-celula[ncel-1].MliqiniRBuf)<=0){
-     fontemassCRBuf=-sinal*QLbuf*(betloc)*celula[ncel-1].rcC;
-     fontemassPRBuf=-sinal*(celula[ncel-1].MliqiniRBuf-fontemassCRBuf);
-     fontemassGRBuf=0.;
-     }*/
   	  }
   }
 }
 
 void SProd::determinaDTExpli() {
-	 /* if ((*vg1dSP).lixo5 < localtiny && (*vg1dSP).chaverede==0) {
-	    arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
-	    if (arq.lingas > 0 && arq.nvalvgas > 0) arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
-	    arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
-	  }*/
 
 	  for (int i = 0; i <= ncel; i++) {
 	    double velAux = celula[i].termAdSomVel();
@@ -17694,78 +11915,14 @@ void SProd::determinaDTExpli() {
 	    celula[i].dt2 = dt;
 	    celula[i].dtPig = dt;
 	  }
-	 /* if (arq.lingas == 1) {		//alteracao2
-	    for (int i = 0; i <= ncelGas; i++) {    //alteracao2
-	      double dtaux;
-	      double jmix = fabs(celulaG[i].VGasR / celulaG[i].u1L);
-	      if (fabs(jmix) > 1e-5) dtaux = celulaG[i].dx0 / jmix;
-	      else dtaux = dt;
-	      if (dtaux < dt) dt = dtaux;
-	    }
-	  }
-	  dt = mult * dt;
-	  if (dt > arq.dtmax) dt = arq.dtmax;
 
-	  if (arq.evento.size() > indevento) {
-	    if ((*vg1dSP).lixo5 < arq.evento[indevento] && ((*vg1dSP).lixo5 + dt) > (arq.evento[indevento] + 0.1)) {
-	      dt = arq.evento[indevento] - (*vg1dSP).lixo5;
-	      indevento++;
-	    } else if ((*vg1dSP).lixo5 < arq.evento[indevento] && ((*vg1dSP).lixo5 + dt) >= (arq.evento[indevento])) indevento++;
-	  }
 
-	  EstadoMaster1 = 1;
-	  for (int i = 0; i < nfechaM1; i++) {
-	    if ((*vg1dSP).lixo5 > fechaM1[i]) {
-	      for (int j = 0; j < nabreM1; j++) {
-	        if ((*vg1dSP).lixo5 < abreM1[j]) {
-	          EstadoMaster1 = 0;
-	          contaMaster1++;
-	          if (contaMaster1 > 19) contaMaster1 = 20;
-	          if ((*vg1dSP).lixo5 >= abreM1[j] - dt) contaMaster1 = 0;
-	          break;
-	        }
-	      }
-	    }
-	  }
 
-	  for (int i = 0; i <= ncel; i++) {
-	    celula[i].dt = dt;
-	    celula[i].dt2 = dt;
-	    celula[i].dtPig = dt;
-	  }*/
 }
 
 void SProd::determinaDT(int vexpli) {
-	/*
-	 *  tVet.push_back(dt);
-  presVet.push_back(presfim * dt);
-  double jtemporario = celula[ncel - 1].Mliqini
-      / (celula[ncel - 1].duto.area
-          * ((1. - celula[ncel - 1].bet) * celula[ncel - 1].rpC + celula[ncel - 1].bet * celula[ncel - 1].rcC));
-  jtemporario += (celula[ncel - 1].MC - celula[ncel - 1].Mliqini)
-      / (celula[ncel - 1].duto.area * celula[ncel - 1].flui.MasEspGas(celula[ncel - 1].pres, celula[ncel - 1].temp));
-  jVet.push_back(jtemporario * dt);
-  alfVet.push_back(celula[ncel - 1].alf * dt);
-  ktMedMov += dt;
-  pTotal += presfim * dt;
-  jTotal += jtemporario * dt;
-  alfTotal += celula[ncel - 1].alf * dt;
-  if ((*vg1dSP).lixo5 > tMedMov) {
-    pTotal -= presVet.front();
-    presVet.erase(presVet.begin());
-    jTotal -= jVet.front();
-    jVet.erase(jVet.begin());
-    alfTotal -= alfVet.front();
-    alfVet.erase(alfVet.begin());
-    ktMedMov -= tVet.front();
-    tVet.erase(tVet.begin());
-    presMedMov = pTotal / ktMedMov;
-    jMedMov = jTotal / ktMedMov;
-    alfMedMov = alfTotal / ktMedMov;
-  }
-	 */
 
-  if ((*vg1dSP).lixo5 < (*vg1dSP).localtiny && (*vg1dSP).chaverede==0) {//alteracao7
+  if ((*vg1dSP).lixo5 < (*vg1dSP).localtiny && (*vg1dSP).chaverede==0) {
     arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
     if (arq.lingas > 0 && arq.nvalvgas > 0) arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
     arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
@@ -17803,7 +11960,6 @@ void SProd::determinaDT(int vexpli) {
 	  if(alarmOscila==1 && arq.desligaPenalizaDT==0)dt/=10.;
   }
 
-  //if(mudaModoChk==1)dt=arq.dtmax/20;
   for (int i = 0; i <= ncel; i++) {
 	  if(celula[i].acsr.tipo==15){
 		  celula[i].acsr.radialPoro.defineDT(0);
@@ -17820,15 +11976,6 @@ void SProd::determinaDT(int vexpli) {
   }
   else{
 
-  /*if(arq.ControlDTGolfada==1 && (((*vg1dSP).lixo5>1e-15 &&chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area &&
-		  celula[ncel-1].MC>10*celula[ncel-1].MCini &&
-		  celula[ncel-1].MC>1*celula[ncel-1].duto.area/0.01824) || kontaGolfada<500)){
-	  if(kontaGolfada>500){
-		  kontaGolfada=0;
-	  }
-	  dt/=10.;
-	  kontaGolfada++;
-  }*/
   int multChoke=1.;
   if(celula[ncel-1].alf<0.9) multChoke=1;
   double mgas=celula[ncel].MC-celula[ncel].Mliqini;
@@ -17837,8 +11984,8 @@ void SProd::determinaDT(int vexpli) {
 		  (((*vg1dSP).lixo5>1e-15 &&masChkSup == 1 && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area &&
 		  chokeSup.AreaGarg > 1e-3 * celula[ncel - 1].duto.area &&
   		  ((celula[ncel].Mliqini>=0 && celula[ncel].Mliqini0<0 && mgas>0)
-  		 || (celula[ncel].Mliqini>=0 && mgas<0 && mgas0>0)/*||
-		 fabs(celula[ncel - 1].MR-celula[ncel - 1].MRini)/(fabs(celula[ncel - 1].MR)+0.0001)>1*/)
+  		 || (celula[ncel].Mliqini>=0 && mgas<0 && mgas0>0)
+)
 		 )||
 		 kontaGolfada<multChoke*200)){
 
@@ -17855,20 +12002,15 @@ void SProd::determinaDT(int vexpli) {
   	  dt*=(progres/(multChoke*100.));
   	  kontaGolfada++;
     }
-  //if(restriDt==1) dt=dtSimMed/100;
   if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) aberto = 1;
-  //else aberto=0;
   if (fabs(presfim - pGSup)/presfim < 0.05 && aberto == 0 && dt > 1. && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area &&
 		  chokeSup.AreaGarg > 1e-15 * celula[ncel - 1].duto.area ) dt =
       1.;
-  //if (pGSup/presfim < 0.1 && aberto == 0 && dt > 1. && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area) dt =
-    //  1.;
   for (int i = 0; i < arq.eventoabre; i++) {
     if ((*vg1dSP).lixo5 > arq.Tevento[i] - arq.dtmax && (*vg1dSP).lixo5 < arq.Tevento[i] + 30) {
       if (dt > menorDx / 100.){
     	  dt = menorDx / 100.;
       }
-      //if((*vg1dSP).lixo5<=arq.Tevento[i])modeloCompleto=0;
     }
   }
   mult=0.8;
@@ -17902,25 +12044,12 @@ void SProd::determinaDT(int vexpli) {
 	  	  }
   }
 
-  /*double multini=mult;
-  for(int i=1;i<ncel;i++){
-	 double refer=0.01*celula[i].flui.MasEspoleo(celula[i].pres,celula[i].temp)*
-		     celula[i].duto.area/celula[i].dx;
-     if(fabs(celula[i].FonteMudaFase)>refer){
-    	 mult=0.8/(100.*fabs(celula[i].FonteMudaFase)/refer);
-    	 if(mult>multini)mult=multini;
-     }
-     else mult=mult/0.95;
-     if (mult > multini) mult = multini;
-  }*/
 
   for (int i = 0; i <= ncel; i++) {
     double jmix = 0.;
     double A1 = celula[i].duto.area;
     double dtaux;
-    //if (celula[i].alf < 1 - 1e-5) jmix += fabs(
         //celula[i].Mliqini
-            // / (A1 * ((1. - celula[i].bet) * celula[i].rpC + celula[i].bet * celula[i].rcC) * (1. - celula[i].alf)));
     double alfteste=celula[i].alf;
     if(i>0 && (celula[i].MC - celula[i].Mliqini)>0)alfteste=celula[i-1].alf;
     if (alfteste > 1e-9) jmix += fabs(
@@ -17933,28 +12062,21 @@ void SProd::determinaDT(int vexpli) {
         celula[i].Mliqini
         / (A1 * ((1. - celula[i].bet) * celula[i].rpC + celula[i].bet * celula[i].rcC) * (1. - 0*alfteste)));
     if (fabs(jmixL) > jmix) jmix = fabs(jmixL);
-    //double ulteste;
-    //if(celula[i].alf<1-1e-9)ulteste=
-    //							fabs(celula[i].Mliqini /
-    //							(A1*((1.-celula[i].bet)*celula[i].rpC+celula[i].bet*celula[i].rcC)*(1.-celula[i].alf)));
-    //if(fabs(ulteste)>jmix)jmix=fabs(ulteste);
     if (fabs(jmix) > 1e-5) dtaux = 1.0 * celula[i].dx / jmix;
     else dtaux = dt;
     if (dtaux < dt) dt = dtaux;
   }
-  if (arq.lingas == 1) {		//alteracao2
-    for (int i = 0; i <= ncelGas; i++) {    //alteracao2
+  if (arq.lingas == 1) {
+    for (int i = 0; i <= ncelGas; i++) {
       double dtaux;
       double jmix = fabs(celulaG[i].VGasR / celulaG[i].u1L);
       if (fabs(jmix) > 1e-5) dtaux = celulaG[i].dx0 / jmix;
       else dtaux = dt;
       if (dtaux < dt) dt = dtaux;
-    }    //alteracao2
-  }		//alteracao2
+    }
+  }
 
   if(restriDt==1 && arq.desligaPenalizaDT==0 ){
-	 // if(dt>arq.dtmax/10.)
-		  //dt=arq.dtmax/10.;
 	  if(alteraTempo<2)dt/=10.;
 	  alteraTempo++;
 	  if(alteraTempo>10)alteraTempo=0;
@@ -17962,7 +12084,6 @@ void SProd::determinaDT(int vexpli) {
 
   dt = mult * dt;
   if (dt > arq.dtmax) dt = arq.dtmax;
-  //if(kSP>100 && dt>dtCFLMed*1.1)dt=dtCFLMed*1.1;
 
   if (arq.evento.size() > indevento) {
     if ((*vg1dSP).lixo5 < arq.evento[indevento] && ((*vg1dSP).lixo5 + dt) > (arq.evento[indevento] + 0.1)) {
@@ -17986,11 +12107,6 @@ void SProd::determinaDT(int vexpli) {
     }
   }
 
- // if(arq.modoDifus3D==1 && poisson3D.penalizaDt>0)dt/=10.;
- // if(arq.modoDifus3D==1 && (poisson3D.penalizaDt>0 || poisson3D.penalizaDt>20) && poisson3D.itera>7){
-	//  dt/=10.;
-	 // poisson3D.penalizaDt=22;
- // }
 
   for (int i = 0; i <= ncel; i++) {
     celula[i].dt = dt;
@@ -18008,117 +12124,15 @@ void SProd::determinaDT(int vexpli) {
  	  }
    }
   //dtInter=dt;//alteracao2
-  //if(arq.descarga==1)avancInter();//alteracao2
-  //if(dtInter<dt)dt=dtInter;//alteracao2
   }
 }
 
-/*void  SProd::determinaDT(){
-	if((*vg1dSP).lixo5<localtiny && (*vg1dSP).chaverede==0){
-		arq.imprimeProfile(celula,  flut, (*vg1dSP).lixo5,indTramo);
-		if(arq.lingas>0 && arq.nvalvgas>0)arq.imprimeProfileG(celulaG,  flutG, (*vg1dSP).lixo5,indTramo);
-		arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
-	}
-	dt = arq.dtmax;
-	if(chokeSup.AreaGarg>= 0.6*celula[ncel-1].duto.area)aberto=1;
-	//else aberto=0;
-	if(fabs(presfim-pGSup)<0.5 && aberto==0 && dt>1. && chokeSup.AreaGarg< 0.6*celula[ncel-1].duto.area)dt=1.;
-	for(int i=0; i<arq.eventoabre;i++){
-		if((*vg1dSP).lixo5>arq.Tevento[i]-arq.dtmax && (*vg1dSP).lixo5<arq.Tevento[i]+30){
-			if(dt>menorDx/100. && (*vg1dSP).chaverede==0 && arq.dtmax>menorDx/100.)dt=menorDx/100.;
-			else if(dt>menorDx/100. && arq.dtmax>menorDx/100.)dt=menorDx/100.;
-		}
-	}
-	if(((*vg1dSP).lixo5>tMedMov && (fabs(presMedMov-presfim)>4.)) || (presfim<pGSup && masChkSup==1 &&
-			             chokeSup.AreaGarg>(1e-3)*celula[ncel-1].duto.area) ||
-						 (celula[ncel].alf<=0.06 && chokeSup.AreaGarg<0.6*celula[ncel-1].duto.area)){
-        double denominador=10.;
-        double progres=0.95;
-
-        if((presfim<pGSup && masChkSup==1)){
-        	denominador=100.;
-        	progres=0.5;
-        	mult=pow(progres,fabs(pGSup-presfim))*mult;
-        }
-        else if(celula[ncel].alf<=0.06 && chokeSup.AreaGarg<0.6*celula[ncel-1].duto.area){
-           	denominador=1000.;
-            progres=0.5;
-            mult=celula[ncel].alf*mult;
-        }
-        else mult=pow(progres,fabs(presMedMov-presfim))*mult;
-		if(arq.dtmax*mult<menorDx/denominador)mult=(menorDx/denominador)/arq.dtmax;
-		if(mult>0.8)mult=0.8;
-	}
-	else{
-		mult=mult/0.95;
-		if(mult>0.8)mult=0.8;
-	}
-
-	for (int i = 0; i <= ncel; i++){
-		double jmix=0.;
-		double A1=celula[i].duto.area;
-		double dtaux;
-		if(celula[i].alf<1-1e-9)jmix+=
-						fabs(celula[i].Mliqini /
-						(A1*((1.-celula[i].bet)*celula[i].rpC+celula[i].bet*celula[i].rcC)*(1.-0*celula[i].alf)));
-		if(celula[i].alf>1e-9)jmix +=
-			fabs((celula[i].MC-celula[i].Mliqini) /
-					(A1 *celula[i].flui.MasEspGas(celula[i].pres,celula[i].temp)*(0+1*celula[i].alf)));
-		if(fabs(celula[i].VTemper)>jmix)jmix=fabs(celula[i].VTemper);
-		//double ulteste;
-		//if(celula[i].alf<1-1e-9)ulteste=
-		//							fabs(celula[i].Mliqini /
-		//							(A1*((1.-celula[i].bet)*celula[i].rpC+celula[i].bet*celula[i].rcC)*(1.-celula[i].alf)));
-		//if(fabs(ulteste)>jmix)jmix=fabs(ulteste);
-		if(fabs(jmix)>1e-5)dtaux=0.8*celula[i].dx/jmix;
-		else dtaux=dt;
-		if(dtaux<dt)dt=dtaux;
-	}
-	if(arq.lingas==1){//alteracao2
-	  for (int i = 0; i <= ncelGas; i++){//alteracao2
-		double dtaux;
-		double jmix=fabs(celulaG[i].VGasR/celulaG[i].u1L);
-		if(fabs(jmix)>1e-5)dtaux=celulaG[i].dx0/jmix;
-		else dtaux=dt;
-		if(dtaux<dt)dt=dtaux;
-	  }//alteracao2
-	}//alteracao2
-	dt=mult*dt;
-	if(dt>arq.dtmax)dt=arq.dtmax;
-	if(arq.evento.size()>indevento){
-		if((*vg1dSP).lixo5<arq.evento[indevento] && ((*vg1dSP).lixo5+dt)> (arq.evento[indevento]+0.1)){
-			  dt=arq.evento[indevento]-(*vg1dSP).lixo5;
-			  indevento++;
-		}
-	    else if((*vg1dSP).lixo5<arq.evento[indevento] && ((*vg1dSP).lixo5+dt)>= (arq.evento[indevento])) indevento++;
-	}
 
 
-    EstadoMaster1=1;
-  	for(int i=0; i<nfechaM1;i++){
-  		if((*vg1dSP).lixo5>fechaM1[i]){
-  			for(int j=0; j<nabreM1; j++){
-  				if((*vg1dSP).lixo5<abreM1[j]){
-  					EstadoMaster1=0;
-  					contaMaster1++;
-  					if(contaMaster1>19)contaMaster1=20;
-  					if((*vg1dSP).lixo5>=abreM1[j]-dt)contaMaster1=0;
-                    break;
-  				}
-  			}
-  		}
-  	}
 
 
-	for (int i = 0; i <= ncel; i++){
-		celula[i].dt = dt;
-		celula[i].dt2 = dt;
-		celula[i].dtPig = dt;
-	}
-	//dtInter=dt;//alteracao2
-	//if(arq.descarga==1)avancInter();//alteracao2
-	//if(dtInter<dt)dt=dtInter;//alteracao2
-}*/
+
+
 
  void SProd::atenuaDtMax(){
 
@@ -18135,7 +12149,6 @@ void SProd::determinaDT(int vexpli) {
 	 	  if(kontarestriDt>10 && restriDt==1){
 	 		 restriDt=0;
 	 		 kontarestriDt=0;
-	 		 //modeloCompleto=1;
 	 	  }
 	   }
 	   dtCFLMed=dtCFLTotal/10;
@@ -18143,14 +12156,11 @@ void SProd::determinaDT(int vexpli) {
 	   if((dtSimMed<dtCFLMed/2 && kontarestriDt>10)){
 		   restriDt=1;
 		   kontarestriDt=0;
-		   //modeloCompleto=0;
 	   }
  }
 
 void SProd::avaliaVariaDpDt(double razMast, double razMast0,int vexpli){
 	   double dpdtRef=2*arq.taxaDespre;
-	   //modeloCompleto=0;
-	   //atenuaSegrega();
 	   double modDpDt=0.;
 	   double modDTDt=0.;
 	   double dpdtMax=0.;
@@ -18187,21 +12197,16 @@ void SProd::avaliaVariaDpDt(double razMast, double razMast0,int vexpli){
 	   	   DpMaxMed/=nvec;
 	   	   DTMaxMed/=nvecT;
 	   	   if(DpMaxMed>dpdtRef)modeloCompleto=1;
-	   	   //if(celula[ncel-1].pres<20)modeloCompleto=0;
-	   	   if( /*razMast<1e-3 &&*/ chokeSup.AreaGarg/celula[ncel - 1].duto.area<1e-3 &&
+	   	   if(  chokeSup.AreaGarg/celula[ncel - 1].duto.area<1e-3 &&
 	   			(DpMaxMed>arq.taxaDespre/10. || DTMaxMed>0.001)   )modeloCompleto=1;
 	   	   int linAberta=1;//caso varias valvulas
 	   	   for(int i=0;i<=arq.nvalv; i++)if(vRazMast1[i]<=1e-3)linAberta=0;//caso varias valvulas
 	   	   if((linAberta==1 && chokeSup.AreaGarg/celula[ncel - 1].duto.area>1e-3))modeloCompleto=1;//caso varias valvulas
-	   	   //if((razMast>1e-3 && chokeSup.AreaGarg/celula[ncel - 1].duto.area>1e-3))modeloCompleto=1;//caso so Master
-	   	  // if(razMast<1e-3 && masChkSup ==0 && (fabs(pGSup-pGSupIni)/dt)<dpdtRef)modeloCompleto=0;
 	   }
-	   //if(razMast!=razMast0 /*|| restriDt==1*/)modeloCompleto=0;//caso so Master
 	   for(int i=0;i<=arq.nvalv; i++)if(vRazMast1[i]!=vRazMast0[i] )modeloCompleto=0;//caso varias valvulas
 	   if((DpMaxMed>10 || DTMaxMed>1) && modeloCompleto==1 && vexpli==0  ){
 		   modeloCompleto=0;
 	   }
-	   //modeloCompleto=0;
 }
 
 void SProd::aberturaVal0(){
@@ -18245,14 +12250,11 @@ void SProd::restringeDTporValv(){
 			}
 			else momentoDesesp=0.;
 			if(vRazMast1[i]<vRazMast0[i] && (vRazMast1[i]<=1.1*arq.master1.razareaativ && vRazMast1[i]>=vRazMastCrit[i]*arq.master1.razareaativ)){
-				//if(i==0)celpos = arq.master1.posic;
-				//else celpos=arq.valv[i-1].posicP;
 				double raz=20.;
 				if(celula[celpos].alf<0.5)raz=40.;
 				dtvec[i]=dtaux;
 				if(dtvec[i]>1)dtvec[i]=1.;
 				if(celula[celpos].alf<0.5)dtvec[i]=0.1+0.9*(celula[celpos].alf)/0.5;
-				//celula[0].dt=dt/raz;
 				dtvec[i]/=raz;
 				reinicia=-1;
 			}
@@ -18267,9 +12269,7 @@ void SProd::restringeDTporValv(){
 void SProd::solveLinGas() {
   if (arq.lingas > 0) {
     double tg;
-    //subtempoGas(celulaG,chokeVGL,matglobG,termolivreG,
     //dt,celula,ColunaAnulaIni,ColunaAnulaFim,
-    //AnulaColunaIni,AnulaColunaFim,posicVGLP,posicVGLG, arq.nvalvgas);
     ValvGasTrans();
     for (int i = 0; i < arq.nvalvgas; i++) {
       int posGLP = posicVGLP[i];
@@ -18281,10 +12281,9 @@ void SProd::solveLinGas() {
         celula[posGLP].acsr.injg.QGas = celulaG[posGLG].massfonteCH;
         celula[posGLP].acsr.injg.tipoflu = 1;
       }
-      //double tg;
       if (posGLG < celInter || (posGLG == celInter && celulaG[posGLG].razInter > 0.5)) {
         if (chokeVGL[i].presEstag > chokeVGL[i].presGarg) {
-          tg = TempDescGL(i);	        		//alteracao2
+          tg = TempDescGL(i);
         } else tg = celula[posGLP].temp;
         celula[posGLP].acsr.injg.temp = tg;
         if (celula[posGLP].acsr.injg.temp < -50) celula[posGLP].acsr.injg.temp = -50;
@@ -18300,62 +12299,35 @@ void SProd::solveLinGas() {
   }
 }
 
-void SProd::EvoluiFrac(double alfrev,double betrev,int ciclo) {//alteracao7
+void SProd::EvoluiFrac(double alfrev,double betrev,int ciclo) {
 
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
 	for (int i = 0; i <= ncel; i++){
 
-		if(i<ncel){//alteracao7
-			//double alfAux=celula[i].alfIter;
-			//int reiniAux=celula[i].reiniciaAlf;
+		if(i<ncel){
 			celula[i].avancalf(reinicia, ncel);
-			/*if(ciclo>0){
-				if((alfAux<1.-1e-15 && celula[i].alf>1.-1e-15) || (alfAux>1e-15 && celula[i].alf<1e-15)){
-					celula[i].dpdt=0.;
-					celula[i].dTdt=0.;
-					celula[i].reiniciaAlf=reiniAux;
-					celula[i].dt1=dt;
-					celula[i].avancalf(reinicia, ncel);
-				}
-			}*/
 		}
 		if(i==ncel){
 
 			if(((*vg1dSP).chaverede==0 || noextremo ==1 || (*vg1dSP).chaveRedeParalela==1)){
-				//celula[i].alf=celula[i-1].alf;
 				if(masChkSup == 0 || celula[ncel].Mliqini>0) celula[i].alf=celula[i-1].alf;
 				else celula[i].avancalf(reinicia, ncel);
 			}
-			/*else{
-				if(masChkSup == 1 && celula[ncel].Mliqini<=0) celula[i].avancalf(reinicia, ncel);//celula[i].alf=celula[i-1].alf;
-				else if(masChkSup == 1 || arq.chkv==1) celula[i].alf=celula[i-1].alf;
-			}*/
 			else{
-				if(/*masChkSup == 0 &&*/ celula[ncel].Mliqini>0) celula[i].alf=celula[i-1].alf;
+				if( celula[ncel].Mliqini>0) celula[i].alf=celula[i-1].alf;
 				else if(masChkSup==0 && arq.chkv==0)celula[i].alf=alfrev;
 				else celula[i].avancalf(reinicia, ncel);
 			}
-			//else celula[i].avancalf(reinicia, ncel);
-			//else
-				//celula[i].avancalf(reinicia, ncel);
-			//if((*vg1dSP).chaverede==1
-					//&& noextremo !=1 && masChkSup==0 && arq.chkv==0){
 
-					//celula[i].alf=alfrev;
-			//if(massliqRev<0 && celula[i].QG<=0.)celula[i-1].alf=alfrev;
-			//}
-			//if(celula[i].alf<-0.001 && chokeSup.AreaGarg < 1e-5 * celula[ncel - 1].duto.area && aberto==0)celula[i].alf=0.05;
 		}
   }
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
   for (int i = 0; i <= ncel; i++){
-		if(i<ncel){//alteracao7
+		if(i<ncel){
 			celula[i].avancbet(reinicia, ncel);
 		}
 		if(i==ncel){
-			//if(masChkSup==0)
 			if(((*vg1dSP).chaverede==0 || noextremo ==1 || (*vg1dSP).chaveRedeParalela==1)){
-				//if(chokeSup.AreaGarg > 1e-3 * celula[ncel - 1].duto.area) celula[i].bet=celula[i-1].bet;
 				if(masChkSup == 0 || celula[ncel].Mliqini>0) celula[i].bet=celula[i-1].bet;
 				else celula[i].avancbet(reinicia, ncel);
 			}
@@ -18363,15 +12335,6 @@ void SProd::EvoluiFrac(double alfrev,double betrev,int ciclo) {//alteracao7
 				if(masChkSup == 1)celula[i].avancbet(reinicia, ncel);
 				else if(arq.chkv==1) celula[i].bet=celula[i-1].bet;
 			}
-			/*else{
-				if(masChkSup == 0 && celula[ncel].Mliqini>0) celula[i].bet=celula[i-1].bet;
-				else if(masChkSup==0 && arq.chkv==0)celula[i].bet=betrev;
-				else celula[i].avancbet(reinicia, ncel);
-			}*/
-			//else celula[i].avancbet(reinicia, ncel);
-			//else
-				//celula[i].avancbet(reinicia, ncel);
-				//if((*vg1dSP).chaverede==1 && noextremo !=1 && masChkSup==0 && arq.chkv==0)celula[i].bet=betrev;
 		}
   }
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
@@ -18397,7 +12360,7 @@ void SProd::EvoluiFrac(double alfrev,double betrev,int ciclo) {//alteracao7
   }
 }
 
-void  SProd::ReiniEvolFrac0(){//alteracao7
+void  SProd::ReiniEvolFrac0(){
 	for(int i=0; i<=ncel;i++){
 		if(celula[i].dt<dt) dt=celula[i].dt;
 		if(celula[i].dt1<dt) dt=celula[i].dt1;
@@ -18408,8 +12371,8 @@ void  SProd::ReiniEvolFrac0(){//alteracao7
 
 void SProd::SubReiniEvolFrac() {
 	  for (int i = 0; i <= ncel; i++) {
-		if(celula[i].pres>-10. /*&& (fabs(celula[i].QG/celula[i].duto.area)+
-				fabs(celula[i].QL/celula[i].duto.area))>0.1*/){
+		if(celula[i].pres>-10.
+){
 			celula[i].alf = celula[i].alfini;
 			celula[i].alfPigE = celula[i].alfPigEini;
 			celula[i].alfPigD = celula[i].alfPigDini;
@@ -18418,11 +12381,6 @@ void SProd::SubReiniEvolFrac() {
 }
 
 void SProd::ReiniEvolFrac() {
- // for (int i = 0; i <= ncel; i++) {
-   // if (celula[i].dt < dt) dt = celula[i].dt;
-    //if (celula[i].dt2 < dt) dt = celula[i].dt2;
-    //if (celula[i].dtPig < dt) dt = celula[i].dtPig;
-  //}
   for (int i = 0; i <= ncel; i++) {
     celula[i].dt = dt;
     celula[i].dt1 = dt;
@@ -18451,7 +12409,6 @@ void SProd::ReiniEvolFrac() {
 void SProd::AtualizaPig() {
   for (int i = 1; i <= ncel; i++){
 	  celula[i].velPigini=celula[i].velPig;
-	  //celula[i].razPigini=celula[i].razPig;
 	  celula[i].estadoPigini=celula[i].estadoPig;
 	  celula[i].indpigini=celula[i].indpig;
   }
@@ -18468,7 +12425,6 @@ void SProd::AtualizaPig() {
           celula[i].indpig = -1;
           celula[i + 1].velPig = celula[i].velPig;
           celula[i + 1].alfPigE = celula[i].alf;
-          //celula[i - 1].alfPigER = celula[i].alfPigE;
           celula[i + 1].betPigE = celula[i].bet;
         }
       } else {
@@ -18501,13 +12457,11 @@ void SProd::AtualizaPig() {
     double betRI;
     celula[i].betI = celula[i].betPigE;
     if (celula[i].QL > 0.) celula[i].betI = celula[i - 1].betPigD;// testeBeta
-    //if (celula[i].QG > 0.) celula[i].betI = celula[i - 1].betPigD;
     celula[i - 1].betRI = celula[i].betI;
     if (i < ncel) celula[i + 1].betLI = celula[i].betI;
   }
 }
 
-///////////////////////////// alteracao7 //////////////////////////////////////////////
 void  SProd::SolveAcopPV(int vexpli,int ciclo){
 #pragma omp parallel for num_threads((*vg1dSP).ntrd)
     for (int i = 0; i <= ncel; i++) {
@@ -18523,10 +12477,8 @@ void  SProd::SolveAcopPV(int vexpli,int ciclo){
 
 	 matglobP.GaussElimPP(termolivreP);
 }
-///////////////////////////// alteracao7 //////////////////////////////////////////////
 
 void  SProd::prepDifusCalorND(int i){
-//	  double fluxcal;
 	  double dia = celula[i].duto.a;
 	  double area = 0.25 * M_PI * dia * dia;
 	  double alfmed = celula[i].alf;
@@ -18571,40 +12523,31 @@ void  SProd::prepDifusCalorND(int i){
 	  celula[i].calor.dt = celula[i].dt;
 	  double condliq = (1. - betmed) * celula[i].flui.CondLiq(celula[i].presini, celula[i].temp)
 		      + betmed * celula[i].fluicol.CondLiq(celula[i].presini, celula[i].temp);//(1. - betmed) * celula[i].flui.CondLiq(celula[i].pres, celula[i].temp)
-	  //+ betmed * celula[i].fluicol.CondLiq(celula[i].pres, celula[i].temp);
 	  celula[i].calor.kint =condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].presini, celula[i].temp) * alfmed;// condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].pres, celula[i].temp) * alfmed;
 	  celula[i].calor.cpint = cpl * (1 - alfmed) + cpg * alfmed;
 	  celula[i].calor.rhoint = rhol * (1 - alfmed) + rhog * alfmed;
-	/*double viscliq = (1. - betmed) * celula[i].flui.ViscOleo(celula[i].presini, celula[i].temp)
-		      + betmed * celula[i].fluicol.VisFlu(celula[i].presini, celula[i].temp);*///(1. - betmed) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp)
-	  //+ betmed * celula[i].fluicol.VisFlu(celula[i].pres, celula[i].temp);
+//(1. - betmed) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp)
 	  double viscliq = (1. - betmed) * celula[i].mipC
 	  	      + betmed * celula[i].micC;
-	/*celula[i].calor.viscint = viscliq * (1 - alfmed) * 1.e-3
-	      + celula[i].flui.ViscGas(celula[i].presini, celula[i].temp) * alfmed * 1.e-3;*///viscliq * (1 - alfmed) * 1.e-3
-	  //+ celula[i].flui.ViscGas(celula[i].pres, celula[i].temp) * alfmed * 1.e-3;
+//viscliq * (1 - alfmed) * 1.e-3
 	  celula[i].calor.viscint = viscliq * (1 - alfmed) * 1.e-3
 		      + celula[i].migC * alfmed * 1.e-3;
 	  double dtemp=celula[i].temp*0.01;
 	  if(fabs(celula[i].temp)<1e-15)dtemp=0.1;
 	  double rholdT=(1. - betmed) * celula[i].flui.MasEspLiq(celula[i].presini, celula[i].temp+dtemp) +
 	      betmed * celula[i].fluicol.MasEspFlu(celula[i].presini, celula[i].temp+dtemp)-rhol;//(1. - betmed) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp+dtemp) +
-		             //betmed * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp+dtemp)-rhol;
 	  double rhogdT=celula[i].flui.MasEspGas(celula[i].presini, celula[i].temp+dtemp)-rhog;//celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp+dtemp)-rhog;
 	  celula[i].calor.betint= -(1/celula[i].calor.rhoint)*(rholdT * (1 - alfmed) + rhogdT * alfmed)/(dtemp);
 }
 
 
 void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
-    if(((*vg1dSP).chaverede==0 || noextremo==1 || (*vg1dSP).chaveRedeParalela==1) && arq.chkv==0){//alteracao7
+    if(((*vg1dSP).chaverede==0 || noextremo==1 || (*vg1dSP).chaveRedeParalela==1) && arq.chkv==0){
 	       if(celula[ncel-1].MliqiniR<0 ){
-	       //if(celula[ncel-1].MR<0 || celula[ncel-1].MliqiniR<0 ){
-		      //celula[ncel-1].MliqiniR=0;
 		      celula[ncel-1].MR=celula[ncel-1].MR-celula[ncel-1].MliqiniR;
 		      celula[ncel-1].MliqiniR=0;
 		      celula[ncel-1].term1R=0;
 		      celula[ncel-1].term2R=0;
-		      //celula[ncel].Mliqini=0;
 		      celula[ncel].MC=celula[ncel].MC-celula[ncel].Mliqini;
 		      celula[ncel].Mliqini=0;
 		      celula[ncel].term1=0;
@@ -18614,16 +12557,13 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 		      celula[ncel-1].QLR=0;
 		      celula[ncel].QL=0;
 	       }
-    }//alteracao7
-    else if((arq.chkv==1 && masChkSup==0) || (arq.chkv==1 && masChkSup==1)){//alteracao7
+    }
+    else if((arq.chkv==1 && masChkSup==0) || (arq.chkv==1 && masChkSup==1)){
 	       if(celula[ncel-1].MliqiniR<0 ){
-	     //if(celula[ncel-1].MR<0 || celula[ncel-1].MliqiniR<0){
-		      //celula[ncel-1].MliqiniR=0;
 		      celula[ncel-1].MR=0.;
 		      celula[ncel-1].MliqiniR=0;
 		      celula[ncel-1].term1R=0;
 		      celula[ncel-1].term2R=0;
-		      //celula[ncel].Mliqini=0;
 		      celula[ncel].MC=0.;
 		      celula[ncel].Mliqini=0;
 		      celula[ncel].term1=0;
@@ -18633,13 +12573,8 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 		      celula[ncel-1].QLR=0;
 		      celula[ncel].QL=0;
 	       }
-    }//alteracao7
+    }
 
-  //salvaFonte();
-  //renovaTemp();
-  //double tempantiga;
-  //double buffer;
-  //tempantiga = celula[0].temp;
 
 
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -18652,7 +12587,7 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 
 
   celula[0].tempini = celula[0].temp;
-	 if(arq.ConContEntrada>0)//alteracao4
+	 if(arq.ConContEntrada>0)
 		celula[0].temp=tempE;
 	 else
 	    celula[0].temp=temperatura;
@@ -18668,10 +12603,10 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 	   #pragma omp parallel for num_threads((*vg1dSP).ntrd)
 	   for (int iP2D = 0; iP2D < nCelulaPoisson2D; iP2D++) {
 		   int i=indCelPoisson2D[iP2D];
-			  if(i<=ncel ){//alteracao7
+			  if(i<=ncel ){
 				  calctemp(i,celula[i].tempini);
 			  }
-			  else{//alteracao7
+			  else{
 				if((*vg1dSP).chaverede==0 || noextremo==1 || (*vg1dSP).chaveRedeParalela==1)celula[i].temp=celula[i].calor.Textern1;
 				else celula[i].temp=tGSup;
 			  }
@@ -18686,10 +12621,10 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 				para=0;
 			}
 		  if(celula[i].calor.difus2D==0){
-			  if(i<=ncel ){//alteracao7
+			  if(i<=ncel ){
 				  calctemp(i,celula[i].tempini);
 			  }
-			  else{//alteracao7
+			  else{
 				  if((*vg1dSP).chaverede==0 || noextremo==1 || (*vg1dSP).chaveRedeParalela==1)celula[i].temp=celula[i].calor.Textern1;
 				  else celula[i].temp=tGSup;
 			  }
@@ -18726,10 +12661,10 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 		   #pragma omp parallel for num_threads((*vg1dSP).ntrd)
 		   for (int iP2D = 0; iP2D < nCelulaPoisson2D; iP2D++) {
 			   int i=indCelPoisson2D[iP2D];
-				  if(i<=ncel ){//alteracao7
+				  if(i<=ncel ){
 					  calctemp(i,celula[i].tempini);
 				  }
-				  else{//alteracao7
+				  else{
 					if((*vg1dSP).chaverede==0 || noextremo==1 || (*vg1dSP).chaveRedeParalela==1)celula[i].temp=celula[i].calor.Textern1;
 					else celula[i].temp=tGSup;
 				  }
@@ -18740,10 +12675,10 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 	#pragma omp parallel for num_threads((*vg1dSP).ntrd)
 	  for (int i = 0; i <= ncel; i++) {
 		  if(celula[i].calor.difus2D==0){
-			  if(i<=ncel ){//alteracao7
+			  if(i<=ncel ){
 				  calctemp(i,celula[i].tempini);
 			  }
-			  else{//alteracao7
+			  else{
 				  if((*vg1dSP).chaverede==0 || noextremo==1 || (*vg1dSP).chaveRedeParalela==1)celula[i].temp=celula[i].calor.Textern1;
 				  else celula[i].temp=tGSup;
 			  }
@@ -18765,12 +12700,10 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 	  for (int k = 0; k <= ncel; k++){
 		  celula[k].FeiticoDoTempo();
 	  }
-	  //if(arq.modoDifus3D==1 )poisson3D.FeiticoDoTempo();
   }
   else if(arq.modoDifus3D==1)poisson3D.renova();
   if(modeloCompleto==0){
 	  if(ciclo<ciclomax){
-		  //for (int k = 0; k <= ncel; k++) celula[k].FeiticoDoTempo();
 		  SolveAcopPV(ciclo);
 		  renova();
 	  }
@@ -18779,7 +12712,6 @@ void  SProd::marchaEnergTrans(int ciclo, int ciclomax){
 
 void SProd::atualizaMiniTab(){
     geraMiniTabFlu();
-    //renovaMasEsp();
     double betIV;
     double rsV;
     double boV;
@@ -18849,57 +12781,27 @@ void SProd::atualizaCC1(){
 }
 
 
-void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
-        ProFlu fluiRev*/, int nrede,ProFlu fluiRev) {//alteracao7
+void SProd::SolveTrans(double titRev, double alfRev, double betRev
+, int nrede,ProFlu fluiRev) {
   chrono::steady_clock::time_point begin, end;
   begin = chrono::steady_clock::now();
-  double velmaxdesc=0;//alteracao5
-  //determinaDT();
+  double velmaxdesc=0;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  //reinicia = 0;
-  //if(arq.controDesc==1)velmaxdesc=BuscaPresInjDesc();//alteracao5
-  //solveLinGas();
-  //arq.atualiza(presfim, chokeSup, celula, celulaG, pGSup, temperatura, presiniG, tempiniG,
-		  //presE,tempE,titE,betaE,(*vg1dSP).lixo5);
-  //trackRGO=arq.trackRGO;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
- // EvoluiFrac();
-  //if (reinicia == -1) {
-   // ReiniEvolFrac();
-   // EvoluiFrac();
-    //reinicia = 0;
-  //}
-  //AtualizaPig();
 
-  //calcCCpres();
-  //renovaterm();
 
-  //for (int i = 0; i <= ncel; i++) {
-    //celula[i].GeraLocal(presfim, masChkSup, ncel,arq.master1.razareaativ,presE);
-    //for (int j = 0; j < 5; j++) {
-      //matglobP[2 * i][j - 2] = celula[i].local[0][j];
-      //matglobP[2 * i + 1][j - 2] = celula[i].local[1][j];
-      //termolivreP[2 * i] = celula[i].TL[0];
-      //termolivreP[2 * i + 1] = celula[i].TL[1];
-   // }
- // }
 
-  //matglobP.GaussElimPP(termolivreP);
 
   if((*vg1dSP).chaverede==0){
 
 	  if (arq.calculaEnvelope==1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
-		  //if ((*vg1dSP).lixo5 <= arq.tfinal) { //chris - Hidratos
 		  FA_Hidrato solverHidrato(*this);
 		  solverHidrato.solverHidrato();
 	  }
 
 	  if (arq.lingas>0 && arq.calculaEnvelope==1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
-		  //if ((*vg1dSP).lixo5 <= arq.tfinal) { //chris - Hidratos
 		  FA_Hidrato_Servico solverHidratoG(*this);
 		  solverHidratoG.solverHidratoG();
 	  }
@@ -18910,7 +12812,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 	  if((*vg1dSP).lixo5>=7408.5  ){
 		  int para;
 		  para=0;
-		  //  arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
 	  }
 
 	  if((*vg1dSP).lixo5<1e-15){
@@ -18919,45 +12820,34 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 		  }
 		  renovaTemp();
 	  }
-	  //double razMast0;//caso so Master
-	  //double razMast;//caso so Master
 	  int ciclomax=arq.cicloAcopTerm;
 
-	///////////////////////////// alteracao7 //////////////////////////////////////////////
-	//if((*vg1dSP).chaverede==0){
 	   int vExpli=0;
 	   modeloCompleto=arq.correcaoMassaEspLiq;
 	   arq.atualizaSonico((*vg1dSP).lixo5,vExpli);
 	   determinaDT(vExpli);
 	   dtauxCFL=dt;
 	   dtauxFinal=dt;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	   reinicia=0;
 	   int celpos = arq.master1.posic;
 	   //razMast0=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
 	   aberturaVal0();//caso varias valvulas
 
-	   if(arq.controDesc==1)velmaxdesc=BuscaPresInjDesc();//alteracao5
+	   if(arq.controDesc==1)velmaxdesc=BuscaPresInjDesc();
 	   solveLinGas();
 	   pGSupIni=pGSup;
 	   arq.atualiza(noinicial,noextremo, derivaAnel,chokeSup, chokeInj,celula,celulaG,pGSup,
 			        temperatura,presiniG,tempiniG,
-			        presE,tempE,titE,betaE,(*vg1dSP).lixo5,dt);//alteracao4
+			        presE,tempE,titE,betaE,(*vg1dSP).lixo5,dt);
 	   atualizaCC1();
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-       //double razMastCrit=0.5;//caso so Master
        for(int i=0; i<=arq.nvalv;i++)vRazMastCrit[i]=0.5;//caso varias valvulas
        aberturaVal1();//caso varias valvulas
 	   //razMast=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
-	   //modeloCompleto=arq.correcaoMassaEspLiq;
-	   //if(razMast!=razMast0 )modeloCompleto=0;//caso so Master
 	   for(int i=0; i<=arq.nvalv;i++)if(vRazMast1[i]!=vRazMast0[i] )modeloCompleto=0;//caso varias valvulas
 	   if(modeloCompleto==1)avaliaVariaDpDt(0,0,vExpli);//caso varias valvulas
-	   //if(vExpli==1)modeloCompleto=1;
-	   //if(modeloCompleto==1)avaliaVariaDpDt(razMast, razMast0);//caso so Master
 	   if(modeloCompleto==0)arq.cicloAcopTerm=0;
 	   else arq.cicloAcopTerm=1;
 	   ciclomax=arq.cicloAcopTerm;
@@ -18974,16 +12864,8 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 				   double vLiqTest=fabs(celula[i].QL/(area));
 				   double vGasTest=fabs(celula[i].QG /(area));
 				   double razDp=0.1;
-//				   double razDp1=1;
 				   double razDT=1;
-				   //if((vLiqTest+vGasTest)>10 && celula[i].alf<0.05 && vExpli==0)razDp=0.0;
-				   /*if((vLiqTest+vGasTest)<1e-1)razDT=0.1;
-				   if((vLiqTest+vGasTest)<1e-3)razDp=0.01;
-				   else if((vLiqTest+vGasTest)<1e-2 && celula[i].alf<0.05 )razDp=0.01;
-				   else if(i>0 && i<ncel){
-					   if(oscila[i]==1)razDp=0.0;
-				   }
-				   else*/ if(i<celpos && celula[celpos].acsr.chk.AreaGarg<1e-15*celula[celpos].acsr.chk.AreaTub){
+ if(i<celpos && celula[celpos].acsr.chk.AreaGarg<1e-15*celula[celpos].acsr.chk.AreaTub){
 					   razDT=1;
 				   }
 				   else if(i==celpos+1 && celula[celpos].acsr.chk.AreaGarg<1e-15*celula[celpos].acsr.chk.AreaTub){
@@ -19000,34 +12882,11 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 				   }
 			   }
 		   }
-		   /*else{
-			   for(int i=0; i<=ncel;i++){
-				   double area=celula[i].duto.area;
-				   double vLiqTest=fabs(celula[i].QL/(area));
-				   double vGasTest=fabs(celula[i].QG /(area));
-				   if((((vLiqTest+vGasTest)>1e-4 && fabs(celula[i].dpdtIni)/celula[i].pres<0.01) ||
-					   ((celula[i].alf<0.9 && (vLiqTest+vGasTest)>1e-4) && fabs(celula[i].dpdtIni)/celula[i].pres<0.01)) &&
-					   fabs(celula[i].dpdtIni)/celula[i].pres<0.1){
-					   if(TransMassModel==0)celula[i].m2d=1.;
-					   else celula[i].m2d=0.;
-					   celula[i].mudaDT=1.;
-				   }
-				   else{
-					   celula[i].m2d=0.;
-					   celula[i].mudaDT=0.;
-				   }
-			   }
-		   }*/
-		   //int estabColTemp=arq.estabCol;
-		   //if((*vg1dSP).lixo5>100600 && (*vg1dSP).lixo5<105000)estabColTemp=1;
 		   if(arq.estabCol==1){
 			   for(int i=0; i<=celpos;i++){
-				   //if(vRazMast1[0]<1e-15){//caso varias valvulas
 					   celula[i].m2d=0.;
 					   celula[i].mudaDT=0.;
 					   celula[i].estabCol=1;
-				   //}
-				   //else celula[i].estabCol=0;
 			   }
 		   }
 		   EvoluiFrac(alfRev,betRev,kontaAcop);
@@ -19053,30 +12912,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 		   }
 
 		   //caso so Master
-		  /* if(razMast<razMast0 && (razMast<=1.1*arq.master1.razareaativ && razMast>=1e-3*arq.master1.razareaativ)){
-			   if(celula[celpos].alf<0.05){
-				   if(celula[celpos].alf<0.01)momentoDesesp+=1.5;
-				   else momentoDesesp=1;
-				   if(momentoDesesp<1.)momentoDesesp=1.;
-				   celula[celpos].fontemassGL+=momentoDesesp*10000*celula[celpos].flui.Deng*1.225/86400;
-				   celula[celpos-1].fontemassGR=celula[celpos].fontemassGL;
-			   }
-			   if(celula[celpos].alf<0.5)razMastCrit=0.01;
-		   }
-		   else momentoDesesp=0.;
-		   if(razMast<razMast0 && (razMast<=1.1*arq.master1.razareaativ && razMast>=razMastCrit*arq.master1.razareaativ)){
-			   double raz=20.;
-			   if(celula[celpos].alf<0.5)raz=40.;
-			   double dtaux=celula[0].dt;
-			   if(reinicia==-1){
-				   for(int i=1;i<=ncel;i++) if(dtaux>celula[i].dt) dtaux=celula[i].dt;
-			   }
-			   dt=dtaux;
-			   if(dt>1)dt=1.;
-			   if(celula[celpos].alf<0.5)dt=0.1+0.9*(celula[celpos].alf)/0.5;
-			   celula[0].dt=dt/raz;
-			   reinicia=-1;
-		   }*/
 		   //caso so Master
 		   if(kontaAcop==0 && arq.controleDTvalv==1)
 			   restringeDTporValv();//caso varias valvulas
@@ -19130,7 +12965,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 		   renovaterm();
 
 		   if(celula[ncel].alf<0.05 && masChkSup==1)celula[ncel].alf=0.05;
-		   //if(celula[celpos].alf<0.05 && razMast<=arq.master1.razareaativ)celula[celpos].alf=0.05;//caso so Master
 		   //caso varias valvulas
 		   for(int j=0; j<=arq.nvalv;j++){
 		   		int celposAux;
@@ -19140,18 +12974,12 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 		   		celula[celposAux].alf=0.05;
 		   }
 		   //caso varias valvulas
-		   //if(arq.cicloAcopTerm==1)SolveAcopPV(kontaAcop);
-		   //else
 		   SolveAcopPV(vExpli);
-	///////////////////////////// alteracao7 //////////////////////////////////////////////
 
-			//if(kontaAcop==1*modeloCompleto || arq.cicloAcopTerm==1)renova();
-			if(kontaAcop<1*modeloCompleto /*&& arq.cicloAcopTerm==0*/){
+			if(kontaAcop<1*modeloCompleto ){
 				for (int i = 0; i <= ncel; i++){
 					celula[i].dpdt=1*(termolivreP[2 * i+1]-celula[i].pres)/celula[i].dt;
 					celula[i].dpdtIni=celula[i].dpdt;
-					//if(fabs(celula[i].dpdt)/celula[i].pres>0.1)
-						//celula[i].dpdt=0.1*(celula[i].pres);
 				}
 			}
 			if(kontaAcop==1*modeloCompleto || arq.cicloAcopTerm==1){
@@ -19164,7 +12992,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 
 			}
 			if(kontaAcop!=1*modeloCompleto){
-			   //indpigPini=indpigP;
 			   for(int i=0; i<= ncel; i++){
 				   celula[i].FeiticoDoTempo2();
 				   if(celula[i].acsr.tipo==15){
@@ -19195,30 +13022,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 		poisson3D.penalizaDt=20;
 	}
 
- /* if (celula[ncel - 1].MliqiniR < 0) {
-    //celula[ncel-1].MliqiniR=0;
-    celula[ncel - 1].MR = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-    celula[ncel - 1].MliqiniR = 0;
-    celula[ncel - 1].term1R = 0;
-    celula[ncel - 1].term2R = 0;
-    //celula[ncel].Mliqini=0;
-    celula[ncel].MC = celula[ncel].MC - celula[ncel].Mliqini;
-    celula[ncel].Mliqini = 0;
-    celula[ncel].term1 = 0;
-    celula[ncel].term2 = 0;
-  }
-  if (celula[ncel - 1].QLR < 0 && (masChkSup == 0 || aberto == 1)) {
-    celula[ncel - 1].QLR = 0;
-    celula[ncel].QL = 0;
-  }*/
 
-  //int ciclomax=arq.cicloAcopTerm;
-  //int ciclomax=1;
- /* if(modeloCompleto==0 || arq.cicloAcopTerm==0){
-	  for(int ciclo=0; ciclo<=ciclomax;ciclo++){
-		  marchaEnergTrans(ciclo,ciclomax);
-	  }
-  }*/
 	for (int i = 1; i <= ncel; i++){
 	  	  celula[i].dTdt=0.;
 	  	  celula[i].dTdtL=0.;
@@ -19230,24 +13034,13 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 
 	if(arq.modoParafina==1) avaliaParafina();
 
-	/*if(arq.flashCompleto==2){
-		for(int i = 1; i <= ncel; i++){
-			celula[i].flui.atualizaPropCompStandard();
-			celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i].flui.dCalculatedBeta,
-				celula[i].flui.oCalculatedLiqComposition,
-				celula[i].flui.oCalculatedVapComposition,arq.pocinjec);
-		}
-	}*/
 	salvaFonte();
 	renovaTemp();
 
     presfim = celula[ncel].pres;
-//    double mliqfim = celula[ncel - 1].MliqiniR;
     if (arq.lingas > 0 && verificaAcop == 1) conectaColuna();
 
-    //solveLinGas();
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if(arq.flashCompleto==2){
     	for (int i = 0; i < ncel; i++){
@@ -19259,25 +13052,18 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
       totbet += fabs(celula[i].bet);
     totbet /= ncel;
     renovaalbetini();
-    //renovaMasEsp();
     if ((trackRGO > 0 || trackDeng > 0) && arq.flashCompleto!=2) renovaRGOdgYco2(fluiRev);
     if(arq.flashCompleto==2){
-    	//renovaFracMol(fluiRev);
-    	//if((*vg1dSP).lixo5>500){
     		renovaFracMol2(fluiRev);
     		kontaRenovaComp++;
-    	//}
     	if(kontaRenovaComp==arq.miniTabAtraso+1 && arq.miniTabAtraso>0){
     		geraMiniTabFlu();
     		kontaRenovaComp=0;
     	}
     }//casoComp
-    //renovaalbetini(celula);
     renovaMasEsp();
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
   tVet.push_back(dt);
   presVet.push_back(presfim * dt);
   double jtemporario = celula[ncel - 1].Mliqini
@@ -19304,7 +13090,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
     jMedMov = jTotal / ktMedMov;
     alfMedMov = alfTotal / ktMedMov;
   }
-  ////////////////////////////////////////////////////////////////////////////////////////////////
   //enterramento
   for(int j=0;j<=ncel;j++){
 	  if(celula[j].calor.difus2D==1){
@@ -19314,7 +13099,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 
   int MaxKontaImpres = 1000;
   int ordemImpT=0;
-  //if(1.-10*fabs((*vg1dSP).lixo5/(1+kimpT))/(arq.tfinal)<0.){
   if ((fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt)||
 	  (fabs((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal - round((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal))
       < 0.5 * dt * (100 / 5.) / arq.tfinal) || KontaImprime > MaxKontaImpres || ((*vg1dSP).lixo5+dt>=arq.tfinal)||
@@ -19323,7 +13107,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 	  ordemImpT=1;
   }
 
-  if((*vg1dSP).chaverede!=0)(*vg1dSP).lixo5=(*vg1dSP).lixo5R;//alteracao7
+  if((*vg1dSP).chaverede!=0)(*vg1dSP).lixo5=(*vg1dSP).lixo5R;
   if (arq.nperfisp > 0) {
     if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profp.tempo[kontaTempoProf] && (*vg1dSP).lixo5 + dt >= arq.profp.tempo[kontaTempoProf])) {
       arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo,nrede);
@@ -19361,11 +13145,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
   }
   if (arq.ntendp > 0) {
     for (int i = 0; i < arq.ntendp; i++) {
-      if (resettrend[i] == 0 /*|| (*vg1dSP).lixo5<1e-15*/) {
-    	  //if((*vg1dSP).lixo5>20){
-    		//  int para;
-    		  //para=0;
-    	  //}
+      if (resettrend[i] == 0 ) {
     	if((*vg1dSP).lixo5<1e-15)ImprimeTrendPCab(i,nrede);
     	if((*vg1dSP).lixo5>1e-15)arq.imprimeTrend(celula, MatTrendP[i], (*vg1dSP).lixo5, i, ntrend[i]);
         ntrend[i]++;
@@ -19386,7 +13166,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
     for (int i = 0; i < arq.ntendg; i++) {
       if (resettrendg[i] == 0 || (*vg1dSP).lixo5<1e-15) {
     	if((*vg1dSP).lixo5<1e-15)ImprimeTrendGCab(i,nrede);
-        arq.imprimeTrendG(celulaG, MatTrendG[i], (*vg1dSP).lixo5, i, ntrendg[i], velmaxdesc);//alteracao5
+        arq.imprimeTrendG(celulaG, MatTrendG[i], (*vg1dSP).lixo5, i, ntrendg[i], velmaxdesc);
         ntrendg[i]++;
       }
       if(ordemImpT==1){
@@ -19445,7 +13225,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
       if (arq.tela[i].col == 1) {
         switch (arq.tela[i].var) {
           case 1:
-           // cout << " " << celula[posic].pres;
         	  cout << " " << modeloCompleto;
             break;
           case 2:
@@ -19482,7 +13261,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
     cout << endl;
   }
 
- // int MaxKontaImpres = 1000;
 
   int maxEvento=arq.logevento.size();
   if(contaLog<maxEvento){
@@ -19497,14 +13275,10 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 		  else{
               saidaT <<"Tramo" << indTramo<<"-" <<tmpLog;
 		  }
-		  //ofstream escreveIni(tmpLog.c_str(), ios_base::app);
 		  string tmp = saidaT.str();
 		  ofstream escreveIni(tmp.c_str(), ios_base::app);
 		  escreveIni << "************************************************************************************************"
 				  << endl;
-		  // if(indTramo>=0){
-		  //escreveIni << "                      Eventos do Tramo "<<indTramo<<"                         " <<endl;;
-		  // }
 		  escreveIni << "Evento Externo = ";
 		  escreveIni << arq.logevento[contaLog].instante << " ; ";
 		  escreveIni << arq.logevento[contaLog].duracao << " ; ";
@@ -19537,7 +13311,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
               saidaT <<"Tramo" << indTramo<<"-" <<tmpLog;
     }
     string tmp = saidaT.str();
-    //ofstream escreveIni(tmpLog.c_str(), ios_base::app);
     ofstream escreveIni(tmp.c_str(), ios_base::app);
     escreveIni << "************************************************************************************************"
         << endl;
@@ -19611,8 +13384,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
     		  int frase=rand() % 15;
     		  escreveIni << "*******************************************************************************" << endl;
     		  escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
-			  //cout << "           'Ouca-me. O fim quase nunca esta longe em nenhum momento!'          " << endl;
-			  //cout << "                              J. California Cooper                             " << endl;
     		  escreveIni << saidaTextoSis[frase]<<endl;
     		  escreveIni << saidaSubTextoSis[frase]<<endl;
     		  escreveIni << "*******************************************************************************" << endl;
@@ -19635,7 +13406,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev/*,
 
   kSP++;
   KontaImprime++;
-  if((*vg1dSP).chaverede==0)(*vg1dSP).lixo5 += dt;//alteracao7
+  if((*vg1dSP).chaverede==0)(*vg1dSP).lixo5 += dt;
 }
 
 void  SProd::ImprimeTrendPCab(int i, int nrede) {
@@ -19647,9 +13418,6 @@ void  SProd::ImprimeTrendPCab(int i, int nrede) {
         if(indTramo<0  && arq.AS==0){
         		  saidaT << pathPrefixoArqSaida << "TENDP" << "-" << round(arq.trendp[i].comp) << ".dat";
         }
-        /*else if(indTramo<0  && arq.AS==1){
-        	 saidaT << pathPrefixoArqSaida << "TENDP-AS-"<<sequenciaAS<< "-" << round(arq.trendp[i].comp) << ".dat";
-        }*/
         else if(indTramo<0  && arq.AS==1){
                 	 saidaT << pathPrefixoArqSaida << "TENDP-AS-"<< round(arq.trendp[i].comp) << ".dat";
         }
@@ -19658,7 +13426,6 @@ void  SProd::ImprimeTrendPCab(int i, int nrede) {
         }
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendp[i].rotulo.c_str(), ios_base::out);
       if(kimpT==1){
          double comprimento=0;
          int posicn=arq.trendp[i].posic;
@@ -19767,14 +13534,10 @@ void  SProd::ImprimeTrendPCab(int i, int nrede) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
 }
 void  SProd::ImprimeTrendP(int i, int nrede) {
   if(arq.ntendp>0){
-     // for(int i=0;i<arq.ntendp;i++){
-        //FullMtx<double> saidatrend(TrendLengthP[i],arq.nvartrendp[i]+1);
-//	    int para=0;
 	    int size=ntrend[i]-ntrendB[i]+1;
 	    FullMtx<double> saidatrend(size,arq.nvartrendp[i]+1);
         for(int k=0; k<size;k++)
@@ -19783,9 +13546,6 @@ void  SProd::ImprimeTrendP(int i, int nrede) {
         if(indTramo<0  && arq.AS==0){
         	      saidaT << pathPrefixoArqSaida << "TENDP" << "-" << arq.trendp[i].comp << ".dat";
         }
-        /*else if(indTramo<0  && arq.AS==1){
-        	 saidaT << pathPrefixoArqSaida << "TENDP-AS-"<<sequenciaAS<< "-" << round(arq.trendp[i].comp) << ".dat";
-        }*/
         else if(indTramo<0  && arq.AS==1){
                 	 saidaT << pathPrefixoArqSaida << "TENDP-AS-"<< round(arq.trendp[i].comp) << ".dat";
         }
@@ -19794,61 +13554,6 @@ void  SProd::ImprimeTrendP(int i, int nrede) {
         }
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::app);
-        //ofstream escreveTrend(arq.trendp[i].rotulo.c_str(), ios_base::out);
-      /*if(kimpT==1){
-         double comprimento=0;
-         int posicn=arq.trendp[i].posic;
-         for(int k=0; k<=posicn; k++)comprimento+=arq.celp[k].dx;
-         escreveTrend<<"# Comprimento a partir do Fundo de Poco (m) = "<<comprimento<<endl;
-         escreveTrend<<"# Rotulo = "<<arq.trendp[i].rotulo<<endl;
-         escreveTrend<<"# Indice da Celula = "<<arq.trendp[i].posic<<endl;
-         escreveTrend<<" Tempo (s) ;";
-         if(arq.trendp[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendp[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendp[i].hol==1) escreveTrend<<" Holdup (-) ;";
-         if(arq.trendp[i].bet==1) escreveTrend<<" Beta (-) ;";
-         if(arq.trendp[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendp[i].uls==1) escreveTrend<<" Uls (m/s) ;";
-         if(arq.trendp[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendp[i].ul==1) escreveTrend<<" Ul (m/s) ;";
-         if(arq.trendp[i].arra==1) escreveTrend<<" Arranjo (-) ;";
-         if(arq.trendp[i].viscl==1) escreveTrend<<" Viscosidade Liquido (cP) ;";
-         if(arq.trendp[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendp[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendp[i].rhol==1) escreveTrend<<" Massa Especifica Liquido (kg/m3) ;";
-         if(arq.trendp[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendp[i].masl==1) escreveTrend<<" Vazao Massica Liquido (kg/s) ;";
-         if(arq.trendp[i].c0==1) escreveTrend<<" C0 (-) ;";
-         if(arq.trendp[i].ud==1) escreveTrend<<" Ud (m/s) ;";
-         if(arq.trendp[i].RGO==1) escreveTrend<<" RGO (Sm3/Sm3) ;";
-         if(arq.trendp[i].deng==1) escreveTrend<<" Densidade Gas (-) ;";
-         if(arq.trendp[i].yco2==1) escreveTrend<<" Fracao Molar de CO2 (-) ;";
-         if(arq.trendp[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendp[i].masstrans==1) escreveTrend<<" Transferencia de Massa entre Fases (kgf/(s m)) ;";
-         if(arq.trendp[i].qlst==1) escreveTrend<<" Vazao de Componente Pesado (Sm3/d) ;";
-		 if(arq.trendp[i].qlwst==1) escreveTrend<<" Vazao de Oleo mais Agua (Sm3/d) ;";
-         if(arq.trendp[i].qlstTot==1) escreveTrend<<" Vazao Total de Liquido (Sm3/d) ;";
-         if(arq.trendp[i].qgst==1) escreveTrend<<" Vazao de Componente Leve (Sm3/d) ;";
-         if(arq.trendp[i].api==1) escreveTrend<<" Grau API (-) ;";
-         if(arq.trendp[i].bsw==1) escreveTrend<<" BSW (-) ;";
-         if(arq.trendp[i].hidro == 1) escreveTrend << " Termo Hidrostatico (Pa/m) ;";
-         if(arq.trendp[i].fric == 1) escreveTrend << " Termo Friccao (Pa/m) ;";
-         if(arq.trendp[i].dengD==1) escreveTrend<<" Densidade Gas Dissolvido In Situ (-) ;";
-         if(arq.trendp[i].dengL==1) escreveTrend<<" Densidade Gas Livre In Situ (-) ;";
- 		 if(arq.trendp[i].reyi == 1) escreveTrend << " Reynolds interno da mistura (-) ;";
- 		 if(arq.trendp[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
- 		 if(arq.trendp[i].Fr == 1) escreveTrend << " Froud (-) ;";
- 		 if(arq.trendp[i].grashi == 1) escreveTrend << " Grashof interno da mistura (-) ;";
- 		 if(arq.trendp[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
- 		 if(arq.trendp[i].nusi == 1) escreveTrend << " Nusselt interno da mistura (-) ;";
- 		 if(arq.trendp[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
- 		 if(arq.trendp[i].hi == 1) escreveTrend << " H interno da mistura (W/(m2.K)) ;";
- 		 if(arq.trendp[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
- 		 if(arq.trendp[i].pri == 1) escreveTrend << " Prandtl interno da mistura (-) ;";
- 		 if(arq.trendp[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-      }*/
-        //escreveTrend<<saidatrend;
         int nc=saidatrend.col();
         int nl=saidatrend.lin();
         if(indTramo<0  && arq.AS==1)nc++;
@@ -19865,168 +13570,14 @@ void  SProd::ImprimeTrendP(int i, int nrede) {
                 }
                 escreveTrend<<endl;
         }
-      //escreveTrend<<endl;
         escreveTrend.close();
         // caso nao seja simulacao POCO_INJETOR
         if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
-  /*if(arq.ntendg>0 && arq.lingas>0){
-      for(int i=0;i<arq.ntendg;i++){
-        FullMtx<double> saidatrend(TrendLengthG[i],arq.nvartrendg[i]+1);
-        for(int k=0; k<TrendLengthG[i];k++)
-          for(int j=0;j<=arq.nvartrendg[i];j++)saidatrend[k][j]=MatTrendG[i][k][j];
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].posic << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDG" << "-" << arq.trendg[i].posic << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendg[i].rotulo.c_str(), ios_base::out);
-        double comprimento=0;
-        int posicn=arq.trendg[i].posic;
-        for(int k=0; k<=posicn; k++)comprimento+=arq.celg[k].dx;
-      escreveTrend<<"# Comprimento a partir da Plataforma (m) = "<<comprimento<<endl;
-      escreveTrend<<"# Rotulo = "<<arq.trendg[i].rotulo<<endl;
-      escreveTrend<<"# Indice da Celula = "<<arq.trendg[i].posic<<endl;
-        escreveTrend<<" Tempo (s) ;";
-         if(arq.trendg[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendg[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendg[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendg[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendg[i].tens==1) escreveTrend<<" Tensao Cisalhante (N/m2) ;";
-         if(arq.trendg[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendg[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendg[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendg[i].hidro==1) escreveTrend<<" Hidrostatica (N/m2) ;";
-         if(arq.trendg[i].fric==1) escreveTrend<<" Perda por Friccao (N/m2) ;";
-         if(arq.trendg[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendg[i].qgst==1) escreveTrend<<" Vazao de Gas Standard (Sm3/d) ;";
-         if(arq.trendg[i].pEstagVGL==1) escreveTrend<<" pressao de Estagnacao VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tEstagVGL==1) escreveTrend<<" Temperatura de Estagnacao VGL (C) ;";
-         if(arq.trendg[i].pGargVGL==1) escreveTrend<<" pressao na Garganta VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tGargVGL==1) escreveTrend<<" Temperatura na Garganta VGL (C) ;";
-         if(arq.trendg[i].velgarg==1) escreveTrend<<" Velocidade na VGL (m/s) ;";
-         if(arq.trendg[i].qVGL==1) escreveTrend<<" Vazao na VGL (mÂ³/s) ;";
-  		 if(arq.trendg[i].reyi == 1) escreveTrend << " Reynolds interno (-) ;";
-  		 if(arq.trendg[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
-  		 if(arq.trendg[i].grashi == 1) escreveTrend << " Grashof interno (-) ;";
-  		 if(arq.trendg[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
-  		 if(arq.trendg[i].nusi == 1) escreveTrend << " Nusselt interno (-) ;";
-  		 if(arq.trendg[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
-  		 if(arq.trendg[i].hi == 1) escreveTrend << " H interno (W/(m2.K)) ;";
-  		 if(arq.trendg[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
-  		 if(arq.trendg[i].pri == 1) escreveTrend << " Prandtl interno (-) ;";
-  		 if(arq.trendg[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-        int nc=saidatrend.col();
-        int nl=saidatrend.lin();
-        for ( int i = 0; i<nl; i++){
-          if(saidatrend[i][0]<=-9999)break;
-                for(int j=0;j<nc;j++){
-                  escreveTrend.width(20);
-                  escreveTrend.precision(19);
-                  escreveTrend<<saidatrend[i][j]<<" ; ";
-                }
-                escreveTrend<<endl;
-        }
-      escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
-/*  if(arq.ntendtransp>0){
-      for(int i=0;i<arq.ntendtransp;i++){
-        FullMtx<double> saidatrend(TrendLengthTransP[i],2);
-        for(int k=0; k<TrendLengthTransP[i];k++)
-          for(int j=0;j<2;j++)saidatrend[k][j]=MatTrendTransP[i][k][j];
-        int poscel=arq.trendtransp[i].posic;
-        int poscam=arq.trendtransp[i].camada-1;
-        int posdiscre=arq.trendtransp[i].discre-1;
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransp[i].rotulo.c_str(), ios_base::out);
-      escreveTrend<<"# Rotulo = "<<arq.trendtransp[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-      int nc=saidatrend.col();
-      int nl=saidatrend.lin();
-      for ( int i = 0; i<nl; i++){
-        if(saidatrend[i][0]<=-9999)break;
-              for(int j=0;j<nc;j++){
-                escreveTrend.width(20);
-                escreveTrend.precision(19);
-                escreveTrend<<saidatrend[i][j]<<" ; ";
-              }
-              escreveTrend<<endl;
-      }
-        escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
-  /*if(arq.ntendtransg>0 && arq.lingas>0){
-      for(int i=0;i<arq.ntendtransg;i++){
-        FullMtx<double> saidatrend(TrendLengthTransG[i],2);
-        for(int k=0; k<TrendLengthTransG[i];k++)
-          for(int j=0;j<2;j++)saidatrend[k][j]=MatTrendTransG[i][k][j];
-        int poscel=arq.trendtransg[i].posic;
-        int poscam=arq.trendtransg[i].camada-1;
-        int posdiscre=arq.trendtransg[i].discre-1;
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDTRANSG" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransg[i].rotulo.c_str(), ios_base::out);
-      escreveTrend<<"# Rotulo = "<<arq.trendtransg[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-      int nc=saidatrend.col();
-      int nl=saidatrend.lin();
-      for ( int i = 0; i<nl; i++){
-        if(saidatrend[i][0]<=-9999)break;
-              for(int j=0;j<nc;j++){
-                escreveTrend.width(20);
-                escreveTrend.precision(19);
-                escreveTrend<<saidatrend[i][j]<<" ; ";
-              }
-              escreveTrend<<endl;
-      }
-        escreveTrend<<endl;
 
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
 }
 
 void  SProd::ImprimeTrendGCab(int i, int nrede) {
@@ -20037,9 +13588,6 @@ void  SProd::ImprimeTrendGCab(int i, int nrede) {
         ostringstream saidaT;
         if(indTramo<0  && arq.AS==0)
          saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
-        /*else if(indTramo<0  && arq.AS==1){
-        	 saidaT << pathPrefixoArqSaida << "TENDG-AS-" << sequenciaAS << arq.trendg[i].comp << ".dat";
-        }*/
         else if(indTramo<0  && arq.AS==1){
         	 saidaT << pathPrefixoArqSaida << "TENDG-AS-"<< arq.trendg[i].comp << ".dat";
         }
@@ -20047,7 +13595,6 @@ void  SProd::ImprimeTrendGCab(int i, int nrede) {
         saidaT << pathPrefixoArqSaida << "Tramo" << indTramo <<"-R-"<<nrede << "-" << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendg[i].rotulo.c_str(), ios_base::out);
       if(kimpT==1){
          double comprimento=0;
          int posicn=arq.trendg[i].posic;
@@ -20066,7 +13613,7 @@ void  SProd::ImprimeTrendGCab(int i, int nrede) {
         if(arq.trendg[i].rhog==1) escreveTrend << t(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
         if(arq.trendg[i].masg==1) escreveTrend << t(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
         if(arq.trendg[i].hidro==1) escreveTrend << t(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
-        if(arq.trendg[i].FVHG==1) escreveTrend << t(" FVHG (-) ;", " FVHG (-) ;"); //chris - Hidratos
+        if(arq.trendg[i].FVHG==1) escreveTrend << t(" FVHG (-) ;", " FVHG (-) ;");
         if(arq.trendg[i].fric==1) escreveTrend << t(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
         if(arq.trendg[i].calor==1) escreveTrend << t(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
         if(arq.trendg[i].qgst==1) escreveTrend << t(" Vazao volumetrica standard de Gas (Sm3/d) ;", " Standard gas volumetric flow rate (Sm3/d) ;");
@@ -20098,100 +13645,11 @@ void  SProd::ImprimeTrendGCab(int i, int nrede) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
 }
 
 void  SProd::ImprimeTrendG(int i, int nrede) {
-/*  if(arq.ntendp>0){
-      for(int i=0;i<arq.ntendp;i++){
-        FullMtx<double> saidatrend(TrendLengthP[i],arq.nvartrendp[i]+1);
-        for(int k=0; k<TrendLengthP[i];k++)
-          for(int j=0;j<=arq.nvartrendp[i];j++)saidatrend[k][j]=MatTrendP[i][k][j];
-        ostringstream saidaT;
-        if(indTramo<0){
-        	      saidaT << pathPrefixoArqSaida << "TENDP" << "-" << arq.trendp[i].posic << ".dat";
-        }
-        else{
-                  saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDP" << "-" << arq.trendp[i].posic << ".dat";
-        }
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendp[i].rotulo.c_str(), ios_base::out);
-        double comprimento=0;
-        int posicn=arq.trendp[i].posic;
-        for(int k=0; k<=posicn; k++)comprimento+=arq.celp[k].dx;
-      escreveTrend<<"# Comprimento a partir do Fundo de Poco (m) = "<<comprimento<<endl;
-      escreveTrend<<"# Rotulo = "<<arq.trendp[i].rotulo<<endl;
-      escreveTrend<<"# Indice da Celula = "<<arq.trendp[i].posic<<endl;
-        escreveTrend<<" Tempo (s) ;";
-         if(arq.trendp[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendp[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendp[i].hol==1) escreveTrend<<" Holdup (-) ;";
-         if(arq.trendp[i].bet==1) escreveTrend<<" Beta (-) ;";
-         if(arq.trendp[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendp[i].uls==1) escreveTrend<<" Uls (m/s) ;";
-         if(arq.trendp[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendp[i].ul==1) escreveTrend<<" Ul (m/s) ;";
-         if(arq.trendp[i].arra==1) escreveTrend<<" Arranjo (-) ;";
-         if(arq.trendp[i].viscl==1) escreveTrend<<" Viscosidade Liquido (cP) ;";
-         if(arq.trendp[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendp[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendp[i].rhol==1) escreveTrend<<" Massa Especifica Liquido (kg/m3) ;";
-         if(arq.trendp[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendp[i].masl==1) escreveTrend<<" Vazao Massica Liquido (kg/s) ;";
-         if(arq.trendp[i].c0==1) escreveTrend<<" C0 (-) ;";
-         if(arq.trendp[i].ud==1) escreveTrend<<" Ud (m/s) ;";
-         if(arq.trendp[i].RGO==1) escreveTrend<<" RGO (Sm3/Sm3) ;";
-         if(arq.trendp[i].deng==1) escreveTrend<<" Densidade Gas (-) ;";
-         if(arq.trendp[i].yco2==1) escreveTrend<<" Fracao Molar de CO2 (-) ;";
-         if(arq.trendp[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendp[i].masstrans==1) escreveTrend<<" Transferencia de Massa entre Fases (kgf/(s m)) ;";
-         if(arq.trendp[i].qlst==1) escreveTrend<<" Vazao de Componente Pesado (Sm3/d) ;";
-		 if(arq.trendp[i].qlwst==1) escreveTrend<<" Vazao de Oleo mais Agua (Sm3/d) ;";
-         if(arq.trendp[i].qlstTot==1) escreveTrend<<" Vazao Total de Liquido (Sm3/d) ;";
-         if(arq.trendp[i].qgst==1) escreveTrend<<" Vazao de Componente Leve (Sm3/d) ;";
-         if(arq.trendp[i].api==1) escreveTrend<<" Grau API (-) ;";
-         if(arq.trendp[i].bsw==1) escreveTrend<<" BSW (-) ;";
-         if(arq.trendp[i].hidro == 1) escreveTrend << " Termo Hidrostatico (Pa/m) ;";
-         if(arq.trendp[i].fric == 1) escreveTrend << " Termo Friccao (Pa/m) ;";
-         if(arq.trendp[i].dengD==1) escreveTrend<<" Densidade Gas Dissolvido In Situ (-) ;";
-         if(arq.trendp[i].dengL==1) escreveTrend<<" Densidade Gas Livre In Situ (-) ;";
- 		 if(arq.trendp[i].reyi == 1) escreveTrend << " Reynolds interno da mistura (-) ;";
- 		 if(arq.trendp[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
- 		 if(arq.trendp[i].Fr == 1) escreveTrend << " Froud (-) ;";
- 		 if(arq.trendp[i].grashi == 1) escreveTrend << " Grashof interno da mistura (-) ;";
- 		 if(arq.trendp[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
- 		 if(arq.trendp[i].nusi == 1) escreveTrend << " Nusselt interno da mistura (-) ;";
- 		 if(arq.trendp[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
- 		 if(arq.trendp[i].hi == 1) escreveTrend << " H interno da mistura (W/(m2.K)) ;";
- 		 if(arq.trendp[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
- 		 if(arq.trendp[i].pri == 1) escreveTrend << " Prandtl interno da mistura (-) ;";
- 		 if(arq.trendp[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-        int nc=saidatrend.col();
-        int nl=saidatrend.lin();
-        for ( int i = 0; i<nl; i++){
-          if(saidatrend[i][0]<=-9999)break;
-                for(int j=0;j<nc;j++){
-                  escreveTrend.width(20);
-                  escreveTrend.precision(19);
-                  escreveTrend<<saidatrend[i][j]<<" ; ";
-                }
-                escreveTrend<<endl;
-        }
-      escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
   if(arq.ntendg>0 && arq.lingas>0){
-      //for(int i=0;i<arq.ntendg;i++){
 	    int size=ntrendg[i]-ntrendgB[i]+1;
         FullMtx<double> saidatrend(size,arq.nvartrendg[i]+1);
         for(int k=0; k<size;k++)
@@ -20199,9 +13657,6 @@ void  SProd::ImprimeTrendG(int i, int nrede) {
         ostringstream saidaT;
         if(indTramo<0  && arq.AS==0)
         	saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
-        /*else if(indTramo<0  && arq.AS==1){
-        	 saidaT << pathPrefixoArqSaida << "TENDG-AS-" << sequenciaAS << arq.trendg[i].comp << ".dat";
-        }*/
         else if(indTramo<0  && arq.AS==1){
                 	 saidaT << pathPrefixoArqSaida << "TENDG-AS-"<< arq.trendg[i].comp << ".dat";
         }
@@ -20209,46 +13664,6 @@ void  SProd::ImprimeTrendG(int i, int nrede) {
         saidaT << pathPrefixoArqSaida << "Tramo" << indTramo <<"-R-"<<nrede << "-" << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::app);
-        //ofstream escreveTrend(arq.trendg[i].rotulo.c_str(), ios_base::out);
-      /*if(kimpT==1){
-         double comprimento=0;
-         int posicn=arq.trendg[i].posic;
-         for(int k=0; k<=posicn; k++)comprimento+=arq.celg[k].dx;
-         escreveTrend<<"# Comprimento a partir da Plataforma (m) = "<<comprimento<<endl;
-         escreveTrend<<"# Rotulo = "<<arq.trendg[i].rotulo<<endl;
-         escreveTrend<<"# Indice da Celula = "<<arq.trendg[i].posic<<endl;
-         escreveTrend<<" Tempo (s) ;";
-         if(arq.trendg[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendg[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendg[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendg[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendg[i].tens==1) escreveTrend<<" Tensao Cisalhante (N/m2) ;";
-         if(arq.trendg[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendg[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendg[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendg[i].hidro==1) escreveTrend<<" Hidrostatica (N/m2) ;";
-         if(arq.trendg[i].fric==1) escreveTrend<<" Perda por Friccao (N/m2) ;";
-         if(arq.trendg[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendg[i].qgst==1) escreveTrend<<" Vazao de Gas Standard (Sm3/d) ;";
-         if(arq.trendg[i].pEstagVGL==1) escreveTrend<<" pressao de Estagnacao VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tEstagVGL==1) escreveTrend<<" Temperatura de Estagnacao VGL (C) ;";
-         if(arq.trendg[i].pGargVGL==1) escreveTrend<<" pressao na Garganta VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tGargVGL==1) escreveTrend<<" Temperatura na Garganta VGL (C) ;";
-         if(arq.trendg[i].velgarg==1) escreveTrend<<" Velocidade na VGL (m/s) ;";
-         if(arq.trendg[i].qVGL==1) escreveTrend<<" Vazao na VGL (mÂ³/s) ;";
-  		 if(arq.trendg[i].reyi == 1) escreveTrend << " Reynolds interno (-) ;";
-  		 if(arq.trendg[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
-  		 if(arq.trendg[i].grashi == 1) escreveTrend << " Grashof interno (-) ;";
-  		 if(arq.trendg[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
-  		 if(arq.trendg[i].nusi == 1) escreveTrend << " Nusselt interno (-) ;";
-  		 if(arq.trendg[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
-  		 if(arq.trendg[i].hi == 1) escreveTrend << " H interno (W/(m2.K)) ;";
-  		 if(arq.trendg[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
-  		 if(arq.trendg[i].pri == 1) escreveTrend << " Prandtl interno (-) ;";
-  		 if(arq.trendg[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-      }*/
-        //escreveTrend<<saidatrend;
         int nc=saidatrend.col();
         int nl=saidatrend.lin();
         if(indTramo<0  && arq.AS==1)nc++;
@@ -20265,98 +13680,14 @@ void  SProd::ImprimeTrendG(int i, int nrede) {
                 }
                 escreveTrend<<endl;
         }
-      //escreveTrend<<endl;
         escreveTrend.close();
         // caso nao seja simulacao POCO_INJETOR
         if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
-/*  if(arq.ntendtransp>0){
-      for(int i=0;i<arq.ntendtransp;i++){
-        FullMtx<double> saidatrend(TrendLengthTransP[i],2);
-        for(int k=0; k<TrendLengthTransP[i];k++)
-          for(int j=0;j<2;j++)saidatrend[k][j]=MatTrendTransP[i][k][j];
-        int poscel=arq.trendtransp[i].posic;
-        int poscam=arq.trendtransp[i].camada-1;
-        int posdiscre=arq.trendtransp[i].discre-1;
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransp[i].rotulo.c_str(), ios_base::out);
-      escreveTrend<<"# Rotulo = "<<arq.trendtransp[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-      int nc=saidatrend.col();
-      int nl=saidatrend.lin();
-      for ( int i = 0; i<nl; i++){
-        if(saidatrend[i][0]<=-9999)break;
-              for(int j=0;j<nc;j++){
-                escreveTrend.width(20);
-                escreveTrend.precision(19);
-                escreveTrend<<saidatrend[i][j]<<" ; ";
-              }
-              escreveTrend<<endl;
-      }
-        escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
-  /*if(arq.ntendtransg>0 && arq.lingas>0){
-      for(int i=0;i<arq.ntendtransg;i++){
-        FullMtx<double> saidatrend(TrendLengthTransG[i],2);
-        for(int k=0; k<TrendLengthTransG[i];k++)
-          for(int j=0;j<2;j++)saidatrend[k][j]=MatTrendTransG[i][k][j];
-        int poscel=arq.trendtransg[i].posic;
-        int poscam=arq.trendtransg[i].camada-1;
-        int posdiscre=arq.trendtransg[i].discre-1;
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDTRANSG" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransg[i].rotulo.c_str(), ios_base::out);
-      escreveTrend<<"# Rotulo = "<<arq.trendtransg[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-      int nc=saidatrend.col();
-      int nl=saidatrend.lin();
-      for ( int i = 0; i<nl; i++){
-        if(saidatrend[i][0]<=-9999)break;
-              for(int j=0;j<nc;j++){
-                escreveTrend.width(20);
-                escreveTrend.precision(19);
-                escreveTrend<<saidatrend[i][j]<<" ; ";
-              }
-              escreveTrend<<endl;
-      }
-        escreveTrend<<endl;
 
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
 }
 
 void  SProd::ImprimeTrendTransPCab(int i) {
@@ -20375,7 +13706,6 @@ void  SProd::ImprimeTrendTransPCab(int i) {
         saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransp[i].rotulo.c_str(), ios_base::out);
       if(kimpT==1){
         escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendtransp[i].rotulo << endl;
         escreveTrend << t(" Tempo (s) ; ", " Time (s) ; ");
@@ -20388,171 +13718,12 @@ void  SProd::ImprimeTrendTransPCab(int i) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
 
 }
 
 void  SProd::ImprimeTrendTransP(int i) {
-  /*if(arq.ntendp>0){
-      for(int i=0;i<arq.ntendp;i++){
-        FullMtx<double> saidatrend(TrendLengthP[i],arq.nvartrendp[i]+1);
-        for(int k=0; k<TrendLengthP[i];k++)
-          for(int j=0;j<=arq.nvartrendp[i];j++)saidatrend[k][j]=MatTrendP[i][k][j];
-        ostringstream saidaT;
-        if(indTramo<0){
-        	      saidaT << pathPrefixoArqSaida << "TENDP" << "-" << arq.trendp[i].posic << ".dat";
-        }
-        else{
-                  saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDP" << "-" << arq.trendp[i].posic << ".dat";
-        }
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendp[i].rotulo.c_str(), ios_base::out);
-        double comprimento=0;
-        int posicn=arq.trendp[i].posic;
-        for(int k=0; k<=posicn; k++)comprimento+=arq.celp[k].dx;
-      escreveTrend<<"# Comprimento a partir do Fundo de Poco (m) = "<<comprimento<<endl;
-      escreveTrend<<"# Rotulo = "<<arq.trendp[i].rotulo<<endl;
-      escreveTrend<<"# Indice da Celula = "<<arq.trendp[i].posic<<endl;
-        escreveTrend<<" Tempo (s) ;";
-         if(arq.trendp[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendp[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendp[i].hol==1) escreveTrend<<" Holdup (-) ;";
-         if(arq.trendp[i].bet==1) escreveTrend<<" Beta (-) ;";
-         if(arq.trendp[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendp[i].uls==1) escreveTrend<<" Uls (m/s) ;";
-         if(arq.trendp[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendp[i].ul==1) escreveTrend<<" Ul (m/s) ;";
-         if(arq.trendp[i].arra==1) escreveTrend<<" Arranjo (-) ;";
-         if(arq.trendp[i].viscl==1) escreveTrend<<" Viscosidade Liquido (cP) ;";
-         if(arq.trendp[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendp[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendp[i].rhol==1) escreveTrend<<" Massa Especifica Liquido (kg/m3) ;";
-         if(arq.trendp[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendp[i].masl==1) escreveTrend<<" Vazao Massica Liquido (kg/s) ;";
-         if(arq.trendp[i].c0==1) escreveTrend<<" C0 (-) ;";
-         if(arq.trendp[i].ud==1) escreveTrend<<" Ud (m/s) ;";
-         if(arq.trendp[i].RGO==1) escreveTrend<<" RGO (Sm3/Sm3) ;";
-         if(arq.trendp[i].deng==1) escreveTrend<<" Densidade Gas (-) ;";
-         if(arq.trendp[i].yco2==1) escreveTrend<<" Fracao Molar de CO2 (-) ;";
-         if(arq.trendp[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendp[i].masstrans==1) escreveTrend<<" Transferencia de Massa entre Fases (kgf/(s m)) ;";
-         if(arq.trendp[i].qlst==1) escreveTrend<<" Vazao de Componente Pesado (Sm3/d) ;";
-		 if(arq.trendp[i].qlwst==1) escreveTrend<<" Vazao de Oleo mais Agua (Sm3/d) ;";
-         if(arq.trendp[i].qlstTot==1) escreveTrend<<" Vazao Total de Liquido (Sm3/d) ;";
-         if(arq.trendp[i].qgst==1) escreveTrend<<" Vazao de Componente Leve (Sm3/d) ;";
-         if(arq.trendp[i].api==1) escreveTrend<<" Grau API (-) ;";
-         if(arq.trendp[i].bsw==1) escreveTrend<<" BSW (-) ;";
-         if(arq.trendp[i].hidro == 1) escreveTrend << " Termo Hidrostatico (Pa/m) ;";
-         if(arq.trendp[i].fric == 1) escreveTrend << " Termo Friccao (Pa/m) ;";
-         if(arq.trendp[i].dengD==1) escreveTrend<<" Densidade Gas Dissolvido In Situ (-) ;";
-         if(arq.trendp[i].dengL==1) escreveTrend<<" Densidade Gas Livre In Situ (-) ;";
- 		 if(arq.trendp[i].reyi == 1) escreveTrend << " Reynolds interno da mistura (-) ;";
- 		 if(arq.trendp[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
- 		 if(arq.trendp[i].Fr == 1) escreveTrend << " Froud (-) ;";
- 		 if(arq.trendp[i].grashi == 1) escreveTrend << " Grashof interno da mistura (-) ;";
- 		 if(arq.trendp[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
- 		 if(arq.trendp[i].nusi == 1) escreveTrend << " Nusselt interno da mistura (-) ;";
- 		 if(arq.trendp[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
- 		 if(arq.trendp[i].hi == 1) escreveTrend << " H interno da mistura (W/(m2.K)) ;";
- 		 if(arq.trendp[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
- 		 if(arq.trendp[i].pri == 1) escreveTrend << " Prandtl interno da mistura (-) ;";
- 		 if(arq.trendp[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-        int nc=saidatrend.col();
-        int nl=saidatrend.lin();
-        for ( int i = 0; i<nl; i++){
-          if(saidatrend[i][0]<=-9999)break;
-                for(int j=0;j<nc;j++){
-                  escreveTrend.width(20);
-                  escreveTrend.precision(19);
-                  escreveTrend<<saidatrend[i][j]<<" ; ";
-                }
-                escreveTrend<<endl;
-        }
-      escreveTrend<<endl;
-        escreveTrend.close();kimpT
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
-  /*if(arq.ntendg>0 && arq.lingas>0){
-      for(int i=0;i<arq.ntendg;i++){
-        FullMtx<double> saidatrend(TrendLengthG[i],arq.nvartrendg[i]+1);
-        for(int k=0; k<TrendLengthG[i];k++)
-          for(int j=0;j<=arq.nvartrendg[i];j++)saidatrend[k][j]=MatTrendG[i][k][j];
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].posic << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDG" << "-" << arq.trendg[i].posic << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendg[i].rotulo.c_str(), ios_base::out);
-        double comprimento=0;
-        int posicn=arq.trendg[i].posic;
-        for(int k=0; k<=posicn; k++)comprimento+=arq.celg[k].dx;
-      escreveTrend<<"# Comprimento a partir da Plataforma (m) = "<<comprimento<<endl;
-      escreveTrend<<"# Rotulo = "<<arq.trendg[i].rotulo<<endl;
-      escreveTrend<<"# Indice da Celula = "<<arq.trendg[i].posic<<endl;
-        escreveTrend<<" Tempo (s) ;";
-         if(arq.trendg[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendg[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendg[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendg[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendg[i].tens==1) escreveTrend<<" Tensao Cisalhante (N/m2) ;";
-         if(arq.trendg[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendg[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendg[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendg[i].hidro==1) escreveTrend<<" Hidrostatica (N/m2) ;";
-         if(arq.trendg[i].fric==1) escreveTrend<<" Perda por Friccao (N/m2) ;";
-         if(arq.trendg[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendg[i].qgst==1) escreveTrend<<" Vazao de Gas Standard (Sm3/d) ;";
-         if(arq.trendg[i].pEstagVGL==1) escreveTrend<<" pressao de Estagnacao VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tEstagVGL==1) escreveTrend<<" Temperatura de Estagnacao VGL (C) ;";
-         if(arq.trendg[i].pGargVGL==1) escreveTrend<<" pressao na Garganta VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tGargVGL==1) escreveTrend<<" Temperatura na Garganta VGL (C) ;";
-         if(arq.trendg[i].velgarg==1) escreveTrend<<" Velocidade na VGL (m/s) ;";
-         if(arq.trendg[i].qVGL==1) escreveTrend<<" Vazao na VGL (mÂ³/s) ;";
-  		 if(arq.trendg[i].reyi == 1) escreveTrend << " Reynolds interno (-) ;";
-  		 if(arq.trendg[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
-  		 if(arq.trendg[i].grashi == 1) escreveTrend << " Grashof interno (-) ;";
-  		 if(arq.trendg[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
-  		 if(arq.trendg[i].nusi == 1) escreveTrend << " Nusselt interno (-) ;";
-  		 if(arq.trendg[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
-  		 if(arq.trendg[i].hi == 1) escreveTrend << " H interno (W/(m2.K)) ;";
-  		 if(arq.trendg[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
-  		 if(arq.trendg[i].pri == 1) escreveTrend << " Prandtl interno (-) ;";
-  		 if(arq.trendg[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-        int nc=saidatrend.col();
-        int nl=saidatrend.lin();
-        for ( int i = 0; i<nl; i++){
-          if(saidatrend[i][0]<=-9999)break;
-                for(int j=0;j<nc;j++){
-                  escreveTrend.width(20);
-                  escreveTrend.precision(19);
-                  escreveTrend<<saidatrend[i][j]<<" ; ";
-                }
-                escreveTrend<<endl;
-        }
-      escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
   if(arq.ntendtransp>0){
-      //for(int i=0;i<arq.ntendtransp;i++){
 	    int size=ntrendtrans[i]-ntrendtransB[i]+1;
         FullMtx<double> saidatrend(size,2);
         for(int k=0; k<size;k++)
@@ -20567,14 +13738,6 @@ void  SProd::ImprimeTrendTransP(int i) {
         saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::app);
-        //ofstream escreveTrend(arq.trendtransp[i].rotulo.c_str(), ios_base::out);
-     /* if(kimpT==1){
-        escreveTrend<<"# Rotulo = "<<arq.trendtransp[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-      }*/
-        //escreveTrend<<saidatrend;
         int nc=saidatrend.col();
         int nl=saidatrend.lin();
         for ( int i = 0; i<nl; i++){
@@ -20593,50 +13756,8 @@ void  SProd::ImprimeTrendTransP(int i) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
-  /*if(arq.ntendtransg>0 && arq.lingas>0){
-      for(int i=0;i<arq.ntendtransg;i++){
-        FullMtx<double> saidatrend(TrendLengthTransG[i],2);
-        for(int k=0; k<TrendLengthTransG[i];k++)
-          for(int j=0;j<2;j++)saidatrend[k][j]=MatTrendTransG[i][k][j];
-        int poscel=arq.trendtransg[i].posic;
-        int poscam=arq.trendtransg[i].camada-1;
-        int posdiscre=arq.trendtransg[i].discre-1;
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDTRANSG" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransg[i].rotulo.c_str(), ios_base::out);
-      escreveTrend<<"# Rotulo = "<<arq.trendtransg[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-      int nc=saidatrend.col();
-      int nl=saidatrend.lin();
-      for ( int i = 0; i<nl; i++){
-        if(saidatrend[i][0]<=-9999)break;
-              for(int j=0;j<nc;j++){
-                escreveTrend.width(20);
-                escreveTrend.precision(19);
-                escreveTrend<<saidatrend[i][j]<<" ; ";
-              }
-              escreveTrend<<endl;
-      }
-        escreveTrend<<endl;
 
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
 }
 
 void  SProd::ImprimeTrendTransGCab(int i) {
@@ -20654,7 +13775,6 @@ void  SProd::ImprimeTrendTransGCab(int i) {
         saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransg[i].rotulo.c_str(), ios_base::out);
       if(kimpT==1){
         escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendtransg[i].rotulo << endl;
         escreveTrend << t(" Tempo (s) ; ", " Time (s) ; ");
@@ -20667,211 +13787,11 @@ void  SProd::ImprimeTrendTransGCab(int i) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
 }
 
 void  SProd::ImprimeTrendTransG(int i) {
-  /*if(arq.ntendp>0){
-      for(int i=0;i<arq.ntendp;i++){
-        FullMtx<double> saidatrend(TrendLengthP[i],arq.nvartrendp[i]+1);
-        for(int k=0; k<TrendLengthP[i];k++)
-          for(int j=0;j<=arq.nvartrendp[i];j++)saidatrend[k][j]=MatTrendP[i][k][j];
-        ostringstream saidaT;
-        if(indTramo<0){
-        	      saidaT << pathPrefixoArqSaida << "TENDP" << "-" << arq.trendp[i].posic << ".dat";
-        }
-        else{
-                  saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDP" << "-" << arq.trendp[i].posic << ".dat";
-        }
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendp[i].rotulo.c_str(), ios_base::out);
-        double comprimento=0;
-        int posicn=arq.trendp[i].posic;
-        for(int k=0; k<=posicn; k++)comprimento+=arq.celp[k].dx;
-      escreveTrend<<"# Comprimento a partir do Fundo de Poco (m) = "<<comprimento<<endl;
-      escreveTrend<<"# Rotulo = "<<arq.trendp[i].rotulo<<endl;
-      escreveTrend<<"# Indice da Celula = "<<arq.trendp[i].posic<<endl;
-        escreveTrend<<" Tempo (s) ;";
-         if(arq.trendp[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendp[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendp[i].hol==1) escreveTrend<<" Holdup (-) ;";
-         if(arq.trendp[i].bet==1) escreveTrend<<" Beta (-) ;";
-         if(arq.trendp[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendp[i].uls==1) escreveTrend<<" Uls (m/s) ;";
-         if(arq.trendp[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendp[i].ul==1) escreveTrend<<" Ul (m/s) ;";
-         if(arq.trendp[i].arra==1) escreveTrend<<" Arranjo (-) ;";
-         if(arq.trendp[i].viscl==1) escreveTrend<<" Viscosidade Liquido (cP) ;";
-         if(arq.trendp[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendp[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendp[i].rhol==1) escreveTrend<<" Massa Especifica Liquido (kg/m3) ;";
-         if(arq.trendp[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendp[i].masl==1) escreveTrend<<" Vazao Massica Liquido (kg/s) ;";
-         if(arq.trendp[i].c0==1) escreveTrend<<" C0 (-) ;";
-         if(arq.trendp[i].ud==1) escreveTrend<<" Ud (m/s) ;";
-         if(arq.trendp[i].RGO==1) escreveTrend<<" RGO (Sm3/Sm3) ;";
-         if(arq.trendp[i].deng==1) escreveTrend<<" Densidade Gas (-) ;";
-         if(arq.trendp[i].yco2==1) escreveTrend<<" Fracao Molar de CO2 (-) ;";
-         if(arq.trendp[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendp[i].masstrans==1) escreveTrend<<" Transferencia de Massa entre Fases (kgf/(s m)) ;";
-         if(arq.trendp[i].qlst==1) escreveTrend<<" Vazao de Componente Pesado (Sm3/d) ;";
-		 if(arq.trendp[i].qlwst==1) escreveTrend<<" Vazao de Oleo mais Agua (Sm3/d) ;";
-         if(arq.trendp[i].qlstTot==1) escreveTrend<<" Vazao Total de Liquido (Sm3/d) ;";
-         if(arq.trendp[i].qgst==1) escreveTrend<<" Vazao de Componente Leve (Sm3/d) ;";
-         if(arq.trendp[i].api==1) escreveTrend<<" Grau API (-) ;";
-         if(arq.trendp[i].bsw==1) escreveTrend<<" BSW (-) ;";
-         if(arq.trendp[i].hidro == 1) escreveTrend << " Termo Hidrostatico (Pa/m) ;";
-         if(arq.trendp[i].fric == 1) escreveTrend << " Termo Friccao (Pa/m) ;";
-         if(arq.trendp[i].dengD==1) escreveTrend<<" Densidade Gas Dissolvido In Situ (-) ;";
-         if(arq.trendp[i].dengL==1) escreveTrend<<" Densidade Gas Livre In Situ (-) ;";
- 		 if(arq.trendp[i].reyi == 1) escreveTrend << " Reynolds interno da mistura (-) ;";
- 		 if(arq.trendp[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
- 		 if(arq.trendp[i].Fr == 1) escreveTrend << " Froud (-) ;";
- 		 if(arq.trendp[i].grashi == 1) escreveTrend << " Grashof interno da mistura (-) ;";
- 		 if(arq.trendp[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
- 		 if(arq.trendp[i].nusi == 1) escreveTrend << " Nusselt interno da mistura (-) ;";
- 		 if(arq.trendp[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
- 		 if(arq.trendp[i].hi == 1) escreveTrend << " H interno da mistura (W/(m2.K)) ;";
- 		 if(arq.trendp[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
- 		 if(arq.trendp[i].pri == 1) escreveTrend << " Prandtl interno da mistura (-) ;";
- 		 if(arq.trendp[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-        int nc=saidatrend.col();
-        int nl=saidatrend.lin();
-        for ( int i = 0; i<nl; i++){
-          if(saidatrend[i][0]<=-9999)break;
-                for(int j=0;j<nc;j++){
-                  escreveTrend.width(20);
-                  escreveTrend.precision(19);
-                  escreveTrend<<saidatrend[i][j]<<" ; ";
-                }
-                escreveTrend<<endl;
-        }
-      escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
-  /*if(arq.ntendg>0 && arq.lingas>0){
-      for(int i=0;i<arq.ntendg;i++){
-        FullMtx<double> saidatrend(TrendLengthG[i],arq.nvartrendg[i]+1);
-        for(int k=0; k<TrendLengthG[i];k++)
-          for(int j=0;j<=arq.nvartrendg[i];j++)saidatrend[k][j]=MatTrendG[i][k][j];
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].posic << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDG" << "-" << arq.trendg[i].posic << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendg[i].rotulo.c_str(), ios_base::out);
-        double comprimento=0;
-        int posicn=arq.trendg[i].posic;
-        for(int k=0; k<=posicn; k++)comprimento+=arq.celg[k].dx;
-      escreveTrend<<"# Comprimento a partir da Plataforma (m) = "<<comprimento<<endl;
-      escreveTrend<<"# Rotulo = "<<arq.trendg[i].rotulo<<endl;
-      escreveTrend<<"# Indice da Celula = "<<arq.trendg[i].posic<<endl;
-        escreveTrend<<" Tempo (s) ;";
-         if(arq.trendg[i].pres==1) escreveTrend<<" Pressao (kgf/cm2) ;";
-         if(arq.trendg[i].temp==1) escreveTrend<<" Temperatura (C) ;";
-         if(arq.trendg[i].ugs==1) escreveTrend<<" Usg (m/s) ;";
-         if(arq.trendg[i].ug==1) escreveTrend<<" Ug (m/s) ;";
-         if(arq.trendg[i].tens==1) escreveTrend<<" Tensao Cisalhante (N/m2) ;";
-         if(arq.trendg[i].viscg==1) escreveTrend<<" Viscosidade Gas (cP) ;";
-         if(arq.trendg[i].rhog==1) escreveTrend<<" Massa Especifica Gas (kg/m3) ;";
-         if(arq.trendg[i].masg==1) escreveTrend<<" Vazao Massica Gas (kg/s) ;";
-         if(arq.trendg[i].hidro==1) escreveTrend<<" Hidrostatica (N/m2) ;";
-         if(arq.trendg[i].fric==1) escreveTrend<<" Perda por Friccao (N/m2) ;";
-         if(arq.trendg[i].calor==1) escreveTrend<<" Fluxo de Calor (W/m) ;";
-         if(arq.trendg[i].qgst==1) escreveTrend<<" Vazao de Gas Standard (Sm3/d) ;";
-         if(arq.trendg[i].pEstagVGL==1) escreveTrend<<" pressao de Estagnacao VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tEstagVGL==1) escreveTrend<<" Temperatura de Estagnacao VGL (C) ;";
-         if(arq.trendg[i].pGargVGL==1) escreveTrend<<" pressao na Garganta VGL (kgf/cmÂ²) ;";
-         if(arq.trendg[i].tGargVGL==1) escreveTrend<<" Temperatura na Garganta VGL (C) ;";
-         if(arq.trendg[i].velgarg==1) escreveTrend<<" Velocidade na VGL (m/s) ;";
-         if(arq.trendg[i].qVGL==1) escreveTrend<<" Vazao na VGL (mÂ³/s) ;";
-  		 if(arq.trendg[i].reyi == 1) escreveTrend << " Reynolds interno (-) ;";
-  		 if(arq.trendg[i].reye == 1) escreveTrend << " Reynolds externo (-) ;";
-  		 if(arq.trendg[i].grashi == 1) escreveTrend << " Grashof interno (-) ;";
-  		 if(arq.trendg[i].grashe == 1) escreveTrend << " Grashof externo (-) ;";
-  		 if(arq.trendg[i].nusi == 1) escreveTrend << " Nusselt interno (-) ;";
-  		 if(arq.trendg[i].nuse == 1) escreveTrend << " Nusselt externo (-) ;";
-  		 if(arq.trendg[i].hi == 1) escreveTrend << " H interno (W/(m2.K)) ;";
-  		 if(arq.trendg[i].he == 1) escreveTrend << " H externo (W/(m2.K)) ;";
-  		 if(arq.trendg[i].pri == 1) escreveTrend << " Prandtl interno (-) ;";
-  		 if(arq.trendg[i].pre == 1)	escreveTrend << " Prandtl externo (-) ;";
-         escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-        int nc=saidatrend.col();
-        int nl=saidatrend.lin();
-        for ( int i = 0; i<nl; i++){
-          if(saidatrend[i][0]<=-9999)break;
-                for(int j=0;j<nc;j++){
-                  escreveTrend.width(20);
-                  escreveTrend.precision(19);
-                  escreveTrend<<saidatrend[i][j]<<" ; ";
-                }
-                escreveTrend<<endl;
-        }
-      escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
-/*  if(arq.ntendtransp>0){
-      for(int i=0;i<arq.ntendtransp;i++){
-        FullMtx<double> saidatrend(TrendLengthTransP[i],2);
-        for(int k=0; k<TrendLengthTransP[i];k++)
-          for(int j=0;j<2;j++)saidatrend[k][j]=MatTrendTransP[i][k][j];
-        int poscel=arq.trendtransp[i].posic;
-        int poscam=arq.trendtransp[i].camada-1;
-        int posdiscre=arq.trendtransp[i].discre-1;
-        ostringstream saidaT;
-        if(indTramo<0)
-      saidaT << pathPrefixoArqSaida << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-        else
-        saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-      string tmp = saidaT.str();
-      ofstream escreveTrend(tmp.c_str(), ios_base::out);
-        //ofstream escreveTrend(arq.trendtransp[i].rotulo.c_str(), ios_base::out);
-      escreveTrend<<"# Rotulo = "<<arq.trendtransp[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-        //escreveTrend<<saidatrend;
-      int nc=saidatrend.col();
-      int nl=saidatrend.lin();
-      for ( int i = 0; i<nl; i++){
-        if(saidatrend[i][0]<=-9999)break;
-              for(int j=0;j<nc;j++){
-                escreveTrend.width(20);
-                escreveTrend.precision(19);
-                escreveTrend<<saidatrend[i][j]<<" ; ";
-              }
-              escreveTrend<<endl;
-      }
-        escreveTrend<<endl;
-        escreveTrend.close();
-        // caso nao seja simulacao POCO_INJETOR
-        if (arq.tipoSimulacao !=  tipoSimulacao_t::poco_injetor) {
-          arqRelatorioPerfis << tmp.c_str() << endl;
-          arqRelatorioPerfis.flush();
-        }
-      }
-  }*/
   if(arq.ntendtransg>0 && arq.lingas>0){
-      //for(int i=0;i<arq.ntendtransg;i++){
 	    int size=ntrendtrans[i]-ntrendtransB[i]+1;
         FullMtx<double> saidatrend(size,2);
         for(int k=0; k<size;k++)
@@ -20886,14 +13806,6 @@ void  SProd::ImprimeTrendTransG(int i) {
         saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
       string tmp = saidaT.str();
       ofstream escreveTrend(tmp.c_str(), ios_base::app);
-        //ofstream escreveTrend(arq.trendtransg[i].rotulo.c_str(), ios_base::out);
-  /*    if(kimpT==1){
-        escreveTrend<<"# Rotulo = "<<arq.trendtransg[i].rotulo<<endl;
-        escreveTrend<<" Tempo (s) ; ";
-        escreveTrend<<" Temperatura (C) ;";
-        escreveTrend<<endl;
-      }*/
-        //escreveTrend<<saidatrend;
       int nc=saidatrend.col();
       int nl=saidatrend.lin();
       for ( int i = 0; i<nl; i++){
@@ -20913,13 +13825,8 @@ void  SProd::ImprimeTrendTransG(int i) {
           arqRelatorioPerfis << tmp.c_str() << endl;
           arqRelatorioPerfis.flush();
         }
-      //}
   }
 }
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -21095,10 +14002,7 @@ double SProd::marchaProdPerm1(double pchute) {
   double presteste0 = -10;
   iterperm = 0;
 
-  //if(celula[0].acsr.tipo==3 && (celula[0].acsr.ipr.Pres-pchute)<localtiny)
-  //pchute=0.95*celula[0].acsr.ipr.Pres;
 
-//  double pchute0 = pchute;
   int limIter=2;//limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
   //desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
   //quando o tramo faz perte de um sistema de redes
@@ -21125,7 +14029,6 @@ double SProd::marchaProdPerm1(double pchute) {
     	IniciaconectaColunaPerm();//antes de iniciar a primeira iteracao de marcha,
     //faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
     //caso se tenha linha de gas
-    //else if(arq.lingas>0 && arq.nvalvgas>0) conectaColuna();
     else if (arq.lingas > 0 && arq.nvalvgas > 0 && verificaAcop == 1)
     	conectaColunaPerm();//acoplamento termico feito com valores de pressao e temperatura
     //obtidas na primeira iteracao de marcha
@@ -21166,53 +14069,6 @@ double SProd::marchaProdPerm1(double pchute) {
      celula[0].betPigEini = celula[0].bet;
      celula[0].betI = celula[0].bet;
      celula[1].betLI = celula[0].bet;
-     /* if (iterperm == 0) {
-    	if(celula[0].acsr.tipo != 1){
-            celula[0].alf = 0.;
-            celula[0].alfini = 0.;
-            celula[0].bet = 0.;
-            celula[0].betini = 0.;
-    	}
-    	else{
-            celula[0].alf = 1.;
-            celula[0].alfini = 1.;
-            celula[0].bet = 0.;
-            celula[0].betini = 0.;
-    	}
-        celula[1].alfL = celula[0].alf;
-        celula[1].alfLini = celula[0].alf;
-        celula[0].alfPigD = celula[0].alf;
-        celula[0].alfPigDini = celula[0].alf;
-        celula[0].alfPigE = celulOa[0].alf;
-        celula[0].alfPigEini = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[1].betLini = celula[0].bet;
-        celula[0].betPigD = celula[0].bet;
-        celula[0].betPigDini = celula[0].bet;
-        celula[0].betPigE = celula[0].bet;
-        celula[0].betPigEini = celula[0].bet;
-        celula[0].betI = celula[0].bet;
-        celula[1].betLI = celula[0].bet;
-      } else {
-        celula[0].alf = 0*0.5+1*celula[1].alf;
-        celula[0].alfini = 0*0.5+1*celula[1].alf;
-        celula[0].bet = 0*0.5+1*celula[1].bet;
-        celula[0].betini = 0*0.5+1*celula[1].bet;
-        celula[1].alfL = celula[0].alf;
-        celula[1].alfLini = celula[0].alf;
-        celula[0].alfPigD = celula[0].alf;
-        celula[0].alfPigDini = celula[0].alf;
-        celula[0].alfPigE = celula[0].alf;
-        celula[0].alfPigEini = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[1].betLini = celula[0].bet;
-        celula[0].betPigD = celula[0].bet;
-        celula[0].betPigDini = celula[0].bet;
-        celula[0].betPigE = celula[0].bet;
-        celula[0].betPigEini = celula[0].bet;
-        celula[0].betI = celula[0].bet;
-        celula[1].betLI = celula[0].bet;
-      }*/
      //verifica se ja existe algum problema no inicio da marcha
       if (celula[0].pres <=  0.1 ||
     		  (arq.usaTabela==1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny)) return -1e10;
@@ -21233,10 +14089,6 @@ double SProd::marchaProdPerm1(double pchute) {
       //inicio da marcha propriamente dita
       while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
 
-/*if(i==480){
-	int para=0;
-	para++;
-}*/
         RenovaPresPermMon(i, 0);//avanco da marcha para obter a pressao na fronteira esquerda
         //da celula i
         //teste para ver se ocorreu algum problema:
@@ -21266,12 +14118,6 @@ double SProd::marchaProdPerm1(double pchute) {
         //seu centro de celula
         //verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
         //celula
-        /*if(arq.flashCompleto==2){
-        	if(i>0)
-        	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
-     			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-        	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-        }*/
         if(arq.usaTabela==1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny){
         	return 1e10;
         }
@@ -21294,10 +14140,6 @@ double SProd::marchaProdPerm1(double pchute) {
         else RenovaTransMassPermGas(i - 1);//caso seja uma tabela PVTSim, calcula-se a
         //taxa de transferÃªncia de massa entre as fases para o uso no calculo de
         //calor latente da equacao de energia
-        /*if((i)>130){
-        	int val;
-        	val=0;
-        }*/
         if (arq.ordperm > 1) {//correcao de segunda ordem
           double D0presaux = celula[i].presaux - celula[i - 1].pres;
           double D0pres = celula[i].pres - celula[i].presaux;
@@ -21333,20 +14175,11 @@ double SProd::marchaProdPerm1(double pchute) {
           else RenovaTransMassPermGas(i - 1);
 
         }
-        /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-        celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-        celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-        celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-        celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-        celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
 
         //apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
         //verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
         //GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
         if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm>0.1) IniciaVazValvGasPerm(i);
-        //RenovaMassPerm(i);
-        //RenovaTempPerm(i);
-        //RenovaTransMassPerm(i-1);
         i++;
 
         if (isnan(celula[i - 1].pres) || isnan(celula[i - 1].temp) || isnan(celula[i - 1].alf)){
@@ -21374,8 +14207,6 @@ double SProd::marchaProdPerm1(double pchute) {
       if (celulaG[0].tipoCC == 0) {//marcha para o caso, pressao de injecao
     	if(arq.chokes.abertura[0]>=0.2){//choke de injecao inativo
            for (int iter = 0; iter < 1; iter++){
-             //double chutemass=50000.;
-             //chutemass=marchaGasPerm2( presiniG,chutemass)+chutemass;
              marchaGasPerm1();
           }
     	}
@@ -21414,7 +14245,6 @@ double SProd::marchaProdPerm1(double pchute) {
     //opcao de acelerador de convergencia esta desligado
     presteste=celula[ncel].pres;//guarda valor de pressao para se calcular o erro, quando a
     //opcao de acelerador de convergencia esta desligado
-    //if(arq.lingas==0)masfim0=masfim;
     iterperm++;//atualiza a ieteracao da marcha
     if (iterperm > 200 && arq.AS==0) NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
     else if(iterperm>200) return 1.1e10;
@@ -21435,7 +14265,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
   double alfini=0.;
   double betini=0.;
   trocaTermicaLenta=0.1;
-  //celula[0].flui=fluiRevRede;
 
   //estimativa da fracao de vazio na primeira celula do sistema
   if (celula[0].acsr.tipo == 0){//sem nenhuma fonte
@@ -21447,7 +14276,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
 	   }
   }
   else if (celula[0].acsr.tipo == 1){//fonte de gas
-	  //celula[0].acsr.injg.FluidoPro=fluiRevRede;
 	  celula[0].temp = celula[0].acsr.injg.temp;
 	  if(arq.flashCompleto==2){
 		  	  if(arq.tabelaDinamica==0)celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
@@ -21473,14 +14301,12 @@ double SProd::marchaProdPerm1Rev(double pchute) {
 				            celula[0].acsr.injg.fluidocol.MasEspFlu(pchute,celula[0].temp);
 		  qcomp/=86400.;
 		  alfini=qgas/(qliq+qcomp+qgas);
-		  //betini=0.;
 		  if((fabs(qcomp)+fabs(qliq))>1e-15)betini=fabs(qcomp)/(fabs(qcomp)+fabs(qliq));
 		  else betini=0.;
 	  }
   }
   else if (celula[0].acsr.tipo == 2){//fonte de liquido, faz-se uma estimativa a partir
 	  //da vazÃƒÂ£o volumÃƒÂ©trica das fases, fracao de vazio = fracao de vazio sem escorregamento
-	  //celula[0].acsr.injl.FluidoPro=fluiRevRede;
 	  celula[0].temp = celula[0].acsr.injl.temp;
 	  if(arq.flashCompleto==2){
 		  	 if(arq.tabelaDinamica==0)celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
@@ -21501,7 +14327,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
   }
   else if (celula[0].acsr.tipo == 3){//IPR no inicio da tubulacao
 	  //da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-	  //celula[0].acsr.ipr.FluidoPro=fluiRevRede;
 	  celula[0].temp = celula[0].acsr.ipr.Tres;
 	  if(arq.flashCompleto==2){
 		  	 if(arq.tabelaDinamica==0)celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
@@ -21516,7 +14341,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
   }
   else if (celula[0].acsr.tipo == 10){//fonte de massa no inicio da tubulacao
 	  //da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-	  //celula[0].acsr.injm.FluidoPro=fluiRevRede;
 	  celula[0].temp = celula[0].acsr.injm.temp;
 	  if(arq.flashCompleto==2){
 		  	 if(arq.tabelaDinamica==0)celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
@@ -21608,8 +14432,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
   double tempteste0 = -1000;
   iterperm = 0;
 
-  //if(celula[0].acsr.tipo==3 && (celula[0].acsr.ipr.Pres-pchute)<localtiny)
-  //pchute=0.95*celula[0].acsr.ipr.Pres;
 
   double pchute0 = pchute;
   int limIter=2;//limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
@@ -21639,7 +14461,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
     	IniciaconectaColunaPerm();//antes de iniciar a primeira iteracao de marcha,
     //faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
     //caso se tenha linha de gas
-    //else if(arq.lingas>0 && arq.nvalvgas>0) conectaColuna();
     else if (arq.lingas > 0 && arq.nvalvgas > 0 && verificaAcop == 1)
     	conectaColunaPerm();//acoplamento termico feito com valores de pressao e temperatura
     //obtidas na primeira iteracao de marcha
@@ -21680,53 +14501,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
      celula[0].betPigEini = celula[0].bet;
      celula[0].betI = celula[0].bet;
      celula[1].betLI = celula[0].bet;
-     /* if (iterperm == 0) {
-    	if(celula[0].acsr.tipo != 1){
-            celula[0].alf = 0.;
-            celula[0].alfini = 0.;
-            celula[0].bet = 0.;
-            celula[0].betini = 0.;
-    	}
-    	else{
-            celula[0].alf = 1.;
-            celula[0].alfini = 1.;
-            celula[0].bet = 0.;
-            celula[0].betini = 0.;
-    	}
-        celula[1].alfL = celula[0].alf;
-        celula[1].alfLini = celula[0].alf;
-        celula[0].alfPigD = celula[0].alf;
-        celula[0].alfPigDini = celula[0].alf;
-        celula[0].alfPigE = celula[0].alf;
-        celula[0].alfPigEini = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[1].betLini = celula[0].bet;
-        celula[0].betPigD = celula[0].bet;
-        celula[0].betPigDini = celula[0].bet;
-        celula[0].betPigE = celula[0].bet;
-        celula[0].betPigEini = celula[0].bet;
-        celula[0].betI = celula[0].bet;
-        celula[1].betLI = celula[0].bet;
-      } else {
-        celula[0].alf = 0*0.5+1*celula[1].alf;
-        celula[0].alfini = 0*0.5+1*celula[1].alf;
-        celula[0].bet = 0*0.5+1*celula[1].bet;
-        celula[0].betini = 0*0.5+1*celula[1].bet;
-        celula[1].alfL = celula[0].alf;
-        celula[1].alfLini = celula[0].alf;
-        celula[0].alfPigD = celula[0].alf;
-        celula[0].alfPigDini = celula[0].alf;
-        celula[0].alfPigE = celula[0].alf;
-        celula[0].alfPigEini = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[1].betLini = celula[0].bet;
-        celula[0].betPigD = celula[0].bet;
-        celula[0].betPigDini = celula[0].bet;
-        celula[0].betPigE = celula[0].bet;
-        celula[0].betPigEini = celula[0].bet;
-        celula[0].betI = celula[0].bet;
-        celula[1].betLI = celula[0].bet;
-      }*/
      //verifica se ja existe algum problema no inicio da marcha
       if (celula[0].pres <=  0.1 ||
     		  (arq.usaTabela==1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny)) return -1e10;
@@ -21736,10 +14510,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
       //inicio da marcha propriamente dita
       while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
 
-/*if(i==480){
-	int para=0;
-	para++;
-}*/
         RenovaPresPermMon(i, 0);//avanco da marcha para obter a pressao na fronteira esquerda
         //da celula i
         //teste para ver se ocorreu algum problema:
@@ -21764,12 +14534,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
         //seu centro de celula
         //verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
         //celula
-        /*if(arq.flashCompleto==2){
-        	if(i>0)
-        	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
-     			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-        	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-        }*/
         if(arq.usaTabela==1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny){
         	return 1e10;
         }
@@ -21783,10 +14547,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
         else RenovaTransMassPermGas(i - 1);//caso seja uma tabela PVTSim, calcula-se a
         //taxa de transferÃªncia de massa entre as fases para o uso no calculo de
         //calor latente da equacao de energia
-        /*if((i)>130){
-        	int val;
-        	val=0;
-        }*/
         if (arq.ordperm > 1) {//correcao de segunda ordem
           double D0presaux = celula[i].presaux - celula[i - 1].pres;
           double D0pres = celula[i].pres - celula[i].presaux;
@@ -21794,7 +14554,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
           RenovaPresPermMon(i, 1);
           atualizaPeriPmonProd(i);
           RenovaMassPerm(i);
-          //RenovaTempPerm(i, 1);
           RenovaPresPermJus(i, 1);
           celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
           celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
@@ -21807,12 +14566,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
           else RenovaTransMassPermGas(i - 1);
 
         }
-        /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-        celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-        celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-        celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-        celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-        celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
 
         i++;
 
@@ -21829,7 +14582,6 @@ double SProd::marchaProdPerm1Rev(double pchute) {
     //opcao de acelerador de convergencia esta desligado
     presteste=celula[ncel].pres;//guarda valor de pressao para se calcular o erro, quando a
     //opcao de acelerador de convergencia esta desligado
-    //if(arq.lingas==0)masfim0=masfim;
 	iterperm++;//atualiza a ieteracao da marcha
 	if (iterperm > 200 && arq.AS==0) NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
 	else if(iterperm>200)return 1.1e10;
@@ -21851,13 +14603,10 @@ double SProd::marchaProdPerm1Rev(double pchute) {
     		}
     		media/=(ncel-1);
     		desvio=(media-0.1);
-    	//if(lento>0 && desvio>0 && desvio<0.05)trocaTermicaLenta=1.;
     		if(lento>0  && lento< ncel){
     			int para;
     			para=0;
-    		//trocaTermicaLenta-=0.01;
     			trocaTermicaLenta=100.;
-    		//iterperm=0;
     		}
     		for(int ktemp=ncel-1; ktemp>=0;ktemp--){
     			RenovaTempPermRev(ktemp, 0);//faz o avanco da temperatura, da celula i-1 para a celula i
@@ -21906,11 +14655,6 @@ double SProd::marchaProdPerm2(double pchute) {
   double alfini=0.;
   double betini=0.;
 
-  //if (celula[0].acsr.tipo == 0) celula[0].temp = arq.celp[0].textern;
-  //else if (celula[0].acsr.tipo == 1) celula[0].temp = celula[0].acsr.injg.temp;
-  //else if (celula[0].acsr.tipo == 2) celula[0].temp = celula[0].acsr.injl.temp;
-  //else if (celula[0].acsr.tipo == 3) celula[0].temp = celula[0].acsr.ipr.Tres;
-  //else celula[0].temp = arq.celp[0].textern;
   //estimativa da fracao de vazio na primeira celula do sistema
   if (celula[0].acsr.tipo == 0){//sem nenhuma fonte
 	  celula[0].temp = arq.celp[0].textern;
@@ -21932,7 +14676,6 @@ double SProd::marchaProdPerm2(double pchute) {
 	  }
 	  else{
 		  double masgas = celula[0].acsr.injg.VMas(pchute, celula[0].temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  double tit;
 		  if(arq.flashCompleto!=2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -21947,7 +14690,6 @@ double SProd::marchaProdPerm2(double pchute) {
 				            celula[0].acsr.injg.fluidocol.MasEspFlu(pchute,celula[0].temp);
 		  qcomp/=86400.;
 		  alfini=qgas/(qliq+qcomp+qgas);
-		  //betini=0.;
 		  if((fabs(qcomp)+fabs(qliq))>1e-15)betini=fabs(qcomp)/(fabs(qcomp)+fabs(qliq));
 		  else betini=0.;
 	  }
@@ -22078,10 +14820,7 @@ double SProd::marchaProdPerm2(double pchute) {
   double presteste0 = -10;
   iterperm = 0;
 
-  //if(celula[0].acsr.tipo==3 && (celula[0].acsr.ipr.Pres-pchute)<localtiny)
-  //pchute=0.95*celula[0].acsr.ipr.Pres;
 
-//  double pchute0 = pchute;
   int limIter=2;//limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
   //desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
   //quando o tramo faz perte de um sistema de redes
@@ -22110,7 +14849,6 @@ double SProd::marchaProdPerm2(double pchute) {
     else if (arq.lingas > 0 && arq.nvalvgas > 0 && verificaAcop == 1)
     	conectaColunaPerm();//acoplamento termico feito com valores de pressao e temperatura
     //obtidas na primeira iteracao de marcha
-    //else if(arq.lingas>0 && arq.nvalvgas>0) conectaColuna();
     int i;
     corrigechute = 1;
     while (corrigechute == 1) {//opcao antiga, ja nao tem mais efeito
@@ -22211,12 +14949,6 @@ double SProd::marchaProdPerm2(double pchute) {
           		else return 1.1e10;
           	}
         }
-        /*if(arq.flashCompleto==2){
-        	if(i>0)
-        	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
-     			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-        	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-        }*/
         if(arq.usaTabela==1 && (celula[i].temp-arq.tabent.tmin) < (*vg1dSP).localtiny)
         	celula[i].temp=arq.tabent.tmin;
         atualizaPeriTempProd(i);//mera atualizacao de atributos de temperatura a esquerda e a direita
@@ -22260,23 +14992,14 @@ double SProd::marchaProdPerm2(double pchute) {
           else RenovaTransMassPermGas(i - 1);
 
         }
-        /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-        celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-        celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-        celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-        celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-        celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
         //apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
         //verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
         //GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
         if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm>0.1) IniciaVazValvGasPerm(i);
-        //RenovaMassPerm(i);
-        //RenovaTempPerm(i);
-        //RenovaTransMassPerm(i-1);
         i++;
         //teste para verificar se a pressao do centro de celula ficou acima
         //da pressao estatica de uma eventual IPR ou ficou baixa demais
-        if (celula[i - 1].pres <=  0.1 || /*((i - 1) >= ncel && celula[i - 1].pres <= pGSup)||*/
+        if (celula[i - 1].pres <=  0.1 ||
         	(arq.usaTabela==1 && (arq.tabent.pmin - celula[i-1].pres) > (*vg1dSP).localtiny)) return -1e10;
         else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < 1e-15
         		 && i==1)) return 1e10;
@@ -22352,14 +15075,11 @@ double SProd::marchaProdPerm2(double pchute) {
 
      double masentrada = celula[ncel - 1].MR;
      double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-     //double maxSup = 0.;
-//     double chokemas = 0;
 
      double tit;
      presfim = celula[ncel].pres;
      double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
      double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
-//     double rholmix = (1 - betSup) * rholp + betSup * rholc;
      tit = fabs(massgas / masentrada);
 
      double masChk;
@@ -22401,8 +15121,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
   monitConvPerm=1000.;
 //busca de dois chutes iniciais com valores com sinais opostos
 //para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
-//chute=chute inicial de pressao de fundo, caso chute seja <0,
-//sera feita uma estimativa interna dos valores;
   double pchute = pGSup;//inicializando o valor de pchute com o valor da pressao a jusante
   //do choke, pchute sera o valor de chute de fato no processo de busca
   //se o valor de chute>0, pchute=chute, senao, ele e estimado
@@ -22435,13 +15153,10 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 		  double rP = celula[0].acsr.injl.FluidoPro.MasEspLiq(pchute, taux);
 		  double rG = celula[0].acsr.injl.FluidoPro.MasEspGas(pchute, taux);
 		  rmis = (1 - bet) * rP + bet * rC;
-//		  double rlpA = celula[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
 		  double rlcA = celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
 		  //estimativa grosseira da vazao massica do liquido complementar
 		  double massicC = rlcA * celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet / 86400;
-		  //////////////////////////////////////////////////////////////////////////////////////////////
 		  //estimativa grosseira da vazao massica de liquido e gas produzidos
-		  //double massic = rlpA * celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
 		  double massic;
 		  //massas especificas, condicao standard
 		  double Rhogs = celula[0].acsr.injl.FluidoPro.Deng * 1.225;    	//cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
@@ -22452,9 +15167,7 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 		  double multiplicador = (Rhols
 				  + celula[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - celula[0].acsr.injl.FluidoPro.BSW));
 		  //massic *= multiplicador;//alteracao8
-		  //if((*vg1dSP).chaverede==1)
 		  massic=1*multiplicador* celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
-		  //else massic=1*multiplicador* celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
 		  //titulo do gas em relacao a misturaoleo+agua+gas
 		  double fracmasshidra = celula[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
 		  double massicP = (1. - fracmasshidra) * massic;//vazao massica de liquido produzido
@@ -22483,11 +15196,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 	  perdafric = (f1 * rmis * j * fabs(j) / 2.) * tmpperi / tmparea;
 	  //se o acessorio for uma IPR, a estimativa serÃ¡ uma pressao prÃ³xima a uma vazao baixa
 	  //no fundo do poco
-	 // if(celula[0].acsr.tipo == 3){
-		 // pchute=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
-		  //if(pchute<0.99* celula[0].acsr.ipr.Pres)pchute = 0.99* celula[0].acsr.ipr.Pres;
-	  //}
-	 // else{
 		  //se nao for IPR, a estimativa continua, considerando a perda de carga e a hidrostatica,
 		  //que serÃ¡ avaliada neste laco
 		  for (int i = ncel; i > 0; i--) {
@@ -22519,7 +15227,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 			  if (celula[i - 1].acsr.tipo == 3 &&
 					  ((celula[i - 1].acsr.ipr.Pres - pchute) <  0.01* celula[i - 1].acsr.ipr.Pres) && i==1){
 				  double qchute=0.15*celula[i-1].duto.area*86400;
-				  //qchute=10.;
 				  pchute=-(qchute/celula[i - 1].acsr.ipr.ip)+celula[i - 1].acsr.ipr.Pres;
 				  if(pchute>0.99* celula[i - 1].acsr.ipr.Pres)pchute = 0.99* celula[i - 1].acsr.ipr.Pres;
 				  if(pchute<0.9* celula[i - 1].acsr.ipr.Pres)pchute = 0.9* celula[i - 1].acsr.ipr.Pres;
@@ -22528,9 +15235,7 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 			  //no caso de se estar usando PVTSim
 			  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute) < (*vg1dSP).localtiny)pchute = 0.9*arq.tabent.pmax;
 		  }
-	 // }
 
-	  //if(arq.lingas==1 && celulaG[0].tipoCC == 0) pchute*=0.5;
 	  if(pchute>1000){
 		  pchute=1000;//pressao maxima de chute
 	  }
@@ -22543,7 +15248,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
   double val;//val recebe sempre o valor retornado pelo procedimento de marcha
   //neste caso, Ã© a pressao a montante do choke-a pressao da ultima celula, calculada pela
   //marcha
-  //pchute=240;
   val = marchaProdPerm1(pchute);
   buscaIni=1;
   //a marcha pode dar problemas, ou a pressao em algum ponto deu acima da pressao estÃ¡tica de
@@ -22581,9 +15285,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
     if(pchuteAux>1000){
     	pchuteAux=1000;//limite de pchuteAux
     }
-    //if(fabs(pchuteAux-pchute)<1e-5){
-    	//pchute=0.9*pchute;
-    //}
   } else if (val > 0.9e10) {//pressao em algum ponto ficou acima de alguma pressao estatica
 	  //deve-se diminuir o valor do chute
     pchuteAux = pGSup;
@@ -22596,7 +15297,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 	  if(betaChute<0.5){
 		  double tit=celula[i].flui.FracMassHidra(pchute, taux);
 		  alfa=tit*rhol/(rhog-tit*rhog+tit*rhol);
-		  //alfa*=1.5;
 		  if(alfa>0.9999)alfa=0.9999;
 	  }
       if(derivaAnel==0)alfa = 1.;
@@ -22615,11 +15315,8 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
     if(pchuteAux>1000){
     	pchuteAux=1000;
     }
-   // if(fabs(pchuteAux-pchute)<1e-5)pchuteAux=0.9*pchute;
   }
 
-//  double mult1=0.9;
-//  double mult2 =1.1;
   int tipo=1;
 
   //para o caso de ter dado eerado a primeira marcha, com pchuteAux faz-se uma nova tentativa
@@ -22811,20 +15508,9 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
   double chuteNeg=0.;
   double chutePos=0.;
   double chutelim = 0.;
-  //double reduz=0.9;
-  //if(chute>0)reduz=0.99;
-//  double aumenta=1.1;
-  //if(chute>0)reduz=0.99;
   double val0=val;
   int reversao=0;
   double atenua=1.;
-  /*if(celula[0].acsr.tipo==3 && celula[0].acsr.ipr.tipoIPR!=2){
-	  if(celula[0].acsr.ipr.ip>2000.)atenua=celula[0].acsr.ipr.ip/2000;
-  }
-  double reduz=0.9*atenua;
-  if(reduz>0.999)reduz=0.999;
-  double amplifica=1.1/atenua;
-  if(amplifica<1.001)amplifica=1.001;*/
   double reduz=1.-arq.buscaFC;
   double amplifica=1.+arq.buscaFC;
   if(fabs(val)<1e-3)return pchute;
@@ -22871,8 +15557,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 						  amplifica=1.-arq.buscaFC;
 						  val0=val;
 					  }
-					  //reversao=1;
-					  //val=1;
 				  }
 				  else val0=val;
 			  }
@@ -22903,16 +15587,9 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 			  while(val<-0.9e10){//a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
   			//de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
   			//deve-se aumentar a estimativa de pressao baixa
-  		  /* double somavaz=1.;
-  		   if (arq.lingas > 0 && arq.nvalvgas > 0 && celulaG[0].tipoCC == 0 && kontaiter>100) {
-  			   somavaz=0.;
-  			   for(int kv=0;kv<arq.nvalvgas;kv++)somavaz+=celulaG[posicVGLG[kv]].massfonteCH;
-  		   }*/
 				  chutelim=pchute2;
-  			//if(somavaz>0.)
 				  pchute2=0.5*(pchute2+pchuteAux);//valor intermediario entre a menor pressao
   			// que leva a val<0 e a pressao baixa demais
-  			//else pchute2*=0.9;
 				  val=marchaProdPerm1(pchute2);
 				  if(fabs(val)>1.01e10){
 					  if(kontaTenta<0)logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -22929,7 +15606,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 				  if(kontaiter>50*0.1/arq.buscaFC){
 					  if((*vg1dSP).chaverede==0){
 						  if(arq.transiente==0 && chute<0 && arq.AS==0)
-							 // NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
 							  if(kontaTenta<0)logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
 							  	      		    		"Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
 							  	      		          "", "");
@@ -22960,7 +15636,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 		  while(val>0){
 			  pchuteAux=pchute2;
 			  pchute2*=amplifica;//Aumentando a pressao na busca de val>0
-  		//if(pchute2>=chutelim)pchute2=0.5*(pchuteAux+chutelim);
 			  int limpres=0;
 			  if(celula[0].acsr.tipo == 3 &&
 					  (celula[0].acsr.ipr.Pres - pchute2) <  0.001* celula[0].acsr.ipr.Pres){
@@ -22989,11 +15664,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 			  }
 			  if(val>0. && limpres==1){
 				  int iterpres=0;
-      	  /*while(val>0 && iterpres<10 && val<0.9e10){
-      	     pchute2*=1.001;
-      	     val = marchaProdPerm1(pchute2);
-      	     iterpres++;
-      	  }*/
 				  if(iterpres>=10)
 					  if(arq.transiente==0 && chute<0 && arq.AS==0){
 						  NumError(
@@ -23011,7 +15681,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 						  else return 1.1e10;
 					  }
 			  }
-  		//val=marchaProdPerm1(pchute2);
 			  if(val>0 && val<0.9e10){
 				  chutePos=pchute2;//atualizando o chutePos
 				  if(val>val0 && celula[0].acsr.tipo==3 && arq.lingas==0){
@@ -23027,8 +15696,6 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 						  val0=val;
 					  }
 
-					  //reversao=1;
-					  //val=-1;
 				  }
 				  else val0=val;
 			  }
@@ -23103,12 +15770,10 @@ double SProd::buscaProdPfundoPerm(double chute,int kontaTenta) {
 		  chuteNeg=pchute2;
 	  }
 
-  //return falsacorda(pchute, pchute2,1,0);
 	  if(reversao==0)return zriddr(chuteNeg, chutePos, 1, 0);//com as duas estimativas de pressao
   //em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
   //de funcao
 	  else return buscaProdPfundoPermRev(pchute*1.);
-  //return zbrent(pchute, pchute2,1,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
@@ -23117,8 +15782,6 @@ double SProd::buscaProdPfundoPermRev(double chute) {
   monitConvPerm=1000.;
 //busca de dois chutes iniciais com valores com sinais opostos
 //para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
-//chute=chute inicial de pressao de fundo, caso chute seja <0,
-//sera feita uma estimativa interna dos valores;
   double pchute = pGSup;//inicializando o valor de pchute com o valor da pressao a jusante
   //do choke, pchute sera o valor de chute de fato no processo de busca
   //se o valor de chute>0, pchute=chute, senao, ele e estimado
@@ -23155,9 +15818,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 		  double rlcA = celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
 		  //estimativa grosseira da vazao massica do liquido complementar
 		  double massicC = rlcA * celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet / 86400;
-		  //////////////////////////////////////////////////////////////////////////////////////////////
 		  //estimativa grosseira da vazao massica de liquido e gas produzidos
-		  //double massic = rlpA * celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
 		  double massic;
 		  //massas especificas, condicao standard
 		  double Rhogs = celula[0].acsr.injl.FluidoPro.Deng * 1.225;    	//cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
@@ -23168,9 +15829,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 		  double multiplicador = (Rhols
 				  + celula[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - celula[0].acsr.injl.FluidoPro.BSW));
 		  //massic *= multiplicador;//alteracao8
-		  //if((*vg1dSP).chaverede==1)
 		  massic=1*multiplicador* celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
-		  //else massic=1*multiplicador* celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
 		  //titulo do gas em relacao a misturaoleo+agua+gas
 		  double fracmasshidra = celula[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
 		  double massicP = (1. - fracmasshidra) * massic;//vazao massica de liquido produzido
@@ -23199,11 +15858,6 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 	  perdafric = (f1 * rmis * j * fabs(j) / 2.) * tmpperi / tmparea;
 	  //se o acessorio for uma IPR, a estimativa serÃ¡ uma pressao prÃ³xima a uma vazao baixa
 	  //no fundo do poco
-	 // if(celula[0].acsr.tipo == 3){
-		//  pchute=(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
-		//  if(pchute>1.01* celula[0].acsr.ipr.Pres)pchute = 1.01* celula[0].acsr.ipr.Pres;
-	  //}
-	 // else{
 		  //se nao for IPR, a estimativa continua, considerando a perda de carga e a hidrostatica,
 		  //que serÃ¡ avaliada neste laco
 		  for (int i = ncel; i > 0; i--) {
@@ -23241,9 +15895,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 			  //no caso de se estar usando PVTSim
 			  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute) < (*vg1dSP).localtiny)pchute = 0.9*arq.tabent.pmax;
 		  }
-	 // }
 
-	  //if(arq.lingas==1 && celulaG[0].tipoCC == 0) pchute*=0.5;
 	  if(pchute>1000)pchute=1000;//pressao maxima de chute
   }
   else pchute=chute;//caso chute nao seja negativo utiliza a estimativa enviada na
@@ -23254,7 +15906,6 @@ double SProd::buscaProdPfundoPermRev(double chute) {
   double val;//val recebe sempre o valor retornado pelo procedimento de marcha
   //neste caso, Ã© a pressao a montante do choke-a pressao da ultima celula, calculada pela
   //marcha
-  //pchute=240;
   val = marchaProdPerm1Rev(pchute);
   buscaIni=1;
   //a marcha pode dar problemas, ou a pressao em algum ponto deu acima da pressao estÃ¡tica de
@@ -23285,9 +15936,6 @@ double SProd::buscaProdPfundoPermRev(double chute) {
       if(arq.usaTabela==1 && (arq.tabent.pmax - pchuteAux) < (*vg1dSP).localtiny)pchuteAux = 0.9*arq.tabent.pmax;
     }
     if(pchuteAux>1100)pchuteAux=1100;//limite de pchuteAux
-    //if(fabs(pchuteAux-pchute)<1e-5){
-    	//pchute=0.9*pchute;
-    //}
   } else if (val > 0.9e10) {//pressÃƒÂ£o em algum ponto ficou acima de alguma pressao estatica
 	  //deve-se diminuir o valor do chute
     pchuteAux = pGSup;
@@ -23311,7 +15959,6 @@ double SProd::buscaProdPfundoPermRev(double chute) {
       if(arq.usaTabela==1 && (arq.tabent.pmax - pchuteAux) < (*vg1dSP).localtiny)pchuteAux = 0.9*arq.tabent.pmax;
     }
     if(pchuteAux>1100)pchuteAux=1100;
-   // if(fabs(pchuteAux-pchute)<1e-5)pchuteAux=0.9*pchute;
   }
 
   double mult1=0.9;
@@ -23449,10 +16096,6 @@ double SProd::buscaProdPfundoPermRev(double chute) {
   double chuteNeg=0.;
   double chutePos=0.;
   double chutelim = 0.;
- /* double reduz=0.9;
-  //if(chute>0)reduz=0.99;
-  double aumenta=1.1;
-  //if(chute>0)reduz=0.99;*/
   arq.buscaFC=fabs(arq.buscaFC);
   double reduz=1.-arq.buscaFC;
   double amplifica=1.+arq.buscaFC;
@@ -23498,16 +16141,9 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 			  while(val<-0.9e10){//a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
   			//de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
   			//deve-se aumentar a estimativa de pressao baixa
-  		  /* double somavaz=1.;
-  		   if (arq.lingas > 0 && arq.nvalvgas > 0 && celulaG[0].tipoCC == 0 && kontaiter>100) {
-  			   somavaz=0.;
-  			   for(int kv=0;kv<arq.nvalvgas;kv++)somavaz+=celulaG[posicVGLG[kv]].massfonteCH;
-  		   }*/
 				  chutelim=pchute2;
-  			//if(somavaz>0.)
 				  pchute2=0.5*(pchute2+pchuteAux);//valor intermediario entre a menor pressao
   			// que leva a val<0 e a pressao baixa demais
-  			//else pchute2*=0.9;
 				  val=marchaProdPerm1Rev(pchute2);
 				  if(val<0 && val>-0.9e10)chuteNeg=pchute2;
 				  kontaiter++;
@@ -23541,10 +16177,8 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 		  while(val>0){
 			  pchuteAux=pchute2;
 			  pchute2*=aumenta;//Aumentando a pressao na busca de val>0
-  		//if(pchute2>=chutelim)pchute2=0.5*(pchuteAux+chutelim);
 			  int limpres=0;
 			  val = marchaProdPerm1Rev(pchute2);
-  		//val=marchaProdPerm1(pchute2);
 			  if(val>0 && val<0.9e10)chutePos=pchute2;//atualizando o chutePos
 			  kontaiter++;
 			  if(kontaiter>100){//limite de iteracoes, falha na busca do segundo chute
@@ -23595,19 +16229,15 @@ double SProd::buscaProdPfundoPermRev(double chute) {
 		  chuteNeg=pchute2;
 	  }
 
-  //return falsacorda(pchute, pchute2,1,0);
 	  return zriddr(chuteNeg, chutePos, 1, 0);//com as duas estimativas de pressao
   //em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
   //de funcao
-  //return zbrent(pchute, pchute2,1,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
 double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 	//busca de dois chutes iniciais com valores com sinais opostos
 	//para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
-	//chute=chute inicial de pressao de fundo, caso chute seja <0,
-	//sera feita uma estimativa interna dos valores;
   revPerm=0;
   monitConvPerm=1000.;
   double pchute = pGSup;//inicializando o valor de pchute com o valor da pressao a jusante
@@ -23646,7 +16276,6 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 		  double rlcA = celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
 		  //estimativa grosseira da vazao massica do liquido complementar
 		  double massicC = rlcA * celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet / 86400;
-		  //////////////////////////////////////////////////////////////////////////////////////////////
 		  //estimativa grosseira da vazao massica de liquido e gas produzidos
 		  double massic = rlpA * celula[0].acsr.injl.QLiq * (1. - celula[0].acsr.injl.bet) / 86400;
 		  //massas especificas, condicao standard
@@ -23687,11 +16316,6 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 	  perdafric = (f1 * rmis * j * fabs(j) / 2.) * celula[0].duto.peri / celula[0].duto.area;
 	  //se o acessorio for uma IPR, a estimativa serÃ¡ uma pressao prÃ³xima a uma vazao baixa
 	  //no fundo do poco
-	 // if(celula[0].acsr.tipo == 3){
-		///  pchute=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
-		 // if(pchute<0.99* celula[0].acsr.ipr.Pres)pchute = 0.99* celula[0].acsr.ipr.Pres;
-	 // }
-	 // else{
 		  //se nao for IPR, a estimativa continua, considerando a perda de carga e a hidrostatica,
 		  //que serÃ¡ avaliada neste laco
 		  for (int i = ncel; i > 0; i--) {
@@ -23714,16 +16338,13 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 			  double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
 			  //avanco da pressao por meio da hidrostatica e da perda por friccao estimada
 			  pchute += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-			  //if(celula[i-1].acsr.tipo==7)pchute-=celula[i-1].acsr.delp;
 			  //caso exista alguma IPR no meio do duto, verifica se a pressao estimada esta maior que
 			  //a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
 			  //para evitar isto, se corrige a pressao para um valor proximo da
 			  //pressao estatica da IPR da celula
 			  if (celula[i - 1].acsr.tipo == 3 &&
     			((celula[i - 1].acsr.ipr.Pres - pchute) <  0.01* celula[i - 1].acsr.ipr.Pres && i==1)){
-				  //pchute = 0.95* celula[i - 1].acsr.ipr.Pres;
 				  double qchute=0.15*celula[i-1].duto.area*86400;
-				  //qchute=10.;
 				  pchute=-(qchute/celula[i-1].acsr.ipr.ip)+celula[i-1].acsr.ipr.Pres;
 				  if(pchute>0.99* celula[i-1].acsr.ipr.Pres)pchute = 0.99* celula[i-1].acsr.ipr.Pres;
 				  if(pchute<0.9* celula[i - 1].acsr.ipr.Pres)pchute = 0.9* celula[i - 1].acsr.ipr.Pres;
@@ -23732,9 +16353,7 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 			  //no caso de se estar usando PVTSim
 			  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute) < (*vg1dSP).localtiny)pchute = 0.9*arq.tabent.pmax;
 		  }
-	 // }
 
-  //if(arq.lingas==1 && celulaG[0].tipoCC == 0) pchute*=0.5;
 	  if(pchute>1000)pchute=1000.;//pressao maxima de chute
   }
   else pchute=chute;//caso chute nao seja negativo utiliza a estimativa enviada na
@@ -23766,10 +16385,8 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
       double rhomix = (1. - alfa) * rhol + alfa * rhog;
       double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
       pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-      //if(celula[i-1].acsr.tipo==7)pchuteAux-=celula[i-1].acsr.delp;
       if (celula[i - 1].acsr.tipo == 3 &&
     	 ((celula[i - 1].acsr.ipr.Pres - pchuteAux) <  0.01* celula[i - 1].acsr.ipr.Pres && i==1)){
-    	  //pchuteAux = 0.99* celula[i - 1].acsr.ipr.Pres;
 		  pchuteAux=-(10/celula[i-1].acsr.ipr.ip)+celula[i-1].acsr.ipr.Pres;
 		  if(pchuteAux<0.99* celula[i-1].acsr.ipr.Pres)pchuteAux = 0.99* celula[i-1].acsr.ipr.Pres;
       }
@@ -23790,10 +16407,8 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
       double rhomix = (1. - alfa) * rhol + alfa * rhog;
       double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
       pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-      //if(celula[i-1].acsr.tipo==7)pchuteAux-=celula[i-1].acsr.delp;
       if (celula[i - 1].acsr.tipo == 3 &&
     	((celula[i - 1].acsr.ipr.Pres - pchuteAux) <  0.01* celula[i - 1].acsr.ipr.Pres && i==1)){
-    	  //pchuteAux = 0.85* celula[i - 1].acsr.ipr.Pres;
 		  pchuteAux=-(10/celula[i-1].acsr.ipr.ip)+celula[i-1].acsr.ipr.Pres;
 		  if(pchuteAux<0.99* celula[i-1].acsr.ipr.Pres)pchuteAux = 0.99* celula[i-1].acsr.ipr.Pres;
       }
@@ -23834,7 +16449,6 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 		  //fundo
 		  if (celula[0].acsr.tipo == 3 &&
 			  (celula[0].acsr.ipr.Pres - pchuteAux) <  0.01* celula[0].acsr.ipr.Pres){
-			  //pchuteAux = 0.99* celula[0].acsr.ipr.Pres;
 			  pchuteAux=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 			  if(pchuteAux<0.99* celula[0].acsr.ipr.Pres)pchuteAux = 0.99* celula[0].acsr.ipr.Pres;
 		  }
@@ -23893,7 +16507,6 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
   	  pchute=1.05*pchute;
   	  if(celula[0].acsr.tipo == 3 &&
   		(celula[0].acsr.ipr.Pres - pchute) <  0.01* celula[0].acsr.ipr.Pres){
-  		  //pchute = 0.99 * celula[0].acsr.ipr.Pres;
 		  pchute=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 		  if(pchute<0.99* celula[0].acsr.ipr.Pres)pchute = 0.99* celula[0].acsr.ipr.Pres;
   	  }
@@ -23932,16 +16545,8 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
   double chuteNeg=0.;
   double chutePos=0.;
   double atenua=1.;
-  /*if(celula[0].acsr.tipo==3 && celula[0].acsr.ipr.tipoIPR!=2){
-	  if(celula[0].acsr.ipr.ip>2000.)atenua=celula[0].acsr.ipr.ip/2000;
-  }
-  double reduz=0.9*atenua;
-  if(reduz>0.999)reduz=0.999;
-  double amplifica=1.1/atenua;
-  if(amplifica<1.001)amplifica=1.001;*/
   double reduz=1.-arq.buscaFC;
   double amplifica=1.+arq.buscaFC;
-//  double aumenta=amplifica;
   if(fabs(val)<1e-3)return pchute;
   else {
 	  if (val < 0.) {//caso em que o chute de pressao foi alto
@@ -23957,11 +16562,6 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 				  pchute2*=0.5;
 			  }
 			  pchuteAux = pchute2;
-      //double coef;
-      //if((*vg1dSP).chaverede==0)coef=atenuador*0.9;
-      //else coef=atenuador*0.99;
-      //if(coef>=(1.-localtiny))coef=0.9999;
-      //pchute*=coef;
 			  if ((*vg1dSP).chaverede == 0) pchute2 *= reduz;//Diminuindo a pressao na busca de val>0
 			  else pchute2 *= mult1;//Diminuindo a pressao na busca de val>0
 			  if (pchute2 <= chutelim) pchute2 = 0.5 * (pchuteAux + chutelim);//chutelim inicialmente
@@ -23971,7 +16571,6 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 			  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
 			  if(celula[0].acsr.tipo == 3 &&
 					  (celula[0].acsr.ipr.Pres - pchute2) <  0.001* celula[0].acsr.ipr.Pres){
-    	  //pchute2 = 0.99 * celula[0].acsr.ipr.Pres;
 				  pchute2=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 				  if(pchute2<0.999* celula[0].acsr.ipr.Pres)pchute2 = 0.999* celula[0].acsr.ipr.Pres;
 			  }
@@ -24008,11 +16607,9 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 				  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
 				  if(celula[0].acsr.tipo == 3 &&
 						  (celula[0].acsr.ipr.Pres - pchute2) <  0.001* celula[0].acsr.ipr.Pres){
-        	//pchute2 = 0.99 * celula[0].acsr.ipr.Pres;
 					  pchute2=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 					  if(pchute2<0.999* celula[0].acsr.ipr.Pres)pchute2 = 0.999* celula[0].acsr.ipr.Pres;
 				  }
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=0.9*pchuteAux;
 				  val = marchaProdPerm2(pchute2);
 				  if(fabs(val)>1.01e10){
 			     		cout<<"#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################"<<endl;
@@ -24051,13 +16648,11 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 			  pchuteAux = pchute2;
 			  if ((*vg1dSP).chaverede == 0) pchute2 *= amplifica;//Aumentando a pressao na busca de val>0
 			  else pchute2 *= mult2;//Aumentando a pressao na busca de val>0
-      //if (pchute2 >= chutelim) pchute2 = 0.5 * (pchuteAux + chutelim);
 			  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
 			  int limpres=0;
 			  if(celula[0].acsr.tipo == 3 &&
 					  (celula[0].acsr.ipr.Pres - pchute2) <  0.001* celula[0].acsr.ipr.Pres){
 				  if(chute<0){
-    		  //pchute2 = 0.99 * celula[0].acsr.ipr.Pres;
 					  pchute2=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 					  if(pchute2<0.999* celula[0].acsr.ipr.Pres)pchute2 = 0.999* celula[0].acsr.ipr.Pres;
 					  if(fabs(pchute2-pchute)<1e-15){
@@ -24129,11 +16724,9 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 				  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
 				  if(celula[0].acsr.tipo == 3 &&
 						  (celula[0].acsr.ipr.Pres - pchute2) <  0.001* celula[0].acsr.ipr.Pres){
-        	//pchute2 = 0.99 * celula[0].acsr.ipr.Pres;
 					  pchute2=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 					  if(pchute2<0.999* celula[0].acsr.ipr.Pres)pchute2 = 0.999* celula[0].acsr.ipr.Pres;
 				  }
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=1.1*pchuteAux;
 				  val = marchaProdPerm2(pchute2);
 				  if(fabs(val)>1.01e10){
 			     		cout<<"#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################"<<endl;
@@ -24164,11 +16757,9 @@ double SProd::buscaProdPfundoPerm2(double chute,int kontaTenta) {
 		  }
 		  chuteNeg=pchute2;
 	  }
-  //return falsacorda(pchute, pchute2,1,1);
 	  return zriddr(chuteNeg, chutePos, 1, 1);//com as duas estimativas de pressao
   //em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
   //de funcao
-  //return zbrent(pchute, pchute2,1,1); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
@@ -24196,7 +16787,6 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
   			           celula[0].acsr.injm.FluidoPro.MasEspLiq(pentrada,celula[0].temp)+
   					   celula[0].acsr.injm.MassC/
   					   celula[0].acsr.injm.fluidocol.MasEspFlu(pentrada,celula[0].temp);
-//  double qo=celula[0].acsr.injm.MassP/
 	           celula[0].acsr.injm.FluidoPro.MasEspLiq(pentrada,celula[0].temp);
   double qcomp=celula[0].acsr.injm.MassC/
 			   celula[0].acsr.injm.fluidocol.MasEspFlu(pentrada,celula[0].temp);
@@ -24228,10 +16818,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
   double presteste0 = -10;
   iterperm = 0;
 
-  //if(celula[0].acsr.tipo==3 && (celula[0].acsr.ipr.Pres-pchute)<localtiny)
-  //pchute=0.95*celula[0].acsr.ipr.Pres;
 
-//  double pchute0 = pentrada;
   int limIter=200;//limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
   //desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
   //quando o tramo faz perte de um sistema de redes
@@ -24258,7 +16845,6 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
     	IniciaconectaColunaPerm();//antes de iniciar a primeira iteracao de marcha,
     //faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
     //caso se tenha linha de gas
-    //else if(arq.lingas>0 && arq.nvalvgas>0) conectaColuna();
     else if (arq.lingas > 0 && arq.nvalvgas > 0 && verificaAcop == 1)
     	conectaColunaPerm();//acoplamento termico feito com valores de pressao e temperatura
     //obtidas na primeira iteracao de marcha
@@ -24345,12 +16931,6 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
         //seu centro de celula
         //verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
         //celula
-        /*if(arq.flashCompleto==2){
-        	if(i>0)
-        	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
-     			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-        	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-        }*/
         if(arq.usaTabela==1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny){
         	return 1e10;
         }
@@ -24373,10 +16953,6 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
         else RenovaTransMassPermGas(i - 1);//caso seja uma tabela PVTSim, calcula-se a
         //taxa de transferÃªncia de massa entre as fases para o uso no calculo de
         //calor latente da equacao de energia
-        /*if((i)>130){
-        	int val;
-        	val=0;
-        }*/
         if (arq.ordperm > 1) {//correcao de segunda ordem
           double D0presaux = celula[i].presaux - celula[i - 1].pres;
           double D0pres = celula[i].pres - celula[i].presaux;
@@ -24397,20 +16973,11 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
           else RenovaTransMassPermGas(i - 1);
 
         }
-        /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-        celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-        celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-        celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-        celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-        celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
 
         //apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
         //verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
         //GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
         if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0) IniciaVazValvGasPerm(i);
-        //RenovaMassPerm(i);
-        //RenovaTempPerm(i);
-        //RenovaTransMassPerm(i-1);
         i++;
 
         //teste para verificar se a pressao do centro de celula ficou acima
@@ -24443,8 +17010,6 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
       if (celulaG[0].tipoCC == 0) {//marcha para o caso, pressao de injecao
     	if(arq.chokes.abertura[0]>=0.2){//choke de injecao inativo
            for (int iter = 0; iter < 1; iter++){
-             //double chutemass=50000.;
-             //chutemass=marchaGasPerm2( presiniG,chutemass)+chutemass;
              marchaGasPerm1();
           }
     	}
@@ -24483,7 +17048,6 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
     //opcao de acelerador de convergencia esta desligado
     presteste=celula[ncel].pres;//guarda valor de pressao para se calcular o erro, quando a
     //opcao de acelerador de convergencia esta desligado
-    //if(arq.lingas==0)masfim0=masfim;
     iterperm++;//atualiza a ieteracao da marcha
     if (iterperm > 200 && arq.AS==0) NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
     else if(iterperm>200)return 1.1e10;
@@ -24529,7 +17093,6 @@ double SProd::marchaProdPresPres1(double mchute) {
 	  }
 	  else{
 		  double masgas = celula[0].acsr.injg.VMas(celula[0].pres, celula[0].temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  double tit;
 		  if(arq.flashCompleto!=2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -24544,7 +17107,6 @@ double SProd::marchaProdPresPres1(double mchute) {
 				            celula[0].acsr.injg.fluidocol.MasEspFlu(celula[0].pres,celula[0].temp);
 		  qcomp/=86400.;
 		  alfini=qgas/(qliq+qcomp+qgas);
-		  //betini=0.;
 		  if((fabs(qcomp)+fabs(qliq))>1e-15)betini=fabs(qcomp)/(fabs(qcomp)+fabs(qliq));
 		  else betini=0.;
 	  }
@@ -24585,7 +17147,6 @@ double SProd::marchaProdPresPres1(double mchute) {
   celula[0].presauxL = celula[0].pres;
   celula[0].presLini = celula[0].pres;
   celula[0].presL = celula[0].pres;
-  //celula[0].pres=pchute;
   celula[1].presL = celula[0].pres;
   celula[0].presini = celula[0].pres;
   celula[1].presLini = celula[0].pres;
@@ -24611,88 +17172,6 @@ double SProd::marchaProdPresPres1(double mchute) {
   celula[0].betI = celula[0].bet;
   celula[1].betLI = celula[0].bet;
 
-  /*if(celula[0].acsr.tipo == 2){
-     if (iterperm == 0) {
-       celula[0].alf = 0.;
-       celula[0].alfini = 0.;
-       celula[0].bet = 0.;
-       celula[0].betini = 0.;
-       celula[1].alfL = celula[0].alf;
-       celula[1].alfLini = celula[0].alf;
-       celula[0].alfPigD = celula[0].alf;
-       celula[0].alfPigDini = celula[0].alf;
-       celula[0].alfPigE = celula[0].alf;
-       celula[0].alfPigEini = celula[0].alf;
-       celula[1].betL = celula[0].bet;
-       celula[1].betLini = celula[0].bet;
-       celula[0].betPigD = celula[0].bet;
-       celula[0].betPigDini = celula[0].bet;
-       celula[0].betPigE = celula[0].bet;
-       celula[0].betPigEini = celula[0].bet;
-       celula[0].betI = celula[0].bet;
-       celula[1].betLI = celula[0].bet;
-     } else {
-       celula[0].alf = celula[1].alf;
-       celula[0].alfini = celula[1].alf;
-       celula[0].bet = celula[1].bet;
-       celula[0].betini = celula[1].bet;
-       celula[1].alfL = celula[0].alf;
-       celula[1].alfLini = celula[0].alf;
-       celula[0].alfPigD = celula[0].alf;
-       celula[0].alfPigDini = celula[0].alf;
-       celula[0].alfPigE = celula[0].alf;
-       celula[0].alfPigEini = celula[0].alf;
-       celula[1].betL = celula[0].bet;
-       celula[1].betLini = celula[0].bet;
-       celula[0].betPigD = celula[0].bet;
-       celula[0].betPigDini = celula[0].bet;
-       celula[0].betPigE = celula[0].bet;
-       celula[0].betPigEini = celula[0].bet;
-       celula[0].betI = celula[0].bet;
-       celula[1].betLI = celula[0].bet;
-     }
-  }
-  else{
-	     if (iterperm == 0) {
-	       celula[0].alf = 1.;
-	       celula[0].alfini = 1.;
-	       celula[0].bet = 0.;
-	       celula[0].betini = 0.;
-	       celula[1].alfL = celula[0].alf;
-	       celula[1].alfLini = celula[0].alf;
-	       celula[0].alfPigD = celula[0].alf;
-	       celula[0].alfPigDini = celula[0].alf;
-	       celula[0].alfPigE = celula[0].alf;
-	       celula[0].alfPigEini = celula[0].alf;
-	       celula[1].betL = celula[0].bet;
-	       celula[1].betLini = celula[0].bet;
-	       celula[0].betPigD = celula[0].bet;
-	       celula[0].betPigDini = celula[0].bet;
-	       celula[0].betPigE = celula[0].bet;
-	       celula[0].betPigEini = celula[0].bet;
-	       celula[0].betI = celula[0].bet;
-	       celula[1].betLI = celula[0].bet;
-	     } else {
-	       celula[0].alf = celula[1].alf;
-	       celula[0].alfini = celula[1].alf;
-	       celula[0].bet = celula[1].bet;
-	       celula[0].betini = celula[1].bet;
-	       celula[1].alfL = celula[0].alf;
-	       celula[1].alfLini = celula[0].alf;
-	       celula[0].alfPigD = celula[0].alf;
-	       celula[0].alfPigDini = celula[0].alf;
-	       celula[0].alfPigE = celula[0].alf;
-	       celula[0].alfPigEini = celula[0].alf;
-	       celula[1].betL = celula[0].bet;
-	       celula[1].betLini = celula[0].bet;
-	       celula[0].betPigD = celula[0].bet;
-	       celula[0].betPigDini = celula[0].bet;
-	       celula[0].betPigE = celula[0].bet;
-	       celula[0].betPigEini = celula[0].bet;
-	       celula[0].betI = celula[0].bet;
-	       celula[1].betLI = celula[0].bet;
-	     }
-  }*/
   iterperm=0;
   while (iterperm < 3) {
 	  i = 1;
@@ -24708,12 +17187,6 @@ double SProd::marchaProdPresPres1(double mchute) {
     	int para;
     	para=0;
     }
-    /*if(arq.flashCompleto==2){
-    	if(i>0)
-    	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
- 			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-    	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-    }*/
     if(arq.usaTabela==1 && (celula[i].temp-arq.tabent.tmin) < (*vg1dSP).localtiny)celula[i].temp=arq.tabent.tmin;
     atualizaPeriTempProd(i);
     RenovaPresPermJus(i, 0);
@@ -24741,15 +17214,6 @@ double SProd::marchaProdPresPres1(double mchute) {
       else RenovaTransMassPermGas(i - 1);
 
     }
-    /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-    celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-    celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-    celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-    celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
-    //RenovaMassPerm(i);
-    //RenovaTempPerm(i);
-    //RenovaTransMassPerm(i-1);
     i++;
     if (celula[i - 1].pres <= 1) return -1e10;
   }
@@ -24766,7 +17230,6 @@ double SProd::marchaProdPresPres1(double mchute) {
 
 double SProd::marchaProdPresPres1Rev(double mchute) {
 
-//  int corrigechute = 1;
   double alfini=0.;
   double betini=0.;
   trocaTermicaLenta=0.05;
@@ -24794,7 +17257,6 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
 	  }
 	  else{
 		  double masgas = celula[0].acsr.injg.VMas(celula[0].pres, celula[0].temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  double tit;
 		  if(arq.flashCompleto!=2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -24809,7 +17271,6 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
 				            celula[0].acsr.injg.fluidocol.MasEspFlu(celula[0].pres,celula[0].temp);
 		  qcomp/=86400.;
 		  alfini=qgas/(qliq+qcomp+qgas);
-		  //betini=0.;
 		  if((fabs(qcomp)+fabs(qliq))>1e-15)betini=fabs(qcomp)/(fabs(qcomp)+fabs(qliq));
 		  else betini=0.;
 	  }
@@ -24850,7 +17311,6 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
   celula[0].presauxL = celula[0].pres;
   celula[0].presLini = celula[0].pres;
   celula[0].presL = celula[0].pres;
-  //celula[0].pres=pchute;
   celula[1].presL = celula[0].pres;
   celula[0].presini = celula[0].pres;
   celula[1].presLini = celula[0].pres;
@@ -24876,88 +17336,6 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
   celula[0].betI = celula[0].bet;
   celula[1].betLI = celula[0].bet;
 
-  /*if(celula[0].acsr.tipo == 2){
-     if (iterperm == 0) {
-       celula[0].alf = 0.;
-       celula[0].alfini = 0.;
-       celula[0].bet = 0.;
-       celula[0].betini = 0.;
-       celula[1].alfL = celula[0].alf;
-       celula[1].alfLini = celula[0].alf;
-       celula[0].alfPigD = celula[0].alf;
-       celula[0].alfPigDini = celula[0].alf;
-       celula[0].alfPigE = celula[0].alf;
-       celula[0].alfPigEini = celula[0].alf;
-       celula[1].betL = celula[0].bet;
-       celula[1].betLini = celula[0].bet;
-       celula[0].betPigD = celula[0].bet;
-       celula[0].betPigDini = celula[0].bet;
-       celula[0].betPigE = celula[0].bet;
-       celula[0].betPigEini = celula[0].bet;
-       celula[0].betI = celula[0].bet;
-       celula[1].betLI = celula[0].bet;
-     } else {
-       celula[0].alf = celula[1].alf;
-       celula[0].alfini = celula[1].alf;
-       celula[0].bet = celula[1].bet;
-       celula[0].betini = celula[1].bet;
-       celula[1].alfL = celula[0].alf;
-       celula[1].alfLini = celula[0].alf;
-       celula[0].alfPigD = celula[0].alf;
-       celula[0].alfPigDini = celula[0].alf;
-       celula[0].alfPigE = celula[0].alf;
-       celula[0].alfPigEini = celula[0].alf;
-       celula[1].betL = celula[0].bet;
-       celula[1].betLini = celula[0].bet;
-       celula[0].betPigD = celula[0].bet;
-       celula[0].betPigDini = celula[0].bet;
-       celula[0].betPigE = celula[0].bet;
-       celula[0].betPigEini = celula[0].bet;
-       celula[0].betI = celula[0].bet;
-       celula[1].betLI = celula[0].bet;
-     }
-  }
-  else{
-	     if (iterperm == 0) {
-	       celula[0].alf = 1.;
-	       celula[0].alfini = 1.;
-	       celula[0].bet = 0.;
-	       celula[0].betini = 0.;
-	       celula[1].alfL = celula[0].alf;
-	       celula[1].alfLini = celula[0].alf;
-	       celula[0].alfPigD = celula[0].alf;
-	       celula[0].alfPigDini = celula[0].alf;
-	       celula[0].alfPigE = celula[0].alf;
-	       celula[0].alfPigEini = celula[0].alf;
-	       celula[1].betL = celula[0].bet;
-	       celula[1].betLini = celula[0].bet;
-	       celula[0].betPigD = celula[0].bet;
-	       celula[0].betPigDini = celula[0].bet;
-	       celula[0].betPigE = celula[0].bet;
-	       celula[0].betPigEini = celula[0].bet;
-	       celula[0].betI = celula[0].bet;
-	       celula[1].betLI = celula[0].bet;
-	     } else {
-	       celula[0].alf = celula[1].alf;
-	       celula[0].alfini = celula[1].alf;
-	       celula[0].bet = celula[1].bet;
-	       celula[0].betini = celula[1].bet;
-	       celula[1].alfL = celula[0].alf;
-	       celula[1].alfLini = celula[0].alf;
-	       celula[0].alfPigD = celula[0].alf;
-	       celula[0].alfPigDini = celula[0].alf;
-	       celula[0].alfPigE = celula[0].alf;
-	       celula[0].alfPigEini = celula[0].alf;
-	       celula[1].betL = celula[0].bet;
-	       celula[1].betLini = celula[0].bet;
-	       celula[0].betPigD = celula[0].bet;
-	       celula[0].betPigDini = celula[0].bet;
-	       celula[0].betPigE = celula[0].bet;
-	       celula[0].betPigEini = celula[0].bet;
-	       celula[0].betI = celula[0].bet;
-	       celula[1].betLI = celula[0].bet;
-	     }
-  }*/
   iterperm=0;
   double tempteste = celula[0].temp;
   double tempteste0 = -1000;
@@ -24971,14 +17349,7 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
     if(arq.flashCompleto!=2)
     RenovaMassPerm(i);
     else RenovaMassPermComp(i);
-    //RenovaTempPerm(i, 0);
     if(isnan(celula[i].temp))NumError("Temperatrura na linha de producao com valor NaN");
-    /*if(arq.flashCompleto==2){
-    	if(i>0)
-    	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
- 			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-    	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-    }*/
     if(arq.usaTabela==1 && (celula[i].temp-arq.tabent.tmin) < (*vg1dSP).localtiny)celula[i].temp=arq.tabent.tmin;
     atualizaPeriTempProd(i);
     RenovaPresPermJus(i, 0);
@@ -24992,7 +17363,6 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
       RenovaPresPermMon(i, 1);
       atualizaPeriPmonProd(i);
       RenovaMassPerm(i);
-      //RenovaTempPerm(i, 1);
       RenovaPresPermJus(i, 1);
       celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
       celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
@@ -25005,15 +17375,6 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
       else RenovaTransMassPermGas(i - 1);
 
     }
-    /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-    celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-    celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-    celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-    celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
-    //RenovaMassPerm(i);
-    //RenovaTempPerm(i);
-    //RenovaTransMassPerm(i-1);
     i++;
     if (celula[i - 1].pres <= 1) return -1e10;
   }
@@ -25081,13 +17442,10 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
   double mchute = chute;
   double val = marchaProdPresPres1(mchute);
   buscaIni=1;
-  //int kontaiter=0;
   if (val < -0.9e10) {
     while (val < -0.9e10 && kontaiter<800) {
- //     if (celula[0].acsr.tipo == 1) {
         mchute *= 0.9;
         val = marchaProdPresPres1(mchute);
-       // if (celula[0].acsr.injg.QGas < 1e-3) {
         if (mchute < 1e-5) {
           if ((*vg1dSP).chaverede == 0 && arq.AS==0) NumError(
               "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
@@ -25096,42 +17454,18 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
             else return 1.1e10;
           }
         }
-     // } else if (celula[0].acsr.tipo == 2) {
-       // mchute *= 0.9;
-       // if (celula[0].acsr.injl.QLiq < 1e-3) {
-       //   if ((*vg1dSP).chaverede == 0) NumError(
-       //       "Busca de valores iniciais para cÃ¡lculo de zero de funÃ§Ã£o em buscaProdPresPresPerm atingiu mï¿½ximo de iteraï¿½ï¿½es");
-       //   else {
-       //     if ((*vg1dSP).iterRede > 0) return -1.1e6;
-       //     else return 1.e6;
-       //   }
-       // }
       }
       val = marchaProdPresPres1(mchute);
       kontaiter++;
-   // }
   }
   double mchuteAux;
   double mchute2 = mchute;
   double chutelim = 0.;
-  //kontaiter = 0;
 
   double chuteNeg=0.;
   double chutePos=0.;
   int testaEscoa=1;
   double sentido=1.;
-  /*if(val<0.){
-	  double valT = marchaProdPresPres1(mchute2*0.9);
-	  double valT2 = marchaProdPresPres1(mchute2*1.1);
-	  if( valT<valT2)sentido=-1.;
-	  //if( valT2<val)sentido=1.;
-  }
-  else{
-	  double valT = marchaProdPresPres1(mchute2*1.1);
-	  double valT2 = marchaProdPresPres1(mchute2*0.9);
-	  if( valT>valT2)sentido=-1.;
-	  //if( valT2>val)sentido=1.;
-  }*/
   double val0=val;
   int reversao=0;
   int kontaReverso;
@@ -25143,7 +17477,6 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
 		  while (val*sentido < 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.-arq.buscaFC);
-      //if (mchute2 <= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres1(mchute2);
 			  if(val> -0.9e10){
 				  if(val<val0){
@@ -25214,7 +17547,6 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
 		  while (val*sentido > 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.+arq.buscaFC);
-      //if (mchute2 >= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres1(mchute2);
 			  if(val> -0.9e10){
 				  if(val>val0){
@@ -25247,7 +17579,6 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
 			  while (val < -0.9e10) {
 				  chutelim = mchute2;
 				  mchute2 = 0.5 * (mchute2 + mchuteAux);
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=1.1*pchuteAux;
 				  val = marchaProdPresPres1(mchute2);
 				  if(val*sentido>0 && val>-0.9e10)chutePos=mchute2;
 				  kontaiter++;
@@ -25265,7 +17596,6 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
 		  }
 		  chuteNeg=mchute2;
 	  }
-  //return falsacorda(mchute, mchute2,2,0);
 	  if(testaEscoa==1 && reversao==0)return zriddr(chuteNeg, chutePos, 2, 0);
 	  else if(reversao==0){
 		  if (celula[0].acsr.tipo == 1) {
@@ -25276,11 +17606,8 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz,int kontaiter) {
 		  return 0.;
 	  }
 	  else{
-	  //kontaiterRev++;
-	  //if(kontaiterRev>3)chute=0.;
 		  return buscaProdPresPresPermRev(-chute, -maxvaz,kontaiter);
 	  }
-  //return zbrent(mchute, mchute2,2,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
@@ -25300,7 +17627,6 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz,int kontaiter
 
   double val = marchaProdPresPres1Rev(mchute);
   buscaIni=1;
- // int kontaiter=0;
   if (val < -0.9e10) {
       if ((*vg1dSP).chaverede == 0 && arq.AS==0) NumError(
           "Busca de valores iniciais para callculo de zero de funcao em buscaProdPresPresPermRev com problemas, pressao abaixo de 1 kgf/cm2 na marcha reversa");
@@ -25312,7 +17638,6 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz,int kontaiter
   double mchuteAux;
   double mchute2 = mchute;
   double chutelim = 0.;
- // kontaiter = 0;
   arq.buscaFC=fabs(arq.buscaFC);
 
   double chuteNeg=0.;
@@ -25327,7 +17652,6 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz,int kontaiter
 		  while (val < 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.+arq.buscaFC);
-      //if (mchute2 <= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres1Rev(mchute2);
 			  if(val> -0.9e10){
 				  if(val<val0){
@@ -25375,7 +17699,6 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz,int kontaiter
 		  while (val > 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.-arq.buscaFC);
-      //if (mchute2 >= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres1Rev(mchute2);
 			  if(val> -0.9e10){
 				  if(val>val0){
@@ -25397,7 +17720,6 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz,int kontaiter
 		  }
 		  chuteNeg=mchute2;
 	  }
-  //return falsacorda(mchute, mchute2,2,0);
 	  if(testaEscoa==1 && reversao==0)return zriddr(chuteNeg, chutePos, 2, 0);
 	  else if(reversao==0){
 		  if (celula[0].acsr.tipo == 1) {
@@ -25408,15 +17730,11 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz,int kontaiter
 		  return 0.;
 	  }
 	  else{
-	  //kontaiterRev++;
-	  //if(kontaiterRev>3)chute=0.;
 		  return buscaProdPresPresPerm(-chute, -maxvaz,kontaiter);
 	  }
-  //return zbrent(mchute, mchute2,2,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 double SProd::marchaProdPresPres2(double mchute) {
 
   int corrigechute = 1;
@@ -25446,7 +17764,6 @@ double SProd::marchaProdPresPres2(double mchute) {
 	  }
 	  else{
 		  double masgas = celula[0].acsr.injg.VMas(celula[0].pres, celula[0].temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  double tit;
 		  double masT;
 		  if(arq.ConContEntrada!=1){
@@ -25469,7 +17786,6 @@ double SProd::marchaProdPresPres2(double mchute) {
 		  qcomp/=86400.;
 		  if(fabs(qliq+qgas)>1e-15)alfini=qgas/(qliq+qcomp+qgas);
 		  else alfini=titE;
-		  //betini=0.;
 		  if((fabs(qcomp)+fabs(qliq))>1e-15)betini=fabs(qcomp)/(fabs(qcomp)+fabs(qliq));
 		  else betini=0.;
 	  }
@@ -25511,7 +17827,6 @@ double SProd::marchaProdPresPres2(double mchute) {
   celula[0].presauxL = celula[0].pres;
   celula[0].presLini = celula[0].pres;
   celula[0].presL = celula[0].pres;
-  //celula[0].pres=pchute;
   celula[1].presL = celula[0].pres;
   celula[0].presini = celula[0].pres;
   celula[1].presLini = celula[0].pres;
@@ -25537,45 +17852,6 @@ double SProd::marchaProdPresPres2(double mchute) {
   celula[0].betI = celula[0].bet;
   celula[1].betLI = celula[0].bet;
 
-  /*if (iterperm == 0) {
-    celula[0].alf = 0.;
-    celula[0].alfini = 0.;
-    celula[0].bet = 0.;
-    celula[0].betini = 0.;
-    celula[1].alfL = celula[0].alf;
-    celula[1].alfLini = celula[0].alf;
-    celula[0].alfPigD = celula[0].alf;
-    celula[0].alfPigDini = celula[0].alf;
-    celula[0].alfPigE = celula[0].alf;
-    celula[0].alfPigEini = celula[0].alf;
-    celula[1].betL = celula[0].bet;
-    celula[1].betLini = celula[0].bet;
-    celula[0].betPigD = celula[0].bet;
-    celula[0].betPigDini = celula[0].bet;
-    celula[0].betPigE = celula[0].bet;
-    celula[0].betPigEini = celula[0].bet;
-    celula[0].betI = celula[0].bet;
-    celula[1].betLI = celula[0].bet;
-  } else {
-    celula[0].alf = celula[1].alf;
-    celula[0].alfini = celula[1].alf;
-    celula[0].bet = celula[1].bet;
-    celula[0].betini = celula[1].bet;
-    celula[1].alfL = celula[0].alf;
-    celula[1].alfLini = celula[0].alf;
-    celula[0].alfPigD = celula[0].alf;
-    celula[0].alfPigDini = celula[0].alf;
-    celula[0].alfPigE = celula[0].alf;
-    celula[0].alfPigEini = celula[0].alf;
-    celula[1].betL = celula[0].bet;
-    celula[1].betLini = celula[0].bet;
-    celula[0].betPigD = celula[0].bet;
-    celula[0].betPigDini = celula[0].bet;
-    celula[0].betPigE = celula[0].bet;
-    celula[0].betPigEini = celula[0].bet;
-    celula[0].betI = celula[0].bet;
-    celula[1].betLI = celula[0].bet;
-  }*/
   iterperm=0;
   while(iterperm<3){
   i = 1;
@@ -25587,12 +17863,6 @@ double SProd::marchaProdPresPres2(double mchute) {
     else RenovaMassPermComp(i);
     RenovaTempPerm(i, 0);
     if(isnan(celula[i].temp))NumError("Temperatrura na linha de producao com valor NaN");
-    /*if(arq.flashCompleto==2){
-    	if(i>0)
-    	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
- 			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-    	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-    }*/
     if(arq.usaTabela==1 && (celula[i].temp-arq.tabent.tmin) < (*vg1dSP).localtiny)celula[i].temp=arq.tabent.tmin;
     atualizaPeriTempProd(i);
     RenovaPresPermJus(i, 0);
@@ -25619,18 +17889,8 @@ double SProd::marchaProdPresPres2(double mchute) {
       else RenovaTransMassPermGas(i - 1);
 
     }
-    /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-    celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-    celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-    celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-    celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
 
-    //RenovaMassPerm(i);
-    //RenovaTempPerm(i);
-    //RenovaTransMassPerm(i-1);
     i++;
-    //if (celula[i - 1].pres <= pGSup) return -1e10;
   }
   iterperm++;
   }
@@ -25644,13 +17904,11 @@ double SProd::marchaProdPresPres2(double mchute) {
 	  double masentrada = celula[ncel - 1].MR;
 	  double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
 	  maxSup = 0.;
-//	  double chokemas = 0;
 
 	  double tit;
 	  presfim = celula[ncel].pres;
 	  double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
 	  double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
-//	  double rholmix = (1 - betSup) * rholp + betSup * rholc;
 	  tit = fabs(massgas / masentrada);
 
 	  double masChk;
@@ -25676,8 +17934,6 @@ double SProd::marchaProdPresPres2(double mchute) {
   }
 
 
-  //if(fabs(celula[ncel - 1].MR)>1e-15)monitConvPermBase=fabs(celula[ncel - 1].MR);
-  //else
 	  if(fabs(maxSup)>1e-15)monitConvPermBase=fabs(maxSup);
   else monitConvPermBase=1.;
   return maxSup - celula[ncel - 1].MR;
@@ -25692,10 +17948,8 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
   int kontaiter=0;
   if (val < -0.9e10) {
     while (val < -0.9e10 && kontaiter<400) {
-      //if (celula[0].acsr.tipo == 1) {
         mchute *= 0.9;
         val = marchaProdPresPres2(mchute);
-        //if (celula[0].acsr.injg.QGas < 1e-3) {
         if (mchute < 1e-5) {
           if ((*vg1dSP).chaverede == 0 && arq.AS==0) NumError(
               "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
@@ -25704,18 +17958,6 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
             else return 1.1e10;
           }
         }
-      //}
-      /*else if (celula[0].acsr.tipo == 2) {
-        mchute *= 0.9;
-        if (celula[0].acsr.injl.QLiq < 1e-3) {
-          if ((*vg1dSP).chaverede == 0) NumError(
-              "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
-          else {
-            if ((*vg1dSP).iterRede > 0) return -1.1e6;
-            else return 1.e6;
-          }
-        }
-      }*/
       val = marchaProdPresPres2(mchute);
       kontaiter++;
     }
@@ -25736,7 +17978,6 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
 		  while (val < 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.-arq.buscaFC);
-      //if (mchute2 <= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres2(mchute2);
 			  if(val<0 && val>-0.9e10)chuteNeg=mchute2;
 			  kontaiter++;
@@ -25792,7 +18033,6 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
 		  while (val > 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.+arq.buscaFC);
-      //if (mchute2 >= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres2(mchute2);
 			  if((*vg1dSP).chaverede!=0 && mchute2>maxvaz){
 				  testaEscoa=0;
@@ -25811,7 +18051,6 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
 			  while (val  < -0.9e10) {
 				  chutelim = mchute2;
 				  mchute2 = 0.5 * (mchute2 + mchuteAux);
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=1.1*pchuteAux;
 				  val = marchaProdPresPres2(mchute2);
 				  if(val>0 && val>-0.9e10)chutePos=mchute2;
 				  kontaiter++;
@@ -25829,7 +18068,6 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
 		  }
 		  chuteNeg=mchute2;
 	  }
-  //return falsacorda(mchute, mchute2,2,1);
 	  if(testaEscoa==1)return zriddr(chuteNeg, chutePos, 2, 1);
 	  else{
 		  if (celula[0].acsr.tipo == 1) {
@@ -25839,17 +18077,13 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
 		  }
 		  return 0.;
 	  }
-  //return zbrent(mchute, mchute2,2,1); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 double SProd::marchaProdPresPres3(double mchute) {
 
-//  int corrigechute = 1;
   double alfini=0.;
   double betini=0.;
 
@@ -25876,7 +18110,6 @@ double SProd::marchaProdPresPres3(double mchute) {
 	  }
 	  else{
 		  double masgas = celula[0].acsr.injg.VMas(celula[0].pres, celula[0].temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  double tit;
 		  if(arq.flashCompleto!=2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
 		  else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -25891,7 +18124,6 @@ double SProd::marchaProdPresPres3(double mchute) {
 				            celula[0].acsr.injg.fluidocol.MasEspFlu(celula[0].pres,celula[0].temp);
 		  qcomp/=86400.;
 		  alfini=qgas/(qliq+qcomp+qgas);
-		  //betini=0.;
 		  if((fabs(qcomp)+fabs(qliq))>1e-15)betini=fabs(qcomp)/(fabs(qcomp)+fabs(qliq));
 		  else betini=0.;
 	  }
@@ -25932,7 +18164,6 @@ double SProd::marchaProdPresPres3(double mchute) {
   celula[0].presauxL = celula[0].pres;
   celula[0].presLini = celula[0].pres;
   celula[0].presL = celula[0].pres;
-  //celula[0].pres=pchute;
   celula[1].presL = celula[0].pres;
   celula[0].presini = celula[0].pres;
   celula[1].presLini = celula[0].pres;
@@ -25958,45 +18189,6 @@ double SProd::marchaProdPresPres3(double mchute) {
   celula[0].betI = celula[0].bet;
   celula[1].betLI = celula[0].bet;
 
-  /*if (iterperm == 0) {
-    celula[0].alf = 0.;
-    celula[0].alfini = 0.;
-    celula[0].bet = 0.;
-    celula[0].betini = 0.;
-    celula[1].alfL = celula[0].alf;
-    celula[1].alfLini = celula[0].alf;
-    celula[0].alfPigD = celula[0].alf;
-    celula[0].alfPigDini = celula[0].alf;
-    celula[0].alfPigE = celula[0].alf;
-    celula[0].alfPigEini = celula[0].alf;
-    celula[1].betL = celula[0].bet;
-    celula[1].betLini = celula[0].bet;
-    celula[0].betPigD = celula[0].bet;
-    celula[0].betPigDini = celula[0].bet;
-    celula[0].betPigE = celula[0].bet;
-    celula[0].betPigEini = celula[0].bet;
-    celula[0].betI = celula[0].bet;
-    celula[1].betLI = celula[0].bet;
-  } else {
-    celula[0].alf = celula[1].alf;
-    celula[0].alfini = celula[1].alf;
-    celula[0].bet = celula[1].bet;
-    celula[0].betini = celula[1].bet;
-    celula[1].alfL = celula[0].alf;
-    celula[1].alfLini = celula[0].alf;
-    celula[0].alfPigD = celula[0].alf;
-    celula[0].alfPigDini = celula[0].alf;
-    celula[0].alfPigE = celula[0].alf;
-    celula[0].alfPigEini = celula[0].alf;
-    celula[1].betL = celula[0].bet;
-    celula[1].betLini = celula[0].bet;
-    celula[0].betPigD = celula[0].bet;
-    celula[0].betPigDini = celula[0].bet;
-    celula[0].betPigE = celula[0].bet;
-    celula[0].betPigEini = celula[0].bet;
-    celula[0].betI = celula[0].bet;
-    celula[1].betLI = celula[0].bet;
-  }*/
   iterperm=0;
   while(iterperm<3){
   i = 1;
@@ -26008,12 +18200,6 @@ double SProd::marchaProdPresPres3(double mchute) {
     else RenovaMassPermComp(i);
     RenovaTempPerm(i, 0);
     if(isnan(celula[i].temp))NumError("Temperatrura na linha de producao com valor NaN");
-    /*if(arq.flashCompleto==2){
-    	if(i>0)
-    	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
- 			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-    	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-    }*/
     if(arq.usaTabela==1 && (celula[i].temp-arq.tabent.tmin) < (*vg1dSP).localtiny)celula[i].temp=arq.tabent.tmin;
     atualizaPeriTempProd(i);
     RenovaPresPermJus(i, 0);
@@ -26040,24 +18226,13 @@ double SProd::marchaProdPresPres3(double mchute) {
       else RenovaTransMassPermGas(i - 1);
 
     }
-    /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-    celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-    celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-    celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-    celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
 
-    //RenovaMassPerm(i);
-    //RenovaTempPerm(i);
-    //RenovaTransMassPerm(i-1);
     i++;
     if (celula[i - 1].pres <= pGSup) return -1e10;
   }
   iterperm++;
   }
 
-  //if(fabs(celula[ncel - 1].MR)>1e-15)monitConvPermBase=fabs(celula[ncel - 1].MR);
-  //else
 	  monitConvPermBase=1.;
   return 0. - celula[ncel - 1].MR;
 }
@@ -26099,12 +18274,9 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
 		  else if (celula[i].acsr.tipo == 1 && arq.tipoFluido==1)adVaz=-celula[i].acsr.injg.QGas;
 		  else if (celula[i].acsr.tipo == 2 && arq.tipoFluido==0)adVaz=-celula[i].acsr.injl.QLiq;
 		  else if (celula[i].acsr.tipo == 9 && celula[0].acsr.tipo == 1){
-			  //celula[i].acsr.fontechk.VMas();
-			  //adVaz=-celula[i].acsr.fontechk.masG*86400./celula[i].acsr.fluido.MasEspGas(1., 20.);
 			  adVaz=10000.;
 		  }
 		  else if (celula[i].acsr.tipo == 9 && celula[0].acsr.tipo == 2){
-			  //adVaz=-(celula[i].acsr.fontechk.masP+celula[i].acsr.fontechk.masC)*86400./celula[i].acsr.fluido.MasEspLiq(1., 20.);
 			  adVaz=1000.;
 		  }
 
@@ -26122,10 +18294,8 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
   int kontaiter=0;
   if (val < -0.9e10) {
     while (val < -0.9e10 && kontaiter<400) {
-      //if (celula[0].acsr.tipo == 1) {
         mchute *= (1.-arq.buscaFC);
         val = marchaProdPresPres2(mchute);
-        //if (celula[0].acsr.injg.QGas < 1e-3) {
         if (mchute < 1e-5) {
           if ((*vg1dSP).chaverede == 0 && arq.AS==0) NumError(
               "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
@@ -26134,18 +18304,6 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
             else return 1.1e10;
           }
         }
-      //}
-      /*else if (celula[0].acsr.tipo == 2) {
-        mchute *= 0.9;
-        if (celula[0].acsr.injl.QLiq < 1e-3) {
-          if ((*vg1dSP).chaverede == 0) NumError(
-              "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
-          else {
-            if ((*vg1dSP).iterRede > 0) return -1.1e6;
-            else return 1.e6;
-          }
-        }
-      }*/
       val = marchaProdPresPres2(mchute);
       kontaiter++;
     }
@@ -26166,7 +18324,6 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
 		  while (val < 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.-arq.buscaFC);
-      //if (mchute2 <= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres2(mchute2);
 			  if(val<0 && val>-0.9e10)chuteNeg=mchute2;
 			  kontaiter++;
@@ -26222,7 +18379,6 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
 		  while (val > 0) {
 			  mchuteAux = mchute2;
 			  mchute2 *= (1.+arq.buscaFC);
-      //if (mchute2 >= chutelim) mchute2 = 0.5 * (mchuteAux + chutelim);
 			  val = marchaProdPresPres2(mchute2);
 			  if((*vg1dSP).chaverede!=0 && mchute2>maxvaz && maxvaz>0){
 				  testaEscoa=0;
@@ -26241,7 +18397,6 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
 			  while (val >0.9e10) {
 				  chutelim = mchute2;
 				  mchute2 = 0.5 * (mchute2 + mchuteAux);
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=1.1*pchuteAux;
 				  val = marchaProdPresPres2(mchute2);
 				  if(val>0 && val<0.9e10)chutePos=mchute2;
 				  kontaiter++;
@@ -26259,7 +18414,6 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
 		  }
 		  chuteNeg=mchute2;
 	  }
-  //return falsacorda(mchute, mchute2,2,1);
 	  if(testaEscoa==1)return zriddr(chuteNeg, chutePos, 2, 1);
 	  else{
 		  if (celula[0].acsr.tipo == 1) {
@@ -26269,19 +18423,17 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
 		  }
 		  return 0.;
 	  }
-  //return zbrent(mchute, mchute2,2,1); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 double SProd::marchaGasPerm1(double chutemass) {
   int nvalv = arq.nvalvgas;
   double massGas = 0.;
-  double erro = 10.; //alteracao2
-  double erro1 = 10.; //alteracao2
+  double erro = 10.;
+  double erro1 = 10.;
   if(chutemass<0){
     for (int j = 0; j < nvalv; j++)
       massGas += celulaG[posicVGLG[j]].massfonteCH;  //caso nÃƒÂ£o se tenha um chute da vazao massica
@@ -26289,14 +18441,11 @@ double SProd::marchaGasPerm1(double chutemass) {
   }
   else massGas=chutemass;
   int itera=0;
-//  int reset=0;
   double relaxa=0.5;//relaxacao para a iteracao da vazao total de injecao estimada a cada iteracao
-//  double masgasini=massGas;
   double presteste=-10;
   double presteste0=-10;
   int vazBaix=0;
   while (((erro > 0.00001 && vazBaix==0) || erro1>0.00001) && itera<600) {    	     //iteracao de convergencia
-    //for(int j=0;j<nvalv;j++) massGas+=celula[posicVGLP[j]].fontemassGR;//alteracao2
 	presteste0=presteste;
 	if(itera>20)relaxa=0.1;
 	else if(itera>50)relaxa=0.05;
@@ -26314,7 +18463,7 @@ double SProd::marchaGasPerm1(double chutemass) {
     celulaG[0].u1LL = celulaG[0].u1L;
     celulaG[1].u1LL = celulaG[0].u1L;
     celulaG[0].VGasL = 0;
-    celulaG[0].massfonteCH = massGas;	  //alteracao2
+    celulaG[0].massfonteCH = massGas;
     celulaG[0].VGasR = massGas;
     celulaG[1].VGasL = massGas;
     for (int i = 1; i <= ncelGas; i++) {//marcha
@@ -26336,28 +18485,16 @@ double SProd::marchaGasPerm1(double chutemass) {
       massGas += celulaG[posicVGLG[j]].massfonteCH;//atualiza a vazao de injecao a partir
     //das vazoes calculadas nas VGLs
     itera++;
-    //if(massGas>1e-15)
     	massGas=(relaxa*massGas+(1.-relaxa)*massGas2);//relaxacao da estimativa de vazao de injecao
     	if(0.05*celulaG[0].duto.area*celulaG[0].rg>massGas)vazBaix=1;
     	else vazBaix=0;
-    //{
-      //if(itera>1){
-    	//relaxa=1-itera/(100/9);
-    	//if(relaxa<0.01)relaxa=0.01;
-    	//bif(itera==10)relaxa=0.1;
-    	//belse if(itera==50)relaxa=0.01;
-    	//bmassGas=masgasini;
-    	//  massGas=(relaxa*massGas+(1.-relaxa)*massGas2);
-      //}
-    //}
     if (fabs(massGas) > 1e-15) erro = fabs(massGas - massGas2) / fabs(massGas);//erro na estimativa de vazao
     //de uma iteracao para a outra
     else if(fabs(massGas2) > 1e-15) erro = fabs(massGas - massGas2) / fabs(massGas2);//erro = erro/2.;
     else erro=0.;
     presteste=celulaG[ncelGas].pres;
     erro1=fabs(presteste-presteste0)/presteste0;//erro no valor da pressao na ultima celula
-  }	  //alteracao2
-      //calcVazGasPerm(ncelGas);
+  }
 	if(itera>=600){
 		if((*vg1dSP).chaverede==0 && arq.AS==0){
 		NumError("Busca de valores iniciais para calculo de zero de funcao em marchaGasPerm1 atingiu maximo de iteracoes");
@@ -26441,9 +18578,7 @@ double SProd::buscaGasPresPerm2() {
 		  }
 		  chuteNeg=pchute2;
 	  }
-  //return falsacorda(pchute,pchute2,0,0);
 	  return zriddr(chuteNeg, chutePos, 0, 0);//calculo de zero de funcao
-  //return zbrent(pchute,pchute2,0,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 
 }
@@ -26454,13 +18589,11 @@ double SProd::buscaGasPresPerm3() {
   //choke de injecao e mais dificil, portanto, se testa mais possibiliodades de hutes:
   double pchute=chokeInj.presEstag*0.8;//pressao a montante do choke 20% menor que a pressao a jusante
   double pchute2=celulaG[0].pres;//Na primeira iteracao este valor Ã© a prÃ³pria pressao a montante
-  //double pchute2=chokeInj.presEstag*0.1;
 
   //duas marchas para os dois chutes:
   double delmas;
   delmas = marchaGasPerm3(pchute);//o valor retornado Ã© a diferenca entre a soma das vazoes VGL
   //e o valor calculado da vazao no choke de injecao, se der negativo, significa que a pressao a montante
-  //do choke de injecao e muito pequena, dando uma vazao alta no choke em comparacao a vazao nas VGLs,
   //se positivo, pressao a montante muito grande
   double delmas2;
   delmas2=marchaGasPerm3(pchute2);
@@ -26479,14 +18612,6 @@ double SProd::buscaGasPresPerm3() {
 			  if(delmas<0 && delmas>-0.9e10)chuteNeg=pchute;
 			  kontaiter++;
 		  }
-	/*if(kontaiter>=800){
-		if((*vg1dSP).chaverede==0)
-		NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
-	    else{
-	    	if((*vg1dSP).iterRede>0)return -1.1e6;
-	     	else return 1.e6;
-	    }
-	}*/
 		  chutePos=pchute;
 	  }
 	  else if (delmas >= 0) {//chute de pressao grande, deve ser diminuido
@@ -26498,14 +18623,6 @@ double SProd::buscaGasPresPerm3() {
 			  if(delmas>0 && delmas<0.9e10)chutePos=pchute;
 			  kontaiter++;
 		  }
-	/*if(kontaiter>=800){
-		if((*vg1dSP).chaverede==0)
-		NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
-	    else{
-	    	if((*vg1dSP).iterRede>0)return -1.1e6;
-	     	else return 1.e6;
-	    }
-	}*/
 		  chuteNeg=pchute;
 	  }
   //caso nÃ£o funcione com o primeiro chute
@@ -26548,9 +18665,7 @@ double SProd::buscaGasPresPerm3() {
 		  }
 		  chutePos=pchute2;
 	  }
-  //return falsacorda(pchute,pchute2,0,0);
 	  return zriddr(chuteNeg, chutePos, 0, 1);//calculo de zero de funcao
-  //return zbrent(pchute,pchute2,0,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 
 }
@@ -26588,7 +18703,6 @@ double SProd::marchaGasPerm2(double pchute,double chutemass) {
     celulaG[i - 1].u1R = celulaG[i].u1L;
     if (i < ncelGas) celulaG[i + 1].u1LL = celulaG[i].u1L;
   }
-  //calcVazGasPerm(ncelGas);
   celulaG[ncelGas].rgR=celulaG[ncelGas].rg;
 
   int nvalv = arq.nvalvgas;
@@ -26615,7 +18729,6 @@ double SProd::marchaGasPerm3(double pchute) {
   chokeInj.presGarg=pchute;
   double chutemass=chokeInj.massica();//vazao de injecao na linha obtido a partir da vazao
   //massica do choke de injecao
-  //celulaG[0].massfonteCH = chutemass * celulaG[0].flui.MasEspGas(1., 15.6) / 86400.;
   celulaG[0].massfonteCH = chutemass;
   celulaG[0].VGasR = celulaG[0].massfonteCH;
   celulaG[1].VGasL = celulaG[0].massfonteCH;
@@ -26632,7 +18745,6 @@ double SProd::marchaGasPerm3(double pchute) {
     celulaG[i - 1].u1R = celulaG[i].u1L;
     if (i < ncelGas) celulaG[i + 1].u1LL = celulaG[i].u1L;
   }
-  //calcVazGasPerm(ncelGas);
   celulaG[ncelGas].rgR=celulaG[ncelGas].rg;
 
   int nvalv = arq.nvalvgas;
@@ -26658,8 +18770,6 @@ void SProd::RenovaPresPermMon(int i, int RK) {
         + betmed * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
     	double ugsmed = (celula[i - 1].MC - celula[i - 1].Mliqini) / (area * rhog);
     	double ulsmed = celula[i - 1].Mliqini / (area * rhol);
-    //double ugsmed=(celula[i-1].QG)/(area);
-    //double ulsmed=celula[i-1].QL/(area);
     	double j = ugsmed + ulsmed;
     	double sinalJ=1.;
     	if(fabs(j)>1e-15)sinalJ=j/fabs(j);
@@ -26670,12 +18780,6 @@ void SProd::RenovaPresPermMon(int i, int RK) {
     	double viscmix = alfmed * celula[i - 1].flui.ViscGas(celula[i - 1].pres, celula[i - 1].temp)
         + (1 - alfmed)*visl;
 
-	/*if((*vg1dSP).iterRede==2 && qualTramo==0 && qualRede==3 && verificaTramo==1 && i==1 && fabs(celula[i-1].pres-80.156)<1e-3){
-  	  	  cout<<"----------Estamos Aqui------------- "<<i<< "  bo  "<< celula[i - 1].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp)<<
-  	  			  "  rhol  "<<celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp)<<"  visl  "<<celula[i - 1].flui.ViscOleo(celula[i - 1].pres, celula[i - 1].temp)<<
-				  "  visg  "<<celula[i - 1].flui.ViscGas(celula[i - 1].pres, celula[i - 1].temp)<<
-				  "  ugs  "<<ugsmed<<"  uls   "<<ulsmed<<"\n";
-	}*/
 
 
     	double re1;
@@ -26686,29 +18790,6 @@ void SProd::RenovaPresPermMon(int i, int RK) {
     	}
     	double f1 = celula[i - 1].fric(re1, celula[i].dutoL.rug / dia);
     	if(i>1 && celula[i - 1].fluicol.tipoF==2){
-    	/*double ulmed=0.;
-    	double reL;
-    	double dR0;
-    	double fatB;
-    	if(fabs(celula[i-1].MComp)>1e-15){
-    		if(alfmed<1-1e-15)ulmed=ulsmed/(1-alfmed);
-    		else ulmed=0.;
-    		if (celula[i].dutoL.revest == 0) reL = celula[i - 1].Rey(celula[i].dutoL.a, ulmed, rhol, visl);
-    		else {
-    			double dhid = 4 * area / si;
-    			reL = celula[i - 1].Rey(dhid, ulmed, rhol, visl);
-    		}
-    		if(reL>=2.82*1.e4){
-    			dR0=sqrt((2.5/100)*reL-704.156)/100.;
-    			fatB=-1.59e-6*(reL-2.82e4);
-    		}
-    		else{
-    			dR0=0.;
-    			fatB=0.;
-    		}
-    		celula[i-1].dRL=dR0*exp(fatB*celula[i-1].fluicol.TR);
-    	}
-    	else celula[i-1].dRL=0.;*/
     		f1*=(1-celula[i-1].dR);
 
     	}
@@ -26771,8 +18852,8 @@ void SProd::RenovaPresPermMon(int i, int RK) {
 	  executarCorrelacao(celula, i, 1, arq.AceleraConvergPerm,
 	                         celula[i-1].correlacaoMR2,
 	                         holdup, frictionGrad, gravityGrad, totalGrad,
-	                         reynolds, flowType/*,
-	                         errorMsg, errorFlag*/);
+	                         reynolds, flowType
+);
 
 		double gradfric = celula[i-1].dPdLFric*frictionGrad*22620.6*dx;
 		double gradhidro = celula[i-1].dPdLHidro*gravityGrad*22620.6*dx;
@@ -26782,8 +18863,6 @@ void SProd::RenovaPresPermMon(int i, int RK) {
 		celula[i].termoFric=gradfric/dx;
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 double SProd::RenovaPresPermNcel() {
@@ -26842,8 +18921,6 @@ double SProd::calcDpArea(int i,double rhomix, double rey, double jmix){
 					double expanse=(1.-pow(areaMenor/areaMaior,2.));
 					perdLoc=0.5*(celula[i].MR*celula[i].MR/(areaMenor*areaMenor*rhomix))*expanse*expanse;
 				}
-				//perdLoc=0.42*0.5*(celula[i].MR*celula[i].MR/(celula[i].duto.area*celula[i].duto.area*rhomix))*
-							//(1.-pow(celula[i].duto.area/celula[i].dutoR.area,2.));
 			}
 			else{
 				areaMenor=celula[i].duto.area;
@@ -26856,8 +18933,6 @@ double SProd::calcDpArea(int i,double rhomix, double rey, double jmix){
 					double expanse=(1.-pow(areaMenor/areaMaior,2.));
 					perdLoc=-0.5*(celula[i].MR*celula[i].MR/(areaMenor*areaMenor*rhomix))*expanse*expanse;
 				}
-				//double expanse=(1.-pow(areaMenor/areaMaior,2.));
-				//perdLoc=-0.5*(celula[i].MR*celula[i].MR/(areaMenor*areaMenor*rhomix))*expanse*expanse;
 
 			}
 			dpArea=bernou+perdLoc;
@@ -26904,7 +18979,6 @@ void SProd::RenovaPresPermJus(int i, int RK) {
 		  else tmed = celula[i - 1].temp;
 		  double pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
 		  rhog =celula[i].rgCi;// celula[i].flui.MasEspGas(pmed, tmed);
-		  //rhol = (1. - betmed) * celula[i].flui.MasEspLiq(pmed, tmed) + betmed * celula[i].fluicol.MasEspFlu(pmed, tmed);
 		  rhol = (1. - betmed) * celula[i].rpCi + betmed * celula[i].rcCi;
 		  ugsmed = (celula[i].QG) / (area);
 		  ulsmed = celula[i].QL / (area);
@@ -26926,8 +19000,6 @@ void SProd::RenovaPresPermJus(int i, int RK) {
 		  if(celula[i].fluicol.tipoF==2){
 			  double ulmed=0.;
 			  double reL;
-//			  double dR0;
-//			  double fatB;
 			  if(fabs(celula[i].MComp)>1e-15){
 				  if(alfmed<1-1e-15)ulmed=ulsmed/(1-alfmed);
 				  else ulmed=0.;
@@ -26991,8 +19063,8 @@ void SProd::RenovaPresPermJus(int i, int RK) {
 	  executarCorrelacao(celula, i, 2, arq.AceleraConvergPerm,
 	                         celula[i-1].correlacaoMR2,
 	                         holdup, frictionGrad, gravityGrad, totalGrad,
-	                         reynolds, flowType/*,
-	                         errorMsg, errorFlag*/);
+	                         reynolds, flowType
+);
 
 		double gradfric = celula[i-1].dPdLFric*frictionGrad*22620.6*dx;
 		double gradhidro = celula[i-1].dPdLHidro*gravityGrad*22620.6*dx;
@@ -27001,9 +19073,7 @@ void SProd::RenovaPresPermJus(int i, int RK) {
 		celula[i].termoHidro=gradhidro/dx;
 		celula[i].termoFric=gradfric/dx;
   }
-///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 
@@ -27061,7 +19131,6 @@ void SProd::corrDeng(int i) {
     	celula[i].flui.rzDegL(celula[k].pres,celula[k].temp);
     	celula[i].flui.PcTcIS();//como a densidade de gas livre mudou, suas pressoes
     	//criticas devem ser recalculadas
-    	//////////////////////////////////////////////////////////////////////
     	//caso tenha alguma fonte, se calcula as densidades in situ das fontes
      	if(celula[i].acsr.tipo==1 && celula[i].acsr.injg.seco==0){//fonte de liquido
          	celula[i].acsr.injg.FluidoPro.razDegD(celula[k].pres,celula[k].temp);
@@ -27119,9 +19188,6 @@ void SProd::RenovaMassPerm(int i) {
   else if(celula[i - 1].acsr.tipo == 2 && celula[i - 1].acsr.injl.QLiq<0){
      celula[i - 1].acsr.injl.FluidoPro=celula[i - 1].flui;
   }
-  /*else if(celula[i - 1].acsr.tipo == 3 && celula[i - 1].acsr.ipr.Pres<celula[i - 1].pres){
-      celula[i - 1].acsr.ipr.FluidoPro=celula[i - 1].flui;
-  }*/
   else if(celula[i - 1].acsr.tipo == 10 && celula[i - 1].acsr.injm.MassC+celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP<0){
 	  celula[i - 1].acsr.injm.FluidoPro=celula[i - 1].flui;
   }
@@ -27130,7 +19196,6 @@ void SProd::RenovaMassPerm(int i) {
 
   renovaFonte(i - 1);//metodo que verifica se existe uma fonte na celula e calcula o valor das
   //vazoes massicas de liquido produzido (oleo+agua), gas e liquido complementar
-  ////////////////////////////////////////////////////////////////////////////////////////////
   //relacao entre fonte a esquerda e a direita de uma celula:
   celula[i].fontemassLL = celula[i-1].fontemassLR;
   celula[i].fontemassCL = celula[i-1].fontemassCR;
@@ -27151,7 +19216,6 @@ void SProd::RenovaMassPerm(int i) {
   double boI;
   double baI;
   double fwI=0;
-  //double tL = 0.;
   //definicao de temperaturas maximas e minimas para uma eventual reavaliacao do metodo
   //ASTM quando ocorre mistura de fluidos e se deseja atualizar o modelo
   //de viscosidade de oleo morto se este for o ASTM que trabalha com um par de temperatura
@@ -27161,8 +19225,6 @@ void SProd::RenovaMassPerm(int i) {
   double tH;
   if(arq.flashCompleto == 1 && (70-arq.tabent.tmax) < (*vg1dSP).localtiny)tH=arq.tabent.tmax-0.1;
   else tH= 70.;
-  //double tH = 70.;
-  //double (*vg1dSP).RGOMax = 140000.;//no simulador, se admite este valor como o maximo de RGO
   double bo;
   double ba;
   double rs;
@@ -27196,7 +19258,6 @@ void SProd::RenovaMassPerm(int i) {
 	  && celula[i - 1].acsr.tipo != 10 && (celula[i - 1].acsr.tipo != 9 ||
 		 (celula[i - 1].acsr.tipo == 9 && celula[i - 1].acsr.fontechk.abertura<=1e-6)) && celula[i - 1].acsr.tipo != 15
 		 && celula[i - 1].acsr.tipo != 16) {
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////
       //neste caso, variaveis como RGO de separador, BSW, API, densidade de gas e outras nÃƒÂ£o muda, sao iguais
 	  //aos valores da celula i-1
 	  double hol = 1 - celula[i - 1].alf;
@@ -27209,12 +19270,10 @@ void SProd::RenovaMassPerm(int i) {
       //deve ser calculado, pois ÃƒÂ© utilizado como entrada no transiente
       celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
       if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  if (arq.trackRGO == -1) {
 		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
 		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
          if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny))
         	 celula[i].flui.RGO = celula[i-1].VolLeveST * bo
           / (hol * (1 - bet) * (1 - bsw));
@@ -27240,8 +19299,6 @@ void SProd::RenovaMassPerm(int i) {
            corrDeng(i);
 
 	   }
-    //celula[i-1].fluiR=celula[i].flui;
-    //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
        if (celula[i - 1].bet > (*vg1dSP).localtiny*1e-6) {//reavaliacao da fracao volumetrica do liquido complementar
     	   //mesmo que nÃƒÂ£o tenha fonte, ela pode mudar, devido ao encolhimento do liquido produzido
          if(celula[i].flui.RGO<1e6)boI= celula[i].flui.BOFunc(celula[i].presaux, tmed);
@@ -27290,7 +19347,6 @@ void SProd::RenovaMassPerm(int i) {
             yco2 = celula[i - 1].flui.yco2;
           }
 
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -27301,7 +19357,6 @@ void SProd::RenovaMassPerm(int i) {
           //pois ÃƒÂ© utilizado como entrada no transiente
           celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
           if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
          if (arq.trackRGO == -1) {
    		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
    		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
@@ -27333,8 +19388,6 @@ void SProd::RenovaMassPerm(int i) {
             corrDeng(i);
          }
 
-         //celula[i-1].fluiR=celula[i].flui;
-         //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
          if (celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 && celula[i-1].alf<1.-(*vg1dSP).localtiny*1e-6 && fabs(celula[i - 1].acsr.injg.QGas)>1e-15) {
         	 //reavaliacao da fracao volumetrica do liquido complementar
       	     //mesmo que nÃƒÂ£o tenha fonte de liquido, ela pode mudar,
@@ -27397,7 +19450,6 @@ void SProd::RenovaMassPerm(int i) {
             yco2 = celula[i - 1].flui.yco2;
           }
 
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -27408,7 +19460,6 @@ void SProd::RenovaMassPerm(int i) {
           //pois ÃƒÂ© utilizado como entrada no transiente
           celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
           if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
          if (arq.trackRGO == -1) {
    		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
    		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
@@ -27425,7 +19476,6 @@ void SProd::RenovaMassPerm(int i) {
          else celula[i].flui.RGO =celula[i-1].flui.RGO;
 
          if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-        	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
         	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
         	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
         	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -27437,21 +19487,21 @@ void SProd::RenovaMassPerm(int i) {
             }
             else if(arq.flashCompleto==0)celula[i].flui.API = celula[i - 1].flui.API;
             double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0/* && arq.flashCompleto==0 */)
+            if ((1. - celula[i - 1].flui.BSW) > 0)
             	qw1 = qostd * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else /*if(arq.flashCompleto==0)*/
+            else
             	qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet)
 				     / (1000. * celula[i - 1].flui.Denag);
             double qw2;
-            if ((1. - celula[i - 1].acsr.injg.FluidoPro.BSW) > 0 /*&& arq.flashCompleto==0*/)
+            if ((1. - celula[i - 1].acsr.injg.FluidoPro.BSW) > 0 )
             	qw2 = qostd2 * celula[i - 1].acsr.injg.FluidoPro.BSW
                / (1. - celula[i - 1].acsr.injg.FluidoPro.BSW);
-            else /*if(arq.flashCompleto==0)*/
+            else
             	qw2 = celula[i - 1].fontemassLR * fwinjl/ (1000. * celula[i - 1].acsr.injg.FluidoPro.Denag);
 
-            if (fabs(qw1 + qw2 + qostd + qostd2) > 1e-15 && fabs(celula[i - 1].acsr.injg.QGas)>1e-15/*&& arq.flashCompleto==0*/)
+            if (fabs(qw1 + qw2 + qostd + qostd2) > 1e-15 && fabs(celula[i - 1].acsr.injg.QGas)>1e-15)
             	celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd + qostd2);
-            else /*if(arq.flashCompleto==0)*/ celula[i].flui.BSW = celula[i - 1].flui.BSW;
+            else  celula[i].flui.BSW = celula[i - 1].flui.BSW;
             if (fabs(qw1 + qw2)>1e-15)celula[i].flui.Denag=(qw1*celula[i - 1].flui.Denag+
             		qw2*celula[i - 1].acsr.injg.FluidoPro.Denag)/(qw1+qw2);
             else celula[i].flui.Denag=celula[i - 1].flui.Denag;
@@ -27500,8 +19550,6 @@ void SProd::RenovaMassPerm(int i) {
                / celula[i - 1].acsr.injg.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
             double qlcF = celula[i - 1].fontemassCR
               / celula[i - 1].acsr.injg.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-            //double betN = (celula[i - 1].QL * celula[i - 1].bet) / (celula[i - 1].QL + qlpF);
-            //double qo = (celula[i - 1].QL + qlpF) * (1 - fwN) * (1 - betN) * boI / bo;
 
             double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
             double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
@@ -27509,9 +19557,7 @@ void SProd::RenovaMassPerm(int i) {
             double qw;
             if (fwI < (1 - (*vg1dSP).localtiny)) qw = fwI * qo / (1 - fwI);
             else qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            //double qc = (celula[i - 1].QL * (celula[i - 1].bet))
              //* celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
-            // / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
 
             double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
              * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
@@ -27548,8 +19594,6 @@ void SProd::RenovaMassPerm(int i) {
           double qostd1=0.;
           if(celula[i - 1].flui.dStockTankVaporMassFraction<1.-1e-15)
         	  qostd1= celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-          //double qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) * (1. - celula[i - 1].acsr.injl.bet)
-             // / (boinjl * rholisF);
           //vazao de oleo standard da fonte:
           double qostd2 =0.;
           if(celula[i - 1].acsr.injl.FluidoPro.dStockTankVaporMassFraction<1.-1e-15)
@@ -27558,7 +19602,6 @@ void SProd::RenovaMassPerm(int i) {
           //da fronteira a esquerda
           //da celula e do gas associado da fonte de liquido
           double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO;
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -27569,13 +19612,11 @@ void SProd::RenovaMassPerm(int i) {
           //pois ÃƒÂ© utilizado como entrada no transiente
           celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
           if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
           if(fabs(celula[i - 1].acsr.injl.QLiq)>1e-15){
         	  if (arq.trackRGO == -1) {
        		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
        		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         		  if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO==1)
         	  		  celula[i].flui.RGO = celula[i-1].VolLeveST * bo/ (hol * (1 - bet) * (1 - bsw));
         		  if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO==1) celula[i].flui.RGO = (*vg1dSP).RGOMax;
@@ -27597,7 +19638,6 @@ void SProd::RenovaMassPerm(int i) {
            + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO * celula[i - 1].acsr.injl.FluidoPro.yco2) / qgstd;
          else if(fabs(celula[i - 1].acsr.injl.QLiq)<=1e-15)celula[i].flui.yco2 =celula[i-1].flui.yco2;
          if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-        	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
         	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
         	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
         	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -27612,22 +19652,22 @@ void SProd::RenovaMassPerm(int i) {
             else if(arq.flashCompleto==0 ||
             		fabs(celula[i - 1].acsr.injl.QLiq)<=1e-15)celula[i].flui.API = celula[i - 1].flui.API;
             double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0/* && arq.flashCompleto==0 */)
+            if ((1. - celula[i - 1].flui.BSW) > 0)
             	qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else /*if(arq.flashCompleto==0)*/
+            else
             	qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet)
 				     / (1000. * celula[i - 1].flui.Denag);
             double qw2;
-            if ((1. - celula[i - 1].acsr.injl.FluidoPro.BSW) > 0 /*&& arq.flashCompleto==0*/)
+            if ((1. - celula[i - 1].acsr.injl.FluidoPro.BSW) > 0 )
             	qw2 = qostd2 * celula[i - 1].acsr.injl.FluidoPro.BSW
                / (1. - celula[i - 1].acsr.injl.FluidoPro.BSW);
-            else /*if(arq.flashCompleto==0)*/
+            else
             	qw2 = celula[i - 1].fontemassLR * fwinjl/ (1000. * celula[i - 1].acsr.injl.FluidoPro.Denag);
 
             if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-            		fabs(celula[i - 1].acsr.injl.QLiq)>1e-15/*&& arq.flashCompleto==0*/)
+            		fabs(celula[i - 1].acsr.injl.QLiq)>1e-15)
             	celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
-            else /*if(arq.flashCompleto==0)*/ celula[i].flui.BSW = celula[i - 1].flui.BSW;
+            else  celula[i].flui.BSW = celula[i - 1].flui.BSW;
             if (fabs(qw1 + qw2)>1e-15)celula[i].flui.Denag=(qw1*celula[i - 1].flui.Denag+
             		qw2*celula[i - 1].acsr.injl.FluidoPro.Denag)/(qw1+qw2);
             else celula[i].flui.Denag=celula[i - 1].flui.Denag;
@@ -27653,8 +19693,6 @@ void SProd::RenovaMassPerm(int i) {
         	 celula[i].flui.RenovaFluido();
         	 corrDeng(i);
          }
-    //celula[i-1].fluiR=celula[i].flui;
-    //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
         if ((celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny*1e-6) &&
         		fabs(celula[i - 1].acsr.injl.QLiq)>1e-15) {
           	 //reavaliacao da fracao volumetrica do liquido complementar
@@ -27716,7 +19754,6 @@ void SProd::RenovaMassPerm(int i) {
           //da fronteira a esquerda
           //da celula e do gas associado da IPR
           double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO;
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -27730,7 +19767,6 @@ void SProd::RenovaMassPerm(int i) {
           if (arq.trackRGO == -1) {
        		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
        		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         	  if((celula[i-1].fontemassLR)>1e-15 && (celula[i-1].fontemassGR)>1e-15){
         		  if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
         				  mudaRGO==1 && fabs(celula[i-1].fontemassLR)>1e-15)
@@ -27746,7 +19782,6 @@ void SProd::RenovaMassPerm(int i) {
         	  }
         	  else celula[i].flui.RGO=celula[i-1].flui.RGO;
           }
-          //if(arq.flashCompleto==0){
           //calculo da nova densidade de gas nas condicoes standard modificada pela IPR
           if(arq.flashCompleto==0 && (celula[i-1].fontemassLR)>1e-15 && (celula[i-1].fontemassGR)>1e-15&&
         		  fabs(qgstd)>1e-15)celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng
@@ -27758,7 +19793,6 @@ void SProd::RenovaMassPerm(int i) {
             + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO * celula[i - 1].acsr.ipr.FluidoPro.yco2) / qgstd;
           else celula[i].flui.yco2=celula[i-1].flui.yco2;
           if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-           	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
            	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
            	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
            	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -27805,13 +19839,10 @@ void SProd::RenovaMassPerm(int i) {
                 celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
               }
           }
-          //}
           if(arq.flashCompleto==0){
         	  celula[i].flui.RenovaFluido();
         	  corrDeng(i);
           }
-    //celula[i-1].fluiR=celula[i].flui;
-    //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
           if (celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 && fabs(celula[i-1].fontemassLR)>1e-15) {
            	 //reavaliacao da fracao volumetrica do liquido complementar
           	 //observar que a IPR pode ter uma fracao de liquido complementar
@@ -27833,7 +19864,6 @@ void SProd::RenovaMassPerm(int i) {
             double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
                 * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
                 / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            //celula[i].bet = qc / (qo + qw + qc);
             celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
           } else celula[i].bet = celula[i - 1].bet;
   }
@@ -27864,8 +19894,6 @@ void SProd::RenovaMassPerm(int i) {
           //vazao de oleo sytandard antes da fonte:
           double qostd1 =0.;
           if(celula[i - 1].flui.dStockTankVaporMassFraction<1.-1e-15)qostd1= celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-          //double qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) * (1. - celula[i - 1].acsr.injl.bet)
-             // / (boinjl * rholisF);
           //vazao de oleo standard da fonte:
           double qostd2=0.;
           if(celula[i - 1].acsr.injm.FluidoPro.dStockTankVaporMassFraction<1.-1e-15)qostd2= celula[i - 1].fontemassLR * (1. - fwinjl)/ (boinjl * rholisF);
@@ -27873,7 +19901,6 @@ void SProd::RenovaMassPerm(int i) {
           //da fronteira a esquerda
           //da celula e do gas associado da fonte de liquido
           double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO;
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -27884,12 +19911,10 @@ void SProd::RenovaMassPerm(int i) {
           //pois ÃƒÂ© utilizado como entrada no transiente
           celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
           if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
           if (arq.trackRGO == -1) {
        		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
        		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
            if((celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP)>1e-15){
         	   if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO==1)
         		   celula[i].flui.RGO = celula[i-1].VolLeveST * bo/ (hol * (1 - bet) * (1 - bsw));
@@ -27917,7 +19942,6 @@ void SProd::RenovaMassPerm(int i) {
            + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO * celula[i - 1].acsr.injm.FluidoPro.yco2) / qgstd;
          else celula[i].flui.yco2=celula[i-1].flui.yco2;
          if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-        	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
         	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
         	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
         	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -27933,22 +19957,22 @@ void SProd::RenovaMassPerm(int i) {
             		fabs(celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP)<=1e-15)
             	celula[i].flui.API = celula[i - 1].flui.API;
             double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0/* && arq.flashCompleto==0 */)
+            if ((1. - celula[i - 1].flui.BSW) > 0)
             	qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else /*if(arq.flashCompleto==0)*/
+            else
             	qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet)
 				     / (1000. * celula[i - 1].flui.Denag);
             double qw2;
-            if ((1. - celula[i - 1].acsr.injm.FluidoPro.BSW) > 0 /*&& arq.flashCompleto==0*/)
+            if ((1. - celula[i - 1].acsr.injm.FluidoPro.BSW) > 0 )
             	qw2 = qostd2 * celula[i - 1].acsr.injm.FluidoPro.BSW
                / (1. - celula[i - 1].acsr.injm.FluidoPro.BSW);
-            else /*if(arq.flashCompleto==0)*/
+            else
             	qw2 = celula[i - 1].fontemassLR * fwinjl/ (1000. * celula[i - 1].acsr.injm.FluidoPro.Denag);
 
             if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-            		(celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP)>1e-15/*&& arq.flashCompleto==0*/)
+            		(celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP)>1e-15)
             	celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
-            else /*if(arq.flashCompleto==0)*/ celula[i].flui.BSW = celula[i - 1].flui.BSW;
+            else  celula[i].flui.BSW = celula[i - 1].flui.BSW;
             if (fabs(qw1 + qw2)>1e-15 &&
             		(celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP)>1e-15)
             	celula[i].flui.Denag=(qw1*celula[i - 1].flui.Denag+
@@ -27977,8 +20001,6 @@ void SProd::RenovaMassPerm(int i) {
         	 celula[i].flui.RenovaFluido();
         	 corrDeng(i);
          }
-    //celula[i-1].fluiR=celula[i].flui;
-    //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
         if ((celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny) &&
         		fabs(celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP+celula[i - 1].acsr.injm.MassC)>1e-15) {
           	 //reavaliacao da fracao volumetrica do liquido complementar
@@ -28002,7 +20024,6 @@ void SProd::RenovaMassPerm(int i) {
            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
             * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
             / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-           //celula[i].bet = qc / (qo + qw + qc);
            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
        } else celula[i].bet = celula[i - 1].bet;
   }
@@ -28031,8 +20052,6 @@ void SProd::RenovaMassPerm(int i) {
       double qostd1 =0.;
       if(celula[i - 1].flui.dStockTankVaporMassFraction<1.-1e-15)
     	  qostd1= celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-      //double qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) * (1. - celula[i - 1].acsr.injl.bet)
-         // / (boinjl * rholisF);
       //vazao de oleo standard da fonte:
       double qostd2=0.;
       if(fluF.dStockTankVaporMassFraction<1.-1e-15)
@@ -28045,7 +20064,6 @@ void SProd::RenovaMassPerm(int i) {
       else{
     	  qgstd= qostd1 * celula[i - 1].flui.RGO + celula[i - 1].fontemassGR/(fluF.Deng*1.225);
       }
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////
       double hol = 1 - celula[i - 1].alf;
       double bet = celula[i - 1].bet;
       double bsw = celula[i - 1].FW;
@@ -28056,12 +20074,10 @@ void SProd::RenovaMassPerm(int i) {
        //pois ÃƒÂ© utilizado como entrada no transiente
       celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
       if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       if (arq.trackRGO == -1) {
   		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
    		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny*1e-6) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO==1)
 	        celula[i].flui.RGO = celula[i-1].VolLeveST * bo/ (hol * (1 - bet) * (1 - bsw));
         if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO==1) celula[i].flui.RGO = (*vg1dSP).RGOMax;
@@ -28086,7 +20102,6 @@ void SProd::RenovaMassPerm(int i) {
     	         +fluF.yco2*celula[i - 1].fontemassGR/(fluF.Deng*1.225)) / qgstd;
      }
      if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-       	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
        	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
        	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
        	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -28099,19 +20114,19 @@ void SProd::RenovaMassPerm(int i) {
         }
         else if(arq.flashCompleto==0)celula[i].flui.API = celula[i - 1].flui.API;
         double qw1;
-        if ((1. - celula[i - 1].flui.BSW) > 0 /*&& arq.flashCompleto==0 */)
+        if ((1. - celula[i - 1].flui.BSW) > 0 )
         	qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-        else /*if(arq.flashCompleto==0)*/qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet)
+        else qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet)
             / (1000. * celula[i - 1].flui.Denag);
         double qw2;
-        if ((1. - fluF.BSW) > 0 /*&& arq.flashCompleto==0*/)
+        if ((1. - fluF.BSW) > 0 )
         	qw2 = qostd2 * fluF.BSW/ (1. - fluF.BSW);
-        else /*if(arq.flashCompleto==0)*/
+        else
         	qw2 = celula[i - 1].fontemassLR * fwinjl/ (1000. * fluF.Denag);
 
-        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 /*&& arq.flashCompleto==0*/)
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 )
         	celula[i].flui.BSW = (qw1 + qw2)/ (qw1 + qw2 + qostd1 + qostd2);
-        else /*if(arq.flashCompleto==0)*/ celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        else  celula[i].flui.BSW = celula[i - 1].flui.BSW;
 
         if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto==0) {
             //reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
@@ -28134,8 +20149,6 @@ void SProd::RenovaMassPerm(int i) {
     	 celula[i].flui.RenovaFluido();
     	 corrDeng(i);
      }
-//celula[i-1].fluiR=celula[i].flui;
-//if(i<ncel)celula[i+1].fluiL=celula[i].flui;
     if (celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny*1e-6) {
       	 //reavaliacao da fracao volumetrica do liquido complementar
      	 //observar a fonte de vazamento pode ter uma fracao de liquido complementar
@@ -28158,7 +20171,6 @@ void SProd::RenovaMassPerm(int i) {
        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
         * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
         / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-       //celula[i].bet = qc / (qo + qw + qc);
        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
    } else celula[i].bet = celula[i - 1].bet;
   }
@@ -28197,7 +20209,6 @@ void SProd::RenovaMassPerm(int i) {
           //da fronteira a esquerda
           //da celula e do gas associado da IPR
           double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO;
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -28211,7 +20222,6 @@ void SProd::RenovaMassPerm(int i) {
           if (arq.trackRGO == -1) {
        		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
        		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         	  if(fabs(celula[i-1].fontemassLR)>1e-15){
         		  if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
         				  mudaRGO==1 && fabs(celula[i-1].fontemassLR)>1e-15)
@@ -28227,7 +20237,6 @@ void SProd::RenovaMassPerm(int i) {
         	  }
         	  else celula[i].flui.RGO=celula[i-1].flui.RGO;
           }
-          //if(arq.flashCompleto==0){
           //calculo da nova densidade de gas nas condicoes standard modificada pela IPR
           if(arq.flashCompleto==0 && (celula[i-1].fontemassLR)>1e-15 && (celula[i-1].fontemassGR)>1e-15 &&
         		  fabs(qgstd)>1e-15)celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng
@@ -28239,7 +20248,6 @@ void SProd::RenovaMassPerm(int i) {
             + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO * celula[i - 1].acsr.radialPoro.flup.yco2) / qgstd;
           else celula[i].flui.yco2=celula[i-1].flui.yco2;
           if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-           	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
            	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
            	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
            	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -28286,13 +20294,10 @@ void SProd::RenovaMassPerm(int i) {
                 celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
               }
           }
-          //}
           if(arq.flashCompleto==0){
         	  celula[i].flui.RenovaFluido();
         	  corrDeng(i);
           }
-    //celula[i-1].fluiR=celula[i].flui;
-    //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
           if (celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 && fabs(celula[i-1].fontemassLR)>1e-15) {
            	 //reavaliacao da fracao volumetrica do liquido complementar
           	 //observar que a IPR pode ter uma fracao de liquido complementar
@@ -28314,7 +20319,6 @@ void SProd::RenovaMassPerm(int i) {
             double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
                 * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
                 / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            //celula[i].bet = qc / (qo + qw + qc);
             celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
           } else celula[i].bet = celula[i - 1].bet;
   }
@@ -28353,7 +20357,6 @@ void SProd::RenovaMassPerm(int i) {
           //da fronteira a esquerda
           //da celula e do gas associado da IPR
           double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO;
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -28367,7 +20370,6 @@ void SProd::RenovaMassPerm(int i) {
           if (arq.trackRGO == -1) {
        		  //esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
        		  //calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         	  if(fabs(celula[i-1].fontemassLR)>1e-15){
         		  if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
         				  mudaRGO==1 && fabs(celula[i-1].fontemassLR)>1e-15)
@@ -28383,7 +20385,6 @@ void SProd::RenovaMassPerm(int i) {
         	  }
         	  else celula[i].flui.RGO=celula[i-1].flui.RGO;
           }
-          //if(arq.flashCompleto==0){
           //calculo da nova densidade de gas nas condicoes standard modificada pela IPR
           if(arq.flashCompleto==0 && (celula[i-1].fontemassLR)>1e-15  && (celula[i-1].fontemassGR)>1e-15 &&
         		  fabs(qgstd)>1e-15)celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng
@@ -28395,7 +20396,6 @@ void SProd::RenovaMassPerm(int i) {
             + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO * celula[i - 1].acsr.poroso2D.dados.flup.yco2) / qgstd;
           else celula[i].flui.yco2=celula[i-1].flui.yco2;
           if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-           	 //alteracao do grau API, do BSW e dos pares de viscosidade de oleo morto, caso
            	 //o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
            	 //de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
            	 //com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
@@ -28443,13 +20443,10 @@ void SProd::RenovaMassPerm(int i) {
                 celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
               }
           }
-          //}
           if(arq.flashCompleto==0){
         	  celula[i].flui.RenovaFluido();
         	  corrDeng(i);
           }
-    //celula[i-1].fluiR=celula[i].flui;
-    //if(i<ncel)celula[i+1].fluiL=celula[i].flui;
           if (celula[i - 1].bet > (*vg1dSP).localtiny*1e-6 && fabs(celula[i-1].fontemassLR)>1e-15) {
            	 //reavaliacao da fracao volumetrica do liquido complementar
           	 //observar que a IPR pode ter uma fracao de liquido complementar
@@ -28471,7 +20468,6 @@ void SProd::RenovaMassPerm(int i) {
             double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
                 * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
                 / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            //celula[i].bet = qc / (qo + qw + qc);
             celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
           } else celula[i].bet = celula[i - 1].bet;
   }
@@ -28482,10 +20478,6 @@ void SProd::RenovaMassPerm(int i) {
   celula[i - 1].MR = celula[i].MC;
   if (i < ncel) celula[i + 1].ML = celula[i].MC;
   celula[i - 1].MRini = celula[i - 1].MR;
-//	double tmed;
-//	if(iterperm!=0)tmed=(celula[i].dx*celula[i].temp+celula[i].dxL*celula[i].tempL)/
-//			         (celula[i].dx+celula[i].dxL);
-//	else tmed=celula[i-1].temp;
   double pmed = celula[i].presaux;
   double rhog;
   double rhol=1000.;
@@ -28497,13 +20489,9 @@ void SProd::RenovaMassPerm(int i) {
 		rs = celula[i].flui.RS(pmed, tmed);
 		bo = celula[i].flui.BOFunc(pmed, tmed,rs);
 		rs = rs * 6.29 / 35.31467;
-		//ba = celula[i].flui.BAFunc(pmed, tmed);
-		//double fw = celula[i].flui.BSW*ba / (bo + ba*celula[i].flui.BSW - celula[i].flui.BSW * bo);
 		double rhogstd = celula[i].flui.Deng * 1.225;
 		double rhololeostd = 1000. * 141.5 / (131.5 + celula[i].flui.API);
-		//double rhoo=celula[i].rpCi = celula[i].flui.MasEspoleo(pmed, tmed);
 		double rhoa = celula[i].flui.Denag * 1000.;
-		//double denom=(celula[i].flui.RGO-rs)*rhogstd+rhoo*bo;
 
 
 		double denom = celula[i].flui.RGO * rhogstd + rhololeostd;
@@ -28529,7 +20517,6 @@ void SProd::RenovaMassPerm(int i) {
 		double tit=celula[i].flui.FracMass(pmed, tmed);
 		celula[i].Mliqini =	celula[i].MC*(1.-tit);
 	}
-    //celula[i].Mliqini=celula[i].MC-(celula[i].flui.RGO-rs)*rhogstd*qo;
     celula[i - 1].MliqiniR = celula[i].Mliqini;
     if (i < ncel) celula[i + 1].MliqiniL = celula[i].Mliqini;
     pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
@@ -28540,7 +20527,6 @@ void SProd::RenovaMassPerm(int i) {
     celula[i].rcCi=celula[i].fluicol.MasEspFlu(pmed, tmed);
     rhol = (1 - celula[i].bet) * celula[i].rpCi + celula[i].bet * celula[i].rcCi;
     //rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(pmed, tmed)
-        //+ celula[i].bet * celula[i].fluicol.MasEspFlu(pmed, tmed);
     //vazoes volumetricas:
     celula[i].QL = celula[i].Mliqini / rhol;
     if (i < ncel) celula[i + 1].QLL = celula[i].QL;
@@ -28692,17 +20678,6 @@ void SProd::RenovaMassPerm(int i) {
   					  / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
   			  double alfHomo=celula[i].QG / (celula[i].QG + celula[i].QL);
   			  if(celula[i].alf>1.-1e-15 || celula[i].alf<1e-15)celula[i].alf=alfHomo;
-  			  //if(fabs(alfHomo-celula[i].alf)>1.-alfHomo && alfHomo>0.95){
-  			  //celula[i].alf=alfHomo;
-  			  //}
-  			  /*{
-    	  	  if(iterperm<5)
-    	  	  celula[i].alf = celula[i].QG
-          	  / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
-    	  	  else
-        	  	  celula[i].alf = 0.5*( celula[i].QG
-              	  / (c0 * (celula[i].QG + celula[i].QL) + ud * area)+celula[i].alf);
-      	  }*/
 
   		  }
   		  else celula[i].alf = 0.;
@@ -28722,8 +20697,8 @@ void SProd::RenovaMassPerm(int i) {
   		  executarCorrelacao(celula, i, 0, arq.AceleraConvergPerm,
   		                         celula[i-1].correlacaoMR2,
   		                         holdup, frictionGrad, gravityGrad, totalGrad,
-  		                         reynolds, flowType/*,
-  		                         errorMsg, errorFlag*/);
+  		                         reynolds, flowType
+);
   		celula[i].alf = 1.-holdup;
   	  }
     }
@@ -28777,7 +20752,6 @@ void SProd::RenovaMassPerm(int i) {
   else celula[i].fluicol.TR=celula[i-1].fluicol.TR;
 
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SProd::RenovaMassPermRev(int i) {
 	  int mudaRGO=1;
 	  if(arq.flashCompleto==1)mudaRGO=1;
@@ -28786,7 +20760,6 @@ void SProd::RenovaMassPermRev(int i) {
 	  if(i==1){
 		  renovaFonte(i - 1);//metodo que verifica se existe uma fonte na celula e calcula o valor das
 		  //vazoes massicas de liquido produzido (oleo+agua), gas e liquido complementar
-		  ////////////////////////////////////////////////////////////////////////////////////////////
 		  //relacao entre fonte a esquerda e a direita de uma celula:
 		  celula[i].fontemassLL = celula[i-1].fontemassLR;
 		  celula[i].fontemassCL = celula[i-1].fontemassCR;
@@ -28920,8 +20893,6 @@ void SProd::RenovaMassPermRev(int i) {
 	  double tH;
 	  if(arq.flashCompleto == 1 && (70-arq.tabent.tmax) < (*vg1dSP).localtiny)tH=arq.tabent.tmax-0.1;
 	  else tH= 70.;
-	  //double tH = 70.;
-	  //double (*vg1dSP).RGOMax = 140000.;//no simulador, se admite este valor como o maximo de RGO
 	  double bo;
 	  double ba;
 	  double rs;
@@ -29038,7 +21009,6 @@ void SProd::RenovaMassPermRev(int i) {
 	      if (iterperm == 0) {//primeira estimativa, primeira iteracao
 	    	  //utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
 	    	  //fracao de vazio depende do valor da fracao de vazio
-	        //if (fabs(celula[i].QG + celula[i].QL) > localtiny) celula[i].alf = celula[i].QG / (celula[i].QG + celula[i].QL);
 	          if ((fabs(celula[i].QG) + fabs(celula[i].QL)) > (*vg1dSP).localtiny){
 	        	  celula[i].alf = fabs(celula[i].QG) /
 	        			  (fabs(celula[i].QG) + fabs(celula[i].QL));
@@ -29072,17 +21042,6 @@ void SProd::RenovaMassPermRev(int i) {
 	          / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
 	          double alfHomo=celula[i].QG / (celula[i].QG + celula[i].QL);
 	          if(celula[i].alf>1.-1e-15 || celula[i].alf<1e-15)celula[i].alf=alfHomo;
-	          //if(fabs(alfHomo-celula[i].alf)>1.-alfHomo && alfHomo>0.95){
-	        	  //celula[i].alf=alfHomo;
-	          //}
-	          /*{
-	    	  if(iterperm<5)
-	    	  celula[i].alf = celula[i].QG
-	          / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
-	    	  else
-	        	  celula[i].alf = 0.5*( celula[i].QG
-	              / (c0 * (celula[i].QG + celula[i].QL) + ud * area)+celula[i].alf);
-	      }*/
 
 	      }
 	      else celula[i].alf = 0.;
@@ -29127,7 +21086,6 @@ void SProd::RenovaMassPermRev(int i) {
 	  }
 
 	  if(fabs(celula[i].QL)>1e-15 && fabs(celula[i].MComp)>1e-15){
-//		  double dxmed=0.5*(celula[i-1].dx+celula[i].dx);
 		  double hol0=1.-celula[i-1].alf;
 		  double hol1=1.-celula[i].alf;
 		  celula[i].fluicol.TR=(celula[i-1].fluicol.TR*celula[i-1].MComp+celula[i-1].fontemassCR*trF)/celula[i].MComp;
@@ -29137,7 +21095,6 @@ void SProd::RenovaMassPermRev(int i) {
 	  else celula[i].fluicol.TR=0.;
 
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SProd::RenovaMassPermComp(int i) {
   int mudaRGO=1;
@@ -29149,25 +21106,12 @@ void SProd::RenovaMassPermComp(int i) {
   double fwF=1.;
   double rhoOF=900.;
   double rhoWF=1000.;
-  //double titF=0.;
 
   double mHidro=0.;
   double mComp;
   double trF=0.;
 
 
-  /*if(celula[i - 1].acsr.tipo == 1 && celula[i - 1].acsr.injg.QGas<0){
-     celula[i - 1].acsr.injg.FluidoPro=celula[i-1].flui;
-  }
-  else if(celula[i - 1].acsr.tipo == 2 && celula[i - 1].acsr.injl.QLiq<0){
-     celula[i - 1].acsr.injl.FluidoPro=celula[i-1].flui;
-  }
-  else if(celula[i - 1].acsr.tipo == 3 && celula[i - 1].acsr.ipr.Pres<celula[i - 1].pres){
-      celula[i - 1].acsr.ipr.FluidoPro=celula[i-1].flui;
-  }
-  else if(celula[i - 1].acsr.tipo == 10 && celula[i - 1].acsr.injm.MassC+celula[i - 1].acsr.injm.MassG+celula[i - 1].acsr.injm.MassP<0){
-	  celula[i - 1].acsr.injm.FluidoPro=celula[i-1].flui;
-  }*/
 
   if(celula[i - 1].acsr.tipo == 1){
 	  if(i>0 && (celula[i-1].flui.dCalculatedBeta>0. && celula[i-1].flui.dCalculatedBeta<1.))
@@ -29289,14 +21233,12 @@ void SProd::RenovaMassPermComp(int i) {
 
   renovaFonte(i - 1);//metodo que verifica se existe uma fonte na celula e calcula o valor das
   //vazoes massicas de liquido produzido (oleo+agua), gas e liquido complementar
-  ////////////////////////////////////////////////////////////////////////////////////////////
   //relacao entre fonte a esquerda e a direita de uma celula:
   celula[i].fontemassLL = celula[i-1].fontemassLR;
   celula[i].fontemassCL = celula[i-1].fontemassCR;
   celula[i].fontemassGL = celula[i-1].fontemassGR;
   mComp=celula[i].MComp=celula[i-1].MComp+celula[i-1].fontemassCR;
   celula[i].MC=celula[i-1].MC+celula[i-1].fontemassLR+celula[i-1].fontemassCR+celula[i-1].fontemassGR;
-  //celula[i].Mliqini=celula[i-1].Mliqini+celula[i-1].fontemassLR+celula[i-1].fontemassCR;
   if(i==0){
 	  if (celula[0].acsr.tipo == 15) celula[0].flui.BSW=celula[0].acsr.radialPoro.BSW;
 	  else if (celula[0].acsr.tipo == 16) celula[0].flui.BSW=celula[0].acsr.poroso2D.dados.transfer.BSW;
@@ -29307,14 +21249,12 @@ void SProd::RenovaMassPermComp(int i) {
   double vazMasLiqL=celula[i].MliqiniL;
   double vazMasGasL=celula[i].ML-celula[i].MliqiniL;
 
-  //double tL = 0.;
   //definicao de temperaturas maximas e minimas para uma eventual reavaliacao do metodo
   //ASTM quando ocorre mistura de fluidos e se deseja atualizar o modelo
   //de viscosidade de oleo morto se este for o ASTM que trabalha com um par de temperatura
   double tL=0;
   double tH=70.;
 
-  //double (*vg1dSP).RGOMax = 14000.;//no simulador, se admite este valor como o maximo de RGO
   double bo;
   double ba;
   double rs;
@@ -29349,7 +21289,6 @@ void SProd::RenovaMassPermComp(int i) {
 		  && celula[i - 1].acsr.tipo != 10 && (celula[i - 1].acsr.tipo != 9 ||
 		 (celula[i - 1].acsr.tipo == 9 && celula[i - 1].acsr.fontechk.abertura<=1e-6)) &&
 		 celula[i - 1].acsr.tipo != 15 && celula[i - 1].acsr.tipo != 16) {
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////
       //neste caso, variaveis como RGO de separador, BSW, API, densidade de gas e outras nÃ£o muda, sao iguais
 	  //aos valores da celula i-1
 	  double hol = 1 - celula[i - 1].alf;
@@ -29362,7 +21301,6 @@ void SProd::RenovaMassPermComp(int i) {
       //deve ser calculado, pois Ã© utilizado como entrada no transiente
       celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
       if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	   celula[i].flui.BSW = celula[i - 1].flui.BSW;
 
@@ -29372,35 +21310,28 @@ void SProd::RenovaMassPermComp(int i) {
  	  titV=(1-fwV)*rhoOV/((1-fwV)*rhoOV+fwV*rhoWV);
 
 	   for(int j=0; j<celula[i].flui.npseudo;j++)celula[i].flui.fracMol[j]=celula[i-1].flui.fracMol[j];
-	   if(i>1 /*&& arq.tabelaDinamica==0*/){
-		   //celula[i].flui.atualizaPropCompStandard(celula[i-1].flui.dCalculatedBeta,
-			   //celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
+	   if(i>1 ){
 			  celula[i].flui.iCalculatedStockTankThermodynamicCondition=celula[i-1].flui.iCalculatedStockTankThermodynamicCondition;
 			  celula[i].flui.dStockTankVaporMassFraction=celula[i-1].flui.dStockTankVaporMassFraction;
 			  celula[i].flui.dStockTankLiquidDensity=celula[i-1].flui.dStockTankLiquidDensity;
 			  celula[i].flui.dStockTankVaporDensity=celula[i-1].flui.dStockTankVaporDensity;
 
-			  //celula[i].flui.API=141.5/(celula[i].flui.dStockTankLiquidDensity/1000.)-131.5;
 	     	  if(celula[i].flui.dStockTankLiquidDensity>0.01){
 	     		  celula[i].flui.API=141.5/(celula[i].flui.dStockTankLiquidDensity/1000.)-131.5;
 	     	  }
 	     	  else celula[i].flui.API=50;
 			  celula[i].flui.Deng=celula[i].flui.dStockTankVaporDensity/1.225;
-	   //yco2=0.;
 			  celula[i].flui.RGO=celula[i-1].flui.RGO;
 			  celula[i].flui.IRGO=celula[i-1].flui.IRGO;
 	   }
-	   else /*if(arq.tabelaDinamica==0)*/{
+	   else {
 		   celula[i].flui.atualizaPropCompStandard();
 	   }
 
-       //if (celula[i - 1].bet > localtiny*1e-5)
        if(arq.tipoFluido==0){//reavaliacao da fracao volumetrica do liquido complementar
     	   //mesmo que nÃ£o tenha fonte, ela pode mudar, devido ao encolhimento do liquido produzido
          double boI;
          double baI;
-         //double rc=celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
- 		 //double qc=mComp/rc;
          if(celula[i].flui.RGO<1e6)boI= celula[i].flui.BOFunc(celula[i].presaux, tmed);
          else boI=1.;
          baI= celula[i].flui.BAFunc(celula[i].presaux, tmed);
@@ -29409,39 +21340,16 @@ void SProd::RenovaMassPermComp(int i) {
          double qw;
          if (fwI < (1 - (*vg1dSP).localtiny*1e-5)) qw = fwI * qo / (1 - fwI);
          else qw = celula[i - 1].QL * (1 - celula[i - 1].bet);
-         //mHidro=qo*celula[i].flui.MasEspoleo(celula[i].presaux, tmed)+celula[i-1].MC-celula[i-1].Mliqini;
          double qc;
          qc= celula[i - 1].QL * (celula[i - 1].bet)
                       * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
                       / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-         //mComp=qc*celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
 
          ////////////////////////esperar//////////////////////////////////////
          if(fabs(qo + qw + qc)>1e-15)
-        	 //celula[i].bet = qc / (qo + qw + qc);
         	 celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
          else celula[i].bet = celula[i - 1].bet;
        } else{
-    	   /*celula[i].bet = celula[i - 1].bet;
-           double boI;
-           double baI;
-           if(celula[i].flui.RGO<1e6)boI= celula[i].flui.BOFunc(celula[i].presaux, tmed);
-           else boI=1.;
-           baI= celula[i].flui.BAFunc(celula[i].presaux, tmed);
-           double fwI = celula[i].flui.BSW*baI / (boI + baI*celula[i].flui.BSW - celula[i].flui.BSW * boI);
-           double qo = celula[i - 1].QL * (1 - celula[i - 1].FW) * (1 - celula[i - 1].bet) * boI / bo;
-           double qw;
-           if (fwI < (1 - localtiny*1e-5)) qw = fwI * qo / (1 - fwI);
-           else qw = celula[i - 1].QL * (1 - celula[i - 1].bet);
-           mHidro=qo*celula[i].flui.MasEspoleo(celula[i].presaux, tmed)+celula[i-1].MC-celula[i-1].Mliqini;
-           double qc;
-           //if(celula[i].flui.RGO<1e6) qc= celula[i - 1].QL * (celula[i - 1].bet)
-               //* celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
-               /// celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-           //else qc=0.;
-           qc= celula[i - 1].QL * (celula[i - 1].bet)
-                        * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
-                        / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);*/
     	   mHidro=celula[i].MC-mComp;
        }
   }
@@ -29464,13 +21372,10 @@ void SProd::RenovaMassPermComp(int i) {
     		  double razMolV=1.;
     		  if(fabs(vazMolV+vazMolF)>1e-15)razMolV=vazMolV/(vazMolV+vazMolF);
     		  if(vazMolF>0.){
-    			  //double fracTotal=0.;
     			  for(int j=0; j<celula[i].flui.npseudo; j++){
     				  celula[i].flui.fracMol[j]=razMolV*celula[i-1].flui.fracMol[j]+
     					  (1.-razMolV)*fluF.fracMol[j];
-    				  //fracTotal+=celula[i].flui.fracMol[j];
     			  }
-    			  //for(int j=0; j<celula[i].flui.npseudo; j++)celula[i].flui.fracMol[j]/=fracTotal;
     		  }
     		  else{
     			  for(int j=0; j<celula[i].flui.npseudo; j++)
@@ -29480,70 +21385,14 @@ void SProd::RenovaMassPermComp(int i) {
 			  for(int j=0; j<celula[i].flui.npseudo; j++)
 				  celula[i].flui.Pmol+=celula[i].flui.fracMol[j]*celula[i].flui.masMol[j];
 
-    		  /*if(i-1>0)
-    		  	 celula[i].flui.atualizaPropCompStandard(celula[i-1].flui.dCalculatedBeta,
-    		  		celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-    	  	  else*/
 
     		  celula[i].flui.atualizaPropCompStandard();
     	  }
-          ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    	  /*double pmed = celula[i].presaux+ celula[i - 1].dpB / 98066.5;
-    	    double rhog;
-    	    double rhol;
-    	    //calculo da vazao massica de liquido e das vazoes volumetricas:
-    	    //if(celula[i].flui.RGO<1e6){//Caso exista liquido
 
-    	  	//if(i>0)
-    	  	  //	celula[i].flui.atualizaPropComp(pmed, tmed,celula[i-1].flui.dCalculatedBeta,
-    	  		//	  celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-    	  	//else
-    	  	if(((iterperm==0 && i<=1 && buscaIni==0) && ((*vg1dSP).chaverede==0 || (*vg1dSP).iterRede==1)) && arq.tabelaDinamica==0){
-    	      //if(iterperm==0 && i<=1)
-    	  		celula[i].flui.atualizaPropComp(pmed, tmed,-1,NULL,NULL,arq.pocinjec);
-    	  	}
-    	  	else if(arq.tabelaDinamica==0){
-    	  		if((iterperm==0 && buscaIni==0) && ((*vg1dSP).chaverede==0 || (*vg1dSP).iterRede==1)){
-    	  			int veriI=i-1;
-    	  			while((celula[veriI].flui.dCalculatedBeta>1-(0.0+1e-15) || celula[veriI].flui.dCalculatedBeta<(0.0+1e-15))
-    	  					&& (veriI>0 ))veriI--;
-    	  			if((veriI==0 ) && (celula[veriI].flui.dCalculatedBeta>1-(0.0+1e-15)
-    	  					|| celula[veriI].flui.dCalculatedBeta<(0.0+1e-15)))veriI=i-1;
-    	  				celula[i].flui.atualizaPropComp(pmed, tmed,celula[veriI].flui.dCalculatedBeta,celula[veriI].flui.oCalculatedLiqComposition,
-    	  					celula[veriI].flui.oCalculatedVapComposition,arq.pocinjec);
-    	  		}
-    	  		else{
-    	  			int veriI;
-    	  			int veriIinf=i;
-    	  			while((celula[veriIinf].flui.dCalculatedBeta>1-1e-15 ||
-    	  					celula[veriIinf].flui.dCalculatedBeta<1e-15) && veriIinf>0)veriIinf--;
-    	  			int veriIsup=i;
-    	  			while((celula[veriIsup].flui.dCalculatedBeta>1-1e-15 ||
-    	  					celula[veriIsup].flui.dCalculatedBeta<1e-15) && veriIsup<ncel)veriIsup++;
-    	  			if((celula[veriIinf].flui.dCalculatedBeta>1-1e-15 ||
-    	  					celula[veriIinf].flui.dCalculatedBeta<1e-15) &&
-    	  					(celula[veriIsup].flui.dCalculatedBeta<1. &&
-    	  					celula[veriIsup].flui.dCalculatedBeta>0.)) veriI=veriIsup;
-    	  			else if((celula[veriIsup].flui.dCalculatedBeta>1-1e-15
-    	  					 || celula[veriIsup].flui.dCalculatedBeta<1e-15)&&
-    	  					(celula[veriIinf].flui.dCalculatedBeta<1.
-    	  					&& celula[veriIinf].flui.dCalculatedBeta>0.)) veriI=veriIinf;
-    	  			else if(fabs(i-veriIsup)<fabs(i-veriIinf))veriI=veriIsup;
-    	  			else veriI=veriIinf;
-    	  			celula[i].flui.atualizaPropComp(pmed, tmed,celula[veriI].flui.dCalculatedBeta,celula[veriI].flui.oCalculatedLiqComposition,
-    	  						celula[veriI].flui.oCalculatedVapComposition,arq.pocinjec);
-    	  		}
-    	  	}
-    	  	//if(i>0 && celula[i-1].flui.dVaporMassFraction>(1-1.E-15) && celula[i].flui.dVaporMassFraction<(1.E-15))
-    	  		//celula[i].flui.atualizaPropComp(pmed, tmed,-1,NULL,NULL,arq.pocinjec);
-    	  	double titulo=celula[i].flui.dVaporMassFraction;*/
 
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double api = celula[i - 1].flui.API;
-//          double rhololeo = 1000. * 141.5 / (131.5 + api);
-//          double rhololeoF = 1000. * 141.5 / (131.5 + fluF.API);
           double rholis=celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
           double rholisF;
           double boinjl;
@@ -29568,15 +21417,12 @@ void SProd::RenovaMassPermComp(int i) {
         	  qostd1= celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) /(bo * rholis);
           else qostd1=0.;
 
-          //double qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) * (1. - celula[i - 1].acsr.injl.bet)
-             // / (boinjl * rholisF);
           //vazao de oleo standard da fonte:
           double qostd2;
           if(fluF.dStockTankVaporMassFraction<1.-1e-15)
         	  qostd2= celula[i - 1].fontemassLR * (1. - fwinjl)/ (boinjl * rholisF);
           else qostd2=0.;
 
-          ///////////////////////////////////////////////////////////////////////////////////////////////////////////
           double hol = 1 - celula[i - 1].alf;
           double bet = celula[i - 1].bet;
           double bsw = celula[i - 1].FW;
@@ -29587,7 +21433,6 @@ void SProd::RenovaMassPermComp(int i) {
           //pois Ã© utilizado como entrada no transiente
           celula[i-1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
           if (celula[i-1].VolLeveST< 1e-15) celula[i-1].VolLeveST = 0.;
-         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
          if (arq.trackRGO == -1) {
    		  //esta chave nÃ£o Ã© utilizada, Ã© mantida aqui como reserva, atualmente este
    		  //calculo nÃ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
@@ -29598,21 +21443,21 @@ void SProd::RenovaMassPermComp(int i) {
          }
 
          double qw1;
-         if ((1. - celula[i - 1].flui.BSW) > 0/* && arq.flashCompleto==0 */)
+         if ((1. - celula[i - 1].flui.BSW) > 0)
          	qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-         else /*if(arq.flashCompleto==0)*/
+         else
          	qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet)
 				     / (1000. * celula[i - 1].flui.Denag);
          double qw2;
-         if ((1. - fluF.BSW) > 0 /*&& arq.flashCompleto==0*/)
+         if ((1. - fluF.BSW) > 0 )
          	qw2 = qostd2 * fluF.BSW
             / (1. - fluF.BSW);
-         else /*if(arq.flashCompleto==0)*/
+         else
          	qw2 = celula[i - 1].fontemassLR * fwinjl/ (1000. * fluF.Denag);
 
-         if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 && fabs(qw2 + qostd2) > 1e-15 && celula[i - 1].fontemassLR>1e-15/*&& arq.flashCompleto==0*/)
+         if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 && fabs(qw2 + qostd2) > 1e-15 && celula[i - 1].fontemassLR>1e-15)
          	celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
-         else /*if(arq.flashCompleto==0)*/ celula[i].flui.BSW = celula[i - 1].flui.BSW;
+         else  celula[i].flui.BSW = celula[i - 1].flui.BSW;
 
          if (fabs(qw1 + qw2)>1e-15 && celula[i - 1].fontemassLR>1e-15)celula[i].flui.Denag=(qw1*celula[i - 1].flui.Denag+
          		qw2*fluF.Denag)/(qw1+qw2);
@@ -29633,7 +21478,6 @@ void SProd::RenovaMassPermComp(int i) {
              celula[i].flui.LVisH = celula[i-1].flui.LVisH;
          }
 
-         //if (celula[i - 1].bet > localtiny*1e-5 || fabs(celula[i - 1].fontemassCR) > localtiny*1e-5) {
          if(arq.tipoFluido==0){
            	 //reavaliacao da fracao volumetrica do liquido complementar
           	 //observar que a fonte de liquido pode ter uma fracao de liquido complementar
@@ -29653,42 +21497,16 @@ void SProd::RenovaMassPermComp(int i) {
             double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) /
             		(celula[i - 1].QL + qlpF + qlcF);
             double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            //mHidro=qo*celula[i].flui.MasEspoleo(celula[i].presaux, tmed)+celula[i].MC-celula[i].Mliqini;
             double qw;
             if (fwI < (1 - (*vg1dSP).localtiny*1e-5)) qw = fwI * qo / (1 - fwI);
             else qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
             double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
              * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
              / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            //mComp=qc*celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
             if(fabs(qo + qw + qc)>1e-15)
-            	//celula[i].bet = qc / (qo + qw + qc);
             	celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
             else celula[i].bet = celula[i - 1].bet;
         } else{
-        	/*celula[i].bet = celula[i - 1].bet;
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW*baN /
-            		(boN + baN*celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            double boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            double baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            double fwI = celula[i].flui.BSW*baI /
-            		(boI + baI*celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR
-               / fluF.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = celula[i - 1].fontemassCR
-              / celula[i].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) /
-            		(celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            mHidro=qo*celula[i].flui.MasEspoleo(celula[i].presaux, tmed)+celula[i].MC-celula[i].Mliqini;
-            double qw;
-            if (fwI < (1 - localtiny*1e-5)) qw = fwI * qo / (1 - fwI);
-            else qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF)
-             * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
-             / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);*/
             mHidro=celula[i].MC-mComp;
         }
   }
@@ -29697,28 +21515,16 @@ void SProd::RenovaMassPermComp(int i) {
   celula[i - 1].MR = celula[i].MC;
   if (i < ncel) celula[i + 1].ML = celula[i].MC;
   celula[i - 1].MRini = celula[i - 1].MR;
-//	double tmed;
-//	if(iterperm!=0)tmed=(celula[i].dx*celula[i].temp+celula[i].dxL*celula[i].tempL)/
-//			         (celula[i].dx+celula[i].dxL);
-//	else tmed=celula[i-1].temp;
 
   double pmed = celula[i].presaux+ celula[i - 1].dpB / 98066.5;
   double rhog;
   double rhol;
   //calculo da vazao massica de liquido e das vazoes volumetricas:
-  //if(celula[i].flui.RGO<1e6){//Caso exista liquido
 
-	//if(i>0)
-	  //	celula[i].flui.atualizaPropComp(pmed, tmed,celula[i-1].flui.dCalculatedBeta,
-		//	  celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-	//else
 	if(((iterperm==0 && i<=1 && buscaIni==0) && ((*vg1dSP).chaverede==0 || (*vg1dSP).iterRede==1)) && arq.tabelaDinamica==0){
-    //if(iterperm==0 && i<=1)
 		celula[i].flui.atualizaPropComp(pmed, tmed,-1,NULL,NULL,arq.pocinjec);
 	}
 	else if(arq.tabelaDinamica==0){
-		//celula[i].flui.atualizaPropComp(pmed, tmed,-1,NULL,NULL,arq.pocinjec);
-		//if(celula[i].flui.iIER!=0){
 		if((iterperm==0 && buscaIni==0) && ((*vg1dSP).chaverede==0 || (*vg1dSP).iterRede==1)){
 			int veriI=i-1;
 			while((celula[veriI].flui.dCalculatedBeta>1-(0.0+1e-15) || celula[veriI].flui.dCalculatedBeta<(0.0+1e-15))
@@ -29759,14 +21565,9 @@ void SProd::RenovaMassPermComp(int i) {
 			int para;
 			para=0;
 		}
-		//}
 	}
-	//if(i>0 && celula[i-1].flui.dVaporMassFraction>(1-1.E-15) && celula[i].flui.dVaporMassFraction<(1.E-15))
-		//celula[i].flui.atualizaPropComp(pmed, tmed,-1,NULL,NULL,arq.pocinjec);
 	double titulo=celula[i].flui.dVaporMassFraction;
 
-	//if(celula[i].flui.tabelaDinamica==0)titulo=celula[i].flui.dVaporMassFraction;
-	//else titulo=celula[i].flui.FracMass(pmed,tmed);
 	double betI;
 	double fwI;
 	ProFlu fluI;
@@ -29786,20 +21587,11 @@ void SProd::RenovaMassPermComp(int i) {
 		bo = celula[i].flui.BOFunc(pmed, tmed,rs);
 		rs = rs * 6.29 / 35.31467;
 		ba = celula[i].flui.BAFunc(pmed, tmed);
-		//double fw = celula[i].flui.BSW*ba / (bo + ba*celula[i].flui.BSW - celula[i].flui.BSW * bo);
 		double rhogstd = celula[i].flui.Deng * 1.225;
 		double rhololeostd = 1000. * 141.5 / (131.5 + celula[i].flui.API);
-		//double rhoo=celula[i].rpCi = celula[i].flui.MasEspoleo(pmed, tmed);
 		double rhoa = celula[i].flui.Denag * 1000.;
-		//double denom=(celula[i].flui.RGO-rs)*rhogstd+rhoo*bo;
 
 
-		/*double denom = celula[i].flui.RGO * rhogstd + rhololeostd;
-    	if (fabs(1 - celula[i].flui.BSW) > localtiny) {
-      	  denom += rhoa * celula[i].flui.BSW / (1 - celula[i].flui.BSW);
-      	  if (fabs(1 - celula[i].bet) > localtiny) denom += (celula[i].fluicol.MasEspFlu(pmed, tmed) * celula[i].bet
-          	  / (1 - celula[i].bet)) * (bo + celula[i].flui.BSW / (1 - celula[i].flui.BSW));
-    	}*/
 		if(titulo<1.-1e-15)
 			celula[i].FW = celula[i].flui.BSW*ba / (bo + ba*celula[i].flui.BSW -
         		             celula[i].flui.BSW * bo);
@@ -29829,7 +21621,6 @@ void SProd::RenovaMassPermComp(int i) {
 	else{
 		double ro=celula[i].flui.MasEspoleo(pmed, tmed);
 		double rc=celula[i].fluicol.MasEspFlu(pmed, tmed);
-//		double	rmix=rc * celula[i].bet+(1 - celula[i].bet)*ro;
 		double qo=mHidro*(1.-titulo)/ro;
 		double qc=mComp/rc;
 		if(fabs(qo+qc)>1e-15)celula[i].bet = qc / (qo  + qc);
@@ -29837,8 +21628,6 @@ void SProd::RenovaMassPermComp(int i) {
 		double bet=celula[i].bet;
 		double denom;
 		if(titulo<1.-1e-15){
-			//denom=rc*bet+(1.-bet)*ro/(1-titulo);
-			//celula[i].QL = celula[i].MC/denom;
 			denom=rc*bet+(1.-bet)*ro;
 			celula[i].QL = (mHidro*(1.-titulo)+mComp)/denom;
 			celula[i].Mliqini =celula[i].QL*(celula[i].bet*rc+(1 - celula[i].bet)*ro);
@@ -29852,44 +21641,12 @@ void SProd::RenovaMassPermComp(int i) {
 			celula[i].QL=0.;
 		}
 	}
-				/*if(titulo<1.-1e-15)
-					celula[i].FW = celula[i].flui.BSW*ba / (bo + ba*celula[i].flui.BSW -
-		        		             celula[i].flui.BSW * bo);
-				else celula[i].FW =1.;
 
-				if(celula[i].MC>=0 && i>0)fwI=celula[i-1].FW;
-				fwI=celula[i].FW;
 
-				double ro=fluI.MasEspoleo(pmed, tmed);
-				double ra=fluI.MasEspAgua(pmed, tmed);
-				double rc=fluCI.MasEspFlu(pmed, tmed);
-				double	denom=rc * betI+(1 - betI)*fwI*ra;
-				if(titulo<1.-1e-15){
-					denom+=(1 - betI)*(1.-fwI)*ro/(1.-titulo);
-					celula[i].QL = celula[i].MC/denom;
 
-					celula[i].Mliqini =celula[i].QL*(betI*rc+(1 - betI)*(fwI*ra+(1.-fwI)*ro));
-				}
-				else if(fluI.BSW>1.e-15 || betI>1.e-15){
-					celula[i].Mliqini=celula[i-1].QL*celula[i-1].rpCi*(1.-celula[i-1].betI)*(1.-titV)+
-		        		celula[i-1].fontemassLR*(1.-titF)+
-		    			celula[i-1].QL*celula[i-1].betI*celula[i-1].rcCi+celula[i-1].fontemassCR;
-					celula[i].QL=celula[i].Mliqini/denom;
-				}
-				else{
-					celula[i].Mliqini=0.;
-					celula[i].QL=0.;
-				}
-			}
-			else{
-				double ro=celula[i].flui.MasEspoleo(pmed, tmed);
-				celula[i].Mliqini =celula[i].MC*(1.-celula[i].flui.dVaporMassFraction);
-				celula[i].QL = celula[i].Mliqini/ro;
-			}*/
 
     celula[i - 1].MliqiniR = celula[i].Mliqini;
     if (i < ncel) celula[i + 1].MliqiniL = celula[i].Mliqini;
-    //pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
     rhog=celula[i].rgCi = celula[i].flui.MasEspGas(pmed, tmed);
 
     //calculo das massas especificas na interface a esquerda da celula
@@ -29897,26 +21654,10 @@ void SProd::RenovaMassPermComp(int i) {
     celula[i].rcCi=celula[i].fluicol.MasEspFlu(pmed, tmed);
     rhol = (1 - celula[i].bet) * celula[i].rpCi + celula[i].bet * celula[i].rcCi;
     //rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(pmed, tmed)
-        //+ celula[i].bet * celula[i].fluicol.MasEspFlu(pmed, tmed);
     //vazoes volumetricas:
-    //celula[i].QL = celula[i].Mliqini / rhol;
     if (i < ncel) celula[i + 1].QLL = celula[i].QL;
     celula[i - 1].QLR = celula[i].QL;
     celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rhog;
-  /*}
-  else{
-	  celula[i].Mliqini =0.;
-	  celula[i - 1].MliqiniR = celula[i].Mliqini;
-	  if (i < ncel) celula[i + 1].MliqiniL = celula[i].Mliqini;
-	  celula[i].QL = 0.;
-	  if (i < ncel) celula[i + 1].QLL = celula[i].QL;
-	  celula[i - 1].QLR = celula[i].QL;
-	  pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
-	  celula[i].rpCi=celula[i].flui.MasEspLiq(pmed, tmed);
-	  celula[i].rcCi=celula[i].fluicol.MasEspFlu(pmed, tmed);
-	  rhog =celula[i].rgCi =  celula[i].flui.MasEspGas(pmed, tmed);
-	  celula[i].QG = (celula[i].MC) / rhog;
-  }*/
   //Definicao das fracoes volumetricas:
     if(fabs(celula[i].QG+celula[i].QL)<(*vg1dSP).localtiny*1e-5){
   	  if(arq.tipoFluido==1){
@@ -30014,7 +21755,6 @@ void SProd::RenovaMassPermComp(int i) {
       if (iterperm == 0) {//primeira estimativa, primeira iteracao
     	  //utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
     	  //fracao de vazio depende do valor da fracao de vazio
-        //if (fabs(celula[i].QG + celula[i].QL) > localtiny*1e-5) celula[i].alf = fabs(celula[i].QG) / (fabs(celula[i].QG) + fabs(celula[i].QL));
           if ((fabs(celula[i].QG) + fabs(celula[i].QL)) > (*vg1dSP).localtiny){
         	  if(monitConvPerm>0.01)
         	  celula[i].alf = fabs(celula[i].QG) /
@@ -30049,17 +21789,6 @@ void SProd::RenovaMassPermComp(int i) {
             / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
             double alfHomo=celula[i].QG / (celula[i].QG + celula[i].QL);
             if(celula[i].alf>1.-1e-15 || celula[i].alf<1e-15)celula[i].alf=alfHomo;
-          // if(fabs(alfHomo-celula[i].alf)>1.-alfHomo && alfHomo>0.95){
-          //	  celula[i].alf=alfHomo;
-          // }
-          /*{
-          if(iterperm<5)
-          celula[i].alf = celula[i].QG
-            / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
-          else
-              celula[i].alf = 0.5*( celula[i].QG
-                / (c0 * (celula[i].QG + celula[i].QL) + ud * area)+celula[i].alf);
-        }*/
         }
         else celula[i].alf = 0.;
         if (celula[i].alf > (1 - (*vg1dSP).localtiny) && fabs(celula[i].QG + celula[i].QL) > (*vg1dSP).localtiny*1e-5)
@@ -30083,8 +21812,8 @@ void SProd::RenovaMassPermComp(int i) {
         executarCorrelacao(celula, i, 0, arq.AceleraConvergPerm,
                               celula[i-1].correlacaoMR2,
                               holdup, frictionGrad, gravityGrad, totalGrad,
-                              reynolds, flowType/*,
-                              errorMsg, errorFlag*/);
+                              reynolds, flowType
+);
         celula[i].alf = 1.-holdup;
     }
     if(celula[i].alf <0.)celula[i].alf = 0.;
@@ -30129,7 +21858,6 @@ void SProd::RenovaMassPermComp(int i) {
     }
     else celula[i].fluicol.TR=celula[i-1].fluicol.TR;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SProd::RenovaMassPermCompRev(int i) {
 	  int mudaRGO=1;
@@ -30139,7 +21867,6 @@ void SProd::RenovaMassPermCompRev(int i) {
 	  if(i==1){
 		  renovaFonte(i - 1);//metodo que verifica se existe uma fonte na celula e calcula o valor das
 		  //vazoes massicas de liquido produzido (oleo+agua), gas e liquido complementar
-		  ////////////////////////////////////////////////////////////////////////////////////////////
 		  //relacao entre fonte a esquerda e a direita de uma celula:
 		  celula[i].fontemassLL = celula[i-1].fontemassLR;
 		  celula[i].fontemassCL = celula[i-1].fontemassCR;
@@ -30232,7 +21959,6 @@ void SProd::RenovaMassPermCompRev(int i) {
 	  double pmed = celula[i].presaux;
 
 	  if(((iterperm==0 && i<=1 && buscaIni==0) && ((*vg1dSP).chaverede==0 || (*vg1dSP).iterRede==1)) && arq.tabelaDinamica==0){
-	    //if(iterperm==0 && i<=1)
 			celula[i].flui.atualizaPropComp(pmed, tmed,-1,NULL,NULL,arq.pocinjec);
 	  }
 	  else if(arq.tabelaDinamica==0){
@@ -30323,8 +22049,6 @@ void SProd::RenovaMassPermCompRev(int i) {
 	  double tH;
 	  if(arq.flashCompleto == 1 && (70-arq.tabent.tmax) < (*vg1dSP).localtiny)tH=arq.tabent.tmax-0.1;
 	  else tH= 70.;
-	  //double tH = 70.;
-	  //double (*vg1dSP).RGOMax = 140000.;//no simulador, se admite este valor como o maximo de RGO
 	  double bo;
 	  double ba;
 	  double rs;
@@ -30441,7 +22165,6 @@ void SProd::RenovaMassPermCompRev(int i) {
 	      if (iterperm == 0) {//primeira estimativa, primeira iteracao
 	    	  //utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
 	    	  //fracao de vazio depende do valor da fracao de vazio
-	       // if (fabs(celula[i].QG + celula[i].QL) > localtiny) celula[i].alf = celula[i].QG / (celula[i].QG + celula[i].QL);
 	          if ((fabs(celula[i].QG) + fabs(celula[i].QL)) > (*vg1dSP).localtiny){
 	        	  celula[i].alf = fabs(celula[i].QG) /
 	        			  (fabs(celula[i].QG) + fabs(celula[i].QL));
@@ -30475,17 +22198,6 @@ void SProd::RenovaMassPermCompRev(int i) {
 	          / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
 	          double alfHomo=celula[i].QG / (celula[i].QG + celula[i].QL);
 	          if(celula[i].alf>1.-1e-15 || celula[i].alf<1e-15)celula[i].alf=alfHomo;
-	          //if(fabs(alfHomo-celula[i].alf)>1.-alfHomo && alfHomo>0.95){
-	        	  //celula[i].alf=alfHomo;
-	          //}
-	          /*{
-	    	  if(iterperm<5)
-	    	  celula[i].alf = celula[i].QG
-	          / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
-	    	  else
-	        	  celula[i].alf = 0.5*( celula[i].QG
-	              / (c0 * (celula[i].QG + celula[i].QL) + ud * area)+celula[i].alf);
-	      }*/
 
 	      }
 	      else celula[i].alf = 0.;
@@ -30539,7 +22251,6 @@ void SProd::RenovaMassPermCompRev(int i) {
 	  else celula[i].fluicol.TR=celula[i-1].fluicol.TR;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
 
@@ -30557,7 +22268,6 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
 
     double hol0 = hns;
     double alf0 = 1 - hol0;
-    //double razdx1 = celula[ind].dxR / (celula[ind].dxR + celula[ind].dx);
     double alf1;
     alf1 = celula[ind].alf;
 
@@ -30627,26 +22337,13 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
     double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) /  (viscl1/1000.);
 
     int xarr1 = 1;
-    double dtot = celula[ind].dxL + celula[ind].dx /*+ 0 * celula[ind].dxR*/;
+    double dtot = celula[ind].dxL + celula[ind].dx ;
     double razL = celula[ind].dxL;
     double raz = celula[ind].dx;
-    //double razR = 0 * celula[ind].dxR;
-    double ang = (razL * celula[ind].dutoL.teta + raz * celula[ind].duto.teta /*+ razR * celula[ind].dutoR.teta*/)
+    double ang = (razL * celula[ind].dutoL.teta + raz * celula[ind].duto.teta )
         / dtot;
     double sinalAng=1.;
     if(fabs(celula[ind].MC)>1e-15)sinalAng=celula[ind].MC/fabs(celula[ind].MC);
-    /*if (ind >= 2) {
-      if (celula[ind - 2].acsr.tipo == 5 && celula[ind - 2].acsr.chk.AreaGarg <= (1e-3))
-        ang = sinalAng*celula[ind].duto.teta;
-      else
-        ang = sinalAng*celula[ind].dutoL.teta;
-    }*/
-    /*double sinal = 1.;
-    if (ang < 0.)
-      sinal = -1.;
-    double xc0 = 2.;
-    double xud = sinal * 0.0246 * cos(ang)
-        + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
     if(rgm<0.9*rlm){
     if (nrey > 1e-30) {
       if (fabs(0 * ang + sinalAng * celula[ind].duto.teta) < 45. * M_PI / 180. && hol0 < 0.99 && hol0 > 0.01
@@ -30670,11 +22367,7 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
             sinalAng*celula[ind].duto.teta, celula[ind].duto.rug / dia1);
 
         testamapa.mapaTD();
-        //testamapa.mapa(dia1,1.-hol0);
-        //double chute=testamapa.mapa2(celula[ind].chutearranjo);
-        //celula[ind].chutearranjo=chute;
         xarr1 = testamapa.arr;
-        //xarr1=1;
         if (xarr1 == -1) {
           if (((celula[ind].arranjo != xarr1) || celula[ind].transic > 0)) {
             if ((celula[ind].arranjo != xarr1) && celula[ind].transic > 0)
@@ -30689,13 +22382,6 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
             celula[ind - 1].perdaEstratL = testamapa.fatorperdaLiq;
             celula[ind - 1].perdaEstratG = testamapa.fatorperdaGas;
           }
-          /*sinal = 1.;
-          if (ang < 0.)
-            sinal = -1.;
-          double xc0C = 2. / (1 + pow(nrey / 1000., 2.))
-              + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
-          double udC = sinal * 0.0246 * cos(ang)
-              + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
 
           double c0D;
           double udD;
@@ -30716,17 +22402,11 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
           double alf0E = celula[ind].alf;
           if (ind > 0)
             alf0E = celula[ind - 1].alf;
-          /*xc0 = 1.;
 
-          c0 = xc0;
 
-          c0 = xc0 = 1.;
-          ud = xud;*/
 
           double jmax=0.05;
           double jmin=0.005;
-          //double jmax=0.5;
-          //double jmin=0.1;
           if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
             c0 = c0E;
             ud = udE;
@@ -30747,24 +22427,13 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
             sinalAng*celula[ind].duto.teta, tensup1, arq.mapaArranjo,vg1dSP);
         xarr1 = testamapa2.verificaArr();
 
-        /*double sinal = 1.;
-        if (ang < 0.)
-          sinal = -1.;
-        c0 = 2. / (1 + pow(nrey / 1000., 2.))
-            + (1.2 - 0.2 * sqrt(rgm / rlm) * (1 - exp(-18 * alf0))) / (1 + pow(1000. / nrey, 2.));
 
-        ud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(ang);*/
         C0UdDisperso(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         		c0, ud, correcHor,celula[ind].estabCol);
         if (xarr1 == -2) {
-          /*c0 = 1. + (1. - alf0) / (alf0 + 4. * sqrt(rgm / rlm));
-          ud = sinal * (1. - alf0)
-              / (alf0 + 4. * sqrt(rgm / rlm) * sqrt(9.82 * dia1 * (rlm - rgm) * (1. - alf0)) / (0.015 * rgm));*/
           C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey,nreyl, ug1, ul1, dia1,celula[ind].duto.rug, ang,
         		  c0, ud, correcHor,celula[ind].estabCol);
         }
-        /*double udM = sinal * 0.0246 * cos(celula[ind].dutoL.teta)
-            + 1.606 * pow(9.82 * tensup1 * (rlm - rgm) / (rlm * rlm), 0.25) * sin(celula[ind].dutoL.teta);*/
         celula[ind].arranjo = xarr1;
         if (ind > 0)
           celula[ind - 1].arranjoR = xarr1;
@@ -30802,68 +22471,12 @@ void SProd::CalcC0UdPerm(int ind, double& c0, double& ud) {
 
 }
 
-/*void SProd::RenovaTransMassPerm(int i) {
 
-  ProFlu flue;
-  ProFlu flud;
-  double fwd;
-  double fwe;
 
-  double razdx = celula[i].dxR / (celula[i].dx + celula[i].dxR);
-  double razdxL = celula[i].dx / (celula[i].dx + celula[i].dxL);
-  double tmed;
-  tmed = razdx * celula[i + 1].temp + (1 - razdx) * celula[i].temp;
-  double tmed0;
-  if (i > 1){
-	  tmed0 = razdxL * celula[i].temp + (1 - razdxL) * celula[i - 1].temp;
-  }
-  else tmed0 = celula[i].temp;
 
-  flud = celula[i].flui;
-  double bo1 = flud.BOFunc(celula[i].pres, celula[i].temp);
-  double ba1 = flud.BAFunc(celula[i].pres, celula[i].temp);
-  fwd = flud.BSW*ba1 / (bo1 + ba1*flud.BSW - flud.BSW * bo1);
-  double rsR = flud.RS(celula[i + 1].presaux, tmed);
-  double boR = flud.BOFunc(celula[i + 1].presaux, tmed);
-  if (i > 0) flue = celula[i - 1].flui;
-  else flue = celula[i].flui;
-  double bo0;
-  double ba0;
-  if (i > 0){
-	  bo0 = flue.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-	  ba0 = flue.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-  }
-  else{
-	  bo0 = flue.BOFunc(celula[i].pres, celula[i].temp);
-	  ba0 = flue.BAFunc(celula[i].pres, celula[i].temp);
-  }
-  fwe = flue.BSW*ba0/ (bo0 + ba0*flue.BSW - flue.BSW * bo0);
-  double rsL = flud.RS(celula[i].presaux, tmed0);
-  double boL = flue.BOFunc(celula[i].presaux, tmed0);
-  double baL = flue.BAFunc(celula[i].presaux, tmed0);
 
-  double betI;
-  double betL;
-  if (i < ncel) {
-    betI = celula[i].betPigD;
-    if (celula[i + 1].Mliqini < 0) betI = celula[i + 1].betPigE;
-  } else betI = celula[i].betPigD;
-  if (i > 0) {
-    betL = celula[i - 1].betPigD;
-    if (celula[i].Mliqini < 0) betL = celula[i].betPigE;
-  } else betL = celula[i].betPigE;
 
-	  celula[i].transmassR =(-(celula[i + 1].QL * (1. - betI) * flud.rDgD*flud.Deng * 1.225 * (1. - fwd) * rsR * (6.29 / 35.31467)
-			  / boR) + (celula[i].QL * (1. - betL)*flue.rDgD * flue.Deng * 1.225 * (1. - fwe) * rsL * (6.29 / 35.31467) / boL));
 
-  celula[i].transmassR /= celula[i].dx;
-  celula[i + 1].transmassL = celula[i].transmassR;
-  celula[i].FonteMudaFase = celula[i].transmassR;
-  if(i==ncel-1){
-	  celula[i+1].transmassR = celula[i].transmassR;
-	  celula[i+1].FonteMudaFase = celula[i].transmassR;
-  }
-}*/
 
 void SProd::RenovaTransMassPerm(int i) {
 
@@ -30944,31 +22557,11 @@ void SProd::RenovaTransMassPerm(int i) {
 
 void SProd::RenovaTransMassPermGas(int i) {
 
-	/*double betI;
-	double betL;
-	if (i < ncel) {
-	    betI = celula[i].betPigD;
-	    if (celula[i + 1].Mliqini < 0) betI = celula[i + 1].betPigE;
-	} else betI = celula[i].betPigD;
-	if (i > 0) {
-	    betL = celula[i - 1].betPigD;
-	    if (celula[i].Mliqini < 0) betL = celula[i].betPigE;
-	} else betL = celula[i].betPigE;
 
-	double masLiqR=celula[i + 1].QL*(1.-betI);
-	double masLiqL=celula[i].QL*(1.-betL);
 
-	double xD;
-	if(celula[i + 1].MC>0.)xD=celula[i].flui.FracMass(celula[i].pres, celula[i].temp);
-	else xD=celula[i+1].flui.FracMass(celula[i+1].pres, celula[i+1].temp);
 
-	double xE;
-	if(celula[i].MC>0. && i>0)xE=celula[i-1].flui.FracMass(celula[i-1].pres, celula[i-1].temp);
-	else xE=celula[i].flui.FracMass(celula[i].pres, celula[i].temp);*/
 
 	if(celula[i].acsr.tipo==0 && fabs(celula[i+1].flui.dVaporMassFraction-celula[i].flui.dVaporMassFraction)<0.2){
-		//celula[i].transmassR =(-(celula[i + 1].MC * (1.-xD) ) +
-		                  //(celula[i].MC *(1.-xE)));
 		celula[i].transmassR =((celula[i + 1].MC - celula[i + 1].Mliqini) -
 				                 (celula[i].MC -celula[i].Mliqini));
 	}
@@ -30986,7 +22579,6 @@ void SProd::RenovaTransMassPermGas(int i) {
 
 
 void SProd::RenovaTempPerm(int i, int RK) {
-  //double dx=celula[i].dx;
   double dx = 0.5 * (celula[i].dx + celula[i - 1].dx);
   double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
   double dTdLmed=(celula[i].dx*celula[i].dTdLCor + celula[i - 1].dx*celula[i-1].dTdLCor)/(celula[i].dx + celula[i - 1].dx);
@@ -31045,7 +22637,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  //energia potencial:
 	  double hidro = (rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(celula[i - 1].duto.teta);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  if (i > 120) {
 		  int para;
@@ -31071,30 +22662,14 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  double fluxcal;
 	  double fluxcalG;
 	  //verifica se existe acoplamento com o anular:
-	  if(/*iterperm>0 &&*/ arq.lingas==1 && (i-1<= ColunaAnulaIni && i-1 >= ColunaAnulaFim) ){
+	  if( arq.lingas==1 && (i-1<= ColunaAnulaIni && i-1 >= ColunaAnulaFim) ){
 		  int j = ColunaAnulaIni + AnulaColunaIni - (i-1);
 		  //caso tenha acoplamento:
-		  /////////////////////////////////////////////////////////////////////////////////////////////////
-	  	  /*resanul=0.;
-
-	  	  celula[i-1].calor.Vextern1 = celulaG[j].VGasR / celulaG[j].u1L;
-	  	  celula[i-1].calor.kextern1 = celulaG[j].calor.kint;
-	  	  celula[i-1].calor.cpextern1 = celulaG[j].calor.cpint;
-	  	  celula[i-1].calor.rhoextern1 = celulaG[j].calor.rhoint;
-	  	  celula[i-1].calor.viscextern1 = celulaG[j].calor.viscint;
-	  	  fluxcal= celula[i - 1].calor.transperm(resanul);
-
-		  celulaG[j].calor.Tint=tmedi;
-		  celulaG[j].calor.Vint=100;
-		  celulaG[j].calor.kint=celula[i - 1].flui.CondGas(pmedi, tmedi);
-		  celulaG[j].calor.cpint=cpg;
-		  celulaG[j].calor.rhoint=rhog;
-		  celulaG[j].calor.viscint=celula[i - 1].flui.ViscGas(pmedi, tmedi)*1.e-3;
-		  fluxcalG=celulaG[j].calor.transperm();*/
 
 
-		  /////////////////////////////////////////////////////////////////////////////////////////////////
-		  if (iterperm == 0 && /*fabs(fluxcalG)<fabs(fluxcal)*/(i-1)<ColunaAnulaIni){
+
+
+		  if (iterperm == 0 && (i-1)<ColunaAnulaIni){
 			  //na primeira iteracao, considera-se a resistencia do revestimento + cimento +
 			  //formacao, nas outras iteracoes
 			  //bastara determinar a troca termica entre a coluna e o gas do anular
@@ -31102,7 +22677,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
 			  //para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
 			  //do anular, o que e feito aqui:
 			  //obs:isto Ã© feito ate uma celula antes de se chegar na master (i-1)<ColunaAnulaIni,
-			  //se fosse ate a celula coincidente com a an seria (i-1)<=ColunaAnulaIni,
 			  //se esta fazendo igual ao que se faz no simulador involuta, para melhorar
 			  //a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
 			  //desde a primeira iteracao
@@ -31121,8 +22695,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
 				celula[i-1].calor.cpextern1 = celulaG[j].calor.cpint;
 				celula[i-1].calor.rhoextern1 = celulaG[j].calor.rhoint;
 				celula[i-1].calor.viscextern1 = celulaG[j].calor.viscint;
-				//celula[i - 1].calor.Textern1=celulaG[j].calor.Textern1;
-				//fluxcal= celula[i - 1].calor.transperm(resanul);
 		  }
 		  else{//apos a primeira iteracao, considera-se apenas a troca termica entre a coluna e o gas do anular
 			  //passando pela parede da coluna, claro
@@ -31133,9 +22705,7 @@ void SProd::RenovaTempPerm(int i, int RK) {
 			  	  celula[i-1].calor.rhoextern1 = celulaG[j].calor.rhoint;
 			  	  celula[i-1].calor.viscextern1 = celulaG[j].calor.viscint;
 		  }
-		  //resanul=celulaG[j].calor.resGlob;
 		  if (iterperm == 0 )
-		  //celula[i - 1].calor.Textern1=celulaG[j].fluxcal*resanul+celulaG[j].calor.Textern1;
 		  celula[i - 1].calor.Textern1=celulaG[j].calor.Textern1;//na primeira iteracao, como se
 		  //usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
 		  else celula[i - 1].calor.Textern1=celulaG[j].temp;//nas iteracoes seguintes, a temperatura ambiente
@@ -31147,13 +22717,8 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  }
 	  else fluxcal= sinalJ*celula[i - 1].calor.transperm(resanul);
 	  celula[i -1].fluxcalmed=fluxcal;//fluxo de calor na coluna
-	  //if(verificaAcopRedeS==1 && (i-1)>=SecPrimIniRedeP && (i-1)<=SecPrimFimRedeP){
-					//fluxcal-=celula[i-1].fluxcalAcopRedeP;
-	 // }
 
-	  //fluxcal=-100.;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double coefdxT = (rhol * ulsmed * cpl + rhog * ugsmed * cpg) * area;//termo que multiplica
 	  //a derivada Dt/Dx
@@ -31164,8 +22729,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  double coefdxP = 1*(rhol * ulsmedTemp * jtl + rhog * ugsmedTemp * jtg) * area;//termo que multiplica
 	  //a derivada Dp/Dx
 	  double dpdx;
-	  //if(i<ncel)dpdx=2.*(celula[i+1].presaux-celula[i].pres)*98600./dx;
-	  //else dpdx=2.*(celula[i].pres-celula[i].presaux)*98600./dx;
 	  if((celula[i-1].acsr.tipo!=4 || celula[i-1].acsr.bcs.freq<1) && celula[i-1].acsr.tipo!=7)
 		  //caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
 		  // e a pressao no centro de celula para o calculo de Dp/Dx
@@ -31173,15 +22736,12 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  else{
 		  //caso tenha BCS ou incremento de pressao  utiliza-se a pressao da celulaa esquerda
 		  // e a pressao no centro de celula para o calculoi de Dp/Dx
-	     //dpdx=1*(pmedi-celula[i-1].pres)*98600./dx;
 		  dpdx = 2. * (celula[i].presaux - celula[i - 1].pres) *98066.5/ celula[i - 1].dx;
 	  }
 	  celula[i].VTemper = ulsmed;//esta velocidade so e util no caso transiente, Ã© armazenada aqui
 	  //apenas para se ter um valor quando a simulacao transiente se iniciar
 	  double dtdx = (-celula[i - 1].temp) / dxmed;
-  //if (celula[i - 1].acsr.tipo == 4 && celula[i - 1].acsr.bcs.freqnova > 1.) dpdx = 0.;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -31219,7 +22779,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
 
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   	  double fontemassG = 0.;
   	  double fontemassL = 0.;
@@ -31289,7 +22848,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
   	  if (fontemassG > 0.) fontemassG *= (cpgF / razcpF) * (tfonte - celula[i - 1].temp);
   	  else fontemassG = 0;
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   	  //efeito do calor latente, quando este for solicitado
   	  double latente=0.;
@@ -31330,7 +22888,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
   	  else if (alfinter > (*vg1dSP).localtiny) delvel = ugsmed;
   	  else delvel = ulsmed;
   	  double verifica = area * celula[i].pres * 98600 * delvel * (alfinter - alfinterL) / celula[i].dx;
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
   	  if(fabs(coefdxT)>(*vg1dSP).localtiny){
   	  	  //parecela de energia relacionada ao ytrabalho de fronteira, energia potencial,
@@ -31350,16 +22907,13 @@ void SProd::RenovaTempPerm(int i, int RK) {
   		  int npasso;
   		  double dxpasso;
   		  double limiteEstab=fabs(coefdxT)/dTdLmed;
-  		  if(dxmed/(celula[i-1].calor.resGlob+resanul)<(limiteEstab+0.*1000.) /*&& fabs(ulsmed+ugsmed)>0.1*/){//resistencia termica nÃ£o e pequena
+  		  if(dxmed/(celula[i-1].calor.resGlob+resanul)<(limiteEstab+0.*1000.) ){//resistencia termica nÃ£o e pequena
   			  npasso=1;
   			  dxpasso=dxmed;
   		  }
   		  else{//resistencia termica e pequena, se determinara em quantos passos se dara
   			  //o avanco de temperatrura
-  			  //if(fabs(ulsmed+ugsmed)>0.1)
   				  npasso=(dxmed/(celula[i-1].calor.resGlob+resanul))/(limiteEstab+0*1000)+1;
-  			 // else
-  				//npasso=10/fabs(ulsmed+ugsmed)+1;
   			  dxpasso=dxmed/npasso;//celula divida em npassos
   		  }
   		  double temppasso=celula[i-1].temp;
@@ -31381,7 +22935,6 @@ void SProd::RenovaTempPerm(int i, int RK) {
                     		 + betmed * celula[i - 1].fluicol.VisFlu(pmed, temppasso);
   			  celula[i - 1].calor.viscint = viscliq * (1 - alfmed) * 1.e-3
   					  + celula[i - 1].flui.ViscGas(pmed, temppasso) * alfmed * 1.e-3;
-  			  //celula[i -1].fluxcalmed=0;
   			  if(iterperm != 0 && arq.lingas==1 && (i-1<= ColunaAnulaIni && i-1 >= ColunaAnulaFim) ){
   					  int k = ColunaAnulaIni + AnulaColunaIni - (i-1);
   					  double dtext=(celulaG[k-1].temp-celulaG[k].temp)/npasso;
@@ -31392,62 +22945,18 @@ void SProd::RenovaTempPerm(int i, int RK) {
   			  parcenerg2=dTdLmed*(fluxcal)/coefdxT;
   			  temppasso=dxpasso*(-(-temppasso)/dxpasso+parcenerg1+parcenerg2);
 
-    	        /*celula[i-1].calor.Tint=temppasso;
-    	        celula[i-1].calor.Vint=ugsmed;
-    	        celulaG[i-1].calor.kint=celulaG[i-1].flui.CondGas(celulaG[i-1].pres,temppasso);
-    	        celulaG[i-1].calor.cpint=cpg;
-    	        celulaG[i-1].calor.rhoint=rhog;
-    	        celulaG[i-1].calor.viscint=celulaG[i-1].flui.ViscGas(celulaG[i-1].pres,temppasso)*1.e-3;
-    	        celulaG[i-1].fluxcal=celulaG[i-1].calor.transperm();
-    	        flucal=celulaG[i-1].fluxcal;
-    	        parcenerg2=(flucal)/coefdxT;
-    	        temppasso=dxpasso*(-(-temppasso)/dxpasso+parcenerg1+parcenerg2);*/
   		  }
 
   		  celula[i].temp=temppasso;
   		  celula[i -1].fluxcalmed/=npasso;
   		  celula[i -1].fluxcalmed=1.*celula[i -1].fluxcalmed;
-   //celula[i -1].fluxcalmed=0.;
 
 
-   /*
-    *
-        	double parcenerg1=(coefdxP*dpdx-cinetico-hidro+fontemassL+fontemassG)/coefdxT;
-    	double parcenerg2=(flucal)/coefdxT;
-    	int npasso;
-    	double dxpasso;
-    	if(dxmed/celulaG[i-1].calor.resGlob<1000.){
-    	          npasso=0.;
-    	          dxpasso=dxmed;
-    	}
-    	else{
-    	         npasso=(dxmed/celulaG[i-1].calor.resGlob)/1000+1;
-    	         dxpasso=dxmed/npasso;
-    	}
-        double temppasso=celulaG[i-1].temp;
 
 
-    	temppasso=dxpasso*(-(-celulaG[i-1].temp)/dxpasso+parcenerg1+parcenerg2);
-    	for(int j=1;j<npasso;j++){
-    	        celulaG[i-1].calor.Tint=temppasso;
-    	        celulaG[i-1].calor.Vint=ugsmed;
-    	        celulaG[i-1].calor.kint=celulaG[i-1].flui.CondGas(celulaG[i-1].pres,temppasso);
-    	        celulaG[i-1].calor.cpint=cpg;
-    	        celulaG[i-1].calor.rhoint=rhog;
-    	        celulaG[i-1].calor.viscint=celulaG[i-1].flui.ViscGas(celulaG[i-1].pres,temppasso)*1.e-3;
-    	        celulaG[i-1].fluxcal=celulaG[i-1].calor.transperm();
-    	        flucal=celulaG[i-1].fluxcal;
-    	        parcenerg2=(flucal)/coefdxT;
-    	        temppasso=dxpasso*(-(-temppasso)/dxpasso+parcenerg1+parcenerg2);
-    	  }
-
-    	  celulaG[i].temp=temppasso;
-    */
 
 
-  /*celula[i].temp = dxmed
-      * (-coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + fontemassL + fontemassG + fluxcal
-          - latente + +celula[i - 1].potB / dxmed) / coefdxT;*/
+
   		  if (celula[i].temp < -50.) celula[i].temp = -50.;
   		  if (celula[i].temp > 200.) celula[i].temp = 200.;
   	  }
@@ -31466,12 +22975,10 @@ void SProd::RenovaTempPerm(int i, int RK) {
 	  }
   }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }
 
 void SProd::RenovaTempPermRev(int i, int RK) {
-  //double dx=celula[i].dx;
   double dx = 0.5 * (celula[i].dx + celula[i + 1].dx);
   double dxmed = 0.5 * (celula[i].dx + celula[i + 1].dx);
   double dTdLmed=(celula[i].dx*celula[i].dTdLCor + celula[i + 1].dx*celula[i+1].dTdLCor)/(celula[i].dx + celula[i + 1].dx);
@@ -31497,7 +23004,7 @@ void SProd::RenovaTempPermRev(int i, int RK) {
   double ulsmed;
   ulsmed = fabs(celula[i+1].QL) / area;//velocidade superficial de liquido
   double sinalJ=1.;
-  if(fabs(ugsmed+ulsmed)>trocaTermicaLenta /*|| trocaTermicaLenta==0*/){//calculo termico e feito para velocidades de mistura superiores a 0,1 m/s,
+  if(fabs(ugsmed+ulsmed)>trocaTermicaLenta ){//calculo termico e feito para velocidades de mistura superiores a 0,1 m/s,
 	  //para velocidades inferiores se admite que a temperatura do fluidoÃƒÂ© igual ÃƒÂ  temperatura ambiente
 	  sinalJ=(ugsmed+ulsmed)/fabs(ugsmed+ulsmed);
 	  double pmedi = celula[i+1].presaux - celula[i].dpB / 98066.5;
@@ -31530,7 +23037,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 	  //energia potencial:
 	  double hidro = -(rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(celula[i + 1].duto.teta);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  if (i > 120) {
 		  int para;
@@ -31556,30 +23062,14 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 	  double fluxcal;
 	  double fluxcalG;
 	  //verifica se existe acoplamento com o anular:
-	  if(/*iterperm>0 &&*/ arq.lingas==1 && (i+1<= ColunaAnulaIni && i+1 >= ColunaAnulaFim) ){
+	  if( arq.lingas==1 && (i+1<= ColunaAnulaIni && i+1 >= ColunaAnulaFim) ){
 		  int j = ColunaAnulaIni + AnulaColunaIni - (i+1);
 		  //caso tenha acoplamento:
-		  /////////////////////////////////////////////////////////////////////////////////////////////////
-	  	  /*resanul=0.;
-
-	  	  celula[i-1].calor.Vextern1 = celulaG[j].VGasR / celulaG[j].u1L;
-	  	  celula[i-1].calor.kextern1 = celulaG[j].calor.kint;
-	  	  celula[i-1].calor.cpextern1 = celulaG[j].calor.cpint;
-	  	  celula[i-1].calor.rhoextern1 = celulaG[j].calor.rhoint;
-	  	  celula[i-1].calor.viscextern1 = celulaG[j].calor.viscint;
-	  	  fluxcal= celula[i - 1].calor.transperm(resanul);
-
-		  celulaG[j].calor.Tint=tmedi;
-		  celulaG[j].calor.Vint=100;
-		  celulaG[j].calor.kint=celula[i - 1].flui.CondGas(pmedi, tmedi);
-		  celulaG[j].calor.cpint=cpg;
-		  celulaG[j].calor.rhoint=rhog;
-		  celulaG[j].calor.viscint=celula[i - 1].flui.ViscGas(pmedi, tmedi)*1.e-3;
-		  fluxcalG=celulaG[j].calor.transperm();*/
 
 
-		  /////////////////////////////////////////////////////////////////////////////////////////////////
-		  if (iterperm == 0 && /*fabs(fluxcalG)<fabs(fluxcal)*/(i+1)>ColunaAnulaFim){
+
+
+		  if (iterperm == 0 && (i+1)>ColunaAnulaFim){
 			  //na primeira iteracao, considera-se a resistencia do revestimento + cimento +
 			  //formacao, nas outras iteracoes
 			  //bastara determinar a troca termica entre a coluna e o gas do anular
@@ -31587,7 +23077,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 			  //para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
 			  //do anular, o que e feito aqui:
 			  //obs:isto Ã© feito ate uma celula antes de se chegar na master (i-1)<ColunaAnulaIni,
-			  //se fosse ate a celula coincidente com a an seria (i-1)<=ColunaAnulaIni,
 			  //se esta fazendo igual ao que se faz no simulador involuta, para melhorar
 			  //a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
 			  //desde a primeira iteracao
@@ -31606,8 +23095,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 				celula[i+1].calor.cpextern1 = celulaG[j].calor.cpint;
 				celula[i+1].calor.rhoextern1 = celulaG[j].calor.rhoint;
 				celula[i+1].calor.viscextern1 = celulaG[j].calor.viscint;
-				//celula[i - 1].calor.Textern1=celulaG[j].calor.Textern1;
-				//fluxcal= celula[i - 1].calor.transperm(resanul);
 		  }
 		  else{//apos a primeira iteracao, considera-se apenas a troca termica entre a coluna e o gas do anular
 			  //passando pela parede da coluna, claro
@@ -31618,9 +23105,7 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 			  	  celula[i+1].calor.rhoextern1 = celulaG[j].calor.rhoint;
 			  	  celula[i+1].calor.viscextern1 = celulaG[j].calor.viscint;
 		  }
-		  //resanul=celulaG[j].calor.resGlob;
 		  if (iterperm == 0 )
-		  //celula[i - 1].calor.Textern1=celulaG[j].fluxcal*resanul+celulaG[j].calor.Textern1;
 		  celula[i + 1].calor.Textern1=celulaG[j].calor.Textern1;//na primeira iteracao, como se
 		  //usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
 		  else celula[i + 1].calor.Textern1=celulaG[j].temp;//nas iteracoes seguintes, a temperatura ambiente
@@ -31630,17 +23115,13 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 	  fluxcal= sinalJ*celula[i + 1].calor.transperm(resanul);
 	  celula[i +1].fluxcalmed=fluxcal;//fluxo de calor na coluna
 
-	  //fluxcal=-100.;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	  double coefdxT = (rhol * ulsmed * cpl + rhog * ugsmed * cpg) * area;//termo que multiplica
 	  //a derivada Dt/Dx
 	  double coefdxP = 1.*(rhol * ulsmed * jtl + rhog * ugsmed * jtg) * area;//termo que multiplica
 	  //a derivada Dp/Dx
 	  double dpdx;
-	  //if(i<ncel)dpdx=2.*(celula[i+1].presaux-celula[i].pres)*98600./dx;
-	  //else dpdx=2.*(celula[i].pres-celula[i].presaux)*98600./dx;
 	  if((celula[i+1].acsr.tipo!=4 || celula[i+1].acsr.bcs.freq<1) && celula[i+1].acsr.tipo!=7)
 		  //caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
 		  // e a pressao no centro de celula para o calculo de Dp/Dx
@@ -31653,9 +23134,7 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 	  celula[i].VTemper = ulsmed;//esta velocidade so e util no caso transiente, Ã© armazenada aqui
 	  //apenas para se ter um valor quando a simulacao transiente se iniciar
 	  double dtdx = (-celula[i + 1].temp) / dxmed;
-  //if (celula[i - 1].acsr.tipo == 4 && celula[i - 1].acsr.bcs.freqnova > 1.) dpdx = 0.;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -31692,11 +23171,9 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   	  double fontemassG = 0.;
   	  double fontemassL = 0.;
-//  	  double fontemassC = 0.;
   	  double tfonte = celula[i + 1].temp;
   	  double cpgF;
   	  double razcpF=0.;
@@ -31762,7 +23239,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
   	  if (fontemassG > 0.) fontemassG *= (cpgF / razcpF) * (tfonte - celula[i + 1].temp);
   	  else fontemassG = 0;
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   	  //efeito do calor latente, quando este for solicitado
   	  double latente=0.;
@@ -31796,7 +23272,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
   	  else if (alfinter > (*vg1dSP).localtiny) delvel = ugsmed;
   	  else delvel = ulsmed;
   	  double verifica = area * celula[i+1].pres * 98600 * delvel * (alfinter - alfinterL) / celula[i+1].dx;
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
   	  if(fabs(coefdxT)>(*vg1dSP).localtiny){
   	  	  //parecela de energia relacionada ao ytrabalho de fronteira, energia potencial,
@@ -31812,7 +23287,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
   		  //feito em um numero maior de passos de uma celula para outra
   		  int npasso;
   		  double dxpasso;
-  		  //if(dxmed/(celula[i+1].calor.resGlob+resanul)<1000.){//resistencia termica nÃ£o e pequena
  		  double limiteEstab=fabs(coefdxT)/dTdLmed;
   		  if(dxmed/(celula[i+1].calor.resGlob+resanul)<(limiteEstab+0.*1000.)){
   			  npasso=1;
@@ -31820,7 +23294,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
   		  }
   		  else{//resistencia termica e pequena, se determinara em quantos passos se dara
   			  //o avanco de temperatrura
-  			  //npasso=(dxmed/(celula[i+1].calor.resGlob+resanul))/1000+1;
   			  npasso=(dxmed/(celula[i+1].calor.resGlob+resanul))/(limiteEstab+0*1000)+1;
   			  dxpasso=dxmed/npasso;//celula divida em npassos
   		  }
@@ -31843,7 +23316,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
                     		 + betmed * celula[i + 1].fluicol.VisFlu(pmed, temppasso);
   			  celula[i + 1].calor.viscint = viscliq * (1 - alfmed) * 1.e-3
   					  + celula[i + 1].flui.ViscGas(pmed, temppasso) * alfmed * 1.e-3;
-  			  //celula[i -1].fluxcalmed=0;
   			  if(iterperm != 0 && arq.lingas==1 && (i+1<= ColunaAnulaIni && i+1 >= ColunaAnulaFim) ){
   					  int k = ColunaAnulaIni + AnulaColunaIni - (i+1);
   					  double dtext=(celulaG[k].temp-celulaG[k-1].temp)/npasso;
@@ -31854,64 +23326,18 @@ void SProd::RenovaTempPermRev(int i, int RK) {
   			  parcenerg2=dTdLmed*(fluxcal)/coefdxT;
   			  temppasso=dxpasso*(-(-temppasso)/dxpasso+parcenerg1+parcenerg2);
 
-    	        /*celula[i-1].calor.Tint=temppasso;
-    	        celula[i-1].calor.Vint=ugsmed;
-    	        celulaG[i-1].calor.kint=celulaG[i-1].flui.CondGas(celulaG[i-1].pres,temppasso);
-    	        celulaG[i-1].calor.cpint=cpg;
-    	        celulaG[i-1].calor.rhoint=rhog;
-    	        celulaG[i-1].calor.viscint=celulaG[i-1].flui.ViscGas(celulaG[i-1].pres,temppasso)*1.e-3;
-    	        celulaG[i-1].fluxcal=celulaG[i-1].calor.transperm();
-    	        flucal=celulaG[i-1].fluxcal;
-    	        parcenerg2=(flucal)/coefdxT;
-    	        temppasso=dxpasso*(-(-temppasso)/dxpasso+parcenerg1+parcenerg2);*/
   		  }
 
   		  celula[i].temp=temppasso;
   		  celula[i +1].fluxcalmed/=npasso;
   		  celula[i +1].fluxcalmed=1.*celula[i +1].fluxcalmed;
-  		  //if(fabs(ugsmed+ulsmed)<2*trocaTermicaLenta && celula[i].temp<celula[i].calor.Textern1)
-  			 // celula[i].temp=celula[i].calor.Textern1;
-   //celula[i -1].fluxcalmed=0.;
 
 
-   /*
-    *
-        	double parcenerg1=(coefdxP*dpdx-cinetico-hidro+fontemassL+fontemassG)/coefdxT;
-    	double parcenerg2=(flucal)/coefdxT;
-    	int npasso;
-    	double dxpasso;
-    	if(dxmed/celulaG[i-1].calor.resGlob<1000.){
-    	          npasso=0.;
-    	          dxpasso=dxmed;
-    	}
-    	else{
-    	         npasso=(dxmed/celulaG[i-1].calor.resGlob)/1000+1;
-    	         dxpasso=dxmed/npasso;
-    	}
-        double temppasso=celulaG[i-1].temp;
 
 
-    	temppasso=dxpasso*(-(-celulaG[i-1].temp)/dxpasso+parcenerg1+parcenerg2);
-    	for(int j=1;j<npasso;j++){
-    	        celulaG[i-1].calor.Tint=temppasso;
-    	        celulaG[i-1].calor.Vint=ugsmed;
-    	        celulaG[i-1].calor.kint=celulaG[i-1].flui.CondGas(celulaG[i-1].pres,temppasso);
-    	        celulaG[i-1].calor.cpint=cpg;
-    	        celulaG[i-1].calor.rhoint=rhog;
-    	        celulaG[i-1].calor.viscint=celulaG[i-1].flui.ViscGas(celulaG[i-1].pres,temppasso)*1.e-3;
-    	        celulaG[i-1].fluxcal=celulaG[i-1].calor.transperm();
-    	        flucal=celulaG[i-1].fluxcal;
-    	        parcenerg2=(flucal)/coefdxT;
-    	        temppasso=dxpasso*(-(-temppasso)/dxpasso+parcenerg1+parcenerg2);
-    	  }
-
-    	  celulaG[i].temp=temppasso;
-    */
 
 
-  /*celula[i].temp = dxmed
-      * (-coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + fontemassL + fontemassG + fluxcal
-          - latente + +celula[i - 1].potB / dxmed) / coefdxT;*/
+
   		  if (celula[i].temp < -50.) celula[i].temp = -50.;
   		  if (celula[i].temp > 200.) celula[i].temp = 200.;
   	  }
@@ -31930,7 +23356,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
 	  }
   }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }
 
@@ -31954,39 +23379,25 @@ void SProd::atualizaPeriPmonProd(int i) {
     double vazmix = fabs(celula[i - 1].QL + celula[i - 1].QG);
     double alf0 = celula[i - 1].alf;
     double bet0 = celula[i - 1].bet;
-    //celula[i].rpCi=celula[i - 1].flui.MasEspLiq(celula[i].presaux, tmed);
-    //celula[i].rgCi=celula[i - 1].flui.MasEspGas(celula[i].presaux, tmed);
-    //celula[i].rcCi=celula[i - 1].fluicol.MasEspFlu(celula[i].presaux, tmed);
     double rhomis = (alf0 * celula[i - 1].flui.MasEspGas(celula[i].presaux, tmed)
         + (1 - alf0)
             * ((1 - bet0) * celula[i - 1].flui.MasEspLiq(celula[i].presaux, tmed)
                 + bet0 * celula[i - 1].fluicol.MasEspFlu(celula[i].presaux, tmed)));
-    //double rhomis = (alf0 * celula[i].rgCi+ (1 - alf0)* ((1 - bet0) * celula[i].rpCi+bet0 * celula[i].rcCi));
     double vismis = alf0 * celula[i - 1].flui.ViscGas(celula[i].presaux, tmed)
         + (1 - alf0)
             * ((1. - bet0) * celula[i - 1].flui.ViscOleo(celula[i].presaux, tmed)
                 + bet0 * celula[i].fluicol.VisFlu(celula[i].presaux, tmed));
     vazmix *= (86400 / 0.1589876);
-    //BomCentSub bombavisc=
-    //celula[i-1].acsr.bcs.NovaVis(vismis,rhomis);
-    //celula[i-1].dpB=0.3048*bombavisc.Fhead(vazmix)*rhomis*9.82;
-    //double veriefic=bombavisc.Fefic(vazmix)/100.;
-    //double veripot=bombavisc.Fpower(vazmix);
-    //celula[i-1].potB=(1.-bombavisc.Fefic(vazmix)/100.+100.*(1.-bombavisc.eficM/100.)/bombavisc.eficM)*
-    //bombavisc.Fpower(vazmix)*745.7;
     celula[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
     celula[i - 1].dpB = sinalQ*0.3048 * celula[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
     celula[i - 1].potB = celula[i - 1].acsr.bcs.Pvis * 745.7;
     celula[i-1].potTermo=(1.-celula[i - 1].acsr.bcs.Evis/100.)*celula[i - 1].potB;
-    //if(celula[i - 1].acsr.bcs.Evis>0.)celula[i - 1].potB*=(100./celula[i - 1].acsr.bcs.Evis);
-    //else celula[i - 1].potB=0.;
     if(celula[i - 1].acsr.bcs.eficM>0.)
     celula[i - 1].potBT = (1. + 100. * (1. - celula[i - 1].acsr.bcs.eficM / 100.) / celula[i - 1].acsr.bcs.eficM)
         * celula[i - 1].potB;
     else celula[i - 1].potBT = 0.;
     celula[i-1].potTermo+=celula[i - 1].potBT* (1. - celula[i - 1].acsr.bcs.eficM / 100.)*celula[i - 1].acsr.bcs.fracTermMotorEfic;
 
-    //celula[i+1].presaux=celula[i+1].presaux-celula[i].dpB/98066.5;
   } else if (celula[i - 1].acsr.tipo == 7){
 	  celula[i - 1].dpB = sinalQ*celula[i - 1].acsr.delp * 98066.5;
 	  double bet0 = celula[i - 1].bet;
@@ -31995,12 +23406,10 @@ void SProd::atualizaPeriPmonProd(int i) {
               + bet0 * celula[i - 1].fluicol.MasEspFlu(celula[i].presaux, tmed));
 	  double qgMon=(celula[i-1].MC-celula[i-1].Mliqini)/rhog;
 	  double qlmon=celula[i-1].Mliqini/rhol;
-	  //double titMon=fabs(celula[i-1].MC-celula[i-1].Mliqini)/fabs(celula[i-1].MC);
 	  double npoli=1.;
 	  if(celula[i - 1].acsr.tipoCompGas==0){
 		  npoli=celula[i - 1].flui.ConstAdG(celula[i - 1].pres, celula[i - 1].temp);
 		  if((npoli-1.05)<1e-2)npoli=1.05;
-		  //npoli=1.26;
 	  }
 	  else if(celula[i - 1].acsr.tipoCompGas==1)npoli=celula[i - 1].acsr.fatPoli;
 	  double Wcomp;
@@ -32045,26 +23454,24 @@ void SProd::atualizaPeriTempProd(int i) {
   celula[i].tempini = celula[i].temp;
 }
 
-void SProd::calcTempFim() {	    		           //alteracao 1
+void SProd::calcTempFim() {
 
-  if (arq.chokep.abertura[0] <= 0.6 && arq.chokep.abertura[0] > (*vg1dSP).localtiny && presfim<pGSup) {//alteracao8
+  if (arq.chokep.abertura[0] <= 0.6 && arq.chokep.abertura[0] > (*vg1dSP).localtiny && presfim<pGSup) {
     double masentrada = celula[ncel - 1].MR;
     double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
     double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
     double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
-//    double rholmix = (1 - celula[ncel].bet) * rholp + celula[ncel].bet * rholc;
     double betEF = celula[ncel].bet;
-//    double alfEF = celula[ncel].alf;
     double tit = fabs(massgas / masentrada);
 
 
     double jtlM = (1. - betEF) * celula[ncel].flui.JTL(celula[ncel].pres, celula[ncel].temp) - betEF / rholc;	  //alteraacao2
-    double jtgM = celula[ncel].flui.JTG(celula[ncel].pres, celula[ncel].temp);	    		           //alteracao2
+    double jtgM = celula[ncel].flui.JTG(celula[ncel].pres, celula[ncel].temp);
     tempSup = celula[ncel].temp + ((1. - tit) * jtlM + tit * jtgM) * (celula[ncel].pres - celula[ncel].pres);//????????
     //???????????????????????????????celula[ncel].pres - celula[ncel].pres????????????????????????????????????????????
 
   } else tempSup = celula[ncel-1].temp;
-}	    		           //alteracao 1
+}
 
 double SProd::delpGasPerm(int i) {
   double dx = 0.5 * celulaG[i].dx0;
@@ -32158,7 +23565,6 @@ double SProd::delpInjPerm(int i) {
   double gradhidro = celula[i].dPdLHidro*9.82 * sin(celula[i].duto.teta) * rho * dx;
 
   double difpres = (gradfric + gradhidro) / 98066.5;
-  //double pmed=celula[i].pres+difpres;
   double pmed = celula[i - 1].pres;
 
   dx = 0.5 * celula[i].dxL;
@@ -32257,12 +23663,11 @@ void  SProd::RenovaPresGasPerm(int i) {
 void  SProd::calcVazGasPerm(int i){
 
 
-	//celulaG[i].massfonteCH=0.;
 	int nvalv=arq.nvalvgas;
-	int match=0;//alteracao2
+	int match=0;
 	for(int j=0;j<nvalv;j++){
         if(posicVGLG[j]==i){
-        	match=1;//alteracao2
+        	match=1;
     		chokeVGL[j].presEstag=celulaG[posicVGLG[j]].pres;
     	    chokeVGL[j].presGarg=(celula[posicVGLP[j]].pres-chokeVGL[j].presEstag*chokeVGL[j].frec)/
     	    		              (1.-chokeVGL[j].frec);
@@ -32274,7 +23679,7 @@ void  SProd::calcVazGasPerm(int i){
     			double abre=areaValvCali(chokeVGL[j].pcalib*14.223595,chokeVGL[j].tcalib,(chokeVGL[j].presEstag-1.033211)*14.223595,
     					                      (chokeVGL[j].presGarg-1.033211)*14.223595, chokeVGL[j].dextern, chokeVGL[j].areagarg,
 											  chokeVGL[j].areagarg/chokeVGL[j].areafole,
-    										  1.8*chokeVGL[j].tempEstag+32);//alteracao2
+    										  1.8*chokeVGL[j].tempEstag+32);
     			celulaG[posicVGLG[j]].massfonteCH*=abre;
     		}
 
@@ -32288,7 +23693,7 @@ void  SProd::calcVazGasPerm(int i){
   	      celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
   	    		  (1.225*celulaG[posGLG].flui.Deng);//celulaG[posGLG].flui.MasEspGas(1.,15.);
   	      if(chokeVGL[j].presEstag>chokeVGL[j].presGarg){
-  	    	tg=TempDescGL(j);//alteracao2
+  	    	tg=TempDescGL(j);
   	      }
   	      else
   	        tg=celula[posGLP].temp;
@@ -32296,45 +23701,27 @@ void  SProd::calcVazGasPerm(int i){
   	      if(celula[posGLP].acsr.injg.temp<-50)celula[posGLP].acsr.injg.temp=-50;
   	      celula[posGLP].fontemassGR=celulaG[posGLG].massfonteCH;
 
-  		  if(celulaG[i].VGasR<=0. && i<ncelGas){//alteracao2
-  			//if(celulaG[0].tipoCC==1)celulaG[posicVGLG[j]].massfonteCH=celulaG[i].massfonteCH+celulaG[i].VGasR;
+  		  if(celulaG[i].VGasR<=0. && i<ncelGas){
   			celulaG[i].VGasR=0.;
   			for(int j1=j+1;j1<nvalv;j1++){
   				celulaG[posicVGLG[j1]].massfonteCH=0;
   				celula[posicVGLP[j1]].fontemassGR=0.;
   			}
-  		  }//alteracao2
+  		  }
 
   		  celulaG[i-1].VGasRR=celulaG[i].VGasR;
   		  if(i<ncelGas)celulaG[i+1].VGasL=celulaG[i].VGasR;
 
         }
 	}
-	if(match==0){//alteracao2
+	if(match==0){
 			if(i>0)	celulaG[i].VGasR=celulaG[i-1].VGasR-0*celulaG[i].massfonteCH;
 			else celulaG[i].VGasR=celulaG[i-1].VGasR+0*celulaG[i].massfonteCH;
 	   		celulaG[i-1].VGasRR=celulaG[i].VGasR;
 	    	if(i<ncelGas)celulaG[i+1].VGasL=celulaG[i].VGasR;
-	}//alteracao2
-	/*if(arq.gasinj.tipoCC==1){
-		double soma=0;
-		for(int j=0;j<nvalv;j++){
-	  	      int posGLP=posicVGLP[j];
-	  	      int posGLG=posicVGLG[j];
-	  	      soma+=celula[posGLP].acsr.injg.QGas;
-		}
-		if(soma<arq.gasinj.vazgas[0]){
-			double difvaz=arq.gasinj.vazgas[0]-soma;
-	  	      int posGLP=posicVGLP[0];
-	  	      int posGLG=posicVGLG[0];
-	  	    double difmas=difvaz*(1.225*celulaG[posGLG].flui.Deng)/86400;
-	  	    celulaG[posGLG].massfonteCH+=difmas;
-    		celulaG[posGLG].VGasR-=difmas;
-    		celula[posGLP].acsr.injg.QGas+=difvaz;
+	}
 
 
-		}
-	}*/
 }
 
 
@@ -32342,14 +23729,12 @@ void  SProd::IniciaVazValvGasPerm(int i){
 	int nvalv=arq.nvalvgas;
 	double vazvalv;
 	double presRev=presiniG;
-	double tempRev=celulaG[0].calor.Textern1;//alteracao2
+	double tempRev=celulaG[0].calor.Textern1;
 	for(int j=0;j<nvalv;j++){
 	  int posGLP=posicVGLP[j];
 	  int posGLG=posicVGLG[j];
-//	  int igl=0;
-	  //while(igl!=posGLP && igl<ncel) igl++;
 	  if(i==posGLP){
-	    if(celulaG[0].tipoCC==1 /*|| celulaG[0].tipoCC==0 || arq.gasinj.chuteVaz==1*/){
+	    if(celulaG[0].tipoCC==1 ){
 	    	vazvalv=(arq.gasinj.vazgas[0]*celulaG[0].flui.MasEspGas(1.,15.)/86400.)/nvalv;
 	    	celulaG[posicVGLG[j]].massfonteCH=vazvalv;
 	    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
@@ -32358,18 +23743,8 @@ void  SProd::IniciaVazValvGasPerm(int i){
 	    	celula[posGLP].fontemassGR=celulaG[posGLG].massfonteCH;
 	    }
 	    else{
-	    	/*if(arq.gasinj.chuteVaz==0){
-	    	for(int k=0;k<posGLG;k++){
-	    		double dx=0.5*(celulaG[k].dx0+celulaG[k].dx1);
-	    		tempRev=celulaG[k].calor.Textern1;//alteracao2
-	    		double rhog=celulaG[k].flui.MasEspGas(presRev,tempRev);
-	    		presRev-=rhog*9.81*sin(celulaG[k].duto.teta)*dx/98066.5;
-	    	}}
-	    	else */
 	    	presRev=celulaG[posGLG].pres;
 	   		chokeVGL[j].presEstag=presRev;
-	    	//chokeVGL[j].presGarg=(celula[posicVGLP[j]].pres-presRev*chokeVGL[j].frec)/
-	    	    		             // (1.-chokeVGL[j].frec);
 	   		chokeVGL[j].presGarg=celula[posicVGLP[j]].pres;
 	        chokeVGL[j].tempEstag=tempRev;
 	    	if(celula[posicVGLP[j]].pres<presRev)
@@ -32377,24 +23752,9 @@ void  SProd::IniciaVazValvGasPerm(int i){
 	    	else celulaG[posicVGLG[j]].massfonteCH=0.;
 	    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
 	    			                      celulaG[posGLG].flui.MasEspGas(1.,15.);
-	    	/*double altaVaz=50*celula[ncel-1].duto.area*celulaG[0].flui.MasEspGas(pGSup,15.)/nvalv;
-	    	double baixaVaz=0.1*celula[ncel-1].duto.area*celulaG[0].flui.MasEspGas(pGSup,15.)/nvalv;
-	    	if(celulaG[posicVGLG[j]].massfonteCH>altaVaz){
-		    	vazvalv=(celula[posGLP].acsr.injg.QGas*celulaG[0].flui.MasEspGas(1.,15.)/86400.)/nvalv;
-		    	celulaG[posicVGLG[j]].massfonteCH=altaVaz;
-		    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
-		    			                      celulaG[posGLG].flui.MasEspGas(1.,15.);
-	    	}
-	    	else if(celulaG[posicVGLG[j]].massfonteCH<baixaVaz){
-		    	vazvalv=(celula[posGLP].acsr.injg.QGas*celulaG[0].flui.MasEspGas(1.,15.)/86400.)/nvalv;
-		    	celulaG[posicVGLG[j]].massfonteCH=vazvalv;
-		    	celula[posGLP].acsr.injg.QGas=celulaG[posGLG].massfonteCH*86400./
-		    			                      celulaG[posGLG].flui.MasEspGas(1.,15.);
-	    	}*/
 	    	celula[posGLP].acsr.injg.temp=tempRev;
 	    	celula[posGLP].fontemassGR=celulaG[posGLG].massfonteCH;
 	    }
-	    //break;
 	  }
 
 	}
@@ -32406,20 +23766,15 @@ void  SProd::RenovaTempGasPerm(int i) {
 			double dx=celulaG[i].dx0;
 			double dxmed=0.5*(celulaG[i].dx0+celulaG[i-1].dx0);
 			double dTdLMed=(celulaG[i].dx0*celulaG[i].dTdLCor+celulaG[i-1].dx0*celulaG[i-1].dTdLCor)/(celulaG[i].dx0+celulaG[i-1].dx0);
-			//double dia=celula[i].duto.dia;
 			double area=celulaG[i].duto.area;
 			double ugsmed;
-			//if(i<ncelGas)ugsmed=celulaG[i-1].VGasR/celulaG[i].u1L;
-			//else ugsmed=celulaG[i].VGasL/celulaG[i].u1L;
 			double rhog=celulaG[i-1].flui.MasEspGas(celulaG[i-1].pres,celulaG[i-1].temp);
-			//ugsmed=celulaG[i-1].VGasR/(rhog*area);
 			ugsmed=celulaG[i-1].VGasR/celulaG[i-1].u1L;
 			double cpg=celulaG[i-1].flui.CalorGas(celulaG[i-1].pres,celulaG[i-1].temp);
 			double cvg=celulaG[i-1].flui.CalorGasVolMod(celulaG[i-1].pres,celulaG[i-1].temp);
 			double jtg=celulaG[i-1].flui.JTG(celulaG[i-1].pres,celulaG[i-1].temp);
 			double hidro=(rhog*ugsmed)*area*9.82*sin(celulaG[i].duto.teta);
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			celulaG[i-1].calor.Tint=celulaG[i-1].temp;
 			celulaG[i-1].calor.Vint=ugsmed;
@@ -32430,14 +23785,8 @@ void  SProd::RenovaTempGasPerm(int i) {
 			celulaG[i-1].fluxcal=celulaG[i-1].calor.transperm();
 			double flucal=celulaG[i-1].fluxcal;
 			double flucalCol=0.;
-	/*if((i-1)>=AnulaColunaIni&&(i-1)<=AnulaColunaFim ){
-		  int kconecte=(i-1)-AnulaColunaIni;
-		  int iconecte=ColunaAnulaIni-kconecte;
-		flucalCol=-celula[iconecte].fluxcalmed;
-	}*/
 
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double razdx;
 			if(i>0)razdx=dx/(dx+celulaG[i-1].dx0);
@@ -32446,9 +23795,7 @@ void  SProd::RenovaTempGasPerm(int i) {
 			double coefdxP=rhog*ugsmed*jtg*area;
 			double dpdx;
 			dpdx=2.*(celulaG[i].pres-((1-razdx)*celulaG[i-1].pres+razdx*celulaG[i].pres))*98600./dx;
-//			double dtdx=(-celulaG[i-1].temp)/dxmed;
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double cinetico;
 			double deljmix=0.;
@@ -32458,19 +23805,17 @@ void  SProd::RenovaTempGasPerm(int i) {
 
 			if(arq.nCompTotalUnidadesG/dx<1e6)cinetico=rhomix*area*ugsmed*ugsmed*deljmix;
 			else cinetico=0.;
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double fontemassG=0.;
 			double fontemassL=0.;
 
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			double fator=0.;
 			if((*vg1dSP).lixo5<1000.) fator=0.;
 
 			if(ugsmed>1e-3 && (celulaG[i].duto.a/celulaG[i-1].duto.a>0.5 &&
-    		           celulaG[i-1].duto.a/celulaG[i].duto.a>0.5)){//alteracao2
+    		           celulaG[i-1].duto.a/celulaG[i].duto.a>0.5)){
 				double parcenerg1=dTdLMed*(coefdxP*dpdx-cinetico-hidro+fontemassL+fontemassG)/coefdxT;
 				double parcenerg2=dTdLMed*(flucal+flucalCol)/coefdxT;
 				int npasso;
@@ -32501,18 +23846,10 @@ void  SProd::RenovaTempGasPerm(int i) {
 				}
 
 				celulaG[i].temp=temppasso;
-        //celulaG[i].temp=dxmed*(-coefdxT*dtdx+coefdxP*dpdx-cinetico-hidro+fontemassL+fontemassG+
-			//flucal)/coefdxT;
 			}
-			else{//alteracao2
-    	  //if((i)>=AnulaColunaIni&&(i)<=AnulaColunaFim){
-    		//int kconecte=(i)-AnulaColunaIni;
-    		//int iconecte=ColunaAnulaIni-kconecte;
-    		//celulaG[i].temp=celula[iconecte].temp;
-    	  //}
-    	  //else
+			else{
 				celulaG[i].temp=celulaG[i].calor.Textern1;
-			}//alteracao2
+			}
 
 			if(celulaG[i].temp<-50.)celulaG[i].temp=-50.;
 			if(celulaG[i].temp>200.)celulaG[i].temp=200.;
@@ -32542,9 +23879,6 @@ void  SProd::RenovaTempGasPerm(int i) {
 					if(templog<celulaG[i].temp)celulaG[i].temp=templog;
 
 				}
-		  /*celulaG[i].temp=(celula[iconecte].temp/celula[iconecte].calor.resGlob+
-					celulaG[i-1].calor.Textern1/celulaG[i-1].calor.resGlob)/
-					(1./celula[iconecte].calor.resGlob+1./celulaG[i-1].calor.resGlob);*/
 			}
 
 			if(celulaG[i].temp<-50.)celulaG[i].temp=-50.;
@@ -32576,15 +23910,11 @@ void SProd::conectaColunaPerm() {
   for (int i = ColunaAnulaIni; i >= ColunaAnulaFim; i--) {
     int j = ColunaAnulaIni + AnulaColunaIni - i;
 
-    //double razres=celulaG[j].calor.resGlob/(celula[i].calor.resGlob+celulaG[j].calor.resGlob);
-//    double razres = celula[i].calor.resGlob / celulaG[j].calor.resGlob;
-    //celula[i].calor.Textern2 = razres * celulaG[j].calor.Textern2 + (1 - razres) * celula[i].temp;
     celula[i].calor.Textern2 = celulaG[j].calor.Textern1 ;
     celula[i].calor.colunaDia = celulaG[j].duto.dia;
 
     double cpg = celulaG[j].flui.CalorGas(celulaG[j].pres, celulaG[j].temp);
     double rhog = celulaG[j].flui.MasEspGas(celulaG[j].pres, celulaG[j].temp);
-    //celula[i].calor.Textern1 = razres * celulaG[j].calor.Textern1 + (1 - razres) * celula[i].temp;
     celula[i].calor.Textern1 = celulaG[j].calor.Textern1 ;
     celula[i].calor.Vextern1 = celulaG[j].VGasR / celulaG[j].u1L;
     celula[i].calor.kextern1 = celulaG[j].flui.CondGas(celulaG[j].pres, celulaG[j].temp);
@@ -32674,12 +24004,9 @@ void SProd::atualizaVelTermPerm() {
 
 void SProd::calcDTPseudoTrans(){
 	  dt=100.;
-	  //if(dt<arq.dtmax)dt = arq.dtmax;
 	  for (int i = 0; i <= ncel; i++) {
 	    double jmix = 0.;
-//	    double A1 = celula[i].duto.area;
 	    double dtaux;
-//	    double alfteste=celula[i].alf;
 	    if (fabs(celula[i].VTemper) > jmix) jmix = fabs(celula[i].VTemper);
 	    if (fabs(jmix) > 1e-5) dtaux = 1.0 * celula[i].dx / jmix;
 	    else dtaux = dt;
@@ -32694,15 +24021,12 @@ void SProd::calcDTPseudoTrans(){
 	      if (dtaux < dt) dt = dtaux;
 	    }
 	  }
-	  //dt=5;
 	  dt = 0.8 * dt;
-	  //if (dt > arq.dtmax) dt = arq.dtmax;
 	  for (int i = 0; i <= ncel; i++) celula[i].dt=dt;
 	  if (arq.lingas == 1){
 		  for (int i = 0; i <= ncelGas; i++) celulaG[i].dt=dt;
 	  }
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 double SProd::marchaInjPerm1(double chute) {
 
   int corrigechute = 1;
@@ -32711,7 +24035,6 @@ double SProd::marchaInjPerm1(double chute) {
   else celula[0].temp = celula[0].acsr.injg.temp;
   double alfini=0.;
   double betini=1.;
-  //double pchute=pGSup;
   double delp = 0.;
   if (arq.condpocinj.CC == 1 || arq.condpocinj.CC == 2 || arq.condpocinj.CC == 3) {
     if ((chokeSup.AreaGarg / chokeSup.AreaTub) >= 0.6) {
@@ -32730,7 +24053,6 @@ double SProd::marchaInjPerm1(double chute) {
     			  celula[0].acsr.injg.FluidoPro.atualizaPropComp(pGSup, celula[0].acsr.injg.temp,-1,NULL,NULL,arq.pocinjec);
     		  }
     		  double masgas = celula[0].acsr.injg.VMas(pGSup, celula[0].acsr.injg.temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
     		  double tit;
     		  if(arq.flashCompleto!=2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
     		  else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -32745,13 +24067,6 @@ double SProd::marchaInjPerm1(double chute) {
     	  }
       }
     } else {
-      //pchute=chute;
-      //double rho=celula[0].fluicol.MasEspFlu(pGSup,celula[0].temp);
-      //double den=1./pow(chokeSup.AreaGarg,2.)-0.*1./pow(celula[ncel].duto.area,2.);
-      //double maschoke=2.*rho*(pGSup-chute)*98066.5/den;
-      //if(maschoke<0.)maschoke=0.;
-      //maschoke=chokeSup.cdchk*sqrt(maschoke);
-      //celula[0].acsr.injl.QLiq=maschoke*86400/celula[0].fluicol.MasEspFlu(1.01,15.);
     	if(arq.flashCompleto<1){
     		celula[0].acsr.injl.QLiq = chute;
     		delp = (1 / (celula[0].fluicol.MasEspFlu(pGSup, celula[0].acsr.injl.temp) * chokeSup.cdchk * 2.))
@@ -32772,7 +24087,6 @@ double SProd::marchaInjPerm1(double chute) {
         	}
         	else{
         		double masgas = celula[0].acsr.injg.VMas(pGSup, celula[0].acsr.injg.temp);
-    		//double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
         		double tit;
         		if(arq.flashCompleto<2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
         		else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -32804,7 +24118,6 @@ double SProd::marchaInjPerm1(double chute) {
   celula[0].QG = 0.;
   if (arq.condpocinj.CC == 0 || arq.condpocinj.CC == 5) {
     pGSup = chute;
-    //pchute=pGSup;
   }
   iterperm = 0;
 
@@ -32822,16 +24135,6 @@ double SProd::marchaInjPerm1(double chute) {
     celula[1].presLini = pGSup - delp;
     celula[0].presaux = pGSup - delp;
     celula[1].presauxL = pGSup - delp;
-    //celula[0].presauxL=pchute;
-    //celula[0].presLini=pchute;
-    //celula[0].presL=pchute;
-    //celula[0].pres=pchute;
-    //celula[1].presL=pchute;
-    //celula[0].presini=pchute;
-    //celula[1].presLini=pchute;
-    //celula[0].presaux=pchute;
-    //celula[1].presauxL=pchute;
-    //if (iterperm == 0) {
       celula[0].alf = alfini;
       celula[0].alfini = alfini;
       celula[0].bet = betini;
@@ -32850,26 +24153,6 @@ double SProd::marchaInjPerm1(double chute) {
       celula[0].betPigEini = celula[0].bet;
       celula[0].betI = celula[0].bet;
       celula[1].betLI = celula[0].bet;
-    /*} else {
-      celula[0].alf = celula[1].alf;
-      celula[0].alfini = celula[1].alf;
-      celula[0].bet = celula[1].bet;
-      celula[0].betini = celula[1].bet;
-      celula[1].alfL = celula[0].alf;
-      celula[1].alfLini = celula[0].alf;
-      celula[0].alfPigD = celula[0].alf;
-      celula[0].alfPigDini = celula[0].alf;
-      celula[0].alfPigE = celula[0].alf;
-      celula[0].alfPigEini = celula[0].alf;
-      celula[1].betL = celula[0].bet;
-      celula[1].betLini = celula[0].bet;
-      celula[0].betPigD = celula[0].bet;
-      celula[0].betPigDini = celula[0].bet;
-      celula[0].betPigE = celula[0].bet;
-      celula[0].betPigEini = celula[0].bet;
-      celula[0].betI = celula[0].bet;
-      celula[1].betLI = celula[0].bet;
-    }*/
     i = 1;
     while (i <= ncel && celula[i - 1].pres >= 1. && masfim >= -(*vg1dSP).localtiny) {
 
@@ -32878,12 +24161,6 @@ double SProd::marchaInjPerm1(double chute) {
       if(arq.flashCompleto!=2) RenovaMassPerm(i);
       else RenovaMassPermComp(i);
       RenovaTempPerm(i, 0);
-      /*if(arq.flashCompleto==2){
-      	if(i>0)
-      	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
-   			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-      	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-      }*/
       atualizaPeriTempProd(i);
       RenovaPresPermJus(i, 0);
       atualizaPeriPjusProd(i);
@@ -32908,12 +24185,6 @@ double SProd::marchaInjPerm1(double chute) {
 
       }
       masfim += (celula[i-1].fontemassCR+celula[i-1].fontemassLR+celula[i-1].fontemassGR);
-      /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-      celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-      celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-      celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-      celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-      celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
       i++;
       if (celula[i - 1].pres <= 1
           || (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) > -(*vg1dSP).localtiny)) return -1e10;
@@ -32926,17 +24197,6 @@ double SProd::marchaInjPerm1(double chute) {
 
   if (arq.condpocinj.CC != 3 && arq.condpocinj.CC != 5) return masfim;
   else return arq.condpocinj.presfundo - celula[ncel].pres;
-  /*else{
-   if((chokeSup.AreaGarg/chokeSup.AreaTub)>=0.6)return arq.condpocinj.presfundo-celula[ncel].pres;
-   else{
-   double rho=celula[ncel].fluicol.MasEspFlu(celula[ncel].pres,celula[ncel].temp);
-   double den=1./pow(chokeSup.AreaGarg,2.)-0.*1./pow(celula[ncel].duto.area,2.);
-   double maschoke=2.*rho*(celula[ncel].pres-arq.condpocinj.presfundo)*98066.5/den;
-   if(maschoke<0.)maschoke=0.;
-   maschoke=chokeSup.cdchk*sqrt(maschoke);
-   return masfim-maschoke;
-   }
-   }*/
 }
 
 double SProd::buscaInjPfundoPerm1(double chute) {
@@ -32997,10 +24257,6 @@ double SProd::buscaInjPfundoPerm1(double chute) {
 	  }
   }
   else mchute=chute;
-  //if((chokeSup.AreaGarg/chokeSup.AreaTub)<0.6){
-  //mchute=pGSup-(1/(celula[ncel].fluicol.MasEspFlu(pGSup,celula[0].acsr.injl.temp)*chokeSup.cdchk*2.))*
-  //pow((mchute*celula[0].fluicol.MasEspFlu(1.01,15.)/86400)/(chokeSup.AreaGarg),2.)/98066.5;
-  //}
   double mchute2;
   double mchuteAux;
   double val;
@@ -33102,9 +24358,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
 		  }
 		  chuteNeg=mchute2;
 	  }
-  //return falsacorda(mchute, mchute2,1,0);
 	  return zriddr(chuteNeg, chutePos, 1, 0);
-  //return zbrent(mchute, mchute2,1,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
@@ -33129,7 +24383,6 @@ double SProd::buscaInjPfundoPerm2(double chute) {
 	  	  rmis = rC;
 	  	  double rlcA = celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
 	  	  double massicC = rlcA * celula[0].acsr.injl.QLiq / 86400;
-  //////////////////////////////////////////////////////////////////////////////////////////////
 	  	  j = (massicC / rC) / celula[0].duto.area;
 	  	  double re;
 	  	  if (celula[0].duto.revest == 0) re = celula[0].Rey(celula[0].duto.a, j, rmis, visMis);
@@ -33165,7 +24418,6 @@ double SProd::buscaInjPfundoPerm2(double chute) {
 	  	  rmis = rC;
 	  	  double rlcA = (celula[0].flui.Deng*1.225);
 	  	  double massicC = rlcA * celula[0].acsr.injg.QGas / 86400;
-  //////////////////////////////////////////////////////////////////////////////////////////////
 	  	  j = (massicC / rC) / celula[0].duto.area;
 	  	  double re;
 	  	  if (celula[0].duto.revest == 0) re = celula[0].Rey(celula[0].duto.a, j, rmis, visMis);
@@ -33295,9 +24547,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
 		  }
 		  chuteNeg=pchute2;
 	  }
-  //return falsacorda(pchute, pchute2,1,0);
 	  return zriddr(chuteNeg, chutePos, 1, 0);
-  //return zbrent(pchute, pchute2,1,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
@@ -33488,7 +24738,6 @@ double SProd::buscaInjPfundoPerm4() {
     			celula[0].acsr.injg.FluidoPro.atualizaPropComp(pGSup, celula[0].acsr.injg.temp,-1,NULL,NULL,arq.pocinjec);
     		}
     		double masgas = celula[0].acsr.injg.VMas(pGSup, celula[0].acsr.injg.temp);
-		  //double tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
     		double tit;
     		if(arq.flashCompleto!=2)tit=celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
     		else tit=celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -33535,7 +24784,6 @@ double SProd::buscaInjPfundoPerm4() {
     celula[1].presLini = pGSup;
     celula[0].presaux = pGSup;
     celula[1].presauxL = pGSup;
-    //if (iterperm == 0) {
       celula[0].alf = alfini;
       celula[0].alfini = alfini;
       celula[0].bet = betini;
@@ -33554,26 +24802,6 @@ double SProd::buscaInjPfundoPerm4() {
       celula[0].betPigEini = celula[0].bet;
       celula[0].betI = celula[0].bet;
       celula[1].betLI = celula[0].bet;
-    /*} else {
-      celula[0].alf = celula[1].alf;
-      celula[0].alfini = celula[1].alf;
-      celula[0].bet = celula[1].bet;
-      celula[0].betini = celula[1].bet;
-      celula[1].alfL = celula[0].alf;
-      celula[1].alfLini = celula[0].alf;
-      celula[0].alfPigD = celula[0].alf;
-      celula[0].alfPigDini = celula[0].alf;
-      celula[0].alfPigE = celula[0].alf;
-      celula[0].alfPigEini = celula[0].alf;
-      celula[1].betL = celula[0].bet;
-      celula[1].betLini = celula[0].bet;
-      celula[0].betPigD = celula[0].bet;
-      celula[0].betPigDini = celula[0].bet;
-      celula[0].betPigE = celula[0].bet;
-      celula[0].betPigEini = celula[0].bet;
-      celula[0].betI = celula[0].bet;
-      celula[1].betLI = celula[0].bet;
-    }*/
     i = 1;
     while (i <= ncel && celula[i - 1].pres >= 1. && masfim >= -(*vg1dSP).localtiny) {
 
@@ -33582,23 +24810,11 @@ double SProd::buscaInjPfundoPerm4() {
       if(arq.flashCompleto!=2)RenovaMassPerm(i);
       else RenovaMassPermComp(i);
       RenovaTempPerm(i, 0);
-      /*if(arq.flashCompleto==2){
-      	if(i>0)
-      	celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp,celula[i-1].flui.dCalculatedBeta,
-   			   celula[i-1].flui.oCalculatedLiqComposition,celula[i-1].flui.oCalculatedVapComposition);
-      	else celula[i].flui.atualizaPropComp(celula[i].pres, celula[i].temp);
-      }*/
       atualizaPeriTempProd(i);
       RenovaPresPermJus(i, 0);
       atualizaPeriPjusProd(i);
       RenovaTransMassPerm(i - 1);
       masfim += (celula[i-1].fontemassCR+celula[i-1].fontemassLR+celula[i-1].fontemassGR);
-      /*celula[i].rpC = celula[i].rpCi = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-      celula[i].rcC = celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-      celula[i].rpL = celula[i].rpLi = celula[i].flui.MasEspLiq(celula[i].presL, celula[i].tempL);
-      celula[i].rcL = celula[i].rcLi = celula[i].fluicol.MasEspFlu(celula[i].presL, celula[i].tempL);
-      celula[i - 1].rpR = celula[i - 1].rpRi = celula[i].rpC;
-      celula[i - 1].rcR = celula[i - 1].rcRi = celula[i].rcC;*/
       i++;
       if (celula[i - 1].pres <= 1) {
         if ((*vg1dSP).chaverede == 0 && arq.AS==0) NumError("pressao menor que 1");
@@ -33644,7 +24860,6 @@ double SProd::buscaInjPfundoPerm5(double chute) {
 	  	  rmis = rC;
 	  	  double rlcA=celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
 	  	  double massicC = rlcA * celula[0].acsr.injl.QLiq / 86400;
-  //////////////////////////////////////////////////////////////////////////////////////////////
 	  	  j = (massicC / rC) / celula[0].duto.area;
 	  	  double re;
 	  	  if (celula[0].duto.revest == 0) re = celula[0].Rey(celula[0].duto.a, j, rmis, visMis);
@@ -33677,7 +24892,6 @@ double SProd::buscaInjPfundoPerm5(double chute) {
 	  	  rmis = rC;
 	  	  double rlcA= (celula[0].acsr.injg.FluidoPro.Deng*1.225);
 	  	  double massicC = rlcA * celula[0].acsr.injg.QGas / 86400;
-  //////////////////////////////////////////////////////////////////////////////////////////////
 	  	  j = (massicC / rC) / celula[0].duto.area;
 	  	  double re;
 	  	  if (celula[0].duto.revest == 0) re = celula[0].Rey(celula[0].duto.a, j, rmis, visMis);
@@ -33806,13 +25020,10 @@ double SProd::buscaInjPfundoPerm5(double chute) {
 		  }
 		  chuteNeg=pchute2;
 	  }
-  //return falsacorda(pchute, pchute2,1,0);
 	  return zriddr(chuteNeg, chutePos, 1, 0);
-  //return zbrent(pchute, pchute2,1,0); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 double  SProd::multMarcha(double chute, int prod, int tipoCC){
   if(arq.pocinjec==0){
@@ -33858,7 +25069,6 @@ double SProd::zbrent(double x1, double x2, int prod, int tipoCC, double tol, dou
   double e=0.;
   double d, fc, p, q, r, s, tol1, xm;
 
-  //if((fa>0.0&&fb>0.0)||(fa<0.0&&fb<0.0))NumError("Chute inadequado para o calculo de raiz no metodo Ridders");
   if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) {
     double val;
     val = falsacorda(x1, x2, prod, tipoCC);
@@ -33921,21 +25131,7 @@ double SProd::zbrent(double x1, double x2, int prod, int tipoCC, double tol, dou
 
 double SProd::falsacorda(double a, double b, int prod, int tipoCC) {
   double u = multMarcha(a, prod, tipoCC);
-  /*double e=b-a;
-   double c;
-   int maxit=100;
-   double delta=0.001;
-   double epsn=0.001;
 
-   for(int k=1;k<=maxit;k++){//este bloco trata da falsa corda propriamente dita
-   e*=0.5;
-   c=a+e;
-   double w=multMarcha(c, prod, tipoCC);
-   if(fabs(e)<delta||fabs(w)<epsn) return c;
-   ((u>0&&w<0)||(u<0&&w>0))?(b=c):(a=c,u=w);
-   }
-   NumError("Falsa corda atingiu numero maximo de iteracoes no calculo da pressao da linha de gas permanente") ;
-   return c;*/
 
   double e = b - a;
   double c;
@@ -33945,108 +25141,17 @@ double SProd::falsacorda(double a, double b, int prod, int tipoCC) {
   double multFC = 0.5;
 
   for (int k = 1; k <= maxit; k++) {    //este bloco trata da falsa corda propriamente dita
-    /*double e1=e;
-     double c1;
-     e1*=multFC;
-     c1=a+e1;
-     multFC=0.5;*/
     e = b - a;
     e *= 0.5;
     c = a + e;
     double w = multMarcha(c, prod, tipoCC);
     if (fabs(e) < delta || fabs(w) < epsn) return c;
     ((u > 0 && w < 0) || (u < 0 && w > 0)) ? (b = c) : (a = c, u = w);
-    /*if((u>0&&w<0)||(u<0&&w>0)){
-     e=e1;
-     c=c1;
-     b=c;
-     v=multMarcha(b, prod, tipoCC);
-     }
-     else if((v>0&&w<0)||(v<0&&w>0)){
-     e=e1;
-     c=c1;
-     a=c;
-     u=w;
-     }
-     else{
-     multFC*=0.5;
-     cout<<multFC<<endl;
-     //maxit++;
-     }*/
   }
-  //NumError("Falsa corda atingiu numero maximo de iteracoes") ;
   return c;
 }
 
-/*double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
-	double xacc=1e-5;
-	int maxit=100;
-	double fl=multMarcha(x1, prod, tipoCC);
-	double fh=multMarcha(x2, prod, tipoCC);
-	if(fl>=0.){
-		if(fh>0.9e10){
-			x1*=0.999999;
-			fl=multMarcha(x1, prod, tipoCC);
-		}
-		else while(fl>=0){
-		   //x1=x1-1*(x2-x1);
-			x1*=1.0000001;
-		   fl=multMarcha(x1, prod, tipoCC);
-		}
-	}
-	else if(fh<=0.){
-		if(fh<-0.9e10){
-			x2*=1.000001;
-			fh=multMarcha(x2, prod, tipoCC);
-		}
-		else while(fh<=0){
-		  //x2=x2-1*(x1-x2);
-		  x2*=0.999999;
-		  fh=multMarcha(x2, prod, tipoCC);
-		}
-	}
-	if((fl>0.0 && fh<0.0) || (fl<0.0 && fh>0.0)){
-		double xl=x1;
-		double xh=x2;
-		double ans=-1.e20;
-		for(int j=0;j<maxit;j++){
-			double xm=0.5*(xl+xh);
-			double fm=multMarcha(xm, prod, tipoCC);
-			double s=sqrt(fm*fm-fl*fh);
-			if(s==0.0) return ans;
-			double xnew=xm+(xm-xl)*((fl>=fh ? 1.0 : -1.0)*fm/s);
-			if(fabs(xnew-ans)<=xacc ){
-				return ans;
-			}
-			ans=xnew;
-			double fnew=multMarcha(ans, prod, tipoCC);
-			if(fabs(fnew)<=xacc ) return ans;
-			if(SIGN(fm, fnew)!=fm){
-				xl=xm;
-				fl=fm;
-				xh=ans;
-				fh=fnew;
-			}
-			else if(SIGN(fl,fnew)!=fl){
-				xh=ans;
-				fh=fnew;
-			}
-			else if(SIGN(fh,fnew)!=fh){
-				xl=ans;
-				fl=fnew;
-			}
-			else return -100000.;
-			if(fabs(xh-xl)<=xacc ) return ans;
 
-		}
-		 return 100000.;
-	}
-	else {
-		if(fabs(fl)<=xacc) return x1;
-		if(fabs(fh)<=xacc) return x2;
-		return -10000.;
-	}
-}*/
 
 double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
 	double xacc=1e-5;
@@ -34060,9 +25165,6 @@ double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
 		fh=multMarcha(x2, prod, tipoCC);
 	}
 	else{
-		//double xTemp=x1;
-		//x1=x2;
-		//x2=xTemp;
 		fl=multMarcha(x1, prod, tipoCC);
 		fh=multMarcha(x2, prod, tipoCC);
 	}
@@ -34073,7 +25175,6 @@ double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
 			fl=multMarcha(x1, prod, tipoCC);
 		}
 		else{
-		   //x1=x1-1*(x2-x1);
 			int konta=0;
 			while(konta<100 && fl>0.){
 				if(revPerm==0){
@@ -34081,7 +25182,6 @@ double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
 					else x1*=0.999;
 				}
 				else{
-					//x1*=1.0001;
 					if(x2<x1) x1*=1.0001;
 					else x1*=0.999;
 				}
@@ -34096,7 +25196,6 @@ double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
 			fh=multMarcha(x2, prod, tipoCC);
 		}
 		else{
-		  //x2=x2-1*(x1-x2);
 			int konta=0;
 			while(konta<100 && fh<0.){
 				if(revPerm==0){
@@ -34104,7 +25203,6 @@ double  SProd::zriddr(double x1,double x2,int prod, int tipoCC){
 					else x2*=0.999;
 				}
 				else{
-					//x2*=0.999;
 					if(x1<x2) x2*=1.0001;
 					else x2*=0.999;
 				}
@@ -34215,7 +25313,6 @@ double SProd::hidroreverso(double hol, double vaz,double vazG) {
     double rlpA = celula[i].flui.MasEspLiq(1., 15.);
     double rlcA = celula[i].fluicol.MasEspFlu(1.001, 15.);
     double massicC = rlcA * vaz * bet;
-    //////////////////////////////////////////////////////////////////////////////////////////////
     double massic = rlpA * vaz * (1. - bet);
     double Rhogs = celula[i].flui.Deng * 1.225;    //cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
     double Rhols = (1000 * 141.5 / (131.5 + celula[i].flui.API)) * (1 - celula[i].flui.BSW)
@@ -34239,7 +25336,6 @@ double SProd::hidroreverso(double hol, double vaz,double vazG) {
     f1 = celula[i].fric(re, celula[0].duto.rug / celula[0].duto.a);
   }
   double perdafric = (f1 * rmis * j * fabs(j) / 2.) * celula[i].duto.peri / celula[i].duto.area;
-  //for (int i = ncel; i > 0; i--) {
     taux = arq.celp[i].textern;
     if(i==500){
     	int para;
@@ -34259,16 +25355,16 @@ double SProd::hidroreverso(double hol, double vaz,double vazG) {
     if (celula[i - 1].acsr.tipo == 16 && (celula[i - 1].acsr.poroso2D.dados.pRes - pchute) < (*vg1dSP).localtiny) pchute = 0.99
         * celula[i - 1].acsr.poroso2D.dados.pRes;
 
-    celula[i - 1].dpB = 0.;    //alteracao 1
-    if (celula[i - 1].acsr.tipo == 4 && celula[i - 1].acsr.bcs.freqnova > 1. && vaz >= 0.) {    //alteracao 1
+    celula[i - 1].dpB = 0.;
+    if (celula[i - 1].acsr.tipo == 4 && celula[i - 1].acsr.bcs.freqnova > 1. && vaz >= 0.) {
       double vazmix = j * celula[i - 1].dutoL.area;
       double rhomis = celula[i - 1].flui.MasEspLiq(pchute, taux);
       double vismis = celula[i - 1].flui.ViscOleo(pchute, taux);
       vazmix *= (86400 / 0.1589876);
       celula[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
       celula[i - 1].dpB = 0.3048 * celula[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
-    }    //alteracao 1
-    if (celula[i - 1].acsr.tipo == 17 && celula[i - 1].acsr.multibcs.freqnova > 1. && vaz >= 0.) {    //alteracao 1
+    }
+    if (celula[i - 1].acsr.tipo == 17 && celula[i - 1].acsr.multibcs.freqnova > 1. && vaz >= 0.) {
 	    double alf0 = celula[i - 1].alf;
 	    double bet0 = celula[i - 1].bet;
 	    celula[i - 1].acsr.multibcs.flui=celula[i - 1].flui;
@@ -34277,7 +25373,7 @@ double SProd::hidroreverso(double hol, double vaz,double vazG) {
 	    		pchute, taux,alf0, bet0);
 	    celula[i - 1].dpB = celula[i - 1].acsr.multibcs.dpB*98066.52;
     }
-    pchute -= celula[i - 1].dpB / 98066.5;    //alteracao 1
+    pchute -= celula[i - 1].dpB / 98066.5;
     celula[i - 1].pres = pchute;
   }
   return pchute;
@@ -34303,7 +25399,6 @@ double SProd::hidroreversoInj(double hol, double vaz) {
     rmis = rC;
     double rlcA = celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
     double massicC = rlcA * vaz;
-    //////////////////////////////////////////////////////////////////////////////////////////////
     j = (massicC / rC) / celula[0].duto.area;
     double re;
     if (celula[0].duto.revest == 0) re = celula[0].Rey(celula[0].duto.a, j, rmis, visMis);
@@ -34392,8 +25487,6 @@ void SProd::hidroLinServ() {
 double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 	//busca de dois chutes iniciais com valores com sinais opostos
 	//para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
-	//chute=chute inicial de pressao de fundo, caso chute seja <0,
-	//sera feita uma estimativa interna dos valores;
   revPerm=0;
   monitConvPerm=1000.;
   double pchute = pPartida;//inicializando o valor de pchute com o valor da pressao a jusante
@@ -34575,16 +25668,8 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
   double chuteNeg=0.;
   double chutePos=0.;
   double atenua=1.;
-  /*if(celula[0].acsr.tipo==3 && celula[0].acsr.ipr.tipoIPR!=2){
-	  if(celula[0].acsr.ipr.ip>2000.)atenua=celula[0].acsr.ipr.ip/2000;
-  }
-  double reduz=0.9*atenua;
-  if(reduz>0.999)reduz=0.999;
-  double amplifica=1.1/atenua;
-  if(amplifica<1.001)amplifica=1.001;*/
   double reduz=1.-arq.buscaFC;
   double amplifica=1.+arq.buscaFC;
-//  double aumenta=amplifica;
   if(fabs(val)<1e-3)return pchute;
   else {
 	  if (val < 0.) {//caso em que o chute de pressao foi alto
@@ -34600,11 +25685,6 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 				  pchute2*=0.5;
 			  }
 			  pchuteAux = pchute2;
-      //double coef;
-      //if((*vg1dSP).chaverede==0)coef=atenuador*0.9;
-      //else coef=atenuador*0.99;
-      //if(coef>=(1.-localtiny))coef=0.9999;
-      //pchute*=coef;
 			  if ((*vg1dSP).chaverede == 0) pchute2 *= reduz;//Diminuindo a pressao na busca de val>0
 			  else pchute2 *= mult1;//Diminuindo a pressao na busca de val>0
 			  if (pchute2 <= chutelim) pchute2 = 0.5 * (pchuteAux + chutelim);//chutelim inicialmente
@@ -34635,11 +25715,9 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 				  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
 				  if(celula[0].acsr.tipo == 3 &&
 						  (celula[0].acsr.ipr.Pres - pchute2) <  0.001* celula[0].acsr.ipr.Pres){
-        	//pchute2 = 0.99 * celula[0].acsr.ipr.Pres;
 					  pchute2=-(10/celula[0].acsr.ipr.ip)+celula[0].acsr.ipr.Pres;
 					  if(pchute2<0.999* celula[0].acsr.ipr.Pres)pchute2 = 0.999* celula[0].acsr.ipr.Pres;
 				  }
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=0.9*pchuteAux;
 				  val = marchaProdPerm2(pchute2);
 				  if(fabs(val)>1.01e10){
 			     		cout<<"#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################"<<endl;
@@ -34667,7 +25745,6 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 			  pchuteAux = pchute2;
 			  if ((*vg1dSP).chaverede == 0) pchute2 *= amplifica;//Aumentando a pressao na busca de val>0
 			  else pchute2 *= mult2;//Aumentando a pressao na busca de val>0
-      //if (pchute2 >= chutelim) pchute2 = 0.5 * (pchuteAux + chutelim);
 			  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
 			  int limpres=0;
 			  val = marchaProdPerm2(pchute2);
@@ -34711,7 +25788,6 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 				  pchute2 = 0.5 * (pchute2 + pchuteAux);//valor intermediario entre a maior pressao
 			// que leva a val>0 e a pressao alta demais
 				  if(arq.usaTabela==1 && (arq.tabent.pmax - pchute2) < (*vg1dSP).localtiny)pchute2 = 0.9*arq.tabent.pmax;
-        //if(fabs(pchute2-pchuteAux)<localtiny)pchute2=1.1*pchuteAux;
 				  val = marchaProdPerm2(pchute2);
 				  if(fabs(val)>1.01e10){
 			     		cout<<"#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################"<<endl;
@@ -34731,12 +25807,9 @@ double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
 		  }
 		  chuteNeg=pchute2;
 	  }
-  //return falsacorda(pchute, pchute2,1,1);
 	  return zriddr(chuteNeg, chutePos, 1, 1);//com as duas estimativas de pressao
   //em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
   //de funcao
-  //return zbrent(pchute, pchute2,1,1); //no caso mono deu problema com este solver, funcionou melhor com a falsa corda
   }
 }
 
-//template class SProd;

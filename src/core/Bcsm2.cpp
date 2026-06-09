@@ -74,7 +74,6 @@ BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhea
         while(maxef<efic[k]&&k<lenth-1){maxef=efic[k];k++;}
         BEP=FalsaCorda(1,vaz[k-2],vaz[k]);
         if(BEP<0)BEP=vaz[k-1];
-        //BEP=FalsaCorda(1,vaz[0],vaz[lenth-1]);
         Qzero=FalsaCorda(0,vaz[lenth-2],vaz[lenth-1]);
 
         Hvis=0.;
@@ -390,65 +389,12 @@ double BomCentSub::FalsaCorda(int qfunc,double a,double b,double delta ,double e
 
 void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 
-
-	   /* double visC=vis*1000/MasEsp;
-        double Y=-112.1374+6.6504*log(Fhead(BEP)/nestag)+12.8429*log(BEP);
-        double Qast=exp((39.52766+26.5605*log(visC)-Y)/51.6565);
-        double Cq=1-4.0327*pow(10,-3)*Qast-1.724*pow(10,-4)*Qast*Qast;
-        double Coeff=1-3.3075*pow(10,-2)*Qast+2.8875*pow(10,-4)*Qast*Qast;
-        double Ch1=1-3.68*pow(10,-3)*Qast-4.36*pow(10,-5)*Qast*Qast;
-        double Ch2=1-4.4723*pow(10,-3)*Qast-4.18*pow(10,-5)*Qast*Qast;
-        double Ch3=1-7.0076*pow(10,-3)*Qast-1.41*pow(10,-5)*Qast*Qast;
-        double Ch4=1-9.01*pow(10,-3)*Qast-1.31*pow(10,-5)*Qast*Qast;
-
-        double q0=0;
-        double q1=Cq*(BEP);
-        double q0p6=0.6*q1;
-        double q0p8=0.8*q1;
-        double q1p2=1.2*q1;
-        double qmax=(Qzero/0.16)*Cq;
-
-        double h0=Fhead(0)/nestag;
-        double h1=Ch1*Fhead(q0p6)/nestag;
-        double h2=Ch2*Fhead(q0p8)/nestag;
-        double h3=Ch3*Fhead(q1)/nestag;
-        double h4=Ch4*Fhead(q1p2)/nestag;
-        double hmax=0;
-
-        double e0=Fefic(0);
-        double e1=Coeff*Fefic(q0p6);
-        double e2=Coeff*Fefic(q0p8);
-        double e3=Coeff*Fefic(q1);
-        double e4=Coeff*Fefic(q1p2);
-        double emax=0;
-
-        double multip=(9.81/(1/100.))*0.001341022*0.3048*0.159/86400.;
-        double p0=Fpower(0)/nestag;
-        double p1=(h1*q0p6*MasEsp/e1)*multip;
-        double p2=(h2*q0p8*MasEsp/e2)*multip;
-        double p3=(h3*q1*MasEsp/e3)*multip;
-        double p4=(h4*q1p2*MasEsp/e4)*multip;
-        double pmax=p4+(p4-p3)*(qmax-q1p2)/(q1p2-q1);
-
-        double vq[]={q0,q0p6,q0p8,q1,q1p2,qmax};
-        double vh[]={h0,h1,h2,h3,h4,hmax};
-        double ve[]={e0,e1,e2,e3,e4,emax};
-        double vp[]={p0,p1,p2,p3,p4,pmax};
-        BomCentSub bombaviscosa(6,vq,vh,vp,ve,freq,nestag,eficM);
-        bombaviscosa.freqnova=freqnova;
-        bombaviscosa.BEP=BEP;
-
-        //BomCentSub bombaviscosa(*this);
-
-        return bombaviscosa;*/
-
 	 if(freqnova>=freqMinima){
 	    double Qbep=BEP;
 	    double visC=vis*1000/MasEsp;
 	    double Hbep=Fhead(BEP)/nestag;
 	    double Nrpm=freqnova*60;
 	    double Bhi=26.6*pow(visC,0.5)*pow(Hbep,0.0625)/(pow(Qbep*(42./144.),0.375)*pow(Nrpm, 0.25));
-	    // double HbepV;
 	    double Qw;
 	    double Cq;
 	    double CbepH;
@@ -467,7 +413,6 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 	    		Cq=pow(2.71,expoente);
 	    		Qw=Qvis/Cq;
 	    		CbepH=Cq;
-	    		// HbepV=CbepH*Hbep;
 	    		Ch=1.-((1-CbepH)*pow(Qw/BEP,0.75));
 	    		Hvis=Ch*Fhead(Qw);
 	    		expoente=-0.0547*pow(Bhi,0.69);
@@ -475,7 +420,6 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 	    		Evis=Ce*Fefic(Qw);
 	    		if(Evis>1e-5){
 	    			Pvis=(Qw*(0.158987/86400.)*Hvis*(0.3048)*(MasEsp*9.8)/745.7)*(100./Evis);
-	    			//Pvis=(42./144.)*Qvis*Hvis*(MasEsp/1000.)/(3960*(Evis)/100);
 	    		}
 	    		else Pvis=0.;
 	    	}
@@ -537,5 +481,3 @@ ostream& BomCentSub::curva(ostream& s, double Vfreq, double estag, int npontos) 
         s<<"\n";
   return s;
 }
- 
-//template class BomCentSub;

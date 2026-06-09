@@ -26,9 +26,7 @@
 
 using namespace rapidjson;
 
-// ---------------------------------------------------------------------------
 // Lazy-loaded translation maps (parsed once from embedded JSON)
-// ---------------------------------------------------------------------------
 
 struct TranslationMaps {
     std::unordered_map<std::string, std::string> keys;
@@ -65,9 +63,7 @@ static const TranslationMaps& getMaps() {
     return maps;
 }
 
-// ---------------------------------------------------------------------------
 // Internal implementation
-// ---------------------------------------------------------------------------
 
 static void renameObjectKeys(Value& obj, Document::AllocatorType& alloc) {
     const TranslationMaps& maps = getMaps();
@@ -135,9 +131,7 @@ static void translateValueRecursive(Value& v,
     }
 }
 
-// ---------------------------------------------------------------------------
 // Public API
-// ---------------------------------------------------------------------------
 
 namespace JSONKeyTranslator {
 

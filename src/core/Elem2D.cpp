@@ -7,12 +7,10 @@
 #include "Elem2D.h"
 
 
-
 elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* atributo,int nVert, int nele, int nno, int i
 		,double vdt, int vperm, int vtrans,ProFluColVF vflucVF,
 		double vpres,double vu,double vv,double vt,double vfluxCal,double vcond,
-		double vcp,double vrho,double vvisc,double vbeta/*,int vpartidaVF,double vrelax,double vrelaxPcor,
-		int vnvfHR,int vnvfHRHol,int vatrasaHR,double vgrav,detTempo vtemp,detCC vCC*/) :
+		double vcp,double vrho,double vvisc,double vbeta) :
 				TLUV(1), localUV(2,nVert+1),TLU(1), localU(1,nVert+1),TLV(1), localV(1,nVert+1),TLPCor(1), localPCor(1,nVert+1),
 				TLT(1), localT(1,nVert+1) {
 	vizinho=0;
@@ -48,7 +46,6 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
 	cel2D.beta=vbeta;
 	cel2D.tempRef=0.;
 	cel2D.taxaDeform=0.;
-	//cel2D.B2Med=grav*cel2D.rho;
 	dt=vdt;
 	perm=vperm;
 	trans=vtrans;
@@ -57,14 +54,12 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
 	ccWvel=0;
 	ccPres=0;
 	ccWall=0;
-	//////////////////////////////////////////////////////////////////
 	ccTD=0;
 	ccTVN=0;
 	ccHR=0;
 	ccTambR=0;
 	DCCN=0.;
 	extrapSuaveCCN=0.;
-	/////////////////////////////////////////////////////////////////
 	massTot=0.;
 
 	residuoU=0.;
@@ -81,15 +76,6 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
 	vg1dSP=Vvg1dSP;
 	flucVF=vflucVF;
 
-    /*temp=vtemp;
-    CC=vCC;
-    partidaVF=vpartidaVF;
-    relax=vrelax;
-    relaxPcor=vrelaxPcor;
-    nvfHR=vnvfHR;
-    nvfHRHol=vnvfHRHol;
-    atrasaHR=vatrasaHR;
-    grav=vgrav;*/
 
 	if(nele>0){
 		cel2D.noFace=0;
@@ -168,12 +154,10 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     	ccWvel=new double [cel2D.nvert];
     	ccPres=new double [cel2D.nvert];
     	ccWall=new double [cel2D.nvert];
-    	////////////////////////////////////////////////////////////////////////////
     	ccTD=new double [cel2D.nvert];
     	ccTVN=new double [cel2D.nvert];
     	ccHR=new double [cel2D.nvert];
     	ccTambR=new double [cel2D.nvert];
-    	////////////////////////////////////////////////////////////////////////////
     	for(int j=0; j<cel2D.nvert;j++) gradPresface[j]=new double [cel2D.dim];
     	for(int j=0; j<cel2D.nvert;j++) gradPresfaceCor[j]=new double [cel2D.dim];
     	cel2D.gradGreenPres=new double [cel2D.dim];
@@ -221,7 +205,6 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     	for(int j=0; j<cel2D.nvert;j++) cel2D.sFace[j]=new double [cel2D.dim];
     	cel2D.sFaceMod=new double [cel2D.nvert];
     	cel2D.subVol=new double [cel2D.nvert];
-    	///////////////////////////////////////////////////////////////////////////////////////////
         cel2D.vecE=new double* [cel2D.nvert];
         for(int j=0; j<cel2D.nvert;j++) cel2D.vecE[j]=new double [cel2D.dim];
         cel2D.modE=new double [cel2D.nvert];
@@ -263,7 +246,6 @@ elem2d::elem2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* 
     		cel2D.noElem[j]=noEle[i][j];
     		int iNo=cel2D.noElem[j];
     		if(j+1<cel2D.nvert){
-    			//int iNoP=cel2D.noElem[j+1];
     			int iNoP=noEle[i][j+1];
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoP])cel2D.ccFace[j]=tipo[iNo];
@@ -517,15 +499,10 @@ elem2d::elem2d(const elem2d& velem) :
 	cel2D.a0U=velem.cel2D.a0U;
 	cel2D.a0V=velem.cel2D.a0V;
 	cel2D.taxaDeform=velem.cel2D.taxaDeform;
-	//cel2D.B2Med=velem.cel2D.B2Med;
 	dt=velem.dt;
 	perm=velem.perm;
 	trans=velem.trans;
 	massTot=velem.massTot;
-	//ccTD=velem.ccTD;
-	//ccTVN=velem.ccTVN;
-	//ccHR=velem.ccHR;
-	//ccTambR=velem.ccTambR;
 	residuoU=velem.residuoU;
 	residuoV=velem.residuoV;
 	denoResU=velem.denoResU;
@@ -539,15 +516,6 @@ elem2d::elem2d(const elem2d& velem) :
 	DCCN=velem.DCCN;
 	extrapSuaveCCN=velem.extrapSuaveCCN;
 
-    /*temp=velem.temp;
-    CC=velem.CC;
-    partidaVF=velem.partidaVF;
-    relax=velem.relax;
-    relaxPcor=velem.relaxPcor;
-    nvfHR=velem.nvfHR;
-    nvfHRHol=velem.nvfHRHol;
-    atrasaHR=velem.atrasaHR;
-    grav=velem.grav;*/
 
 	if(cel2D.nvert>0){
     	vizinho=new elemento* [cel2D.nvert];
@@ -646,7 +614,6 @@ elem2d::elem2d(const elem2d& velem) :
         	ccPres[j]=-1;
         	ccWall[j]=-1;
     	}
-    	///////////////////////////////////////////////////////////////////////////////////////
     	ccTD=new double [cel2D.nvert];
     	ccTVN=new double [cel2D.nvert];
     	ccHR=new double [cel2D.nvert];
@@ -657,7 +624,6 @@ elem2d::elem2d(const elem2d& velem) :
     		ccHR[j]=-1;
     		ccTambR[j]=-1;
     	}
-    	/////////////////////////////////////////////////////////////////////////////////////////
     	for(int j=0; j<cel2D.nvert;j++) gradPresface[j]=new double [cel2D.dim];
     	for(int j=0; j<cel2D.nvert;j++) gradPresfaceCor[j]=new double [cel2D.dim];
     	cel2D.gradGreenPres=new double [cel2D.dim];
@@ -744,12 +710,10 @@ elem2d::elem2d(const elem2d& velem) :
         	ccWvel[i]=velem.ccWvel[i];
         	ccPres[i]=velem.ccPres[i];
         	ccWall[i]=velem.ccWall[i];
-        	////////////////////////////////////////////////////////////////////////////////
         	ccTD[i]=velem.ccTD[i];
         	ccTVN[i]=velem.ccTVN[i];
         	ccHR[i]=velem.ccHR[i];
         	ccTambR[i]=velem.ccTambR[i];
-        	////////////////////////////////////////////////////////////////////////////////
         	for(int j=0;j<cel2D.dim;j++) gradPresface[i][j]=velem.gradPresface[i][j];
         	for(int j=0;j<cel2D.dim;j++) gradPresfaceCor[i][j]=velem.gradPresfaceCor[i][j];
         	for(int j=0;j<cel2D.dim;j++) gradUface[i][j]=velem.gradUface[i][j];
@@ -801,7 +765,6 @@ elem2d::elem2d(const elem2d& velem) :
     	for(int i=0; i<cel2D.nvert;i++)cel2D.sFaceMod[i]=velem.cel2D.sFaceMod[i];
     	cel2D.subVol=new double [cel2D.nvert];
     	for(int i=0; i<cel2D.nvert;i++)cel2D.subVol[i]=velem.cel2D.subVol[i];
-    	///////////////////////////////////////////////////////////////////////////////////////////
         cel2D.vecE=new double* [cel2D.nvert];
         for(int j=0; j<cel2D.nvert;j++) cel2D.vecE[j]=new double [cel2D.dim];
     	for(int i=0; i<cel2D.nvert;i++)
@@ -845,7 +808,6 @@ elem2d::elem2d(const elem2d& velem) :
 		cel2D.sFaceMod=0;
 		cel2D.subVol=0;
 		cel2D.ownFace=0;
-		//////////////////////////////////////////////////////////////////////////////////////
         cel2D.vecE=0;
         cel2D.modE=0;
         cel2D.vecT=0;
@@ -919,12 +881,10 @@ elem2d::elem2d(const elem2d& velem) :
     	ccWvel=0;
     	ccPres=0;
     	ccWall=0;
-    	///////////////////////////////////////////////////////////////////////////
     	ccTD=0;
     	ccTVN=0;
     	ccHR=0;
     	ccTambR=0;
-    	//////////////////////////////////////////////////////////////////////////
     	cel2D.difuPres=0;
     	cel2D.difuPresRC=0;
     	cel2D.vecSDif=0;
@@ -964,28 +924,23 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 			delete[] ccWvel;
 			delete[] ccPres;
 			delete[] ccWall;
-			/////////////////////////////////////////////////////////////////////////////////////////////////
 			delete[] ccTD;
 			delete[] ccTVN;
 			delete[] ccHR;
 			delete[] ccTambR;
-			///////////////////////////////////////////////////////////////////////////////////////////////////
 			for(int i=0;i<cel2D.nvert;i++){
 				delete[] cel2D.centroideFace[i];
 				delete[] cel2D.coordVert[i];
 				delete[] cel2D.dCF[i];
 				delete[] cel2D.sFace[i];
-				///////////////////////////////////////////////////////////
 				delete[] cel2D.vecE[i];
 				delete[] cel2D.vecT[i];
 				delete[] cel2D.fInter[i];
 				delete[] cel2D.fIfC[i];
-				///////////////////////////////////////////////////////////
 				delete[] gradPresface[i];
 				delete[] gradPresfaceCor[i];
 				delete[] gradUface[i];
 				delete[] gradVface[i];
-				///////////////////////////////////////////////////////////
 				delete[] cel2D.vecSDif[i];
 			}
 			delete[] cel2D.centroideFace;
@@ -994,7 +949,6 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 			delete[] cel2D.sFace;
 			delete[] vizinho;
 			delete[] kvizinho;
-			///////////////////////////////////////////////////////////////////////////////
 			delete[] cel2D.vecE;
 			delete[] cel2D.modE;
 			delete[] cel2D.vecT;
@@ -1017,7 +971,6 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 			delete[] cel2D.gradGreenTempI;
 			delete[] cel2D.gradGreenHolI;
 
-			//////////////////////////////////////////////////////////////////////////////////
 			delete[] presF;
 			delete[] presFcor;
 			delete[] gradPresface;
@@ -1078,10 +1031,6 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 			delete[] dtCFL;
 			delete[] CFL;
 		}
-		/*if(nvizinho>0){
-			delete[] vizinho;
-			delete[] kvizinho;
-		}*/
 		TLUV=velem.TLUV;
 		localUV=velem.localUV;
 		TLU=velem.TLU;
@@ -1127,15 +1076,9 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 		cel2D.a0U=velem.cel2D.a0U;
 		cel2D.a0V=velem.cel2D.a0V;
 		cel2D.taxaDeform=velem.cel2D.taxaDeform;
-		//cel2D.B2Med=velem.cel2D.B2Med;
 		dt=velem.dt;
 		perm=velem.perm;
 		trans=velem.trans;
-		/*ccInU=velem.ccInU;
-		ccInV=velem.ccInV;
-		ccWvel=velem.ccWvel;
-		ccPres=velem.ccPres;
-		ccWall=velem.ccWall;*/
 		massTot=velem.massTot;
 
 		residuoU=velem.residuoU;
@@ -1152,15 +1095,6 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 		DCCN=velem.DCCN;
 		extrapSuaveCCN=velem.extrapSuaveCCN;
 
-	    /*temp=velem.temp;
-	    CC=velem.CC;
-	    partidaVF=velem.partidaVF;
-	    relax=velem.relax;
-	    relaxPcor=velem.relaxPcor;
-	    nvfHR=velem.nvfHR;
-	    nvfHRHol=velem.nvfHRHol;
-	    atrasaHR=velem.atrasaHR;
-	    grav=velem.grav;*/
 
 		if(cel2D.nvert>0){
 	    	vizinho=new elemento* [cel2D.nvert];
@@ -1244,12 +1178,10 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 	    	ccWvel=new double [cel2D.nvert];
 	    	ccPres=new double [cel2D.nvert];
 	    	ccWall=new double [cel2D.nvert];
-	    	///////////////////////////////////////////////////////////////////////////////////////
 	    	ccTD=new double [cel2D.nvert];
 	    	ccTVN=new double [cel2D.nvert];
 	    	ccHR=new double [cel2D.nvert];
 	    	ccTambR=new double [cel2D.nvert];
-	    	/////////////////////////////////////////////////////////////////////////////////////////
 	    	for(int j=0; j<cel2D.nvert;j++) gradPresface[j]=new double [cel2D.dim];
 	    	for(int j=0; j<cel2D.nvert;j++) gradPresfaceCor[j]=new double [cel2D.dim];
 	    	cel2D.gradGreenPres=new double [cel2D.dim];
@@ -1337,12 +1269,10 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 	        	ccWvel[i]=velem.ccWvel[i];
 	        	ccPres[i]=velem.ccPres[i];
 	        	ccWall[i]=velem.ccWall[i];
-	        	////////////////////////////////////////////////////////////////////////////////
 	        	ccTD[i]=velem.ccTD[i];
 	        	ccTVN[i]=velem.ccTVN[i];
 	        	ccHR[i]=velem.ccHR[i];
 	        	ccTambR[i]=velem.ccTambR[i];
-	        	///////////////////////////////////////////////////////////////////////////////
 	        	for(int j=0;j<cel2D.dim;j++) gradPresface[i][j]=velem.gradPresface[i][j];
 	        	for(int j=0;j<cel2D.dim;j++) gradPresfaceCor[i][j]=velem.gradPresfaceCor[i][j];
 	        	for(int j=0;j<cel2D.dim;j++) gradUface[i][j]=velem.gradUface[i][j];
@@ -1395,7 +1325,6 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 	    	for(int i=0; i<cel2D.nvert;i++)cel2D.sFaceMod[i]=velem.cel2D.sFaceMod[i];
 	    	cel2D.subVol=new double [cel2D.nvert];
 	    	for(int i=0; i<cel2D.nvert;i++)cel2D.subVol[i]=velem.cel2D.subVol[i];
-	    	///////////////////////////////////////////////////////////////////////////////////////////
 	        cel2D.vecE=new double* [cel2D.nvert];
 	        for(int j=0; j<cel2D.nvert;j++) cel2D.vecE[j]=new double [cel2D.dim];
 	    	for(int i=0; i<cel2D.nvert;i++)
@@ -1439,7 +1368,6 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 				cel2D.sFaceMod=0;
 				cel2D.subVol=0;
 				cel2D.ownFace=0;
-				//////////////////////////////////////////////////////////////////////////////////////
 		        cel2D.vecE=0;
 		        cel2D.modE=0;
 		        cel2D.vecT=0;
@@ -1513,12 +1441,10 @@ elem2d& elem2d::operator =(const elem2d& velem) {
 		    	ccWvel=0;
 		    	ccPres=0;
 		    	ccWall=0;
-		    	///////////////////////////////////////////////////////////////////////////
 		    	ccTD=0;
 		    	ccTVN=0;
 		    	ccHR=0;
 		    	ccTambR=0;
-		    	//////////////////////////////////////////////////////////////////////////
 		    	cel2D.difuPres=0;
 		    	cel2D.difuPresRC=0;
 		    	cel2D.vecSDif=0;
@@ -1565,14 +1491,6 @@ void elem2d::buscaVizinho(int** noEle,int* face,int elem,int nVert, int nEle){
 }
 
 void elem2d::menorIndViz(){
-	/*int rank=0;
-	if(kvizinho[iviz]>=0){
-		for(int i=0;i<cel2D.nvert;i++){
-			if(kvizinho[i]>=0 && cel2D.indFace[iviz]>cel2D.indFace[i])rank++;
-		}
-	}
-	else rank=-1;
-	return rank;*/
 
 	cel2D.indVizCres.push_back(cel2D.indEle);
 	for(int i=0;i<cel2D.nvert;i++)if(cel2D.indFace[i]>=0)cel2D.indVizCres.push_back(cel2D.indFace[i]);
@@ -1597,10 +1515,6 @@ void elem2d::indraz(int& ind, double& raz,
 								/ (serietemp[i + 1] - serietemp[i]);
 				break;
 			}
-			//else if(i==parserie-2){
-			//ind=i+1;
-			//raz=1;
-			//}
 		} else if (i == parserie - 1) {
 			ind = i;
 			raz = 1;
@@ -1610,17 +1524,6 @@ void elem2d::indraz(int& ind, double& raz,
 
 void elem2d::faceDetalhes(){
 
-	/*
-	double** vecE;//vetor unitario na orientacao entre o centroide de do elemento e um dos seus vizinhos
-    double* modE;//distancia entre o centroide do elemento e um dos seus vizinho
-    double** vecT;//vetor unitario normal a vecE
-    double* modT;//distancia entre o centroide da face e a intersecao da face
-    double* fatG;//razao de distancia entre a intersecao da face e o centroide e a
-    //distancia de dois centroides de elementos
-    double* angES;//angulo entre a corda dos dois centroides e o vetor da area da face
-    double** fInter;//coordenadas da intersecao da corda entre os centroides dos elementos e a face do elemento
-    double** fIfC;//vetor entre a intersecao e o centroide da face
-	 */
 	for(int i=0;i<cel2D.nvert;i++){
 		cel2D.modE[i]=0.;
 		for(int j=0;j<cel2D.dim;j++){
@@ -1639,23 +1542,14 @@ void elem2d::faceDetalhes(){
 			cel2D.angES[i]+=(cel2D.sFace[i][j]/cel2D.sFaceMod[i])*cel2D.vecE[i][j];
 		}
 
-		// double ortogS [cel2D.dim];
-		// ortogS[0]=-cel2D.sFace[i][1]/cel2D.sFaceMod[i];
-		// ortogS[1]=cel2D.sFace[i][0]/cel2D.sFaceMod[i];
 		double denf=0.;
 		double numf=0.;
-		//denf=cel2D.vecE[i][0]*ortogS[1]-cel2D.vecE[i][1]*ortogS[0];
-		//numf=(cel2D.centroideFace[i][0]-cel2D.centroideElem[0])*ortogS[1]-
-				//(cel2D.centroideFace[i][1]-cel2D.centroideElem[1])*ortogS[0];
 		for(int j=0;j<cel2D.dim;j++){
 			numf+=(cel2D.centroideFace[i][j]-cel2D.centroideElem[j])*cel2D.sFace[i][j];
 			denf+=cel2D.sFace[i][j]*cel2D.vecE[i][j];
 		}
 		double kf=numf/denf;
 		for(int j=0;j<cel2D.dim;j++){
-			//cel2D.fInter[i][j]=
-					//(cel2D.centroideFace[i][j]-cel2D.centroideElem[j])*cel2D.sFace[i][j]/(cel2D.sFace[i][j]*cel2D.vecE[i][j])+
-					//cel2D.centroideElem[j];
 			cel2D.fInter[i][j]=kf*cel2D.vecE[i][j]+cel2D.centroideElem[j];
 		}
 
@@ -1686,14 +1580,7 @@ void elem2d::vazMass(double rlx,int noRelax){
 	double difGradMed [cel2D.dim];
 	massTot=0.;
 	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
-		// int para;
-		// para=0;
 	}
-	//int inl=0;
-	//int out=0;
-	//int wall=0;
-	//int sim=0;
-	//int kcc=0;
 	for(int face=0;face<cel2D.nvert;face++){
 		if(kvizinho[face]>=0){
 			for(int j=0; j<cel2D.dim;j++){
@@ -1720,15 +1607,11 @@ void elem2d::vazMass(double rlx,int noRelax){
 				uRC[face]+=corRelaxU;
 				vRC[face]+=corRelaxV;
 			}
-			// double bmed[cel2D.dim];
-			// bmed[0]=0.;
-			// bmed[1]=(cel2D.fatG[face]*cel2D.rho+(1-cel2D.fatG[face])*(*vizinho[face]).rho)*(*vg1dSP).gravVF*(*vg1dSP).vertY;
 			double bmed3[cel2D.dim];
 			for(int j=0; j<cel2D.dim;j++)
 				bmed3[j]=(cel2D.fatG[face]*cel2D.B2Med[j]+(1-cel2D.fatG[face])*(*vizinho[face]).B2Med[j]);
 			///// Moukaled
 			if((*vg1dSP).correcForcCorp==0){
-			//uRC[face]+=1.*(cel2D.BMedF[face][0]-bmed3[0])*difU;
 				vRC[face]+=1.*(cel2D.BMedF[face][1]-bmed3[1])*difV;
 			}
 			else{
@@ -1740,20 +1623,6 @@ void elem2d::vazMass(double rlx,int noRelax){
 				vRC[face]+=(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-
 						0.5*deltaRho-rhoMed)*(*vg1dSP).gravVF*cel2D.vecE[face][1]*cel2D.vecE[face][1]*difV;
 			}
-			//eu-segunda ordem
-			//double gCf=1.-cel2D.fatG[face];
-			//double gfV=1.-gCf;
-			//double rhof=cel2D.rho*(1*mulFC-cel2D.beta*(tempF[face]-cel2D.tempRef));
-			//double deltaRho=cel2D.rho*(1*mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-
-					//(*vizinho[face]).rho*(1*mulFC-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef));
-			//double deltaRho2=gCf*((*vizinho[face]).rho*(1*mulFC-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef))-rhof)-gfV*
-					//(rhof-cel2D.rho*(1*mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)));
-			//double rhoMed=cel2D.fatG[face]*cel2D.rho*(1*mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
-								//(1-cel2D.fatG[face])*(*vizinho[face]).rho*(1*mulFC-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef));
-			//double difPotencial=rhof+0.5*deltaRho*(gfV*gfV-gCf*gCf)+(deltaRho2/(12.*gCf*gfV))*(gfV*gfV*gfV+gCf*gCf*gCf);
-			//vRC[face]+=(difPotencial-rhoMed)*grav*cel2D.vecE[face][1]*cel2D.vecE[face][1]*difV;
-
-
 
 			if(perm==0 && trans==1){
 				double a0Difus;
@@ -1780,27 +1649,15 @@ void elem2d::vazMass(double rlx,int noRelax){
 				uRC[face]=ccInU[face];
 				vRC[face]=ccInV[face];
 			}
-			/*else if(out==1){
-				uRC[face]=cel2D.uC;
-				vRC[face]=cel2D.vC;
-			}*/
 			else if(wall==1){
 				uRC[face]=ccWall[face]*fabs(-cel2D.sFace[face][1]/cel2D.sFaceMod[face]);
 				vRC[face]=ccWall[face]*fabs(cel2D.sFace[face][0]/cel2D.sFaceMod[face]);
 			}
 			else if(sim==1){
-				/*double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenU[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[face],cel2D.sFace[face],cel2D.dim);
-				double termoCorda=escalar(gradMed,cel2D.vecE[face],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[face],cel2D.dim);*/
 				coefUHRC[face]=1;
 				fonteUHR[face]=-(cel2D.uC*cel2D.sFace[face][0]+cel2D.vC*cel2D.sFace[face][1])*cel2D.sFace[face][0]/
 						(cel2D.sFaceMod[face]*cel2D.sFaceMod[face]);
 				uRC[face]=cel2D.uC+fonteUHR[face];
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				coefVHRC[face]=1;
 				fonteVHR[face]=-(cel2D.uC*cel2D.sFace[face][0]+cel2D.vC*cel2D.sFace[face][1])*cel2D.sFace[face][1]/
 						(cel2D.sFaceMod[face]*cel2D.sFaceMod[face]);
@@ -1816,10 +1673,10 @@ void elem2d::vazMass(double rlx,int noRelax){
 				gradMed[1]-=termoCorda*cel2D.vecE[face][1];
 				termoCorda=escalar(gradMed,cel2D.vecE[face],cel2D.dim);
 				coefUHRC[face]=1;
-				fonteUHR[face]=-1*termoCorda*cel2D.modE[face];//dúvida, se é para zerar o gradiente, não devceria ser negativo
-				//ao contrário do indicado em Moukalled?
+				fonteUHR[face]=-1*termoCorda*cel2D.modE[face]; 
+				// QUESTION: If the goal is to set the gradient to zero, shouldn't this term be
+				// negative, contrary to what is indicated by Moukalled?
 				uRC[face]=cel2D.uC+fonteUHR[face];
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				for(int j=0; j<cel2D.dim;j++){
 					gradMed[j]=cel2D.gradGreenV[j];
 				}
@@ -1835,7 +1692,7 @@ void elem2d::vazMass(double rlx,int noRelax){
 	}
 	for(int face=0;face<cel2D.nvert;face++){
 		if(kvizinho[face]>=0){
-			double rhoHarm;//=2*cel2D.visc*(*vizinho[face]).visc/(cel2D.visc+(*vizinho[face]).visc);
+			double rhoHarm;
 			//Moukaled
 			if((*vg1dSP).correcForcCorp==0){
 				rhoHarm=cel2D.fatG[face]/(cel2D.rho*(1.-0.*cel2D.beta*(cel2D.tempC-cel2D.tempRef)))+
@@ -1843,17 +1700,9 @@ void elem2d::vazMass(double rlx,int noRelax){
 				rhoHarm=1./rhoHarm;
 			}
 			else{
-			//eu- primeira ordem
-				/*
-				 double deltaRho=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-
-						(*vizinho[face]).rho*(1.-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef));
-				rhoHarm=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-deltaRho*(1.-cel2D.fatG[face]);
-				*/
 				rhoHarm=cel2D.fatG[face]*cel2D.rho*(1.-0.*cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
 								(1.-cel2D.fatG[face])*(*vizinho[face]).rho*(1.-0.*(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef));
 			}
-			//eu- segunda ordem
-			//rhoHarm=cel2D.rho*(1.-cel2D.beta*(tempF[face]-cel2D.tempRef));
 			masTemp=cel2D.sFace[face][0]*uRC[face]+cel2D.sFace[face][1]*vRC[face];
 			massF[face]=rhoHarm*masTemp;
 			massTot+=massF[face];
@@ -1866,7 +1715,7 @@ void elem2d::vazMass(double rlx,int noRelax){
 			int kcc=0;
 			tipoCC(face, inl, out, wall, sim, kcc);
 			if(inl==1 || out==1){
-				double rhoHarm;//=2*cel2D.visc*(*vizinho[face]).visc/(cel2D.visc+(*vizinho[face]).visc);
+				double rhoHarm;
 				rhoHarm=cel2D.rho*(1.-0.*cel2D.beta*(cel2D.tempC-cel2D.tempRef));
 				masTemp=cel2D.sFace[face][0]*uRC[face]+cel2D.sFace[face][1]*vRC[face];
 				massF[face]=rhoHarm*masTemp;
@@ -1883,8 +1732,6 @@ void elem2d::atualizaCor(){
 	double masTemp;
 	cel2D.uC-=cel2D.difuPres[0]*cel2D.gradGreenPresCor[0];
 	cel2D.vC-=cel2D.difuPres[1]*cel2D.gradGreenPresCor[1];
-	//cel2D.presC+=(1.-relax)*cel2D.presCcor;
-	//cel2D.presC+=(relax)*cel2D.presCcor;
 	cel2D.presC+=((*vg1dSP).relaxVFPcor)*cel2D.presCcor;
 	for(int face=0;face<cel2D.nvert;face++){
 		if(kvizinho[face]>=0){
@@ -1903,23 +1750,13 @@ void elem2d::atualizaCor(){
 				rhoHarm=1./rhoHarm;
 			}
 			else{
-			//////eu-primeira ordem
-				/*double deltaRho=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-
-						(*vizinho[face]).rho*(1.-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef));
-				rhoHarm=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-deltaRho*(1.-cel2D.fatG[face]);*/
 				rhoHarm=cel2D.fatG[face]*cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
 							(1.-cel2D.fatG[face])*(*vizinho[face]).rho*(1.-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef));
 			}
-			//////eu-segunda ordem
-			//rhoHarm=cel2D.rho*(1.-cel2D.beta*(tempF[face]-cel2D.tempRef));
 			double difU=cel2D.fatG[face]*cel2D.difuPres[0]+
 					(1-cel2D.fatG[face])*(*vizinho[face]).difuPres[0];
 			double difV=cel2D.fatG[face]*cel2D.difuPres[1]+
 					(1-cel2D.fatG[face])*(*vizinho[face]).difuPres[1];
-			//uRC[face]=uRC[face]-cel2D.difuPres[0]*cel2D.gradGreenPresCor[0];
-			//vRC[face]=vRC[face]-cel2D.difuPres[1]*cel2D.gradGreenPresCor[1];
-			//uRC[face]-=difU*difGradMed[0];
-			//vRC[face]-=difV*difGradMed[1];
 			masTemp=(cel2D.sFace[face][0]*difU*difGradMed[0]+cel2D.sFace[face][1]*difV*difGradMed[1]);
 			massF[face]=massF[face]-rhoHarm*masTemp;
 			massTot+=massF[face];
@@ -1941,39 +1778,11 @@ void elem2d::atualizaCor(){
 					difGradMed[j]=0.*difGradMed[j]+(deri-0.*termoCorda)*cel2D.vecE[face][j];
 				}
 				double rhoHarm;
-				//rhoHarm=cel2D.rho;
 				rhoHarm=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef));
 				double difU=cel2D.difuPres[0];
 				double difV=cel2D.difuPres[1];
-				//uRC[face]=uRC[face]-cel2D.difuPres[0]*cel2D.gradGreenPresCor[0];
-				//vRC[face]=vRC[face]-cel2D.difuPres[1]*cel2D.gradGreenPresCor[1];
-				//uRC[face]-=difU*difGradMed[0];
-				//vRC[face]-=difV*difGradMed[1];
 				masTemp=-(cel2D.sFace[face][0]*difU*difGradMed[0]+cel2D.sFace[face][1]*difV*difGradMed[1]);
 				massF[face]=massF[face]+rhoHarm*masTemp;
-				//double gradMed [cel2D.dim];
-				//for(int j=0; j<cel2D.dim;j++){
-					//gradMed[j]=cel2D.gradGreenU[j];
-				//}
-				//double termoCorda=escalar(gradMed,cel2D.vecE[face],cel2D.dim);
-				//gradMed[0]-=termoCorda*cel2D.vecE[face][0];
-				//gradMed[1]-=termoCorda*cel2D.vecE[face][1];
-				//termoCorda=escalar(gradMed,cel2D.vecE[face],cel2D.dim);
-				//coefUHRC[face]=1;
-				//fonteUHR[face]=-termoCorda*cel2D.modE[face];//dúvida, se é para zerar o gradiente, não devceria ser negativo
-				//ao contrário do indicado em Moukalled?
-				//uRC[face]=cel2D.uC+fonteUHR[face];
-				//////////////////////////////////////////////////////////////////////////////////////////////////
-				//for(int j=0; j<cel2D.dim;j++){
-					//gradMed[j]=cel2D.gradGreenV[j];
-				//}
-				//termoCorda=escalar(gradMed,cel2D.vecE[face],cel2D.dim);
-				//gradMed[0]-=termoCorda*cel2D.vecE[face][0];
-				//gradMed[1]-=termoCorda*cel2D.vecE[face][1];
-				//termoCorda=escalar(gradMed,cel2D.vecE[face],cel2D.dim);
-				//coefVHRC[face]=1;
-				//fonteVHR[face]=-termoCorda*cel2D.modE[face];
-				//vRC[face]=cel2D.vC+fonteVHR[face];
 				massTot+=1*massF[face];
 			}
 			else if(inl==1)massTot+=1*massF[face];
@@ -1987,8 +1796,6 @@ void elem2d::impliHR(int face){
 	double kLoc=0.;
 
 	for(int vari=1;vari<3;vari++){
-		//if(vari==0)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
-		//else
 		if(vari==1){
 			if(fabs(uDow[face]-uUpw[face])>1e-15)
 				phi=(uMed[face]-uUpw[face])/(uDow[face]-uUpw[face]);
@@ -1999,22 +1806,6 @@ void elem2d::impliHR(int face){
 				phi=(vMed[face]-vUpw[face])/(vDow[face]-vUpw[face]);
 			else phi=1.1;
 		}
-		/*if(phi>0. && phi<1./6.){
-			lLoc=4.;
-			kLoc=0.;
-		}
-		else if(phi>=1./6. && phi<5./6.){
-			lLoc=3./4.;
-			kLoc=3./8.;
-		}
-		else if(phi>=5./6. && phi<1.){
-			lLoc=0.;
-			kLoc=1.;
-		}
-		else{
-			lLoc=1.;
-			kLoc=0.;
-		}*/
 		switch((*vg1dSP).nvfHR){
 			case 0://upwind
 				{
@@ -2088,20 +1879,11 @@ void elem2d::impliHR(int face){
 				}
 				break;
 		}
-		/*if(vari==0){
-			tL[face]=lLoc;
-			tK[face]=kLoc;
-		}
-		else*/
 		if(vari==1){
-			//lLoc=1.;
-			//kLoc=0.;
 			uL[face]=lLoc;
 			uK[face]=kLoc;
 		}
 		else if(vari==2){
-			//lLoc=1.;
-			//kLoc=0.;
 			vL[face]=lLoc;
 			vK[face]=kLoc;
 		}
@@ -2114,8 +1896,6 @@ void elem2d::expliHR(int face){
 	double mLoc=0.;
 
 	for(int vari=1;vari<3;vari++){
-		//if(vari==0)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
-		//else
 		if(vari==1){
 			if(fabs(uDow[face]-uUpw[face])>1e-15)phi=(uMed[face]-uUpw[face])/(uDow[face]-uUpw[face]);
 			else phi=1.1;
@@ -2124,22 +1904,6 @@ void elem2d::expliHR(int face){
 			if(fabs(vDow[face]-vUpw[face])>1e-15)phi=(vMed[face]-vUpw[face])/(vDow[face]-vUpw[face]);
 			else phi=1.1;
 		}
-		/*if(phi>0. && phi<1./6.){
-			lLoc=4.;
-			kLoc=0.;
-		}
-		else if(phi>=1./6. && phi<5./6.){
-			lLoc=3./4.;
-			kLoc=3./8.;
-		}
-		else if(phi>=5./6. && phi<1.){
-			lLoc=0.;
-			kLoc=1.;
-		}
-		else{
-			lLoc=1.;
-			kLoc=0.;
-		}*/
 		switch((*vg1dSP).nvfHR){
 			case 0://upwind
 				{
@@ -2213,20 +1977,11 @@ void elem2d::expliHR(int face){
 				}
 				break;
 		}
-		/*if(vari==0){
-			tL[face]=lLoc;
-			tK[face]=mLoc;
-		}
-		else*/
 		if(vari==1){
-			//lLoc=1.;
-			//kLoc=0.;
 			uL[face]=lLoc;
 			uK[face]=mLoc;
 		}
 		else if(vari==2){
-			//lLoc=1.;
-			//kLoc=0.;
 			vL[face]=lLoc;
 			vK[face]=mLoc;
 		}
@@ -2322,7 +2077,6 @@ void elem2d::expliHRT(int face){
 	double lLoc=0.;
 	double mLoc=0.;
 
-	//phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
 	if(fabs(tDow[face]-tUpw[face])>1e-15)phi=(tMed[face]-tUpw[face])/(tDow[face]-tUpw[face]);
 	else phi=1.1;
 	switch((*vg1dSP).nvfHR){
@@ -2443,7 +2197,6 @@ void elem2d::expliHRHol(int face){
 				mCicsam=CFLC+(1.-CFLC)*6./8.;
 				lCicsam=(1.-CFLC)*3./8.;
 				double phiCicsam=mCicsam*phi+lCicsam;
-				//if((mCicsam*phi+lCicsam)<phi/CFLC){
 				if(phiCicsam<phiCBC){
 					lLoc=lCicsam;
 					mLoc=mCicsam;
@@ -2572,22 +2325,6 @@ void elem2d::calcVarFaceUV(int face){
 		gradMedV[j]=gradMedV[j]+(deri-termoCorda)*cel2D.vecE[face][j];
 	}
 
-	/*if(massF[face]>=0.){
-		coefUHRC[face]=uL[face];
-		coefUHRV[face]=uK[face]+(1-uL[face]-uK[face]);
-		fonteUHR[face]=-2*escalar(cel2D.gradGreenU,cel2D.vecE[face],cel2D.dim)*cel2D.modE[face]*(1-uL[face]-uK[face]);
-		coefVHRC[face]=vL[face];
-		coefVHRV[face]=vK[face]+(1-vL[face]-vK[face]);
-		fonteVHR[face]=-2*escalar(cel2D.gradGreenV,cel2D.vecE[face],cel2D.dim)*cel2D.modE[face]*(1-vL[face]-vK[face]);
-	}
-	else{
-		coefUHRV[face]=uL[face];
-		coefUHRC[face]=uK[face]+(1-uL[face]-uK[face]);
-		fonteUHR[face]=2*escalar(cel2D.gradGreenU,cel2D.vecE[face],cel2D.dim)*cel2D.modE[face]*(1-uL[face]-uK[face]);
-		coefVHRV[face]=vL[face];
-		coefVHRC[face]=vK[face]+(1-vL[face]-vK[face]);
-		fonteVHR[face]=2*escalar(cel2D.gradGreenV,cel2D.vecE[face],cel2D.dim)*cel2D.modE[face]*(1-vL[face]-vK[face]);
-	}*/
 	if((*vg1dSP).atrasaHR==0)impliCoefHR(face);
 	else expliCoefHR(face);
 	for(int j=0; j<cel2D.dim;j++){
@@ -2674,16 +2411,6 @@ void elem2d::calcVarFaceTemp(int face){
 }
 
 void elem2d::calcVarFacePres(int face){
-	/*if(massF[face]>=0.){
-		tMed[face]=cel2D.presC;
-		tDow[face]=(*vizinho[face]).presC;
-		tUpw[face]=tDow[face]-2*escalar(cel2D.gradGreenPres,cel2D.vecE[face],cel2D.dim)*cel2D.modE[face];
-	}
-	else{
-		tMed[face]=(*vizinho[face]).presC;
-		tDow[face]=cel2D.presC;
-		tUpw[face]=tDow[face]+2*escalar((*vizinho[face]).gradGreenPres,cel2D.vecE[face],cel2D.dim)*cel2D.modE[face];
-	}*/
 
 	presF[face]=0.;
 
@@ -2709,10 +2436,6 @@ void elem2d::calcVarFacePres(int face){
 	double forcCorp=-(cel2D.fatG[face]*cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
 				(1.-cel2D.fatG[face])*(*vizinho[face]).rho*((*vg1dSP).mulFC-
 						(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
-	/*presF[face]-=cel2D.rho*(mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angY)*cel2D.vecE[face][1]*cel2D.modE[face]*(1.-cel2D.fatG[face])/2;
-	presF[face]+=(*vizinho[face]).rho*(mulFC-(*vizinho[face]).beta*((*vizinho[face]).tempC-(*vizinho[face]).tempRef))*
-			grav*sin(angY)*cel2D.vecE[face][1]*cel2D.modE[face]*cel2D.fatG[face]/2;
-	presF[face]+=(cel2D.presC+(*vizinho[face]).presC)/2;*/
 
 	for(int j=0; j<cel2D.dim;j++){
 		presF[face]+=(1.-corDistorc2*(*vg1dSP).corrigeDistor)*(0.*cel2D.BMedF[face][1]+1.*forcCorp)*(cel2D.centroideFace[face][1]-cel2D.fInter[face][1]);
@@ -2766,9 +2489,6 @@ void elem2d::calcVarFaceHol(int face){
 		gradMedHol[j]=gradMedHol[j]+(deri-termoCorda)*cel2D.vecE[face][j];
 	}
 
-	//for(int j=0; j<cel2D.dim;j++){
-		//holF[face]+=1.*gradMedHol[j]*(cel2D.centroideFace[face][j]-cel2D.fInter[face][j]);
-	//}
 
 	holF[face]+=holK[face]*holMed[face]+holL[face]*holDow[face]+(1-holL[face]-holK[face])*holUpw[face];
 }
@@ -2874,7 +2594,6 @@ void elem2d::atualizaCCTemp(int i){
 	}
 }
 
-
 void elem2d::atualizaCC(int i){
 	int inl=0;
 	int out=0;
@@ -2884,10 +2603,6 @@ void elem2d::atualizaCC(int i){
 	tipoCC(i, inl, out, wall, sim, kcc);
     int ind=0;
     double raz;
-	//if(fabs(cel2D.centroElem[1]-0.03818283448917122)<1e-5){
-		//int para;
-		//para=0;
-	//}
 	if(inl==1){
 
 		indraz(ind, raz, (*vg1dSP).tempo, CC.ccInl[kcc].nserie, CC.ccInl[kcc].tempo);
@@ -2932,36 +2647,6 @@ void elem2d::atualizaCC(int i){
 	}
 }
 
-/*void elem2d::calcForcCorp(){
-	cel2D.B2Med[0]=0.;
-	cel2D.B2Med[1]=0.;
-	for(int i=0;i<cel2D.nvert;i++){
-		if(kvizinho[i]>=0){
-			cel2D.BMedF[i][0]=-(cel2D.fatG[i]*cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
-					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*grav*sin(angX);
-			cel2D.BMedF[i][1]=-(cel2D.fatG[i]*cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
-					(1-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef)))*grav*sin(angY);
-		}
-		else{
-			cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angX);
-			cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angY);
-			//cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angX);
-			//cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angY);
-		}
-		for(int j=0;j<cel2D.dim;j++){
-			if(kvizinho[i]>=0){
-				cel2D.B2Med[j]+=cel2D.fatG[i]*cel2D.BMedF[i][j]*cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
-			}
-			else{
-				//cel2D.B2Med[j]+=cel2D.BMedF[i][j]*cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
-				if(j==1)cel2D.B2Med[j]-=(cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angY)*
-						cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
-			}
-		}
-		//cel2D.B2Med[0]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angX);
-		//cel2D.B2Med[1]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angY);
-	}
-}*/
 
 void elem2d::calcForcCorp(){
 	cel2D.B2Med[0]=0.;
@@ -2974,36 +2659,19 @@ void elem2d::calcForcCorp(){
 		}
 		else{
 			cel2D.BMedF[i][1]=-(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
-			//cel2D.BMedF[i][0]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angX);
-			//cel2D.BMedF[i][1]=-(cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angY);
 		}
 		if(kvizinho[i]>=0){
 			cel2D.B2Med[1]+=cel2D.fatG[i]*cel2D.BMedF[i][1]*cel2D.vecE[i][1]*cel2D.modE[i]*cel2D.sFace[i][1]/cel2D.vElem;
-			//cel2D.B2Med[j]+=cel2D.BMedF[i][j]*cel2D.subVol[i]/cel2D.vElem;
 		}
 		else{
-			//if(j==1)cel2D.B2Med[j]-=(cel2D.rho*(1*mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*grav*sin(angY)*
-						//cel2D.subVol[i]/cel2D.vElem;
 			cel2D.B2Med[1]-=(cel2D.rho*(1*(*vg1dSP).mulFC-cel2D.beta*(tempF[i]-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY)*
 						cel2D.vecE[i][1]*cel2D.modE[i]*cel2D.sFace[i][1]/cel2D.vElem;
-			//if(j==1)cel2D.B2Med[j]-=1*(cel2D.rho*(mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*grav*sin(angY)*
-										//cel2D.vecE[i][j]*cel2D.modE[i]*cel2D.sFace[i][j]/cel2D.vElem;
 		}
-		//cel2D.B2Med[1]+=(-mulFC*cel2D.rho*grav*sin(angY));
-		//cel2D.B2Med[0]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angX);
-		//cel2D.B2Med[1]=-cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))*grav*sin(angY);
-		//for(int i=0;i<cel2D.nvert;i++){
-			//cel2D.BMedF[i][1]+=(-mulFC*cel2D.rho*grav*sin(angY));
-		//}
 	}
 }
 
 void elem2d::calcGradGreenUV(){
-	//if(iterPresCor==0)
-		//vazMass();
 	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
-		// int para;
-		// para=0;
 	}
 	for(int i=0;i<cel2D.nvert;i++){
 		if(kvizinho[i]>=0){
@@ -3023,7 +2691,6 @@ void elem2d::calcGradGreenUV(){
 				vF[i]=ccInV[i];
 			}
 			else if(wall==1){
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				uF[i]=ccWall[i]*fabs(-cel2D.sFace[i][1]/cel2D.sFaceMod[i]);
 				vF[i]=ccWall[i]*fabs(cel2D.sFace[i][0]/cel2D.sFaceMod[i]);
 			}
@@ -3037,14 +2704,11 @@ void elem2d::calcGradGreenUV(){
 					gradMed[0]-=termoCorda*cel2D.vecE[i][0];
 					gradMed[1]-=termoCorda*cel2D.vecE[i][1];
 					termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					 //dúvida, se é para zerar o gradiente, não devceria ser negativo
-					 //ao contrário do indicado em Moukalled?
-					//if(iterPresCor!=0){
+					// QUESTION: If the goal is to set the gradient to zero, shouldn't this term be
+					// negative, contrary to what is indicated by Moukalled?
 						coefUHRC[i]=1;
 						fonteUHR[i]=+termoCorda*cel2D.modE[i];
-					//}
 					uF[i]=cel2D.uC+termoCorda*cel2D.modE[i];
-					//////////////////////////////////////////////////////////////////////////////////////////////////
 					for(int j=0; j<cel2D.dim;j++){
 						gradMed[j]=cel2D.gradGreenV[j];
 					}
@@ -3052,33 +2716,13 @@ void elem2d::calcGradGreenUV(){
 					gradMed[0]-=termoCorda*cel2D.vecE[i][0];
 					gradMed[1]-=termoCorda*cel2D.vecE[i][1];
 					termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					//if(iterPresCor!=0){
 						coefVHRC[i]=1;
 						fonteVHR[i]=+termoCorda*cel2D.modE[i];
-					//}
 					vF[i]=cel2D.vC+termoCorda*cel2D.modE[i];
 				}
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				else if(sim==1){
-					// double gradMed [cel2D.dim];
-					// double cordaArea;
-					// double termoCorda;
-					// double escalGradArea;
-					/*for(int j=0; j<cel2D.dim;j++){
-						gradMed[j]=cel2D.gradGreenU[j];
-					}
-					double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-					double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-					uF[i]=cel2D.uC+(-escalGradArea+termoCorda*cordaArea)*cel2D.modE[i]/cordaArea;*/
 					uF[i]=cel2D.uC-(cel2D.uC*cel2D.sFace[i][0]+cel2D.vC*cel2D.sFace[i][1])*cel2D.sFace[i][0]/
 							(cel2D.sFaceMod[i]*cel2D.sFaceMod[i]);
-					//////////////////////////////////////////////////////////////////////////////////////////////////
-					/*for(int j=0; j<cel2D.dim;j++){
-						gradMed[j]=cel2D.gradGreenV[j];
-					}
-					termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);*/
 					vF[i]=cel2D.vC-(cel2D.uC*cel2D.sFace[i][0]+cel2D.vC*cel2D.sFace[i][1])*cel2D.sFace[i][1]/
 							(cel2D.sFaceMod[i]*cel2D.sFaceMod[i]);
 				}
@@ -3120,18 +2764,6 @@ void elem2d::calcGradGreenPres(){
 			double forcCorp=-1*(cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
 			if(inl==1){
 				if((*vg1dSP).partidaVF>=0){
-					/*double vazCentro=(cel2D.uC*cel2D.sFace[i][0]+cel2D.vC*cel2D.sFace[i][1])*cel2D.rho;
-					double vazContor=(uF[i]*cel2D.sFace[i][0]+vF[i]*cel2D.sFace[i][1])*cel2D.rho;
-					double cordaAreaDif=escalar(cel2D.vecE[i],cel2D.vecSDif[i],cel2D.dim);
-					double gradMed [cel2D.dim];
-					for(int j=0; j<cel2D.dim;j++){
-						gradMed[j]=cel2D.gradGreenPres[j];
-					}
-					double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-					double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-					presF[i]=cel2D.presC+termoCorda*cel2D.modE[i];
-					presF[i]+=(vazCentro-vazContor)*cel2D.modE[i]/cordaAreaDif;*/
 					double gradMed [cel2D.dim];
 					for(int j=0; j<cel2D.dim;j++){
 						gradMed[j]=cel2D.gradGreenPres[j];
@@ -3144,45 +2776,27 @@ void elem2d::calcGradGreenPres(){
 				}
 			}
 			else if(wall==1){
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				if((*vg1dSP).partidaVF>=0){
-					/*double vazCentro=(cel2D.uC*cel2D.sFace[i][0]+cel2D.vC*cel2D.sFace[i][1])*cel2D.rho;
-					double cordaAreaDif=escalar(cel2D.vecE[i],cel2D.vecSDif[i],cel2D.dim);
-					double gradMed [cel2D.dim];
-					for(int j=0; j<cel2D.dim;j++){
-						gradMed[j]=cel2D.gradGreenPres[j];
-					}
-					double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-					double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-					presF[i]=cel2D.presC+termoCorda*cel2D.modE[i];
-					presF[i]+=vazCentro*cel2D.modE[i]/cordaAreaDif;*/
 
 					double gradMed [cel2D.dim];
 					for(int j=0; j<cel2D.dim;j++){
 						gradMed[j]=cel2D.gradGreenPres[j];
 					}
 					double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					//if(confinado[i]==0)
 						presF[i]=cel2D.presC+(*vg1dSP).corrigeDistor*termoCorda*cel2D.modE[i]+
 								(1.-(*vg1dSP).corrigeDistor)*(0.*cel2D.B2Med[1]+1.*forcCorp)*(cel2D.centroideFace[i][1]-cel2D.centroideElem[1]);
-					//else presF[i]=10.*98066.52;
 				}
 				else{
-					//if(confinado[i]==0)
 						presF[i]=cel2D.presC+
 								(1.-(*vg1dSP).corrigeDistor)*(0.*cel2D.B2Med[1]+1.*forcCorp)*(cel2D.centroideFace[i][1]-cel2D.centroideElem[1]);
-					//else presF[i]=10.*98066.52;
 				}
 			}
 			else if(sim==1 || out==1){
 				if(out==1){
 					presF[i]=ccPres[i];
 				}
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				else if(sim==1){
 					double gradMed [cel2D.dim];
-					// double cordaArea;
 					double termoCorda;
 					double escalGradArea;
 					for(int j=0; j<cel2D.dim;j++){
@@ -3227,7 +2841,6 @@ void elem2d::calcGradGreenTemp(int inicia){
 			}
 			else if(vn==1 || acoplado==1){
 				double condHarm=cel2D.cond;
-				//double gradareaB=-ccTVN[i]/condHarm;
 				double gradareaB=ccTVN[i]*cel2D.sFaceMod[i]/condHarm;
 
 				double gradMed [cel2D.dim];
@@ -3238,67 +2851,14 @@ void elem2d::calcGradGreenTemp(int inicia){
 				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
 				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
 				extrapSuaveCCN=(termoCorda)*cel2D.modE[i];
-				//tempF[i]=cel2D.tempC+(gradareaB-escalGradArea+cel2D.sFaceMod[i]*termoCorda)*cel2D.modE[i]/cel2D.sFaceMod[i];
 				coefTHRC[i]=1.;
 				fonteTHR[i]=(gradareaB-escalGradArea+termoCorda*cordaArea)*(cel2D.modE[i]/cordaArea);
 				tempF[i]=cel2D.tempC+fonteTHR[i];
 
-				/*double condHarm=cel2D.cond;
-				//double gradareaB=-ccTVN[i]/condHarm;???????
-				double gradareaB=ccTVN[i]/condHarm;//fluxo negativo, saindo do sólido, grad negativo
 
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenTemp[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				//tempF[i]=cel2D.tempC+(gradareaB-escalGradArea+cel2D.sFaceMod[i]*termoCorda)*cel2D.modE[i]/cel2D.sFaceMod[i];
-				coefTHRC[i]=1.;
-				fonteTHR[i]=(gradareaB-escalGradArea+termoCorda*cordaArea)*cel2D.modE[i]/cordaArea;*/
-				////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				/*double condHarm=cel2D.cond;
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenTemp[j];
-				}
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				coefTHRC[i]=1.;
-				fonteTHR[i]=(termoCorda)*cel2D.modE[i];
-				//fonteTHR[i]=ccTVN[i]*cel2D.modE[i];
-				tempF[i]=(cel2D.tempC+0*fonteTHR[i]);
-				if((*vg1dSP).tempo>40){
-					int para;
-					para=0;
-				}
-				tempF[i]=cel2D.tempC+ccTVN[i]*cel2D.modE[i]/condHarm;*/
-				/*
-				if((*vg1dSP).tempo<10)
-				tempF[i]=(cel2D.tempC+fonteTHR[i]);
-				else if((*vg1dSP).tempo<20){
-					double raz=(20.-(*vg1dSP).tempo)/10.;
-					tempF[i]=cel2D.tempC+(1.-raz)*ccTVN[i]*cel2D.modE[i]/condHarm+raz*fonteTHR[i];
-				}
-				else
-				tempF[i]=cel2D.tempC+ccTVN[i]*cel2D.modE[i]/condHarm;*/
 			}
 			else if(rich==1){
-				/*double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenTemp[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				double denom=(cel2D.cond*cordaArea/cel2D.modE[i])+ccHR[i]*cel2D.sFaceMod[i];
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				double correrT=escalGradArea-termoCorda*cordaArea;
-				double num=ccHR[i]*cel2D.sFaceMod[i]*ccTambR[i]+
-						cel2D.cond*cordaArea*cel2D.tempC/cel2D.modE[i]-cel2D.cond*correrT;
 
-				coefTHRC[i]=(cel2D.cond*cordaArea/cel2D.modE[i])/denom;
-				fonteTHR[i]=(ccHR[i]*cel2D.sFaceMod[i]*ccTambR[i]-cel2D.cond*correrT)/denom;
-				tempF[i]=num/denom;*/
 
 				double gradMed [cel2D.dim];
 				for(int j=0; j<cel2D.dim;j++){
@@ -3326,7 +2886,6 @@ void elem2d::calcGradGreenTemp(int inicia){
 }
 
 void elem2d::calcGradGreenPresCor(){
-	//vazMass();
 	for(int i=0;i<cel2D.nvert;i++){
 		if(kvizinho[i]>=0){
 			calcVarFacePresCor(i);
@@ -3340,17 +2899,6 @@ void elem2d::calcGradGreenPresCor(){
 			tipoCC(i, inl, out, wall, sim, kcc);
 			presFcor[i]=0.;
 			if(wall==1 || inl==1 || sim==1){
-				/*if(partidaVF>0){
-					double gradMed [cel2D.dim];
-					for(int j=0; j<cel2D.dim;j++){
-						gradMed[j]=cel2D.gradGreenPresCor[j];
-					}
-					double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					presFcor[i]=cel2D.presCcor+termoCorda*cel2D.modE[i];
-				}
-				else{
-					presFcor[i]=cel2D.presCcor;
-				}*/
 				presFcor[i]=cel2D.presCcor;
 			}
 			else presFcor[i]=0.;
@@ -3377,17 +2925,12 @@ void elem2d::calcGradGreenHol(int inicia){
 			tipoCC(i, inl, out, wall, sim, kcc);
 			holF[i]=0.;
 			if(inl==1){
-				holF[i]=1.;//a ser modificado, seria o valor de entrada
+				holF[i]=1.; // TODO: Modify this to use the input value.
 			}
 			else if(wall==1){
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				if((*vg1dSP).partidaVF>=0){
-//					double gradMed [cel2D.dim];
 					for(int j=0; j<cel2D.dim;j++){
-//						gradMed[j]=cel2D.gradGreenHol[j];
 					}
-					// double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-						//holF[i]=cel2D.holC+termoCorda*cel2D.modE[i];
 					holF[i]=cel2D.holC;
 				}
 				else{
@@ -3404,16 +2947,12 @@ void elem2d::calcGradGreenHol(int inicia){
 					gradMed[0]-=termoCorda*cel2D.vecE[i][0];
 					gradMed[1]-=termoCorda*cel2D.vecE[i][1];
 					termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					 //dúvida, se é para zerar o gradiente, não devceria ser negativo
-					 //ao contrário do indicado em Moukalled?
-					//holF[i]=cel2D.holC+termoCorda*cel2D.modE[i];
+					// QUESTION: If the goal is to set the gradient to zero, shouldn't this term be
+					// negative, contrary to what is indicated by Moukalled?
 					holF[i]=cel2D.holC;
 				}
-				//////////////////////////////////////////////////////////////////////////////////////////////////
 				else if(sim==1){
 					double gradMed [cel2D.dim];
-					// double cordaArea;
-					// double termoCorda;
 					double escalGradArea;
 					for(int j=0; j<cel2D.dim;j++){
 						gradMed[j]=cel2D.gradGreenHol[j];
@@ -3421,8 +2960,6 @@ void elem2d::calcGradGreenHol(int inicia){
 					escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
 					gradMed[0]-=escalGradArea*cel2D.sFace[i][0]/(cel2D.sFaceMod[i]*cel2D.sFaceMod[i]);
 					gradMed[1]-=escalGradArea*cel2D.sFace[i][1]/(cel2D.sFaceMod[i]*cel2D.sFaceMod[i]);
-					// termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-					//holF[i]=cel2D.holC+termoCorda*cel2D.modE[i];
 					holF[i]=cel2D.holC;
 				}
 			}
@@ -3480,42 +3017,27 @@ void elem2d::explicitUV(){
 	localU.mx[0][diag]=0.;
 	localV.mx[0][diag]=0.;
 	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
-		// int para;
-		// para=0;
 	}
 	for(int i=0;i<cel2D.nvert;i++){
 		if(kvizinho[i]>=0){
-			// int col=achaInd(cel2D.indFace[i]);
 			double gradMedU [cel2D.dim];
 			double gradMedV [cel2D.dim];
-			//double gradMedTransU[cel2D.dim];
-			//double gradMedTransV[cel2D.dim];
 			for(int j=0; j<cel2D.dim;j++){
 				gradMedU[j]=cel2D.fatG[i]*cel2D.gradGreenU[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenU[j];
 				gradMedV[j]=cel2D.fatG[i]*cel2D.gradGreenV[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenV[j];
 			}
-			//gradMedTransU[0]=gradMedU[0];
-			//gradMedTransU[1]=gradMedV[0];
-			//gradMedTransV[0]=gradMedU[1];
-			//gradMedTransV[1]=gradMedV[1];
 			double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 			double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
-			//gradMedTransU[0]=gradMedTransU[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][0];
-			//gradMedTransU[1]=gradMedTransU[1]+(((*vizinho[i]).vC-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][0];
-			//gradMedTransV[0]=gradMedTransV[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][1];
-			//gradMedTransV[1]=gradMedTransV[1]+(((*vizinho[i]).vC-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][1];
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
+			double viscHarm;
 			viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
 			viscHarm=1./viscHarm;
 			double escalGradAreaU=escalar(gradMedU,cel2D.sFace[i],cel2D.dim);
 			double escalGradAreaV=escalar(gradMedV,cel2D.sFace[i],cel2D.dim);
 			double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-			//double escalGradAreaTransU=escalar(gradMedTransU,cel2D.sFace[i],cel2D.dim);
-			//double escalGradAreaTransV=escalar(gradMedTransV,cel2D.sFace[i],cel2D.dim);
 			TLU[0]+=viscHarm*(escalGradAreaU-termoCordaU*cordaArea/*+escalGradAreaTransU*/);
-			TLU[0]-=(fonteUHR[i]/*+cel2D.gradGreenPres[0]*cel2D.vElem*/);
+			TLU[0]-=(fonteUHR[i]);
 			TLV[0]+=viscHarm*(escalGradAreaV-termoCordaV*cordaArea/*+escalGradAreaTransV*/);
-			TLV[0]-=(fonteVHR[i]/*+cel2D.gradGreenPres[1]*cel2D.vElem*/);
+			TLV[0]-=(fonteVHR[i]);
 			double termMat=(viscHarm*cordaArea/cel2D.modE[i]);
 			TLU[0]-=(-termMat+coefUHRV[i])*(*vizinho[i]).uCI;
 			localU.mx[0][diag]+=(termMat+coefUHRC[i]);
@@ -3529,48 +3051,30 @@ void elem2d::explicitUV(){
 			int sim=0;
 			int kcc=0;
 			tipoCC(i, inl, out, wall, sim, kcc);
-		    //int ind;
-		    //double raz;
-			//int col=achaInd(cel2D.indFace[i]);
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
-			//viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
-			//viscHarm=1./viscHarm;
+			double viscHarm;
 			viscHarm=cel2D.visc;
 			double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
 			if(wall!=1){
 				if(inl==1){
-
 					double gradMedU [cel2D.dim];
 					double gradMedV [cel2D.dim];
-					//double gradMedTransU[cel2D.dim];
-					//double gradMedTransV[cel2D.dim];
 					for(int j=0; j<cel2D.dim;j++){
 						gradMedU[j]=cel2D.gradGreenU[j];
 						gradMedV[j]=cel2D.gradGreenV[j];
 					}
 					double escalGradAreaU=escalar(gradMedU,cel2D.sFace[i],cel2D.dim);
 					double escalGradAreaV=escalar(gradMedV,cel2D.sFace[i],cel2D.dim);
-					//gradMedTransU[0]=gradMedU[0];
-					//gradMedTransU[1]=gradMedV[0];
-					//gradMedTransV[0]=gradMedU[1];
-					//gradMedTransV[1]=gradMedV[1];
 					double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 					double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
-					//gradMedTransU[0]=gradMedTransU[0]+((uRC[i]-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][0];
-					//gradMedTransU[1]=gradMedTransU[1]+((vRC[i]-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][0];
-					//gradMedTransV[0]=gradMedTransV[0]+((uRC[i]-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][1];
-					//gradMedTransV[1]=gradMedTransV[1]+((vRC[i]-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][1];
-					//double escalGradAreaTransU=escalar(gradMedTransU,cel2D.sFace[i],cel2D.dim);
-					//double escalGradAreaTransV=escalar(gradMedTransV,cel2D.sFace[i],cel2D.dim);
 
 					TLU[0]+=viscHarm*(escalGradAreaU-termoCordaU*cordaArea/*+escalGradAreaTransU*/);
-					TLU[0]-=(massF[i]*uRC[i]/*+cel2D.gradGreenPres[0]*cel2D.vElem*/);
+					TLU[0]-=(massF[i]*uRC[i]);
 					double termMat=(viscHarm*cordaArea/cel2D.modE[i]);
 					TLU[0]+=termMat*uRC[i];
 					localU.mx[0][diag]+=(termMat);
 
 					TLV[0]+=viscHarm*(escalGradAreaV-termoCordaV*cordaArea/*+escalGradAreaTransV*/);
-					TLV[0]-=(massF[i]*vRC[i]/*+cel2D.gradGreenPres[1]*cel2D.vElem*/);
+					TLV[0]-=(massF[i]*vRC[i]);
 					TLV[0]+=termMat*vRC[i];
 					localV.mx[0][diag]+=(termMat);
 				}
@@ -3583,7 +3087,6 @@ void elem2d::explicitUV(){
 
 					TLV[0]-=(2*viscHarm*cel2D.sFaceMod[i]*cel2D.uC/cordaArea)*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2;
 					localV.mx[0][diag]+=(2*viscHarm*cel2D.sFaceMod[i]/cordaArea)*cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2;
-
 				}
 				else if(out==1){
 
@@ -3605,26 +3108,23 @@ void elem2d::explicitUV(){
 					double escalGradAreaV=escalar(gradMedV,cel2D.sFace[i],cel2D.dim);
 
 
-					TLU[0]-=(massF[i]*fonteUHR[i]-0*viscHarm*escalGradAreaU/*+cel2D.gradGreenPres[0]*cel2D.vElem*/);
+					TLU[0]-=(massF[i]*fonteUHR[i]-0*viscHarm*escalGradAreaU);
 					localU.mx[0][diag]+=(massF[i]*coefUHRC[i]);
 
-					TLV[0]-=(massF[i]*fonteVHR[i]-0*viscHarm*escalGradAreaV/*+cel2D.gradGreenPres[1]*cel2D.vElem*/);
+					TLV[0]-=(massF[i]*fonteVHR[i]-0*viscHarm*escalGradAreaV);
 					localV.mx[0][diag]+=(massF[i]*coefVHRC[i]);
 				}
 			}
 			else{
-				//cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim)*cel2D.modE[i]/cel2D.sFaceMod[i];
 				double mod2=cel2D.sFaceMod[i]*cel2D.sFaceMod[i];
 				cordaArea=mod2/(escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim)*cel2D.modE[i]);
 
 				TLU[0]+=viscHarm*cordaArea*(uRC[i]*(1-cel2D.sFace[i][0]*cel2D.sFace[i][0]/mod2)+
 						(cel2D.vC-vRC[i])*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2);
-				/*TLU[0]-=cel2D.gradGreenPres[0]*cel2D.vElem;*/
 				localU.mx[0][diag]+=viscHarm*cordaArea*(1-cel2D.sFace[i][0]*cel2D.sFace[i][0]/mod2);
 
 				TLV[0]+=viscHarm*cordaArea*(vRC[i]*(1-cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2)+
 						(cel2D.uC-uRC[i])*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2);
-				/*TLV[0]-=cel2D.gradGreenPres[1]*cel2D.vElem;*/
 				localV.mx[0][diag]+=viscHarm*cordaArea*(1-cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2);
 			}
 		}
@@ -3637,14 +3137,10 @@ void elem2d::explicitUV(){
 		cel2D.a0U=cel2D.vElem*(cel2D.rho/dt);
 		TLU[0]+=cel2D.a0U*cel2D.uC0;
 		localU.mx[0][diag]+=cel2D.a0U;
-		//cel2D.a0U/=localU.mx[0][diag];
 		cel2D.a0V=cel2D.vElem*(cel2D.rho/dt);
 		TLV[0]+=cel2D.a0V*cel2D.vC0;
 		localV.mx[0][diag]+=cel2D.a0V;
-		//cel2D.a0V/=localV.mx[0][diag];
 	}
-	//cel2D.difuPres[0]=cel2D.vElem/localU.mx[0][diag];
-	//cel2D.difuPres[1]=cel2D.vElem/localV.mx[0][diag];
 	double acTemp=localU.mx[0][diag];
 	localU.mx[0][diag]=acTemp/(*vg1dSP).relaxVF;
 	TLU[0]+=((1-(*vg1dSP).relaxVF)/(*vg1dSP).relaxVF)*acTemp*cel2D.uCI;
@@ -3669,8 +3165,6 @@ void elem2d::GeraLocalUV(double rlx){
 	localU.mx[0][diag]=0.;
 	localV.mx[0][diag]=0.;
 	if(fabs(cel2D.centroElem[1]-6.0806626583835642 )<1e-5){
-		// int para;
-		// para=0;
 	}
 	for(int i=0;i<cel2D.nvert;i++){
 		cel2D.HcU[i]=0.;
@@ -3681,16 +3175,10 @@ void elem2d::GeraLocalUV(double rlx){
 			double gradMedV [cel2D.dim];
 			double gradFaceTU [cel2D.dim];
 			double gradFaceTV [cel2D.dim];
-			//double gradMedTransU[cel2D.dim];
-			//double gradMedTransV[cel2D.dim];
 			for(int j=0; j<cel2D.dim;j++){
 				gradMedU[j]=cel2D.fatG[i]*cel2D.gradGreenU[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenU[j];
 				gradMedV[j]=cel2D.fatG[i]*cel2D.gradGreenV[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenV[j];
 			}
-			//gradMedTransU[0]=gradMedU[0];
-			//gradMedTransU[1]=gradMedV[0];
-			//gradMedTransV[0]=gradMedU[1];
-			//gradMedTransV[1]=gradMedV[1];
 			double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 			double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
 
@@ -3710,11 +3198,7 @@ void elem2d::GeraLocalUV(double rlx){
 			taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 					(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
 
-			//gradMedTransU[0]=gradMedTransU[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][0];
-			//gradMedTransU[1]=gradMedTransU[1]+(((*vizinho[i]).vC-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][0];
-			//gradMedTransV[0]=gradMedTransV[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][1];
-			//gradMedTransV[1]=gradMedTransV[1]+(((*vizinho[i]).vC-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][1];
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
+			double viscHarm;
 			if((*vg1dSP).acop!=1){
 				viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
 				viscHarm=viscFace[i]=1./viscHarm;
@@ -3726,17 +3210,14 @@ void elem2d::GeraLocalUV(double rlx){
 				viscHarm=viscFace[i]=holF[i]*flucVF.VisFlu(pres, temp,taxaDef)/1000.+
 					(1.-holF[i])*flucVF.VisGas(pres, temp)/1000.;
 			}
-			//viscHarm=(*vizinho[i]).visc;
 			double escalGradAreaU=escalar(gradMedU,cel2D.sFace[i],cel2D.dim);
 			double escalGradAreaV=escalar(gradMedV,cel2D.sFace[i],cel2D.dim);
 			double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-			//double escalGradAreaTransU=escalar(gradMedTransU,cel2D.sFace[i],cel2D.dim);
-			//double escalGradAreaTransV=escalar(gradMedTransV,cel2D.sFace[i],cel2D.dim);
 			TLU[0]+=viscHarm*(escalGradAreaU-termoCordaU*cordaArea/*+escalGradAreaTransU*/);
-			TLU[0]-=(fonteUHR[i]/*+cel2D.gradGreenPres[0]*cel2D.vElem*/);
+			TLU[0]-=(fonteUHR[i]);
 			TLU[0]+=viscHarm*forcTransU;
 			TLV[0]+=viscHarm*(escalGradAreaV-termoCordaV*cordaArea/*+escalGradAreaTransV*/);
-			TLV[0]-=(fonteVHR[i]/*+cel2D.gradGreenPres[1]*cel2D.vElem*/);
+			TLV[0]-=(fonteVHR[i]);
 			TLV[0]+=viscHarm*forcTransV;
 			double termMat=(viscHarm*cordaArea/cel2D.modE[i]);
 			localU.mx[0][col]=-termMat+coefUHRV[i];
@@ -3753,12 +3234,7 @@ void elem2d::GeraLocalUV(double rlx){
 			int sim=0;
 			int kcc=0;
 			tipoCC(i, inl, out, wall, sim, kcc);
-		    //int ind;
-		    //double raz;
-			//int col=achaInd(cel2D.indFace[i]);
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
-			//viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
-			//viscHarm=1./viscHarm;
+			double viscHarm;
 			viscHarm=viscFace[i]=cel2D.visc;
 			double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
 			if(wall!=1){
@@ -3766,18 +3242,12 @@ void elem2d::GeraLocalUV(double rlx){
 
 					double gradMedU [cel2D.dim];
 					double gradMedV [cel2D.dim];
-					//double gradMedTransU[cel2D.dim];
-					//double gradMedTransV[cel2D.dim];
 					for(int j=0; j<cel2D.dim;j++){
 						gradMedU[j]=cel2D.gradGreenU[j];
 						gradMedV[j]=cel2D.gradGreenV[j];
 					}
 					double escalGradAreaU=escalar(gradMedU,cel2D.sFace[i],cel2D.dim);
 					double escalGradAreaV=escalar(gradMedV,cel2D.sFace[i],cel2D.dim);
-					//gradMedTransU[0]=gradMedU[0];
-					//gradMedTransU[1]=gradMedV[0];
-					//gradMedTransV[0]=gradMedU[1];
-					//gradMedTransV[1]=gradMedV[1];
 					double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 					double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
 
@@ -3797,21 +3267,15 @@ void elem2d::GeraLocalUV(double rlx){
 						viscHarm=viscFace[i]=holF[i]*flucVF.VisFlu(pres, temp,taxaDef)/1000.+
 							(1.-holF[i])*flucVF.VisGas(pres, temp)/1000.;
 					}
-					//gradMedTransU[0]=gradMedTransU[0]+((uRC[i]-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][0];
-					//gradMedTransU[1]=gradMedTransU[1]+((vRC[i]-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][0];
-					//gradMedTransV[0]=gradMedTransV[0]+((uRC[i]-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][1];
-					//gradMedTransV[1]=gradMedTransV[1]+((vRC[i]-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][1];
-					//double escalGradAreaTransU=escalar(gradMedTransU,cel2D.sFace[i],cel2D.dim);
-					//double escalGradAreaTransV=escalar(gradMedTransV,cel2D.sFace[i],cel2D.dim);
 
-					TLU[0]+=viscHarm*(escalGradAreaU-termoCordaU*cordaArea/*+escalGradAreaTransU*/);
-					TLU[0]-=(massF[i]*uRC[i]/*+cel2D.gradGreenPres[0]*cel2D.vElem*/);
+					TLU[0]+=viscHarm*(escalGradAreaU-termoCordaU*cordaArea);
+					TLU[0]-=(massF[i]*uRC[i]);
 					double termMat=(viscHarm*cordaArea/cel2D.modE[i]);
 					TLU[0]+=termMat*uRC[i];
 					localU.mx[0][diag]+=(termMat);
 
-					TLV[0]+=viscHarm*(escalGradAreaV-termoCordaV*cordaArea/*+escalGradAreaTransV*/);
-					TLV[0]-=(massF[i]*vRC[i]/*+cel2D.gradGreenPres[1]*cel2D.vElem*/);
+					TLV[0]+=viscHarm*(escalGradAreaV-termoCordaV*cordaArea);
+					TLV[0]-=(massF[i]*vRC[i]);
 					TLV[0]+=termMat*vRC[i];
 					localV.mx[0][diag]+=(termMat);
 				}
@@ -3851,15 +3315,7 @@ void elem2d::GeraLocalUV(double rlx){
 					TLV[0]-=(2*viscHarm*cel2D.sFaceMod[i]*cel2D.uC/cordaArea)*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2;
 					localV.mx[0][diag]+=(2*viscHarm*cel2D.sFaceMod[i]/cordaArea)*cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2;
 
-					/*double forcBU=-(2.*viscHarm*cel2D.sFaceMod[i]/cel2D.modE[i])*cel2D.sFace[i][0]/cel2D.sFaceMod[i];
-					TLU[0]-=(massF[i]*fonteUHR[i]+forcBU*cel2D.vC*cel2D.sFace[i][1]/cel2D.sFaceMod[i]);
-					localU.mx[0][diag]+=(massF[i]*coefUHRC[i]);
-					localU.mx[0][diag]-=forcBU*cel2D.sFace[i][0]/cel2D.sFaceMod[i];
 
-					double forcBV=-(2.*viscHarm*cel2D.sFaceMod[i]/cel2D.modE[i])*cel2D.sFace[i][1]/cel2D.sFaceMod[i];
-					TLV[0]-=(massF[i]*fonteVHR[i]+forcBV*cel2D.vC*cel2D.sFace[i][0]/cel2D.sFaceMod[i]);
-					localV.mx[0][diag]+=(massF[i]*coefVHRC[i]);
-					localV.mx[0][diag]-=forcBV*cel2D.sFace[i][1]/cel2D.sFaceMod[i];*/
 				}
 				else if(out==1){
 
@@ -3880,22 +3336,15 @@ void elem2d::GeraLocalUV(double rlx){
 					}
 					taxadeformFace[i]=sqrt(2.*gradUface[i][0]*gradUface[i][0]+2.*gradVface[i][1]*gradVface[i][1]+
 										(gradUface[i][1]+gradVface[i][0])*(gradUface[i][1]+gradVface[i][0]));
-					//if((*vg1dSP).acop==1){
-						//double pres=presF[i];
-						//double temp=tempF[i];
-						//double taxaDef=taxadeformFace[i];
-						//viscHarm=viscFace[i]=holF[i]*flucVF.VisFlu(pres, temp,taxaDef)/1000.+
-						//	(1.-holF[i])*flucVF.VisGas(pres, temp)/1000.;
-					//}
 
 					double escalGradAreaU=escalar(gradMedU,cel2D.sFace[i],cel2D.dim);
 					double escalGradAreaV=escalar(gradMedV,cel2D.sFace[i],cel2D.dim);
 
 
-					TLU[0]-=(massF[i]*fonteUHR[i]-0*viscHarm*escalGradAreaU/*+cel2D.gradGreenPres[0]*cel2D.vElem*/);
+					TLU[0]-=(massF[i]*fonteUHR[i]-0*viscHarm*escalGradAreaU);
 					localU.mx[0][diag]+=(massF[i]*coefUHRC[i]);
 
-					TLV[0]-=(massF[i]*fonteVHR[i]-0*viscHarm*escalGradAreaV/*+cel2D.gradGreenPres[1]*cel2D.vElem*/);
+					TLV[0]-=(massF[i]*fonteVHR[i]-0*viscHarm*escalGradAreaV);
 					localV.mx[0][diag]+=(massF[i]*coefVHRC[i]);
 				}
 			}
@@ -3903,16 +3352,10 @@ void elem2d::GeraLocalUV(double rlx){
 
 				double gradMedU [cel2D.dim];
 				double gradMedV [cel2D.dim];
-				//double gradMedTransU[cel2D.dim];
-				//double gradMedTransV[cel2D.dim];
 				for(int j=0; j<cel2D.dim;j++){
 					gradMedU[j]=cel2D.gradGreenU[j];
 					gradMedV[j]=cel2D.gradGreenV[j];
 				}
-				//gradMedTransU[0]=gradMedU[0];
-				//gradMedTransU[1]=gradMedV[0];
-				//gradMedTransV[0]=gradMedU[1];
-				//gradMedTransV[1]=gradMedV[1];
 				double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 				double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
 
@@ -3935,7 +3378,6 @@ void elem2d::GeraLocalUV(double rlx){
 						(1.-holF[i])*flucVF.VisGas(pres, temp)/1000.;
 				}
 
-				//cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim)*cel2D.modE[i]/cel2D.sFaceMod[i];
 				double mod2=cel2D.sFaceMod[i]*cel2D.sFaceMod[i];
 				cordaArea=mod2/(escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim)*cel2D.modE[i]);
 
@@ -3943,14 +3385,12 @@ void elem2d::GeraLocalUV(double rlx){
 						(cel2D.vC-vRC[i])*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2);
 				TLU[0]-=2.*viscHarm*cordaArea*(cel2D.uC*cel2D.sFace[i][0]*cel2D.sFace[i][0]/mod2+
 						cel2D.vC*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2);
-				/*TLU[0]-=cel2D.gradGreenPres[0]*cel2D.vElem;*/
 				localU.mx[0][diag]+=viscHarm*cordaArea*(1-cel2D.sFace[i][0]*cel2D.sFace[i][0]/mod2);
 
 				TLV[0]+=viscHarm*cordaArea*(vRC[i]*(1-cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2)+
 						(cel2D.uC-uRC[i])*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2);
 				TLU[0]-=2.*viscHarm*cordaArea*(cel2D.uC*cel2D.sFace[i][0]*cel2D.sFace[i][1]/mod2+
 						cel2D.vC*cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2);
-				/*TLV[0]-=cel2D.gradGreenPres[1]*cel2D.vElem;*/
 				localV.mx[0][diag]+=viscHarm*cordaArea*(1-cel2D.sFace[i][1]*cel2D.sFace[i][1]/mod2);
 			}
 		}
@@ -3962,19 +3402,13 @@ void elem2d::GeraLocalUV(double rlx){
 			1.*(cel2D.rho*((*vg1dSP).mulFC-cel2D.beta*(cel2D.tempC-cel2D.tempRef)))*(*vg1dSP).gravVF*sin((*vg1dSP).angY)*cel2D.vElem);
 	double rhoC=cel2D.rho*(1.-0*cel2D.beta*(cel2D.tempC-cel2D.tempRef));
 	if(perm==0 && trans==1){
-		//cel2D.a0U=cel2D.vElem*(cel2D.rho/dt);
 		cel2D.a0U=cel2D.vElem*(rhoC/dt);
 		TLU[0]+=cel2D.a0U*cel2D.uC0;
 		localU.mx[0][diag]+=cel2D.a0U;
-		//cel2D.a0U/=localU.mx[0][diag];
-		//cel2D.a0V=cel2D.vElem*(cel2D.rho/dt);
 		cel2D.a0V=cel2D.vElem*(rhoC/dt);
 		TLV[0]+=cel2D.a0V*cel2D.vC0;
 		localV.mx[0][diag]+=cel2D.a0V;
-		//cel2D.a0V/=localV.mx[0][diag];
 	}
-	//cel2D.uCEx=TLU[0];
-	//cel2D.vCEx=TLV[0];
 	for(int i=0;i<cel2D.nvert;i++){
 		if(kvizinho[i]>=0){
 			cel2D.uCEx-=cel2D.HcU[i]*(*vizinho[i]).uC;
@@ -3990,10 +3424,6 @@ void elem2d::GeraLocalUV(double rlx){
 	residuoU-=denoResU;
 	residuoV-=denoResV;
 
-	//cel2D.uCEx/=localU.mx[0][diag];
-	//cel2D.vCEx/=localV.mx[0][diag];
-	//cel2D.difuPres[0]=cel2D.vElem/localU.mx[0][diag];
-	//cel2D.difuPres[1]=cel2D.vElem/localV.mx[0][diag];
 	double acTemp=localU.mx[0][diag];
 	localU.mx[0][diag]=acTemp/rlx;
 	TLU[0]+=((1-rlx)/rlx)*acTemp*cel2D.uCI;
@@ -4023,8 +3453,6 @@ void elem2d::GeraLocalUV(double rlx){
 		cel2D.difuPres[0]/=(1.+modHcU);
 		cel2D.difuPres[1]/=(1.+modHcV);
 	}
-	//cel2D.a0U=cel2D.a0U*cel2D.difuPresRC[0]/cel2D.vElem;
-	//cel2D.a0V=cel2D.a0V*cel2D.difuPresRC[1]/cel2D.vElem;
 }
 
 void elem2d::GeraLocalU(){
@@ -4047,7 +3475,7 @@ void elem2d::GeraLocalU(){
 			double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
 			gradMedTrans[0]=gradMedTrans[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCorda)*cel2D.vecE[i][0];
 			gradMedTrans[1]=gradMedTrans[1]+(((*vizinho[i]).vC-cel2D.vC)/cel2D.modE[i]-termoCordaV)*cel2D.vecE[i][0];
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
+			double viscHarm;
 			viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
 			viscHarm=1./viscHarm;
 			double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
@@ -4066,7 +3494,6 @@ void elem2d::GeraLocalU(){
 			int sim=0;
 			int kcc=0;
 			tipoCC(i, inl, out, wall, sim, kcc);
-			// int col=achaInd(cel2D.indFace[i]);
 			double gradMed [cel2D.dim];
 			double gradMedV [cel2D.dim];
 			double gradMedTrans[cel2D.dim];
@@ -4078,7 +3505,7 @@ void elem2d::GeraLocalU(){
 			gradMedTrans[1]=gradMedV[0];
 			double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
 			double termoCordaV=escalar(gradMedV,cel2D.vecE[i],cel2D.dim);
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
+			double viscHarm;
 			viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
 			viscHarm=1./viscHarm;
 			double escalGradAreaTrans;
@@ -4147,7 +3574,7 @@ void elem2d::GeraLocalV(){
 			double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 			gradMedTrans[0]=gradMedTrans[0]+(((*vizinho[i]).uC-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][1];
 			gradMedTrans[1]=gradMedTrans[1]+(((*vizinho[i]).vC-cel2D.vC)/cel2D.modE[i]-termoCorda)*cel2D.vecE[i][1];
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
+			double viscHarm;
 			viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
 			viscHarm=1./viscHarm;
 			double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
@@ -4166,12 +3593,10 @@ void elem2d::GeraLocalV(){
 			int sim=0;
 			int kcc=0;
 			tipoCC(i, inl, out, wall, sim, kcc);
-			// int col=achaInd(cel2D.indFace[i]);
 			double gradMed [cel2D.dim];
 			double gradMedU [cel2D.dim];
 			double gradMedTrans[cel2D.dim];
 			for(int j=0; j<cel2D.dim;j++){
-				//gradMed[j]=cel2D.fatG[i]*cel2D.gradGreenV[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenV[j];
 				gradMed[j]=cel2D.gradGreenV[j];
 				gradMedU[j]=cel2D.gradGreenU[j];
 			}
@@ -4181,7 +3606,7 @@ void elem2d::GeraLocalV(){
 			double termoCordaU=escalar(gradMedU,cel2D.vecE[i],cel2D.dim);
 			gradMedTrans[0]=gradMedTrans[0]+((uRC[i]-cel2D.uC)/cel2D.modE[i]-termoCordaU)*cel2D.vecE[i][1];
 			gradMedTrans[1]=gradMedTrans[1]+((vRC[i]-cel2D.vC)/cel2D.modE[i]-termoCorda)*cel2D.vecE[i][1];
-			double viscHarm;//=2*cel2D.visc*(*vizinho[i]).visc/(cel2D.visc+(*vizinho[i]).visc);
+			double viscHarm;
 			viscHarm=cel2D.fatG[i]/cel2D.visc+(1-cel2D.fatG[i])/(*vizinho[i]).visc;
 			viscHarm=1./viscHarm;
 			double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
@@ -4241,15 +3666,9 @@ void elem2d::GeraLocalPcor(){
 				rhoHarm=1./rhoHarm;
 			}
 			else{
-			//// Eu-primeira ordem
-				/*double deltaRho=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-
-						(*vizinho[i]).rho*(1.-(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef));
-				rhoHarm=cel2D.rho*(1.-cel2D.beta*(cel2D.tempC-cel2D.tempRef))-deltaRho*(1.-cel2D.fatG[i]);*/
 				rhoHarm=cel2D.fatG[i]*cel2D.rho*(1.-0*cel2D.beta*(cel2D.tempC-cel2D.tempRef))+
 							(1.-cel2D.fatG[i])*(*vizinho[i]).rho*(1.-0*(*vizinho[i]).beta*((*vizinho[i]).tempC-(*vizinho[i]).tempRef));
 			}
-			///////eu-segunda ordem
-			//rhoHarm=cel2D.rho*(1.-cel2D.beta*(tempF[i]-cel2D.tempRef));
 			double gradMed [cel2D.dim];
 			for(int j=0; j<cel2D.dim;j++){
 				gradMed[j]=cel2D.fatG[i]*cel2D.gradGreenPresCor[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenPresCor[j];
@@ -4262,7 +3681,6 @@ void elem2d::GeraLocalPcor(){
 			localPCor.mx[0][col]=-termMat;
 			localPCor.mx[0][diag]+=(termMat);
 			cel2D.HcP[i]=localPCor.mx[0][col];
-			//TLPCor[0]-=massTot;
 		}
 		else{
 			int inl=0;
@@ -4271,55 +3689,13 @@ void elem2d::GeraLocalPcor(){
 			int sim=0;
 			int kcc=0;
 			tipoCC(i, inl, out, wall, sim, kcc);
-			//int col=achaInd(cel2D.indFace[i]);
-			/*if(inl==1 || sim==1 || wall==1){
+			if(out==1){
 				double rhoHarm;
-				rhoHarm=cel2D.rho;
-				double difGradMed [cel2D.dim];
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					difGradMed[j]=gradMed[j]=cel2D.gradGreenPresCor[j];
-				}
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				/////////////////////////////////////////////////////////////////////////////////////////
-				//double deri=(pb-cel2D.presCcor)/cel2D.modE[i];
-				//(deri)*cel2D.vecE[i][j]
-				for(int j=0; j<cel2D.dim;j++){
-					difGradMed[j]=difGradMed[j]-termoCorda*cel2D.vecE[i][j];
-				}
-				double rhoHarm;
-				rhoHarm=cel2D.rho;
-				double difU=cel2D.difuPres[0];
-				double difV=cel2D.difuPres[1];
-				double masTempFonte=-(cel2D.sFace[i][0]*difU*difGradMed[0]+cel2D.sFace[i][1]*difV*difGradMed[1]);
-				double coef0=-(cel2D.sFace[i][0]*difU*cel2D.vecE[i][0]+cel2D.sFace[i][1]*difU*cel2D.vecE[i][1])/cel2D.modE[i];
-				masTempFonte=-masTempFonte/coef0;
-				////////////////////////////////////////////////////////////////////////////////////////
-				double escalGradArea=escalar(gradMed,cel2D.vecSDif[i],cel2D.dim);
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.vecSDif[i],cel2D.dim);
-				TLPCor[0]+=rhoHarm*(escalGradArea-termoCorda*cordaArea);
-				double termMat=rhoHarm*(cordaArea/cel2D.modE[i]);
-				//localPCor.mx[0][col]=-termMat;
-				//localPCor.mx[0][diag]+=(termMat);
-				TLPCor[0]+=termMat*masTempFonte;
-				//TLPCor[0]-=massTot;
-			}
-	  else*/if(out==1){
-				double rhoHarm;
-				//rhoHarm=cel2D.rho;
 				rhoHarm=cel2D.rho*(1.-0*cel2D.beta*(cel2D.tempC-cel2D.tempRef));
-//				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-//					gradMed[j]=cel2D.gradGreenPresCor[j];
-				}
-				// double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				// double escalGradArea=escalar(gradMed,cel2D.vecSDif[i],cel2D.dim);
+
 				double cordaArea=escalar(cel2D.vecE[i],cel2D.vecSDif[i],cel2D.dim);
-				//TLPCor[0]+=rhoHarm*(escalGradArea-termoCorda*cordaArea);
 				double termMat=rhoHarm*(cordaArea/cel2D.modE[i]);
-				//localPCor.mx[0][col]=-termMat;
 				localPCor.mx[0][diag]+=(termMat);
-				//TLPCor[0]-=massTot;
 			}
 		}
 	}
@@ -4347,7 +3723,7 @@ void elem2d::GeraLocalT(double rlx){
 			for(int j=0; j<cel2D.dim;j++){
 				gradMed[j]=cel2D.fatG[i]*cel2D.gradGreenTemp[j]+(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenTemp[j];
 			}
-			double condHarm;//=2*cel2D.cond*(*vizinho[i]).cond/(cel2D.cond+(*vizinho[i]).cond);
+			double condHarm;
 			condHarm=cel2D.fatG[i]/cel2D.cond+(1-cel2D.fatG[i])/(*vizinho[i]).cond;
 			condHarm=1./condHarm;
 			double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
@@ -4367,8 +3743,6 @@ void elem2d::GeraLocalT(double rlx){
 			int kcc=0;
 			int acoplado;
 			tipoCCTemp(i, diri, vn, rich,acoplado,kcc);
-		    // int ind;
-		    // double raz;
 			if(diri==1){
 
 				double gradMed [cel2D.dim];
@@ -4412,13 +3786,11 @@ void elem2d::GeraLocalT(double rlx){
 		}
 	}
 	double rhoC=cel2D.rho*(1.-0*cel2D.beta*(cel2D.tempC-cel2D.tempRef));
-	////dissipacao viscosa/////////////////////////////////////////////////////
 	double term1=2*(cel2D.gradGreenU[0]*cel2D.gradGreenU[0]+cel2D.gradGreenV[1]*cel2D.gradGreenV[1]);
 	double term2=cel2D.gradGreenU[1]+cel2D.gradGreenV[0];
 	term2*=term2;
 	double dissipa=cel2D.visc*(term1+term2)*cel2D.vElem;
 	TLT[0]+=dissipa;
-	//////////////////////////////////////////////////////////////////////////
 	if(perm==0 && trans==1){
 		TLT[0]+=cel2D.vElem*rhoC*cel2D.cp*cel2D.tempC0/dt;
 		localT.mx[0][diag]+=cel2D.vElem*(rhoC*cel2D.cp/dt);
@@ -4439,9 +3811,7 @@ void elem2d::GeraLocalT(double rlx){
 	TLT[0]+=((1-rlx)/rlx)*acTemp*cel2D.tempCI;
 
 	cel2D.tCEx+=TLT[0];
-
 	cel2D.tCEx/=localT.mx[0][diag];
-
 }
 
 void elem2d::explicitHol(){
@@ -4462,15 +3832,10 @@ void elem2d::explicitHol(){
 		for(int i=0;i<cel2D.nvert;i++){
 			fluxTot+=(cel2D.sFace[i][0]*uRC[i]+cel2D.sFace[i][1]*vRC[i])*holF[i];
 		}
-		// double holVol0=cel2D.vElem*cel2D.holC0/dt;
 		hol=cel2D.holC0-(fluxTot)*dt/cel2D.vElem;
 
 		if(hol>1.-1e-5){
 			if(hol>1.+1e-5){
-				//if(holF[0]>1.-1e-5 && holF[1]>1.-1e-5 && holF[2]>1.-1e-5){
-					//int erro=0;
-					//erro++;
-				//}
 				double dtTemp;
 				dtTemp=-(1.-cel2D.holC0)*cel2D.vElem/fluxTot;
 				if(dtTemp>1e-15){
@@ -4496,4 +3861,3 @@ void elem2d::explicitHol(){
 		else cel2D.holC=hol;
 	}
 }
-

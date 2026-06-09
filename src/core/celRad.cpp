@@ -4,14 +4,6 @@
  *  Created on: 14 de out. de 2023
  *      Author: Eduardo
  */
-/*#include <math.h>
-
-#include <algorithm>
-#include <fstream>
-using namespace std;
-#include <stdlib.h>
-#include "Vetor.h"
-#include "Matriz.h"*/
 #include "celRad.h"
 
 celrad::celrad():
@@ -233,8 +225,6 @@ celrad::celrad(int vncel,int vicel,double vr0, double vr1, double vrm,double vkX
 	fluc=vfluc;
 	flup=vflup;
 
-	//celL=vcelL;
-	//celR=vcelR;
 
 	condiTparede=0;
 	dtSL=dt;
@@ -432,8 +422,6 @@ celrad::celrad(const celrad& vcel):
 	fluc=vcel.fluc;
 	flup=vcel.flup;
 
-	//celL=vcel.celL;
-	//celR=vcel.celR;
 
 	condiTparede=0;
 	dtSL=vcel.dtSL;
@@ -609,8 +597,6 @@ celrad& celrad::operator =(const celrad& vcel){
 		fluc=vcel.fluc;
 		flup=vcel.flup;
 
-		//celL=vcel.celL;
-		//celR=vcel.celR;
 
 		condiTparede=0;
 		dtSL=vcel.dtSL;
@@ -756,15 +742,9 @@ double celrad::interpolaTabela(int nserie, double valx, double* x, double* y){
 			}
 			if (valx >= x[i] && valx < x[i + 1]) {
 				ind = i;
-				raz = 1
-						- (valx - x[i])
-								/ (x[i + 1] - x[i]);
+				raz = 1 - (valx - x[i]) / (x[i + 1] - x[i]);
 				break;
 			}
-			//else if(i==parserie-2){
-			//ind=i+1;
-			//raz=1;
-			//}
 		} else if (i == nserie - 1) {
 			ind = i;
 			raz = 1;
@@ -785,19 +765,9 @@ double celrad::interpolaTabela(int nserie, double valx, double* x, double* y){
 }
 
 double celrad::fkO(double satW, double satG){
-	/*double krw=interpolaTabela(kRelOACel.npont, satW, kRelOACel.satW, kRelOACel.permRelW);
-	double krow=interpolaTabela(kRelOACel.npont, satW, kRelOACel.satW, kRelOACel.permRelOW);
-	double krowC=interpolaTabela(kRelOACel.npont, satConata, kRelOACel.satW, kRelOACel.permRelOW);
 
-	double val=krowC*(((krow/krowC)+krw)-(krw));*/
 
-	/*double krw0=interpolaTabela(kRelOACel.npont, 0.49, kRelOACel.satW, kRelOACel.permRelW);
-	double krow0=interpolaTabela(kRelOACel.npont, 0.49, kRelOACel.satW, kRelOACel.permRelOW);
-	double krowC0=interpolaTabela(kRelOACel.npont, 0.13, kRelOACel.satW, kRelOACel.permRelOW);
-	double krg0=interpolaTabela(kRelOGCel.npont, 0.195, kRelOGCel.satG, kRelOGCel.permRelG);
-	double krog0=interpolaTabela(kRelOGCel.npont, 0.195, kRelOGCel.satG, kRelOGCel.permRelOG);
 
-	double val0=krowC0*(((krow0/krowC0)+krw0)*((krog0/krowC0)+krg0)-(krw0+krg0));*/
 
 	double krw=interpolaTabela(kRelOACel.npont, satW, kRelOACel.satW, kRelOACel.permRelW);
 	double krow=interpolaTabela(kRelOACel.npont, satW, kRelOACel.satW, kRelOACel.permRelOW);
@@ -819,9 +789,7 @@ double celrad::dFW(double satW, double satG){
 	double krog=interpolaTabela(kRelOGCel.npont, satG, kRelOGCel.satG, kRelOGCel.permRelOG);
 	double ko=krowC*(((krow/krowC)+krw)*(1.+0*(krog/krowC)+0*krg)-(krw+0*krg));
 
-//	double fracO=ko/(ko+krw+krg);
 	double fracA=krw/(ko+krw+krg);
-//	double fracG=0*krg/(ko+krow+krg);
 
 	double satwD=satW*1.001;
 	if(satwD>1)satwD=satW*0.999;
@@ -830,9 +798,7 @@ double celrad::dFW(double satW, double satG){
 	krow=interpolaTabela(kRelOACel.npont, satwD, kRelOACel.satW, kRelOACel.permRelOW);
 	ko=krowC*(((krow/krowC)+krw)*((krog/krowC)+krg)-(krw+krg));
 
-//	double fracOD=ko/(ko+krw+krg);
 	double fracAD=krw/(ko+krw+krg);
-//	double fracGD=krg/(ko+krow+krg);
 
 	double val=(fracAD-fracA)/dsatW;
 
@@ -844,16 +810,14 @@ double celrad::dFW(double satW, double satG){
 void celrad::calcVazOWG(){
 
 	pmed1=0.5*(PcamadaR+Pcamada);
-	slmed1=sLR;//0.5*(sLR+sL);
+	slmed1=sLR;
 	if((QwcamadaR+QocamadaR)<0)slmed1=sL;
-	samed1=sWR;//0.5*(sWR+sW);
-	//if(dFW(sWR ,1.-slmed1)*(QwcamadaR)<0)samed1=sW;
+	samed1=sWR;
 	if((QwcamadaR+QocamadaR)<0)samed1=sW;
 	pmed0=0.5*(Pcamada+PcamadaL);
-	slmed0=sL;//0.5*(sL+sLL);
+	slmed0=sL;
 	if((QwcamadaL+QocamadaL)<0)slmed0=sLL;
-	samed0=sW;//0.5*(sW+sWL);
-	//if((dFW(sW ,1.-slmed0)*QwcamadaL)<0)samed0=sWL;
+	samed0=sW;
 	if((QwcamadaL+QocamadaL)<0)samed0=sWL;
 
 	vbo=flup.BOFunc(Pcamada, tRes);
@@ -941,24 +905,6 @@ void celrad::calcVazOWG(){
 	darcyG0=0;
 	darcyA1=kmedA1*kabsol1*98066.22/mia1;
 	darcyA0=kmedA0*kabsol0*98066.22/mia0;
-
-	/*double grav=9.82/98066.22;
-
-	double mo1=-darcyO1*rQcamadaR*(PcamadaR-Pcamada-zD1*rhoP1*grav+zD*rhoP*grav)/drP1;
-	double mo0=-darcyO0*rQcamadaL*(Pcamada-PcamadaL-zD*rhoP*grav+zD0*rhoP0*grav)/drP0;
-
-	double mg1=-darcyG1*rQcamadaR*(PcamadaR+pcOG1-Pcamada-pcOGm-zD1*rhogP1*grav+zD*rhogP*grav)/drP1;
-	double mg0=-darcyG0*rQcamadaL*(Pcamada+pcOGm-PcamadaL-pcOG0-zD*rhogP*grav+zD0*rhogP0*grav)/drP0;
-
-	double ma1=-darcyA1*rQcamadaR*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)/drP1;
-	double ma0=-darcyA0*rQcamadaL*(Pcamada-pcAOm-PcamadaL+pcAO0-zD*rhoPa*grav+zD0*rhoPa0*grav)/drP0;
-
-	QocamadaR=mo1;
-	QocamadaL=mo0;
-	QgcamadaR=mg1;
-	QgcamadaL=mg0;
-	QwcamadaR=ma1;
-	QwcamadaL=ma0;*/
 }
 
 double celrad::cflO(){
@@ -983,7 +929,6 @@ double celrad::cflA(){
 void celrad::evoluiSL(int& reinicia,int ciclo,double dpdt){
 
 	double poro0=poro*(1-compresPoro*(Pini-presRes));
-	//double area=rm*drQ;//dividido por 2*Pi
 	double area=(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
 	double multTO=poro0*rhostd*area/vbo;
 	double multTA=poro0*area*rhoa;
@@ -1033,10 +978,8 @@ void celrad::evoluiSL(int& reinicia,int ciclo,double dpdt){
 	else if(alfx<-localtiny){
 	      double dtaux;
 	      dtaux=(1.-sLini)/(balanco);
-	      //if(dtaux<dt*CritDTMin)dtaux=dt*CritDTMin;
 	      if(reinicia==0){
 	        dtSL=dtaux;
-	        //reinicia=-1;
 	        reiniciaSL=-1;
 	        sL=1.;
 	      }
@@ -1050,7 +993,6 @@ void celrad::evoluiSL(int& reinicia,int ciclo,double dpdt){
 	      dtaux=(satConata-sLini)/(balanco);
 	      if(reinicia==0){
 	        dtSL=dtaux;
-	        //reinicia=-1;
 	        reiniciaSL=-1;
 	        sL=fabs(satConata);
 	      }
@@ -1065,9 +1007,7 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 
 	dtSW=dt;
 	double poro0=poro*(1-compresPoro*(Pini-presRes));
-	//double area=rm*drQ;//dividido por 2*Pi
 	double area=(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
-	//if(icel==1)area*=2.;
 	double multTA=poro0*area*rhoPaIni;
 
 	double dPoroRhow=0;
@@ -1088,11 +1028,9 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	double val=sWini+balanco*dt;
 	if(val<satConata && sWini==satConata)val=satConata;
 	else if(val>1. && sWini==1.)val=1.;
-//    double alfx=1.-val;
     double localtiny=1e-5;
 
 	if(((val<=sL+localtiny)&&(val>=sL-localtiny))){
-		   //alf=fabs(0.);
 		   sW=sL;
 	}
 	else if(val>sL+localtiny){
@@ -1102,10 +1040,8 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	      else{
 	    	  dtaux=0.;
 	      }
-	      //if(dtaux<dt*CritDTMin)dtaux=dt*CritDTMin;
 	      if(reinicia==0 && dtaux>1e-5){
 	        dtSW=dtaux;
-	        //reinicia=-1;
 	        reiniciaSW=-1;
 	        sW=sL;
 	      }
@@ -1124,7 +1060,6 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	      else dtaux=0.;
 	      if(reinicia==0 && dtaux>1e-5){
 	        dtSW=dtaux;
-	        //reinicia=-1;
 	        reiniciaSW=-1;
 	        sW=fabs(satConata);
 	      }
@@ -1134,79 +1069,17 @@ void celrad::evoluiSW(int& reinicia,int ciclo,double dpdt){
 	      }
 	}
 	else sW=val;
-
-	if(reiniciaSW==-1){
-//		int para;
-//		para=0;
-	}
-
-	//sW=0.13;
-	//dtSW=dt;
-	//reiniciaSW=0;
-
-
 }
 
 void celrad::transcel(int idisc){
 
   double cond;
   double h1;
-//  double hi;
-//  double vr0;
   double vr1;
   double vr2;
   double grav=9.82/98066.22;
 
   calcVazOWG();
-
-
-  /*double area=(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
-  double poro0=poro*(1-compresPoro*(Pcamada-presRes));
-  double multTot;
-  if(fabs((Pcamada-Pini)/Pini)<1e-3){
-	  double dporo=-poro*compresPoro;
-	  double porod=poro*(1-compresPoro*(Pcamada*1.0001-presRes));
-	  double dPoroRhoo=0;
-	  double dPoroRhow=0;
-	  double dPoroRhog=0;
-	  double pmedT=0.5*(Pcamada+Pini);
-	  double rhood=flup.MasEspoleo(pmedT*1.00001, tRes);
-	  double rhogd=flup.MasEspGas(pmedT*1.00001, tRes);
-	  double titd=flup.FracMassHidra(pmedT*1.00001, tRes);
-	  double alfd=0*titd+1*(titd/rhogd)/((titd/rhogd)+((1.-titd)/rhood));
-	  double rhooe=flup.MasEspoleo(pmedT*(1-0.00001), tRes);
-	  double rhoge=flup.MasEspGas(pmedT*(1-0.00001), tRes);
-	  double tite=flup.FracMassHidra(pmedT*(1-0.00001), tRes);
-	  double alfe=0*titd+1*(tite/rhoge)/((tite/rhoge)+((1.-tite)/rhooe));
-	  //dPoroRhoo=(porod*((1-alfd)*rhood+alfd*rhogd)-poro0*((1.-alf)*rhoP+alf*rhogP))/(Pcamada*0.001);
-	  dPoroRhoo=dporo*((1.-alf)*rhoP+alf*rhogP)+
-		    poro0*(((1-alfd)*rhood+alfd*rhogd)-((1.-alfe)*rhooe+alfe*rhoge))/(pmedT*0.00002);
-
-	  dPoroRhog=(porod*rhogd-poro0*rhogP)/(Pcamada*0.0001);
-	  dPoroRhog=dporo*(rhogP)+
-		    poro0*((rhogd)-(rhogP))/(Pcamada*0.0001);
-
-	  //double rhowd=flup.MasEspAgua(Pcamada*1.000001, tRes);
-	  //porod=poro*(1-compresPoro*(Pcamada*1.0001-presRes));
-	  //dPoroRhow=(porod*rhowd-poro0*rhoa)/(Pcamada*0.0001);
-	  //dPoroRhow=dporo*(rhoa)+
-		    //poro0*(((rhowd)-(rhoa))/(Pcamada*0.000001));
-	  dPoroRhow=dporo*(rhoa)+
-		    poro0*flup.DMasEspAgua(pmedT, tRes);
-	  multTot=((sL-sW-0*satConata)*dPoroRhoo+(1.-sL)*dPoroRhog+(sW-0.*satConata)*dPoroRhow)*area;
-  }
-  else{
-	  double poro0B=poro*(1-compresPoro*(Pini-presRes));
-	  double poro1B=poro*(1-compresPoro*(Pcamada-presRes));
-	  double tit0B=flup.FracMassHidra(Pini, tRes);
-	  double rho0B=flup.MasEspoleo(Pini, tRes);
-	  double rhog0B=flup.MasEspGas(Pini, tRes);
-	  double rhoa0B=flup.MasEspAgua(Pini, tRes);
-	  double alf0B=(tit0B/rhog0B)/((tit0B/rhog0B)+((1.-tit0B)/rho0B));
-	  multTot=((sL-sW-0*satConata)*(poro1B*((1.-alf)*rhoP+alf*rhogP)-poro0B*((1.-alf0B)*rho0B+alf0B*rhog0B))/(Pcamada-Pini)+
-			  (sW-0.*satConata)*(poro1B*rhoa-poro0B*rhoa0B)/(Pcamada-Pini))*area;
-  }*/
-
 
 
   double area=(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
@@ -1245,7 +1118,6 @@ void celrad::transcel(int idisc){
 		  rhoge=flup.MasEspGas(pmedT*(1-0.00001), tRes);
 		  alfe=0;
 	  }
-	  //dPoroRhoo=(porod*((1-alfd)*rhood+alfd*rhogd)-poro0*((1.-alf)*rhoP+alf*rhogP))/(Pcamada*0.001);
 	  dPoroRhoo=dporo*((1.-alf)*rhoP+alf*rhogP)+
 		    poro0*(((1-alfd)*rhood+alfd*rhogd)-((1.-alfe)*rhooe+alfe*rhoge))/(pmedT*0.00002);
 
@@ -1253,11 +1125,6 @@ void celrad::transcel(int idisc){
 	  dPoroRhog=dporo*(rhogP)+
 		    poro0*((rhogd)-(rhogP))/(Pcamada*0.0001);
 
-	  //double rhowd=flup.MasEspAgua(Pcamada*1.000001, tRes);
-	  //porod=poro*(1-compresPoro*(Pcamada*1.0001-presRes));
-	  //dPoroRhow=(porod*rhowd-poro0*rhoa)/(Pcamada*0.0001);
-	  //dPoroRhow=dporo*(rhoa)+
-		    //poro0*(((rhowd)-(rhoa))/(Pcamada*0.000001));
 	  dPoroRhow=dporo*(rhoa)+
 		    poro0*flup.DMasEspAgua(pmedT, tRes);
 	  multTot=((sL-sW-0*satConata)*dPoroRhoo+(1.-sL)*dPoroRhog+(sW-1.*satConata)*dPoroRhow)*area;
@@ -1287,86 +1154,46 @@ void celrad::transcel(int idisc){
 			  (sW-1.*satConata)*(poro1B*rhoa-poro0B*rhoa0B)/(Pcamada-Pini))*area;
   }
 
-  /*double poro0=poro*(1-compresPoro*(Pcamada-presRes));
-  double dporo=-poro*compresPoro;
-  double porod=poro*(1-compresPoro*(Pcamada*1.0001-presRes));
-  double dPoroRhoo=0;
-  double dPoroRhow=0;
-  double dPoroRhog=0;
-  double pmedT=0.5*(Pcamada+Pini);
-  double rhood=flup.MasEspoleo(pmedT*1.00001, tRes);
-  double rhogd=flup.MasEspGas(pmedT*1.00001, tRes);
-  double titd=flup.FracMassHidra(pmedT*1.00001, tRes);
-  double alfd=0*titd+1*(titd/rhogd)/((titd/rhogd)+((1.-titd)/rhood));
-  double rhooe=flup.MasEspoleo(pmedT*(1-0.00001), tRes);
-  double rhoge=flup.MasEspGas(pmedT*(1-0.00001), tRes);
-  double tite=flup.FracMassHidra(pmedT*(1-0.00001), tRes);
-  double alfe=0*titd+1*(tite/rhoge)/((tite/rhoge)+((1.-tite)/rhooe));
-  dPoroRhoo=dporo*((1.-alf)*rhoP+alf*rhogP)+
-		    poro0*(((1-alfd)*rhood+alfd*rhogd)-((1.-alfe)*rhooe+alfe*rhoge))/(pmedT*0.00002);
-  dPoroRhog=(porod*rhogd-poro0*rhogP)/(Pcamada*0.0001);
-  dPoroRhog=dporo*(rhogP)+
-		    poro0*((rhogd)-(rhogP))/(Pcamada*0.0001);
-  dPoroRhow=dporo*(rhoa)+
-		    poro0*flup.DMasEspAgua(pmedT, tRes);
-  double multTot=((sL-sW-0*satConata)*dPoroRhoo+(1.-sL)*dPoroRhog+(sW-0.*satConata)*dPoroRhow)*area;*/
 
   double multTO=((1.-alf)*rhoP+alf*rhogP)*(sL-sW-sLini+sWini);
   double multTG=rhogP*(-sL+sLini);
   double multTA=rhoa*(sW-sWini);
-  //double area=rm*(0.5*(r1-r0));//dividido por 2*Pi
-  //double area=(rQcamadaR*rQcamadaR-rQcamadaL*rQcamadaL)/2.;
   double termoSat=1*poro0*(multTO+multTG+multTA)*area/dt;
-  //double invert=dt/multTot;
 
   for(int i=0;i<4;i++){
 	  localvet[i]=0.;
 	  for(int j=0;j<11;j++)localmat[i][j]=0.;
   }
 
-//  vr0=r0;
   vr1=rm;
   vr2=r1;
 
   if(idisc==0 || idisc==ncel-1){
 	  cond=kabsol1*fluc.rholStd*98066.22/fluc.VisFlu(1., tRes);
-//	  hi=h1=1000000000.*cond*vr1/drcamada;
   }
 
   if(idisc>0){
 	  if(idisc<ncel-1){
-  	  //localmat[0][1]=(1/vr1)/(0.5*(vr2-vr0));
   	  localmat[0][0]=((1.-alfmed0)*rho0+alfmed0*rhog0);
   	  localmat[0][1]=rhog0;
   	  localmat[0][2]=rhoa0;
-  	  //localmat[0][2]=(rho*cp)/dt;
   	  localmat[0][3]=multTot/dt;
-  	  //localmat[0][3]=1.;
-  	  //localmat[0][3]=-(1/vr1)/(0.5*(vr2-vr0));
   	  localmat[0][4]=-((1.-alfmed1)*rho1+alfmed1*rhog1);
   	  localmat[0][5]=-rhog1;
   	  localmat[0][6]=-rhoa1;
-  	  //localvet[0]=Pcamada[icam][idisc]*(rho*cp)/dt;
   	  localvet[0]=Pini*multTot/dt-termoSat;
 	  }
 	  else{
-	  	  //localmat[0][1]=(1/vr1)/(0.5*(vr2-vr0));
 	  	  localmat[0][0]=0;
 	  	  localmat[0][1]=0;
 	  	  localmat[0][2]=0;
-	  	  //localmat[0][2]=(rho*cp)/dt;
 	  	  localmat[0][3]=1;
-	  	  //localmat[0][3]=-(1/vr1)/(0.5*(vr2-vr0));
 	  	  localmat[0][4]=0;
 	  	  localmat[0][5]=0;
 	  	  localmat[0][6]=0;
-	  	  //localvet[0]=Pcamada[icam][idisc]*(rho*cp)/dt;
 	  	  localvet[0]=presRes2;
 	  }
 	  if(idisc<ncel-1){
-		  /*
-double ma1=-darcyA1*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)/drP1;
-		   */
 		  double grav=9.82/98066.22;
 		  double ciL;
 		  ciL=darcyO1*rQcamadaR/drP1;
@@ -1389,81 +1216,30 @@ double ma1=-darcyA1*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)
 		  localvet[3]=-ciL*(pcAO1-pcAOm+0.5*(rhoPa1+rhoPa)*grav*(zD1-zD));
 	  }
 	  else{
-		 //double tit=flup.FracMass(presRes, tRes);
-		 //double rhost = 141.5/(131.5+flup.API);
-		 //double FW = flup.BSW*flup.Denag / ((1.-flup.BSW)*rhost+flup.BSW*flup.Denag);
-		 //double fracO=(sLRes-sWRes)/(1.-satConata);
-		 //double fracA=(sWRes-satConata)/(1.-satConata);
-		 //double fracG=(1.-sLRes)/(1.-satConata);
 		  double fracO;
 		  double fracA;
 		  double fracG;
-		  /*if(fabs(presRes-Pcamada)>1e-15){
-			  double fatTot=fabs((vr1/(drcamada*h1))*(Pcamada-PcamadaL)/(presRes-Pcamada));
-			  fracO=darcyO1*fatTot;
-			  fracA=darcyA1*fatTot;
-			  fracG=darcyG1*fatTot;
-		  }
-		  else{
-			  fracO=(sLRes-sWRes)/(1.-satConata);
-			  fracA=(sWRes-satConata)/(1.-satConata);
-			  fracG=(1.-sLRes)/(1.-satConata);
-		  }*/
 		  fracO=darcyO1/(darcyO1+darcyA1+0*darcyG1);
 		  fracA=darcyA1/(darcyO1+darcyA1+0*darcyG1);
 		  fracG=0*darcyG1/(darcyO1+darcyA1+0*darcyG1);
-		 /*if(flup.BSW<1.-1e-15){
-			 if(tit<1.-1e-15){
-				 double tot=1.+tit/(1.-tit)+FW/(1.-FW);
-				 fracO=1./tot;
-				 fracG=(tit/(1.-tit))/tot;
-				 fracA=(FW/(1.-FW))/tot;
-			 }
-			 else fracG=1.;
-		 }
-		 else fracA=1.;*/
-
-
-		  /*localmat[0][3]=-((1.+0*fracO+0*fracA+0*fracG)*h1*rm+(darcyO1+darcyG1+darcyA1)*rm/drcamada);
-		  localmat[0][7]=(darcyO1+darcyG1+darcyA1)*rm/drcamada;
-		  localvet[0]=-(1+0*fracO+0*fracA+0*fracG)*h1*rm*presRes+(darcyO1*rm/drcamada)*(zD1*rhoP1*grav-zD*rhoP*grav)+
-				  1*(darcyG1*rm/drcamada)*(-pcOG1+pcOGm+zD1*rhogP1*grav-zD*rhogP*grav)+
-				  1*(darcyA1*rm/drcamada)*(pcAO1-pcAOm+zD1*rhoPa1*grav-zD*rhoPa*grav);*/
 		  h1=(darcyO0+0*darcyG0+darcyA0)/drcamada;
-		 localmat[1][3]=fracO*h1*vr2;
-		 localmat[1][4]=1.;
-		 localvet[1]=fracO*h1*vr2*presRes2;
+		  localmat[1][3]=fracO*h1*vr2;
+		  localmat[1][4]=1.;
+		  localvet[1]=fracO*h1*vr2*presRes2;
 
-		 localmat[2][3]=0*fracG*h1*vr2;
-		 localmat[2][5]=1.;
-		 localvet[2]=0*fracG*h1*vr2*presRes2;
+		  localmat[2][3]=0*fracG*h1*vr2;
+		  localmat[2][5]=1.;
+		  localvet[2]=0*fracG*h1*vr2*presRes2;
 
-		 localmat[3][3]=fracA*h1*vr2;
-		 localmat[3][6]=1.;
-		 localvet[3]=fracA*h1*vr2*presRes2;
+		  localmat[3][3]=fracA*h1*vr2;
+		  localmat[3][6]=1.;
+		  localvet[3]=fracA*h1*vr2*presRes2;
 	  }
   }
   else{
-	  //double tit=flup.FracMass(Pint, tRes);
-	  //double rhost = 141.5/(131.5+flup.API);
-	  //double FW = flup.BSW*flup.Denag / ((1.-flup.BSW)*rhost+flup.BSW*flup.Denag);
-	  //double fracO=(sL-sW)/(1.-satConata);
-	  //double fracA=(sW-satConata)/(1.-satConata);
-	  //double fracG=(1.-sL)/(1.-satConata);
 	  double fracO;
 	  double fracA;
 	  double fracG;
-	 /* if(fabs(Pcamada-Pint)>1e-15){
-		  double fatTot=fabs((rm/(drcamada*h1))*(PcamadaR-Pcamada)/(Pcamada-Pint));
-		  fracO=darcyO1*fatTot;
-		  fracA=darcyA1*fatTot;
-		  fracG=darcyG1*fatTot;
-	  }
-	  else{
-		  fracO=(sL-sW)/(1.-satConata);
-		  fracA=(sW-satConata)/(1.-satConata);
-		  fracG=(1.-sL)/(1.-satConata);
-	  }*/
 
 		double ko;
 		double ka;
@@ -1523,19 +1299,6 @@ double ma1=-darcyA1*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)
 		 fracA=dA/(dO+dA);
 		 fracG=0.;
 
-	  //fracO=ko/(ko+ka);
-	  //fracA=ka/(ko+ka);
-	  //fracG=0;
-	  /*if(flup.BSW<1.-1e-15){
-			 if(tit<1.-1e-15){
-				 double tot=1.+tit/(1.-tit)+FW/(1.-FW);
-				 fracO=1./tot;
-				 fracG=(tit/(1.-tit))/tot;
-				 fracA=(FW/(1.-FW))/tot;
-			 }
-			 else fracG=1.;
-	  }
-	  else fracA=1.;*/
 	  h1=ip/(2*M_PI*rm*86400);
 
 
@@ -1553,14 +1316,6 @@ double ma1=-darcyA1*(PcamadaR-pcAO1-Pcamada+pcAOm-zD1*rhoPa1*grav+zD*rhoPa*grav)
 	  localmat[3][3]=-fracA*h1*rm;
 	  localmat[3][6]=1.;
 	  localvet[3]=-fracA*h1*rm*Pint;
-	  //localmat[0][3]=1.;
-	  //localvet[0]=Pint;
-	  /*localmat[1][8]=1.;
-	  localmat[1][4]=-1.;
-	  localmat[2][9]=1;
-	  localmat[2][5]=-1.;
-	  localmat[3][10]=1;
-	  localmat[3][6]=-1.;*/
   }
 
 
@@ -1585,5 +1340,3 @@ void celrad::FeiticoDoTempoPQ(){
 	 QocamadaR=Qoini;
 	 QgcamadaR=Qgini;
 }
-
-

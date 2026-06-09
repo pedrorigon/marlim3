@@ -20,9 +20,7 @@ malha3d::malha3d(varGlob1D* DGP3DV,eleOBJ* velementoUNV, double** xcoor, int** n
 	    	mlh3d.push_back(temp);
 	    	voltot+=mlh3d[i].cel3D.vElem;
 	    	for(int j=0; j<mlh3d[i].cel3D.nvert;j++){
-//	    		int indCC=mlh3d[i].eleUNV.faceCCfaceReal[j];
 	    		if(mlh3d[i].cel3D.ccFace[j]!="interno")areatot+=mlh3d[i].cel3D.sFaceMod[j];
-	    		//if(indCC>=0)cel3D.ccFace[j]=eleUNV.objFace[indCC].condCont;
 	    	}
 	    }
 	    for(int i=0; i<nele;i++){
@@ -32,20 +30,15 @@ malha3d::malha3d(varGlob1D* DGP3DV,eleOBJ* velementoUNV, double** xcoor, int** n
 	    	}
 	    	mlh3d[i].nvizinho=nvizi;
 	    	if(mlh3d[i].cel3D.nvert>0){
-	    		//mlh3d[i].vizinho=new elementoPoisson3D* [mlh3d[i].cel3D.nvert];
-	    		//mlh3d[i].kvizinho=new int [mlh3d[i].cel3D.nvert];
 	    		for(int k=0; k<mlh3d[i].cel3D.nvert;k++){
 	    			mlh3d[i].kvizinho[k]=-1;
 	    			mlh3d[i].vizinho[k]=0;
 	    		}
-	    		//int j=0;
-	    		//while(j<nvizi)
 	    		for(int k=0; k<mlh3d[i].cel3D.nvert;k++){
 	    			if(mlh3d[i].cel3D.indFace[k]>=0){
 	    				int indViz=mlh3d[i].cel3D.indFace[k];
 	    				mlh3d[i].kvizinho[k]=k;
 	    				mlh3d[i].vizinho[k]=&mlh3d[indViz].cel3D;
-	    				//j++;
 	    			}
 	    		}
 	    	}
@@ -88,20 +81,15 @@ malha3d::malha3d(const malha3d& vmalha):vecSolv(vmalha.nele){
 	    	}
 	    	mlh3d[i].nvizinho=nvizi;
 	    	if(mlh3d[i].cel3D.nvert>0){
-	    		//mlh3d[i].vizinho=new elementoPoisson3D* [mlh3d[i].cel3D.nvert];
-	    		//mlh3d[i].kvizinho=new int [mlh3d[i].cel3D.nvert];
 	    		for(int k=0; k<mlh3d[i].cel3D.nvert;k++){
 	    			mlh3d[i].kvizinho[k]=-1;
 	    			mlh3d[i].vizinho[k]=0;
 	    		}
-	    		//int j=0;
-	    		//while(j<nvizi)
 	    		for(int k=0; k<mlh3d[i].cel3D.nvert;k++){
 	    			if(mlh3d[i].cel3D.indFace[k]>=0){
 	    				int indViz=mlh3d[i].cel3D.indFace[k];
 	    				mlh3d[i].kvizinho[k]=k;
 	    				mlh3d[i].vizinho[k]=&mlh3d[indViz].cel3D;
-	    				//j++;
 	    			}
 	    		}
 	    	}
@@ -146,20 +134,15 @@ malha3d& malha3d::operator =(const malha3d& vmalha) {
 		    	}
 		    	mlh3d[i].nvizinho=nvizi;
 		    	if(mlh3d[i].cel3D.nvert>0){
-		    		//mlh3d[i].vizinho=new elementoPoisson3D* [mlh3d[i].cel3D.nvert];
-		    		//mlh3d[i].kvizinho=new int [mlh3d[i].cel3D.nvert];
 		    		for(int k=0; k<mlh3d[i].cel3D.nvert;k++){
 		    			mlh3d[i].kvizinho[k]=-1;
 		    			mlh3d[i].vizinho[k]=0;
 		    		}
-		    		//int j=0;
-		    		//while(j<nvizi)
 		    		for(int k=0; k<mlh3d[i].cel3D.nvert;k++){
 		    			if(mlh3d[i].cel3D.indFace[k]>=0){
 		    				int indViz=mlh3d[i].cel3D.indFace[k];
 		    				mlh3d[i].kvizinho[k]=k;
 		    				mlh3d[i].vizinho[k]=&mlh3d[indViz].cel3D;
-		    				//j++;
 		    			}
 		    		}
 		    	}
