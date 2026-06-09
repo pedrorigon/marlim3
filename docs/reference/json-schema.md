@@ -4,10 +4,10 @@ Marlim3 uses JSON input files to define simulations. Two schema variants are ava
 
 ## Schema Files
 
-| Schema | Language | Typical use |
-|--------|----------|-------------|
-| [Tramo Schema](../schema_tramo.json) | Portuguese keys | Legacy single-pipeline input files |
-| [Branch Schema](../schema_branch.json) | English keys | Recommended format for new models |
+| Schema | Language |
+|--------|----------|
+| [Tramo Schema](../schema_tramo.json) | Portuguese keys |
+| [Branch Schema](../schema_branch.json) | English keys |
 
 !!! note
     The Branch schema is the recommended starting point for new simulations. It uses English key names and is the format produced by `branch.to_json()` in the Python API.
