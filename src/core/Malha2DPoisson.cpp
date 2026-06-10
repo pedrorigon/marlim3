@@ -22,20 +22,15 @@ malha2d::malha2d(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double
 	    	}
 	    	mlh2d[i].nvizinho=nvizi;
 	    	if(mlh2d[i].cel2D.nvert>0){
-	    		//mlh2d[i].vizinho=new elementoPoisson* [mlh2d[i].cel2D.nvert];
-	    		//mlh2d[i].kvizinho=new int [mlh2d[i].cel2D.nvert];
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			mlh2d[i].kvizinho[k]=-1;
 	    			mlh2d[i].vizinho[k]=0;
 	    		}
-	    		//int j=0;
-	    		//while(j<nvizi)
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			if(mlh2d[i].cel2D.indFace[k]>=0){
 	    				int indViz=mlh2d[i].cel2D.indFace[k];
 	    				mlh2d[i].kvizinho[k]=k;
 	    				mlh2d[i].vizinho[k]=&mlh2d[indViz].cel2D;
-	    				//j++;
 	    			}
 	    		}
 	    	}
@@ -77,20 +72,15 @@ malha2d::malha2d(const malha2d& vmalha):vecSolv(vmalha.nele){
 	    	}
 	    	mlh2d[i].nvizinho=nvizi;
 	    	if(mlh2d[i].cel2D.nvert>0){
-	    		//mlh2d[i].vizinho=new elementoPoisson* [mlh2d[i].cel2D.nvert];
-	    		//mlh2d[i].kvizinho=new int [mlh2d[i].cel2D.nvert];
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			mlh2d[i].kvizinho[k]=-1;
 	    			mlh2d[i].vizinho[k]=0;
 	    		}
-	    		//int j=0;
-	    		//while(j<nvizi)
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			if(mlh2d[i].cel2D.indFace[k]>=0){
 	    				int indViz=mlh2d[i].cel2D.indFace[k];
 	    				mlh2d[i].kvizinho[k]=k;
 	    				mlh2d[i].vizinho[k]=&mlh2d[indViz].cel2D;
-	    				//j++;
 	    			}
 	    		}
 	    	}
@@ -134,20 +124,15 @@ malha2d& malha2d::operator =(const malha2d& vmalha) {
 		    	}
 		    	mlh2d[i].nvizinho=nvizi;
 		    	if(mlh2d[i].cel2D.nvert>0){
-		    		//mlh2d[i].vizinho=new elementoPoisson* [mlh2d[i].cel2D.nvert];
-		    		//mlh2d[i].kvizinho=new int [mlh2d[i].cel2D.nvert];
 		    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 		    			mlh2d[i].kvizinho[k]=-1;
 		    			mlh2d[i].vizinho[k]=0;
 		    		}
-		    		//int j=0;
-		    		//while(j<nvizi)
 		    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 		    			if(mlh2d[i].cel2D.indFace[k]>=0){
 		    				int indViz=mlh2d[i].cel2D.indFace[k];
 		    				mlh2d[i].kvizinho[k]=k;
 		    				mlh2d[i].vizinho[k]=&mlh2d[indViz].cel2D;
-		    				//j++;
 		    			}
 		    		}
 		    	}

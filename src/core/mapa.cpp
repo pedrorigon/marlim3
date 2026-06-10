@@ -14,10 +14,6 @@
 using namespace std;
 #include <stdlib.h>
 #include "mapa.h"
-/*#include "Vetor.h"
-#include "Matriz.h"
-#include "PropFlu.h"
-#include "Geometria.h"*/
 
 arranjo::arranjo(double vdia, double vuls, double vugs,
                  double vrl, double vrg,   double vmil,
@@ -163,9 +159,6 @@ double arranjo::zbrent(double x1,double x2,
                             double tol, double epsn, int maxit){
 //Acha zero de fun��o ver NR
  double EPS=epsn;
- //double a=x1;
- //double b=x2;
- //double c=x2;
  double a=0.98;
  double b=0.05;
  double c=b;
@@ -179,8 +172,6 @@ double arranjo::zbrent(double x1,double x2,
 	 while(((fa>0.0&&fb>0.0)||(fa<0.0&&fb<0.0)) ){
 		 a-=dhol;
 		 if(a<=b){
-			// cout<<"Chute inadequado para o c�lculo de raiz no m�todo Ridders"<<"\n";
-			// b=4.*alNd/M_PI;
 			 b=-1.;
 			 return b;
 		 }
@@ -239,7 +230,6 @@ double arranjo::zbrent(double x1,double x2,
    else b+=SIGN(tol1,xm);
    fb=funcarranjo(b);
  }
- //cout<<"Falsa corda atingiu n�mero m�ximo de itera��es"<<"\n";
  b=-1.;
  return b;
 }
@@ -276,7 +266,6 @@ int arranjo::verificaArr(){
 		double crit4;
 		if(j>0)crit4=dc-(0.725+4.15*sqrt(fabs(ugs)/j))*pow(dina/rl,0.6)*pow(2*fm*j*j*j/dia,-0.4);//se positivo, bolha dispersa
 		else crit4=-1.;
-		//double crit5=uls-0.92308*ugs;
 		double crit5=hol-0.48;
 		if(crit1>=0 && crit2>=0 && crit3>=0)return 1;
 		else if(crit4>0 && crit5>0) return 1;
@@ -286,8 +275,6 @@ int arranjo::verificaArr(){
 			dpg=(4/dia)*fg*rg*ugs*fabs(ugs)/2.;
 			dpl=(4/dia)*fl*rl*uls*fabs(uls)/2.;
 			hidro=(rl-rg)*9.81*sin(ang);
-			//if(fabs(ugs+uls)>1e-10)hidro*=(ugs+uls)/fabs(ugs+uls);
-			//double alfl=zbrent(0.0001,1);
 			double alfl=hol;
 			double crit6=hidro*alfl*alfl*alfl*(1.-1.5*alfl)-(2.-1.5*alfl)*dpl;
 			double crit7=alfl-0.24;
@@ -327,7 +314,4 @@ int arranjo::verificaArr(){
 		else if(fabs(uls)>uslBolGen && hol>0.48) return 1;
 		else return 2;
 	}
-
-
-
 }

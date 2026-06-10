@@ -64,7 +64,6 @@ JSON_entrada_configuracaoInicial_Avancado::JSON_entrada_configuracaoInicial_Avan
 	contents["AceleraConvergPerm"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_AceleraConvergPerm>();
 	contents["escorregamentoCelulaContorno"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_escorregamentoCelulaContorno>();
 	contents["correcaoContracorPerm"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_correcaoContracorPerm>();
-	//contents["tempoEstabCol"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol>();
 	contents["estabCol"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_estabCol>();
 	contents["TcorrecaoModComp"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_TcorrecaoModComp>();
 	contents["correcaoModComp"] = make_shared<JSON_entrada_configuracaoInicial_Avancado_correcaoModComp>();
@@ -142,9 +141,6 @@ JSON_entrada_configuracaoInicial_Avancado_correcaoContracorPerm& JSON_entrada_co
 	return static_cast<JSON_entrada_configuracaoInicial_Avancado_correcaoContracorPerm&>(*contents["correcaoContracorPerm"].get());
 }
 
-//JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol& JSON_entrada_configuracaoInicial_Avancado::tempoEstabCol(){
-	//return static_cast<JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol&>(*contents["tempoEstabCol"].get());
-//}
 
 JSON_entrada_configuracaoInicial_Avancado_estabCol& JSON_entrada_configuracaoInicial_Avancado::estabCol(){
 	return static_cast<JSON_entrada_configuracaoInicial_Avancado_estabCol&>(*contents["estabCol"].get());
@@ -358,7 +354,7 @@ JSON_entrada_configuracaoInicial::JSON_entrada_configuracaoInicial(){
 	contents["condicaoInicial"] = make_shared<JSON_entrada_configuracaoInicial_condicaoInicial>();
 	contents["ordemperm"] = make_shared<JSON_entrada_configuracaoInicial_ordemperm>();
 	contents["SnapShotArq"] = make_shared<JSON_entrada_configuracaoInicial_SnapShotArq>();
-	contents["HISEP"] = make_shared<JSON_entrada_configuracaoInicial_HISEP>(); //chris
+	contents["HISEP"] = make_shared<JSON_entrada_configuracaoInicial_HISEP>();
 	contents["SalinidadeFluido"] = make_shared<JSON_entrada_configuracaoInicial_SalinidadeFluido>();
 	contents["comprimentoMedidoInterfaceLinhaGas"] = make_shared<JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaGas>();
 	contents["comprimentoMedidoInterfaceLinhaProd"] = make_shared<JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaProd>();
@@ -387,7 +383,6 @@ JSON_entrada_configuracaoInicial::JSON_entrada_configuracaoInicial(){
 	contents["modoDifus3D"] = make_shared<JSON_entrada_configuracaoInicial_modoDifus3D>();
 	contents["threadP3D"] = make_shared<JSON_entrada_configuracaoInicial_threadP3D>();
 	contents["modoDifus3DArq"] = make_shared<JSON_entrada_configuracaoInicial_modoDifus3DJson>();
-	//contents["redutorAtritoCalc"] = make_shared<JSON_entrada_configuracaoInicial_redutorAtritoCalc>();
 }
 
 JSON_entrada_configuracaoInicial_origemGeometria& JSON_entrada_configuracaoInicial::origemGeometria(){
@@ -627,9 +622,6 @@ JSON_entrada_configuracaoInicial_modoDifus3DJson& JSON_entrada_configuracaoInici
 	return static_cast<JSON_entrada_configuracaoInicial_modoDifus3DJson&>(*contents["modoDifus3DArq"].get());
 }
 
-//JSON_entrada_configuracaoInicial_redutorAtritoCalc& JSON_entrada_configuracaoInicial::redutorAtritoCalc(){
-	//return static_cast<JSON_entrada_configuracaoInicial_redutorAtritoCalc&>(*contents["redutorAtritoCalc"].get());
-//}
 
 JSON_entrada_tabela::JSON_entrada_tabela(){
 	contents["ativo"] = make_shared<JSON_entrada_tabela_ativo>();
@@ -1470,17 +1462,7 @@ JSON_entrada_tempo_gravaMomento& JSON_entrada_tempo::gravaMomento(){
 }
 
 
-//JSON_entrada_gravaMomento::JSON_entrada_gravaMomento(){
-	//contents["ativo"] = make_shared<JSON_entrada_gravaMomento_ativo>();
-//	contents["tempos"] = make_shared<JSON_entrada_gravaMomento_tempos>();
-//}
 
-//JSON_entrada_gravaMomento_ativo& JSON_entrada_gravaMomento::ativo(){
-//	return static_cast<JSON_entrada_gravaMomento_ativo&>(*contents["ativo"].get());
-//}
-//JSON_entrada_gravaMomento_tempos& JSON_entrada_gravaMomento::tempos(){
-//	return static_cast<JSON_entrada_gravaMomento_tempos&>(*contents["tempos"].get());
-//}
 
 JSON_entrada_dutosProducao_Item_discretizacao_Item::JSON_entrada_dutosProducao_Item_discretizacao_Item(){
 	contents["nCelulas"] = make_shared<JSON_entrada_dutosProducao_Item_discretizacao_Item_nCelulas>();
@@ -1985,12 +1967,9 @@ JSON_entrada_dutosServico_Item_nCelulas_XY& JSON_entrada_dutosServico_Item::nCel
 }
 
 
-/*JSON_entrada_hidrato_Hammerschmidt_Khamm& JSON_entrada_hidrato_Hammerschmidt::Khamm(){
-	return static_cast<JSON_entrada_hidrato_Hammerschmidt_Khamm&>(*contents["Khamm"].get()); //hydvaloritem
-}*/ //chris - Hidratos
 
 JSON_entrada_hidrato_modeloHidrato_tipoHmodel& JSON_entrada_hidrato_modeloHidrato::tipoHmodel(){ //hydvaloritem
-	return static_cast<JSON_entrada_hidrato_modeloHidrato_tipoHmodel&>(*contents["tipoHmodel"].get()); //chris-model2
+	return static_cast<JSON_entrada_hidrato_modeloHidrato_tipoHmodel&>(*contents["tipoHmodel"].get());
 }
 
 JSON_entrada_hidrato_Hammerschmidt_MMH& JSON_entrada_hidrato_Hammerschmidt::MMH(){ //hydvaloritem
@@ -2009,21 +1988,15 @@ JSON_entrada_hidrato_Hammerschmidt_Whamm& JSON_entrada_hidrato_Hammerschmidt::Wh
 	return static_cast<JSON_entrada_hidrato_Hammerschmidt_Whamm&>(*contents["Whamm"].get()); //hydvaloritem
 }
 
-JSONString& JSON_entrada_hidrato_Hammerschmidt::inibidor() { // chris - Hidratos
+JSONString& JSON_entrada_hidrato_Hammerschmidt::inibidor() {
     return static_cast<JSONString&>(*contents["inibidor"].get());
 }
 
-JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada& JSON_entrada_hidrato_Hammerschmidt::fracFWcarregada(){ //chris - Hidratos
+JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada& JSON_entrada_hidrato_Hammerschmidt::fracFWcarregada(){
 	return static_cast<JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada&>(*contents["fracFWcarregada"].get()); //hydvaloritem
 }
 
-/*JSON_entrada_hidrato_Hammerschmidt_Methanol& JSON_entrada_hidrato_Hammerschmidt::Methanol(){ //hydvaloritem
-	return static_cast<JSON_entrada_hidrato_Hammerschmidt_Methanol&>(*contents["Methanol"].get());
-}
 
-JSON_entrada_hidrato_Hammerschmidt_MMEG& JSON_entrada_hidrato_Hammerschmidt::MMEG(){ //hydvaloritem
-	return static_cast<JSON_entrada_hidrato_Hammerschmidt_MMEG&>(*contents["MMEG"].get());
-}*/ //chris - Hidratos
 
 JSON_entrada_hidrato_Hammerschmidt::JSON_entrada_hidrato_Hammerschmidt(){ //hydvalor
 	//contents["Khamm"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_Khamm>(); //chris - Hidratos
@@ -2032,14 +2005,10 @@ JSON_entrada_hidrato_Hammerschmidt::JSON_entrada_hidrato_Hammerschmidt(){ //hydv
 	contents["MMW"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_MMW>();
 	contents["Whamm"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_Whamm>();
 //	contents["Methanol"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_Methanol>(); //chris - Hidratos
-//	contents["MMEG"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_MMEG>();
-	contents["inibidor"] = make_shared<JSONString>(); //chris - Hidratos
-	contents["fracFWcarregada"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada>(); //chris - Hidratos
+	contents["inibidor"] = make_shared<JSONString>();
+	contents["fracFWcarregada"] = make_shared<JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada>();
 }
 
-/*JSON_entrada_hidrato_PropFluHidrato_rhoH& JSON_entrada_hidrato_PropFluHidrato::rhoH(){
-	return static_cast<JSON_entrada_hidrato_PropFluHidrato_rhoH&>(*contents["rhoH"].get()); //hydvaloritem
-}*/ //chris - Hidratos
 
 JSON_entrada_hidrato_PropFluHidrato_coefEsteq& JSON_entrada_hidrato_PropFluHidrato::coefEsteq(){ //hydvaloritem
 	return static_cast<JSON_entrada_hidrato_PropFluHidrato_coefEsteq&>(*contents["coefEsteq"].get());
@@ -2056,38 +2025,18 @@ JSON_entrada_hidrato_PropFluHidrato::JSON_entrada_hidrato_PropFluHidrato(){ //hy
 }
 
 JSON_entrada_hidrato_ModeloTurner::JSON_entrada_hidrato_ModeloTurner(){ //hydvalor
-	/*contents["estruturaHidratosIk1"] = make_shared<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk1>();
-	contents["estruturaHidratosIk2"] = make_shared<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk2>();
-	contents["estruturaHidratosIIk1"] = make_shared<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk1>();
-	contents["estruturaHidratosIIk2"] = make_shared<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk2>();*/
-	//contents["estruturaHidratos"] = make_shared<JSON_entrada_hidrato_ModeloTurner_estruturaHidratos>();
-	contents["estruturaHidratos"] = make_shared<JSONString>(); //chris - Hidratos
+	contents["estruturaHidratos"] = make_shared<JSONString>();
 	contents["rd"] = make_shared<JSON_entrada_hidrato_ModeloTurner_rd>();
 	contents["rp"] = make_shared<JSON_entrada_hidrato_ModeloTurner_rp>();
 }
 
-/*JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk1& JSON_entrada_hidrato_ModeloTurner::estruturaHidratosIk1(){
-	return static_cast<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk1&>(*contents["estruturaHidratosIk1"].get()); //hydvaloritem
-}
-
-JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk2& JSON_entrada_hidrato_ModeloTurner::estruturaHidratosIk2(){
-	return static_cast<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk2&>(*contents["estruturaHidratosIk2"].get()); //hydvaloritem
-}
-
-JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk1& JSON_entrada_hidrato_ModeloTurner::estruturaHidratosIIk1(){
-	return static_cast<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk1&>(*contents["estruturaHidratosIIk1"].get()); //hydvaloritem
-}
-
-JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk2& JSON_entrada_hidrato_ModeloTurner::estruturaHidratosIIk2(){
-	return static_cast<JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk2&>(*contents["estruturaHidratosIIk2"].get()); //hydvaloritem
-}*/
-
-/*JSON_entrada_hidrato_ModeloTurner_estruturaHidratos& JSON_entrada_hidrato_ModeloTurner::estruturaHidratos(){
-	return static_cast<JSON_entrada_hidrato_ModeloTurner_estruturaHidratos&>(*contents["estruturaHidratos"].get()); //hydvaloritem
-}*/
 
 
-JSONString& JSON_entrada_hidrato_ModeloTurner::estruturaHidratos() { // chris - Hidratos
+
+
+
+
+JSONString& JSON_entrada_hidrato_ModeloTurner::estruturaHidratos() {
     return static_cast<JSONString&>(*contents["estruturaHidratos"].get());
 }
 
@@ -2101,7 +2050,7 @@ JSON_entrada_hidrato_ModeloTurner_rp& JSON_entrada_hidrato_ModeloTurner::rp(){
 
 JSON_entrada_hidrato::JSON_entrada_hidrato(){
 	contents["calculoInterno"] = make_shared<JSON_entrada_hidrato_calculoInterno>();
-	contents["modeloHidrato"] = make_shared<JSON_entrada_hidrato_modeloHidrato>(); //chris-model2
+	contents["modeloHidrato"] = make_shared<JSON_entrada_hidrato_modeloHidrato>();
 	contents["pressao"] = make_shared<JSON_entrada_hidrato_pressao>();
 	contents["temperatura"] = make_shared<JSON_entrada_hidrato_temperatura>();
 	contents["Hammerschmidt"] = make_shared<JSON_entrada_hidrato_Hammerschmidt>();
@@ -2115,7 +2064,7 @@ JSON_entrada_hidrato_calculoInterno& JSON_entrada_hidrato::calculoInterno(){
 
 JSON_entrada_hidrato_modeloHidrato& JSON_entrada_hidrato::modeloHidrato(){
 	return static_cast<JSON_entrada_hidrato_modeloHidrato&>(*contents["modeloHidrato"].get());
-} //chris-model2
+}
 
 JSON_entrada_hidrato_pressao& JSON_entrada_hidrato::pressao(){
 	return static_cast<JSON_entrada_hidrato_pressao&>(*contents["pressao"].get());
@@ -3154,7 +3103,7 @@ JSON_entrada_tendS_Item::JSON_entrada_tendS_Item(){
 	contents["vazaoMassicaGas"] = make_shared<JSON_entrada_tendS_Item_vazaoMassicaGas>();
 	contents["hidro"] = make_shared<JSON_entrada_tendS_Item_hidro>();
 	contents["fric"] = make_shared<JSON_entrada_tendS_Item_fric>();
-	contents["FVHG"] = make_shared<JSON_entrada_tendS_Item_FVHG>(); //chris - Hidratos
+	contents["FVHG"] = make_shared<JSON_entrada_tendS_Item_FVHG>();
 	contents["calor"] = make_shared<JSON_entrada_tendS_Item_calor>();
 	contents["QGstd"] = make_shared<JSON_entrada_tendS_Item_QGstd>();
 	contents["presEstagVGL"] = make_shared<JSON_entrada_tendS_Item_presEstagVGL>();
@@ -3237,7 +3186,7 @@ JSON_entrada_tendS_Item_fric& JSON_entrada_tendS_Item::fric(){
 
 JSON_entrada_tendS_Item_FVHG& JSON_entrada_tendS_Item::FVHG(){
 	return static_cast<JSON_entrada_tendS_Item_FVHG&>(*contents["FVHG"].get());
-} //chris - Hidratos
+}
 
 JSON_entrada_tendS_Item_calor& JSON_entrada_tendS_Item::calor(){
 	return static_cast<JSON_entrada_tendS_Item_calor&>(*contents["calor"].get());
@@ -3791,7 +3740,7 @@ JSON_entrada_perfilServico::JSON_entrada_perfilServico(){
 	contents["fric"] = make_shared<JSON_entrada_perfilServico_fric>();
 	contents["calor"] = make_shared<JSON_entrada_perfilServico_calor>();
 	contents["hidro"] = make_shared<JSON_entrada_perfilServico_hidro>();
-	contents["FVHG"] = make_shared<JSON_entrada_perfilServico_FVHG>(); //chris - Hidratos
+	contents["FVHG"] = make_shared<JSON_entrada_perfilServico_FVHG>();
 	contents["ReyInterno"] = make_shared<JSON_entrada_perfilServico_ReyInterno>();
 	contents["ReyExterno"] = make_shared<JSON_entrada_perfilServico_ReyExterno>();
 	contents["GrashInterno"] = make_shared<JSON_entrada_perfilServico_GrashInterno>();
@@ -3867,7 +3816,7 @@ JSON_entrada_perfilServico_hidro& JSON_entrada_perfilServico::hidro(){
 
 JSON_entrada_perfilServico_FVHG& JSON_entrada_perfilServico::FVHG(){
 	return static_cast<JSON_entrada_perfilServico_FVHG&>(*contents["FVHG"].get());
-} //chris - Hidratos
+}
 
 JSON_entrada_perfilServico_ReyInterno& JSON_entrada_perfilServico::ReyInterno(){
 	return static_cast<JSON_entrada_perfilServico_ReyInterno&>(*contents["ReyInterno"].get());

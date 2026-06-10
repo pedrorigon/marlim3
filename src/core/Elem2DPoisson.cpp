@@ -7,7 +7,6 @@
 #include "Elem2DPoisson.h"
 
 
-
 elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int* tipo,double* atributo,int nVert, int nele, int nno, int vperm,
 		int vtrans,int i,double vtemp,double vfluxCal,double vcond,double vcp,double vrho,double vdt) :
 				TL(1), local(1,nVert+1) {
@@ -69,7 +68,6 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     	cel2D.sFace=new double* [cel2D.nvert];
     	for(int j=0; j<cel2D.nvert;j++) cel2D.sFace[j]=new double [cel2D.dim];
     	cel2D.sFaceMod=new double [cel2D.nvert];
-    	///////////////////////////////////////////////////////////////////////////////////////////
         cel2D.vecE=new double* [cel2D.nvert];
         for(int j=0; j<cel2D.nvert;j++) cel2D.vecE[j]=new double [cel2D.dim];
         cel2D.modE=new double [cel2D.nvert];
@@ -103,7 +101,6 @@ elem2dPoisson::elem2dPoisson(varGlob1D* Vvg1dSP,double** xcoor, int** noEle,int*
     		cel2D.noElem[j]=noEle[i][j];
     		int iNo=cel2D.noElem[j];
     		if(j+1<cel2D.nvert){
-    			//int iNoP=cel2D.noElem[j+1];
     			int iNoP=noEle[i][j+1];
     			if(cel2D.indFace[j]>=0)cel2D.ccFace[j]=0;
     			else if(tipo[iNo]==tipo[iNoP])cel2D.ccFace[j]=tipo[iNo];
@@ -258,10 +255,6 @@ elem2dPoisson::elem2dPoisson(const elem2dPoisson& velem) :
 	perm=velem.perm;
 	trans=velem.trans;
 	CC=velem.CC;
-	//ccTD=velem.ccTD;
-	//ccTVN=velem.ccTVN;
-	//ccHR=velem.ccHR;
-	//ccTambR=velem.ccTambR;
 	if(cel2D.nvert>0){
     	vizinho=new elementoPoisson* [cel2D.nvert];
     	kvizinho=new int [cel2D.nvert];
@@ -347,7 +340,6 @@ elem2dPoisson::elem2dPoisson(const elem2dPoisson& velem) :
         	for(int j=0; j<cel2D.dim;j++)cel2D.sFace[i][j]=velem.cel2D.sFace[i][j];
     	cel2D.sFaceMod=new double [cel2D.nvert];
     	for(int i=0; i<cel2D.nvert;i++)cel2D.sFaceMod[i]=velem.cel2D.sFaceMod[i];
-    	///////////////////////////////////////////////////////////////////////////////////////////
         cel2D.vecE=new double* [cel2D.nvert];
         for(int j=0; j<cel2D.nvert;j++) cel2D.vecE[j]=new double [cel2D.dim];
     	for(int i=0; i<cel2D.nvert;i++)
@@ -390,7 +382,6 @@ elem2dPoisson::elem2dPoisson(const elem2dPoisson& velem) :
 		cel2D.sFace=0;
 		cel2D.sFaceMod=0;
 		cel2D.ownFace=0;
-		//////////////////////////////////////////////////////////////////////////////////////
         cel2D.vecE=0;
         cel2D.modE=0;
         cel2D.vecT=0;
@@ -435,12 +426,10 @@ elem2dPoisson& elem2dPoisson::operator =(const elem2dPoisson& velem) {
 				delete[] cel2D.coordVert[i];
 				delete[] cel2D.dCF[i];
 				delete[] cel2D.sFace[i];
-				///////////////////////////////////////////////////////////
 				delete[] cel2D.vecE[i];
 				delete[] cel2D.vecT[i];
 				delete[] cel2D.fInter[i];
 				delete[] cel2D.fIfC[i];
-				///////////////////////////////////////////////////////////
 				delete[] gradTface[i];
 			}
 			delete[] cel2D.centroideFace;
@@ -449,7 +438,6 @@ elem2dPoisson& elem2dPoisson::operator =(const elem2dPoisson& velem) {
 			delete[] cel2D.sFace;
 			delete[] vizinho;
 			delete[] kvizinho;
-			///////////////////////////////////////////////////////////////////////////////
 			delete[] cel2D.vecE;
 			delete[] cel2D.modE;
 			delete[] cel2D.vecT;
@@ -460,7 +448,6 @@ elem2dPoisson& elem2dPoisson::operator =(const elem2dPoisson& velem) {
 			delete[] cel2D.fIfC;
 			delete[] cel2D.gradGreenT;
 			delete[] cel2D.gradGreenTI;
-			//////////////////////////////////////////////////////////////////////////////////
 			delete[] tempF;
 			delete[] gradTface;
 
@@ -468,10 +455,6 @@ elem2dPoisson& elem2dPoisson::operator =(const elem2dPoisson& velem) {
 			delete[] coefTHRV;
 			delete[] fonteTHR;
 		}
-		/*if(nvizinho>0){
-			delete[] vizinho;
-			delete[] kvizinho;
-		}*/
 		vg1dSP=velem.vg1dSP;
 		TL=velem.TL;
 		local=velem.local;
@@ -575,7 +558,6 @@ elem2dPoisson& elem2dPoisson::operator =(const elem2dPoisson& velem) {
 	        	for(int j=0; j<cel2D.dim;j++)cel2D.sFace[i][j]=velem.cel2D.sFace[i][j];
 	    	cel2D.sFaceMod=new double [cel2D.nvert];
 	    	for(int i=0; i<cel2D.nvert;i++)cel2D.sFaceMod[i]=velem.cel2D.sFaceMod[i];
-	    	///////////////////////////////////////////////////////////////////////////////////////////
 	        cel2D.vecE=new double* [cel2D.nvert];
 	        for(int j=0; j<cel2D.nvert;j++) cel2D.vecE[j]=new double [cel2D.dim];
 	    	for(int i=0; i<cel2D.nvert;i++)
@@ -618,7 +600,6 @@ elem2dPoisson& elem2dPoisson::operator =(const elem2dPoisson& velem) {
 			cel2D.sFace=0;
 			cel2D.sFaceMod=0;
 			cel2D.ownFace=0;
-			//////////////////////////////////////////////////////////////////////////////////////
 	        cel2D.vecE=0;
 	        cel2D.modE=0;
 	        cel2D.vecT=0;
@@ -672,14 +653,6 @@ void elem2dPoisson::buscaVizinho(int** noEle,int* face,int elem,int nVert, int n
 }
 
 void elem2dPoisson::menorIndViz(){
-	/*int rank=0;
-	if(kvizinho[iviz]>=0){
-		for(int i=0;i<cel2D.nvert;i++){
-			if(kvizinho[i]>=0 && cel2D.indFace[iviz]>cel2D.indFace[i])rank++;
-		}
-	}
-	else rank=-1;
-	return rank;*/
 
 	cel2D.indVizCres.push_back(cel2D.indEle);
 	for(int i=0;i<cel2D.nvert;i++)if(cel2D.indFace[i]>=0)cel2D.indVizCres.push_back(cel2D.indFace[i]);
@@ -704,10 +677,6 @@ void elem2dPoisson::indraz(int& ind, double& raz,
 								/ (serietemp[i + 1] - serietemp[i]);
 				break;
 			}
-			//else if(i==parserie-2){
-			//ind=i+1;
-			//raz=1;
-			//}
 		} else if (i == parserie - 1) {
 			ind = i;
 			raz = 1;
@@ -717,17 +686,6 @@ void elem2dPoisson::indraz(int& ind, double& raz,
 
 void elem2dPoisson::faceDetalhes(){
 
-	/*
-	double** vecE;//vetor unitario na orientacao entre o centroide de do elementoPoisson e um dos seus vizinhos
-    double* modE;//distancia entre o centroide do elementoPoisson e um dos seus vizinho
-    double** vecT;//vetor unitario normal a vecE
-    double* modT;//distancia entre o centroide da face e a intersecao da face
-    double* fatG;//razao de distancia entre a intersecao da face e o centroide e a
-    //distancia de dois centroides de elementoPoissons
-    double* angES;//angulo entre a corda dos dois centroides e o vetor da area da face
-    double** fInter;//coordenadas da intersecao da corda entre os centroides dos elementoPoissons e a face do elementoPoisson
-    double** fIfC;//vetor entre a intersecao e o centroide da face
-	 */
 	for(int i=0;i<cel2D.nvert;i++){
 		cel2D.modE[i]=0.;
 		for(int j=0;j<cel2D.dim;j++){
@@ -746,14 +704,8 @@ void elem2dPoisson::faceDetalhes(){
 			cel2D.angES[i]+=(cel2D.sFace[i][j]/cel2D.sFaceMod[i])*cel2D.vecE[i][j];
 		}
 
-		//double ortogS [cel2D.dim];
-		//ortogS[0]=-cel2D.sFace[i][1]/cel2D.sFaceMod[i];
-		//ortogS[1]=cel2D.sFace[i][0]/cel2D.sFaceMod[i];
 		double denf=0.;
 		double numf=0.;
-		//denf=cel2D.vecE[i][0]*ortogS[1]-cel2D.vecE[i][1]*ortogS[0];
-		//numf=(cel2D.centroideFace[i][0]-cel2D.centroideElem[0])*ortogS[1]-
-				//(cel2D.centroideFace[i][1]-cel2D.centroideElem[1])*ortogS[0];
 
 		for(int j=0;j<cel2D.dim;j++){
 			numf+=(cel2D.centroideFace[i][j]-cel2D.centroideElem[j])*cel2D.sFace[i][j];
@@ -761,9 +713,6 @@ void elem2dPoisson::faceDetalhes(){
 		}
 		double kf=numf/denf;
 		for(int j=0;j<cel2D.dim;j++){
-			//cel2D.fInter[i][j]=
-					//(cel2D.centroideFace[i][j]-cel2D.centroideElem[j])*cel2D.sFace[i][j]/(cel2D.sFace[i][j]*cel2D.vecE[i][j])+
-					//cel2D.centroideElem[j];
 			cel2D.fInter[i][j]=kf*cel2D.vecE[i][j]+cel2D.centroideElem[j];
 		}
 
@@ -873,16 +822,9 @@ void elem2dPoisson::calcGradGreen(){
 			tempF[i]=0.;
 				//esta abordagem não parece corrigir bem a distorção pelo fator da interpolação nção estar no centro da superfície:
 
-			//for(int j=0; j<cel2D.dim;j++)
-			//tempF[i]+=cel2D.fatG[i]*cel2D.gradGreenT[j]*(cel2D.centroideFace[i][j]-cel2D.centroideElem[j])+
-			//(1-cel2D.fatG[i])*(*vizinho[i]).gradGreenT[j]*(cel2D.centroideFace[i][j]-(*vizinho[i]).centroideElem[j]);
 
 				//esta abordagem, aparentemente. levou a resultados melhores:
 
-			//for(int j=0; j<cel2D.dim;j++)
-			//tempF[i]+=cel2D.fatG[i]*cel2D.gradGreenT[j]*(cel2D.centroideFace[i][j]-cel2D.fInter[i][j])+
-				//	  (1-cel2D.fatG[i])*(*vizinho[i]).gradGreenT[j]*(cel2D.centroideFace[i][j]-cel2D.fInter[i][j]);
-			//tempF[i]+=tinter;
 
 
 			double gradMed [cel2D.dim];
@@ -911,21 +853,7 @@ void elem2dPoisson::calcGradGreen(){
 				tempF[i]=ccTD[i];
 			}
 			else if(vn==1){
-				/*double condHarm=cel2D.cond;
-				//double gradareaB=-ccTVN[i]/condHarm;???????
-				double gradareaB=ccTVN[i]/condHarm;//fluxo negativo, saindo do sólido, grad negativo
 
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenT[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				//tempF[i]=cel2D.tempC+(gradareaB-escalGradArea+cel2D.sFaceMod[i]*termoCorda)*cel2D.modE[i]/cel2D.sFaceMod[i];
-				coefTHRC[i]=1.;
-				fonteTHR[i]=(gradareaB-escalGradArea+termoCorda*cordaArea)*cel2D.modE[i]/cordaArea;
-				tempF[i]=cel2D.tempC+fonteTHR[i];*/
 				double gradMed [cel2D.dim];
 				for(int j=0; j<cel2D.dim;j++){
 					gradMed[j]=cel2D.gradGreenT[j];
@@ -952,34 +880,7 @@ void elem2dPoisson::calcGradGreen(){
 				fonteTHR[i]=(ccHR[i]*cel2D.sFaceMod[i]*ccTambR[i]-cel2D.cond*correrT)/denom;
 				tempF[i]=num/denom;
 			}
-			/*else if(vn==1){
-				double condHarm=cel2D.cond;
-				double gradareaB=-ccTVN[i]/condHarm;
 
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenT[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				//tempF[i]=cel2D.tempC+(gradareaB-escalGradArea+cel2D.sFaceMod[i]*termoCorda)*cel2D.modE[i]/cel2D.sFaceMod[i];
-				tempF[i]=cel2D.tempC+(gradareaB-escalGradArea+termoCorda*cordaArea)*cel2D.modE[i]/cordaArea;
-			}
-			else if(rich==1){
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenT[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				double denom=(cel2D.cond*cordaArea/cel2D.modE[i])+ccHR[i]*cel2D.sFaceMod[i];
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				double correrT=escalGradArea-termoCorda*cordaArea;
-				double num=ccHR[i]*cel2D.sFaceMod[i]*ccTambR[i]+
-						cel2D.cond*cordaArea*cel2D.tempC/cel2D.modE[i]-cel2D.cond*correrT;
-				tempF[i]=num/denom;
-			}*/
 		}
 	}
 	for(int j=0; j<cel2D.dim;j++)cel2D.gradGreenT[j]=0.;
@@ -1030,8 +931,6 @@ void elem2dPoisson::GeraLocal(){
 			int kcc=0;
 			int acoplado;
 			tipoCC(i, diri, vn, rich,acoplado,kcc);
-		    //int ind;
-		    //double raz;
 			if(diri==1){
 
 				double gradMed [cel2D.dim];
@@ -1066,75 +965,6 @@ void elem2dPoisson::GeraLocal(){
 			else if(vn==1){
 				TL[0]+=ccTVN[i]*cel2D.sFaceMod[i];
 			}
-			/*if(diri==1){
-
-				indraz(ind, raz, tempo, CC.ccDir[kcc].nserie, CC.ccDir[kcc].tempo);
-				double inf = CC.ccDir[kcc].val[ind];
-				double sup;
-				if (ind < CC.ccDir[kcc].nserie - 1)
-					sup = CC.ccDir[kcc].val[ind + 1];
-				else
-					sup = CC.ccDir[kcc].val[ind];
-				ccTD[i] = (inf * raz + (1 - raz) * sup);
-
-
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenT[j];
-				}
-				double condHarm=cel2D.cond;
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				TL[0]+=condHarm*(escalGradArea-termoCorda*cordaArea);
-				double termMat=(condHarm*cordaArea/cel2D.modE[i]);
-				TL[0]+=termMat*ccTD[i];
-				local.mx[0][diag]+=termMat;
-			}
-			else if(vn==1){
-
-				indraz(ind, raz, tempo, CC.ccVN[kcc].nserie, CC.ccVN[kcc].tempo);
-				double inf = CC.ccVN[kcc].val[ind];
-				double sup;
-				if (ind < CC.ccVN[kcc].nserie - 1)
-					sup = CC.ccVN[kcc].val[ind + 1];
-				else
-					sup = CC.ccVN[kcc].val[ind];
-				ccTVN[i] = (inf * raz + (1 - raz) * sup);
-
-				TL[0]+=ccTVN[i];
-			}
-			else if(rich==1){
-
-				indraz(ind, raz, tempo, CC.ccRic[kcc].nserie, CC.ccRic[kcc].tempo);
-				double inf = CC.ccRic[kcc].valAmb[ind];
-				double sup;
-				if (ind < CC.ccRic[kcc].nserie - 1)
-					sup = CC.ccRic[kcc].valAmb[ind + 1];
-				else
-					sup = CC.ccRic[kcc].valAmb[ind];
-				ccTambR[i] = (inf * raz + (1 - raz) * sup);
-
-				inf = CC.ccRic[kcc].hAmb[ind];
-				if (ind < CC.ccRic[kcc].nserie - 1)
-					sup = CC.ccRic[kcc].hAmb[ind + 1];
-				else
-					sup = CC.ccRic[kcc].hAmb[ind];
-				ccHR[i] = (inf * raz + (1 - raz) * sup);
-
-				double gradMed [cel2D.dim];
-				for(int j=0; j<cel2D.dim;j++){
-					gradMed[j]=cel2D.gradGreenT[j];
-				}
-				double cordaArea=escalar(cel2D.vecE[i],cel2D.sFace[i],cel2D.dim);
-				double num=ccHR[i]*(cel2D.cond*cordaArea/cel2D.modE[i])*cel2D.sFaceMod[i];
-				double denom=(cel2D.cond*cordaArea/cel2D.modE[i])+ccHR[i]*cel2D.sFaceMod[i];
-				double termoCorda=escalar(gradMed,cel2D.vecE[i],cel2D.dim);
-				double escalGradArea=escalar(gradMed,cel2D.sFace[i],cel2D.dim);
-				double termLiv=-(ccHR[i]*cel2D.cond*cel2D.sFaceMod[i]*(escalGradArea-termoCorda*cordaArea)+num*ccTambR[i])/denom;
-				TL[0]+=termLiv;
-				local.mx[0][diag]-=num/denom;
-			}*/
 		}
 	}
 	if(perm==0 && trans==1){
@@ -1142,4 +972,3 @@ void elem2dPoisson::GeraLocal(){
 		local.mx[0][diag]+=cel2D.vElem*(cel2D.rho*cel2D.cp/dt-deriFonteT);
 	}
 }
-

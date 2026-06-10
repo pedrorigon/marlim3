@@ -15,11 +15,6 @@ malha2dVF::malha2dVF(double** xcoor, int** noEle,int* tipo,double* atributo,int 
 	flucVF=vflucVF;
 	if(nele>0){
 	    for(int i=0; i<neleV;i++){
-	    	/*
-	    	 * 	elem2d(double** xcoor=0, int** noEle=0, int* tipo=0,double* atributo=0,int nVert=0, int nele=0, int nno=0, int i=0,
-			double vpres=0.,double vu=0.,double vv=0.,double vt=0.,double vfluxCal=0.,double vcond=0.,double vcp=0.,
-			double vrho=0.,double vvisc=0.,double vbeta=0.,double vdt=0., int vperm=1, int vtrans=0);
-	    	 */
 	    	elem2d temp(vg1dSP,xcoor, noEle, tipo, atributo, nVert, nele, nno, i,vdt,vperm, vtrans,flucVF);
 	    	mlh2d.push_back(temp);
 	    }
@@ -30,20 +25,15 @@ malha2dVF::malha2dVF(double** xcoor, int** noEle,int* tipo,double* atributo,int 
 	    	}
 	    	mlh2d[i].nvizinho=nvizi;
 	    	if(mlh2d[i].cel2D.nvert>0){
-	    		//mlh2d[i].vizinho=new elemento* [mlh2d[i].cel2D.nvert];
-	    		//mlh2d[i].kvizinho=new int [mlh2d[i].cel2D.nvert];
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			mlh2d[i].kvizinho[k]=-1;
 	    			mlh2d[i].vizinho[k]=0;
 	    		}
-	    		//int j=0;
-	    		//while(j<nvizi)
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			if(mlh2d[i].cel2D.indFace[k]>=0){
 	    				int indViz=mlh2d[i].cel2D.indFace[k];
 	    				mlh2d[i].kvizinho[k]=k;
 	    				mlh2d[i].vizinho[k]=&mlh2d[indViz].cel2D;
-	    				//j++;
 	    			}
 	    		}
 	    	}
@@ -87,20 +77,15 @@ malha2dVF::malha2dVF(const malha2dVF& vmalha):vecSolv(vmalha.nele){
 	    	}
 	    	mlh2d[i].nvizinho=nvizi;
 	    	if(mlh2d[i].cel2D.nvert>0){
-	    		//mlh2d[i].vizinho=new elemento* [mlh2d[i].cel2D.nvert];
-	    		//mlh2d[i].kvizinho=new int [mlh2d[i].cel2D.nvert];
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			mlh2d[i].kvizinho[k]=-1;
 	    			mlh2d[i].vizinho[k]=0;
 	    		}
-	    		//int j=0;
-	    		//while(j<nvizi)
 	    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 	    			if(mlh2d[i].cel2D.indFace[k]>=0){
 	    				int indViz=mlh2d[i].cel2D.indFace[k];
 	    				mlh2d[i].kvizinho[k]=k;
 	    				mlh2d[i].vizinho[k]=&mlh2d[indViz].cel2D;
-	    				//j++;
 	    			}
 	    		}
 	    	}
@@ -146,20 +131,15 @@ malha2dVF& malha2dVF::operator =(const malha2dVF& vmalha) {
 		    	}
 		    	mlh2d[i].nvizinho=nvizi;
 		    	if(mlh2d[i].cel2D.nvert>0){
-		    		//mlh2d[i].vizinho=new elemento* [mlh2d[i].cel2D.nvert];
-		    		//mlh2d[i].kvizinho=new int [mlh2d[i].cel2D.nvert];
 		    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 		    			mlh2d[i].kvizinho[k]=-1;
 		    			mlh2d[i].vizinho[k]=0;
 		    		}
-		    		//int j=0;
-		    		//while(j<nvizi)
 		    		for(int k=0; k<mlh2d[i].cel2D.nvert;k++){
 		    			if(mlh2d[i].cel2D.indFace[k]>=0){
 		    				int indViz=mlh2d[i].cel2D.indFace[k];
 		    				mlh2d[i].kvizinho[k]=k;
 		    				mlh2d[i].vizinho[k]=&mlh2d[indViz].cel2D;
-		    				//j++;
 		    			}
 		    		}
 		    	}

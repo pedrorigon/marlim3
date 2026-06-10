@@ -1,7 +1,22 @@
+/*!
+ * \file JSON_entrada.h
+ * \brief Typed representation of the Marlim simulation input JSON schema.
+ *
+ * This header maps JSON properties to the primitive wrappers provided by
+ * JSONDataModel.h and declares typed object wrappers for every nested section
+ * of the simulation input document.
+ *
+ * Macros define the expected JSON value type for each property. Classes
+ * derived from JSONObject expose typed accessors for nested objects and
+ * arrays, while JSON_entrada represents the root input document.
+ */
 #ifndef JSONENTRADA_H_
 #define JSONENTRADA_H_
-
 #include "JSONDataModel.h"
+
+// ==============================================================================
+// Root metadata and initial simulation configuration
+// ==============================================================================
 
 #define JSON_entrada_sistema JSONString
 #define JSON_entrada_versaoJson JSONString
@@ -35,7 +50,7 @@
 #define JSON_entrada_configuracaoInicial_condicaoInicial JSONInteger
 #define JSON_entrada_configuracaoInicial_ordemperm JSONInteger
 #define JSON_entrada_configuracaoInicial_SnapShotArq JSONString
-#define JSON_entrada_configuracaoInicial_HISEP JSONInteger  //chris
+#define JSON_entrada_configuracaoInicial_HISEP JSONInteger
 #define JSON_entrada_configuracaoInicial_SalinidadeFluido JSONNumber
 #define JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaGas JSONNumber
 #define JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaProd JSONNumber
@@ -53,35 +68,35 @@
 #define JSON_entrada_configuracaoInicial_tempReves JSONNumber
 #define JSON_entrada_configuracaoInicial_razCompGasReves JSONNumber
 #define JSON_entrada_configuracaoInicial_chutePerm JSONNumber
-
 #define JSON_entrada_configuracaoInicial_modoXY JSONBoolean
 #define JSON_entrada_configuracaoInicial_xProdInicio JSONNumber
 #define JSON_entrada_configuracaoInicial_yProdInicio JSONNumber
 #define JSON_entrada_configuracaoInicial_xServInicio JSONNumber
 #define JSON_entrada_configuracaoInicial_yServInicio JSONNumber
-
 #define JSON_entrada_configuracaoInicial_modoDifus3D JSONBoolean
 #define JSON_entrada_configuracaoInicial_threadP3D JSONInteger
 #define JSON_entrada_configuracaoInicial_modoDifus3DJson JSONString
-
 #define JSON_entrada_configuracaoInicial_modoParafina JSONBoolean
-
 #define JSON_entrada_configuracaoInicial_tipoModeloDrift JSONBoolean
-//#define JSON_entrada_configuracaoInicial_redutorAtritoCalc JSONNumber
 
-class JSON_entrada_configuracaoInicial_parametrosDescarga: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_parametrosDescarga();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_vazaoLimiteDescarga& vazaoLimiteDescarga();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoLimiteDescarga& pressaoLimiteDescarga();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoMinimaDescarga& pressaoMinimaDescarga();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoTrabalhoDescargaGas& pressaoTrabalhoDescargaGas();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoLimiteDescargaGas& pressaoLimiteDescargaGas();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoMinimaDescargaGas& pressaoMinimaDescargaGas();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoInicialDescargaGas& pressaoInicialDescargaGas();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_temperaturaDescarga& temperaturaDescarga();
-	JSON_entrada_configuracaoInicial_parametrosDescarga_tempoLatencia& tempoLatencia();
-
+/*!
+ * Store discharge-control limits, working conditions, temperature, and latency.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_parametrosDescarga : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_parametrosDescarga();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_vazaoLimiteDescarga &vazaoLimiteDescarga();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoLimiteDescarga &pressaoLimiteDescarga();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoMinimaDescarga &pressaoMinimaDescarga();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoTrabalhoDescargaGas &pressaoTrabalhoDescargaGas();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoLimiteDescargaGas &pressaoLimiteDescargaGas();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoMinimaDescargaGas &pressaoMinimaDescargaGas();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_pressaoInicialDescargaGas &pressaoInicialDescargaGas();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_temperaturaDescarga &temperaturaDescarga();
+    JSON_entrada_configuracaoInicial_parametrosDescarga_tempoLatencia &tempoLatencia();
 };
 
 #define JSON_entrada_configuracaoInicial_transiente JSONBoolean
@@ -121,44 +136,44 @@ public:
 #define JSON_entrada_configuracaoInicial_Avancado_sonico_Item JSONBoolean
 #define JSON_entrada_configuracaoInicial_Avancado_sonico JSONArray<JSON_entrada_configuracaoInicial_Avancado_sonico_Item>
 
-//#define JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol_Item JSONNumber
-//#define JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol JSONArray<JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol_Item>
-//#define JSON_entrada_configuracaoInicial_Avancado_estabCol_Item JSONBoolean
-//#define JSON_entrada_configuracaoInicial_Avancado_estabCol JSONArray<JSON_entrada_configuracaoInicial_Avancado_estabCol_Item>
-
-class JSON_entrada_configuracaoInicial_Avancado: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_Avancado();
-	JSON_entrada_configuracaoInicial_Avancado_CriterioMonofasico& CriterioMonofasico();
-	JSON_entrada_configuracaoInicial_Avancado_CriterioCondensacao& CriterioCondensacao();
-	JSON_entrada_configuracaoInicial_Avancado_CriterioDTMin& CriterioDTMin();
-	JSON_entrada_configuracaoInicial_Avancado_CriterioBuscaFalsaCorda& CriterioBuscaFalsaCorda();
-	JSON_entrada_configuracaoInicial_Avancado_taxaDespre& taxaDespre();
-	JSON_entrada_configuracaoInicial_Avancado_MedSimpPresFront& MedSimpPresFront();
-	JSON_entrada_configuracaoInicial_Avancado_JTLiquidoSimple& JTLiquidoSimple();
-	JSON_entrada_configuracaoInicial_Avancado_limTransMass& limTransMass();
-	JSON_entrada_configuracaoInicial_Avancado_RelaxaDTChoke& RelaxaDTChoke();
-	JSON_entrada_configuracaoInicial_Avancado_controleDTvalv& controleDTvalv();
-	JSON_entrada_configuracaoInicial_Avancado_desligaPenalizaDT& desligaPenalizaDT();
-	JSON_entrada_configuracaoInicial_Avancado_CriterioConvergPerm& CriterioConvergPerm();
-	JSON_entrada_configuracaoInicial_Avancado_AceleraConvergPerm& AceleraConvergPerm();
-	JSON_entrada_configuracaoInicial_Avancado_escorregamentoCelulaContorno& escorregamentoCelulaContorno();
-	JSON_entrada_configuracaoInicial_Avancado_correcaoContracorPerm& correcaoContracorPerm();
-	//JSON_entrada_configuracaoInicial_Avancado_tempoEstabCol& tempoEstabCol();
-	JSON_entrada_configuracaoInicial_Avancado_estabCol& estabCol();
-	JSON_entrada_configuracaoInicial_Avancado_TcorrecaoModComp& TcorrecaoModComp();
-	JSON_entrada_configuracaoInicial_Avancado_correcaoModComp& correcaoModComp();
-	JSON_entrada_configuracaoInicial_Avancado_desligaDeriTransMassDTemp& desligaDeriTransMassDTemp();
-	JSON_entrada_configuracaoInicial_Avancado_corrigeContSep& corrigeContSep();
-	JSON_entrada_configuracaoInicial_Avancado_acopColAnulPermForte& acopColAnulPermForte();
-	JSON_entrada_configuracaoInicial_Avancado_mudaArea& mudaArea();
-	JSON_entrada_configuracaoInicial_Avancado_nthrd& nthrd();
-	JSON_entrada_configuracaoInicial_Avancado_nthrdMatriz& nthrdMatriz();
-	JSON_entrada_configuracaoInicial_Avancado_miniTabDinAtraso& miniTabDinAtraso();
-	JSON_entrada_configuracaoInicial_Avancado_miniTabDinDp& miniTabDinDp();
-	JSON_entrada_configuracaoInicial_Avancado_miniTabDinDt& miniTabDinDt();
-	JSON_entrada_configuracaoInicial_Avancado_Tsonico& Tsonico();
-	JSON_entrada_configuracaoInicial_Avancado_sonico& sonico();
+/*!
+ * Store advanced numerical, convergence, threading, and model-correction settings.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_Avancado : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_Avancado();
+    JSON_entrada_configuracaoInicial_Avancado_CriterioMonofasico &CriterioMonofasico();
+    JSON_entrada_configuracaoInicial_Avancado_CriterioCondensacao &CriterioCondensacao();
+    JSON_entrada_configuracaoInicial_Avancado_CriterioDTMin &CriterioDTMin();
+    JSON_entrada_configuracaoInicial_Avancado_CriterioBuscaFalsaCorda &CriterioBuscaFalsaCorda();
+    JSON_entrada_configuracaoInicial_Avancado_taxaDespre &taxaDespre();
+    JSON_entrada_configuracaoInicial_Avancado_MedSimpPresFront &MedSimpPresFront();
+    JSON_entrada_configuracaoInicial_Avancado_JTLiquidoSimple &JTLiquidoSimple();
+    JSON_entrada_configuracaoInicial_Avancado_limTransMass &limTransMass();
+    JSON_entrada_configuracaoInicial_Avancado_RelaxaDTChoke &RelaxaDTChoke();
+    JSON_entrada_configuracaoInicial_Avancado_controleDTvalv &controleDTvalv();
+    JSON_entrada_configuracaoInicial_Avancado_desligaPenalizaDT &desligaPenalizaDT();
+    JSON_entrada_configuracaoInicial_Avancado_CriterioConvergPerm &CriterioConvergPerm();
+    JSON_entrada_configuracaoInicial_Avancado_AceleraConvergPerm &AceleraConvergPerm();
+    JSON_entrada_configuracaoInicial_Avancado_escorregamentoCelulaContorno &escorregamentoCelulaContorno();
+    JSON_entrada_configuracaoInicial_Avancado_correcaoContracorPerm &correcaoContracorPerm();
+    JSON_entrada_configuracaoInicial_Avancado_estabCol &estabCol();
+    JSON_entrada_configuracaoInicial_Avancado_TcorrecaoModComp &TcorrecaoModComp();
+    JSON_entrada_configuracaoInicial_Avancado_correcaoModComp &correcaoModComp();
+    JSON_entrada_configuracaoInicial_Avancado_desligaDeriTransMassDTemp &desligaDeriTransMassDTemp();
+    JSON_entrada_configuracaoInicial_Avancado_corrigeContSep &corrigeContSep();
+    JSON_entrada_configuracaoInicial_Avancado_acopColAnulPermForte &acopColAnulPermForte();
+    JSON_entrada_configuracaoInicial_Avancado_mudaArea &mudaArea();
+    JSON_entrada_configuracaoInicial_Avancado_nthrd &nthrd();
+    JSON_entrada_configuracaoInicial_Avancado_nthrdMatriz &nthrdMatriz();
+    JSON_entrada_configuracaoInicial_Avancado_miniTabDinAtraso &miniTabDinAtraso();
+    JSON_entrada_configuracaoInicial_Avancado_miniTabDinDp &miniTabDinDp();
+    JSON_entrada_configuracaoInicial_Avancado_miniTabDinDt &miniTabDinDt();
+    JSON_entrada_configuracaoInicial_Avancado_Tsonico &Tsonico();
+    JSON_entrada_configuracaoInicial_Avancado_sonico &sonico();
 };
 
 #define JSON_entrada_configuracaoInicial_condicaoPressao_ativo JSONBoolean
@@ -174,17 +189,22 @@ public:
 #define JSON_entrada_configuracaoInicial_condicaoPressao_tempo_Item JSONNumber
 #define JSON_entrada_configuracaoInicial_condicaoPressao_tempo JSONArray<JSON_entrada_configuracaoInicial_condicaoPressao_tempo_Item>
 
-class JSON_entrada_configuracaoInicial_condicaoPressao: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_condicaoPressao();
-	JSON_entrada_configuracaoInicial_condicaoPressao_ativo& ativo();
-		JSON_entrada_configuracaoInicial_condicaoPressao_indFluido& indFluido();
-	JSON_entrada_configuracaoInicial_condicaoPressao_pressao& pressao();
-	JSON_entrada_configuracaoInicial_condicaoPressao_temperatura& temperatura();
-	JSON_entrada_configuracaoInicial_condicaoPressao_titulo& titulo();
-	JSON_entrada_configuracaoInicial_condicaoPressao_razaoBeta& razaoBeta();
-	JSON_entrada_configuracaoInicial_condicaoPressao_tempo& tempo();
-
+/*!
+ * Store a time-dependent pressure boundary condition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_condicaoPressao : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_condicaoPressao();
+    JSON_entrada_configuracaoInicial_condicaoPressao_ativo &ativo();
+    JSON_entrada_configuracaoInicial_condicaoPressao_indFluido &indFluido();
+    JSON_entrada_configuracaoInicial_condicaoPressao_pressao &pressao();
+    JSON_entrada_configuracaoInicial_condicaoPressao_temperatura &temperatura();
+    JSON_entrada_configuracaoInicial_condicaoPressao_titulo &titulo();
+    JSON_entrada_configuracaoInicial_condicaoPressao_razaoBeta &razaoBeta();
+    JSON_entrada_configuracaoInicial_condicaoPressao_tempo &tempo();
 };
 
 #define JSON_entrada_configuracaoInicial_condicaoVazPres_ativo JSONBoolean
@@ -199,16 +219,21 @@ public:
 #define JSON_entrada_configuracaoInicial_condicaoVazPres_tempo_Item JSONNumber
 #define JSON_entrada_configuracaoInicial_condicaoVazPres_tempo JSONArray<JSON_entrada_configuracaoInicial_condicaoVazPres_tempo_Item>
 
-class JSON_entrada_configuracaoInicial_condicaoVazPres: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_condicaoVazPres();
-	JSON_entrada_configuracaoInicial_condicaoVazPres_ativo& ativo();
-	JSON_entrada_configuracaoInicial_condicaoVazPres_pressao& pressao();
-	JSON_entrada_configuracaoInicial_condicaoVazPres_temperatura& temperatura();
-	JSON_entrada_configuracaoInicial_condicaoVazPres_VazMass& VazMass();
-	JSON_entrada_configuracaoInicial_condicaoVazPres_razaoBeta& razaoBeta();
-	JSON_entrada_configuracaoInicial_condicaoVazPres_tempo& tempo();
-
+/*!
+ * Store coupled mass-flow, pressure, and temperature boundary data.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_condicaoVazPres : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_condicaoVazPres();
+    JSON_entrada_configuracaoInicial_condicaoVazPres_ativo &ativo();
+    JSON_entrada_configuracaoInicial_condicaoVazPres_pressao &pressao();
+    JSON_entrada_configuracaoInicial_condicaoVazPres_temperatura &temperatura();
+    JSON_entrada_configuracaoInicial_condicaoVazPres_VazMass &VazMass();
+    JSON_entrada_configuracaoInicial_condicaoVazPres_razaoBeta &razaoBeta();
+    JSON_entrada_configuracaoInicial_condicaoVazPres_tempo &tempo();
 };
 
 #define JSON_entrada_configuracaoInicial_correlacoesEscorregamento JSONBoolean
@@ -216,13 +241,18 @@ public:
 #define JSON_entrada_configuracaoInicial_correlacoesPorArranjo_bolhaGolfada JSONInteger
 #define JSON_entrada_configuracaoInicial_correlacoesPorArranjo_anularChurn JSONInteger
 
-class JSON_entrada_configuracaoInicial_correlacoesPorArranjo: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_correlacoesPorArranjo();
-	JSON_entrada_configuracaoInicial_correlacoesPorArranjo_estratificado& estratificado();
-	JSON_entrada_configuracaoInicial_correlacoesPorArranjo_bolhaGolfada& bolhaGolfada();
-	JSON_entrada_configuracaoInicial_correlacoesPorArranjo_anularChurn& anularChurn();
-
+/*!
+ * Select slip correlations for each multiphase flow-pattern group.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_correlacoesPorArranjo : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_correlacoesPorArranjo();
+    JSON_entrada_configuracaoInicial_correlacoesPorArranjo_estratificado &estratificado();
+    JSON_entrada_configuracaoInicial_correlacoesPorArranjo_bolhaGolfada &bolhaGolfada();
+    JSON_entrada_configuracaoInicial_correlacoesPorArranjo_anularChurn &anularChurn();
 };
 
 #define JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_id JSONInteger
@@ -230,93 +260,110 @@ public:
 #define JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_calorEspecifico JSONNumber
 #define JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_massaEspecifica JSONNumber
 
-class JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item();
-	JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_id& id();
-	JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_condutividade& condutividade();
-	JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_calorEspecifico& calorEspecifico();
-	JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_massaEspecifica& massaEspecifica();
-
+/*!
+ * Store the thermophysical properties of one formation material.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item();
+    JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_id &id();
+    JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_condutividade &condutividade();
+    JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_calorEspecifico &calorEspecifico();
+    JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item_massaEspecifica &massaEspecifica();
 };
 
 #define JSON_entrada_configuracaoInicial_Formacao_Propriedades JSONArray<JSON_entrada_configuracaoInicial_Formacao_Propriedades_Item>
 #define JSON_entrada_configuracaoInicial_Formacao_TempoProducao JSONNumber
 
-class JSON_entrada_configuracaoInicial_Formacao: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial_Formacao();
-	JSON_entrada_configuracaoInicial_Formacao_Propriedades& Propriedades();
-	JSON_entrada_configuracaoInicial_Formacao_TempoProducao& TempoProducao();
-
+/*!
+ * Store formation properties and production-time information.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial_Formacao : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial_Formacao();
+    JSON_entrada_configuracaoInicial_Formacao_Propriedades &Propriedades();
+    JSON_entrada_configuracaoInicial_Formacao_TempoProducao &TempoProducao();
 };
 
-
-class JSON_entrada_configuracaoInicial: public JSONObject {
-public:
-	JSON_entrada_configuracaoInicial();
-	JSON_entrada_configuracaoInicial_origemGeometria& origemGeometria();
-	JSON_entrada_configuracaoInicial_sentidoGeometriaSegueEscoamento& sentidoGeometriaSegueEscoamento();
-	JSON_entrada_configuracaoInicial_saidaClassica& saidaClassica();
-	JSON_entrada_configuracaoInicial_linhaGas& linhaGas();
-	JSON_entrada_configuracaoInicial_saidaTela& saidaTela();
-	JSON_entrada_configuracaoInicial_equilibrioTermico& equilibrioTermico();
-	JSON_entrada_configuracaoInicial_latente& latente();
-	JSON_entrada_configuracaoInicial_condlatente& condlatente();
-	JSON_entrada_configuracaoInicial_pvtsimArq& pvtsimArq();
-	JSON_entrada_configuracaoInicial_modeloFluidoTabelaFlash& modeloFluidoTabelaFlash();
-	JSON_entrada_configuracaoInicial_modeloFluidoComposicional& modeloFluidoComposicional();
-	JSON_entrada_configuracaoInicial_modeloTabelaDinamica& modeloTabelaDinamica();
-	JSON_entrada_configuracaoInicial_modeloCp& modeloCp();
-	JSON_entrada_configuracaoInicial_modeloJTL& modeloJTL();
-	JSON_entrada_configuracaoInicial_tabP& tabP();
-	JSON_entrada_configuracaoInicial_AS& AS();
-	JSON_entrada_configuracaoInicial_paralelizaAS& paralelizaAS();
-	JSON_entrada_configuracaoInicial_trackRgo& trackRgo();
-	JSON_entrada_configuracaoInicial_trackDensidadeGas& trackDensidadeGas();
-	JSON_entrada_configuracaoInicial_correcaoDenGasLivreBlackOil& correcaoDenGasLivreBlackOil();
-	JSON_entrada_configuracaoInicial_tabelaRSPB& tabelaRSPB();
-	JSON_entrada_configuracaoInicial_propFluido& propFluido();
-	JSON_entrada_configuracaoInicial_iniFluidoP& iniFluidoP();
-	JSON_entrada_configuracaoInicial_tabG& tabG();
-	JSON_entrada_configuracaoInicial_escorregamentoPermanente& escorregamentoPermanente();
-	JSON_entrada_configuracaoInicial_escorregamentoTransiente& escorregamentoTransiente();
-	JSON_entrada_configuracaoInicial_mapaArranjo& mapaArranjo();
-	JSON_entrada_configuracaoInicial_condicaoInicial& condicaoInicial();
-	JSON_entrada_configuracaoInicial_ordemperm& ordemperm();
-	JSON_entrada_configuracaoInicial_SnapShotArq& SnapShotArq();
-	JSON_entrada_configuracaoInicial_HISEP& HISEP();
-	JSON_entrada_configuracaoInicial_SalinidadeFluido& SalinidadeFluido();
-	JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaGas& comprimentoMedidoInterfaceLinhaGas();
-	JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaProd& comprimentoMedidoInterfaceLinhaProd();
-	JSON_entrada_configuracaoInicial_controleDescarga& controleDescarga();
-	JSON_entrada_configuracaoInicial_parametrosDescarga& parametrosDescarga();
-	JSON_entrada_configuracaoInicial_transiente& transiente();
-	JSON_entrada_configuracaoInicial_transferenciaMassa& transferenciaMassa();
-	JSON_entrada_configuracaoInicial_CheckValve& CheckValve();
-	JSON_entrada_configuracaoInicial_Avancado& Avancado();
-	JSON_entrada_configuracaoInicial_condicaoPressao& condicaoPressao();
-	JSON_entrada_configuracaoInicial_condicaoVazPres& condicaoVazPres();
-	JSON_entrada_configuracaoInicial_correlacoesEscorregamento& correlacoesEscorregamento();
-	JSON_entrada_configuracaoInicial_correlacoesPorArranjo& correlacoesPorArranjo();
-	JSON_entrada_configuracaoInicial_Formacao& Formacao();
-	JSON_entrada_configuracaoInicial_tipoFluido& tipoFluido();
-	JSON_entrada_configuracaoInicial_tempReves& tempReves();
-	JSON_entrada_configuracaoInicial_razCompGasReves& razCompGasReves();
-	JSON_entrada_configuracaoInicial_chutePerm& chutePerm();
-	JSON_entrada_configuracaoInicial_modoXY& modoXY();
-	JSON_entrada_configuracaoInicial_xProdInicio& xProdInicio();
-	JSON_entrada_configuracaoInicial_yProdInicio& yProdInicio();
-	JSON_entrada_configuracaoInicial_xServInicio& xServInicio();
-	JSON_entrada_configuracaoInicial_yServInicio& yServInicio();
-	JSON_entrada_configuracaoInicial_modoParafina& modoParafina();
-	JSON_entrada_configuracaoInicial_tipoModeloDrift& tipoModeloDrift();
-	JSON_entrada_configuracaoInicial_modoDifus3D& modoDifus3D();
-	JSON_entrada_configuracaoInicial_threadP3D& threadP3D();
-	JSON_entrada_configuracaoInicial_modoDifus3DJson& modoDifus3DJson();
-	//JSON_entrada_configuracaoInicial_redutorAtritoCalc& redutorAtritoCalc();
-
+/*!
+ * Represent the complete initial simulation configuration.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_configuracaoInicial : public JSONObject {
+  public:
+    JSON_entrada_configuracaoInicial();
+    JSON_entrada_configuracaoInicial_origemGeometria &origemGeometria();
+    JSON_entrada_configuracaoInicial_sentidoGeometriaSegueEscoamento &sentidoGeometriaSegueEscoamento();
+    JSON_entrada_configuracaoInicial_saidaClassica &saidaClassica();
+    JSON_entrada_configuracaoInicial_linhaGas &linhaGas();
+    JSON_entrada_configuracaoInicial_saidaTela &saidaTela();
+    JSON_entrada_configuracaoInicial_equilibrioTermico &equilibrioTermico();
+    JSON_entrada_configuracaoInicial_latente &latente();
+    JSON_entrada_configuracaoInicial_condlatente &condlatente();
+    JSON_entrada_configuracaoInicial_pvtsimArq &pvtsimArq();
+    JSON_entrada_configuracaoInicial_modeloFluidoTabelaFlash &modeloFluidoTabelaFlash();
+    JSON_entrada_configuracaoInicial_modeloFluidoComposicional &modeloFluidoComposicional();
+    JSON_entrada_configuracaoInicial_modeloTabelaDinamica &modeloTabelaDinamica();
+    JSON_entrada_configuracaoInicial_modeloCp &modeloCp();
+    JSON_entrada_configuracaoInicial_modeloJTL &modeloJTL();
+    JSON_entrada_configuracaoInicial_tabP &tabP();
+    JSON_entrada_configuracaoInicial_AS &AS();
+    JSON_entrada_configuracaoInicial_paralelizaAS &paralelizaAS();
+    JSON_entrada_configuracaoInicial_trackRgo &trackRgo();
+    JSON_entrada_configuracaoInicial_trackDensidadeGas &trackDensidadeGas();
+    JSON_entrada_configuracaoInicial_correcaoDenGasLivreBlackOil &correcaoDenGasLivreBlackOil();
+    JSON_entrada_configuracaoInicial_tabelaRSPB &tabelaRSPB();
+    JSON_entrada_configuracaoInicial_propFluido &propFluido();
+    JSON_entrada_configuracaoInicial_iniFluidoP &iniFluidoP();
+    JSON_entrada_configuracaoInicial_tabG &tabG();
+    JSON_entrada_configuracaoInicial_escorregamentoPermanente &escorregamentoPermanente();
+    JSON_entrada_configuracaoInicial_escorregamentoTransiente &escorregamentoTransiente();
+    JSON_entrada_configuracaoInicial_mapaArranjo &mapaArranjo();
+    JSON_entrada_configuracaoInicial_condicaoInicial &condicaoInicial();
+    JSON_entrada_configuracaoInicial_ordemperm &ordemperm();
+    JSON_entrada_configuracaoInicial_SnapShotArq &SnapShotArq();
+    JSON_entrada_configuracaoInicial_HISEP &HISEP();
+    JSON_entrada_configuracaoInicial_SalinidadeFluido &SalinidadeFluido();
+    JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaGas &comprimentoMedidoInterfaceLinhaGas();
+    JSON_entrada_configuracaoInicial_comprimentoMedidoInterfaceLinhaProd &comprimentoMedidoInterfaceLinhaProd();
+    JSON_entrada_configuracaoInicial_controleDescarga &controleDescarga();
+    JSON_entrada_configuracaoInicial_parametrosDescarga &parametrosDescarga();
+    JSON_entrada_configuracaoInicial_transiente &transiente();
+    JSON_entrada_configuracaoInicial_transferenciaMassa &transferenciaMassa();
+    JSON_entrada_configuracaoInicial_CheckValve &CheckValve();
+    JSON_entrada_configuracaoInicial_Avancado &Avancado();
+    JSON_entrada_configuracaoInicial_condicaoPressao &condicaoPressao();
+    JSON_entrada_configuracaoInicial_condicaoVazPres &condicaoVazPres();
+    JSON_entrada_configuracaoInicial_correlacoesEscorregamento &correlacoesEscorregamento();
+    JSON_entrada_configuracaoInicial_correlacoesPorArranjo &correlacoesPorArranjo();
+    JSON_entrada_configuracaoInicial_Formacao &Formacao();
+    JSON_entrada_configuracaoInicial_tipoFluido &tipoFluido();
+    JSON_entrada_configuracaoInicial_tempReves &tempReves();
+    JSON_entrada_configuracaoInicial_razCompGasReves &razCompGasReves();
+    JSON_entrada_configuracaoInicial_chutePerm &chutePerm();
+    JSON_entrada_configuracaoInicial_modoXY &modoXY();
+    JSON_entrada_configuracaoInicial_xProdInicio &xProdInicio();
+    JSON_entrada_configuracaoInicial_yProdInicio &yProdInicio();
+    JSON_entrada_configuracaoInicial_xServInicio &xServInicio();
+    JSON_entrada_configuracaoInicial_yServInicio &yServInicio();
+    JSON_entrada_configuracaoInicial_modoParafina &modoParafina();
+    JSON_entrada_configuracaoInicial_tipoModeloDrift &tipoModeloDrift();
+    JSON_entrada_configuracaoInicial_modoDifus3D &modoDifus3D();
+    JSON_entrada_configuracaoInicial_threadP3D &threadP3D();
+    JSON_entrada_configuracaoInicial_modoDifus3DJson &modoDifus3DJson();
 };
+
+// ==============================================================================
+// Property-table and wax-deposition configuration
+// ==============================================================================
 
 #define JSON_entrada_tabela_ativo JSONBoolean
 #define JSON_entrada_tabela_nPontos JSONInteger
@@ -325,18 +372,22 @@ public:
 #define JSON_entrada_tabela_temperaturaMaxima JSONNumber
 #define JSON_entrada_tabela_temperaturaMinima JSONNumber
 
-class JSON_entrada_tabela: public JSONObject {
-public:
-	JSON_entrada_tabela();
-	JSON_entrada_tabela_ativo& ativo();
-	JSON_entrada_tabela_nPontos& nPontos();
-	JSON_entrada_tabela_pressaoMaxima& pressaoMaxima();
-	JSON_entrada_tabela_pressaoMinima& pressaoMinima();
-	JSON_entrada_tabela_temperaturaMaxima& temperaturaMaxima();
-	JSON_entrada_tabela_temperaturaMinima& temperaturaMinima();
-
+/*!
+ * Store the pressure-temperature property-table domain and resolution.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tabela : public JSONObject {
+  public:
+    JSON_entrada_tabela();
+    JSON_entrada_tabela_ativo &ativo();
+    JSON_entrada_tabela_nPontos &nPontos();
+    JSON_entrada_tabela_pressaoMaxima &pressaoMaxima();
+    JSON_entrada_tabela_pressaoMinima &pressaoMinima();
+    JSON_entrada_tabela_temperaturaMaxima &temperaturaMaxima();
+    JSON_entrada_tabela_temperaturaMinima &temperaturaMinima();
 };
-
 
 #define JSON_entrada_parafina_arquivoWax JSONString
 #define JSON_entrada_parafina_usuarioPorosidade JSONBoolean
@@ -353,25 +404,34 @@ public:
 #define JSON_entrada_parafina_EmultipWax JSONNumber
 #define JSON_entrada_parafina_FmultipWax JSONNumber
 
-class JSON_entrada_parafina: public JSONObject {
-public:
-	JSON_entrada_parafina();
-	JSON_entrada_parafina_arquivoWax& arquivoWax();
-	JSON_entrada_parafina_usuarioPorosidade& usuarioPorosidade();
-	JSON_entrada_parafina_porosidade& porosidade();
-	JSON_entrada_parafina_usuarioC2C3& usuarioC2C3();
-	JSON_entrada_parafina_c2& c2();
-	JSON_entrada_parafina_c3& c3();
-	JSON_entrada_parafina_usuarioDifus& usuarioDifus();
-	JSON_entrada_parafina_alteraViscFlu& alteraViscFlu();
-	JSON_entrada_parafina_difus& difus();
-	JSON_entrada_parafina_rugosidade& rugosidade();
-	JSON_entrada_parafina_multVis& multVis();
-	JSON_entrada_parafina_DmultipWax& DmultipWax();
-	JSON_entrada_parafina_EmultipWax& EmultipWax();
-	JSON_entrada_parafina_FmultipWax& FmultipWax();
+/*!
+ * Store wax-deposition and wax-transport model parameters.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_parafina : public JSONObject {
+  public:
+    JSON_entrada_parafina();
+    JSON_entrada_parafina_arquivoWax &arquivoWax();
+    JSON_entrada_parafina_usuarioPorosidade &usuarioPorosidade();
+    JSON_entrada_parafina_porosidade &porosidade();
+    JSON_entrada_parafina_usuarioC2C3 &usuarioC2C3();
+    JSON_entrada_parafina_c2 &c2();
+    JSON_entrada_parafina_c3 &c3();
+    JSON_entrada_parafina_usuarioDifus &usuarioDifus();
+    JSON_entrada_parafina_alteraViscFlu &alteraViscFlu();
+    JSON_entrada_parafina_difus &difus();
+    JSON_entrada_parafina_rugosidade &rugosidade();
+    JSON_entrada_parafina_multVis &multVis();
+    JSON_entrada_parafina_DmultipWax &DmultipWax();
+    JSON_entrada_parafina_EmultipWax &EmultipWax();
+    JSON_entrada_parafina_FmultipWax &FmultipWax();
 };
 
+// ==============================================================================
+// Gas, production-fluid, and complementary-fluid definitions
+// ==============================================================================
 
 #define JSON_entrada_fluidoGas_ativo JSONBoolean
 #define JSON_entrada_fluidoGas_usaTabelaFlash JSONBoolean
@@ -382,17 +442,22 @@ public:
 #define JSON_entrada_fluidoGas_fracMolar_Item JSONNumber
 #define JSON_entrada_fluidoGas_fracMolar JSONArray<JSON_entrada_fluidoGas_fracMolar_Item>
 
-class JSON_entrada_fluidoGas: public JSONObject {
-public:
-	JSON_entrada_fluidoGas();
-	JSON_entrada_fluidoGas_ativo& ativo();
-	JSON_entrada_fluidoGas_usaTabelaFlash& usaTabelaFlash();
-	JSON_entrada_fluidoGas_densidadeGas& densidadeGas();
-	JSON_entrada_fluidoGas_fracCO2& fracCO2();
-	JSON_entrada_fluidoGas_correlacaoCritica& correlacaoCritica();
-	JSON_entrada_fluidoGas_fracMolarUsuario& fracMolarUsuario();
-	JSON_entrada_fluidoGas_fracMolar& fracMolar();
-
+/*!
+ * Store gas-fluid properties and optional user molar composition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fluidoGas : public JSONObject {
+  public:
+    JSON_entrada_fluidoGas();
+    JSON_entrada_fluidoGas_ativo &ativo();
+    JSON_entrada_fluidoGas_usaTabelaFlash &usaTabelaFlash();
+    JSON_entrada_fluidoGas_densidadeGas &densidadeGas();
+    JSON_entrada_fluidoGas_fracCO2 &fracCO2();
+    JSON_entrada_fluidoGas_correlacaoCritica &correlacaoCritica();
+    JSON_entrada_fluidoGas_fracMolarUsuario &fracMolarUsuario();
+    JSON_entrada_fluidoGas_fracMolar &fracMolar();
 };
 
 #define JSON_entrada_fluidosProducao_Item_ativo JSONBoolean
@@ -432,41 +497,46 @@ public:
 #define JSON_entrada_fluidosProducao_Item_fracMolar JSONArray<JSON_entrada_fluidosProducao_Item_fracMolar_Item>
 #define JSON_entrada_fluidosProducao_Item_RGOCompUsuario JSONBoolean
 
-class JSON_entrada_fluidosProducao_Item: public JSONObject {
-public:
-	JSON_entrada_fluidosProducao_Item();
-	JSON_entrada_fluidosProducao_Item_ativo& ativo();
-	JSON_entrada_fluidosProducao_Item_id& id();
-	JSON_entrada_fluidosProducao_Item_api& api();
-	JSON_entrada_fluidosProducao_Item_rgo& rgo();
-	JSON_entrada_fluidosProducao_Item_densidadeGas& densidadeGas();
-	JSON_entrada_fluidosProducao_Item_bsw& bsw();
-	JSON_entrada_fluidosProducao_Item_densidadeAgua& densidadeAgua();
-	JSON_entrada_fluidosProducao_Item_tipoEmul& tipoEmul();
-	JSON_entrada_fluidosProducao_Item_coefAModeloExp& coefAModeloExp();
-	JSON_entrada_fluidosProducao_Item_coefBModeloExp& coefBModeloExp();
-	JSON_entrada_fluidosProducao_Item_PHI100& PHI100();
-	JSON_entrada_fluidosProducao_Item_bswCorte& bswCorte();
-	JSON_entrada_fluidosProducao_Item_BSWVec& BSWVec();
-	JSON_entrada_fluidosProducao_Item_emulVec& emulVec();
-	JSON_entrada_fluidosProducao_Item_fracCO2& fracCO2();
-	JSON_entrada_fluidosProducao_Item_correlacaoCritica& correlacaoCritica();
-	JSON_entrada_fluidosProducao_Item_modeloRsPb& modeloRsPb();
-	JSON_entrada_fluidosProducao_Item_modeloOleoMorto& modeloOleoMorto();
-	JSON_entrada_fluidosProducao_Item_temp1& temp1();
-	JSON_entrada_fluidosProducao_Item_visc1& visc1();
-	JSON_entrada_fluidosProducao_Item_temp2& temp2();
-	JSON_entrada_fluidosProducao_Item_visc2& visc2();
-	JSON_entrada_fluidosProducao_Item_tempOleoMorto& tempOleoMorto();
-	JSON_entrada_fluidosProducao_Item_viscOleoMorto& viscOleoMorto();
-	JSON_entrada_fluidosProducao_Item_modeloOleoVivo& modeloOleoVivo();
-	JSON_entrada_fluidosProducao_Item_modeloOleoSubSaturado& modeloOleoSubSaturado();
-	JSON_entrada_fluidosProducao_Item_modeloViscBlackOil& modeloViscBlackOil();
-	JSON_entrada_fluidosProducao_Item_modeloAguaBlackOil& modeloAguaBlackOil();
-	JSON_entrada_fluidosProducao_Item_fracMolarUsuario& fracMolarUsuario();
-	JSON_entrada_fluidosProducao_Item_fracMolar& fracMolar();
-	JSON_entrada_fluidosProducao_Item_RGOCompUsuario& RGOCompUsuario();
-
+/*!
+ * Store one production-fluid definition and its Black-Oil or tabulated models.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fluidosProducao_Item : public JSONObject {
+  public:
+    JSON_entrada_fluidosProducao_Item();
+    JSON_entrada_fluidosProducao_Item_ativo &ativo();
+    JSON_entrada_fluidosProducao_Item_id &id();
+    JSON_entrada_fluidosProducao_Item_api &api();
+    JSON_entrada_fluidosProducao_Item_rgo &rgo();
+    JSON_entrada_fluidosProducao_Item_densidadeGas &densidadeGas();
+    JSON_entrada_fluidosProducao_Item_bsw &bsw();
+    JSON_entrada_fluidosProducao_Item_densidadeAgua &densidadeAgua();
+    JSON_entrada_fluidosProducao_Item_tipoEmul &tipoEmul();
+    JSON_entrada_fluidosProducao_Item_coefAModeloExp &coefAModeloExp();
+    JSON_entrada_fluidosProducao_Item_coefBModeloExp &coefBModeloExp();
+    JSON_entrada_fluidosProducao_Item_PHI100 &PHI100();
+    JSON_entrada_fluidosProducao_Item_bswCorte &bswCorte();
+    JSON_entrada_fluidosProducao_Item_BSWVec &BSWVec();
+    JSON_entrada_fluidosProducao_Item_emulVec &emulVec();
+    JSON_entrada_fluidosProducao_Item_fracCO2 &fracCO2();
+    JSON_entrada_fluidosProducao_Item_correlacaoCritica &correlacaoCritica();
+    JSON_entrada_fluidosProducao_Item_modeloRsPb &modeloRsPb();
+    JSON_entrada_fluidosProducao_Item_modeloOleoMorto &modeloOleoMorto();
+    JSON_entrada_fluidosProducao_Item_temp1 &temp1();
+    JSON_entrada_fluidosProducao_Item_visc1 &visc1();
+    JSON_entrada_fluidosProducao_Item_temp2 &temp2();
+    JSON_entrada_fluidosProducao_Item_visc2 &visc2();
+    JSON_entrada_fluidosProducao_Item_tempOleoMorto &tempOleoMorto();
+    JSON_entrada_fluidosProducao_Item_viscOleoMorto &viscOleoMorto();
+    JSON_entrada_fluidosProducao_Item_modeloOleoVivo &modeloOleoVivo();
+    JSON_entrada_fluidosProducao_Item_modeloOleoSubSaturado &modeloOleoSubSaturado();
+    JSON_entrada_fluidosProducao_Item_modeloViscBlackOil &modeloViscBlackOil();
+    JSON_entrada_fluidosProducao_Item_modeloAguaBlackOil &modeloAguaBlackOil();
+    JSON_entrada_fluidosProducao_Item_fracMolarUsuario &fracMolarUsuario();
+    JSON_entrada_fluidosProducao_Item_fracMolar &fracMolar();
+    JSON_entrada_fluidosProducao_Item_RGOCompUsuario &RGOCompUsuario();
 };
 
 #define JSON_entrada_fluidosProducao JSONArray<JSON_entrada_fluidosProducao_Item>
@@ -484,25 +554,33 @@ public:
 #define JSON_entrada_fluidoComplementar_salinidade JSONNumber
 #define JSON_entrada_fluidoComplementar_tipoF JSONInteger
 
-class JSON_entrada_fluidoComplementar: public JSONObject {
-public:
-	JSON_entrada_fluidoComplementar();
-	JSON_entrada_fluidoComplementar_ativo& ativo();
-	JSON_entrada_fluidoComplementar_massaEspecifica& massaEspecifica();
-	JSON_entrada_fluidoComplementar_compP& compP();
-	JSON_entrada_fluidoComplementar_compT& compT();
-	JSON_entrada_fluidoComplementar_tensup& tensup();
-	JSON_entrada_fluidoComplementar_calorEspecifico& calorEspecifico();
-	JSON_entrada_fluidoComplementar_condutividade& condutividade();
-	JSON_entrada_fluidoComplementar_temp1& temp1();
-	JSON_entrada_fluidoComplementar_visc1& visc1();
-	JSON_entrada_fluidoComplementar_temp2& temp2();
-	JSON_entrada_fluidoComplementar_visc2& visc2();
-	JSON_entrada_fluidoComplementar_salinidade& salinidade();
-	JSON_entrada_fluidoComplementar_tipoF& tipoF();
-
-
+/*!
+ * Store complementary-fluid thermophysical properties.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fluidoComplementar : public JSONObject {
+  public:
+    JSON_entrada_fluidoComplementar();
+    JSON_entrada_fluidoComplementar_ativo &ativo();
+    JSON_entrada_fluidoComplementar_massaEspecifica &massaEspecifica();
+    JSON_entrada_fluidoComplementar_compP &compP();
+    JSON_entrada_fluidoComplementar_compT &compT();
+    JSON_entrada_fluidoComplementar_tensup &tensup();
+    JSON_entrada_fluidoComplementar_calorEspecifico &calorEspecifico();
+    JSON_entrada_fluidoComplementar_condutividade &condutividade();
+    JSON_entrada_fluidoComplementar_temp1 &temp1();
+    JSON_entrada_fluidoComplementar_visc1 &visc1();
+    JSON_entrada_fluidoComplementar_temp2 &temp2();
+    JSON_entrada_fluidoComplementar_visc2 &visc2();
+    JSON_entrada_fluidoComplementar_salinidade &salinidade();
+    JSON_entrada_fluidoComplementar_tipoF &tipoF();
 };
+
+// ==============================================================================
+// Valves and distributed mass-source definitions
+// ==============================================================================
 
 #define JSON_entrada_valvula_Item_ativo JSONBoolean
 #define JSON_entrada_valvula_Item_id JSONInteger
@@ -519,23 +597,28 @@ public:
 #define JSON_entrada_valvula_Item_cv1_Item JSONNumber
 #define JSON_entrada_valvula_Item_cv1 JSONArray<JSON_entrada_valvula_Item_cv1_Item>
 
-class JSON_entrada_valvula_Item: public JSONObject {
-public:
-	JSON_entrada_valvula_Item();
-	JSON_entrada_valvula_Item_ativo& ativo();
-	JSON_entrada_valvula_Item_id& id();
-	JSON_entrada_valvula_Item_curvaCV& curvaCV();
-	JSON_entrada_valvula_Item_curvaDinamic& curvaDinamic();
-	JSON_entrada_valvula_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_valvula_Item_tempo& tempo();
-	JSON_entrada_valvula_Item_abertura& abertura();
-	JSON_entrada_valvula_Item_cd& cd();
-	JSON_entrada_valvula_Item_x1& x1();
-	JSON_entrada_valvula_Item_cv1& cv1();
+/*!
+ * Store one valve definition and its opening or Cv curves.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_valvula_Item : public JSONObject {
+  public:
+    JSON_entrada_valvula_Item();
+    JSON_entrada_valvula_Item_ativo &ativo();
+    JSON_entrada_valvula_Item_id &id();
+    JSON_entrada_valvula_Item_curvaCV &curvaCV();
+    JSON_entrada_valvula_Item_curvaDinamic &curvaDinamic();
+    JSON_entrada_valvula_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_valvula_Item_tempo &tempo();
+    JSON_entrada_valvula_Item_abertura &abertura();
+    JSON_entrada_valvula_Item_cd &cd();
+    JSON_entrada_valvula_Item_x1 &x1();
+    JSON_entrada_valvula_Item_cv1 &cv1();
 };
 
 #define JSON_entrada_valvula JSONArray<JSON_entrada_valvula_Item>
-
 #define JSON_entrada_fonteLiquido_Item_ativo JSONBoolean
 #define JSON_entrada_fonteLiquido_Item_id JSONInteger
 #define JSON_entrada_fonteLiquido_Item_comprimentoMedido JSONNumber
@@ -549,18 +632,23 @@ public:
 #define JSON_entrada_fonteLiquido_Item_vazaoLiquido JSONArray<JSON_entrada_fonteLiquido_Item_vazaoLiquido_Item>
 #define JSON_entrada_fonteLiquido_Item_indiFluidoPro JSONInteger
 
-class JSON_entrada_fonteLiquido_Item: public JSONObject {
-public:
-	JSON_entrada_fonteLiquido_Item();
-	JSON_entrada_fonteLiquido_Item_ativo& ativo();
-	JSON_entrada_fonteLiquido_Item_id& id();
-	JSON_entrada_fonteLiquido_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fonteLiquido_Item_tempo& tempo();
-	JSON_entrada_fonteLiquido_Item_temperatura& temperatura();
-	JSON_entrada_fonteLiquido_Item_beta& beta();
-	JSON_entrada_fonteLiquido_Item_vazaoLiquido& vazaoLiquido();
-	JSON_entrada_fonteLiquido_Item_indiFluidoPro& indiFluidoPro();
-
+/*!
+ * Store one time-dependent liquid-source definition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fonteLiquido_Item : public JSONObject {
+  public:
+    JSON_entrada_fonteLiquido_Item();
+    JSON_entrada_fonteLiquido_Item_ativo &ativo();
+    JSON_entrada_fonteLiquido_Item_id &id();
+    JSON_entrada_fonteLiquido_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fonteLiquido_Item_tempo &tempo();
+    JSON_entrada_fonteLiquido_Item_temperatura &temperatura();
+    JSON_entrada_fonteLiquido_Item_beta &beta();
+    JSON_entrada_fonteLiquido_Item_vazaoLiquido &vazaoLiquido();
+    JSON_entrada_fonteLiquido_Item_indiFluidoPro &indiFluidoPro();
 };
 
 #define JSON_entrada_fonteLiquido JSONArray<JSON_entrada_fonteLiquido_Item>
@@ -580,20 +668,25 @@ public:
 #define JSON_entrada_fonteMassa_Item_vazaoMassG JSONArray<JSON_entrada_fonteMassa_Item_vazaoMassG_Item>
 #define JSON_entrada_fonteMassa_Item_indiFluidoPro JSONInteger
 
-class JSON_entrada_fonteMassa_Item: public JSONObject {
-public:
-	JSON_entrada_fonteMassa_Item();
-	JSON_entrada_fonteMassa_Item_ativo& ativo();
-	JSON_entrada_fonteMassa_Item_id& id();
-	JSON_entrada_fonteMassa_Item_tipoTermo& tipoTermo();
-	JSON_entrada_fonteMassa_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fonteMassa_Item_tempo& tempo();
-	JSON_entrada_fonteMassa_Item_temperatura& temperatura();
-	JSON_entrada_fonteMassa_Item_vazaoMassT& vazaoMassT();
-	JSON_entrada_fonteMassa_Item_vazaoMassC& vazaoMassC();
-	JSON_entrada_fonteMassa_Item_vazaoMassG& vazaoMassG();
-	JSON_entrada_fonteMassa_Item_indiFluidoPro& indiFluidoPro();
-
+/*!
+ * Store one time-dependent multiphase mass-source definition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fonteMassa_Item : public JSONObject {
+  public:
+    JSON_entrada_fonteMassa_Item();
+    JSON_entrada_fonteMassa_Item_ativo &ativo();
+    JSON_entrada_fonteMassa_Item_id &id();
+    JSON_entrada_fonteMassa_Item_tipoTermo &tipoTermo();
+    JSON_entrada_fonteMassa_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fonteMassa_Item_tempo &tempo();
+    JSON_entrada_fonteMassa_Item_temperatura &temperatura();
+    JSON_entrada_fonteMassa_Item_vazaoMassT &vazaoMassT();
+    JSON_entrada_fonteMassa_Item_vazaoMassC &vazaoMassC();
+    JSON_entrada_fonteMassa_Item_vazaoMassG &vazaoMassG();
+    JSON_entrada_fonteMassa_Item_indiFluidoPro &indiFluidoPro();
 };
 
 #define JSON_entrada_fonteMassa JSONArray<JSON_entrada_fonteMassa_Item>
@@ -611,56 +704,69 @@ public:
 #define JSON_entrada_fonteGas_Item_seco JSONBoolean
 #define JSON_entrada_fonteGas_Item_indiFluidoPro JSONInteger
 
-class JSON_entrada_fonteGas_Item: public JSONObject {
-public:
-	JSON_entrada_fonteGas_Item();
-	JSON_entrada_fonteGas_Item_ativo& ativo();
-	JSON_entrada_fonteGas_Item_id& id();
-	JSON_entrada_fonteGas_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fonteGas_Item_tempo& tempo();
-	JSON_entrada_fonteGas_Item_temperatura& temperatura();
-	JSON_entrada_fonteGas_Item_vazaoGas& vazaoGas();
-	JSON_entrada_fonteGas_Item_vazaoFluidoComplementar& vazaoFluidoComplementar();
-	JSON_entrada_fonteGas_Item_seco& seco();
-	JSON_entrada_fonteGas_Item_indiFluidoPro& indiFluidoPro();
+/*!
+ * Store one time-dependent gas-source definition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fonteGas_Item : public JSONObject {
+  public:
+    JSON_entrada_fonteGas_Item();
+    JSON_entrada_fonteGas_Item_ativo &ativo();
+    JSON_entrada_fonteGas_Item_id &id();
+    JSON_entrada_fonteGas_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fonteGas_Item_tempo &tempo();
+    JSON_entrada_fonteGas_Item_temperatura &temperatura();
+    JSON_entrada_fonteGas_Item_vazaoGas &vazaoGas();
+    JSON_entrada_fonteGas_Item_vazaoFluidoComplementar &vazaoFluidoComplementar();
+    JSON_entrada_fonteGas_Item_seco &seco();
+    JSON_entrada_fonteGas_Item_indiFluidoPro &indiFluidoPro();
 };
 
 #define JSON_entrada_fonteGas JSONArray<JSON_entrada_fonteGas_Item>
-
 #define JSON_entrada_fontePoroRadial_Item_ativo JSONBoolean
 #define JSON_entrada_fontePoroRadial_Item_id JSONInteger
 #define JSON_entrada_fontePoroRadial_Item_comprimentoMedido JSONNumber
 #define JSON_entrada_fontePoroRadial_Item_arquivo JSONString
 
-
-class JSON_entrada_fontePoroRadial_Item: public JSONObject {
-public:
-	JSON_entrada_fontePoroRadial_Item();
-	JSON_entrada_fontePoroRadial_Item_ativo& ativo();
-	JSON_entrada_fontePoroRadial_Item_id& id();
-	JSON_entrada_fontePoroRadial_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fontePoroRadial_Item_arquivo& arquivo();
+/*!
+ * Reference one radial porous-medium source model.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fontePoroRadial_Item : public JSONObject {
+  public:
+    JSON_entrada_fontePoroRadial_Item();
+    JSON_entrada_fontePoroRadial_Item_ativo &ativo();
+    JSON_entrada_fontePoroRadial_Item_id &id();
+    JSON_entrada_fontePoroRadial_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fontePoroRadial_Item_arquivo &arquivo();
 };
 
 #define JSON_entrada_fontePoroRadial JSONArray<JSON_entrada_fontePoroRadial_Item>
-
 #define JSON_entrada_fontePoro2D_Item_ativo JSONBoolean
 #define JSON_entrada_fontePoro2D_Item_id JSONInteger
 #define JSON_entrada_fontePoro2D_Item_comprimentoMedido JSONNumber
 #define JSON_entrada_fontePoro2D_Item_arquivo JSONString
 
-
-class JSON_entrada_fontePoro2D_Item: public JSONObject {
-public:
-	JSON_entrada_fontePoro2D_Item();
-	JSON_entrada_fontePoro2D_Item_ativo& ativo();
-	JSON_entrada_fontePoro2D_Item_id& id();
-	JSON_entrada_fontePoro2D_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fontePoro2D_Item_arquivo& arquivo();
+/*!
+ * Reference one two-dimensional porous-medium source model.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fontePoro2D_Item : public JSONObject {
+  public:
+    JSON_entrada_fontePoro2D_Item();
+    JSON_entrada_fontePoro2D_Item_ativo &ativo();
+    JSON_entrada_fontePoro2D_Item_id &id();
+    JSON_entrada_fontePoro2D_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fontePoro2D_Item_arquivo &arquivo();
 };
 
 #define JSON_entrada_fontePoro2D JSONArray<JSON_entrada_fontePoro2D_Item>
-
 #define JSON_entrada_fonteGasLift_Item_ativo JSONBoolean
 #define JSON_entrada_fonteGasLift_Item_colunaEanular JSONBoolean
 #define JSON_entrada_fonteGasLift_Item_id JSONInteger
@@ -677,28 +783,37 @@ public:
 #define JSON_entrada_fonteGasLift_Item_temperaturaCalibracao JSONNumber
 #define JSON_entrada_fonteGasLift_Item_diametroExterno JSONNumber
 
-class JSON_entrada_fonteGasLift_Item: public JSONObject {
-public:
-	JSON_entrada_fonteGasLift_Item();
-	JSON_entrada_fonteGasLift_Item_ativo& ativo();
-	JSON_entrada_fonteGasLift_Item_colunaEanular& colunaEanular();
-	JSON_entrada_fonteGasLift_Item_id& id();
-	JSON_entrada_fonteGasLift_Item_comprimentoMedidoProducao& comprimentoMedidoProducao();
-	JSON_entrada_fonteGasLift_Item_comprimentoMedidoServico& comprimentoMedidoServico();
-	JSON_entrada_fonteGasLift_Item_tipoValvula& tipoValvula();
-	JSON_entrada_fonteGasLift_Item_diametroOrificio& diametroOrificio();
-	JSON_entrada_fonteGasLift_Item_cdvgl& cdvgl();
-	JSON_entrada_fonteGasLift_Item_frecupera& frecupera();
-	JSON_entrada_fonteGasLift_Item_cdvLiq& cdvLiq();
-	JSON_entrada_fonteGasLift_Item_frecuperaLiq& frecuperaLiq();
-	JSON_entrada_fonteGasLift_Item_razaoArea& razaoArea();
-	JSON_entrada_fonteGasLift_Item_pressaoCalibracao& pressaoCalibracao();
-	JSON_entrada_fonteGasLift_Item_temperaturaCalibracao& temperaturaCalibracao();
-	JSON_entrada_fonteGasLift_Item_diametroExterno& diametroExterno();
-
+/*!
+ * Store one gas-lift valve and its calibration properties.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fonteGasLift_Item : public JSONObject {
+  public:
+    JSON_entrada_fonteGasLift_Item();
+    JSON_entrada_fonteGasLift_Item_ativo &ativo();
+    JSON_entrada_fonteGasLift_Item_colunaEanular &colunaEanular();
+    JSON_entrada_fonteGasLift_Item_id &id();
+    JSON_entrada_fonteGasLift_Item_comprimentoMedidoProducao &comprimentoMedidoProducao();
+    JSON_entrada_fonteGasLift_Item_comprimentoMedidoServico &comprimentoMedidoServico();
+    JSON_entrada_fonteGasLift_Item_tipoValvula &tipoValvula();
+    JSON_entrada_fonteGasLift_Item_diametroOrificio &diametroOrificio();
+    JSON_entrada_fonteGasLift_Item_cdvgl &cdvgl();
+    JSON_entrada_fonteGasLift_Item_frecupera &frecupera();
+    JSON_entrada_fonteGasLift_Item_cdvLiq &cdvLiq();
+    JSON_entrada_fonteGasLift_Item_frecuperaLiq &frecuperaLiq();
+    JSON_entrada_fonteGasLift_Item_razaoArea &razaoArea();
+    JSON_entrada_fonteGasLift_Item_pressaoCalibracao &pressaoCalibracao();
+    JSON_entrada_fonteGasLift_Item_temperaturaCalibracao &temperaturaCalibracao();
+    JSON_entrada_fonteGasLift_Item_diametroExterno &diametroExterno();
 };
 
 #define JSON_entrada_fonteGasLift JSONArray<JSON_entrada_fonteGasLift_Item>
+// ==============================================================================
+// Material, cross-section, and simulation-time definitions
+// ==============================================================================
+
 #define JSON_entrada_material_Item_ativo JSONBoolean
 #define JSON_entrada_material_Item_id JSONInteger
 #define JSON_entrada_material_Item_tipo JSONInteger
@@ -708,18 +823,23 @@ public:
 #define JSON_entrada_material_Item_visc JSONNumber
 #define JSON_entrada_material_Item_beta JSONNumber
 
-class JSON_entrada_material_Item: public JSONObject {
-public:
-	JSON_entrada_material_Item();
-	JSON_entrada_material_Item_ativo& ativo();
-	JSON_entrada_material_Item_id& id();
-	JSON_entrada_material_Item_tipo& tipo();
-	JSON_entrada_material_Item_condutividade& condutividade();
-	JSON_entrada_material_Item_calorEspecifico& calorEspecifico();
-	JSON_entrada_material_Item_rho& rho();
-	JSON_entrada_material_Item_visc& visc();
-	JSON_entrada_material_Item_beta& beta();
-
+/*!
+ * Store one wall or surrounding-medium material definition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_material_Item : public JSONObject {
+  public:
+    JSON_entrada_material_Item();
+    JSON_entrada_material_Item_ativo &ativo();
+    JSON_entrada_material_Item_id &id();
+    JSON_entrada_material_Item_tipo &tipo();
+    JSON_entrada_material_Item_condutividade &condutividade();
+    JSON_entrada_material_Item_calorEspecifico &calorEspecifico();
+    JSON_entrada_material_Item_rho &rho();
+    JSON_entrada_material_Item_visc &visc();
+    JSON_entrada_material_Item_beta &beta();
 };
 
 #define JSON_entrada_material JSONArray<JSON_entrada_material_Item>
@@ -735,70 +855,75 @@ public:
 #define JSON_entrada_secaoTransversal_Item_camadas_Item_discretizacao JSONInteger
 #define JSON_entrada_secaoTransversal_Item_camadas_Item_idMaterial JSONInteger
 
-class JSON_entrada_secaoTransversal_Item_camadas_Item: public JSONObject {
-public:
-	JSON_entrada_secaoTransversal_Item_camadas_Item();
-	JSON_entrada_secaoTransversal_Item_camadas_Item_tipoMedicaoCamada& tipoMedicaoCamada();
-	JSON_entrada_secaoTransversal_Item_camadas_Item_diametro& diametro();
-	JSON_entrada_secaoTransversal_Item_camadas_Item_espessura& espessura();
-	JSON_entrada_secaoTransversal_Item_camadas_Item_discretizacao& discretizacao();
-	JSON_entrada_secaoTransversal_Item_camadas_Item_idMaterial& idMaterial();
-
+/*!
+ * Store one material layer of a pipe cross-section.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_secaoTransversal_Item_camadas_Item : public JSONObject {
+  public:
+    JSON_entrada_secaoTransversal_Item_camadas_Item();
+    JSON_entrada_secaoTransversal_Item_camadas_Item_tipoMedicaoCamada &tipoMedicaoCamada();
+    JSON_entrada_secaoTransversal_Item_camadas_Item_diametro &diametro();
+    JSON_entrada_secaoTransversal_Item_camadas_Item_espessura &espessura();
+    JSON_entrada_secaoTransversal_Item_camadas_Item_discretizacao &discretizacao();
+    JSON_entrada_secaoTransversal_Item_camadas_Item_idMaterial &idMaterial();
 };
 
 #define JSON_entrada_secaoTransversal_Item_camadas JSONArray<JSON_entrada_secaoTransversal_Item_camadas_Item>
 
-class JSON_entrada_secaoTransversal_Item: public JSONObject {
-public:
-	JSON_entrada_secaoTransversal_Item();
-	JSON_entrada_secaoTransversal_Item_ativo& ativo();
-	JSON_entrada_secaoTransversal_Item_id& id();
-	JSON_entrada_secaoTransversal_Item_anular& anular();
-	JSON_entrada_secaoTransversal_Item_diametroExterno& diametroExterno();
-	JSON_entrada_secaoTransversal_Item_diametroInterno& diametroInterno();
-	JSON_entrada_secaoTransversal_Item_rugosidade& rugosidade();
-	JSON_entrada_secaoTransversal_Item_camadas& camadas();
-
+/*!
+ * Store one circular or annular pipe cross-section.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_secaoTransversal_Item : public JSONObject {
+  public:
+    JSON_entrada_secaoTransversal_Item();
+    JSON_entrada_secaoTransversal_Item_ativo &ativo();
+    JSON_entrada_secaoTransversal_Item_id &id();
+    JSON_entrada_secaoTransversal_Item_anular &anular();
+    JSON_entrada_secaoTransversal_Item_diametroExterno &diametroExterno();
+    JSON_entrada_secaoTransversal_Item_diametroInterno &diametroInterno();
+    JSON_entrada_secaoTransversal_Item_rugosidade &rugosidade();
+    JSON_entrada_secaoTransversal_Item_camadas &camadas();
 };
 
 #define JSON_entrada_secaoTransversal JSONArray<JSON_entrada_secaoTransversal_Item>
 #define JSON_entrada_tempo_tempoFinal JSONNumber
-
 #define JSON_entrada_tempo_tempos_Item JSONNumber
 #define JSON_entrada_tempo_tempos JSONArray<JSON_entrada_tempo_tempos_Item>
 #define JSON_entrada_tempo_dtmax_Item JSONNumber
 #define JSON_entrada_tempo_dtmax JSONArray<JSON_entrada_tempo_dtmax_Item>
-
 #define JSON_entrada_tempo_tempoSegrega_Item JSONNumber
 #define JSON_entrada_tempo_tempoSegrega JSONArray<JSON_entrada_tempo_tempoSegrega_Item>
 #define JSON_entrada_tempo_segrega_Item JSONInteger
 #define JSON_entrada_tempo_segrega JSONArray<JSON_entrada_tempo_segrega_Item>
-
 #define JSON_entrada_tempo_gravaMomento_Item JSONNumber
 #define JSON_entrada_tempo_gravaMomento JSONArray<JSON_entrada_tempo_gravaMomento_Item>
 
-class JSON_entrada_tempo: public JSONObject {
-public:
-	JSON_entrada_tempo();
-	JSON_entrada_tempo_tempoFinal& tempoFinal();
-	JSON_entrada_tempo_tempos& tempos();
-	JSON_entrada_tempo_dtmax& dtmax();
-	JSON_entrada_tempo_tempoSegrega& tempoSegrega();
-	JSON_entrada_tempo_segrega& segrega();
-	JSON_entrada_tempo_gravaMomento& gravaMomento();
+/*!
+ * Store the simulation horizon, time-step limits, and output times.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tempo : public JSONObject {
+  public:
+    JSON_entrada_tempo();
+    JSON_entrada_tempo_tempoFinal &tempoFinal();
+    JSON_entrada_tempo_tempos &tempos();
+    JSON_entrada_tempo_dtmax &dtmax();
+    JSON_entrada_tempo_tempoSegrega &tempoSegrega();
+    JSON_entrada_tempo_segrega &segrega();
+    JSON_entrada_tempo_gravaMomento &gravaMomento();
 };
 
-
-//#define JSON_entrada_gravaMomento_ativo JSONBoolean
-//#define JSON_entrada_gravaMomento_tempos_Item JSONNumber
-//#define JSON_entrada_gravaMomento_tempos JSONArray<JSON_entrada_gravaMomento_tempos_Item>
-
-//class JSON_entrada_gravaMomento: public JSONObject {
-//public:
-//	JSON_entrada_gravaMomento();
-	//JSON_entrada_gravaMomento_ativo& ativo();
-//	JSON_entrada_gravaMomento_tempos& tempos();
-//};
+// ==============================================================================
+// Production-pipeline geometry, discretization, and initial conditions
+// ==============================================================================
 
 #define JSON_entrada_dutosProducao_Item_ativo JSONBoolean
 #define JSON_entrada_dutosProducao_Item_id JSONInteger
@@ -830,12 +955,17 @@ public:
 #define JSON_entrada_dutosProducao_Item_yCoor JSONNumber
 #define JSON_entrada_dutosProducao_Item_nCelulas_XY JSONInteger
 
-class JSON_entrada_dutosProducao_Item_discretizacao_Item: public JSONObject {
-public:
-	JSON_entrada_dutosProducao_Item_discretizacao_Item();
-	JSON_entrada_dutosProducao_Item_discretizacao_Item_nCelulas& nCelulas();
-	JSON_entrada_dutosProducao_Item_discretizacao_Item_comprimento& comprimento();
-
+/*!
+ * Store one production-pipeline discretization segment.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosProducao_Item_discretizacao_Item : public JSONObject {
+  public:
+    JSON_entrada_dutosProducao_Item_discretizacao_Item();
+    JSON_entrada_dutosProducao_Item_discretizacao_Item_nCelulas &nCelulas();
+    JSON_entrada_dutosProducao_Item_discretizacao_Item_comprimento &comprimento();
 };
 
 #define JSON_entrada_dutosProducao_Item_discretizacao JSONArray<JSON_entrada_dutosProducao_Item_discretizacao_Item>
@@ -865,7 +995,6 @@ public:
 #define JSON_entrada_dutosProducao_Item_condicoesIniciais_rhoExterno JSONArray<JSON_entrada_dutosProducao_Item_condicoesIniciais_rhoExterno_Item>
 #define JSON_entrada_dutosProducao_Item_condicoesIniciais_viscExterna_Item JSONNumber
 #define JSON_entrada_dutosProducao_Item_condicoesIniciais_viscExterna JSONArray<JSON_entrada_dutosProducao_Item_condicoesIniciais_viscExterna_Item>
-
 #define JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_compInter_Item JSONNumber
 #define JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_compInter JSONArray<JSON_entrada_dutosProducao_Item_condicoesIniciais_compInter_Item>
 #define JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_temp_Item JSONNumber
@@ -893,79 +1022,96 @@ public:
 #define JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_viscExterna_Item JSONNumber
 #define JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_viscExterna JSONArray<JSON_entrada_dutosProducao_Item_condicoesIniciais_viscExterna_Item>
 
-
-class JSON_entrada_dutosProducao_Item_condicoesIniciais: public JSONObject {
-public:
-	JSON_entrada_dutosProducao_Item_condicoesIniciais();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_compInter& compInter();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_temp& temp();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_pressao& pressao();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_holdup& holdup();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_bet& bet();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_uls& uls();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_ugs& ugs();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_tempExterna& tempExterna();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_velExterna& velExterna();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_kExterna& kExterna();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_calorEspecificoExterno& calorEspecificoExterno();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_rhoExterno& rhoExterno();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais_viscExterna& viscExterna();
-
+/*!
+ * Store production-pipeline initial and external-environment conditions.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosProducao_Item_condicoesIniciais : public JSONObject {
+  public:
+    JSON_entrada_dutosProducao_Item_condicoesIniciais();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_compInter &compInter();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_temp &temp();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_pressao &pressao();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_holdup &holdup();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_bet &bet();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_uls &uls();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_ugs &ugs();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_tempExterna &tempExterna();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_velExterna &velExterna();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_kExterna &kExterna();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_calorEspecificoExterno &calorEspecificoExterno();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_rhoExterno &rhoExterno();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais_viscExterna &viscExterna();
 };
 
-class JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente: public JSONObject {
-public:
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_compInter& compInter();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_temp& temp();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_pressao& pressao();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_holdup& holdup();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_bet& bet();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_uls& uls();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_ugs& ugs();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_tempExterna& tempExterna();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_velExterna& velExterna();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_kExterna& kExterna();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_calorEspecificoExterno& calorEspecificoExterno();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_rhoExterno& rhoExterno();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_viscExterna& viscExterna();
-
+/*!
+ * Store combined production-pipeline and environment initial conditions.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente : public JSONObject {
+  public:
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_compInter &compInter();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_temp &temp();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_pressao &pressao();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_holdup &holdup();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_bet &bet();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_uls &uls();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_ugs &ugs();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_tempExterna &tempExterna();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_velExterna &velExterna();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_kExterna &kExterna();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_calorEspecificoExterno &calorEspecificoExterno();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_rhoExterno &rhoExterno();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente_viscExterna &viscExterna();
 };
 
-
-
-class JSON_entrada_dutosProducao_Item: public JSONObject {
-public:
-	JSON_entrada_dutosProducao_Item();
-	JSON_entrada_dutosProducao_Item_ativo& ativo();
-	JSON_entrada_dutosProducao_Item_id& id();
-	JSON_entrada_dutosProducao_Item_correlacaoMR2& correlacaoMR2();
-	JSON_entrada_dutosProducao_Item_angulo& angulo();
-	JSON_entrada_dutosProducao_Item_idCorte& idCorte();
-	JSON_entrada_dutosProducao_Item_idFormacao& idFormacao();
-	JSON_entrada_dutosProducao_Item_ambienteExterno& ambienteExterno();
-	JSON_entrada_dutosProducao_Item_direcaoConveccao& direcaoConveccao();
-	JSON_entrada_dutosProducao_Item_acoplamentoTermico& acoplamentoTermico();
-	JSON_entrada_dutosProducao_Item_acoplamentoTermicoRedeParalela& acoplamentoTermicoRedeParalela();
-	JSON_entrada_dutosProducao_Item_agrupamento& agrupamento();
-	JSON_entrada_dutosProducao_Item_dxCelula& dxCelula();
-	JSON_entrada_dutosProducao_Item_discretizacao& discretizacao();
-	JSON_entrada_dutosProducao_Item_condicoesIniciais& condicoesIniciais();
-	JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente& condicoesIniciaisEAmbiente();
-	JSON_entrada_dutosProducao_Item_dPdLHidro& dPdLHidro();
-	JSON_entrada_dutosProducao_Item_dPdLFric& dPdLFric();
-	JSON_entrada_dutosProducao_Item_dTdL& dTdL();
-	JSON_entrada_dutosProducao_Item_difusTerm2D& difusTerm2D();
-	JSON_entrada_dutosProducao_Item_difusTerm2DJSON& difusTerm2DJSON();
-	JSON_entrada_dutosProducao_Item_difusTerm3D& difusTerm3D();
-	JSON_entrada_dutosProducao_Item_difusTerm3DFE& difusTerm3DFE();
-	JSON_entrada_dutosProducao_Item_difusTerm3DAcop& difusTerm3DAcop();
-	JSON_entrada_dutosProducao_Item_xCoor& xCoor();
-	JSON_entrada_dutosProducao_Item_yCoor& yCoor();
-	JSON_entrada_dutosProducao_Item_nCelulas_XY& nCelulas_XY();
+/*!
+ * Store one production-pipeline segment and its numerical configuration.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosProducao_Item : public JSONObject {
+  public:
+    JSON_entrada_dutosProducao_Item();
+    JSON_entrada_dutosProducao_Item_ativo &ativo();
+    JSON_entrada_dutosProducao_Item_id &id();
+    JSON_entrada_dutosProducao_Item_correlacaoMR2 &correlacaoMR2();
+    JSON_entrada_dutosProducao_Item_angulo &angulo();
+    JSON_entrada_dutosProducao_Item_idCorte &idCorte();
+    JSON_entrada_dutosProducao_Item_idFormacao &idFormacao();
+    JSON_entrada_dutosProducao_Item_ambienteExterno &ambienteExterno();
+    JSON_entrada_dutosProducao_Item_direcaoConveccao &direcaoConveccao();
+    JSON_entrada_dutosProducao_Item_acoplamentoTermico &acoplamentoTermico();
+    JSON_entrada_dutosProducao_Item_acoplamentoTermicoRedeParalela &acoplamentoTermicoRedeParalela();
+    JSON_entrada_dutosProducao_Item_agrupamento &agrupamento();
+    JSON_entrada_dutosProducao_Item_dxCelula &dxCelula();
+    JSON_entrada_dutosProducao_Item_discretizacao &discretizacao();
+    JSON_entrada_dutosProducao_Item_condicoesIniciais &condicoesIniciais();
+    JSON_entrada_dutosProducao_Item_condicoesIniciaisEAmbiente &condicoesIniciaisEAmbiente();
+    JSON_entrada_dutosProducao_Item_dPdLHidro &dPdLHidro();
+    JSON_entrada_dutosProducao_Item_dPdLFric &dPdLFric();
+    JSON_entrada_dutosProducao_Item_dTdL &dTdL();
+    JSON_entrada_dutosProducao_Item_difusTerm2D &difusTerm2D();
+    JSON_entrada_dutosProducao_Item_difusTerm2DJSON &difusTerm2DJSON();
+    JSON_entrada_dutosProducao_Item_difusTerm3D &difusTerm3D();
+    JSON_entrada_dutosProducao_Item_difusTerm3DFE &difusTerm3DFE();
+    JSON_entrada_dutosProducao_Item_difusTerm3DAcop &difusTerm3DAcop();
+    JSON_entrada_dutosProducao_Item_xCoor &xCoor();
+    JSON_entrada_dutosProducao_Item_yCoor &yCoor();
+    JSON_entrada_dutosProducao_Item_nCelulas_XY &nCelulas_XY();
 };
 
 #define JSON_entrada_dutosProducao JSONArray<JSON_entrada_dutosProducao_Item>
+// ==============================================================================
+// Service-line geometry, discretization, and initial conditions
+// ==============================================================================
+
 #define JSON_entrada_dutosServico_Item_ativo JSONBoolean
 #define JSON_entrada_dutosServico_Item_id JSONInteger
 #define JSON_entrada_dutosServico_Item_angulo JSONNumber
@@ -986,12 +1132,17 @@ public:
 #define JSON_entrada_dutosServico_Item_yCoor JSONNumber
 #define JSON_entrada_dutosServico_Item_nCelulas_XY JSONNumber
 
-class JSON_entrada_dutosServico_Item_discretizacao_Item: public JSONObject {
-public:
-	JSON_entrada_dutosServico_Item_discretizacao_Item();
-	JSON_entrada_dutosServico_Item_discretizacao_Item_nCelulas& nCelulas();
-	JSON_entrada_dutosServico_Item_discretizacao_Item_comprimento& comprimento();
-
+/*!
+ * Store one service-line discretization segment.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosServico_Item_discretizacao_Item : public JSONObject {
+  public:
+    JSON_entrada_dutosServico_Item_discretizacao_Item();
+    JSON_entrada_dutosServico_Item_discretizacao_Item_nCelulas &nCelulas();
+    JSON_entrada_dutosServico_Item_discretizacao_Item_comprimento &comprimento();
 };
 
 #define JSON_entrada_dutosServico_Item_discretizacao JSONArray<JSON_entrada_dutosServico_Item_discretizacao_Item>
@@ -1016,20 +1167,25 @@ public:
 #define JSON_entrada_dutosServico_Item_condicoesIniciais_viscExterna_Item JSONNumber
 #define JSON_entrada_dutosServico_Item_condicoesIniciais_viscExterna JSONArray<JSON_entrada_dutosServico_Item_condicoesIniciais_viscExterna_Item>
 
-class JSON_entrada_dutosServico_Item_condicoesIniciais: public JSONObject {
-public:
-	JSON_entrada_dutosServico_Item_condicoesIniciais();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_compInter& compInter();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_temp& temp();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_pressao& pressao();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_vazaoMassicaGas& vazaoMassicaGas();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_tempExterna& tempExterna();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_velExterna& velExterna();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_kExterna& kExterna();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_calorEspecificoExterno& calorEspecificoExterno();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_rhoExterno& rhoExterno();
-	JSON_entrada_dutosServico_Item_condicoesIniciais_viscExterna& viscExterna();
-
+/*!
+ * Store service-line initial and external-environment conditions.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosServico_Item_condicoesIniciais : public JSONObject {
+  public:
+    JSON_entrada_dutosServico_Item_condicoesIniciais();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_compInter &compInter();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_temp &temp();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_pressao &pressao();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_vazaoMassicaGas &vazaoMassicaGas();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_tempExterna &tempExterna();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_velExterna &velExterna();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_kExterna &kExterna();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_calorEspecificoExterno &calorEspecificoExterno();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_rhoExterno &rhoExterno();
+    JSON_entrada_dutosServico_Item_condicoesIniciais_viscExterna &viscExterna();
 };
 
 #define JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_compInter_Item JSONNumber
@@ -1053,138 +1209,160 @@ public:
 #define JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_viscExterna_Item JSONNumber
 #define JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_viscExterna JSONArray<JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_viscExterna_Item>
 
-class JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente: public JSONObject {
-public:
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_compInter& compInter();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_temp& temp();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_pressao& pressao();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_vazaoMassicaGas& vazaoMassicaGas();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_tempExterna& tempExterna();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_velExterna& velExterna();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_kExterna& kExterna();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_calorEspecificoExterno& calorEspecificoExterno();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_rhoExterno& rhoExterno();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_viscExterna& viscExterna();
-
+/*!
+ * Store combined service-line and environment initial conditions.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente : public JSONObject {
+  public:
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_compInter &compInter();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_temp &temp();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_pressao &pressao();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_vazaoMassicaGas &vazaoMassicaGas();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_tempExterna &tempExterna();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_velExterna &velExterna();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_kExterna &kExterna();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_calorEspecificoExterno &calorEspecificoExterno();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_rhoExterno &rhoExterno();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente_viscExterna &viscExterna();
 };
 
-
-class JSON_entrada_dutosServico_Item: public JSONObject {
-public:
-	JSON_entrada_dutosServico_Item();
-	JSON_entrada_dutosServico_Item_ativo& ativo();
-	JSON_entrada_dutosServico_Item_id& id();
-	JSON_entrada_dutosServico_Item_angulo& angulo();
-	JSON_entrada_dutosServico_Item_idCorte& idCorte();
-	JSON_entrada_dutosServico_Item_idFormacao& idFormacao();
-	JSON_entrada_dutosServico_Item_ambienteExterno& ambienteExterno();
-	JSON_entrada_dutosServico_Item_direcaoConveccao& direcaoConveccao();
-	JSON_entrada_dutosServico_Item_acoplamentoTermico& acoplamentoTermico();
-	JSON_entrada_dutosServico_Item_agrupamento& agrupamento();
-	JSON_entrada_dutosServico_Item_dxCelula& dxCelula();
-	JSON_entrada_dutosServico_Item_discretizacao& discretizacao();
-	JSON_entrada_dutosServico_Item_condicoesIniciais& condicoesIniciais();
-	JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente& condicoesIniciaisEAmbiente();
-	JSON_entrada_dutosServico_Item_dPdLHidro& dPdLHidro();
-	JSON_entrada_dutosServico_Item_dPdLFric& dPdLFric();
-	JSON_entrada_dutosServico_Item_dTdL& dTdL();
-	JSON_entrada_dutosServico_Item_xCoor& xCoor();
-	JSON_entrada_dutosServico_Item_yCoor& yCoor();
-	JSON_entrada_dutosServico_Item_nCelulas_XY & nCelulas_XY ();
-
+/*!
+ * Store one gas service-line segment and its numerical configuration.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_dutosServico_Item : public JSONObject {
+  public:
+    JSON_entrada_dutosServico_Item();
+    JSON_entrada_dutosServico_Item_ativo &ativo();
+    JSON_entrada_dutosServico_Item_id &id();
+    JSON_entrada_dutosServico_Item_angulo &angulo();
+    JSON_entrada_dutosServico_Item_idCorte &idCorte();
+    JSON_entrada_dutosServico_Item_idFormacao &idFormacao();
+    JSON_entrada_dutosServico_Item_ambienteExterno &ambienteExterno();
+    JSON_entrada_dutosServico_Item_direcaoConveccao &direcaoConveccao();
+    JSON_entrada_dutosServico_Item_acoplamentoTermico &acoplamentoTermico();
+    JSON_entrada_dutosServico_Item_agrupamento &agrupamento();
+    JSON_entrada_dutosServico_Item_dxCelula &dxCelula();
+    JSON_entrada_dutosServico_Item_discretizacao &discretizacao();
+    JSON_entrada_dutosServico_Item_condicoesIniciais &condicoesIniciais();
+    JSON_entrada_dutosServico_Item_condicoesIniciaisEAmbiente &condicoesIniciaisEAmbiente();
+    JSON_entrada_dutosServico_Item_dPdLHidro &dPdLHidro();
+    JSON_entrada_dutosServico_Item_dPdLFric &dPdLFric();
+    JSON_entrada_dutosServico_Item_dTdL &dTdL();
+    JSON_entrada_dutosServico_Item_xCoor &xCoor();
+    JSON_entrada_dutosServico_Item_yCoor &yCoor();
+    JSON_entrada_dutosServico_Item_nCelulas_XY &nCelulas_XY();
 };
 
 #define JSON_entrada_dutosServico JSONArray<JSON_entrada_dutosServico_Item>
 
-//#define JSON_entrada_hidrato_Hammerschmidt_Khamm JSONNumber //chris - Hidratos
+// ==============================================================================
+// Hydrate-equilibrium and kinetic-model configuration
+// ==============================================================================
+
 #define JSON_entrada_hidrato_Hammerschmidt_MMH JSONNumber
 #define JSON_entrada_hidrato_Hammerschmidt_MMG JSONNumber
 #define JSON_entrada_hidrato_Hammerschmidt_MMW JSONNumber
 #define JSON_entrada_hidrato_Hammerschmidt_Whamm JSONNumber
-JSONString inibidor(); //chris - Hidratos
-//#define JSON_entrada_hidrato_Hammerschmidt_Methanol JSONNumber //chris - Hidratos
-//#define JSON_entrada_hidrato_Hammerschmidt_MMEG JSONNumber
-#define JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada JSONNumber //chris - Hidratos
+JSONString inibidor();
+#define JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada JSONNumber
 
-class JSON_entrada_hidrato_Hammerschmidt: public JSONObject { //hydvalor
-public:
-	JSON_entrada_hidrato_Hammerschmidt();
-	//JSON_entrada_hidrato_Hammerschmidt_Khamm& Khamm(); //chris - Hidratos
-	JSON_entrada_hidrato_Hammerschmidt_MMH& MMH();
-	JSON_entrada_hidrato_Hammerschmidt_MMG& MMG();
-	JSON_entrada_hidrato_Hammerschmidt_MMW& MMW();
-	JSON_entrada_hidrato_Hammerschmidt_Whamm& Whamm();
-	JSONString& inibidor(); //chris - Hidratos
-	//JSON_entrada_hidrato_Hammerschmidt_Methanol& Methanol(); //chris - Hidratos
-	//JSON_entrada_hidrato_Hammerschmidt_MMEG& MMEG();
-	JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada& fracFWcarregada(); //chris - Hidratos
-
+/*!
+ * Store Hammerschmidt hydrate-inhibitor parameters.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_hidrato_Hammerschmidt : public JSONObject { // Hydrate-configuration object.
+  public:
+    JSON_entrada_hidrato_Hammerschmidt();
+    JSON_entrada_hidrato_Hammerschmidt_MMH &MMH();
+    JSON_entrada_hidrato_Hammerschmidt_MMG &MMG();
+    JSON_entrada_hidrato_Hammerschmidt_MMW &MMW();
+    JSON_entrada_hidrato_Hammerschmidt_Whamm &Whamm();
+    JSONString &inibidor();
+    JSON_entrada_hidrato_Hammerschmidt_fracFWcarregada &fracFWcarregada();
 };
 
-//#define JSON_entrada_hidrato_PropFluHidrato_rhoH JSONNumber //chris - Hidratos
 #define JSON_entrada_hidrato_PropFluHidrato_coefEsteq JSONNumber
-#define JSON_entrada_hidrato_modeloHidrato_tipoHmodel JSONNumber //chris-model2
+#define JSON_entrada_hidrato_modeloHidrato_tipoHmodel JSONNumber
 
-class JSON_entrada_hidrato_PropFluHidrato: public JSONObject { //hydvalor
-public:
-	JSON_entrada_hidrato_PropFluHidrato();
-	//JSON_entrada_hidrato_PropFluHidrato_rhoH& rhoH(); //chris - Hidratos
-	JSON_entrada_hidrato_PropFluHidrato_coefEsteq& coefEsteq();
-
+/*!
+ * Store hydrate-fluid stoichiometric properties.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_hidrato_PropFluHidrato : public JSONObject { // Hydrate-configuration object.
+  public:
+    JSON_entrada_hidrato_PropFluHidrato();
+    JSON_entrada_hidrato_PropFluHidrato_coefEsteq &coefEsteq();
 };
 
-class JSON_entrada_hidrato_modeloHidrato: public JSONObject { //hydvalor
-public:
-	JSON_entrada_hidrato_modeloHidrato();
-	JSON_entrada_hidrato_modeloHidrato_tipoHmodel& tipoHmodel();
+/*!
+ * Select the hydrate model.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_hidrato_modeloHidrato : public JSONObject { // Hydrate-configuration object.
+  public:
+    JSON_entrada_hidrato_modeloHidrato();
+    JSON_entrada_hidrato_modeloHidrato_tipoHmodel &tipoHmodel();
+};
 
-}; //chris-model2
-
-/*#define JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk1 JSONNumber
-#define JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk2 JSONNumber
-#define JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk1 JSONNumber
-#define JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk2 JSONNumber*/
-
-//#define JSON_entrada_hidrato_ModeloTurner_estruturaHidratos JSONString; //chris - Hidratos
 JSONString estruturaHidratos();
 #define JSON_entrada_hidrato_ModeloTurner_rd JSONNumber
 #define JSON_entrada_hidrato_ModeloTurner_rp JSONNumber
 
-class JSON_entrada_hidrato_ModeloTurner: public JSONObject { //hydvalor
-public:
-	JSON_entrada_hidrato_ModeloTurner();
-	/*JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk1& estruturaHidratosIk1();
-	JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIk2& estruturaHidratosIk2();
-	JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk1& estruturaHidratosIIk1();
-	JSON_entrada_hidrato_ModeloTurner_estruturaHidratosIIk2& estruturaHidratosIIk2();*/
+/*!
+ * Store Turner hydrate-kinetic parameters and crystal structure.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_hidrato_ModeloTurner : public JSONObject { // Hydrate-configuration object.
+  public:
+    JSON_entrada_hidrato_ModeloTurner();
 
-	//JSON_entrada_hidrato_ModeloTurner_estruturaHidratos& estruturaHidratos();
-	//JSONString& estruturaHidratos() { return estruturaHidratos; }
-	JSONString& estruturaHidratos(); //chris - Hidratos
-	JSON_entrada_hidrato_ModeloTurner_rd& rd();
-	JSON_entrada_hidrato_ModeloTurner_rp& rp();
-
+    JSONString &estruturaHidratos();
+    JSON_entrada_hidrato_ModeloTurner_rd &rd();
+    JSON_entrada_hidrato_ModeloTurner_rp &rp();
 };
 
 #define JSON_entrada_hidrato_calculoInterno JSONBoolean
-//#define JSON_entrada_hidrato_modeloHidrato JSONNumber //chris-model2
 #define JSON_entrada_hidrato_pressao_Item JSONNumber
 #define JSON_entrada_hidrato_pressao JSONArray<JSON_entrada_hidrato_pressao_Item>
 #define JSON_entrada_hidrato_temperatura_Item JSONNumber
 #define JSON_entrada_hidrato_temperatura JSONArray<JSON_entrada_hidrato_temperatura_Item>
 
-class JSON_entrada_hidrato: public JSONObject {
-public:
-	JSON_entrada_hidrato();
-	JSON_entrada_hidrato_calculoInterno& calculoInterno();
-	JSON_entrada_hidrato_modeloHidrato& modeloHidrato(); //chris-model2
-	JSON_entrada_hidrato_pressao& pressao();
-	JSON_entrada_hidrato_temperatura& temperatura();
-	JSON_entrada_hidrato_Hammerschmidt& Hammerschmidt();
-	JSON_entrada_hidrato_PropFluHidrato& PropFluHidrato();
-	JSON_entrada_hidrato_ModeloTurner& ModeloTurner();
+/*!
+ * Store the complete hydrate-equilibrium and kinetic configuration.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_hidrato : public JSONObject {
+  public:
+    JSON_entrada_hidrato();
+    JSON_entrada_hidrato_calculoInterno &calculoInterno();
+    JSON_entrada_hidrato_modeloHidrato &modeloHidrato();
+    JSON_entrada_hidrato_pressao &pressao();
+    JSON_entrada_hidrato_temperatura &temperatura();
+    JSON_entrada_hidrato_Hammerschmidt &Hammerschmidt();
+    JSON_entrada_hidrato_PropFluHidrato &PropFluHidrato();
+    JSON_entrada_hidrato_ModeloTurner &ModeloTurner();
 };
+
+// ==============================================================================
+// IPR sources, chokes, pumps, pressure changes, and heat sources
+// ==============================================================================
 
 #define JSON_entrada_ipr_Item_ativo JSONBoolean
 #define JSON_entrada_ipr_Item_id JSONInteger
@@ -1213,26 +1391,31 @@ public:
 #define JSON_entrada_ipr_Item_indFluidoPro JSONInteger
 #define JSON_entrada_ipr_Item_indiFluidoPro JSONInteger
 
-class JSON_entrada_ipr_Item: public JSONObject {
-public:
-	JSON_entrada_ipr_Item();
-	JSON_entrada_ipr_Item_ativo& ativo();
-	JSON_entrada_ipr_Item_id& id();
-	JSON_entrada_ipr_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_ipr_Item_tipoIPR& tipoIPR();
-	JSON_entrada_ipr_Item_pressaoEstatica& pressaoEstatica();
-	JSON_entrada_ipr_Item_qMax& qMax();
-	JSON_entrada_ipr_Item_tempoPressaoEstatica& tempoPressaoEstatica();
-	JSON_entrada_ipr_Item_tempoqMax& tempoqMax();
-	JSON_entrada_ipr_Item_temperaturas& temperaturas();
-	JSON_entrada_ipr_Item_tempoTemperaturas& tempoTemperaturas();
-	JSON_entrada_ipr_Item_ip& ip();
-	JSON_entrada_ipr_Item_tempoip& tempoip();
-	JSON_entrada_ipr_Item_ii& ii();
-	JSON_entrada_ipr_Item_tempoii& tempoii();
-	JSON_entrada_ipr_Item_indFluidoPro& indFluidoPro();
-	JSON_entrada_ipr_Item_indiFluidoPro& indiFluidoPro();
-
+/*!
+ * Store one time-dependent inflow-performance relationship.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_ipr_Item : public JSONObject {
+  public:
+    JSON_entrada_ipr_Item();
+    JSON_entrada_ipr_Item_ativo &ativo();
+    JSON_entrada_ipr_Item_id &id();
+    JSON_entrada_ipr_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_ipr_Item_tipoIPR &tipoIPR();
+    JSON_entrada_ipr_Item_pressaoEstatica &pressaoEstatica();
+    JSON_entrada_ipr_Item_qMax &qMax();
+    JSON_entrada_ipr_Item_tempoPressaoEstatica &tempoPressaoEstatica();
+    JSON_entrada_ipr_Item_tempoqMax &tempoqMax();
+    JSON_entrada_ipr_Item_temperaturas &temperaturas();
+    JSON_entrada_ipr_Item_tempoTemperaturas &tempoTemperaturas();
+    JSON_entrada_ipr_Item_ip &ip();
+    JSON_entrada_ipr_Item_tempoip &tempoip();
+    JSON_entrada_ipr_Item_ii &ii();
+    JSON_entrada_ipr_Item_tempoii &tempoii();
+    JSON_entrada_ipr_Item_indFluidoPro &indFluidoPro();
+    JSON_entrada_ipr_Item_indiFluidoPro &indiFluidoPro();
 };
 
 #define JSON_entrada_ipr JSONArray<JSON_entrada_ipr_Item>
@@ -1244,15 +1427,20 @@ public:
 #define JSON_entrada_fonteChoke_coeficienteDescarga JSONNumber
 #define JSON_entrada_fonteChoke_modelo JSONInteger
 
-class JSON_entrada_fonteChoke: public JSONObject {
-public:
-	JSON_entrada_fonteChoke();
-	JSON_entrada_fonteChoke_ativo& ativo();
-	JSON_entrada_fonteChoke_tempo& tempo();
-	JSON_entrada_fonteChoke_abertura& abertura();
-	JSON_entrada_fonteChoke_coeficienteDescarga& coeficienteDescarga();
-	JSON_entrada_fonteChoke_modelo& modelo();
-
+/*!
+ * Store the source-choke opening curve and discharge coefficient.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fonteChoke : public JSONObject {
+  public:
+    JSON_entrada_fonteChoke();
+    JSON_entrada_fonteChoke_ativo &ativo();
+    JSON_entrada_fonteChoke_tempo &tempo();
+    JSON_entrada_fonteChoke_abertura &abertura();
+    JSON_entrada_fonteChoke_coeficienteDescarga &coeficienteDescarga();
+    JSON_entrada_fonteChoke_modelo &modelo();
 };
 
 #define JSON_entrada_bcs_Item_ativo JSONBoolean
@@ -1278,30 +1466,34 @@ public:
 #define JSON_entrada_bcs_Item_EficienciaMotor JSONNumber
 #define JSON_entrada_bcs_Item_FrequenciaMinima JSONNumber
 
-class JSON_entrada_bcs_Item: public JSONObject {
-public:
-	JSON_entrada_bcs_Item();
-	JSON_entrada_bcs_Item_ativo& ativo();
-	JSON_entrada_bcs_Item_correcHI& correcHI();
-	JSON_entrada_bcs_Item_id& id();
-	JSON_entrada_bcs_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_bcs_Item_fracTermMotorEfic& fracTermMotorEfic();
-	JSON_entrada_bcs_Item_tempo& tempo();
-	JSON_entrada_bcs_Item_frequencia& frequencia();
-	JSON_entrada_bcs_Item_vazao& vazao();
-	JSON_entrada_bcs_Item_potencia& potencia();
-	JSON_entrada_bcs_Item_eficiencia& eficiencia();
-	JSON_entrada_bcs_Item_head& head();
-	JSON_entrada_bcs_Item_freqref& freqref();
-	JSON_entrada_bcs_Item_nestag& nestag();
-	JSON_entrada_bcs_Item_nestag& nestagFab();
-	JSON_entrada_bcs_Item_EficienciaMotor& EficienciaMotor();
-	JSON_entrada_bcs_Item_FrequenciaMinima& FrequenciaMinima();
-
+/*!
+ * Store one electric-submersible-pump performance curve.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_bcs_Item : public JSONObject {
+  public:
+    JSON_entrada_bcs_Item();
+    JSON_entrada_bcs_Item_ativo &ativo();
+    JSON_entrada_bcs_Item_correcHI &correcHI();
+    JSON_entrada_bcs_Item_id &id();
+    JSON_entrada_bcs_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_bcs_Item_fracTermMotorEfic &fracTermMotorEfic();
+    JSON_entrada_bcs_Item_tempo &tempo();
+    JSON_entrada_bcs_Item_frequencia &frequencia();
+    JSON_entrada_bcs_Item_vazao &vazao();
+    JSON_entrada_bcs_Item_potencia &potencia();
+    JSON_entrada_bcs_Item_eficiencia &eficiencia();
+    JSON_entrada_bcs_Item_head &head();
+    JSON_entrada_bcs_Item_freqref &freqref();
+    JSON_entrada_bcs_Item_nestag &nestag();
+    JSON_entrada_bcs_Item_nestag &nestagFab();
+    JSON_entrada_bcs_Item_EficienciaMotor &EficienciaMotor();
+    JSON_entrada_bcs_Item_FrequenciaMinima &FrequenciaMinima();
 };
 
 #define JSON_entrada_bcs JSONArray<JSON_entrada_bcs_Item>
-
 #define JSON_entrada_multibcs_Item_ativo JSONBoolean
 #define JSON_entrada_multibcs_Item_correcHI JSONBoolean
 #define JSON_entrada_multibcs_Item_equilTerm JSONBoolean
@@ -1315,7 +1507,6 @@ public:
 #define JSON_entrada_multibcs_Item_EficienciaMotor JSONNumber
 #define JSON_entrada_multibcs_Item_FrequenciaMinima JSONNumber
 #define JSON_entrada_multibcs_Item_freqref JSONNumber
-
 #define JSON_entrada_multibcs_Item_curva_Item_vazao_Item JSONNumber
 #define JSON_entrada_multibcs_Item_curva_Item_vazao JSONArray<JSON_entrada_multibcs_Item_curva_Item_vazao_Item>
 #define JSON_entrada_multibcs_Item_curva_Item_potencia_Item JSONNumber
@@ -1327,42 +1518,48 @@ public:
 #define JSON_entrada_multibcs_Item_curva_Item_nestagFab JSONInteger
 #define JSON_entrada_multibcs_Item_curva_Item_nestag JSONInteger
 
-
-class JSON_entrada_multibcs_Item_curva_Item: public JSONObject {
-public:
-	JSON_entrada_multibcs_Item_curva_Item();
-	JSON_entrada_multibcs_Item_curva_Item_vazao& vazao();
-	JSON_entrada_multibcs_Item_curva_Item_potencia& potencia();
-	JSON_entrada_multibcs_Item_curva_Item_eficiencia& eficiencia();
-	JSON_entrada_multibcs_Item_curva_Item_head& head();
-	JSON_entrada_multibcs_Item_curva_Item_nestagFab& nestagFab();
-	JSON_entrada_multibcs_Item_curva_Item_nestag& nestag();
+/*!
+ * Store one pump curve used by a multi-pump assembly.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_multibcs_Item_curva_Item : public JSONObject {
+  public:
+    JSON_entrada_multibcs_Item_curva_Item();
+    JSON_entrada_multibcs_Item_curva_Item_vazao &vazao();
+    JSON_entrada_multibcs_Item_curva_Item_potencia &potencia();
+    JSON_entrada_multibcs_Item_curva_Item_eficiencia &eficiencia();
+    JSON_entrada_multibcs_Item_curva_Item_head &head();
+    JSON_entrada_multibcs_Item_curva_Item_nestagFab &nestagFab();
+    JSON_entrada_multibcs_Item_curva_Item_nestag &nestag();
 };
 #define JSON_entrada_multibcs_Item_curva JSONArray<JSON_entrada_multibcs_Item_curva_Item>
 
-
-class JSON_entrada_multibcs_Item: public JSONObject {
-public:
-	JSON_entrada_multibcs_Item();
-	JSON_entrada_multibcs_Item_ativo& ativo();
-	JSON_entrada_multibcs_Item_correcHI& correcHI();
-	JSON_entrada_multibcs_Item_equilTerm& equilTerm();
-	JSON_entrada_multibcs_Item_id& id();
-	JSON_entrada_multibcs_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_multibcs_Item_fracTermMotorEfic& fracTermMotorEfic();
-	JSON_entrada_multibcs_Item_tempo& tempo();
-	JSON_entrada_multibcs_Item_frequencia& frequencia();
-	JSON_entrada_multibcs_Item_EficienciaMotor& EficienciaMotor();
-	JSON_entrada_multibcs_Item_FrequenciaMinima& FrequenciaMinima();
-	JSON_entrada_multibcs_Item_freqref& freqref();
-
-	JSON_entrada_multibcs_Item_curva& curva();
-
+/*!
+ * Store one multi-pump assembly and its operating schedule.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_multibcs_Item : public JSONObject {
+  public:
+    JSON_entrada_multibcs_Item();
+    JSON_entrada_multibcs_Item_ativo &ativo();
+    JSON_entrada_multibcs_Item_correcHI &correcHI();
+    JSON_entrada_multibcs_Item_equilTerm &equilTerm();
+    JSON_entrada_multibcs_Item_id &id();
+    JSON_entrada_multibcs_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_multibcs_Item_fracTermMotorEfic &fracTermMotorEfic();
+    JSON_entrada_multibcs_Item_tempo &tempo();
+    JSON_entrada_multibcs_Item_frequencia &frequencia();
+    JSON_entrada_multibcs_Item_EficienciaMotor &EficienciaMotor();
+    JSON_entrada_multibcs_Item_FrequenciaMinima &FrequenciaMinima();
+    JSON_entrada_multibcs_Item_freqref &freqref();
+    JSON_entrada_multibcs_Item_curva &curva();
 };
 
 #define JSON_entrada_multibcs JSONArray<JSON_entrada_multibcs_Item>
-
-
 #define JSON_entrada_bombaVolumetrica_Item_ativo JSONBoolean
 #define JSON_entrada_bombaVolumetrica_Item_id JSONInteger
 #define JSON_entrada_bombaVolumetrica_Item_comprimentoMedido JSONNumber
@@ -1373,17 +1570,22 @@ public:
 #define JSON_entrada_bombaVolumetrica_Item_capacidade JSONNumber
 #define JSON_entrada_bombaVolumetrica_Item_fatorpoli JSONNumber
 
-class JSON_entrada_bombaVolumetrica_Item: public JSONObject {
-public:
-	JSON_entrada_bombaVolumetrica_Item();
-	JSON_entrada_bombaVolumetrica_Item_ativo& ativo();
-	JSON_entrada_bombaVolumetrica_Item_id& id();
-	JSON_entrada_bombaVolumetrica_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_bombaVolumetrica_Item_tempo& tempo();
-	JSON_entrada_bombaVolumetrica_Item_frequencia& frequencia();
-	JSON_entrada_bombaVolumetrica_Item_capacidade& capacidade();
-	JSON_entrada_bombaVolumetrica_Item_fatorpoli& fatorpoli();
-
+/*!
+ * Store one positive-displacement pump definition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_bombaVolumetrica_Item : public JSONObject {
+  public:
+    JSON_entrada_bombaVolumetrica_Item();
+    JSON_entrada_bombaVolumetrica_Item_ativo &ativo();
+    JSON_entrada_bombaVolumetrica_Item_id &id();
+    JSON_entrada_bombaVolumetrica_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_bombaVolumetrica_Item_tempo &tempo();
+    JSON_entrada_bombaVolumetrica_Item_frequencia &frequencia();
+    JSON_entrada_bombaVolumetrica_Item_capacidade &capacidade();
+    JSON_entrada_bombaVolumetrica_Item_fatorpoli &fatorpoli();
 };
 
 #define JSON_entrada_bombaVolumetrica JSONArray<JSON_entrada_bombaVolumetrica_Item>
@@ -1394,30 +1596,32 @@ public:
 #define JSON_entrada_deltaPressao_Item_tempo JSONArray<JSON_entrada_deltaPressao_Item_tempo_Item>
 #define JSON_entrada_deltaPressao_Item_deltaPressao_Item JSONNumber
 #define JSON_entrada_deltaPressao_Item_deltaPressao JSONArray<JSON_entrada_deltaPressao_Item_deltaPressao_Item>
-//alteracao 5/02/2021
 #define JSON_entrada_deltaPressao_Item_tipoCompGas JSONInteger
 #define JSON_entrada_deltaPressao_Item_fatPoli JSONNumber
 #define JSON_entrada_deltaPressao_Item_eficLiq JSONNumber
 #define JSON_entrada_deltaPressao_Item_eficGas JSONNumber
 
-
-class JSON_entrada_deltaPressao_Item: public JSONObject {
-public:
-	JSON_entrada_deltaPressao_Item();
-	JSON_entrada_deltaPressao_Item_ativo& ativo();
-	JSON_entrada_deltaPressao_Item_id& id();
-	JSON_entrada_deltaPressao_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_deltaPressao_Item_tempo& tempo();
-	JSON_entrada_deltaPressao_Item_deltaPressao& deltaPressao();
-	JSON_entrada_deltaPressao_Item_tipoCompGas& tipoCompGas();
-	JSON_entrada_deltaPressao_Item_fatPoli& fatPoli();
-	JSON_entrada_deltaPressao_Item_eficLiq& eficLiq();
-	JSON_entrada_deltaPressao_Item_eficGas& eficGas();
+/*!
+ * Store one prescribed pressure-change device.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_deltaPressao_Item : public JSONObject {
+  public:
+    JSON_entrada_deltaPressao_Item();
+    JSON_entrada_deltaPressao_Item_ativo &ativo();
+    JSON_entrada_deltaPressao_Item_id &id();
+    JSON_entrada_deltaPressao_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_deltaPressao_Item_tempo &tempo();
+    JSON_entrada_deltaPressao_Item_deltaPressao &deltaPressao();
+    JSON_entrada_deltaPressao_Item_tipoCompGas &tipoCompGas();
+    JSON_entrada_deltaPressao_Item_fatPoli &fatPoli();
+    JSON_entrada_deltaPressao_Item_eficLiq &eficLiq();
+    JSON_entrada_deltaPressao_Item_eficGas &eficGas();
 };
 
 #define JSON_entrada_deltaPressao JSONArray<JSON_entrada_deltaPressao_Item>
-
-
 #define JSON_entrada_fonteCalor_Item_ativo JSONBoolean
 #define JSON_entrada_fonteCalor_Item_id JSONInteger
 #define JSON_entrada_fonteCalor_Item_comprimentoMedido JSONNumber
@@ -1426,19 +1630,23 @@ public:
 #define JSON_entrada_fonteCalor_Item_calor_Item JSONNumber
 #define JSON_entrada_fonteCalor_Item_calor JSONArray<JSON_entrada_fonteCalor_Item_calor_Item>
 
-
-class JSON_entrada_fonteCalor_Item: public JSONObject {
-public:
-	JSON_entrada_fonteCalor_Item();
-	JSON_entrada_fonteCalor_Item_ativo& ativo();
-	JSON_entrada_fonteCalor_Item_id& id();
-	JSON_entrada_fonteCalor_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fonteCalor_Item_tempo& tempo();
-	JSON_entrada_fonteCalor_Item_calor& calor();
+/*!
+ * Store one time-dependent heat source.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fonteCalor_Item : public JSONObject {
+  public:
+    JSON_entrada_fonteCalor_Item();
+    JSON_entrada_fonteCalor_Item_ativo &ativo();
+    JSON_entrada_fonteCalor_Item_id &id();
+    JSON_entrada_fonteCalor_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fonteCalor_Item_tempo &tempo();
+    JSON_entrada_fonteCalor_Item_calor &calor();
 };
 
 #define JSON_entrada_fonteCalor JSONArray<JSON_entrada_fonteCalor_Item>
-
 #define JSON_entrada_master1_ativo JSONBoolean
 #define JSON_entrada_master1_curvaCV JSONInteger
 #define JSON_entrada_master1_razaoAreaAtiva JSONNumber
@@ -1452,18 +1660,23 @@ public:
 #define JSON_entrada_master1_cv1_Item JSONNumber
 #define JSON_entrada_master1_cv1 JSONArray<JSON_entrada_master1_cv1_Item>
 
-class JSON_entrada_master1: public JSONObject {
-public:
-	JSON_entrada_master1();
-	JSON_entrada_master1_ativo& ativo();
-	JSON_entrada_master1_curvaCV& curvaCV();
-	JSON_entrada_master1_razaoAreaAtiva& razaoAreaAtiva();
-	JSON_entrada_master1_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_master1_tempo& tempo();
-	JSON_entrada_master1_abertura& abertura();
-	JSON_entrada_master1_x1& x1();
-	JSON_entrada_master1_cv1& cv1();
-
+/*!
+ * Store the Master 1 valve operating schedule and Cv curve.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_master1 : public JSONObject {
+  public:
+    JSON_entrada_master1();
+    JSON_entrada_master1_ativo &ativo();
+    JSON_entrada_master1_curvaCV &curvaCV();
+    JSON_entrada_master1_razaoAreaAtiva &razaoAreaAtiva();
+    JSON_entrada_master1_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_master1_tempo &tempo();
+    JSON_entrada_master1_abertura &abertura();
+    JSON_entrada_master1_x1 &x1();
+    JSON_entrada_master1_cv1 &cv1();
 };
 
 #define JSON_entrada_master2_ativo JSONBoolean
@@ -1473,14 +1686,19 @@ public:
 #define JSON_entrada_master2_abertura_Item JSONNumber
 #define JSON_entrada_master2_abertura JSONArray<JSON_entrada_master2_abertura_Item>
 
-class JSON_entrada_master2: public JSONObject {
-public:
-	JSON_entrada_master2();
-	JSON_entrada_master2_ativo& ativo();
-	JSON_entrada_master2_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_master2_tempo& tempo();
-	JSON_entrada_master2_abertura& abertura();
-
+/*!
+ * Store the Master 2 valve operating schedule.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_master2 : public JSONObject {
+  public:
+    JSON_entrada_master2();
+    JSON_entrada_master2_ativo &ativo();
+    JSON_entrada_master2_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_master2_tempo &tempo();
+    JSON_entrada_master2_abertura &abertura();
 };
 
 #define JSON_entrada_pig_Item_ativo JSONBoolean
@@ -1492,18 +1710,23 @@ public:
 #define JSON_entrada_pig_Item_deltaPressao JSONNumber
 #define JSON_entrada_pig_Item_cdPig JSONNumber
 
-class JSON_entrada_pig_Item: public JSONObject {
-public:
-	JSON_entrada_pig_Item();
-	JSON_entrada_pig_Item_ativo& ativo();
-	JSON_entrada_pig_Item_id& id();
-	JSON_entrada_pig_Item_lancador& lancador();
-	JSON_entrada_pig_Item_recebedor& recebedor();
-	JSON_entrada_pig_Item_tempo& tempo();
-	JSON_entrada_pig_Item_folgaArea& folgaArea();
-	JSON_entrada_pig_Item_deltaPressao& deltaPressao();
-	JSON_entrada_pig_Item_cdPig& cdPig();
-
+/*!
+ * Store one pipeline-pig launch, travel, and pressure-loss configuration.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_pig_Item : public JSONObject {
+  public:
+    JSON_entrada_pig_Item();
+    JSON_entrada_pig_Item_ativo &ativo();
+    JSON_entrada_pig_Item_id &id();
+    JSON_entrada_pig_Item_lancador &lancador();
+    JSON_entrada_pig_Item_recebedor &recebedor();
+    JSON_entrada_pig_Item_tempo &tempo();
+    JSON_entrada_pig_Item_folgaArea &folgaArea();
+    JSON_entrada_pig_Item_deltaPressao &deltaPressao();
+    JSON_entrada_pig_Item_cdPig &cdPig();
 };
 
 #define JSON_entrada_pig JSONArray<JSON_entrada_pig_Item>
@@ -1515,9 +1738,7 @@ public:
 #define JSON_entrada_fontePressao_Item_titAmb JSONNumber
 #define JSON_entrada_fontePressao_Item_cd JSONNumber
 #define JSON_entrada_fontePressao_Item_temperatura JSONNumber
-//#define JSON_entrada_fontePressao_Item_temperatura JSONArray<JSON_entrada_fontePressao_Item_temperatura_Item>
 #define JSON_entrada_fontePressao_Item_pressao JSONNumber
-//#define JSON_entrada_fontePressao_Item_pressao JSONArray<JSON_entrada_fontePressao_Item_pressao_Item>
 #define JSON_entrada_fontePressao_Item_abertura_Item JSONNumber
 #define JSON_entrada_fontePressao_Item_abertura JSONArray<JSON_entrada_fontePressao_Item_abertura_Item>
 #define JSON_entrada_fontePressao_Item_tempo_Item JSONNumber
@@ -1530,29 +1751,38 @@ public:
 #define JSON_entrada_fontePressao_Item_tempoChk_Item JSONNumber
 #define JSON_entrada_fontePressao_Item_tempoChk JSONArray<JSON_entrada_fontePressao_Item_tempoChk_Item>
 
-class JSON_entrada_fontePressao_Item: public JSONObject {
-public:
-	JSON_entrada_fontePressao_Item();
-	JSON_entrada_fontePressao_Item_ativo& ativo();
-	JSON_entrada_fontePressao_Item_id& id();
-	JSON_entrada_fontePressao_Item_TipoAbertura& TipoAbertura();
-	JSON_entrada_fontePressao_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_fontePressao_Item_beta& beta();
-	JSON_entrada_fontePressao_Item_titAmb& titAmb();
-	JSON_entrada_fontePressao_Item_cd& cd();
-	JSON_entrada_fontePressao_Item_temperatura& temperatura();
-	JSON_entrada_fontePressao_Item_pressao& pressao();
-	JSON_entrada_fontePressao_Item_abertura& abertura();
-	JSON_entrada_fontePressao_Item_tempo& tempo();
-	JSON_entrada_fontePressao_Item_tipoFluido& tipoFluido();
-	JSON_entrada_fontePressao_Item_indiFluidoPro& indiFluidoPro();
-	JSON_entrada_fontePressao_Item_ambGas& ambGas();
-	JSON_entrada_fontePressao_Item_check& check();
-	JSON_entrada_fontePressao_Item_tempoChk& tempoChk();
-
+/*!
+ * Store one pressure-source boundary condition.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_fontePressao_Item : public JSONObject {
+  public:
+    JSON_entrada_fontePressao_Item();
+    JSON_entrada_fontePressao_Item_ativo &ativo();
+    JSON_entrada_fontePressao_Item_id &id();
+    JSON_entrada_fontePressao_Item_TipoAbertura &TipoAbertura();
+    JSON_entrada_fontePressao_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_fontePressao_Item_beta &beta();
+    JSON_entrada_fontePressao_Item_titAmb &titAmb();
+    JSON_entrada_fontePressao_Item_cd &cd();
+    JSON_entrada_fontePressao_Item_temperatura &temperatura();
+    JSON_entrada_fontePressao_Item_pressao &pressao();
+    JSON_entrada_fontePressao_Item_abertura &abertura();
+    JSON_entrada_fontePressao_Item_tempo &tempo();
+    JSON_entrada_fontePressao_Item_tipoFluido &tipoFluido();
+    JSON_entrada_fontePressao_Item_indiFluidoPro &indiFluidoPro();
+    JSON_entrada_fontePressao_Item_ambGas &ambGas();
+    JSON_entrada_fontePressao_Item_check &check();
+    JSON_entrada_fontePressao_Item_tempoChk &tempoChk();
 };
 
 #define JSON_entrada_fontePressao JSONArray<JSON_entrada_fontePressao_Item>
+// ==============================================================================
+// Production-line trend-output configuration
+// ==============================================================================
+
 #define JSON_entrada_tendP_Item_ativo JSONBoolean
 #define JSON_entrada_tendP_Item_comprimentoMedido JSONNumber
 #define JSON_entrada_tendP_Item_dt JSONNumber
@@ -1560,7 +1790,7 @@ public:
 #define JSON_entrada_tendP_Item_pressao JSONBoolean
 #define JSON_entrada_tendP_Item_temperatura JSONBoolean
 #define JSON_entrada_tendP_Item_holdup JSONBoolean
-#define JSON_entrada_tendP_Item_FVH JSONBoolean //chris - hidratos
+#define JSON_entrada_tendP_Item_FVH JSONBoolean
 #define JSON_entrada_tendP_Item_bet JSONBoolean
 #define JSON_entrada_tendP_Item_ugs JSONBoolean
 #define JSON_entrada_tendP_Item_uls JSONBoolean
@@ -1626,81 +1856,87 @@ public:
 #define JSON_entrada_tendP_Item_inventarioLiq JSONBoolean
 #define JSON_entrada_tendP_Item_subResfria JSONBoolean
 
-class JSON_entrada_tendP_Item: public JSONObject {
-public:
-	JSON_entrada_tendP_Item();
-	JSON_entrada_tendP_Item_ativo& ativo();
-	JSON_entrada_tendP_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_tendP_Item_dt& dt();
-	JSON_entrada_tendP_Item_rotulo& rotulo();
-	JSON_entrada_tendP_Item_pressao& pressao();
-	JSON_entrada_tendP_Item_temperatura& temperatura();
-	JSON_entrada_tendP_Item_holdup& holdup();
-	JSON_entrada_tendP_Item_FVH& FVH(); //chris - Hidratos
-	JSON_entrada_tendP_Item_bet& bet();
-	JSON_entrada_tendP_Item_ugs& ugs();
-	JSON_entrada_tendP_Item_uls& uls();
-	JSON_entrada_tendP_Item_ug& ug();
-	JSON_entrada_tendP_Item_ul& ul();
-	JSON_entrada_tendP_Item_arra& arra();
-	JSON_entrada_tendP_Item_viscosidadeLiquido& viscosidadeLiquido();
-	JSON_entrada_tendP_Item_viscosidadeGas& viscosidadeGas();
-	JSON_entrada_tendP_Item_rhog& rhog();
-	JSON_entrada_tendP_Item_rhol& rhol();
-	JSON_entrada_tendP_Item_rhoMix& rhoMix();
-	JSON_entrada_tendP_Item_vazaoMassicaGas& vazaoMassicaGas();
-	JSON_entrada_tendP_Item_vazaoMassicaLiquido& vazaoMassicaLiquido();
-	JSON_entrada_tendP_Item_c0& c0();
-	JSON_entrada_tendP_Item_ud& ud();
-	JSON_entrada_tendP_Item_RGO& RGO();
-	JSON_entrada_tendP_Item_deng& deng();
-	JSON_entrada_tendP_Item_yco2& yco2();
-	JSON_entrada_tendP_Item_calor& calor();
-	JSON_entrada_tendP_Item_masstrans& masstrans();
-	JSON_entrada_tendP_Item_QLstd& QLstd();
-	JSON_entrada_tendP_Item_QLWstd& QLWstd();
-	JSON_entrada_tendP_Item_QLstd& QOstd();
-	JSON_entrada_tendP_Item_QLWstd& QOWstd();
-	JSON_entrada_tendP_Item_QLstdTotal& QLstdTotal();
-	JSON_entrada_tendP_Item_QGstd& QGstd();
-	JSON_entrada_tendP_Item_api& api();
-	JSON_entrada_tendP_Item_bsw& bsw();
-	JSON_entrada_tendP_Item_hidro& hidro();
-	JSON_entrada_tendP_Item_fric& fric();
-	JSON_entrada_tendP_Item_dengD& dengD();
-	JSON_entrada_tendP_Item_dengL& dengL();
-	JSON_entrada_tendP_Item_ReyInterno& ReyInterno();
-	JSON_entrada_tendP_Item_ReyExterno& ReyExterno();
-	JSON_entrada_tendP_Item_GrashInterno& GrashInterno();
-	JSON_entrada_tendP_Item_GrashExterno& GrashExterno();
-	JSON_entrada_tendP_Item_NusselInterno& NusselInterno();
-	JSON_entrada_tendP_Item_NusselExterno& NusselExterno();
-	JSON_entrada_tendP_Item_PrandtlInterno& PrandtlInterno();
-	JSON_entrada_tendP_Item_PrandtlExterno& PrandtlExterno();
-	JSON_entrada_tendP_Item_Froud& Froud();
-	JSON_entrada_tendP_Item_Rs& Rs();
-	JSON_entrada_tendP_Item_Bo& Bo();
-	JSON_entrada_tendP_Item_Hint& Hint();
-	JSON_entrada_tendP_Item_Hext& Hext();
-	JSON_entrada_tendP_Item_mlFonte& mlFonte();
-	JSON_entrada_tendP_Item_mgFonte& mgFonte();
-	JSON_entrada_tendP_Item_mcFonte& mcFonte();
-	JSON_entrada_tendP_Item_tempChokeJus& tempChokeJus();
-	JSON_entrada_tendP_Item_deltaPBomba& deltaPBomba();
-	JSON_entrada_tendP_Item_potenciaBomba& potenciaBomba();
-	JSON_entrada_tendP_Item_volMonM1PT& volMonM1PT();
-	JSON_entrada_tendP_Item_volJusM1PT& volJusM1PT();
-	JSON_entrada_tendP_Item_volMonM1ST& volMonM1ST();
-	JSON_entrada_tendP_Item_volJusM1ST& volJusM1ST();
-	JSON_entrada_tendP_Item_autoVal& autoVal();
-	JSON_entrada_tendP_Item_autoVel& autoVel();
-	JSON_entrada_tendP_Item_flutuacao& flutuacao();
-	JSON_entrada_tendP_Item_diametroInterno& diametroInterno();
-	JSON_entrada_tendP_Item_tempParede& tempParede();
-	JSON_entrada_tendP_Item_dadosParafina& dadosParafina();
-	JSON_entrada_tendP_Item_inventarioGas& inventarioGas();
-	JSON_entrada_tendP_Item_inventarioLiq& inventarioLiq();
-	JSON_entrada_tendP_Item_subResfria& subResfria();
+/*!
+ * Select production-line variables recorded in one trend output.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tendP_Item : public JSONObject {
+  public:
+    JSON_entrada_tendP_Item();
+    JSON_entrada_tendP_Item_ativo &ativo();
+    JSON_entrada_tendP_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_tendP_Item_dt &dt();
+    JSON_entrada_tendP_Item_rotulo &rotulo();
+    JSON_entrada_tendP_Item_pressao &pressao();
+    JSON_entrada_tendP_Item_temperatura &temperatura();
+    JSON_entrada_tendP_Item_holdup &holdup();
+    JSON_entrada_tendP_Item_FVH &FVH();
+    JSON_entrada_tendP_Item_bet &bet();
+    JSON_entrada_tendP_Item_ugs &ugs();
+    JSON_entrada_tendP_Item_uls &uls();
+    JSON_entrada_tendP_Item_ug &ug();
+    JSON_entrada_tendP_Item_ul &ul();
+    JSON_entrada_tendP_Item_arra &arra();
+    JSON_entrada_tendP_Item_viscosidadeLiquido &viscosidadeLiquido();
+    JSON_entrada_tendP_Item_viscosidadeGas &viscosidadeGas();
+    JSON_entrada_tendP_Item_rhog &rhog();
+    JSON_entrada_tendP_Item_rhol &rhol();
+    JSON_entrada_tendP_Item_rhoMix &rhoMix();
+    JSON_entrada_tendP_Item_vazaoMassicaGas &vazaoMassicaGas();
+    JSON_entrada_tendP_Item_vazaoMassicaLiquido &vazaoMassicaLiquido();
+    JSON_entrada_tendP_Item_c0 &c0();
+    JSON_entrada_tendP_Item_ud &ud();
+    JSON_entrada_tendP_Item_RGO &RGO();
+    JSON_entrada_tendP_Item_deng &deng();
+    JSON_entrada_tendP_Item_yco2 &yco2();
+    JSON_entrada_tendP_Item_calor &calor();
+    JSON_entrada_tendP_Item_masstrans &masstrans();
+    JSON_entrada_tendP_Item_QLstd &QLstd();
+    JSON_entrada_tendP_Item_QLWstd &QLWstd();
+    JSON_entrada_tendP_Item_QLstd &QOstd();
+    JSON_entrada_tendP_Item_QLWstd &QOWstd();
+    JSON_entrada_tendP_Item_QLstdTotal &QLstdTotal();
+    JSON_entrada_tendP_Item_QGstd &QGstd();
+    JSON_entrada_tendP_Item_api &api();
+    JSON_entrada_tendP_Item_bsw &bsw();
+    JSON_entrada_tendP_Item_hidro &hidro();
+    JSON_entrada_tendP_Item_fric &fric();
+    JSON_entrada_tendP_Item_dengD &dengD();
+    JSON_entrada_tendP_Item_dengL &dengL();
+    JSON_entrada_tendP_Item_ReyInterno &ReyInterno();
+    JSON_entrada_tendP_Item_ReyExterno &ReyExterno();
+    JSON_entrada_tendP_Item_GrashInterno &GrashInterno();
+    JSON_entrada_tendP_Item_GrashExterno &GrashExterno();
+    JSON_entrada_tendP_Item_NusselInterno &NusselInterno();
+    JSON_entrada_tendP_Item_NusselExterno &NusselExterno();
+    JSON_entrada_tendP_Item_PrandtlInterno &PrandtlInterno();
+    JSON_entrada_tendP_Item_PrandtlExterno &PrandtlExterno();
+    JSON_entrada_tendP_Item_Froud &Froud();
+    JSON_entrada_tendP_Item_Rs &Rs();
+    JSON_entrada_tendP_Item_Bo &Bo();
+    JSON_entrada_tendP_Item_Hint &Hint();
+    JSON_entrada_tendP_Item_Hext &Hext();
+    JSON_entrada_tendP_Item_mlFonte &mlFonte();
+    JSON_entrada_tendP_Item_mgFonte &mgFonte();
+    JSON_entrada_tendP_Item_mcFonte &mcFonte();
+    JSON_entrada_tendP_Item_tempChokeJus &tempChokeJus();
+    JSON_entrada_tendP_Item_deltaPBomba &deltaPBomba();
+    JSON_entrada_tendP_Item_potenciaBomba &potenciaBomba();
+    JSON_entrada_tendP_Item_volMonM1PT &volMonM1PT();
+    JSON_entrada_tendP_Item_volJusM1PT &volJusM1PT();
+    JSON_entrada_tendP_Item_volMonM1ST &volMonM1ST();
+    JSON_entrada_tendP_Item_volJusM1ST &volJusM1ST();
+    JSON_entrada_tendP_Item_autoVal &autoVal();
+    JSON_entrada_tendP_Item_autoVel &autoVel();
+    JSON_entrada_tendP_Item_flutuacao &flutuacao();
+    JSON_entrada_tendP_Item_diametroInterno &diametroInterno();
+    JSON_entrada_tendP_Item_tempParede &tempParede();
+    JSON_entrada_tendP_Item_dadosParafina &dadosParafina();
+    JSON_entrada_tendP_Item_inventarioGas &inventarioGas();
+    JSON_entrada_tendP_Item_inventarioLiq &inventarioLiq();
+    JSON_entrada_tendP_Item_subResfria &subResfria();
 };
 
 #define JSON_entrada_tendP JSONArray<JSON_entrada_tendP_Item>
@@ -1711,19 +1947,28 @@ public:
 #define JSON_entrada_tendTransP_Item_dt JSONNumber
 #define JSON_entrada_tendTransP_Item_rotulo JSONString
 
-class JSON_entrada_tendTransP_Item: public JSONObject {
-public:
-	JSON_entrada_tendTransP_Item();
-	JSON_entrada_tendTransP_Item_ativo& ativo();
-	JSON_entrada_tendTransP_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_tendTransP_Item_camada& camada();
-	JSON_entrada_tendTransP_Item_discretizacao& discretizacao();
-	JSON_entrada_tendTransP_Item_dt& dt();
-	JSON_entrada_tendTransP_Item_rotulo& rotulo();
-
+/*!
+ * Configure one transient wall-temperature trend in the production line.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tendTransP_Item : public JSONObject {
+  public:
+    JSON_entrada_tendTransP_Item();
+    JSON_entrada_tendTransP_Item_ativo &ativo();
+    JSON_entrada_tendTransP_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_tendTransP_Item_camada &camada();
+    JSON_entrada_tendTransP_Item_discretizacao &discretizacao();
+    JSON_entrada_tendTransP_Item_dt &dt();
+    JSON_entrada_tendTransP_Item_rotulo &rotulo();
 };
 
 #define JSON_entrada_tendTransP JSONArray<JSON_entrada_tendTransP_Item>
+// ==============================================================================
+// Service-line trend-output configuration
+// ==============================================================================
+
 #define JSON_entrada_tendS_Item_ativo JSONBoolean
 #define JSON_entrada_tendS_Item_comprimentoMedido JSONNumber
 #define JSON_entrada_tendS_Item_dt JSONNumber
@@ -1738,7 +1983,7 @@ public:
 #define JSON_entrada_tendS_Item_vazaoMassicaGas JSONBoolean
 #define JSON_entrada_tendS_Item_hidro JSONBoolean
 #define JSON_entrada_tendS_Item_fric JSONBoolean
-#define JSON_entrada_tendS_Item_FVHG JSONBoolean //chris - Hidratos
+#define JSON_entrada_tendS_Item_FVHG JSONBoolean
 #define JSON_entrada_tendS_Item_calor JSONBoolean
 #define JSON_entrada_tendS_Item_QGstd JSONBoolean
 #define JSON_entrada_tendS_Item_presEstagVGL JSONBoolean
@@ -1762,47 +2007,52 @@ public:
 #define JSON_entrada_tendS_Item_tempParede JSONBoolean
 #define JSON_entrada_tendS_Item_subResfria JSONBoolean
 
-class JSON_entrada_tendS_Item: public JSONObject {
-public:
-	JSON_entrada_tendS_Item();
-	JSON_entrada_tendS_Item_ativo& ativo();
-	JSON_entrada_tendS_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_tendS_Item_dt& dt();
-	JSON_entrada_tendS_Item_rotulo& rotulo();
-	JSON_entrada_tendS_Item_pressao& pressao();
-	JSON_entrada_tendS_Item_temperatura& temperatura();
-	JSON_entrada_tendS_Item_ugs& ugs();
-	JSON_entrada_tendS_Item_ug& ug();
-	JSON_entrada_tendS_Item_tensaoCisalhamento& tensaoCisalhamento();
-	JSON_entrada_tendS_Item_viscosidadeGas& viscosidadeGas();
-	JSON_entrada_tendS_Item_rhog& rhog();
-	JSON_entrada_tendS_Item_vazaoMassicaGas& vazaoMassicaGas();
-	JSON_entrada_tendS_Item_hidro& hidro();
-	JSON_entrada_tendS_Item_fric& fric();
-	JSON_entrada_tendS_Item_FVHG& FVHG(); //chris - Hidratos
-	JSON_entrada_tendS_Item_calor& calor();
-	JSON_entrada_tendS_Item_QGstd& QGstd();
-	JSON_entrada_tendS_Item_presEstagVGL& presEstagVGL();
-	JSON_entrada_tendS_Item_tempEstagVGL& tempEstagVGL();
-	JSON_entrada_tendS_Item_presGargVGL& presGargVGL();
-	JSON_entrada_tendS_Item_tempGargVGL& tempGargVGL();
-	JSON_entrada_tendS_Item_vazaoVGL& vazaoVGL();
-	JSON_entrada_tendS_Item_VelocidadeMaximaGarganta& VelocidadeMaximaGarganta();
-	JSON_entrada_tendS_Item_ReyInterno& ReyInterno();
-	JSON_entrada_tendS_Item_ReyExterno& ReyExterno();
-	JSON_entrada_tendS_Item_GrashInterno& GrashInterno();
-	JSON_entrada_tendS_Item_GrashExterno& GrashExterno();
-	JSON_entrada_tendS_Item_NusselInterno& NusselInterno();
-	JSON_entrada_tendS_Item_NusselExterno& NusselExterno();
-	JSON_entrada_tendS_Item_PrandtlInterno& PrandtlInterno();
-	JSON_entrada_tendS_Item_PrandtlExterno& PrandtlExterno();
-	JSON_entrada_tendS_Item_Froud& Froud();
-	JSON_entrada_tendS_Item_Hint& Hint();
-	JSON_entrada_tendS_Item_Hext& Hext();
-	JSON_entrada_tendS_Item_diametroInterno& diametroInterno();
-	JSON_entrada_tendS_Item_tempParede& tempParede();
-	JSON_entrada_tendS_Item_subResfria& subResfria();
-
+/*!
+ * Select service-line variables recorded in one trend output.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tendS_Item : public JSONObject {
+  public:
+    JSON_entrada_tendS_Item();
+    JSON_entrada_tendS_Item_ativo &ativo();
+    JSON_entrada_tendS_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_tendS_Item_dt &dt();
+    JSON_entrada_tendS_Item_rotulo &rotulo();
+    JSON_entrada_tendS_Item_pressao &pressao();
+    JSON_entrada_tendS_Item_temperatura &temperatura();
+    JSON_entrada_tendS_Item_ugs &ugs();
+    JSON_entrada_tendS_Item_ug &ug();
+    JSON_entrada_tendS_Item_tensaoCisalhamento &tensaoCisalhamento();
+    JSON_entrada_tendS_Item_viscosidadeGas &viscosidadeGas();
+    JSON_entrada_tendS_Item_rhog &rhog();
+    JSON_entrada_tendS_Item_vazaoMassicaGas &vazaoMassicaGas();
+    JSON_entrada_tendS_Item_hidro &hidro();
+    JSON_entrada_tendS_Item_fric &fric();
+    JSON_entrada_tendS_Item_FVHG &FVHG();
+    JSON_entrada_tendS_Item_calor &calor();
+    JSON_entrada_tendS_Item_QGstd &QGstd();
+    JSON_entrada_tendS_Item_presEstagVGL &presEstagVGL();
+    JSON_entrada_tendS_Item_tempEstagVGL &tempEstagVGL();
+    JSON_entrada_tendS_Item_presGargVGL &presGargVGL();
+    JSON_entrada_tendS_Item_tempGargVGL &tempGargVGL();
+    JSON_entrada_tendS_Item_vazaoVGL &vazaoVGL();
+    JSON_entrada_tendS_Item_VelocidadeMaximaGarganta &VelocidadeMaximaGarganta();
+    JSON_entrada_tendS_Item_ReyInterno &ReyInterno();
+    JSON_entrada_tendS_Item_ReyExterno &ReyExterno();
+    JSON_entrada_tendS_Item_GrashInterno &GrashInterno();
+    JSON_entrada_tendS_Item_GrashExterno &GrashExterno();
+    JSON_entrada_tendS_Item_NusselInterno &NusselInterno();
+    JSON_entrada_tendS_Item_NusselExterno &NusselExterno();
+    JSON_entrada_tendS_Item_PrandtlInterno &PrandtlInterno();
+    JSON_entrada_tendS_Item_PrandtlExterno &PrandtlExterno();
+    JSON_entrada_tendS_Item_Froud &Froud();
+    JSON_entrada_tendS_Item_Hint &Hint();
+    JSON_entrada_tendS_Item_Hext &Hext();
+    JSON_entrada_tendS_Item_diametroInterno &diametroInterno();
+    JSON_entrada_tendS_Item_tempParede &tempParede();
+    JSON_entrada_tendS_Item_subResfria &subResfria();
 };
 
 #define JSON_entrada_tendS JSONArray<JSON_entrada_tendS_Item>
@@ -1813,32 +2063,46 @@ public:
 #define JSON_entrada_tendTransS_Item_dt JSONNumber
 #define JSON_entrada_tendTransS_Item_rotulo JSONString
 
-class JSON_entrada_tendTransS_Item: public JSONObject {
-public:
-	JSON_entrada_tendTransS_Item();
-	JSON_entrada_tendTransS_Item_ativo& ativo();
-	JSON_entrada_tendTransS_Item_comprimentoMedido& comprimentoMedido();
-	JSON_entrada_tendTransS_Item_camada& camada();
-	JSON_entrada_tendTransS_Item_discretizacao& discretizacao();
-	JSON_entrada_tendTransS_Item_dt& dt();
-	JSON_entrada_tendTransS_Item_rotulo& rotulo();
-
+/*!
+ * Configure one transient wall-temperature trend in the service line.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tendTransS_Item : public JSONObject {
+  public:
+    JSON_entrada_tendTransS_Item();
+    JSON_entrada_tendTransS_Item_ativo &ativo();
+    JSON_entrada_tendTransS_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_tendTransS_Item_camada &camada();
+    JSON_entrada_tendTransS_Item_discretizacao &discretizacao();
+    JSON_entrada_tendTransS_Item_dt &dt();
+    JSON_entrada_tendTransS_Item_rotulo &rotulo();
 };
 
 #define JSON_entrada_tendTransS JSONArray<JSON_entrada_tendTransS_Item>
+// ==============================================================================
+// Screen output, gas injection, and profile-output configuration
+// ==============================================================================
+
 #define JSON_entrada_tela_Item_ativo JSONBoolean
 #define JSON_entrada_tela_Item_coluna JSONBoolean
 #define JSON_entrada_tela_Item_celula JSONInteger
 #define JSON_entrada_tela_Item_variavel JSONInteger
 
-class JSON_entrada_tela_Item: public JSONObject {
-public:
-	JSON_entrada_tela_Item();
-	JSON_entrada_tela_Item_ativo& ativo();
-	JSON_entrada_tela_Item_coluna& coluna();
-	JSON_entrada_tela_Item_celula& celula();
-	JSON_entrada_tela_Item_variavel& variavel();
-
+/*!
+ * Select one cell variable displayed on screen.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_tela_Item : public JSONObject {
+  public:
+    JSON_entrada_tela_Item();
+    JSON_entrada_tela_Item_ativo &ativo();
+    JSON_entrada_tela_Item_coluna &coluna();
+    JSON_entrada_tela_Item_celula &celula();
+    JSON_entrada_tela_Item_variavel &variavel();
 };
 
 #define JSON_entrada_tela JSONArray<JSON_entrada_tela_Item>
@@ -1854,17 +2118,22 @@ public:
 #define JSON_entrada_gasInj_pressaoInjecao JSONArray<JSON_entrada_gasInj_pressaoInjecao_Item>
 #define JSON_entrada_gasInj_chuteVazaoInjecao JSONBoolean
 
-class JSON_entrada_gasInj: public JSONObject {
-public:
-	JSON_entrada_gasInj();
-	JSON_entrada_gasInj_ativo& ativo();
-	JSON_entrada_gasInj_tipoCC& tipoCC();
-	JSON_entrada_gasInj_temperatura& temperatura();
-	JSON_entrada_gasInj_tempo& tempo();
-	JSON_entrada_gasInj_vazaoGas& vazaoGas();
-	JSON_entrada_gasInj_pressaoInjecao& pressaoInjecao();
-	JSON_entrada_gasInj_chuteVazaoInjecao& chuteVazaoInjecao();
-
+/*!
+ * Store the gas-injection boundary condition and operating schedule.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_gasInj : public JSONObject {
+  public:
+    JSON_entrada_gasInj();
+    JSON_entrada_gasInj_ativo &ativo();
+    JSON_entrada_gasInj_tipoCC &tipoCC();
+    JSON_entrada_gasInj_temperatura &temperatura();
+    JSON_entrada_gasInj_tempo &tempo();
+    JSON_entrada_gasInj_vazaoGas &vazaoGas();
+    JSON_entrada_gasInj_pressaoInjecao &pressaoInjecao();
+    JSON_entrada_gasInj_chuteVazaoInjecao &chuteVazaoInjecao();
 };
 
 #define JSON_entrada_perfilProducao_ativo JSONBoolean
@@ -1873,7 +2142,7 @@ public:
 #define JSON_entrada_perfilProducao_pressao JSONBoolean
 #define JSON_entrada_perfilProducao_temperatura JSONBoolean
 #define JSON_entrada_perfilProducao_holdup JSONBoolean
-#define JSON_entrada_perfilProducao_FVH JSONBoolean //chris - hidratos
+#define JSON_entrada_perfilProducao_FVH JSONBoolean
 #define JSON_entrada_perfilProducao_bet JSONBoolean
 #define JSON_entrada_perfilProducao_ugs JSONBoolean
 #define JSON_entrada_perfilProducao_uls JSONBoolean
@@ -1939,80 +2208,85 @@ public:
 #define JSON_entrada_perfilProducao_dadosParafina JSONBoolean
 #define JSON_entrada_perfilProducao_correlacaoBB JSONBoolean
 
-class JSON_entrada_perfilProducao: public JSONObject {
-public:
-	JSON_entrada_perfilProducao();
-	JSON_entrada_perfilProducao_ativo& ativo();
-	JSON_entrada_perfilProducao_tempo& tempo();
-	JSON_entrada_perfilProducao_pressao& pressao();
-	JSON_entrada_perfilProducao_temperatura& temperatura();
-	JSON_entrada_perfilProducao_holdup& holdup();
-	JSON_entrada_perfilProducao_FVH& FVH(); //chris - hidratos
-	JSON_entrada_perfilProducao_bet& bet();
-	JSON_entrada_perfilProducao_ugs& ugs();
-	JSON_entrada_perfilProducao_uls& uls();
-	JSON_entrada_perfilProducao_ug& ug();
-	JSON_entrada_perfilProducao_ul& ul();
-	JSON_entrada_perfilProducao_arra& arra();
-	JSON_entrada_perfilProducao_viscosidadeLiquido& viscosidadeLiquido();
-	JSON_entrada_perfilProducao_viscosidadeGas& viscosidadeGas();
-	JSON_entrada_perfilProducao_rhog& rhog();
-	JSON_entrada_perfilProducao_rhol& rhol();
-	JSON_entrada_perfilProducao_rhoo& rhoo();
-	JSON_entrada_perfilProducao_rhoa& rhoa();
-	JSON_entrada_perfilProducao_rhoMix& rhoMix();
-	JSON_entrada_perfilProducao_RS& RS();
-	JSON_entrada_perfilProducao_vazaoMassicaGas& vazaoMassicaGas();
-	JSON_entrada_perfilProducao_vazaoMassicaLiquido& vazaoMassicaLiquido();
-	JSON_entrada_perfilProducao_c0& c0();
-	JSON_entrada_perfilProducao_ud& ud();
-	JSON_entrada_perfilProducao_RGO& RGO();
-	JSON_entrada_perfilProducao_deng& deng();
-	JSON_entrada_perfilProducao_yco2& yco2();
-	JSON_entrada_perfilProducao_calor& calor();
-	JSON_entrada_perfilProducao_masstrans& masstrans();
-	JSON_entrada_perfilProducao_cpgas& cpgas();
-	JSON_entrada_perfilProducao_cpliq& cpliq();
-	JSON_entrada_perfilProducao_QLstd& QLstd();
-	JSON_entrada_perfilProducao_QLWstd& QLWstd();
-	JSON_entrada_perfilProducao_QLstdTotal& QLstdTotal();
-	JSON_entrada_perfilProducao_QGstd& QGstd();
-	JSON_entrada_perfilProducao_api& api();
-	JSON_entrada_perfilProducao_bsw& bsw();
-	JSON_entrada_perfilProducao_hidro& hidro();
-	JSON_entrada_perfilProducao_fric& fric();
-	JSON_entrada_perfilProducao_Term1& Term1();
-	JSON_entrada_perfilProducao_Term2& Term2();
-	JSON_entrada_perfilProducao_dengD& dengD();
-	JSON_entrada_perfilProducao_dengL& dengL();
-	JSON_entrada_perfilProducao_ReyInterno& ReyInterno();
-	JSON_entrada_perfilProducao_ReyExterno& ReyExterno();
-	JSON_entrada_perfilProducao_GrashInterno& GrashInterno();
-	JSON_entrada_perfilProducao_GrashExterno& GrashExterno();
-	JSON_entrada_perfilProducao_NusselInterno& NusselInterno();
-	JSON_entrada_perfilProducao_NusselExterno& NusselExterno();
-	JSON_entrada_perfilProducao_PrandtlInterno& PrandtlInterno();
-	JSON_entrada_perfilProducao_PrandtlExterno& PrandtlExterno();
-	JSON_entrada_perfilProducao_Froud& Froud();
-	JSON_entrada_perfilProducao_Rs& Rs();
-	JSON_entrada_perfilProducao_Bo& Bo();
-	JSON_entrada_perfilProducao_Hint& Hint();
-	JSON_entrada_perfilProducao_Hext& Hext();
-	JSON_entrada_perfilProducao_temperaturaAmbiente& temperaturaAmbiente();
-	JSON_entrada_perfilProducao_PrandtlGas& PrandtlGas();
-	JSON_entrada_perfilProducao_PrandtlLiquido& PrandtlLiquido();
-	JSON_entrada_perfilProducao_pseudoLiquido& pseudoLiquido();
-	JSON_entrada_perfilProducao_pseudoGas& pseudoGas();
-	JSON_entrada_perfilProducao_pseudoMist& pseudoMist();
-	JSON_entrada_perfilProducao_TResi& TResi();
-	JSON_entrada_perfilProducao_RedutorAtrito& RedutorAtrito();
-	JSON_entrada_perfilProducao_angulo& angulo();
-	JSON_entrada_perfilProducao_diametroInterno& diametroInterno();
-	JSON_entrada_perfilProducao_tempParede& tempParede();
-	JSON_entrada_perfilProducao_subResfria& subResfria();
-	JSON_entrada_perfilProducao_dadosParafina& dadosParafina();
-	JSON_entrada_perfilProducao_correlacaoBB& correlacaoBB();
-
+/*!
+ * Select variables written to production-line profile files.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_perfilProducao : public JSONObject {
+  public:
+    JSON_entrada_perfilProducao();
+    JSON_entrada_perfilProducao_ativo &ativo();
+    JSON_entrada_perfilProducao_tempo &tempo();
+    JSON_entrada_perfilProducao_pressao &pressao();
+    JSON_entrada_perfilProducao_temperatura &temperatura();
+    JSON_entrada_perfilProducao_holdup &holdup();
+    JSON_entrada_perfilProducao_FVH &FVH();
+    JSON_entrada_perfilProducao_bet &bet();
+    JSON_entrada_perfilProducao_ugs &ugs();
+    JSON_entrada_perfilProducao_uls &uls();
+    JSON_entrada_perfilProducao_ug &ug();
+    JSON_entrada_perfilProducao_ul &ul();
+    JSON_entrada_perfilProducao_arra &arra();
+    JSON_entrada_perfilProducao_viscosidadeLiquido &viscosidadeLiquido();
+    JSON_entrada_perfilProducao_viscosidadeGas &viscosidadeGas();
+    JSON_entrada_perfilProducao_rhog &rhog();
+    JSON_entrada_perfilProducao_rhol &rhol();
+    JSON_entrada_perfilProducao_rhoo &rhoo();
+    JSON_entrada_perfilProducao_rhoa &rhoa();
+    JSON_entrada_perfilProducao_rhoMix &rhoMix();
+    JSON_entrada_perfilProducao_RS &RS();
+    JSON_entrada_perfilProducao_vazaoMassicaGas &vazaoMassicaGas();
+    JSON_entrada_perfilProducao_vazaoMassicaLiquido &vazaoMassicaLiquido();
+    JSON_entrada_perfilProducao_c0 &c0();
+    JSON_entrada_perfilProducao_ud &ud();
+    JSON_entrada_perfilProducao_RGO &RGO();
+    JSON_entrada_perfilProducao_deng &deng();
+    JSON_entrada_perfilProducao_yco2 &yco2();
+    JSON_entrada_perfilProducao_calor &calor();
+    JSON_entrada_perfilProducao_masstrans &masstrans();
+    JSON_entrada_perfilProducao_cpgas &cpgas();
+    JSON_entrada_perfilProducao_cpliq &cpliq();
+    JSON_entrada_perfilProducao_QLstd &QLstd();
+    JSON_entrada_perfilProducao_QLWstd &QLWstd();
+    JSON_entrada_perfilProducao_QLstdTotal &QLstdTotal();
+    JSON_entrada_perfilProducao_QGstd &QGstd();
+    JSON_entrada_perfilProducao_api &api();
+    JSON_entrada_perfilProducao_bsw &bsw();
+    JSON_entrada_perfilProducao_hidro &hidro();
+    JSON_entrada_perfilProducao_fric &fric();
+    JSON_entrada_perfilProducao_Term1 &Term1();
+    JSON_entrada_perfilProducao_Term2 &Term2();
+    JSON_entrada_perfilProducao_dengD &dengD();
+    JSON_entrada_perfilProducao_dengL &dengL();
+    JSON_entrada_perfilProducao_ReyInterno &ReyInterno();
+    JSON_entrada_perfilProducao_ReyExterno &ReyExterno();
+    JSON_entrada_perfilProducao_GrashInterno &GrashInterno();
+    JSON_entrada_perfilProducao_GrashExterno &GrashExterno();
+    JSON_entrada_perfilProducao_NusselInterno &NusselInterno();
+    JSON_entrada_perfilProducao_NusselExterno &NusselExterno();
+    JSON_entrada_perfilProducao_PrandtlInterno &PrandtlInterno();
+    JSON_entrada_perfilProducao_PrandtlExterno &PrandtlExterno();
+    JSON_entrada_perfilProducao_Froud &Froud();
+    JSON_entrada_perfilProducao_Rs &Rs();
+    JSON_entrada_perfilProducao_Bo &Bo();
+    JSON_entrada_perfilProducao_Hint &Hint();
+    JSON_entrada_perfilProducao_Hext &Hext();
+    JSON_entrada_perfilProducao_temperaturaAmbiente &temperaturaAmbiente();
+    JSON_entrada_perfilProducao_PrandtlGas &PrandtlGas();
+    JSON_entrada_perfilProducao_PrandtlLiquido &PrandtlLiquido();
+    JSON_entrada_perfilProducao_pseudoLiquido &pseudoLiquido();
+    JSON_entrada_perfilProducao_pseudoGas &pseudoGas();
+    JSON_entrada_perfilProducao_pseudoMist &pseudoMist();
+    JSON_entrada_perfilProducao_TResi &TResi();
+    JSON_entrada_perfilProducao_RedutorAtrito &RedutorAtrito();
+    JSON_entrada_perfilProducao_angulo &angulo();
+    JSON_entrada_perfilProducao_diametroInterno &diametroInterno();
+    JSON_entrada_perfilProducao_tempParede &tempParede();
+    JSON_entrada_perfilProducao_subResfria &subResfria();
+    JSON_entrada_perfilProducao_dadosParafina &dadosParafina();
+    JSON_entrada_perfilProducao_correlacaoBB &correlacaoBB();
 };
 
 #define JSON_entrada_perfilServico_ativo JSONBoolean
@@ -2030,7 +2304,7 @@ public:
 #define JSON_entrada_perfilServico_fric JSONBoolean
 #define JSON_entrada_perfilServico_calor JSONBoolean
 #define JSON_entrada_perfilServico_hidro JSONBoolean
-#define JSON_entrada_perfilServico_FVHG JSONBoolean //chris - Hidratos
+#define JSON_entrada_perfilServico_FVHG JSONBoolean
 #define JSON_entrada_perfilServico_ReyInterno JSONBoolean
 #define JSON_entrada_perfilServico_ReyExterno JSONBoolean
 #define JSON_entrada_perfilServico_GrashInterno JSONBoolean
@@ -2047,40 +2321,45 @@ public:
 #define JSON_entrada_perfilServico_tempParede JSONBoolean
 #define JSON_entrada_perfilServico_subResfria JSONBoolean
 
-class JSON_entrada_perfilServico: public JSONObject {
-public:
-	JSON_entrada_perfilServico();
-	JSON_entrada_perfilServico_ativo& ativo();
-	JSON_entrada_perfilServico_tempo& tempo();
-	JSON_entrada_perfilServico_pressao& pressao();
-	JSON_entrada_perfilServico_temperatura& temperatura();
-	JSON_entrada_perfilServico_ugs& ugs();
-	JSON_entrada_perfilServico_ug& ug();
-	JSON_entrada_perfilServico_tensaoCisalhamento& tensaoCisalhamento();
-	JSON_entrada_perfilServico_viscosidadeGas& viscosidadeGas();
-	JSON_entrada_perfilServico_rhog& rhog();
-	JSON_entrada_perfilServico_vazaoMassicaGas& vazaoMassicaGas();
-	JSON_entrada_perfilServico_QGstd& QGstd();
-	JSON_entrada_perfilServico_fric& fric();
-	JSON_entrada_perfilServico_calor& calor();
-	JSON_entrada_perfilServico_hidro& hidro();
-	JSON_entrada_perfilServico_FVHG& FVHG(); //chris - Hidratos
-	JSON_entrada_perfilServico_ReyInterno& ReyInterno();
-	JSON_entrada_perfilServico_ReyExterno& ReyExterno();
-	JSON_entrada_perfilServico_GrashInterno& GrashInterno();
-	JSON_entrada_perfilServico_GrashExterno& GrashExterno();
-	JSON_entrada_perfilServico_NusselInterno& NusselInterno();
-	JSON_entrada_perfilServico_NusselExterno& NusselExterno();
-	JSON_entrada_perfilServico_PrandtlInterno& PrandtlInterno();
-	JSON_entrada_perfilServico_PrandtlExterno& PrandtlExterno();
-	JSON_entrada_perfilServico_Hint& Hint();
-	JSON_entrada_perfilServico_Hext& Hext();
-	JSON_entrada_perfilServico_temperaturaAmbiente& temperaturaAmbiente();
-	JSON_entrada_perfilServico_angulo& angulo();
-	JSON_entrada_perfilServico_diametroInterno& diametroInterno();
-	JSON_entrada_perfilServico_tempParede& tempParede();
-	JSON_entrada_perfilServico_subResfria& subResfria();
-
+/*!
+ * Select variables written to service-line profile files.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_perfilServico : public JSONObject {
+  public:
+    JSON_entrada_perfilServico();
+    JSON_entrada_perfilServico_ativo &ativo();
+    JSON_entrada_perfilServico_tempo &tempo();
+    JSON_entrada_perfilServico_pressao &pressao();
+    JSON_entrada_perfilServico_temperatura &temperatura();
+    JSON_entrada_perfilServico_ugs &ugs();
+    JSON_entrada_perfilServico_ug &ug();
+    JSON_entrada_perfilServico_tensaoCisalhamento &tensaoCisalhamento();
+    JSON_entrada_perfilServico_viscosidadeGas &viscosidadeGas();
+    JSON_entrada_perfilServico_rhog &rhog();
+    JSON_entrada_perfilServico_vazaoMassicaGas &vazaoMassicaGas();
+    JSON_entrada_perfilServico_QGstd &QGstd();
+    JSON_entrada_perfilServico_fric &fric();
+    JSON_entrada_perfilServico_calor &calor();
+    JSON_entrada_perfilServico_hidro &hidro();
+    JSON_entrada_perfilServico_FVHG &FVHG();
+    JSON_entrada_perfilServico_ReyInterno &ReyInterno();
+    JSON_entrada_perfilServico_ReyExterno &ReyExterno();
+    JSON_entrada_perfilServico_GrashInterno &GrashInterno();
+    JSON_entrada_perfilServico_GrashExterno &GrashExterno();
+    JSON_entrada_perfilServico_NusselInterno &NusselInterno();
+    JSON_entrada_perfilServico_NusselExterno &NusselExterno();
+    JSON_entrada_perfilServico_PrandtlInterno &PrandtlInterno();
+    JSON_entrada_perfilServico_PrandtlExterno &PrandtlExterno();
+    JSON_entrada_perfilServico_Hint &Hint();
+    JSON_entrada_perfilServico_Hext &Hext();
+    JSON_entrada_perfilServico_temperaturaAmbiente &temperaturaAmbiente();
+    JSON_entrada_perfilServico_angulo &angulo();
+    JSON_entrada_perfilServico_diametroInterno &diametroInterno();
+    JSON_entrada_perfilServico_tempParede &tempParede();
+    JSON_entrada_perfilServico_subResfria &subResfria();
 };
 
 #define JSON_entrada_perfisTransP_ativo JSONBoolean
@@ -2089,13 +2368,18 @@ public:
 #define JSON_entrada_perfisTransP_comprimentoMedido_Item JSONNumber
 #define JSON_entrada_perfisTransP_comprimentoMedido JSONArray<JSON_entrada_perfisTransP_comprimentoMedido_Item>
 
-class JSON_entrada_perfisTransP: public JSONObject {
-public:
-	JSON_entrada_perfisTransP();
-	JSON_entrada_perfisTransP_ativo& ativo();
-	JSON_entrada_perfisTransP_tempo& tempo();
-	JSON_entrada_perfisTransP_comprimentoMedido& comprimentoMedido();
-
+/*!
+ * Configure transient production-line profile extraction.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_perfisTransP : public JSONObject {
+  public:
+    JSON_entrada_perfisTransP();
+    JSON_entrada_perfisTransP_ativo &ativo();
+    JSON_entrada_perfisTransP_tempo &tempo();
+    JSON_entrada_perfisTransP_comprimentoMedido &comprimentoMedido();
 };
 
 #define JSON_entrada_perfisTransS_ativo JSONBoolean
@@ -2104,14 +2388,23 @@ public:
 #define JSON_entrada_perfisTransS_comprimentoMedido_Item JSONNumber
 #define JSON_entrada_perfisTransS_comprimentoMedido JSONArray<JSON_entrada_perfisTransS_comprimentoMedido_Item>
 
-class JSON_entrada_perfisTransS: public JSONObject {
-public:
-	JSON_entrada_perfisTransS();
-	JSON_entrada_perfisTransS_ativo& ativo();
-	JSON_entrada_perfisTransS_tempo& tempo();
-	JSON_entrada_perfisTransS_comprimentoMedido& comprimentoMedido();
-
+/*!
+ * Configure transient service-line profile extraction.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_perfisTransS : public JSONObject {
+  public:
+    JSON_entrada_perfisTransS();
+    JSON_entrada_perfisTransS_ativo &ativo();
+    JSON_entrada_perfisTransS_tempo &tempo();
+    JSON_entrada_perfisTransS_comprimentoMedido &comprimentoMedido();
 };
+
+// ==============================================================================
+// Separator, correction, choke, injector-well, and severe-slugging configuration
+// ==============================================================================
 
 #define JSON_entrada_separador_ativo JSONBoolean
 #define JSON_entrada_separador_tempo_Item JSONNumber
@@ -2119,13 +2412,18 @@ public:
 #define JSON_entrada_separador_pressao_Item JSONNumber
 #define JSON_entrada_separador_pressao JSONArray<JSON_entrada_separador_pressao_Item>
 
-class JSON_entrada_separador: public JSONObject {
-public:
-	JSON_entrada_separador();
-	JSON_entrada_separador_ativo& ativo();
-	JSON_entrada_separador_tempo& tempo();
-	JSON_entrada_separador_pressao& pressao();
-
+/*!
+ * Store the time-dependent separator pressure.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_separador : public JSONObject {
+  public:
+    JSON_entrada_separador();
+    JSON_entrada_separador_ativo &ativo();
+    JSON_entrada_separador_tempo &tempo();
+    JSON_entrada_separador_pressao &pressao();
 };
 
 #define JSON_entrada_correcao_ativo JSONBoolean
@@ -2136,14 +2434,19 @@ public:
 #define JSON_entrada_correcao_dTdL_Item JSONNumber
 #define JSON_entrada_correcao_dTdL JSONArray<JSON_entrada_correcao_dTdL_Item>
 
-class JSON_entrada_correcao: public JSONObject {
-public:
-	JSON_entrada_correcao();
-	JSON_entrada_correcao_ativo& ativo();
-	JSON_entrada_correcao_dPdLHidro& dPdLHidro();
-	JSON_entrada_correcao_dPdLFric& dPdLFric();
-	JSON_entrada_correcao_dTdL& dTdL();
-
+/*!
+ * Store user-defined hydrostatic, frictional, and thermal-gradient corrections.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_correcao : public JSONObject {
+  public:
+    JSON_entrada_correcao();
+    JSON_entrada_correcao_ativo &ativo();
+    JSON_entrada_correcao_dPdLHidro &dPdLHidro();
+    JSON_entrada_correcao_dPdLFric &dPdLFric();
+    JSON_entrada_correcao_dTdL &dTdL();
 };
 
 #define JSON_entrada_chokeSup_ativo JSONBoolean
@@ -2160,19 +2463,24 @@ public:
 #define JSON_entrada_chokeSup_cv1_Item JSONNumber
 #define JSON_entrada_chokeSup_cv1 JSONArray<JSON_entrada_chokeSup_cv1_Item>
 
-class JSON_entrada_chokeSup: public JSONObject {
-public:
-	JSON_entrada_chokeSup();
-	JSON_entrada_chokeSup_ativo& ativo();
-	JSON_entrada_chokeSup_curvaCV& curvaCV();
-	JSON_entrada_chokeSup_curvaDinamic& curvaDinamic();
-	JSON_entrada_chokeSup_tempo& tempo();
-	JSON_entrada_chokeSup_abertura& abertura();
-	JSON_entrada_chokeSup_coeficienteDescarga& coeficienteDescarga();
-	JSON_entrada_chokeSup_modelo& modelo();
-	JSON_entrada_chokeSup_x1& x1();
-	JSON_entrada_chokeSup_cv1& cv1();
-
+/*!
+ * Store the topside choke model, opening schedule, and Cv curve.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_chokeSup : public JSONObject {
+  public:
+    JSON_entrada_chokeSup();
+    JSON_entrada_chokeSup_ativo &ativo();
+    JSON_entrada_chokeSup_curvaCV &curvaCV();
+    JSON_entrada_chokeSup_curvaDinamic &curvaDinamic();
+    JSON_entrada_chokeSup_tempo &tempo();
+    JSON_entrada_chokeSup_abertura &abertura();
+    JSON_entrada_chokeSup_coeficienteDescarga &coeficienteDescarga();
+    JSON_entrada_chokeSup_modelo &modelo();
+    JSON_entrada_chokeSup_x1 &x1();
+    JSON_entrada_chokeSup_cv1 &cv1();
 };
 
 #define JSON_entrada_chokeInj_ativo JSONBoolean
@@ -2182,14 +2490,19 @@ public:
 #define JSON_entrada_chokeInj_abertura JSONArray<JSON_entrada_chokeInj_abertura_Item>
 #define JSON_entrada_chokeInj_coeficienteDescarga JSONNumber
 
-class JSON_entrada_chokeInj: public JSONObject {
-public:
-	JSON_entrada_chokeInj();
-	JSON_entrada_chokeInj_ativo& ativo();
-	JSON_entrada_chokeInj_tempo& tempo();
-	JSON_entrada_chokeInj_abertura& abertura();
-	JSON_entrada_chokeInj_coeficienteDescarga& coeficienteDescarga();
-
+/*!
+ * Store the injection-choke opening schedule and discharge coefficient.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_chokeInj : public JSONObject {
+  public:
+    JSON_entrada_chokeInj();
+    JSON_entrada_chokeInj_ativo &ativo();
+    JSON_entrada_chokeInj_tempo &tempo();
+    JSON_entrada_chokeInj_abertura &abertura();
+    JSON_entrada_chokeInj_coeficienteDescarga &coeficienteDescarga();
 };
 
 #define JSON_entrada_CondicaoContPocInjec_ativo JSONBoolean
@@ -2203,22 +2516,26 @@ public:
 #define JSON_entrada_CondicaoContPocInjec_presInjec JSONNumber
 #define JSON_entrada_CondicaoContPocInjec_presFundo JSONNumber
 
-class JSON_entrada_CondicaoContPocInjec: public JSONObject {
-public:
-	JSON_entrada_CondicaoContPocInjec();
-	JSON_entrada_CondicaoContPocInjec_ativo& ativo();
-	JSON_entrada_CondicaoContPocInjec_usuario& usuario();
-	JSON_entrada_CondicaoContPocInjec_tipoFluido& tipoFluido();
-	JSON_entrada_CondicaoContPocInjec_salinidade& salinidade();
-	JSON_entrada_CondicaoContPocInjec_arquivoPvtsim& arquivoPvtsim();
-	JSON_entrada_CondicaoContPocInjec_condContorno& condContorno();
-	JSON_entrada_CondicaoContPocInjec_tempInj& tempInj();
-	JSON_entrada_CondicaoContPocInjec_vazLiq& vazLiq();
-	JSON_entrada_CondicaoContPocInjec_presInjec& presInjec();
-	JSON_entrada_CondicaoContPocInjec_presFundo& presFundo();
-
+/*!
+ * Store injector-well fluid and boundary-condition data.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_CondicaoContPocInjec : public JSONObject {
+  public:
+    JSON_entrada_CondicaoContPocInjec();
+    JSON_entrada_CondicaoContPocInjec_ativo &ativo();
+    JSON_entrada_CondicaoContPocInjec_usuario &usuario();
+    JSON_entrada_CondicaoContPocInjec_tipoFluido &tipoFluido();
+    JSON_entrada_CondicaoContPocInjec_salinidade &salinidade();
+    JSON_entrada_CondicaoContPocInjec_arquivoPvtsim &arquivoPvtsim();
+    JSON_entrada_CondicaoContPocInjec_condContorno &condContorno();
+    JSON_entrada_CondicaoContPocInjec_tempInj &tempInj();
+    JSON_entrada_CondicaoContPocInjec_vazLiq &vazLiq();
+    JSON_entrada_CondicaoContPocInjec_presInjec &presInjec();
+    JSON_entrada_CondicaoContPocInjec_presFundo &presFundo();
 };
-
 
 #define JSON_entrada_intermitenciaSevera_Item_ativo JSONBoolean
 #define JSON_entrada_intermitenciaSevera_Item_id JSONInteger
@@ -2228,78 +2545,83 @@ public:
 #define JSON_entrada_intermitenciaSevera_Item_fracaoVazioPenetracao JSONNumber
 #define JSON_entrada_intermitenciaSevera_Item_criterio JSONInteger
 
-
-class JSON_entrada_intermitenciaSevera_Item: public JSONObject {
-public:
-	JSON_entrada_intermitenciaSevera_Item();
-	JSON_entrada_intermitenciaSevera_Item_ativo& ativo();
-	JSON_entrada_intermitenciaSevera_Item_id& id();
-	JSON_entrada_intermitenciaSevera_Item_inicioTrechoAcumula& inicioTrechoAcumula();
-	JSON_entrada_intermitenciaSevera_Item_fimTrechoAcumula& fimTrechoAcumula();
-	JSON_entrada_intermitenciaSevera_Item_fimTrechoColuna& fimTrechoColuna();
-	JSON_entrada_intermitenciaSevera_Item_fracaoVazioPenetracao& fracaoVazioPenetracao();
-	JSON_entrada_intermitenciaSevera_Item_criterio& criterio();
-
-
+/*!
+ * Store one severe-slugging accumulation and penetration configuration.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada_intermitenciaSevera_Item : public JSONObject {
+  public:
+    JSON_entrada_intermitenciaSevera_Item();
+    JSON_entrada_intermitenciaSevera_Item_ativo &ativo();
+    JSON_entrada_intermitenciaSevera_Item_id &id();
+    JSON_entrada_intermitenciaSevera_Item_inicioTrechoAcumula &inicioTrechoAcumula();
+    JSON_entrada_intermitenciaSevera_Item_fimTrechoAcumula &fimTrechoAcumula();
+    JSON_entrada_intermitenciaSevera_Item_fimTrechoColuna &fimTrechoColuna();
+    JSON_entrada_intermitenciaSevera_Item_fracaoVazioPenetracao &fracaoVazioPenetracao();
+    JSON_entrada_intermitenciaSevera_Item_criterio &criterio();
 };
 
 #define JSON_entrada_intermitenciaSevera JSONArray<JSON_entrada_intermitenciaSevera_Item>
 
-
-class JSON_entrada: public JSONRootObject {
-public:
-	JSON_entrada();
-	JSON_entrada_sistema& sistema();
-	JSON_entrada_versaoJson& versaoJson();
-	JSON_entrada_configuracaoInicial& configuracaoInicial();
-	JSON_entrada_tabela& tabela();
-	JSON_entrada_parafina& parafina();
-	JSON_entrada_fluidoGas& fluidoGas();
-	JSON_entrada_fluidosProducao& fluidosProducao();
-	JSON_entrada_fluidoComplementar& fluidoComplementar();
-	JSON_entrada_valvula& valvula();
-	JSON_entrada_fonteLiquido& fonteLiquido();
-	JSON_entrada_fonteMassa& fonteMassa();
-	JSON_entrada_fonteGas& fonteGas();
-	JSON_entrada_fontePoroRadial& fontePoroRadial();
-	JSON_entrada_fontePoro2D& fontePoro2D();
-	JSON_entrada_fonteGasLift& fonteGasLift();
-	JSON_entrada_material& material();
-	JSON_entrada_secaoTransversal& secaoTransversal();
-	JSON_entrada_tempo& tempo();
-	JSON_entrada_dutosProducao& dutosProducao();
-	JSON_entrada_dutosServico& dutosServico();
-	JSON_entrada_hidrato& hidrato();
-	JSON_entrada_ipr& ipr();
-	JSON_entrada_fonteChoke& fonteChoke();
-	JSON_entrada_bcs& bcs();
-	JSON_entrada_multibcs& multibcs();
-	JSON_entrada_bombaVolumetrica& bombaVolumetrica();
-	JSON_entrada_deltaPressao& deltaPressao();
-	JSON_entrada_fonteCalor& fonteCalor();
-	JSON_entrada_master1& master1();
-	JSON_entrada_master2& master2();
-	JSON_entrada_pig& pig();
-	JSON_entrada_fontePressao& fontePressao();
-	JSON_entrada_tendP& tendP();
-	JSON_entrada_tendTransP& tendTransP();
-	JSON_entrada_tendS& tendS();
-	JSON_entrada_tendTransS& tendTransS();
-	JSON_entrada_tela& tela();
-	JSON_entrada_gasInj& gasInj();
-	JSON_entrada_perfilProducao& perfilProducao();
-	JSON_entrada_perfilServico& perfilServico();
-	JSON_entrada_perfisTransP& perfisTransP();
-	JSON_entrada_perfisTransS& perfisTransS();
-	JSON_entrada_separador& separador();
-	JSON_entrada_correcao& correcao();
-	JSON_entrada_chokeSup& chokeSup();
-	JSON_entrada_chokeInj& chokeInj();
-	JSON_entrada_CondicaoContPocInjec& CondicaoContPocInjec();
-	JSON_entrada_intermitenciaSevera& intermitenciaSevera();
-
+/*!
+ * Represent the root Marlim simulation input document.
+ *
+ * Accessor methods return typed JSONDataModel wrappers for the
+ * corresponding properties without changing the stored JSON names.
+ */
+class JSON_entrada : public JSONRootObject {
+  public:
+    JSON_entrada();
+    JSON_entrada_sistema &sistema();
+    JSON_entrada_versaoJson &versaoJson();
+    JSON_entrada_configuracaoInicial &configuracaoInicial();
+    JSON_entrada_tabela &tabela();
+    JSON_entrada_parafina &parafina();
+    JSON_entrada_fluidoGas &fluidoGas();
+    JSON_entrada_fluidosProducao &fluidosProducao();
+    JSON_entrada_fluidoComplementar &fluidoComplementar();
+    JSON_entrada_valvula &valvula();
+    JSON_entrada_fonteLiquido &fonteLiquido();
+    JSON_entrada_fonteMassa &fonteMassa();
+    JSON_entrada_fonteGas &fonteGas();
+    JSON_entrada_fontePoroRadial &fontePoroRadial();
+    JSON_entrada_fontePoro2D &fontePoro2D();
+    JSON_entrada_fonteGasLift &fonteGasLift();
+    JSON_entrada_material &material();
+    JSON_entrada_secaoTransversal &secaoTransversal();
+    JSON_entrada_tempo &tempo();
+    JSON_entrada_dutosProducao &dutosProducao();
+    JSON_entrada_dutosServico &dutosServico();
+    JSON_entrada_hidrato &hidrato();
+    JSON_entrada_ipr &ipr();
+    JSON_entrada_fonteChoke &fonteChoke();
+    JSON_entrada_bcs &bcs();
+    JSON_entrada_multibcs &multibcs();
+    JSON_entrada_bombaVolumetrica &bombaVolumetrica();
+    JSON_entrada_deltaPressao &deltaPressao();
+    JSON_entrada_fonteCalor &fonteCalor();
+    JSON_entrada_master1 &master1();
+    JSON_entrada_master2 &master2();
+    JSON_entrada_pig &pig();
+    JSON_entrada_fontePressao &fontePressao();
+    JSON_entrada_tendP &tendP();
+    JSON_entrada_tendTransP &tendTransP();
+    JSON_entrada_tendS &tendS();
+    JSON_entrada_tendTransS &tendTransS();
+    JSON_entrada_tela &tela();
+    JSON_entrada_gasInj &gasInj();
+    JSON_entrada_perfilProducao &perfilProducao();
+    JSON_entrada_perfilServico &perfilServico();
+    JSON_entrada_perfisTransP &perfisTransP();
+    JSON_entrada_perfisTransS &perfisTransS();
+    JSON_entrada_separador &separador();
+    JSON_entrada_correcao &correcao();
+    JSON_entrada_chokeSup &chokeSup();
+    JSON_entrada_chokeInj &chokeInj();
+    JSON_entrada_CondicaoContPocInjec &CondicaoContPocInjec();
+    JSON_entrada_intermitenciaSevera &intermitenciaSevera();
 };
 
 #endif
-
-

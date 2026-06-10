@@ -1,51 +1,95 @@
 /*
  * FonteMasVap.h
  *
- *  Created on: 21 de mai de 2019
- *      Author: eduardo
+ * Created on: May 21, 2019
+ * Author: Eduardo
+ *
+ * Mass-source models used by the vapor-flow formulation.
  */
 
 #ifndef FONTEMASVAP_H_
 #define FONTEMASVAP_H_
 
+#include "PropVapor.h"
+#include <algorithm>
+#include <complex>
+#include <fstream>
 #include <math.h>
 
-#include <algorithm>
-#include <fstream>
-#include <complex>
 using namespace std;
-#include "PropVapor.h"
 
+/*!
+ * Represent a vapor source based on an inflow-performance relationship.
+ *
+ * The model stores the reservoir pressure and temperature, injectivity
+ * index, and derivatives used by the vapor-flow formulation.
+ */
+class IPRVap {
+  public:
+    double Pres;  // Reservoir pressure in kgf/cm2.
+    double Tres;  // Reservoir temperature in degrees Celsius.
+    double ij;    // Injectivity index in m3/(day.kgf/cm2).
+    double deriP; // Pressure-related derivative.
+    double deriG; // Vapor- or gas-related derivative.
 
+    //! Construct an IPR vapor source using default or specified parameters.
+    IPRVap(double = 0, double = 0, double = 0);
 
-class IPRVap{//classe para fonte do tipo IPR, herda a interface de AbsFonte
-	public:
-        double Pres; //press�o de reservat�rio kgf/cm2
-		double Tres; //temperatura de reservat�rio C
-        double ij;//�ndice de injetividade m3/d/kgf/cm2
-        double deriP;
-        double deriG;
-		IPRVap(double=0, double=0, double=0); //construtor default
-		IPRVap(const IPRVap&);//construtor de c�pia
-        IPRVap& operator=(const IPRVap&);//sobrecarga do operador =
+    //! Copy constructor.
+    IPRVap(const IPRVap &);
 
-        double VMas(const double&, const double&);//retorna a vaz�o m�ssica para uma dada press�o e temperatura de fundo. kg/s
-        double MasL(const double&, const double&);//retorna a vaz�o m�ssica de L�quido para uma dada press�o e temperatura de fundo. kg/s
-        double MasG(const double&, const double&);//retorna a vaz�o m�ssica de G�s para uma dada press�o e temperatura de fundo. kg/s
+    //! Copy-assignment operator.
+    IPRVap &operator=(const IPRVap &);
+
+    /*!
+     * Calculate the total mass flow rate at the specified bottom-hole state.
+     *
+     * \return Total mass flow rate in kg/s.
+     */
+    double VMas(const double &, const double &);
+
+    /*!
+     * Calculate the liquid mass flow rate at the specified bottom-hole state.
+     *
+     * \return Liquid mass flow rate in kg/s.
+     */
+    double MasL(const double &, const double &);
+
+    /*!
+     * Calculate the vapor or gas mass flow rate at the specified bottom-hole state.
+     *
+     * \return Vapor or gas mass flow rate in kg/s.
+     */
+    double MasG(const double &, const double &);
 };
 
-class InjMultVap{//classe para fonte do tipo inje��o de l�quido, herda a interface de AbsFonte
-//alteracao7
-        public:
-        double Mass;
-        double temp;
-		InjMultVap(double=0,double=0); //construtor default
-		InjMultVap(const InjMultVap&);//construtor de c�pia
-        InjMultVap& operator=(const InjMultVap&);//sobrecarga do operador =
-        double VMas(const double& pres, const double& temp);//retorna a vaz�o m�ssica kg/s
+/*!
+ * Represent a prescribed vapor multiphase-injection source.
+ *
+ * The model stores the injected mass flow rate and injection temperature.
+ */
+class InjMultVap {
+  public:
+    double Mass; // Prescribed injected mass flow rate.
+    double temp; // Injection temperature.
+
+    //! Construct a vapor-injection source using default or specified values.
+    InjMultVap(double = 0, double = 0);
+
+    //! Copy constructor.
+    InjMultVap(const InjMultVap &);
+
+    //! Copy-assignment operator.
+    InjMultVap &operator=(const InjMultVap &);
+
+    /*!
+     * Calculate the injected mass flow rate.
+     *
+     * \param pres Pressure at the source evaluation point.
+     * \param temp Temperature at the source evaluation point.
+     * \return Injected mass flow rate in kg/s.
+     */
+    double VMas(const double &pres, const double &temp);
 };
-
-
-
 
 #endif /* FONTEMASVAP_H_ */

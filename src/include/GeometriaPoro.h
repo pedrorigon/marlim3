@@ -1,8 +1,9 @@
 #ifndef _GEOMPoro
 #define _GEOMPoro
-
 #define _USE_MATH_DEFINES // para M_PI
+
 #include <math.h>
+#include <iostream>
 
 using namespace std;
 

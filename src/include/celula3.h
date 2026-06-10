@@ -1,569 +1,544 @@
 #ifndef _CEL
 #define _CEL
+#define _USE_MATH_DEFINES // Enables the M_PI mathematical constant.
 
-#define _USE_MATH_DEFINES // para M_PI
-#include <math.h>
-
-#include <algorithm>
-#include <fstream>
-#include <complex>
-
-using namespace std;
-#include "acessorios.h"
 #include "Geometria.h"
-#include "Vetor.h"
 #include "Matriz.h"
 #include "PropFlu.h"
 #include "PropFluCol.h"
 #include "TrocaCalor.h"
+#include "Vetor.h"
+#include "acessorios.h"
 #include "variaveisGlobais1D.h"
+#include <algorithm>
+#include <complex>
+#include <fstream>
+#include <math.h>
 
-/*extern double localtiny;//pequeno valor, usado como criterio para transicao entre multifasico e monofasico
-extern double CritCond;//variavel global, indica o menor valor de fracao de vazio ou holdup em que a
-//transferencia de massa e considerada em uma simulacao transiente
-extern double CritDTMin;
-extern double lixo5;// variavel global, tempo na simulacao para um so tramo;
-
-extern int chaverede;//variavel global, indica se se esta simulando um tramo solteiro ou pertencente a uma malha de dutos;
-extern int chaveredeT;*/
+using namespace std;
 
 struct dadosParafina;
-struct detalhaParafina{
-	double tempInterDeposito;
-	double difusividadeParafina;
-	double gradienteConcentracao;
-	double fluxMassParafina1;
-	double fluxMassParafina2;
-	double kDep;
-	detalhaParafina(){
-		tempInterDeposito=0.;
-		difusividadeParafina=0.;
-		gradienteConcentracao=0.;
-		fluxMassParafina1=0.;
-		fluxMassParafina2=0.;
-		kDep=0.;
-	}
-	detalhaParafina(const detalhaParafina& temp){
-		tempInterDeposito=temp.tempInterDeposito;
-		difusividadeParafina=temp.difusividadeParafina;
-		gradienteConcentracao=temp.gradienteConcentracao;
-		fluxMassParafina1=temp.fluxMassParafina1;
-		fluxMassParafina2=temp.fluxMassParafina2;
-		kDep=temp.kDep;
-	}
-	detalhaParafina& operator=(const detalhaParafina& temp){
-		if (this != &temp) {
-			tempInterDeposito=temp.tempInterDeposito;
-			difusividadeParafina=temp.difusividadeParafina;
-			gradienteConcentracao=temp.gradienteConcentracao;
-			fluxMassParafina1=temp.fluxMassParafina1;
-			fluxMassParafina2=temp.fluxMassParafina2;
-			kDep=temp.kDep;
-		}
-		return *this;
-	}
 
+/**
+ * Stores intermediate quantities used by the wax-deposition model.
+ */
+struct detalhaParafina {
+    double tempInterDeposito;
+    double difusividadeParafina;
+    double gradienteConcentracao;
+    double fluxMassParafina1;
+    double fluxMassParafina2;
+    double kDep;
+    detalhaParafina() {
+        tempInterDeposito = 0.;
+        difusividadeParafina = 0.;
+        gradienteConcentracao = 0.;
+        fluxMassParafina1 = 0.;
+        fluxMassParafina2 = 0.;
+        kDep = 0.;
+    }
+    detalhaParafina(const detalhaParafina &temp) {
+        tempInterDeposito = temp.tempInterDeposito;
+        difusividadeParafina = temp.difusividadeParafina;
+        gradienteConcentracao = temp.gradienteConcentracao;
+        fluxMassParafina1 = temp.fluxMassParafina1;
+        fluxMassParafina2 = temp.fluxMassParafina2;
+        kDep = temp.kDep;
+    }
+    detalhaParafina &operator=(const detalhaParafina &temp) {
+        if (this != &temp) {
+            tempInterDeposito = temp.tempInterDeposito;
+            difusividadeParafina = temp.difusividadeParafina;
+            gradienteConcentracao = temp.gradienteConcentracao;
+            fluxMassParafina1 = temp.fluxMassParafina1;
+            fluxMassParafina2 = temp.fluxMassParafina2;
+            kDep = temp.kDep;
+        }
+        return *this;
+    }
 };
 
-class Cel{
+/**
+ * Represents a one-dimensional finite-volume cell and its neighboring state.
+ *
+ * The class stores geometry, fluid properties, thermodynamic state, mass-transfer
+ * terms, heat-transfer data, flow-regime information, pigging state, and the local
+ * linear system required by the pressure-velocity coupling algorithm.
+ */
+class Cel {
+  public:
+    // Hydrate solver.
+    // Model III.
+    double V_h_total;
+    double V_h_dep;
+    double V_h_disp;
+
+    double e_dep;
+    double D_h_eff;
+    double A_eff;
+    double phi_h_disp;
+
+    double phi_h_eff;
+    double mu_rel_slurry;
+    double mu_base_liq;
+    double mu_slurry;
+
+    double j_H;
+    double j_G;
+    double j_W;
+    double V_h;
+    double V_w;
+    double V_g;
+    double FVH;
+    double agua_consumida;
+    double gas_consumido;
+
+    double agua_consumida_massa;
+    double gas_consumido_massa;
+
+    double agua_consumida_massa_step;
+    double gas_consumido_massa_step;
+
+    double massa_hidrato;
+
+    DadosGeo dutoL;    // Geometry data for the left control volume.
+    DadosGeo duto;     // Geometry data for the current control volume.
+    DadosGeo dutoR;    // Geometry data for the right control volume.
+    acessorio acsr;    // Accessory associated with the control volume, such as a source, ESP, positive displacement pump, or valve.
+    acessorio *acsrL;  // Pointer to the accessory associated with the left control volume.
+    ProFlu flui;       // Fluid properties for the current control volume.
+    ProFlu *fluiL;     // Pointer to the fluid properties of the left control volume.
+    ProFlu *fluiR;     // Pointer to the fluid properties of the right control volume.
+    ProFluCol fluicol; // Complementary-fluid properties for the current control volume.
+    int fonteCompartilhada;
+    double multiFComp;
+
+    // Units: pressure in kgf/cm2; temperature in degrees Celsius; mass flow rate in kg/s; time in seconds;
+    // diameter, perimeter, roughness, velocity, and cell length in meters; density in kg/m3;
+    // volumetric flow rate in m3/s; angle in radians; light, heavy, and water volumes in Sm3;
+    // and heat flux in W/m.
+
+    int correlacaoMR2;
+    int posic; // Index of the control-volume center, referenced from the bottom of the well.
+    double dt; // Time increment, generally equal to the global time step, but it may differ when a local correction is required.
+    double dt1;
+    // A local time-step adjustment may be required to correct control-volume fraction constraints.
+    double dt2; // Corrected time increment used when the beta factor would exceed its admissible bounds.
+    // When this occurs, the time increment is recalculated to prevent the violation,
+    // and the corrected value is stored in dt2.
+    double dTdt; // Temperature time derivative, optionally included as a correction in the mass-conservation models.
+
+    double dTdtIni;
+    double dTdtL; // Temperature time derivative in the left control volume, optionally included in the mass-conservation models.
+
+    double tempR;       // Temperature in the right control volume.
+    double tempRini;    // Temperature in the right control volume at the previous time level.
+    double temp;        // Temperature in the current control volume.
+    double tempini;     // Temperature in the current control volume at the previous time level.
+    double tempL;       // Temperature in the left control volume.
+    double tempLini;    // Temperature in the left control volume at the previous time level.
+    double presL;       // Pressure in the left control volume.
+    double presLini;    // Pressure in the left control volume at the previous time level.
+    double pres;        // Pressure in the current control volume.
+    double presini;     // Pressure in the current control volume at the previous time level.
+    double presauxL;    // Pressure at the left boundary of the left control volume.
+    double presauxLini; // Pressure at the left boundary of the left control volume
+    // at the previous time level.
+    double presaux;  // Pressure at the left boundary of the current control volume.
+    double dpresaux; // Mean pressure deviation at the left boundary of the current control volume relative to the
+    // average pressure of neighboring volumes, including frictional and hydrostatic corrections.
+    double presauxini;  // Pressure at the left boundary of the current control volume at the previous time level.
+    double presauxR;    // Pressure at the left boundary of the right control volume.
+    double presauxRini; // Pressure at the left boundary of the right control volume
+    // at the previous time level.
+    double presR;    // Pressure in the right control volume.
+    double presRini; // Pressure in the right control volume at the previous time level.
+    double ML;       // Mixture mass flow rate at the left boundary of the left control volume.
+    double MLini;    // Mixture mass flow rate at the left boundary of the left control volume
+    // at the previous time level.
+    double MC;    // Mixture mass flow rate at the left boundary of the current control volume.
+    double MCini; // Mixture mass flow rate at the left boundary of the current control volume
+    // at the previous time level.
+    double MR;    // Mixture mass flow rate at the left boundary of the right control volume.
+    double MRini; // Mixture mass flow rate at the left boundary of the right control volume
+    // at the previous time level.
+    double MliqiniR;  // Liquid mass flow rate at the left boundary of the right control volume.
+    double MliqiniR0; // Liquid mass flow rate at the left boundary of the right control volume
+    // at the previous time level.
+    double Mliqini;  // Liquid mass flow rate at the left boundary of the current control volume.
+    double Mliqini0; // Liquid mass flow rate at the left boundary of the current control volume
+    // at the previous time level.
+    double MliqiniL;  // Liquid mass flow rate at the left boundary of the left control volume.
+    double MliqiniL0; // Liquid mass flow rate at the left boundary of the left control volume
+    // at the previous time level.
+    double MComp;   // Auxiliary complementary-fluid mass flow rate used only for reverse flow in the steady-state model.
+    double presBuf; // Pressure in the current control volume during an intermediate flow-network solution iteration.
+
+    double presLiniBuf; // Pressure in the left control volume during an intermediate flow-network solution iteration;
+    // this previous-time-level buffer is currently unused.
+    double presLBuf; // Pressure in the left control volume during an intermediate flow-network solution iteration.
+
+    double presRBuf; // Pressure in the right control volume during an intermediate flow-network solution iteration.
+
+    double presauxBuf; // Pressure at the left boundary of the current control volume during an intermediate
+    // flow-network solution iteration.
+    double MCBuf; // Mixture flow rate at the left boundary of the current control volume during an intermediate
+    // flow-network solution iteration.
+    double MRBuf; // Mixture flow rate at the left boundary of the right control volume during an intermediate
+    // flow-network solution iteration.
+    double MliqiniRBuf; // Liquid flow rate at the left boundary of the right control volume during an intermediate
+    // flow-network solution iteration.
+    double MRiniBuf; // Currently unused.
+    double MLBuf;    // Mixture flow rate at the left boundary of the left control volume during an intermediate
+    // flow-network solution iteration.
+    double MliqiniBuf; // Liquid flow rate at the left boundary of the current control volume during an intermediate
+    // flow-network solution iteration.
+    double MliqiniLBuf; // Liquid flow rate at the left boundary of the left control volume during an intermediate
+    // flow-network solution iteration.
+    double alfL;    // Void fraction in the left control volume.
+    double alfLini; // Void fraction in the left control volume at the previous time level.
+    double alfR;    // Void fraction in the right control volume.
+    double alfRini; // Void fraction in the right control volume at the previous time level.
+    double alf;     // Void fraction in the current control volume.
+    double alfIter;
+    double alfini;  // Void fraction in the current control volume at the previous time level.
+    double betL;    // Beta fraction in the left control volume.
+    double betLini; // Beta fraction in the left control volume at the previous time level.
+    double betR;    // Beta fraction in the right control volume.
+    double betRini; // Beta fraction in the right control volume at the previous time level.
+    double bet;     // Beta fraction in the current control volume.
+    double betini;  // Beta fraction in the current control volume at the previous time level.
+    double betLI;   // Beta fraction at the left boundary of the left control volume.
+    double betLIini;
+    double betI; // Beta fraction at the left boundary of the current control volume.
+    double betIini;
+    double betRI; // Beta fraction at the left boundary of the right control volume.
+    double betRIini;
+    double FW;          // In-situ BSW of the current control volume.
+    double FWini;       // In-situ BSW of the current control volume at the previous time level.
+    double dxL;         // Length of the left control volume.
+    double dx;          // Length of the current control volume.
+    double dxR;         // Length of the right control volume.
+    double razdxTM;     // Currently unused.
+    double razdxTM0;    // Currently unused.
+    double massfonteCH; // Currently unused.
+    // Model T1 and T2 terms.
+    double term1L; // T1 at the left boundary of the left control volume.
+    double term2L; // T2 at the left boundary of the left control volume.
+    double term1;  // T1 at the left boundary of the current control volume.
+    double term2;  // T2 at the left boundary of the current control volume.
+    double term1R; // T1 at the left boundary of the right control volume.
+    double term2R; // T2 at the left boundary of the right control volume.
+    double c0;     // Distribution parameter at the left boundary of the current control volume.
+    double ud;     // Drift velocity at the left boundary of the current control volume.
+    double c0ini;
+    double udini;
+    double c0Spare; // Auxiliary distribution parameter used when the flow regime or inclination changes between
+    // the current and left control volumes. It stores the value associated with the previous
+    // flow regime and is averaged with the distribution parameter of the current control volume.
+    double udSpare; // Auxiliary drift velocity used when the flow regime or inclination changes between
+    // the current and left control volumes.
+    // Mass-transfer terms used by the mass-conservation equations.
+    double transmassL;
+    double transmassLini;
+    double transmassR;
+    double transmassRini;
+    double FonteMudaFase;
+    double FonteMudaFaseini;
+    double DTransDt1;
+    double DTransDt1ini;
+    double DTransDt0;
+    double DTransDt0ini;
+    double DTransDxR;
+    double DTransDxRini;
+    double DTransDxL;
+    double DTransDxLini;
+    double DTransDxLp;
+    double DTransDxRp;
+    double DTransDxLpini;
+    double DTransDxRpini;
+    double DTransDx;
+    double DTransDtp;
+    double DTransDtpL;
+    double DTransDtpini;
+    double DTransDtT;
+    double DTransDtTL;
+    double DtransDxLinear;
+    double coefTransBetini;
+    double coefTransBet;
+    double CoefDTRini;
+    double CoefDTR;
+    double CoefDTLini;
+    double CoefDTL;
+    double fontedissolv;
+    double ativaDeri;
+    int TMModel; // Mass-transfer model used in the current control volume: 0 selects the complete model,
+    // 1 selects the explicit model, and 2 selects a simplified low-relevance model.
+    int TMModelL;          // Mass-transfer model used in the left control volume.
+    double fontemassLL;    // Hydrocarbon-liquid mass source in the left control volume.
+    double fontemassLLini; // Hydrocarbon-liquid mass source in the left control volume at the previous time level.
+    double fontemassGL;    // Gas mass source in the left control volume.
+    double fontemassGLini; // Gas mass source in the left control volume at the previous time level.
+    double fontemassCL;    // Complementary-liquid mass source in the left control volume.
+    double fontemassCLini; // Complementary-liquid mass source in the left control volume at the previous time level.
+    double fontemassLR;    // Hydrocarbon-liquid mass source in the current control volume.
+    double fontemassLRini; // Hydrocarbon-liquid mass source in the current control volume at the previous time level.
+    double fontemassGR;    // Gas mass source in the current control volume.
+    double fontemassGRini; // Gas mass source in the current control volume at the previous time level.
+    double fontemassCR;    // Complementary-liquid mass source in the current control volume.
+    double fontemassCRini; // Complementary-liquid mass source in the current control volume at the previous time level.
+    double dpB;            // Pressure gain at the right boundary of the current control volume due to an ESP.
+    double potB;           // Power transferred to the fluid by an ESP or through a pressure increase.
+    double potBT;          // Power transferred to the fluid by pumping equipment, accounting for
+    // motor efficiency.
+    double potTermo;
+    double dpBL;
+    double potBL;
+    double potBTL;
+    int transic; // Time-step counter used to smoothly transition the drift-flux parameters
+    // when the flow regime changes between consecutive time steps.
+    int transic0;
+    int arranjo;         // Flow-regime indicator at the left boundary of the current control volume.
+    int arranjoR;        // Flow-regime indicator at the right boundary of the current control volume.
+    double chutearranjo; // Currently unused.
+    double QLL;          // Liquid-mixture volumetric flow rate at the left boundary of the left control volume.
+    double QLLini;       // Liquid-mixture volumetric flow rate at the left boundary of the left control volume at the previous time level.
+    double QL;           // Liquid-mixture volumetric flow rate at the left boundary of the current control volume.
+    double QLini;        // Liquid-mixture volumetric flow rate at the left boundary of the current control volume at the previous time level.
+    double QLR;          // Liquid-mixture volumetric flow rate at the left boundary of the right control volume.
+    double QLRini;       // Liquid-mixture volumetric flow rate at the left boundary of the right control volume at the previous time level.
+    double QG;           // Gas volumetric flow rate at the left boundary of the current control volume.
+    double QGini;        // Gas volumetric flow rate at the left boundary of the current control volume at the previous time level.
+    double rpL;          // Hydrocarbon-liquid density in the left control volume.
+    double rpC;          // Hydrocarbon-liquid density in the current control volume.
+    double rpR;          // Hydrocarbon-liquid density in the right control volume.
+    double rcL;          // Complementary-liquid density in the left control volume.
+    double rcC;          // Complementary-liquid density in the current control volume.
+    double rcR;          // Complementary-liquid density in the right control volume.
+    double rgL;          // Gas density in the left control volume.
+    double rgC;          // Gas density in the current control volume.
+    double rgR;          // Gas density in the right control volume.
+    double rpLi;         // Hydrocarbon-liquid density at the left boundary of the left control volume.
+    double rpCi;         // Hydrocarbon-liquid density at the left boundary of the current control volume.
+    double rpRi;         // Hydrocarbon-liquid density at the left boundary of the right control volume.
+    double rcLi;         // Complementary-liquid density at the left boundary of the left control volume.
+    double rcCi;         // Complementary-liquid density at the left boundary of the current control volume.
+    double rcRi;         // Complementary-liquid density at the left boundary of the right control volume.
+    double rgLi;         // Gas density at the left boundary of the left control volume.
+    double rgCi;         // Gas density at the left boundary of the current control volume.
+    double rgRi;         // Gas density at the left boundary of the right control volume.
+    double drhogdt;      // Time derivative of gas density in the current control volume.
+    double mipC;
+    double micC;
+    double migC;
+    double mipR;
+    double micR;
+    double migR;
+    Vcr<double> TL;        // Right-hand-side vector of the local linear system.
+    FullMtx<double> local; // Local coefficient matrix.
+    double perdaEstratL;   // Currently unused.
+    double perdaEstratG;   // Currently unused.
+    double cinematico;     // Currently unused.
+    double VTemper;        // Temperature advection velocity at the left boundary of the current control volume.
+    double VTemperini;     // Temperature advection velocity at the left boundary of the current control volume
+    // at the previous time level.
+    TransCal calor;    // Heat-transfer model associated with the current control volume.
+    double fluxcalmed; // Heat flux.
+
+    int estadoPig; // Indicates whether a pig is traveling through the current control volume.
+    int estadoPigini;
+    double dtPig; // Corrected time increment used when a pig would cross from one control volume to another
+    // within a single time step. In this case, the time increment is recalculated so that
+    // the pig reaches the control-volume boundary exactly, and the corrected value
+    // is stored in dtPig.
+    double alfPigE;    // Void fraction to the left of the pig when it is in the current control volume.
+    double alfPigER;   // Void fraction to the left of the pig when it is in the right control volume.
+    double alfPigEini; // Void fraction to the left of the pig in the current control volume
+    // at the previous time level.
+    double alfPigERini;
+    double alfPigD;    // Void fraction to the right of the pig when it is in the current control volume.
+    double alfPigDini; // Void fraction to the right of the pig in the current control volume
+    // at the previous time level.
+    double betPigE;    // Beta fraction to the left of the pig when it is in the current control volume.
+    double betPigEini; // Beta fraction to the left of the pig in the current control volume
+    // at the previous time level.
+    double betPigD;    // Beta fraction to the right of the pig when it is in the current control volume.
+    double betPigDini; // Beta fraction to the right of the pig in the current control volume
+    // at the previous time level.
+    double velPig;    // Pig velocity.
+    double velPigini; // Pig velocity at the previous time level.
+    double razPig;    // Relative pig position in the current control volume: 0 at the left boundary and 1 at the right boundary.
+    double razPigini; // Relative pig position in the current control volume at the previous time level:
+    // 0 at the left boundary and 1 at the right boundary.
+    double RazAreaPig; // Currently unused.
+    double DelPig;     // Currently unused.
+    double VazaPig;    // Currently unused.
+    double cdpig;      // Currently unused.
+    int indpig;        // Index that identifies the pig position in the launch-time queue.
+    int indpigini;
+
+    double VolLeveST; // Light-component volume in the current control volume.
+    double VolPesaST; // Heavy-component volume in the current control volume.
+    double VolAguaST; // Water volume in the current control volume.
+
+    double DmasschokeG; // Derivative of the gas mass flow rate through the surface choke with respect to pressure;
+    // used to increase choke-model implicitness only in the last system cell.
+    double DmasschokeL; // Derivative of the hydrocarbon-liquid mass flow rate through the surface choke with respect to pressure;
+    // used to increase choke-model implicitness only in the last system cell.
+    double DmasschokeC; // Derivative of the complementary-liquid mass flow rate through the surface choke with respect to pressure;
+    // used to increase choke-model implicitness only in the last system cell.
+
+    double corrigeMassaPres; // Currently unused.
+    int mudaDT;
+    int mudaDTL;
+    double dpdt;
+    double dpdtIni;
+    double m2d;
+    double m2dL;
+    double d2pdt2;
+    double termoHidro; // Hydrostatic pressure variation between the current and right control volumes.
+    double termoFric;  // Frictional pressure variation between the current and right control volumes.
+
+    double termRug; // Contribution of the pipe relative roughness to the friction-factor calculation.
+
+    double angEsq; // Last nonzero-magnitude angle to the left of the current control volume,
+    // used to determine the sign of the drift velocity in a horizontal pipe.
+
+    double angDir; // Last nonzero-magnitude angle to the right of the current control volume,
+    // used to determine the sign of the drift velocity in a horizontal pipe.
 
 
-      	public:
-      	
-	    //Solver de Hidratos
+    int estabCol;
+    int mudaArea;
 
-//modeloIII
-	double V_h_total;
-	double V_h_dep;
-	double V_h_disp;
+    double nMol;
+    double nMolIni;
 
-	double e_dep;
-	double D_h_eff;
-	double A_eff;
-	double phi_h_disp;
+    double dR;
 
-	double phi_h_eff;
-	double mu_rel_slurry;
-	double mu_base_liq;
-	double mu_slurry; //modeloIII
-	
-		double j_H;
-		double j_G;
-		double j_W;
-		double V_h;
-		double V_w; //chris - Hidratos
-		double V_g; //chris - Hidratos
-		double FVH; //chris - Hidratos
-		double agua_consumida;  // acumulada por hidrato //chris - Hidratos
-		double gas_consumido;
+    int indGeom;
 
-		double agua_consumida_massa;  //alteracao Hidratos
-		double gas_consumido_massa; //alteracao Hidratos
+    double dPdLHidro;
+    double dPdLFric;
+    double dTdLCor;
 
-		double agua_consumida_massa_step;  //alteracao Hidratos
-		double gas_consumido_massa_step; //alteracao Hidratos
+    int inddPdLHidro;
+    int inddPdLFric;
+    int inddTdLCor;
 
-		double massa_hidrato; //chris - Hidratos
-		//double Vcel_hyd; //chris - Hidratos
-		//double VolLiq;  //chris - Hidratos
-	    
-	    DadosGeo dutoL;//objeto com as informacoes sobre a geometria do volume a esquerda;
-        DadosGeo duto;//objeto com as informacoes sobre a geometria do volume;
-        DadosGeo dutoR;//objeto com as informacoes sobre a geometria do volume a direita;
-        acessorio acsr;//objeto onde o acessorio do volume e armazenado->fontes, BCS,bomba volumetrica, valvula;
-        acessorio* acsrL;//ponteiro com o endereco do acessorio do volume a esquerda;
-        ProFlu flui;//objeto com as propriedades do fluido do volume;
-        ProFlu* fluiL;//ponteiro com o endereco do obejto que armazena as propriuedades do fluido do volume a esquerda;
-        ProFlu* fluiR;//ponteiro com o endereco do obejto que armazena as propriuedades do fluido do volume a direita;
-        ProFluCol fluicol;//objeto com as propriedades do fluido complementar;
-        int fonteCompartilhada;
-        double multiFComp;
+    int reiniciaAlf;
+    int reiniciaBet;
+    int reiniciaPig;
 
-        //obs: pressao em kgf/cm2, temperatura em C; vazao massica em kg/s; tempo em seg.; diametro, perimetro,
-        //rugosidade em metros, massa especifica em kg/m3, vazao volumetrica em m3/s; angulo em radianos;
-        //velocidade em metros; comprimento de celula em metros; volume de leve, pesado e agua em Sm3;
-        //fluxo de calor em W/m;
+    int correrGlobHol;
 
-        int correlacaoMR2;
-        int posic;//indice do centro de volume, referencia->fundo de poco;
-        double dt;//incremento de tempo, em geral, igual ao incremento de tempo global, mas pode ser diferente
-        double dt1;
-        //caso neste volume seja necessario um ajuste de tempo para corrigir problemas na fracao volumetrica do volume;
-        double dt2;//incremento de tempo relacionado com a correcao necessaria, quando o fator beta e desrespeitado
-        //nos seus limites, quando isto ocorre, calcula-se o valor de incremento de tempo para que isto nao ocorra e
-        //e armazenado em dt2;
-        double dTdt;//variacao da temperatura com o tempo, usado em caso de se desejar usar esta correcao nos modelos
-        //de conservacao de massa;
-        double dTdtIni;
-        double dTdtL;//variacao da temperatura com o tempo no volume a esquerda, usado em caso de se desejar
-        //usar esta correcao nos modelos de conservacao de massa;
-        double tempR;//temperatura no volume a direita;
-        double tempRini;//temperatura no volume a direita na camada de tempo anterior;
-        double temp;//temperatura no volume;
-        double tempini;//temperatura no volume na camada de tempo anterior;
-        double tempL;//temperatura no volume a esquerda;
-        double tempLini;//temperatura no volume a esquerda na camada de tempo anterior;
-        double presL;//pressao no volume a esquerda;
-        double presLini;//pressao no volume a esquerda na camada de tempo anterior;
-        double pres;//pressao no volume;
-        double presini;//pressao no volume na camada de tempo anterior;
-        double presauxL;//pressao na fronteira esquerda do volume a esquerda;
-        double presauxLini;//pressao na fronteira esquerda no volume a esquerda
-        //na camada de tempo anterior;
-        double presaux;//pressao na frointeira esquerda do volume;
-        double dpresaux;//desvio medio da pressao na fronteira a esquerda do volume em relacao as medias
-        //das pressoes dos volumes vizinhos, devido as correcoes friccao e hidrostatica;
-        double presauxini;//pressao na frointeira esquerda do volume, na camada de tempo anterior;
-        double presauxR;//pressao na fronteira esquerda do volume a direita;
-        double presauxRini;//pressao na fronteira esquerda no volume a direita
-        //na camada de tempo anterior;
-        double presR;//pressao no volume a direita;
-        double presRini;//pressao no volume a direita na camada de tempo anterior;
-        double ML;//vazao massica da mistura na fronteira esquerda do volume a esquerda;
-        double MLini;//vazao massica da mistura na fronteira esquerda do volume a esquerda
-        // na camada de tempo anterior;
-        double MC;//vazao massica da mistura na fronteira esquerda do volume;
-        double MCini;//vazao massica da mistura na fronteira esquerda do volume
-        // na camada de tempo anterior;
-        double MR;//vazao massica da mistura na fronteira esquerda do volume a direita;
-        double MRini;//vazao massica da mistura na fronteira esquerda do volume a direita
-        // na camada de tempo anterior;
-        double MliqiniR;//vazao massica de liquido na fronteira esquerda do volume a direita;
-        double MliqiniR0;//vazao massica de liquido na fronteira esquerda do volume a direita
-        // na camada de tempo anterior;
-        double Mliqini;//vazao massica de liquido na fronteira esquerda do volume;
-        double Mliqini0;//vazao massica de liquido na fronteira esquerda do volume
-        // na camada de tempo anterior;
-        double MliqiniL;//vazao massica de liquido na fronteira esquerda do volume a esquerda;
-        double MliqiniL0;//vazao massica de liquido na fronteira esquerda do volume a esquerda
-        // na camada de tempo anterior;
-        double MComp;//vazao massica de fluido complementar, valor auxiliar, so usado no permanente em condicao de escoamento reverso
-        ///////////////////////////// 05-07-2018 //////////////////////////////////////////////
-        double presBuf;//pressao no volume na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double presLiniBuf;//pressao no volume a esquerda na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento, variavel da camada de tempo anterior (nao utilizado);
-        double presLBuf;//pressao no volume a esquerda na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double presRBuf;//pressao no volume a direita na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double presauxBuf;//pressao na fronteira a esquerda do volume na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double MCBuf;//vazao da mistura na fronteira a esquerda do volume na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double MRBuf;//vazao da mistura na fronteira a esquerda do volume a direita na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double MliqiniRBuf;//vazao da mistura na fronteira a esquerda do volume a direita na iteracao intermediaria
-        //no processo de resolucao de rede de escoamento;
-        double MRiniBuf;//nao utilizado;
-        double MLBuf;//vazao da mistura na fronteira a esquerda do volume a esquerda na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double MliqiniBuf;//vazao de liquido na fronteira a esquerda do volume na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        double MliqiniLBuf;//vazao de liquido na fronteira a esquerda do volume a esquerda na iteracao intermediaria no processo de resolucao de rede
-        //de escoamento;
-        //////////////////////////// 05-07-2018 ///////////////////////////////////////////////
-        double alfL;//fracao de vazio no volume a esquerda;
-        double alfLini;//fracao de vazio no volume a esquerda na camada de tempo anterior;
-        double alfR;//fracao de vazio no volume a direita;
-        double alfRini;//fracao de vazio no volume a direita na camada de tempo anterior;
-        double alf;//fracao de vazio no volume;
-        double alfIter;
-        double alfini;//fracao de vazio no volume, na camada de tempo anterior;
-        double betL;//beta no volume a esquerda;
-        double betLini;//beta no volume a esquerda, na camada de tempo anterior;
-        double betR;//beta no volume a direita;
-        double betRini;//beta no volume a direita, na camada de tempo anterior;
-        double bet;//beta no volume;
-        double betini;//beta no volume, na camada de tempo anterior;
-        double betLI;//fracao beta na fronteira esquerda do volume a esquerda;
-        double betLIini;
-        double betI;//fracao beta na fronteira esquerda do volume;
-        double betIini;
-        double betRI;//fracao beta na fronteira esquerda do volume a direita;
-        double betRIini;
-        double FW;//BSW in-situ do volume;
-        double FWini;//BSW in-situ do volume na camada de tempo anterior;
-        double dxL;//comprimento do volume a esquerda;
-        double dx;//comprimento do volume;
-        double dxR;//comprimento do volume a direita;
-        double razdxTM;//sem utilizacao;
-        double razdxTM0;//sem utilizacao;
-        double massfonteCH;//sem utilizacao;
-        //T1 e T2 do modelo:
-        double term1L;//T1 da fronteira esquerda do volume a esquerda;
-        double term2L;//T2 da fronteira esquerda do volume a esquerda;
-        double term1;//T1 da fronteira esquerda do volume;
-        double term2;//T2 da fronteira esquerda do volume;
-        double term1R;//T1 da fronteira esquerda do volume a direita;
-        double term2R;//T2 da fronteira esquerda do volume a direita;
-        double c0;//parametro de distribuicao, fronteira esquerda do volume;
-        double ud;//parametro de distribuicao, fronteira esquerda do volume;
-        double c0ini;
-        double udini;
-        double c0Spare;//atributo usado quando ha mudanca de arranjo entre o volume
-        //e o volume a esquerda, ou quando ha mudanca de inclinacao, guarda o parametro de distribuicao
-        //indicado pelo arranjo no volume anterior e faz uma media com o parametro de distribuicao do volume
-        double udSpare;//atributo usado quando ha mudanca de arranjo entre o volume;
-        //e o volume a esquerda, ou quando ha mudanca de inclinacao, guarda a velocidade de escorregamento
-        //indicado pelo arranjo no volume anterior e faz uma media com a velocidade de escorregamento do volume;
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //variaveis relacionadoas com termos de transferencia de massa usados nas equacoes de conservacao de massa:
-        double transmassL;
-        double transmassLini;
-        double transmassR;
-        double transmassRini;
-        double FonteMudaFase;
-        double FonteMudaFaseini;
-        double DTransDt1;
-        double DTransDt1ini;
-        double DTransDt0;
-        double DTransDt0ini;
-        double DTransDxR;
-        double DTransDxRini;
-        double DTransDxL;
-        double DTransDxLini;
-        double DTransDxLp;
-        double DTransDxRp;
-        double DTransDxLpini;
-        double DTransDxRpini;
-        double DTransDx;
-        double DTransDtp;
-        double DTransDtpL;
-        double DTransDtpini;
-        double DTransDtT;
-        double DTransDtTL;
-        double DtransDxLinear;
-        double coefTransBetini;
-        double coefTransBet;
-        double CoefDTRini;
-        double CoefDTR;
-        double CoefDTLini;
-        double CoefDTL;
-        double fontedissolv;
-        double ativaDeri;
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        int TMModel;//modelo de transferencia de massa usado no volume; quando zero, modelo completo,
-        //quando 1 modelo expicito, quando 2, utiliza-se um modelo simplificado de baixa relevancia e
-        //, finalmente, quando 3, elimina-se a transferencia de massa;
-        int TMModelL;//modelo de transferencia de massa usado no volume a esquerda;
-        double fontemassLL;//fonte de massa de liquido, hidrocarboneto, no volume a esquerda;
-        double fontemassLLini;//fonte de massa de liquido, hidrocarboneto, no volume a esquerda
-        //camada de tempo anetrior;
-        double fontemassGL;//fonte de massa de gas, no volume a esquerda;
-        double fontemassGLini;//fonte de massa de gas, no volume a esquerda
-        //camada de tempo anetrior;
-        double fontemassCL;//fonte de massa de liquido complementar, hidrocarboneto, no volume a esquerda;
-        double fontemassCLini;//fonte de massa de liquido complementar, no volume a esquerda
-        //camada de tempo anetrior;
-        double fontemassLR;//fonte de massa de liquido, hidrocarboneto, no volume;
-        double fontemassLRini;//fonte de massa de liquido, hidrocarboneto, no volume
-        //camada de tempo anetrior;
-        double fontemassGR;//fonte de massa de gas, no volume;
-        double fontemassGRini;//fonte de massa de gas, no volume
-        //camada de tempo anetrior;
-        double fontemassCR;//fonte de massa de liquido complementar, no volume;
-        double fontemassCRini;//fonte de massa de liquido complementar, no volume
-        //camada de tempo anetrior;
-        double dpB;//ganho de pressao na fronteira direita do volume devido a acao de uma BCS;
-        double potB;//potencia aplicada ao fluido devido a uma BCS ou um incremento de pressao;
-        double potBT;//potencia aplicada a um fluido devido a um equipamento de bombeio considerando a
-        //eficiencia do motor
-        double potTermo;
-        double dpBL;
-        double potBL;
-        double potBTL;
-        int transic;//contador de passo de tempo para fazer uma transicao suave dos parametros de escorregamento,
-        //quando a variavel arranjo modifica de um passo de tempo para outro, nao e feita uma mudanca automatica
-        //nos parametros de escorregamento devido a mudanca de arranjo, isto causaria problemas na simulacao;
-        int transic0;
-        int arranjo;//indicador do arranjo do escoamento na fronteira esquerda do volume;
-        int arranjoR;//indicador de arranjo na fronteira direita do arranjo;
-        double chutearranjo;//sem utilizacao
-        double QLL;//vazao volumetrica da mistura de liquido na fronteira esuqerda do volume esquerdo;
-        double QLLini;//vazao volumetrica da mistura de liquido na fronteira esuqerda do volume esquerdo
-        //camada de tempo anterior;
-        double QL;//vazao volumetrica da mistura de liquido na fronteira esuqerda do volume;
-        double QLini;//vazao volumetrica da mistura de liquido na fronteira esuqerda do volume
-        //camada de tempo anterior;
-        double QLR;//vazao volumetrica da mistura de liquido na fronteira esuqerda do volume direito;
-        double QLRini;//vazao volumetrica da mistura de liquido na fronteira esuqerda do volume direito
-        //camada de tempo anterior;
-        double QG;//vazao volumetrica de gas na fronteira esuqerda do volume;
-        double QGini;//vazao volumetrica de gas na fronteira esuqerda do volume
-        //camada de tempo anterior;
-        double rpL;//massa especifica de lpiquido, hidrocarboneto, volume a esquerda;
-        double rpC;//massa especifica de lpiquido, hidrocarboneto, volume central;
-        double rpR;//massa especifica de lpiquido, hidrocarboneto, volume a direita;
-        double rcL;//massa especifica de lpiquido, complementar, volume a esquerda;
-        double rcC;//massa especifica de lpiquido, complementar, volume cehtral;
-        double rcR;//massa especifica de lpiquido, complementar, volume a direita;
-        double rgL;//massa especifica de gas, volume a esquerda;
-        double rgC;//massa especifica de gas, volume central;
-        double rgR;//massa especifica de gas, volume a direita;
-        double rpLi;//massa especifica de lpiquido, hidrocarboneto,fronteira a esquerda do volume a esquerda;
-        double rpCi;//massa especifica de lpiquido, hidrocarboneto,fronteira a esquerda do volume central;
-        double rpRi;//massa especifica de lpiquido, hidrocarboneto,fronteira a esquerda do volume a direita;
-        double rcLi;//massa especifica de lpiquido, complementar,fronteira a esquerda do volume a esquerda;
-        double rcCi;//massa especifica de lpiquido, complementar,fronteira a esquerda do volume central;
-        double rcRi;//massa especifica de lpiquido, complementar,fronteira a esquerda do volume a direita;
-        double rgLi;//massa especifica de gas,fronteira a esquerda do volume a esquerda;
-        double rgCi;//massa especifica de gas,fronteira a esquerda do volume central;
-        double rgRi;//massa especifica de gas,fronteira a esquerda do volume a direita;
-        double drhogdt;//derivada da massa especifica de gas com o tempo no volume central;
-        double mipC;
-        double micC;
-        double migC;
-        double mipR;
-        double micR;
-        double migR;
-        Vcr<double> TL;//vetor livre da matriz local;
-        FullMtx<double> local;//matriz local;
-        double perdaEstratL;//nao utilizado;
-        double perdaEstratG;//nao utilizado;
-        double cinematico;//nao utilizado;
-        double VTemper;//velocidade de adveccao da temperatura, fronteira a esquerda do volume;
-        double VTemperini;//velocidade de adveccao da temperatura, fronteira a esquerda do volume
-        //camada de tempo anterior;
-        TransCal calor;//objeto de transferencia de calor;
-        double fluxcalmed;//fluxo de calor;
+    int miniTabAtraso;
 
-        int estadoPig;//indicador de que existe um pig viajando dentro do volume;
-        int estadoPigini;
-        double dtPig;//incremento de tempo relacionado com a correcao necessaria,
-        //quando o pig viaja de um volume para outro em um passo de tempo
-        //, quando isto ocorre, calcula-se o valor de incremento de tempo para que o pig viaje ate a fronteira, este tempo
-        //e armazenado em dtPig;
-        double alfPigE;//fracao de vazio a esquerda do pig, caso este esteja no volume central;
-        double alfPigER;//fracao de vazio a esquerda do pig, caso este esteja no volume a direita;
-        double alfPigEini;//fracao de vazio a esquerda do pig, caso este esteja no volume central
-        //na camada de tempo anterior;
-        double alfPigERini;
-        double alfPigD;//fracao de vazio a direita do pig, caso este esteja no volume central;
-        double alfPigDini;//fracao de vazio a direita do pig, caso este esteja no volume central
-        //na camada de tempo anterior;
-        double betPigE;//beta a esquerda do pig, caso este esteja no volume central;
-        double betPigEini;//beta a esquerda do pig, caso este esteja no volume central
-        //na camada de tempo anterior;
-        double betPigD;//beta a direita do pig, caso este esteja no volume central;
-        double betPigDini;//beta a direita do pig, caso este esteja no volume central
-        //na camada de tempo anterior;
-        double velPig;//velocidade do pig;
-        double velPigini;//velocidade do pig na camada de tempo anterior;
-        double razPig;//posicao relativa do pig no volume central, 0=fronteira esquerda, 1=fronteira direita;
-        double razPigini;//posicao relativa do pig no volume central, 0=fronteira esquerda, 1=fronteira direita
-        //na camada de tempo anterior;
-        double RazAreaPig;//nao utilizado;
-        double DelPig;//nao utilizado;
-        double VazaPig;//nao utilizado;
-        double cdpig;//nao utilizado;
-        int indpig;//indice que determinada a posicao do pig na fila temporal de lancamento;
-        int indpigini;
+    varGlob1D *vg1dSP;
 
-        double VolLeveST;//volume de componente leve no volume central
-        double VolPesaST;//volume de componente pesado no volume central
-        double VolAguaST;//volume de agua no volume central;
+    int modoParafina;
+    int parafinado;
+    double deltaPar;
 
-        double DmasschokeG;//derivada da vazao massica de gas passando pelo choke de superficie com a pressao
-        //utilizada para aumentar a implicitude do modelo de choke, so utilizada na ultima celula do sistema;
-        double DmasschokeL;//derivada da vazao massica de liquido - hidrocarboneto - passando pelo choke de superficie com a pressao
-        //utilizada para aumentar a implicitude do modelo de choke, so utilizada na ultima celula do sistema;
-        double DmasschokeC;//derivada da vazao massica de liquido complementar passando pelo choke de superficie com a pressao
-        //utilizada para aumentar a implicitude do modelo de choke, so utilizada na ultima celula do sistema;
+    double fluxCal2D;
 
-        double corrigeMassaPres;//nao utilizado;
-        int mudaDT;
-        int mudaDTL;
-        double dpdt;
-        double dpdtIni;
-        double m2d;
-        double m2dL;
-        double d2pdt2;
-        ///////////////////////////////////
-        ////novas saidas
-        double termoHidro;//variacao de pressao hidrostatica entre o volume central e o volume a direita
-        double termoFric;//variacao de pressao por friccao entre o volume central e o volume a direita
+    double C2;
+    double C3;
+    double diamInterIni;
+    double porosoPar;
+    double MW_wax;
+    double rhoWaxLiq;
+    double Sum_dCwaxdT;
 
-        double termRug;//parcela do calculo de fatpor de friccao relacionada com a rugosidade relativa da tubulacao;
+    double fluxcalAcopRedeP;
+    double resAcopRedeP;
 
-        double angEsq;//valor do ultimo angulo a esquerda do volume com modulo > zero,
-        //variavel utilziada na decisao de qual sentido a velocidade de escorregamento tera em um duto horizontal
-        //se positiva ou negativa
-        double angDir;//valor do ultimo angulo a volume do volume com modulo > zero,
-        //variavel utilziada na decisao de qual sentido a velocidade de escorregamento tera em um duto horizontal
-        //se positiva ou negativa
+    double fonteCal;
 
-        int estabCol;
-        int mudaArea;
+    detalhaParafina detParCel;
 
-        double nMol;
-        double nMolIni;
+    Cel(varGlob1D *Vvg1dSP = 0, const DadosGeo vdutoL = DadosGeo(),
+        const DadosGeo vduto = DadosGeo(),
+        const DadosGeo vdutoR = DadosGeo(),
+        const ProFlu vflui = ProFlu(),
+        const ProFluCol vfluiCol = ProFluCol(),
+        const double vtempL = 25., const double vtemp = 25.,
+        const double vtempR = 25., const double vtempini = 25.,
+        const double vpresL = 10., const double vpres = 10., const double vpresR = 10.,
+        const double vML = 0., const double vMC = 0., const double vMR = 0.,
+        const double vMliqiniL = 0., const double vMliqini = 0., const double vMliqiniR = 0.,
+        const double valfL = 1., const double valf = 1., const double valfR = 1.,
+        const double vbetL = 1., const double vbet = 1., const double vbetR = 1.,
+        const double vdxL = 1., const double vdx = 1., const double vdxR = 1.,
+        const double vdt = -1.,
+        const int vposic = -1,
+        const TransCal vcalor = TransCal(),
+        const acessorio vacsr = acessorio(),
+        acessorio *vacsrL = 0); // Default constructor.
+    Cel(const Cel &);           // Copy constructor.
+    Cel &operator=(const Cel &);
 
-        double dR;
+    double Rey(double dia /* diameter */, double vel /* velocity */,
+               double rho /* density */, double vis /* viscosity in cP */); // Computes the Reynolds number.
+    double fric(double re /*Reynolds*/, double eps /* relative roughness */,
+                int tipo = 1 /* indicates whether the roughness contribution to the friction factor must be recalculated or
+                   whether the previously computed term should be reused; 1 reuses the previous term */
+    );                       // Computes the friction factor.
+    void avancalf(int &reinicia /* indicates whether the time increment must be corrected */,
+                  int ncel /* number of cells in the system */); // Advances the void-fraction solution.
+    void avancbet(int &reinicia /* indicates whether the time increment must be corrected */,
+                  int ncel /* number of cells in the system */); // Advances the beta-fraction solution.
+    double delpJus(double presfim);
+    void GeraLocal(double presfim /* separator pressure */,
+                   int masChkSup,
+                   int ncel /* number of cells in the system */,
+                   double razareativa /* indicates that master1 is partially open and its resistance
+                     must therefore be included in the model */
+                   ,
+                   double presE /* inlet pressure boundary-condition value;
+                    presE < 0 represents a closed boundary */
+                   ,
+                   double tempE /* inlet temperature for the pressure boundary condition */,
+                   double titE = -1 /* inlet quality for the pressure boundary condition */,
+                   double betE = -1 /* inlet beta value for the pressure boundary condition */,
+                   int ciclo = 0 /* iteration counter controlling inclusion of dTdtL in mixture mass conservation;
+                      at cycle 0 the term is omitted and is included from cycle 1 onward
+                      when iterative correction is enabled */,
+                   int modelo = 1, int noextremo = 0, int corrigeContSep = 1, double areaChoke = 1., int vexpi = 0); // Builds the local system used for pressure-velocity coupling.
 
-        int indGeom;
+    void avancPig(int &reinicia); // Computes the new relative pig position in the control volume. If it exceeds 1,
+    // the time increment is corrected so that the position reaches exactly 1.
+    void avancalfPig(); // Updates the void fractions to the left and right of the pig in the control volume.
+    void avancbetPig(); // Updates the beta fractions to the left and right of the pig in the control volume.
 
-        double dPdLHidro;
-        double dPdLFric;
-        double dTdLCor;
+    void avancalfPigExpli(); // Explicitly updates the void fractions to the left and right of the pig.
+    void avancbetPigExpli(); // Explicitly updates the beta fractions to the left and right of the pig.
 
-        int inddPdLHidro;
-        int inddPdLFric;
-        int inddTdLCor;
+    void FeiticoDoTempo(); // Restores values after a time-evolution iteration
+    // to their original values from the previous time level.
 
-        int reiniciaAlf;
-        int reiniciaBet;
-        int reiniciaPig;
+    void FeiticoDoTempo2(); // Restores values after a time-evolution iteration
+    // to their original values from the previous time level.
 
-        int correrGlobHol;
+    void FeiticoDoTempo3(); // Restores values after a time-evolution iteration
+    // to their original values from the previous time level.
+    double SIGN(double a, double b); // Helper function used by zriddr.
+    double zriddrRhop(double x1, double x2, double rp);
 
-        int miniTabAtraso;
+    void expiAlfaBetaPres(int &reinicia, int ncel);
+    void expiMassMist(double presfim, int masChkSup, int ncel, double razareativa,
+                      double presE,
+                      double tempE,
+                      double titE = -1,
+                      double betE = -1,
+                      int noextremo = 0, double areaChoke = 1.);
+    double somVel();
+    double termAdSomVel();
+    void WaxDeposition(dadosParafina &detalParafina, int ncel);
 
-        varGlob1D* vg1dSP;
-
-        int modoParafina;
-        int parafinado;
-        double deltaPar;
-
-        double fluxCal2D;
-
-        double C2;
-        double C3;
-        double diamInterIni;
-        double porosoPar;
-        double MW_wax;
-        double rhoWaxLiq;
-        double Sum_dCwaxdT;
-
-        double fluxcalAcopRedeP;
-        double resAcopRedeP;
-
-        double fonteCal;
-
-        detalhaParafina detParCel;
-
-        Cel(varGlob1D* Vvg1dSP=0,const DadosGeo vdutoL=DadosGeo(),
-        	const DadosGeo vduto=DadosGeo(),
-        	const DadosGeo vdutoR=DadosGeo(),
-            const ProFlu vflui=ProFlu(),
-            const ProFluCol vfluiCol=ProFluCol(),
-            const double vtempL=25.,const double vtemp=25.,
-            const double vtempR=25.,const double vtempini=25.,
-            const double vpresL=10.,const double vpres=10.,const double vpresR=10.,
-            const double vML=0.,const double vMC=0.,const double vMR=0.,
-            const double vMliqiniL=0.,const double vMliqini=0.,const double vMliqiniR=0.,
-            const double valfL=1.,const double valf=1.,const double valfR=1.,
-            const double vbetL=1.,const double vbet=1.,const double vbetR=1.,
-            const double vdxL=1.,const double vdx=1.,const double vdxR=1.,
-            const double vdt=-1.,
-            const int vposic=-1,
-            const TransCal vcalor=TransCal(),
-            const acessorio vacsr=acessorio(),
-            acessorio* vacsrL=0);//construtor default
-        Cel(const Cel&); //construtor por copia
-  	    Cel& operator=(const Cel&);
-
-  	    double Rey(double dia/*diametro*/,double vel/*velocidade*/,
-  	    		double rho/*massa especifica*/,double vis/*viscosidade, cP*/);//calcula o npumero de Reynolds
-  	    double fric(double re/*Reynolds*/,double eps/*rugosidade relativa*/,
-  	    		int tipo=1/*indica se o termo de rugosidade do fator de friccao deve ser recalculado ou
-				se deve ser utilizado o termo a priori, se 1, usa o termo a priori*/);  //calcula o fator de friccao
-  	    void avancalf(int& reinicia/*indicador se sera necessario corrigir o incremento de tempo*/,
-  	    		int ncel/*numero de celulas do sistema*/);//metodo da evolucao da fracao de vazio
-  	    void avancbet(int& reinicia/*indicador se sera necessario corrigir o incremento de tempo*/,
-  	    		int ncel/*numero de celulas do sistema*/);//metodo da evolucao de beta
-  	    double delpJus(double presfim);
-  	    void GeraLocal(double presfim/*pressao do separador*/,
-  	    		int masChkSup/*indicador de que o choke de superficie esta ativo ou inativo, 0=inativo*/,
-				int ncel/*numero de celulas do sistema*/,
-				double razareativa/*avisa que a master1 esta em uma condicao de abertura em que se
-				 deve considerar a sua resistencia no modelo*/,
-                double presE/*para a condicao de contorno pressao na entrada, valor da pressao,
-                se presE<0, condicao fechada*/,
-				double tempE/*para a condicao de contorno pressao na entrada, valor da temperatura*/,
-				double titE=-1/*para a condicao de contorno pressao na entrada, valor do titulo*/,
-				double betE=-1/*para a condicao de contorno pressao na entrada, valor de beta*/,
-				int ciclo=0/*contador de iteracao para se incluir o termo dTdtL na conservacao de massa da mistura
-				em ciclo 0, este termo nao e adicionado ao modelo, so apos a segunda iteracao ciclo=1
-				(caso se deseje fazer a iteracao)*/,
-				int modelo=1, int noextremo=0, int corrigeContSep=1, double areaChoke=1., int vexpi=0);//metodo onde e feito acoplamento pressao-velocidade
-
-  	    void avancPig(int& reinicia);//metodo em que se calcula a nova posicao relativa do pig no volume, se maior que 1,
-  	    //corrigisse o incremento de tempo para ficar =1;
-  	    void avancalfPig();//metodo em que se calcula a fracao de vazio a esquerda e direita do pig, dentro do volume;
-  	    void avancbetPig();//metodo em que se calcula o beta a esquerda e direita do pig, dentro do volume;
-
-  	    void avancalfPigExpli();//metodo em que se calcula a fracao de vazio a esquerda e direita do pig, dentro do volume;
-  	    void avancbetPigExpli();//metodo em que se calcula o beta a esquerda e direita do pig, dentro do volume;
-
-  	    void FeiticoDoTempo();//metodo especial para iteracoes, apos uma evcolucao de tempo,
-  	    //retorna os valores calculador para os valores originais da camada de tempo anteriuor
-
-  	    void FeiticoDoTempo2();//metodo especial para iteracoes, apos uma evcolucao de tempo,
-  	    //retorna os valores calculador para os valores originais da camada de tempo anteriuor
-
-  	    void FeiticoDoTempo3();//metodo especial para iteracoes, apos uma evcolucao de tempo,
-  	    //retorna os valores calculador para os valores originais da camada de tempo anteriuor
-  	    double SIGN(double a,double b);//metodo auxiliar a zriddr;
-        double zriddrRhop(double x1,double x2, double rp);
-
-  	    void expiAlfaBetaPres(int& reinicia,int ncel);
-  	    void expiMassMist(double presfim,int masChkSup,int ncel,double razareativa,
-                double presE,
-				double tempE,
-				double titE=-1,
-				double betE=-1,
-				int noextremo=0,double areaChoke=1.);
-  	    double somVel();
-  	    double termAdSomVel();
-  	    //void WaxDeposition(int BooleanPi, double C2_star, double C3_star, int BooleanFi,
-  	    		           //double ConstFi, double MultipDil, double rug, double MultipVisc, int alteraViscFlu, int ncel);
-  	    void WaxDeposition(dadosParafina& detalParafina, int ncel);
-
-  	    FullMtx<double> Jacobiana();
-  	    Vcr<double> autoVec(int ind, FullMtx<double> jac);
-  	    Vcr<double> flutua();
+    FullMtx<double> Jacobiana();
+    Vcr<double> autoVec(int ind, FullMtx<double> jac);
+    Vcr<double> flutua();
 };
 
 #endif
-
