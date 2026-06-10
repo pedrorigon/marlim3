@@ -1,203 +1,227 @@
 /*
  * dados1Poisson.h
  *
- *  Created on: 31 de ago. de 2023
- *      Author: Eduardo
+ * Created on: August 31, 2023
+ * Author: Eduardo
  */
 
 #ifndef DADOS3DPOISSON_H_
 #define DADOS3DPOISSON_H_
 
-#include <math.h>
-
-#include <iostream>
 #include <algorithm>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <vector>
 #include <ctime>
+#include <fstream>
+#include <iostream>
+#include <math.h>
+#include <sstream>
+#include <string>
 #include <unordered_map>
-using namespace std;
-//#include <ctime.h>
-//#include <ctime.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include "Log.h"
-#include "Vetor.h"
-//#include "Vetor.cpp"
-#include "Matriz.h"
-//#include "Matriz.cpp"
+#include <vector>
+// Legacy alternative: #include <ctime.h>
 #include "Elem3DPoisson.h"
-#include "Malha3DPoisson.h"
-#include "estruturasPoisson3D.h"
 #include "Geometria.h"
-//#include "TrocaCalor.h"
-#include "PropFluCol.h"
+#include "Log.h"
+#include "Malha3DPoisson.h"
+#include "Matriz.h"
 #include "PropFlu.h"
+#include "PropFluCol.h"
+#include "Vetor.h"
 #include "estruturaUNV.h"
-
+#include "estruturasPoisson3D.h"
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/schema.h"
+#include "rapidjson/error/pt_BR.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
-#include "rapidjson/error/pt_BR.h"
+#include "rapidjson/schema.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
+using namespace std;
 
-// criar relatorio dos arquivos de dados de saida da simulacao
+// Simulation output-profile report stream.
 extern ofstream arqRelatorioPerfis;
 
-// criar objeto de logger
+// Application logger.
 extern Logger logger;
 
-// criar string do path do arquivo de entrada
+// Path to the main input file.
 extern string pathArqEntrada;
 
-// criar string do path dos arquivos de entrada PVTSIM e SnapShot
+// Path to the external PVTSIM and snapshot input files.
 extern string pathArqExtEntrada;
 
-// criar string do path e prefixo dos arquivos de saida para POCO_INJETOR
+// Path and filename prefix for POCO_INJETOR output files.
 extern string pathPrefixoArqSaida;
 
-//diretorio contendo os arquivos de saida
+// Directory containing the simulation output files.
 extern string diretorioSaida;
 
+/*!
+ * Store and manage input data for the three-dimensional Poisson model.
+ *
+ * The class contains simulation-time settings, physical properties,
+ * boundary conditions, mesh connectivity and coordinates, thermal-coupling
+ * data, geometric references, and linear-system solver configuration.
+ *
+ * It also owns the dynamically allocated arrays created while loading the
+ * three-dimensional model and releases them in the destructor.
+ */
+class dadosP3D {
+  public:
+    detTempoPoisson3D temp; // Time-discretization and simulation-time data.
+    detPropPoisson3D prop;  // Material and physical-property data.
+    detCCPoisson3D CC;      // Boundary-condition and coupling data.
 
-class dadosP3D{
-	public:
+    int nno;          // Number of mesh nodes.
+    int nele;         // Number of mesh elements.
+    int noZero;       // Number of nonzero entries used by the sparse system.
+    int **noEle;      // Element-to-node connectivity matrix.
+    double *atributo; // Mesh or region attribute array.
+    int *tipo;        // Node, element, or boundary classification array.
+    double *vecsra;   // Auxiliary sparse-matrix value vector.
+    int *veclm;       // Auxiliary sparse-matrix index vector.
+    int *vecfnz;      // Auxiliary first-nonzero-entry index vector.
+    double **xcoor;   // Node-coordinate matrix.
 
-		detTempoPoisson3D temp;
-		detPropPoisson3D prop;
-		//detCIPoisson3D CI;
-		detCCPoisson3D CC;
-		//materialPoisson3D* mat;//vetor com os materiais cadastrados no Json
-		//cortedutoPoisson3D* corte;//vetor com as secoes transversais cadastradas no json
-		//ProFluCol fluc;
-		//ProFlu flui;
-		//DadosGeo* dutosMRT;
-		//double* comp;
-		//TransCal* transfer;
+    eleOBJ *elementoO; // Array containing auxiliary geometric or UNV element data.
 
-		int nno;//vari�vel inteira indicando o n�mero de n�s da malha
-		int nele;
-		int noZero;
-		int** noEle;
-		double* atributo;
-		int* tipo;
-		double* vecsra;
-		int* veclm;
-		int* vecfnz;
-		//double* vecsra;
-		//int* veclm;
-		//int* vecfnz;
-		double** xcoor;
+    double tempo;    // Current simulation time.
+    int nmaterial;   // Number of materials in the model.
+    int acop;        // Thermal-coupling activation flag.
+    double angAcop;  // Angular position used by the thermal-coupling model.
+    double *tParede; // Wall temperatures at the coupled locations.
+    double *tInt;    // Internal-fluid temperatures at the coupled locations.
 
-		//vector<cordaNo> cordas;
-		//vector<faceNo> faces;
-		//vector<eleNo> elemento;
-		//cordaOBJ* cordaO;
-		//faceOBJ* faceO;
-		eleOBJ* elementoO;
+    double *hE;      // External convective heat-transfer coefficients.
+    double *hI;      // Internal convective heat-transfer coefficients.
+    double *qAcop;   // Coupled heat-transfer rates.
+    double *qTotal;  // Total heat-transfer rates.
+    double *tInt0;   // Initial or reference internal-fluid temperatures.
+    double dimExt;   // External characteristic dimension.
+    double *diamRef; // Reference diameters at the coupled locations.
 
-		double tempo;
-		int nmaterial;
-		int acop;
-		double angAcop;
-		double* tParede;
-		double* tInt;
-		//double pInt;
-		//double tAmb;
-		//double vAmb;
-		//double velIni;
-		//int amb;
+    int rank;      // Rank or configuration value used by the linear solver.
+    int colorido;  // Coloring configuration used by the solver.
+    int solverMat; // Matrix-solver selection flag.
 
-		double* hE;
-		double* hI;
-		//double* condGlob;
-		//double* condLoc;
-		//double* qDesacop;
-		double* qAcop;
-		double* qTotal;
-		double* tInt0;
-		double dimExt;
-		double* diamRef;
-		//int* soConvInt;
+    string elearq;  // Element-file path or name.
+    string noarq;   // Node-file path or name.
+    string polyarq; // Polygon or geometry-file path or name.
+    string entrada; // Main input-file path or name.
 
-		int rank;
-		int colorido;
-		int solverMat;
+    /*!
+     * Construct the three-dimensional Poisson-model data from an input file.
+     * \param nomeArquivoEntrada Path to the input file.
+     */
+    dadosP3D(string nomeArquivoEntrada);
 
-		string elearq;
-		string noarq;
-		string polyarq;
-		string entrada;
+    //! Construct an empty three-dimensional Poisson-model data object.
+    dadosP3D();
 
-		dadosP3D(string nomeArquivoEntrada);
-		dadosP3D();
-		dadosP3D(const dadosP3D&);
-		dadosP3D& operator=(const dadosP3D&);
-		~dadosP3D(){
-			if(nele>0){
-				for(int i=0;i<nele;i++) delete[] noEle[i];
-				delete[] noEle;
-			}
-			if(nno>0){
-				for(int i=0;i<nno;i++) delete[] xcoor[i];
-				delete[] xcoor;
-		    	delete[] atributo;
-		    	delete[] tipo;
-			}
-			if(nele>0)delete[] vecsra;
-			if(nele>0)delete[] veclm;
-			if(nele>0)delete[] vecfnz;
-			//if(acop==1 && CC.nAcop>0){
-				//delete[] mat;
-				//for(int i=0; i<CC.nAcop; i++){
-					//delete[] corte[i].diam;
-					//delete[] corte[i].indmat;
-					//delete[] corte[i].discre;
-				//}
-				//delete[] corte;
-				//delete[] transfer;
-				//if(comp!=0)delete[] comp;
-				//if(dutosMRT!=0)delete[] dutosMRT;
-			//}
-		    //if(cordaO!=0)delete [] cordaO;
-		    //if(faceO!=0)delete [] faceO;
-		    if(elementoO!=0)delete [] elementoO;
-		    if(acop==1 && CC.nAcop>0){
-		    	if(tParede!=0)delete[] tParede;
-		    	if(tInt!=0)delete[] tInt;
-		    	if(hE!=0)delete[] hE;
-		    	if(hI!=0)delete[] hI;
-		    	//delete[] condGlob;
-		    	//delete[] condLoc;
-		    	//delete[] qDesacop;
-		    	if(qAcop!=0)delete[] qAcop;
-		    	if(qTotal!=0)delete[] qTotal;
-		    	if(tInt0!=0)delete[] tInt0;
-		    	if(diamRef!=0)delete[] diamRef;
-		    }
-		}
-		void iniciaVariaveis();
-		//void parse_materiais(Value& material_json);
-		void parse_corte(Value& corte_json);
-		//void parse_fluido_complementar(Value& fluido_json);
-		void parse_configIni(Value& configuracaoInicial_json);
-		void parse_Prop(Value& prop_json);
-		void parse_CI(Value& CI_json);
-		void parse_CC(Value& CC_json);
-		void parse_malha(Value& malha_json);
-		void lerPoisson(string nomeArquivoEntrada);
-		void lerPoisson2(string nomeArquivoEntrada,const dadosP3D& aux);
+    //! Copy constructor.
+    dadosP3D(const dadosP3D &);
 
+    //! Copy-assignment operator.
+    dadosP3D &operator=(const dadosP3D &);
+
+    //! Release all dynamically allocated mesh, element, and coupling arrays.
+    ~dadosP3D() {
+        if (nele > 0) {
+            for (int i = 0; i < nele; i++)
+                delete[] noEle[i];
+            delete[] noEle;
+        }
+        if (nno > 0) {
+            for (int i = 0; i < nno; i++)
+                delete[] xcoor[i];
+            delete[] xcoor;
+            delete[] atributo;
+            delete[] tipo;
+        }
+        if (nele > 0)
+            delete[] vecsra;
+        if (nele > 0)
+            delete[] veclm;
+        if (nele > 0)
+            delete[] vecfnz;
+        if (elementoO != 0)
+            delete[] elementoO;
+        if (acop == 1 && CC.nAcop > 0) {
+            if (tParede != 0)
+                delete[] tParede;
+            if (tInt != 0)
+                delete[] tInt;
+            if (hE != 0)
+                delete[] hE;
+            if (hI != 0)
+                delete[] hI;
+            if (qAcop != 0)
+                delete[] qAcop;
+            if (qTotal != 0)
+                delete[] qTotal;
+            if (tInt0 != 0)
+                delete[] tInt0;
+            if (diamRef != 0)
+                delete[] diamRef;
+        }
+    }
+
+    //! Initialize the class attributes with their default values.
+    void iniciaVariaveis();
+
+    /*!
+     * Parse the cross-section or coupled-geometry configuration.
+     * \param corte_json JSON object containing the cross-section data.
+     */
+    void parse_corte(Value &corte_json);
+
+    /*!
+     * Parse the initial simulation configuration.
+     * \param configuracaoInicial_json JSON object containing the initial configuration.
+     */
+    void parse_configIni(Value &configuracaoInicial_json);
+
+    /*!
+     * Parse the material and physical-property configuration.
+     * \param prop_json JSON object containing the physical-property data.
+     */
+    void parse_Prop(Value &prop_json);
+
+    /*!
+     * Parse the initial-condition configuration.
+     * \param CI_json JSON object containing the initial-condition data.
+     */
+    void parse_CI(Value &CI_json);
+
+    /*!
+     * Parse the boundary-condition and coupling configuration.
+     * \param CC_json JSON object containing the boundary-condition data.
+     */
+    void parse_CC(Value &CC_json);
+
+    /*!
+     * Parse the three-dimensional mesh configuration.
+     * \param malha_json JSON object containing the mesh data.
+     */
+    void parse_malha(Value &malha_json);
+
+    /*!
+     * Read and initialize the complete three-dimensional Poisson model.
+     * \param nomeArquivoEntrada Path to the input file.
+     */
+    void lerPoisson(string nomeArquivoEntrada);
+
+    /*!
+     * Read and initialize the model using data from an auxiliary instance.
+     * \param nomeArquivoEntrada Path to the input file.
+     * \param aux Auxiliary three-dimensional Poisson data object.
+     */
+    void lerPoisson2(string nomeArquivoEntrada, const dadosP3D &aux);
 };
-
-
 
 #endif /* DADOS3DPOISSON_H_ */

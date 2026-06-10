@@ -1,181 +1,166 @@
 #ifndef _CELG
 #define _CELG
+#define _USE_MATH_DEFINES // Enable mathematical constants such as M_PI.
 
-#define _USE_MATH_DEFINES // para M_PI
-#include <math.h>
-
-#include <algorithm>
-#include <fstream>
-#include <complex>
-using namespace std;
-#include "Vetor.h"
+#include "Geometria.h"
 #include "Matriz.h"
 #include "PropFlu.h"
-#include "Geometria.h"
-#include "chokegas.h"
 #include "TrocaCalor.h"
+#include "Vetor.h"
+#include "chokegas.h"
+#include <algorithm>
+#include <complex>
+#include <fstream>
+#include <math.h>
 
-class CelG{
+using namespace std;
 
-    //obs: pressao em kgf/cm2, temperatura em C; vazao massica em kg/s; tempo em seg.; diametro, perimetro,
-    //rugosidade em metros, massa especifica em kg/m3, vazao volumetrica em m3/s; angulo em radianos;
-    //velocidade em metros; comprimento de celula em metros; volume de leve, pesado e agua em Sm3;
-    //fluxo de calor em W/m;
-      	public:
-    //Solver de Hidratos
+/*!
+ * Represent a control volume in the gas-injection and service-line model.
+ *
+ * Unless otherwise stated, the following units are used:
+ * - Pressure: kgf/cm2
+ * - Temperature: degrees Celsius
+ * - Mass flow rate: kg/s
+ * - Time: seconds
+ * - Diameter, perimeter, roughness, velocity, and cell length: meters
+ * - Density: kg/m3
+ * - Volumetric flow rate: m3/s
+ * - Angle: radians
+ * - Standard volumes of light component, heavy component, and water: Sm3
+ * - Heat flow per unit length: W/m
+ */
+class CelG {
 
-		double j_H;
-		double j_G;
-		double j_W;
-		double V_h;
-		double V_w; //chris - Hidratos
-		double FVHG; //chris - Hidratos
-		double agua_consumida;  // acumulada por hidrato //chris - Hidratos
-		double massa_hidrato; //chris - Hidratos
+  public:
+    // Hydrate solver variables.
+    double j_H;
+    double j_G;
+    double j_W;
+    double V_h;
+    double V_w;
+    double FVHG;
+    double agua_consumida;
+    double massa_hidrato;
 
+    DadosGeo dutoL; // Geometry data for the control volume to the left.
+    DadosGeo duto;  // Geometry data for the current control volume.
+    DadosGeo dutoR; // Geometry data for the control volume to the right.
+    ProFlu flui;    // Fluid properties for the current control volume.
+    TransCal calor; // Heat-transfer model associated with the control volume.
+    int posic;      // Control-volume center index, referenced from the platform.
+    int tipoCC;     // Gas-injection boundary-condition type: 0 -> pressure, 1 -> flow rate.
+    double dt;      // Time-step increment.
+    double dTdt;    // Temperature time derivative used as a correction term in mass-conservation models.
+    double tempL;   // Temperature in the control volume to the left.
+    double temp;    // Temperature in the current control volume.
+    double tempR;   // Temperature in the control volume to the right.
+    double presL;   // Pressure in the control volume to the left.
+    double pres;    // Pressure in the current control volume.
+    double presR;   // Pressure in the control volume to the right.
+    double VGasL;   // Gas mass flow rate at the left boundary of the current control volume.
+    double VGasR;   // Gas mass flow rate at the right boundary of the current control volume.
+    double VGasRBuf; // Buffered gas mass flow rate at the right boundary during an intermediate
+                     // transient-network convergence iteration.
+    double VGasRR;      // Gas mass flow rate at the right boundary of the control volume to the right.
+    double dx0;         // Length of the current control volume.
+    double dx1;         // Length of the control volume to the right.
+    double dxL;         // Length of the control volume to the left.
+    double u1LL;        // Product of density and pipe cross-sectional area in the control volume to the left.
+    double u1L;         // Product of density and pipe cross-sectional area in the current control volume.
+    double u1R;         // Product of density and pipe cross-sectional area in the control volume to the right.
+    double massfonteCH; // Mass-source term in the current control volume.
+    double fluxcal;     // Heat flow.
+    double salinidade;  // Completion-fluid salinity used by the gas-lift unloading model.
+    int labelchk;       // Indicates whether a Master2 valve is installed at the right boundary: 1 when present.
+    int fechamon;       // Currently unused.
+    double razInter;    // Relative position of the gas/completion-fluid interface in the gas-lift unloading model:
+                        // 0 -> left boundary of the control volume, 1 -> right boundary.
+    double razInterIni; // Relative interface position at the previous time level.
+    int *celInter;      // Pointer to the index of the control volume containing the gas/completion-fluid interface.
+                        // Used during gas-lift unloading to identify the interface volume in GeraLocal().
+    ChokeGas chkcell;      // Gas-injection choke associated with the control volume.
+    double rpchk;          // Currently unused.
+    Vcr<double> TL;        // Right-hand-side vector of the local system.
+    FullMtx<double> local; // Local system matrix.
 
-	    DadosGeo dutoL;//objeto com as informacoes sobre a geometria do volume a esquerda;
-	    DadosGeo duto;//objeto com as informacoes sobre a geometria do volume;
-        DadosGeo dutoR;//objeto com as informacoes sobre a geometria do volume a direita;
-        ProFlu flui;//objeto com as propriedades do fluido do volume;
-        TransCal calor;//objeto de transferencia de calor;
-        int posic;//indice do centro de volume, referencia->plataforma;
-        int tipoCC;//tipo de condicao de contorno na injecao de gas, 0->pressao, 1->vazao
-        double dt;//incremento de tempo
-        double dTdt;//variacao da temperatura com o tempo, usado em caso de se desejar usar esta correcao nos modelos
-        //de conservacao de massa;
-        double tempL;//temperatura no volume a esquerda;
-        double temp;//temperatura no volume;
-        double tempR;//temperatura no volume a direita;
-        double presL;//pressao no volume a esquerda;
-        double pres;//pressao no volume;
-        double presR;//pressao no volume a direita;
-        double VGasL;//vazao massica de gas na fronteira esquerda do volume;
-        double VGasR;//vazao massica de gas na fronteira direita do volume;
-        double VGasRBuf;//vazao massica de gas na fronteira direita do volume,
-        //na iteracao intermediaria para a convergencia da rede transiente;
-        double VGasRR;//vazao massica de gas na fronteira direita do volume a direita;
-        double dx0;//comprimento do volume;
-        double dx1;//comprimento do volume a direita;
-        double dxL;//comprimento do volume a esquerda;
-        double u1LL;//produto massa especpificaXarea da tubukacao no volume a esquerda;
-        double u1L;//produto massa especpificaXarea da tubukacao no volume;
-        double u1R;//produto massa especpificaXarea da tubukacao no volume a direita;
-        double massfonteCH;//fonte de massa no volume;
-        double fluxcal;//fluxo de calor;
-        double salinidade;//para o modelo de descarga de GL, salinidade do fluido de completacao contido no volume;
-        int labelchk;//indicador de que existe uma Master2 instalada na fronteira direita do volume -> 1;
-        int fechamon;//nao utilizado;
-        double razInter;//para o modelo de descarga de gas lift, posicao relativa da interface
-        //gas-fluido de completacao dentro do volume, 0-> frobteira a escquerda do volume,
-        //1->fronteira a direitaa do volume;
-        double razInterIni;//;//para o modelo de descarga de gas lift, posicao relativa da interface
-        //gas-fluido de completacao dentro do volume na camada de tempo anteiror;
-        /*double posicLiq;
-        double dtInter;
-        double velInter;*/
-        int *celInter;//ponteiro da variavel que guarda o indice do volume onde se encontra a a interface
-        //gas-fluido de completacao, necessario na descarga de GL para indicar no metodo gera-local se o volume
-        //esta na interface gas-fluido de completacao;
-        ChokeGas chkcell;//objeto choke de injecao;
-        double rpchk;//sem utilidade atualmente;
-        Vcr<double> TL;//termo livre do sistema local;
-        FullMtx<double> local;//matriz local;
+    double fonteM2;        // Auxiliary Master2 mass-source term when the choke is active at this valve.
+    double tempLini;       // Left-control-volume temperature at the previous time level.
+    double tempini;        // Current-control-volume temperature at the previous time level.
+    double tempRini;       // Right-control-volume temperature at the previous time level.
+    double presLini;       // Left-control-volume pressure at the previous time level.
+    double presini;        // Current-control-volume pressure at the previous time level.
+    double presRini;       // Right-control-volume pressure at the previous time level.
+    double VGasLini;       // Gas mass flow rate at the left boundary at the previous time level.
+    double VGasRini;       // Gas mass flow rate at the right boundary at the previous time level.
+    double VGasRRini;      // Gas mass flow rate at the right boundary of the right control volume at the previous time level.
+    double u1LLini;        // Previous-time-level density-area product in the control volume to the left.
+    double u1Lini;         // Previous-time-level density-area product in the current control volume.
+    double u1Rini;         // Previous-time-level density-area product in the control volume to the right.
+    double massfonteCHini; // Mass-source term at the previous time level.
+    double fonteM2ini;     // Auxiliary Master2 mass-source term at the previous time level when the choke is active.
+    int fechamonini;  // Currently unused.
+    int *celInterini; // Pointer to the interface-volume index at the previous time level.
+                      // Used during gas-lift unloading to identify the interface volume in GeraLocal().
+    int posicini;    // Currently unused.
+    double rpchkini; // Currently unused.
+    int vgl;         // Indicates that the control volume contains a gas-lift valve; used for trend output.
+    double tEstag;   // Temperature upstream of the gas-lift valve, used for trend output.
+    double pEstag;   // Pressure upstream of the gas-lift valve, used for trend output.
+    double tGarg;    // Temperature downstream of the gas-lift valve, used for trend output.
+    double pGarg;    // Pressure downstream of the gas-lift valve, used for trend output.
+    double qGarg;    // Gas-lift valve flow rate in std m3/day, used for trend output.
+    double areaGarg; // Gas-lift valve orifice area.
 
-        double fonteM2;//fonte de massa auxiliar para modelo de master2, quando o choke esta ativo nesta valvula;
-        //double deriLM2;
-        //double deriCM2;
-        //double deriRM2;
- ///////////////////////////////////////////////////////////////////////////////////////
-        double tempLini;//temperatura no volume a esquerda na camada de tempo anterior;
-        double tempini;//temperatura no volume na camada de tempo anterior;
-        double tempRini;//temperatura no volume a direita na camada de tempo anterior;
-        double presLini;//pressao no volume a esquerda na camada de tempo anterior;
-        double presini;//pressao no volume na camada de tempo anterior;
-        double presRini;//pressao no volume a direita na camada de tempo anterior;
-        double VGasLini;//vazao massica de gas na fronteira esquerda do volume na camada de tempo anterior;
-        double VGasRini;//vazao massica de gas na fronteira direita do volume na camada de tempo anterior;
-        double VGasRRini;//vazao massica de gas na fronteira direita do volume a direita na camada de tempo anterior;
-        double u1LLini;//produto massa especpificaXarea da tubukacao no volume na camada de tempo anterior;
-        double u1Lini;//produto massa especpificaXarea da tubukacao no volume na camada de tempo anterior;
-        double u1Rini;//produto massa especpificaXarea da tubukacao no volume a direita na camada de tempo anterior;
-        double massfonteCHini;//fonte de massa no volume na camada de tempo anterior;
-        double fonteM2ini;//fonte de massa auxiliar para modelo de master2,
-        // valor da camada de tempo anterior, quando o choke esta ativo nesta valvula;
-        int fechamonini;//nao utilizado;
-        //double razInterIni0;
-        int *celInterini;//ponteiro da variavel que guarda o indice do volume onde se encontra a a interface
-        //gas-fluido de completacao (camada de tempo anterior), necessario na descarga de GL para indicar no
-        //metodo gera-local se o volume esta na interface gas-fluido de completacao;
-        int posicini;//nao utilizado atualmente;
-        double rpchkini;//sem utilidade atualmente;
-        int vgl;//indicador de que este volume tem uma VGL->1, utilizado na impressao de tendencia para VGL;
-        double tEstag;//temperatura a montante da VGL, usada para impressao de tendencia para VGL;
-        double pEstag;//pressao a montante da VGL, usada para impressao de tendencia para VGL;
-        double tGarg;//temperatura a jusante da VGL, usada para impressao de tendencia para VGL;
-        double pGarg;//pressao a jusante da VGL, usada para impressao de tendencia para VGL;
-        double qGarg;//vazao na VGL em Stdm3/d, usada para impressao de tendencia para VGL;
-        double areaGarg;//area do orificio da VGL;
+    double rg;
+    double rgR;
 
-        double rg;
-        double rgR;
+    int indGeom;
 
-        int indGeom;
+    double dPdLHidro;
+    double dPdLFric;
+    double dTdLCor;
 
-        double dPdLHidro;
-        double dPdLFric;
-        double dTdLCor;
+    int inddPdLHidro;
+    int inddPdLFric;
+    int inddTdLCor;
 
-        int inddPdLHidro;
-        int inddPdLFric;
-        int inddTdLCor;
+    double termoHidro; // Hydrostatic pressure variation between the current and right control volumes.
+    double termoFric;  // Frictional pressure variation between the current and right control volumes.
 
-        double termoHidro;//variacao de pressao hidrostatica entre o volume central e o volume a direita
-        double termoFric;//variacao de pressao por friccao entre o volume central e o volume a direita
- ///////////////////////////////////////////////////////////////////////////////////////////////
+    CelG(const DadosGeo vdutoL = DadosGeo(),
+         const DadosGeo vduto = DadosGeo(),
+         const DadosGeo vdutoR = DadosGeo(),
+         const ProFlu vflui = ProFlu(),
+         const ChokeGas vchkcell = ChokeGas(),
+         const double vtempL = 25., const double vtemp = 25., const double vtempR = 25.,
+         const double vpresL = 10., const double vpres = 10., const double vpresR = 10.,
+         const double vVGasL = 0., const double vVGasR = 0., const double vVGasRR = 0.,
+         const double vu1L = 0., const double vu1R = 0., const double vu1LL = 0.,
+         const double vdx0 = 0., const double vdx1 = 0., const double vdxL = 0.,
+         const double vdt = -1., const int vposic = -1, const int vfecham = 0, const int vtipoCC = 0,
+         const TransCal vcalor = TransCal()); // Default constructor.
+    CelG(const CelG &);                       // Copy constructor.
+    CelG &operator=(const CelG &);
 
-
-        CelG(const DadosGeo vdutoL=DadosGeo(),
-        	const DadosGeo vduto=DadosGeo(),
-        	const DadosGeo vdutoR=DadosGeo(),
-            const ProFlu vflui=ProFlu(),
-            const ChokeGas vchkcell=ChokeGas(),
-            const double vtempL=25.,const double vtemp=25., const double vtempR=25.,
-            const double vpresL=10.,const double vpres=10., const double vpresR=10.,
-            const double vVGasL=0.,const double vVGasR=0.,const double vVGasRR=0.,
-            const double vu1L=0.,const double vu1R=0.,const double vu1LL=0.,
-            const double vdx0=0.,const double vdx1=0.,const double vdxL=0.,
-            const double vdt=-1.,const int vposic=-1,const int vfecham=0, const int vtipoCC=0,
-            const TransCal vcalor=TransCal());//construtor default
-        CelG(const CelG&); //construtor por c�pia
-  	    CelG& operator=(const CelG&);
-
-  	    double Rey(double dia/*diametro da tubulacao*/,
-  	    		double vel/*velocidade media de escoamento*/,
-				double rho/*massa especifica*/,
-				double vis/*viscosidade*/);//Reynolds;
-  	    double fric(double re/*numero de Reynolds*/,
-  	    		double eps/*rugosidade relativa*/);//metodo para calculo do fator de friccao;
-  	    double MasEspFlu(double pres, double temp) const;//metodo que calcula a
-  	    //massa especifica do fluido de completacao na linha de servico, usado no caso de descarga de VGL;
-  	    double VisFlu(double pres, double temp) const;//metodo que calcula a
-  	    //viscosidade do fluido de completacao na linha de servico, usado no caso de descarga de VGL;
-  	    double CalorLiq(double pres, double temp) const;//metodo que calcula o
-  	    //calor especifico do fluido de completacao na linha de servico, usado no caso de descarga de VGL;
-  	    double CondLiq(double pres, double temp) const;//metodo que calcula a
-  	    //condutividade do fluido de completacao na linha de servico, usado no caso de descarga de VGL;
-  	    double DrhoDtFlu(double pres, double temp) const;//metodo que calcula a
-  	    //derivada da massa especifica do fluido de completacao com a temperatura na linha de servico,
-  	    //usado no caso de descarga de VGL;
-  	    double psia(const double p)const { return (p*0.9678411)*14.69595;} //p->kgf, transforma kgf para psia // alteracao2
-  	    double Faren(const double t)const { return 1.8*t + 32;} //t em Celcius, transforma Celcius para Farenheit // alteracao2
-  	    void GeraLocal(int ncelGas,double presiniG,double tempiniG,double abertura);//metodo que
-  	    //monta a matriz local do i-esimo volume da linha de servico
-  	    void FeiticoDoTempo();//metodo que recupera os valores dos atributos do voluem da camada de tempo anterior;
-  	    void DeVoltaParaoFuturo();//metodo que salva os valores mais recentes antes de um novo avanco de tempo;
-  	    //void avancInter(int& reinicia);
-
+    double Rey(double dia /* Pipe diameter. */,
+               double vel /* Mean flow velocity. */,
+               double rho /* Density. */,
+               double vis /* Viscosity. */); // Calculate the Reynolds number.
+    double fric(double re /* Reynolds number. */,
+                double eps /* Relative roughness. */); // Calculate the friction factor.
+    double MasEspFlu(double pres, double temp) const; // Calculate the completion-fluid density.
+    double VisFlu(double pres, double temp) const;    // Calculate the completion-fluid viscosity.
+    double CalorLiq(double pres, double temp) const;  // Calculate the completion-fluid specific heat.
+    double CondLiq(double pres, double temp) const;   // Calculate the completion-fluid thermal conductivity.
+    double DrhoDtFlu(double pres, double temp) const; // Calculate the completion-fluid density derivative
+                                                     // with respect to temperature in the service line.
+    double psia(const double p) const { return (p * 0.9678411) * 14.69595; }        // Convert pressure from kgf/cm2 to psia.
+    double Faren(const double t) const { return 1.8 * t + 32; }                     // Convert temperature from degrees Celsius to degrees Fahrenheit.
+    void GeraLocal(int ncelGas, double presiniG, double tempiniG, double abertura); // Assemble the local matrix for the
+                                                                                   // i-th service-line control volume.
+    void FeiticoDoTempo();     // Restore control-volume attributes from the previous time level.
+    void DeVoltaParaoFuturo(); // Save the most recent values before advancing to a new time level.
 };
 
 #endif
-

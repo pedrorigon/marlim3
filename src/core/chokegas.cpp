@@ -3,7 +3,7 @@
 ChokeGas::ChokeGas(const ProFlu vflui,const double vareagarg,const double vdextern,
 		const double vcd, const double vpresEstag,const double vpresGarg,const double vtempEstag,
 		const double vfrec, int vtipo, double vareafole, double vpcalib, double vtcalib,
-		const double vcdliq,const double vfrecliq) { //construtor default//alteracao2
+		const double vcdliq,const double vfrecliq) { //construtor default
 
 	flui = vflui;
 	areagarg=vareagarg;
@@ -23,7 +23,7 @@ ChokeGas::ChokeGas(const ProFlu vflui,const double vareagarg,const double vdexte
 	tempGarg=tempEstag;
 
 
-}//alteracao2
+}
 
 ChokeGas::ChokeGas(const ChokeGas& vchok) { //construtor por c�pia//alteracao2
 	flui = vchok.flui;
@@ -42,9 +42,9 @@ ChokeGas::ChokeGas(const ChokeGas& vchok) { //construtor por c�pia//alteracao2
 	frecliq=vchok.frecliq;
 	qGarg=vchok.qGarg;
 	tempGarg=vchok.tempGarg;
-}//alteracao2
+}
 
-ChokeGas& ChokeGas::operator =(const ChokeGas& vchok) {//alteracao2
+ChokeGas& ChokeGas::operator =(const ChokeGas& vchok) {
 	if (this != &vchok) {
 		flui = vchok.flui;
 		areagarg=vchok.areagarg;
@@ -64,9 +64,9 @@ ChokeGas& ChokeGas::operator =(const ChokeGas& vchok) {//alteracao2
         tempGarg=vchok.tempGarg;
 	}
 	return *this;
-}//alteracao2
+}
 
-double  ChokeGas::MasEspFlu(double pres, double temper, double salin) const{// alteracao2
+double  ChokeGas::MasEspFlu(double pres, double temper, double salin) const{
 
 	  double tfarAmb=Faren(20.);
 	  double ppsiAmb=psia(1.);
@@ -81,16 +81,13 @@ double  ChokeGas::MasEspFlu(double pres, double temper, double salin) const{// a
 	  double rhomist=(1-x)/rholw+x/rhosal;
 	  return 1./rhomist;
 
-}// alteracao2
+}
 
-double ChokeGas::massica(int fluido, double salin) {//alteracao2
+double ChokeGas::massica(int fluido, double salin) {
 
 	double massica=0.;
 	double sens=1.;
 	if(presEstag<presGarg){
-		//double aux=presEstag;
-		//presEstag=presGarg;
-		//presGarg=aux;
 		sens=0.;
 	}
 
@@ -98,8 +95,7 @@ double ChokeGas::massica(int fluido, double salin) {//alteracao2
 	  double max;
 	  double kad=flui.ConstAdG(presEstag,tempEstag);
 	  double rho0=flui.MasEspGas(presEstag,tempEstag);
-//	  double rhoG=flui.MasEspGas(presGarg,tempGarg);
-	  if(tipo==0 || tipo==1){//alteracao3
+	  if(tipo==0 || tipo==1){
 	    double rt=presEstag*98066.52/(rho0*flui.Zdran(presEstag,tempEstag));
 	    double razcrit=pow((kad+1)/2.,-kad/(kad-1));
 	    if(presGarg/presEstag>razcrit){
@@ -117,22 +113,22 @@ double ChokeGas::massica(int fluido, double salin) {//alteracao2
 
 	      massica=max;
 	    }
-	  }//alteracao3
-	  else{//alteracao3
+	  }
+	  else{
 		  double SGG=flui.Deng;
 		  double PBAR=0.980665*presEstag;
 		  double TC=tempEstag;
 		  double agmm=areagarg*(1000*1000);
 		  double CR;
 
-		  int JDG = floor(10.0*(SGG - 0.55)); // Densidade
+		  int JDG = floor(10.0*(SGG - 0.55));  // Densidade
 		  if (JDG < 0) JDG = 0;
 		  if (JDG > 3) JDG = 3;
 
-		  int JPR = floor(0.02*PBAR);         // Pressão
+		  int JPR = floor(0.02*PBAR);  // Pressão
 		  if (JPR > 7) JPR = 7;
 
-		  int JTE = floor(0.05*TC)-1;               // Temperatura
+		  int JTE = floor(0.05*TC)-1;  // Temperatura
 		  if (JTE < 0) JTE = 0;
 		  if (JTE >8) JTE = 8;
 
@@ -173,7 +169,7 @@ double ChokeGas::massica(int fluido, double salin) {//alteracao2
 
 		  massica=QG*Rhostd/86400;
 
-	  }//alteracao3
+	  }
 	  double rho1=flui.MasEspGas(presGarg,tempGarg);
 	  qGarg=cd*sens*massica/rho1;
 	  return cd*sens*massica;
@@ -190,79 +186,7 @@ double ChokeGas::massica(int fluido, double salin) {//alteracao2
 
 	}
 
-}//alteracao2
-
-///alteração para válvula de orifício, Thornhill-Craver
-
-
-/*double ChokeGas::massica(int fluido, double salin) {//alteracao2
-
-	double massica;
-	double sens=1.;
-	if(presEstag<presGarg){
-		//double aux=presEstag;
-		//presEstag=presGarg;
-		//presGarg=aux;
-		sens=0.;
-	}
-
-	if(fluido==0){
-	  double max;
-	  double kad=1.3;
-	  double rho0=flui.MasEspGas(1.0332,20.);
-	  double rt=(pow(flui.Deng,1)*(tempEstag+273.23)*flui.Zdran(presEstag,tempEstag));
-	  //double rt=presEstag*0.98665/(flui.MasEspGas(presEstag,tempEstag));
-	  double razcrit=pow((kad+1)/2.,-kad/(kad-1));
-	  double razpres=presGarg/presEstag;
-	  if(presGarg/presEstag>razcrit){
-	    massica=sqrt(2.*(kad/(kad-1.))*(pow(razpres,2/kad)-pow(razpres,(kad+1)/kad))/rt);
-	    massica*=423.6*(areagarg*1e6*presEstag*0.980665)*rho0/86400;
-	  }
-	  else{
-	    massica=sqrt(2.*(kad/(kad-1.))*(pow(razcrit,2/kad)-pow(razcrit,(kad+1)/kad))/rt);
-		massica*=423.6*(areagarg*1e6*presEstag*0.98665)*rho0/86400;
-	  }
-	  return cd*sens*massica;
-	}
-	else{
-		double rho0=MasEspFlu(presEstag,tempEstag,salin);
-		if(presEstag>presGarg)
-		massica=areagarg*sqrt(2.*rho0*(presEstag-presGarg)*98066.52);
-		else massica=0.;
-		return cdliq*sens*massica;
-
-	}
-
-}//alteracao2*/
-
-/*double ChokeGas::massica(int fluido, double salin) {
-
-	double massica;
-	double sens=1.;
-	if(presEstag<presGarg){
-		//double aux=presEstag;
-		//presEstag=presGarg;
-		//presGarg=aux;
-		sens=0.;
-	}
-
-	  double max;
-	  double kad=flui.ConstAdG(presEstag,tempEstag);
-	  //double kad=1.26;
-	  double rho0=flui.MasEspGas(presEstag,tempEstag);
-	  double rt=presEstag*98066.5/(rho0*flui.Zdran(presEstag,tempEstag));
-	 // max=sqrt(kad)*pow(2./(kad+1.),0.5*(kad+1.)/(kad-1.))*areagarg*rho0*sqrt(rt);
-	  massica=sqrt(2.*kad/(kad-1.)*pow(presGarg/presEstag,2./kad)*
-			  (1.-pow(presGarg/presEstag,(kad-1.)/kad)));
-	  massica*=(areagarg*presEstag*98066.5/sqrt(rt));
-	  double razcrit=pow((kad+1)/2.,-kad/(kad-1));
-	  max=sqrt((2.*kad/(kad-1.))*pow(razcrit,2./kad)*(1.-pow(razcrit,(kad-1.)/kad)));
-	  max*=(areagarg*presEstag*98066.5/sqrt(rt));
-	  //if(massica>max)massica=max;
-	  if(presGarg/presEstag<=razcrit)massica=max;
-	return cd*sens*massica;
-}*/
-
+}
 
 double ChokeGas::tgarg() {
 	double kad=flui.ConstAdG(presEstag,tempEstag);
@@ -278,37 +202,31 @@ double ChokeGas::razcrit() {
 double ChokeGas::fraiz(double kad, double rt, double mass, double rp) {
 	return pow((mass*sqrt(rt)/(areagarg*presEstag*98066.5)),2.)-(2*kad/(kad-1.))*rp*rp*(1.-pow(rp,kad-1.));
 }
+
 double ChokeGas::derraiz(double kad, double rp) {
 	return -(2.*kad/(kad-1.))*(2.*rp*(1.-pow(rp,kad-1.))-(kad-1.)*rp*rp*pow(rp,kad-2.));
 }
-double ChokeGas::newton(double kad, double rt, double mass, double rp) {
-	double errox=100.;
-	double errof=fraiz(kad,rt,mass,rp);
 
-	int konta=0;
-	while((fabs(errox)>1e-5 || fabs(errof)>1e-5) && konta<100){
-	 double deri=derraiz(kad,rp);
-	 errox=-errof/deri;
-	 rp=rp+errox;
-	/* if(rp<0.){
-		 errox=0.;
-		 errof=0.;
-		 rp=0.0001;
-	 }
-	 else{*/
-		 errof=fraiz(kad,rt,mass,rp);
-	     konta++;
-	 //}
-	}
-	return rp;
+double ChokeGas::newton(double kad, double rt, double mass, double rp) {
+    double errox = 100.;
+    double errof = fraiz(kad, rt, mass, rp);
+
+    int konta = 0;
+    while ((fabs(errox) > 1e-5 || fabs(errof) > 1e-5) && konta < 100) {
+        double deri = derraiz(kad, rp);
+        errox = -errof / deri;
+        rp = rp + errox;
+        errof = fraiz(kad, rt, mass, rp);
+        konta++;
+    }
+    return rp;
 }
+
 double ChokeGas::razpres(double mass, double rp) {
 	double kad=flui.ConstAdG(presEstag,tempEstag);
 	double rho0=flui.MasEspGas(presEstag,tempEstag);
 	double rt=presEstag*98066.5/(rho0*flui.Zdran(presEstag,tempEstag));
-	//double max=sqrt(kad)*pow(2./(kad+1.),0.5*(kad+1.)/(kad-1.))*areagarg*rho0*sqrt(rt);
 	double rpcrit=razcrit();
-	//rp=rpcrit;
 	rp=razpresSimples(mass,rp);
 	double aux=newton(kad,rt,mass,pow(rp,1./kad));
 	aux=pow(fabs(aux),kad);
@@ -328,9 +246,7 @@ double ChokeGas::razpresSimples(double mass, double rp) {
 	double vsom=sqrt((2.*kad/(kad+1.))*rt);
 	double Mach=vgarg/vsom;
 	double rpcrit=razcrit();
-	//rp=rpcrit;
 	double aux=pow(1.+0.5*(kad-1.)*Mach*Mach,kad/(kad-1.));
-	//aux=1./aux;
 	double rpS=1./aux;
 	if(rpS>1.)rpS=1.;
 	if(rpS<rpcrit)rpS=rpcrit;
@@ -338,14 +254,11 @@ double ChokeGas::razpresSimples(double mass, double rp) {
 }
 
 double ChokeGas::FMachVenturi(double Mach, double kad){
-	//double kad=flui.ConstAdG(presEstag,tempEstag);
 	double razarea=areafole/areagarg;
     return razarea-pow((1.+0.5*(kad-1)*Mach*Mach)/(0.5*(kad+1.)),0.5*(kad+1.)/(kad-1.))/Mach;
 }
 
 double ChokeGas::DeriFMachVenturi(double Mach, double kad){
-	//double kad=flui.ConstAdG(presEstag,tempEstag);
-//	double razarea=areafole/areagarg;
 	double expre1=(1.+0.5*(kad-1)*Mach*Mach)/(0.5*(kad+1.));
     return (1/(Mach*Mach))*pow(expre1,0.5*(kad+1.)/(kad-1.))-pow(expre1,(-0.5*kad+1.5)/(kad-1.));
 }
@@ -354,22 +267,14 @@ double ChokeGas::newtonMachVenturi(double kad) {
 	double errox=100.;
 	double MachChute=0.05;
 	double errof=FMachVenturi(MachChute, kad);
-//	double raiz;
 
 	int konta=0;
 	while((fabs(errox)>1e-5 || fabs(errof)>1e-5) && konta<100){
 	 double deri=DeriFMachVenturi(MachChute, kad);
 	 errox=-errof/deri;
 	 MachChute=MachChute+errox;
-	/* if(rp<0.){
-		 errox=0.;
-		 errof=0.;
-		 rp=0.0001;
-	 }
-	 else{*/
 		 errof=FMachVenturi(MachChute, kad);
 	     konta++;
-	 //}
 	}
 	return MachChute;
 }
@@ -385,27 +290,18 @@ double ChokeGas::massicaVenturi() {
 	double massica;
 	double sens=1.;
 	if(presEstag<presGarg){
-		//double aux=presEstag;
-		//presEstag=presGarg;
-		//presGarg=aux;
 		sens=0.;
 	}
 
 	  double max;
 	  double kad=flui.ConstAdG(presEstag,tempEstag);
-	  //double kad=1.26;
 	  double rho0=flui.MasEspGas(presEstag,tempEstag);
 	  double rt=presEstag*98066.5/(rho0*flui.Zdran(presEstag,tempEstag));
-	  //max=sqrt(kad)*pow(2./(kad+1.),0.5*(kad+1.)/(kad-1.))*areagarg*rho0*sqrt(rt);
 	  massica=sqrt((2.*kad/(kad-1.))*pow(presGarg/presEstag,2./kad)*(1.-pow(presGarg/presEstag,(kad-1.)/kad)));
 	  massica*=(areafole*presEstag*98066.5/sqrt(rt));
 	  double razcrit=razpresVenturi();
-	  //razcrit=pow((kad+1)/2.,-kad/(kad-1));
 	  max=sqrt((2.*kad/(kad-1.))*pow(razcrit,2./kad)*(1.-pow(razcrit,(kad-1.)/kad)));
 	  max*=(areafole*presEstag*98066.5/sqrt(rt));
 	  if(presGarg/presEstag<=razcrit)massica=max;
-	  //if(massica>max)massica=max;
 	return cd*sens*massica;
 }
-
-//template class ChokeGas;
