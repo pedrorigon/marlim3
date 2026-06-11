@@ -87,7 +87,7 @@ struct varGlob1D {
     int ntrd3DP;
     int modoTransiente;
     int simulaTransiente;
-    int sequenciaAS;
+    int sequenciaAP;
     int narq;
     int tipoModeloDrift;
     int blackOilTemp;
@@ -168,7 +168,7 @@ struct varGlob1D {
         ntrd3DP = 1;
         modoTransiente = 0;
         simulaTransiente = 0;
-        sequenciaAS = 0;
+        sequenciaAP = 0;
         narq = 1;
         tipoModeloDrift = 1;
         blackOilTemp = 0;
@@ -250,7 +250,7 @@ struct varGlob1D {
             ntrd3DP = vtemp.ntrd3DP;
             modoTransiente = vtemp.modoTransiente;
             simulaTransiente = vtemp.simulaTransiente;
-            sequenciaAS = vtemp.sequenciaAS;
+            sequenciaAP = vtemp.sequenciaAP;
             narq = vtemp.narq;
             tipoModeloDrift = vtemp.tipoModeloDrift;
             blackOilTemp = vtemp.blackOilTemp;

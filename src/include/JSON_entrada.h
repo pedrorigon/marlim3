@@ -35,8 +35,9 @@
 #define JSON_entrada_configuracaoInicial_modeloCp JSONInteger
 #define JSON_entrada_configuracaoInicial_modeloJTL JSONInteger
 #define JSON_entrada_configuracaoInicial_tabP JSONBoolean
-#define JSON_entrada_configuracaoInicial_AS JSONBoolean
-#define JSON_entrada_configuracaoInicial_paralelizaAS JSONBoolean
+#define JSON_entrada_configuracaoInicial_AP JSONBoolean
+#define JSON_entrada_configuracaoInicial_paralelizaAP JSONBoolean
+#define JSON_entrada_configuracaoInicial_arquivoAP JSONString
 #define JSON_entrada_configuracaoInicial_trackRgo JSONBoolean
 #define JSON_entrada_configuracaoInicial_trackDensidadeGas JSONBoolean
 #define JSON_entrada_configuracaoInicial_correcaoDenGasLivreBlackOil JSONBoolean
@@ -315,8 +316,9 @@ class JSON_entrada_configuracaoInicial : public JSONObject {
     JSON_entrada_configuracaoInicial_modeloCp &modeloCp();
     JSON_entrada_configuracaoInicial_modeloJTL &modeloJTL();
     JSON_entrada_configuracaoInicial_tabP &tabP();
-    JSON_entrada_configuracaoInicial_AS &AS();
-    JSON_entrada_configuracaoInicial_paralelizaAS &paralelizaAS();
+    JSON_entrada_configuracaoInicial_AP &AP();
+    JSON_entrada_configuracaoInicial_paralelizaAP &paralelizaAP();
+	JSON_entrada_configuracaoInicial_arquivoAP& arquivoAP();
     JSON_entrada_configuracaoInicial_trackRgo &trackRgo();
     JSON_entrada_configuracaoInicial_trackDensidadeGas &trackDensidadeGas();
     JSON_entrada_configuracaoInicial_correcaoDenGasLivreBlackOil &correcaoDenGasLivreBlackOil();

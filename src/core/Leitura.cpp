@@ -198,8 +198,9 @@ void Ler::iniciarVariaveis() {
 	correcao.dPdLFric =0;
 	correcao.dTdL =0;
 
-	AS=0;
-	paralelAS=0;
+	AP=0;
+	paralelAP=0;
+	arquivoAP="leituraAP.json";
 
 	nthrd=1;
 
@@ -467,8 +468,9 @@ void Ler::iniciarVariaveisConstrutorDefault() {
 	correcao.dPdLFric =0;
 	correcao.dTdL =0;
 
-	AS=0;
-	paralelAS=0;
+	AP=0;
+	paralelAP=0;
+	arquivoAP="leituraAP.json";
 
 	nthrd=1;
 	buscaFC=0.1;
@@ -2147,8 +2149,9 @@ void Ler::parse_configuracao_inicial(
 		razCompGasReves=0.;
 		tempReves=-1000.;
 
-		AS=0;
-		paralelAS=0;
+		AP=0;
+		paralelAP=0;
+		arquivoAP="leituraAP.json";
 
 		nthrd=1;
 		buscaFC=0.1;
@@ -2183,10 +2186,12 @@ void Ler::parse_configuracao_inicial(
 			saidaClassica = configuracao_inicial_json.saidaClassica();
 		}
 
-		if (configuracao_inicial_json.AS().exists())
-			AS = configuracao_inicial_json.AS();
-		if (configuracao_inicial_json.paralelizaAS().exists())
-			paralelAS = configuracao_inicial_json.paralelizaAS();
+		if (configuracao_inicial_json.AP().exists())
+			AP = configuracao_inicial_json.AP();
+		if (configuracao_inicial_json.paralelizaAP().exists())
+			paralelAP = configuracao_inicial_json.paralelizaAP();
+		if (configuracao_inicial_json.arquivoAP().exists())
+			arquivoAP = configuracao_inicial_json.arquivoAP();
 
 		if (configuracao_inicial_json.HISEP().exists())
 			HISEP = configuracao_inicial_json.HISEP();
@@ -13374,6 +13379,7 @@ void Ler::copiaArq(Ler& arqAntigo) {
 		int iniSegC = 0;
 		for (int j = tempncel; j < (tempncel + unidadeP[i].ncel); j++) {
 			int kontauni = j - tempncel;
+			celp[j].correlacaoMR2 = unidadeP[i].correlacaoMR2;
 			celp[j].duto = unidadeP[i].duto;
 			celp[j].dirconv = unidadeP[i].dirconv;
 			celp[j].acopcol = unidadeP[i].acopcol;
@@ -17618,11 +17624,11 @@ void Ler::imprimeProfile(Cel* const celula,
 		}
 		ostringstream saidaP;
 		int numero = round(tempo);
-		if (indTramo < 0 && AS==0)
+		if (indTramo < 0 && AP==0)
 			saidaP << pathPrefixoArqSaida << "PERFISP" << "-" << numero
 					<< ".dat";
-		else if (indTramo < 0 && AS==1)
-			saidaP << pathPrefixoArqSaida << "PERFISP"<<"-seqAS-"<<(*vg1dSP).sequenciaAS << "-" << numero
+		else if (indTramo < 0 && AP==1)
+			saidaP << pathPrefixoArqSaida << "PERFISP"<<"-seqAP-"<<(*vg1dSP).sequenciaAP << "-" << numero
 					<< ".dat";
 		else
 			saidaP << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
@@ -18007,11 +18013,11 @@ void Ler::imprimeProfileG(CelG* const celula,
 		}
 		ostringstream saidaG;
 		int aproxtempo = round(tempo);
-		if (indTramo < 0 && AS==0)
+		if (indTramo < 0 && AP==0)
 			saidaG << pathPrefixoArqSaida << "PERFISG" << "-" << aproxtempo
 					<< ".dat";
-		else if (indTramo < 0 && AS==1)
-			saidaG << pathPrefixoArqSaida << "PERFISG" <<"-seqAS-"<<(*vg1dSP).sequenciaAS << "-" << aproxtempo
+		else if (indTramo < 0 && AP==1)
+			saidaG << pathPrefixoArqSaida << "PERFISG" <<"-seqAP-"<<(*vg1dSP).sequenciaAP << "-" << aproxtempo
 			<< ".dat";
 		else
 			saidaG << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
@@ -18108,10 +18114,10 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 		return output_i18n::tr(this->idiomaSaida, pt, en);
 	};
 	ostringstream saidaR;
-	if (indTramo < 0 && AS==0)
+	if (indTramo < 0 && AP==0)
 		saidaR << pathPrefixoArqSaida << "resumoPermanente" << ".dat";
-	else if (indTramo < 0 && AS==1)
-		saidaR << pathPrefixoArqSaida << "resumoPermanente"<<"-seqAS-"<<(*vg1dSP).sequenciaAS <<".dat";
+	else if (indTramo < 0 && AP==1)
+		saidaR << pathPrefixoArqSaida << "resumoPermanente"<<"-seqAP-"<<(*vg1dSP).sequenciaAP <<".dat";
 	else
 		saidaR << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
 				<< "resumoPermanente" << ".dat";
@@ -19168,8 +19174,9 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 		razCompGasReves=0.;
 		tempReves=-1000.;
 
-		AS=0;
-		paralelAS=0;
+		AP=0;
+		paralelAP=0;
+		arquivoAP="leituraAP.json";
 
 		nthrd=1;
 		buscaFC=0.1;
@@ -19194,8 +19201,9 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 
 		// indicador do sentido dos angulos dos dutos em relacao ao do escoamento
 		saidaClassica = arqAntigo.saidaClassica; // angulos do duto a favor do sentido do escoamento
-		AS = arqAntigo.AS;
-		paralelAS = arqAntigo.paralelAS;
+		AP = arqAntigo.AP;
+		paralelAP = arqAntigo.paralelAP;
+		arquivoAP=arqAntigo.arquivoAP;
 		HISEP = arqAntigo.HISEP;
 		chutePerm = arqAntigo.chutePerm;
 		pocinjec =arqAntigo.pocinjec;
@@ -19270,20 +19278,32 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 	    mudaArea=arqAntigo.mudaArea;
 	    nthrd=arqAntigo.nthrd;
     	nTcorrecaoMassaEspLiq =	arqAntigo.nTcorrecaoMassaEspLiq;
-    	TcorrecaoMassaEspLiq = new double[nTcorrecaoMassaEspLiq];
-    	VcorrecaoMassaEspLiq = new int[nTcorrecaoMassaEspLiq];
-    	for(int i=0;i<nTcorrecaoMassaEspLiq;i++){
-    		VcorrecaoMassaEspLiq[i]=arqAntigo.VcorrecaoMassaEspLiq[i];
-    		TcorrecaoMassaEspLiq[i]=arqAntigo.TcorrecaoMassaEspLiq[i];
+    	if(nTcorrecaoMassaEspLiq>0){
+    		TcorrecaoMassaEspLiq = new double[nTcorrecaoMassaEspLiq];
+    		VcorrecaoMassaEspLiq = new int[nTcorrecaoMassaEspLiq];
+    		for(int i=0;i<nTcorrecaoMassaEspLiq;i++){
+    			VcorrecaoMassaEspLiq[i]=arqAntigo.VcorrecaoMassaEspLiq[i];
+    			TcorrecaoMassaEspLiq[i]=arqAntigo.TcorrecaoMassaEspLiq[i];
+    		}
+    	}
+    	else{
+    		TcorrecaoMassaEspLiq = 0;
+    		VcorrecaoMassaEspLiq = 0;
     	}
     	correcaoMassaEspLiq=VcorrecaoMassaEspLiq[0];
     	cicloAcopTerm=arqAntigo.cicloAcopTerm;
     	nTsonico =	arqAntigo.nTsonico;
-    	Tempsonico = new double[nTsonico];
-    	Vsonico = new int[nTsonico];
-    	for(int i=0;i<nTsonico;i++){
-    		Vsonico[i]=arqAntigo.Vsonico[i];
-    		Tempsonico[i]=arqAntigo.Tempsonico[i];
+    	if(nTsonico>0){
+    		Tempsonico = new double[nTsonico];
+    		Vsonico = new int[nTsonico];
+    		for(int i=0;i<nTsonico;i++){
+    			Vsonico[i]=arqAntigo.Vsonico[i];
+    			Tempsonico[i]=arqAntigo.Tempsonico[i];
+    		}
+    	}
+    	else{
+    		Tempsonico = 0;
+    		Vsonico = 0;
     	}
     	desligaDeriTransMassDTemp=arqAntigo.desligaDeriTransMassDTemp;
 	    corrigeContSep=arqAntigo.corrigeContSep;
@@ -19295,39 +19315,57 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 		ConContEntrada = arqAntigo.ConContEntrada;
 		CCPres.parserie =arqAntigo.CCPres.parserie;
 		CCPres.indFluido=arqAntigo.CCPres.indFluido;
-		CCPres.temperatura = new double[CCPres.parserie];
-		CCPres.pres = new double[CCPres.parserie];
-		CCPres.tit = new double[CCPres.parserie];
-		CCPres.bet = new double[CCPres.parserie];
-		CCPres.tempo = new double[CCPres.parserie];
-		for (int i = 0; i < CCPres.parserie; i++)
-			CCPres.temperatura[i] =arqAntigo.CCPres.temperatura[i];
-		for (int i = 0; i < CCPres.parserie; i++)
-			CCPres.pres[i] =arqAntigo.CCPres.pres[i];
-		for (int i = 0; i < CCPres.parserie; i++)
-			CCPres.tit[i] =arqAntigo.CCPres.tit[i];
-		for (int i = 0; i < CCPres.parserie; i++){
-				CCPres.bet[i] =arqAntigo.CCPres.bet[i];
+		if(CCPres.parserie>0){
+			CCPres.temperatura = new double[CCPres.parserie];
+			CCPres.pres = new double[CCPres.parserie];
+			CCPres.tit = new double[CCPres.parserie];
+			CCPres.bet = new double[CCPres.parserie];
+			CCPres.tempo = new double[CCPres.parserie];
+			for (int i = 0; i < CCPres.parserie; i++)
+				CCPres.temperatura[i] =arqAntigo.CCPres.temperatura[i];
+			for (int i = 0; i < CCPres.parserie; i++)
+				CCPres.pres[i] =arqAntigo.CCPres.pres[i];
+			for (int i = 0; i < CCPres.parserie; i++)
+				CCPres.tit[i] =arqAntigo.CCPres.tit[i];
+			for (int i = 0; i < CCPres.parserie; i++){
+					CCPres.bet[i] =arqAntigo.CCPres.bet[i];
+			}
+			for (int i = 0; i < CCPres.parserie; i++)
+				CCPres.tempo[i] =arqAntigo.CCPres.tempo[i];
 		}
-		for (int i = 0; i < CCPres.parserie; i++)
-			CCPres.tempo[i] =arqAntigo.CCPres.tempo[i];
-		CCVPres.parserie =arqAntigo.CCVPres.parserie;
-		CCVPres.temperatura = new double[CCVPres.parserie];
-		CCVPres.pres = new double[CCVPres.parserie];
-		CCVPres.mass = new double[CCVPres.parserie];
-		CCVPres.bet = new double[CCVPres.parserie];
-		CCVPres.tempo = new double[CCVPres.parserie];
-		for (int i = 0; i < CCVPres.parserie; i++)
-			CCVPres.temperatura[i] =arqAntigo.CCVPres.temperatura[i];
-		for (int i = 0; i < CCVPres.parserie; i++)
-			CCVPres.pres[i] =arqAntigo.CCVPres.pres[i];
-		for (int i = 0; i < CCVPres.parserie; i++)
-			CCVPres.mass[i] =arqAntigo.CCVPres.mass[i];
-		for (int i = 0; i < CCVPres.parserie; i++){
-				CCVPres.bet[i] =arqAntigo.CCVPres.bet[i];
+		else{
+			CCPres.temperatura = 0;
+			CCPres.pres = 0;
+			CCPres.tit = 0;
+			CCPres.bet = 0;
+			CCPres.tempo = 0;
 		}
-		for (int i = 0; i < CCVPres.parserie; i++)
-			CCVPres.tempo[i] =arqAntigo.CCVPres.tempo[i];
+		if(CCVPres.parserie>0){
+			CCVPres.parserie =arqAntigo.CCVPres.parserie;
+			CCVPres.temperatura = new double[CCVPres.parserie];
+			CCVPres.pres = new double[CCVPres.parserie];
+			CCVPres.mass = new double[CCVPres.parserie];
+			CCVPres.bet = new double[CCVPres.parserie];
+			CCVPres.tempo = new double[CCVPres.parserie];
+			for (int i = 0; i < CCVPres.parserie; i++)
+				CCVPres.temperatura[i] =arqAntigo.CCVPres.temperatura[i];
+			for (int i = 0; i < CCVPres.parserie; i++)
+				CCVPres.pres[i] =arqAntigo.CCVPres.pres[i];
+			for (int i = 0; i < CCVPres.parserie; i++)
+				CCVPres.mass[i] =arqAntigo.CCVPres.mass[i];
+			for (int i = 0; i < CCVPres.parserie; i++){
+					CCVPres.bet[i] =arqAntigo.CCVPres.bet[i];
+			}
+			for (int i = 0; i < CCVPres.parserie; i++)
+				CCVPres.tempo[i] =arqAntigo.CCVPres.tempo[i];
+		}
+		else{
+			CCVPres.temperatura = 0;
+			CCVPres.pres = 0;
+			CCVPres.mass = 0;
+			CCVPres.bet = 0;
+			CCVPres.tempo = 0;
+		}
 		CorreEstrat = arqAntigo.CorreEstrat;
 		CorreDisper = arqAntigo.CorreDisper;
 		CorreAnular = arqAntigo.CorreAnular;
@@ -19339,13 +19377,18 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 		tempReves=arqAntigo.tempReves;
 		razCompGasReves=arqAntigo.razCompGasReves;
 		nform =arqAntigo.nform;
-		formacPoc = new detFormacao[nform];
-		for (int i = 0; i < nform; i++) {
-			formacPoc[i].id = arqAntigo.formacPoc[i].id;
-			formacPoc[i].tempo = arqAntigo.formacPoc[i].tempo;
-			formacPoc[i].cond =arqAntigo.formacPoc[i].cond;
-			formacPoc[i].cp =arqAntigo.formacPoc[i].cp;
-			formacPoc[i].rho =arqAntigo.formacPoc[i].rho;
+		if(nform>0){
+			formacPoc = new detFormacao[nform];
+			for (int i = 0; i < nform; i++) {  //alteracao2
+				formacPoc[i].id = arqAntigo.formacPoc[i].id;
+				formacPoc[i].tempo = arqAntigo.formacPoc[i].tempo;  //alteracao2
+				formacPoc[i].cond =arqAntigo.formacPoc[i].cond; //alteracao2
+				formacPoc[i].cp =arqAntigo.formacPoc[i].cp; //alteracao2
+				formacPoc[i].rho =arqAntigo.formacPoc[i].rho; //alteracao2
+			}  //alteracao2
+		}
+		else{
+			formacPoc = 0;
 		}
 
 
@@ -19456,16 +19499,18 @@ void Ler::copia_tabela(Ler& arqAntigo) {
 
 void Ler::copia_parafina(Ler& arqAntigo) {
 
-	detalParafina.arquivo=arqAntigo.detalParafina.arquivo;
-	detalParafina.poroRey=arqAntigo.detalParafina.poroRey;
-	detalParafina.valRey=arqAntigo.detalParafina.valRey;
-	detalParafina.C2C3=arqAntigo.detalParafina.C2C3;
-	detalParafina.valC2=arqAntigo.detalParafina.valC2;
-	detalParafina.valC3=arqAntigo.detalParafina.valC3;
-	detalParafina.difus=arqAntigo.detalParafina.difus;
-	detalParafina.multDifus=arqAntigo.detalParafina.multDifus;
-	detalParafina.rug=arqAntigo.detalParafina.rug;
-	detalParafina.multVis=arqAntigo.detalParafina.multVis;
+	if(modoParafina==1){
+		detalParafina.arquivo=arqAntigo.detalParafina.arquivo;
+		detalParafina.poroRey=arqAntigo.detalParafina.poroRey;
+		detalParafina.valRey=arqAntigo.detalParafina.valRey;
+		detalParafina.C2C3=arqAntigo.detalParafina.C2C3;
+		detalParafina.valC2=arqAntigo.detalParafina.valC2;
+		detalParafina.valC3=arqAntigo.detalParafina.valC3;
+		detalParafina.difus=arqAntigo.detalParafina.difus;
+		detalParafina.multDifus=arqAntigo.detalParafina.multDifus;
+		detalParafina.rug=arqAntigo.detalParafina.rug;
+		detalParafina.multVis=arqAntigo.detalParafina.multVis;
+	}
 }
 
 
