@@ -339,8 +339,9 @@ JSON_entrada_configuracaoInicial::JSON_entrada_configuracaoInicial(){
 	contents["modeloCp"] = make_shared<JSON_entrada_configuracaoInicial_modeloCp>();
 	contents["modeloJTL"] = make_shared<JSON_entrada_configuracaoInicial_modeloJTL>();
 	contents["tabP"] = make_shared<JSON_entrada_configuracaoInicial_tabP>();
-	contents["AS"] = make_shared<JSON_entrada_configuracaoInicial_AS>();
-	contents["paralelizaAS"] = make_shared<JSON_entrada_configuracaoInicial_paralelizaAS>();
+	contents["AP"] = make_shared<JSON_entrada_configuracaoInicial_AP>();
+	contents["paralelizaAP"] = make_shared<JSON_entrada_configuracaoInicial_paralelizaAP>();
+	contents["arquivoAP"] = make_shared<JSON_entrada_configuracaoInicial_arquivoAP>();
 	contents["trackRgo"] = make_shared<JSON_entrada_configuracaoInicial_trackRgo>();
 	contents["trackDensidadeGas"] = make_shared<JSON_entrada_configuracaoInicial_trackDensidadeGas>();
 	contents["correcaoDenGasLivreBlackOil"] = make_shared<JSON_entrada_configuracaoInicial_correcaoDenGasLivreBlackOil>();
@@ -445,12 +446,16 @@ JSON_entrada_configuracaoInicial_tabP& JSON_entrada_configuracaoInicial::tabP(){
 	return static_cast<JSON_entrada_configuracaoInicial_tabP&>(*contents["tabP"].get());
 }
 
-JSON_entrada_configuracaoInicial_AS& JSON_entrada_configuracaoInicial::AS(){
-	return static_cast<JSON_entrada_configuracaoInicial_AS&>(*contents["AS"].get());
+JSON_entrada_configuracaoInicial_AP& JSON_entrada_configuracaoInicial::AP(){
+	return static_cast<JSON_entrada_configuracaoInicial_AP&>(*contents["AP"].get());
 }
 
-JSON_entrada_configuracaoInicial_paralelizaAS& JSON_entrada_configuracaoInicial::paralelizaAS(){
-	return static_cast<JSON_entrada_configuracaoInicial_paralelizaAS&>(*contents["paralelizaAS"].get());
+JSON_entrada_configuracaoInicial_paralelizaAP& JSON_entrada_configuracaoInicial::paralelizaAP(){
+	return static_cast<JSON_entrada_configuracaoInicial_paralelizaAP&>(*contents["paralelizaAP"].get());
+}
+
+JSON_entrada_configuracaoInicial_arquivoAP& JSON_entrada_configuracaoInicial::arquivoAP(){
+	return static_cast<JSON_entrada_configuracaoInicial_arquivoAP&>(*contents["arquivoAP"].get());
 }
 
 JSON_entrada_configuracaoInicial_trackRgo& JSON_entrada_configuracaoInicial::trackRgo(){

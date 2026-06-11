@@ -12888,10 +12888,10 @@ void SProd::ImprimeTrendPCab(int i, int nrede) {
             return output_i18n::tr(this->arq.idiomaSaida, pt, en);
         };
         ostringstream saidaT;
-        if (indTramo < 0 && arq.AS == 0) {
+        if (indTramo < 0 && arq.AP == 0) {
             saidaT << pathPrefixoArqSaida << "TENDP" << "-" << round(arq.trendp[i].comp) << ".dat";
-        } else if (indTramo < 0 && arq.AS == 1) {
-            saidaT << pathPrefixoArqSaida << "TENDP-AS-" << round(arq.trendp[i].comp) << ".dat";
+        } else if (indTramo < 0 && arq.AP == 1) {
+            saidaT << pathPrefixoArqSaida << "TENDP-AP-" << round(arq.trendp[i].comp) << ".dat";
         } else {
             saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-R-" << nrede << "-" << "TENDP" << "-" << arq.trendp[i].comp << ".dat";
         }
@@ -12905,8 +12905,8 @@ void SProd::ImprimeTrendPCab(int i, int nrede) {
             escreveTrend << t("# Comprimento a partir do Fundo de Poco (m) = ", "# Length from Bottomhole (m) = ") << comprimento << endl;
             escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendp[i].rotulo << endl;
             escreveTrend << t("# Indice da Celula = ", "# Cell index = ") << arq.trendp[i].posic << endl;
-            if (indTramo < 0 && arq.AS == 1)
-                escreveTrend << t(" Sequencia AS ;", " SA sequence ;");
+            if (indTramo < 0 && arq.AP == 1)
+                escreveTrend << t(" Sequencia AP ;", " SA sequence ;");
             escreveTrend << t(" Tempo (s) ;", " Time (s) ;");
             if (arq.trendp[i].pres == 1)
                 escreveTrend << t(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
@@ -13079,10 +13079,10 @@ void SProd::ImprimeTrendP(int i, int nrede) {
             for (int j = 0; j <= arq.nvartrendp[i]; j++)
                 saidatrend[k][j] = MatTrendP[i][k + ntrendB[i]][j];
         ostringstream saidaT;
-        if (indTramo < 0 && arq.AS == 0) {
+        if (indTramo < 0 && arq.AP == 0) {
             saidaT << pathPrefixoArqSaida << "TENDP" << "-" << arq.trendp[i].comp << ".dat";
-        } else if (indTramo < 0 && arq.AS == 1) {
-            saidaT << pathPrefixoArqSaida << "TENDP-AS-" << round(arq.trendp[i].comp) << ".dat";
+        } else if (indTramo < 0 && arq.AP == 1) {
+            saidaT << pathPrefixoArqSaida << "TENDP-AP-" << round(arq.trendp[i].comp) << ".dat";
         } else {
             saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-R-" << nrede << "-" << "TENDP" << "-" << arq.trendp[i].comp << ".dat";
         }
@@ -13090,7 +13090,7 @@ void SProd::ImprimeTrendP(int i, int nrede) {
         ofstream escreveTrend(tmp.c_str(), ios_base::app);
         int nc = saidatrend.col();
         int nl = saidatrend.lin();
-        if (indTramo < 0 && arq.AS == 1)
+        if (indTramo < 0 && arq.AP == 1)
             nc++;
         for (int i = 0; i < nl; i++) {
             if (saidatrend[i][0] <= -9999)
@@ -13098,9 +13098,9 @@ void SProd::ImprimeTrendP(int i, int nrede) {
             for (int j = 0; j < nc; j++) {
                 escreveTrend.width(20);
                 escreveTrend.precision(19);
-                if (indTramo < 0 && arq.AS == 1) {
+                if (indTramo < 0 && arq.AP == 1) {
                     if (j == 0)
-                        escreveTrend << (*vg1dSP).sequenciaAS << " ; ";
+                        escreveTrend << (*vg1dSP).sequenciaAP << " ; ";
                     else
                         escreveTrend << saidatrend[i][j - 1] << " ; ";
                 } else
@@ -13123,10 +13123,10 @@ void SProd::ImprimeTrendGCab(int i, int nrede) {
             return output_i18n::tr(this->arq.idiomaSaida, pt, en);
         };
         ostringstream saidaT;
-        if (indTramo < 0 && arq.AS == 0)
+        if (indTramo < 0 && arq.AP == 0)
             saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
-        else if (indTramo < 0 && arq.AS == 1) {
-            saidaT << pathPrefixoArqSaida << "TENDG-AS-" << arq.trendg[i].comp << ".dat";
+        else if (indTramo < 0 && arq.AP == 1) {
+            saidaT << pathPrefixoArqSaida << "TENDG-AP-" << arq.trendg[i].comp << ".dat";
         } else
             saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-R-" << nrede << "-" << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
         string tmp = saidaT.str();
@@ -13139,8 +13139,8 @@ void SProd::ImprimeTrendGCab(int i, int nrede) {
             escreveTrend << t("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ") << comprimento << endl;
             escreveTrend << t("# Rotulo = ", "# Label = ") << arq.trendg[i].rotulo << endl;
             escreveTrend << t("# Indice da Celula = ", "# Cell index = ") << arq.trendg[i].posic << endl;
-            if (indTramo < 0 && arq.AS == 1)
-                escreveTrend << t(" Sequencia AS ;", " SA sequence ;");
+            if (indTramo < 0 && arq.AP == 1)
+                escreveTrend << t(" Sequencia AP ;", " SA sequence ;");
             escreveTrend << t(" Tempo (s) ;", " Time (s) ;");
             if (arq.trendg[i].pres == 1)
                 escreveTrend << t(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
@@ -13226,17 +13226,17 @@ void SProd::ImprimeTrendG(int i, int nrede) {
             for (int j = 0; j <= arq.nvartrendg[i]; j++)
                 saidatrend[k][j] = MatTrendG[i][k + ntrendgB[i]][j];
         ostringstream saidaT;
-        if (indTramo < 0 && arq.AS == 0)
+        if (indTramo < 0 && arq.AP == 0)
             saidaT << pathPrefixoArqSaida << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
-        else if (indTramo < 0 && arq.AS == 1) {
-            saidaT << pathPrefixoArqSaida << "TENDG-AS-" << arq.trendg[i].comp << ".dat";
+        else if (indTramo < 0 && arq.AP == 1) {
+            saidaT << pathPrefixoArqSaida << "TENDG-AP-" << arq.trendg[i].comp << ".dat";
         } else
             saidaT << pathPrefixoArqSaida << "Tramo" << indTramo << "-R-" << nrede << "-" << "TENDG" << "-" << arq.trendg[i].comp << ".dat";
         string tmp = saidaT.str();
         ofstream escreveTrend(tmp.c_str(), ios_base::app);
         int nc = saidatrend.col();
         int nl = saidatrend.lin();
-        if (indTramo < 0 && arq.AS == 1)
+        if (indTramo < 0 && arq.AP == 1)
             nc++;
         for (int i = 0; i < nl; i++) {
             if (saidatrend[i][0] <= -9999)
@@ -13244,9 +13244,9 @@ void SProd::ImprimeTrendG(int i, int nrede) {
             for (int j = 0; j < nc; j++) {
                 escreveTrend.width(20);
                 escreveTrend.precision(19);
-                if (indTramo < 0 && arq.AS == 1) {
+                if (indTramo < 0 && arq.AP == 1) {
                     if (j == 0)
-                        escreveTrend << (*vg1dSP).sequenciaAS << " ; ";
+                        escreveTrend << (*vg1dSP).sequenciaAP << " ; ";
                     else
                         escreveTrend << saidatrend[i][j - 1] << " ; ";
                 } else
@@ -13736,7 +13736,7 @@ double SProd::marchaProdPerm1(double pchute) {
                     RenovaMassPerm(i);
                     RenovaTempPerm(i, 1);
                     if (isnan(celula[i].temp)) {
-                        if (arq.transiente == 0 && arq.AS == 0)
+                        if (arq.transiente == 0 && arq.AP == 0)
                             // neste caso, se finaliza a simulacao, nao tem um transiente
                             // a ser feito a seguir e nem se estÃ¡ em uma rede
                             NumError(
@@ -13835,7 +13835,7 @@ double SProd::marchaProdPerm1(double pchute) {
         presteste = celula[ncel].pres; // guarda valor de pressao para se calcular o erro, quando a
         // opcao de acelerador de convergencia esta desligado
         iterperm++; // atualiza a ieteracao da marcha
-        if (iterperm > 200 && arq.AS == 0)
+        if (iterperm > 200 && arq.AP == 0)
             NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
         else if (iterperm > 200)
             return 1.1e10;
@@ -14188,7 +14188,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
         presteste = celula[ncel].pres; // guarda valor de pressao para se calcular o erro, quando a
         // opcao de acelerador de convergencia esta desligado
         iterperm++; // atualiza a ieteracao da marcha
-        if (iterperm > 200 && arq.AS == 0)
+        if (iterperm > 200 && arq.AP == 0)
             NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
         else if (iterperm > 200)
             return 1.1e10;
@@ -14549,7 +14549,7 @@ double SProd::marchaProdPerm2(double pchute) {
                 // verifica se teve algum problema nos limites de temperatura
                 // caso se esteja trabalhando com tabela PVTSim
                 if (isnan(celula[i].temp)) {
-                    if (arq.transiente == 0 && arq.AS == 0)
+                    if (arq.transiente == 0 && arq.AP == 0)
                         // neste caso, se finaliza a simulacao, nao tem um transiente
                         // a ser feito a seguir e nem se estÃ¡ em uma rede
                         NumError(
@@ -14681,7 +14681,7 @@ double SProd::marchaProdPerm2(double pchute) {
         presteste = celula[ncel].pres; // guarda valor de pressao para se calcular o erro, quando a
         // opcao de acelerador de convergencia esta desligado
         iterperm++; // atualiza a ieteracao da marcha
-        if (iterperm > 200 && arq.AS == 0)
+        if (iterperm > 200 && arq.AP == 0)
             NumError("Convergencia em marchaProdPerm2 atingiu maximo de iteracoes");
         else if (iterperm > 200)
             return 1e10;
@@ -15056,7 +15056,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                 if (iterpres >= 10) {
                     // caso em que atingiu o maximo de passos de incremento de pressa em uma situacao
                     // de passo pequeno, retorna um aviso que deu problema ou finaliza a simulacao
-                    if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+                    if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                         // neste caso, se finaliza a simulacao, nao tem um transiente
                         // a ser feito a seguir e nem se estÃ¡ em uma rede
                         NumError(
@@ -15094,7 +15094,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
         if ((*vg1dSP).chaverede == 0) {
             // neste caso, se finaliza a simulacao, nao tem um transiente
             // a ser feito a seguir e nem se estÃ¡ em uma rede
-            if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+            if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
@@ -15157,7 +15157,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
     }
     if (kontaiter >= 50) {
         if ((*vg1dSP).chaverede == 0) {
-            if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+            if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
@@ -15241,7 +15241,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                 if (kontaiter > 50 * 0.1 / arq.buscaFC) { // limite de iteracoes, falha na busca do segundo chute
                     // fim da simulacao ou aviso de falha
                     if ((*vg1dSP).chaverede == 0) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
@@ -15288,7 +15288,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                     kontaiter++;
                     if (kontaiter > 50 * 0.1 / arq.buscaFC) {
                         if ((*vg1dSP).chaverede == 0) {
-                            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                                 if (kontaTenta < 0)
                                     logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
@@ -15355,7 +15355,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                 if (val > 0. && limpres == 1) {
                     int iterpres = 0;
                     if (iterpres >= 10)
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -15394,7 +15394,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                 if (kontaiter > 50 * 0.1 / arq.buscaFC) { // limite de iteracoes, falha na busca do segundo chute
                     // fim da simulacao ou aviso de falha
                     if ((*vg1dSP).chaverede == 0) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
@@ -15442,7 +15442,7 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                     kontaiter++;
                     if (kontaiter > 50 * 0.1 / arq.buscaFC) {
                         if ((*vg1dSP).chaverede == 0) {
-                            if (arq.transiente == 0 && chute < 0 && arq.AS == 0) {
+                            if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
@@ -15734,7 +15734,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
                 if (iterpres >= 10) {
                     // caso em que atingiu o maximo de passos de incremento de pressa em uma situacao
                     // de passo pequeno, retorna um aviso que deu problema ou finaliza a simulacao
-                    if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                    if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                         // neste caso, se finaliza a simulacao, nao tem um transiente
                         // a ser feito a seguir e nem se estÃ¡ em uma rede
                         NumError(
@@ -15765,7 +15765,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
         if ((*vg1dSP).chaverede == 0) {
             // neste caso, se finaliza a simulacao, nao tem um transiente
             // a ser feito a seguir e nem se estÃ¡ em uma rede
-            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 // apresenta apenas um aviso
@@ -15810,7 +15810,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
     }
     if (kontaiter >= 100) {
         if ((*vg1dSP).chaverede == 0) {
-            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
@@ -15864,7 +15864,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
                 if (kontaiter > 100) { // limite de iteracoes, falha na busca do segundo chute
                     // fim da simulacao ou aviso de falha
                     if ((*vg1dSP).chaverede == 0) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                         else {
                             cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
@@ -15892,7 +15892,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
                     kontaiter++;
                     if (kontaiter > 100) {
                         if ((*vg1dSP).chaverede == 0) {
-                            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                             else {
                                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
@@ -15930,7 +15930,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
                 if (kontaiter > 100) { // limite de iteracoes, falha na busca do segundo chute
                     // fim da simulacao ou aviso de falha
                     if ((*vg1dSP).chaverede == 0) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                         else {
                             cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
@@ -15960,7 +15960,7 @@ double SProd::buscaProdPfundoPermRev(double chute) {
                     kontaiter++;
                     if (kontaiter > 100) {
                         if ((*vg1dSP).chaverede == 0) {
-                            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                             else {
                                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
@@ -16264,7 +16264,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
         if ((*vg1dSP).chaverede == 0) {
             // neste caso, se finaliza a simulacao, nao tem um transiente
             // a ser feito a seguir e nem se estÃ¡ em uma rede
-            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
@@ -16314,7 +16314,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
     }
     if (kontaiter > 50) {
         if ((*vg1dSP).chaverede == 0) {
-            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
@@ -16387,7 +16387,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
                 if (kontaiter > 50) { // limite de iteracoes, falha na busca do segundo chute
                     // fim da simulacao ou aviso de falha
                     if ((*vg1dSP).chaverede == 0) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoees");
                         else {
                             cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
@@ -16430,7 +16430,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
                     kontaiter++;
                     if (kontaiter > 50) {
                         if ((*vg1dSP).chaverede == 0) {
-                            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                                 NumError(
                                     "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                             else {
@@ -16505,7 +16505,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
                         iterpres++;
                     }
                     if (iterpres >= 10) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                         else {
@@ -16523,7 +16523,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
                 if (kontaiter > 50) { // limite de iteracoes, falha na busca do segundo chute
                     // fim da simulacao ou aviso de falha
                     if ((*vg1dSP).chaverede == 0) {
-                        if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                        if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                         else {
@@ -16570,7 +16570,7 @@ double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
 
                     if (kontaiter > 50) {
                         if ((*vg1dSP).chaverede == 0) {
-                            if (arq.transiente == 0 && chute < 0 && arq.AS == 0)
+                            if (arq.transiente == 0 && chute < 0 && arq.AP == 0)
                                 NumError(
                                     "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                             else {
@@ -16894,7 +16894,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
         presteste = celula[ncel].pres; // guarda valor de pressao para se calcular o erro, quando a
         // opcao de acelerador de convergencia esta desligado
         iterperm++; // atualiza a ieteracao da marcha
-        if (iterperm > 200 && arq.AS == 0)
+        if (iterperm > 200 && arq.AP == 0)
             NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
         else if (iterperm > 200)
             return 1.1e10;
@@ -17249,7 +17249,7 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
         }
 
         iterperm++;
-        if (iterperm > 200 && arq.AS == 0)
+        if (iterperm > 200 && arq.AP == 0)
             NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
         else if (iterperm > 200)
             return 1.1e10;
@@ -17318,7 +17318,7 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) 
             mchute *= 0.9;
             val = marchaProdPresPres1(mchute);
             if (mchute < 1e-5) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
@@ -17390,7 +17390,7 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) 
                     multiplica = rGst;
                 vel = mchute2 * multiplica / (rmis * celula[0].duto.area * 86400);
                 if (kontaiter > 200 && vel > 0.01) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
@@ -17412,7 +17412,7 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) 
                         chuteNeg = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
@@ -17453,7 +17453,7 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) 
                     chutePos = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
@@ -17472,7 +17472,7 @@ double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) 
                     kontaiter++;
 
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
@@ -17516,7 +17516,7 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz, int kontaite
     double val = marchaProdPresPres1Rev(mchute);
     buscaIni = 1;
     if (val < -0.9e10) {
-        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
             NumError(
                 "Busca de valores iniciais para callculo de zero de funcao em buscaProdPresPresPermRev com problemas, pressao abaixo de 1 kgf/cm2 na marcha reversa");
         else {
@@ -17576,7 +17576,7 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz, int kontaite
                     multiplica = rGst;
                 vel = mchute2 * multiplica / (rmis * celula[0].duto.area * 86400);
                 if (kontaiter > 200 && fabs(vel) > 0.01) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPermRev atingiu maximo de iteracoes");
                     else {
@@ -17609,7 +17609,7 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz, int kontaite
                     chutePos = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
@@ -17868,7 +17868,7 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
             mchute *= 0.9;
             val = marchaProdPresPres2(mchute);
             if (mchute < 1e-5) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
@@ -17924,7 +17924,7 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
                     multiplica = rGst;
                 vel = mchute2 * multiplica / (rmis * celula[0].duto.area * 86400);
                 if (kontaiter > 200 && vel > 0.01) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
@@ -17946,7 +17946,7 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
                         chuteNeg = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
@@ -17973,7 +17973,7 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
                     chutePos = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
@@ -17992,7 +17992,7 @@ double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
                     kontaiter++;
 
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
@@ -18253,7 +18253,7 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
             mchute *= (1. - arq.buscaFC);
             val = marchaProdPresPres2(mchute);
             if (mchute < 1e-5) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
@@ -18309,7 +18309,7 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
                     multiplica = rGst;
                 vel = mchute2 * multiplica / (rmis * celula[0].duto.area * 86400);
                 if (kontaiter > 200 && vel > 0.01) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
@@ -18331,7 +18331,7 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
                         chuteNeg = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
@@ -18358,7 +18358,7 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
                     chutePos = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
@@ -18377,7 +18377,7 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
                     kontaiter++;
 
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
@@ -18481,7 +18481,7 @@ double SProd::marchaGasPerm1(double chutemass) {
         erro1 = fabs(presteste - presteste0) / presteste0; // erro no valor da pressao na ultima celula
     }
     if (itera >= 600) {
-        if ((*vg1dSP).chaverede == 0 && arq.AS == 0) {
+        if ((*vg1dSP).chaverede == 0 && arq.AP == 0) {
             NumError("Busca de valores iniciais para calculo de zero de funcao em marchaGasPerm1 atingiu maximo de iteracoes");
             return 0.0;
         } else {
@@ -18541,7 +18541,7 @@ double SProd::buscaGasPresPerm2() {
                 kontaiter++;
             }
             if (kontaiter >= 800) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm2 atingiu maximo de iteracoes");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -18562,7 +18562,7 @@ double SProd::buscaGasPresPerm2() {
                 kontaiter++;
             }
             if (kontaiter >= 800) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm2 atingiu maximo de iteracoes");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -18634,7 +18634,7 @@ double SProd::buscaGasPresPerm3() {
                 kontaiter++;
             }
             if (kontaiter >= 800) { // falha na busca de estimativa para a falsa corda
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -18657,7 +18657,7 @@ double SProd::buscaGasPresPerm3() {
                 kontaiter++;
             }
             if (kontaiter >= 800) { // falha na busca de estimativa para a falsa corda
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -24197,7 +24197,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 pavanc -= rhol * 9.81 * sin(celula[i].duto.teta) * dxmed / 98066.5;
                 if (celula[i].acsr.tipo == 3 && (celula[i].acsr.ipr.Pres - pavanc) > -(*vg1dSP).localtiny) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Poco injetor provavelmente produzindo quando se utiliza este valor de pressao na superficie");
                     else {
@@ -24229,7 +24229,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 pavanc -= rhog * 9.81 * sin(celula[i].duto.teta) * dxmed / 98066.5;
                 if (celula[i].acsr.tipo == 3 && (celula[i].acsr.ipr.Pres - pavanc) > -(*vg1dSP).localtiny) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Poco injetor provavelmente produzindo quando se utiliza este valor de pressao na superficie");
                     else {
@@ -24267,7 +24267,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
             val = marchaInjPerm1(mchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, perda de carga muito alta");
                 else {
@@ -24284,7 +24284,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
             val = marchaInjPerm1(mchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, Vazao muito baixa");
                 else {
@@ -24311,7 +24311,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
                 val = marchaInjPerm1(mchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                     else {
@@ -24326,7 +24326,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
                     val = marchaInjPerm1(mchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                         else {
@@ -24347,7 +24347,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
                 val = marchaInjPerm1(mchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                     else {
@@ -24362,7 +24362,7 @@ double SProd::buscaInjPfundoPerm1(double chute) {
                     val = marchaInjPerm1(mchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                         else {
@@ -24466,7 +24466,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
             val = marchaInjPerm1(pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                 else {
@@ -24483,7 +24483,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
             val = marchaInjPerm1(pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
                 else {
@@ -24510,7 +24510,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
                 if (pchute2 < 1.) {
                     pchute2 = pchuteAux;
                     pchute2 *= 0.99;
-                    if (pchute2 < 1. && arq.AS == 0)
+                    if (pchute2 < 1. && arq.AP == 0)
                         NumError("Pressao de injecao abaixo da pressao atmosferica");
                     else if (pchute2 < 1.)
                         return 1.1e10;
@@ -24518,7 +24518,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
                 val = marchaInjPerm1(pchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                     else {
@@ -24533,7 +24533,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
                     val = marchaInjPerm1(pchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                         else {
@@ -24554,7 +24554,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
                 val = marchaInjPerm1(pchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                     else {
@@ -24569,7 +24569,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
                     val = marchaInjPerm1(pchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                         else {
@@ -24590,7 +24590,7 @@ double SProd::buscaInjPfundoPerm2(double chute) {
 double SProd::buscaInjPfundoPerm3(double chute) {
     celula[ncel].pres = arq.condpocinj.presfundo;
     if (celula[ncel].pres < celula[ncel].acsr.ipr.Pres) {
-        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
             NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
         else {
             if ((*vg1dSP).iterRede > 0)
@@ -24614,7 +24614,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 celula[i - 1].pres = celula[i].pres + rhol * 9.81 * sin(celula[i].duto.teta) * dxmed / 98066.5;
                 if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
                         if ((*vg1dSP).iterRede > 0)
@@ -24643,7 +24643,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 celula[i - 1].pres = celula[i].pres + rhol * 9.81 * sin(celula[i].duto.teta) * dxmed / 98066.5;
                 if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
                         if ((*vg1dSP).iterRede > 0)
@@ -24667,7 +24667,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
     double val;
     val = marchaInjPerm1(mchute);
     if (val < -0.9e10) {
-        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
             NumError(
                 "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
         else {
@@ -24678,7 +24678,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
         }
     }
     if (val > 0.9e10) {
-        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
             NumError(
                 "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
         else {
@@ -24699,7 +24699,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
             for (int i = ncel; i > 0; i--) {
                 celula[i - 1].pres = celula[i].pres + delpInjPerm(i);
                 if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
                         if ((*vg1dSP).iterRede > 0)
@@ -24723,7 +24723,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
             for (int i = ncel; i > 0; i--) {
                 celula[i - 1].pres = celula[i].pres + delpInjPerm(i);
                 if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
                         if ((*vg1dSP).iterRede > 0)
@@ -24744,7 +24744,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
         val = marchaInjPerm1(mchute);
         konta++;
         if (val < -0.9e10) {
-            if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+            if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                 NumError(
                     "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
             else {
@@ -24755,7 +24755,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
             }
         }
         if (val > 0.9e10) {
-            if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+            if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                 NumError(
                     "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, pressao muito alta");
             else {
@@ -24767,7 +24767,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
         }
     }
     if (konta >= 200) {
-        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
             NumError("PoÃ§o injetor com problemas na iteracao");
         else {
             if ((*vg1dSP).iterRede > 0)
@@ -24883,7 +24883,7 @@ double SProd::buscaInjPfundoPerm4() {
             masfim += (celula[i - 1].fontemassCR + celula[i - 1].fontemassLR + celula[i - 1].fontemassGR);
             i++;
             if (celula[i - 1].pres <= 1) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("pressao menor que 1");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -24892,7 +24892,7 @@ double SProd::buscaInjPfundoPerm4() {
                         return 1.1e10;
                 }
             } else if ((celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) > -(*vg1dSP).localtiny)) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -24901,7 +24901,7 @@ double SProd::buscaInjPfundoPerm4() {
                         return 1.1e10;
                 }
             } else if (i < (ncel + 1) && masfim < -(*vg1dSP).localtiny) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError("Vazao massica de injeÃ§Ã£o menor que 0");
                 else {
                     if ((*vg1dSP).iterRede > 0)
@@ -24951,7 +24951,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
                 if (pchute < 0.5) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                     else {
@@ -24986,7 +24986,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
                 if (pchute < 0.5) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                     else {
@@ -25013,7 +25013,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
             val = marchaInjPerm1(pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                 else {
@@ -25030,7 +25030,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
             val = marchaInjPerm1(pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
                 else {
@@ -25057,7 +25057,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                 val = marchaInjPerm1(pchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                     else {
@@ -25072,7 +25072,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                     val = marchaInjPerm1(pchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                         else {
@@ -25093,7 +25093,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                 val = marchaInjPerm1(pchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                    if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                     else {
@@ -25108,7 +25108,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                     val = marchaInjPerm1(pchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*vg1dSP).chaverede == 0 && arq.AS == 0)
+                        if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                         else {

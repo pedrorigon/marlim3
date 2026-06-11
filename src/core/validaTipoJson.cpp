@@ -33,16 +33,22 @@ void validadorTipo::valida_configuracao_inicial(Value &configuracao_inicial_json
         }
     }
 
-    if (configuracao_inicial_json.HasMember("AS"))
-        if (!configuracao_inicial_json["AS"].IsBool()) {
+    if (configuracao_inicial_json.HasMember("AP"))
+        if (!configuracao_inicial_json["AP"].IsBool()) {
             sucesso = false;
-            erros.push_back("Configuracao inicial: AS deve ser do tipo booleano");
+            erros.push_back("Configuracao inicial: AP deve ser do tipo booleano");
         }
 
-    if (configuracao_inicial_json.HasMember("paralelizaAS"))
-        if (!configuracao_inicial_json["paralelizaAS"].IsBool()) {
+    if (configuracao_inicial_json.HasMember("paralelizaAP"))
+        if (!configuracao_inicial_json["paralelizaAP"].IsBool()) {
             sucesso = false;
-            erros.push_back("Configuracao inicial: paralelizaAS deve ser do tipo booleano");
+            erros.push_back("Configuracao inicial: paralelizaAP deve ser do tipo booleano");
+        }
+
+    if (configuracao_inicial_json.HasMember("arquivoAP"))
+        if (!configuracao_inicial_json["paralelizaAP"].IsString()) {
+            sucesso = false;
+            erros.push_back("Configuracao inicial: arquivoAP deve ser do tipo string");
         }
 
     if (configuracao_inicial_json.HasMember("HISEP"))
