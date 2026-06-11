@@ -18,7 +18,7 @@
                           "initialFluidId":  0,
                           "freeGasDensityCorrectionBO":  true,
                           "checkValve":  1,
-                          "sensitivityAnalysis":  true,
+                          "parametricAnalysis":  true,
                           "advanced":  {
                                            "monophasicCriterion":  1E-05,
                                            "condensationCriterion":  0.001,

@@ -92,10 +92,15 @@
           "default": false,
           "description": "If true, generates a table before simulation start with black-oil fluid compressibilities and derivatives for declared production-line fluids using reduced P and T. The compressibility factor is then estimated by interpolation at each iteration, which can significantly reduce simulation time, especially in transient runs."
         },
-        "sensitivityAnalysis": {
+        "parametricAnalysis": {
           "type": "boolean",
           "default": false,
-          "description": "If true, runs steady-state sensitivity analysis using the 'leituraAS.json' file."
+          "description": "If true, runs steady-state parametric analysis using the 'leituraAP.json' file."
+        },
+        "parametricAnalysisFile": {
+          "type": "string",
+          "default": "leituraAP.json",
+          "description": "Name of the JSON file for parametric analysis (valid when parametricAnalysis == true)."
         },
         "trackGOR": {
           "type": "boolean",
@@ -325,10 +330,10 @@
           "unit": "m",
           "default": 0
         },
-        "parallelizeSA": {
+        "parallelizePA": {
           "type": "boolean",
           "default": false,
-          "description": "If true, runs sensitivity analysis (SA) in parallel."
+          "description": "If true, runs parametric analysis (PA) in parallel."
         },
         "diffusion3dMode": {
           "type": "boolean",

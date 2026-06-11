@@ -18,7 +18,7 @@
    "iniFluidoP":0,
    "correcaoDenGasLivreBlackOil":true,
    "CheckValve": 1,
-   "AS":true,
+   "AP":true,
     "Avancado": {
       "CriterioMonofasico": 1e-05,
       "CriterioCondensacao": 0.001,
