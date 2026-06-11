@@ -5,8 +5,8 @@
  *     Author: Eduardo
  */
 
-#ifndef LERAS_H_
-#define LERAS_H_
+#ifndef LERAP_H_
+#define LERAP_H_
 #define _USE_MATH_DEFINES // Required for M_PI
 #define ARQUIVO_SCHEMA_AS_JSON "schema_AS_1_0_0.json"
 
@@ -49,7 +49,7 @@ extern int chaverede;
 // Application logger object
 extern Logger logger;
 
-struct detIPRAS {
+struct detIPRAP {
     int parseriePres;
     int parserieTemp;
     int parserieIP;
@@ -65,7 +65,7 @@ struct detIPRAS {
     vector<int> indfluP;
 };
 
-struct detGASINJAS {
+struct detGASINJAP {
     int parserieTemp;
     int parseriePresInj;
     int parserieVazGas;
@@ -74,7 +74,7 @@ struct detGASINJAS {
     vector<double> vazgas;
 };
 
-struct detPresEntAS {
+struct detPresEntAP {
     int parserieTemp;
     int parseriePres;
     int parserieTit;
@@ -86,7 +86,7 @@ struct detPresEntAS {
     vector<double> bet;
 };
 
-struct detVazPresEntAS {
+struct detVazPresEntAP {
     int parserieTemp;
     int parseriePres;
     int parserieMass;
@@ -98,7 +98,7 @@ struct detVazPresEntAS {
 };
 
 // Gas-source configuration details
-struct detFONGASAS {
+struct detFONGASAP {
     int seco;
     int parserieTemp;
     int parserieVazG;
@@ -110,7 +110,7 @@ struct detFONGASAS {
 };
 
 // Valve configuration details
-struct detValvAS {
+struct detValvAP {
     int indValv;
     int parserieAbre;
     int parserieCD;
@@ -120,7 +120,7 @@ struct detValvAS {
 };
 
 // Liquid-source configuration details
-struct detFONLIQAS {
+struct detFONLIQAP {
     int parserieTemp;
     int parserieBet;
     int parserieVL;
@@ -134,7 +134,7 @@ struct detFONLIQAS {
 };
 
 // Mass-source configuration details
-struct detFONMASSAS {
+struct detFONMASSAP {
     int parserieTemp;
     int parserieMP;
     int parserieMC;
@@ -149,7 +149,7 @@ struct detFONMASSAS {
 };
 
 // Leak-source configuration for a branching connection
-struct detFUROAS {
+struct detFUROAP {
     int parseriePres;
     int parserieTemp;
     int parserieBeta;
@@ -165,7 +165,7 @@ struct detFUROAS {
     vector<int> indFlu;
 };
 
-struct detBCSAS {
+struct detBCSAP {
     int indBCS;
     int parserieFreq;
     int parserieEstag;
@@ -174,7 +174,7 @@ struct detBCSAS {
 };
 
 // Positive-displacement pump configuration details
-struct detBVOLAS {
+struct detBVOLAP {
     int parserieFreq;
     int parserieCap;
     int parserieNPoli;
@@ -185,26 +185,26 @@ struct detBVOLAS {
 };
 
 // Localized pressure-increase configuration details
-struct detDPREQAS {
+struct detDPREQAP {
     int parserieDP;
     int indDP;
     vector<double> dp;
 };
 
 // Downstream line-pressure configuration, corresponding to separator pressure
-struct detPSEPAS {
+struct detPSEPAP {
     int parseriePres;
     vector<double> pres;
 };
 
 // Gas-oil ratio configuration for fluid zero only
-struct detRGOAS {
+struct detRGOAP {
     int parserieRGO;
     vector<double> RGO;
 };
 
 // Basic sediment and water configuration for fluid zero only
-struct detBSWAS {
+struct detBSWAP {
     int parserieBSW;
     vector<double> BSW;
 };
@@ -231,14 +231,14 @@ struct detDT {
 };
 
 // Surface-choke configuration details
-struct detCHOKESUPAS {
+struct detCHOKESUPAP {
     int parserieCD;
     int parserieAbre;
     vector<double> cd;
     vector<double> abertura;
 };
 
-struct detCondConInjecAS {
+struct detCondConInjecAP {
     int parserieTemp;
     int parserieVaz;
     int parseriePresI;
@@ -356,57 +356,57 @@ struct genericoVEC {
     vector<int> generico;
 };
 
-class ASens {
+class APara {
   public:
-    int tipoAS;
+    int tipoAP;
     string entrada;
     int dim;
     int nVariaveis;
     variaveis listaV;
-    int nASIPR;
-    detIPRAS *ASIPR;
-    int nASFG;
-    detFONGASAS *ASFonGas;
-    int nASV;
-    detValvAS *ASValv;
-    int nASFL;
-    detFONLIQAS *ASFonLiq;
-    int nASFM;
-    detFONMASSAS *ASFonMas;
-    int nASFuro;
-    detFUROAS *ASFuro;
-    int nASBCS;
-    detBCSAS *ASBCS;
-    int nASBV;
-    detBVOLAS *ASBVOL;
-    int nASDP;
-    detDPREQAS *ASDP;
-    int nASdPdLH;
-    detDPHidro *ASdPdLH;
-    int nASdPdLF;
-    detDPFric *ASdPdLF;
-    int nASdTdL;
-    detDT *ASdTdL;
-    int nASGeom;
-    detDiamRug *ASGeom;
-    int nASCondEquiv;
-    detCondEquiv *ASCondEquiv;
+    int nAPIPR;
+    detIPRAP *APIPR;
+    int nAPFG;
+    detFONGASAP *APFonGas;
+    int nAPV;
+    detValvAP *APValv;
+    int nAPFL;
+    detFONLIQAP *APFonLiq;
+    int nAPFM;
+    detFONMASSAP *APFonMas;
+    int nAPFuro;
+    detFUROAP *APFuro;
+    int nAPBCS;
+    detBCSAP *APBCS;
+    int nAPBV;
+    detBVOLAP *APBVOL;
+    int nAPDP;
+    detDPREQAP *APDP;
+    int nAPdPdLH;
+    detDPHidro *APdPdLH;
+    int nAPdPdLF;
+    detDPFric *APdPdLF;
+    int nAPdTdL;
+    detDT *APdTdL;
+    int nAPGeom;
+    detDiamRug *APGeom;
+    int nAPCondEquiv;
+    detCondEquiv *APCondEquiv;
 
-    detGASINJAS ASGasInj;
-    detPresEntAS ASpEntrada;
-    detVazPresEntAS ASvpEntrada;
-    detPSEPAS ASPsep;
-    detRGOAS ASRGO;
-    detBSWAS ASBSW;
-    detCHOKESUPAS ASCHK;
-    detCondConInjecAS ASPInj;
-    casoVEC *sequenciaAS;
-    genericoVEC *genericoAS;
+    detGASINJAP APGasInj;
+    detPresEntAP APpEntrada;
+    detVazPresEntAP APvpEntrada;
+    detPSEPAP APPsep;
+    detRGOAP APRGO;
+    detBSWAP APBSW;
+    detCHOKESUPAP APCHK;
+    detCondConInjecAP APPInj;
+    casoVEC *sequenciaAP;
+    genericoVEC *genericoAP;
 
     double resultadosVec[21 + 1];
     double **saidaBHP;
     double **saidaVazLiq;
-    int nthrdAS;
+    int nthrdAP;
     int *vecParSerie;
     int varSeq[22];
     int vfp;
@@ -417,74 +417,74 @@ class ASens {
     detBCS *bcs;
     detFONGAS *fonteg;
 
-    ASens(varGlob1D *Vvg1dSP, const string IMPFILE, int vncel, detcelp *vcelp, ProFlu *vflup = 0, detBCS *vbcs = 0, detFONGAS *vfonteg = 0);
-    ASens(const ASens &); // Copy constructor
-    ASens &operator=(const ASens &);
-    ~ASens() { // Destructor
+    APara(varGlob1D *Vvg1dSP, const string IMPFILE, int vncel, detcelp *vcelp, ProFlu *vflup = 0, detBCS *vbcs = 0, detFONGAS *vfonteg = 0);
+    APara(const APara &); // Copy constructor
+    APara &operator=(const APara &);
+    ~APara() { // Destructor
 
         if (listaV.vbcs == 1) {
-            delete[] ASBCS;
+            delete[] APBCS;
         }
 
         if (listaV.vipr == 1) {
-            delete[] ASIPR;
+            delete[] APIPR;
         }
 
         if (listaV.vfonliq == 1) {
-            delete[] ASFonLiq;
+            delete[] APFonLiq;
         }
 
         if (listaV.vfongas == 1) {
-            delete[] ASFonGas;
+            delete[] APFonGas;
         }
 
         if (listaV.vfonmas == 1) {
-            delete[] ASFonMas;
+            delete[] APFonMas;
         }
 
         if (listaV.vvalv == 1) {
-            delete[] ASValv;
+            delete[] APValv;
         }
 
         if (listaV.vbvol == 1) {
-            delete[] ASBVOL;
+            delete[] APBVOL;
         }
 
         if (listaV.vdp == 1) {
-            delete[] ASDP;
+            delete[] APDP;
         }
 
         if (listaV.vdpH == 1) {
-            delete[] ASdPdLH;
+            delete[] APdPdLH;
         }
 
         if (listaV.vdpF == 1) {
-            delete[] ASdPdLF;
+            delete[] APdPdLF;
         }
 
         if (listaV.vdt == 1) {
-            delete[] ASdTdL;
+            delete[] APdTdL;
         }
 
         if (listaV.vfuro == 1) {
-            delete[] ASFuro;
+            delete[] APFuro;
         }
 
         if (listaV.diam == 1) {
-            delete[] ASGeom;
+            delete[] APGeom;
         }
 
         if (listaV.kequiv == 1) {
-            delete[] ASCondEquiv;
+            delete[] APCondEquiv;
         }
 
         if (nVariaveis > 1) {
-            delete[] sequenciaAS;
-            delete[] genericoAS;
+            delete[] sequenciaAP;
+            delete[] genericoAP;
             delete[] vecParSerie;
         }
 
-        if (nVariaveis > 1 && dim > 0 && tipoAS == 1) {
+        if (nVariaveis > 1 && dim > 0 && tipoAP == 1) {
             for (int i = 0; i < nVariaveis; i++) {
                 delete[] saidaBHP[i];
                 delete[] saidaVazLiq[i];
@@ -531,40 +531,40 @@ class ASens {
     void atualizaBSW(Cel *celula, double val);
     void atualizaCorrecao(int ncelG, Cel *celula, CelG *celulaG, double *vdPdLH,
                           double *vdPdLF, double *vdTdL);
-    void cabecalhoAS(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void cabecalhoAP(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                      detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                      detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq);
-    void cabecalhoASImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void cabecalhoAPImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                          detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                          detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq);
-    void imprimeVarInteresseAS(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void imprimeVarInteresseAP(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                                detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                                detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq, int seq);
-    void selecaoAS(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void selecaoAP(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                    detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                    detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
                    double &pGSup, double &temperatura,
                    double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                    double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                    double *vdPdLF, double *vdTdL, int imprime = 1);
-    void selecaoASsemImpre(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void selecaoAPsemImpre(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                            detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                            detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
                            double &pGSup, double &temperatura,
                            double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                            double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                            double *vdPdLF, double *vdTdL);
-    void imprimeVarInteresseASImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void imprimeVarInteresseAPImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                                    detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                                    detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq, int seq);
-    void selecaoASImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void selecaoAPImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                        detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                        detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
                        double &pGSup, double &temperatura,
                        double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                        double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                        double *vdPdLF, double *vdTdL, int imprime = 1);
-    void selecaoASImexsemImpre(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
+    void selecaoAPImexsemImpre(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                                detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
                                detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
                                double &pGSup, double &temperatura,
@@ -581,4 +581,4 @@ class ASens {
                         double *vdPdLF, double *vdTdL, double BHP);
 };
 
-#endif /* LERAS_H_ */
+#endif /* LERAP_H_ */

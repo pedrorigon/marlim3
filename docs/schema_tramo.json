@@ -83,10 +83,15 @@
           "default": false,
           "description": "Se true, antes do início da simulação, gera uma tabela com as compressibilidades e suas derivadas dos fluidos black oil da linha de produção declarados utilizando P e T reduzidas. O fator de compressibilidade é estimado por meio de interpolações dessa tabela a cada iteração, o que pode reduzir significativamente o tempo de simulação, especialmente a transiente."
         },
-        "AS": {
+        "AP": {
           "type": "boolean",
           "default": false,
-          "description": "Se true, efetua análise de sensibilidade para o regime permanente a partir do arquivo 'leituraAS.json'."
+          "description": "Se true, efetua análise paramétrica para o regime permanente a partir do arquivo 'leituraAP.json'."
+        },
+        "arquivoAP": {
+          "type": "string",
+          "description": "Nome do arquivo JSON de leitura para análise paramétrica (válido quando AP == true).",
+          "default": "leituraAP.json"
         },
         "trackRgo": {
           "type": "boolean",
@@ -295,10 +300,10 @@
           "unit": "m",
           "default": 0
         },
-        "paralelizaAS": {
+        "paralelizaAP": {
           "type": "boolean",
           "default": false,
-          "description": "Se true, paraleliza a análise de sensibilidade (AS)."
+          "description": "Se true, paraleliza a análise paramétrica (AP)."
         },
         "modoDifus3D": {
           "type": "boolean",

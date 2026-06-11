@@ -1340,8 +1340,9 @@ class Ler {
     double tempReves;
     double razCompGasReves;
 
-    int AS;
-    int paralelAS;
+    int AP;
+    int paralelAP;
+    string arquivoAP;
 
     detTabVisc *tabVisc;
 

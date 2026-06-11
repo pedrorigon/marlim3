@@ -87,13 +87,14 @@ def extract_cpp_fields_with_paths(header_path: Path) -> dict:
 
     # Accessor pattern
     accessor_pattern = re.compile(
-        r'^\s+'
+        r'^\s*'                          # indentação opcional (fix: JSONString soltos)
         r'(?:JSON_entrada_\S+|JSONString|JSONBoolean|JSONInteger|JSONNumber)'
-        r'&\s+'
+        r'\s*&\s*'                       # fix principal: espaço flexível ao redor do &
         r'(\w+)'
         r'\s*\(\s*\)\s*;',
         re.MULTILINE
     )
+
 
     # Map each accessor to its enclosing class path
     fields = {}
