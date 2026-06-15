@@ -8225,6 +8225,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
     double vecdtCicMin[analisePara.nVariaveis];
     varGlob1D *vg1dTramo;
     vg1dTramo = new varGlob1D[analisePara.nVariaveis];
+    for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++)vg1dTramo[iSeq] = (*sistem1.vg1dSP);
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) {
         vg1dTramo[iSeq].sequenciaAP = iSeq;
         string nomeArquivoLogAP = nomeArquivoLog;
@@ -8278,7 +8279,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         // criar objeto de simulacao
         // construtor do objeto que representa o tramo
 
-        if (analisePara.vfp == 1)
+        if (analisePara.vfp == 1){
             analisePara.selecaoAPsemImpre(sistem2.ncelGas, sistem2.chokeSup, sistem2.celula, sistem2.celulaG,
                                           sistem2.arq.flup,
                                           sistem2.arq.IPRS, sistem2.arq.valv, sistem2.arq.fonteg,
@@ -8287,7 +8288,9 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
                                           sistem2.pGSup, sistem2.temperatura, sistem2.presiniG, sistem2.tempiniG, vazgasG,
                                           presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2.arq.correcao.dPdLHidro, sistem2.arq.correcao.dPdLFric,
                                           sistem2.arq.correcao.dTdL);
-        else if (analisePara.vfp == 0)
+
+        }
+        else if (analisePara.vfp == 0){
             analisePara.selecaoAPImexsemImpre(sistem2.ncelGas, sistem2.chokeSup, sistem2.celula, sistem2.celulaG,
                                               sistem2.arq.flup,
                                               sistem2.arq.IPRS, sistem2.arq.valv, sistem2.arq.fonteg,
@@ -8296,6 +8299,8 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
                                               sistem2.pGSup, sistem2.temperatura, sistem2.presiniG, sistem2.tempiniG, vazgasG,
                                               presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2.arq.correcao.dPdLHidro, sistem2.arq.correcao.dPdLFric,
                                               sistem2.arq.correcao.dTdL);
+
+        }
         // variavei que precisam de um pos processamento para se encaixar na condicao de simulacao
         if (sistem2.arq.lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
             // caso tenha linha de gas e analise de sensibilidade para vazao de injecao, a entrada no json e em stdM3,
@@ -8346,19 +8351,15 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
             }
         }
 		#pragma omp critical
-		{
 			cout<<"Resolvendo Sequencia "<<iSeq<<" da analise de sensibilidade"<< endl;
-		}
 		falha=SolveTramoSolteiro(sistem2,chute);
 		if(fabs(falha)>(0.9e10) && chute!=-1){
 			falha=SolveTramoSolteiro(sistem2);
 		}
-		if(fabs(falha)>0.9e10){
+		if(fabs(falha)>1e9){
 			//caso ocorre uma falha nma busca da solucao para um caso da analise de sensibilidade
 			#pragma omp critical
-			{
 				cout<<"----------------------------- falha no caso -------------------------------"<<endl;
-			}
 		}
 
         if (fabs(falha) < 1e9)
@@ -8371,9 +8372,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         tempSaida.tempFim = sistem2.celula[sistem2.ncel].temp;
         tempSaida.falha = indfalha[iSeq];
 		#pragma omp critical
-		{
 			dadosAP.emplace_back(iSeq,tempSaida);
-		}
         // impressão dos perfis e tendencias da analise de sensibilidade, caso sem construcao de tabela de pressao de fundo
         sistem2.arq.imprimeProfile(sistem2.celula, sistem2.flut, 0, sistem2.indTramo);
         sistem2.arq.resumoPermanente(sistem2.celula, sistem2.celulaG, sistem2.pGSup,

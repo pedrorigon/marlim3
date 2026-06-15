@@ -13,16 +13,21 @@ using namespace rapidjson;
 namespace {
 
 void assignString(char *&target, const string &value) {
+
+
     char *buffer = (char *)malloc((value.size() + 1) * sizeof(char));
     if (buffer == NULL) {
         return;
     }
-
     memcpy(buffer, value.c_str(), value.size() + 1);
-    if (target != NULL) {
-        free(target);
+    buffer[value.size()] = '\0';
+	#pragma omp critical(assignString)
+    {
+    	if (target != NULL) {
+    		free(target);
+    	}
+    	target = buffer;
     }
-    target = buffer;
 }
 
 void initializeResultadoSimulacao(stResultadoSimulacao_t &resultado) {
@@ -80,8 +85,8 @@ void Logger::changeResultadoSimulacao(const string nomeArquivoEntrada, const str
             time_t hoje = time(0);
             struct tm *agora = localtime(&hoje);
             // definir a data corrente
-            sprintf(getStResultadoSimulacao().dataExecucao, "%d/%d/%d", agora->tm_mday, (agora->tm_mon + 1),
-                    (agora->tm_year + 1900));
+            sprintf(getStResultadoSimulacao().dataExecucao, "%d/%d/%d hora: %d:%d", agora->tm_mday, (agora->tm_mon + 1),
+                    (agora->tm_year + 1900), (agora->tm_hour), (agora->tm_min));
             // status da inicação do log
             this->stResultadoSimulacao.started = true;
             // iniciar a variavel de status da simulacao

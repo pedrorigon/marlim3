@@ -1005,27 +1005,27 @@ Ler& Ler::operator =(const Ler& vler) {
 			    if(pocinjec == 0 && (lingas==1 || ninjgas>0))delete[] compLinServ;
 		  }
 		if (pocinjec > 0 && condpocinj.tipoFlui == 2) {
-			if (RhoInj) {
+			if (RhoInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] RhoInj[i];
 				delete[] RhoInj;
 			}
-			if (ViscInj) {
+			if (ViscInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] ViscInj[i];
 				delete[] ViscInj;
 			}
-			if (CondInj) {
+			if (CondInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] CondInj[i];
 				delete[] CondInj;
 			}
-			if (CpInj) {
+			if (CpInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] CpInj[i];
 				delete[] CpInj;
 			}
-			if (DrhoDtInj) {
+			if (DrhoDtInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] DrhoDtInj[i];
 				delete[] DrhoDtInj;
@@ -1280,6 +1280,9 @@ void Ler::copiaSemJson(Ler& vler) {
 		  for(int i=0; i<this->nfuro;i++){
 			  delete [] furo[i].abertura;
 			  delete [] furo[i].tempo;
+
+              delete[] furo[i].check;
+              delete[] furo[i].tempoChk;
 		  }
 		  delete [] furo;
 		}
@@ -1296,6 +1299,10 @@ void Ler::copiaSemJson(Ler& vler) {
 			delete[] bcs;
 		}
 
+        if (nmultibcs > 0)
+            delete[] multiBcs;
+
+
 		if (nbvol > 0) {
 			for (int i = 0; i < this->nbvol; i++) {
 				delete[] bvol[i].tempo;
@@ -1311,6 +1318,14 @@ void Ler::copiaSemJson(Ler& vler) {
 			}
 			delete[] dpreq;
 		}
+
+        if (ncalor > 0) {
+            for (int i = 0; i < this->ncalor; i++) {
+                delete[] fonteCal[i].cal;
+                delete[] fonteCal[i].tempo;
+            }
+            delete[] fonteCal;
+        }
 
 		if (npig > 0)
 			delete[] pig;
@@ -1473,27 +1488,27 @@ void Ler::copiaSemJson(Ler& vler) {
 			    if(pocinjec == 0 && (lingas==1 || ninjgas>0))delete[] compLinServ;
 		  }
 		if (pocinjec > 0 && condpocinj.tipoFlui == 2) {
-			if (RhoInj) {
+			if (RhoInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] RhoInj[i];
 				delete[] RhoInj;
 			}
-			if (ViscInj) {
+			if (ViscInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] ViscInj[i];
 				delete[] ViscInj;
 			}
-			if (CondInj) {
+			if (CondInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] CondInj[i];
 				delete[] CondInj;
 			}
-			if (CpInj) {
+			if (CpInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] CpInj[i];
 				delete[] CpInj;
 			}
-			if (DrhoDtInj) {
+			if (DrhoDtInj!=0) {
 				for (int i = 0; i < ndiv + 2; i++)
 					delete[] DrhoDtInj[i];
 				delete[] DrhoDtInj;
@@ -13724,9 +13739,9 @@ void Ler::geraTabCp() {
 		LOG_ERR_UNEXPECTED_EXCEPTION, "Arquivo inexistente", chavePvtsimArq,
 				pvtsimarq);
 	}
-	string impfile;
-	impfile = pvtsimarq;
-	string dadosMR = impfile;
+	string impfileCp;
+	impfileCp = pvtsimarq;
+	string dadosMR = impfileCp;
 	ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
 	string chave;
 	char* tenta;
@@ -13831,9 +13846,9 @@ void Ler::geraTabCp() {
 }
 
 void Ler::geraTabDrholDt() {
-	string impfile;
-	impfile = pvtsimarq;
-	string dadosMR = impfile;
+	string impfileDrhol;
+	impfileDrhol = pvtsimarq;
+	string dadosMR = impfileDrhol;
 	ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
 	string chave;
 	char* tenta;
@@ -13955,9 +13970,9 @@ void Ler::geraTabInjCO2() {
 	tabent.npont=ntab;
 
 
-	string impfile;
-	impfile = condpocinj.pvtsimarqInj;
-	string dadosMR = impfile;
+	string impfileCO2;
+	impfileCO2 = condpocinj.pvtsimarqInj;
+	string dadosMR = impfileCO2;
 	ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
 
 

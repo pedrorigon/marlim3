@@ -411,11 +411,11 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
 SProd &SProd::operator=(const SProd &sp) {
     if (arq.lingas > 0)
         delete[] celulaG;
-    if (chokeVGL && arq.lingas > 0)
+    if (chokeVGL!=0 && arq.lingas > 0)
         delete[] chokeVGL;
-    if (posicVGLP && arq.lingas > 0)
+    if (posicVGLP!=0 && arq.lingas > 0)
         delete[] posicVGLP;
-    if (posicVGLG && arq.lingas > 0)
+    if (posicVGLG!=0 && arq.lingas > 0)
         delete[] posicVGLG;
     if (nabreM1 > 0)
         delete[] abreM1;
@@ -427,55 +427,85 @@ SProd &SProd::operator=(const SProd &sp) {
     if (arq.nperfistransg > 0 && arq.lingas > 0)
         delete[] ncelperftransg;
 
-    if (arq.ntendp > 0) {
-        for (int i = 0; i < arq.ntendp; i++) {
-            for (int j = 0; j < TrendLengthP[i]; j++)
-                delete[] MatTrendP[i][j];
-            delete[] MatTrendP[i];
+    if (arq.ntendp > 0 && redeTemporario == 0) {
+        for (int i = 0; i < arq.ntendp && MatTrendP && TrendLengthP; i++) {
+            if (MatTrendP[i]) {
+                for (int j = 0; j < TrendLengthP[i]; j++)
+                    delete[] MatTrendP[i][j];
+                delete[] MatTrendP[i];
+            }
         }
-        delete[] MatTrendP;
-        delete[] TrendLengthP;
-        delete[] resettrend;
-        delete[] ntrend;
-        delete[] ntrendB;
+        if (MatTrendP!=0)
+            delete[] MatTrendP;
+        if (TrendLengthP!=0)
+            delete[] TrendLengthP;
+        if (resettrend!=0)
+            delete[] resettrend;
+        if (ntrend)
+            delete[] ntrend;
+        if (ntrendB)
+            delete[] ntrendB;
     }
 
-    if (arq.ntendg > 0 && arq.lingas > 0) {
-        for (int i = 0; i < arq.ntendg; i++) {
-            for (int j = 0; j < TrendLengthG[i]; j++)
-                delete[] MatTrendG[i][j];
-            delete[] MatTrendG[i];
+
+    if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0) {
+        for (int i = 0; i < arq.ntendg && MatTrendG && TrendLengthG; i++) {
+            if (MatTrendG[i]) {
+                for (int j = 0; j < TrendLengthG[i]; j++)
+                    delete[] MatTrendG[i][j];
+                delete[] MatTrendG[i];
+            }
         }
-        delete[] MatTrendG;
-        delete[] TrendLengthG;
-        delete[] resettrendg;
-        delete[] ntrendg;
-        delete[] ntrendgB;
-    }
-    if (arq.ntendtransp > 0) {
-        for (int i = 0; i < arq.ntendtransp; i++) {
-            for (int j = 0; j < TrendLengthTransP[i]; j++)
-                delete[] MatTrendTransP[i][j];
-            delete[] MatTrendTransP[i];
-        }
-        delete[] MatTrendTransP;
-        delete[] TrendLengthTransP;
-        delete[] resettrendtrans;
-        delete[] ntrendtrans;
-        delete[] ntrendtransB;
+        if (MatTrendG!=0)
+            delete[] MatTrendG;
+        if (TrendLengthG!=0)
+            delete[] TrendLengthG;
+        if (resettrendg!=0)
+            delete[] resettrendg;
+        if (ntrendg)
+            delete[] ntrendg;
+        if (ntrendgB)
+            delete[] ntrendgB;
     }
 
-    if (arq.ntendtransg > 0) {
-        for (int i = 0; i < arq.ntendtransg; i++) {
-            for (int j = 0; j < TrendLengthTransG[i]; j++)
-                delete[] MatTrendTransG[i][j];
-            delete[] MatTrendTransG[i];
+    if (arq.ntendtransp > 0 && redeTemporario == 0) {
+        for (int i = 0; i < arq.ntendtransp && MatTrendTransP && TrendLengthTransP; i++) {
+            if (MatTrendTransP[i]) {
+                for (int j = 0; j < TrendLengthTransP[i]; j++)
+                    delete[] MatTrendTransP[i][j];
+                delete[] MatTrendTransP[i];
+            }
         }
-        delete[] MatTrendTransG;
-        delete[] TrendLengthTransG;
-        delete[] resettrendtransg;
-        delete[] ntrendtransg;
-        delete[] ntrendtransgB;
+        if (MatTrendTransP!=0)
+            delete[] MatTrendTransP;
+        if (TrendLengthTransP!=0)
+            delete[] TrendLengthTransP;
+        if (resettrendtrans!=0)
+            delete[] resettrendtrans;
+        if (ntrendtrans)
+            delete[] ntrendtrans;
+        if (ntrendtransB)
+            delete[] ntrendtransB;
+    }
+
+    if (arq.ntendtransg > 0 && redeTemporario == 0) {
+        for (int i = 0; i < arq.ntendtransg && MatTrendTransG && TrendLengthTransG; i++) {
+            if (MatTrendTransG[i]) {
+                for (int j = 0; j < TrendLengthTransG[i]; j++)
+                    delete[] MatTrendTransG[i][j];
+                delete[] MatTrendTransG[i];
+            }
+        }
+        if (MatTrendTransG!=0)
+            delete[] MatTrendTransG;
+        if (TrendLengthTransG!=0)
+            delete[] TrendLengthTransG;
+        if (resettrendtransg!=0)
+            delete[] resettrendtransg;
+        if (ntrendtransg)
+            delete[] ntrendtransg;
+        if (ntrendtransgB)
+            delete[] ntrendtransgB;
     }
 
     int ndiv = arq.tabent.npont - 1;
@@ -685,11 +715,11 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
                          double vbetaRevini, double vtitRev, double vtitRevini, double vdtCicMin) {
     if (arq.lingas > 0)
         delete[] celulaG;
-    if (chokeVGL && arq.lingas > 0)
+    if (chokeVGL!=0 && arq.lingas > 0)
         delete[] chokeVGL;
-    if (posicVGLP && arq.lingas > 0)
+    if (posicVGLP!=0 && arq.lingas > 0)
         delete[] posicVGLP;
-    if (posicVGLG && arq.lingas > 0)
+    if (posicVGLG!=0 && arq.lingas > 0)
         delete[] posicVGLG;
     if (nabreM1 > 0)
         delete[] abreM1;
@@ -701,56 +731,85 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
     if (arq.nperfistransg > 0 && arq.lingas > 0)
         delete[] ncelperftransg;
 
-    if (arq.ntendp > 0) {
-        for (int i = 0; i < arq.ntendp; i++) {
-            for (int j = 0; j < TrendLengthP[i]; j++)
-                delete[] MatTrendP[i][j];
-            delete[] MatTrendP[i];
-        }
-        delete[] MatTrendP;
-        delete[] TrendLengthP;
-        delete[] resettrend;
-        delete[] ntrend;
-        delete[] ntrendB;
-    }
+    if (arq.ntendp > 0 && redeTemporario == 0) {
+         for (int i = 0; i < arq.ntendp && MatTrendP && TrendLengthP; i++) {
+             if (MatTrendP[i]) {
+                 for (int j = 0; j < TrendLengthP[i]; j++)
+                     delete[] MatTrendP[i][j];
+                 delete[] MatTrendP[i];
+             }
+         }
+         if (MatTrendP!=0)
+             delete[] MatTrendP;
+         if (TrendLengthP!=0)
+             delete[] TrendLengthP;
+         if (resettrend!=0)
+             delete[] resettrend;
+         if (ntrend)
+             delete[] ntrend;
+         if (ntrendB)
+             delete[] ntrendB;
+     }
 
-    if (arq.ntendg > 0 && arq.lingas > 0) {
-        for (int i = 0; i < arq.ntendg; i++) {
-            for (int j = 0; j < TrendLengthG[i]; j++)
-                delete[] MatTrendG[i][j];
-            delete[] MatTrendG[i];
-        }
-        delete[] MatTrendG;
-        delete[] TrendLengthG;
-        delete[] resettrendg;
-        delete[] ntrendg;
-        delete[] ntrendgB;
-    }
-    if (arq.ntendtransp > 0) {
-        for (int i = 0; i < arq.ntendtransp; i++) {
-            for (int j = 0; j < TrendLengthTransP[i]; j++)
-                delete[] MatTrendTransP[i][j];
-            delete[] MatTrendTransP[i];
-        }
-        delete[] MatTrendTransP;
-        delete[] TrendLengthTransP;
-        delete[] resettrendtrans;
-        delete[] ntrendtrans;
-        delete[] ntrendtransB;
-    }
+     if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0) {
+         for (int i = 0; i < arq.ntendg && MatTrendG && TrendLengthG; i++) {
+             if (MatTrendG[i]) {
+                 for (int j = 0; j < TrendLengthG[i]; j++)
+                     delete[] MatTrendG[i][j];
+                 delete[] MatTrendG[i];
+             }
+         }
+         if (MatTrendG!=0)
+             delete[] MatTrendG;
+         if (TrendLengthG!=0)
+             delete[] TrendLengthG;
+         if (resettrendg!=0)
+             delete[] resettrendg;
+         if (ntrendg)
+             delete[] ntrendg;
+         if (ntrendgB)
+             delete[] ntrendgB;
+     }
 
-    if (arq.ntendtransg > 0) {
-        for (int i = 0; i < arq.ntendtransg; i++) {
-            for (int j = 0; j < TrendLengthTransG[i]; j++)
-                delete[] MatTrendTransG[i][j];
-            delete[] MatTrendTransG[i];
-        }
-        delete[] MatTrendTransG;
-        delete[] TrendLengthTransG;
-        delete[] resettrendtransg;
-        delete[] ntrendtransg;
-        delete[] ntrendtransgB;
-    }
+     if (arq.ntendtransp > 0 && redeTemporario == 0) {
+         for (int i = 0; i < arq.ntendtransp && MatTrendTransP && TrendLengthTransP; i++) {
+             if (MatTrendTransP[i]) {
+                 for (int j = 0; j < TrendLengthTransP[i]; j++)
+                     delete[] MatTrendTransP[i][j];
+                 delete[] MatTrendTransP[i];
+             }
+         }
+         if (MatTrendTransP)
+             delete[] MatTrendTransP;
+         if (TrendLengthTransP)
+             delete[] TrendLengthTransP;
+         if (resettrendtrans)
+             delete[] resettrendtrans;
+         if (ntrendtrans)
+             delete[] ntrendtrans;
+         if (ntrendtransB)
+             delete[] ntrendtransB;
+     }
+
+     if (arq.ntendtransg > 0 && redeTemporario == 0) {
+         for (int i = 0; i < arq.ntendtransg && MatTrendTransG && TrendLengthTransG; i++) {
+             if (MatTrendTransG[i]) {
+                 for (int j = 0; j < TrendLengthTransG[i]; j++)
+                     delete[] MatTrendTransG[i][j];
+                 delete[] MatTrendTransG[i];
+             }
+         }
+         if (MatTrendTransG)
+             delete[] MatTrendTransG;
+         if (TrendLengthTransG)
+             delete[] TrendLengthTransG;
+         if (resettrendtransg)
+             delete[] resettrendtransg;
+         if (ntrendtransg)
+             delete[] ntrendtransg;
+         if (ntrendtransgB)
+             delete[] ntrendtransgB;
+     }
 
     int ndiv = arq.tabent.npont - 1;
     if (CalcLat > 0 && arq.flashCompleto == 0) {
@@ -24953,7 +25012,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                 if (pchute < 0.5) {
                     if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
-                            "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
+                            "Poco injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                     else {
                         if ((*vg1dSP).iterRede > 0)
                             return -1.1e10;
@@ -24988,7 +25047,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
                 if (pchute < 0.5) {
                     if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError(
-                            "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
+                            "Poco injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                     else {
                         if ((*vg1dSP).iterRede > 0)
                             return -1.1e10;
@@ -25015,7 +25074,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
             if (kontaiter > 200) {
                 if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
-                        "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
+                        "Poco injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                 else {
                     if ((*vg1dSP).iterRede > 0)
                         return -1.1e10;
@@ -25032,7 +25091,7 @@ double SProd::buscaInjPfundoPerm5(double chute) {
             if (kontaiter > 200) {
                 if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                     NumError(
-                        "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
+                        "Poco injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
                 else {
                     if ((*vg1dSP).iterRede > 0)
                         return -1.1e10;
