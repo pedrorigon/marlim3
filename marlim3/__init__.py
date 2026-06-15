@@ -25,6 +25,10 @@ from ._tramo._branch import Branch
 from ._rede._rede import Network
 from ._cenarios._cenarios import Scenarios
 
+# Import tpl/ppl converter
+from ._conversores._conversor_marlim3_tplppl import convert_to_ppl_tpl
+
 Tramo = Branch  # Portuguese alias
 
-__all__ = ['Branch', 'Tramo', 'Network', 'Scenarios', '__version__']
+__all__ = ['Branch', 'Tramo', 'Network', 'Scenarios', 
+           'convert_to_ppl_tpl', '__version__']
