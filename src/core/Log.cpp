@@ -13,24 +13,6 @@ using namespace rapidjson;
 
 namespace {
 
-void assignString(char *&target, const string &value) {
-
-
-    char *buffer = (char *)malloc((value.size() + 1) * sizeof(char));
-    if (buffer == NULL) {
-        return;
-    }
-    memcpy(buffer, value.c_str(), value.size() + 1);
-    buffer[value.size()] = '\0';
-	#pragma omp critical(assignString)
-    {
-    	if (target != NULL) {
-    		free(target);
-    	}
-    	target = buffer;
-    }
-}
-
 void initializeResultadoSimulacao(stResultadoSimulacao_t &resultado) {
     // status da inicação do log
     resultado.started = false;
@@ -39,9 +21,6 @@ void initializeResultadoSimulacao(stResultadoSimulacao_t &resultado) {
     resultado.totalInfos = -1;
     resultado.totalAvisos = -1;
     resultado.totalFalhas = -1;
-    resultado.nomeArqLog = NULL;
-    resultado.nomeArqEntrada = NULL;
-    resultado.dataExecucao = NULL;
 }
 
 bool getLocalTime(time_t source, struct tm &dest) {
@@ -80,14 +59,14 @@ Logger &Logger::operator=(const Logger &vLogger) {
 void Logger::setNomeArqEntrada(string nomeArquivoEntrada) {
     // trocar o nome do arquivo de entrada
     if (logRede == 0)
-        assignString(this->stResultadoSimulacao.nomeArqEntrada, nomeArquivoEntrada);
+        this->stResultadoSimulacao.nomeArqEntrada = nomeArquivoEntrada;
     else
-        assignString(this->stResultadoSimulacao.nomeArqEntrada, nomeRedePrincipal);
+        this->stResultadoSimulacao.nomeArqEntrada = nomeRedePrincipal;
 }
 
 void Logger::setNomeArqLog(string nomeArquivoLog) {
     // trocar o nome do arquivo do log
-    assignString(this->stResultadoSimulacao.nomeArqLog, nomeArquivoLog);
+    this->stResultadoSimulacao.nomeArqLog = nomeArquivoLog;
 }
 
 void Logger::changeResultadoSimulacao(const string nomeArquivoEntrada, const string nomeArquivoLog) {
@@ -102,7 +81,7 @@ void Logger::changeResultadoSimulacao(const string nomeArquivoEntrada, const str
             if (getLocalTime(hoje, agora)) {
                 dataExecucao = formatDataExecucao(agora);
             }
-            assignString(this->stResultadoSimulacao.dataExecucao, dataExecucao);
+            this->stResultadoSimulacao.dataExecucao = dataExecucao;
             // status da inicação do log
             this->stResultadoSimulacao.started = true;
             // iniciar a variavel de status da simulacao
@@ -185,9 +164,9 @@ Document Logger::parseTemplateLogOutput() {
 
 void Logger::writeJsonFile(Document *outputDoc) {
     try {
-        remove(getStResultadoSimulacao().nomeArqLog);
+        remove(getStResultadoSimulacao().nomeArqLog.c_str());
         // criar arquivo de saída da simulação
-        FILE *logOutFile = fopen(getStResultadoSimulacao().nomeArqLog, "wb"); // non-Windows use "w"
+        FILE *logOutFile = fopen(getStResultadoSimulacao().nomeArqLog.c_str(), "wb"); // non-Windows use "w"
         // definir buffer de saída da simulação
         char writeBuffer[65536];
         // criar stream do arquivo de saída da simulação
@@ -216,9 +195,9 @@ void Logger::writeOutputLog(int tipoSaida) {
         // recuperar o objeto de resultado da simulação do templateJson
         Value &resultadoSimulacao = logOutDoc["resultadoSimulacao"];
         // alterar o nome do arquivo de entrada da simulação
-        resultadoSimulacao["arquivo"].SetString(StringRef(getStResultadoSimulacao().nomeArqEntrada));
+        resultadoSimulacao["arquivo"].SetString(StringRef(getStResultadoSimulacao().nomeArqEntrada.c_str()));
         // alterar a data da simulação
-        resultadoSimulacao["data"].SetString(StringRef(getStResultadoSimulacao().dataExecucao));
+        resultadoSimulacao["data"].SetString(StringRef(getStResultadoSimulacao().dataExecucao.c_str()));
         // caso o resultado da simulação seja bem sucedido
         if (getStResultadoSimulacao().sucesso) {
             resultadoSimulacao["status"].SetString("sucesso");
@@ -245,23 +224,22 @@ void Logger::writeOutputLog(int tipoSaida) {
             Value valorCodigo(StringRef(getStResultadoSimulacao().evento.codigos[indLog].c_str()));
             // criar descrição do log - chave e valor
             Value chaveDescricao(StringRef("descricao"));
-            char *descricaoLog = (char *)malloc(
-                sizeof(char) * (strlen(excCfg[getStResultadoSimulacao().evento.codigos[indLog].c_str()].GetString()) + strlen(getStResultadoSimulacao().evento.descricoes[indLog].c_str()) + 1));
-            strcpy(descricaoLog, excCfg[getStResultadoSimulacao().evento.codigos[indLog].c_str()].GetString());
-            strcat(descricaoLog, getStResultadoSimulacao().evento.descricoes[indLog].c_str());
-            Value valorDescricao(StringRef(descricaoLog));
+            string descricaoLog = string(excCfg[getStResultadoSimulacao().evento.codigos[indLog].c_str()].GetString()) +
+                                  getStResultadoSimulacao().evento.descricoes[indLog];
+            Value valorDescricao;
+            valorDescricao.SetString(descricaoLog.c_str(), static_cast<SizeType>(descricaoLog.size()), allocator);
             // criar propriedade do log - chave e valor
             Value chavePropriedade(StringRef("propriedade"));
-            char *propriedadeFalha = (char *)malloc(
-                sizeof(char) * strlen(getStResultadoSimulacao().evento.propriedades[indLog].c_str()) + 1);
-            strcpy(propriedadeFalha, getStResultadoSimulacao().evento.propriedades[indLog].c_str());
-            Value valorPropriedade(StringRef(propriedadeFalha));
+            Value valorPropriedade;
+            valorPropriedade.SetString(getStResultadoSimulacao().evento.propriedades[indLog].c_str(),
+                                       static_cast<SizeType>(getStResultadoSimulacao().evento.propriedades[indLog].size()),
+                                       allocator);
             // criar causa do log - chave e valor
             Value chaveCausa(StringRef("causa"));
-            char *causaLog = (char *)malloc(
-                sizeof(char) * strlen(getStResultadoSimulacao().evento.causas[indLog].c_str()) + 1);
-            strcpy(causaLog, getStResultadoSimulacao().evento.causas[indLog].c_str());
-            Value valorCausa(StringRef(causaLog));
+            Value valorCausa;
+            valorCausa.SetString(getStResultadoSimulacao().evento.causas[indLog].c_str(),
+                                 static_cast<SizeType>(getStResultadoSimulacao().evento.causas[indLog].size()),
+                                 allocator);
             // criar linha do arquivo - chave e valor
             Value chaveLinha(StringRef("linha"));
             Value valorLinha(getStResultadoSimulacao().evento.linhas[indLog]);
