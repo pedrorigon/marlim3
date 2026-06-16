@@ -53,9 +53,9 @@ typedef enum {
 } log_t;
 
 typedef struct {
-    char *nomeArqEntrada;
-    char *nomeArqLog;
-    char *dataExecucao;
+    string nomeArqEntrada;
+    string nomeArqLog;
+    string dataExecucao;
     bool started;
     bool sucesso;
     int totalInfos;
