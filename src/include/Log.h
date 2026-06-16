@@ -33,6 +33,7 @@
 #include <string.h>
 #include <time.h>
 #include <vector>
+#include <omp.h>
 
 using namespace std;
 

@@ -1830,27 +1830,27 @@ class Ler {
                 delete[] compLinServ;
         }
         if (pocinjec > 0 && condpocinj.tipoFlui == 2) {
-            if (RhoInj) {
+            if (RhoInj!=0) {
                 for (int i = 0; i < ndiv + 2; i++)
                     delete[] RhoInj[i];
                 delete[] RhoInj;
             }
-            if (ViscInj) {
+            if (ViscInj!=0) {
                 for (int i = 0; i < ndiv + 2; i++)
                     delete[] ViscInj[i];
                 delete[] ViscInj;
             }
-            if (CondInj) {
+            if (CondInj!=0) {
                 for (int i = 0; i < ndiv + 2; i++)
                     delete[] CondInj[i];
                 delete[] CondInj;
             }
-            if (CpInj) {
+            if (CpInj!=0) {
                 for (int i = 0; i < ndiv + 2; i++)
                     delete[] CpInj[i];
                 delete[] CpInj;
             }
-            if (DrhoDtInj) {
+            if (DrhoDtInj!=0) {
                 for (int i = 0; i < ndiv + 2; i++)
                     delete[] DrhoDtInj[i];
                 delete[] DrhoDtInj;

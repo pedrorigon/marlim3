@@ -1045,11 +1045,11 @@ class SProd {
     ~SProd() {
         if (arq.lingas > 0)
             delete[] celulaG;
-        if (chokeVGL && arq.lingas > 0)
+        if (chokeVGL!=0 && arq.lingas > 0)
             delete[] chokeVGL;
-        if (posicVGLP && arq.lingas > 0)
+        if (posicVGLP!=0 && arq.lingas > 0)
             delete[] posicVGLP;
-        if (posicVGLG && arq.lingas > 0)
+        if (posicVGLG!=0 && arq.lingas > 0)
             delete[] posicVGLG;
         if (nabreM1 > 0)
             delete[] abreM1;
@@ -1069,11 +1069,11 @@ class SProd {
                     delete[] MatTrendP[i];
                 }
             }
-            if (MatTrendP)
+            if (MatTrendP!=0)
                 delete[] MatTrendP;
-            if (TrendLengthP)
+            if (TrendLengthP!=0)
                 delete[] TrendLengthP;
-            if (resettrend)
+            if (resettrend!=0)
                 delete[] resettrend;
             if (ntrend)
                 delete[] ntrend;
@@ -1089,11 +1089,11 @@ class SProd {
                     delete[] MatTrendG[i];
                 }
             }
-            if (MatTrendG)
+            if (MatTrendG!=0)
                 delete[] MatTrendG;
-            if (TrendLengthG)
+            if (TrendLengthG!=0)
                 delete[] TrendLengthG;
-            if (resettrendg)
+            if (resettrendg!=0)
                 delete[] resettrendg;
             if (ntrendg)
                 delete[] ntrendg;
@@ -1109,11 +1109,11 @@ class SProd {
                     delete[] MatTrendTransP[i];
                 }
             }
-            if (MatTrendTransP)
+            if (MatTrendTransP!=0)
                 delete[] MatTrendTransP;
-            if (TrendLengthTransP)
+            if (TrendLengthTransP!=0)
                 delete[] TrendLengthTransP;
-            if (resettrendtrans)
+            if (resettrendtrans!=0)
                 delete[] resettrendtrans;
             if (ntrendtrans)
                 delete[] ntrendtrans;
@@ -1129,11 +1129,11 @@ class SProd {
                     delete[] MatTrendTransG[i];
                 }
             }
-            if (MatTrendTransG)
+            if (MatTrendTransG!=0)
                 delete[] MatTrendTransG;
-            if (TrendLengthTransG)
+            if (TrendLengthTransG!=0)
                 delete[] TrendLengthTransG;
-            if (resettrendtransg)
+            if (resettrendtransg!=0)
                 delete[] resettrendtransg;
             if (ntrendtransg)
                 delete[] ntrendtransg;

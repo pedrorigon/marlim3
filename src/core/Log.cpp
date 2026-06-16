@@ -7,22 +7,28 @@
 
 #include "Log.h"
 #include <stdlib.h>
+#include <string>
 
 using namespace rapidjson;
 
 namespace {
 
 void assignString(char *&target, const string &value) {
+
+
     char *buffer = (char *)malloc((value.size() + 1) * sizeof(char));
     if (buffer == NULL) {
         return;
     }
-
     memcpy(buffer, value.c_str(), value.size() + 1);
-    if (target != NULL) {
-        free(target);
+    buffer[value.size()] = '\0';
+	#pragma omp critical(assignString)
+    {
+    	if (target != NULL) {
+    		free(target);
+    	}
+    	target = buffer;
     }
-    target = buffer;
 }
 
 void initializeResultadoSimulacao(stResultadoSimulacao_t &resultado) {
@@ -36,6 +42,20 @@ void initializeResultadoSimulacao(stResultadoSimulacao_t &resultado) {
     resultado.nomeArqLog = NULL;
     resultado.nomeArqEntrada = NULL;
     resultado.dataExecucao = NULL;
+}
+
+bool getLocalTime(time_t source, struct tm &dest) {
+#ifdef _WIN32
+    return localtime_s(&dest, &source) == 0;
+#else
+    return localtime_r(&source, &dest) != NULL;
+#endif
+}
+
+string formatDataExecucao(const struct tm &agora) {
+    return to_string(agora.tm_mday) + "/" + to_string(agora.tm_mon + 1) + "/" +
+           to_string(agora.tm_year + 1900) + " hora: " + to_string(agora.tm_hour) + ":" +
+           to_string(agora.tm_min);
 }
 
 } // namespace
@@ -74,14 +94,15 @@ void Logger::changeResultadoSimulacao(const string nomeArquivoEntrada, const str
     // caso seja a configuracao inicial
     if (nomeArquivoEntrada.size() > 0) {
         if (!this->stResultadoSimulacao.started) {
-            // alocar espaco para a data
-            this->stResultadoSimulacao.dataExecucao = (char *)malloc(11 * sizeof(char));
             // obter a data corrente
             time_t hoje = time(0);
-            struct tm *agora = localtime(&hoje);
+            struct tm agora;
             // definir a data corrente
-            sprintf(getStResultadoSimulacao().dataExecucao, "%d/%d/%d", agora->tm_mday, (agora->tm_mon + 1),
-                    (agora->tm_year + 1900));
+            string dataExecucao;
+            if (getLocalTime(hoje, agora)) {
+                dataExecucao = formatDataExecucao(agora);
+            }
+            assignString(this->stResultadoSimulacao.dataExecucao, dataExecucao);
             // status da inicação do log
             this->stResultadoSimulacao.started = true;
             // iniciar a variavel de status da simulacao
