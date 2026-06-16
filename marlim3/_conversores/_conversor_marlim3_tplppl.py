@@ -13,6 +13,9 @@ import os
 import glob 
 import sys
 
+from datetime import datetime
+from .. import __version__
+
 from .._output_headers import (
     SKIP_VARIABLES,
     is_pressure_variable,
@@ -23,25 +26,26 @@ from .._output_headers import (
 
 skip_variables = SKIP_VARIABLES
 
-# Cabeçalho padrão para os arquivos de saída
-header_template = """'Marlim3' 
-{plot_type} 
+def _build_header_template():
+    today = datetime.now().strftime("%d-%m-%y %H:%M:%S")
+    return f"""'Marlim3 v{__version__}' 
+{{plot_type}} 
 INPUT FILE 
 'Marlim3.genkey' 
 PVT FILE 
 './3phase.tab' 
 DATE 
-'24-10-23 12:59:00' 
+'{today}' 
 PROJECT 
-'Marlim 3' 
+'Marlim' 
 TITLE 
 'Convertido a partir da saída do Marlim 3' 
 AUTHOR 
 'Petrobras' 
 NETWORK 
-{network_count} 
+{{network_count}} 
 GEOMETRY' (M) ' 
-{geometry_blocks}"""
+{{geometry_blocks}}"""
 
 def read_tend_file(file_path): 
     with open(file_path, 'r', encoding='utf-8') as file: 
@@ -99,7 +103,7 @@ def format_geometry_block(sections, elevations, name):
 
 def write_tpl_output_file(output_path, all_variables, sorted_data, position_mapping, geometry_blocks): 
     with open(output_path, 'w', encoding='utf-8') as file: 
-        file.write(header_template.format(plot_type="TIME PLOT", network_count="2" if "SERVICO" in geometry_blocks else "1", geometry_blocks=geometry_blocks)) 
+        file.write(_build_header_template().format(plot_type="TIME PLOT", network_count="2" if "SERVICO" in geometry_blocks else "1", geometry_blocks=geometry_blocks)) 
          
         file.write("CATALOG\n") 
         file.write(f"{len(all_variables)}\n") 
@@ -125,7 +129,7 @@ def write_tpl_output_file(output_path, all_variables, sorted_data, position_mapp
 
 def write_ppl_output_file(output_path, perfisp_variables, perfisg_variables, sorted_data, times, geometry_blocks): 
     with open(output_path, 'w', encoding='utf-8') as file: 
-        file.write(header_template.format(plot_type="PROFILE PLOT", network_count="2" if perfisg_variables else "1", geometry_blocks=geometry_blocks)) 
+        file.write(_build_header_template().format(plot_type="PROFILE PLOT", network_count="2" if perfisg_variables else "1", geometry_blocks=geometry_blocks)) 
          
         file.write("CATALOG\n") 
         all_variables = perfisp_variables + perfisg_variables 
