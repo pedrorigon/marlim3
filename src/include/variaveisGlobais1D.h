@@ -10,6 +10,7 @@
 #define _USE_MATH_DEFINES // Enables access to the M_PI constant
 
 #include <math.h>
+#include "Log.h"
 
 struct varGlob1D {
     int partidaVF;
@@ -91,6 +92,7 @@ struct varGlob1D {
     int narq;
     int tipoModeloDrift;
     int blackOilTemp;
+    //Logger logger;
     varGlob1D() {
         partidaVF = 0;
         relaxVF = 0.7;
@@ -172,6 +174,7 @@ struct varGlob1D {
         narq = 1;
         tipoModeloDrift = 1;
         blackOilTemp = 0;
+        //logger=Logger("")
     }
     varGlob1D &operator=(varGlob1D &vtemp) {
         if (this != &vtemp) {
