@@ -46,7 +46,7 @@ void validadorTipo::valida_configuracao_inicial(Value &configuracao_inicial_json
         }
 
     if (configuracao_inicial_json.HasMember("arquivoAP"))
-        if (!configuracao_inicial_json["paralelizaAP"].IsString()) {
+        if (!configuracao_inicial_json["arquivoAP"].IsString()) {
             sucesso = false;
             erros.push_back("Configuracao inicial: arquivoAP deve ser do tipo string");
         }
