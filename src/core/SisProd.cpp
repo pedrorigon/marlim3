@@ -441,9 +441,9 @@ SProd &SProd::operator=(const SProd &sp) {
             delete[] TrendLengthP;
         if (resettrend!=0)
             delete[] resettrend;
-        if (ntrend)
+        if (ntrend!=0)
             delete[] ntrend;
-        if (ntrendB)
+        if (ntrendB!=0)
             delete[] ntrendB;
     }
 
@@ -462,9 +462,9 @@ SProd &SProd::operator=(const SProd &sp) {
             delete[] TrendLengthG;
         if (resettrendg!=0)
             delete[] resettrendg;
-        if (ntrendg)
+        if (ntrendg!=0)
             delete[] ntrendg;
-        if (ntrendgB)
+        if (ntrendgB!=0)
             delete[] ntrendgB;
     }
 
@@ -482,9 +482,9 @@ SProd &SProd::operator=(const SProd &sp) {
             delete[] TrendLengthTransP;
         if (resettrendtrans!=0)
             delete[] resettrendtrans;
-        if (ntrendtrans)
+        if (ntrendtrans!=0)
             delete[] ntrendtrans;
-        if (ntrendtransB)
+        if (ntrendtransB!=0)
             delete[] ntrendtransB;
     }
 
@@ -502,9 +502,9 @@ SProd &SProd::operator=(const SProd &sp) {
             delete[] TrendLengthTransG;
         if (resettrendtransg!=0)
             delete[] resettrendtransg;
-        if (ntrendtransg)
+        if (ntrendtransg!=0)
             delete[] ntrendtransg;
-        if (ntrendtransgB)
+        if (ntrendtransgB!=0)
             delete[] ntrendtransgB;
     }
 
@@ -745,9 +745,9 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
              delete[] TrendLengthP;
          if (resettrend!=0)
              delete[] resettrend;
-         if (ntrend)
+         if (ntrend!=0)
              delete[] ntrend;
-         if (ntrendB)
+         if (ntrendB!=0)
              delete[] ntrendB;
      }
 
@@ -765,9 +765,9 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
              delete[] TrendLengthG;
          if (resettrendg!=0)
              delete[] resettrendg;
-         if (ntrendg)
+         if (ntrendg!=0)
              delete[] ntrendg;
-         if (ntrendgB)
+         if (ntrendgB!=0)
              delete[] ntrendgB;
      }
 
@@ -785,9 +785,9 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
              delete[] TrendLengthTransP;
          if (resettrendtrans)
              delete[] resettrendtrans;
-         if (ntrendtrans)
+         if (ntrendtrans!=0)
              delete[] ntrendtrans;
-         if (ntrendtransB)
+         if (ntrendtransB!=0)
              delete[] ntrendtransB;
      }
 
@@ -805,9 +805,9 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
              delete[] TrendLengthTransG;
          if (resettrendtransg)
              delete[] resettrendtransg;
-         if (ntrendtransg)
+         if (ntrendtransg!=0)
              delete[] ntrendtransg;
-         if (ntrendtransgB)
+         if (ntrendtransgB!=0)
              delete[] ntrendtransgB;
      }
 
@@ -7203,19 +7203,21 @@ void SProd::renovaTemp() {
                     celula[i - 1].TMModel = 3;
                 else if (celula[i - 1].acsr.tipo == 2 || celula[i - 1].acsr.tipo == 3 || celula[i - 1].acsr.tipo == 9 || celula[i - 1].acsr.tipo == 15 || celula[i - 1].acsr.tipo == 16)
                     celula[i - 1].TMModel = 3;
-                if (arq.flashCompleto == 2) {
-                    double titTeste =
-                        celula[i - 1].flui.FracMass(celula[i - 1].pres, celula[i - 1].temp);
-                    if (titTeste > 1.0 - 1e-2 || titTeste < 1e-2)
-                        celula[i - 1].TMModel = 3;
-                } else if (i >= 2) {
+            	else if (i >= 2) {
                     if (celula[i - 2].acsr.tipo == 5 &&
                         (celula[i - 2].acsr.chk.AreaGarg < (1e-3 + arq.master1.razareaativ) * celula[i - 2].duto.area))
                         celula[i - 1].TMModel = 3;
                     else if (celula[i - 2].acsr.tipo == 4 || celula[i - 2].acsr.tipo == 7 || celula[i - 2].acsr.tipo == 17)
                         celula[i - 1].TMModel = 0;
                 }
-            }
+            	if (arq.flashCompleto == 2) {
+            		double titTeste =
+            				celula[i - 1].flui.FracMass(celula[i - 1].pres, celula[i - 1].temp);
+            		if (titTeste > 1.0 - 1e-2 || titTeste < 1e-2)
+            			celula[i - 1].TMModel = 3;
+            	}
+
+        	}
             if (celula[i - 1].TMModel == 0 && celula[i - 1].alf <= (*vg1dSP).CritCond)
                 celula[i - 1].TMModel = 1;
             if (celula[i - 1].TMModel == 0 && i == ncel)
