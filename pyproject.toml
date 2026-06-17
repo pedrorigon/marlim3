@@ -44,7 +44,9 @@ Homepage = "https://github.com/petrobras/marlim3"
 include = ["marlim3", "marlim3.*"]
 
 [tool.setuptools.package-data]
-marlim3 = ["translations.json"]
+marlim3 = ["translations.json",
+           "_conversores/_conversor_mr2/_resources/templateMR2toMRT.json",
+]
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Development dependencies  (uv dependency groups — not shipped to end users)
