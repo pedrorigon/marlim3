@@ -1075,9 +1075,9 @@ class SProd {
                 delete[] TrendLengthP;
             if (resettrend!=0)
                 delete[] resettrend;
-            if (ntrend)
+            if (ntrend!=0)
                 delete[] ntrend;
-            if (ntrendB)
+            if (ntrendB!=0)
                 delete[] ntrendB;
         }
 
@@ -1095,9 +1095,9 @@ class SProd {
                 delete[] TrendLengthG;
             if (resettrendg!=0)
                 delete[] resettrendg;
-            if (ntrendg)
+            if (ntrendg!=0)
                 delete[] ntrendg;
-            if (ntrendgB)
+            if (ntrendgB!=0)
                 delete[] ntrendgB;
         }
 
@@ -1115,9 +1115,9 @@ class SProd {
                 delete[] TrendLengthTransP;
             if (resettrendtrans!=0)
                 delete[] resettrendtrans;
-            if (ntrendtrans)
+            if (ntrendtrans!=0)
                 delete[] ntrendtrans;
-            if (ntrendtransB)
+            if (ntrendtransB!=0)
                 delete[] ntrendtransB;
         }
 
@@ -1135,9 +1135,9 @@ class SProd {
                 delete[] TrendLengthTransG;
             if (resettrendtransg!=0)
                 delete[] resettrendtransg;
-            if (ntrendtransg)
+            if (ntrendtransg!=0)
                 delete[] ntrendtransg;
-            if (ntrendtransgB)
+            if (ntrendtransgB!=0)
                 delete[] ntrendtransgB;
         }
 
