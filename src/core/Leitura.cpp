@@ -2227,6 +2227,7 @@ void Ler::parse_configuracao_inicial(
 				latente = configuracao_inicial_json.latente();
 			if (configuracao_inicial_json.condlatente().exists())
 				condlatente = configuracao_inicial_json.condlatente();
+			pvtsimarq ="";
 			if (configuracao_inicial_json.pvtsimArq().exists())
 				pvtsimarq = pathArqExtEntrada
 						+ string(configuracao_inicial_json.pvtsimArq());
@@ -2252,6 +2253,31 @@ void Ler::parse_configuracao_inicial(
 						modelcp = configuracao_inicial_json.modeloCp();
 					if (configuracao_inicial_json.modeloJTL().exists())
 						modelJTL = configuracao_inicial_json.modeloJTL();
+					if(modelcp==1 || modelJTL==1 || latente==1){
+						// Verificar extensão .tab
+						if (pvtsimarq.empty()){
+							logger.log(LOGGER_FALHA,
+									LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+									"Chave requerida: latente, modeloCp ou modeloJTL",
+									chaveJson, "black-oil com uso híbrido de tabelas, é necessária uma tabela do tipo .tab, não se está indicando o arquivo");
+						}
+						// Verificar extensão .ctm
+						else if (pvtsimarq.length() >= 4 && pvtsimarq.substr(pvtsimarq.length() - 4) == ".ctm" ||
+								pvtsimarq.substr(pvtsimarq.length() - 4) == ".CTM" ) {
+						    // É um arquivo .ctm
+							logger.log(LOGGER_FALHA,
+									LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+									"Chave requerida: latente, modeloCp ou modeloJTL",
+									chaveJson, "black-oil com uso híbrido de tabelas, é necessária uma tabela do tipo .tab não um arquivo ctm");
+						}
+						else if (pvtsimarq.length() >= 4 && pvtsimarq.substr(pvtsimarq.length() - 4) != ".tab") {
+							logger.log(LOGGER_FALHA,
+									LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+									"Chave requerida: latente, modeloCp ou modeloJTL",
+									chaveJson, "black-oil com uso híbrido de tabelas, é necessária uma tabela do tipo .tab, se indicou um arquivo de extensão desconhecida");
+						}
+
+					}
 					// RN-089: Chave "tabP" requerida em caso de "modeloFluidoTabelaFlash"=false
 					if (configuracao_inicial_json.tabP().exists())
 						tabp = configuracao_inicial_json.tabP();
