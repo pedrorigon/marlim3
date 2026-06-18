@@ -214,7 +214,7 @@ double critInterSev::testaCriterio(int tipo, Cel *celula) {
         return uls0Boe(celula);
         break;
     case 1:
-        return uls0Boe(celula);
+        return difPresTeB(celula);
         break;
     default:
         logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
