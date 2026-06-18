@@ -2031,6 +2031,7 @@ class Ler {
     void imprimeTrendTrans(Cel *const celula,
                            double tempo, int trend);
     void resumoPermanente(Cel *const celula, CelG *const celulaG, double pGsup, double presiniG, int indTramo, int nrede = -1);
+    void resumoIntermitencia(Cel *const celula, int indTramo, int nrede = -1);
 
     // The following methods are used by lerArq while constructing production- and gas-cell
     // structures from the units and discretization data registered in JSON. They locate each

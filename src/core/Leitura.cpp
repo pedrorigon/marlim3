@@ -10066,13 +10066,16 @@ void Ler::parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_js
 					maiorIdentificador = identificadores[i];
 				}
 
-				double comp =
-						intermitencia_json[indAtivo].inicioTrechoAcumula();
-				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento && reverso<2)
-					comp = nCompTotalUnidadesP - comp;
-				if (comp < 0.0)
-					comp = 0.0;
+				double comp;
+				comp=master1.comp;
+				if(intermitencia_json[indAtivo].inicioTrechoAcumula().exists()){
+					comp =intermitencia_json[indAtivo].inicioTrechoAcumula();
+					// sentido plataforma para fundo-poco
+					if (!sentidoGeometriaSegueEscoamento && reverso<2)
+						comp = nCompTotalUnidadesP - comp;
+					if (comp < 0.0)
+						comp = 0.0;
+				}
 				intermi[i].indInicioTrechoAcumula = buscaIndiceMeioP(comp);
 
 				comp =intermitencia_json[indAtivo].fimTrechoAcumula();
@@ -10082,17 +10085,22 @@ void Ler::parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_js
 				if (comp < 0.0)comp = 0.0;
 				intermi[i].indFimTrechoAcumula = buscaIndiceMeioP(comp);
 
-				comp =intermitencia_json[indAtivo].fimTrechoColuna();
-				// sentido plataforma para fundo-poco
-				if (!sentidoGeometriaSegueEscoamento && reverso<2)
-					comp = nCompTotalUnidadesP - comp;
-				if (comp < 0.0)comp = 0.0;
+				comp=nCompTotalUnidadesP;
+				if(intermitencia_json[indAtivo].fimTrechoColuna().exists()){
+					comp =intermitencia_json[indAtivo].fimTrechoColuna();
+					// sentido plataforma para fundo-poco
+					if (!sentidoGeometriaSegueEscoamento && reverso<2)
+						comp = nCompTotalUnidadesP - comp;
+					if (comp < 0.0)comp = 0.0;
+				}
 				intermi[i].indFimTrechoColuna = buscaIndiceMeioP(comp);
 				if (intermitencia_json[indAtivo].fracaoVazioPenetracao().exists())
 				intermi[i].fracaoVazioPenetracao=intermitencia_json[indAtivo].fracaoVazioPenetracao();
 				else intermi[i].fracaoVazioPenetracao=0.1;
 
-				intermi[i].criterio=intermitencia_json[indAtivo].criterio();
+				intermi[i].criterio=0;
+				if (intermitencia_json[indAtivo].criterio().exists())
+					intermi[i].criterio=intermitencia_json[indAtivo].criterio();
 
 			}
 			// verificar a unicidade dos identificadores
@@ -13059,13 +13067,15 @@ void Ler::lerArq() {
 			if (contemChaveAtivaArray(jsonDoc, fontePressao)) {
 				parse_furo(jsonDoc.fontePressao());
 			}
-			if (contemChaveAtivaArray(jsonDoc, intermitenciaSevera)) {
-				parse_intermitencia(jsonDoc.intermitenciaSevera());
-			}
 			///forcacao de barra:
 
 			// parse do elemento "master1"
 			parse_master1(jsonDoc.master1());
+
+			if (contemChaveAtivaArray(jsonDoc, intermitenciaSevera)) {
+				parse_intermitencia(jsonDoc.intermitenciaSevera());
+			}
+
 			// parser do elemento "pig"
 			if (contemChaveAtivaArray(jsonDoc, pig)) {
 				parse_pig(jsonDoc.pig());
@@ -18179,7 +18189,7 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 			escreveIni << t(" Vazao de gas in situ na descarga da BCS ", " In-situ gas flow rate at ESP discharge ") << ibcs+nbcs << t(", (m3/s);", ", (m3/s);");
 		}
 	}
-	if(nintermi>0){
+	/*if(nintermi>0){
 		for(int iintermi=0;iintermi<nintermi;iintermi++){
 			escreveIni << t(" Criterio do teste de Intermitencia Severa ", " Severe Intermittency test criterion ") << iintermi << " ;";
 			escreveIni << t(" Qualidade do Arranjo estratificado para Trecho de Acumulacao ", " Stratified pattern quality for accumulation section ") << iintermi << t(", (-);", ", (-);");
@@ -18192,7 +18202,7 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 			escreveIni << t(" Velocidade superficial de liquido inicio da zona de acumulo ", " Liquid superficial velocity at start of accumulation zone ") << iintermi << t(", (m/s);", ", (m/s);");
 			escreveIni << t(" Indicador de estabilidade ", " Stability indicator ") << iintermi << ", ;";
 		}
-	}
+	}*/
 	escreveIni << "\n";
 
 	escreveIni << fqlst(celula,ncelp - 1,0)<<" ; ";
@@ -18248,7 +18258,7 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 
 		}
 	}
-	if(nintermi>0){
+	/*if(nintermi>0){
 		std::vector<string> model = {"Boe", "Taitel-Barnea"};
 		critInterSev* criterioItermitencia;
 		criterioItermitencia = new critInterSev[nintermi];
@@ -18270,6 +18280,65 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 					if(estabi>0) escreveIni << t("estavel", "stable") <<" ; ";
 					else escreveIni << t("instavel", "unstable") <<" ; ";
 			  }
+		}
+		delete [] criterioItermitencia;
+	}*/
+	escreveIni.close();
+}
+
+void Ler::resumoIntermitencia(Cel* const celula, int indTramo, int nrede){
+	const auto t = [this](const char* pt, const char* en) {
+		return output_i18n::tr(this->idiomaSaida, pt, en);
+	};
+	ostringstream saidaR;
+	if (indTramo < 0 && AP==0)
+		saidaR << pathPrefixoArqSaida << "resumoIntermitencia" << ".dat";
+	else if (indTramo < 0 && AP==1)
+		saidaR << pathPrefixoArqSaida << "resumoIntermitencia"<<"-seqAP-"<<(*vg1dSP).sequenciaAP <<".dat";
+	else
+		saidaR << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
+				<< "resumoIntermitencia" << ".dat";
+	string tmp = saidaR.str();
+	ofstream escreveIni(tmp.c_str(), ios_base::out);
+
+	escreveIni << t(" Índice do Teste ", " Index Test ") << " ;";
+	escreveIni << t(" Criterio do teste de Intermitencia Severa ", " Severe Intermittency test criterion ") << " ;";
+	escreveIni << t(" Qualidade do Arranjo estratificado para Trecho de Acumulacao ", " Stratified pattern quality for accumulation section ") <<  t(", (-);", ", (-);");
+	escreveIni << t(" Fator de compressibilidade medio zona de acumulo ", " Average compressibility factor in accumulation zone ") << t(", (-);", ", (-);");
+	escreveIni << t(" Temperatura media zona de acumulo ", " Average temperature in accumulation zone ") <<t(", (C);", ", (C);");
+	escreveIni << t(" Fracao de Vazio media zona de acumulo ", " Average void fraction in accumulation zone ") <<t(", (-);", ", (-);");
+	escreveIni << t(" Vazao massica de gas inicio da zona de acumulo ", " Gas mass flow rate at start of accumulation zone ") << t(", (kg/s);", ", (kg/s);");
+	escreveIni << t(" Vazao massica de liquido inicio da zona de acumulo ", " Liquid mass flow rate at start of accumulation zone ") << t(", (kg/s);", ", (kg/s);");
+	escreveIni << t(" Velocidade superficial de gas inicio da zona de acumulo ", " Gas superficial velocity at start of accumulation zone ") << t(", (m/s);", ", (m/s);");
+	escreveIni << t(" Velocidade superficial de liquido inicio da zona de acumulo ", " Liquid superficial velocity at start of accumulation zone ") << t(", (m/s);", ", (m/s);");
+	escreveIni << t(" Indicador de estabilidade ", " Stability indicator ") << ", ;";
+
+
+	int posicM = master1.posic;
+	if(nintermi>0){
+		std::vector<string> model = {"Boe", "Taitel-Barnea"};
+		critInterSev* criterioItermitencia;
+		criterioItermitencia = new critInterSev[nintermi];
+		for(int i=0; i<nintermi;i++){
+			  criterioItermitencia[i]=critInterSev(celula, intermi[i].indInicioTrechoAcumula,
+					  intermi[i].indFimTrechoAcumula,  intermi[i].indFimTrechoColuna, intermi[i].criterio,
+					  intermi[i].fracaoVazioPenetracao);
+			  double estabi=criterioItermitencia[i].testaCriterio(intermi[i].criterio, celula);
+			  //for(int iintermi=0;iintermi<nintermi;iintermi++){
+					escreveIni << "\n";
+					escreveIni << i<<" ; ";
+					escreveIni << model[criterioItermitencia[i].criterio]<<" ; ";
+					escreveIni << criterioItermitencia[i].qualidadeArranjo<<" ; ";
+					escreveIni << criterioItermitencia[i].zMed<<" ; ";
+					escreveIni << criterioItermitencia[i].tempMedAcumula<<" ; ";
+					escreveIni << criterioItermitencia[i].alfMedAcumula<<" ; ";
+					escreveIni << criterioItermitencia[i].massGas0<<" ; ";
+					escreveIni << criterioItermitencia[i].massLiq0<<" ; ";
+					escreveIni << criterioItermitencia[i].ugs0<<" ; ";
+					escreveIni << criterioItermitencia[i].uls0<<" ; ";
+					if(estabi>0) escreveIni << t("estavel", "stable") <<" ; ";
+					else escreveIni << t("instavel", "unstable") <<" ; ";
+			 // }
 		}
 		delete [] criterioItermitencia;
 	}
