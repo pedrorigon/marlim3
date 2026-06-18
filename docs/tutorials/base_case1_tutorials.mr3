@@ -12,8 +12,7 @@
         }
       ],
       "productionTime": 365
-    },
-    "gasLine": true
+    }
   },
   "productionFluid": [
     {
@@ -24,9 +23,6 @@
       "bsw": 0.0
     }
   ],
-  "gasFluid": {
-    "gasDensity": 0.7
-  },
   "material": [
     {
       "id": 0,
@@ -110,97 +106,19 @@
           "thickness": 0.0508
         }
       ]
-    },
-    {
-      "id": 2,
-      "label": "Well cross-section - uncoupled section",
-      "innerDiameter": 0.2032,
-      "roughness": 0.000183,
-      "layers": [
-        {
-          "label": "Inner steel layer",
-          "materialId": 0,
-          "layerMeasurementType": "THICKNESS",
-          "thickness": 0.00635
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "label": "Flowline+riser cross-section [SERVICE]",
-      "innerDiameter": 0.127,
-      "roughness": 0.000183,
-      "layers": [
-        {
-          "label": "Inner steel layer",
-          "materialId": 0,
-          "layerMeasurementType": "THICKNESS",
-          "thickness": 0.00635
-        },
-        {
-          "label": "Insulation layer",
-          "materialId": 3,
-          "layerMeasurementType": "THICKNESS",
-          "thickness": 0.0508
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "label": "Well cross-section [SERVICE]",
-      "annular": true,
-      "innerDiameter": 0.21589999999999998,
-      "outerDiameter": 0.36829999999999996,
-      "roughness": 0.000183,
-      "layers": [
-        {
-          "label": "Casing steel layer",
-          "materialId": 0,
-          "layerMeasurementType": "THICKNESS",
-          "thickness": 0.0127
-        },
-        {
-          "label": "Cement layer",
-          "materialId": 2,
-          "layerMeasurementType": "THICKNESS",
-          "thickness": 0.07619999999999999
-        }
-      ]
     }
   ],
   "productionPipe": [
     {
-      "id": 3,
-      "label": "Well - uncoupled section",
-      "crossSectionId": 2,
+      "id": 0,
+      "label": "Well",
+      "crossSectionId": 0,
       "formationId": 0,
       "angle": 1.5707963267948966,
       "discretization": [
         {
-          "numCells": 2,
-          "length": 100
-        }
-      ],
-      "initialConditions": {
-        "measuredPosition": [
-          0,
-          1
-        ],
-        "ambientTemp": [
-          90.0,
-          80.0
-        ]
-      }
-    },
-    {
-      "id": 0,
-      "label": "Well",
-      "crossSectionId": 0,
-      "angle": 1.5707963267948966,
-      "discretization": [
-        {
-          "numCells": 8,
-          "length": 100
+          "numCells": 10,
+          "length": 100.0
         }
       ],
       "initialConditions": {
@@ -214,8 +132,7 @@
           50,
           4
         ]
-      },
-      "thermalCoupling": 1
+      }
     },
     {
       "id": 1,
@@ -272,90 +189,6 @@
       }
     }
   ],
-  "servicePipe": [
-    {
-      "id": 0,
-      "label": "Riser [SERVICE]",
-      "crossSectionId": 3,
-      "environment": 1,
-      "angle": -1.5707963267948966,
-      "discretization": [
-        {
-          "numCells": 10,
-          "length": 100.0
-        }
-      ],
-      "initialConditions": {
-        "measuredPosition": [
-          0,
-          1
-        ],
-        "ambientTemp": [
-          20,
-          4
-        ],
-        "ambientVel": [
-          1,
-          0.1
-        ]
-      },
-      "thermalCoupling": 0
-    },
-    {
-      "id": 1,
-      "label": "Flowline [SERVICE]",
-      "crossSectionId": 3,
-      "environment": 1,
-      "angle": 0,
-      "discretization": [
-        {
-          "numCells": 10,
-          "length": 100.0
-        }
-      ],
-      "initialConditions": {
-        "measuredPosition": [
-          0,
-          1
-        ],
-        "ambientTemp": [
-          4,
-          4
-        ],
-        "ambientVel": [
-          0.1,
-          0.1
-        ]
-      },
-      "thermalCoupling": 0
-    },
-    {
-      "id": 2,
-      "label": "Well annulus [SERVICE]",
-      "crossSectionId": 4,
-      "formationId": 0,
-      "angle": -1.5707963267948966,
-      "discretization": [
-        {
-          "numCells": 10,
-          "length": 80.0
-        }
-      ],
-      "initialConditions": {
-        "measuredPosition": [
-          0,
-          0.25,
-          1
-        ],
-        "ambientTemp": [
-          4,
-          50,
-          80.0
-        ]
-      },
-      "thermalCoupling": 1
-    }
-  ],
   "separator": {
     "time": [
       0
@@ -364,23 +197,11 @@
       10
     ]
   },
-  "gasInj": {
-    "bcType": 1,
-    "time": [
-      0
-    ],
-    "temperature": [
-      40
-    ],
-    "gasFlowRate": [
-      150000.0
-    ]
-  },
   "ipr": [
     {
       "id": 0,
       "iprType": 0,
-      "prodFluidIndex": 0,
+      "prodFluidId": 0,
       "measuredLength": 0.1,
       "staticPressureTime": [
         0
@@ -409,22 +230,6 @@
       "active": true
     }
   ],
-  "gasSource": [
-    {
-      "id": 0,
-      "measuredLength": 200,
-      "time": [
-        0
-      ],
-      "temperature": [
-        87
-      ],
-      "gasFlowRate": [
-        150000.0
-      ],
-      "active": false
-    }
-  ],
   "liquidSource": [
     {
       "id": 0,
@@ -437,17 +242,6 @@
         90
       ],
       "active": false
-    }
-  ],
-  "gasLiftSource": [
-    {
-      "id": 0,
-      "prodMeasuredLength": 200,
-      "serviceMeasuredLength": 2800,
-      "valveType": 0,
-      "orificeDiameter": 0.005,
-      "recoveryFactor": 0.0,
-      "areaRatio": 0.1
     }
   ],
   "masterValve": {
@@ -464,14 +258,5 @@
     "frictionPressureGradient": true,
     "hydrostaticPressureGradient": true,
     "stdLiqFlowRate": true
-  },
-  "serviceProfile": {
-    "time": [
-      0
-    ],
-    "pressure": true,
-    "temperature": true,
-    "hydrostaticPressureGradient": true,
-    "frictionPressureGradient": true
   }
 }

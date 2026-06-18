@@ -11,6 +11,7 @@ output in either language.  When loading a Portuguese-keyed JSON (one without
 English before populating the attributes.
 """
 
+from fileinput import filename
 import json
 import os
 import re
@@ -194,8 +195,10 @@ class Branch:
 
     def to_json(self, filename='marlim3_model', language='en',
                generate_empty_fields=False):
-        if not filename.endswith('.json'):
-            file_path = './' + filename + '.json'
+        
+        file_path = './' + filename
+        if not filename.endswith('.mr3'):
+            file_path = './' + filename + '.mr3'
         else:
             file_path = './' + filename
 
@@ -240,7 +243,12 @@ class Branch:
             with open(json_input, 'r') as fh:
                 data = json.load(fh)
             if not hasattr(self, 'label'):
-                label = json_input[:-5] if json_input.endswith('.json') else json_input
+                if json_input.endswith('.json'):
+                    label = json_input[:-5]     # remove '.json'
+                elif json_input.endswith('.mr3'):
+                    label = json_input[:-4]     # remove '.mr3'
+                else:
+                    label = json_input
                 self.label = label
 
         lang = data.get('language', '').lower() if isinstance(data, dict) else ''
@@ -331,7 +339,7 @@ class Branch:
 
         with nullcontext(get_executable_path()) as executavel:
 
-            filename = label + '.json'
+            filename = label + '.mr3'
 
             if not os.path.isdir(directory):
                 os.mkdir(directory)

@@ -138,15 +138,15 @@ OUTPUT_DIR = os.path.join(PROJECT_ROOT, "regression_output")
 
 DEMOS = {
     "2zonas-2VGLs-2-Check-correcPerfTerm": {
-        "json": "pt-br/2zonas-2VGLs-2-Check-correcPerfTerm.json",
+        "json": "pt-br/2zonas-2VGLs-2-Check-correcPerfTerm.mr3",
         "aux": ["PVTSIM-MARLIM.tab"],
     },
     "BCS-longo-eficMotor": {
-        "json": "pt-br/BCS-longo-eficMotor.json",
+        "json": "pt-br/BCS-longo-eficMotor.mr3",
         "aux": ["PVTSIM-MARLIM.tab"],
     },
     "injec-Liq-TempoResidencia": {
-        "json": "pt-br/injec-Liq-TempoResidencia.json",
+        "json": "pt-br/injec-Liq-TempoResidencia.mr3",
         "aux": [],
     },
     # "MultiBCS": {
@@ -154,11 +154,11 @@ DEMOS = {
     #     "aux": ["PVTSIM-MARLIM.tab"],
     # },
     "parada-longo-Combinado-BCS-GLC-PIG-completo": {
-        "json": "pt-br/parada-longo-Combinado-BCS-GLC-PIG-completo.json",
+        "json": "pt-br/parada-longo-Combinado-BCS-GLC-PIG-completo.mr3",
         "aux": ["PVTSIM-MARLIM.tab"],
     },
     "producaoSimplificado": {
-        "json": "pt-br/producaoSimplificado.json",
+        "json": "pt-br/producaoSimplificado.mr3",
         "aux": [],
     },
 }
