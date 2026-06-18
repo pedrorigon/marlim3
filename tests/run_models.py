@@ -12,7 +12,7 @@ from pathlib import Path
 
 TESTS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = TESTS_DIR.parent
-MODELS_FILE = PROJECT_ROOT / "data" / "models" / "models.json"
+MODELS_FILE = PROJECT_ROOT / "data" / "models" / "models.mr3"
 CHECK_RESULT = TESTS_DIR / "check_result.py"
 REGRESSION_TESTS_FILE = TESTS_DIR / "test_regression.py"
 JSON_MODEL_GROUPS = ("benchmark", "transiente", "injetor", "rede", "convecnat")

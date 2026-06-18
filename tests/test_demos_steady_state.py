@@ -43,18 +43,18 @@ skip_sem_executavel = pytest.mark.skipif(
 
 DEMOS = {
     # Legacy PT demos moved under demos/pt-br
-    "pt-br/2zonas-2VGLs-2-Check-correcPerfTerm.json": ["PVTSIM-MARLIM.tab"],
-    "pt-br/BCS-longo-eficMotor.json":                 ["PVTSIM-MARLIM.tab"],
-    "pt-br/injec-Liq-TempoResidencia.json":           [],
-    "pt-br/parada-longo-Combinado-BCS-GLC-PIG-completo.json": ["PVTSIM-MARLIM.tab"],
-    "pt-br/producaoSimplificado.json":                [],
+    "pt-br/2zonas-2VGLs-2-Check-correcPerfTerm.mr3": ["PVTSIM-MARLIM.tab"],
+    "pt-br/BCS-longo-eficMotor.mr3":                 ["PVTSIM-MARLIM.tab"],
+    "pt-br/injec-Liq-TempoResidencia.mr3":           [],
+    "pt-br/parada-longo-Combinado-BCS-GLC-PIG-completo.mr3": ["PVTSIM-MARLIM.tab"],
+    "pt-br/producaoSimplificado.mr3":                [],
 
     # Renamed EN demos at demos/
-    "2zones-2GLVs-2-Check-correcThermProf.json": ["PVTSIM-MARLIM.tab"],
-    "extended-ESP-pumpEfic.json":                 ["PVTSIM-MARLIM.tab"],
-    "injec-Liq-ResidenceTime.json":               [],
-    "extended-shutdown-combined-ESP-CGL-PIG-complete.json": ["PVTSIM-MARLIM.tab"],
-    "simplifiedProduction.json":                  [],
+    "2zones-2GLVs-2-Check-correcThermProf.mr3": ["PVTSIM-MARLIM.tab"],
+    "extended-ESP-pumpEfic.mr3":                 ["PVTSIM-MARLIM.tab"],
+    "injec-Liq-ResidenceTime.mr3":               [],
+    "extended-shutdown-combined-ESP-CGL-PIG-complete.mr3": ["PVTSIM-MARLIM.tab"],
+    "simplifiedProduction.mr3":                  [],
 }
 
 # ============================================================================

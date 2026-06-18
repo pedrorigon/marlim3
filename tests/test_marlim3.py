@@ -343,7 +343,7 @@ class TestJsonSerialization:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("test_model")
-                assert os.path.isfile(os.path.join(tmpdir, "test_model.json"))
+                assert os.path.isfile(os.path.join(tmpdir, "test_model.mr3"))
             finally:
                 os.chdir(original_cwd)
 
@@ -353,7 +353,7 @@ class TestJsonSerialization:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("test_model")
-                with open(os.path.join(tmpdir, "test_model.json"), "r") as f:
+                with open(os.path.join(tmpdir, "test_model.mr3"), "r") as f:
                     data = json.load(f)
                 assert isinstance(data, dict)
             finally:
@@ -365,7 +365,7 @@ class TestJsonSerialization:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("test_model")
-                with open(os.path.join(tmpdir, "test_model.json"), "r") as f:
+                with open(os.path.join(tmpdir, "test_model.mr3"), "r") as f:
                     data = json.load(f)
 
                 assert "system" in data
@@ -387,7 +387,7 @@ class TestJsonSerialization:
                 caso_horizontal.to_json("roundtrip")
 
                 novo = marlim3.Branch()
-                novo.from_json(os.path.join(tmpdir, "roundtrip.json"))
+                novo.from_json(os.path.join(tmpdir, "roundtrip.mr3"))
 
                 assert novo.system == caso_horizontal.system
                 assert novo.productionFluid == caso_horizontal.productionFluid
@@ -407,7 +407,7 @@ class TestJsonSerialization:
                 os.chdir(tmpdir)
                 caso_vertical.to_json("roundtrip_v")
                 novo = marlim3.Branch()
-                novo.from_json(os.path.join(tmpdir, "roundtrip_v.json"))
+                novo.from_json(os.path.join(tmpdir, "roundtrip_v.mr3"))
                 assert novo.productionPipe[0]["angle"] == pytest.approx(np.pi / 2)
             finally:
                 os.chdir(original_cwd)
@@ -420,7 +420,7 @@ class TestJsonSerialization:
                 os.chdir(tmpdir)
                 t = marlim3.Branch()
                 t.to_json("empty_model", generate_empty_fields=True)
-                with open(os.path.join(tmpdir, "empty_model.json"), "r") as f:
+                with open(os.path.join(tmpdir, "empty_model.mr3"), "r") as f:
                     data = json.load(f)
                 # Com generate_empty_fields=True, campos vazios devem existir
                 assert "system" in data
@@ -434,7 +434,7 @@ class TestJsonSerialization:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("dict_test")
-                with open(os.path.join(tmpdir, "dict_test.json"), "r") as f:
+                with open(os.path.join(tmpdir, "dict_test.mr3"), "r") as f:
                     data = json.load(f)
 
                 novo = marlim3.Branch()
@@ -586,7 +586,7 @@ class TestDemoFiles:
         if not os.path.isdir(self.DEMO_DIR):
             pytest.skip("Diretório demos/ não encontrado")
         return [
-            f for f in os.listdir(self.DEMO_DIR) if f.endswith(".json")
+            f for f in os.listdir(self.DEMO_DIR) if f.endswith(".mr3")
         ]
 
     def test_demo_files_exist(self):
@@ -594,9 +594,9 @@ class TestDemoFiles:
         assert len(demos) > 0, "Nenhum arquivo demo .json encontrado"
 
     @pytest.mark.parametrize("demo_file", [
-        "2zones-2GLVs-2-Check-SA_en.json",
-        "extended-ESP-pumpEfic.json",
-        "simplifiedProduction.json",
+        "2zones-2GLVs-2-Check-SA_en.mr3",
+        "extended-ESP-pumpEfic.mr3",
+        "simplifiedProduction.mr3",
     ])
     def test_load_demo_json(self, demo_file):
         """Arquivos demo devem ser carregáveis como Tramo."""
@@ -655,7 +655,7 @@ class TestBilingual:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("test_pt", language='pt')
-                with open(os.path.join(tmpdir, "test_pt.json"), "r") as f:
+                with open(os.path.join(tmpdir, "test_pt.mr3"), "r") as f:
                     data = json.load(f)
 
                 assert "sistema" in data
@@ -676,7 +676,7 @@ class TestBilingual:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("test_pt_val", language='pt')
-                with open(os.path.join(tmpdir, "test_pt_val.json"), "r") as f:
+                with open(os.path.join(tmpdir, "test_pt_val.mr3"), "r") as f:
                     data = json.load(f)
                 assert data["sistema"] == "MULTIFASICO"
             finally:
@@ -691,7 +691,7 @@ class TestBilingual:
                 caso_horizontal.to_json("roundtrip_pt", language='pt')
 
                 novo = marlim3.Branch()
-                novo.from_json(os.path.join(tmpdir, "roundtrip_pt.json"))
+                novo.from_json(os.path.join(tmpdir, "roundtrip_pt.mr3"))
 
                 assert novo.system == caso_horizontal.system
                 assert novo.productionFluid == caso_horizontal.productionFluid
@@ -750,7 +750,7 @@ class TestBilingual:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("nested_pt", language='pt')
-                with open(os.path.join(tmpdir, "nested_pt.json"), "r") as f:
+                with open(os.path.join(tmpdir, "nested_pt.mr3"), "r") as f:
                     data = json.load(f)
 
                 # Top-level
@@ -775,7 +775,7 @@ class TestBilingual:
             try:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("values_pt", language='pt')
-                with open(os.path.join(tmpdir, "values_pt.json"), "r") as f:
+                with open(os.path.join(tmpdir, "values_pt.mr3"), "r") as f:
                     data = json.load(f)
 
                 camada = data["secaoTransversal"][0]["camadas"][0]
@@ -792,7 +792,7 @@ class TestBilingual:
             try:
                 os.chdir(tmpdir)
                 t.to_json("inj_pt", language='pt')
-                with open(os.path.join(tmpdir, "inj_pt.json"), "r") as f:
+                with open(os.path.join(tmpdir, "inj_pt.mr3"), "r") as f:
                     data = json.load(f)
                 assert data["sistema"] == "INJETOR"
             finally:
@@ -808,7 +808,7 @@ class TestBilingual:
                 os.chdir(tmpdir)
                 t.to_json("rt_inj", language='pt')
                 novo = marlim3.Branch()
-                novo.from_json(os.path.join(tmpdir, "rt_inj.json"))
+                novo.from_json(os.path.join(tmpdir, "rt_inj.mr3"))
                 assert novo.system == "INJ"
             finally:
                 os.chdir(original_cwd)
@@ -821,7 +821,7 @@ class TestBilingual:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("full_rt", language='pt')
                 novo = marlim3.Branch()
-                novo.from_json(os.path.join(tmpdir, "full_rt.json"))
+                novo.from_json(os.path.join(tmpdir, "full_rt.mr3"))
 
                 assert novo.system == caso_horizontal.system
                 assert novo.productionFluid == caso_horizontal.productionFluid
@@ -842,9 +842,9 @@ class TestBilingual:
                 os.chdir(tmpdir)
                 caso_horizontal.to_json("default_lang")
                 caso_horizontal.to_json("explicit_en", language='en')
-                with open(os.path.join(tmpdir, "default_lang.json"), "r") as f:
+                with open(os.path.join(tmpdir, "default_lang.mr3"), "r") as f:
                     data_default = json.load(f)
-                with open(os.path.join(tmpdir, "explicit_en.json"), "r") as f:
+                with open(os.path.join(tmpdir, "explicit_en.mr3"), "r") as f:
                     data_en = json.load(f)
                 assert data_default == data_en
             finally:
@@ -858,7 +858,7 @@ class TestBilingual:
             try:
                 os.chdir(tmpdir)
                 t.to_json("empty_pt", language='pt', generate_empty_fields=True)
-                with open(os.path.join(tmpdir, "empty_pt.json"), "r") as f:
+                with open(os.path.join(tmpdir, "empty_pt.mr3"), "r") as f:
                     data = json.load(f)
                 assert "sistema" in data
                 assert data["sistema"] == "MULTIFASICO"
@@ -935,7 +935,7 @@ class TestBilingual:
         pt_dir = os.path.join(os.path.dirname(__file__), "..", "demos", "pt-br")
         if not os.path.isdir(pt_dir):
             pytest.skip("demos/pt-br/ not found")
-        pt_files = [f for f in os.listdir(pt_dir) if f.endswith(".json")]
+        pt_files = [f for f in os.listdir(pt_dir) if f.endswith(".mr3")]
         if not pt_files:
             pytest.skip("No PT demo files found")
         filepath = os.path.join(pt_dir, pt_files[0])
@@ -1192,7 +1192,7 @@ class TestSimulatePT:
                 # Export as PT JSON, re-import, simulate
                 caso_original.to_json('model_pt', language='pt')
                 caso_reloaded = marlim3.Branch()
-                caso_reloaded.from_json('./model_pt.json')
+                caso_reloaded.from_json('./model_pt.mr3')
                 caso_reloaded.simulate(label='reloaded', directory='res_reload')
                 pp_reload = caso_reloaded.resultados['productionProfile']
 
@@ -1213,7 +1213,7 @@ class TestSimulatePT:
 
                 caso_original.to_json('model_en', language='en')
                 caso_reloaded = marlim3.Branch()
-                caso_reloaded.from_json('./model_en.json')
+                caso_reloaded.from_json('./model_en.mr3')
                 caso_reloaded.simulate(label='reloaded', directory='res_reload')
                 pp_reload = caso_reloaded.resultados['productionProfile']
 

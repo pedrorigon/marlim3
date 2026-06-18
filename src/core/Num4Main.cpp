@@ -7794,6 +7794,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
     } else { // solucao para o caso em que o sistema é de poco injetor
         sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
         sistem1.arq.resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
+        if(sistem1.arq.nintermi>0)sistem1.arq.resumoIntermitencia(sistem1.celula, sistem1.indTramo);
         // enterramento
         for (int j = 0; j <= sistem1.ncel; j++) {
             if (sistem1.celula[j].calor.difus2D == 1) {
@@ -8013,6 +8014,7 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
         // nao esta ativa
         sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
         sistem1.arq.resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
+        if(sistem1.arq.nintermi>0)sistem1.arq.resumoIntermitencia(sistem1.celula, sistem1.indTramo);
         // enterramento
         for (int j = 0; j <= sistem1.ncel; j++) {
             if (sistem1.celula[j].calor.difus2D == 1) {
@@ -8377,6 +8379,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         sistem2.arq.imprimeProfile(sistem2.celula, sistem2.flut, 0, sistem2.indTramo);
         sistem2.arq.resumoPermanente(sistem2.celula, sistem2.celulaG, sistem2.pGSup,
                                      sistem2.presiniG, sistem2.indTramo);
+        if(sistem2.arq.nintermi>0)sistem2.arq.resumoIntermitencia(sistem2.celula, sistem2.indTramo);
         // enterramento
         for (int j = 0; j <= sistem2.ncel; j++) {
             if (sistem2.celula[j].calor.difus2D == 1) {
@@ -8618,6 +8621,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
         sistem2[iSeq].arq.imprimeProfile(sistem2[iSeq].celula, sistem2[iSeq].flut, 0, sistem2[iSeq].indTramo);
         sistem2[iSeq].arq.resumoPermanente(sistem2[iSeq].celula, sistem2[iSeq].celulaG, sistem2[iSeq].pGSup,
                                            sistem2[iSeq].presiniG, sistem2[iSeq].indTramo);
+        if(sistem2[iSeq].arq.nintermi>0)sistem2[iSeq].arq.resumoIntermitencia(sistem2[iSeq].celula, sistem2[iSeq].indTramo);
         // enterramento
         for (int j = 0; j <= sistem2[iSeq].ncel; j++) {
             if (sistem2[iSeq].celula[j].calor.difus2D == 1) {
@@ -8845,6 +8849,7 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
             // impressão dos perfis e tendencias da analise de sensibilidade, caso sem construcao de tabela de pressao de fundo
             sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
             sistem1.arq.resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
+            if(sistem1.arq.nintermi>0)sistem1.arq.resumoIntermitencia(sistem1.celula, sistem1.indTramo);
             // enterramento
             for (int j = 0; j <= sistem1.ncel; j++) {
                 if (sistem1.celula[j].calor.difus2D == 1) {
@@ -9675,6 +9680,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                     if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
                         malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
                         malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
                         // enterramento
                         for (int j = 0; j <= malha[i].ncel; j++) {
                             if (malha[i].celula[j].calor.difus2D == 1) {
@@ -9697,6 +9703,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                 if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
                     malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
                     malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                    if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
                     malha[i].kimpT++;
                     for (int j = 0; j < malha[i].arq.ntendp; j++) {
                         malha[i].ImprimeTrendPCab(j, nrede);
@@ -9786,6 +9793,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
         SolveTramoSolteiro(malha[0], malha[0].arq.chutePerm);
         malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
         malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
         malha[i].kimpT++;
         for (int j = 0; j < malha[i].arq.ntendp; j++) {
             malha[i].ImprimeTrendPCab(j, nrede);
@@ -10307,6 +10315,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                     if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
                         malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
                         malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
                         // enterramento
                         for (int j = 0; j <= malha[i].ncel; j++) {
                             if (malha[i].celula[j].calor.difus2D == 1) {
@@ -10329,6 +10338,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                 if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
                     malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
                     malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                    if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
                     // enterramento
                     for (int j = 0; j <= malha[i].ncel; j++) {
                         if (malha[i].celula[j].calor.difus2D == 1) {
@@ -10445,6 +10455,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
         SolveTramoSolteiro(malha[0], malha[0].arq.chutePerm);
         malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
         malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
         // enterramento
         for (int j = 0; j <= malha[i].ncel; j++) {
             if (malha[i].celula[j].calor.difus2D == 1) {
@@ -11448,6 +11459,7 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
     for (int i = 0; i < 2; i++) {
         malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
         malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
         malha[i].kimpT++;
         for (int j = 0; j < malha[i].arq.ntendp; j++) {
             malha[i].ImprimeTrendPCab(j, nrede);
@@ -11789,6 +11801,7 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
         if (inativo[i] == 0) {
             malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo);
             malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo);
+            if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo);
             // enterramento
             for (int j = 0; j <= malha[i].ncel; j++) {
                 if (malha[i].celula[j].calor.difus2D == 1) {
