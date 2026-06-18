@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Marlim3
+Comment=Steady-state and transient multiphase flow simulation
+Exec=Marlim3
+Icon=marlim3
+StartupWMClass=Marlim3
+Categories=Science;Engineering;
+Terminal=false

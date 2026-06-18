@@ -16,6 +16,15 @@ obj/
 modules/
 target/
 
+# Desktop Application Packaging
+AppDir/
+appimagetool
+appimagetool-*.AppImage
+*.AppImage
+*.dmg
+*.sha256
+squashfs-root/
+
 # Executaveis/artefatos compilados
 src/Marlim3
 marlim3/Marlim3*
@@ -40,6 +49,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 *.manifest
 *.spec
+!gui/packaging/*.spec
 
 # Python cache, testes e tipagem
 __pycache__/

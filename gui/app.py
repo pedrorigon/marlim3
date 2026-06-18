@@ -18,9 +18,24 @@ import pandas as pd
 import plotly.graph_objects as go
 from pathlib import Path
 
-# Add project root to path for marlim3 imports
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+
+def _resolve_project_root():
+    """Return the repository root or the frozen desktop bundle root."""
+    desktop_root = os.environ.get("MARLIM3_DESKTOP_ROOT")
+    if desktop_root:
+        return Path(desktop_root)
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path(__file__).parent.parent
+
+
+# Add project root/bundle root to path for marlim3 imports
+PROJECT_ROOT = _resolve_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+APP_ICON_PATH = PROJECT_ROOT / "assets" / "icons" / "app-icon.png"
+LOGO_PATH = PROJECT_ROOT / "assets" / "branding" / "logo.svg"
 
 
 def _kill_sim_on_exit():
@@ -37,7 +52,7 @@ atexit.register(_kill_sim_on_exit)
 
 st.set_page_config(
     page_title="Marlim3",
-    page_icon="🛢️",
+    page_icon=str(APP_ICON_PATH) if APP_ICON_PATH.exists() else "🛢️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -331,9 +346,8 @@ def _sanitize_json(obj):
 
 with st.sidebar:
     # Logo
-    _logo_path = PROJECT_ROOT / "img" / "logo_marlim3.svg"
-    if _logo_path.exists():
-        st.image(str(_logo_path), use_container_width=True)
+    if LOGO_PATH.exists():
+        st.image(str(LOGO_PATH), use_container_width=True)
     else:
         st.title("Marlim3")
     st.markdown(
