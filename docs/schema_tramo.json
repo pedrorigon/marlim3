@@ -3816,40 +3816,42 @@
     },
     "intermitenciaSevera": {
       "type": "array",
-      "description": "",
+      "description": "Regiões para análise de intermitência severa de acordo com Taitel e Barnea (1990).",
       "items": {
         "type": "object",
         "properties": {
           "ativo": {
             "type": "boolean",
-            "description": ""
+            "description": "Indica se a região para análise de intermitência severa está ativa."
           },
           "id": {
             "type": "integer",
-            "description": ""
+            "description": "Identificador do critério de intermitência severa."
           },
           "inicioTrechoAcumula": {
             "type": "number",
-            "description": "",
+            "description": "Início do trecho de acumulação de gás na região de arranjo estratificado.",
             "unit": "m"
           },
           "fimTrechoAcumula": {
             "type": "number",
-            "description": "",
+            "description": "Fim do trecho de acumulação de gás na região de arranjo estratificado (exemplo típico: base do riser ou touchdown point).",
             "unit": "m"
           },
           "fimTrechoColuna": {
             "type": "number",
-            "description": "",
+            "description": "Fim do trecho em que se acumula líquido na região vertical (ex: riser ou coluna).",
             "unit": "m"
           },
           "fracaoVazioPenetracao": {
             "type": "number",
-            "description": ""
+            "description": "Fração de vazio referente à região de penetração da bolha (após fimTrechoAcumula). Utilizado apenas para o critério de intermitência baseado na pressão (Eq 81 de Taitel e Barnea, 1990).",
+            "default": 0.1
           },
           "criterio": {
             "type": "integer",
-            "description": ""
+            "default": 0,
+            "description": "Critérios de intermitência de acordo com Taitel e Barnea (1990). 0: Boe (Eq 78). 1: diferencial de pressão (Eq 81)."
           }
         }
       }
