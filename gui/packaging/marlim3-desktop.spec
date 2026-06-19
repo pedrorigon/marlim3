@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 
+from PyInstaller.depend.bindepend import get_imports
 from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules, copy_metadata
 
 
@@ -37,10 +38,8 @@ hiddenimports += [
     "jsonschema",
     "lxml",
     "matplotlib",
-    "nbformat",
     "networkx",
     "numpy",
-    "openpyxl",
     "pandas",
     "plotly",
     "plotly.graph_objects",
@@ -54,7 +53,6 @@ hiddenimports += [
     "PySide6.QtWidgets",
     "requests",
     "seaborn",
-    "sklearn",
     "xmltodict",
 ]
 
@@ -81,19 +79,107 @@ if not engine_path.is_file():
     raise FileNotFoundError(f"Missing native Marlim3 engine: {engine_path}")
 binaries.append((str(engine_path), "marlim3"))
 
+
+def collect_linux_runtime_libraries():
+    import PySide6
+
+    pyside_dir = Path(PySide6.__file__).resolve().parent
+    qt_dir = pyside_dir / "Qt"
+    runtime_roots = (
+        qt_dir / "lib" / "libQt6WebEngineCore.so.6",
+        qt_dir / "plugins" / "platforms" / "libqxcb.so",
+        qt_dir / "plugins" / "platforms" / "libqwayland.so",
+        qt_dir / "plugins" / "platforms" / "libqoffscreen.so",
+    )
+    glibc_libraries = {
+        "ld-linux-x86-64.so.2",
+        "libanl.so.1",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libmvec.so.1",
+        "libnsl.so.1",
+        "libpthread.so.0",
+        "libresolv.so.2",
+        "librt.so.1",
+        "libutil.so.1",
+    }
+    pending = [path for path in runtime_roots if path.is_file()]
+    processed = set()
+    portable_libraries = {}
+
+    while pending:
+        binary = pending.pop()
+        resolved_binary = binary.resolve()
+        if resolved_binary in processed:
+            continue
+        processed.add(resolved_binary)
+
+        for library_name, library_path in get_imports(str(resolved_binary)):
+            if not library_path or library_name in glibc_libraries:
+                continue
+            soname_path = Path(library_path)
+            resolved_library = soname_path.resolve()
+            if pyside_dir in resolved_library.parents:
+                continue
+            portable_libraries[library_name] = soname_path
+            pending.append(resolved_library)
+
+    return [
+        (str(library_path), ".")
+        for _, library_path in sorted(portable_libraries.items())
+    ]
+
+
+if sys.platform.startswith("linux"):
+    binaries += collect_linux_runtime_libraries()
+
+
 a = Analysis(
     [str(root / "gui" / "desktop.py")],
     pathex=[str(root)],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[],
-    hooksconfig={},
+    hookspath=[str(root / "gui" / "packaging" / "hooks")],
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        "IPython",
+        "_tkinter",
+        "jedi",
+        "nbformat",
+        "openpyxl",
+        "pytest",
+        "scipy",
+        "sklearn",
+        "streamlit.hello",
+        "streamlit.testing",
+        "tkinter",
+    ],
     noarchive=False,
-    optimize=0,
+    optimize=1,
+    hooksconfig={
+        "matplotlib": {
+            "backends": ["Agg"],
+        },
+    },
 )
+
+if sys.platform.startswith("linux"):
+    def required_linux_qt_data(entry):
+        destination = entry[0].replace("\\", "/")
+        name = Path(destination).name
+
+        if name == "qtwebengine_devtools_resources.pak":
+            return False
+        if "/qtwebengine_locales/" in destination:
+            return name in {"en-US.pak", "pt-BR.pak"}
+        if name.startswith("qtwebengine_") and name.endswith(".qm"):
+            return False
+        return True
+
+    a.datas = type(a.datas)(filter(required_linux_qt_data, a.datas))
+
 pyz = PYZ(a.pure)
 
 if sys.platform == "darwin":

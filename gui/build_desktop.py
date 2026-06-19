@@ -8,7 +8,6 @@ import os
 import platform
 import shutil
 import subprocess
-import urllib.request
 from pathlib import Path
 
 
@@ -16,12 +15,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = ROOT / "dist"
 WORK_DIR = ROOT / "build" / "desktop"
 SPEC_FILE = ROOT / "gui" / "packaging" / "marlim3-desktop.spec"
-LINUX_PACKAGING_DIR = ROOT / "gui" / "packaging" / "linux"
-ICON_FILE = ROOT / "assets" / "icons" / "app-icon.png"
-APPIMAGE_TOOL_URL = (
-    "https://github.com/AppImage/AppImageKit/releases/download/continuous/"
-    "appimagetool-x86_64.AppImage"
-)
 
 
 def run(
@@ -50,7 +43,7 @@ def platform_config() -> tuple[str, str, str]:
         ("Linux", "x86_64"): (
             "gcc-release",
             "Marlim3",
-            "Marlim3-desktop-linux-x64.AppImage",
+            "Marlim3-desktop-linux-x64",
         ),
         ("Windows", "x86_64"): (
             "mingw-release",
@@ -135,51 +128,8 @@ def package_linux(smoke_test: bool) -> Path:
         raise FileNotFoundError(f"PyInstaller output not found: {raw_executable}")
     validate_executable(raw_executable, smoke_test)
 
-    app_dir = WORK_DIR / "AppDir"
-    shutil.rmtree(app_dir, ignore_errors=True)
-    (app_dir / "usr" / "bin").mkdir(parents=True)
-    icon_dir = app_dir / "usr" / "share" / "icons" / "hicolor" / "1024x1024" / "apps"
-    icon_dir.mkdir(parents=True)
-    applications_dir = app_dir / "usr" / "share" / "applications"
-    applications_dir.mkdir(parents=True)
-    metainfo_dir = app_dir / "usr" / "share" / "metainfo"
-    metainfo_dir.mkdir(parents=True)
-    shutil.copy2(raw_executable, app_dir / "usr" / "bin" / "Marlim3")
-    shutil.copy2(ICON_FILE, app_dir / "marlim3.png")
-    shutil.copy2(ICON_FILE, app_dir / ".DirIcon")
-    shutil.copy2(ICON_FILE, icon_dir / "marlim3.png")
-    app_run = app_dir / "AppRun"
-    shutil.copy2(LINUX_PACKAGING_DIR / "AppRun", app_run)
-    app_run.chmod(0o755)
-    desktop_name = "br.com.petrobras.marlim3.desktop"
-    desktop_file = LINUX_PACKAGING_DIR / desktop_name
-    shutil.copy2(desktop_file, app_dir / desktop_name)
-    shutil.copy2(desktop_file, applications_dir / desktop_name)
-    shutil.copy2(
-        LINUX_PACKAGING_DIR / "br.com.petrobras.marlim3.appdata.xml",
-        metainfo_dir / "br.com.petrobras.marlim3.appdata.xml",
-    )
-
-    tool = WORK_DIR / "appimagetool-x86_64.AppImage"
-    tool.parent.mkdir(parents=True, exist_ok=True)
-    if not tool.is_file():
-        print(f"Downloading {APPIMAGE_TOOL_URL}", flush=True)
-        urllib.request.urlretrieve(APPIMAGE_TOOL_URL, tool)
-    tool.chmod(0o755)
-
-    artifact = DIST_DIR / "Marlim3-desktop-linux-x64.AppImage"
-    env = os.environ.copy()
-    env.update({"APPIMAGE_EXTRACT_AND_RUN": "1", "ARCH": "x86_64"})
-    run([str(tool), str(app_dir), str(artifact)], env=env)
-    raw_executable.unlink()
-
-    validation_env = os.environ.copy()
-    validation_env["APPIMAGE_EXTRACT_AND_RUN"] = "1"
-    run([str(artifact), "--print-config"], env=validation_env)
-    if smoke_test:
-        env = validation_environment()
-        env["APPIMAGE_EXTRACT_AND_RUN"] = "1"
-        run([str(artifact), "--window-smoke-test"], env=env)
+    artifact = DIST_DIR / "Marlim3-desktop-linux-x64"
+    raw_executable.replace(artifact)
     return artifact
 
 

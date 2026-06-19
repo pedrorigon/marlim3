@@ -28,6 +28,12 @@ def test_desktop_executable_name_matches_platform():
 def test_configure_environment_sets_desktop_defaults(monkeypatch, tmp_path):
     monkeypatch.delenv("MARLIM3_EXEC", raising=False)
     monkeypatch.delenv("MARLIM3_SKIP_EXECUTABLE_RESOLUTION", raising=False)
+    monkeypatch.delenv("GIO_MODULE_DIR", raising=False)
+    monkeypatch.delenv("GIO_EXTRA_MODULES", raising=False)
+    monkeypatch.delenv("QT_QUICK_BACKEND", raising=False)
+    monkeypatch.delenv("QT_WIDGETS_RHI", raising=False)
+    monkeypatch.delenv("QT_XCB_GL_INTEGRATION", raising=False)
+    monkeypatch.delenv("QTWEBENGINE_CHROMIUM_FLAGS", raising=False)
 
     engine = tmp_path / "marlim3" / desktop.executable_name()
     desktop.configure_environment(tmp_path, engine)
@@ -35,6 +41,13 @@ def test_configure_environment_sets_desktop_defaults(monkeypatch, tmp_path):
     assert os.environ["MARLIM3_DESKTOP_ROOT"] == str(tmp_path)
     assert os.environ["MARLIM3_EXEC"] == str(engine)
     assert os.environ["MARLIM3_SKIP_EXECUTABLE_RESOLUTION"] == "1"
+    if desktop.sys.platform.startswith("linux"):
+        assert os.environ["GIO_MODULE_DIR"] == str(tmp_path / "gio-modules")
+        assert os.environ["GIO_EXTRA_MODULES"] == ""
+        assert os.environ["QT_QUICK_BACKEND"] == "software"
+        assert os.environ["QT_WIDGETS_RHI"] == "0"
+        assert os.environ["QT_XCB_GL_INTEGRATION"] == "none"
+        assert "--disable-gpu" in os.environ["QTWEBENGINE_CHROMIUM_FLAGS"]
 
 
 def test_streamlit_flags_are_headless_and_localhost():

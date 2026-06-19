@@ -85,11 +85,29 @@ def streamlit_flag_options(port: int, host: str = DEFAULT_HOST) -> dict[str, obj
     }
 
 
+def configure_linux_environment(bundle_root: Path) -> None:
+    gio_modules = bundle_root / "gio-modules"
+    gio_modules.mkdir(exist_ok=True)
+    os.environ["GIO_MODULE_DIR"] = str(gio_modules)
+    os.environ["GIO_EXTRA_MODULES"] = ""
+    os.environ.setdefault("QT_QUICK_BACKEND", "software")
+    os.environ.setdefault("QT_WIDGETS_RHI", "0")
+    os.environ.setdefault("QT_XCB_GL_INTEGRATION", "none")
+
+    chromium_flags = os.environ.get("QTWEBENGINE_CHROMIUM_FLAGS", "").split()
+    for flag in ("--disable-gpu", "--disable-gpu-compositing"):
+        if flag not in chromium_flags:
+            chromium_flags.append(flag)
+    os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = " ".join(chromium_flags)
+
+
 def configure_environment(bundle_root: Path, engine_path: Path) -> None:
     os.environ["MARLIM3_DESKTOP_ROOT"] = str(bundle_root)
     os.environ.setdefault("MARLIM3_EXEC", str(engine_path))
     os.environ.setdefault("MARLIM3_SKIP_EXECUTABLE_RESOLUTION", "1")
     os.environ.setdefault("STREAMLIT_BROWSER_GATHER_USAGE_STATS", "false")
+    if sys.platform.startswith("linux"):
+        configure_linux_environment(bundle_root)
 
 
 def wait_for_server(

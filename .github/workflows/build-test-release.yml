@@ -511,33 +511,17 @@ jobs:
           ./dist/Marlim3-Desktop --print-config
           QT_QPA_PLATFORM=offscreen QTWEBENGINE_DISABLE_SANDBOX=1 \
             ./dist/Marlim3-Desktop --window-smoke-test
-          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/1024x1024/apps AppDir/usr/share/metainfo
-          cp dist/Marlim3-Desktop AppDir/usr/bin/Marlim3
-          cp assets/icons/app-icon.png AppDir/marlim3.png
-          cp assets/icons/app-icon.png AppDir/.DirIcon
-          cp assets/icons/app-icon.png AppDir/usr/share/icons/hicolor/1024x1024/apps/marlim3.png
-          cp gui/packaging/linux/AppRun AppDir/AppRun
-          cp gui/packaging/linux/br.com.petrobras.marlim3.desktop AppDir/br.com.petrobras.marlim3.desktop
-          cp gui/packaging/linux/br.com.petrobras.marlim3.desktop AppDir/usr/share/applications/br.com.petrobras.marlim3.desktop
-          cp gui/packaging/linux/br.com.petrobras.marlim3.appdata.xml AppDir/usr/share/metainfo/br.com.petrobras.marlim3.appdata.xml
-          chmod +x AppDir/AppRun
-          curl -fL --retry 3 -o appimagetool \
-            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool
-          APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 ./appimagetool AppDir dist/Marlim3-desktop-linux-x64.AppImage
-          APPIMAGE_EXTRACT_AND_RUN=1 ./dist/Marlim3-desktop-linux-x64.AppImage --print-config
-          APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=offscreen QTWEBENGINE_DISABLE_SANDBOX=1 \
-            ./dist/Marlim3-desktop-linux-x64.AppImage --window-smoke-test
-          ( cd dist && sha256sum Marlim3-desktop-linux-x64.AppImage > Marlim3-desktop-linux-x64.AppImage.sha256 )
-          ls -lh dist/Marlim3-desktop-linux-x64.AppImage*
+          mv dist/Marlim3-Desktop dist/Marlim3-desktop-linux-x64
+          ( cd dist && sha256sum Marlim3-desktop-linux-x64 > Marlim3-desktop-linux-x64.sha256 )
+          ls -lh dist/Marlim3-desktop-linux-x64*
 
       - name: Upload desktop executable + checksum
         uses: actions/upload-artifact@v6
         with:
           name: Marlim3-desktop-linux-x64
           path: |
-            dist/Marlim3-desktop-linux-x64.AppImage
-            dist/Marlim3-desktop-linux-x64.AppImage.sha256
+            dist/Marlim3-desktop-linux-x64
+            dist/Marlim3-desktop-linux-x64.sha256
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
           if-no-files-found: error
 
@@ -836,7 +820,7 @@ jobs:
           ( cd artifacts/linux       && sha256sum -c Marlim3.sha256 )
           ( cd artifacts/windows     && sha256sum -c Marlim3.exe.sha256 )
           ( cd artifacts/macos-arm64 && sha256sum -c Marlim3.sha256 )
-          ( cd artifacts/desktop-linux       && sha256sum -c Marlim3-desktop-linux-x64.AppImage.sha256 )
+          ( cd artifacts/desktop-linux       && sha256sum -c Marlim3-desktop-linux-x64.sha256 )
           ( cd artifacts/desktop-windows     && sha256sum -c Marlim3-desktop-windows-x64.exe.sha256 )
           ( cd artifacts/desktop-macos-arm64 && sha256sum -c Marlim3-desktop-macos-arm64.dmg.sha256 )
 
@@ -863,8 +847,8 @@ jobs:
             artifacts/windows/Marlim3-windows-x64.exe.sha256
             artifacts/macos-arm64/Marlim3-macos-arm64
             artifacts/macos-arm64/Marlim3-macos-arm64.sha256
-            artifacts/desktop-linux/Marlim3-desktop-linux-x64.AppImage
-            artifacts/desktop-linux/Marlim3-desktop-linux-x64.AppImage.sha256
+            artifacts/desktop-linux/Marlim3-desktop-linux-x64
+            artifacts/desktop-linux/Marlim3-desktop-linux-x64.sha256
             artifacts/desktop-windows/Marlim3-desktop-windows-x64.exe
             artifacts/desktop-windows/Marlim3-desktop-windows-x64.exe.sha256
             artifacts/desktop-macos-arm64/Marlim3-desktop-macos-arm64.dmg

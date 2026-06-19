@@ -40,7 +40,7 @@ simulation engine:
 
 | Platform | Release asset |
 |----------|---------------|
-| Linux x64 | `Marlim3-desktop-linux-x64.AppImage` |
+| Linux x64 | `Marlim3-desktop-linux-x64` |
 | Windows x64 | `Marlim3-desktop-windows-x64.exe` |
 | macOS Apple Silicon | `Marlim3-desktop-macos-arm64.dmg` |
 
@@ -94,9 +94,12 @@ Streamlit process tree and releases its dynamically allocated port.
 #### Linux
 
 ```bash
-chmod +x Marlim3-desktop-linux-x64.AppImage
-./Marlim3-desktop-linux-x64.AppImage
+chmod +x Marlim3-desktop-linux-x64
+./Marlim3-desktop-linux-x64
 ```
+
+The Linux desktop executable is a self-contained ELF binary and does not
+require installing additional dependencies.
 
 #### Windows
 
