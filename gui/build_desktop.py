@@ -139,7 +139,7 @@ def package_windows(smoke_test: bool) -> Path:
         raise FileNotFoundError(f"PyInstaller output not found: {raw_executable}")
     validate_executable(raw_executable, smoke_test)
     artifact = DIST_DIR / "Marlim3-desktop-windows-x64.exe"
-    raw_executable.replace(artifact)
+    shutil.copy2(raw_executable, artifact)
     return artifact
 
 

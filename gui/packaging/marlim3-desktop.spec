@@ -107,6 +107,7 @@ def collect_linux_runtime_libraries():
     pending = [path for path in runtime_roots if path.is_file()]
     processed = set()
     portable_libraries = {}
+    missing_libraries = set()
 
     while pending:
         binary = pending.pop()
@@ -116,7 +117,10 @@ def collect_linux_runtime_libraries():
         processed.add(resolved_binary)
 
         for library_name, library_path in get_imports(str(resolved_binary)):
-            if not library_path or library_name in glibc_libraries:
+            if library_name in glibc_libraries:
+                continue
+            if not library_path:
+                missing_libraries.add(library_name)
                 continue
             soname_path = Path(library_path)
             resolved_library = soname_path.resolve()
@@ -124,6 +128,10 @@ def collect_linux_runtime_libraries():
                 continue
             portable_libraries[library_name] = soname_path
             pending.append(resolved_library)
+
+    if missing_libraries:
+        names = ", ".join(sorted(missing_libraries))
+        raise RuntimeError(f"Missing Linux desktop runtime libraries: {names}")
 
     return [
         (str(library_path), ".")

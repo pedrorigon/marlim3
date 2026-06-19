@@ -482,6 +482,11 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install Linux graphics runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libgles2 libopengl0
+
       - name: Install GUI and desktop build dependencies
         run: uv sync --locked --group gui --group desktop
 
@@ -580,7 +585,17 @@ jobs:
           $env:QT_QPA_PLATFORM = "offscreen"
           $env:QTWEBENGINE_DISABLE_SANDBOX = "1"
           & dist\Marlim3-Desktop.exe --window-smoke-test
-          Move-Item dist\Marlim3-Desktop.exe dist\Marlim3-desktop-windows-x64.exe
+          $source = "dist\Marlim3-Desktop.exe"
+          $artifact = "dist\Marlim3-desktop-windows-x64.exe"
+          for ($attempt = 1; $attempt -le 10; $attempt++) {
+            try {
+              Copy-Item $source $artifact -Force -ErrorAction Stop
+              break
+            } catch {
+              if ($attempt -eq 10) { throw }
+              Start-Sleep -Seconds 1
+            }
+          }
           $hash = (Get-FileHash dist\Marlim3-desktop-windows-x64.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path dist\Marlim3-desktop-windows-x64.exe.sha256 -Value "$hash  Marlim3-desktop-windows-x64.exe"
           Get-Item dist\Marlim3-desktop-windows-x64.exe, dist\Marlim3-desktop-windows-x64.exe.sha256 | Format-List FullName, Length
@@ -643,7 +658,7 @@ jobs:
           set -euo pipefail
           test -d dist/Marlim3.app
           test -x dist/Marlim3.app/Contents/MacOS/Marlim3
-          lipo -verify_arch arm64 dist/Marlim3.app/Contents/MacOS/Marlim3
+          lipo dist/Marlim3.app/Contents/MacOS/Marlim3 -verify_arch arm64
           ICON_FILE=$(plutil -extract CFBundleIconFile raw dist/Marlim3.app/Contents/Info.plist)
           test -n "$ICON_FILE"
           test -f "dist/Marlim3.app/Contents/Resources/$ICON_FILE"
