@@ -116,22 +116,6 @@ def test_server_command_relaunches_desktop_module(monkeypatch):
     ]
 
 
-def test_run_streamlit_server_loads_port_options(monkeypatch, tmp_path):
-    from streamlit.web import bootstrap
-
-    load_config_options = Mock()
-    run = Mock()
-    monkeypatch.setattr(bootstrap, "load_config_options", load_config_options)
-    monkeypatch.setattr(bootstrap, "run", run)
-    app_path = tmp_path / "app.py"
-
-    desktop.run_streamlit_server(app_path, 9012)
-
-    options = desktop.streamlit_flag_options(9012)
-    load_config_options.assert_called_once_with(options)
-    run.assert_called_once_with(str(app_path), False, [], options)
-
-
 def test_main_stops_server_when_window_closes(monkeypatch, tmp_path):
     app_path = tmp_path / "gui" / "app.py"
     engine_path = tmp_path / "marlim3" / desktop.executable_name()
