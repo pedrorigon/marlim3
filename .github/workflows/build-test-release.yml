@@ -530,7 +530,7 @@ jobs:
       - name: Validate and package desktop executable
         run: |
           set -euo pipefail
-          xvfb-run -a env QTWEBENGINE_DISABLE_SANDBOX=1 \
+          xvfb-run -a env QT_QPA_PLATFORM=xcb QTWEBENGINE_DISABLE_SANDBOX=1 \
             python3 -m marlim3_desktop.build --skip-build
           ls -lh dist/Marlim3-desktop-linux-x64*
 

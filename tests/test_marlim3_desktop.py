@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 os.environ.setdefault("MARLIM3_SKIP_EXECUTABLE_RESOLUTION", "1")
 
-from marlim3_desktop import checkpoints, launcher, logs, paths, processes
+from marlim3_desktop import build, checkpoints, launcher, logs, paths, processes
 
 
 def test_desktop_paths_resolve_from_bundle_override(monkeypatch, tmp_path):
@@ -56,6 +56,27 @@ def test_streamlit_flags_are_headless_and_localhost():
     assert flags["server.port"] == 8765
     assert flags["server.headless"] is True
     assert flags["server.fileWatcherType"] == "none"
+
+
+def test_validation_environment_uses_xcb_with_linux_display(monkeypatch):
+    monkeypatch.setattr(build.platform, "system", lambda: "Linux")
+    monkeypatch.setenv("DISPLAY", ":99")
+    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
+
+    env = build.validation_environment()
+
+    assert env["QT_QPA_PLATFORM"] == "xcb"
+    assert env["QTWEBENGINE_DISABLE_SANDBOX"] == "1"
+
+
+def test_validation_environment_uses_offscreen_without_display(monkeypatch):
+    monkeypatch.setattr(build.platform, "system", lambda: "Linux")
+    monkeypatch.delenv("DISPLAY", raising=False)
+    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
+
+    env = build.validation_environment()
+
+    assert env["QT_QPA_PLATFORM"] == "offscreen"
 
 
 def test_server_command_uses_desktop_module_on_posix(monkeypatch):

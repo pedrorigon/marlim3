@@ -123,7 +123,10 @@ def build_pyinstaller_bundle() -> None:
 
 def validation_environment() -> dict[str, str]:
     env = os.environ.copy()
-    env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    if platform.system() == "Linux" and env.get("DISPLAY"):
+        env.setdefault("QT_QPA_PLATFORM", "xcb")
+    else:
+        env.setdefault("QT_QPA_PLATFORM", "offscreen")
     env.setdefault("QTWEBENGINE_DISABLE_SANDBOX", "1")
     return env
 
