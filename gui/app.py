@@ -18,23 +18,10 @@ import pandas as pd
 import plotly.graph_objects as go
 from pathlib import Path
 
+# Add project root to path for marlim3 imports
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-def _resolve_project_root():
-    """Return the repository root or the frozen desktop bundle root."""
-    desktop_root = os.environ.get("MARLIM3_DESKTOP_ROOT")
-    if desktop_root:
-        return Path(desktop_root)
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        return Path(sys._MEIPASS)
-    return Path(__file__).parent.parent
-
-
-# Add project root/bundle root to path for marlim3 imports
-PROJECT_ROOT = _resolve_project_root()
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-APP_ICON_PATH = PROJECT_ROOT / "assets" / "icons" / "app-icon.png"
 LOGO_PATH = PROJECT_ROOT / "assets" / "branding" / "logo.svg"
 
 
@@ -52,7 +39,7 @@ atexit.register(_kill_sim_on_exit)
 
 st.set_page_config(
     page_title="Marlim3",
-    page_icon=str(APP_ICON_PATH) if APP_ICON_PATH.exists() else "🛢️",
+    page_icon="🛢️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -507,6 +494,7 @@ with st.sidebar:
                 import shutil
                 import time as _time
                 import gc
+                from marlim3._process import hidden_process_kwargs
 
                 # Write sanitized JSON into work directory
                 work_dir = st.session_state["work_dir"]
@@ -543,6 +531,7 @@ with st.sidebar:
                     stderr=subprocess.STDOUT,
                     text=True,
                     cwd=work_dir,
+                    **hidden_process_kwargs(),
                 )
                 st.session_state["_sim_pid"] = process.pid
                 for line in iter(process.stdout.readline, ""):

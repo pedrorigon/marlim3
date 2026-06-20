@@ -45,7 +45,8 @@ simulation engine:
 | macOS Apple Silicon | `Marlim3-desktop-macos-arm64.dmg` |
 
 Download the matching asset from the GitHub Releases page and run it. No Python
-installation, compiler, or manual dependency setup is required.
+installation or compiler is required. The Linux desktop application requires
+only glibc 2.34 or newer from the operating system.
 
 ### Option 3: Use the command-line executable
 
@@ -98,8 +99,8 @@ chmod +x Marlim3-desktop-linux-x64
 ./Marlim3-desktop-linux-x64
 ```
 
-The Linux desktop executable is a self-contained ELF binary and does not
-require installing additional dependencies.
+The Linux desktop executable is a self-contained ELF binary. Its only system
+runtime requirement is glibc 2.34 or newer.
 
 #### Windows
 
@@ -120,7 +121,7 @@ Developers can build the standalone application for the current operating
 system with:
 
 ```bash
-uv run python gui/build_desktop.py
+uv run python -m marlim3_desktop.build
 ```
 
 The script detects the platform, builds the native engine, installs the desktop

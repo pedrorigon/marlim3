@@ -1,20 +1,27 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+import re
+import subprocess
 import sys
 from pathlib import Path
 
 from PyInstaller.depend.bindepend import get_imports
-from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules, copy_metadata
+from PyInstaller.utils.hooks import (
+    collect_all,
+    collect_data_files,
+    collect_submodules,
+    copy_metadata,
+)
 
 
 root = Path(SPECPATH).resolve().parents[1]
-
-icons_dir = root / "assets" / "icons"
-branding_dir = root / "assets" / "branding"
+desktop_root = root / "marlim3_desktop"
+icons_dir = desktop_root / "assets" / "icons"
 windows_icon = icons_dir / "app-icon.ico"
 macos_icon = icons_dir / "app-icon.icns"
 runtime_icon = icons_dir / "app-icon.png"
-logo = branding_dir / "logo.svg"
+logo = root / "assets" / "branding" / "logo.svg"
 
 version_namespace = {}
 exec((root / "_version.py").read_text(encoding="utf-8"), version_namespace)
@@ -33,7 +40,6 @@ streamlit_datas, streamlit_binaries, streamlit_hiddenimports = collect_all("stre
 datas += streamlit_datas
 binaries += streamlit_binaries
 hiddenimports += streamlit_hiddenimports
-
 hiddenimports += [
     "jsonschema",
     "lxml",
@@ -62,14 +68,13 @@ for package in ("streamlit", "PySide6", "plotly", "pandas", "jsonschema", "marli
     except Exception:
         pass
 
-marlim_datas = collect_data_files("marlim3")
-datas += marlim_datas
+datas += collect_data_files("marlim3")
 hiddenimports += collect_submodules("marlim3")
-
 datas += [
     (str(root / "gui" / "app.py"), "gui"),
+    (str(root / "gui" / ".streamlit"), "gui/.streamlit"),
     (str(root / "demos"), "demos"),
-    (str(runtime_icon), "assets/icons"),
+    (str(runtime_icon), "marlim3_desktop/assets/icons"),
     (str(logo), "assets/branding"),
 ]
 
@@ -85,17 +90,18 @@ def collect_linux_runtime_libraries():
 
     pyside_dir = Path(PySide6.__file__).resolve().parent
     qt_dir = pyside_dir / "Qt"
-    runtime_roots = (
+    roots = (
         qt_dir / "lib" / "libQt6WebEngineCore.so.6",
         qt_dir / "plugins" / "platforms" / "libqxcb.so",
         qt_dir / "plugins" / "platforms" / "libqwayland.so",
         qt_dir / "plugins" / "platforms" / "libqoffscreen.so",
     )
-    glibc_libraries = {
+    system_libraries = {
         "ld-linux-x86-64.so.2",
         "libanl.so.1",
         "libc.so.6",
         "libdl.so.2",
+        "libgcc_s.so.1",
         "libm.so.6",
         "libmvec.so.1",
         "libnsl.so.1",
@@ -104,52 +110,75 @@ def collect_linux_runtime_libraries():
         "librt.so.1",
         "libutil.so.1",
     }
-    pending = [path for path in runtime_roots if path.is_file()]
+    pending = [path for path in roots if path.is_file()]
     processed = set()
-    portable_libraries = {}
-    missing_libraries = set()
-
+    portable = {}
+    missing = set()
     while pending:
         binary = pending.pop()
         resolved_binary = binary.resolve()
         if resolved_binary in processed:
             continue
         processed.add(resolved_binary)
-
         for library_name, library_path in get_imports(str(resolved_binary)):
-            if library_name in glibc_libraries:
+            if library_name in system_libraries:
                 continue
             if not library_path:
-                missing_libraries.add(library_name)
+                missing.add(library_name)
                 continue
-            soname_path = Path(library_path)
-            resolved_library = soname_path.resolve()
-            if pyside_dir in resolved_library.parents:
+            source = Path(library_path)
+            resolved_source = source.resolve()
+            if pyside_dir in resolved_source.parents:
                 continue
-            portable_libraries[library_name] = soname_path
-            pending.append(resolved_library)
-
-    if missing_libraries:
-        names = ", ".join(sorted(missing_libraries))
-        raise RuntimeError(f"Missing Linux desktop runtime libraries: {names}")
-
-    return [
-        (str(library_path), ".")
-        for _, library_path in sorted(portable_libraries.items())
-    ]
+            portable[library_name] = source
+            pending.append(resolved_source)
+    if missing:
+        raise RuntimeError(
+            "Missing Linux desktop runtime libraries: " + ", ".join(sorted(missing))
+        )
+    baseline_text = os.environ.get("MARLIM3_GLIBC_BASELINE")
+    baseline = (
+        tuple(int(part) for part in baseline_text.split("."))
+        if baseline_text
+        else None
+    )
+    print("Bundled Linux desktop runtime libraries:")
+    for name, source in sorted(portable.items()):
+        print(f"  {name}: {source}")
+        if baseline is not None:
+            result = subprocess.run(
+                ["objdump", "-T", str(source.resolve())],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            versions = []
+            for line in result.stdout.splitlines():
+                if "*UND*" not in line:
+                    continue
+                versions.extend(
+                    tuple(int(part) for part in match.groups())
+                    for match in re.finditer(r"GLIBC_(\d+)\.(\d+)", line)
+                )
+            if versions and max(versions) > baseline:
+                required = ".".join(str(part) for part in max(versions))
+                raise RuntimeError(
+                    f"{name} requires glibc {required}, newer than "
+                    f"the configured {baseline_text} baseline"
+                )
+    return [(str(source), ".") for _, source in sorted(portable.items())]
 
 
 if sys.platform.startswith("linux"):
     binaries += collect_linux_runtime_libraries()
 
-
 a = Analysis(
-    [str(root / "gui" / "desktop.py")],
+    [str(desktop_root / "__main__.py")],
     pathex=[str(root)],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[str(root / "gui" / "packaging" / "hooks")],
+    hookspath=[str(desktop_root / "packaging" / "hooks")],
     runtime_hooks=[],
     excludes=[
         "IPython",
@@ -166,18 +195,13 @@ a = Analysis(
     ],
     noarchive=False,
     optimize=1,
-    hooksconfig={
-        "matplotlib": {
-            "backends": ["Agg"],
-        },
-    },
+    hooksconfig={"matplotlib": {"backends": ["Agg"]}},
 )
 
 if sys.platform.startswith("linux"):
     def required_linux_qt_data(entry):
         destination = entry[0].replace("\\", "/")
         name = Path(destination).name
-
         if name == "qtwebengine_devtools_resources.pak":
             return False
         if "/qtwebengine_locales/" in destination:
@@ -204,10 +228,7 @@ if sys.platform == "darwin":
         console=False,
         disable_windowed_traceback=False,
         argv_emulation=False,
-        target_arch=None,
         icon=str(macos_icon),
-        codesign_identity=None,
-        entitlements_file=None,
     )
     coll = COLLECT(
         exe,
@@ -215,7 +236,6 @@ if sys.platform == "darwin":
         a.datas,
         strip=False,
         upx=False,
-        upx_exclude=[],
         name="Marlim3",
     )
     app = BUNDLE(
@@ -232,24 +252,48 @@ if sys.platform == "darwin":
         },
     )
 else:
-    exe = EXE(
-        pyz,
-        a.scripts,
-        a.binaries,
-        a.datas,
-        [],
-        name="Marlim3-Desktop",
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=False,
-        upx_exclude=[],
-        runtime_tmpdir=None,
-        console=False,
-        disable_windowed_traceback=False,
-        argv_emulation=False,
-        target_arch=None,
-        icon=str(windows_icon) if sys.platform.startswith("win") else None,
-        codesign_identity=None,
-        entitlements_file=None,
-    )
+    if sys.platform.startswith("win"):
+        splash = Splash(
+            str(runtime_icon),
+            binaries=a.binaries,
+            datas=a.datas,
+            text_pos=(30, 485),
+            text_size=22,
+            text_color="#ffffff",
+            text_default="Loading Marlim3...",
+            max_img_size=(520, 520),
+        )
+        exe = EXE(
+            pyz,
+            a.scripts,
+            splash,
+            splash.binaries,
+            a.binaries,
+            a.datas,
+            [],
+            name="Marlim3-Desktop",
+            debug=False,
+            bootloader_ignore_signals=False,
+            strip=False,
+            upx=False,
+            runtime_tmpdir=None,
+            console=False,
+            disable_windowed_traceback=False,
+            icon=str(windows_icon),
+        )
+    else:
+        exe = EXE(
+            pyz,
+            a.scripts,
+            a.binaries,
+            a.datas,
+            [],
+            name="Marlim3-Desktop",
+            debug=False,
+            bootloader_ignore_signals=False,
+            strip=False,
+            upx=False,
+            runtime_tmpdir=None,
+            console=False,
+            disable_windowed_traceback=False,
+        )
