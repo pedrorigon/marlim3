@@ -44,6 +44,7 @@
 #include "solverPoroso.h"
 #include "validaTipoJson.h"
 #include "variaveisGlobais1D.h"
+#include "SlugFlow_TaitelBarnea.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -1056,6 +1057,13 @@ struct acopDuto3D {
     double comp;
 };
 
+struct detCelUnit {
+    int posicP;
+    double comp;
+    int parserie;
+    double *tempo;
+};
+
 class Ler {
   public:
     int tipoHmodel;
@@ -1421,6 +1429,9 @@ class Ler {
 
     int nintermi;
     detIntermi *intermi;
+
+    int nCelUnit;
+    detCelUnit* celUnit;
 
     /*
      * Default Constructor
@@ -1913,6 +1924,13 @@ class Ler {
         if (nintermi > 0) {
             delete[] intermi;
         }
+
+        if (nCelUnit > 0) {
+            for (int i = 0; i < this->nCelUnit; i++) {
+                delete[] celUnit[i].tempo;
+            }
+            delete[] celUnit;
+        }
     }
 
     void copiaSemJson(Ler &);
@@ -2032,6 +2050,7 @@ class Ler {
                            double tempo, int trend);
     void resumoPermanente(Cel *const celula, CelG *const celulaG, double pGsup, double presiniG, int indTramo, int nrede = -1);
     void resumoIntermitencia(Cel *const celula, int indTramo, int nrede = -1);
+    void relatorioCelulaUnitaria(Cel *const celula, int posic, int indTramo, int nrede = -1);
 
     // The following methods are used by lerArq while constructing production- and gas-cell
     // structures from the units and discretization data registered in JSON. They locate each
@@ -2110,6 +2129,7 @@ class Ler {
     void troca_gaslift(detVALVGL &valv1, detVALVGL &valv2);
     void parse_fonte_gaslift(JSON_entrada_fonteGasLift &fonte_gaslift_json);
     void parse_intermitencia(JSON_entrada_intermitenciaSevera &intermitencia_json);
+    void parse_celulaUnitaria(JSON_entrada_detalheCelulaUnitaria &celulaUnitaria_json);
     void parse_perfil_producao(JSON_entrada_perfilProducao &perfis_producao_json);
     void parse_perfil_servico(JSON_entrada_perfilServico &perfis_servico_json);
     void parse_perfis_trans_producao(JSON_entrada_perfisTransP &perfis_trans_producao_json);
@@ -2156,6 +2176,7 @@ class Ler {
     void copia_fonteCalor(Ler &arqAntigo);
     void copia_fonte_gaslift(Ler &arqAntigo);
     void copia_intermitencia(Ler &arqAntigo);
+    void copia_celulaUnitaria(Ler &arqAntigo);
     void copia_perfil_producao(Ler &arqAntigo);
     void copia_perfil_servico(Ler &arqAntigo);
     void copia_perfis_trans_producao(Ler &arqAntigo);

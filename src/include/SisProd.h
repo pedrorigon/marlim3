@@ -997,6 +997,8 @@ class SProd {
      */
     int redeParalelaS;
 
+    vector<int> kontaTempoCelUni;
+
     const char *saidaTextoSis[15] = {"                          Post Coitum Omine Animal Triste Est                   ",
                                      "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
                                      "      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
