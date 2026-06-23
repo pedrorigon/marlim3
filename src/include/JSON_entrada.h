@@ -2567,6 +2567,24 @@ class JSON_entrada_intermitenciaSevera_Item : public JSONObject {
 
 #define JSON_entrada_intermitenciaSevera JSONArray<JSON_entrada_intermitenciaSevera_Item>
 
+
+#define JSON_entrada_detalheCelulaUnitaria_Item_ativo JSONBoolean
+#define JSON_entrada_detalheCelulaUnitaria_Item_id JSONInteger
+#define JSON_entrada_detalheCelulaUnitaria_Item_comprimentoMedido JSONNumber
+#define JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres_Item JSONNumber
+#define JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres JSONArray<JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres_Item>
+
+class JSON_entrada_detalheCelulaUnitaria_Item : public JSONObject {
+  public:
+    JSON_entrada_detalheCelulaUnitaria_Item();
+    JSON_entrada_detalheCelulaUnitaria_Item_ativo &ativo();
+    JSON_entrada_detalheCelulaUnitaria_Item_id &id();
+    JSON_entrada_detalheCelulaUnitaria_Item_comprimentoMedido &comprimentoMedido();
+    JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres &tempoImpres();
+};
+
+#define JSON_entrada_detalheCelulaUnitaria JSONArray<JSON_entrada_detalheCelulaUnitaria_Item>
+
 /*!
  * Represent the root Marlim simulation input document.
  *
@@ -2624,6 +2642,7 @@ class JSON_entrada : public JSONRootObject {
     JSON_entrada_chokeInj &chokeInj();
     JSON_entrada_CondicaoContPocInjec &CondicaoContPocInjec();
     JSON_entrada_intermitenciaSevera &intermitenciaSevera();
+    JSON_entrada_detalheCelulaUnitaria &detalheCelulaUnitaria();
 };
 
 #endif

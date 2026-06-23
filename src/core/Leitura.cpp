@@ -341,6 +341,9 @@ void Ler::iniciarVariaveis() {
 	nintermi=0;
 	intermi=0;
 
+	nCelUnit=0;
+	celUnit=0;
+
 	pmin=0.01;
 	tmin=-200;
 }
@@ -572,6 +575,9 @@ void Ler::iniciarVariaveisConstrutorDefault() {
 
 	nintermi=0;
 	intermi=0;
+
+	nCelUnit=0;
+	celUnit=0;
 
 	pmin=0.01;
 	tmin=-200;
@@ -1076,6 +1082,19 @@ Ler& Ler::operator =(const Ler& vler) {
 		if(oMolecularWeightsOfWaxComponents!=0) delete [] oMolecularWeightsOfWaxComponents;
 		if(oLiquidDensitiesOfWaxComponents!=0) delete [] oLiquidDensitiesOfWaxComponents;
 		if(oInterpolatedWaxConcs!=0) delete [] oInterpolatedWaxConcs;
+
+        if (nintermi > 0) {
+            delete[] intermi;
+        }
+
+        if (nCelUnit > 0) {
+            for (int i = 0; i < this->nCelUnit; i++) {
+                delete[] celUnit[i].tempo;
+            }
+            delete[] celUnit;
+        }
+
+
 		if(logeventoEstat.size()>0)logeventoEstat.clear();
 		if(logevento.size()>0)logevento.clear();
 		if(evento.size()>0)evento.clear();
@@ -1559,6 +1578,19 @@ void Ler::copiaSemJson(Ler& vler) {
 		if(oMolecularWeightsOfWaxComponents!=0) delete [] oMolecularWeightsOfWaxComponents;
 		if(oLiquidDensitiesOfWaxComponents!=0) delete [] oLiquidDensitiesOfWaxComponents;
 		if(oInterpolatedWaxConcs!=0) delete [] oInterpolatedWaxConcs;
+
+
+        if (nintermi > 0) {
+            delete[] intermi;
+        }
+
+        if (nCelUnit > 0) {
+            for (int i = 0; i < this->nCelUnit; i++) {
+                delete[] celUnit[i].tempo;
+            }
+            delete[] celUnit;
+        }
+
 		if(logeventoEstat.size()>0)logeventoEstat.clear();
 		if(logevento.size()>0)logevento.clear();
 		if(evento.size()>0)evento.clear();
@@ -10149,6 +10181,78 @@ void Ler::parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_js
 	}
 }
 
+void Ler::parse_celulaUnitaria(JSON_entrada_detalheCelulaUnitaria& celulaUnitaria_json) {
+	// criar variavel para o nome da propriedade json em processo de parse
+	string chaveJson("#/detalheCelulaUnitaria");
+	// criar vetor de inteiros para armazenar os ids
+	std::vector<int> identificadores;
+	// criar variavel para o maior identificador encontrado
+	int maiorIdentificador = -99999;
+	try {
+		// tamanho do vetor de celUnit
+		nCelUnit = 0;
+		// percorre o array de celUnit
+		for (size_t i = 0; i < celulaUnitaria_json.size(); i++) {
+			// caso o bcs esteja ativo
+			if (is_ativo(celulaUnitaria_json[i]))
+				nCelUnit++;
+		}
+		if (nCelUnit > 0) {
+			celUnit = new detCelUnit[nCelUnit];
+			// criar vetor de inteiros para armazenar os ids
+			identificadores.resize(nCelUnit);
+			// loop para parse das estruturas do celUnit
+			int indAtivo = -1;
+			for (int i = 0; i < nCelUnit; i++) {
+				// enquanto a propriedade "ativo" do celUnit esteja desabilitada, avança
+				while (!is_ativo(celulaUnitaria_json[++indAtivo]))
+					;
+
+				// obter maior identificador
+				identificadores[i] = celulaUnitaria_json[indAtivo].id();
+				// caso o identificador seja maior que o ultimo selecionado, substitui
+				if (identificadores[i] > maiorIdentificador) {
+					maiorIdentificador = identificadores[i];
+				}
+
+				celUnit[i].comp =
+						celulaUnitaria_json[indAtivo].comprimentoMedido();
+				// sentido plataforma para fundo-poco
+				if (!sentidoGeometriaSegueEscoamento && reverso<2)
+					celUnit[i].comp = nCompTotalUnidadesP - celUnit[i].comp;
+				if (celUnit[i].comp < 0.0)
+					celUnit[i].comp = 0.0;
+				double lverif = celUnit[i].comp;
+				celUnit[i].posicP = buscaIndiceFrontP(lverif);
+
+				celUnit[i].parserie = (int) celulaUnitaria_json[indAtivo].tempoImpres().size();
+				celUnit[i].tempo = new double[celUnit[i].parserie];
+				for (int j = 0; j < celUnit[i].parserie; j++) {
+						celUnit[i].tempo[j] =
+								celulaUnitaria_json[indAtivo].tempoImpres()[j];
+				}
+
+			}
+			// verificar a unicidade dos identificadores
+			if (!verificarUnicidade(identificadores)) {
+				// RN-094: Unicidade da chave 'id' em '#/celulaUnitaria'
+				// incluir falha
+				logger.log(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+						"id", chaveJson, "Unicidade da chave 'id'");
+			}
+			// caso exista uma condicao de falha da aplicacao ate esta etapa
+				if (!logger.getStResultadoSimulacao().sucesso) {
+					// gerar o arquivo de saida da simulacao e encerra a aplicacao
+					logger.write_logs_and_exit();
+				}
+		}
+	} catch (exception& e) {
+		// incluir falha
+		logger.log_write_logs_and_exit(LOGGER_FALHA,
+		LOG_ERR_UNEXPECTED_EXCEPTION, "", chaveJson, e.what());
+	}
+}
+
 /*!
  * Converter os elementos "perfil_producao" do arquivo Json do MRT em struct fonte.
  *
@@ -10698,7 +10802,7 @@ void Ler::parse_perfil_producao(
 				if (perfil_producao_json.dadosParafina().exists() && modoParafina==1) {
 					profp.dadosParafina = perfil_producao_json.dadosParafina();
 					if (profp.dadosParafina == 1)
-						nvarprofp+=18;
+						nvarprofp+=19;
 				}
 
 				if (perfil_producao_json.correlacaoBB().exists() && tipoModeloDrift==0) {
@@ -11512,7 +11616,7 @@ void Ler::parse_tendencia_producao(
 				if (tendencia_producao_json[indAtivo].dadosParafina().exists() && modoParafina==1) {
 					trendp[i].dadosParafina = tendencia_producao_json[indAtivo].dadosParafina();
 					if (trendp[i].dadosParafina == 1)
-						nvartrendp[i]+=11;
+						nvartrendp[i]+=12;
 				}
 
 				if (tendencia_producao_json[indAtivo].tempParede().exists()) {
@@ -13100,6 +13204,11 @@ void Ler::lerArq() {
 
 			if (contemChaveAtivaArray(jsonDoc, intermitenciaSevera)) {
 				parse_intermitencia(jsonDoc.intermitenciaSevera());
+			}
+
+			// parser do elemento "detalheCelulaUnitaria"
+			if (jsonDoc.detalheCelulaUnitaria().exists()) {
+				parse_celulaUnitaria(jsonDoc.detalheCelulaUnitaria());
 			}
 
 			// parser do elemento "pig"
@@ -17649,10 +17758,11 @@ void Ler::imprimeProfile(Cel* const celula,
 				flut[i][k+12] = celula[i].detParCel.difusividadeParafina;
 				flut[i][k+13] = celula[i].detParCel.fluxMassParafina1;
 				flut[i][k+14] = celula[i].detParCel.fluxMassParafina2;
-				flut[i][k+15] = celula[i].detParCel.gradienteConcentracao;
-				flut[i][k+16] = celula[i].detParCel.kDep;
-				flut[i][k+17] = celula[i].detParCel.tempInterDeposito;
-				k+=18;
+				flut[i][k+15] = celula[i].detParCel.fluxMassParafina2*3.14159265359*celula[i].duto.a*celula[i].dx;
+				flut[i][k+16] = celula[i].detParCel.gradienteConcentracao;
+				flut[i][k+17] = celula[i].detParCel.kDep;
+				flut[i][k+18] = celula[i].detParCel.tempInterDeposito;
+				k+=19;
 			}
 			if(tipoModeloDrift==0 && profp.correlacaoBB==1){
 				flut[i][k] = celula[i].correlacaoMR2;
@@ -17861,6 +17971,7 @@ void Ler::imprimeProfile(Cel* const celula,
 			escreveIni << t(" Difusividade Massica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
 			escreveIni << t(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
 			escreveIni << t(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
+			escreveIni << t(" Vazao Massica de Parafina por Difusao (kg/(s)) C;", " Paraffin mass rate (kg/(s)) C;");
 			escreveIni << t(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
 			escreveIni << t(" Condutividade do deposito (W/(m-K)) C;", " Deposit conductivity (W/(m-K)) C;");
 			escreveIni << t(" Temperatura da Interface do deposito (C) C;", " Deposit interface temperature (C) C;");
@@ -18368,6 +18479,89 @@ void Ler::resumoIntermitencia(Cel* const celula, int indTramo, int nrede){
 		}
 		delete [] criterioItermitencia;
 	}
+	escreveIni.close();
+}
+
+void Ler::relatorioCelulaUnitaria(Cel *const celula, int posic, int indTramo, int nrede){
+
+	SlugFlowResults celUnitResults;
+	double MPi=3.14159265359;
+	double gravity=9.81;
+	double area=celula[posic].duto.area;
+	double roughness=celula[posic].duto.rug/celula[posic].duto.dia;
+	double uLs=celula[posic].QL/area;
+	double uGs=celula[posic].QG/area;
+	double alf;
+	if(posic>0 && uGs>0)alf=celula[posic-1].alf;
+	else alf=celula[posic].alf;
+	double bet;
+	if(posic>0 && uLs>0)bet=celula[posic-1].bet;
+	else bet=celula[posic].bet;
+	double razdx = celula[posic].dxL / (celula[posic].dx + celula[posic].dxL);
+	double tmed=razdx * celula[posic].temp + (1 - razdx) * celula[posic].tempL;
+	double pmed=celula[posic].presaux;
+	double rhoL=(1.-bet)*celula[posic].flui.MasEspLiq(pmed,tmed)+bet*celula[posic].fluicol.MasEspFlu(pmed, tmed);
+	double rhoG=celula[posic].flui.MasEspGas(pmed,tmed);
+	double muL=((1.-bet)*celula[posic].flui.ViscOleo(pmed,tmed)+bet*celula[posic].fluicol.VisFlu(pmed, tmed))*1e-3;
+	double muG=celula[posic].flui.ViscGas(pmed, tmed)*1e-3;
+	double sigma=(1 - bet) * celula[posic].flui.TensSuper(pmed, tmed) + bet * celula[posic].fluicol.TensSuper(pmed, tmed);
+
+
+	calculateSlugFlow(celula[posic].duto.teta*(180./MPi),celula[posic].duto.dia,uLs,uGs,rhoL,
+	    rhoG,muL,muG,sigma,roughness, gravity,celUnitResults);
+
+	ostringstream saidaR;
+	if (indTramo < 0 && AP==0)
+		saidaR << pathPrefixoArqSaida << "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*vg1dSP).lixo5 << ".dat";
+	else if (indTramo < 0 && AP==1)
+		saidaR << pathPrefixoArqSaida <<  "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*vg1dSP).lixo5<<"-seqAP-"<<(*vg1dSP).sequenciaAP <<".dat";
+	else
+		saidaR << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
+				<< "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*vg1dSP).lixo5 << ".dat";
+	string tmp = saidaR.str();
+	ofstream escreveIni(tmp.c_str(), ios_base::out);
+	escreveIni << "us (m/s) Velocidade da mistura ; ";
+	escreveIni << "C  (-)   Parâmetro de distribuição ; ";
+	escreveIni << "ud (m/s) Velocidade de drift ; ";
+	escreveIni << "ut (m/s) Velocidade translacional ; ";
+	escreveIni << "HG (-)   Holdup na golfada ; ";
+	escreveIni << "alpha_s (-) Fração de vazio na golfada ; ";
+	escreveIni << "ub (m/s) Velocidade bolhas dispersas ; ";
+	escreveIni << "uL (m/s) Velocidade do líquido na golfada ; ";
+	escreveIni << "ls (m) Comprimento da golfada ; ";
+	escreveIni << "lf (m) Comprimento do filme ; ";
+	escreveIni << "lu (m) Comprimento do slug unit ; ";
+	escreveIni << "freq (Hz) Frequência da golfada ; ";
+	escreveIni << "hfe  (m)  Nível/espessura no final do filme ; ";
+	escreveIni << "Rfe  (-)  Holdup no final do filme ; ";
+	escreveIni << "ufe  (m/s) Velocidade do filme final ; ";
+	escreveIni << "hE   (m)   Nível de equilíbrio ; ";
+	escreveIni << "alpha_u (-) Fração de vazio média do slug unit ; ";
+	escreveIni << "flowGeometry (-) Vertical annular ou stratified ; ";
+	escreveIni << "Indicador de Arranjo (-) ; ";
+	escreveIni << "Convergencia ; ";
+	escreveIni << "\n";
+
+	escreveIni << celUnitResults.us<< " ; "<<celUnitResults.C<<" ; "<<celUnitResults.ud<<" ; "<<
+			celUnitResults.ut<<" ; "<<celUnitResults.Rs<<" ; "<<celUnitResults.alpha_s<<" ; "<<
+			celUnitResults.ub<<" ; "<<celUnitResults.uL<<" ; "<<celUnitResults.ls<<" ; "<<
+			celUnitResults.lf<<" ; "<<celUnitResults.lu<<" ; "<<celUnitResults.freq<<" ; "<<
+			celUnitResults.hfe<<" ; "<<celUnitResults.Rfe<<" ; "<<celUnitResults.ufe<<" ; "<<
+			celUnitResults.hE<<" ; "<<celUnitResults.alpha_u<<" ; "<<celUnitResults.flowGeometry<<" ; "<<
+			celula[posic].arranjo<<" ; "<<celUnitResults.profile.converged<< "\n";
+	escreveIni << "\n";
+	escreveIni << "////////////////////////////////////////////////////////////////////////////////";
+	escreveIni << "                                    Perfil Filme                               "<<"\n";
+
+	escreveIni<<"indice da posicao ; "<<"z (m) Posição axial desde o tail da golfada ; "<<"hf (m) Nivel (estratif.) ou espessura δ (anular) ; "<<
+		"Holf (-) Holdup do filme ; "<<	"uf (m/s) Velocidade do líquido no filme ; "<<"uG (m/s) Velocidade do gás"<<"\n";
+	int nPerf=celUnitResults.profile.z.size();
+	for(int iPerf=0;iPerf<nPerf;iPerf++){
+		escreveIni<<iPerf<<" ; "<<celUnitResults.profile.z[iPerf]<<" ; "<<celUnitResults.profile.hf[iPerf]<<" ; "<<
+				celUnitResults.profile.Rf[iPerf]<<" ; "<<celUnitResults.profile.uf[iPerf]<<	" ; "<<
+				celUnitResults.profile.uG[iPerf]<<"\n";
+	}
+
 	escreveIni.close();
 }
 
@@ -18977,10 +19171,11 @@ void Ler::imprimeTrend(Cel* const celula,
 			flut[linha][k+5] = celula[i].detParCel.difusividadeParafina;
 			flut[linha][k+6] = celula[i].detParCel.fluxMassParafina1;
 			flut[linha][k+7] = celula[i].detParCel.fluxMassParafina2;
-			flut[linha][k+8] = celula[i].detParCel.gradienteConcentracao;
-			flut[linha][k+9] = celula[i].detParCel.kDep;
-			flut[linha][k+10] = celula[i].detParCel.tempInterDeposito;
-			k+=11;
+			flut[linha][k+8] = celula[i].detParCel.fluxMassParafina2*3.14159265359*celula[i].duto.a*celula[i].dx;
+			flut[linha][k+9] = celula[i].detParCel.gradienteConcentracao;
+			flut[linha][k+10] = celula[i].detParCel.kDep;
+			flut[linha][k+11] = celula[i].detParCel.tempInterDeposito;
+			k+=12;
 		}
 		if(trendp[trend].autoVal == 1){
 			double som=celula[i].somVel();
@@ -19923,6 +20118,20 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 					flup[i].npontos = arqAntigo.flup[i].npontos;
 				}
 
+				flup[i].parserie=tabVisc[i].parserie;
+				flup[i].viscTab=tabVisc[i].visc;
+				flup[i].tempTab=tabVisc[i].temp;
+
+				flup[i].nvecEmul=nvecEmul;
+				flup[i].BSWVec=BSWVec;
+				flup[i].emulVec=emulVec;
+				if(tabp==1){
+					flup[i].zdranP = zdranP;
+					flup[i].dzdpP = dzdpP;
+					flup[i].dzdtP = dzdtP;
+					flup[i].npontos = npontos;
+				}
+
 			}
 		}
 		if(modoParafina==1){
@@ -20852,6 +21061,21 @@ void Ler::copia_intermitencia(Ler& arqAntigo) {
 			intermi[i].indFimTrechoColuna=arqAntigo.intermi[i].indFimTrechoColuna;
 			intermi[i].fracaoVazioPenetracao=arqAntigo.intermi[i].fracaoVazioPenetracao;
 			intermi[i].criterio=arqAntigo.intermi[i].criterio;
+		}
+	}
+}
+
+void Ler::copia_celulaUnitaria(Ler& arqAntigo) {
+
+	nCelUnit = arqAntigo.nCelUnit;
+	if (nCelUnit> 0) {
+		celUnit = new detCelUnit[nCelUnit];
+		for(int i=0; i<nCelUnit;i++){
+			celUnit[i].comp=arqAntigo.celUnit[i].comp;
+			celUnit[i].posicP=arqAntigo.celUnit[i].posicP;
+			celUnit[i].parserie=arqAntigo.celUnit[i].parserie;
+			for(int j=0; j<celUnit[i].parserie; j++)
+				celUnit[i].tempo[j]=arqAntigo.celUnit[i].tempo[j];
 		}
 	}
 }

@@ -193,6 +193,7 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
 
     alfTotal = 0.;
     kontaTempoProf = 0;
+    //kontaTempoCelUni = 0;
     dt = 0.;
     nabreM1 = 0;
     nfechaM1 = 0;
@@ -304,6 +305,7 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
     PrimSecIniRedeP = 0;
     PrimSecFimRedeP = 0;
     kontaTempoProf = 0;
+    //kontaTempoCelUni = 0;
     kontaTempoProfG = 0;
     kontaTempoTransProf = 0;
     kontaTempoTransProfG = 0;
@@ -2395,6 +2397,13 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             if (i > 1)
                 celula[i].razdxTM0 = celula[i - 2].dx / (celula[i - 1].dx + celula[i - 2].dx);
         }
+
+        if (arq.nCelUnit>0) {
+        	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
+        		kontaTempoCelUni.push_back(0);
+        	}
+        }
+
         kSP = 0;
         indevento = 1;
         mult = 0.8;
@@ -12329,12 +12338,13 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
         if (arq.flashCompleto == 2 && (*vg1dSP).lixo5 < 1e-15) {
             atualizaMiniTab();
         }
-        if ((*vg1dSP).lixo5 >= 7408.5) {
+        if ((*vg1dSP).lixo5 >= 996) {
             int para;
             para = 0;
         }
 
         if ((*vg1dSP).lixo5 < 1e-15) {
+        	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++)kontaTempoCelUni[iCelU]=1;
             for (int i = 0; i < arq.ntendp; i++) {
                 arq.imprimeTrend(celula, MatTrendP[i], (*vg1dSP).lixo5, i, ntrend[i]);
             }
@@ -12668,6 +12678,18 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
             if (kontaTempoTransProfG >= arq.proftransg.n)
                 kontaTempoTransProfG--;
         }
+    }
+    if (arq.nCelUnit>0) {
+    	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
+    		if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] &&
+    				(*vg1dSP).lixo5 + dt >= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]])) {
+    			arq.relatorioCelulaUnitaria(celula,arq.celUnit[iCelU].posicP, indTramo,nrede);
+    			arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] = (*vg1dSP).lixo5;
+    			kontaTempoCelUni[iCelU]++;
+    			if (kontaTempoCelUni[iCelU] >= arq.celUnit[iCelU].parserie)
+    				kontaTempoCelUni[iCelU]--;
+    		}
+    	}
     }
     if (arq.ntendp > 0) {
         for (int i = 0; i < arq.ntendp; i++) {
@@ -13102,6 +13124,7 @@ void SProd::ImprimeTrendPCab(int i, int nrede) {
                 escreveTrend << t(" Difusividade Massica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
                 escreveTrend << t(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
                 escreveTrend << t(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
+                escreveTrend << t(" Vazao Massica de Parafina por Difusao (kg/(s)) C;", " Paraffin mass rate (kg/(s)) C;");
                 escreveTrend << t(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
                 escreveTrend << t(" Condutividade do deposito (W/(m-K)) C;", " Deposit conductivity (W/(m-K)) C;");
                 escreveTrend << t(" Temperatura da Interface do deposito (C) C;", " Deposit interface temperature (C) C;");
