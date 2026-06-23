@@ -4122,6 +4122,29 @@ JSON_entrada_intermitenciaSevera_Item_criterio& JSON_entrada_intermitenciaSevera
 	return static_cast<JSON_entrada_intermitenciaSevera_Item_criterio&>(*contents["criterio"].get());
 }
 
+JSON_entrada_detalheCelulaUnitaria_Item::JSON_entrada_detalheCelulaUnitaria_Item(){
+	contents["ativo"] = make_shared<JSON_entrada_detalheCelulaUnitaria_Item_ativo>();
+	contents["id"] = make_shared<JSON_entrada_detalheCelulaUnitaria_Item_id>();
+	contents["comprimentoMedido"] = make_shared<JSON_entrada_detalheCelulaUnitaria_Item_comprimentoMedido>();
+	contents["tempoImpres"] = make_shared<JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres>();
+}
+
+JSON_entrada_detalheCelulaUnitaria_Item_ativo& JSON_entrada_detalheCelulaUnitaria_Item::ativo(){
+	return static_cast<JSON_entrada_detalheCelulaUnitaria_Item_ativo&>(*contents["ativo"].get());
+}
+
+JSON_entrada_detalheCelulaUnitaria_Item_id& JSON_entrada_detalheCelulaUnitaria_Item::id(){
+	return static_cast<JSON_entrada_detalheCelulaUnitaria_Item_id&>(*contents["id"].get());
+}
+
+JSON_entrada_detalheCelulaUnitaria_Item_comprimentoMedido& JSON_entrada_detalheCelulaUnitaria_Item::comprimentoMedido(){
+	return static_cast<JSON_entrada_detalheCelulaUnitaria_Item_comprimentoMedido&>(*contents["comprimentoMedido"].get());
+}
+
+JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres& JSON_entrada_detalheCelulaUnitaria_Item::tempoImpres(){
+	return static_cast<JSON_entrada_detalheCelulaUnitaria_Item_tempoImpres&>(*contents["tempoImpres"].get());
+}
+
 JSON_entrada::JSON_entrada(){
 	contents["sistema"] = make_shared<JSON_entrada_sistema>();
 	contents["versaoJson"] = make_shared<JSON_entrada_versaoJson>();
@@ -4171,6 +4194,7 @@ JSON_entrada::JSON_entrada(){
 	contents["chokeInj"] = make_shared<JSON_entrada_chokeInj>();
 	contents["CondicaoContPocInjec"] = make_shared<JSON_entrada_CondicaoContPocInjec>();
 	contents["intermitenciaSevera"] = make_shared<JSON_entrada_intermitenciaSevera>();
+	contents["detalheCelulaUnitaria"] = make_shared<JSON_entrada_detalheCelulaUnitaria>();
 }
 
 JSON_entrada_sistema& JSON_entrada::sistema(){
@@ -4363,4 +4387,8 @@ JSON_entrada_CondicaoContPocInjec& JSON_entrada::CondicaoContPocInjec(){
 
 JSON_entrada_intermitenciaSevera& JSON_entrada::intermitenciaSevera(){
 	return static_cast<JSON_entrada_intermitenciaSevera&>(*contents["intermitenciaSevera"].get());
+}
+
+JSON_entrada_detalheCelulaUnitaria& JSON_entrada::detalheCelulaUnitaria(){
+	return static_cast<JSON_entrada_detalheCelulaUnitaria&>(*contents["detalheCelulaUnitaria"].get());
 }
