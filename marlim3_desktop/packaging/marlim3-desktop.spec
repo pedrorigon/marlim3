@@ -54,13 +54,17 @@ hiddenimports += [
     "PySide6.QtNetwork",
     "PySide6.QtSvg",
     "PySide6.QtWebChannel",
-    "PySide6.QtWebEngineCore",
-    "PySide6.QtWebEngineWidgets",
+    "PySide6.QtWebView",
     "PySide6.QtWidgets",
     "requests",
     "seaborn",
     "xmltodict",
 ]
+if sys.platform != "darwin":
+    hiddenimports += [
+        "PySide6.QtWebEngineCore",
+        "PySide6.QtWebEngineWidgets",
+    ]
 
 for package in ("streamlit", "PySide6", "plotly", "pandas", "jsonschema", "marlim3"):
     try:
@@ -172,6 +176,15 @@ def collect_linux_runtime_libraries():
 if sys.platform.startswith("linux"):
     binaries += collect_linux_runtime_libraries()
 
+if sys.platform == "darwin":
+    import PySide6
+
+    pyside_dir = Path(PySide6.__file__).resolve().parent
+    webview_plugin = pyside_dir / "Qt" / "plugins" / "webview" / "libqtwebview_darwin.dylib"
+    if not webview_plugin.is_file():
+        raise FileNotFoundError(f"Missing macOS QtWebView plugin: {webview_plugin}")
+    binaries.append((str(webview_plugin), "PySide6/Qt/plugins/webview"))
+
 a = Analysis(
     [str(desktop_root / "__main__.py")],
     pathex=[str(root)],
@@ -192,7 +205,14 @@ a = Analysis(
         "streamlit.hello",
         "streamlit.testing",
         "tkinter",
-    ],
+    ] + (
+        [
+            "PySide6.QtWebEngineCore",
+            "PySide6.QtWebEngineWidgets",
+        ]
+        if sys.platform == "darwin"
+        else []
+    ),
     noarchive=False,
     optimize=1,
     hooksconfig={"matplotlib": {"backends": ["Agg"]}},
@@ -253,21 +273,9 @@ if sys.platform == "darwin":
     )
 else:
     if sys.platform.startswith("win"):
-        splash = Splash(
-            str(runtime_icon),
-            binaries=a.binaries,
-            datas=a.datas,
-            text_pos=(30, 485),
-            text_size=22,
-            text_color="#ffffff",
-            text_default="Loading Marlim3...",
-            max_img_size=(520, 520),
-        )
         exe = EXE(
             pyz,
             a.scripts,
-            splash,
-            splash.binaries,
             a.binaries,
             a.datas,
             [],

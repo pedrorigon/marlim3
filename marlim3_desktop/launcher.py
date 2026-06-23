@@ -87,6 +87,24 @@ def configure_linux_environment(bundle_root: Path) -> None:
     os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = " ".join(flags)
 
 
+def configure_qt_webengine() -> None:
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QApplication
+
+    if QApplication.instance() is None:
+        QApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+
+    # Qt WebEngine must be imported before QApplication is created. Importing it
+    # lazily after QApplication can abort the process on macOS.
+    import PySide6.QtWebEngineWidgets  # noqa: F401
+
+
+def configure_qt_webview() -> None:
+    from PySide6.QtWebView import QtWebView
+
+    QtWebView.initialize()
+
+
 def configure_environment(bundle_root: Path, engine_path: Path) -> None:
     os.environ["MARLIM3_EXEC"] = str(engine_path)
     os.environ["MARLIM3_SKIP_EXECUTABLE_RESOLUTION"] = "1"
@@ -185,8 +203,8 @@ def open_desktop_window(
 ) -> None:
     from PySide6.QtCore import QTimer, QUrl
     from PySide6.QtGui import QIcon
-    from PySide6.QtWebEngineWidgets import QWebEngineView
     from PySide6.QtWidgets import QMainWindow
+    from PySide6.QtWebEngineWidgets import QWebEngineView
 
     icon = QIcon(str(get_app_icon_path()))
     if icon.isNull():
@@ -201,8 +219,13 @@ def open_desktop_window(
     recorder.record("webengine_created")
 
     load_result = {"finished": False, "ok": False}
+    load_attempt = {"count": 1}
 
     def loaded(ok: bool) -> None:
+        if not ok and load_attempt["count"] < 5:
+            load_attempt["count"] += 1
+            QTimer.singleShot(350 * load_attempt["count"], lambda: browser.setUrl(QUrl(url)))
+            return
         load_result["finished"] = True
         load_result["ok"] = ok
         if not ok:
@@ -225,6 +248,71 @@ def open_desktop_window(
         raise DesktopStartupError("Qt WebEngine timed out while loading the interface")
     if not load_result["ok"]:
         raise DesktopStartupError("Qt WebEngine could not load the Streamlit interface")
+
+
+def open_macos_webview_window(
+    app,
+    splash,
+    url: str,
+    recorder: CheckpointRecorder,
+    close_after_ms: int | None = None,
+) -> None:
+    from PySide6.QtCore import QSize, QTimer, QUrl
+    from PySide6.QtGui import QIcon
+    from PySide6.QtWebView import QWebView, QWebViewLoadingInfo
+
+    icon = QIcon(str(get_app_icon_path()))
+    if icon.isNull():
+        raise DesktopStartupError(f"Invalid desktop icon: {get_app_icon_path()}")
+
+    browser = QWebView()
+    browser.setTitle(APP_NAME)
+    browser.setMinimumSize(QSize(960, 640))
+    browser.setIcon(icon)
+    recorder.record("webengine_created")
+
+    load_result = {"finished": False, "ok": False, "error": ""}
+    load_attempt = {"count": 1}
+
+    def retry_load() -> None:
+        browser.setUrl(QUrl(url))
+
+    def loading_changed(info: QWebViewLoadingInfo) -> None:
+        status = info.status()
+        if status == QWebViewLoadingInfo.LoadStatus.Failed:
+            load_result["error"] = info.errorString()
+            if load_attempt["count"] < 5:
+                load_attempt["count"] += 1
+                QTimer.singleShot(350 * load_attempt["count"], retry_load)
+                return
+            load_result["finished"] = True
+            load_result["ok"] = False
+            app.quit()
+            return
+        if status != QWebViewLoadingInfo.LoadStatus.Succeeded:
+            return
+
+        load_result["finished"] = True
+        load_result["ok"] = True
+        recorder.record("webengine_load_finished")
+        browser.showMaximized()
+        recorder.record("main_window_visible")
+        QTimer.singleShot(150, splash.close)
+        if close_after_ms is not None:
+            QTimer.singleShot(close_after_ms, browser.close)
+            QTimer.singleShot(close_after_ms + 100, app.quit)
+
+    browser.loadingChanged.connect(loading_changed)
+    browser.setUrl(QUrl(url))
+    QTimer.singleShot(45_000, lambda: app.quit() if not load_result["finished"] else None)
+    app.exec()
+    browser.close()
+    browser.deleteLater()
+    if not load_result["finished"]:
+        raise DesktopStartupError("macOS WebView timed out while loading the interface")
+    if not load_result["ok"]:
+        detail = f": {load_result['error']}" if load_result["error"] else ""
+        raise DesktopStartupError(f"macOS WebView could not load the Streamlit interface{detail}")
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -275,6 +363,10 @@ def _run(argv: list[str] | None = None) -> int:
         return 0
 
     configure_platform_app_id()
+    if sys.platform == "darwin":
+        configure_qt_webview()
+    else:
+        configure_qt_webengine()
     from PySide6.QtGui import QIcon
     from PySide6.QtWidgets import QApplication
 
@@ -318,13 +410,22 @@ def _run(argv: list[str] | None = None) -> int:
             on_started=lambda: recorder.record("server_process_started"),
         )
         recorder.record("health_endpoint_ready")
-        open_desktop_window(
-            app,
-            splash,
-            url,
-            recorder,
-            close_after_ms=2500 if args.window_smoke_test else None,
-        )
+        if sys.platform == "darwin":
+            open_macos_webview_window(
+                app,
+                splash,
+                url,
+                recorder,
+                close_after_ms=2500 if args.window_smoke_test else None,
+            )
+        else:
+            open_desktop_window(
+                app,
+                splash,
+                url,
+                recorder,
+                close_after_ms=2500 if args.window_smoke_test else None,
+            )
         recorder.record("shutdown_requested")
     finally:
         if process is not None:

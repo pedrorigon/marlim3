@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import types
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -49,6 +50,72 @@ def test_configure_environment_sets_desktop_defaults(monkeypatch, tmp_path):
         assert "--disable-gpu" in os.environ["QTWEBENGINE_CHROMIUM_FLAGS"]
 
 
+def test_qt_webengine_is_prepared_before_qapplication(monkeypatch):
+    calls = []
+
+    class FakeQApplication:
+        @staticmethod
+        def instance():
+            calls.append("instance")
+            return None
+
+        @staticmethod
+        def setAttribute(attribute):
+            calls.append(("attribute", attribute))
+
+    fake_qt = types.SimpleNamespace(AA_ShareOpenGLContexts="share-opengl")
+    monkeypatch.setitem(sys.modules, "PySide6", types.ModuleType("PySide6"))
+    monkeypatch.setitem(
+        sys.modules,
+        "PySide6.QtCore",
+        types.SimpleNamespace(Qt=fake_qt),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "PySide6.QtWidgets",
+        types.SimpleNamespace(QApplication=FakeQApplication),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "PySide6.QtWebEngineWidgets",
+        types.ModuleType("PySide6.QtWebEngineWidgets"),
+    )
+
+    launcher.configure_qt_webengine()
+
+    assert calls == ["instance", ("attribute", "share-opengl")]
+
+
+def test_qt_webview_is_initialized(monkeypatch):
+    calls = []
+
+    class FakeQtWebView:
+        @staticmethod
+        def initialize():
+            calls.append("initialize")
+
+    monkeypatch.setitem(sys.modules, "PySide6", types.ModuleType("PySide6"))
+    monkeypatch.setitem(
+        sys.modules,
+        "PySide6.QtWebView",
+        types.SimpleNamespace(QtWebView=FakeQtWebView),
+    )
+
+    launcher.configure_qt_webview()
+
+    assert calls == ["initialize"]
+
+
+def test_windows_build_does_not_use_pyinstaller_bootloader_splash():
+    spec = Path("marlim3_desktop/packaging/marlim3-desktop.spec").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Splash(" not in spec
+    assert "PySide6.QtWebView" in spec
+    assert "libqtwebview_darwin.dylib" in spec
+
+
 def test_streamlit_flags_are_headless_and_localhost():
     flags = launcher.streamlit_flag_options(8765)
 
@@ -77,6 +144,16 @@ def test_validation_environment_uses_offscreen_without_display(monkeypatch):
     env = build.validation_environment()
 
     assert env["QT_QPA_PLATFORM"] == "offscreen"
+
+
+def test_validation_environment_does_not_force_offscreen_on_macos(monkeypatch):
+    monkeypatch.setattr(build.platform, "system", lambda: "Darwin")
+    monkeypatch.delenv("DISPLAY", raising=False)
+    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
+
+    env = build.validation_environment()
+
+    assert "QT_QPA_PLATFORM" not in env
 
 
 def test_server_command_uses_desktop_module_on_posix(monkeypatch):
