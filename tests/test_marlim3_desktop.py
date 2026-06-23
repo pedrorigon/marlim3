@@ -149,7 +149,7 @@ def test_validation_environment_uses_offscreen_without_display(monkeypatch):
 def test_validation_environment_does_not_force_offscreen_on_macos(monkeypatch):
     monkeypatch.setattr(build.platform, "system", lambda: "Darwin")
     monkeypatch.delenv("DISPLAY", raising=False)
-    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
 
     env = build.validation_environment()
 

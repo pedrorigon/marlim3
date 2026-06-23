@@ -128,6 +128,8 @@ def validation_environment() -> dict[str, str]:
             env.setdefault("QT_QPA_PLATFORM", "xcb")
         else:
             env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    elif platform.system() == "Darwin":
+        env.pop("QT_QPA_PLATFORM", None)
     env.setdefault("QTWEBENGINE_DISABLE_SANDBOX", "1")
     return env
 
