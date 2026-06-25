@@ -20,6 +20,10 @@ Cel::Cel(varGlob1D *Vvg1dSP, const DadosGeo vdutoL, const DadosGeo vduto,
     // Solver de Hidratos
 
     // modeloIII
+    kH=0.57; //alteracao hidratos modelo 3
+    cpH=2080; //alteracao hidratos modelo 3
+    rhoH=920; //alteracao hidratos modelo 3
+    rugH=1e-9; //alteracao hidratos modelo 3
     V_h_total = 0.0;
     V_h_dep = 0.0;
     V_h_disp = 0.0;
@@ -409,10 +413,15 @@ Cel::Cel(const Cel &vcel) : TL(2), local(2, 6) { // construtor por copia
     gas_consumido_massa_step = vcel.gas_consumido_massa_step;
 
     // modeloIII
+	kH=vcel.kH; //alteracao hidratos modelo 3
+	cpH=vcel.cpH; //alteracao hidratos modelo 3
+	rhoH=vcel.rhoH; //alteracao hidratos modelo 3
+	rugH=vcel.rugH; //alteracao hidratos modelo 3
     V_h_total = vcel.V_h_total;
     V_h_dep = vcel.V_h_dep;
     V_h_disp = vcel.V_h_disp;
 
+	de_dep = vcel.de_dep; //alteracao hidratos modelo 3
     e_dep = vcel.e_dep;
     D_h_eff = vcel.D_h_eff;
     A_eff = vcel.A_eff;
@@ -759,10 +768,15 @@ Cel &Cel::operator=(const Cel &vcel) {
         gas_consumido_massa_step = vcel.gas_consumido_massa_step;
 
         // modeloIII
+	    kH=vcel.kH; //alteracao hidratos modelo 3
+	    cpH=vcel.cpH; //alteracao hidratos modelo 3
+	    rhoH=vcel.rhoH; //alteracao hidratos modelo 3
+	    rugH=vcel.rugH; //alteracao hidratos modelo 3
         V_h_total = vcel.V_h_total;
         V_h_dep = vcel.V_h_dep;
         V_h_disp = vcel.V_h_disp;
 
+		de_dep = vcel.de_dep; //alteracao hidratos modelo 3
         e_dep = vcel.e_dep;
         D_h_eff = vcel.D_h_eff;
         A_eff = vcel.A_eff;

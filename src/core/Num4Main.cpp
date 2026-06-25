@@ -8473,7 +8473,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
             // caso de construcao de tabela VFP:
             double BHP;
             if (indfalha[iSeq] >0)
-                BHP = sistem1.celula[0].pres;
+                BHP = dadosAP[iSeq].second.presIni;
             else
                 BHP = -1e10;
             analisePara.tabelaGenerica(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,

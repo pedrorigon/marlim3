@@ -349,6 +349,8 @@ class ProFlu {
     double coefViscWax;
     double JTLiquidoSimple;
 
+    int tipoHmodel_local; //alteracao hidrato 3
+	double phi_h_disp_local; //alteracao hidrato 3
     double FalsaCorda(double, double, double, double, double delta = 0.00001, double epsn = 0.00001, int maxit = 100) const; // Root-finding routine used exclusively by FNDran
     // The integrand has the form f(x); x contains the quadrature points and w contains their weights
     void gauleg(const double x1, const double x2, double *const x, double *const w, int size) const; // Auxiliary routine for Gaussian quadrature

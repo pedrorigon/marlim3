@@ -331,6 +331,9 @@ void Ler::iniciarVariaveis() {
 	inibidor="";
 	fracFWcarregada=1e-4;
 	estruturaHidratos="";
+	cTurneraprox=1e-10; //alteracao hidratos modelo 3
+	tlimitArea=200; //alteracao hidratos modelo 3
+	Alimit=1e3; //alteracao hidratos modelo 3
     rd=4e-5;
 	rp=4e-5;
 
@@ -567,6 +570,9 @@ void Ler::iniciarVariaveisConstrutorDefault() {
 	inibidor="";
 	fracFWcarregada=1e-4;
 	estruturaHidratos="";
+	cTurneraprox=1e-10; //alteracao hidratos modelo 3
+	tlimitArea=200; //alteracao hidratos modelo 3
+	Alimit=1e3; //alteracao hidratos modelo 3
     rd=4e-5;
 	rp=4e-5;
 
@@ -7452,6 +7458,18 @@ void Ler::parse_hidrato(JSON_entrada_hidrato& hidrato_json) {
 						hidrato_json.ModeloTurner().rd();
 				rp =
 						hidrato_json.ModeloTurner().rp();
+
+				cTurneraprox =
+
+						hidrato_json.ModeloTurner().cTurneraprox(); //alteracao hidratos modelo 3
+
+				tlimitArea =
+
+						hidrato_json.ModeloTurner().tlimitArea(); //alteracao hidratos modelo 3
+
+				Alimit =
+
+						hidrato_json.ModeloTurner().Alimit(); //alteracao hidratos modelo 3
 
 			} else {
 

@@ -2033,6 +2033,9 @@ JSON_entrada_hidrato_ModeloTurner::JSON_entrada_hidrato_ModeloTurner(){ //hydval
 	contents["estruturaHidratos"] = make_shared<JSONString>();
 	contents["rd"] = make_shared<JSON_entrada_hidrato_ModeloTurner_rd>();
 	contents["rp"] = make_shared<JSON_entrada_hidrato_ModeloTurner_rp>();
+	contents["cTurneraprox"] = make_shared<JSON_entrada_hidrato_ModeloTurner_cTurneraprox>(); //alteracao hidratos modelo 3
+	contents["tlimitArea"] = make_shared<JSON_entrada_hidrato_ModeloTurner_tlimitArea>(); //alteracao hidratos modelo 3
+	contents["Alimit"] = make_shared<JSON_entrada_hidrato_ModeloTurner_Alimit>(); //alteracao hidratos modelo 3
 }
 
 
@@ -2051,6 +2054,18 @@ JSON_entrada_hidrato_ModeloTurner_rd& JSON_entrada_hidrato_ModeloTurner::rd(){
 
 JSON_entrada_hidrato_ModeloTurner_rp& JSON_entrada_hidrato_ModeloTurner::rp(){
 	return static_cast<JSON_entrada_hidrato_ModeloTurner_rp&>(*contents["rp"].get()); //hydvaloritem
+}
+
+JSON_entrada_hidrato_ModeloTurner_cTurneraprox& JSON_entrada_hidrato_ModeloTurner::cTurneraprox(){
+	return static_cast<JSON_entrada_hidrato_ModeloTurner_cTurneraprox&>(*contents["cTurneraprox"].get()); //alteracao hidratos modelo 3
+}
+
+JSON_entrada_hidrato_ModeloTurner_tlimitArea& JSON_entrada_hidrato_ModeloTurner::tlimitArea(){
+	return static_cast<JSON_entrada_hidrato_ModeloTurner_tlimitArea&>(*contents["tlimitArea"].get()); //alteracao hidratos modelo 3
+}
+
+JSON_entrada_hidrato_ModeloTurner_Alimit& JSON_entrada_hidrato_ModeloTurner::Alimit(){
+	return static_cast<JSON_entrada_hidrato_ModeloTurner_Alimit&>(*contents["Alimit"].get()); //alteracao hidratos modelo 3
 }
 
 JSON_entrada_hidrato::JSON_entrada_hidrato(){
