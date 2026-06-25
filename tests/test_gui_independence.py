@@ -26,8 +26,8 @@ def test_relevant_simulator_launches_do_not_use_shell():
     sources = [
         ROOT / "gui" / "app.py",
         ROOT / "marlim3" / "_tramo" / "_branch.py",
-        ROOT / "marlim3" / "_tramo" / "_tramo.py",
         ROOT / "marlim3" / "_rede" / "_rede.py",
+        ROOT / "marlim3" / "_conversores" / "_conversor_mr2" / "_mr2_simulator.py",
     ]
 
     for source_path in sources:
