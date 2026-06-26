@@ -8,13 +8,13 @@ from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
 from .._plots._plots_redes import _plotar_rede
 from .._tramo._branch import Branch
+from .._process import process_group_kwargs
 import subprocess
 import time
 from threading import Thread
 import re
 import pandas as pd
 from datetime import datetime
-import platform
 
 class Network:
 
@@ -146,21 +146,19 @@ class Network:
                 
             self.to_json(label)
             
-            comando_simulacao = f'{executavel} -d {diretorio} -i {filename} -s REDE'
-
-            # Iniciar o processo de simulação
-            if platform.system() == "Windows":
-                process = subprocess.Popen(
-                    comando_simulacao,
-                    shell=True,
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-                )
-            else:
-                process = subprocess.Popen(
-                    comando_simulacao,
-                    shell=True,
-                    preexec_fn=os.setsid
-                )
+            comando_simulacao = [
+                str(executavel),
+                "-d",
+                diretorio,
+                "-i",
+                filename,
+                "-s",
+                "REDE",
+            ]
+            process = subprocess.Popen(
+                comando_simulacao,
+                **process_group_kwargs(),
+            )
             if tracker:
                 tracker.process_pid = process.pid
                 tracker.save()
