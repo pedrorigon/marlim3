@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="img/logo_marlim3.svg" alt="drawing" width="300"/>
+<img src="assets/branding/logo.svg" alt="Marlim3 logo" width="300"/>
 
 </h1><br>
 
@@ -32,11 +32,29 @@ Install `Marlim3` as a Python package:
 pip install marlim3
 ```
 
-### Option 2: Use the executable directly
+### Option 2: Download the desktop application
 
-You can download the `Marlim3` executable for Linux, Windows or Mac from the Releases section on GitHub. This standalone executable allows you to run simulations directly from the terminal, without the need to install the Python package. Detailed instructions are provided below.
+Each tagged release provides a standalone desktop application containing the
+Streamlit GUI, its Python runtime and dependencies, and the native Marlim3
+simulation engine:
 
-### Option 3: Developer setup (uv)
+| Platform | Release asset |
+|----------|---------------|
+| Linux x64 | `Marlim3-desktop-linux-x64` |
+| Windows x64 | `Marlim3-desktop-windows-x64.exe` |
+| macOS Apple Silicon | `Marlim3-desktop-macos-arm64.dmg` |
+
+Download the matching asset from the GitHub Releases page and run it. No Python
+installation or compiler is required. The Linux desktop application requires
+only glibc 2.34 or newer from the operating system.
+
+### Option 3: Use the command-line executable
+
+You can also download the native `Marlim3` executable for Linux, Windows, or
+macOS from the GitHub Releases page. This smaller standalone executable runs
+simulations directly from a terminal without installing the Python package.
+
+### Option 4: Developer setup (uv)
 
 For development, use [uv](https://docs.astral.sh/uv/) to manage the Python environment and dependencies.
 
@@ -64,7 +82,52 @@ MARLIM3_SKIP_BUILD=1 uv sync --locked
 
 ## Usage
 
-### Option 1: Python Package
+### Option 1: Desktop Application
+
+The desktop application starts the Streamlit server locally on `127.0.0.1` and
+renders it in an embedded Qt WebEngine desktop window. The packaged application
+includes Qt and its Chromium runtime, so it does not depend on an installed web
+browser or open the interface in the system browser. Simulation data remains on
+the local machine. The window opens maximized with the Marlim3 logo as its
+application icon. Closing the window with the title-bar `X` shuts down the local
+Streamlit process tree and releases its dynamically allocated port.
+
+#### Linux
+
+```bash
+chmod +x Marlim3-desktop-linux-x64
+./Marlim3-desktop-linux-x64
+```
+
+The Linux desktop executable is a self-contained ELF binary. Its only system
+runtime requirement is glibc 2.34 or newer.
+
+#### Windows
+
+Double-click `Marlim3-desktop-windows-x64.exe`.
+
+#### macOS
+
+Open `Marlim3-desktop-macos-arm64.dmg`, then drag `Marlim3.app` to the
+`Applications` folder. The current macOS release targets Apple Silicon
+(`arm64`). A signed and notarized release opens normally through Gatekeeper.
+Unsigned development or fork builds may require the user to explicitly allow
+the application: try to open it once, then go to **System Settings** →
+**Privacy & Security** → **Open Anyway**.
+
+SHA-256 checksum files are published alongside every desktop artifact.
+
+Developers can build the standalone application for the current operating
+system with:
+
+```bash
+uv run python -m marlim3_desktop.build
+```
+
+The script detects the platform, builds the native engine, installs the desktop
+dependencies, and writes one release-named artifact to `dist/`.
+
+### Option 2: Python Package
 
 Use `Marlim3` as a Python library in your scripts or notebooks.
 
@@ -184,7 +247,7 @@ tramo.to_json("modelo", language='pt')
 
 See [Bilingual Support](docs/translations.md) for details. For examples, refer to the tutorials in `docs/`.
 
-### Option 2: Command-Line Executable
+### Option 3: Command-Line Executable
 
 Run `Marlim3` directly from the terminal using the compiled executable available in the Releases section on GitHub.
 

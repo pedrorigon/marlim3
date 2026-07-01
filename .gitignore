@@ -16,6 +16,10 @@ obj/
 modules/
 target/
 
+# Desktop application artifacts
+*.dmg
+*.sha256
+
 # Executaveis/artefatos compilados
 src/Marlim3
 marlim3/Marlim3*
@@ -40,6 +44,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 *.manifest
 *.spec
+!marlim3_desktop/packaging/*.spec
 
 # Python cache, testes e tipagem
 __pycache__/

@@ -63,6 +63,10 @@ gui = [
     "streamlit>=1.35.0",
     "jsonschema>=4.0.0",
 ]
+desktop = [
+    "pyinstaller>=6.0",
+    "pyside6>=6.8",
+]
 docs = [
     "mkdocs-material>=9.5",
 ]
