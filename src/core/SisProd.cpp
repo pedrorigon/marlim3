@@ -2336,27 +2336,37 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         PrimSecIniRedeP = 0;
         PrimSecFimRedeP = 0;
 
+        if(arq.AP==0){
+        	if (arq.nperfisp > 0) {
+        		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
+        	}
+        	if (arq.nperfisg > 0 && arq.lingas > 0) {
+        		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
+        	}
+        	if (arq.nperfistransp > 0) {
+        		arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
+        	}
+        	if (arq.nperfistransg > 0 && arq.lingas > 0) {
+        		arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
+        	}
+        }
         kontaTempoProf = 0;
         kontaTempoProfG = 0;
         if (arq.nperfisp > 0) {
-            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
             if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoProf++;
         }
         if (arq.nperfisg > 0 && arq.lingas > 0) {
-            arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
             if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoProfG++;
         }
         kontaTempoTransProf = 0;
         kontaTempoTransProfG = 0;
         if (arq.nperfistransp > 0) {
-            arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
             if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoTransProf++;
         }
         if (arq.nperfistransg > 0 && arq.lingas > 0) {
-            arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
             if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoTransProfG++;
         }
@@ -20853,6 +20863,11 @@ void SProd::RenovaMassPerm(int i) {
                                    celula[i - 1].correlacaoMR2,
                                    holdup, frictionGrad, gravityGrad, totalGrad,
                                    reynolds, flowType);
+                if(flowType==1 || flowType==2)celula[i].arranjo=0;
+                if(flowType==3)celula[i].arranjo=1;
+                if(flowType==4)celula[i].arranjo=2;
+                if(flowType==6)celula[i].arranjo=-1;
+                if(flowType==5)celula[i].arranjo=-2;
                 celula[i].alf = 1. - holdup;
             }
         } else {
@@ -21974,6 +21989,11 @@ void SProd::RenovaMassPermComp(int i) {
                                celula[i - 1].correlacaoMR2,
                                holdup, frictionGrad, gravityGrad, totalGrad,
                                reynolds, flowType);
+            if(flowType==1 || flowType==2)celula[i].arranjo=0;
+            if(flowType==3)celula[i].arranjo=1;
+            if(flowType==4)celula[i].arranjo=2;
+            if(flowType==6)celula[i].arranjo=-1;
+            if(flowType==5)celula[i].arranjo=-2;
             celula[i].alf = 1. - holdup;
         }
         if (celula[i].alf < 0.)

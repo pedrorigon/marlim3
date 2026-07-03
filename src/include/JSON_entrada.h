@@ -405,6 +405,7 @@ class JSON_entrada_tabela : public JSONObject {
 #define JSON_entrada_parafina_DmultipWax JSONNumber
 #define JSON_entrada_parafina_EmultipWax JSONNumber
 #define JSON_entrada_parafina_FmultipWax JSONNumber
+#define JSON_entrada_parafina_ponderaCond JSONInteger
 
 /*!
  * Store wax-deposition and wax-transport model parameters.
@@ -429,6 +430,7 @@ class JSON_entrada_parafina : public JSONObject {
     JSON_entrada_parafina_DmultipWax &DmultipWax();
     JSON_entrada_parafina_EmultipWax &EmultipWax();
     JSON_entrada_parafina_FmultipWax &FmultipWax();
+    JSON_entrada_parafina_ponderaCond &ponderaCond();
 };
 
 // ==============================================================================
@@ -1322,6 +1324,9 @@ class JSON_entrada_hidrato_modeloHidrato : public JSONObject { // Hydrate-config
 JSONString estruturaHidratos();
 #define JSON_entrada_hidrato_ModeloTurner_rd JSONNumber
 #define JSON_entrada_hidrato_ModeloTurner_rp JSONNumber
+#define JSON_entrada_hidrato_ModeloTurner_cTurneraprox JSONNumber //alteracao hidratos modelo 3
+#define JSON_entrada_hidrato_ModeloTurner_tlimitArea JSONNumber //alteracao hidratos modelo 3
+#define JSON_entrada_hidrato_ModeloTurner_Alimit JSONNumber //alteracao hidratos modelo 3
 
 /*!
  * Store Turner hydrate-kinetic parameters and crystal structure.
@@ -1336,6 +1341,9 @@ class JSON_entrada_hidrato_ModeloTurner : public JSONObject { // Hydrate-configu
     JSONString &estruturaHidratos();
     JSON_entrada_hidrato_ModeloTurner_rd &rd();
     JSON_entrada_hidrato_ModeloTurner_rp &rp();
+	JSON_entrada_hidrato_ModeloTurner_cTurneraprox& cTurneraprox(); //alteracao hidratos modelo 3
+	JSON_entrada_hidrato_ModeloTurner_tlimitArea& tlimitArea(); //alteracao hidratos modelo 3
+	JSON_entrada_hidrato_ModeloTurner_Alimit& Alimit(); //alteracao hidratos modelo 3
 };
 
 #define JSON_entrada_hidrato_calculoInterno JSONBoolean

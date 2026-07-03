@@ -1,3 +1,6 @@
+
+//---
+
 #include "FA_Hidratos.h"
 #include <fstream>
 #include <stdexcept>
@@ -7,13 +10,6 @@
 #include <iostream>
 #include <ctime>
 #include <iomanip>
-#include <vector>
-#include <algorithm>
-
-//CHECK DE HIDRATO: pensar na questão de unidades:
-//-- geralmente as tabelas vem em [bar] e o Marlim 3 é em [kgf/cm2].
-//Conversão: 1bar --> 1.01972 kgf/cm2
-//1kgf/cm2 --> 0.98066864218981 bar
 
             std::string datahora_atual() {
                 std::time_t t = std::time(nullptr);
@@ -38,6 +34,79 @@ constexpr double G_MOL_TO_KG_MOL = 1.0 / 1000.0; //não precisa mais --> Chris: 
 FA_Hidrato::FA_Hidrato(const SProd& sistemaRef) : sistema(sistemaRef) {
 
 
+   // std::cout << "Inicializando FA_Hidrato com os dados do sistema de producao." << std::endl;
+    carregarCurvaHidrato("curva_base_hidrato.txt");
+
+    //std::cout << "\n--- Curva Base de Hidrato (Tbase [°C] vs Pbase [kgf/cm²]) ---\n";
+    for (size_t i = 0; i < temperaturaCurva.size(); ++i) {
+        //std::cout << temperaturaCurva[i] - 273.15 << "\t" << pressaoCurva[i] << "\n";
+      //  std::cout << temperaturaCurva[i] << "\t" << pressaoCurva[i] << "\n";
+    }
+
+   // V_w.assign(sistema.ncel, 0.0);   // cria vetor com um Vw por célula
+    K_Hamm_Etanol = 1297; //sistema.arq.Khamm_Etanol;  //K_Etanol=1297;
+    K_Hamm_MEG = 1500; //sistema.arq.Khamm_MEG; //K_MEG=1500;
+    //MM_H = sistema.arq.MMH * G_MOL_TO_KG_MOL;
+    //MM_G = sistema.arq.MMG * G_MOL_TO_KG_MOL;
+    //MM_W = sistema.arq.MMW * G_MOL_TO_KG_MOL;
+    MM_H = sistema.arq.MMH;  //* G_MOL_TO_KG_MOL; tem de ficar em g/mol mesmo
+    MM_G = sistema.arq.MMG;  //* G_MOL_TO_KG_MOL; tem de ficar em g/mol mesmo
+    MM_W = sistema.arq.MMW;  //* G_MOL_TO_KG_MOL; tem de ficar em g/mol mesmo
+    W_Hamm = sistema.arq.Whamm;
+    M_Etanol = 46.07;    //sistema.arq.Methanol; //chris - Hidratos - não é mais usado, nem como entrada
+    M_MEG = 62.1;     //sistema.arq.MMEG; //chris - Hidratos - não é mais usado, nem como entrada
+
+    //rhoH = sistema.arq.rhoH; //agora é definido pelas estruturas sI ou sII
+    // double rhoH_sI  = 930.0;   // kg/m³
+    // double rhoH_sII = 910.0;   // kg/m³
+    // double rhoW     = 1000.0;  // kg/m³
+
+    coefEsteq = sistema.arq.coefEsteq;
+
+    /*k1_sI = sistema.arq.estruturaHidratosIk1;
+    k2_sI = sistema.arq.estruturaHidratosIk2;
+    k1_sII = sistema.arq.estruturaHidratosIIk1;
+    k2_sII = sistema.arq.estruturaHidratosIIk2;*/
+    inibidor=sistema.arq.inibidor;
+    estruturaHidratos = sistema.arq.estruturaHidratos;
+    r_d = sistema.arq.rd;
+    r_p = sistema.arq.rp;
+
+   /* std::cout << "[INFO] Aplicando a equacao de Hammerschmidt:\n";
+    std::cout << "       T [oC] = (K * w) / (M * (1 - w))\n";
+    std::cout << "       Onde:\n";
+    std::cout << "            K = " << K_Hamm << "\n";
+    std::cout << "            M = " << MM_W << " g/mol\n";   //" kg/mol\n";
+    std::cout << "            w = " << W_Hamm << "\n"; */
+
+    double delta_T = 0.0;
+    if (inibidor=="Etanol") {
+    delta_T = (K_Hamm_Etanol * W_Hamm) / (MM_W * (1.0 - W_Hamm));
+    std::cout << "[HAMMERSCHMIDT] delta_T [oC] = " << delta_T << "\n";
+    } else if (inibidor=="MEG") {
+       delta_T = (K_Hamm_MEG * W_Hamm) / (MM_W * (1.0 - W_Hamm));
+        std::cout << "[HAMMERSCHMIDT] delta_T [oC] = " << delta_T << "\n";
+    } else {
+    	cout << "O inibidor a ser aplicado é Etanol ou MEG" << endl;
+    	system("exit");
+    }
+
+    temperaturaCurvaDeslocada.clear();
+    pressaoCurvaDeslocada.clear();
+    for (size_t i = 0; i < temperaturaCurva.size(); ++i) {
+        temperaturaCurvaDeslocada.push_back(temperaturaCurva[i] - delta_T);
+        //temperaturaCurvaDeslocada.push_back(temperaturaCurva[i] +10); //teste para forçar formação de hidrato
+        //pressaoCurvaDeslocada.push_back(pressaoCurva[i]);
+        pressaoCurvaDeslocada.push_back(pressaoCurva[i]); //teste para forçar formação de hidrato
+    }
+
+    salvarCurvaDeslocada("curva_hidrato_deslocada.txt");
+
+   // std::cout << "\n--- Curva Deslocada com Inibidor (T [°C] vs P [kgf/cm²]) ---\n";
+    for (size_t i = 0; i < temperaturaCurvaDeslocada.size(); ++i) {
+        //std::cout << temperaturaCurvaDeslocada[i] - 273.15 << "\t" << pressaoCurvaDeslocada[i] << "\n";
+      //  std::cout << temperaturaCurvaDeslocada[i] << "\t" << pressaoCurvaDeslocada[i] << "\n";
+    }
 }
 
 FA_Hidrato::~FA_Hidrato() {
@@ -45,6 +114,7 @@ FA_Hidrato::~FA_Hidrato() {
 }
 
 void FA_Hidrato::carregarCurvaHidrato(const std::string& nomeArquivo) {
+
 }
 
 
@@ -54,63 +124,53 @@ void FA_Hidrato::salvarCurvaDeslocada(const std::string& nomeArquivo) {
 }
 
 
+
 std::tuple<std::vector<double>, std::vector<double>> FA_Hidrato::gerarCurvaComInibidor(const std::vector<double>& tempBase,
 	    const std::vector<double>& pressBase,
 	    double K, double M, double w) {
-
+    return {};
 }
 
 
 bool FA_Hidrato::checkHidrato(double P_atual, double T_atual) {
-    double P_eq = interpolar(T_atual, temperaturaCurvaDeslocada, pressaoCurvaDeslocada);
-    return -1e15;
-}
-
-void FA_Hidrato::logModeloHidratoTxt()
-{
+    return false;
 }
 
 
 double FA_Hidrato::interpolar(double x,
                                    const std::vector<double>& xData,
-                                   const std::vector<double>& yData) {return -1e15;
+                                   const std::vector<double>& yData) {
+	return -100000000.;
 }
 
 double FA_Hidrato::TurnerHidrato(double P, double T, double P_eq, double T_eq,
         double A_s, double V_h, double V_w,
-        double r_d, double r_p, const std::string& estruturaHidratos,   double A_s_input, double &A_s_eff_out) {return -1e15;
-}
+        double r_d, double r_p, const std::string& estruturaHidratos,   double A_s_input, double &A_s_eff_out) {
 
-void FA_Hidrato::salvarMassaHidratoTotal(const std::string& nomeArquivo)
-{
+    return -100000000.; // kg/s
 }
 
 //*** Euler assume a mesma Massa Molar de Hidrato, pois está é praticamente igual entre as estruturas sI (119.5g/mol)
-// e sII (117.9g/mol)
+//e sII (117.9g/mol)
 double FA_Hidrato::Euler1ordemHidrato(double j_H, double taxaCinetica,
-                                           double A, double eta, double MM_h, double rho_h) {return -1e15;
+                                           double A, double eta, double MM_h, double rho_h) {
+	 return -100000000.;
 }
 
 double FA_Hidrato::Euler1ordemGas(int i, double j_G, double taxaCinetica,
-                                       double A, double MM_g) {return -1e15;
+                                       double A, double MM_g) {
+
+    return -100000000.;
 }
 
 double FA_Hidrato::Euler1ordemAgua(int i, double j_W, double taxaCinetica,
-                                        double A, double eta, double MM_w) {return -1e15;
+                                        double A, double eta, double MM_w) {
+    return -100000000.;
 }
 
-void FA_Hidrato::solverHidrato1() {
-
-}
-
-void FA_Hidrato::solverHidrato2() {
-
-}
-
-void FA_Hidrato::solverHidrato3() {
-
-
-}
 
 void FA_Hidrato::solverHidrato() {
+
 }
+
+

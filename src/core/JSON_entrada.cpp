@@ -677,6 +677,7 @@ JSON_entrada_parafina::JSON_entrada_parafina(){
 	contents["DmultipWax"] = make_shared<JSON_entrada_parafina_DmultipWax>();
 	contents["EmultipWax"] = make_shared<JSON_entrada_parafina_EmultipWax>();
 	contents["FmultipWax"] = make_shared<JSON_entrada_parafina_FmultipWax>();
+	contents["ponderaCond"] = make_shared<JSON_entrada_parafina_ponderaCond>();
 }
 
 JSON_entrada_parafina_arquivoWax& JSON_entrada_parafina::arquivoWax(){
@@ -733,6 +734,10 @@ JSON_entrada_parafina_EmultipWax& JSON_entrada_parafina::EmultipWax(){
 
 JSON_entrada_parafina_FmultipWax& JSON_entrada_parafina::FmultipWax(){
 	return static_cast<JSON_entrada_parafina_FmultipWax&>(*contents["FmultipWax"].get());
+}
+
+JSON_entrada_parafina_ponderaCond& JSON_entrada_parafina::ponderaCond(){
+	return static_cast<JSON_entrada_parafina_ponderaCond&>(*contents["ponderaCond"].get());
 }
 
 

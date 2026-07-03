@@ -28,6 +28,7 @@ Cel::Cel(varGlob1D *Vvg1dSP, const DadosGeo vdutoL, const DadosGeo vduto,
     V_h_dep = 0.0;
     V_h_disp = 0.0;
 
+    de_dep = 0.0;
     e_dep = 0.0;
     D_h_eff = 0.0;
     A_eff = 0.0;
@@ -37,6 +38,8 @@ Cel::Cel(varGlob1D *Vvg1dSP, const DadosGeo vdutoL, const DadosGeo vduto,
     mu_rel_slurry = 0.0;
     mu_base_liq = 0.0;
     mu_slurry = 0.0; // modeloIII
+
+    hidratado=0;
 
     // fluxos em massa (por área) – começam em zero
     j_H = 0.0; // não são usados no modelo I de Hidratos
@@ -427,6 +430,8 @@ Cel::Cel(const Cel &vcel) : TL(2), local(2, 6) { // construtor por copia
     A_eff = vcel.A_eff;
     phi_h_disp = vcel.phi_h_disp;
 
+    hidratado=vcel.hidratado;
+
     phi_h_disp = 0.0;
     phi_h_eff = vcel.phi_h_eff;
     mu_rel_slurry = vcel.mu_rel_slurry;
@@ -787,6 +792,7 @@ Cel &Cel::operator=(const Cel &vcel) {
         mu_rel_slurry = vcel.mu_rel_slurry;
         mu_base_liq = vcel.mu_base_liq;
         mu_slurry = vcel.mu_slurry;
+        hidratado=vcel.hidratado;
 
         vg1dSP = vcel.vg1dSP;
         dutoL = vcel.dutoL;
@@ -2741,8 +2747,12 @@ void Cel::WaxDeposition(dadosParafina &detalParafina, int ncel) {
         double rhoDep = Fi * rhoOil + (1.0 - Fi) * rhoWaxSolid;
         double cpDep = flui.dInterpolatedCPWaxOutput;
 
-        detParCel.kDep = ((2 * flui.dInterpolatedThermCondOutput + kOil + (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi)) /
-                          (2 * flui.dInterpolatedThermCondOutput + kOil - 2 * (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi))) * kOil;
+        if(detalParafina.ponderaCond==1)
+        	detParCel.kDep = ((2 * flui.dInterpolatedThermCondOutput + kOil + (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi)) /
+                          (2 * flui.dInterpolatedThermCondOutput + kOil - 2 * (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi))) * kOil; // Comentado; Samuel - 29/06/2026
+        else if(detalParafina.ponderaCond==0)
+        	detParCel.kDep = ((2.0 * kOil + flui.dInterpolatedThermCondOutput - 2.0 * (kOil - flui.dInterpolatedThermCondOutput) * (1.0 - Fi)) /
+                          (2.0 * kOil + flui.dInterpolatedThermCondOutput + (kOil - flui.dInterpolatedThermCondOutput) * (1.0 - Fi))) * kOil; // Samuel - 29/06/2026
 
         if (parafinado == 0 && delta > 0.) {
             duto.atualizaCamada(delta, rug, cpDep, detParCel.kDep, rhoDep);
