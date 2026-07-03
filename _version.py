@@ -1,3 +1,3 @@
 """Version information for Marlim3 package."""
 
-__version__ = '3.7.7'
+__version__ = '3.8.0'
