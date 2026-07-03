@@ -36,6 +36,9 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
 //vtemph -> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, temperatura C de um dos pontos do ASTM
 //vlvish -> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, viscosidade cP de um dos pontos do ASTM, (vtemph,vlvish)
 
+  tipoHmodel_local=-1; //alteracao hidratos 3
+  phi_h_disp_local=0; //alteracao hidratos 3
+  
   mascor=1.;
   vg1dSP=Vvg1dSP;
   API=vapi;
@@ -415,6 +418,9 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
 //         ndice 7-> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, temperatura C de um dos pontos do ASTM
 //         ndice 8-> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, viscosidade cP de um dos pontos do ASTM, (vtemph,vlvish)
 
+	  tipoHmodel_local=-1; //alteracao hidratos 3
+	  phi_h_disp_local=0; //alteracao hidratos 3
+	  
   mascor=1;
   vg1dSP=Vvg1dSP;
   API=fluido[0];
@@ -797,6 +803,10 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
 //astm          ndice 1-> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, viscosidade cP de um dos pontos do ASTM, (vtempl,vlvisl)
 //astm          ndice 2-> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, temperatura C de um dos pontos do ASTM
 //astm          ndice 3-> para o caso de c         lculo de viscosidade do l         quido com o aux         lio do ASTM, viscosidade cP de um dos pontos do ASTM, (vtemph,vlvish)
+
+	  tipoHmodel_local=-1; //alteracao hidratos 3
+	  phi_h_disp_local=0; //alteracao hidratos 3
+	  
   mascor=1.;
   vg1dSP=Vvg1dSP;
   API=fluido[0];
@@ -1161,6 +1171,10 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
 ProFlu::ProFlu(const ProFlu& fluido):
                         BPPF(17), GMF(17), APIEMW(10),EMW(10){
 //construtor por c         pia
+
+	  tipoHmodel_local=fluido.tipoHmodel_local; //alteracao hidratos 3
+	  phi_h_disp_local=fluido.phi_h_disp_local; //alteracao hidratos 3
+
   mascor=fluido.mascor;
   vg1dSP=fluido.vg1dSP;
   API=fluido.API;
@@ -3044,6 +3058,21 @@ double ProFlu::emul(double pres,double temp) const{
   else if(tipoemul==7){
 	  multplic=1.;
   }
+  
+  
+  if (tipoHmodel_local == 3) { //alteracao hidrato 3
+      double phi_max = 4.0 / 7.0;
+      double phi = phi_h_disp_local;
+
+      if (phi < 0.0) phi = 0.0;
+      if (phi > 0.99 * phi_max) phi = 0.99 * phi_max;
+
+      double mu_rel_slurry =
+          (1.0 - phi) / pow(1.0 - phi / phi_max, 2.0);
+
+      multplic *= mu_rel_slurry;
+  }
+
   return multplic;
 }
 

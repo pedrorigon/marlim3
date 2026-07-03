@@ -5299,6 +5299,71 @@ void validadorTipo::valida_intermitencia(Value &intermitenciaSevera_json, std::v
                 erros.push_back(indiceIntermi + "/criterio: deve ser do tipo inteiro");
             }
         }
+
+    }
+}
+
+void validadorTipo::valida_celUnit(Value &celUnit_json, std::vector<std::string> &erros, bool &sucesso) {
+    // Criar variável para o nome da propriedade json em processo de validação
+    string chaveJson("#/detalheCelulaUnitaria");
+
+    // Validar se detalheCelulaUnitaria é um array
+    if (!celUnit_json.IsArray()) {
+        sucesso = false;
+        erros.push_back("detalheCelulaUnitaria: deve ser do tipo array");
+        return;
+    }
+
+    // Percorrer cada item do array detalheCelulaUnitaria
+    for (SizeType i = 0; i < celUnit_json.Size(); i++) {
+        string indiceCelUnit = chaveJson + "[" + std::to_string(i) + "]";
+
+        // Validar se o item é um objeto
+        if (!celUnit_json[i].IsObject()) {
+            sucesso = false;
+            erros.push_back(indiceCelUnit + ": deve ser do tipo objeto");
+            continue;
+        }
+
+        // Validar campo ativo (opcional)
+        if (celUnit_json[i].HasMember("ativo")) {
+            if (!celUnit_json[i]["ativo"].IsBool()) {
+                sucesso = false;
+                erros.push_back(indiceCelUnit + "/ativo: deve ser do tipo booleano");
+            }
+        }
+
+        // Validar campo id (opcional)
+        if (celUnit_json[i].HasMember("id")) {
+            if (!celUnit_json[i]["id"].IsInt()) {
+                sucesso = false;
+                erros.push_back(indiceCelUnit + "/id: deve ser do tipo inteiro");
+            }
+        }
+
+        // Validar campo comprimentoMedido (opcional)
+        if (celUnit_json[i].HasMember("comprimentoMedido")) {
+            if (!celUnit_json[i]["comprimentoMedido"].IsNumber()) {
+                sucesso = false;
+                erros.push_back(indiceCelUnit + "/comprimentoMedido: deve ser do tipo number");
+            }
+        }
+
+        // Validar array tempo de impressao (opcional)
+        if (celUnit_json[i].HasMember("tempoImpres")) {
+            if (!celUnit_json[i]["tempoImpres"].IsArray()) {
+                sucesso = false;
+                erros.push_back(indiceCelUnit + "/tempoImpres: deve ser do tipo array");
+            } else {
+                for (SizeType j = 0; j < celUnit_json[i]["tempoImpres"].Size(); j++) {
+                    if (!celUnit_json[i]["tempoImpres"][j].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back(indiceCelUnit + "/tempoImpres[" + std::to_string(j) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
     }
 }
 
@@ -5856,6 +5921,11 @@ void validadorTipo::validaGeral(Document &jsonDoc) {
     // Valida intermitenciaSevera
     if (jsonDoc.HasMember("intermitenciaSevera")) {
         valida_intermitencia(jsonDoc["intermitenciaSevera"], erros, sucesso);
+    }
+
+    // Valida celulaUnitaria
+    if (jsonDoc.HasMember("detalheCelulaUnitaria")) {
+        valida_intermitencia(jsonDoc["detalheCelulaUnitaria"], erros, sucesso);
     }
 
     // Valida fontePoroRadial

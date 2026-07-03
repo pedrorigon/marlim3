@@ -483,6 +483,34 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
                          holdup, frictionGrad, gravityGrad, accelGrad, totalGrad,
                          reynolds, flowPattern, correlationFlag, transitionFlag, criticalFlag);
     }
+    else if (correlacao == 16) {
+    	GomezInput entrada;
+    	entrada.angle=angle;
+    	entrada.diameter=diameter*(2.54*12)/100.;
+    	entrada.gravity=9.81;
+    	entrada.muG=gasViscosity/1000.;
+    	entrada.muL=liquidViscosity/1000.;
+    	entrada.pressure=pmed*98066.5/((0.9678411)*14.69595);
+    	entrada.rhoG=gasDensity/0.06243;
+    	entrada.rhoL=liquidDensity/0.06243;
+    	entrada.roughness=roughness*entrada.diameter;
+    	entrada.sigma=surfaceTension/1000.;
+    	entrada.vSG=ugsmed;
+    	entrada.vSL=ulsmed;
+    	GomezResult saida;
+    	saida=calculateGomez(entrada);
+    	holdup=saida.HL;
+    	totalGrad=(saida.dpdL_grav+saida.dpdL_fric)/22620.6;
+    	gravityGrad=saida.dpdL_grav/22620.6;
+    	frictionGrad=saida.dpdL_fric/22620.6;
+    	accelGrad=0.;
+        if(holdup>1-1e-5)flowPattern=1;
+        if(holdup<1e-5)flowPattern=2;
+        if((int)saida.pattern==2)flowPattern=4;
+        if((int)saida.pattern==4 || (int)saida.pattern==5)flowPattern=3;
+        if((int)saida.pattern==0 || (int)saida.pattern==1)flowPattern=6;
+        if((int)saida.pattern==3)flowPattern=5;
+    }
 }
 
 

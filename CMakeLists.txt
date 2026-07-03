@@ -78,10 +78,12 @@ configure_file(
 file(GLOB CXX_SOURCES ${SRCDIR}/*.cpp)
 set(F90_SOURCES
     ${FSRCDIR}/Constants.f90
+    ${FSRCDIR}/DebugFacilities.f90
     ${FSRCDIR}/Newton.f90
     ${FSRCDIR}/PvtSimWAXFileImport.f90
     ${FSRCDIR}/PvtSimCTMFileImport.f90
     ${FSRCDIR}/VLECalculations.f90
+    ${FSRCDIR}/BlackOilModels.f90
     ${FSRCDIR}/PhaseProperties.f90
     ${FSRCDIR}/Obsoletes.f90
     ${FSRCDIR}/FlashExtras.f90
@@ -234,8 +236,15 @@ if(MARLIM_FORTRAN_LIBS)
 endif()
 
 set_source_files_properties(${FSRCDIR}/Newton.f90            PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
+set_source_files_properties(${FSRCDIR}/PvtSimCTMFileImport.f90 PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
+set_source_files_properties(${FSRCDIR}/PvtSimWAXFileImport.f90 PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
 set_source_files_properties(${FSRCDIR}/VLECalculations.f90   PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
+set_source_files_properties(${FSRCDIR}/BlackOilModels.f90    PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
+set_source_files_properties(${FSRCDIR}/ViscosityCalculationModule.f90 PROPERTIES OBJECT_DEPENDS ${FSRCDIR}/Constants.f90)
 set_source_files_properties(${FSRCDIR}/PhaseProperties.f90   PROPERTIES OBJECT_DEPENDS "${FSRCDIR}/VLECalculations.f90;${FSRCDIR}/Constants.f90")
+set_source_files_properties(${FSRCDIR}/FlashExtras.f90       PROPERTIES OBJECT_DEPENDS "${FSRCDIR}/VLECalculations.f90;${FSRCDIR}/Newton.f90;${FSRCDIR}/DebugFacilities.f90")
+set_source_files_properties(${FSRCDIR}/BlackOilFromCompositional.f90 PROPERTIES OBJECT_DEPENDS "${FSRCDIR}/VLECalculations.f90;${FSRCDIR}/PhaseProperties.f90;${FSRCDIR}/FlashExtras.f90")
+set_source_files_properties(${FSRCDIR}/MarlimComposicional.f90 PROPERTIES OBJECT_DEPENDS "${FSRCDIR}/VLECalculations.f90;${FSRCDIR}/PvtSimCTMFileImport.f90;${FSRCDIR}/PhaseProperties.f90;${FSRCDIR}/BlackOilFromCompositional.f90;${FSRCDIR}/FlashExtras.f90;${FSRCDIR}/PvtSimWAXFileImport.f90")
 
 set_target_properties(Marlim3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 if(APPLE)

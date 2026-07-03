@@ -20,10 +20,15 @@ Cel::Cel(varGlob1D *Vvg1dSP, const DadosGeo vdutoL, const DadosGeo vduto,
     // Solver de Hidratos
 
     // modeloIII
+    kH=0.57; //alteracao hidratos modelo 3
+    cpH=2080; //alteracao hidratos modelo 3
+    rhoH=920; //alteracao hidratos modelo 3
+    rugH=1e-9; //alteracao hidratos modelo 3
     V_h_total = 0.0;
     V_h_dep = 0.0;
     V_h_disp = 0.0;
 
+    de_dep = 0.0;
     e_dep = 0.0;
     D_h_eff = 0.0;
     A_eff = 0.0;
@@ -33,6 +38,8 @@ Cel::Cel(varGlob1D *Vvg1dSP, const DadosGeo vdutoL, const DadosGeo vduto,
     mu_rel_slurry = 0.0;
     mu_base_liq = 0.0;
     mu_slurry = 0.0; // modeloIII
+
+    hidratado=0;
 
     // fluxos em massa (por área) – começam em zero
     j_H = 0.0; // não são usados no modelo I de Hidratos
@@ -409,14 +416,21 @@ Cel::Cel(const Cel &vcel) : TL(2), local(2, 6) { // construtor por copia
     gas_consumido_massa_step = vcel.gas_consumido_massa_step;
 
     // modeloIII
+	kH=vcel.kH; //alteracao hidratos modelo 3
+	cpH=vcel.cpH; //alteracao hidratos modelo 3
+	rhoH=vcel.rhoH; //alteracao hidratos modelo 3
+	rugH=vcel.rugH; //alteracao hidratos modelo 3
     V_h_total = vcel.V_h_total;
     V_h_dep = vcel.V_h_dep;
     V_h_disp = vcel.V_h_disp;
 
+	de_dep = vcel.de_dep; //alteracao hidratos modelo 3
     e_dep = vcel.e_dep;
     D_h_eff = vcel.D_h_eff;
     A_eff = vcel.A_eff;
     phi_h_disp = vcel.phi_h_disp;
+
+    hidratado=vcel.hidratado;
 
     phi_h_disp = 0.0;
     phi_h_eff = vcel.phi_h_eff;
@@ -759,10 +773,15 @@ Cel &Cel::operator=(const Cel &vcel) {
         gas_consumido_massa_step = vcel.gas_consumido_massa_step;
 
         // modeloIII
+	    kH=vcel.kH; //alteracao hidratos modelo 3
+	    cpH=vcel.cpH; //alteracao hidratos modelo 3
+	    rhoH=vcel.rhoH; //alteracao hidratos modelo 3
+	    rugH=vcel.rugH; //alteracao hidratos modelo 3
         V_h_total = vcel.V_h_total;
         V_h_dep = vcel.V_h_dep;
         V_h_disp = vcel.V_h_disp;
 
+		de_dep = vcel.de_dep; //alteracao hidratos modelo 3
         e_dep = vcel.e_dep;
         D_h_eff = vcel.D_h_eff;
         A_eff = vcel.A_eff;
@@ -773,6 +792,7 @@ Cel &Cel::operator=(const Cel &vcel) {
         mu_rel_slurry = vcel.mu_rel_slurry;
         mu_base_liq = vcel.mu_base_liq;
         mu_slurry = vcel.mu_slurry;
+        hidratado=vcel.hidratado;
 
         vg1dSP = vcel.vg1dSP;
         dutoL = vcel.dutoL;
@@ -2727,8 +2747,12 @@ void Cel::WaxDeposition(dadosParafina &detalParafina, int ncel) {
         double rhoDep = Fi * rhoOil + (1.0 - Fi) * rhoWaxSolid;
         double cpDep = flui.dInterpolatedCPWaxOutput;
 
-        detParCel.kDep = ((2 * flui.dInterpolatedThermCondOutput + kOil + (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi)) /
-                          (2 * flui.dInterpolatedThermCondOutput + kOil - 2 * (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi))) * kOil;
+        if(detalParafina.ponderaCond==1)
+        	detParCel.kDep = ((2 * flui.dInterpolatedThermCondOutput + kOil + (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi)) /
+                          (2 * flui.dInterpolatedThermCondOutput + kOil - 2 * (flui.dInterpolatedThermCondOutput - kOil) * (1.0 - Fi))) * kOil; // Comentado; Samuel - 29/06/2026
+        else if(detalParafina.ponderaCond==0)
+        	detParCel.kDep = ((2.0 * kOil + flui.dInterpolatedThermCondOutput - 2.0 * (kOil - flui.dInterpolatedThermCondOutput) * (1.0 - Fi)) /
+                          (2.0 * kOil + flui.dInterpolatedThermCondOutput + (kOil - flui.dInterpolatedThermCondOutput) * (1.0 - Fi))) * kOil; // Samuel - 29/06/2026
 
         if (parafinado == 0 && delta > 0.) {
             duto.atualizaCamada(delta, rug, cpDep, detParCel.kDep, rhoDep);

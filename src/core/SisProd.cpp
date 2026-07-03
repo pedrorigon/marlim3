@@ -2336,27 +2336,37 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         PrimSecIniRedeP = 0;
         PrimSecFimRedeP = 0;
 
+        if(arq.AP==0){
+        	if (arq.nperfisp > 0) {
+        		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
+        	}
+        	if (arq.nperfisg > 0 && arq.lingas > 0) {
+        		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
+        	}
+        	if (arq.nperfistransp > 0) {
+        		arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
+        	}
+        	if (arq.nperfistransg > 0 && arq.lingas > 0) {
+        		arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
+        	}
+        }
         kontaTempoProf = 0;
         kontaTempoProfG = 0;
         if (arq.nperfisp > 0) {
-            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
             if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoProf++;
         }
         if (arq.nperfisg > 0 && arq.lingas > 0) {
-            arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
             if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoProfG++;
         }
         kontaTempoTransProf = 0;
         kontaTempoTransProfG = 0;
         if (arq.nperfistransp > 0) {
-            arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
             if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoTransProf++;
         }
         if (arq.nperfistransg > 0 && arq.lingas > 0) {
-            arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
             if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
                 kontaTempoTransProfG++;
         }
@@ -4443,20 +4453,66 @@ void SProd::renovaFonte(int ind) {
 
         gas_consumido_Mg = celula[ind].gas_consumido_massa_step;
 
-        // Atualizar BSW
-        double A_cross = celula[ind].duto.area;
-        double Lcel = celula[ind].dx;
-        double Vcel = A_cross * Lcel;
-        double frac_agua = (1 - celula[ind].alfR) * (1 - celula[ind].betR) * celula[ind].FW;
-        double frac_oleo = (1 - celula[ind].alfR) * (1 - celula[ind].betR) * (1 - celula[ind].FW);
-        double Vagua = frac_agua * Vcel;
-        double Vagua_new = Vagua - (agua_consumida_Mw / celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp));
-        double Voil = frac_oleo * Vcel;
+	  //Atualizar BSW
+	    double A_cross = celula[ind].duto.area;
+	    double Lcel    = celula[ind].dx;
+	    double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h, 1e-12);
 
-        double BSW = celula[ind].flui.BSW;
-        celula[ind].flui.BSW = Vagua_new / (Voil + Vagua_new);
-    }
+	    double frac_agua = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*celula[ind].FW, 1e-12);
+	    double frac_oleo = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*(1-celula[ind].FW), 1e-12);
 
+	    double Vagua = frac_agua * Vlivre;
+	    double Voil  = frac_oleo * Vlivre;
+
+	    double rho_w = std::max(celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp), 1e-12);
+	    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
+	    if (Vagua_new < 0.0) Vagua_new = 0.0;
+
+	    double BSW_old = celula[ind].flui.BSW;
+	    double den = Voil + Vagua_new;
+	    if (den > 1e-12) {
+	        celula[ind].flui.BSW = Vagua_new / den;
+	    } else {
+	        celula[ind].flui.BSW = BSW_old;
+	    }
+	  //celula[ind].FW=celula[ind].flui.BSW;
+	  if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
+	  //if (ind==3) system("pause");
+
+  } //Alteracao Hidratos
+  
+  if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+
+	    agua_consumida_Mw  = celula[ind].agua_consumida_massa_step;
+
+	    gas_consumido_Mg   = celula[ind].gas_consumido_massa_step;
+
+	  //Atualizar BSW
+	    double A_cross = celula[ind].duto.area;
+	    double Lcel    = celula[ind].dx;
+	    double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h_total, 1e-12);
+
+	    double frac_agua = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*celula[ind].FW, 1e-12);
+	    double frac_oleo = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*(1-celula[ind].FW), 1e-12);
+
+	    double Vagua = frac_agua * Vlivre;
+	    double Voil  = frac_oleo * Vlivre;
+
+	    double rho_w = std::max(celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp), 1e-12);
+	    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
+	    if (Vagua_new < 0.0) Vagua_new = 0.0;
+
+	    double BSW_old = celula[ind].flui.BSW;
+	    double den = Voil + Vagua_new;
+	    if (den > 1e-12) {
+	        celula[ind].flui.BSW = Vagua_new / den;
+	    } else {
+	        celula[ind].flui.BSW = BSW_old;
+	    }
+	  
+	  //if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
+
+  } //Alteracao Hidratos
     if (celula[ind].acsr.tipo == 1) {
         if (celula[ind].acsr.injg.tipoflu == 0) {
             double masgas = celula[ind].acsr.injg.VMas(pr, tr);
@@ -4668,6 +4724,11 @@ void SProd::renovaFonte(int ind) {
         celula[ind].fontemassLR -= (agua_consumida_Mw / (*vg1dSP).lixo5);
         celula[ind].fontemassGR -= (gas_consumido_Mg / (*vg1dSP).lixo5);
     }
+  	//alteracao hidrato 3
+  	if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && celula[ind].flui.BSW>1e-14 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+  		celula[ind].fontemassLR -= (agua_consumida_Mw / (*vg1dSP).lixo5);
+  		celula[ind].fontemassGR -= (gas_consumido_Mg / (*vg1dSP).lixo5);
+  	}
 }
 
 void SProd::renovaalbetini() {
@@ -20802,6 +20863,11 @@ void SProd::RenovaMassPerm(int i) {
                                    celula[i - 1].correlacaoMR2,
                                    holdup, frictionGrad, gravityGrad, totalGrad,
                                    reynolds, flowType);
+                if(flowType==1 || flowType==2)celula[i].arranjo=0;
+                if(flowType==3)celula[i].arranjo=1;
+                if(flowType==4)celula[i].arranjo=2;
+                if(flowType==6)celula[i].arranjo=-1;
+                if(flowType==5)celula[i].arranjo=-2;
                 celula[i].alf = 1. - holdup;
             }
         } else {
@@ -21923,6 +21989,11 @@ void SProd::RenovaMassPermComp(int i) {
                                celula[i - 1].correlacaoMR2,
                                holdup, frictionGrad, gravityGrad, totalGrad,
                                reynolds, flowType);
+            if(flowType==1 || flowType==2)celula[i].arranjo=0;
+            if(flowType==3)celula[i].arranjo=1;
+            if(flowType==4)celula[i].arranjo=2;
+            if(flowType==6)celula[i].arranjo=-1;
+            if(flowType==5)celula[i].arranjo=-2;
             celula[i].alf = 1. - holdup;
         }
         if (celula[i].alf < 0.)
