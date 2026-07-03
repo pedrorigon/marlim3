@@ -469,6 +469,7 @@ jobs:
     name: Desktop App – Linux x64
     runs-on: ubuntu-24.04
     needs: test-linux
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - name: Checkout
@@ -548,6 +549,7 @@ jobs:
     name: Desktop App – Windows x64
     runs-on: windows-2022
     needs: test-windows
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - name: Checkout
@@ -609,6 +611,7 @@ jobs:
     name: Desktop App – macOS ARM64
     runs-on: macos-15
     needs: test-macos
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - name: Checkout
