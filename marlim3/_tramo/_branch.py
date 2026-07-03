@@ -16,8 +16,8 @@ import json
 import os
 import re
 import shutil
-import platform
 import subprocess
+import sys
 import time
 from contextlib import nullcontext
 from threading import Thread
@@ -25,6 +25,7 @@ from threading import Thread
 import pandas as pd
 
 from .._download import get_executable_path
+from .._process import process_group_kwargs
 from .._conversores._conversor_marlim3_tplppl import convert_to_ppl_tpl
 from .._output_headers import CANONICAL_TIME_COLUMN, normalize_time_column, parse_trend_headers
 from .._plots._plots_perfis import _plotar_perfis, _plotar_perfis_animados
@@ -371,20 +372,21 @@ class Branch:
 
             self.to_json(label)
 
+            cmd = [str(executavel), "-d", directory, "-i", filename]
             if self.system == 'INJETOR':
-                cmd = f'"{executavel}" -d "{directory}" -i "{filename}" -s INJETOR'
-            else:
-                cmd = f'"{executavel}" -d "{directory}" -i "{filename}"'
+                cmd.extend(["-s", "INJETOR"])
 
-            if platform.system() == "Windows":
-                process = subprocess.Popen(
-                    cmd, shell=True,
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            popen_options = process_group_kwargs()
+            if sys.platform.startswith("win"):
+                popen_options.update(
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+            process = subprocess.Popen(cmd, **popen_options)
+            if sys.platform.startswith("win"):
                 stdout, _ = process.communicate()
                 print(stdout)
-            else:
-                process = subprocess.Popen(cmd, shell=True,
-                                           preexec_fn=os.setsid)
 
             if tracker:
                 tracker.process_pid = process.pid

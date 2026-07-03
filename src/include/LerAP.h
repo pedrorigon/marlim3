@@ -12,6 +12,7 @@
 
 #include "Acidentes2.h"
 #include "Bcsm2.h"
+#include "multiBCS.h"
 #include "BombaVol.h"
 #include "FonteMas.h"
 #include "FonteMassCHK.h"
@@ -48,6 +49,8 @@ extern int chaverede;
 
 // Application logger object
 extern Logger logger;
+
+extern string pathPrefixoArqSaida;
 
 struct detIPRAP {
     int parseriePres;
@@ -173,6 +176,12 @@ struct detBCSAP {
     vector<int> nestag;
 };
 
+struct detMultiBCSAP {
+    int indBCS;
+    int parserieFreq;
+    vector<double> freq;
+};
+
 // Positive-displacement pump configuration details
 struct detBVOLAP {
     int parserieFreq;
@@ -274,6 +283,7 @@ struct variaveis {
     int vipr;
     int vfonmas;
     int vbcs;
+    int vmbcs;
     int vdp;
     int vbvol;
     int vvalv;
@@ -311,6 +321,7 @@ struct casoVEC {
     vector<int> FMindfluP;
     vector<int> BCSfreq;
     vector<int> BCSnestag;
+    vector<int> MBCSfreq;
     vector<int> BVOLfreq;
     vector<int> BVOLcapacidade;
     vector<int> BVOLnpoli;
@@ -377,6 +388,8 @@ class APara {
     detFUROAP *APFuro;
     int nAPBCS;
     detBCSAP *APBCS;
+    int nAPMBCS;
+    detBCSAP *APMBCS;
     int nAPBV;
     detBVOLAP *APBVOL;
     int nAPDP;
@@ -415,15 +428,23 @@ class APara {
     detcelp *celp;
     ProFlu *flup;
     detBCS *bcs;
+    detMultiBCS *mbcs;
     detFONGAS *fonteg;
 
-    APara(varGlob1D *Vvg1dSP, const string IMPFILE, int vncel, detcelp *vcelp, ProFlu *vflup = 0, detBCS *vbcs = 0, detFONGAS *vfonteg = 0);
+    int imprimePerfil;
+
+    APara(varGlob1D *Vvg1dSP, const string IMPFILE, int vncel, detcelp *vcelp, ProFlu *vflup = 0, detBCS *vbcs = 0,
+    		detMultiBCS *vmbcs = 0, detFONGAS *vfonteg = 0);
     APara(const APara &); // Copy constructor
     APara &operator=(const APara &);
     ~APara() { // Destructor
 
         if (listaV.vbcs == 1) {
             delete[] APBCS;
+        }
+
+        if (listaV.vmbcs == 1) {
+            delete[] APMBCS;
         }
 
         if (listaV.vipr == 1) {
@@ -501,6 +522,7 @@ class APara {
     void parse_FonGas(Value &FonGas_json);
     void parse_FonMas(Value &FonMas_json);
     void parse_BCS(Value &BCS_json);
+    void parse_MBCS(Value &MBCS_json);
     void parse_BVol(Value &BVol_json);
     void parse_DP(Value &DP_json);
     void parse_dPdLH(Value &dPdLHidro_json);
@@ -533,40 +555,42 @@ class APara {
                           double *vdPdLF, double *vdTdL);
     void cabecalhoAP(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                      detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                     detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq);
+                     detFONMASS *fontem, detFURO *furo, detBCS *bcs,detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq);
     void cabecalhoAPImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                          detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                         detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq);
+                         detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq);
     void imprimeVarInteresseAP(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                                detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                               detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq, int seq);
+                               detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
+							   int seq);
     void selecaoAP(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                    detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                   detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
+                   detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
                    double &pGSup, double &temperatura,
                    double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                    double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                    double *vdPdLF, double *vdTdL, int imprime = 1);
     void selecaoAPsemImpre(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                            detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                           detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
+                           detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
                            double &pGSup, double &temperatura,
                            double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                            double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                            double *vdPdLF, double *vdTdL);
     void imprimeVarInteresseAPImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                                    detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                                   detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq, int seq);
+                                   detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
+								   int seq);
     void selecaoAPImex(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                        detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                       detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
+                       detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
                        double &pGSup, double &temperatura,
                        double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                        double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                        double *vdPdLF, double *vdTdL, int imprime = 1);
     void selecaoAPImexsemImpre(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                                detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                               detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
+                               detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
                                double &pGSup, double &temperatura,
                                double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                                double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
@@ -574,7 +598,7 @@ class APara {
     void tabelaGenericaCabecalho();
     void tabelaGenerica(int ncelG, choke &chokeSup, Cel *celula, CelG *celulaG, ProFlu *flup,
                         detIPR *IPRS, detValv *valv, detFONGAS *fonteg, detFONLIQ *fontel,
-                        detFONMASS *fontem, detFURO *furo, detBCS *bcs, detBVOL *bvol, detDPREQ *dpreq,
+                        detFONMASS *fontem, detFURO *furo, detBCS *bcs, detMultiBCS *mbcs, detBVOL *bvol, detDPREQ *dpreq,
                         double &pGSup, double &temperatura,
                         double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                         double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,

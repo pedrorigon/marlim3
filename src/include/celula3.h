@@ -74,6 +74,7 @@ class Cel {
     double V_h_disp;
 
     double e_dep;
+	double de_dep; //alteracao hidratos modelo 3
     double D_h_eff;
     double A_eff;
     double phi_h_disp;
@@ -437,6 +438,11 @@ class Cel {
     varGlob1D *vg1dSP;
 
     int modoParafina;
+    int hidratado; //alteracao hidratos modelo 3
+    double kH; //alteracao hidratos modelo 3
+    double cpH; //alteracao hidratos modelo 3
+    double rhoH; //alteracao hidratos modelo 3
+    double rugH; //alteracao hidratos modelo 3
     int parafinado;
     double deltaPar;
 

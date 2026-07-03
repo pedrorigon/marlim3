@@ -1048,6 +1048,7 @@ struct dadosParafina {
     double DmultipWax;
     double EmultipWax;
     double FmultipWax;
+    int ponderaCond;
 };
 
 struct acopDuto3D {
@@ -1066,6 +1067,8 @@ struct detCelUnit {
 
 class Ler {
   public:
+	double cTurneraprox; //alteracao hidratos modelo 3
+	double tlimitArea, Alimit; //alteracao hidratos modelo 3	
     int tipoHmodel;
     double MMH, MMG, MMW, Whamm;
     double coefEsteq;
