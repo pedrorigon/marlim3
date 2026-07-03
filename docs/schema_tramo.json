@@ -1753,7 +1753,7 @@
             },
             "correlacaoMR2": {
               "type": "integer",
-              "description": "Correlação caixa-preta utilizada no duto, quando o modelo de drift está desabilitado (configuracaoInicial: tipoModeloDrift = false). Válida para o regime permanente. 0 = Poettmann-Carpenter; 1 = Baxendell-Thomas; 2 = Fancher-Brown; 3 = Hagedorn-Brown; 4 = Duns-Ros; 5 = Orkiszewski; 6 = Beggs & Brill; 7 = Mukherjee-Brill; 8 = Aziz; 9 = Gray; 10 = Oliemans; 11 = Dukler; 12 = Beggs & Brill com correção de Palmer; 13 = Dukler, Eaton e Flanigan;  14 = Dukler e Minami I; 15 = Dukler e Minami II."
+              "description": "Correlação caixa-preta utilizada no duto, quando o modelo de drift está desabilitado (configuracaoInicial: tipoModeloDrift = false). Válida para o regime permanente. 0 = Poettmann-Carpenter; 1 = Baxendell-Thomas; 2 = Fancher-Brown; 3 = Hagedorn-Brown; 4 = Duns-Ros; 5 = Orkiszewski; 6 = Beggs & Brill; 7 = Mukherjee-Brill; 8 = Aziz; 9 = Gray; 10 = Oliemans; 11 = Dukler; 12 = Beggs & Brill com correção de Palmer; 13 = Dukler, Eaton e Flanigan;  14 = Dukler e Minami I; 15 = Dukler e Minami II; 16 = Gomez."
             },
             "acoplamentoTermicoRedeParalela": {
               "type": "integer",
