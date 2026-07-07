@@ -910,30 +910,31 @@ jobs:
       MARLIM3_SKIP_EXECUTABLE_RESOLUTION: "0"
 
     steps:
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          path: workflow-scripts
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
-      - name: Wait for version to be visible on PyPI
+      - name: Upgrade pip
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+
+      - name: Wait for version to be installable from PyPI
         shell: bash
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           VERSION="${REF_NAME#v}"
-          echo "Looking for marlim3==$VERSION on PyPI (JSON API)..."
-          export TARGET_VERSION="$VERSION"
-          for i in $(seq 1 30); do
-            if python -c "import os,json,sys,urllib.request; d=json.load(urllib.request.urlopen('https://pypi.org/pypi/marlim3/json',timeout=10)); sys.exit(0 if os.environ['TARGET_VERSION'] in d.get('releases',{}) else 1)"; then
-              echo "marlim3==$VERSION is available on PyPI"
-              exit 0
-            fi
-            echo "Attempt $i: marlim3==$VERSION not yet on PyPI, sleeping 20s..."
-            sleep 20
-          done
-          echo "marlim3==$VERSION did not become available on PyPI in time"
-          exit 1
+          python workflow-scripts/.github/scripts/wait_for_pypi_release.py marlim3 "$VERSION"
 
       - name: Install marlim3 from PyPI (clean environment)
         shell: bash
@@ -942,8 +943,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${REF_NAME#v}"
-          python -m pip install --upgrade pip
-          python -m pip install "marlim3==${VERSION}"
+          python -m pip install --no-cache-dir "marlim3==${VERSION}"
 
       - name: Import package and trigger executable resolution
         shell: bash
