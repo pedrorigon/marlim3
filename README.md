@@ -32,6 +32,11 @@ Install `Marlim3` as a Python package:
 pip install marlim3
 ```
 
+On supported platforms, the first package import downloads the matching native
+executable from the GitHub Release when it is not already present. No compiler
+is required for the published Linux x64, Windows x64, and macOS Apple Silicon
+executables.
+
 ### Option 2: Download the desktop application
 
 Each tagged release provides a standalone desktop application containing the
@@ -345,7 +350,8 @@ cmake --build --preset mingw-release -j%NUMBER_OF_PROCESSORS%
 
 The resulting `build/Marlim3.exe` is fully statically linked and does not require external DLLs.
 
-The compiled executable is placed at `build/Marlim3`.
+The compiled executable is placed at `build/Marlim3` on Linux and macOS, or
+`build/Marlim3.exe` on Windows.
 
 A CMake `POST_BUILD` step automatically copies the executable to `marlim3/` after each successful build, so the Python package always picks up the latest binary. No manual copy is needed.
 
