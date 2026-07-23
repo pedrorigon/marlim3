@@ -32,6 +32,7 @@ comportamento numérico** dentro da tolerância acordada.
 - [ ] A flag `MARLIM_USE_NEW_SISPROD` continua **default OFF** (legado ativo) até
       a paridade total passar.
 - [ ] A suíte de testes existente permanece **verde** em todo checkpoint.
+- [ ] Todo checkpoint de migração só é aceito após **selftest isolado + build OFF + build ON** com sucesso.
 - [ ] Este documento é **atualizado após cada checkpoint** (marcar caixas e
       acrescentar linha no "Registro de progresso").
 
@@ -128,7 +129,7 @@ Legenda: `[ ]` pendente · `[~]` estrutura existe, física não portada · `[x]`
 ### Fase 3 — Portar física acoplada (verificada por dual-run end-to-end)
 - [ ] R04 → R05 → R06 → R07 → R08 → R09, uma região por vez, cada uma extraída do `SisProd_old.cpp` e validada por `compare_sisprod_impls.py` a 1e-6 sobre os demos e `data/models`.
 - [ ] R10, R11, R12, R13 na sequência.
-- [ ] Critério de aceite por região: paridade 1e-6 em todos os demos aplicáveis e sem regressão na suíte.
+- [ ] Critério de aceite por região: **selftest isolado + build OFF + build ON + testes específicos + paridade 1e-6** em todos os demos aplicáveis e sem regressão na suíte.
 
 ### Fase 4 — Virar a chave
 - [ ] Todos os demos e `data/models` com paridade 1e-6 na build `-DMARLIM_USE_NEW_SISPROD=ON`.
@@ -142,6 +143,19 @@ Legenda: `[ ]` pendente · `[~]` estrutura existe, física não portada · `[x]`
 4. Suíte completa verde.
 5. Paridade dual-run a 1e-6 nos demos aplicáveis.
 6. Marcar a região na matriz (seção 5) e acrescentar linha no "Registro de progresso".
+
+### Gate obrigatório por checkpoint
+
+Nenhum checkpoint pode ser considerado concluído sem as seguintes evidências objetivas:
+
+1. **Selftest isolado do caminho novo** (`tests/sisprod2_selftest.cpp` + `SisProd.cpp` + arquivos `SisProd_r0x.cpp`) passando.
+2. **Build completa com `MARLIM_USE_NEW_SISPROD=OFF`** passando.
+3. **Build completa com `MARLIM_USE_NEW_SISPROD=ON`** passando.
+4. **Testes específicos do incremento** passando.
+5. **Testes existentes afetados pelo escopo** passando.
+6. **Paridade/comparação legado vs novo**, quando houver caminho equivalente disponível para o bloco portado.
+
+Se qualquer um desses itens não for executado, falhar ou ficar inconclusivo, o checkpoint deve permanecer **incompleto** e isso deve ser registrado explicitamente. Não aceitar sucesso apenas por inspeção visual, build parcial ou selftest isolado.
 
 ## 8. Registro de progresso (append-only)
 
@@ -189,12 +203,14 @@ esperado:
 
 ## 11. Como continuar (próxima ação)
 
+> **Gate permanente para qualquer continuação:** antes de marcar qualquer incremento como concluído, executar e registrar: (1) selftest isolado, (2) build OFF, (3) build ON, (4) testes específicos do incremento, (5) comparação/paridade quando aplicável.
+
 **Estado atual:**
 - Fase 0 (guardrail 1e-6): **CONCLUÍDA**.
 - Fase 2/R01 (`RootFinder`): **CONCLUÍDA** — 73/73 testes.
 - Fase 2/R03 (C0/Ud): **CONCLUÍDA** — `SisProd_r03.cpp`.
 - Fase 2/R05 (dispatcher + `marchToWellheadPhysical`): **CONCLUÍDA** — `SisProd_r05.cpp`, 36 testes totais via `#ifdef MARLIM_BUILD`.
-- Fase 2/R04 (branch analítico `flashCompleto==0`): **PARCIAL** — helpers puros expandidos em `SisProd_r04.cpp`, consumidor real integrado em `marchToWellheadPhysical`, bloco de transferência de fase integrado ao fluxo principal de marcha de massa e primeiro bloco líquido/térmico derivado de `RenovaTempPerm` integrado ao fluxo principal térmico da nova arquitetura; faltam os demais ramos de massa/energia e os caminhos tabelados/PVTSim/composicional.
+- Fase 2/R04 (branch analítico `flashCompleto==0`): **PARCIAL** — helpers puros expandidos em `SisProd_r04.cpp`, consumidor real integrado em `marchToWellheadPhysical`, bloco de transferência de fase integrado ao fluxo principal de marcha de massa, bloco líquido/térmico derivado de `RenovaTempPerm` integrado ao fluxo principal térmico da nova arquitetura, condutividade analítica portada e termos mínimos de Joule-Thomson integrados; faltam entalpias/derivadas complementares e os caminhos tabelados/PVTSim/composicional.
 - Fase 2/R06+R10 (Colebrook + areaValvCali): **CONCLUÍDA** — `SisProd_r06.cpp`, 13 testes.
 - Fase 1/R14 (encapsulamento `Num4Main.cpp`): **CONCLUÍDA** — ~5414 acessos diretos eliminados.
 - **Paridade dual-run: 6/6 demos IGUAIS a 1e-6** (`simplifiedProduction`, `2zones-2GLVs`, `2zones-PA`, `extended-ESP-pumpEfic`, `extended-shutdown`, `MultiESP`, `injec-Liq`).
@@ -208,10 +224,10 @@ esperado:
   Reusar `BlackOilState` / `makeBlackOilState()` e o novo `computePhaseTransferRate()` para atacar o próximo bloco pequeno de `RenovaMassPerm` além do já integrado em `TramoEngine::marchMassWithPhaseTransfer()`, preferencialmente um trecho que também consuma `MasEspLiq`/`ViscOleo`/`CalorLiq`.
 
 ### Opção B — Portar derivadas/restantes utilidades térmicas do branch analítico
-- Cobrir `drhodp`, `drhodt` do gás, entalpias/JT/condutividade e demais auxiliares ainda usados por R07, substituindo os placeholders locais de condutividade do `computeThermalFlowSnapshot()`.
-- Cobrir `drhodp`, `drhodt` do gás, entalpias/JT e demais auxiliares ainda usados por R07. A parte de condutividade já foi portada neste estágio.
+- Cobrir `drhodp`, `drhodt` do gás, entalpias/JT e demais auxiliares ainda usados por R07. A parte de condutividade e o bloco mínimo de Joule-Thomson já foram portados.
+- Cobrir `drhodp`, `drhodt` do gás, entalpias e demais auxiliares ainda usados por R07. A parte de condutividade e o bloco mínimo de Joule-Thomson já foram portados.
 
 ### Opção C — Portar `corrDeng` / `renovaRGOdgYco2`
 Atacar o pré-processamento de propriedades de fluido antes da marcha, reduzindo dependência de `ProFlu` no caminho de entrada.
 
-- **Recomendação:** Opção B — portar agora entalpias e/ou termos Joule-Thomson do branch analítico (`JTL`, `JTG`, eventualmente `EntalpLiq`/`EntalpGas`) para reduzir os placeholders/aproximações remanescentes no caminho térmico recém-integrado.
+- **Recomendação:** Opção B — portar agora o menor bloco analítico de entalpia ainda necessário (`EntalpLiq` e/ou `EntalpGas`, se estritamente requerido pelo trecho escolhido) para continuar a reduzir aproximações no caminho térmico recém-integrado.

@@ -315,7 +315,35 @@ double gasThermalConductivityBlackOil(double pres, double temp) {
     return XK1;
 }
 
-double gasSpecificHeatBlackOil(double pres, double temp, double Deng,
+double liquidJouleThomsonBlackOil(double pres, double temp, double API,
+                                  double Deng, double BSW, double Denag,
+                                  double rs, double rDgD,
+                                  double liquidSimple) {
+    const double bo = oilFVF(pres, temp, API, Deng, rs);
+    const double roIS = oilDensityBlackOil(pres, temp, API, Deng, rs, rDgD);
+    const double fw = BSW / (bo + BSW - BSW * bo);
+    const double drholDt = liquidDensityDerivativeTBlackOil(pres, temp, API,
+                                                            Deng, rs, rDgD);
+    const double jtl = -(1.0 / roIS +
+        (1.0 - liquidSimple) * (temp + 273.15) * (drholDt / (roIS * roIS)));
+    const double jtw = -1.0 / (1000.0 * Denag)
+                     + (temp + 273.15) * (3.0e-4) / (1000.0 * Denag);
+    return (1.0 - fw) * jtl + fw * jtw;
+}
+
+double gasJouleThomsonBlackOil(double pres, double temp,
+                               double Deng, double PCis, double TCis,
+                               double rhog) {
+    const double rho = rhog < 0.0
+        ? gasDensityBlackOil(pres, temp, Deng, PCis, TCis)
+        : rhog;
+    const double z0 = zFactor(pres, temp, Deng, PCis, TCis);
+    const double dzdt = (zFactor(pres, temp + 1e-3, Deng, PCis, TCis)
+                       - zFactor(pres, temp - 1e-3, Deng, PCis, TCis)) / (2e-3);
+    return (temp + 273.16) * dzdt / (z0 * rho);
+}
+
+ double gasSpecificHeatBlackOil(double pres, double temp, double Deng,
                                 double PCis, double TCis,
                                 double yco2, double rDgL) {
     const double RG = (8.0465 * 1000.0) / (rDgL * Deng * 28.9625);

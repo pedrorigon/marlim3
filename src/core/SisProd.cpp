@@ -478,6 +478,12 @@ ThermalFlowSnapshot computeThermalFlowSnapshot(const ThermalSideInput &in) {
     snapshot.gasDensity = props.gasDensity;
     snapshot.liquidSpecificHeat = props.liquidSpecificHeat;
     snapshot.gasSpecificHeat = props.gasSpecificHeat;
+    snapshot.liquidJouleThomson = liquidJouleThomsonBlackOil(
+        pressureKgf, temperatureC, in.stream.oilApi, in.stream.gasDensity,
+        beta, in.stream.waterDensity, props.solutionGor, 1.0, 0.0);
+    snapshot.gasJouleThomson = gasJouleThomsonBlackOil(
+        pressureKgf, temperatureC, in.stream.gasDensity, 667.0, 395.0,
+        props.gasDensity);
     snapshot.liquidViscosityPaS = props.liquidViscosity * 1e-3;
     snapshot.gasViscosityPaS = props.gasViscosity * 1e-3;
     snapshot.mixedConductivity = liquidCond * liquidHoldup + gasCond * gasHoldup;
@@ -1382,20 +1388,31 @@ bool runAllTests(bool verbose) {
         const double kl = liquidThermalConductivityBlackOil(30.0, 60.0, API, Deng,
                                                             BSW, Denag, rs_cp);
         const double kg = gasThermalConductivityBlackOil(30.0, 60.0);
-         reporter.check("R04/liquidSpecificHeat positive finite",
-                        cpl > 1000.0 && cpl < 10000.0 && std::isfinite(cpl));
-         reporter.check("R04/gasSpecificHeat positive finite",
-                        cpg > 500.0 && cpg < 10000.0 && std::isfinite(cpg));
-         reporter.check("R04/liquidThermalConductivity positive finite",
+        const double jtl = liquidJouleThomsonBlackOil(30.0, 60.0, API, Deng,
+                                                      BSW, Denag, rs_cp);
+        const double jtg = gasJouleThomsonBlackOil(30.0, 60.0, Deng, PC, TC);
+        reporter.check("R04/liquidSpecificHeat positive finite",
+                       cpl > 1000.0 && cpl < 10000.0 && std::isfinite(cpl));
+        reporter.check("R04/gasSpecificHeat positive finite",
+                       cpg > 500.0 && cpg < 10000.0 && std::isfinite(cpg));
+        reporter.check("R04/liquidThermalConductivity positive finite",
                        kl > 0.01 && kl < 1.0 && std::isfinite(kl));
-         reporter.check("R04/gasThermalConductivity positive finite",
+        reporter.check("R04/gasThermalConductivity positive finite",
                        kg > 0.005 && kg < 1.0 && std::isfinite(kg));
-         reporter.check("R04/liquidThermalConductivity changes with water cut",
-                       !almostEqual(kl,
-                                    liquidThermalConductivityBlackOil(30.0, 60.0,
-                                                                      API, Deng, 0.0,
-                                                                      Denag, rs_cp),
+        reporter.check("R04/liquidJouleThomson finite",
+                       std::isfinite(jtl));
+        reporter.check("R04/gasJouleThomson finite",
+                       std::isfinite(jtg));
+        reporter.check("R04/gasJouleThomson changes with temperature",
+                       !almostEqual(jtg,
+                                    gasJouleThomsonBlackOil(30.0, 80.0, Deng, PC, TC),
                                     1e-9));
+        reporter.check("R04/liquidThermalConductivity changes with water cut",
+                        !almostEqual(kl,
+                                     liquidThermalConductivityBlackOil(30.0, 60.0,
+                                                                       API, Deng, 0.0,
+                                                                       Denag, rs_cp),
+                                     1e-9));
         const double drholdt = liquidDensityDerivativeTBlackOil(30.0, 60.0,
                                                                 API, Deng,
                                                                 rs_cp);
@@ -1618,6 +1635,10 @@ bool runAllTests(bool verbose) {
                        std::isfinite(thermal.mixedViscosityPaS) && thermal.mixedViscosityPaS > 0.0);
         reporter.check("R07/thermal snapshot conductivity finite",
                        std::isfinite(thermal.mixedConductivity) && thermal.mixedConductivity > 0.0);
+        reporter.check("R07/thermal snapshot liquid JT finite",
+                       std::isfinite(thermal.liquidJouleThomson));
+        reporter.check("R07/thermal snapshot gas JT finite",
+                       std::isfinite(thermal.gasJouleThomson));
 
          const ThermalFlowSnapshot thermalViaEngine = engine.buildThermalSnapshot(thermalIn);
          reporter.check("R07/thermal snapshot engine matches helper density",
@@ -1626,6 +1647,10 @@ bool runAllTests(bool verbose) {
                         thermalViaEngine.mixedSpecificHeat == thermal.mixedSpecificHeat);
          reporter.check("R07/thermal snapshot engine matches helper conductivity",
                         thermalViaEngine.mixedConductivity == thermal.mixedConductivity);
+         reporter.check("R07/thermal snapshot engine matches helper liquid JT",
+                        thermalViaEngine.liquidJouleThomson == thermal.liquidJouleThomson);
+         reporter.check("R07/thermal snapshot engine matches helper gas JT",
+                        thermalViaEngine.gasJouleThomson == thermal.gasJouleThomson);
 
          ThermalSideInput thermalEdge = thermalIn;
          thermalEdge.gasHoldup = 0.0;
