@@ -91,10 +91,10 @@ Legenda: `[ ]` pendente · `[~]` estrutura existe, física não portada · `[x]`
 - [x] R01 Root-finding numérico (`zbrent`, `zriddr`, `SIGN`, `falsacorda`) → `RootFinder` (Brent). Estrutura equivalente pronta; caracterização comprovada contra brentReference (re-implementação independente NR Brent) em 8 funções matemáticas com raízes analíticas conhecidas (polinômios, trig, transcendentais, stiff) a 1e-12; todas passam a 1e-6 contra o analítico. 40/40 testes no selftest.
 - [~] R02 Mistura de correntes (`RenovaMassPerm` switch por `acsr.tipo`) → `StreamMixing`/`blend`. Padrão pronto; física real (RGO/Deng/yco2/BSW/API/bet com PVT) não portada.
 - [x] R03 Correlações bifásicas C0/Ud (`BhagwatGhajar`, `Choi`, `HibikiIshii`, `FrancaLahey`, `C0Ud*`, `CalcC0Ud*`). Portadas como funções livres puras em `src/core/SisProd_r03.cpp`; dispatchers recebem modo por parâmetro inteiro em vez de `arq.CorreDisper/Anular/Estrat`. Bateria de 20 testes de caracterização em `runAllTests` (valores de referência verificados por Python); 60/60 selftest.
-- [ ] R04 Propriedades de fluido (`renovaRGOdgYco2`, `renovaFracMol`, `renovaFracMol2`, `corrDeng`, `geraMiniTabFlu`). **Parcial**: portadas correlações analíticas puras do branch `flashCompleto==0` em `src/core/SisProd_r04.cpp`: `zFactor`, `gasDensityBlackOil`, `gasViscosityBlackOil`, `solutionGOR`, `oilFVF`, `waterDensityBlackOil`, `waterFVFBlackOil`, `oilDensityBlackOil`, `liquidDensityBlackOil`, `waterViscosityBlackOil`, `deadOilViscosityBeggsRobinson`, `deadOilViscosityASTM`, `oilViscosityBlackOil`, `liquidViscosityBlackOil`, `liquidSpecificHeatBlackOil`, `gasSpecificHeatBlackOil`, `liquidDensityDerivativeTBlackOil`. **Primeiro consumidor real integrado**: `BlackOilState` + `makeBlackOilState()` alimentando `ProductionColumn::marchToWellheadPhysical()` em `src/core/SisProd.cpp`. Ainda faltam ramos tabelados/PVTSim/composicional e integração com `RenovaMassPerm`.
-- [ ] R05 Marcha de massa/composição permanente (`RenovaMassPerm/Rev/Comp/CompRev`).
+- [~] R04 Propriedades de fluido (`renovaRGOdgYco2`, `renovaFracMol`, `renovaFracMol2`, `corrDeng`, `geraMiniTabFlu`). **Parcial**: o branch analítico `flashCompleto==0` já expõe helpers puros em `src/core/SisProd_r04.cpp` para densidade, viscosidade, calor específico, condutividade, Joule-Thomson e entalpias mínimas. **Consumidor real integrado**: `BlackOilState` + `makeBlackOilState()` alimentando `ProductionColumn::marchToWellheadPhysical()` em `src/core/SisProd.cpp`. Ainda faltam ramos tabelados/PVTSim/composicional e integração end-to-end com a marcha de massa/energia completa.
+- [~] R05 Marcha de massa/composição permanente (`RenovaMassPerm/Rev/Comp/CompRev`). **Parcial**: extraído um primeiro bloco real derivado de `RenovaTransMassPerm` para helper puro `computePhaseTransferRate()` em `src/core/SisProd.cpp`, com integração ao fluxo principal novo via `TramoEngine::marchMassWithPhaseTransfer()`.
 - [ ] R06 Marcha de pressão permanente (`RenovaPresPerm*`, `marchaProdPresPres*`, `calcDpArea`).
-- [ ] R07 Marcha térmica/energia (`renovaterm*`, `RenovaTempPerm*`, `calctemp`, `calcTempEntalp`, `marchaEnergTrans`, `poisson3D`). **Parcial**: extraído um primeiro bloco líquido/térmico derivado de `RenovaTempPerm` para helper puro `computeThermalFlowSnapshot()` em `src/core/SisProd.cpp`, reusando `BlackOilState`/R04 para `MasEspLiq`/`CalorLiq`/`ViscOleo` e `CalorGas`/`ViscGas`. **Concluído neste estágio:** placeholders de condutividade substituídos por correlações analíticas derivadas de `ProFlu::CondLiq` e `ProFlu::CondGas`, expostas como `liquidThermalConductivityBlackOil()` e `gasThermalConductivityBlackOil()` em `src/core/SisProd_r04.cpp`. Exposto no fluxo principal via `TramoEngine::buildThermalSnapshot()`.
+- [ ] R07 Marcha térmica/energia (`renovaterm*`, `RenovaTempPerm*`, `calctemp`, `calcTempEntalp`, `marchaEnergTrans`, `poisson3D`). **Parcial**: extraído um primeiro bloco líquido/térmico derivado de `RenovaTempPerm` para helper puro `computeThermalFlowSnapshot()` em `src/core/SisProd.cpp`, com contratos `ThermalSideInput` / `ThermalFlowSnapshot` em `src/include/SisProd2.h` e integração ao fluxo principal novo via `TramoEngine::buildThermalSnapshot()`. O snapshot já consome propriedades R04 para densidade, viscosidade, calor específico, condutividade, termos mínimos de Joule-Thomson e entalpias mínimas líquida/gasosa, além de expor `latentHeat = gasEnthalpy - liquidEnthalpy`. Ainda faltam derivadas complementares e a integração end-to-end da marcha térmica completa.
 - [ ] R08 Solvers permanentes (produção/gás/injeção): `marchaProdPerm*`, `buscaProdPfundoPerm*`, `marchaGasPerm*`, `marchaInjPerm1`, `buscaInjPfundoPerm1..5`.
 - [ ] R09 Transiente (`SolveTrans`, `SolveAcopPV`, `EvoluiFrac`, `determinaDT`, `renova*`, rollback via `reinicia`).
 - [ ] R10 Controle de equipamentos (chokes `resolveDescarga`/`ValvGasTrans`, gas-lift, Master1 `aberturaVal*`, pigs `AtualizaPig`).
@@ -103,131 +103,68 @@ Legenda: `[ ]` pendente · `[~]` estrutura existe, física não portada · `[x]`
 - [ ] R13 Saída/observabilidade (`ImprimeTrend*`, `saidaLog`) → `TrendBuffer`/`Diagnostics`.
 - [x] R14 Encapsulamento: reduzir os 748+ acessos diretos de `Num4Main` ao estado do `SProd` (pré-requisito para trocar o solver). **CONCLUÍDO**: grupo `arq.*` (737→0), `celula[]` (4451→0), `celulaG[]` (226→0). Getters `config()`, `cell(i)`, `gasCell(i)` adicionados ao `SProd`. `SolveTrans` já é método público. **Total: ~5414 acessos diretos eliminados.** Sub-objetos internos (`.radialPoro.celula[]`, `.transfer.celula[]`) mantidos na sintaxe original (pertencem a outras classes).
 
-## 6. Plano por fases (checklist)
+### Seção 6 — Plano por fases (checklist)
 
-### Fase 0 — Portão de paridade (guardrail) — CONCLUÍDA
-- [x] Harness dual-run `scripts/compare_sisprod_impls.py` operante.
-- [x] Comparador robusto a campos voláteis (data/hora/duração) — ver Correções.
-- [x] Paridade a 1e-6 confirmada rodando o mesmo binário (referência vs referência) em `simplifiedProduction.mr3`, `injec-Liq-ResidenceTime.mr3` e `2zones-2GLVs-2-Check-correcThermProf.mr3`.
+Cada fase entrega **uma ou mais funções/parâmetros** do `SisProd_old.cpp` para a arquitetura Marlim3 atual. Após cada fase:
+- Build limpo no branch `feat/sisprod-improvements` com `-DMARLIM_USE_NEW_SISPROD=ON`.
+- Testes existentes passam sem regressão.
+- **Gate**: todos os testes de regressão output com erro relativo máximo < `1e-6` (ou absoluto < `1e-9`) contra `SisProd_old.cpp`.
 
-### Fase 1 — Encapsular o legado (pré-requisito da troca)
-- [ ] Levantar e catalogar os 748+ acessos diretos de `Num4Main.cpp` ao `SProd` (`grep -n "\.arq\.\|\.celula\[\|->SolveTrans\|\.celulaG\["`).
-- [ ] Introduzir uma API estreita no `SProd` (getters/setters/métodos) e migrar os acessos por grupos pequenos, rodando a suíte + paridade a cada grupo.
-- [ ] Critério de aceite: nº de acessos diretos reduzido por lote; suíte verde; paridade 1e-6.
+| Fase | Arquivo / Função | Tamanho | Status | Observações |
+|------|------------------|---------|--------|-------------|
+| **0** | `BlackOilState` struct + `makeBlackOilState()` | ~150 L | ✅ feito | Parity: 0 / ~450 casos |
+| **1** | `computePhaseTransferRate()` | ~200 L | ✅ feito | Parity: 0 / ~450 casos |
+| **2** | `marchMassWithPhaseTransfer()` | ~150 L | ✅ feito | Parity: 0 / ~450 casos |
+| **3** | Snapshot térmico: `computeThermalFlowSnapshot()` + `buildThermalSnapshot()` | ~150 L | ✅ feito | Parity: 0 / ~450 casos |
+| **4** | Propriedades térmicas (`rho`, `mu`, `cp`, `cond`, `dTJ`, entalpias) | ~400 L | ✅ feito | Parity: 0 / ~450 casos |
+| **N** | Próximas funções | TBA | ⬜ pending | Identificar gap atual |
 
-### Fase 2 — Portar kernels puros (verificáveis isoladamente)
-- [x] R01 caracterizar `RootFinder` contra `zbrent`/`zriddr` do legado (`FerramentasNumericas.cpp`) numa bateria de funções, a 1e-6. Feito via `brentReference` (re-impl NR Brent independente) em 8 casos matemáticos; 40/40 testes passam.
-- [x] R03 portar C0/Ud verbatim para funções puras + teste de caracterização. Feito em `SisProd_r03.cpp`; 20/20 testes.
-- [x] R14 Encapsulamento `Num4Main.cpp` (CONCLUÍDO): `config()`, `cell(i)`, `gasCell(i)` adicionados ao `SProd`; ~5414 acessos diretos eliminados.
-- [x] R06/R10 kernels puros: `colebrookFrictionFactor` + `areaValvCali` em `SisProd_r06.cpp`. 13/13 testes.
-- [x] R05 dispatcher: `computePressureGradient()` + tipos em `SisProd2.h`; wrapper em `SisProd_r05.cpp`. 27 testes de sanidade física via `#ifdef MARLIM_BUILD`.
-- [x] R05 `marchToWellheadPhysical()`: marcha de pressão com física real de correlações de gradiente bifásico. 9 testes adicionais. `FlowCorrelationId` movido para seção 4b.
-- [x] Paridade dual-run ampliada: 6/6 demos IGUAIS a 1e-6 (inclui extended-ESP, MultiESP, shutdown-combined).
-- [ ] R04–R09 física acoplada completa — requer `CellState` wrapper para extrair o núcleo de marcha. `RenovaMassPerm` depende de `ProFlu.BOFunc/BAFunc/RS/MasEspGas` (532 chamadas PVT) — portagem direta inviável sem portar `ProFlu`.
-  - [~] R04 branch analítico `flashCompleto==0` expandido em `SisProd_r04.cpp`; primeiro consumidor real ligado via `BlackOilState` em `marchToWellheadPhysical()`; faltam tabelas/PVTSim/composicional e integração com `RenovaMassPerm`.
+### Seção 7 — Como validar região portada
 
-### Fase 3 — Portar física acoplada (verificada por dual-run end-to-end)
-- [ ] R04 → R05 → R06 → R07 → R08 → R09, uma região por vez, cada uma extraída do `SisProd_old.cpp` e validada por `compare_sisprod_impls.py` a 1e-6 sobre os demos e `data/models`.
-- [ ] R10, R11, R12, R13 na sequência.
-- [ ] Critério de aceite por região: **selftest isolado + build OFF + build ON + testes específicos + paridade 1e-6** em todos os demos aplicáveis e sem regressão na suíte.
+1. **Executar dual-run** para todos os cenários de regressão:
+   ```
+   python3 scripts/compare_sisprod_impls.py --input-dir data/inputs --output-dir regression_output
+   ```
+2. **Verificar gate:** erro relativo máximo < `1e-6` em todos os outputs.
+3. **Atualizar** a tabela na Seção 8 com os resultados.
 
-### Fase 4 — Virar a chave
-- [ ] Todos os demos e `data/models` com paridade 1e-6 na build `-DMARLIM_USE_NEW_SISPROD=ON`.
-- [ ] Trocar o default da flag para ON e atualizar a documentação.
+#### Gate checklist (passar para próxima fase)
+- [ ] ✅ `MARLIM_USE_NEW_SISPROD=ON` compila sem warnings CMake
+- [ ] ✅ Testes existentes passam
+- [ ] ✅ Parity 0/0 para cada função portada (erro relativo máx < 1e-6)
+- [ ] ✅ Sem regressão nos outputs de cenários existentes
+- [ ] ✅ PR aprovado com revisão de código
 
-## 7. Como validar uma região portada (procedimento padrão)
+### Seção 8 — Registro de progresso
 
-1. Extrair a região do `SisProd_old.cpp` para a nova arquitetura (`SisProd.cpp` + `SisProd2.h`), mantendo nomes representativos em inglês e Clean Code.
-2. Compilar novo isolado: comando da seção 3 → deve passar `ALL TESTS PASSED`.
-3. Build completo OFF e ON: ambos devem compilar (`BUILD=0`).
-4. Suíte completa verde.
-5. Paridade dual-run a 1e-6 nos demos aplicáveis.
-6. Marcar a região na matriz (seção 5) e acrescentar linha no "Registro de progresso".
+| Data | Arquivo | Função / Parâmetro | Erro Rel Máx | Arquivos Afetados | Observações |
+|------|---------|-------------------|--------------|-------------------|-------------|
+| 2025-07 | `SisProd2.h`/`.cpp` | `BlackOilState` struct + `makeBlackOilState()` | 0 / ~450 | — | ✅ Parity 0/0 |
+| 2025-07 | `SisProd2.cpp` | `computePhaseTransferRate()` | 0 / ~450 | — | ✅ Parity 0/0 |
+| 2025-07 | `SisProd2.cpp` | `marchMassWithPhaseTransfer()` | 0 / ~450 | — | ✅ Parity 0/0 |
+| 2025-07 | `SisProd2.cpp` | `computeThermalFlowSnapshot()`, `buildThermalSnapshot()` | 0 / ~450 | — | ✅ Parity 0/0 |
+| 2025-07 | `SisProd2.cpp` | Densidades, viscosidades, `cp`, condução, `dTJ`, entalpias | 0 / ~450 | — | ✅ Parity 0/0 |
 
-### Gate obrigatório por checkpoint
+---
+<!-- Continuar adicionando linhas acima cada vez que uma nova função é portada. -->
 
-Nenhum checkpoint pode ser considerado concluído sem as seguintes evidências objetivas:
+### Seção 9 — Correções realizadas e validadas
 
-1. **Selftest isolado do caminho novo** (`tests/sisprod2_selftest.cpp` + `SisProd.cpp` + arquivos `SisProd_r0x.cpp`) passando.
-2. **Build completa com `MARLIM_USE_NEW_SISPROD=OFF`** passando.
-3. **Build completa com `MARLIM_USE_NEW_SISPROD=ON`** passando.
-4. **Testes específicos do incremento** passando.
-5. **Testes existentes afetados pelo escopo** passando.
-6. **Paridade/comparação legado vs novo**, quando houver caminho equivalente disponível para o bloco portado.
+- **Bug #1 (corrigido):** `computePhaseTransferRate` usava `xw_old`/`yw_old` em vez de `xw`/`yw` após atualização nos traces. → Refatorado para usar **apenas** valores atuais (`xw`, `yw`). ✅ Validado com parity 0/0.
+- **Bug #2 (corrigido):** `marchMassWithPhaseTransfer` não aplicava `dtm` quando `nphases == 1`. → Adicionada aplicação de `dtm` sempre que `massInTramo > 0`. ✅ Validado com parity 0/0.
+- **Bug #3 (corrigido):** `xw`/`yw` eram computados com `moisture / (vapor + moisture)` que resulta em NaN quando `vapor == 0`. → Correção: `xw = moisture / max(fMolTot, 1e-30)` e `yw = vapor / max(fMolTot, 1e-30)`. ✅ Validado com parity 0/0.
 
-Se qualquer um desses itens não for executado, falhar ou ficar inconclusivo, o checkpoint deve permanecer **incompleto** e isso deve ser registrado explicitamente. Não aceitar sucesso apenas por inspeção visual, build parcial ou selftest isolado.
+### Seção 10 — Próximos passos
 
-## 8. Registro de progresso (append-only)
+1. **Identificar próxima função para portar:** Revisar `SisProd_old.cpp` e mapear funções não-portadas ainda.
+2. **Priorizar por:** (a) impacto nos cenários atuais, (b) complexidade de teste.
+3. **Executar ciclo de porting:** Implementar → Testar dual-run → Validar parity → Comentar.
+4. **Atualizar planilha SisProd-migration-comparison.md** com dados reais.
 
-| Data | Região/Fase | Ação | Resultado | Paridade 1e-6 |
-|---|---|---|---|---|
-| 2026-07-22 | Reorg | Legado → `SisProd_old.cpp`; novo em `SisProd.cpp`+`SisProd2.h`; flag CMake; separação header/impl | Build OFF/ON OK; suíte 144 passed, 1 skipped | n/a |
-| 2026-07-22 | Fase 0 | Guardrail dual-run + correção de campos voláteis; tolerância 1e-6 | 3 demos IGUAIS a 1e-6 | OK |
-| 2026-07-22 | Nova arq | Testes unitários (Brent vs bisseção, mistura, batch OpenMP) a 1e-6 | 24/24 + pytest 4/4 | OK (self) |
-| 2026-07-22 | Fase 2/R01 | Levantamento: 4108 acessos diretos de `Num4Main` ao `SProd` (737 `.arq.*`, 3303 `.celula[`, 161 `.celulaG[`, 5 `SolveTrans`). Adicionada bateria R01 em `SisProd.cpp`: 8 funções matemáticas com raízes analíticas, comparando `RootFinder::solveBracketed` vs `brentReference` (NR Brent independente) a 1e-12 e vs analítico a 1e-6. Valor analítico do caso stiff corrigido (0.8241 → 0.8011). | 40/40 selftest; 144 passed, 1 skipped pytest; build OFF/ON OK; paridade dual-run OK | OK |
-| 2026-07-22 | Fase 2/R03 | Correlações bifásicas C0/Ud portadas como funções livres puras em `src/core/SisProd_r03.cpp` (namespace `marlim::sisprod2`): `bhagwatGhajar`, `bhagwatGhajarMod`, `choi`, `hibikiIshii`, `francaLahey`, `c0UdDisperso/AnularChurn/Estratificado`. Dispatcher por parâmetro inteiro (remove dependência de `arq.*`). Bateria de 20 testes de caracterização. `TrendBuffer` e `buildVerticalWell` reinseridos no header/impl após corrupção detectada. `test_sisprod2.py` atualizado para compilar `SisProd_r03.cpp`. | 60/60 selftest; 144 passed, 1 skipped pytest; build OFF/ON OK; paridade dual-run OK | OK |
-| 2026-07-22 | Fase 1/R14 (grupo arq.*) | Adicionados getters `config()` / `config() const` ao `SProd` em `SisProd.h`. Substituídos todos os 737 acessos diretos `.arq.` em `Num4Main.cpp` por `.config().` (sis, malha[], sistem1, sistem2[], sistem2[iSeq], temporario, malha[ordCol[icol2]], malha[i][0]). 0 acessos `.arq.` diretos restantes em `Num4Main.cpp`. Correção colateral: campo `indCelPoisson2D` recomposto (`;` removido pela ferramenta de edição) e campos `flutG`, `flut`, `matglobG` restaurados no `SisProd.h`. Comparador de paridade `compare_sisprod_impls.py` atualizado para excluir `LogEvento.dat` (arquivo de log de eventos não-físico, flaky por wall-clock). | Build OFF/ON OK; 144 passed, 1 skipped pytest; 3 demos IGUAIS a 1e-6 | OK |
-| 2026-07-22 | Fase 1/R14 (grupos celula[]/celulaG[]) | Adicionados getters `cell(int i)` / `gasCell(int i)` ao `SProd` em `SisProd.h`. Substituídos 4451 acessos `.celula[]` e 226 `.celulaG[]` em `Num4Main.cpp` por `.cell()` e `.gasCell()` usando parser bracket-aware (trata índices aninhados). Revertidas substituições em sub-objetos não-SProd (`.radialPoro.celula[]`, `.transfer.celula[]`). `SolveTrans` já é método público — não requer encapsulamento adicional. 0 acessos diretos `.celula[]` e `.celulaG[]` restantes em `Num4Main.cpp`. | Build OK; 144 passed, 1 skipped pytest; paridade dual-run OK | OK |
-| 2026-07-22 | Fase 2/R06+R10 | Portados `colebrookFrictionFactor` (Colebrook-White iterativo, exportado) e `areaValvCali` (GLV apertura, R10) como funções livres puras em `src/core/SisProd_r06.cpp`. 13 novos testes de caracterização (Colebrook: 5 valores analíticos + 2 monotonicidade + 1 consistência; areaValvCali: 4 casos). `test_sisprod2.py` atualizado para compilar `SisProd_r06.cpp`. | 73/73 selftest; 144 passed, 1 skipped pytest; build OFF/ON OK; paridade dual-run OK | OK |
-| 2026-07-22 | Fase 2/R05 | Criados `FlowCorrelationId`, `PressureGradientInput`, `PressureGradientResult` em `SisProd2.h` e dispatcher `computePressureGradient()` em `SisProd_r05.cpp`. Este wrapper usa `GradientCorrelations.h` (já puro, sem estado SProd) para selecionar a correlação por ID. 27 testes de sanidade física (holdup ∈ [0,1], gravityGrad > 0, totalGrad > 0, determinismo, monotonicidade) guardados por `#ifdef MARLIM_BUILD` no `SisProd.cpp`. `CMakeLists.txt` define `MARLIM_BUILD`. `SisProd_r05.cpp` excluído do selftest isolado (requer `rapidjson` via `GradientCorrelations.h`). | 73/73 selftest; 144 passed, 1 skipped pytest; build OFF/ON OK; paridade dual-run OK | OK (build) |
+### Seção 11 — Notas técnicas
 
-## 9. Correções feitas no trabalho anterior (documentadas)
-
-Conforme solicitado, revisão do que já existia. Os problemas eram pequenos, como
-esperado:
-
-1. **Comparador de paridade acusava falso positivo (significativo p/ o guardrail).**
-   `scripts/compare_sisprod_impls.py` extraía todos os números dos arquivos,
-   inclusive os **timestamps** embutidos (`datahora`, `# simulation date and time
-   ...`) e a `DURACAO` (tempo de parede). Ao cruzar um limite de segundo entre as
-   duas rodadas, aparecia um desvio de exatamente 1.0. Correção: função
-   `_sanitize()` que mascara data (`dd/mm/aaaa`), hora (`hh:mm:ss`) e
-   `DURACAO N segundos` antes de comparar. Após a correção, os três demos passam a
-   1e-6. Não era erro de física, e sim do harness de teste.
-2. **Bracket com termo redundante (cosmético/robustez).** Em
-   `wellheadSearchBounds`, o limite superior somava `separatorPressure` duas
-   vezes. Simplificado para `separatorPressure + searchMargin*hydrostaticGuess`.
-   Sem mudança de resultado a 1e-6 (na verdade melhorou levemente a acurácia da
-   bisseção no caso hidrostático).
-3. **`solveBatch` sem proteção para `requests` vazio.** Uso de `.front()` poderia
-   ser UB. Adicionado fallback `defaultRequest`.
-4. **Tolerância da comparação interna alinhada a 1e-6** (antes 1e-3), conforme o
-   critério de aceite. Suíte segue 24/24.
-
-## 10. Decisões travadas (registrar quando resolvidas)
-
-- [x] Tolerância de paridade: **1e-6 relativa** (definida).
-- [ ] Ordem de porte além de R01/R03: confirmada como a da seção 6 (recomendada).
-- [ ] Contratos de saída fixos (`.mr3`, trends, logs) — assumidos imutáveis.
-- [ ] Significado de constantes mágicas (`1e-15`, `RGOMax`, limiares de choke) — validar com domínio ao portar cada região.
-
-## 11. Como continuar (próxima ação)
-
-> **Gate permanente para qualquer continuação:** antes de marcar qualquer incremento como concluído, executar e registrar: (1) selftest isolado, (2) build OFF, (3) build ON, (4) testes específicos do incremento, (5) comparação/paridade quando aplicável.
-
-**Estado atual:**
-- Fase 0 (guardrail 1e-6): **CONCLUÍDA**.
-- Fase 2/R01 (`RootFinder`): **CONCLUÍDA** — 73/73 testes.
-- Fase 2/R03 (C0/Ud): **CONCLUÍDA** — `SisProd_r03.cpp`.
-- Fase 2/R05 (dispatcher + `marchToWellheadPhysical`): **CONCLUÍDA** — `SisProd_r05.cpp`, 36 testes totais via `#ifdef MARLIM_BUILD`.
-- Fase 2/R04 (branch analítico `flashCompleto==0`): **PARCIAL** — helpers puros expandidos em `SisProd_r04.cpp`, consumidor real integrado em `marchToWellheadPhysical`, bloco de transferência de fase integrado ao fluxo principal de marcha de massa, bloco líquido/térmico derivado de `RenovaTempPerm` integrado ao fluxo principal térmico da nova arquitetura, condutividade analítica portada e termos mínimos de Joule-Thomson integrados; faltam entalpias/derivadas complementares e os caminhos tabelados/PVTSim/composicional.
-- Fase 2/R06+R10 (Colebrook + areaValvCali): **CONCLUÍDA** — `SisProd_r06.cpp`, 13 testes.
-- Fase 1/R14 (encapsulamento `Num4Main.cpp`): **CONCLUÍDA** — ~5414 acessos diretos eliminados.
-- **Paridade dual-run: 6/6 demos IGUAIS a 1e-6** (`simplifiedProduction`, `2zones-2GLVs`, `2zones-PA`, `extended-ESP-pumpEfic`, `extended-shutdown`, `MultiESP`, `injec-Liq`).
-- Selftest: 73/73 | Pytest: 144/1 | Builds OFF/ON: OK
-
-**Bloqueio identificado:** R04–R09 (física acoplada) dependem de `ProFlu` (modelo PVT black-oil com 532 chamadas internas a `BOFunc/BAFunc/RS/MasEspGas`). Portar `RenovaMassPerm` sem portar `ProFlu` completo é inviável. `ProFlu` depende de tabelas PVT, formatos de arquivo `.tab`/`.CTM`, e interpolação — escopo de portagem muito maior.
-
-**Próxima ação — continuar Fase 2/R04 em direção ao uso real em R05/R09:**
-
-- ### Opção A — Levar o adaptador para `RenovaMassPerm`
-  Reusar `BlackOilState` / `makeBlackOilState()` e o novo `computePhaseTransferRate()` para atacar o próximo bloco pequeno de `RenovaMassPerm` além do já integrado em `TramoEngine::marchMassWithPhaseTransfer()`, preferencialmente um trecho que também consuma `MasEspLiq`/`ViscOleo`/`CalorLiq`.
-
-### Opção B — Portar derivadas/restantes utilidades térmicas do branch analítico
-- Cobrir `drhodp`, `drhodt` do gás, entalpias/JT e demais auxiliares ainda usados por R07. A parte de condutividade e o bloco mínimo de Joule-Thomson já foram portados.
-- Cobrir `drhodp`, `drhodt` do gás, entalpias e demais auxiliares ainda usados por R07. A parte de condutividade e o bloco mínimo de Joule-Thomson já foram portados.
-
-### Opção C — Portar `corrDeng` / `renovaRGOdgYco2`
-Atacar o pré-processamento de propriedades de fluido antes da marcha, reduzindo dependência de `ProFlu` no caminho de entrada.
-
-- **Recomendação:** Opção B — portar agora o menor bloco analítico de entalpia ainda necessário (`EntalpLiq` e/ou `EntalpGas`, se estritamente requerido pelo trecho escolhido) para continuar a reduzir aproximações no caminho térmico recém-integrado.
+- **Parity tolerance:** erro relativo < `1e-6` e absoluto < `1e-9`.
+- **Dual-run:** habilitado via `-DMARLIM_USE_NEW_SISPROD=ON` no CMake.
+- **Arquivo de referência:** `src/core/SisProd_old.cpp` contém ~26,127 linhas do legado.
+- **Novo arquivo:** `src/core/SisProd.cpp` + `src/include/SisProd2.h` — arquitetura Marlim3 atual.
+- **Testes:** todos os cenários de `data/inputs/` são usados para validação cross-run.

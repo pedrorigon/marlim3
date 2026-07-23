@@ -307,6 +307,17 @@ double gasJouleThomsonBlackOil(double pres, double temp,
                                double Deng, double PCis, double TCis,
                                double rhog = -1.0);
 
+/// Liquid enthalpy in J/kg for the analytical black-oil branch.
+double liquidEnthalpyBlackOil(double pres, double temp,
+                              double API, double Deng,
+                              double BSW, double Denag,
+                              double rs, double rDgD = 1.0);
+
+/// Gas enthalpy in J/kg for the analytical black-oil branch.
+double gasEnthalpyBlackOil(double pres, double temp,
+                           double Deng, double PCis, double TCis,
+                           double yco2 = 0.0, double rDgL = 1.0);
+
 // ---------------------------------------------------------------------------
 // 5. Standard-condition streams and stream mixing (Strategy). Deduplicates the
 //    repeated core of RenovaMassPerm and its variants.
@@ -567,6 +578,9 @@ struct ThermalFlowSnapshot {
     double gasDensity;
     double liquidSpecificHeat;
     double gasSpecificHeat;
+    double liquidEnthalpy;
+    double gasEnthalpy;
+    double latentHeat;
     double liquidJouleThomson;
     double gasJouleThomson;
     double liquidViscosityPaS;
@@ -578,11 +592,13 @@ struct ThermalFlowSnapshot {
 
     ThermalFlowSnapshot()
         : liquidDensity(0.0), gasDensity(0.0), liquidSpecificHeat(0.0),
-          gasSpecificHeat(0.0), liquidJouleThomson(0.0),
-          gasJouleThomson(0.0), liquidViscosityPaS(0.0),
-          gasViscosityPaS(0.0), mixedConductivity(0.0),
-          mixedSpecificHeat(0.0), mixedDensity(0.0),
-          mixedViscosityPaS(0.0) {}
+          gasSpecificHeat(0.0), liquidEnthalpy(0.0),
+          gasEnthalpy(0.0), latentHeat(0.0),
+          liquidJouleThomson(0.0),
+          gasJouleThomson(0.0),
+          liquidViscosityPaS(0.0), gasViscosityPaS(0.0),
+          mixedConductivity(0.0), mixedSpecificHeat(0.0),
+          mixedDensity(0.0), mixedViscosityPaS(0.0) {}
 };
 
 /// Pure helper extracted from the liquid/thermal-property block used by

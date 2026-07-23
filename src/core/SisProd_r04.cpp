@@ -343,6 +343,21 @@ double gasJouleThomsonBlackOil(double pres, double temp,
     return (temp + 273.16) * dzdt / (z0 * rho);
 }
 
+double liquidEnthalpyBlackOil(double pres, double temp,
+                              double API, double Deng,
+                              double BSW, double Denag,
+                              double rs, double rDgD) {
+    return liquidSpecificHeatBlackOil(pres, temp, API, Deng, BSW, Denag,
+                                      rs, rDgD) * temp;
+}
+
+double gasEnthalpyBlackOil(double pres, double temp,
+                           double Deng, double PCis, double TCis,
+                           double yco2, double rDgL) {
+    return gasSpecificHeatBlackOil(pres, temp, Deng, PCis, TCis,
+                                   yco2, rDgL) * temp;
+}
+
  double gasSpecificHeatBlackOil(double pres, double temp, double Deng,
                                 double PCis, double TCis,
                                 double yco2, double rDgL) {
