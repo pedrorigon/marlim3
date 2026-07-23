@@ -594,7 +594,7 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
     srand(time(NULL));
     int frase = rand() % 15;
 
-    if (sis.arq.HISEP == 0) {
+    if (sis.config().HISEP == 0) {
         ostringstream saidaS;
         int numero = round(porc);
         if (tramo < 0)
@@ -688,35 +688,35 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
         int ncel = sis.ncel + 1;
         for (int i = 0; i < ncel; i++) {
             rst << "Celula de producao= " << i << " -> ";
-            rst << sis.celula[i].tempR << " ; " << sis.celula[i].temp << " ; " << sis.celula[i].tempL << " ; " << sis.celula[i].tempini << " ; " << sis.celula[i].presL << " ; " << sis.celula[i].presLini << " ; " << sis.celula[i].pres << " ; " << sis.celula[i].presini << " ; " << sis.celula[i].presauxL << " ; " << sis.celula[i].presaux << " ; " << sis.celula[i].presauxR << " ; " << sis.celula[i].presR << " ; " << sis.celula[i].ML << " ; " << sis.celula[i].MC << " ; " << sis.celula[i].MR << " ; " << sis.celula[i].MRini << " ; " << sis.celula[i].MliqiniR << " ; " << sis.celula[i].Mliqini << " ; " << sis.celula[i].MliqiniL << " ; " << sis.celula[i].alfL << " ; " << sis.celula[i].alfLini << " ; " << sis.celula[i].alfR << " ; " << sis.celula[i].alfRini << " ; " << sis.celula[i].alf << " ; " << sis.celula[i].alfini << " ; " << sis.celula[i].betL << " ; " << sis.celula[i].betLini << " ; " << sis.celula[i].betR << " ; " << sis.celula[i].betRini << " ; " << sis.celula[i].bet << " ; " << sis.celula[i].betini << " ; " << sis.celula[i].betLI << " ; " << sis.celula[i].betI << " ; " << sis.celula[i].betRI << " ; " << sis.celula[i].FW << " ; " << sis.celula[i].FWini << " ; " << sis.celula[i].massfonteCH << " ; " << sis.celula[i].term1L << " ; " << sis.celula[i].term2L << " ; " << sis.celula[i].term1 << " ; " << sis.celula[i].term2 << " ; " << sis.celula[i].term1R << " ; " << sis.celula[i].term2R << " ; " << sis.celula[i].c0 << " ; " << sis.celula[i].ud << " ; " << sis.celula[i].c0Spare << " ; " << sis.celula[i].udSpare << " ; " << sis.celula[i].transmassL << " ; " << sis.celula[i].transmassR << " ; " << sis.celula[i].DTransDt1 << " ; " << sis.celula[i].DTransDt0 << " ; " << sis.celula[i].DTransDxR << " ; " << sis.celula[i].DTransDxL << " ; " << sis.celula[i].coefTransBet << " ; " << sis.celula[i].CoefDTR << " ; " << sis.celula[i].CoefDTL << " ; " << sis.celula[i].fontedissolv << " ; " << sis.celula[i].TMModel << " ; " << sis.celula[i].TMModelL << " ; " << sis.celula[i].fontemassLL << " ; " << sis.celula[i].fontemassGL << " ; " << sis.celula[i].fontemassCL << " ; " << sis.celula[i].fontemassLR << " ; " << sis.celula[i].fontemassGR << " ; " << sis.celula[i].fontemassCR << " ; " << sis.celula[i].dpB << " ; " << sis.celula[i].potB << " ; " << sis.celula[i].transic << " ; " << sis.celula[i].arranjo << " ; " << sis.celula[i].arranjoR << " ; " << sis.celula[i].chutearranjo << " ; " << sis.celula[i].QLL << " ; " << sis.celula[i].QL << " ; " << sis.celula[i].QLR << " ; " << sis.celula[i].QG << " ; " << sis.celula[i].rpL << " ; " << sis.celula[i].rpC << " ; " << sis.celula[i].rpR << " ; " << sis.celula[i].rcL << " ; " << sis.celula[i].rcC << " ; " << sis.celula[i].rcR << " ; " << sis.celula[i].rpLi << " ; " << sis.celula[i].rpCi << " ; " << sis.celula[i].rpRi << " ; " << sis.celula[i].rcLi << " ; " << sis.celula[i].rcCi << " ; " << sis.celula[i].rcRi << " ; " << sis.celula[i].perdaEstratL << " ; " << sis.celula[i].perdaEstratG << " ; " << sis.celula[i].cinematico << " ; " << sis.celula[i].VTemper << " ; " << sis.celula[i].estadoPig << " ; " << sis.celula[i].dtPig << " ; " << sis.celula[i].alfPigE << " ; " << sis.celula[i].alfPigEini << " ; " << sis.celula[i].alfPigD << " ; " << sis.celula[i].alfPigDini << " ; " << sis.celula[i].betPigE << " ; " << sis.celula[i].betPigEini << " ; " << sis.celula[i].betPigD << " ; " << sis.celula[i].betPigDini << " ; " << sis.celula[i].velPig << " ; " << sis.celula[i].velPigini << " ; " << sis.celula[i].razPig << " ; " << sis.celula[i].razPigini << " ; " << sis.celula[i].VolLeveST << " ; " << sis.celula[i].VolPesaST << " ; " << sis.celula[i].VolAguaST << " ; " << sis.celula[i].DmasschokeG << " ; " << sis.celula[i].DmasschokeL << " ; " << sis.celula[i].DmasschokeC << " ; " << sis.celula[i].MliqiniR0 << " ; " << sis.celula[i].presBuf << " ; " << sis.celula[i].presLiniBuf << " ; " << sis.celula[i].presLBuf << " ; " << sis.celula[i].presRBuf << " ; " << sis.celula[i].presauxBuf << " ; " << sis.celula[i].MCBuf << " ; " << sis.celula[i].MRBuf << " ; " << sis.celula[i].MliqiniRBuf << " ; " << sis.celula[i].MRiniBuf << " ; " << sis.celula[i].MLBuf << " ; " << sis.celula[i].MliqiniBuf << " ; " << sis.celula[i].MliqiniLBuf << " ; " << sis.celula[i].QLRini << " ; " << sis.celula[i].presRini << " ; " << sis.celula[i].presauxini << " ; " << sis.celula[i].MCini << " ; " << sis.celula[i].MRini << " ; " << sis.celula[i].MLini << " ; " << sis.celula[i].Mliqini0 << " ; " << sis.celula[i].MliqiniL0 << " ; " << sis.celula[i].tempLini << " ; " << sis.celula[i].tempRini << " ; " << sis.celula[i].rgC << " ; " << sis.celula[i].rgL << " ; " << sis.celula[i].rgR << " ; " << sis.celula[i].rgCi << " ; " << sis.celula[i].rgLi << " ; " << sis.celula[i].rgRi << " ; " << sis.celula[i].flui.API << " ; " << sis.celula[i].flui.RGO << " ; " << sis.celula[i].flui.Deng << " ; " << sis.celula[i].flui.BSW << " ; " << sis.celula[i].flui.TempL << " ; " << sis.celula[i].flui.LVisL << " ; " << sis.celula[i].flui.TempH << " ; " << sis.celula[i].flui.LVisH << " ; " << sis.celula[i].flui.tipoemul << " ; " << sis.celula[i].flui.bswCorte << " ; " << sis.celula[i].flui.yco2 << " ; " << sis.celula[i].flui.corrC << " ; ";
-            if (sis.arq.modoParafina == 1) {
-                rst << sis.celula[i].parafinado << " ; " << sis.celula[i].duto.espessuR[0] << " ; " << sis.celula[i].duto.cond[0] << " ; " << sis.celula[i].duto.cp[0] << " ; " << sis.celula[i].duto.rhoC[0] << " ; " << sis.celula[i].deltaPar << " ; ";
+            rst << sis.cell(i).tempR << " ; " << sis.cell(i).temp << " ; " << sis.cell(i).tempL << " ; " << sis.cell(i).tempini << " ; " << sis.cell(i).presL << " ; " << sis.cell(i).presLini << " ; " << sis.cell(i).pres << " ; " << sis.cell(i).presini << " ; " << sis.cell(i).presauxL << " ; " << sis.cell(i).presaux << " ; " << sis.cell(i).presauxR << " ; " << sis.cell(i).presR << " ; " << sis.cell(i).ML << " ; " << sis.cell(i).MC << " ; " << sis.cell(i).MR << " ; " << sis.cell(i).MRini << " ; " << sis.cell(i).MliqiniR << " ; " << sis.cell(i).Mliqini << " ; " << sis.cell(i).MliqiniL << " ; " << sis.cell(i).alfL << " ; " << sis.cell(i).alfLini << " ; " << sis.cell(i).alfR << " ; " << sis.cell(i).alfRini << " ; " << sis.cell(i).alf << " ; " << sis.cell(i).alfini << " ; " << sis.cell(i).betL << " ; " << sis.cell(i).betLini << " ; " << sis.cell(i).betR << " ; " << sis.cell(i).betRini << " ; " << sis.cell(i).bet << " ; " << sis.cell(i).betini << " ; " << sis.cell(i).betLI << " ; " << sis.cell(i).betI << " ; " << sis.cell(i).betRI << " ; " << sis.cell(i).FW << " ; " << sis.cell(i).FWini << " ; " << sis.cell(i).massfonteCH << " ; " << sis.cell(i).term1L << " ; " << sis.cell(i).term2L << " ; " << sis.cell(i).term1 << " ; " << sis.cell(i).term2 << " ; " << sis.cell(i).term1R << " ; " << sis.cell(i).term2R << " ; " << sis.cell(i).c0 << " ; " << sis.cell(i).ud << " ; " << sis.cell(i).c0Spare << " ; " << sis.cell(i).udSpare << " ; " << sis.cell(i).transmassL << " ; " << sis.cell(i).transmassR << " ; " << sis.cell(i).DTransDt1 << " ; " << sis.cell(i).DTransDt0 << " ; " << sis.cell(i).DTransDxR << " ; " << sis.cell(i).DTransDxL << " ; " << sis.cell(i).coefTransBet << " ; " << sis.cell(i).CoefDTR << " ; " << sis.cell(i).CoefDTL << " ; " << sis.cell(i).fontedissolv << " ; " << sis.cell(i).TMModel << " ; " << sis.cell(i).TMModelL << " ; " << sis.cell(i).fontemassLL << " ; " << sis.cell(i).fontemassGL << " ; " << sis.cell(i).fontemassCL << " ; " << sis.cell(i).fontemassLR << " ; " << sis.cell(i).fontemassGR << " ; " << sis.cell(i).fontemassCR << " ; " << sis.cell(i).dpB << " ; " << sis.cell(i).potB << " ; " << sis.cell(i).transic << " ; " << sis.cell(i).arranjo << " ; " << sis.cell(i).arranjoR << " ; " << sis.cell(i).chutearranjo << " ; " << sis.cell(i).QLL << " ; " << sis.cell(i).QL << " ; " << sis.cell(i).QLR << " ; " << sis.cell(i).QG << " ; " << sis.cell(i).rpL << " ; " << sis.cell(i).rpC << " ; " << sis.cell(i).rpR << " ; " << sis.cell(i).rcL << " ; " << sis.cell(i).rcC << " ; " << sis.cell(i).rcR << " ; " << sis.cell(i).rpLi << " ; " << sis.cell(i).rpCi << " ; " << sis.cell(i).rpRi << " ; " << sis.cell(i).rcLi << " ; " << sis.cell(i).rcCi << " ; " << sis.cell(i).rcRi << " ; " << sis.cell(i).perdaEstratL << " ; " << sis.cell(i).perdaEstratG << " ; " << sis.cell(i).cinematico << " ; " << sis.cell(i).VTemper << " ; " << sis.cell(i).estadoPig << " ; " << sis.cell(i).dtPig << " ; " << sis.cell(i).alfPigE << " ; " << sis.cell(i).alfPigEini << " ; " << sis.cell(i).alfPigD << " ; " << sis.cell(i).alfPigDini << " ; " << sis.cell(i).betPigE << " ; " << sis.cell(i).betPigEini << " ; " << sis.cell(i).betPigD << " ; " << sis.cell(i).betPigDini << " ; " << sis.cell(i).velPig << " ; " << sis.cell(i).velPigini << " ; " << sis.cell(i).razPig << " ; " << sis.cell(i).razPigini << " ; " << sis.cell(i).VolLeveST << " ; " << sis.cell(i).VolPesaST << " ; " << sis.cell(i).VolAguaST << " ; " << sis.cell(i).DmasschokeG << " ; " << sis.cell(i).DmasschokeL << " ; " << sis.cell(i).DmasschokeC << " ; " << sis.cell(i).MliqiniR0 << " ; " << sis.cell(i).presBuf << " ; " << sis.cell(i).presLiniBuf << " ; " << sis.cell(i).presLBuf << " ; " << sis.cell(i).presRBuf << " ; " << sis.cell(i).presauxBuf << " ; " << sis.cell(i).MCBuf << " ; " << sis.cell(i).MRBuf << " ; " << sis.cell(i).MliqiniRBuf << " ; " << sis.cell(i).MRiniBuf << " ; " << sis.cell(i).MLBuf << " ; " << sis.cell(i).MliqiniBuf << " ; " << sis.cell(i).MliqiniLBuf << " ; " << sis.cell(i).QLRini << " ; " << sis.cell(i).presRini << " ; " << sis.cell(i).presauxini << " ; " << sis.cell(i).MCini << " ; " << sis.cell(i).MRini << " ; " << sis.cell(i).MLini << " ; " << sis.cell(i).Mliqini0 << " ; " << sis.cell(i).MliqiniL0 << " ; " << sis.cell(i).tempLini << " ; " << sis.cell(i).tempRini << " ; " << sis.cell(i).rgC << " ; " << sis.cell(i).rgL << " ; " << sis.cell(i).rgR << " ; " << sis.cell(i).rgCi << " ; " << sis.cell(i).rgLi << " ; " << sis.cell(i).rgRi << " ; " << sis.cell(i).flui.API << " ; " << sis.cell(i).flui.RGO << " ; " << sis.cell(i).flui.Deng << " ; " << sis.cell(i).flui.BSW << " ; " << sis.cell(i).flui.TempL << " ; " << sis.cell(i).flui.LVisL << " ; " << sis.cell(i).flui.TempH << " ; " << sis.cell(i).flui.LVisH << " ; " << sis.cell(i).flui.tipoemul << " ; " << sis.cell(i).flui.bswCorte << " ; " << sis.cell(i).flui.yco2 << " ; " << sis.cell(i).flui.corrC << " ; ";
+            if (sis.config().modoParafina == 1) {
+                rst << sis.cell(i).parafinado << " ; " << sis.cell(i).duto.espessuR[0] << " ; " << sis.cell(i).duto.cond[0] << " ; " << sis.cell(i).duto.cp[0] << " ; " << sis.cell(i).duto.rhoC[0] << " ; " << sis.cell(i).deltaPar << " ; ";
             }
-            rst << sis.celula[i].calor.Vint << " ; " << sis.celula[i].calor.Tint << " ; " << sis.celula[i].calor.Tint2 << " ; " << sis.celula[i].calor.kint << " ; " << sis.celula[i].calor.cpint << " ; " << sis.celula[i].calor.rhoint << " ; " << sis.celula[i].calor.viscint << " ; " << sis.celula[i].calor.Vconf << " ; " << sis.celula[i].calor.fluxIni << " ; " << sis.celula[i].calor.fluxFim << " ; " << sis.celula[i].calor.ccon << " ; " << sis.celula[i].calor.ncon << " ; " << sis.celula[i].calor.mcon << " ; " << sis.celula[i].calor.npet << " ; " << sis.celula[i].calor.betint << " ; " << sis.celula[i].calor.betext << " ; " << sis.celula[i].calor.reyi << " ; " << sis.celula[i].calor.reye << " ; " << sis.celula[i].calor.grashi << " ; " << sis.celula[i].calor.grashe << " ; " << sis.celula[i].calor.nusi << " ; " << sis.celula[i].calor.nuse << " ; " << sis.celula[i].calor.pri << " ; " << sis.celula[i].calor.pre << " ; " << sis.celula[i].calor.hi << " ; " << sis.celula[i].calor.he;
+            rst << sis.cell(i).calor.Vint << " ; " << sis.cell(i).calor.Tint << " ; " << sis.cell(i).calor.Tint2 << " ; " << sis.cell(i).calor.kint << " ; " << sis.cell(i).calor.cpint << " ; " << sis.cell(i).calor.rhoint << " ; " << sis.cell(i).calor.viscint << " ; " << sis.cell(i).calor.Vconf << " ; " << sis.cell(i).calor.fluxIni << " ; " << sis.cell(i).calor.fluxFim << " ; " << sis.cell(i).calor.ccon << " ; " << sis.cell(i).calor.ncon << " ; " << sis.cell(i).calor.mcon << " ; " << sis.cell(i).calor.npet << " ; " << sis.cell(i).calor.betint << " ; " << sis.cell(i).calor.betext << " ; " << sis.cell(i).calor.reyi << " ; " << sis.cell(i).calor.reye << " ; " << sis.cell(i).calor.grashi << " ; " << sis.cell(i).calor.grashe << " ; " << sis.cell(i).calor.nusi << " ; " << sis.cell(i).calor.nuse << " ; " << sis.cell(i).calor.pri << " ; " << sis.cell(i).calor.pre << " ; " << sis.cell(i).calor.hi << " ; " << sis.cell(i).calor.he;
 
-            for (int j = 0; j < sis.celula[i].calor.geom.ncamadas; j++) {
-                for (int k = 0; k <= sis.celula[i].calor.ncamada[j]; k++)
-                    rst << " ; " << sis.celula[i].calor.Tcamada[j][k];
+            for (int j = 0; j < sis.cell(i).calor.geom.ncamadas; j++) {
+                for (int k = 0; k <= sis.cell(i).calor.ncamada[j]; k++)
+                    rst << " ; " << sis.cell(i).calor.Tcamada[j][k];
             }
 
-            if (sis.arq.flashCompleto == 2) {
-                rst << " ; " << sis.celula[i].flui.npseudo;
-                for (int j = 0; j < sis.celula[i].flui.npseudo; j++) {
-                    rst << " ; " << sis.celula[i].flui.fracMol[j];
+            if (sis.config().flashCompleto == 2) {
+                rst << " ; " << sis.cell(i).flui.npseudo;
+                for (int j = 0; j < sis.cell(i).flui.npseudo; j++) {
+                    rst << " ; " << sis.cell(i).flui.fracMol[j];
                 }
-                for (int j = 0; j < sis.celula[i].flui.npseudo; j++) {
-                    rst << " ; " << sis.celula[i].flui.oCalculatedLiqComposition[j];
+                for (int j = 0; j < sis.cell(i).flui.npseudo; j++) {
+                    rst << " ; " << sis.cell(i).flui.oCalculatedLiqComposition[j];
                 }
-                for (int j = 0; j < sis.celula[i].flui.npseudo; j++) {
-                    rst << " ; " << sis.celula[i].flui.oCalculatedVapComposition[j];
+                for (int j = 0; j < sis.cell(i).flui.npseudo; j++) {
+                    rst << " ; " << sis.cell(i).flui.oCalculatedVapComposition[j];
                 }
-                rst << " ; " << sis.celula[i].flui.dCalculatedBeta << " ; " << sis.celula[i].flui.dCalculatedBubbleP << " ; " << sis.celula[i].flui.iCalculatedThermodynamicCondition << " ; " << sis.celula[i].flui.iCalculatedStockTankThermodynamicCondition << " ; " << sis.celula[i].flui.dVaporMassFraction << " ; " << sis.celula[i].flui.dStockTankVaporMassFraction << " ; " << sis.celula[i].flui.dStockTankLiquidDensity << " ; " << sis.celula[i].flui.dStockTankVaporDensity;
+                rst << " ; " << sis.cell(i).flui.dCalculatedBeta << " ; " << sis.cell(i).flui.dCalculatedBubbleP << " ; " << sis.cell(i).flui.iCalculatedThermodynamicCondition << " ; " << sis.cell(i).flui.iCalculatedStockTankThermodynamicCondition << " ; " << sis.cell(i).flui.dVaporMassFraction << " ; " << sis.cell(i).flui.dStockTankVaporMassFraction << " ; " << sis.cell(i).flui.dStockTankLiquidDensity << " ; " << sis.cell(i).flui.dStockTankVaporDensity;
             }
 
             rst << endl;
         }
 
-        if (sis.arq.lingas > 0) {
+        if (sis.config().lingas > 0) {
             rst << endl;
             rst << endl;
             rst << endl;
@@ -724,10 +724,10 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
             ncel = sis.ncelGas + 1;
             for (int i = 0; i < ncel; i++) {
                 rst << "Celula de servico= " << i << " -> ";
-                rst << sis.celulaG[i].tempL << " ; " << sis.celulaG[i].temp << " ; " << sis.celulaG[i].tempR << " ; " << sis.celulaG[i].presL << " ; " << sis.celulaG[i].pres << " ; " << sis.celulaG[i].presini << " ; " << sis.celulaG[i].presR << " ; " << sis.celulaG[i].VGasL << " ; " << sis.celulaG[i].VGasR << " ; " << sis.celulaG[i].VGasRR << " ; " << sis.celulaG[i].u1LL << " ; " << sis.celulaG[i].u1L << " ; " << sis.celulaG[i].u1R << " ; " << sis.celulaG[i].massfonteCH << " ; " << sis.celulaG[i].fluxcal << " ; " << sis.celulaG[i].labelchk << " ; " << sis.celulaG[i].fechamon << " ; " << sis.celulaG[i].rpchk << " ; " << sis.celulaG[i].fonteM2 << " ; " << sis.celulaG[i].salinidade << " ; " << sis.celulaG[i].razInter << " ; " << sis.celulaG[i].razInterIni << " ; " << sis.celulaG[i].tempLini << " ; " << sis.celulaG[i].tempini << " ; " << sis.celulaG[i].tempRini << " ; " << sis.celulaG[i].presLini << " ; " << sis.celulaG[i].presini << " ; " << sis.celulaG[i].presRini << " ; " << sis.celulaG[i].VGasLini << " ; " << sis.celulaG[i].VGasRini << " ; " << sis.celulaG[i].VGasRRini << " ; " << sis.celulaG[i].u1LLini << " ; " << sis.celulaG[i].u1Lini << " ; " << sis.celulaG[i].u1Rini << " ; " << sis.celulaG[i].massfonteCHini << " ; " << sis.celulaG[i].fonteM2ini << " ; " << sis.celulaG[i].fechamonini << " ; " << sis.celulaG[i].posicini << " ; " << sis.celulaG[i].rpchkini << " ; " << sis.celulaG[i].calor.Vint << " ; " << sis.celulaG[i].calor.Tint << " ; " << sis.celulaG[i].calor.Tint2 << " ; " << sis.celulaG[i].calor.kint << " ; " << sis.celulaG[i].calor.cpint << " ; " << sis.celulaG[i].calor.rhoint << " ; " << sis.celulaG[i].calor.viscint << " ; " << sis.celulaG[i].calor.Vconf << " ; " << sis.celulaG[i].calor.fluxIni << " ; " << sis.celulaG[i].calor.fluxFim << " ; " << sis.celulaG[i].calor.ccon << " ; " << sis.celulaG[i].calor.ncon << " ; " << sis.celulaG[i].calor.mcon << " ; " << sis.celulaG[i].calor.npet << " ; " << sis.celulaG[i].calor.betext << " ; " << sis.celulaG[i].calor.betint << " ; " << sis.celulaG[i].calor.reyi << " ; " << sis.celulaG[i].calor.reye << " ; " << sis.celulaG[i].calor.grashi << " ; " << sis.celulaG[i].calor.grashe << " ; " << sis.celulaG[i].calor.nusi << " ; " << sis.celulaG[i].calor.nuse << " ; " << sis.celulaG[i].calor.pri << " ; " << sis.celulaG[i].calor.pre << " ; " << sis.celulaG[i].calor.hi << " ; " << sis.celulaG[i].calor.he;
-                for (int j = 0; j < sis.celulaG[i].calor.geom.ncamadas; j++) {
-                    for (int k = 0; k <= sis.celulaG[i].calor.ncamada[j]; k++)
-                        rst << " ; " << sis.celulaG[i].calor.Tcamada[j][k];
+                rst << sis.gasCell(i).tempL << " ; " << sis.gasCell(i).temp << " ; " << sis.gasCell(i).tempR << " ; " << sis.gasCell(i).presL << " ; " << sis.gasCell(i).pres << " ; " << sis.gasCell(i).presini << " ; " << sis.gasCell(i).presR << " ; " << sis.gasCell(i).VGasL << " ; " << sis.gasCell(i).VGasR << " ; " << sis.gasCell(i).VGasRR << " ; " << sis.gasCell(i).u1LL << " ; " << sis.gasCell(i).u1L << " ; " << sis.gasCell(i).u1R << " ; " << sis.gasCell(i).massfonteCH << " ; " << sis.gasCell(i).fluxcal << " ; " << sis.gasCell(i).labelchk << " ; " << sis.gasCell(i).fechamon << " ; " << sis.gasCell(i).rpchk << " ; " << sis.gasCell(i).fonteM2 << " ; " << sis.gasCell(i).salinidade << " ; " << sis.gasCell(i).razInter << " ; " << sis.gasCell(i).razInterIni << " ; " << sis.gasCell(i).tempLini << " ; " << sis.gasCell(i).tempini << " ; " << sis.gasCell(i).tempRini << " ; " << sis.gasCell(i).presLini << " ; " << sis.gasCell(i).presini << " ; " << sis.gasCell(i).presRini << " ; " << sis.gasCell(i).VGasLini << " ; " << sis.gasCell(i).VGasRini << " ; " << sis.gasCell(i).VGasRRini << " ; " << sis.gasCell(i).u1LLini << " ; " << sis.gasCell(i).u1Lini << " ; " << sis.gasCell(i).u1Rini << " ; " << sis.gasCell(i).massfonteCHini << " ; " << sis.gasCell(i).fonteM2ini << " ; " << sis.gasCell(i).fechamonini << " ; " << sis.gasCell(i).posicini << " ; " << sis.gasCell(i).rpchkini << " ; " << sis.gasCell(i).calor.Vint << " ; " << sis.gasCell(i).calor.Tint << " ; " << sis.gasCell(i).calor.Tint2 << " ; " << sis.gasCell(i).calor.kint << " ; " << sis.gasCell(i).calor.cpint << " ; " << sis.gasCell(i).calor.rhoint << " ; " << sis.gasCell(i).calor.viscint << " ; " << sis.gasCell(i).calor.Vconf << " ; " << sis.gasCell(i).calor.fluxIni << " ; " << sis.gasCell(i).calor.fluxFim << " ; " << sis.gasCell(i).calor.ccon << " ; " << sis.gasCell(i).calor.ncon << " ; " << sis.gasCell(i).calor.mcon << " ; " << sis.gasCell(i).calor.npet << " ; " << sis.gasCell(i).calor.betext << " ; " << sis.gasCell(i).calor.betint << " ; " << sis.gasCell(i).calor.reyi << " ; " << sis.gasCell(i).calor.reye << " ; " << sis.gasCell(i).calor.grashi << " ; " << sis.gasCell(i).calor.grashe << " ; " << sis.gasCell(i).calor.nusi << " ; " << sis.gasCell(i).calor.nuse << " ; " << sis.gasCell(i).calor.pri << " ; " << sis.gasCell(i).calor.pre << " ; " << sis.gasCell(i).calor.hi << " ; " << sis.gasCell(i).calor.he;
+                for (int j = 0; j < sis.gasCell(i).calor.geom.ncamadas; j++) {
+                    for (int k = 0; k <= sis.gasCell(i).calor.ncamada[j]; k++)
+                        rst << " ; " << sis.gasCell(i).calor.Tcamada[j][k];
                 }
                 rst << endl;
             }
@@ -756,7 +756,7 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
         rst << " t [s] " << ";" << " HL [] " << ";" << " slipRatio [] " << ";" << " Usg [m/s] " << ";" << " Usl [m/s] " << ";" << " Flow Pattern " << ";" << " cell " << "\n"; //<< i
         for (int i = 1; i < ncel; i++) {                                                                                                                                       // i=0 não possui velocidades (condição de parede fechada)
             // rst << " t [s] " << " HL [] " << " slipRatio [] " << " Usg [m/s] " << " Usl [m/s]" << " cell " << "\n"; //<< i
-            rst << (*sis.vg1dSP).lixo5 << " ; " << 1 - sis.celula[i].alf << " ; " << (sis.celula[i].QG / sis.celula[i].duto.area * (sis.celula[i].alf + 0.001)) / (sis.celula[i].QL / (sis.celula[i].duto.area * ((1 - sis.celula[i].alf) + 0.001))) << " ; " << sis.celula[i].QG / sis.celula[i].duto.area << " ; " << sis.celula[i].QL / sis.celula[i].duto.area << " ; " << sis.celula[i].arranjo << " ; " << i << " ; ";
+            rst << (*sis.vg1dSP).lixo5 << " ; " << 1 - sis.cell(i).alf << " ; " << (sis.cell(i).QG / sis.cell(i).duto.area * (sis.cell(i).alf + 0.001)) / (sis.cell(i).QL / (sis.cell(i).duto.area * ((1 - sis.cell(i).alf) + 0.001))) << " ; " << sis.cell(i).QG / sis.cell(i).duto.area << " ; " << sis.cell(i).QL / sis.cell(i).duto.area << " ; " << sis.cell(i).arranjo << " ; " << i << " ; ";
 
             rst << "\n";
         }
@@ -766,7 +766,7 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
 }
 
 void ReadSnapShot(SProd &sis) {
-    string dadosMR = sis.arq.snapshotArqIn;
+    string dadosMR = sis.config().snapshotArqIn;
     ifstream rst(dadosMR.c_str(), ios_base::in);
     string chave;
     rst >> chave;
@@ -852,325 +852,325 @@ void ReadSnapShot(SProd &sis) {
         rst >> chave;
         while (chave != "->")
             rst >> chave;
-        rst >> sis.celula[i].tempR;
+        rst >> sis.cell(i).tempR;
         rst >> chave;
-        rst >> sis.celula[i].temp;
+        rst >> sis.cell(i).temp;
         rst >> chave;
-        rst >> sis.celula[i].tempL;
+        rst >> sis.cell(i).tempL;
         rst >> chave;
-        rst >> sis.celula[i].tempini;
+        rst >> sis.cell(i).tempini;
         rst >> chave;
-        rst >> sis.celula[i].presL;
+        rst >> sis.cell(i).presL;
         rst >> chave;
-        rst >> sis.celula[i].presLini;
+        rst >> sis.cell(i).presLini;
         rst >> chave;
-        rst >> sis.celula[i].pres;
+        rst >> sis.cell(i).pres;
         rst >> chave;
-        rst >> sis.celula[i].presini;
+        rst >> sis.cell(i).presini;
         rst >> chave;
-        rst >> sis.celula[i].presauxL;
+        rst >> sis.cell(i).presauxL;
         rst >> chave;
-        rst >> sis.celula[i].presaux;
+        rst >> sis.cell(i).presaux;
         rst >> chave;
-        rst >> sis.celula[i].presauxR;
+        rst >> sis.cell(i).presauxR;
         rst >> chave;
-        rst >> sis.celula[i].presR;
+        rst >> sis.cell(i).presR;
         rst >> chave;
-        rst >> sis.celula[i].ML;
+        rst >> sis.cell(i).ML;
         rst >> chave;
-        rst >> sis.celula[i].MC;
+        rst >> sis.cell(i).MC;
         rst >> chave;
-        rst >> sis.celula[i].MR;
+        rst >> sis.cell(i).MR;
         rst >> chave;
-        rst >> sis.celula[i].MRini;
+        rst >> sis.cell(i).MRini;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniR;
+        rst >> sis.cell(i).MliqiniR;
         rst >> chave;
-        rst >> sis.celula[i].Mliqini;
+        rst >> sis.cell(i).Mliqini;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniL;
+        rst >> sis.cell(i).MliqiniL;
         rst >> chave;
-        rst >> sis.celula[i].alfL;
+        rst >> sis.cell(i).alfL;
         rst >> chave;
-        rst >> sis.celula[i].alfLini;
+        rst >> sis.cell(i).alfLini;
         rst >> chave;
-        rst >> sis.celula[i].alfR;
+        rst >> sis.cell(i).alfR;
         rst >> chave;
-        rst >> sis.celula[i].alfRini;
+        rst >> sis.cell(i).alfRini;
         rst >> chave;
-        rst >> sis.celula[i].alf;
+        rst >> sis.cell(i).alf;
         rst >> chave;
-        rst >> sis.celula[i].alfini;
+        rst >> sis.cell(i).alfini;
         rst >> chave;
-        rst >> sis.celula[i].betL;
+        rst >> sis.cell(i).betL;
         rst >> chave;
-        rst >> sis.celula[i].betLini;
+        rst >> sis.cell(i).betLini;
         rst >> chave;
-        rst >> sis.celula[i].betR;
+        rst >> sis.cell(i).betR;
         rst >> chave;
-        rst >> sis.celula[i].betRini;
+        rst >> sis.cell(i).betRini;
         rst >> chave;
-        rst >> sis.celula[i].bet;
+        rst >> sis.cell(i).bet;
         rst >> chave;
-        rst >> sis.celula[i].betini;
+        rst >> sis.cell(i).betini;
         rst >> chave;
-        rst >> sis.celula[i].betLI;
+        rst >> sis.cell(i).betLI;
         rst >> chave;
-        rst >> sis.celula[i].betI;
+        rst >> sis.cell(i).betI;
         rst >> chave;
-        rst >> sis.celula[i].betRI;
+        rst >> sis.cell(i).betRI;
         rst >> chave;
-        rst >> sis.celula[i].FW;
+        rst >> sis.cell(i).FW;
         rst >> chave;
-        rst >> sis.celula[i].FWini;
+        rst >> sis.cell(i).FWini;
         rst >> chave;
-        rst >> sis.celula[i].massfonteCH;
+        rst >> sis.cell(i).massfonteCH;
         rst >> chave;
-        rst >> sis.celula[i].term1L;
+        rst >> sis.cell(i).term1L;
         rst >> chave;
-        rst >> sis.celula[i].term2L;
+        rst >> sis.cell(i).term2L;
         rst >> chave;
-        rst >> sis.celula[i].term1;
+        rst >> sis.cell(i).term1;
         rst >> chave;
-        rst >> sis.celula[i].term2;
+        rst >> sis.cell(i).term2;
         rst >> chave;
-        rst >> sis.celula[i].term1R;
+        rst >> sis.cell(i).term1R;
         rst >> chave;
-        rst >> sis.celula[i].term2R;
+        rst >> sis.cell(i).term2R;
         rst >> chave;
-        rst >> sis.celula[i].c0;
+        rst >> sis.cell(i).c0;
         rst >> chave;
-        rst >> sis.celula[i].ud;
+        rst >> sis.cell(i).ud;
         rst >> chave;
-        rst >> sis.celula[i].c0Spare;
+        rst >> sis.cell(i).c0Spare;
         rst >> chave;
-        rst >> sis.celula[i].udSpare;
+        rst >> sis.cell(i).udSpare;
         rst >> chave;
-        rst >> sis.celula[i].transmassL;
+        rst >> sis.cell(i).transmassL;
         rst >> chave;
-        rst >> sis.celula[i].transmassR;
+        rst >> sis.cell(i).transmassR;
         rst >> chave;
-        rst >> sis.celula[i].DTransDt1;
+        rst >> sis.cell(i).DTransDt1;
         rst >> chave;
-        rst >> sis.celula[i].DTransDt0;
+        rst >> sis.cell(i).DTransDt0;
         rst >> chave;
-        rst >> sis.celula[i].DTransDxR;
+        rst >> sis.cell(i).DTransDxR;
         rst >> chave;
-        rst >> sis.celula[i].DTransDxL;
+        rst >> sis.cell(i).DTransDxL;
         rst >> chave;
-        rst >> sis.celula[i].coefTransBet;
+        rst >> sis.cell(i).coefTransBet;
         rst >> chave;
-        rst >> sis.celula[i].CoefDTR;
+        rst >> sis.cell(i).CoefDTR;
         rst >> chave;
-        rst >> sis.celula[i].CoefDTL;
+        rst >> sis.cell(i).CoefDTL;
         rst >> chave;
-        rst >> sis.celula[i].fontedissolv;
+        rst >> sis.cell(i).fontedissolv;
         rst >> chave;
-        rst >> sis.celula[i].TMModel;
+        rst >> sis.cell(i).TMModel;
         rst >> chave;
-        rst >> sis.celula[i].TMModelL;
+        rst >> sis.cell(i).TMModelL;
         rst >> chave;
-        rst >> sis.celula[i].fontemassLL;
+        rst >> sis.cell(i).fontemassLL;
         rst >> chave;
-        rst >> sis.celula[i].fontemassGL;
+        rst >> sis.cell(i).fontemassGL;
         rst >> chave;
-        rst >> sis.celula[i].fontemassCL;
+        rst >> sis.cell(i).fontemassCL;
         rst >> chave;
-        rst >> sis.celula[i].fontemassLR;
+        rst >> sis.cell(i).fontemassLR;
         rst >> chave;
-        rst >> sis.celula[i].fontemassGR;
+        rst >> sis.cell(i).fontemassGR;
         rst >> chave;
-        rst >> sis.celula[i].fontemassCR;
+        rst >> sis.cell(i).fontemassCR;
         rst >> chave;
-        rst >> sis.celula[i].dpB;
+        rst >> sis.cell(i).dpB;
         rst >> chave;
-        rst >> sis.celula[i].potB;
+        rst >> sis.cell(i).potB;
         rst >> chave;
-        rst >> sis.celula[i].transic;
+        rst >> sis.cell(i).transic;
         rst >> chave;
-        rst >> sis.celula[i].arranjo;
+        rst >> sis.cell(i).arranjo;
         rst >> chave;
-        rst >> sis.celula[i].arranjoR;
+        rst >> sis.cell(i).arranjoR;
         rst >> chave;
-        rst >> sis.celula[i].chutearranjo;
+        rst >> sis.cell(i).chutearranjo;
         rst >> chave;
-        rst >> sis.celula[i].QLL;
+        rst >> sis.cell(i).QLL;
         rst >> chave;
-        rst >> sis.celula[i].QL;
+        rst >> sis.cell(i).QL;
         rst >> chave;
-        rst >> sis.celula[i].QLR;
+        rst >> sis.cell(i).QLR;
         rst >> chave;
-        rst >> sis.celula[i].QG;
+        rst >> sis.cell(i).QG;
         rst >> chave;
-        rst >> sis.celula[i].rpL;
+        rst >> sis.cell(i).rpL;
         rst >> chave;
-        rst >> sis.celula[i].rpC;
+        rst >> sis.cell(i).rpC;
         rst >> chave;
-        rst >> sis.celula[i].rpR;
+        rst >> sis.cell(i).rpR;
         rst >> chave;
-        rst >> sis.celula[i].rcL;
+        rst >> sis.cell(i).rcL;
         rst >> chave;
-        rst >> sis.celula[i].rcC;
+        rst >> sis.cell(i).rcC;
         rst >> chave;
-        rst >> sis.celula[i].rcR;
+        rst >> sis.cell(i).rcR;
         rst >> chave;
-        rst >> sis.celula[i].rpLi;
+        rst >> sis.cell(i).rpLi;
         rst >> chave;
-        rst >> sis.celula[i].rpCi;
+        rst >> sis.cell(i).rpCi;
         rst >> chave;
-        rst >> sis.celula[i].rpRi;
+        rst >> sis.cell(i).rpRi;
         rst >> chave;
-        rst >> sis.celula[i].rcLi;
+        rst >> sis.cell(i).rcLi;
         rst >> chave;
-        rst >> sis.celula[i].rcCi;
+        rst >> sis.cell(i).rcCi;
         rst >> chave;
-        rst >> sis.celula[i].rcRi;
+        rst >> sis.cell(i).rcRi;
         rst >> chave;
-        rst >> sis.celula[i].perdaEstratL;
+        rst >> sis.cell(i).perdaEstratL;
         rst >> chave;
-        rst >> sis.celula[i].perdaEstratG;
+        rst >> sis.cell(i).perdaEstratG;
         rst >> chave;
-        rst >> sis.celula[i].cinematico;
+        rst >> sis.cell(i).cinematico;
         rst >> chave;
-        rst >> sis.celula[i].VTemper;
+        rst >> sis.cell(i).VTemper;
         rst >> chave;
-        rst >> sis.celula[i].estadoPig;
+        rst >> sis.cell(i).estadoPig;
         rst >> chave;
-        rst >> sis.celula[i].dtPig;
+        rst >> sis.cell(i).dtPig;
         rst >> chave;
-        rst >> sis.celula[i].alfPigE;
+        rst >> sis.cell(i).alfPigE;
         rst >> chave;
-        rst >> sis.celula[i].alfPigEini;
+        rst >> sis.cell(i).alfPigEini;
         rst >> chave;
-        rst >> sis.celula[i].alfPigD;
+        rst >> sis.cell(i).alfPigD;
         rst >> chave;
-        rst >> sis.celula[i].alfPigDini;
+        rst >> sis.cell(i).alfPigDini;
         rst >> chave;
-        rst >> sis.celula[i].betPigE;
+        rst >> sis.cell(i).betPigE;
         rst >> chave;
-        rst >> sis.celula[i].betPigEini;
+        rst >> sis.cell(i).betPigEini;
         rst >> chave;
-        rst >> sis.celula[i].betPigD;
+        rst >> sis.cell(i).betPigD;
         rst >> chave;
-        rst >> sis.celula[i].betPigDini;
+        rst >> sis.cell(i).betPigDini;
         rst >> chave;
-        rst >> sis.celula[i].velPig;
+        rst >> sis.cell(i).velPig;
         rst >> chave;
-        rst >> sis.celula[i].velPigini;
+        rst >> sis.cell(i).velPigini;
         rst >> chave;
-        rst >> sis.celula[i].razPig;
+        rst >> sis.cell(i).razPig;
         rst >> chave;
-        rst >> sis.celula[i].razPigini;
+        rst >> sis.cell(i).razPigini;
         rst >> chave;
-        rst >> sis.celula[i].VolLeveST;
+        rst >> sis.cell(i).VolLeveST;
         rst >> chave;
-        rst >> sis.celula[i].VolPesaST;
+        rst >> sis.cell(i).VolPesaST;
         rst >> chave;
-        rst >> sis.celula[i].VolAguaST;
+        rst >> sis.cell(i).VolAguaST;
         rst >> chave;
-        rst >> sis.celula[i].DmasschokeG;
+        rst >> sis.cell(i).DmasschokeG;
         rst >> chave;
-        rst >> sis.celula[i].DmasschokeL;
+        rst >> sis.cell(i).DmasschokeL;
         rst >> chave;
-        rst >> sis.celula[i].DmasschokeC;
+        rst >> sis.cell(i).DmasschokeC;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniR0;
+        rst >> sis.cell(i).MliqiniR0;
         rst >> chave;
-        rst >> sis.celula[i].presBuf;
+        rst >> sis.cell(i).presBuf;
         rst >> chave;
-        rst >> sis.celula[i].presLiniBuf;
+        rst >> sis.cell(i).presLiniBuf;
         rst >> chave;
-        rst >> sis.celula[i].presLBuf;
+        rst >> sis.cell(i).presLBuf;
         rst >> chave;
-        rst >> sis.celula[i].presRBuf;
+        rst >> sis.cell(i).presRBuf;
         rst >> chave;
-        rst >> sis.celula[i].presauxBuf;
+        rst >> sis.cell(i).presauxBuf;
         rst >> chave;
-        rst >> sis.celula[i].MCBuf;
+        rst >> sis.cell(i).MCBuf;
         rst >> chave;
-        rst >> sis.celula[i].MRBuf;
+        rst >> sis.cell(i).MRBuf;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniRBuf;
+        rst >> sis.cell(i).MliqiniRBuf;
         rst >> chave;
-        rst >> sis.celula[i].MRiniBuf;
+        rst >> sis.cell(i).MRiniBuf;
         rst >> chave;
-        rst >> sis.celula[i].MLBuf;
+        rst >> sis.cell(i).MLBuf;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniBuf;
+        rst >> sis.cell(i).MliqiniBuf;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniLBuf;
+        rst >> sis.cell(i).MliqiniLBuf;
         rst >> chave;
-        rst >> sis.celula[i].QLRini;
+        rst >> sis.cell(i).QLRini;
         rst >> chave;
-        rst >> sis.celula[i].presRini;
+        rst >> sis.cell(i).presRini;
         rst >> chave;
-        rst >> sis.celula[i].presauxini;
+        rst >> sis.cell(i).presauxini;
         rst >> chave;
-        rst >> sis.celula[i].MCini;
+        rst >> sis.cell(i).MCini;
         rst >> chave;
-        rst >> sis.celula[i].MRini;
+        rst >> sis.cell(i).MRini;
         rst >> chave;
-        rst >> sis.celula[i].MLini;
+        rst >> sis.cell(i).MLini;
         rst >> chave;
-        rst >> sis.celula[i].Mliqini0;
+        rst >> sis.cell(i).Mliqini0;
         rst >> chave;
-        rst >> sis.celula[i].MliqiniL0;
+        rst >> sis.cell(i).MliqiniL0;
         rst >> chave;
-        rst >> sis.celula[i].tempLini;
+        rst >> sis.cell(i).tempLini;
         rst >> chave;
-        rst >> sis.celula[i].tempRini;
+        rst >> sis.cell(i).tempRini;
         rst >> chave;
-        rst >> sis.celula[i].rgC;
+        rst >> sis.cell(i).rgC;
         rst >> chave;
-        rst >> sis.celula[i].rgL;
+        rst >> sis.cell(i).rgL;
         rst >> chave;
-        rst >> sis.celula[i].rgR;
+        rst >> sis.cell(i).rgR;
         rst >> chave;
-        rst >> sis.celula[i].rgCi;
+        rst >> sis.cell(i).rgCi;
         rst >> chave;
-        rst >> sis.celula[i].rgLi;
+        rst >> sis.cell(i).rgLi;
         rst >> chave;
-        rst >> sis.celula[i].rgRi;
+        rst >> sis.cell(i).rgRi;
         rst >> chave;
-        rst >> sis.celula[i].flui.API;
+        rst >> sis.cell(i).flui.API;
         rst >> chave;
-        rst >> sis.celula[i].flui.RGO;
+        rst >> sis.cell(i).flui.RGO;
         rst >> chave;
-        rst >> sis.celula[i].flui.Deng;
+        rst >> sis.cell(i).flui.Deng;
         rst >> chave;
-        rst >> sis.celula[i].flui.BSW;
+        rst >> sis.cell(i).flui.BSW;
         rst >> chave;
-        rst >> sis.celula[i].flui.TempL;
+        rst >> sis.cell(i).flui.TempL;
         rst >> chave;
-        rst >> sis.celula[i].flui.LVisL;
+        rst >> sis.cell(i).flui.LVisL;
         rst >> chave;
-        rst >> sis.celula[i].flui.TempH;
+        rst >> sis.cell(i).flui.TempH;
         rst >> chave;
-        rst >> sis.celula[i].flui.LVisH;
+        rst >> sis.cell(i).flui.LVisH;
         rst >> chave;
-        rst >> sis.celula[i].flui.tipoemul;
+        rst >> sis.cell(i).flui.tipoemul;
         rst >> chave;
-        rst >> sis.celula[i].flui.bswCorte;
+        rst >> sis.cell(i).flui.bswCorte;
         rst >> chave;
-        rst >> sis.celula[i].flui.yco2;
+        rst >> sis.cell(i).flui.yco2;
         rst >> chave;
-        rst >> sis.celula[i].flui.corrC;
+        rst >> sis.cell(i).flui.corrC;
         rst >> chave;
-        sis.celula[i].flui.RenovaFluido();
+        sis.cell(i).flui.RenovaFluido();
         if (i > 0)
-            sis.celula[i - 1].fluiR = &(sis.celula[i].flui);
+            sis.cell(i - 1).fluiR = &(sis.cell(i).flui);
         if (i < ncel - 1)
-            sis.celula[i + 1].fluiL = &(sis.celula[i].flui);
-        if (sis.arq.modoParafina == 1) {
-            rst >> sis.celula[i].parafinado;
+            sis.cell(i + 1).fluiL = &(sis.cell(i).flui);
+        if (sis.config().modoParafina == 1) {
+            rst >> sis.cell(i).parafinado;
             rst >> chave;
             double espessura;
             double cpW;
             double kW;
             double rhoW;
             double rugosidade = 0.;
-            if (sis.arq.modoParafina == 1)
-                rugosidade = sis.arq.detalParafina.rug;
+            if (sis.config().modoParafina == 1)
+                rugosidade = sis.config().detalParafina.rug;
             rst >> espessura;
             rst >> chave;
             rst >> kW;
@@ -1179,251 +1179,251 @@ void ReadSnapShot(SProd &sis) {
             rst >> chave;
             rst >> rhoW;
             rst >> chave;
-            rst >> sis.celula[i].deltaPar;
-            if (sis.celula[i].parafinado == 1) {
-                sis.celula[i].duto.atualizaCamada(espessura, rugosidade, cpW, kW, rhoW);
-                sis.celula[i].calor.atualiza(sis.celula[i].duto, 1);
+            rst >> sis.cell(i).deltaPar;
+            if (sis.cell(i).parafinado == 1) {
+                sis.cell(i).duto.atualizaCamada(espessura, rugosidade, cpW, kW, rhoW);
+                sis.cell(i).calor.atualiza(sis.cell(i).duto, 1);
             }
         }
-        rst >> sis.celula[i].calor.Vint;
+        rst >> sis.cell(i).calor.Vint;
         rst >> chave;
-        rst >> sis.celula[i].calor.Tint;
+        rst >> sis.cell(i).calor.Tint;
         rst >> chave;
-        rst >> sis.celula[i].calor.Tint2;
+        rst >> sis.cell(i).calor.Tint2;
         rst >> chave;
-        rst >> sis.celula[i].calor.kint;
+        rst >> sis.cell(i).calor.kint;
         rst >> chave;
-        rst >> sis.celula[i].calor.cpint;
+        rst >> sis.cell(i).calor.cpint;
         rst >> chave;
-        rst >> sis.celula[i].calor.rhoint;
+        rst >> sis.cell(i).calor.rhoint;
         rst >> chave;
-        rst >> sis.celula[i].calor.viscint;
+        rst >> sis.cell(i).calor.viscint;
         rst >> chave;
-        rst >> sis.celula[i].calor.Vconf;
+        rst >> sis.cell(i).calor.Vconf;
         rst >> chave;
-        rst >> sis.celula[i].calor.fluxIni;
+        rst >> sis.cell(i).calor.fluxIni;
         rst >> chave;
-        rst >> sis.celula[i].calor.fluxFim;
+        rst >> sis.cell(i).calor.fluxFim;
         rst >> chave;
-        rst >> sis.celula[i].calor.ccon;
+        rst >> sis.cell(i).calor.ccon;
         rst >> chave;
-        rst >> sis.celula[i].calor.ncon;
+        rst >> sis.cell(i).calor.ncon;
         rst >> chave;
-        rst >> sis.celula[i].calor.mcon;
+        rst >> sis.cell(i).calor.mcon;
         rst >> chave;
-        rst >> sis.celula[i].calor.npet;
+        rst >> sis.cell(i).calor.npet;
         rst >> chave;
-        rst >> sis.celula[i].calor.betint;
+        rst >> sis.cell(i).calor.betint;
         rst >> chave;
-        rst >> sis.celula[i].calor.betext;
+        rst >> sis.cell(i).calor.betext;
         rst >> chave;
-        rst >> sis.celula[i].calor.reyi;
+        rst >> sis.cell(i).calor.reyi;
         rst >> chave;
-        rst >> sis.celula[i].calor.reye;
+        rst >> sis.cell(i).calor.reye;
         rst >> chave;
-        rst >> sis.celula[i].calor.grashi;
+        rst >> sis.cell(i).calor.grashi;
         rst >> chave;
-        rst >> sis.celula[i].calor.grashe;
+        rst >> sis.cell(i).calor.grashe;
         rst >> chave;
-        rst >> sis.celula[i].calor.nusi;
+        rst >> sis.cell(i).calor.nusi;
         rst >> chave;
-        rst >> sis.celula[i].calor.nuse;
+        rst >> sis.cell(i).calor.nuse;
         rst >> chave;
-        rst >> sis.celula[i].calor.pri;
+        rst >> sis.cell(i).calor.pri;
         rst >> chave;
-        rst >> sis.celula[i].calor.pre;
+        rst >> sis.cell(i).calor.pre;
         rst >> chave;
-        rst >> sis.celula[i].calor.hi;
+        rst >> sis.cell(i).calor.hi;
         rst >> chave;
-        rst >> sis.celula[i].calor.he;
+        rst >> sis.cell(i).calor.he;
         rst >> chave;
-        for (int j = 0; j < sis.celula[i].calor.geom.ncamadas; j++) {
-            for (int k = 0; k <= sis.celula[i].calor.ncamada[j]; k++) {
-                rst >> sis.celula[i].calor.Tcamada[j][k];
+        for (int j = 0; j < sis.cell(i).calor.geom.ncamadas; j++) {
+            for (int k = 0; k <= sis.cell(i).calor.ncamada[j]; k++) {
+                rst >> sis.cell(i).calor.Tcamada[j][k];
                 rst >> chave;
             }
         }
-        if (sis.arq.flashCompleto == 2) {
-            rst >> sis.celula[i].flui.npseudo;
+        if (sis.config().flashCompleto == 2) {
+            rst >> sis.cell(i).flui.npseudo;
             rst >> chave;
-            for (int j = 0; j < sis.celula[i].flui.npseudo; j++) {
-                rst >> sis.celula[i].flui.fracMol[j];
+            for (int j = 0; j < sis.cell(i).flui.npseudo; j++) {
+                rst >> sis.cell(i).flui.fracMol[j];
                 rst >> chave;
             }
-            for (int j = 0; j < sis.celula[i].flui.npseudo; j++) {
-                rst >> sis.celula[i].flui.oCalculatedLiqComposition[j];
+            for (int j = 0; j < sis.cell(i).flui.npseudo; j++) {
+                rst >> sis.cell(i).flui.oCalculatedLiqComposition[j];
                 rst >> chave;
             }
-            for (int j = 0; j < sis.celula[i].flui.npseudo; j++) {
-                rst >> sis.celula[i].flui.oCalculatedVapComposition[j];
+            for (int j = 0; j < sis.cell(i).flui.npseudo; j++) {
+                rst >> sis.cell(i).flui.oCalculatedVapComposition[j];
                 rst >> chave;
             }
-            rst >> sis.celula[i].flui.dCalculatedBeta;
+            rst >> sis.cell(i).flui.dCalculatedBeta;
             rst >> chave;
-            rst >> sis.celula[i].flui.dCalculatedBubbleP;
+            rst >> sis.cell(i).flui.dCalculatedBubbleP;
             rst >> chave;
-            rst >> sis.celula[i].flui.iCalculatedThermodynamicCondition;
+            rst >> sis.cell(i).flui.iCalculatedThermodynamicCondition;
             rst >> chave;
-            rst >> sis.celula[i].flui.iCalculatedStockTankThermodynamicCondition;
+            rst >> sis.cell(i).flui.iCalculatedStockTankThermodynamicCondition;
             rst >> chave;
-            rst >> sis.celula[i].flui.dVaporMassFraction;
+            rst >> sis.cell(i).flui.dVaporMassFraction;
             rst >> chave;
-            rst >> sis.celula[i].flui.dStockTankVaporMassFraction;
+            rst >> sis.cell(i).flui.dStockTankVaporMassFraction;
             rst >> chave;
-            rst >> sis.celula[i].flui.dStockTankLiquidDensity;
+            rst >> sis.cell(i).flui.dStockTankLiquidDensity;
             rst >> chave;
-            rst >> sis.celula[i].flui.dStockTankVaporDensity;
+            rst >> sis.cell(i).flui.dStockTankVaporDensity;
             rst >> chave;
 
-            sis.celula[i].flui.atualizaPropCompStandard();
-            sis.celula[i].flui.atualizaPropComp(sis.celula[i].pres, sis.celula[i].temp, sis.celula[i].flui.dCalculatedBeta,
-                                                sis.celula[i].flui.oCalculatedLiqComposition,
-                                                sis.celula[i].flui.oCalculatedVapComposition, sis.arq.pocinjec);
+            sis.cell(i).flui.atualizaPropCompStandard();
+            sis.cell(i).flui.atualizaPropComp(sis.cell(i).pres, sis.cell(i).temp, sis.cell(i).flui.dCalculatedBeta,
+                                                sis.cell(i).flui.oCalculatedLiqComposition,
+                                                sis.cell(i).flui.oCalculatedVapComposition, sis.config().pocinjec);
         }
     }
 
-    if (sis.arq.lingas > 0) {
+    if (sis.config().lingas > 0) {
         ncel = sis.ncelGas + 1;
         for (int i = 0; i < ncel; i++) {
             rst >> chave;
             while (chave != "->")
                 rst >> chave;
-            rst >> sis.celulaG[i].tempL;
+            rst >> sis.gasCell(i).tempL;
             rst >> chave;
-            rst >> sis.celulaG[i].temp;
+            rst >> sis.gasCell(i).temp;
             rst >> chave;
-            rst >> sis.celulaG[i].tempR;
+            rst >> sis.gasCell(i).tempR;
             rst >> chave;
-            rst >> sis.celulaG[i].presL;
+            rst >> sis.gasCell(i).presL;
             rst >> chave;
-            rst >> sis.celulaG[i].pres;
+            rst >> sis.gasCell(i).pres;
             rst >> chave;
-            rst >> sis.celulaG[i].presini;
+            rst >> sis.gasCell(i).presini;
             rst >> chave;
-            rst >> sis.celulaG[i].presR;
+            rst >> sis.gasCell(i).presR;
             rst >> chave;
-            rst >> sis.celulaG[i].VGasL;
+            rst >> sis.gasCell(i).VGasL;
             rst >> chave;
-            rst >> sis.celulaG[i].VGasR;
+            rst >> sis.gasCell(i).VGasR;
             rst >> chave;
-            rst >> sis.celulaG[i].VGasRR;
+            rst >> sis.gasCell(i).VGasRR;
             rst >> chave;
-            rst >> sis.celulaG[i].u1LL;
+            rst >> sis.gasCell(i).u1LL;
             rst >> chave;
-            rst >> sis.celulaG[i].u1L;
+            rst >> sis.gasCell(i).u1L;
             rst >> chave;
-            rst >> sis.celulaG[i].u1R;
+            rst >> sis.gasCell(i).u1R;
             rst >> chave;
-            rst >> sis.celulaG[i].massfonteCH;
+            rst >> sis.gasCell(i).massfonteCH;
             rst >> chave;
-            rst >> sis.celulaG[i].fluxcal;
+            rst >> sis.gasCell(i).fluxcal;
             rst >> chave;
-            rst >> sis.celulaG[i].labelchk;
+            rst >> sis.gasCell(i).labelchk;
             rst >> chave;
-            rst >> sis.celulaG[i].fechamon;
+            rst >> sis.gasCell(i).fechamon;
             rst >> chave;
-            rst >> sis.celulaG[i].rpchk;
+            rst >> sis.gasCell(i).rpchk;
             rst >> chave;
-            rst >> sis.celulaG[i].fonteM2;
+            rst >> sis.gasCell(i).fonteM2;
             rst >> chave;
-            rst >> sis.celulaG[i].salinidade;
+            rst >> sis.gasCell(i).salinidade;
             rst >> chave;
-            rst >> sis.celulaG[i].razInter;
+            rst >> sis.gasCell(i).razInter;
             rst >> chave;
-            rst >> sis.celulaG[i].razInterIni;
+            rst >> sis.gasCell(i).razInterIni;
             rst >> chave;
-            sis.celulaG[i].celInter = &(sis.celInter);
-            rst >> sis.celulaG[i].tempLini;
+            sis.gasCell(i).celInter = &(sis.celInter);
+            rst >> sis.gasCell(i).tempLini;
             rst >> chave;
-            rst >> sis.celulaG[i].tempini;
+            rst >> sis.gasCell(i).tempini;
             rst >> chave;
-            rst >> sis.celulaG[i].tempRini;
+            rst >> sis.gasCell(i).tempRini;
             rst >> chave;
-            rst >> sis.celulaG[i].presLini;
+            rst >> sis.gasCell(i).presLini;
             rst >> chave;
-            rst >> sis.celulaG[i].presini;
+            rst >> sis.gasCell(i).presini;
             rst >> chave;
-            rst >> sis.celulaG[i].presRini;
+            rst >> sis.gasCell(i).presRini;
             rst >> chave;
-            rst >> sis.celulaG[i].VGasLini;
+            rst >> sis.gasCell(i).VGasLini;
             rst >> chave;
-            rst >> sis.celulaG[i].VGasRini;
+            rst >> sis.gasCell(i).VGasRini;
             rst >> chave;
-            rst >> sis.celulaG[i].VGasRRini;
+            rst >> sis.gasCell(i).VGasRRini;
             rst >> chave;
-            rst >> sis.celulaG[i].u1LLini;
+            rst >> sis.gasCell(i).u1LLini;
             rst >> chave;
-            rst >> sis.celulaG[i].u1Lini;
+            rst >> sis.gasCell(i).u1Lini;
             rst >> chave;
-            rst >> sis.celulaG[i].u1Rini;
+            rst >> sis.gasCell(i).u1Rini;
             rst >> chave;
-            rst >> sis.celulaG[i].massfonteCHini;
+            rst >> sis.gasCell(i).massfonteCHini;
             rst >> chave;
-            rst >> sis.celulaG[i].fonteM2ini;
+            rst >> sis.gasCell(i).fonteM2ini;
             rst >> chave;
-            rst >> sis.celulaG[i].fechamonini;
+            rst >> sis.gasCell(i).fechamonini;
             rst >> chave;
-            sis.celulaG[i].celInterini = &(sis.celInterIni);
-            rst >> sis.celulaG[i].posicini;
+            sis.gasCell(i).celInterini = &(sis.celInterIni);
+            rst >> sis.gasCell(i).posicini;
             rst >> chave;
-            rst >> sis.celulaG[i].rpchkini;
+            rst >> sis.gasCell(i).rpchkini;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.Vint;
+            rst >> sis.gasCell(i).calor.Vint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.Tint;
+            rst >> sis.gasCell(i).calor.Tint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.Tint2;
+            rst >> sis.gasCell(i).calor.Tint2;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.kint;
+            rst >> sis.gasCell(i).calor.kint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.cpint;
+            rst >> sis.gasCell(i).calor.cpint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.rhoint;
+            rst >> sis.gasCell(i).calor.rhoint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.viscint;
+            rst >> sis.gasCell(i).calor.viscint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.Vconf;
+            rst >> sis.gasCell(i).calor.Vconf;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.fluxIni;
+            rst >> sis.gasCell(i).calor.fluxIni;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.fluxFim;
+            rst >> sis.gasCell(i).calor.fluxFim;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.ccon;
+            rst >> sis.gasCell(i).calor.ccon;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.ncon;
+            rst >> sis.gasCell(i).calor.ncon;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.mcon;
+            rst >> sis.gasCell(i).calor.mcon;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.npet;
+            rst >> sis.gasCell(i).calor.npet;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.betint;
+            rst >> sis.gasCell(i).calor.betint;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.betext;
+            rst >> sis.gasCell(i).calor.betext;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.reyi;
+            rst >> sis.gasCell(i).calor.reyi;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.reye;
+            rst >> sis.gasCell(i).calor.reye;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.grashi;
+            rst >> sis.gasCell(i).calor.grashi;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.grashe;
+            rst >> sis.gasCell(i).calor.grashe;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.nusi;
+            rst >> sis.gasCell(i).calor.nusi;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.nuse;
+            rst >> sis.gasCell(i).calor.nuse;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.pri;
+            rst >> sis.gasCell(i).calor.pri;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.pre;
+            rst >> sis.gasCell(i).calor.pre;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.hi;
+            rst >> sis.gasCell(i).calor.hi;
             rst >> chave;
-            rst >> sis.celulaG[i].calor.he;
+            rst >> sis.gasCell(i).calor.he;
             rst >> chave;
 
-            for (int j = 0; j < sis.celulaG[i].calor.geom.ncamadas; j++) {
-                for (int k = 0; k <= sis.celulaG[i].calor.ncamada[j]; k++) {
-                    rst >> sis.celulaG[i].calor.Tcamada[j][k];
+            for (int j = 0; j < sis.gasCell(i).calor.geom.ncamadas; j++) {
+                for (int k = 0; k <= sis.gasCell(i).calor.ncamada[j]; k++) {
+                    rst >> sis.gasCell(i).calor.Tcamada[j][k];
                     rst >> chave;
                 }
             }
@@ -1485,10 +1485,10 @@ double FQleve(Cel *celula, int i) {
 }
 
 int verificaFonteDuplaReversa(SProd *malha, int aux) {
-    if (malha[aux].celula[0].acsr.tipo == 1) {
-        if (malha[aux].celula[1].acsr.tipo == 1) {
-            if (malha[aux].celula[1].acsr.injg.QGas * malha[aux].celula[0].acsr.injg.QGas < 0) {
-                if (fabs(malha[aux].celula[0].acsr.injg.QGas) < fabs(malha[aux].celula[1].acsr.injg.QGas)) {
+    if (malha[aux].cell(0).acsr.tipo == 1) {
+        if (malha[aux].cell(1).acsr.tipo == 1) {
+            if (malha[aux].cell(1).acsr.injg.QGas * malha[aux].cell(0).acsr.injg.QGas < 0) {
+                if (fabs(malha[aux].cell(0).acsr.injg.QGas) < fabs(malha[aux].cell(1).acsr.injg.QGas)) {
                     return -1;
                 } else
                     return 1;
@@ -1496,10 +1496,10 @@ int verificaFonteDuplaReversa(SProd *malha, int aux) {
                 return 1;
         } else
             return 1;
-    } else if (malha[aux].celula[0].acsr.tipo == 2) {
-        if (malha[aux].celula[1].acsr.tipo == 2) {
-            if (malha[aux].celula[1].acsr.injl.QLiq * malha[aux].celula[0].acsr.injl.QLiq < 0) {
-                if (fabs(malha[aux].celula[0].acsr.injl.QLiq) < fabs(malha[aux].celula[1].acsr.injl.QLiq)) {
+    } else if (malha[aux].cell(0).acsr.tipo == 2) {
+        if (malha[aux].cell(1).acsr.tipo == 2) {
+            if (malha[aux].cell(1).acsr.injl.QLiq * malha[aux].cell(0).acsr.injl.QLiq < 0) {
+                if (fabs(malha[aux].cell(0).acsr.injl.QLiq) < fabs(malha[aux].cell(1).acsr.injl.QLiq)) {
                     return -1;
                 } else
                     return 1;
@@ -1507,11 +1507,11 @@ int verificaFonteDuplaReversa(SProd *malha, int aux) {
                 return 1;
         } else
             return 1;
-    } else if (malha[aux].celula[1].acsr.tipo == 10) {
-        double mass0 = malha[aux].celula[0].acsr.injm.MassC +
-                       malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassP;
-        double mass1 = malha[aux].celula[1].acsr.injm.MassC +
-                       malha[aux].celula[1].acsr.injm.MassG + malha[aux].celula[1].acsr.injm.MassP;
+    } else if (malha[aux].cell(1).acsr.tipo == 10) {
+        double mass0 = malha[aux].cell(0).acsr.injm.MassC +
+                       malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassP;
+        double mass1 = malha[aux].cell(1).acsr.injm.MassC +
+                       malha[aux].cell(1).acsr.injm.MassG + malha[aux].cell(1).acsr.injm.MassP;
         if (mass0 * mass1 < 0) {
             if (fabs(mass0) < fabs(mass1)) {
                 return -1;
@@ -1524,14 +1524,14 @@ int verificaFonteDuplaReversa(SProd *malha, int aux) {
 }
 
 int trocaFonteColetor(SProd *malha, int aux) {
-    if (malha[aux].celula[0].acsr.tipo == 1) {
-        if (malha[aux].celula[1].acsr.tipo == 1) {
-            if (malha[aux].celula[1].acsr.injg.QGas * malha[aux].celula[0].acsr.injg.QGas < 0) {
-                if (fabs(malha[aux].celula[0].acsr.injg.QGas) < fabs(malha[aux].celula[1].acsr.injg.QGas)) {
+    if (malha[aux].cell(0).acsr.tipo == 1) {
+        if (malha[aux].cell(1).acsr.tipo == 1) {
+            if (malha[aux].cell(1).acsr.injg.QGas * malha[aux].cell(0).acsr.injg.QGas < 0) {
+                if (fabs(malha[aux].cell(0).acsr.injg.QGas) < fabs(malha[aux].cell(1).acsr.injg.QGas)) {
                     InjGas reserva;
-                    reserva = malha[aux].celula[0].acsr.injg;
-                    malha[aux].celula[0].acsr.injg = malha[aux].celula[1].acsr.injg;
-                    malha[aux].celula[1].acsr.injg = reserva;
+                    reserva = malha[aux].cell(0).acsr.injg;
+                    malha[aux].cell(0).acsr.injg = malha[aux].cell(1).acsr.injg;
+                    malha[aux].cell(1).acsr.injg = reserva;
                     return -1;
                 } else
                     return 1;
@@ -1539,14 +1539,14 @@ int trocaFonteColetor(SProd *malha, int aux) {
                 return 1;
         } else
             return 1;
-    } else if (malha[aux].celula[0].acsr.tipo == 2) {
-        if (malha[aux].celula[1].acsr.tipo == 2) {
-            if (malha[aux].celula[1].acsr.injl.QLiq * malha[aux].celula[0].acsr.injl.QLiq < 0) {
-                if (fabs(malha[aux].celula[0].acsr.injl.QLiq) < fabs(malha[aux].celula[1].acsr.injl.QLiq)) {
+    } else if (malha[aux].cell(0).acsr.tipo == 2) {
+        if (malha[aux].cell(1).acsr.tipo == 2) {
+            if (malha[aux].cell(1).acsr.injl.QLiq * malha[aux].cell(0).acsr.injl.QLiq < 0) {
+                if (fabs(malha[aux].cell(0).acsr.injl.QLiq) < fabs(malha[aux].cell(1).acsr.injl.QLiq)) {
                     InjLiq reserva;
-                    reserva = malha[aux].celula[0].acsr.injl;
-                    malha[aux].celula[0].acsr.injl = malha[aux].celula[1].acsr.injl;
-                    malha[aux].celula[1].acsr.injl = reserva;
+                    reserva = malha[aux].cell(0).acsr.injl;
+                    malha[aux].cell(0).acsr.injl = malha[aux].cell(1).acsr.injl;
+                    malha[aux].cell(1).acsr.injl = reserva;
                     return -1;
                 } else
                     return 1;
@@ -1554,17 +1554,17 @@ int trocaFonteColetor(SProd *malha, int aux) {
                 return 1;
         } else
             return 1;
-    } else if (malha[aux].celula[1].acsr.tipo == 10) {
-        double mass0 = malha[aux].celula[0].acsr.injm.MassC +
-                       malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassP;
-        double mass1 = malha[aux].celula[1].acsr.injm.MassC +
-                       malha[aux].celula[1].acsr.injm.MassG + malha[aux].celula[1].acsr.injm.MassP;
+    } else if (malha[aux].cell(1).acsr.tipo == 10) {
+        double mass0 = malha[aux].cell(0).acsr.injm.MassC +
+                       malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassP;
+        double mass1 = malha[aux].cell(1).acsr.injm.MassC +
+                       malha[aux].cell(1).acsr.injm.MassG + malha[aux].cell(1).acsr.injm.MassP;
         if (mass0 * mass1 < 0) {
             if (fabs(mass0) < fabs(mass1)) {
                 InjMult reserva;
-                reserva = malha[aux].celula[0].acsr.injm;
-                malha[aux].celula[0].acsr.injm = malha[aux].celula[1].acsr.injm;
-                malha[aux].celula[1].acsr.injm = reserva;
+                reserva = malha[aux].cell(0).acsr.injm;
+                malha[aux].cell(0).acsr.injm = malha[aux].cell(1).acsr.injm;
+                malha[aux].cell(1).acsr.injm = reserva;
                 return -1;
             } else
                 return 1;
@@ -1575,21 +1575,21 @@ int trocaFonteColetor(SProd *malha, int aux) {
 }
 
 void retornaFonteColetor(SProd *malha, int aux) {
-    if (malha[aux].celula[0].acsr.tipo == 1) {
+    if (malha[aux].cell(0).acsr.tipo == 1) {
         InjGas reserva;
-        reserva = malha[aux].celula[0].acsr.injg;
-        malha[aux].celula[0].acsr.injg = malha[aux].celula[1].acsr.injg;
-        malha[aux].celula[1].acsr.injg = reserva;
-    } else if (malha[aux].celula[0].acsr.tipo == 2) {
+        reserva = malha[aux].cell(0).acsr.injg;
+        malha[aux].cell(0).acsr.injg = malha[aux].cell(1).acsr.injg;
+        malha[aux].cell(1).acsr.injg = reserva;
+    } else if (malha[aux].cell(0).acsr.tipo == 2) {
         InjLiq reserva;
-        reserva = malha[aux].celula[0].acsr.injl;
-        malha[aux].celula[0].acsr.injl = malha[aux].celula[1].acsr.injl;
-        malha[aux].celula[1].acsr.injl = reserva;
-    } else if (malha[aux].celula[1].acsr.tipo == 10) {
+        reserva = malha[aux].cell(0).acsr.injl;
+        malha[aux].cell(0).acsr.injl = malha[aux].cell(1).acsr.injl;
+        malha[aux].cell(1).acsr.injl = reserva;
+    } else if (malha[aux].cell(1).acsr.tipo == 10) {
         InjMult reserva;
-        reserva = malha[aux].celula[0].acsr.injm;
-        malha[aux].celula[0].acsr.injm = malha[aux].celula[1].acsr.injm;
-        malha[aux].celula[1].acsr.injm = reserva;
+        reserva = malha[aux].cell(0).acsr.injm;
+        malha[aux].cell(0).acsr.injm = malha[aux].cell(1).acsr.injm;
+        malha[aux].cell(1).acsr.injm = reserva;
     }
 }
 
@@ -1649,7 +1649,7 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                         vector<double> dcol;
                         for (int icol = 0; icol < nderiva; icol++) {
                             int aux = arqRede.malha[ind].coleta[icol];
-                            dcol.push_back(malha[aux].celula[0].duto.dia);
+                            dcol.push_back(malha[aux].cell(0).duto.dia);
                             malha[aux].presE = -1.;
                         }
                         sort(dcol.begin(), dcol.end());
@@ -1657,7 +1657,7 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                         for (int icol = 0; icol < nderiva; icol++) {
                             int aux = arqRede.malha[ind].coleta[icol];
                             for (int icol2 = 0; icol2 < nderiva; icol2++) {
-                                if (dcol[icol2] == malha[aux].celula[0].duto.dia && carregado[icol2] == 0) {
+                                if (dcol[icol2] == malha[aux].cell(0).duto.dia && carregado[icol2] == 0) {
                                     ordCol[icol2] = aux;
                                     carregado[icol2] = 1;
                                     icol2 = nderiva;
@@ -1699,11 +1699,11 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                         Vcr<double> variaMassG(ntotal);
 
                         double tL = 0.;
-                        if (malha[ind].arq.flashCompleto == 1 && malha[i].arq.tabent.tmin > tL)
-                            tL = malha[ind].arq.tabent.tmin;
+                        if (malha[ind].config().flashCompleto == 1 && malha[i].config().tabent.tmin > tL)
+                            tL = malha[ind].config().tabent.tmin;
                         double tH = 70.;
-                        if (malha[ind].arq.flashCompleto == 1 && malha[ind].arq.tabent.tmax < tH)
-                            tH = malha[ind].arq.tabent.tmax;
+                        if (malha[ind].config().flashCompleto == 1 && malha[ind].config().tabent.tmax < tH)
+                            tH = malha[ind].config().tabent.tmax;
                         double qostdTot = 0;
                         double qgstdTot = 0;
                         double dengmist = 0;
@@ -1741,9 +1741,9 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
 
                             if ((*arqRede.vg1dSP).iterRedeT == 0) {
 
-                                MasstempC[k] = malha[ind].celula[fim + 1].fontemassCR;
-                                MasstempP[k] = malha[ind].celula[fim + 1].fontemassLR;
-                                MasstempG[k] = malha[ind].celula[fim + 1].fontemassGR;
+                                MasstempC[k] = malha[ind].cell(fim + 1).fontemassCR;
+                                MasstempP[k] = malha[ind].cell(fim + 1).fontemassLR;
+                                MasstempG[k] = malha[ind].cell(fim + 1).fontemassGR;
 
                             } else {
 
@@ -1758,77 +1758,77 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                             tempFim[k] = malha[ind].tempSup;
                             temp[k] = malha[ind].tempSup;
 
-                            if ((malha[ind].celula[fim].MliqiniR) > 0.) {
-                                double bo = malha[ind].celula[fim].flui.BOFunc(pres, temp[k]);
-                                RGO[k] = malha[ind].celula[fim].flui.RGO;
-                                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                                API[k] = malha[ind].celula[fim].flui.API;
+                            if ((malha[ind].cell(fim).MliqiniR) > 0.) {
+                                double bo = malha[ind].cell(fim).flui.BOFunc(pres, temp[k]);
+                                RGO[k] = malha[ind].cell(fim).flui.RGO;
+                                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                                API[k] = malha[ind].cell(fim).flui.API;
                                 rhololeoST[k] = 1000. * 141.5 / (131.5 + API[k]);
-                                Bet[k] = malha[ind].celula[fim].bet;
+                                Bet[k] = malha[ind].cell(fim).bet;
                                 if (Bet[k] > 0) {
                                 }
-                                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
 
                                 double ba;
                                 double rs;
-                                if (malha[ind].celula[fim].flui.RGO < 1e6) {
-                                    rs = malha[ind].celula[fim].flui.RS(malha[ind].celula[fim].pres,
-                                                                        malha[ind].celula[fim].temp) *
+                                if (malha[ind].cell(fim).flui.RGO < 1e6) {
+                                    rs = malha[ind].cell(fim).flui.RS(malha[ind].cell(fim).pres,
+                                                                        malha[ind].cell(fim).temp) *
                                          6.29 / 35.31467;
-                                    bo = malha[ind].celula[fim].flui.BOFunc(malha[ind].celula[fim].pres,
-                                                                            malha[ind].celula[fim].temp, rs);
-                                    ba = malha[ind].celula[fim].flui.BAFunc(malha[ind].celula[fim].pres,
-                                                                            malha[ind].celula[fim].temp);
+                                    bo = malha[ind].cell(fim).flui.BOFunc(malha[ind].cell(fim).pres,
+                                                                            malha[ind].cell(fim).temp, rs);
+                                    ba = malha[ind].cell(fim).flui.BAFunc(malha[ind].cell(fim).pres,
+                                                                            malha[ind].cell(fim).temp);
                                 } else {
                                     bo = 1;
                                     ba = 0.;
                                 }
-                                double FW = malha[ind].celula[fim].flui.BSW * ba /
-                                            (bo + ba * malha[ind].celula[fim].flui.BSW -
-                                             malha[ind].celula[fim].flui.BSW * bo);
+                                double FW = malha[ind].cell(fim).flui.BSW * ba /
+                                            (bo + ba * malha[ind].cell(fim).flui.BSW -
+                                             malha[ind].cell(fim).flui.BSW * bo);
 
                                 qostd[k] = 0.;
-                                if (malha[ind].celula[fim].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                                    qostd[k] = malha[ind].celula[fim].Mliqini *
-                                               (1. - FW) * (1. - malha[ind].celula[fim].bet) /
+                                if (malha[ind].cell(fim).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                                    qostd[k] = malha[ind].cell(fim).Mliqini *
+                                               (1. - FW) * (1. - malha[ind].cell(fim).bet) /
                                                (bo * rholliqIS[k]);
                                 Rhocomp[k] = rc;
-                                cpl[k] = (1. - Bet[k]) * malha[ind].celula[fim].flui.CalorLiq(pres, temp[k]) +
-                                         Bet[k] * malha[ind].celula[fim].fluicol.CalorLiq(pres, temp[k]);
-                                cpg[k] = malha[ind].celula[fim].flui.CalorGas(pres, temp[k]);
-                                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                                cpl[k] = (1. - Bet[k]) * malha[ind].cell(fim).flui.CalorLiq(pres, temp[k]) +
+                                         Bet[k] * malha[ind].cell(fim).fluicol.CalorLiq(pres, temp[k]);
+                                cpg[k] = malha[ind].cell(fim).flui.CalorGas(pres, temp[k]);
+                                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                                Qliq[k] = malha[ind].cell(fim + 1).QL;
                                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                                 Qcomp[k] = Qliq[k] * Bet[k];
-                                Denag[k] = malha[ind].celula[fim].flui.Denag;
-                                Deng[k] = malha[ind].celula[fim].flui.Deng;
-                                yco2[k] = malha[ind].celula[fim].flui.yco2;
+                                Denag[k] = malha[ind].cell(fim).flui.Denag;
+                                Deng[k] = malha[ind].cell(fim).flui.Deng;
+                                yco2[k] = malha[ind].cell(fim).flui.yco2;
                             }
-                            if ((malha[ind].celula[fim].MR - malha[ind].celula[fim].MliqiniR) > 0.) {
-                                rhogST[k] = malha[ind].celula[fim].flui.Deng * 1.225;
-                                rhogIS[k] = malha[ind].celula[fim].flui.MasEspGas(pres, temp[k]);
-                                cpg[k] = malha[ind].celula[fim].flui.CalorGas(pres, temp[k]);
-                                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
+                            if ((malha[ind].cell(fim).MR - malha[ind].cell(fim).MliqiniR) > 0.) {
+                                rhogST[k] = malha[ind].cell(fim).flui.Deng * 1.225;
+                                rhogIS[k] = malha[ind].cell(fim).flui.MasEspGas(pres, temp[k]);
+                                cpg[k] = malha[ind].cell(fim).flui.CalorGas(pres, temp[k]);
+                                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
                                 Qgas[k] = Mgas[k] / rhogIS[k];
-                                Deng[k] = malha[ind].celula[fim].flui.Deng;
-                                yco2[k] = malha[ind].celula[fim].flui.yco2;
-                                if ((malha[ind].celula[fim].MliqiniR) < 0.)
+                                Deng[k] = malha[ind].cell(fim).flui.Deng;
+                                yco2[k] = malha[ind].cell(fim).flui.yco2;
+                                if ((malha[ind].cell(fim).MliqiniR) < 0.)
                                     RGO[k] = 1400.;
                             }
 
                             qostdTot += qostd[k];
-                            if ((malha[ind].celula[fim].MliqiniR) > 0.) {
-                                double rst = malha[ind].celula[fim].flui.RS(pres, temp[k]);
+                            if ((malha[ind].cell(fim).MliqiniR) > 0.) {
+                                double rst = malha[ind].cell(fim).flui.RS(pres, temp[k]);
                                 qgstdTot += qostd[k] * rst;
-                                dengmist += malha[ind].celula[fim].flui.rDgD * Deng[k] * qostd[k] * rst;
+                                dengmist += malha[ind].cell(fim).flui.rDgD * Deng[k] * qostd[k] * rst;
                                 yco2mist += yco2[k] * qostd[k] * rst;
                             }
-                            if ((malha[ind].celula[fim].MR - malha[ind].celula[fim].MliqiniR) > 0) {
+                            if ((malha[ind].cell(fim).MR - malha[ind].cell(fim).MliqiniR) > 0) {
                                 double qgstdLocal = Mgas[k] / (Deng[k] * 1.225);
                                 qgstdTot += qgstdLocal;
-                                dengmist += malha[ind].celula[fim].flui.rDgL * Deng[k] * qgstdLocal;
+                                dengmist += malha[ind].cell(fim).flui.rDgL * Deng[k] * qgstdLocal;
                                 yco2mist += yco2[k] * qgstdLocal;
                             }
                             apimist += (141.5 / (API[k] + 131.5)) * qostd[k];
@@ -1841,16 +1841,16 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                             denagmist += Denag[k] * qw1;
                             mliqmist += Mliq[k];
                             mgasmist += Mgas[k];
-                            mliqmistC += Qcomp[k] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k]);
+                            mliqmistC += Qcomp[k] * malha[i].cell(0).fluicol.MasEspFlu(pres, temp[k]);
                             cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
                             tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * tempFim[k];
-                            LVisL += qostd[k] * malha[ind].celula[fim].flui.VisOM(tL);
-                            LVisH += qostd[k] * malha[ind].celula[fim].flui.VisOM(tH);
+                            LVisL += qostd[k] * malha[ind].cell(fim).flui.VisOM(tL);
+                            LVisH += qostd[k] * malha[ind].cell(fim).flui.VisOM(tH);
                             Qlmist += Qliq[k];
                             QGmist += Qgas[k];
                             qlmistStd += (qw1 + qostd[k] +
-                                          Qcomp[k] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k]) /
-                                              malha[i].celula[0].fluicol.MasEspFlu(1.001, 15.));
+                                          Qcomp[k] * malha[i].cell(0).fluicol.MasEspFlu(pres, temp[k]) /
+                                              malha[i].cell(0).fluicol.MasEspFlu(1.001, 15.));
                             betmist += (Qcomp[k]);
 
                             afluAlimenta += 1;
@@ -1863,100 +1863,100 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                         for (int k = 0; k < coleAtivo; k++) {
                             int ind = indCole[k];
                             int ini = 0;
-                            temp[k + afluAlimenta] = malha[ind].celula[ini].temp;
-                            tempFim[k + afluAlimenta] = malha[ind].celula[ini].temp;
+                            temp[k + afluAlimenta] = malha[ind].cell(ini).temp;
+                            tempFim[k + afluAlimenta] = malha[ind].cell(ini).temp;
                             double pres;
                             if ((*arqRede.vg1dSP).iterRedeT == 0)
-                                pres = malha[ind].celula[ini].pres;
+                                pres = malha[ind].cell(ini).pres;
                             else
-                                pres = malha[ind].celula[ini].presBuf;
+                                pres = malha[ind].cell(ini).presBuf;
 
-                            double rpini = malha[ind].celula[ini].flui.MasEspLiq(pres, temp[k + afluAlimenta]);
-                            double rcini = malha[ind].celula[ini].fluicol.MasEspFlu(pres, temp[k + afluAlimenta]);
-                            double betini = malha[ind].celula[ini].bet;
+                            double rpini = malha[ind].cell(ini).flui.MasEspLiq(pres, temp[k + afluAlimenta]);
+                            double rcini = malha[ind].cell(ini).fluicol.MasEspFlu(pres, temp[k + afluAlimenta]);
+                            double betini = malha[ind].cell(ini).bet;
                             double rholini = (1. - betini) * rpini + betini * rcini;
                             double CoMassC;
                             double CoMassP;
                             double CoMassL;
                             double CoMassG;
                             if ((*arqRede.vg1dSP).iterRedeT == 0) {
-                                CoMassC = (malha[ind].celula[ini].Mliqini / rholini) * betini * rcini;
-                                CoMassP = (malha[ind].celula[ini].Mliqini / rholini) * (1. - betini) * rpini;
+                                CoMassC = (malha[ind].cell(ini).Mliqini / rholini) * betini * rcini;
+                                CoMassP = (malha[ind].cell(ini).Mliqini / rholini) * (1. - betini) * rpini;
                                 CoMassL = CoMassP + CoMassC;
-                                CoMassG = malha[ind].celula[ini].MC - malha[ind].celula[ini].Mliqini;
+                                CoMassG = malha[ind].cell(ini).MC - malha[ind].cell(ini).Mliqini;
                             } else {
-                                CoMassC = (malha[ind].celula[ini].MliqiniBuf / rholini) * betini * rcini;
-                                CoMassP = (malha[ind].celula[ini].MliqiniBuf / rholini) * (1. - betini) * rpini;
+                                CoMassC = (malha[ind].cell(ini).MliqiniBuf / rholini) * betini * rcini;
+                                CoMassP = (malha[ind].cell(ini).MliqiniBuf / rholini) * (1. - betini) * rpini;
                                 CoMassL = CoMassP + CoMassC;
-                                CoMassG = malha[ind].celula[ini].MCBuf - malha[ind].celula[ini].MliqiniBuf;
+                                CoMassG = malha[ind].cell(ini).MCBuf - malha[ind].cell(ini).MliqiniBuf;
                             }
 
                             if ((CoMassL) < 0.) {
-                                double bo = malha[ind].celula[ini].flui.BOFunc(
-                                    malha[ind].celula[ini].pres, malha[ind].celula[ini].temp);
-                                double rp = malha[ind].celula[ini].flui.MasEspLiq(pres, temp[k + afluAlimenta]);
-                                double rc = malha[ind].celula[ini].fluicol.MasEspFlu(pres, temp[k + afluAlimenta]);
-                                RGO[k + afluAlimenta] = malha[ind].celula[ini].flui.RGO;
+                                double bo = malha[ind].cell(ini).flui.BOFunc(
+                                    malha[ind].cell(ini).pres, malha[ind].cell(ini).temp);
+                                double rp = malha[ind].cell(ini).flui.MasEspLiq(pres, temp[k + afluAlimenta]);
+                                double rc = malha[ind].cell(ini).fluicol.MasEspFlu(pres, temp[k + afluAlimenta]);
+                                RGO[k + afluAlimenta] = malha[ind].cell(ini).flui.RGO;
                                 Bet[k + afluAlimenta] = (-CoMassC / rc) / (-(CoMassC / rc) - (CoMassP / rp));
-                                BSW[k + afluAlimenta] = malha[ind].celula[ini].flui.BSW;
-                                API[k + afluAlimenta] = malha[ind].celula[ini].flui.API;
+                                BSW[k + afluAlimenta] = malha[ind].cell(ini).flui.BSW;
+                                API[k + afluAlimenta] = malha[ind].cell(ini).flui.API;
                                 rhololeoST[k + afluAlimenta] = 1000. * 141.5 / (131.5 + API[k + afluAlimenta]);
 
                                 double ba;
                                 double rs;
-                                if (malha[ind].celula[ini].flui.RGO < 1e6) {
-                                    rs = malha[ind].celula[ini].flui.RS(malha[ind].celula[ini].pres,
-                                                                        malha[ind].celula[ini].temp) *
+                                if (malha[ind].cell(ini).flui.RGO < 1e6) {
+                                    rs = malha[ind].cell(ini).flui.RS(malha[ind].cell(ini).pres,
+                                                                        malha[ind].cell(ini).temp) *
                                          6.29 / 35.31467;
-                                    bo = malha[ind].celula[ini].flui.BOFunc(malha[ind].celula[ini].pres,
-                                                                            malha[ind].celula[ini].temp, rs);
-                                    ba = malha[ind].celula[ini].flui.BAFunc(malha[ind].celula[ini].pres,
-                                                                            malha[ind].celula[ini].temp);
+                                    bo = malha[ind].cell(ini).flui.BOFunc(malha[ind].cell(ini).pres,
+                                                                            malha[ind].cell(ini).temp, rs);
+                                    ba = malha[ind].cell(ini).flui.BAFunc(malha[ind].cell(ini).pres,
+                                                                            malha[ind].cell(ini).temp);
                                 } else {
                                     bo = 1;
                                     ba = 0.;
                                 }
-                                double FW = malha[ind].celula[ini].flui.BSW * ba /
-                                            (bo + ba * malha[ind].celula[ini].flui.BSW -
-                                             malha[ind].celula[ini].flui.BSW * bo);
+                                double FW = malha[ind].cell(ini).flui.BSW * ba /
+                                            (bo + ba * malha[ind].cell(ini).flui.BSW -
+                                             malha[ind].cell(ini).flui.BSW * bo);
 
                                 rholliqIS[k + afluAlimenta] = (1. - Bet[k + afluAlimenta]) * rp + Bet[k + afluAlimenta] * rc;
                                 qostd[k + afluAlimenta] = 0.;
-                                if (malha[ind].celula[ini].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                                if (malha[ind].cell(ini).flui.dStockTankVaporMassFraction < 1. - 1e-15)
                                     qostd[k + afluAlimenta] = CoMassL * (1. - FW) * (1. - Bet[k + afluAlimenta]) /
                                                               (bo * rholliqIS[k + afluAlimenta]);
                                 Rhocomp[k + afluAlimenta] = rc;
-                                cpl[k + afluAlimenta] = (1. - Bet[k + afluAlimenta]) * malha[ind].celula[ini].flui.CalorLiq(pres, temp[k + afluAlimenta]) +
-                                                        Bet[k + afluAlimenta] * malha[ind].celula[ini].fluicol.CalorLiq(pres, temp[k + afluAlimenta]);
-                                cpg[k + afluAlimenta] = malha[ind].celula[ini].flui.CalorGas(pres, temp[k + afluAlimenta]);
+                                cpl[k + afluAlimenta] = (1. - Bet[k + afluAlimenta]) * malha[ind].cell(ini).flui.CalorLiq(pres, temp[k + afluAlimenta]) +
+                                                        Bet[k + afluAlimenta] * malha[ind].cell(ini).fluicol.CalorLiq(pres, temp[k + afluAlimenta]);
+                                cpg[k + afluAlimenta] = malha[ind].cell(ini).flui.CalorGas(pres, temp[k + afluAlimenta]);
                                 Mliq[k + afluAlimenta] = CoMassL;
                                 Qliq[k + afluAlimenta] = CoMassL / rholliqIS[k + afluAlimenta];
                                 Mcomp[k + afluAlimenta] = Mliq[k + afluAlimenta] * Bet[k + afluAlimenta] * Rhocomp[k + afluAlimenta] / rholliqIS[k + afluAlimenta];
                                 Qcomp[k + afluAlimenta] = Qliq[k + afluAlimenta] * Bet[k + afluAlimenta];
-                                Denag[k + afluAlimenta] = malha[ind].celula[ini].flui.Denag;
-                                Deng[k + afluAlimenta] = malha[ind].celula[ini].flui.Deng;
-                                yco2[k + afluAlimenta] = malha[ind].celula[ini].flui.yco2;
+                                Denag[k + afluAlimenta] = malha[ind].cell(ini).flui.Denag;
+                                Deng[k + afluAlimenta] = malha[ind].cell(ini).flui.Deng;
+                                yco2[k + afluAlimenta] = malha[ind].cell(ini).flui.yco2;
                             }
                             if ((CoMassG) < 0.) {
-                                rhogIS[k + afluAlimenta] = malha[ind].celula[ini].flui.MasEspGas(pres, temp[k + afluAlimenta]);
-                                cpg[k + afluAlimenta] = malha[ind].celula[ini].flui.CalorGas(pres, temp[k + afluAlimenta]);
+                                rhogIS[k + afluAlimenta] = malha[ind].cell(ini).flui.MasEspGas(pres, temp[k + afluAlimenta]);
+                                cpg[k + afluAlimenta] = malha[ind].cell(ini).flui.CalorGas(pres, temp[k + afluAlimenta]);
                                 Mgas[k + afluAlimenta] = CoMassG;
                                 Qgas[k + afluAlimenta] = Mgas[k + afluAlimenta] / rhogIS[k + afluAlimenta];
-                                Deng[k + afluAlimenta] = malha[ind].celula[ini].flui.Deng;
-                                yco2[k + afluAlimenta] = malha[ind].celula[ini].flui.yco2;
+                                Deng[k + afluAlimenta] = malha[ind].cell(ini).flui.Deng;
+                                yco2[k + afluAlimenta] = malha[ind].cell(ini).flui.yco2;
                             }
 
                             qostdTot -= qostd[k + afluAlimenta];
                             if ((CoMassL) < 0.) {
-                                double rst = malha[ind].celula[ini].flui.RS(pres, temp[k + afluAlimenta]);
+                                double rst = malha[ind].cell(ini).flui.RS(pres, temp[k + afluAlimenta]);
                                 qgstdTot -= qostd[k + afluAlimenta] * rst;
-                                dengmist -= malha[ind].celula[ini].flui.rDgD * Deng[k + afluAlimenta] * qostd[k + afluAlimenta] * rst;
+                                dengmist -= malha[ind].cell(ini).flui.rDgD * Deng[k + afluAlimenta] * qostd[k + afluAlimenta] * rst;
                                 yco2mist -= yco2[k + afluAlimenta] * qostd[k + afluAlimenta] * rst;
                             }
                             if ((CoMassG) < 0.) {
                                 double qgstdLocal = Mgas[k + afluAlimenta] / (Deng[k + afluAlimenta] * 1.225);
                                 qgstdTot -= qgstdLocal;
-                                dengmist -= malha[ind].celula[ini].flui.rDgL * Deng[k + afluAlimenta] * qgstdLocal;
+                                dengmist -= malha[ind].cell(ini).flui.rDgL * Deng[k + afluAlimenta] * qgstdLocal;
                                 yco2mist -= yco2[k + afluAlimenta] * qgstdLocal;
                             }
                             apimist -= (141.5 / (API[k + afluAlimenta] + 131.5)) * qostd[k + afluAlimenta];
@@ -1970,18 +1970,18 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                             mliqmist -= Mliq[k + afluAlimenta];
                             mgasmist -= Mgas[k + afluAlimenta];
                             mliqmistC -= Qcomp[k + afluAlimenta] *
-                                         malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k + afluAlimenta]);
+                                         malha[i].cell(0).fluicol.MasEspFlu(pres, temp[k + afluAlimenta]);
                             cpmist -= (Mliq[k + afluAlimenta] * cpl[k + afluAlimenta] + Mgas[k + afluAlimenta] * cpg[k + afluAlimenta]);
                             tempmist -= (Mliq[k + afluAlimenta] * cpl[k + afluAlimenta] +
                                          Mgas[k + afluAlimenta] * cpg[k + afluAlimenta]) *
                                         tempFim[k + afluAlimenta];
-                            LVisL -= qostd[k + afluAlimenta] * malha[ind].celula[ini].flui.VisOM(tL);
-                            LVisH -= qostd[k + afluAlimenta] * malha[ind].celula[ini].flui.VisOM(tH);
+                            LVisL -= qostd[k + afluAlimenta] * malha[ind].cell(ini).flui.VisOM(tL);
+                            LVisH -= qostd[k + afluAlimenta] * malha[ind].cell(ini).flui.VisOM(tH);
                             Qlmist -= Qliq[k + afluAlimenta];
                             QGmist -= Qgas[k + afluAlimenta];
                             qlmistStd -= (qw1 + qostd[k + afluAlimenta] +
-                                          Qcomp[k + afluAlimenta] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k + afluAlimenta]) /
-                                              malha[i].celula[0].fluicol.MasEspFlu(1.001, 15.));
+                                          Qcomp[k + afluAlimenta] * malha[i].cell(0).fluicol.MasEspFlu(pres, temp[k + afluAlimenta]) /
+                                              malha[i].cell(0).fluicol.MasEspFlu(1.001, 15.));
                             betmist -= (Qcomp[k + afluAlimenta]);
 
                             coleAlimenta += 1;
@@ -1990,7 +1990,7 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                         if (mliqmist > (*arqRede.vg1dSP).localtiny * 1e-5 || mgasmist > (*arqRede.vg1dSP).localtiny * 1e-5) {
                             tempmist = tempmist / cpmist;
 
-                            alfmist = malha[aux0].celula[0].alf;
+                            alfmist = malha[aux0].cell(0).alf;
 
                             if (qostdTot > (*arqRede.vg1dSP).localtiny * 1e-5) {
                                 RGOmist = qgstdTot / qostdTot;
@@ -1999,65 +1999,65 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                                 LVisL = LVisL / qostdTot;
                                 LVisH = LVisH / qostdTot;
                             } else {
-                                RGOmist = malha[aux0].celula[0].flui.RGO;
-                                apimist = malha[aux0].celula[0].flui.API;
-                                LVisL = malha[aux0].celula[0].flui.VisOM(tL);
-                                LVisH = malha[aux0].celula[0].flui.VisOM(tH);
+                                RGOmist = malha[aux0].cell(0).flui.RGO;
+                                apimist = malha[aux0].cell(0).flui.API;
+                                LVisL = malha[aux0].cell(0).flui.VisOM(tL);
+                                LVisH = malha[aux0].cell(0).flui.VisOM(tH);
                             }
                             if ((qgstdTot) > (*arqRede.vg1dSP).localtiny * 1e-5) {
                                 dengmist = dengmist / qgstdTot;
                                 yco2mist = yco2mist / qgstdTot;
                             } else {
-                                dengmist = malha[aux0].celula[0].flui.Deng;
-                                yco2mist = malha[aux0].celula[0].flui.yco2;
+                                dengmist = malha[aux0].cell(0).flui.Deng;
+                                yco2mist = malha[aux0].cell(0).flui.yco2;
                             }
                             if ((qostdTot + qwmist) > (*arqRede.vg1dSP).localtiny * 1e-5)
                                 bswmist = qwmist / (qostdTot + qwmist);
                             else
-                                bswmist = malha[aux0].celula[0].flui.BSW;
+                                bswmist = malha[aux0].cell(0).flui.BSW;
                             if (qwmist > (*arqRede.vg1dSP).localtiny * 1e-5)
                                 denagmist = denagmist / qwmist;
                             else
-                                denagmist = malha[aux0].celula[0].flui.Denag;
+                                denagmist = malha[aux0].cell(0).flui.Denag;
                             if (Qlmist > (*arqRede.vg1dSP).localtiny * 1e-5)
                                 betmist = betmist / Qlmist;
                             else
-                                betmist = malha[aux0].celula[0].bet;
+                                betmist = malha[aux0].cell(0).bet;
 
                             if (mgasmist > 0. && (mliqmist) > 0)
                                 titmist = mgasmist / (mgasmist + mliqmist);
                             else {
-                                double alfCol = malha[aux0].celula[0].alf;
-                                double presCol = malha[aux0].celula[0].pres;
-                                double tempCol = malha[aux0].celula[0].temp;
-                                double betCol = malha[aux0].celula[0].bet;
-                                double rhop = malha[aux0].celula[0].flui.MasEspLiq(presCol, tempCol);
-                                double rhoc = malha[aux0].celula[0].fluicol.MasEspFlu(presCol, tempCol);
-                                double rhog = malha[aux0].celula[0].flui.MasEspGas(presCol, tempCol);
+                                double alfCol = malha[aux0].cell(0).alf;
+                                double presCol = malha[aux0].cell(0).pres;
+                                double tempCol = malha[aux0].cell(0).temp;
+                                double betCol = malha[aux0].cell(0).bet;
+                                double rhop = malha[aux0].cell(0).flui.MasEspLiq(presCol, tempCol);
+                                double rhoc = malha[aux0].cell(0).fluicol.MasEspFlu(presCol, tempCol);
+                                double rhog = malha[aux0].cell(0).flui.MasEspGas(presCol, tempCol);
                                 double rhol = betCol * rhoc + (1. - betCol) * rhop;
                                 double rhoCol = alfCol * rhog + (1. - alfCol) * rhol;
                                 titmist = rhog * alfCol / ((1. - alfCol) * rhoCol + rhog * alfCol);
                             }
 
                         } else {
-                            tempmist = malha[aux0].celula[0].temp;
-                            RGOmist = malha[aux0].celula[0].flui.RGO;
-                            apimist = malha[aux0].celula[0].flui.API;
-                            LVisL = malha[aux0].celula[0].flui.VisOM(tL);
-                            LVisH = malha[aux0].celula[0].flui.VisOM(tH);
-                            dengmist = malha[aux0].celula[0].flui.Deng;
-                            yco2mist = malha[aux0].celula[0].flui.yco2;
-                            bswmist = malha[aux0].celula[0].flui.BSW;
-                            denagmist = malha[aux0].celula[0].flui.Denag;
-                            betmist = malha[aux0].celula[0].bet;
-                            alfmist = malha[aux0].celula[0].alf;
-                            double betCol = malha[aux0].celula[0].bet;
-                            double alfCol = malha[aux0].celula[0].alf;
-                            double presCol = malha[aux0].celula[0].pres;
-                            double tempCol = malha[aux0].celula[0].temp;
-                            double rhop = malha[aux0].celula[0].flui.MasEspLiq(presCol, tempCol);
-                            double rhoc = malha[aux0].celula[0].fluicol.MasEspFlu(presCol, tempCol);
-                            double rhog = malha[aux0].celula[0].flui.MasEspGas(presCol, tempCol);
+                            tempmist = malha[aux0].cell(0).temp;
+                            RGOmist = malha[aux0].cell(0).flui.RGO;
+                            apimist = malha[aux0].cell(0).flui.API;
+                            LVisL = malha[aux0].cell(0).flui.VisOM(tL);
+                            LVisH = malha[aux0].cell(0).flui.VisOM(tH);
+                            dengmist = malha[aux0].cell(0).flui.Deng;
+                            yco2mist = malha[aux0].cell(0).flui.yco2;
+                            bswmist = malha[aux0].cell(0).flui.BSW;
+                            denagmist = malha[aux0].cell(0).flui.Denag;
+                            betmist = malha[aux0].cell(0).bet;
+                            alfmist = malha[aux0].cell(0).alf;
+                            double betCol = malha[aux0].cell(0).bet;
+                            double alfCol = malha[aux0].cell(0).alf;
+                            double presCol = malha[aux0].cell(0).pres;
+                            double tempCol = malha[aux0].cell(0).temp;
+                            double rhop = malha[aux0].cell(0).flui.MasEspLiq(presCol, tempCol);
+                            double rhoc = malha[aux0].cell(0).fluicol.MasEspFlu(presCol, tempCol);
+                            double rhog = malha[aux0].cell(0).flui.MasEspGas(presCol, tempCol);
                             double rhol = betCol * rhoc + (1. - betCol) * rhop;
                             double rhoCol = alfCol * rhog + (1. - alfCol) * rhol;
                             titmist = rhog * alfCol / ((1. - alfCol) * rhoCol + rhog * alfCol);
@@ -2082,28 +2082,28 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
 
                             if ((*arqRede.vg1dSP).iterRedeT == 0) {
 
-                                massC = malha[aux].celula[0].QL * malha[aux].celula[0].bet *
-                                        malha[aux].celula[0].fluicol.MasEspFlu(malha[aux].celula[0].pres, malha[aux].celula[0].temp);
+                                massC = malha[aux].cell(0).QL * malha[aux].cell(0).bet *
+                                        malha[aux].cell(0).fluicol.MasEspFlu(malha[aux].cell(0).pres, malha[aux].cell(0).temp);
 
-                                massP = malha[aux].celula[0].Mliqini - massC;
+                                massP = malha[aux].cell(0).Mliqini - massC;
 
-                                massG = malha[aux].celula[0].MC - malha[aux].celula[0].Mliqini;
+                                massG = malha[aux].cell(0).MC - malha[aux].cell(0).Mliqini;
 
                             } else {
 
-                                double rhomistBuf = malha[aux].celula[0].bet *
-                                                        malha[aux].celula[0].fluicol.MasEspFlu(malha[aux].celula[0].presBuf,
-                                                                                               malha[aux].celula[0].temp) +
-                                                    (1. - malha[aux].celula[0].bet) *
-                                                        malha[aux].celula[0].flui.MasEspLiq(malha[aux].celula[0].presBuf,
-                                                                                            malha[aux].celula[0].temp);
-                                double QLbuf = malha[aux].celula[0].MliqiniBuf / rhomistBuf;
-                                massC = QLbuf * malha[aux].celula[0].bet *
-                                        malha[aux].celula[0].fluicol.MasEspFlu(malha[aux].celula[0].presBuf, malha[aux].celula[0].temp);
+                                double rhomistBuf = malha[aux].cell(0).bet *
+                                                        malha[aux].cell(0).fluicol.MasEspFlu(malha[aux].cell(0).presBuf,
+                                                                                               malha[aux].cell(0).temp) +
+                                                    (1. - malha[aux].cell(0).bet) *
+                                                        malha[aux].cell(0).flui.MasEspLiq(malha[aux].cell(0).presBuf,
+                                                                                            malha[aux].cell(0).temp);
+                                double QLbuf = malha[aux].cell(0).MliqiniBuf / rhomistBuf;
+                                massC = QLbuf * malha[aux].cell(0).bet *
+                                        malha[aux].cell(0).fluicol.MasEspFlu(malha[aux].cell(0).presBuf, malha[aux].cell(0).temp);
 
-                                massP = malha[aux].celula[0].MliqiniBuf - massC;
+                                massP = malha[aux].cell(0).MliqiniBuf - massC;
 
-                                massG = malha[aux].celula[0].MCBuf - malha[aux].celula[0].MliqiniBuf;
+                                massG = malha[aux].cell(0).MCBuf - malha[aux].cell(0).MliqiniBuf;
                             }
 
                             MassAfluP -= (massP);
@@ -2115,42 +2115,42 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
                                 if ((*arqRede.vg1dSP).iterRedeT == 0) {
-                                    malha[aux].celula[0].acsr.injm.temp = tempmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.RGO = RGOmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.Deng = dengmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.Denag = denagmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.yco2 = yco2mist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.API = apimist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.BSW = bswmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.TempL = tL;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.TempH = tH;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.LVisL = LVisL;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.LVisH = LVisH;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.RenovaFluido();
-                                    malha[aux].celula[0].acsr.injm.temp = tempmist;
-                                    if (malha[aux].arq.corrDeng == 0) {
-                                        malha[aux].celula[i].acsr.injm.FluidoPro.rDgD = 1.;
-                                        malha[aux].celula[i].acsr.injm.FluidoPro.rDgL = 1.;
+                                    malha[aux].cell(0).acsr.injm.temp = tempmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.RGO = RGOmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.Deng = dengmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.Denag = denagmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.yco2 = yco2mist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.API = apimist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.BSW = bswmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.TempL = tL;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.TempH = tH;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.LVisL = LVisL;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.LVisH = LVisH;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.RenovaFluido();
+                                    malha[aux].cell(0).acsr.injm.temp = tempmist;
+                                    if (malha[aux].config().corrDeng == 0) {
+                                        malha[aux].cell(i).acsr.injm.FluidoPro.rDgD = 1.;
+                                        malha[aux].cell(i).acsr.injm.FluidoPro.rDgL = 1.;
                                     } else {
 
-                                        malha[aux].celula[i].acsr.injm.FluidoPro.razDegD(malha[aux].celula[i].pres,
-                                                                                         malha[aux].celula[i].acsr.injm.temp);
-                                        malha[aux].celula[i].acsr.injm.FluidoPro.rzDegL(malha[aux].celula[i].pres,
-                                                                                        malha[aux].celula[i].acsr.injm.temp);
+                                        malha[aux].cell(i).acsr.injm.FluidoPro.razDegD(malha[aux].cell(i).pres,
+                                                                                         malha[aux].cell(i).acsr.injm.temp);
+                                        malha[aux].cell(i).acsr.injm.FluidoPro.rzDegL(malha[aux].cell(i).pres,
+                                                                                        malha[aux].cell(i).acsr.injm.temp);
                                     }
                                     malha[aux].temperatura = tempmist;
                                 }
-                                malha[aux].celula[0].acsr.injm.MassP = MassAfluP;
-                                malha[aux].celula[0].acsr.injm.MassC = MassAfluC;
-                                malha[aux].celula[0].acsr.injm.MassG = MassAfluG;
-                                if (MassAfluP < 0 && (malha[aux].celula[0].alf > 1 - (*arqRede.vg1dSP).localtiny)) {
-                                    malha[aux].celula[0].acsr.injm.MassP = 0.;
+                                malha[aux].cell(0).acsr.injm.MassP = MassAfluP;
+                                malha[aux].cell(0).acsr.injm.MassC = MassAfluC;
+                                malha[aux].cell(0).acsr.injm.MassG = MassAfluG;
+                                if (MassAfluP < 0 && (malha[aux].cell(0).alf > 1 - (*arqRede.vg1dSP).localtiny)) {
+                                    malha[aux].cell(0).acsr.injm.MassP = 0.;
                                 }
-                                if (MassAfluC < 0 && ((malha[aux].celula[0].alf > 1 - (*arqRede.vg1dSP).localtiny) || malha[aux].celula[0].bet < (*arqRede.vg1dSP).localtiny)) {
-                                    malha[aux].celula[0].acsr.injm.MassC = 0.;
+                                if (MassAfluC < 0 && ((malha[aux].cell(0).alf > 1 - (*arqRede.vg1dSP).localtiny) || malha[aux].cell(0).bet < (*arqRede.vg1dSP).localtiny)) {
+                                    malha[aux].cell(0).acsr.injm.MassC = 0.;
                                 }
-                                if (MassAfluG < 0 && (malha[aux].celula[0].alf < (*arqRede.vg1dSP).localtiny)) {
-                                    malha[aux].celula[0].acsr.injm.MassG = 0.;
+                                if (MassAfluG < 0 && (malha[aux].cell(0).alf < (*arqRede.vg1dSP).localtiny)) {
+                                    malha[aux].cell(0).acsr.injm.MassG = 0.;
                                 }
 
                                 Resolv[aux] = 1;
@@ -2163,39 +2163,39 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
 
                                     if ((*arqRede.vg1dSP).iterRedeT == 0)
                                         malha[indaflu].tGSup = tempmist;
-                                    if (malha[indaflu].celula[malha[indaflu].ncel].MC < -(*arqRede.vg1dSP).localtiny) {
-                                        malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].flui;
+                                    if (malha[indaflu].cell(malha[indaflu].ncel).MC < -(*arqRede.vg1dSP).localtiny) {
+                                        malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).flui;
                                     }
                                     if (arqRede.malha[indaflu].presimposta == 0) {
                                         if ((*arqRede.vg1dSP).iterRedeT == 0)
-                                            malha[indaflu].pGSup = malha[aux].celula[0].pres;
+                                            malha[indaflu].pGSup = malha[aux].cell(0).pres;
                                         else
-                                            malha[indaflu].pGSup = malha[aux].celula[0].presBuf;
+                                            malha[indaflu].pGSup = malha[aux].cell(0).presBuf;
                                         if (malha[indaflu].masChkSup == 0)
                                             malha[indaflu].presfim = malha[indaflu].pGSup;
                                     }
-                                    malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                    malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                 }
                             } else {
                                 int aux = ordCol[icol];
-                                malha[aux].arq.ConContEntrada = 1;
+                                malha[aux].config().ConContEntrada = 1;
 
-                                malha[aux].celula[0].acsr.injm.MassP = 0.;
-                                malha[aux].celula[0].acsr.injm.MassC = 0.;
-                                malha[aux].celula[0].acsr.injm.MassG = 0.;
+                                malha[aux].cell(0).acsr.injm.MassP = 0.;
+                                malha[aux].cell(0).acsr.injm.MassC = 0.;
+                                malha[aux].cell(0).acsr.injm.MassG = 0.;
 
                                 int auxfim = ordCol[nderiva - 1];
-                                malha[aux].celula[0].acsr.injm.FluidoPro = malha[auxfim].celula[0].acsr.injm.FluidoPro;
-                                malha[aux].celula[0].fluiL = &(malha[auxfim].celula[0].acsr.injm.FluidoPro);
+                                malha[aux].cell(0).acsr.injm.FluidoPro = malha[auxfim].cell(0).acsr.injm.FluidoPro;
+                                malha[aux].cell(0).fluiL = &(malha[auxfim].cell(0).acsr.injm.FluidoPro);
 
                                 malha[aux].tempE = tempmist;
                                 malha[aux].titE = titmist;
                                 malha[aux].betaE = betmist;
 
                                 if ((*arqRede.vg1dSP).iterRedeT == 0) {
-                                    malha[aux].presE = malha[auxfim].celula[0].pres;
+                                    malha[aux].presE = malha[auxfim].cell(0).pres;
                                 } else {
-                                    malha[aux].presE = malha[auxfim].celula[0].presBuf;
+                                    malha[aux].presE = malha[auxfim].cell(0).presBuf;
                                 }
                                 Resolv[aux] = 1;
                                 resolvGlob += Resolv[aux];
@@ -2213,12 +2213,12 @@ int buscaNoColetorMrestre(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int ia
     int ncol = arqRede.malha[iaflu].ncoleta;
     int icol = arqRede.malha[iaflu].coleta[0];
 
-    double dmax = malha[icol].celula[0].duto.dia;
+    double dmax = malha[icol].cell(0).duto.dia;
     int idmax = 0;
     for (int i = 1; i < ncol; i++) {
         icol = arqRede.malha[iaflu].coleta[i];
-        if (malha[icol].celula[0].duto.dia > dmax && inativo[icol] == 0) {
-            dmax = malha[icol].celula[0].duto.dia;
+        if (malha[icol].cell(0).duto.dia > dmax && inativo[icol] == 0) {
+            dmax = malha[icol].cell(0).duto.dia;
             idmax = i;
         }
     }
@@ -2235,64 +2235,64 @@ void celAfluFinal(int naflu, int ncol, SProd *malha, Rede &arqRede, Vcr<int> &in
     for (int j = 0; j < colet; j++) {
         int qtramo = arqRede.malha[naflu].coleta[j];
         if (j != ncolM) {
-            Mt += malha[qtramo].celula[icol].MC;
-            Ml += malha[qtramo].celula[icol].Mliqini;
+            Mt += malha[qtramo].cell(icol).MC;
+            Ml += malha[qtramo].cell(icol).Mliqini;
         } else {
-            Mt += malha[qtramo].celula[icol].MR;
-            Ml += malha[qtramo].celula[icol].MliqiniR;
+            Mt += malha[qtramo].cell(icol).MR;
+            Ml += malha[qtramo].cell(icol).MliqiniR;
         }
     }
 
-    malha[naflu].celula[iaflu].dutoR = malha[ncol].celula[icol].duto;
-    malha[naflu].celula[iaflu].flui = malha[ncol].celula[icol].flui;
-    malha[naflu].celula[iaflu].fluiR = malha[ncol].celula[icol].fluiR;
-    malha[naflu].celula[iaflu].fluicol = malha[ncol].celula[icol].fluicol;
+    malha[naflu].cell(iaflu).dutoR = malha[ncol].cell(icol).duto;
+    malha[naflu].cell(iaflu).flui = malha[ncol].cell(icol).flui;
+    malha[naflu].cell(iaflu).fluiR = malha[ncol].cell(icol).fluiR;
+    malha[naflu].cell(iaflu).fluicol = malha[ncol].cell(icol).fluicol;
 
-    malha[naflu].celula[iaflu].tempR = malha[ncol].celula[icol].tempR;
-    if (malha[naflu].celula[iaflu].VTemper < 0.) {
-        malha[naflu].celula[iaflu].temp = malha[ncol].celula[icol].acsr.injm.temp;
+    malha[naflu].cell(iaflu).tempR = malha[ncol].cell(icol).tempR;
+    if (malha[naflu].cell(iaflu).VTemper < 0.) {
+        malha[naflu].cell(iaflu).temp = malha[ncol].cell(icol).acsr.injm.temp;
     }
 
-    malha[naflu].pGSup = malha[ncol].celula[icol].pres;
+    malha[naflu].pGSup = malha[ncol].cell(icol).pres;
 
-    malha[naflu].celula[iaflu].presauxR = malha[ncol].celula[icol].presauxR;
-    malha[naflu].celula[iaflu].presR = malha[ncol].celula[icol].presR;
+    malha[naflu].cell(iaflu).presauxR = malha[ncol].cell(icol).presauxR;
+    malha[naflu].cell(iaflu).presR = malha[ncol].cell(icol).presR;
 
-    malha[naflu].celula[iaflu].MR = malha[naflu].celula[iaflu].MC;
+    malha[naflu].cell(iaflu).MR = malha[naflu].cell(iaflu).MC;
 
-    if (malha[naflu].masChkSup == 0 && malha[naflu].arq.chkv == 0) {
-        malha[naflu].celula[iaflu].alf = malha[naflu].titRev;
-        malha[naflu].celula[iaflu].alfR = malha[ncol].celula[icol].alfR;
+    if (malha[naflu].masChkSup == 0 && malha[naflu].config().chkv == 0) {
+        malha[naflu].cell(iaflu).alf = malha[naflu].titRev;
+        malha[naflu].cell(iaflu).alfR = malha[ncol].cell(icol).alfR;
     }
 
-    if (malha[naflu].masChkSup == 0 && malha[naflu].arq.chkv == 0) {
-        malha[naflu].celula[iaflu].bet = malha[naflu].betaRev;
-        malha[naflu].celula[iaflu].betR = malha[ncol].celula[icol].betR;
+    if (malha[naflu].masChkSup == 0 && malha[naflu].config().chkv == 0) {
+        malha[naflu].cell(iaflu).bet = malha[naflu].betaRev;
+        malha[naflu].cell(iaflu).betR = malha[ncol].cell(icol).betR;
     }
 
-    malha[naflu].celula[iaflu].betI = malha[naflu].celula[iaflu].bet;
-    malha[naflu].celula[iaflu].betRI = malha[naflu].celula[iaflu].bet;
-    malha[naflu].celula[iaflu].FW = malha[ncol].celula[icol].FW;
+    malha[naflu].cell(iaflu).betI = malha[naflu].cell(iaflu).bet;
+    malha[naflu].cell(iaflu).betRI = malha[naflu].cell(iaflu).bet;
+    malha[naflu].cell(iaflu).FW = malha[ncol].cell(icol).FW;
 
-    // malha[naflu].celula[iaflu].MliqiniR0 = Ml;// alteracao7
-    malha[naflu].celula[iaflu].MliqiniR = malha[naflu].celula[iaflu].Mliqini;
-    // malha[naflu].celula[iaflu].MliqiniR0 = malha[naflu].celula[iaflu].Mliqini;// alteracao7
+    // malha[naflu].cell(iaflu).MliqiniR0 = Ml;// alteracao7
+    malha[naflu].cell(iaflu).MliqiniR = malha[naflu].cell(iaflu).Mliqini;
+    // malha[naflu].cell(iaflu).MliqiniR0 = malha[naflu].cell(iaflu).Mliqini;// alteracao7
 
-    malha[naflu].celula[iaflu].QLR = malha[naflu].celula[iaflu].QL;
-    // malha[naflu].celula[iaflu].QLRini=malha[naflu].celula[iaflu].QL;// alteracao7
+    malha[naflu].cell(iaflu).QLR = malha[naflu].cell(iaflu).QL;
+    // malha[naflu].cell(iaflu).QLRini=malha[naflu].cell(iaflu).QL;// alteracao7
 
-    malha[naflu].celula[iaflu].rpR = malha[ncol].celula[icol].rpR;
-    malha[naflu].celula[iaflu].rcR = malha[ncol].celula[icol].rcR;
+    malha[naflu].cell(iaflu).rpR = malha[ncol].cell(icol).rpR;
+    malha[naflu].cell(iaflu).rcR = malha[ncol].cell(icol).rcR;
 
-    malha[naflu].celula[iaflu].rpRi = malha[ncol].celula[icol].rpRi;
-    malha[naflu].celula[iaflu].rcRi = malha[ncol].celula[icol].rcRi;
+    malha[naflu].cell(iaflu).rpRi = malha[ncol].cell(icol).rpRi;
+    malha[naflu].cell(iaflu).rcRi = malha[ncol].cell(icol).rcRi;
 
-    if (malha[naflu].masChkSup == 0 && malha[naflu].arq.chkv == 0) {
-        malha[naflu].celula[iaflu].alfPigE = malha[naflu].titRev;
-        malha[naflu].celula[iaflu].alfPigER = malha[naflu].titRev;
-        malha[naflu].celula[iaflu].alfPigD = malha[naflu].titRev;
-        malha[naflu].celula[iaflu].betPigE = malha[naflu].betaRev;
-        malha[naflu].celula[iaflu].betPigD = malha[naflu].betaRev;
+    if (malha[naflu].masChkSup == 0 && malha[naflu].config().chkv == 0) {
+        malha[naflu].cell(iaflu).alfPigE = malha[naflu].titRev;
+        malha[naflu].cell(iaflu).alfPigER = malha[naflu].titRev;
+        malha[naflu].cell(iaflu).alfPigD = malha[naflu].titRev;
+        malha[naflu].cell(iaflu).betPigE = malha[naflu].betaRev;
+        malha[naflu].cell(iaflu).betPigD = malha[naflu].betaRev;
     }
 }
 
@@ -2300,29 +2300,29 @@ void corrigeVazNo(SProd *malha, int ind) {
     int ncel = malha[ind].ncel;
 
     if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].titRev >= 1. - (*malha[ind].vg1dSP).localtiny)) {
-        if ((malha[ind].celula[ncel - 1].MliqiniR < 0)) {
-            malha[ind].celula[ncel - 1].MR -= (malha[ind].celula[ncel - 1].MliqiniR);
-            malha[ind].celula[ncel - 1].MliqiniR = 0;
-            malha[ind].celula[ncel - 1].term1R = 0;
-            malha[ind].celula[ncel - 1].term2R = 0;
-            malha[ind].celula[ncel].Mliqini = 0;
-            malha[ind].celula[ncel].MC = (malha[ind].celula[ncel - 1].MR);
-            malha[ind].celula[ncel].Mliqini = 0;
-            malha[ind].celula[ncel].term1 = 0;
-            malha[ind].celula[ncel].term2 = 0;
+        if ((malha[ind].cell(ncel - 1).MliqiniR < 0)) {
+            malha[ind].cell(ncel - 1).MR -= (malha[ind].cell(ncel - 1).MliqiniR);
+            malha[ind].cell(ncel - 1).MliqiniR = 0;
+            malha[ind].cell(ncel - 1).term1R = 0;
+            malha[ind].cell(ncel - 1).term2R = 0;
+            malha[ind].cell(ncel).Mliqini = 0;
+            malha[ind].cell(ncel).MC = (malha[ind].cell(ncel - 1).MR);
+            malha[ind].cell(ncel).Mliqini = 0;
+            malha[ind].cell(ncel).term1 = 0;
+            malha[ind].cell(ncel).term2 = 0;
         }
         if ((malha[ind].masChkSup == 0 || malha[ind].aberto == 1)) {
-            malha[ind].celula[ncel - 1].QLR = 0;
-            malha[ind].celula[ncel].QL = 0;
+            malha[ind].cell(ncel - 1).QLR = 0;
+            malha[ind].cell(ncel).QL = 0;
         }
     } else if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].titRev <= (*malha[ind].vg1dSP).localtiny)) {
-        if (malha[ind].celula[ncel - 1].MliqiniR < 0) {
-            malha[ind].celula[ncel - 1].MR = malha[ind].celula[ncel - 1].MliqiniR;
-            malha[ind].celula[ncel - 1].term1R = 1;
-            malha[ind].celula[ncel - 1].term2R = 0;
-            malha[ind].celula[ncel].MC = malha[ind].celula[ncel - 1].MliqiniR;
-            malha[ind].celula[ncel].term1 = 1;
-            malha[ind].celula[ncel].term2 = 0;
+        if (malha[ind].cell(ncel - 1).MliqiniR < 0) {
+            malha[ind].cell(ncel - 1).MR = malha[ind].cell(ncel - 1).MliqiniR;
+            malha[ind].cell(ncel - 1).term1R = 1;
+            malha[ind].cell(ncel - 1).term2R = 0;
+            malha[ind].cell(ncel).MC = malha[ind].cell(ncel - 1).MliqiniR;
+            malha[ind].cell(ncel).term1 = 1;
+            malha[ind].cell(ncel).term2 = 0;
         }
     }
 }
@@ -2335,18 +2335,18 @@ void corrigeVazNoBuf(SProd *malha, int ind) {
             malha[ind].fontemassPRBuf = 0;
             malha[ind].fontemassCRBuf = 0;
 
-            malha[ind].celula[ncel - 1].term1R = 0;
-            malha[ind].celula[ncel - 1].term2R = 0;
-            malha[ind].celula[ncel].term1 = 0;
-            malha[ind].celula[ncel].term2 = 0;
+            malha[ind].cell(ncel - 1).term1R = 0;
+            malha[ind].cell(ncel - 1).term2R = 0;
+            malha[ind].cell(ncel).term1 = 0;
+            malha[ind].cell(ncel).term2 = 0;
         }
     } else if ((malha[ind].noextremo != 1 && malha[ind].titRev <= (*malha[ind].vg1dSP).localtiny)) {
         if (malha[ind].fontemassGRBuf < 0) {
             malha[ind].fontemassGRBuf = 0;
-            malha[ind].celula[ncel - 1].term1R = 1;
-            malha[ind].celula[ncel - 1].term2R = 0;
-            malha[ind].celula[ncel].term1 = 1;
-            malha[ind].celula[ncel].term2 = 0;
+            malha[ind].cell(ncel - 1).term1R = 1;
+            malha[ind].cell(ncel - 1).term2R = 0;
+            malha[ind].cell(ncel).term1 = 1;
+            malha[ind].cell(ncel).term2 = 0;
         }
     }
 }
@@ -2368,15 +2368,15 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
+        malha[i].config().tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
         if (inativo[i] == 0) {
-            malha[i].arq.master1.razareaativ = 0.4;
+            malha[i].config().master1.razareaativ = 0.4;
             if (arqRede.malha[i].nafluente > 0) {
-                if (malha[i].celula[0].acsr.tipo == 2) {
-                    malha[i].celula[0].acsr.injm.FluidoPro = malha[i].celula[0].acsr.injl.FluidoPro;
-                    malha[i].celula[0].acsr.injm.fluidocol = malha[i].celula[0].acsr.injl.fluidocol;
-                } else if (malha[i].celula[0].acsr.tipo == 1) {
-                    malha[i].celula[0].acsr.injm.FluidoPro = malha[i].celula[0].acsr.injg.FluidoPro;
+                if (malha[i].cell(0).acsr.tipo == 2) {
+                    malha[i].cell(0).acsr.injm.FluidoPro = malha[i].cell(0).acsr.injl.FluidoPro;
+                    malha[i].cell(0).acsr.injm.fluidocol = malha[i].cell(0).acsr.injl.fluidocol;
+                } else if (malha[i].cell(0).acsr.tipo == 1) {
+                    malha[i].cell(0).acsr.injm.FluidoPro = malha[i].cell(0).acsr.injg.FluidoPro;
                 }
                 int ind = arqRede.malha[i].afluente[0];
 
@@ -2385,7 +2385,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 vector<double> dcol;
                 for (int icol = 0; icol < nderiva; icol++) {
                     int aux = arqRede.malha[ind].coleta[icol];
-                    dcol.push_back(malha[aux].celula[0].duto.dia);
+                    dcol.push_back(malha[aux].cell(0).duto.dia);
                 }
                 sort(dcol.begin(), dcol.end());
                 Vcr<int> carregado(nderiva, 0);
@@ -2393,7 +2393,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                     Vcr<int> colRev(narq);
                     int aux = arqRede.malha[ind].coleta[icol];
                     for (int icol2 = 0; icol2 < nderiva; icol2++) {
-                        if (dcol[icol2] == malha[aux].celula[0].duto.dia && carregado[icol2] == 0) {
+                        if (dcol[icol2] == malha[aux].cell(0).duto.dia && carregado[icol2] == 0) {
                             ordCol[icol2] = aux;
                             carregado[icol2] = 1;
                             icol2 = nderiva;
@@ -2401,85 +2401,85 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                     }
                 }
                 if (i == ordCol[nderiva - 1]) {
-                    if (malha[i].celula[0].acsr.tipo != 10) {
-                        malha[i].celula[0].acsr.injm.MassC = malha[i].celula[0].QLR * malha[i].celula[0].bet *
-                                                             malha[i].celula[0].fluicol.MasEspFlu(malha[i].celula[0].pres, malha[i].celula[0].temp);
-                        malha[i].celula[0].acsr.injm.MassP = malha[i].celula[0].MliqiniR -
-                                                             malha[i].celula[0].acsr.injm.MassC;
-                        malha[i].celula[0].acsr.injm.MassG = malha[i].celula[0].MR - malha[i].celula[0].MliqiniR;
-                        malha[i].celula[0].acsr.tipo = 10;
+                    if (malha[i].cell(0).acsr.tipo != 10) {
+                        malha[i].cell(0).acsr.injm.MassC = malha[i].cell(0).QLR * malha[i].cell(0).bet *
+                                                             malha[i].cell(0).fluicol.MasEspFlu(malha[i].cell(0).pres, malha[i].cell(0).temp);
+                        malha[i].cell(0).acsr.injm.MassP = malha[i].cell(0).MliqiniR -
+                                                             malha[i].cell(0).acsr.injm.MassC;
+                        malha[i].cell(0).acsr.injm.MassG = malha[i].cell(0).MR - malha[i].cell(0).MliqiniR;
+                        malha[i].cell(0).acsr.tipo = 10;
                     }
-                    malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injm.FluidoPro;
+                    malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injm.FluidoPro;
                 } else {
-                    malha[i].arq.ConContEntrada = 1;
-                    malha[i].presE = malha[ordCol[nderiva - 1]].celula[0].pres +
-                                     (malha[ordCol[nderiva - 1]].celula[0].pres -
-                                      malha[ordCol[nderiva - 1]].celula[1].presaux);
-                    malha[i].tempE = malha[i].celula[0].acsr.injl.temp;
-                    malha[i].titE = malha[i].celula[0].fontemassGR / (malha[i].celula[0].fontemassLR +
-                                                                      malha[i].celula[0].fontemassCR + malha[i].celula[0].fontemassGR);
-                    malha[i].betaE = malha[ordCol[nderiva - 1]].celula[0].bet;
-                    malha[i].celula[0].acsr.injl.QLiq = 0.;
-                    malha[i].celula[0].acsr.injg.QGas = 0.;
-                    malha[i].celula[0].acsr.injm.MassC = 0.;
-                    malha[i].celula[0].acsr.injm.MassP = 0.;
-                    malha[i].celula[0].acsr.injm.MassG = 0.;
-                    malha[i].celula[0].fluiL = &malha[ordCol[nderiva - 1]].celula[0].acsr.injm.FluidoPro;
-                    malha[i].celula[0].MC = malha[i].celula[0].fontemassLR +
-                                            malha[i].celula[0].fontemassCR + malha[i].celula[0].fontemassGR;
-                    malha[i].celula[0].MCini = malha[i].celula[0].MC;
-                    malha[i].celula[0].Mliqini = malha[i].celula[0].fontemassLR + malha[i].celula[0].fontemassCR;
-                    malha[i].celula[0].Mliqini0 = malha[i].celula[0].Mliqini;
-                    double rholMix = malha[i].celula[0].bet * malha[i].celula[0].fluicol.MasEspFlu(
-                                                                  malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    rholMix += (1. - malha[i].celula[0].bet) * malha[i].celula[0].flui.MasEspLiq(
-                                                                   malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QL = malha[i].celula[0].Mliqini / rholMix;
-                    malha[i].celula[0].QLini = malha[i].celula[0].QL;
-                    double rhog = malha[i].celula[0].flui.MasEspGas(
-                        malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QG = (malha[i].celula[0].MC - malha[i].celula[0].Mliqini) / rhog;
-                    malha[i].celula[0].QGini = malha[i].celula[0].QG;
+                    malha[i].config().ConContEntrada = 1;
+                    malha[i].presE = malha[ordCol[nderiva - 1]].cell(0).pres +
+                                     (malha[ordCol[nderiva - 1]].cell(0).pres -
+                                      malha[ordCol[nderiva - 1]].cell(1).presaux);
+                    malha[i].tempE = malha[i].cell(0).acsr.injl.temp;
+                    malha[i].titE = malha[i].cell(0).fontemassGR / (malha[i].cell(0).fontemassLR +
+                                                                      malha[i].cell(0).fontemassCR + malha[i].cell(0).fontemassGR);
+                    malha[i].betaE = malha[ordCol[nderiva - 1]].cell(0).bet;
+                    malha[i].cell(0).acsr.injl.QLiq = 0.;
+                    malha[i].cell(0).acsr.injg.QGas = 0.;
+                    malha[i].cell(0).acsr.injm.MassC = 0.;
+                    malha[i].cell(0).acsr.injm.MassP = 0.;
+                    malha[i].cell(0).acsr.injm.MassG = 0.;
+                    malha[i].cell(0).fluiL = &malha[ordCol[nderiva - 1]].cell(0).acsr.injm.FluidoPro;
+                    malha[i].cell(0).MC = malha[i].cell(0).fontemassLR +
+                                            malha[i].cell(0).fontemassCR + malha[i].cell(0).fontemassGR;
+                    malha[i].cell(0).MCini = malha[i].cell(0).MC;
+                    malha[i].cell(0).Mliqini = malha[i].cell(0).fontemassLR + malha[i].cell(0).fontemassCR;
+                    malha[i].cell(0).Mliqini0 = malha[i].cell(0).Mliqini;
+                    double rholMix = malha[i].cell(0).bet * malha[i].cell(0).fluicol.MasEspFlu(
+                                                                  malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    rholMix += (1. - malha[i].cell(0).bet) * malha[i].cell(0).flui.MasEspLiq(
+                                                                   malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QL = malha[i].cell(0).Mliqini / rholMix;
+                    malha[i].cell(0).QLini = malha[i].cell(0).QL;
+                    double rhog = malha[i].cell(0).flui.MasEspGas(
+                        malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QG = (malha[i].cell(0).MC - malha[i].cell(0).Mliqini) / rhog;
+                    malha[i].cell(0).QGini = malha[i].cell(0).QG;
                 }
-            } else if (malha[i].arq.ConContEntrada == 1) {
+            } else if (malha[i].config().ConContEntrada == 1) {
 
-                if (malha[i].celula[0].acsr.tipo == 2) {
-                    malha[i].celula[0].acsr.injl.QLiq = 0.;
-                    malha[i].celula[0].MC = malha[i].celula[0].fontemassLR +
-                                            malha[i].celula[0].fontemassCR + malha[i].celula[0].fontemassGR;
-                    malha[i].celula[0].MCini = malha[i].celula[0].MC;
-                    malha[i].celula[0].Mliqini = malha[i].celula[0].fontemassLR + malha[i].celula[0].fontemassCR;
-                    malha[i].celula[0].Mliqini0 = malha[i].celula[0].Mliqini;
-                    double rholMix = malha[i].celula[0].bet * malha[i].celula[0].fluicol.MasEspFlu(
-                                                                  malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    rholMix += (1. - malha[i].celula[0].bet) * malha[i].celula[0].flui.MasEspLiq(
-                                                                   malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QL = malha[i].celula[0].Mliqini / rholMix;
-                    malha[i].celula[0].QLini = malha[i].celula[0].QL;
-                    double rhog = malha[i].celula[0].flui.MasEspGas(
-                        malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QG = (malha[i].celula[0].MC - malha[i].celula[0].Mliqini) / rhog;
-                    malha[i].celula[0].QGini = malha[i].celula[0].QG;
-                    malha[i].celula[0].fontemassLR = 0.;
-                    malha[i].celula[0].fontemassCR = 0.;
-                    malha[i].celula[0].fontemassGR = 0.;
-                    malha[i].celula[0].fluiL = &malha[i].celula[0].flui;
-                } else if (malha[i].celula[0].acsr.tipo == 1) {
-                    malha[i].celula[0].acsr.injg.QGas = 0.;
-                    malha[i].celula[0].MC = malha[i].celula[0].fontemassGR;
-                    malha[i].celula[0].MCini = malha[i].celula[0].MC;
-                    malha[i].celula[0].Mliqini = 0.;
-                    malha[i].celula[0].Mliqini0 = malha[i].celula[0].Mliqini;
-                    malha[i].celula[0].QL = 0;
-                    malha[i].celula[0].QLini = malha[i].celula[0].QL;
-                    double rhog = malha[i].celula[0].flui.MasEspGas(
-                        malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QG = (malha[i].celula[0].MC - malha[i].celula[0].Mliqini) / rhog;
-                    malha[i].celula[0].QGini = malha[i].celula[0].QG;
-                    malha[i].celula[0].fontemassLR = 0.;
-                    malha[i].celula[0].fontemassCR = 0.;
-                    malha[i].celula[0].fontemassGR = 0.;
-                    malha[i].celula[0].fluiL = &malha[i].celula[0].flui;
+                if (malha[i].cell(0).acsr.tipo == 2) {
+                    malha[i].cell(0).acsr.injl.QLiq = 0.;
+                    malha[i].cell(0).MC = malha[i].cell(0).fontemassLR +
+                                            malha[i].cell(0).fontemassCR + malha[i].cell(0).fontemassGR;
+                    malha[i].cell(0).MCini = malha[i].cell(0).MC;
+                    malha[i].cell(0).Mliqini = malha[i].cell(0).fontemassLR + malha[i].cell(0).fontemassCR;
+                    malha[i].cell(0).Mliqini0 = malha[i].cell(0).Mliqini;
+                    double rholMix = malha[i].cell(0).bet * malha[i].cell(0).fluicol.MasEspFlu(
+                                                                  malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    rholMix += (1. - malha[i].cell(0).bet) * malha[i].cell(0).flui.MasEspLiq(
+                                                                   malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QL = malha[i].cell(0).Mliqini / rholMix;
+                    malha[i].cell(0).QLini = malha[i].cell(0).QL;
+                    double rhog = malha[i].cell(0).flui.MasEspGas(
+                        malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QG = (malha[i].cell(0).MC - malha[i].cell(0).Mliqini) / rhog;
+                    malha[i].cell(0).QGini = malha[i].cell(0).QG;
+                    malha[i].cell(0).fontemassLR = 0.;
+                    malha[i].cell(0).fontemassCR = 0.;
+                    malha[i].cell(0).fontemassGR = 0.;
+                    malha[i].cell(0).fluiL = &malha[i].cell(0).flui;
+                } else if (malha[i].cell(0).acsr.tipo == 1) {
+                    malha[i].cell(0).acsr.injg.QGas = 0.;
+                    malha[i].cell(0).MC = malha[i].cell(0).fontemassGR;
+                    malha[i].cell(0).MCini = malha[i].cell(0).MC;
+                    malha[i].cell(0).Mliqini = 0.;
+                    malha[i].cell(0).Mliqini0 = malha[i].cell(0).Mliqini;
+                    malha[i].cell(0).QL = 0;
+                    malha[i].cell(0).QLini = malha[i].cell(0).QL;
+                    double rhog = malha[i].cell(0).flui.MasEspGas(
+                        malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QG = (malha[i].cell(0).MC - malha[i].cell(0).Mliqini) / rhog;
+                    malha[i].cell(0).QGini = malha[i].cell(0).QG;
+                    malha[i].cell(0).fontemassLR = 0.;
+                    malha[i].cell(0).fontemassCR = 0.;
+                    malha[i].cell(0).fontemassGR = 0.;
+                    malha[i].cell(0).fluiL = &malha[i].cell(0).flui;
                 }
             }
         }
@@ -2509,8 +2509,8 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
 
     for (int i = 0; i < narq; i++) {
         if (inativo[i] == 0) {
-            malha[i].titRev = malha[i].celula[malha[i].ncel].alf;
-            malha[i].betaRev = malha[i].celula[malha[i].ncel].bet;
+            malha[i].titRev = malha[i].cell(malha[i].ncel).alf;
+            malha[i].betaRev = malha[i].cell(malha[i].ncel).bet;
         }
     }
 
@@ -2523,20 +2523,20 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
             for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
                 int indCol2 = arqRede.malha[i].coleta[j];
                 if (inativo[indCol2] == 1) {
-                    if (malha[indCol2].celula[1].QG < 0)
-                        qg -= malha[indCol2].celula[1].QG;
-                    if (malha[indCol2].celula[1].QL < 0)
-                        ql -= malha[indCol2].celula[1].QL;
+                    if (malha[indCol2].cell(1).QG < 0)
+                        qg -= malha[indCol2].cell(1).QG;
+                    if (malha[indCol2].cell(1).QL < 0)
+                        ql -= malha[indCol2].cell(1).QL;
                 }
             }
             for (int j = 0; j < arqRede.malha[indCol].nafluente; j++) {
                 int indAflu = arqRede.malha[i].afluente[j];
                 int fim = malha[indAflu].ncel;
                 if (inativo[indAflu] == 1) {
-                    if (malha[indAflu].celula[fim].QG > 0)
-                        qg += malha[indAflu].celula[fim].QG;
-                    if (malha[indAflu].celula[fim].QL > 0)
-                        ql += malha[indAflu].celula[fim].QL;
+                    if (malha[indAflu].cell(fim).QG > 0)
+                        qg += malha[indAflu].cell(fim).QG;
+                    if (malha[indAflu].cell(fim).QL > 0)
+                        ql += malha[indAflu].cell(fim).QL;
                 }
             }
             for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
@@ -2563,23 +2563,23 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
     while ((*arqRede.vg1dSP).lixo5R < (*arqRede.vg1dSP).TmaxR) {
 
         for (int i = 0; i < narq; i++) {
-            if (malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].config().calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
                 FA_Hidrato solverHidrato(malha[i]);
                 solverHidrato.solverHidrato();
             }
 
-            if (malha[i].arq.lingas > 0 && malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].config().lingas > 0 && malha[i].config().calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
                 FA_Hidrato_Servico solverHidratoG(malha[i]);
                 solverHidratoG.solverHidratoG();
             }
 
-            if (malha[i].arq.flashCompleto == 2 && (*arqRede.vg1dSP).lixo5 < 1e-15) {
+            if (malha[i].config().flashCompleto == 2 && (*arqRede.vg1dSP).lixo5 < 1e-15) {
                 malha[i].atualizaMiniTab();
             }
 
             if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
-                for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].ntrend[j]);
+                for (int j = 0; j < malha[i].config().ntendp; j++) {
+                    malha[i].config().imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].ntrend[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -2588,7 +2588,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
         dtteste = 1e6;
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
-                malha[i].modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
+                malha[i].modeloCompleto = malha[i].config().correcaoMassaEspLiq;
                 malha[i].determinaDT();
                 malha[i].dtauxCFL = malha[i].dt;
                 malha[i].dtauxFinal = malha[i].dt;
@@ -2601,23 +2601,23 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
             if (inativo[i] == 0) {
                 malha[i].dt = dtteste;
                 for (int j = 0; j <= malha[i].ncel; j++) {
-                    malha[i].celula[j].dt = malha[i].dt;
-                    malha[i].celula[j].dt2 = malha[i].dt;
-                    malha[i].celula[j].dtPig = malha[i].dt;
+                    malha[i].cell(j).dt = malha[i].dt;
+                    malha[i].cell(j).dt2 = malha[i].dt;
+                    malha[i].cell(j).dtPig = malha[i].dt;
                 }
             }
         }
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
                 malha[i].reinicia = 0;
-                celpos[i] = malha[i].arq.master1.posic;
-                // razMast0[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
+                celpos[i] = malha[i].config().master1.posic;
+                // razMast0[i]=malha[i].cell(celpos[i]).acsr.chk.AreaGarg/malha[i].cell(celpos[i]).duto.area;//caso so Master
                 malha[i].aberturaVal0(); // caso varias valvulas
                 malha[i].solveLinGas();
                 int presinterna = malha[i].noextremo;
                 if (arqRede.malha[i].presimposta == 1)
                     presinterna = 1;
-                malha[i].arq.atualiza(malha[i].noinicial, presinterna, malha[i].derivaAnel,
+                malha[i].config().atualiza(malha[i].noinicial, presinterna, malha[i].derivaAnel,
                                       malha[i].chokeSup,
                                       malha[i].chokeInj, malha[i].celula,
                                       malha[i].celulaG, malha[i].pGSup, malha[i].temperatura,
@@ -2625,24 +2625,24 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                                       malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
                 malha[i].atualizaCC1();
                 // razMastCrit[i]=0.5;//caso so Master
-                for (int j = 0; j <= malha[i].arq.nvalv; j++)
+                for (int j = 0; j <= malha[i].config().nvalv; j++)
                     malha[i].vRazMastCrit[j] = 0.5; // caso varias valvulas
-                // razMast[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
+                // razMast[i]=malha[i].cell(celpos[i]).acsr.chk.AreaGarg/malha[i].cell(celpos[i]).duto.area;//caso so Master
                 malha[i].aberturaVal1(); // caso varias valvulas
                 if (arqRede.malha[i].ncoleta > 0 &&
-                    (malha[i].chokeSup.AreaGarg / malha[i].celula[malha[i].ncel - 1].duto.area) < 0.6)
-                    malha[i].arq.chkv = 1;
+                    (malha[i].chokeSup.AreaGarg / malha[i].cell(malha[i].ncel - 1).duto.area) < 0.6)
+                    malha[i].config().chkv = 1;
                 if ((*arqRede.vg1dSP).lixo5R >= 4000) {
                 }
-                for (int j = 0; j <= malha[i].arq.nvalv; j++)
+                for (int j = 0; j <= malha[i].config().nvalv; j++)
                     if (malha[i].vRazMast1[j] != malha[i].vRazMast0[j])
                         malha[i].modeloCompleto = 0; // caso varias valvulas
                 if (malha[i].modeloCompleto == 1)
                     malha[i].avaliaVariaDpDt(); // caso varias valvulas
                 if (malha[i].modeloCompleto == 0)
-                    malha[i].arq.cicloAcopTerm = 0;
+                    malha[i].config().cicloAcopTerm = 0;
                 else
-                    malha[i].arq.cicloAcopTerm = 1;
+                    malha[i].config().cicloAcopTerm = 1;
             }
         }
         int modeloCompletoGlob = 1;
@@ -2667,23 +2667,23 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 malha[i].titRevini = malha[i].titRev;
                 malha[i].betaRevini = malha[i].betaRev;
                 malha[i].presfimini = malha[i].presfim;
-                condcon[i] = malha[i].arq.ConContEntrada;
+                condcon[i] = malha[i].config().ConContEntrada;
                 temperatura[i] = malha[i].temperatura;
-                injTempIni[i] = malha[i].celula[0].acsr.injm.temp;
-                rDgD[i] = malha[i].celula[0].acsr.injm.FluidoPro.rDgD;
-                rDgL[i] = malha[i].celula[0].acsr.injm.FluidoPro.rDgL;
-                if (malha[i].celula[0].acsr.tipo == 10) {
-                    injMG[i] = malha[i].celula[0].acsr.injm.MassG;
-                    injMP[i] = malha[i].celula[0].acsr.injm.MassP;
-                    injMC[i] = malha[i].celula[0].acsr.injm.MassC;
-                    fluiInjM[i] = malha[i].celula[0].acsr.injm.FluidoPro;
+                injTempIni[i] = malha[i].cell(0).acsr.injm.temp;
+                rDgD[i] = malha[i].cell(0).acsr.injm.FluidoPro.rDgD;
+                rDgL[i] = malha[i].cell(0).acsr.injm.FluidoPro.rDgL;
+                if (malha[i].cell(0).acsr.tipo == 10) {
+                    injMG[i] = malha[i].cell(0).acsr.injm.MassG;
+                    injMP[i] = malha[i].cell(0).acsr.injm.MassP;
+                    injMC[i] = malha[i].cell(0).acsr.injm.MassC;
+                    fluiInjM[i] = malha[i].cell(0).acsr.injm.FluidoPro;
                 }
-                fluiFim[i] = malha[i].celula[malha[i].ncel].flui;
-                fluiIni[i] = malha[i].celula[0].fluiL;
-                rpR[i] = malha[i].celula[0].rpR;
-                rcR[i] = malha[i].celula[0].rcR;
-                rpRi[i] = malha[i].celula[0].rpRi;
-                rcRi[i] = malha[i].celula[0].rcRi;
+                fluiFim[i] = malha[i].cell(malha[i].ncel).flui;
+                fluiIni[i] = malha[i].cell(0).fluiL;
+                rpR[i] = malha[i].cell(0).rpR;
+                rcR[i] = malha[i].cell(0).rcR;
+                rpRi[i] = malha[i].cell(0).rpRi;
+                rcRi[i] = malha[i].cell(0).rcRi;
                 malha[i].abertoini = malha[i].aberto;
                 malha[i].tempoabertoini = malha[i].tempoaberto;
                 malha[i].masChkSupini = malha[i].masChkSup;
@@ -2702,62 +2702,62 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
 
                     if (malha[i].modeloCompleto == 0) {
                         for (int j = 0; j <= malha[i].ncel; j++)
-                            malha[i].celula[j].m2d = 0.;
+                            malha[i].cell(j).m2d = 0.;
                     } else {
 
                         for (int j = 0; j <= malha[i].ncel; j++) {
                             double razDp = 0.1;
                             double razDT = 1;
-                            if (j < celpos[i] && malha[i].celula[celpos[i]].acsr.chk.AreaGarg < 1e-15 * malha[i].celula[celpos[i]].acsr.chk.AreaTub) {
+                            if (j < celpos[i] && malha[i].cell(celpos[i]).acsr.chk.AreaGarg < 1e-15 * malha[i].cell(celpos[i]).acsr.chk.AreaTub) {
                                 razDT = 1;
                             } else if (j == celpos[i] + 1 &&
-                                       malha[i].celula[celpos[i]].acsr.chk.AreaGarg < 1e-15 * malha[i].celula[celpos[i]].acsr.chk.AreaTub) {
+                                       malha[i].cell(celpos[i]).acsr.chk.AreaGarg < 1e-15 * malha[i].cell(celpos[i]).acsr.chk.AreaTub) {
                                 razDT = 1;
                             }
-                            if ((fabs(malha[i].celula[j].dpdtIni) / malha[i].celula[j].pres < razDp) && fabs(malha[i].celula[j].dTdtIni) < razDT) {
+                            if ((fabs(malha[i].cell(j).dpdtIni) / malha[i].cell(j).pres < razDp) && fabs(malha[i].cell(j).dTdtIni) < razDT) {
                                 if (malha[i].TransMassModel == 0)
-                                    malha[i].celula[j].m2d = 1.;
+                                    malha[i].cell(j).m2d = 1.;
                                 else
-                                    malha[i].celula[j].m2d = 0.;
-                                malha[i].celula[j].mudaDT = 1.;
+                                    malha[i].cell(j).m2d = 0.;
+                                malha[i].cell(j).mudaDT = 1.;
                             } else {
-                                malha[i].celula[j].m2d = 0.;
-                                malha[i].celula[j].mudaDT = 0.;
+                                malha[i].cell(j).m2d = 0.;
+                                malha[i].cell(j).mudaDT = 0.;
                             }
                         }
                     }
-                    if (malha[i].arq.estabCol == 1) {
+                    if (malha[i].config().estabCol == 1) {
                         for (int j = 0; j <= celpos[i]; j++) {
-                            malha[i].celula[j].m2d = 0.;
-                            malha[i].celula[j].mudaDT = 0.;
-                            malha[i].celula[j].estabCol = 1;
+                            malha[i].cell(j).m2d = 0.;
+                            malha[i].cell(j).mudaDT = 0.;
+                            malha[i].cell(j).estabCol = 1;
                         }
                     }
 
                     malha[i].EvoluiFrac(alfRev[i], betRev[i], kontaAcop);
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        if (malha[i].celula[j].acsr.tipo == 15) {
-                            malha[i].celula[j].acsr.radialPoro.avancoSW(malha[i].dt);
-                            if (malha[i].celula[j].acsr.radialPoro.reinicia == -1) {
+                        if (malha[i].cell(j).acsr.tipo == 15) {
+                            malha[i].cell(j).acsr.radialPoro.avancoSW(malha[i].dt);
+                            if (malha[i].cell(j).acsr.radialPoro.reinicia == -1) {
                                 if (malha[i].reinicia > -1)
                                     malha[i].reinicia = -1;
                                 // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
                             }
-                        } else if (malha[i].celula[j].acsr.tipo == 16) {
-                            malha[i].celula[j].acsr.poroso2D.avancoSW(malha[i].dt);
-                            if (malha[i].celula[j].acsr.poroso2D.reinicia == -1) {
+                        } else if (malha[i].cell(j).acsr.tipo == 16) {
+                            malha[i].cell(j).acsr.poroso2D.avancoSW(malha[i].dt);
+                            if (malha[i].cell(j).acsr.poroso2D.reinicia == -1) {
                                 if (malha[i].reinicia > -1)
                                     malha[i].reinicia = -1;
                                 // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
                             }
                         }
                     }
-                    if (malha[i].arq.correcaoMassaEspLiq == 1) {
+                    if (malha[i].config().correcaoMassaEspLiq == 1) {
                         for (int j = 0; j < malha[i].ncel; j++)
-                            malha[i].celula[j + 1].mudaDTL = malha[i].celula[j].mudaDT;
+                            malha[i].cell(j + 1).mudaDTL = malha[i].cell(j).mudaDT;
                     }
 
-                    if (kontaAcop == 0 && malha[i].arq.controleDTvalv == 1) {
+                    if (kontaAcop == 0 && malha[i].config().controleDTvalv == 1) {
                         // caso so Master
                         // caso so Master
                         malha[i].restringeDTporValv(); // caso varias valvulas
@@ -2775,19 +2775,19 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                     if (inativo[i] == 0) {
                         malha[i].ReiniEvolFrac0();
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].acsr.tipo == 15) {
-                                malha[i].celula[j].acsr.radialPoro.reavaliaDT(malha[i].dt);
+                            if (malha[i].cell(j).acsr.tipo == 15) {
+                                malha[i].cell(j).acsr.radialPoro.reavaliaDT(malha[i].dt);
                             }
-                            if (malha[i].celula[j].acsr.tipo == 16) {
-                                malha[i].celula[j].acsr.poroso2D.reavaliaDT(malha[i].dt);
+                            if (malha[i].cell(j).acsr.tipo == 16) {
+                                malha[i].cell(j).acsr.poroso2D.reavaliaDT(malha[i].dt);
                             }
                         }
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].acsr.tipo == 15) {
-                                malha[i].celula[j].acsr.radialPoro.reiniciaEvoluiSW(malha[i].dt);
+                            if (malha[i].cell(j).acsr.tipo == 15) {
+                                malha[i].cell(j).acsr.radialPoro.reiniciaEvoluiSW(malha[i].dt);
                             }
-                            if (malha[i].celula[j].acsr.tipo == 16) {
-                                malha[i].celula[j].acsr.poroso2D.reiniciaEvoluiSW(malha[i].dt);
+                            if (malha[i].cell(j).acsr.tipo == 16) {
+                                malha[i].cell(j).acsr.poroso2D.reiniciaEvoluiSW(malha[i].dt);
                             }
                         }
                         if (malha[i].dt < dtteste) {
@@ -2803,11 +2803,11 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         malha[i].EvoluiFrac(alfRev[i], betRev[i], kontaAcop);
                         malha[i].reinicia = 0;
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].acsr.tipo == 15) {
-                                malha[i].celula[j].acsr.radialPoro.avancoSWcorrec();
+                            if (malha[i].cell(j).acsr.tipo == 15) {
+                                malha[i].cell(j).acsr.radialPoro.avancoSWcorrec();
                             }
-                            if (malha[i].celula[j].acsr.tipo == 16) {
-                                malha[i].celula[j].acsr.poroso2D.avancoSWcorrec();
+                            if (malha[i].cell(j).acsr.tipo == 16) {
+                                malha[i].cell(j).acsr.poroso2D.avancoSWcorrec();
                             }
                         }
                     }
@@ -2820,13 +2820,13 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 if (inativo[i] == 0 && arqRede.malha[i].ncoleta > 0) {
                     int colMaster = buscaNoColetorMrestre(malha, arqRede, inativo, i);
                     colRev[i] = arqRede.malha[i].coleta[colMaster];
-                    betRev[i] = malha[colRev[i]].celula[0].bet;
-                    double presRev = malha[colRev[i]].celula[0].pres;
-                    double tempRev = malha[colRev[i]].celula[0].temp;
-                    double rholp = malha[colRev[i]].celula[0].flui.MasEspLiq(presRev, tempRev);
-                    double rholc = malha[colRev[i]].celula[0].fluicol.MasEspFlu(presRev, tempRev);
+                    betRev[i] = malha[colRev[i]].cell(0).bet;
+                    double presRev = malha[colRev[i]].cell(0).pres;
+                    double tempRev = malha[colRev[i]].cell(0).temp;
+                    double rholp = malha[colRev[i]].cell(0).flui.MasEspLiq(presRev, tempRev);
+                    double rholc = malha[colRev[i]].cell(0).fluicol.MasEspFlu(presRev, tempRev);
                     double rholmix = (1 - betRev[i]) * rholp + betRev[i] * rholc;
-                    double rhog = malha[colRev[i]].celula[0].flui.MasEspGas(presRev, tempRev);
+                    double rhog = malha[colRev[i]].cell(0).flui.MasEspGas(presRev, tempRev);
                     double romix = alfRev[i] * rhog + (1 - alfRev[i]) * rholmix;
                     titRev[i] = alfRev[i] * rhog / romix;
 
@@ -2844,32 +2844,32 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         malha[i].atenuaDtMax();
 
                     if (modeloCompletoGlob == 1) {
-                        fonteC[i] = malha[i].celula[malha[i].ncel].fontemassCR;
-                        fonteP[i] = malha[i].celula[malha[i].ncel].fontemassLR;
-                        fonteG[i] = malha[i].celula[malha[i].ncel].fontemassGR;
+                        fonteC[i] = malha[i].cell(malha[i].ncel).fontemassCR;
+                        fonteP[i] = malha[i].cell(malha[i].ncel).fontemassLR;
+                        fonteG[i] = malha[i].cell(malha[i].ncel).fontemassGR;
                     }
 
                     malha[i].calcCCpres(titRev[i], alfRev[i], betRev[i]);
                     int temaflu = 0;
                     if (arqRede.malha[i].ncoleta > 0) {
                         temaflu = 1;
-                        if (malha[i].masChkSup == 0 && malha[i].arq.chkv == 0) {
-                            malha[i].celula[malha[i].ncel].alf = alfRev[i];
-                            malha[i].celula[malha[i].ncel].bet = betRev[i];
+                        if (malha[i].masChkSup == 0 && malha[i].config().chkv == 0) {
+                            malha[i].cell(malha[i].ncel).alf = alfRev[i];
+                            malha[i].cell(malha[i].ncel).bet = betRev[i];
                         }
                     }
-                    if (malha[i].celula[malha[i].ncel].alf < 0.05 && malha[i].masChkSup == 1)
-                        malha[i].celula[malha[i].ncel].alf = 0.05;
-                    // malha[i].celula[celpos[i]].alf=0.05;//caso so Master
+                    if (malha[i].cell(malha[i].ncel).alf < 0.05 && malha[i].masChkSup == 1)
+                        malha[i].cell(malha[i].ncel).alf = 0.05;
+                    // malha[i].cell(celpos[i]).alf=0.05;//caso so Master
                     // caso varias valvulas
-                    for (int j = 0; j <= malha[i].arq.nvalv; j++) {
+                    for (int j = 0; j <= malha[i].config().nvalv; j++) {
                         int celposAux;
                         if (j > 0)
-                            celposAux = malha[i].arq.valv[j - 1].posicP;
+                            celposAux = malha[i].config().valv[j - 1].posicP;
                         else
                             celposAux = celpos[i];
-                        if (malha[i].celula[celposAux].alf < 0.05 && malha[i].vRazMast1[j] <= malha[i].arq.master1.razareaativ)
-                            malha[i].celula[celposAux].alf = 0.05;
+                        if (malha[i].cell(celposAux).alf < 0.05 && malha[i].vRazMast1[j] <= malha[i].config().master1.razareaativ)
+                            malha[i].cell(celposAux).alf = 0.05;
                     }
                     // caso varias valvulas
                     malha[i].renovaterm(temaflu);
@@ -2881,7 +2881,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0 && (malha[i].noextremo == 1 ||
                                         (malha[i].noextremo == 0 &&
-                                         ((malha[i].chokeSup.AreaGarg / malha[i].celula[malha[i].ncel - 1].duto.area) > 0.1 ||
+                                         ((malha[i].chokeSup.AreaGarg / malha[i].cell(malha[i].ncel - 1).duto.area) > 0.1 ||
                                           malha[i].masChkSup == 0))))
                     segundoAcop[i] = 1;
             }
@@ -2907,71 +2907,71 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                     if (arqRede.malha[i].ncoleta > 0) {
                         malha[i].renovatermAfluFim();
                     }
-                    if (arqRede.malha[i].nafluente > 0 && malha[i].arq.ConContEntrada > 0)
+                    if (arqRede.malha[i].nafluente > 0 && malha[i].config().ConContEntrada > 0)
                         malha[i].renovatermColIni();
                     malha[i].SolveAcopPV();
 
                     if (kontaAcop < 1 * malha[i].modeloCompleto && malha[i].modeloCompleto == 1) {
                         for (int j = 0; j <= malha[i].ncel; j++)
-                            malha[i].celula[j].dpdt =
-                                1 * (malha[i].termolivreP[2 * j + 1] - malha[i].celula[j].pres) / malha[i].celula[j].dt;
+                            malha[i].cell(j).dpdt =
+                                1 * (malha[i].termolivreP[2 * j + 1] - malha[i].cell(j).pres) / malha[i].cell(j).dt;
                     }
                     malha[i].renova();
-                    if (malha[i].arq.cicloAcopTerm == 1) {
+                    if (malha[i].config().cicloAcopTerm == 1) {
                         if (kontaAcop < 1 * malha[i].modeloCompleto)
                             for (int j = 0; j <= malha[i].ncel; j++)
-                                malha[i].celula[j].dpdt = malha[i].celula[j].d2pdt2;
+                                malha[i].cell(j).dpdt = malha[i].cell(j).d2pdt2;
                         malha[i].marchaEnergTrans(kontaAcop, ciclomax);
                     }
                     if (arqRede.malha[i].nafluente > 0) {
-                        malha[i].celula[0].dTdt = 0.;
-                        malha[i].celula[0].dTdtL = 0.;
-                        malha[i].celula[0].dpdt = 0.;
-                        malha[i].celula[0].m2d = 0.;
-                        malha[i].celula[0].mudaDT = 0.;
-                        malha[i].celula[1].dTdt = 0.;
-                        malha[i].celula[1].dTdtL = 0.;
-                        malha[i].celula[1].dpdt = 0.;
-                        malha[i].celula[1].m2d = 0.;
-                        malha[i].celula[1].mudaDT = 0.;
+                        malha[i].cell(0).dTdt = 0.;
+                        malha[i].cell(0).dTdtL = 0.;
+                        malha[i].cell(0).dpdt = 0.;
+                        malha[i].cell(0).m2d = 0.;
+                        malha[i].cell(0).mudaDT = 0.;
+                        malha[i].cell(1).dTdt = 0.;
+                        malha[i].cell(1).dTdtL = 0.;
+                        malha[i].cell(1).dpdt = 0.;
+                        malha[i].cell(1).m2d = 0.;
+                        malha[i].cell(1).mudaDT = 0.;
                     }
-                    double razChoke = (malha[i].chokeSup.AreaGarg / malha[i].celula[malha[i].ncel - 1].duto.area);
+                    double razChoke = (malha[i].chokeSup.AreaGarg / malha[i].cell(malha[i].ncel - 1).duto.area);
                     if ((razChoke > 1e-15 && malha[i].noextremo == 0)) {
-                        malha[i].celula[malha[i].ncel].dTdt = 0.;
-                        malha[i].celula[malha[i].ncel].dTdtL = 0.;
-                        malha[i].celula[malha[i].ncel].dpdt = 0.;
-                        malha[i].celula[malha[i].ncel].m2d = 0.;
-                        malha[i].celula[malha[i].ncel].mudaDT = 0.;
-                        malha[i].celula[malha[i].ncel - 1].dTdt = 0.;
-                        malha[i].celula[malha[i].ncel - 1].dTdtL = 0.;
-                        malha[i].celula[malha[i].ncel - 1].dpdt = 0.;
-                        malha[i].celula[malha[i].ncel - 1].m2d = 0.;
-                        malha[i].celula[malha[i].ncel - 1].mudaDT = 0.;
+                        malha[i].cell(malha[i].ncel).dTdt = 0.;
+                        malha[i].cell(malha[i].ncel).dTdtL = 0.;
+                        malha[i].cell(malha[i].ncel).dpdt = 0.;
+                        malha[i].cell(malha[i].ncel).m2d = 0.;
+                        malha[i].cell(malha[i].ncel).mudaDT = 0.;
+                        malha[i].cell(malha[i].ncel - 1).dTdt = 0.;
+                        malha[i].cell(malha[i].ncel - 1).dTdtL = 0.;
+                        malha[i].cell(malha[i].ncel - 1).dpdt = 0.;
+                        malha[i].cell(malha[i].ncel - 1).m2d = 0.;
+                        malha[i].cell(malha[i].ncel - 1).mudaDT = 0.;
                     }
                     if (kontaAcop != 1 * modeloCompletoGlob) {
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            malha[i].celula[j].FeiticoDoTempo2();
-                            if (malha[i].celula[j].acsr.tipo == 15) {
-                                malha[i].celula[j].acsr.radialPoro.FeiticoDoTempoSW();
-                            } else if (malha[i].celula[j].acsr.tipo == 16) {
-                                malha[i].celula[j].acsr.poroso2D.FeiticoDoTempoSW();
+                            malha[i].cell(j).FeiticoDoTempo2();
+                            if (malha[i].cell(j).acsr.tipo == 15) {
+                                malha[i].cell(j).acsr.radialPoro.FeiticoDoTempoSW();
+                            } else if (malha[i].cell(j).acsr.tipo == 16) {
+                                malha[i].cell(j).acsr.poroso2D.FeiticoDoTempoSW();
                             }
                         }
 
                         if (malha[i].modeloCompleto == 0) {
                             for (int j = 0; j <= malha[i].ncel; j++) {
-                                malha[i].celula[j].FeiticoDoTempo3();
-                                if (malha[i].celula[j].acsr.tipo == 15) {
-                                    malha[i].celula[j].acsr.radialPoro.FeiticoDoTempoPQ();
-                                } else if (malha[i].celula[j].acsr.tipo == 16) {
-                                    malha[i].celula[j].acsr.poroso2D.FeiticoDoTempoPQ();
+                                malha[i].cell(j).FeiticoDoTempo3();
+                                if (malha[i].cell(j).acsr.tipo == 15) {
+                                    malha[i].cell(j).acsr.radialPoro.FeiticoDoTempoPQ();
+                                } else if (malha[i].cell(j).acsr.tipo == 16) {
+                                    malha[i].cell(j).acsr.poroso2D.FeiticoDoTempoPQ();
                                 }
                             }
                         }
 
-                        malha[i].celula[malha[i].ncel].fontemassCR = fonteC[i];
-                        malha[i].celula[malha[i].ncel].fontemassLR = fonteP[i];
-                        malha[i].celula[malha[i].ncel].fontemassGR = fonteG[i];
+                        malha[i].cell(malha[i].ncel).fontemassCR = fonteC[i];
+                        malha[i].cell(malha[i].ncel).fontemassLR = fonteP[i];
+                        malha[i].cell(malha[i].ncel).fontemassGR = fonteG[i];
                         malha[i].pGSup = malha[i].pGSupIni;
                         malha[i].tGSup = malha[i].tGSupIni;
                         malha[i].presfim = malha[i].presfimini;
@@ -2983,25 +2983,25 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         malha[i].betaRev = malha[i].betaRevini;
                         malha[i].titRev = malha[i].titRevini;
                         malha[i].temperatura = temperatura[i];
-                        malha[i].celula[malha[i].ncel].flui = fluiFim[i];
-                        malha[i].celula[0].fluiL = fluiIni[i];
-                        malha[i].celula[0].rpR = rpR[i];
-                        malha[i].celula[0].rcR = rcR[i];
-                        malha[i].celula[0].rpRi = rpRi[i];
-                        malha[i].celula[0].rcRi = rcRi[i];
-                        malha[i].arq.ConContEntrada = condcon[i];
+                        malha[i].cell(malha[i].ncel).flui = fluiFim[i];
+                        malha[i].cell(0).fluiL = fluiIni[i];
+                        malha[i].cell(0).rpR = rpR[i];
+                        malha[i].cell(0).rcR = rcR[i];
+                        malha[i].cell(0).rpRi = rpRi[i];
+                        malha[i].cell(0).rcRi = rcRi[i];
+                        malha[i].config().ConContEntrada = condcon[i];
                         malha[i].aberto = malha[i].abertoini;
                         malha[i].tempoaberto = malha[i].tempoabertoini;
                         malha[i].masChkSup = malha[i].masChkSupini;
                         malha[i].mudaModoChk = malha[i].mudaModoChkini;
-                        if (malha[i].celula[0].acsr.tipo == 10) {
-                            malha[i].celula[0].acsr.injm.MassG = injMG[i];
-                            malha[i].celula[0].acsr.injm.MassP = injMP[i];
-                            malha[i].celula[0].acsr.injm.MassC = injMC[i];
-                            malha[i].celula[0].acsr.injm.FluidoPro = fluiInjM[i];
-                            malha[i].celula[0].acsr.injm.temp = injTempIni[i];
-                            malha[i].celula[0].acsr.injm.FluidoPro.rDgD = rDgD[i];
-                            malha[i].celula[0].acsr.injm.FluidoPro.rDgL = rDgL[i];
+                        if (malha[i].cell(0).acsr.tipo == 10) {
+                            malha[i].cell(0).acsr.injm.MassG = injMG[i];
+                            malha[i].cell(0).acsr.injm.MassP = injMP[i];
+                            malha[i].cell(0).acsr.injm.MassC = injMC[i];
+                            malha[i].cell(0).acsr.injm.FluidoPro = fluiInjM[i];
+                            malha[i].cell(0).acsr.injm.temp = injTempIni[i];
+                            malha[i].cell(0).acsr.injm.FluidoPro.rDgD = rDgD[i];
+                            malha[i].cell(0).acsr.injm.FluidoPro.rDgL = rDgL[i];
                         }
                     }
                 }
@@ -3016,20 +3016,20 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
                     int indCol2 = arqRede.malha[i].coleta[j];
                     if (inativo[indCol2] == 1) {
-                        if (malha[indCol2].celula[1].QG < 0)
-                            qg -= malha[indCol2].celula[1].QG;
-                        if (malha[indCol2].celula[1].QL < 0)
-                            ql -= malha[indCol2].celula[1].QL;
+                        if (malha[indCol2].cell(1).QG < 0)
+                            qg -= malha[indCol2].cell(1).QG;
+                        if (malha[indCol2].cell(1).QL < 0)
+                            ql -= malha[indCol2].cell(1).QL;
                     }
                 }
                 for (int j = 0; j < arqRede.malha[indCol].nafluente; j++) {
                     int indAflu = arqRede.malha[i].afluente[j];
                     int fim = malha[indAflu].ncel;
                     if (inativo[indAflu] == 1) {
-                        if (malha[indAflu].celula[fim].QG > 0)
-                            qg += malha[indAflu].celula[fim].QG;
-                        if (malha[indAflu].celula[fim].QL > 0)
-                            ql += malha[indAflu].celula[fim].QL;
+                        if (malha[indAflu].cell(fim).QG > 0)
+                            qg += malha[indAflu].cell(fim).QG;
+                        if (malha[indAflu].cell(fim).QL > 0)
+                            ql += malha[indAflu].cell(fim).QL;
                     }
                 }
                 for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
@@ -3037,7 +3037,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                     if (fabs(qg) > 1e-15 || fabs(ql) > 1e-15)
                         alfRev[indCol2] = qg / (qg + ql);
                     else
-                        alfRev[indCol2] = malha[indCol].celula[0].alf;
+                        alfRev[indCol2] = malha[indCol].cell(0).alf;
                     reverse[indCol2] = 1;
                 }
                 for (int j = 0; j < arqRede.malha[indCol].nafluente; j++) {
@@ -3045,7 +3045,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                     if (fabs(qg) > 1e-15 || fabs(ql) > 1e-15)
                         alfRev[indAflu] = qg / (qg + ql);
                     else
-                        alfRev[indAflu] = malha[indCol].celula[0].alf;
+                        alfRev[indAflu] = malha[indCol].cell(0).alf;
                     reverse[indAflu] = 1;
                 }
             }
@@ -3057,11 +3057,11 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 }
                 if (arqRede.malha[i].ncoleta > 0) {
                     int col = arqRede.malha[i].coleta[0];
-                    malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede, malha[col].celula[0].flui);
+                    malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede, malha[col].cell(0).flui);
                 } else
                     malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede);
-                for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {
-                    if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
+                for (int kontasnp = 0; kontasnp < malha[i].config().nsnp; kontasnp++) {
+                    if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].config().tempsnp[kontasnp]) < malha[i].dt) {
                         WriteSnapShot(malha[i], kontasnp, i); // registro do arquivo SNP
                     }
                 }
@@ -3076,7 +3076,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
     delete[] fluiIni;
 
     for (int i = 0; i < narq; i++) {
-        WriteSnapShot(malha[i], malha[i].arq.nsnp, i);
+        WriteSnapShot(malha[i], malha[i].config().nsnp, i);
     }
 }
 
@@ -3112,7 +3112,7 @@ void verificaTramoVazPres(int &ind, Rede &arqRede, SProd *malha) {
             if (arqRede.malha[ind].ncoleta != 1) {
                 fimBusca = 1;
                 ind = -1;
-            } else if (malha[aux].arq.ConContEntrada != 2) {
+            } else if (malha[aux].config().ConContEntrada != 2) {
                 ind = aux;
             } else {
                 ind = aux;
@@ -3233,8 +3233,8 @@ void avaliaBloq(int i, Rede &arqRede,
 
 int chutePresRede(int indprod, SProd *malha, Rede &arqRede, double chutehol,
                   Vcr<double> &razcolet, Vcr<double> &prescolet) {
-    double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
-    double vazG = (*arqRede.vg1dSP).somavazG * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
+    double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].cell(0).duto.area / (*arqRede.vg1dSP).somaarea;
+    double vazG = (*arqRede.vg1dSP).somavazG * malha[indprod].cell(0).duto.area / (*arqRede.vg1dSP).somaarea;
     double presno = malha[indprod].hidroreverso(chutehol, vaz, vazG);
     int contarecur = 1;
     for (int i = 0; i < arqRede.malha[indprod].nafluente; i++) {
@@ -3275,7 +3275,7 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
     for (int k = 0; k < naflu + ncoleta; k++) {
         vazMolV[k] = 0.;
     }
-    noConv.flu = malha[i].celula[recb].flui;
+    noConv.flu = malha[i].cell(recb).flui;
     noConv.tL = 0.;
     noConv.tH = 70.;
     noConv.qostdTot = 0;
@@ -3305,58 +3305,58 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
 
     int aplicaFluiCol = 0;
     if ((*arqRede.vg1dSP).fluidoRede == 1)
-        malha[i].celula[recb].acsr.injl.fluidocol = malha[i].celula[recb].fluicol;
+        malha[i].cell(recb).acsr.injl.fluidocol = malha[i].cell(recb).fluicol;
 
     for (int k = 0; k < naflu; k++) {
         int ind = arqRede.malha[i].afluente[k];
         int fim = malha[ind].ncel - 1;
-        if (nBloq[k] > 0. && malha[ind].celula[fim + 1].MC >= 0) {
+        if (nBloq[k] > 0. && malha[ind].cell(fim + 1).MC >= 0) {
             kpos++;
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
-                double bo = malha[ind].celula[fim].flui.BOFunc(
-                    malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double ba = malha[ind].celula[fim].flui.BAFunc(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double fw = malha[ind].celula[fim].flui.BSW * ba /
-                            (bo + ba * malha[ind].celula[fim].flui.BSW - malha[ind].celula[fim].flui.BSW * bo);
-                double rhoO = malha[ind].celula[fim].flui.MasEspoleo(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double rhoW = malha[ind].celula[fim].flui.MasEspAgua(malha[ind].pGSup, malha[ind].celula[fim].temp);
+                double bo = malha[ind].cell(fim).flui.BOFunc(
+                    malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double ba = malha[ind].cell(fim).flui.BAFunc(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double fw = malha[ind].cell(fim).flui.BSW * ba /
+                            (bo + ba * malha[ind].cell(fim).flui.BSW - malha[ind].cell(fim).flui.BSW * bo);
+                double rhoO = malha[ind].cell(fim).flui.MasEspoleo(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double rhoW = malha[ind].cell(fim).flui.MasEspAgua(malha[ind].pGSup, malha[ind].cell(fim).temp);
                 titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
                 double pres = malha[ind].pGSup;
                 malha[ind].calcTempFim();
                 temp[k] = malha[ind].tempSup;
-                Bet[k] = malha[ind].celula[fim].bet;
+                Bet[k] = malha[ind].cell(fim).bet;
 
                 if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
-                    malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[fim].fluicol;
+                    malha[i].cell(recb).acsr.injl.fluidocol = malha[ind].cell(fim).fluicol;
                     aplicaFluiCol = 1;
                 }
-                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-                if (malha[ind].celula[fim + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                    qostd[k] = malha[ind].celula[fim + 1].Mliqini * (1. - malha[ind].celula[fim].FW) *
-                               (1. - malha[ind].celula[fim].bet) / (bo * rholliqIS[k]);
+                if (malha[ind].cell(fim + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                    qostd[k] = malha[ind].cell(fim + 1).Mliqini * (1. - malha[ind].cell(fim).FW) *
+                               (1. - malha[ind].cell(fim).bet) / (bo * rholliqIS[k]);
                 else
                     qostd[k] = 0.;
                 Rhocomp[k] = rc;
-                rhogIS[k] = malha[ind].celula[fim].flui.MasEspGas(pres, temp[k]);
-                cpl[k] = (1. - Bet[k]) * malha[ind].celula[fim].flui.CalorLiq(pres, temp[k]) +
-                         Bet[k] * malha[ind].celula[fim].fluicol.CalorLiq(pres, temp[k]);
-                cpg[k] = malha[ind].celula[fim].flui.CalorGas(pres, temp[k]);
-                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                rhogIS[k] = malha[ind].cell(fim).flui.MasEspGas(pres, temp[k]);
+                cpl[k] = (1. - Bet[k]) * malha[ind].cell(fim).flui.CalorLiq(pres, temp[k]) +
+                         Bet[k] * malha[ind].cell(fim).fluicol.CalorLiq(pres, temp[k]);
+                cpg[k] = malha[ind].cell(fim).flui.CalorGas(pres, temp[k]);
+                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                Qliq[k] = malha[ind].cell(fim + 1).QL;
                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                 Qcomp[k] = Qliq[k] * Bet[k];
-                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
+                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
 
-                Denag[k] = malha[ind].celula[fim].flui.Denag;
+                Denag[k] = malha[ind].cell(fim).flui.Denag;
                 vazMasLiqL[k] = titW[k] * (Mliq[k] - Mcomp[k]);
                 noConv.moleomist += vazMasLiqL[k];
                 double pesoMolV = 0;
-                for (int j = 0; j < malha[ind].celula[fim + 1].flui.npseudo; j++) {
-                    pesoMolV += malha[ind].celula[fim + 1].flui.masMol[j] *
-                                malha[ind].celula[fim + 1].flui.fracMol[j];
+                for (int j = 0; j < malha[ind].cell(fim + 1).flui.npseudo; j++) {
+                    pesoMolV += malha[ind].cell(fim + 1).flui.masMol[j] *
+                                malha[ind].cell(fim + 1).flui.fracMol[j];
                 }
                 vazMolV[k] = (vazMasLiqL[k] + Mgas[k]) / pesoMolV;
                 noConv.moltot += vazMolV[k];
@@ -3372,51 +3372,51 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
                 noConv.denagmist += Denag[k] * qw1;
                 noConv.mliqmist += Mliq[k];
                 noConv.mliqCmist += Mcomp[k];
-                noConv.TRmist += Mcomp[k] * malha[ind].celula[fim].fluicol.TR;
+                noConv.TRmist += Mcomp[k] * malha[ind].cell(fim).fluicol.TR;
                 noConv.mgasmist += Mgas[k];
                 noConv.cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
                 noConv.tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * temp[k];
-                noConv.LVisL += qostd[k] * malha[ind].celula[fim].flui.VisOM(noConv.tL);
-                noConv.LVisH += qostd[k] * malha[ind].celula[fim].flui.VisOM(noConv.tH);
+                noConv.LVisL += qostd[k] * malha[ind].cell(fim).flui.VisOM(noConv.tL);
+                noConv.LVisH += qostd[k] * malha[ind].cell(fim).flui.VisOM(noConv.tH);
                 noConv.Qlmist += Qliq[k];
                 noConv.qlmistStd += (qw1 + qostd[k] +
-                                     Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                         malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                   malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                         malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.qcmistStd += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.betmist += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                   malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             }
-        } else if (malha[ind].celula[fim + 1].MC < 0) {
+        } else if (malha[ind].cell(fim + 1).MC < 0) {
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
-                double bo = malha[ind].celula[fim].flui.BOFunc(
-                    malha[ind].pGSup, malha[ind].celula[fim].temp);
+                double bo = malha[ind].cell(fim).flui.BOFunc(
+                    malha[ind].pGSup, malha[ind].cell(fim).temp);
                 double pres = malha[ind].pGSup;
                 malha[ind].calcTempFim();
                 temp[k] = malha[ind].tempSup;
-                Bet[k] = malha[ind].celula[fim].bet;
+                Bet[k] = malha[ind].cell(fim).bet;
 
-                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-                if (malha[ind].celula[fim + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                    qostd[k] = malha[ind].celula[fim + 1].Mliqini * (1. - malha[ind].celula[fim].FW) *
-                               (1. - malha[ind].celula[fim].bet) / (bo * rholliqIS[k]);
+                if (malha[ind].cell(fim + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                    qostd[k] = malha[ind].cell(fim + 1).Mliqini * (1. - malha[ind].cell(fim).FW) *
+                               (1. - malha[ind].cell(fim).bet) / (bo * rholliqIS[k]);
                 else
                     qostd[k] = 0.;
                 Rhocomp[k] = rc;
-                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                Qliq[k] = malha[ind].cell(fim + 1).QL;
                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                 Qcomp[k] = Qliq[k] * Bet[k];
-                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
-                Denag[k] = malha[ind].celula[fim].flui.Denag;
-                double ba = malha[ind].celula[fim].flui.BAFunc(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double fw = malha[ind].celula[fim].flui.BSW * ba /
-                            (bo + ba * malha[ind].celula[fim].flui.BSW - malha[ind].celula[fim].flui.BSW * bo);
-                double rhoO = malha[ind].celula[fim].flui.MasEspoleo(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double rhoW = malha[ind].celula[fim].flui.MasEspAgua(malha[ind].pGSup, malha[ind].celula[fim].temp);
+                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
+                Denag[k] = malha[ind].cell(fim).flui.Denag;
+                double ba = malha[ind].cell(fim).flui.BAFunc(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double fw = malha[ind].cell(fim).flui.BSW * ba /
+                            (bo + ba * malha[ind].cell(fim).flui.BSW - malha[ind].cell(fim).flui.BSW * bo);
+                double rhoO = malha[ind].cell(fim).flui.MasEspoleo(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double rhoW = malha[ind].cell(fim).flui.MasEspAgua(malha[ind].pGSup, malha[ind].cell(fim).temp);
                 titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
                 vazMasLiqL[k] = titW[k] * (Mliq[k] - Mcomp[k]);
                 noConv.moleomistNeg += vazMasLiqL[k];
@@ -3429,10 +3429,10 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
                 noConv.mliqCmistNeg += Mcomp[k];
                 noConv.mgasmistNeg += Mgas[k];
                 noConv.qlmistStdNeg += (qw1 + qostd[k] +
-                                        Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                            malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.qcmistStdNeg += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                        malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                        Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                            malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.qcmistStdNeg += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                        malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             }
         }
     }
@@ -3447,49 +3447,49 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
         if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1 && ind != auxMaster) {
             kpos++;
             int ini = 0;
-            double bo = malha[ind].celula[ini].flui.BOFunc(
-                malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            double ba = malha[ind].celula[ini].flui.BAFunc(malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            double fw = malha[ind].celula[ini].flui.BSW * ba /
-                        (bo + ba * malha[ind].celula[ini].flui.BSW - malha[ind].celula[ini].flui.BSW * bo);
-            double rhoO = malha[ind].celula[ini].flui.MasEspoleo(malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            double rhoW = malha[ind].celula[ini].flui.MasEspAgua(malha[indAflu].pGSup, malha[ind].celula[ini].temp);
+            double bo = malha[ind].cell(ini).flui.BOFunc(
+                malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            double ba = malha[ind].cell(ini).flui.BAFunc(malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            double fw = malha[ind].cell(ini).flui.BSW * ba /
+                        (bo + ba * malha[ind].cell(ini).flui.BSW - malha[ind].cell(ini).flui.BSW * bo);
+            double rhoO = malha[ind].cell(ini).flui.MasEspoleo(malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            double rhoW = malha[ind].cell(ini).flui.MasEspAgua(malha[indAflu].pGSup, malha[ind].cell(ini).temp);
             titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
             double pres = malha[indAflu].pGSup;
             malha[ind].calcTempFim();
             temp[k] = malha[ind].tempSup;
-            Bet[k] = malha[ind].celula[ini].bet;
+            Bet[k] = malha[ind].cell(ini).bet;
 
             if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
-                malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[ini].fluicol;
+                malha[i].cell(recb).acsr.injl.fluidocol = malha[ind].cell(ini).fluicol;
                 aplicaFluiCol = 1;
             }
-            BSW[k] = malha[ind].celula[ini].flui.BSW;
-            double rp = malha[ind].celula[ini].flui.MasEspLiq(pres, temp[k]);
-            double rc = malha[ind].celula[ini].fluicol.MasEspFlu(pres, temp[k]);
+            BSW[k] = malha[ind].cell(ini).flui.BSW;
+            double rp = malha[ind].cell(ini).flui.MasEspLiq(pres, temp[k]);
+            double rc = malha[ind].cell(ini).fluicol.MasEspFlu(pres, temp[k]);
             rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-            if (malha[ind].celula[ini + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                qostd[k] = -malha[ind].celula[ini + 1].Mliqini * (1. - malha[ind].celula[ini].FW) *
-                           (1. - malha[ind].celula[ini].bet) / (bo * rholliqIS[k]);
+            if (malha[ind].cell(ini + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                qostd[k] = -malha[ind].cell(ini + 1).Mliqini * (1. - malha[ind].cell(ini).FW) *
+                           (1. - malha[ind].cell(ini).bet) / (bo * rholliqIS[k]);
             else
                 qostd[k] = 0.;
             Rhocomp[k] = rc;
-            rhogIS[k] = malha[ind].celula[ini].flui.MasEspGas(pres, temp[k]);
-            cpl[k] = (1. - Bet[k]) * malha[ind].celula[ini].flui.CalorLiq(pres, temp[k]) +
-                     Bet[k] * malha[ind].celula[ini].fluicol.CalorLiq(pres, temp[k]);
-            cpg[k] = malha[ind].celula[ini].flui.CalorGas(pres, temp[k]);
-            Mliq[k] = -malha[ind].celula[ini + 1].Mliqini;
-            Qliq[k] = -malha[ind].celula[ini + 1].QL;
+            rhogIS[k] = malha[ind].cell(ini).flui.MasEspGas(pres, temp[k]);
+            cpl[k] = (1. - Bet[k]) * malha[ind].cell(ini).flui.CalorLiq(pres, temp[k]) +
+                     Bet[k] * malha[ind].cell(ini).fluicol.CalorLiq(pres, temp[k]);
+            cpg[k] = malha[ind].cell(ini).flui.CalorGas(pres, temp[k]);
+            Mliq[k] = -malha[ind].cell(ini + 1).Mliqini;
+            Qliq[k] = -malha[ind].cell(ini + 1).QL;
             Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
             Qcomp[k] = Qliq[k] * Bet[k];
-            Mgas[k] = -malha[ind].celula[ini + 1].MC + malha[ind].celula[ini + 1].Mliqini;
-            Denag[k] = malha[ind].celula[ini].flui.Denag;
+            Mgas[k] = -malha[ind].cell(ini + 1).MC + malha[ind].cell(ini + 1).Mliqini;
+            Denag[k] = malha[ind].cell(ini).flui.Denag;
             vazMasLiqL[k] = titW[k] * (Mliq[k] - Mcomp[k]);
             noConv.moleomist += vazMasLiqL[k];
             double pesoMolV = 0;
-            for (int j = 0; j < malha[ind].celula[ini + 1].flui.npseudo; j++) {
-                pesoMolV += malha[ind].celula[ini + 1].flui.masMol[j] *
-                            malha[ind].celula[ini + 1].flui.fracMol[j];
+            for (int j = 0; j < malha[ind].cell(ini + 1).flui.npseudo; j++) {
+                pesoMolV += malha[ind].cell(ini + 1).flui.masMol[j] *
+                            malha[ind].cell(ini + 1).flui.fracMol[j];
             }
             vazMolV[k] = (vazMasLiqL[k] + Mgas[k]) / pesoMolV;
             noConv.moltot += vazMolV[k];
@@ -3505,52 +3505,52 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
             noConv.denagmist += Denag[k] * qw1;
             noConv.mliqmist += Mliq[k];
             noConv.mliqCmist += Mcomp[k];
-            noConv.TRmist += Mcomp[k] * malha[ind].celula[ini].fluicol.TR;
+            noConv.TRmist += Mcomp[k] * malha[ind].cell(ini).fluicol.TR;
             noConv.mgasmist += Mgas[k];
             noConv.cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
             noConv.tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * temp[k];
-            noConv.LVisL += qostd[k] * malha[ind].celula[ini].flui.VisOM(noConv.tL);
-            noConv.LVisH += qostd[k] * malha[ind].celula[ini].flui.VisOM(noConv.tH);
+            noConv.LVisL += qostd[k] * malha[ind].cell(ini).flui.VisOM(noConv.tL);
+            noConv.LVisH += qostd[k] * malha[ind].cell(ini).flui.VisOM(noConv.tH);
             noConv.Qlmist += Qliq[k];
             noConv.qlmistStd += (qw1 + qostd[k] +
-                                 Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                 Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             noConv.qcmistStd += (qw1 + qostd[k] +
-                                 Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-            noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                               malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                 Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+            noConv.betmist += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                               malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
         }
     }
 
     if (kpos > 0) {
         if (recb == 0 && noConv.moltot > 0) {
-            for (int jgrup = 0; jgrup < malha[i].celula[recb].flui.npseudo; jgrup++) {
-                malha[i].celula[recb].flui.fracMol[jgrup] = 0.;
+            for (int jgrup = 0; jgrup < malha[i].cell(recb).flui.npseudo; jgrup++) {
+                malha[i].cell(recb).flui.fracMol[jgrup] = 0.;
                 noConv.flu.fracMol[jgrup] = 0.;
             }
             for (int iaflu = 0; iaflu < naflu; iaflu++) {
                 int ind = arqRede.malha[i].afluente[iaflu];
                 int fim = malha[ind].ncel - 1;
-                for (int jgrup = 0; jgrup < malha[i].celula[recb].flui.npseudo; jgrup++) {
-                    malha[i].celula[recb].flui.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[fim + 1].flui.fracMol[jgrup] / noConv.moltot;
+                for (int jgrup = 0; jgrup < malha[i].cell(recb).flui.npseudo; jgrup++) {
+                    malha[i].cell(recb).flui.fracMol[jgrup] +=
+                        vazMolV[iaflu] * malha[ind].cell(fim + 1).flui.fracMol[jgrup] / noConv.moltot;
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[fim + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(fim + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
             for (int iaflu = naflu; iaflu < naflu + ncoleta; iaflu++) {
                 int ind = coleta[iaflu - naflu];
                 int ini = 0;
-                for (int jgrup = 0; jgrup < malha[i].celula[0].flui.npseudo; jgrup++) {
-                    malha[i].celula[recb].flui.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[ini + 1].flui.fracMol[jgrup] / noConv.moltot;
+                for (int jgrup = 0; jgrup < malha[i].cell(0).flui.npseudo; jgrup++) {
+                    malha[i].cell(recb).flui.fracMol[jgrup] +=
+                        vazMolV[iaflu] * malha[ind].cell(ini + 1).flui.fracMol[jgrup] / noConv.moltot;
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[ini + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(ini + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
-            if (malha[i].arq.tabelaDinamica == 0) {
-                malha[i].celula[recb].flui.atualizaPropCompStandard();
+            if (malha[i].config().tabelaDinamica == 0) {
+                malha[i].cell(recb).flui.atualizaPropCompStandard();
                 noConv.flu.atualizaPropCompStandard();
             }
         } else if (noConv.moltot > 0) {
@@ -3562,7 +3562,7 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
                 int fim = malha[ind].ncel - 1;
                 for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[fim + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(fim + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
             for (int iaflu = naflu; iaflu < naflu + ncoleta; iaflu++) {
@@ -3570,17 +3570,17 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
                 int ini = 0;
                 for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[ini + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(ini + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
-            if (malha[i].arq.tabelaDinamica == 0)
+            if (malha[i].config().tabelaDinamica == 0)
                 noConv.flu.atualizaPropCompStandard();
         } else {
             for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                 noConv.flu.fracMol[jgrup] =
                     malha[auxMaster].fluiRevRede.fracMol[jgrup];
             }
-            if (malha[i].arq.tabelaDinamica == 0)
+            if (malha[i].config().tabelaDinamica == 0)
                 noConv.flu.atualizaPropCompStandard();
         }
 
@@ -3588,17 +3588,17 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
             noConv.LVisL = noConv.LVisL / noConv.qostdTot;
             noConv.LVisH = noConv.LVisH / noConv.qostdTot;
         } else {
-            noConv.LVisL = malha[i].celula[recb].flui.VisOM(noConv.tL);
-            noConv.LVisH = malha[i].celula[recb].flui.VisOM(noConv.tH);
+            noConv.LVisL = malha[i].cell(recb).flui.VisOM(noConv.tL);
+            noConv.LVisH = malha[i].cell(recb).flui.VisOM(noConv.tH);
         }
         if ((noConv.qostdTot + noConv.qwmist) > (*arqRede.vg1dSP).localtiny)
             noConv.bswmist = noConv.qwmist / (noConv.qostdTot + noConv.qwmist);
         else
-            noConv.bswmist = malha[i].celula[recb].flui.BSW;
+            noConv.bswmist = malha[i].cell(recb).flui.BSW;
         if (noConv.qwmist > (*arqRede.vg1dSP).localtiny)
             noConv.denagmist = noConv.denagmist / noConv.qwmist;
         else
-            noConv.denagmist = malha[i].celula[recb].flui.Denag;
+            noConv.denagmist = malha[i].cell(recb).flui.Denag;
         if (noConv.cpmist > (*arqRede.vg1dSP).localtiny)
             noConv.tempmist = noConv.tempmist / noConv.cpmist;
         else
@@ -3616,7 +3616,7 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
             noConv.flu.fracMol[jgrup] =
                 malha[i].fluiRevRede.fracMol[jgrup];
         }
-        if (malha[i].arq.tabelaDinamica == 0)
+        if (malha[i].config().tabelaDinamica == 0)
             noConv.flu.atualizaPropCompStandard();
         noConv.LVisL = malha[i].fluiRevRede.LVisL;
         noConv.LVisH = malha[i].fluiRevRede.LVisH;
@@ -3625,8 +3625,8 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
         noConv.betmist = 0.;
         int ind = arqRede.malha[i].afluente[0];
         int fim = malha[ind].ncel - 1;
-        noConv.tempmist = malha[ind].celula[fim].temp;
-        noConv.TRmist = malha[ind].celula[fim].fluicol.TR;
+        noConv.tempmist = malha[ind].cell(fim).temp;
+        noConv.TRmist = malha[ind].cell(fim).fluicol.TR;
     }
     noConv.qlmistStd *= 86400;
     noConv.qlmistStdNeg *= 86400;
@@ -3634,11 +3634,11 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
     noConv.qcmistStdNeg *= 86400;
 
     if (recb == 0) {
-        malha[i].celula[recb].flui.BSW = noConv.bswmist;
-        malha[i].celula[recb].flui.TempL = noConv.tL;
-        malha[i].celula[recb].flui.TempH = noConv.tH;
-        malha[i].celula[recb].flui.LVisL = noConv.LVisL;
-        malha[i].celula[recb].flui.LVisH = noConv.LVisH;
+        malha[i].cell(recb).flui.BSW = noConv.bswmist;
+        malha[i].cell(recb).flui.TempL = noConv.tL;
+        malha[i].cell(recb).flui.TempH = noConv.tH;
+        malha[i].cell(recb).flui.LVisL = noConv.LVisL;
+        malha[i].cell(recb).flui.LVisH = noConv.LVisH;
     } else {
         noConv.flu.BSW = noConv.bswmist;
         noConv.flu.TempL = noConv.tL;
@@ -3685,57 +3685,57 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                 Resolv[i] == 0 && inativo[i] == 0) {
                 if (arqRede.malha[i].perm == 1) {
                     (*arqRede.vg1dSP).qualTramo = i;
-                    if (malha[i].arq.ConContEntrada == 0) {
+                    if (malha[i].config().ConContEntrada == 0) {
                         int reverso = 0;
-                        if (malha[i].celula[0].acsr.tipo == 1) {
-                            if (malha[i].celula[0].acsr.injg.QGas < 0)
+                        if (malha[i].cell(0).acsr.tipo == 1) {
+                            if (malha[i].cell(0).acsr.injg.QGas < 0)
                                 reverso = 1;
-                        } else if (malha[i].celula[0].acsr.tipo == 2) {
-                            if (malha[i].celula[0].acsr.injl.QLiq < 0)
+                        } else if (malha[i].cell(0).acsr.tipo == 2) {
+                            if (malha[i].cell(0).acsr.injl.QLiq < 0)
                                 reverso = 1;
-                        } else if (malha[i].celula[0].acsr.tipo == 10) {
-                            if ((malha[i].celula[0].acsr.injm.MassC +
-                                 malha[i].celula[0].acsr.injm.MassG + malha[i].celula[0].acsr.injm.MassP) < 0)
+                        } else if (malha[i].cell(0).acsr.tipo == 10) {
+                            if ((malha[i].cell(0).acsr.injm.MassC +
+                                 malha[i].cell(0).acsr.injm.MassG + malha[i].cell(0).acsr.injm.MassP) < 0)
                                 reverso = 1;
                         }
                         malha[i].modoPerm = 1;
                         if (reverso == 0) {
-                            if (malha[i].arq.chokep.abertura[0] > 0.6) {
+                            if (malha[i].config().chokep.abertura[0] > 0.6) {
                                 if ((*arqRede.vg1dSP).iterRede == 0) { // mudancaChute
 
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].celulaG[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].celulaG[0].duto.area / (*arqRede.vg1dSP).arearef;
-                                    if (malha[i].arq.lingas == 1 && malha[i].celulaG[0].tipoCC == 0) {
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 0 && malha[i].gasCell(0).tipoCC == 0)
+                                        malha[i].config().gasinj.vazgas[0] = 150000 * malha[i].gasCell(0).duto.area / (*arqRede.vg1dSP).arearef;
+                                    if (malha[i].config().lingas == 1 && malha[i].gasCell(0).tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
                                         double multVazGas;
-                                        malha[i].celulaG[0].tipoCC = 1;
+                                        malha[i].gasCell(0).tipoCC = 1;
                                         malha[i].buscaProdPfundoPerm();
-                                        double testaPres1 = malha[i].celulaG[0].pres;
-                                        malha[i].arq.gasinj.vazgas[0] *= 1.05;
-                                        malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres);
-                                        double testaPres2 = malha[i].celulaG[0].pres;
+                                        double testaPres1 = malha[i].gasCell(0).pres;
+                                        malha[i].config().gasinj.vazgas[0] *= 1.05;
+                                        malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres);
+                                        double testaPres2 = malha[i].gasCell(0).pres;
                                         if (testaPres1 < testaPres2) {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 1.05;
                                             else
                                                 multVazGas = 0.95;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         } else {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 0.95;
                                             else
                                                 multVazGas = 1.05;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         }
                                         while (ciclo > 0.9e9 && konta < 10) {
-                                            malha[i].celulaG[0].tipoCC = 1;
+                                            malha[i].gasCell(0).tipoCC = 1;
                                             if (konta > 0)
                                                 malha[i].buscaProdPfundoPerm();
-                                            malha[i].celulaG[0].tipoCC = 0;
-                                            ciclo = malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres, konta);
+                                            malha[i].gasCell(0).tipoCC = 0;
+                                            ciclo = malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres, konta);
                                             if (ciclo > 0.9e9) {
-                                                malha[i].arq.gasinj.vazgas[0] *= multVazGas;
+                                                malha[i].config().gasinj.vazgas[0] *= multVazGas;
                                                 cout << "#################NOVA TENTATIVA PARA GL COM CONDICAO DE PRESSAO########################" << endl;
                                             }
                                             konta++;
@@ -3751,49 +3751,49 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                     else
                                         valor = malha[i].buscaProdPfundoPerm();
                                 } else { // mudancaChute
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 1 && malha[i].celulaG[0].tipoCC == 0) {
-                                        malha[i].celulaG[0].tipoCC = 1;
-                                        malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres);
-                                        malha[i].celulaG[0].tipoCC = 0;
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 1 && malha[i].gasCell(0).tipoCC == 0) {
+                                        malha[i].gasCell(0).tipoCC = 1;
+                                        malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres);
+                                        malha[i].gasCell(0).tipoCC = 0;
                                     }
-                                    valor = malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres);
+                                    valor = malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres);
                                     //}//mudancaChute
                                 }
                             } else {
                                 if ((*arqRede.vg1dSP).iterRede == 0) { // mudancaChute
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].celulaG[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].celulaG[0].duto.area / (*arqRede.vg1dSP).arearef;
-                                    if (malha[i].arq.lingas == 1 && malha[i].celulaG[0].tipoCC == 0) {
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 0 && malha[i].gasCell(0).tipoCC == 0)
+                                        malha[i].config().gasinj.vazgas[0] = 150000 * malha[i].gasCell(0).duto.area / (*arqRede.vg1dSP).arearef;
+                                    if (malha[i].config().lingas == 1 && malha[i].gasCell(0).tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
                                         double multVazGas;
-                                        malha[i].celulaG[0].tipoCC = 1;
+                                        malha[i].gasCell(0).tipoCC = 1;
                                         malha[i].buscaProdPfundoPerm2();
-                                        double testaPres1 = malha[i].celulaG[0].pres;
-                                        malha[i].arq.gasinj.vazgas[0] *= 1.05;
-                                        malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres);
-                                        double testaPres2 = malha[i].celulaG[0].pres;
+                                        double testaPres1 = malha[i].gasCell(0).pres;
+                                        malha[i].config().gasinj.vazgas[0] *= 1.05;
+                                        malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres);
+                                        double testaPres2 = malha[i].gasCell(0).pres;
                                         if (testaPres1 < testaPres2) {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 1.05;
                                             else
                                                 multVazGas = 0.95;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         } else {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 0.95;
                                             else
                                                 multVazGas = 1.05;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         }
                                         while (ciclo > 0.9e9 && konta < 10) {
-                                            malha[i].celulaG[0].tipoCC = 1;
+                                            malha[i].gasCell(0).tipoCC = 1;
                                             if (konta > 0)
                                                 malha[i].buscaProdPfundoPerm2();
-                                            malha[i].celulaG[0].tipoCC = 0;
-                                            ciclo = malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres, konta);
+                                            malha[i].gasCell(0).tipoCC = 0;
+                                            ciclo = malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres, konta);
                                             if (ciclo > 0.9e9) {
-                                                malha[i].arq.gasinj.vazgas[0] *= multVazGas;
+                                                malha[i].config().gasinj.vazgas[0] *= multVazGas;
                                                 cout << "#################NOVA TENTATIVA PARA GL COM CONDICAO DE PRESSAO########################" << endl;
                                             }
                                             konta++;
@@ -3809,12 +3809,12 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                     else
                                         valor = malha[i].buscaProdPfundoPerm2();
                                 } else { // mudancaChute
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 1 && malha[i].celulaG[0].tipoCC == 0) {
-                                        malha[i].celulaG[0].tipoCC = 1;
-                                        malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres);
-                                        malha[i].celulaG[0].tipoCC = 0;
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 1 && malha[i].gasCell(0).tipoCC == 0) {
+                                        malha[i].gasCell(0).tipoCC = 1;
+                                        malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres);
+                                        malha[i].gasCell(0).tipoCC = 0;
                                     }
-                                    valor = malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres);
+                                    valor = malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres);
                                     //}//mudancaChute
                                 }
                             }
@@ -3822,15 +3822,15 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                             if ((*arqRede.vg1dSP).iterRede == 0)
                                 valor = malha[i].buscaProdPfundoPermRev();
                             else
-                                valor = malha[i].buscaProdPfundoPermRev(malha[i].celula[0].pres);
+                                valor = malha[i].buscaProdPfundoPermRev(malha[i].cell(0).pres);
                         }
                     } else {
                         double chutemass = 0.;
-                        if (malha[i].celula[0].acsr.tipo == 2)
-                            chutemass = malha[i].celula[0].acsr.injl.QLiq;
+                        if (malha[i].cell(0).acsr.tipo == 2)
+                            chutemass = malha[i].cell(0).acsr.injl.QLiq;
                         else
-                            chutemass = malha[i].celula[0].acsr.injg.QGas;
-                        if (malha[i].arq.chokep.abertura[0] > 0.6)
+                            chutemass = malha[i].cell(0).acsr.injg.QGas;
+                        if (malha[i].config().chokep.abertura[0] > 0.6)
                             malha[i].buscaProdPresPresPerm(chutemass);
                         else
                             malha[i].buscaProdPresPresPerm2(chutemass);
@@ -3838,9 +3838,9 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                 } else {
                     valor = 0;
                     int icol = arqRede.malha[i].coleta[0];
-                    malha[i].pGSup = malha[icol].celula[0].pres;
-                    malha[i].tGSup = malha[icol].celula[0].temp;
-                    malha[i].tempSup = malha[icol].celula[0].temp;
+                    malha[i].pGSup = malha[icol].cell(0).pres;
+                    malha[i].tGSup = malha[icol].cell(0).temp;
+                    malha[i].tempSup = malha[icol].cell(0).temp;
                 }
                 if (valor < -1e9 || valor > 1e9) {
                     inativo[i] = 1;
@@ -3900,23 +3900,23 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                         if (trocaDeriva == 0) {
                             for (int icol = 0; icol < nderiva; icol++) {
                                 int aux = arqRede.malha[ind].coleta[icol];
-                                if (malha[aux].arq.perm == 1) {
+                                if (malha[aux].config().perm == 1) {
                                     double mult = 1.0;
-                                    if (malha[aux].arq.ConContEntrada == 2)
+                                    if (malha[aux].config().ConContEntrada == 2)
                                         mult = -1.;
-                                    dcol.push_back(malha[aux].celula[0].duto.dia * mult);
+                                    dcol.push_back(malha[aux].cell(0).duto.dia * mult);
                                 }
                             }
                             sort(dcol.begin(), dcol.end());
 
                             for (int icol = 0; icol < nderiva; icol++) {
                                 int aux = arqRede.malha[ind].coleta[icol];
-                                if (malha[aux].arq.perm == 1) {
+                                if (malha[aux].config().perm == 1) {
                                     double mult = 1.0;
-                                    if (malha[aux].arq.ConContEntrada == 2)
+                                    if (malha[aux].config().ConContEntrada == 2)
                                         mult = -1.;
                                     for (int icol2 = 0; icol2 < nderiva; icol2++) {
-                                        if (fabs(dcol[icol2] - malha[aux].celula[0].duto.dia * mult) < 1.e-15 && carregado[icol2] == 0) {
+                                        if (fabs(dcol[icol2] - malha[aux].cell(0).duto.dia * mult) < 1.e-15 && carregado[icol2] == 0) {
                                             ordCol[icol2] = aux;
                                             carregado[icol2] = 1;
                                             icol2 = nderiva;
@@ -3928,7 +3928,7 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                             int icol2 = 0;
                             for (int icol = 0; icol < nderiva; icol++) {
                                 int aux = arqRede.malha[ind].coleta[icol];
-                                if (malha[aux].arq.perm == 1) {
+                                if (malha[aux].config().perm == 1) {
                                     if (aux != novaDeriva) {
                                         ordCol[icol2] = aux;
                                         carregado[icol2] = 1;
@@ -3954,19 +3954,19 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                         Vcr<int> colneg(nderiva);
                         for (int icol = 0; icol < nderiva; icol++) {
                             int aux = arqRede.malha[ind].coleta[icol];
-                            if (malha[aux].arq.perm == 1) {
-                                if (malha[aux].celula[0].acsr.tipo == 1) {
-                                    if (malha[aux].celula[0].acsr.injg.QGas < 0) {
+                            if (malha[aux].config().perm == 1) {
+                                if (malha[aux].cell(0).acsr.tipo == 1) {
+                                    if (malha[aux].cell(0).acsr.injg.QGas < 0) {
                                         colneg[ncolneg] = aux;
                                         ncolneg++;
                                     }
-                                } else if (malha[aux].celula[0].acsr.tipo == 2) {
-                                    if (malha[aux].celula[0].acsr.injl.QLiq < 0) {
+                                } else if (malha[aux].cell(0).acsr.tipo == 2) {
+                                    if (malha[aux].cell(0).acsr.injl.QLiq < 0) {
                                         colneg[ncolneg] = aux;
                                         ncolneg++;
                                     }
-                                } else if (malha[aux].celula[0].acsr.tipo == 10) {
-                                    if ((malha[aux].celula[0].acsr.injm.MassP + malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassC) < 0) {
+                                } else if (malha[aux].cell(0).acsr.tipo == 10) {
+                                    if ((malha[aux].cell(0).acsr.injm.MassP + malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassC) < 0) {
                                         colneg[ncolneg] = aux;
                                         ncolneg++;
                                     }
@@ -3980,15 +3980,15 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                         for (int iaflu = 0; iaflu < naflu; iaflu++) {
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
                             int celProp = 1 - verificaFonteDuplaReversa(malha, auxMaster);
-                            malha[indaflu].fluiRevRede = malha[auxMaster].celula[celProp].flui;
-                            malha[indaflu].tempRev = malha[auxMaster].celula[0].temp;
+                            malha[indaflu].fluiRevRede = malha[auxMaster].cell(celProp).flui;
+                            malha[indaflu].tempRev = malha[auxMaster].cell(0).temp;
                             if ((*arqRede.vg1dSP).fluidoRede == 0)
-                                malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[celProp].acsr.injg.razCompGas;
+                                malha[indaflu].config().razCompGasReves = malha[auxMaster].cell(celProp).acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
                             int aux = ordCol[icol];
                             if (arqRede.malha[aux].ncoleta == 0)
-                                malha[aux].fluiRevRede = malha[aux].arq.flup[0];
+                                malha[aux].fluiRevRede = malha[aux].config().flup[0];
                         }
 
                         int col2;
@@ -4004,49 +4004,49 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                                    (noConv1.dengmist * 1.225)) *
                                                   noConv1.flu.dStockTankVaporMassFraction;
                             if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                malha[i].celula[1].acsr.tipo = 2;
-                                if (malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
-                                    malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
-                                malha[i].celula[1].acsr.injl.bet = noConv1.betmist;
-                                malha[i].celula[1].acsr.injl.temp = noConv1.tempmist;
-                                malha[i].celula[1].acsr.injl.FluidoPro = noConv1.flu;
-                                malha[i].celula[1].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                                malha[i].celula[1].acsr.injl.fluidocol.TR = noConv1.TRmist;
+                                malha[i].cell(1).acsr.tipo = 2;
+                                if (malha[i].cell(1).acsr.injl.FluidoPro.flashCompleto == 0)
+                                    malha[i].cell(1).acsr.injl.FluidoPro.flashCompleto = 2;
+                                malha[i].cell(1).acsr.injl.bet = noConv1.betmist;
+                                malha[i].cell(1).acsr.injl.temp = noConv1.tempmist;
+                                malha[i].cell(1).acsr.injl.FluidoPro = noConv1.flu;
+                                malha[i].cell(1).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                                malha[i].cell(1).acsr.injl.fluidocol.TR = noConv1.TRmist;
 
                                 noConv1.qgstdTot *= 86400;
 
-                                malha[i].celula[1].acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
+                                malha[i].cell(1).acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
                             } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                malha[i].celula[1].acsr.tipo = 1;
-                                if (malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
-                                    malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
-                                malha[i].celula[1].acsr.injg.seco = 0;
-                                malha[i].celula[1].acsr.injg.temp = noConv1.tempmist;
-                                malha[i].celula[1].acsr.injg.FluidoPro = noConv1.flu;
-                                malha[i].celula[1].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                                malha[i].celula[1].acsr.injg.fluidocol.TR = noConv1.TRmist;
+                                malha[i].cell(1).acsr.tipo = 1;
+                                if (malha[i].cell(1).acsr.injg.FluidoPro.flashCompleto == 0)
+                                    malha[i].cell(1).acsr.injg.FluidoPro.flashCompleto = 2;
+                                malha[i].cell(1).acsr.injg.seco = 0;
+                                malha[i].cell(1).acsr.injg.temp = noConv1.tempmist;
+                                malha[i].cell(1).acsr.injg.FluidoPro = noConv1.flu;
+                                malha[i].cell(1).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                                malha[i].cell(1).acsr.injg.fluidocol.TR = noConv1.TRmist;
                                 noConv1.qgstdTot *= 86400;
-                                malha[i].celula[1].acsr.injg.QGas = noConv1.qgstdTot + noConv1.qgstdTotNeg * 86400.;
-                                if (fabs(malha[i].celula[1].acsr.injg.QGas) > 1e-15)
-                                    malha[i].celula[1].acsr.injg.razCompGas = (noConv1.qcmistStd + noConv1.qcmistStdNeg) /
-                                                                              malha[i].celula[1].acsr.injg.QGas;
+                                malha[i].cell(1).acsr.injg.QGas = noConv1.qgstdTot + noConv1.qgstdTotNeg * 86400.;
+                                if (fabs(malha[i].cell(1).acsr.injg.QGas) > 1e-15)
+                                    malha[i].cell(1).acsr.injg.razCompGas = (noConv1.qcmistStd + noConv1.qcmistStdNeg) /
+                                                                              malha[i].cell(1).acsr.injg.QGas;
                                 else
-                                    malha[i].celula[1].acsr.injg.razCompGas = 0.;
+                                    malha[i].cell(1).acsr.injg.razCompGas = 0.;
 
                             } else {
-                                malha[i].celula[1].acsr.tipo = 10;
-                                if (malha[i].celula[1].acsr.injm.FluidoPro.flashCompleto == 0)
-                                    malha[i].celula[1].acsr.injm.FluidoPro.flashCompleto = 2;
-                                malha[i].celula[1].acsr.injm.temp = noConv1.tempmist;
-                                malha[i].celula[1].acsr.injm.FluidoPro = noConv1.flu;
-                                malha[i].celula[1].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                                malha[i].celula[1].acsr.injm.fluidocol.TR = noConv1.TRmist;
+                                malha[i].cell(1).acsr.tipo = 10;
+                                if (malha[i].cell(1).acsr.injm.FluidoPro.flashCompleto == 0)
+                                    malha[i].cell(1).acsr.injm.FluidoPro.flashCompleto = 2;
+                                malha[i].cell(1).acsr.injm.temp = noConv1.tempmist;
+                                malha[i].cell(1).acsr.injm.FluidoPro = noConv1.flu;
+                                malha[i].cell(1).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                                malha[i].cell(1).acsr.injm.fluidocol.TR = noConv1.TRmist;
                                 noConv1.qgstdTot *= 86400;
 
-                                malha[i].celula[1].acsr.injm.MassP = noConv1.mliqmist - noConv1.mliqCmist +
+                                malha[i].cell(1).acsr.injm.MassP = noConv1.mliqmist - noConv1.mliqCmist +
                                                                      noConv1.mliqmistNeg - noConv1.mliqCmistNeg;
-                                malha[i].celula[1].acsr.injm.MassC = noConv1.mliqCmist + noConv1.mliqCmistNeg;
-                                malha[i].celula[1].acsr.injm.MassG = noConv1.mgasmist + noConv1.mgasmistNeg;
+                                malha[i].cell(1).acsr.injm.MassC = noConv1.mliqCmist + noConv1.mliqCmistNeg;
+                                malha[i].cell(1).acsr.injm.MassG = noConv1.mgasmist + noConv1.mgasmistNeg;
                             }
                         }
                         if (totBloq2 > 0) {
@@ -4058,156 +4058,156 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                                    (noConv2.dengmist * 1.225)) *
                                                   noConv2.flu.dStockTankVaporMassFraction;
                             if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                malha[col2].celula[1].acsr.tipo = 2;
-                                if (malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
-                                    malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
-                                malha[col2].celula[1].acsr.injl.bet = noConv2.betmist;
-                                malha[col2].celula[1].acsr.injl.temp = noConv2.tempmist;
-                                malha[col2].celula[1].acsr.injl.FluidoPro = noConv2.flu;
-                                malha[col2].celula[1].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                                malha[col2].celula[1].acsr.injl.fluidocol.TR = noConv2.TRmist;
+                                malha[col2].cell(1).acsr.tipo = 2;
+                                if (malha[col2].cell(1).acsr.injl.FluidoPro.flashCompleto == 0)
+                                    malha[col2].cell(1).acsr.injl.FluidoPro.flashCompleto = 2;
+                                malha[col2].cell(1).acsr.injl.bet = noConv2.betmist;
+                                malha[col2].cell(1).acsr.injl.temp = noConv2.tempmist;
+                                malha[col2].cell(1).acsr.injl.FluidoPro = noConv2.flu;
+                                malha[col2].cell(1).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                                malha[col2].cell(1).acsr.injl.fluidocol.TR = noConv2.TRmist;
 
                                 noConv2.qgstdTot *= 86400;
 
-                                malha[col2].celula[1].acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
+                                malha[col2].cell(1).acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
                             } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                malha[col2].celula[1].acsr.tipo = 1;
-                                if (malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
-                                    malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
-                                malha[col2].celula[1].acsr.injg.seco = 0;
-                                malha[col2].celula[1].acsr.injg.temp = noConv2.tempmist;
-                                malha[col2].celula[1].acsr.injg.FluidoPro = noConv2.flu;
-                                malha[col2].celula[1].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                                malha[col2].celula[1].acsr.injg.fluidocol.TR = noConv2.TRmist;
+                                malha[col2].cell(1).acsr.tipo = 1;
+                                if (malha[col2].cell(1).acsr.injg.FluidoPro.flashCompleto == 0)
+                                    malha[col2].cell(1).acsr.injg.FluidoPro.flashCompleto = 2;
+                                malha[col2].cell(1).acsr.injg.seco = 0;
+                                malha[col2].cell(1).acsr.injg.temp = noConv2.tempmist;
+                                malha[col2].cell(1).acsr.injg.FluidoPro = noConv2.flu;
+                                malha[col2].cell(1).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                                malha[col2].cell(1).acsr.injg.fluidocol.TR = noConv2.TRmist;
                                 noConv2.qgstdTot *= 86400;
-                                malha[col2].celula[1].acsr.injg.QGas = noConv2.qgstdTot + noConv2.qgstdTotNeg * 86400.;
-                                if (fabs(malha[i].celula[1].acsr.injg.QGas) > 1e-15)
-                                    malha[i].celula[1].acsr.injg.razCompGas = (noConv2.qcmistStd + noConv2.qcmistStdNeg) /
-                                                                              malha[i].celula[1].acsr.injg.QGas;
+                                malha[col2].cell(1).acsr.injg.QGas = noConv2.qgstdTot + noConv2.qgstdTotNeg * 86400.;
+                                if (fabs(malha[i].cell(1).acsr.injg.QGas) > 1e-15)
+                                    malha[i].cell(1).acsr.injg.razCompGas = (noConv2.qcmistStd + noConv2.qcmistStdNeg) /
+                                                                              malha[i].cell(1).acsr.injg.QGas;
                                 else
-                                    malha[i].celula[1].acsr.injg.razCompGas = 0.;
+                                    malha[i].cell(1).acsr.injg.razCompGas = 0.;
                             } else {
-                                malha[col2].celula[1].acsr.tipo = 10;
-                                if (malha[col2].celula[1].acsr.injm.FluidoPro.flashCompleto == 0)
-                                    malha[col2].celula[1].acsr.injm.FluidoPro.flashCompleto = 2;
-                                malha[col2].celula[1].acsr.injm.temp = noConv2.tempmist;
-                                malha[col2].celula[1].acsr.injm.FluidoPro = noConv2.flu;
-                                malha[col2].celula[1].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                                malha[col2].celula[1].acsr.injm.fluidocol.TR = noConv2.TRmist;
+                                malha[col2].cell(1).acsr.tipo = 10;
+                                if (malha[col2].cell(1).acsr.injm.FluidoPro.flashCompleto == 0)
+                                    malha[col2].cell(1).acsr.injm.FluidoPro.flashCompleto = 2;
+                                malha[col2].cell(1).acsr.injm.temp = noConv2.tempmist;
+                                malha[col2].cell(1).acsr.injm.FluidoPro = noConv2.flu;
+                                malha[col2].cell(1).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                                malha[col2].cell(1).acsr.injm.fluidocol.TR = noConv2.TRmist;
                                 noConv2.qgstdTot *= 86400;
 
-                                malha[col2].celula[1].acsr.injm.MassP = noConv2.mliqmist - noConv2.mliqCmist +
+                                malha[col2].cell(1).acsr.injm.MassP = noConv2.mliqmist - noConv2.mliqCmist +
                                                                         noConv2.mliqmistNeg - noConv2.mliqCmistNeg;
-                                malha[col2].celula[1].acsr.injm.MassC = noConv2.mliqCmist + noConv2.mliqCmistNeg;
-                                malha[col2].celula[1].acsr.injm.MassG = noConv2.mgasmist + noConv2.mgasmistNeg;
+                                malha[col2].cell(1).acsr.injm.MassC = noConv2.mliqCmist + noConv2.mliqCmistNeg;
+                                malha[col2].cell(1).acsr.injm.MassG = noConv2.mgasmist + noConv2.mgasmistNeg;
                             }
                         }
 
                         noConv.qgstdTot = ((noConv.mgasmist + noConv.moleomist) /
-                                           (malha[ordCol[nderiva - 1]].celula[0].flui.Deng * 1.225)) *
-                                          malha[ordCol[nderiva - 1]].celula[0].flui.dStockTankVaporMassFraction;
+                                           (malha[ordCol[nderiva - 1]].cell(0).flui.Deng * 1.225)) *
+                                          malha[ordCol[nderiva - 1]].cell(0).flui.dStockTankVaporMassFraction;
                         noConv.qgstdTotNeg = ((noConv.mgasmistNeg + noConv.moleomistNeg) /
-                                              (malha[ordCol[nderiva - 1]].celula[0].flui.Deng * 1.225)) *
-                                             malha[ordCol[nderiva - 1]].celula[0].flui.dStockTankVaporMassFraction;
+                                              (malha[ordCol[nderiva - 1]].cell(0).flui.Deng * 1.225)) *
+                                             malha[ordCol[nderiva - 1]].cell(0).flui.dStockTankVaporMassFraction;
 
                         for (int icol = 0; icol < nderiva; icol++) {
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
                                 if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                    malha[aux].celula[0].acsr.tipo = 2;
-                                    if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 0)
-                                        malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 2;
-                                    malha[aux].celula[0].acsr.injl.bet = noConv.betmist;
-                                    malha[aux].celula[0].acsr.injl.temp = noConv.tempmist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                                    malha[aux].celula[0].acsr.injl.fluidocol.TR = noConv.TRmist;
+                                    malha[aux].cell(0).acsr.tipo = 2;
+                                    if (malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto == 0)
+                                        malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto = 2;
+                                    malha[aux].cell(0).acsr.injl.bet = noConv.betmist;
+                                    malha[aux].cell(0).acsr.injl.temp = noConv.tempmist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                                    malha[aux].cell(0).acsr.injl.fluidocol.TR = noConv.TRmist;
 
                                     noConv.qgstdTot *= 86400;
 
-                                    norma += pow((malha[aux].celula[0].acsr.injl.QLiq - (noConv.qlmistStd + noConv.qlmistStdNeg)) /
+                                    norma += pow((malha[aux].cell(0).acsr.injl.QLiq - (noConv.qlmistStd + noConv.qlmistStdNeg)) /
                                                      (noConv.qlmistStd + noConv.qlmistStdNeg),
                                                  2.);
-                                    malha[aux].celula[0].acsr.injl.QLiq = noConv.qlmistStd + noConv.qlmistStdNeg;
+                                    malha[aux].cell(0).acsr.injl.QLiq = noConv.qlmistStd + noConv.qlmistStdNeg;
 
                                 } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                    malha[aux].celula[0].acsr.tipo = 1;
-                                    if (malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto == 0)
-                                        malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto = 2;
-                                    malha[aux].celula[0].acsr.injg.seco = 0;
-                                    malha[aux].celula[0].acsr.injg.temp = noConv.tempmist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro = noConv.flu;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                                    malha[aux].celula[0].acsr.injg.fluidocol.TR = noConv.TRmist;
+                                    malha[aux].cell(0).acsr.tipo = 1;
+                                    if (malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto == 0)
+                                        malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto = 2;
+                                    malha[aux].cell(0).acsr.injg.seco = 0;
+                                    malha[aux].cell(0).acsr.injg.temp = noConv.tempmist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                                    malha[aux].cell(0).acsr.injg.fluidocol.TR = noConv.TRmist;
 
                                     noConv.qgstdTot *= 86400;
-                                    norma += pow((malha[aux].celula[0].acsr.injg.QGas - (noConv.qgstdTot + noConv.qgstdTotNeg * 86400.)) /
+                                    norma += pow((malha[aux].cell(0).acsr.injg.QGas - (noConv.qgstdTot + noConv.qgstdTotNeg * 86400.)) /
                                                      (noConv.qgstdTot + noConv.qgstdTotNeg * 86400.),
                                                  2.);
-                                    malha[aux].celula[0].acsr.injg.QGas = noConv.qgstdTot + noConv.qgstdTotNeg * 86400.; //+qlmistStd;???????
+                                    malha[aux].cell(0).acsr.injg.QGas = noConv.qgstdTot + noConv.qgstdTotNeg * 86400.; //+qlmistStd;???????
 
-                                    if (fabs(malha[aux].celula[0].acsr.injg.QGas) > 1e-15)
-                                        malha[aux].celula[0].acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
-                                                                                    malha[aux].celula[0].acsr.injg.QGas;
+                                    if (fabs(malha[aux].cell(0).acsr.injg.QGas) > 1e-15)
+                                        malha[aux].cell(0).acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
+                                                                                    malha[aux].cell(0).acsr.injg.QGas;
                                     else
-                                        malha[aux].celula[0].acsr.injg.razCompGas = 0.;
+                                        malha[aux].cell(0).acsr.injg.razCompGas = 0.;
 
                                 } else {
-                                    malha[aux].celula[0].acsr.tipo = 10;
-                                    if (malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto == 0)
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto = 2;
-                                    malha[aux].celula[0].acsr.injm.temp = noConv.tempmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro = noConv.flu;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                                    malha[aux].celula[0].acsr.injm.fluidocol.TR = noConv.TRmist;
+                                    malha[aux].cell(0).acsr.tipo = 10;
+                                    if (malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto == 0)
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto = 2;
+                                    malha[aux].cell(0).acsr.injm.temp = noConv.tempmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                                    malha[aux].cell(0).acsr.injm.fluidocol.TR = noConv.TRmist;
 
                                     noConv.qgstdTot *= 86400;
 
-                                    double massT = malha[aux].celula[0].acsr.injm.MassP + malha[aux].celula[0].acsr.injm.MassC +
-                                                   malha[aux].celula[0].acsr.injm.MassG;
+                                    double massT = malha[aux].cell(0).acsr.injm.MassP + malha[aux].cell(0).acsr.injm.MassC +
+                                                   malha[aux].cell(0).acsr.injm.MassG;
                                     norma += pow((massT - (noConv.mliqmist + noConv.mgasmist + noConv.mliqmistNeg + noConv.mgasmistNeg)) /
                                                      (noConv.mliqmist + noConv.mgasmist + noConv.mliqmistNeg + noConv.mgasmistNeg),
                                                  2.);
-                                    malha[aux].celula[0].acsr.injm.MassP = noConv.mliqmist - noConv.mliqCmist +
+                                    malha[aux].cell(0).acsr.injm.MassP = noConv.mliqmist - noConv.mliqCmist +
                                                                            noConv.mliqmistNeg - noConv.mliqCmistNeg;
-                                    malha[aux].celula[0].acsr.injm.MassC = noConv.mliqCmist + noConv.mliqCmistNeg;
-                                    malha[aux].celula[0].acsr.injm.MassG = noConv.mgasmist + noConv.mgasmistNeg;
+                                    malha[aux].cell(0).acsr.injm.MassC = noConv.mliqCmist + noConv.mliqCmistNeg;
+                                    malha[aux].cell(0).acsr.injm.MassG = noConv.mgasmist + noConv.mgasmistNeg;
                                 }
 
                                 int trocou = trocaFonteColetor(malha, aux);
                                 (*arqRede.vg1dSP).qualTramo = aux;
-                                double pini = malha[aux].celula[0].pres;
+                                double pini = malha[aux].cell(0).pres;
                                 if (arqRede.malha[aux].perm == 1) {
                                     malha[aux].modoPerm = 1;
                                     int reverso = 0;
-                                    if (malha[aux].celula[0].acsr.tipo == 1) {
-                                        if (malha[aux].celula[0].acsr.injg.QGas < 0)
+                                    if (malha[aux].cell(0).acsr.tipo == 1) {
+                                        if (malha[aux].cell(0).acsr.injg.QGas < 0)
                                             reverso = 1;
-                                    } else if (malha[aux].celula[0].acsr.tipo == 2) {
-                                        if (malha[aux].celula[0].acsr.injl.QLiq < 0)
+                                    } else if (malha[aux].cell(0).acsr.tipo == 2) {
+                                        if (malha[aux].cell(0).acsr.injl.QLiq < 0)
                                             reverso = 1;
-                                    } else if (malha[aux].celula[0].acsr.tipo == 10) {
-                                        if ((malha[aux].celula[0].acsr.injm.MassC +
-                                             malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassP) < 0)
+                                    } else if (malha[aux].cell(0).acsr.tipo == 10) {
+                                        if ((malha[aux].cell(0).acsr.injm.MassC +
+                                             malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassP) < 0)
                                             reverso = 1;
                                     }
                                     if (reverso == 0) {
-                                        if (malha[aux].arq.chokep.abertura[0] > 0.6) {
+                                        if (malha[aux].config().chokep.abertura[0] > 0.6) {
                                             if ((*arqRede.vg1dSP).iterRede == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm();
                                             else
-                                                valor = malha[aux].buscaProdPfundoPerm(malha[i].celula[0].pres);
+                                                valor = malha[aux].buscaProdPfundoPerm(malha[i].cell(0).pres);
                                         } else {
                                             if ((*arqRede.vg1dSP).iterRede == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm2();
                                             else
-                                                valor = malha[aux].buscaProdPfundoPerm2(malha[i].celula[0].pres);
+                                                valor = malha[aux].buscaProdPfundoPerm2(malha[i].cell(0).pres);
                                         }
                                     } else {
                                         if ((*arqRede.vg1dSP).iterRede == 0)
                                             valor = malha[aux].buscaProdPfundoPermRev();
                                         else
-                                            valor = malha[aux].buscaProdPfundoPermRev(malha[aux].celula[0].pres);
+                                            valor = malha[aux].buscaProdPfundoPermRev(malha[aux].cell(0).pres);
                                     }
                                 } else
                                     valor = 0;
@@ -4243,34 +4243,34 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                     }
                                     if (IndNorma[aux] == 0) {
                                         normaEvol[qNo].normaP0 = normaEvol[qNo].normaP1;
-                                        normaEvol[qNo].normaP1 = pow((malha[aux].celula[0].pres - pini) / pini, 2.);
-                                        norma += pow((malha[aux].celula[0].pres - pini) / pini, 2.);
+                                        normaEvol[qNo].normaP1 = pow((malha[aux].cell(0).pres - pini) / pini, 2.);
+                                        norma += pow((malha[aux].cell(0).pres - pini) / pini, 2.);
                                         IndNorma[aux] = 1;
                                         nnos++;
                                     }
                                     for (int iaflu = 0; iaflu < arqRede.malha[aux].nafluente; iaflu++) {
                                         int indaflu = arqRede.malha[aux].afluente[iaflu];
                                         if ((*arqRede.vg1dSP).fluidoRede == 1)
-                                            malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
+                                            malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injl.FluidoPro;
                                         else if ((*arqRede.vg1dSP).fluidoRede == 0)
-                                            malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
+                                            malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injg.FluidoPro;
                                         else
-                                            malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                            malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                         if (arqRede.malha[indaflu].perm == 1) {
                                             pini = malha[indaflu].pGSup;
                                             if (IndNorma[indaflu] == 0) {
                                                 IndNorma[indaflu] = 1;
                                                 if (arqRede.malha[indaflu].presimposta == 0) {
-                                                    norma += pow((malha[aux].celula[0].pres - pini) / pini, 2.);
+                                                    norma += pow((malha[aux].cell(0).pres - pini) / pini, 2.);
                                                     nnos++;
                                                 }
                                             }
                                             if (arqRede.malha[indaflu].presimposta == 0)
-                                                malha[indaflu].pGSup = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres + (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].pGSup;
+                                                malha[indaflu].pGSup = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres + (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].pGSup;
                                         } else {
-                                            malha[indaflu].pGSup = malha[aux].celula[0].pres;
-                                            malha[indaflu].tGSup = malha[aux].celula[0].temp;
-                                            malha[indaflu].tempSup = malha[aux].celula[0].temp;
+                                            malha[indaflu].pGSup = malha[aux].cell(0).pres;
+                                            malha[indaflu].tGSup = malha[aux].cell(0).temp;
+                                            malha[indaflu].tempSup = malha[aux].cell(0).temp;
                                         }
                                     }
                                 }
@@ -4281,19 +4281,19 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                     indaflu = arqRede.malha[aux].afluente[iaflu];
                                 }
                                 for (int icol2 = 0; icol2 < nderiva - 1; icol2++) {
-                                    norma += pow((malha[ordCol[icol2]].celula[0].pres - malha[aux].celula[0].pres) / malha[aux].celula[0].pres, 2.);
+                                    norma += pow((malha[ordCol[icol2]].cell(0).pres - malha[aux].cell(0).pres) / malha[aux].cell(0).pres, 2.);
                                     nnos++;
                                     if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
-                                        malha[ordCol[icol2]].celula[0].pres = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].cell(0).pres = (0.5) * malha[aux].cell(0).pres + (1. - 0.5) * malha[ordCol[icol2]].cell(0).pres;
                                     } else {
-                                        malha[ordCol[icol2]].celula[0].pres = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                              (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].cell(0).pres = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres +
+                                                                              (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].cell(0).pres;
                                     }
                                     if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
-                                        malha[ordCol[icol2]].presE = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].presE = (0.5) * malha[aux].cell(0).pres + (1. - 0.5) * malha[ordCol[icol2]].cell(0).pres;
                                     } else {
-                                        malha[ordCol[icol2]].presE = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                     (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].presE = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres +
+                                                                     (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].cell(0).pres;
                                     }
                                     malha[ordCol[icol2]].tempE = noConv.tempmist;
                                     malha[ordCol[icol2]].betaE = noConv.betmist;
@@ -4306,101 +4306,101 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                 int aux = ordCol[icol];
                                 if ((*arqRede.vg1dSP).iterRede == 0) {
                                     int indAflu = arqRede.malha[aux].afluente[0];
-                                    malha[aux].celula[0].pres = malha[indAflu].pGSup;
+                                    malha[aux].cell(0).pres = malha[indAflu].pGSup;
                                 }
                                 if (arqRede.malha[aux].perm == 1) {
                                     (*arqRede.vg1dSP).qualTramo = aux;
-                                    if (malha[aux].arq.ConContEntrada != 2) {
+                                    if (malha[aux].config().ConContEntrada != 2) {
                                         if ((*arqRede.vg1dSP).fluidoRede != 0) {
-                                            malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
-                                            malha[aux].celula[0].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                                            malha[aux].celula[0].acsr.tipo = 2;
-                                            if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 0)
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 2;
-                                            malha[aux].celula[0].acsr.injl.bet = noConv.betmist;
-                                            malha[aux].celula[0].acsr.injl.temp = noConv.tempmist;
-                                            malha[aux].celula[0].acsr.injl.fluidocol.TR = noConv.TRmist;
+                                            malha[aux].cell(0).acsr.injl.FluidoPro = noConv.flu;
+                                            malha[aux].cell(0).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                                            malha[aux].cell(0).acsr.tipo = 2;
+                                            if (malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto == 0)
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto = 2;
+                                            malha[aux].cell(0).acsr.injl.bet = noConv.betmist;
+                                            malha[aux].cell(0).acsr.injl.temp = noConv.tempmist;
+                                            malha[aux].cell(0).acsr.injl.fluidocol.TR = noConv.TRmist;
 
-                                            malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
-                                            if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].celula[0].acsr.injl.QLiq < 0) {
-                                                malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].fluiRevRede;
+                                            malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injl.FluidoPro;
+                                            if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].cell(0).acsr.injl.QLiq < 0) {
+                                                malha[aux].cell(0).acsr.injl.FluidoPro = malha[aux].fluiRevRede;
                                             }
 
                                         } else {
-                                            malha[aux].celula[0].acsr.injg.FluidoPro = noConv.flu;
-                                            malha[aux].celula[0].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                                            malha[aux].celula[0].acsr.tipo = 1;
-                                            if (malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto == 0)
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto = 2;
-                                            malha[aux].celula[0].acsr.injg.seco = 0;
-                                            malha[aux].celula[0].acsr.injg.temp = noConv.tempmist;
-                                            malha[aux].celula[0].acsr.injg.fluidocol.TR = noConv.TRmist;
+                                            malha[aux].cell(0).acsr.injg.FluidoPro = noConv.flu;
+                                            malha[aux].cell(0).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                                            malha[aux].cell(0).acsr.tipo = 1;
+                                            if (malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto == 0)
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto = 2;
+                                            malha[aux].cell(0).acsr.injg.seco = 0;
+                                            malha[aux].cell(0).acsr.injg.temp = noConv.tempmist;
+                                            malha[aux].cell(0).acsr.injg.fluidocol.TR = noConv.TRmist;
 
-                                            malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
-                                            if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].celula[0].acsr.injg.QGas < 0) {
-                                                malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].fluiRevRede;
+                                            malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injg.FluidoPro;
+                                            if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].cell(0).acsr.injg.QGas < 0) {
+                                                malha[aux].cell(0).acsr.injg.FluidoPro = malha[aux].fluiRevRede;
                                             }
                                         }
                                     } else {
-                                        malha[aux].celula[0].acsr.injm.FluidoPro = noConv.flu;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                                        malha[aux].celula[0].acsr.tipo = 10;
-                                        if (malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto == 0)
-                                            malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto = 2;
-                                        malha[aux].celula[0].acsr.injm.temp = noConv.tempmist;
-                                        malha[aux].celula[0].acsr.injm.condTermo = 0;
-                                        malha[aux].celula[0].acsr.injm.fluidocol.TR = noConv.TRmist;
-                                        malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro = noConv.flu;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                                        malha[aux].cell(0).acsr.tipo = 10;
+                                        if (malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto == 0)
+                                            malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto = 2;
+                                        malha[aux].cell(0).acsr.injm.temp = noConv.tempmist;
+                                        malha[aux].cell(0).acsr.injm.condTermo = 0;
+                                        malha[aux].cell(0).acsr.injm.fluidocol.TR = noConv.TRmist;
+                                        malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                     }
 
-                                    if (malha[aux].arq.ConContEntrada != 2) {
+                                    if (malha[aux].config().ConContEntrada != 2) {
                                         for (int icol2 = icol; icol2 < nderiva; icol2++)
-                                            area += malha[ordCol[icol2]].celula[0].duto.area;
+                                            area += malha[ordCol[icol2]].cell(0).duto.area;
                                         if ((*arqRede.vg1dSP).iterRede == 0) {
                                             if ((*arqRede.vg1dSP).fluidoRede != 0)
-                                                chutemass = (noConv.qlmistStd + noConv.qlmistStdNeg) * malha[aux].celula[0].duto.area / area;
+                                                chutemass = (noConv.qlmistStd + noConv.qlmistStdNeg) * malha[aux].cell(0).duto.area / area;
                                             else {
                                                 chutemass = (noConv.qgstdTot * 86400 + noConv.qgstdTotNeg * 86400) *
-                                                            malha[aux].celula[0].duto.area / area;
+                                                            malha[aux].cell(0).duto.area / area;
                                                 if (fabs(chutemass) > 1e-15)
-                                                    malha[aux].celula[0].acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
+                                                    malha[aux].cell(0).acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
                                                                                                 (noConv.qgstdTot * 86400. + noConv.qgstdTotNeg * 86400);
                                                 else
-                                                    malha[aux].celula[0].acsr.injg.razCompGas = 0.;
+                                                    malha[aux].cell(0).acsr.injg.razCompGas = 0.;
                                             }
                                         } else {
                                             if ((*arqRede.vg1dSP).fluidoRede == 1)
-                                                chutemass = malha[aux].celula[0].acsr.injl.QLiq;
+                                                chutemass = malha[aux].cell(0).acsr.injl.QLiq;
                                             else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                                chutemass = malha[aux].celula[0].acsr.injg.QGas;
+                                                chutemass = malha[aux].cell(0).acsr.injg.QGas;
                                                 if (fabs(noConv.qgstdTot * 86400. + noConv.qgstdTotNeg * 86400) > 1e-15)
-                                                    malha[aux].celula[0].acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
+                                                    malha[aux].cell(0).acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
                                                                                                 (noConv.qgstdTot * 86400. + noConv.qgstdTotNeg * 86400);
                                                 else
-                                                    malha[aux].celula[0].acsr.injg.razCompGas = 0.;
+                                                    malha[aux].cell(0).acsr.injg.razCompGas = 0.;
                                             }
                                         }
                                         if (arqRede.malha[aux].perm == 1) {
                                             malha[aux].modoPerm = 1;
                                             if (chutemass > 0.) {
-                                                if (malha[aux].arq.chokep.abertura[0] > 0.6)
+                                                if (malha[aux].config().chokep.abertura[0] > 0.6)
                                                     valor = malha[aux].buscaProdPresPresPerm(chutemass, noConv.qgstdTot * 86400);
                                                 else
                                                     valor = malha[aux].buscaProdPresPresPerm2(chutemass, noConv.qgstdTot * 86400);
                                             } else {
-                                                malha[aux].celula[0].acsr.injg.razCompGas = malha[aux].arq.razCompGasReves;
+                                                malha[aux].cell(0).acsr.injg.razCompGas = malha[aux].config().razCompGasReves;
                                                 valor = malha[aux].buscaProdPresPresPermRev(chutemass, -noConv.qgstdTot * 86400);
                                             }
                                             if ((*arqRede.vg1dSP).fluidoRede != 0) {
-                                                if (malha[aux].celula[0].acsr.injl.QLiq > (noConv.qlmistStd + noConv.qlmistStdNeg)) {
-                                                    malha[aux].celula[0].acsr.injl.QLiq = chutemass;
+                                                if (malha[aux].cell(0).acsr.injl.QLiq > (noConv.qlmistStd + noConv.qlmistStdNeg)) {
+                                                    malha[aux].cell(0).acsr.injl.QLiq = chutemass;
                                                     cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo: " << aux << endl;
                                                     arqRede.malha[aux].principal = 1;
                                                 } else
                                                     arqRede.malha[aux].principal = 0;
                                             } else {
-                                                if (malha[aux].celula[0].acsr.injg.QGas > (noConv.qgstdTot * 86400 + noConv.qgstdTotNeg * 86400.)) {
-                                                    malha[aux].celula[0].acsr.injg.QGas = chutemass;
+                                                if (malha[aux].cell(0).acsr.injg.QGas > (noConv.qgstdTot * 86400 + noConv.qgstdTotNeg * 86400.)) {
+                                                    malha[aux].cell(0).acsr.injg.QGas = chutemass;
                                                     cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo: " << aux << endl;
                                                     arqRede.malha[aux].principal = 1;
                                                 } else
@@ -4427,32 +4427,32 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                         resolvGlob += Resolv[aux];
                                         ciclomalha++;
                                         if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                            if (arqRede.malha[aux].perm == 1 && malha[aux].celula[0].acsr.injl.QLiq > 0.)
-                                                noConv.qlmistStd -= malha[aux].celula[0].acsr.injl.QLiq;
-                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq) < 1e-15)
+                                            if (arqRede.malha[aux].perm == 1 && malha[aux].cell(0).acsr.injl.QLiq > 0.)
+                                                noConv.qlmistStd -= malha[aux].cell(0).acsr.injl.QLiq;
+                                            if (fabs(malha[aux].cell(0).acsr.injl.QLiq) < 1e-15)
                                                 cout << "#################Sem vazao no tramo : " << aux << endl;
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                            if (arqRede.malha[aux].perm == 1 && malha[aux].celula[0].acsr.injg.QGas > 0.)
-                                                noConv.qgstdTot -= malha[aux].celula[0].acsr.injg.QGas / 86400.;
-                                            if (fabs(malha[aux].celula[0].acsr.injg.QGas) < 1e-15)
+                                            if (arqRede.malha[aux].perm == 1 && malha[aux].cell(0).acsr.injg.QGas > 0.)
+                                                noConv.qgstdTot -= malha[aux].cell(0).acsr.injg.QGas / 86400.;
+                                            if (fabs(malha[aux].cell(0).acsr.injg.QGas) < 1e-15)
                                                 cout << "#################Sem vazao no tramo : " << aux << endl;
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
-                                                (malha[aux].celula[0].acsr.injl.QLiq) > 0) {
-                                                double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-                                                double vazmassc = rlcA * malha[aux].celula[0].acsr.injl.QLiq * malha[aux].celula[0].acsr.injl.bet / 86400;
-                                                double massic = malha[aux].celula[0].acsr.injl.QLiq *
-                                                                (1. - malha[aux].celula[0].acsr.injl.bet) / 86400;
-                                                double Rhogs = malha[aux].celula[0].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
-                                                double Rhols = (1000 * 141.5 / (131.5 + malha[aux].celula[0].acsr.injl.FluidoPro.API)) * (1 - malha[aux].celula[0].acsr.injl.FluidoPro.BSW) + 1000. * malha[aux].celula[0].acsr.injl.FluidoPro.Denag * malha[aux].celula[0].acsr.injl.FluidoPro.BSW;
-                                                double multiplicador = (Rhols + malha[aux].celula[0].acsr.injl.FluidoPro.RGO * Rhogs *
-                                                                                    (1 - malha[aux].celula[0].acsr.injl.FluidoPro.BSW));
+                                                (malha[aux].cell(0).acsr.injl.QLiq) > 0) {
+                                                double rlcA = malha[aux].cell(0).acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+                                                double vazmassc = rlcA * malha[aux].cell(0).acsr.injl.QLiq * malha[aux].cell(0).acsr.injl.bet / 86400;
+                                                double massic = malha[aux].cell(0).acsr.injl.QLiq *
+                                                                (1. - malha[aux].cell(0).acsr.injl.bet) / 86400;
+                                                double Rhogs = malha[aux].cell(0).acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+                                                double Rhols = (1000 * 141.5 / (131.5 + malha[aux].cell(0).acsr.injl.FluidoPro.API)) * (1 - malha[aux].cell(0).acsr.injl.FluidoPro.BSW) + 1000. * malha[aux].cell(0).acsr.injl.FluidoPro.Denag * malha[aux].cell(0).acsr.injl.FluidoPro.BSW;
+                                                double multiplicador = (Rhols + malha[aux].cell(0).acsr.injl.FluidoPro.RGO * Rhogs *
+                                                                                    (1 - malha[aux].cell(0).acsr.injl.FluidoPro.BSW));
                                                 massic *= multiplicador;
-                                                double fracmasshidra = malha[aux].celula[0].acsr.injl.FluidoPro.FracMassHidra(malha[aux].celula[0].pres, malha[aux].celula[0].temp);
+                                                double fracmasshidra = malha[aux].cell(0).acsr.injl.FluidoPro.FracMassHidra(malha[aux].cell(0).pres, malha[aux].cell(0).temp);
                                                 noConv.mliqmist -= ((1. - fracmasshidra) * massic + vazmassc);
                                                 noConv.mgasmist -= fracmasshidra * massic;
                                             }
-                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq) < 1e-15)
+                                            if (fabs(malha[aux].cell(0).acsr.injl.QLiq) < 1e-15)
                                                 cout << "#################Sem vazao no tramo : " << aux << endl;
                                         }
                                     } else {
@@ -4483,32 +4483,32 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                                         Resolv[aux] = 1;
                                         resolvGlob += Resolv[aux];
                                         ciclomalha++;
-                                        double rlcA = malha[aux].celula[0].acsr.injm.fluidocol.MasEspFlu(1.001, 15.);
-                                        double Rhogs = malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
-                                        double Rhols = (1000 * 141.5 / (131.5 + malha[aux].celula[0].acsr.injm.FluidoPro.API)) * (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW) + 1000. * malha[aux].celula[0].acsr.injm.FluidoPro.Denag *
-                                                                                                                                                                                          malha[aux].celula[0].acsr.injm.FluidoPro.BSW;
-                                        double multiplicador = (Rhols + malha[aux].celula[0].acsr.injm.FluidoPro.RGO * Rhogs *
-                                                                            (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW));
-                                        double fracmasshidra = malha[aux].celula[0].acsr.injm.FluidoPro.FracMassHidra(malha[aux].celula[0].pres,
-                                                                                                                      malha[aux].celula[0].temp);
-                                        if ((*arqRede.vg1dSP).fluidoRede == 1 && malha[aux].celula[0].acsr.injm.MassP > 0.) {
+                                        double rlcA = malha[aux].cell(0).acsr.injm.fluidocol.MasEspFlu(1.001, 15.);
+                                        double Rhogs = malha[aux].cell(0).acsr.injm.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+                                        double Rhols = (1000 * 141.5 / (131.5 + malha[aux].cell(0).acsr.injm.FluidoPro.API)) * (1 - malha[aux].cell(0).acsr.injm.FluidoPro.BSW) + 1000. * malha[aux].cell(0).acsr.injm.FluidoPro.Denag *
+                                                                                                                                                                                          malha[aux].cell(0).acsr.injm.FluidoPro.BSW;
+                                        double multiplicador = (Rhols + malha[aux].cell(0).acsr.injm.FluidoPro.RGO * Rhogs *
+                                                                            (1 - malha[aux].cell(0).acsr.injm.FluidoPro.BSW));
+                                        double fracmasshidra = malha[aux].cell(0).acsr.injm.FluidoPro.FracMassHidra(malha[aux].cell(0).pres,
+                                                                                                                      malha[aux].cell(0).temp);
+                                        if ((*arqRede.vg1dSP).fluidoRede == 1 && malha[aux].cell(0).acsr.injm.MassP > 0.) {
                                             if (arqRede.malha[aux].perm == 1) {
-                                                noConv.qlmistStd -= (malha[aux].celula[0].acsr.injm.MassP * 86400. /
+                                                noConv.qlmistStd -= (malha[aux].cell(0).acsr.injm.MassP * 86400. /
                                                                          ((1. - fracmasshidra) * multiplicador) +
-                                                                     malha[aux].celula[0].acsr.injm.MassC * 86400. / rlcA);
+                                                                     malha[aux].cell(0).acsr.injm.MassC * 86400. / rlcA);
                                             }
-                                        } else if ((*arqRede.vg1dSP).fluidoRede == 0 && malha[aux].celula[0].acsr.injm.MassG > 0.) {
-                                            double tit = malha[aux].celula[0].acsr.injm.FluidoPro.dStockTankVaporMassFraction;
-                                            noConv.qgstdTot -= malha[aux].celula[0].acsr.injm.MassG * tit /
-                                                               (malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225 * fracmasshidra);
-                                        } else if ((malha[aux].celula[0].acsr.injm.MassC + malha[aux].celula[0].acsr.injm.MassP +
-                                                    malha[aux].celula[0].acsr.injm.MassG) > 0.) {
-                                            noConv.mliqmist -= (malha[aux].celula[0].acsr.injm.MassC + malha[aux].celula[0].acsr.injm.MassP);
-                                            noConv.mgasmist -= malha[aux].celula[0].acsr.injm.MassG;
+                                        } else if ((*arqRede.vg1dSP).fluidoRede == 0 && malha[aux].cell(0).acsr.injm.MassG > 0.) {
+                                            double tit = malha[aux].cell(0).acsr.injm.FluidoPro.dStockTankVaporMassFraction;
+                                            noConv.qgstdTot -= malha[aux].cell(0).acsr.injm.MassG * tit /
+                                                               (malha[aux].cell(0).acsr.injm.FluidoPro.Deng * 1.225 * fracmasshidra);
+                                        } else if ((malha[aux].cell(0).acsr.injm.MassC + malha[aux].cell(0).acsr.injm.MassP +
+                                                    malha[aux].cell(0).acsr.injm.MassG) > 0.) {
+                                            noConv.mliqmist -= (malha[aux].cell(0).acsr.injm.MassC + malha[aux].cell(0).acsr.injm.MassP);
+                                            noConv.mgasmist -= malha[aux].cell(0).acsr.injm.MassG;
                                         }
-                                        if (fabs(malha[aux].celula[0].acsr.injm.MassC +
-                                                 malha[aux].celula[0].acsr.injm.MassP +
-                                                 malha[aux].celula[0].acsr.injm.MassG) < 1e-15)
+                                        if (fabs(malha[aux].cell(0).acsr.injm.MassC +
+                                                 malha[aux].cell(0).acsr.injm.MassP +
+                                                 malha[aux].cell(0).acsr.injm.MassG) < 1e-15)
                                             cout << "#################Sem vazao no tramo : " << aux << endl;
                                     }
                                     cout << "convergencia tramo: " << aux << endl;
@@ -4539,163 +4539,163 @@ void atualizaComp(SProd &sistem1, int i) {
     double rhoOF = 900.;
     double rhoWF = 1000.;
 
-    if (sistem1.celula[i - 1].acsr.tipo == 1) {
-        sistem1.celula[i - 1].acsr.injg.FluidoPro.tabelaDinamica = 0;
+    if (sistem1.cell(i - 1).acsr.tipo == 1) {
+        sistem1.cell(i - 1).acsr.injg.FluidoPro.tabelaDinamica = 0;
         if (i > 0)
-            sistem1.celula[i - 1].acsr.injg.FluidoPro.atualizaPropComp(
-                sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition, sistem1.celula[i - 1].flui.oCalculatedVapComposition,
-                sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.injg.FluidoPro.atualizaPropComp(
+                sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition, sistem1.cell(i - 1).flui.oCalculatedVapComposition,
+                sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.injg.FluidoPro.atualizaPropComp(
-                sistem1.celula[i].pres, sistem1.celula[i].temp, -1, NULL, NULL, sistem1.arq.pocinjec);
-        fluF = sistem1.celula[i - 1].acsr.injg.FluidoPro;
+            sistem1.cell(i - 1).acsr.injg.FluidoPro.atualizaPropComp(
+                sistem1.cell(i).pres, sistem1.cell(i).temp, -1, NULL, NULL, sistem1.config().pocinjec);
+        fluF = sistem1.cell(i - 1).acsr.injg.FluidoPro;
         fwF = 0.;
         titF = 1.;
-    } else if (sistem1.celula[i - 1].acsr.tipo == 2) {
-        sistem1.celula[i - 1].acsr.injl.FluidoPro.tabelaDinamica = 0;
+    } else if (sistem1.cell(i - 1).acsr.tipo == 2) {
+        sistem1.cell(i - 1).acsr.injl.FluidoPro.tabelaDinamica = 0;
         if (i > 0)
-            sistem1.celula[i - 1].acsr.injl.FluidoPro.atualizaPropComp(
-                sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.injl.FluidoPro.atualizaPropComp(
+                sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.injl.FluidoPro.atualizaPropComp(
-                sistem1.celula[i].pres, sistem1.celula[i].temp, -1, NULL, NULL, sistem1.arq.pocinjec);
-        fluF = sistem1.celula[i - 1].acsr.injl.FluidoPro;
-        boF = fluF.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        baF = fluF.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+            sistem1.cell(i - 1).acsr.injl.FluidoPro.atualizaPropComp(
+                sistem1.cell(i).pres, sistem1.cell(i).temp, -1, NULL, NULL, sistem1.config().pocinjec);
+        fluF = sistem1.cell(i - 1).acsr.injl.FluidoPro;
+        boF = fluF.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        baF = fluF.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         fwF = fluF.BSW * baF / (boF + baF * fluF.BSW - fluF.BSW * boF);
-        rhoOF = fluF.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rhoWF = fluF.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        rhoOF = fluF.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        rhoWF = fluF.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
-    } else if (sistem1.celula[i - 1].acsr.tipo == 3) {
-        sistem1.celula[i - 1].acsr.ipr.FluidoPro.tabelaDinamica = 0;
+    } else if (sistem1.cell(i - 1).acsr.tipo == 3) {
+        sistem1.cell(i - 1).acsr.ipr.FluidoPro.tabelaDinamica = 0;
         if (i > 0)
-            sistem1.celula[i - 1].acsr.ipr.FluidoPro.atualizaPropComp(
-                sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.ipr.FluidoPro.atualizaPropComp(
+                sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.ipr.FluidoPro.atualizaPropComp(
-                sistem1.celula[i].pres, sistem1.celula[i].temp, -1, NULL, NULL, sistem1.arq.pocinjec);
-        fluF = sistem1.celula[i - 1].acsr.ipr.FluidoPro;
-        boF = fluF.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        baF = fluF.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+            sistem1.cell(i - 1).acsr.ipr.FluidoPro.atualizaPropComp(
+                sistem1.cell(i).pres, sistem1.cell(i).temp, -1, NULL, NULL, sistem1.config().pocinjec);
+        fluF = sistem1.cell(i - 1).acsr.ipr.FluidoPro;
+        boF = fluF.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        baF = fluF.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         fwF = fluF.BSW * baF / (boF + baF * fluF.BSW - fluF.BSW * boF);
-        rhoOF = fluF.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rhoWF = fluF.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        rhoOF = fluF.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        rhoWF = fluF.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
-    } else if (sistem1.celula[i - 1].acsr.tipo == 15) {
-        sistem1.celula[i - 1].acsr.radialPoro.flup.tabelaDinamica = 0;
-        int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
-        double tRes = sistem1.celula[i].acsr.radialPoro.tRes;
+    } else if (sistem1.cell(i - 1).acsr.tipo == 15) {
+        sistem1.cell(i - 1).acsr.radialPoro.flup.tabelaDinamica = 0;
+        int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
+        double tRes = sistem1.cell(i).acsr.radialPoro.tRes;
         for (int k = 0; k < ncelRad; k++) {
-            sistem1.celula[i].acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
         }
         if (i > 0)
-            sistem1.celula[i - 1].acsr.radialPoro.flup.atualizaPropComp(
-                sistem1.celula[i - 1].pres, tRes, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.radialPoro.flup.atualizaPropComp(
+                sistem1.cell(i - 1).pres, tRes, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.radialPoro.flup.atualizaPropComp(
-                sistem1.celula[i].pres, tRes, -1, NULL, NULL, sistem1.arq.pocinjec);
-        fluF = sistem1.celula[i - 1].acsr.radialPoro.flup;
-        boF = fluF.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        baF = fluF.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+            sistem1.cell(i - 1).acsr.radialPoro.flup.atualizaPropComp(
+                sistem1.cell(i).pres, tRes, -1, NULL, NULL, sistem1.config().pocinjec);
+        fluF = sistem1.cell(i - 1).acsr.radialPoro.flup;
+        boF = fluF.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        baF = fluF.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         fwF = fluF.BSW * baF / (boF + baF * fluF.BSW - fluF.BSW * boF);
-        rhoOF = fluF.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rhoWF = fluF.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        rhoOF = fluF.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        rhoWF = fluF.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
-    } else if (sistem1.celula[i - 1].acsr.tipo == 16) {
-        sistem1.celula[i - 1].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-        int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
-        double tRes = sistem1.celula[i].acsr.poroso2D.dados.transfer.tRes;
+    } else if (sistem1.cell(i - 1).acsr.tipo == 16) {
+        sistem1.cell(i - 1).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+        int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
+        double tRes = sistem1.cell(i).acsr.poroso2D.dados.transfer.tRes;
         for (int k = 0; k < ncelRad; k++) {
-            sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
         }
-        int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
-        tRes = sistem1.celula[i].acsr.poroso2D.dados.tRes;
+        int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
+        tRes = sistem1.cell(i).acsr.poroso2D.dados.tRes;
         for (int k = 0; k < ncelEle; k++) {
-            sistem1.celula[i].acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
         }
         if (i > 0)
-            sistem1.celula[i - 1].acsr.poroso2D.dados.flup.atualizaPropComp(
-                sistem1.celula[i - 1].pres, tRes, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.poroso2D.dados.flup.atualizaPropComp(
+                sistem1.cell(i - 1).pres, tRes, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.poroso2D.dados.flup.atualizaPropComp(
-                sistem1.celula[i].pres, tRes, -1, NULL, NULL, sistem1.arq.pocinjec);
-        fluF = sistem1.celula[i - 1].acsr.poroso2D.dados.flup;
-        boF = fluF.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        baF = fluF.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+            sistem1.cell(i - 1).acsr.poroso2D.dados.flup.atualizaPropComp(
+                sistem1.cell(i).pres, tRes, -1, NULL, NULL, sistem1.config().pocinjec);
+        fluF = sistem1.cell(i - 1).acsr.poroso2D.dados.flup;
+        boF = fluF.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        baF = fluF.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         fwF = fluF.BSW * baF / (boF + baF * fluF.BSW - fluF.BSW * boF);
-        rhoOF = fluF.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rhoWF = fluF.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        rhoOF = fluF.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        rhoWF = fluF.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
-    } else if (sistem1.celula[i - 1].acsr.tipo == 10) {
-        sistem1.celula[i - 1].acsr.injm.FluidoPro.tabelaDinamica = 0;
+    } else if (sistem1.cell(i - 1).acsr.tipo == 10) {
+        sistem1.cell(i - 1).acsr.injm.FluidoPro.tabelaDinamica = 0;
         if (i > 0)
-            sistem1.celula[i - 1].acsr.injm.FluidoPro.atualizaPropComp(
-                sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.injm.FluidoPro.atualizaPropComp(
+                sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.injm.FluidoPro.atualizaPropComp(
-                sistem1.celula[i].pres, sistem1.celula[i].temp, -1, NULL, NULL, sistem1.arq.pocinjec);
-        fluF = sistem1.celula[i - 1].acsr.injm.FluidoPro;
-        boF = fluF.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        baF = fluF.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+            sistem1.cell(i - 1).acsr.injm.FluidoPro.atualizaPropComp(
+                sistem1.cell(i).pres, sistem1.cell(i).temp, -1, NULL, NULL, sistem1.config().pocinjec);
+        fluF = sistem1.cell(i - 1).acsr.injm.FluidoPro;
+        boF = fluF.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        baF = fluF.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         fwF = fluF.BSW * baF / (boF + baF * fluF.BSW - fluF.BSW * boF);
-        rhoOF = fluF.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rhoWF = fluF.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        rhoOF = fluF.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        rhoWF = fluF.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
-    } else if (sistem1.celula[i - 1].acsr.tipo == 9 && sistem1.celula[i - 1].acsr.fontechk.abertura > 1e-6) {
-        sistem1.celula[i - 1].acsr.fontechk.fluidoP.tabelaDinamica = 0;
-        sistem1.celula[i - 1].acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
+    } else if (sistem1.cell(i - 1).acsr.tipo == 9 && sistem1.cell(i - 1).acsr.fontechk.abertura > 1e-6) {
+        sistem1.cell(i - 1).acsr.fontechk.fluidoP.tabelaDinamica = 0;
+        sistem1.cell(i - 1).acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
         if (i > 0)
-            sistem1.celula[i - 1].acsr.fontechk.fluidoP.atualizaPropComp(
-                sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp,
-                sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.fontechk.fluidoP.atualizaPropComp(
+                sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp,
+                sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.fontechk.fluidoP.atualizaPropComp(
-                sistem1.celula[i].pres, sistem1.celula[i].temp, -1, NULL, NULL, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.fontechk.fluidoP.atualizaPropComp(
+                sistem1.cell(i).pres, sistem1.cell(i).temp, -1, NULL, NULL, sistem1.config().pocinjec);
         if (i > 0)
-            sistem1.celula[i - 1].acsr.fontechk.fluidoPamb.atualizaPropComp(
-                sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, sistem1.celula[i - 1].flui.dCalculatedBeta,
-                sistem1.celula[i - 1].flui.oCalculatedLiqComposition,
-                sistem1.celula[i - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+            sistem1.cell(i - 1).acsr.fontechk.fluidoPamb.atualizaPropComp(
+                sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp, sistem1.cell(i - 1).flui.dCalculatedBeta,
+                sistem1.cell(i - 1).flui.oCalculatedLiqComposition,
+                sistem1.cell(i - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         else
-            sistem1.celula[i - 1].acsr.fontechk.fluidoPamb.atualizaPropComp(
-                sistem1.celula[i].pres, sistem1.celula[i].temp, -1, NULL, NULL, sistem1.arq.pocinjec);
-        if (sistem1.celula[i - 1].acsr.fontechk.presT > sistem1.celula[i - 1].acsr.fontechk.pamb) {
-            fluF = sistem1.celula[i - 1].acsr.fontechk.fluidoP;
+            sistem1.cell(i - 1).acsr.fontechk.fluidoPamb.atualizaPropComp(
+                sistem1.cell(i).pres, sistem1.cell(i).temp, -1, NULL, NULL, sistem1.config().pocinjec);
+        if (sistem1.cell(i - 1).acsr.fontechk.presT > sistem1.cell(i - 1).acsr.fontechk.pamb) {
+            fluF = sistem1.cell(i - 1).acsr.fontechk.fluidoP;
         } else {
-            fluF = sistem1.celula[i - 1].acsr.fontechk.fluidoPamb;
+            fluF = sistem1.cell(i - 1).acsr.fontechk.fluidoPamb;
         }
-        boF = fluF.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        baF = fluF.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        boF = fluF.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        baF = fluF.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         fwF = fluF.BSW * baF / (boF + baF * fluF.BSW - fluF.BSW * boF);
-        rhoOF = fluF.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rhoWF = fluF.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+        rhoOF = fluF.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        rhoWF = fluF.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
     }
 
     // sistem1.renovaFonte(i - 1);//metodo que verifica se existe uma fonte na celula e calcula o valor das
     // vazoes massicas de liquido produzido (oleo+agua), gas e liquido complementar
     // relacao entre fonte a esquerda e a direita de uma celula:
-    sistem1.celula[i].fontemassLL = sistem1.celula[i - 1].fontemassLR;
-    sistem1.celula[i].fontemassCL = sistem1.celula[i - 1].fontemassCR;
-    sistem1.celula[i].fontemassGL = sistem1.celula[i - 1].fontemassGR;
+    sistem1.cell(i).fontemassLL = sistem1.cell(i - 1).fontemassLR;
+    sistem1.cell(i).fontemassCL = sistem1.cell(i - 1).fontemassCR;
+    sistem1.cell(i).fontemassGL = sistem1.cell(i - 1).fontemassGR;
 
-    double vazMasLiqL = sistem1.celula[i].MliqiniL;
-    double vazMasGasL = sistem1.celula[i].ML - sistem1.celula[i].MliqiniL;
-    double fonteMasLiqL = sistem1.celula[i].fontemassLL;
-    double fonteMasGasL = sistem1.celula[i].fontemassGL;
+    double vazMasLiqL = sistem1.cell(i).MliqiniL;
+    double vazMasGasL = sistem1.cell(i).ML - sistem1.cell(i).MliqiniL;
+    double fonteMasLiqL = sistem1.cell(i).fontemassLL;
+    double fonteMasGasL = sistem1.cell(i).fontemassGL;
 
     // definicao de temperaturas maximas e minimas para uma eventual reavaliacao do metodo
     // ASTM quando ocorre mistura de fluidos e se deseja atualizar o modelo
@@ -4706,10 +4706,10 @@ void atualizaComp(SProd &sistem1, int i) {
     double rs;
     double titV = 0.;
     // calcula os valores de RS, Bo e Ba na celula anterior a i-esima celula
-    if (sistem1.celula[i - 1].flui.RGO < 1e6) {
-        rs = sistem1.celula[i - 1].flui.RS(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        bo = sistem1.celula[i - 1].flui.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, rs);
-        ba = sistem1.celula[i - 1].flui.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+    if (sistem1.cell(i - 1).flui.RGO < 1e6) {
+        rs = sistem1.cell(i - 1).flui.RS(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+        bo = sistem1.cell(i - 1).flui.BOFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp, rs);
+        ba = sistem1.cell(i - 1).flui.BAFunc(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
         rs = rs * 6.29 / 35.31467;
     } else {
         bo = 1;
@@ -4717,73 +4717,73 @@ void atualizaComp(SProd &sistem1, int i) {
         ba = 0.;
     }
     // BSW in-situ da celula anterior, na marcha, a i-esima celula
-    sistem1.celula[i - 1].FW = sistem1.celula[i - 1].flui.BSW * ba / (bo + ba * sistem1.celula[i - 1].flui.BSW - sistem1.celula[i - 1].flui.BSW * bo);
-    sistem1.celula[i - 1].FWini = sistem1.celula[i - 1].FW;
+    sistem1.cell(i - 1).FW = sistem1.cell(i - 1).flui.BSW * ba / (bo + ba * sistem1.cell(i - 1).flui.BSW - sistem1.cell(i - 1).flui.BSW * bo);
+    sistem1.cell(i - 1).FWini = sistem1.cell(i - 1).FW;
     // temperatura na fronteira entre a celula i-1 e a celula i, da segunda iteracao em diante, pode-se
     // usar a temperatura da celula i, pois já a tem calculada, mas isto pode ser um complicador de
     // convergencia, mais seguro manter o criterio em todas as iteracoes, neste caso, a temperatura na
     // fronteira e admitida = a temperatura da celula i-1
-    //	  tmed = (sistem1.celula[i].dx * sistem1.celula[i].temp + sistem1.celula[i].dxL * sistem1.celula[i].tempL)
+    //	  tmed = (sistem1.cell(i).dx * sistem1.cell(i).temp + sistem1.cell(i).dxL * sistem1.cell(i).tempL)
 
-    double fwV = sistem1.celula[i - 1].FW;
-    double rhoOV = sistem1.celula[i - 1].flui.MasEspoleo(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-    double rhoWV = sistem1.celula[i - 1].flui.MasEspAgua(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
+    double fwV = sistem1.cell(i - 1).FW;
+    double rhoOV = sistem1.cell(i - 1).flui.MasEspoleo(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
+    double rhoWV = sistem1.cell(i - 1).flui.MasEspAgua(sistem1.cell(i - 1).pres, sistem1.cell(i - 1).temp);
     titV = (1 - fwV) * rhoOV / ((1 - fwV) * rhoOV + fwV * rhoWV);
     vazMasLiqL *= titV;
     fonteMasLiqL *= titF;
     double pesoMolV = 0;
     double pesoMolF = 0;
-    for (int j = 0; j < sistem1.celula[i].flui.npseudo; j++) {
-        pesoMolV += sistem1.celula[i].flui.masMol[j] * sistem1.celula[i].flui.fracMol[j];
+    for (int j = 0; j < sistem1.cell(i).flui.npseudo; j++) {
+        pesoMolV += sistem1.cell(i).flui.masMol[j] * sistem1.cell(i).flui.fracMol[j];
         pesoMolF += fluF.masMol[j] * fluF.fracMol[j];
     }
     double vazMolV = (vazMasLiqL + vazMasGasL) / pesoMolV;
     double vazMolF = (fonteMasLiqL + fonteMasGasL) / pesoMolF;
     double razMolV = vazMolV / (vazMolV + vazMolF);
     if (vazMolF > 0.) {
-        for (int j = 0; j < sistem1.celula[i].flui.npseudo; j++) {
-            sistem1.celula[i].flui.fracMol[j] = razMolV * sistem1.celula[i - 1].flui.fracMol[j] +
+        for (int j = 0; j < sistem1.cell(i).flui.npseudo; j++) {
+            sistem1.cell(i).flui.fracMol[j] = razMolV * sistem1.cell(i - 1).flui.fracMol[j] +
                                                 (1. - razMolV) * fluF.fracMol[j];
         }
     } else {
-        for (int j = 0; j < sistem1.celula[i].flui.npseudo; j++)
-            sistem1.celula[i].flui.fracMol[j] = sistem1.celula[i - 1].flui.fracMol[j];
+        for (int j = 0; j < sistem1.cell(i).flui.npseudo; j++)
+            sistem1.cell(i).flui.fracMol[j] = sistem1.cell(i - 1).flui.fracMol[j];
     }
 }
 
 void atualizaCel(SProd &sistem1, int i) {
-    for (int j = 0; j < sistem1.celula[i].flui.npseudo; j++)
-        sistem1.celula[i].flui.fracMol[j] = sistem1.celula[i - 1].flui.fracMol[j];
-    sistem1.celula[i].flui.iCalculatedStockTankThermodynamicCondition =
-        sistem1.celula[i - 1].flui.iCalculatedStockTankThermodynamicCondition;
-    sistem1.celula[i].flui.dStockTankVaporMassFraction =
-        sistem1.celula[i - 1].flui.dStockTankVaporMassFraction;
-    sistem1.celula[i].flui.dStockTankLiquidDensity =
-        sistem1.celula[i - 1].flui.dStockTankLiquidDensity;
-    sistem1.celula[i].flui.dStockTankVaporDensity =
-        sistem1.celula[i - 1].flui.dStockTankVaporDensity;
+    for (int j = 0; j < sistem1.cell(i).flui.npseudo; j++)
+        sistem1.cell(i).flui.fracMol[j] = sistem1.cell(i - 1).flui.fracMol[j];
+    sistem1.cell(i).flui.iCalculatedStockTankThermodynamicCondition =
+        sistem1.cell(i - 1).flui.iCalculatedStockTankThermodynamicCondition;
+    sistem1.cell(i).flui.dStockTankVaporMassFraction =
+        sistem1.cell(i - 1).flui.dStockTankVaporMassFraction;
+    sistem1.cell(i).flui.dStockTankLiquidDensity =
+        sistem1.cell(i - 1).flui.dStockTankLiquidDensity;
+    sistem1.cell(i).flui.dStockTankVaporDensity =
+        sistem1.cell(i - 1).flui.dStockTankVaporDensity;
 
-    if (sistem1.celula[i].flui.dStockTankLiquidDensity > 0.01) {
-        sistem1.celula[i].flui.API = 141.5 / (sistem1.celula[i].flui.dStockTankLiquidDensity / 1000.) - 131.5;
+    if (sistem1.cell(i).flui.dStockTankLiquidDensity > 0.01) {
+        sistem1.cell(i).flui.API = 141.5 / (sistem1.cell(i).flui.dStockTankLiquidDensity / 1000.) - 131.5;
     } else
-        sistem1.celula[i].flui.API = 50;
-    sistem1.celula[i].flui.Deng = sistem1.celula[i].flui.dStockTankVaporDensity / 1.225;
-    sistem1.celula[i].flui.RGO = sistem1.celula[i - 1].flui.RGO;
-    sistem1.celula[i].flui.IRGO = sistem1.celula[i - 1].flui.IRGO;
+        sistem1.cell(i).flui.API = 50;
+    sistem1.cell(i).flui.Deng = sistem1.cell(i).flui.dStockTankVaporDensity / 1.225;
+    sistem1.cell(i).flui.RGO = sistem1.cell(i - 1).flui.RGO;
+    sistem1.cell(i).flui.IRGO = sistem1.cell(i - 1).flui.IRGO;
 
-    double tmed = (sistem1.celula[i].dx * sistem1.celula[i].temp + sistem1.celula[i].dxL * sistem1.celula[i].tempL) / (sistem1.celula[i].dx + sistem1.celula[i].dxL);
-    double pmed = sistem1.celula[i].presaux + sistem1.celula[i - 1].dpB / 98066.5;
+    double tmed = (sistem1.cell(i).dx * sistem1.cell(i).temp + sistem1.cell(i).dxL * sistem1.cell(i).tempL) / (sistem1.cell(i).dx + sistem1.cell(i).dxL);
+    double pmed = sistem1.cell(i).presaux + sistem1.cell(i - 1).dpB / 98066.5;
 
     int veriI = i - 1;
-    while ((sistem1.celula[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) ||
-            sistem1.celula[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)) &&
+    while ((sistem1.cell(veriI).flui.dCalculatedBeta > 1 - (0.0 + 1e-15) ||
+            sistem1.cell(veriI).flui.dCalculatedBeta < (0.0 + 1e-15)) &&
            (veriI > 0))
         veriI--;
-    if ((veriI == 0) && (sistem1.celula[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || sistem1.celula[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
+    if ((veriI == 0) && (sistem1.cell(veriI).flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || sistem1.cell(veriI).flui.dCalculatedBeta < (0.0 + 1e-15)))
         veriI = i - 1;
-    sistem1.celula[i].flui.atualizaPropComp(pmed, tmed, sistem1.celula[veriI].flui.dCalculatedBeta,
-                                            sistem1.celula[veriI].flui.oCalculatedLiqComposition,
-                                            sistem1.celula[veriI].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+    sistem1.cell(i).flui.atualizaPropComp(pmed, tmed, sistem1.cell(veriI).flui.dCalculatedBeta,
+                                            sistem1.cell(veriI).flui.oCalculatedLiqComposition,
+                                            sistem1.cell(veriI).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
 }
 
 int ranqueiaCol(Rede &arqRede, int i) {
@@ -4802,67 +4802,67 @@ int ranqueiaCol(Rede &arqRede, int i) {
 
 void preparaTabDin(SProd &sistem1) {
     for (int i = 0; i <= sistem1.ncel; i++) {
-        sistem1.celula[i].flui.tabelaDinamica = 0;
-        if (sistem1.celula[i].acsr.tipo == 1) {
-            if (sistem1.celula[i].acsr.tipo == 1 && sistem1.celula[i].acsr.injg.QGas < 0) {
-                sistem1.celula[i].acsr.injg.FluidoPro = sistem1.celula[0].flui;
+        sistem1.cell(i).flui.tabelaDinamica = 0;
+        if (sistem1.cell(i).acsr.tipo == 1) {
+            if (sistem1.cell(i).acsr.tipo == 1 && sistem1.cell(i).acsr.injg.QGas < 0) {
+                sistem1.cell(i).acsr.injg.FluidoPro = sistem1.cell(0).flui;
             }
-            sistem1.celula[i].acsr.injg.FluidoPro.tabelaDinamica = 0;
-            sistem1.celula[i].acsr.injg.FluidoPro.atualizaPropCompStandard();
-        } else if (sistem1.celula[i].acsr.tipo == 2) {
-            if (sistem1.celula[i].acsr.tipo == 2 && sistem1.celula[i].acsr.injl.QLiq < 0) {
-                sistem1.celula[i].acsr.injl.FluidoPro = sistem1.celula[0].flui;
+            sistem1.cell(i).acsr.injg.FluidoPro.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.injg.FluidoPro.atualizaPropCompStandard();
+        } else if (sistem1.cell(i).acsr.tipo == 2) {
+            if (sistem1.cell(i).acsr.tipo == 2 && sistem1.cell(i).acsr.injl.QLiq < 0) {
+                sistem1.cell(i).acsr.injl.FluidoPro = sistem1.cell(0).flui;
             }
-            sistem1.celula[i].acsr.injl.FluidoPro.tabelaDinamica = 0;
-            sistem1.celula[i].acsr.injl.FluidoPro.atualizaPropCompStandard();
-        } else if (sistem1.celula[i].acsr.tipo == 3) {
-            sistem1.celula[i].acsr.ipr.FluidoPro.tabelaDinamica = 0;
-            sistem1.celula[i].acsr.ipr.FluidoPro.atualizaPropCompStandard();
-        } else if (sistem1.celula[i].acsr.tipo == 15) {
-            sistem1.celula[i].acsr.radialPoro.flup.tabelaDinamica = 0;
-            int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
+            sistem1.cell(i).acsr.injl.FluidoPro.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.injl.FluidoPro.atualizaPropCompStandard();
+        } else if (sistem1.cell(i).acsr.tipo == 3) {
+            sistem1.cell(i).acsr.ipr.FluidoPro.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.ipr.FluidoPro.atualizaPropCompStandard();
+        } else if (sistem1.cell(i).acsr.tipo == 15) {
+            sistem1.cell(i).acsr.radialPoro.flup.tabelaDinamica = 0;
+            int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
             for (int k = 0; k < ncelRad; k++) {
-                sistem1.celula[i].acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
+                sistem1.cell(i).acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
             }
-        } else if (sistem1.celula[i].acsr.tipo == 16) {
-            sistem1.celula[i].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-            int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
+        } else if (sistem1.cell(i).acsr.tipo == 16) {
+            sistem1.cell(i).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+            int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
             for (int k = 0; k < ncelRad; k++) {
-                sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
+                sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
             }
-            int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
+            int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
             for (int k = 0; k < ncelEle; k++) {
-                sistem1.celula[i].acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
+                sistem1.cell(i).acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
             }
-        } else if (sistem1.celula[i].acsr.tipo == 10) {
-            if (sistem1.celula[i].acsr.tipo == 10 &&
-                sistem1.celula[i].acsr.injm.MassC + sistem1.celula[i].acsr.injm.MassG + sistem1.celula[i].acsr.injm.MassP < 0) {
-                sistem1.celula[i].acsr.injm.FluidoPro = sistem1.celula[0].flui;
+        } else if (sistem1.cell(i).acsr.tipo == 10) {
+            if (sistem1.cell(i).acsr.tipo == 10 &&
+                sistem1.cell(i).acsr.injm.MassC + sistem1.cell(i).acsr.injm.MassG + sistem1.cell(i).acsr.injm.MassP < 0) {
+                sistem1.cell(i).acsr.injm.FluidoPro = sistem1.cell(0).flui;
             }
-            sistem1.celula[i].acsr.injm.FluidoPro.atualizaPropCompStandard();
-        } else if (sistem1.celula[i].acsr.tipo == 9 && sistem1.celula[i].acsr.fontechk.abertura > 1e-6) {
-            sistem1.celula[i].acsr.fontechk.fluidoP.tabelaDinamica = 0;
-            sistem1.celula[i].acsr.fontechk.fluidoP.atualizaPropCompStandard();
-            sistem1.celula[i].acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
-            sistem1.celula[i].acsr.fontechk.fluidoPamb.atualizaPropCompStandard();
+            sistem1.cell(i).acsr.injm.FluidoPro.atualizaPropCompStandard();
+        } else if (sistem1.cell(i).acsr.tipo == 9 && sistem1.cell(i).acsr.fontechk.abertura > 1e-6) {
+            sistem1.cell(i).acsr.fontechk.fluidoP.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.fontechk.fluidoP.atualizaPropCompStandard();
+            sistem1.cell(i).acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
+            sistem1.cell(i).acsr.fontechk.fluidoPamb.atualizaPropCompStandard();
         }
     }
     for (int i = 0; i < sistem1.ntabDin; i++) {
         int i0 = sistem1.tabDin[i].celIni;
         int i1 = sistem1.tabDin[i].celFim;
-        sistem1.tabDin[i].pmax = sistem1.celula[i0].pres;
-        sistem1.tabDin[i].pmin = sistem1.celula[i0].pres;
-        sistem1.tabDin[i].tmax = sistem1.celula[i0].temp;
-        sistem1.tabDin[i].tmin = sistem1.celula[i0].temp;
+        sistem1.tabDin[i].pmax = sistem1.cell(i0).pres;
+        sistem1.tabDin[i].pmin = sistem1.cell(i0).pres;
+        sistem1.tabDin[i].tmax = sistem1.cell(i0).temp;
+        sistem1.tabDin[i].tmin = sistem1.cell(i0).temp;
         for (int j = i0 + 1; j <= i1; j++) {
-            if (sistem1.celula[j].pres < sistem1.tabDin[i].pmin)
-                sistem1.tabDin[i].pmin = sistem1.celula[j].pres;
-            else if (sistem1.celula[j].pres > sistem1.tabDin[i].pmax)
-                sistem1.tabDin[i].pmax = sistem1.celula[j].pres;
-            if (sistem1.celula[j].temp < sistem1.tabDin[i].tmin)
-                sistem1.tabDin[i].tmin = sistem1.celula[j].temp;
-            else if (sistem1.celula[j].temp > sistem1.tabDin[i].tmax)
-                sistem1.tabDin[i].tmax = sistem1.celula[j].temp;
+            if (sistem1.cell(j).pres < sistem1.tabDin[i].pmin)
+                sistem1.tabDin[i].pmin = sistem1.cell(j).pres;
+            else if (sistem1.cell(j).pres > sistem1.tabDin[i].pmax)
+                sistem1.tabDin[i].pmax = sistem1.cell(j).pres;
+            if (sistem1.cell(j).temp < sistem1.tabDin[i].tmin)
+                sistem1.tabDin[i].tmin = sistem1.cell(j).temp;
+            else if (sistem1.cell(j).temp > sistem1.tabDin[i].tmax)
+                sistem1.tabDin[i].tmax = sistem1.cell(j).temp;
         }
         sistem1.tabDin[i].pmax *= 1.6;
         sistem1.tabDin[i].pmin *= 0.6;
@@ -4885,13 +4885,13 @@ void preparaTabDin(SProd &sistem1) {
     }
     int i0 = sistem1.tabDin[0].celIni;
     int i1 = sistem1.tabDin[0].celFim;
-    sistem1.celula[i0].flui.atualizaPropCompStandard();
-    double pmed = sistem1.celula[i0].presaux;
-    double tmed = sistem1.celula[i0].temp;
-    sistem1.celula[i0].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, sistem1.arq.pocinjec);
+    sistem1.cell(i0).flui.atualizaPropCompStandard();
+    double pmed = sistem1.cell(i0).presaux;
+    double tmed = sistem1.cell(i0).temp;
+    sistem1.cell(i0).flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, sistem1.config().pocinjec);
     for (int i = i0 + 1; i <= i1; i++) {
-        for (int k = 0; k < sistem1.celula[i].flui.npseudo; k++)
-            sistem1.celula[i].flui.fracMol[k] = sistem1.celula[i - 1].flui.fracMol[k];
+        for (int k = 0; k < sistem1.cell(i).flui.npseudo; k++)
+            sistem1.cell(i).flui.fracMol[k] = sistem1.cell(i - 1).flui.fracMol[k];
         atualizaCel(sistem1, i);
     }
 
@@ -4899,15 +4899,15 @@ void preparaTabDin(SProd &sistem1) {
         int i0 = sistem1.tabDin[j].celIni;
         int i1 = sistem1.tabDin[j].celFim;
         atualizaComp(sistem1, i0);
-        sistem1.celula[i0].flui.atualizaPropCompStandard();
-        tmed = (sistem1.celula[i0].dx * sistem1.celula[i0].temp + sistem1.celula[i0].dxL * sistem1.celula[i0].tempL) / (sistem1.celula[i0].dx + sistem1.celula[i0].dxL);
-        pmed = sistem1.celula[i0].presaux + sistem1.celula[i0 - 1].dpB / 98066.5;
-        sistem1.celula[i0].flui.atualizaPropComp(pmed, tmed, sistem1.celula[i0 - 1].flui.dCalculatedBeta,
-                                                 sistem1.celula[i0 - 1].flui.oCalculatedLiqComposition,
-                                                 sistem1.celula[i0 - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
+        sistem1.cell(i0).flui.atualizaPropCompStandard();
+        tmed = (sistem1.cell(i0).dx * sistem1.cell(i0).temp + sistem1.cell(i0).dxL * sistem1.cell(i0).tempL) / (sistem1.cell(i0).dx + sistem1.cell(i0).dxL);
+        pmed = sistem1.cell(i0).presaux + sistem1.cell(i0 - 1).dpB / 98066.5;
+        sistem1.cell(i0).flui.atualizaPropComp(pmed, tmed, sistem1.cell(i0 - 1).flui.dCalculatedBeta,
+                                                 sistem1.cell(i0 - 1).flui.oCalculatedLiqComposition,
+                                                 sistem1.cell(i0 - 1).flui.oCalculatedVapComposition, sistem1.config().pocinjec);
         for (int i = i0 + 1; i <= i1; i++) {
-            for (int k = 0; k < sistem1.celula[i].flui.npseudo; k++)
-                sistem1.celula[i].flui.fracMol[k] = sistem1.celula[i - 1].flui.fracMol[k];
+            for (int k = 0; k < sistem1.cell(i).flui.npseudo; k++)
+                sistem1.cell(i).flui.fracMol[k] = sistem1.cell(i - 1).flui.fracMol[k];
             atualizaCel(sistem1, i);
         }
     }
@@ -5063,12 +5063,12 @@ void preparaTabDin(SProd &sistem1) {
                 double pres = sistem1.tabDin[i].rholF[k][0];
                 double temp = sistem1.tabDin[i].rholF[0][j];
                 int indIni = sistem1.tabDin[i].celIni;
-                fluF = sistem1.celula[indIni].flui;
+                fluF = sistem1.cell(indIni).flui;
                 if (j == 1)
-                    fluF.atualizaPropComp(pres, temp, -1, NULL, NULL, sistem1.arq.pocinjec);
+                    fluF.atualizaPropComp(pres, temp, -1, NULL, NULL, sistem1.config().pocinjec);
                 else
                     fluF.atualizaPropComp(pres, temp, fluF.dCalculatedBeta, fluF.oCalculatedLiqComposition,
-                                          fluF.oCalculatedVapComposition, sistem1.arq.pocinjec);
+                                          fluF.oCalculatedVapComposition, sistem1.config().pocinjec);
                 sistem1.tabDin[i].rholF[k][j] = fluF.MasEspoleo(pres, temp);
                 sistem1.tabDin[i].rhogF[k][j] = fluF.MasEspGas(pres, temp);
                 sistem1.tabDin[i].DrhogDpF[k][j] = fluF.drhodp(pres, temp);
@@ -5095,46 +5095,46 @@ void preparaTabDin(SProd &sistem1) {
         int i0 = sistem1.tabDin[i].celIni;
         int i1 = sistem1.tabDin[i].celFim;
         for (int j = i0; j <= i1; j++) {
-            sistem1.celula[j].flui.tabDin.TBF = sistem1.tabDin[i].TBF;
-            sistem1.celula[j].flui.tabDin.PBF = sistem1.tabDin[i].PBF;
-            sistem1.celula[j].flui.tabDin.rholF = sistem1.tabDin[i].rholF;
-            sistem1.celula[j].flui.tabDin.rhogF = sistem1.tabDin[i].rhogF;
-            sistem1.celula[j].flui.tabDin.DrholDpF = sistem1.tabDin[i].DrholDpF;
-            sistem1.celula[j].flui.tabDin.DrhogDpF = sistem1.tabDin[i].DrhogDpF;
-            sistem1.celula[j].flui.tabDin.DrholDtF = sistem1.tabDin[i].DrholDtF;
-            sistem1.celula[j].flui.tabDin.DrhogDtF = sistem1.tabDin[i].DrhogDtF;
-            sistem1.celula[j].flui.tabDin.valBO = sistem1.tabDin[i].valBO;
-            sistem1.celula[j].flui.tabDin.tit = sistem1.tabDin[i].tit;
-            sistem1.celula[j].flui.tabDin.rs = sistem1.tabDin[i].rs;
-            sistem1.celula[j].flui.tabDin.cplF = sistem1.tabDin[i].cplF;
-            sistem1.celula[j].flui.tabDin.cpgF = sistem1.tabDin[i].cpgF;
-            sistem1.celula[j].flui.tabDin.valZ = sistem1.tabDin[i].valZ;
-            sistem1.celula[j].flui.tabDin.HlF = sistem1.tabDin[i].HlF;
-            sistem1.celula[j].flui.tabDin.HgF = sistem1.tabDin[i].HgF;
-            sistem1.celula[j].flui.tabDin.valdZdT = sistem1.tabDin[i].valdZdT;
-            sistem1.celula[j].flui.tabDin.valdZdP = sistem1.tabDin[i].valdZdP;
-            sistem1.celula[j].flui.tabDin.viscO = sistem1.tabDin[i].viscO;
-            sistem1.celula[j].flui.tabDin.viscG = sistem1.tabDin[i].viscG;
-            sistem1.celula[j].flui.tabDin.delP = sistem1.tabDin[i].delP;
-            sistem1.celula[j].flui.tabDin.delT = sistem1.tabDin[i].delT;
-            sistem1.celula[j].flui.tabDin.npontosP = sistem1.tabDin[i].npontosP;
-            sistem1.celula[j].flui.tabDin.npontosT = sistem1.tabDin[i].npontosT;
-            sistem1.celula[j].flui.tabDin.pmax = sistem1.tabDin[i].pmax;
-            sistem1.celula[j].flui.tabDin.pmin = sistem1.tabDin[i].pmin;
-            sistem1.celula[j].flui.tabDin.tmax = sistem1.tabDin[i].tmax;
-            sistem1.celula[j].flui.tabDin.tmin = sistem1.tabDin[i].tmin;
+            sistem1.cell(j).flui.tabDin.TBF = sistem1.tabDin[i].TBF;
+            sistem1.cell(j).flui.tabDin.PBF = sistem1.tabDin[i].PBF;
+            sistem1.cell(j).flui.tabDin.rholF = sistem1.tabDin[i].rholF;
+            sistem1.cell(j).flui.tabDin.rhogF = sistem1.tabDin[i].rhogF;
+            sistem1.cell(j).flui.tabDin.DrholDpF = sistem1.tabDin[i].DrholDpF;
+            sistem1.cell(j).flui.tabDin.DrhogDpF = sistem1.tabDin[i].DrhogDpF;
+            sistem1.cell(j).flui.tabDin.DrholDtF = sistem1.tabDin[i].DrholDtF;
+            sistem1.cell(j).flui.tabDin.DrhogDtF = sistem1.tabDin[i].DrhogDtF;
+            sistem1.cell(j).flui.tabDin.valBO = sistem1.tabDin[i].valBO;
+            sistem1.cell(j).flui.tabDin.tit = sistem1.tabDin[i].tit;
+            sistem1.cell(j).flui.tabDin.rs = sistem1.tabDin[i].rs;
+            sistem1.cell(j).flui.tabDin.cplF = sistem1.tabDin[i].cplF;
+            sistem1.cell(j).flui.tabDin.cpgF = sistem1.tabDin[i].cpgF;
+            sistem1.cell(j).flui.tabDin.valZ = sistem1.tabDin[i].valZ;
+            sistem1.cell(j).flui.tabDin.HlF = sistem1.tabDin[i].HlF;
+            sistem1.cell(j).flui.tabDin.HgF = sistem1.tabDin[i].HgF;
+            sistem1.cell(j).flui.tabDin.valdZdT = sistem1.tabDin[i].valdZdT;
+            sistem1.cell(j).flui.tabDin.valdZdP = sistem1.tabDin[i].valdZdP;
+            sistem1.cell(j).flui.tabDin.viscO = sistem1.tabDin[i].viscO;
+            sistem1.cell(j).flui.tabDin.viscG = sistem1.tabDin[i].viscG;
+            sistem1.cell(j).flui.tabDin.delP = sistem1.tabDin[i].delP;
+            sistem1.cell(j).flui.tabDin.delT = sistem1.tabDin[i].delT;
+            sistem1.cell(j).flui.tabDin.npontosP = sistem1.tabDin[i].npontosP;
+            sistem1.cell(j).flui.tabDin.npontosT = sistem1.tabDin[i].npontosT;
+            sistem1.cell(j).flui.tabDin.pmax = sistem1.tabDin[i].pmax;
+            sistem1.cell(j).flui.tabDin.pmin = sistem1.tabDin[i].pmin;
+            sistem1.cell(j).flui.tabDin.tmax = sistem1.tabDin[i].tmax;
+            sistem1.cell(j).flui.tabDin.tmin = sistem1.tabDin[i].tmin;
         }
     }
 
     for (int i = 0; i <= sistem1.ncel; i++) {
-        sistem1.celula[i].flui.tabelaDinamica = 1;
-        if (sistem1.celula[i].acsr.tipo == 15) {
-            sistem1.celula[i].acsr.radialPoro.flup.tabelaDinamica = 1;
-            sistem1.celula[i].acsr.radialPoro.preparaTabDin();
+        sistem1.cell(i).flui.tabelaDinamica = 1;
+        if (sistem1.cell(i).acsr.tipo == 15) {
+            sistem1.cell(i).acsr.radialPoro.flup.tabelaDinamica = 1;
+            sistem1.cell(i).acsr.radialPoro.preparaTabDin();
         }
-        if (sistem1.celula[i].acsr.tipo == 16) {
-            sistem1.celula[i].acsr.poroso2D.dados.flup.tabelaDinamica = 1;
-            sistem1.celula[i].acsr.poroso2D.preparaTabDin();
+        if (sistem1.cell(i).acsr.tipo == 16) {
+            sistem1.cell(i).acsr.poroso2D.dados.flup.tabelaDinamica = 1;
+            sistem1.cell(i).acsr.poroso2D.preparaTabDin();
         }
     }
 }
@@ -5162,7 +5162,7 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
     for (int k = 0; k < naflu + ncoleta; k++) {
         vazMolV[k] = 0.;
     }
-    noConv.flu = malha[i].celula[recb].flui;
+    noConv.flu = malha[i].cell(recb).flui;
     noConv.qostdTot = 0;
     noConv.moleomist = 0;
     noConv.moleomistNeg = 0;
@@ -5188,57 +5188,57 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
 
     int aplicaFluiCol = 0;
     if ((*arqRede.vg1dSP).fluidoRede == 1)
-        malha[i].celula[recb].acsr.injl.fluidocol = malha[i].celula[recb].fluicol;
+        malha[i].cell(recb).acsr.injl.fluidocol = malha[i].cell(recb).fluicol;
 
     for (int k = 0; k < naflu; k++) {
         int ind = arqRede.malha[i].afluente[k];
         int fim = malha[ind].ncel - 1;
-        if (nBloq[k] > 0. && malha[ind].celula[fim + 1].MC >= 0) {
+        if (nBloq[k] > 0. && malha[ind].cell(fim + 1).MC >= 0) {
             kpos++;
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
-                double bo = malha[ind].celula[fim].flui.BOFunc(
-                    malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double ba = malha[ind].celula[fim].flui.BAFunc(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double fw = malha[ind].celula[fim].flui.BSW * ba /
-                            (bo + ba * malha[ind].celula[fim].flui.BSW - malha[ind].celula[fim].flui.BSW * bo);
-                double rhoO = malha[ind].celula[fim].flui.MasEspoleo(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double rhoW = malha[ind].celula[fim].flui.MasEspAgua(malha[ind].pGSup, malha[ind].celula[fim].temp);
+                double bo = malha[ind].cell(fim).flui.BOFunc(
+                    malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double ba = malha[ind].cell(fim).flui.BAFunc(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double fw = malha[ind].cell(fim).flui.BSW * ba /
+                            (bo + ba * malha[ind].cell(fim).flui.BSW - malha[ind].cell(fim).flui.BSW * bo);
+                double rhoO = malha[ind].cell(fim).flui.MasEspoleo(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double rhoW = malha[ind].cell(fim).flui.MasEspAgua(malha[ind].pGSup, malha[ind].cell(fim).temp);
                 titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
                 double pres = malha[ind].pGSup;
                 malha[ind].calcTempFim();
                 temp[k] = malha[ind].tempSup;
-                Bet[k] = malha[ind].celula[fim].bet;
+                Bet[k] = malha[ind].cell(fim).bet;
 
                 if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
-                    malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[fim].fluicol;
+                    malha[i].cell(recb).acsr.injl.fluidocol = malha[ind].cell(fim).fluicol;
                     aplicaFluiCol = 1;
                 }
-                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-                if (malha[ind].celula[fim + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                    qostd[k] = malha[ind].celula[fim + 1].Mliqini * (1. - malha[ind].celula[fim].FW) *
-                               (1. - malha[ind].celula[fim].bet) / (bo * rholliqIS[k]);
+                if (malha[ind].cell(fim + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                    qostd[k] = malha[ind].cell(fim + 1).Mliqini * (1. - malha[ind].cell(fim).FW) *
+                               (1. - malha[ind].cell(fim).bet) / (bo * rholliqIS[k]);
                 else
                     qostd[k] = 0.;
                 Rhocomp[k] = rc;
-                rhogIS[k] = malha[ind].celula[fim].flui.MasEspGas(pres, temp[k]);
-                cpl[k] = (1. - Bet[k]) * malha[ind].celula[fim].flui.CalorLiq(pres, temp[k]) +
-                         Bet[k] * malha[ind].celula[fim].fluicol.CalorLiq(pres, temp[k]);
-                cpg[k] = malha[ind].celula[fim].flui.CalorGas(pres, temp[k]);
-                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                rhogIS[k] = malha[ind].cell(fim).flui.MasEspGas(pres, temp[k]);
+                cpl[k] = (1. - Bet[k]) * malha[ind].cell(fim).flui.CalorLiq(pres, temp[k]) +
+                         Bet[k] * malha[ind].cell(fim).fluicol.CalorLiq(pres, temp[k]);
+                cpg[k] = malha[ind].cell(fim).flui.CalorGas(pres, temp[k]);
+                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                Qliq[k] = malha[ind].cell(fim + 1).QL;
                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                 Qcomp[k] = Qliq[k] * Bet[k];
-                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
-                Denag[k] = malha[ind].celula[fim].flui.Denag;
+                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
+                Denag[k] = malha[ind].cell(fim).flui.Denag;
                 vazMasLiqL[k] = titW[k] * (Mliq[k] - Mcomp[k]);
                 noConv.moleomist += vazMasLiqL[k];
                 double pesoMolV = 0;
-                for (int j = 0; j < malha[ind].celula[fim + 1].flui.npseudo; j++) {
-                    pesoMolV += malha[ind].celula[fim + 1].flui.masMol[j] *
-                                malha[ind].celula[fim + 1].flui.fracMol[j];
+                for (int j = 0; j < malha[ind].cell(fim + 1).flui.npseudo; j++) {
+                    pesoMolV += malha[ind].cell(fim + 1).flui.masMol[j] *
+                                malha[ind].cell(fim + 1).flui.fracMol[j];
                 }
                 vazMolV[k] = (vazMasLiqL[k] + Mgas[k]) / pesoMolV;
                 noConv.moltot += vazMolV[k];
@@ -5254,49 +5254,49 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
                 noConv.denagmist += Denag[k] * qw1;
                 noConv.mliqmist += Mliq[k];
                 noConv.mliqCmist += Mcomp[k];
-                noConv.TRmist += Mcomp[k] * malha[ind].celula[fim].fluicol.TR;
+                noConv.TRmist += Mcomp[k] * malha[ind].cell(fim).fluicol.TR;
                 noConv.mgasmist += Mgas[k];
                 noConv.cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
                 noConv.tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * temp[k];
                 noConv.Qlmist += Qliq[k];
                 noConv.qlmistStd += (qw1 + qostd[k] +
-                                     Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                         malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                   malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                         malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.qcmistStd += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.betmist += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                   malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             }
-        } else if (malha[ind].celula[fim + 1].MC < 0) {
+        } else if (malha[ind].cell(fim + 1).MC < 0) {
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
-                double bo = malha[ind].celula[fim].flui.BOFunc(
-                    malha[ind].pGSup, malha[ind].celula[fim].temp);
+                double bo = malha[ind].cell(fim).flui.BOFunc(
+                    malha[ind].pGSup, malha[ind].cell(fim).temp);
                 double pres = malha[ind].pGSup;
                 malha[ind].calcTempFim();
                 temp[k] = malha[ind].tempSup;
-                Bet[k] = malha[ind].celula[fim].bet;
+                Bet[k] = malha[ind].cell(fim).bet;
 
-                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-                if (malha[ind].celula[fim + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                    qostd[k] = malha[ind].celula[fim + 1].Mliqini * (1. - malha[ind].celula[fim].FW) *
-                               (1. - malha[ind].celula[fim].bet) / (bo * rholliqIS[k]);
+                if (malha[ind].cell(fim + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                    qostd[k] = malha[ind].cell(fim + 1).Mliqini * (1. - malha[ind].cell(fim).FW) *
+                               (1. - malha[ind].cell(fim).bet) / (bo * rholliqIS[k]);
                 else
                     qostd[k] = 0.;
                 Rhocomp[k] = rc;
-                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                Qliq[k] = malha[ind].cell(fim + 1).QL;
                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                 Qcomp[k] = Qliq[k] * Bet[k];
-                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
-                Denag[k] = malha[ind].celula[fim].flui.Denag;
-                double ba = malha[ind].celula[fim].flui.BAFunc(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double fw = malha[ind].celula[fim].flui.BSW * ba /
-                            (bo + ba * malha[ind].celula[fim].flui.BSW - malha[ind].celula[fim].flui.BSW * bo);
-                double rhoO = malha[ind].celula[fim].flui.MasEspoleo(malha[ind].pGSup, malha[ind].celula[fim].temp);
-                double rhoW = malha[ind].celula[fim].flui.MasEspAgua(malha[ind].pGSup, malha[ind].celula[fim].temp);
+                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
+                Denag[k] = malha[ind].cell(fim).flui.Denag;
+                double ba = malha[ind].cell(fim).flui.BAFunc(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double fw = malha[ind].cell(fim).flui.BSW * ba /
+                            (bo + ba * malha[ind].cell(fim).flui.BSW - malha[ind].cell(fim).flui.BSW * bo);
+                double rhoO = malha[ind].cell(fim).flui.MasEspoleo(malha[ind].pGSup, malha[ind].cell(fim).temp);
+                double rhoW = malha[ind].cell(fim).flui.MasEspAgua(malha[ind].pGSup, malha[ind].cell(fim).temp);
                 titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
                 vazMasLiqL[k] = titW[k] * (Mliq[k] - Mcomp[k]);
                 noConv.moleomistNeg += vazMasLiqL[k];
@@ -5309,10 +5309,10 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
                 noConv.mliqCmistNeg += Mcomp[k];
                 noConv.mgasmistNeg += Mgas[k];
                 noConv.qlmistStdNeg += (qw1 + qostd[k] +
-                                        Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                            malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.qcmistStdNeg += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                        malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                        Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                            malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.qcmistStdNeg += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                        malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             }
         }
     }
@@ -5322,49 +5322,49 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
             kpos++;
             int ini = 0;
             int indAflu = arqRede.malha[i].afluente[0];
-            double bo = malha[ind].celula[ini].flui.BOFunc(
-                malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            double ba = malha[ind].celula[ini].flui.BAFunc(malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            double fw = malha[ind].celula[ini].flui.BSW * ba /
-                        (bo + ba * malha[ind].celula[ini].flui.BSW - malha[indAflu].celula[ini].flui.BSW * bo);
-            double rhoO = malha[ind].celula[ini].flui.MasEspoleo(malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            double rhoW = malha[ind].celula[ini].flui.MasEspAgua(malha[indAflu].pGSup, malha[ind].celula[ini].temp);
+            double bo = malha[ind].cell(ini).flui.BOFunc(
+                malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            double ba = malha[ind].cell(ini).flui.BAFunc(malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            double fw = malha[ind].cell(ini).flui.BSW * ba /
+                        (bo + ba * malha[ind].cell(ini).flui.BSW - malha[indAflu].cell(ini).flui.BSW * bo);
+            double rhoO = malha[ind].cell(ini).flui.MasEspoleo(malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            double rhoW = malha[ind].cell(ini).flui.MasEspAgua(malha[indAflu].pGSup, malha[ind].cell(ini).temp);
             titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
             double pres = malha[indAflu].pGSup;
             malha[ind].calcTempFim();
             temp[k] = malha[ind].tempSup;
-            Bet[k] = malha[ind].celula[ini].bet;
+            Bet[k] = malha[ind].cell(ini).bet;
 
             if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
-                malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[ini].fluicol;
+                malha[i].cell(recb).acsr.injl.fluidocol = malha[ind].cell(ini).fluicol;
                 aplicaFluiCol = 1;
             }
-            BSW[k] = malha[ind].celula[ini].flui.BSW;
-            double rp = malha[ind].celula[ini].flui.MasEspLiq(pres, temp[k]);
-            double rc = malha[ind].celula[ini].fluicol.MasEspFlu(pres, temp[k]);
+            BSW[k] = malha[ind].cell(ini).flui.BSW;
+            double rp = malha[ind].cell(ini).flui.MasEspLiq(pres, temp[k]);
+            double rc = malha[ind].cell(ini).fluicol.MasEspFlu(pres, temp[k]);
             rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-            if (malha[ind].celula[ini + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                qostd[k] = -malha[ind].celula[ini + 1].Mliqini * (1. - malha[ind].celula[ini].FW) *
-                           (1. - malha[ind].celula[ini].bet) / (bo * rholliqIS[k]);
+            if (malha[ind].cell(ini + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                qostd[k] = -malha[ind].cell(ini + 1).Mliqini * (1. - malha[ind].cell(ini).FW) *
+                           (1. - malha[ind].cell(ini).bet) / (bo * rholliqIS[k]);
             else
                 qostd[k] = 0.;
             Rhocomp[k] = rc;
-            rhogIS[k] = malha[ind].celula[ini].flui.MasEspGas(pres, temp[k]);
-            cpl[k] = (1. - Bet[k]) * malha[ind].celula[ini].flui.CalorLiq(pres, temp[k]) +
-                     Bet[k] * malha[ind].celula[ini].fluicol.CalorLiq(pres, temp[k]);
-            cpg[k] = malha[ind].celula[ini].flui.CalorGas(pres, temp[k]);
-            Mliq[k] = -malha[ind].celula[ini + 1].Mliqini;
-            Qliq[k] = -malha[ind].celula[ini + 1].QL;
+            rhogIS[k] = malha[ind].cell(ini).flui.MasEspGas(pres, temp[k]);
+            cpl[k] = (1. - Bet[k]) * malha[ind].cell(ini).flui.CalorLiq(pres, temp[k]) +
+                     Bet[k] * malha[ind].cell(ini).fluicol.CalorLiq(pres, temp[k]);
+            cpg[k] = malha[ind].cell(ini).flui.CalorGas(pres, temp[k]);
+            Mliq[k] = -malha[ind].cell(ini + 1).Mliqini;
+            Qliq[k] = -malha[ind].cell(ini + 1).QL;
             Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
             Qcomp[k] = Qliq[k] * Bet[k];
-            Mgas[k] = -malha[ind].celula[ini + 1].MC + malha[ind].celula[ini + 1].Mliqini;
-            Denag[k] = malha[ind].celula[ini].flui.Denag;
+            Mgas[k] = -malha[ind].cell(ini + 1).MC + malha[ind].cell(ini + 1).Mliqini;
+            Denag[k] = malha[ind].cell(ini).flui.Denag;
             vazMasLiqL[k] = titW[k] * (Mliq[k] - Mcomp[k]);
             noConv.moleomist += vazMasLiqL[k];
             double pesoMolV = 0;
-            for (int j = 0; j < malha[ind].celula[ini + 1].flui.npseudo; j++) {
-                pesoMolV += malha[ind].celula[ini + 1].flui.masMol[j] *
-                            malha[ind].celula[ini + 1].flui.fracMol[j];
+            for (int j = 0; j < malha[ind].cell(ini + 1).flui.npseudo; j++) {
+                pesoMolV += malha[ind].cell(ini + 1).flui.masMol[j] *
+                            malha[ind].cell(ini + 1).flui.fracMol[j];
             }
             vazMolV[k] = (vazMasLiqL[k] + Mgas[k]) / pesoMolV;
             noConv.moltot += vazMolV[k];
@@ -5380,48 +5380,48 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
             noConv.denagmist += Denag[k] * qw1;
             noConv.mliqmist += Mliq[k];
             noConv.mliqCmist += Mcomp[k];
-            noConv.TRmist += Mcomp[k] * malha[ind].celula[ini].fluicol.TR;
+            noConv.TRmist += Mcomp[k] * malha[ind].cell(ini).fluicol.TR;
             noConv.mgasmist += Mgas[k];
             noConv.cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
             noConv.tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * temp[k];
             noConv.Qlmist += Qliq[k];
             noConv.qlmistStd += (qw1 + qostd[k] +
-                                 Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-            noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                 malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-            noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                               malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                 Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+            noConv.qcmistStd += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                 malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+            noConv.betmist += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                               malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
         }
     }
 
     if (kpos > 0) {
         if (recb == 0 && noConv.moltot > 0) {
-            for (int jgrup = 0; jgrup < malha[i].celula[recb].flui.npseudo; jgrup++) {
-                malha[i].celula[recb].flui.fracMol[jgrup] = 0.;
+            for (int jgrup = 0; jgrup < malha[i].cell(recb).flui.npseudo; jgrup++) {
+                malha[i].cell(recb).flui.fracMol[jgrup] = 0.;
                 noConv.flu.fracMol[jgrup] = 0.;
             }
             for (int iaflu = 0; iaflu < naflu; iaflu++) {
                 int ind = arqRede.malha[i].afluente[iaflu];
                 int fim = malha[ind].ncel - 1;
-                for (int jgrup = 0; jgrup < malha[i].celula[0].flui.npseudo; jgrup++) {
-                    malha[i].celula[recb].flui.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[fim + 1].flui.fracMol[jgrup] / noConv.moltot;
+                for (int jgrup = 0; jgrup < malha[i].cell(0).flui.npseudo; jgrup++) {
+                    malha[i].cell(recb).flui.fracMol[jgrup] +=
+                        vazMolV[iaflu] * malha[ind].cell(fim + 1).flui.fracMol[jgrup] / noConv.moltot;
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[fim + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(fim + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
             for (int iaflu = naflu; iaflu < naflu + ncoleta; iaflu++) {
                 int ind = coleta[iaflu - naflu];
                 int ini = 0;
-                for (int jgrup = 0; jgrup < malha[i].celula[0].flui.npseudo; jgrup++) {
-                    malha[i].celula[recb].flui.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[ini + 1].flui.fracMol[jgrup] / noConv.moltot;
+                for (int jgrup = 0; jgrup < malha[i].cell(0).flui.npseudo; jgrup++) {
+                    malha[i].cell(recb).flui.fracMol[jgrup] +=
+                        vazMolV[iaflu] * malha[ind].cell(ini + 1).flui.fracMol[jgrup] / noConv.moltot;
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[ini + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(ini + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
-            malha[i].celula[recb].flui.atualizaPropCompStandard();
+            malha[i].cell(recb).flui.atualizaPropCompStandard();
             noConv.flu.atualizaPropCompStandard();
         } else if (noConv.moltot > 0) {
             for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++)
@@ -5431,7 +5431,7 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
                 int fim = malha[ind].ncel - 1;
                 for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[fim + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(fim + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
             for (int iaflu = naflu; iaflu < naflu + ncoleta; iaflu++) {
@@ -5439,7 +5439,7 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
                 int ini = 0;
                 for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                     noConv.flu.fracMol[jgrup] +=
-                        vazMolV[iaflu] * malha[ind].celula[ini + 1].flui.fracMol[jgrup] / noConv.moltot;
+                        vazMolV[iaflu] * malha[ind].cell(ini + 1).flui.fracMol[jgrup] / noConv.moltot;
                 }
             }
             noConv.flu.atualizaPropCompStandard();
@@ -5467,8 +5467,8 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
         noConv.betmist = 0.;
         int ind = arqRede.malha[i].afluente[0];
         int fim = malha[ind].ncel - 1;
-        noConv.tempmist = malha[ind].celula[fim].temp;
-        noConv.TRmist = malha[ind].celula[fim].fluicol.TR;
+        noConv.tempmist = malha[ind].cell(fim).temp;
+        noConv.TRmist = malha[ind].cell(fim).fluicol.TR;
     }
     noConv.qlmistStd *= 86400.;
     noConv.qlmistStdNeg *= 86400.;
@@ -5505,13 +5505,13 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
             }
             if ((arqRede.malha[i].nafluente == 0 || (permAflu == 0 && arqRede.malha[i].perm == 1)) &&
                 Resolv[i] == 0 && inativo[i] == 0) {
-                if (malha[i].celula[0].acsr.tipo == 1 && malha[i].celula[0].acsr.injg.QGas >= 0.) {
+                if (malha[i].cell(0).acsr.tipo == 1 && malha[i].cell(0).acsr.injg.QGas >= 0.) {
                     preparaTabDin(malha[i]);
                     prepTab[i] = 1;
-                } else if (malha[i].celula[0].acsr.tipo == 2 && malha[i].celula[0].acsr.injl.QLiq >= 0.) {
+                } else if (malha[i].cell(0).acsr.tipo == 2 && malha[i].cell(0).acsr.injl.QLiq >= 0.) {
                     preparaTabDin(malha[i]);
                     prepTab[i] = 1;
-                } else if (malha[i].celula[0].acsr.tipo == 10 && malha[i].celula[0].acsr.injm.MassP >= 0.) {
+                } else if (malha[i].cell(0).acsr.tipo == 10 && malha[i].cell(0).acsr.injm.MassP >= 0.) {
                     preparaTabDin(malha[i]);
                     prepTab[i] = 1;
                 }
@@ -5557,19 +5557,19 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                             for (int icol = 0; icol < nderiva; icol++) {
                                 int aux = arqRede.malha[ind].coleta[icol];
                                 double mult = 1.0;
-                                if (malha[aux].arq.ConContEntrada == 2)
+                                if (malha[aux].config().ConContEntrada == 2)
                                     mult = -1.;
-                                dcol.push_back(malha[aux].celula[0].duto.dia * mult);
+                                dcol.push_back(malha[aux].cell(0).duto.dia * mult);
                             }
                             sort(dcol.begin(), dcol.end());
 
                             for (int icol = 0; icol < nderiva; icol++) {
                                 int aux = arqRede.malha[ind].coleta[icol];
                                 double mult = 1.0;
-                                if (malha[aux].arq.ConContEntrada == 2)
+                                if (malha[aux].config().ConContEntrada == 2)
                                     mult = -1.;
                                 for (int icol2 = 0; icol2 < nderiva; icol2++) {
-                                    if (fabs(dcol[icol2] - malha[aux].celula[0].duto.dia * mult) < 1.e-15 && carregado[icol2] == 0) {
+                                    if (fabs(dcol[icol2] - malha[aux].cell(0).duto.dia * mult) < 1.e-15 && carregado[icol2] == 0) {
                                         ordCol[icol2] = aux;
                                         carregado[icol2] = 1;
                                         icol2 = nderiva;
@@ -5604,18 +5604,18 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                         Vcr<int> colneg(nderiva);
                         for (int icol = 0; icol < nderiva; icol++) {
                             int aux = arqRede.malha[ind].coleta[icol];
-                            if (malha[aux].celula[0].acsr.tipo == 1) {
-                                if (malha[aux].celula[0].acsr.injg.QGas < 0) {
+                            if (malha[aux].cell(0).acsr.tipo == 1) {
+                                if (malha[aux].cell(0).acsr.injg.QGas < 0) {
                                     colneg[ncolneg] = aux;
                                     ncolneg++;
                                 }
-                            } else if (malha[aux].celula[0].acsr.tipo == 2) {
-                                if (malha[aux].celula[0].acsr.injl.QLiq < 0) {
+                            } else if (malha[aux].cell(0).acsr.tipo == 2) {
+                                if (malha[aux].cell(0).acsr.injl.QLiq < 0) {
                                     colneg[ncolneg] = aux;
                                     ncolneg++;
                                 }
-                            } else if (malha[aux].celula[0].acsr.tipo == 10) {
-                                if ((malha[aux].celula[0].acsr.injm.MassP + malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassC) < 0) {
+                            } else if (malha[aux].cell(0).acsr.tipo == 10) {
+                                if ((malha[aux].cell(0).acsr.injm.MassP + malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassC) < 0) {
                                     colneg[ncolneg] = aux;
                                     ncolneg++;
                                 }
@@ -5627,15 +5627,15 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
 
                         for (int iaflu = 0; iaflu < naflu; iaflu++) {
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
-                            malha[indaflu].fluiRevRede = malha[auxMaster].celula[0].flui;
-                            malha[indaflu].tempRev = malha[auxMaster].celula[0].temp;
+                            malha[indaflu].fluiRevRede = malha[auxMaster].cell(0).flui;
+                            malha[indaflu].tempRev = malha[auxMaster].cell(0).temp;
                             if ((*arqRede.vg1dSP).fluidoRede == 0)
-                                malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[0].acsr.injg.razCompGas;
+                                malha[indaflu].config().razCompGasReves = malha[auxMaster].cell(0).acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
                             int aux = ordCol[icol];
                             if (arqRede.malha[aux].ncoleta == 0)
-                                malha[aux].fluiRevRede = malha[aux].arq.flup[0];
+                                malha[aux].fluiRevRede = malha[aux].config().flup[0];
                         }
 
                         int col2;
@@ -5651,50 +5651,50 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                                                    (noConv1.dengmist * 1.225)) *
                                                   noConv1.flu.dStockTankVaporMassFraction;
                             if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                malha[i].celula[1].acsr.tipo = 2;
-                                if (malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
-                                    malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
-                                malha[i].celula[1].acsr.injl.bet = noConv1.betmist;
-                                malha[i].celula[1].acsr.injl.temp = noConv1.tempmist;
-                                malha[i].celula[1].acsr.injl.FluidoPro = noConv1.flu;
-                                malha[i].celula[1].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                                malha[i].celula[1].acsr.injl.fluidocol.TR = noConv1.TRmist;
+                                malha[i].cell(1).acsr.tipo = 2;
+                                if (malha[i].cell(1).acsr.injl.FluidoPro.flashCompleto == 0)
+                                    malha[i].cell(1).acsr.injl.FluidoPro.flashCompleto = 2;
+                                malha[i].cell(1).acsr.injl.bet = noConv1.betmist;
+                                malha[i].cell(1).acsr.injl.temp = noConv1.tempmist;
+                                malha[i].cell(1).acsr.injl.FluidoPro = noConv1.flu;
+                                malha[i].cell(1).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                                malha[i].cell(1).acsr.injl.fluidocol.TR = noConv1.TRmist;
 
                                 noConv1.qgstdTot *= 86400;
 
-                                malha[i].celula[1].acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
+                                malha[i].cell(1).acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
                             } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                malha[i].celula[1].acsr.tipo = 1;
-                                if (malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
-                                    malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
-                                malha[i].celula[1].acsr.injg.seco = 0;
-                                malha[i].celula[1].acsr.injg.temp = noConv1.tempmist;
-                                malha[i].celula[1].acsr.injg.FluidoPro = noConv1.flu;
-                                malha[i].celula[1].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                                malha[i].celula[1].acsr.injg.fluidocol.TR = noConv1.TRmist;
+                                malha[i].cell(1).acsr.tipo = 1;
+                                if (malha[i].cell(1).acsr.injg.FluidoPro.flashCompleto == 0)
+                                    malha[i].cell(1).acsr.injg.FluidoPro.flashCompleto = 2;
+                                malha[i].cell(1).acsr.injg.seco = 0;
+                                malha[i].cell(1).acsr.injg.temp = noConv1.tempmist;
+                                malha[i].cell(1).acsr.injg.FluidoPro = noConv1.flu;
+                                malha[i].cell(1).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                                malha[i].cell(1).acsr.injg.fluidocol.TR = noConv1.TRmist;
                                 noConv1.qgstdTot *= 86400;
-                                malha[i].celula[1].acsr.injg.QGas = noConv1.qgstdTot + noConv1.qgstdTotNeg * 86400.;
+                                malha[i].cell(1).acsr.injg.QGas = noConv1.qgstdTot + noConv1.qgstdTotNeg * 86400.;
 
-                                if (fabs(malha[i].celula[1].acsr.injg.QGas) > 1e-15)
-                                    malha[i].celula[1].acsr.injg.razCompGas = (noConv1.qcmistStd + noConv1.qcmistStdNeg) /
-                                                                              malha[i].celula[1].acsr.injg.QGas;
+                                if (fabs(malha[i].cell(1).acsr.injg.QGas) > 1e-15)
+                                    malha[i].cell(1).acsr.injg.razCompGas = (noConv1.qcmistStd + noConv1.qcmistStdNeg) /
+                                                                              malha[i].cell(1).acsr.injg.QGas;
                                 else
-                                    malha[i].celula[1].acsr.injg.razCompGas = 0.;
+                                    malha[i].cell(1).acsr.injg.razCompGas = 0.;
 
                             } else {
-                                malha[i].celula[1].acsr.tipo = 10;
-                                if (malha[i].celula[1].acsr.injm.FluidoPro.flashCompleto == 0)
-                                    malha[i].celula[1].acsr.injm.FluidoPro.flashCompleto = 2;
-                                malha[i].celula[1].acsr.injm.temp = noConv1.tempmist;
-                                malha[i].celula[1].acsr.injm.FluidoPro = noConv1.flu;
-                                malha[i].celula[1].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                                malha[i].celula[1].acsr.injm.fluidocol.TR = noConv1.TRmist;
+                                malha[i].cell(1).acsr.tipo = 10;
+                                if (malha[i].cell(1).acsr.injm.FluidoPro.flashCompleto == 0)
+                                    malha[i].cell(1).acsr.injm.FluidoPro.flashCompleto = 2;
+                                malha[i].cell(1).acsr.injm.temp = noConv1.tempmist;
+                                malha[i].cell(1).acsr.injm.FluidoPro = noConv1.flu;
+                                malha[i].cell(1).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                                malha[i].cell(1).acsr.injm.fluidocol.TR = noConv1.TRmist;
                                 noConv1.qgstdTot *= 86400;
 
-                                malha[i].celula[1].acsr.injm.MassP = noConv1.mliqmist - noConv1.mliqCmist +
+                                malha[i].cell(1).acsr.injm.MassP = noConv1.mliqmist - noConv1.mliqCmist +
                                                                      noConv1.mliqmistNeg - noConv1.mliqCmistNeg;
-                                malha[i].celula[1].acsr.injm.MassC = noConv1.mliqCmist + noConv1.mliqCmistNeg;
-                                malha[i].celula[1].acsr.injm.MassG = noConv1.mgasmist + noConv1.mgasmistNeg;
+                                malha[i].cell(1).acsr.injm.MassC = noConv1.mliqCmist + noConv1.mliqCmistNeg;
+                                malha[i].cell(1).acsr.injm.MassG = noConv1.mgasmist + noConv1.mgasmistNeg;
                             }
                         }
                         if (totBloq2 > 0) {
@@ -5706,48 +5706,48 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                                                    (noConv2.dengmist * 1.225)) *
                                                   noConv2.flu.dStockTankVaporMassFraction;
                             if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                malha[col2].celula[1].acsr.tipo = 2;
-                                if (malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
-                                    malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
-                                malha[col2].celula[1].acsr.injl.bet = noConv2.betmist;
-                                malha[col2].celula[1].acsr.injl.temp = noConv2.tempmist;
-                                malha[col2].celula[1].acsr.injl.FluidoPro = noConv2.flu;
-                                malha[col2].celula[1].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                                malha[col2].celula[1].acsr.injl.fluidocol.TR = noConv2.TRmist;
+                                malha[col2].cell(1).acsr.tipo = 2;
+                                if (malha[col2].cell(1).acsr.injl.FluidoPro.flashCompleto == 0)
+                                    malha[col2].cell(1).acsr.injl.FluidoPro.flashCompleto = 2;
+                                malha[col2].cell(1).acsr.injl.bet = noConv2.betmist;
+                                malha[col2].cell(1).acsr.injl.temp = noConv2.tempmist;
+                                malha[col2].cell(1).acsr.injl.FluidoPro = noConv2.flu;
+                                malha[col2].cell(1).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                                malha[col2].cell(1).acsr.injl.fluidocol.TR = noConv2.TRmist;
 
                                 noConv2.qgstdTot *= 86400;
 
-                                malha[col2].celula[1].acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
+                                malha[col2].cell(1).acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
                             } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                malha[col2].celula[1].acsr.tipo = 1;
-                                if (malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
-                                    malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
-                                malha[col2].celula[1].acsr.injg.seco = 0;
-                                malha[col2].celula[1].acsr.injg.temp = noConv2.tempmist;
-                                malha[col2].celula[1].acsr.injg.FluidoPro = noConv2.flu;
-                                malha[col2].celula[1].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                                malha[col2].celula[1].acsr.injg.fluidocol.TR = noConv2.TRmist;
+                                malha[col2].cell(1).acsr.tipo = 1;
+                                if (malha[col2].cell(1).acsr.injg.FluidoPro.flashCompleto == 0)
+                                    malha[col2].cell(1).acsr.injg.FluidoPro.flashCompleto = 2;
+                                malha[col2].cell(1).acsr.injg.seco = 0;
+                                malha[col2].cell(1).acsr.injg.temp = noConv2.tempmist;
+                                malha[col2].cell(1).acsr.injg.FluidoPro = noConv2.flu;
+                                malha[col2].cell(1).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                                malha[col2].cell(1).acsr.injg.fluidocol.TR = noConv2.TRmist;
                                 noConv2.qgstdTot *= 86400;
-                                malha[col2].celula[1].acsr.injg.QGas = noConv2.qgstdTot + noConv2.qgstdTotNeg * 86400.;
-                                if (fabs(malha[col2].celula[1].acsr.injg.QGas) > 1e-15)
-                                    malha[col2].celula[1].acsr.injg.razCompGas = (noConv2.qcmistStd + noConv2.qcmistStdNeg) /
-                                                                                 malha[col2].celula[1].acsr.injg.QGas;
+                                malha[col2].cell(1).acsr.injg.QGas = noConv2.qgstdTot + noConv2.qgstdTotNeg * 86400.;
+                                if (fabs(malha[col2].cell(1).acsr.injg.QGas) > 1e-15)
+                                    malha[col2].cell(1).acsr.injg.razCompGas = (noConv2.qcmistStd + noConv2.qcmistStdNeg) /
+                                                                                 malha[col2].cell(1).acsr.injg.QGas;
                                 else
-                                    malha[col2].celula[1].acsr.injg.razCompGas = 0.;
+                                    malha[col2].cell(1).acsr.injg.razCompGas = 0.;
                             } else {
-                                malha[col2].celula[1].acsr.tipo = 10;
-                                if (malha[col2].celula[1].acsr.injm.FluidoPro.flashCompleto == 0)
-                                    malha[col2].celula[1].acsr.injm.FluidoPro.flashCompleto = 2;
-                                malha[col2].celula[1].acsr.injm.temp = noConv2.tempmist;
-                                malha[col2].celula[1].acsr.injm.FluidoPro = noConv2.flu;
-                                malha[col2].celula[1].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                                malha[col2].celula[1].acsr.injm.fluidocol.TR = noConv2.TRmist;
+                                malha[col2].cell(1).acsr.tipo = 10;
+                                if (malha[col2].cell(1).acsr.injm.FluidoPro.flashCompleto == 0)
+                                    malha[col2].cell(1).acsr.injm.FluidoPro.flashCompleto = 2;
+                                malha[col2].cell(1).acsr.injm.temp = noConv2.tempmist;
+                                malha[col2].cell(1).acsr.injm.FluidoPro = noConv2.flu;
+                                malha[col2].cell(1).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                                malha[col2].cell(1).acsr.injm.fluidocol.TR = noConv2.TRmist;
                                 noConv2.qgstdTot *= 86400;
 
-                                malha[col2].celula[1].acsr.injm.MassP = noConv2.mliqmist - noConv2.mliqCmist +
+                                malha[col2].cell(1).acsr.injm.MassP = noConv2.mliqmist - noConv2.mliqCmist +
                                                                         noConv2.mliqmistNeg - noConv2.mliqCmistNeg;
-                                malha[col2].celula[1].acsr.injm.MassC = noConv2.mliqCmist + noConv2.mliqCmistNeg;
-                                malha[col2].celula[1].acsr.injm.MassG = noConv2.mgasmist + noConv2.mgasmistNeg;
+                                malha[col2].cell(1).acsr.injm.MassC = noConv2.mliqCmist + noConv2.mliqCmistNeg;
+                                malha[col2].cell(1).acsr.injm.MassG = noConv2.mgasmist + noConv2.mgasmistNeg;
                             }
                         }
 
@@ -5755,35 +5755,35 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
                                 if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                    malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro = noConv.flu;
                                 } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                    malha[aux].celula[0].acsr.injg.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro = noConv.flu;
                                 } else {
-                                    malha[aux].celula[0].acsr.injm.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro = noConv.flu;
                                 }
-                                malha[aux].celula[0].flui = noConv.flu;
+                                malha[aux].cell(0).flui = noConv.flu;
                             } else {
                                 int aux = ordCol[icol];
-                                if (malha[aux].arq.ConContEntrada != 2) {
+                                if (malha[aux].config().ConContEntrada != 2) {
                                     if ((*arqRede.vg1dSP).fluidoRede != 0) {
-                                        malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
-                                        malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
-                                        if ((malha[aux].celula[0].acsr.injl.QLiq) < 0) {
-                                            malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].fluiRevRede;
+                                        malha[aux].cell(0).acsr.injl.FluidoPro = noConv.flu;
+                                        malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injl.FluidoPro;
+                                        if ((malha[aux].cell(0).acsr.injl.QLiq) < 0) {
+                                            malha[aux].cell(0).acsr.injl.FluidoPro = malha[aux].fluiRevRede;
                                         }
 
                                     } else {
-                                        malha[aux].celula[0].acsr.injg.FluidoPro = noConv.flu;
-                                        malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
-                                        if ((malha[aux].celula[0].acsr.injg.QGas) < 0) {
-                                            malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].fluiRevRede;
+                                        malha[aux].cell(0).acsr.injg.FluidoPro = noConv.flu;
+                                        malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injg.FluidoPro;
+                                        if ((malha[aux].cell(0).acsr.injg.QGas) < 0) {
+                                            malha[aux].cell(0).acsr.injg.FluidoPro = malha[aux].fluiRevRede;
                                         }
                                     }
                                 } else {
-                                    malha[aux].celula[0].acsr.injm.FluidoPro = noConv.flu;
-                                    malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro = noConv.flu;
+                                    malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                 }
-                                malha[aux].celula[0].flui = noConv.flu;
+                                malha[aux].cell(0).flui = noConv.flu;
                             }
                         }
 
@@ -5797,39 +5797,39 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                                         prepTab[aux] = 1;
                                     }
                                 } else {
-                                    if (malha[aux].celula[0].acsr.tipo == 1 &&
-                                        (malha[aux].celula[0].acsr.injg.QGas >= 0. || arqRede.malha[aux].ncoleta == 0)) {
-                                        if (malha[aux].celula[0].acsr.injg.QGas >= 0.)
+                                    if (malha[aux].cell(0).acsr.tipo == 1 &&
+                                        (malha[aux].cell(0).acsr.injg.QGas >= 0. || arqRede.malha[aux].ncoleta == 0)) {
+                                        if (malha[aux].cell(0).acsr.injg.QGas >= 0.)
                                             preparaTabDin(malha[aux]);
                                         else {
                                             for (int kontaCel = 0; kontaCel <= malha[aux].ncel; kontaCel++) {
-                                                malha[aux].celula[kontaCel].flui = malha[aux].fluiRevRede;
+                                                malha[aux].cell(kontaCel).flui = malha[aux].fluiRevRede;
                                             }
                                             preparaTabDin(malha[aux]);
-                                            malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].fluiRevRede;
+                                            malha[aux].cell(0).acsr.injg.FluidoPro = malha[aux].fluiRevRede;
                                         }
                                         prepTab[aux] = 1;
-                                    } else if (malha[aux].celula[0].acsr.tipo == 2 &&
-                                               (malha[aux].celula[0].acsr.injl.QLiq >= 0. || arqRede.malha[aux].ncoleta == 0)) {
-                                        if (malha[aux].celula[0].acsr.injl.QLiq >= 0.)
+                                    } else if (malha[aux].cell(0).acsr.tipo == 2 &&
+                                               (malha[aux].cell(0).acsr.injl.QLiq >= 0. || arqRede.malha[aux].ncoleta == 0)) {
+                                        if (malha[aux].cell(0).acsr.injl.QLiq >= 0.)
                                             preparaTabDin(malha[aux]);
                                         else {
                                             for (int kontaCel = 0; kontaCel <= malha[aux].ncel; kontaCel++) {
-                                                malha[aux].celula[kontaCel].flui = malha[aux].fluiRevRede;
+                                                malha[aux].cell(kontaCel).flui = malha[aux].fluiRevRede;
                                             }
-                                            malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].fluiRevRede;
+                                            malha[aux].cell(0).acsr.injl.FluidoPro = malha[aux].fluiRevRede;
                                             preparaTabDin(malha[aux]);
                                         }
                                         prepTab[aux] = 1;
-                                    } else if (malha[aux].celula[0].acsr.tipo == 10 &&
-                                               (malha[aux].celula[0].acsr.injm.MassP >= 0. || arqRede.malha[aux].ncoleta == 0)) {
-                                        if (malha[aux].celula[0].acsr.injm.MassP >= 0.)
+                                    } else if (malha[aux].cell(0).acsr.tipo == 10 &&
+                                               (malha[aux].cell(0).acsr.injm.MassP >= 0. || arqRede.malha[aux].ncoleta == 0)) {
+                                        if (malha[aux].cell(0).acsr.injm.MassP >= 0.)
                                             preparaTabDin(malha[aux]);
                                         else {
                                             for (int kontaCel = 0; kontaCel <= malha[aux].ncel; kontaCel++) {
-                                                malha[aux].celula[kontaCel].flui = malha[aux].fluiRevRede;
+                                                malha[aux].cell(kontaCel).flui = malha[aux].fluiRevRede;
                                             }
-                                            malha[aux].celula[0].acsr.injm.FluidoPro = malha[aux].fluiRevRede;
+                                            malha[aux].cell(0).acsr.injm.FluidoPro = malha[aux].fluiRevRede;
                                             preparaTabDin(malha[aux]);
                                         }
                                         prepTab[aux] = 1;
@@ -5842,7 +5842,7 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                             } else {
                                 int aux = ordCol[icol];
 
-                                if (malha[aux].arq.ConContEntrada != 2) {
+                                if (malha[aux].config().ConContEntrada != 2) {
                                     if (arqRede.malha[aux].perm == 1) {
                                         preparaTabDin(malha[aux]);
                                         prepTab[aux] = 1;
@@ -5875,21 +5875,21 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                     int fimPrepara = 0;
                     for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
                         int indCol = arqRede.malha[i].coleta[j];
-                        if ((malha[indCol].celula[0].acsr.tipo == 1 && (malha[indCol].celula[0].acsr.injg.QGas +
-                                                                        malha[indCol].celula[1].acsr.injg.QGas) >= 0) ||
-                            (malha[indCol].celula[0].acsr.tipo == 2 && (malha[indCol].celula[0].acsr.injl.QLiq +
-                                                                        malha[indCol].celula[1].acsr.injl.QLiq) >= 0) ||
-                            (malha[indCol].celula[0].acsr.tipo == 10 && (malha[indCol].celula[0].acsr.injm.MassP +
-                                                                         malha[indCol].celula[1].acsr.injm.MassP) >= 0) ||
+                        if ((malha[indCol].cell(0).acsr.tipo == 1 && (malha[indCol].cell(0).acsr.injg.QGas +
+                                                                        malha[indCol].cell(1).acsr.injg.QGas) >= 0) ||
+                            (malha[indCol].cell(0).acsr.tipo == 2 && (malha[indCol].cell(0).acsr.injl.QLiq +
+                                                                        malha[indCol].cell(1).acsr.injl.QLiq) >= 0) ||
+                            (malha[indCol].cell(0).acsr.tipo == 10 && (malha[indCol].cell(0).acsr.injm.MassP +
+                                                                         malha[indCol].cell(1).acsr.injm.MassP) >= 0) ||
                             prepTab[indCol] == 1) {
                             for (int k = 0; k < malha[i].ncel; k++) {
-                                malha[i].celula[k].flui = malha[indCol].celula[0].flui;
-                                if (malha[i].celula[k].acsr.tipo == 1 && malha[i].celula[k].acsr.injg.QGas < 0) {
-                                    malha[i].celula[k].acsr.injg.FluidoPro = malha[indCol].celula[0].flui;
-                                } else if (malha[i].celula[k].acsr.tipo == 2 && malha[i].celula[k].acsr.injl.QLiq < 0) {
-                                    malha[i].celula[k].acsr.injl.FluidoPro = malha[indCol].celula[0].flui;
-                                } else if (malha[i].celula[k].acsr.tipo == 10 && malha[i].celula[k].acsr.injm.MassP < 0) {
-                                    malha[i].celula[k].acsr.injm.FluidoPro = malha[indCol].celula[0].flui;
+                                malha[i].cell(k).flui = malha[indCol].cell(0).flui;
+                                if (malha[i].cell(k).acsr.tipo == 1 && malha[i].cell(k).acsr.injg.QGas < 0) {
+                                    malha[i].cell(k).acsr.injg.FluidoPro = malha[indCol].cell(0).flui;
+                                } else if (malha[i].cell(k).acsr.tipo == 2 && malha[i].cell(k).acsr.injl.QLiq < 0) {
+                                    malha[i].cell(k).acsr.injl.FluidoPro = malha[indCol].cell(0).flui;
+                                } else if (malha[i].cell(k).acsr.tipo == 10 && malha[i].cell(k).acsr.injm.MassP < 0) {
+                                    malha[i].cell(k).acsr.injm.FluidoPro = malha[indCol].cell(0).flui;
                                 }
                             }
                             preparaTabDin(malha[i]);
@@ -5930,13 +5930,13 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
     Vcr<double> Deng(naflu + ncoleta);
     Vcr<double> yco2(naflu + ncoleta);
     Vcr<double> Denag(naflu + ncoleta);
-    noConv.flu = malha[i].celula[recb].flui;
+    noConv.flu = malha[i].cell(recb).flui;
     noConv.tL = 0.;
-    if (malha[i].arq.flashCompleto == 1 && malha[i].arq.tabent.tmin > noConv.tL)
-        noConv.tL = malha[i].arq.tabent.tmin + 1.;
+    if (malha[i].config().flashCompleto == 1 && malha[i].config().tabent.tmin > noConv.tL)
+        noConv.tL = malha[i].config().tabent.tmin + 1.;
     noConv.tH = 70.;
-    if (malha[i].arq.flashCompleto == 1 && malha[i].arq.tabent.tmax < noConv.tH)
-        noConv.tH = malha[i].arq.tabent.tmax - 1.;
+    if (malha[i].config().flashCompleto == 1 && malha[i].config().tabent.tmax < noConv.tH)
+        noConv.tH = malha[i].config().tabent.tmax - 1.;
     noConv.qostdTot = 0;
     noConv.qgstdTot = 0;
     noConv.qgstdTotNeg = 0;
@@ -5964,61 +5964,61 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
     noConv.TRmist = 0.;
     int aplicaFluiCol = 0;
     if ((*arqRede.vg1dSP).fluidoRede == 1)
-        malha[i].celula[recb].acsr.injl.fluidocol = malha[i].celula[recb].fluicol;
+        malha[i].cell(recb).acsr.injl.fluidocol = malha[i].cell(recb).fluicol;
     int kpos = 0;
     for (int k = 0; k < naflu; k++) {
         int ind = arqRede.malha[i].afluente[k];
         int fim = malha[ind].ncel - 1;
-        if (nBloq[k] > 0. && malha[ind].celula[fim + 1].MC >= 0) {
+        if (nBloq[k] > 0. && malha[ind].cell(fim + 1).MC >= 0) {
             kpos++;
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
-                double bo = malha[ind].celula[fim].flui.BOFunc(
-                    malha[ind].pGSup, malha[ind].celula[fim].temp);
-                RGO[k] = malha[ind].celula[fim].flui.RGO;
+                double bo = malha[ind].cell(fim).flui.BOFunc(
+                    malha[ind].pGSup, malha[ind].cell(fim).temp);
+                RGO[k] = malha[ind].cell(fim).flui.RGO;
                 double pres = malha[ind].pGSup;
                 malha[ind].calcTempFim();
                 temp[k] = malha[ind].tempSup;
-                Bet[k] = malha[ind].celula[fim].bet;
+                Bet[k] = malha[ind].cell(fim).bet;
 
                 if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
-                    malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[fim].fluicol;
+                    malha[i].cell(recb).acsr.injl.fluidocol = malha[ind].cell(fim).fluicol;
                     aplicaFluiCol = 1;
                 }
-                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                rhogST[k] = malha[ind].celula[fim].flui.Deng * 1.225;
-                API[k] = malha[ind].celula[fim].flui.API;
+                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                rhogST[k] = malha[ind].cell(fim).flui.Deng * 1.225;
+                API[k] = malha[ind].cell(fim).flui.API;
                 rhololeoST[k] = 1000. * 141.5 / (131.5 + API[k]);
-                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-                if (malha[ind].celula[fim + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                    qostd[k] = malha[ind].celula[fim + 1].Mliqini *
-                               (1. - malha[ind].celula[fim].FW) * (1. - malha[ind].celula[fim].bet) /
+                if (malha[ind].cell(fim + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                    qostd[k] = malha[ind].cell(fim + 1).Mliqini *
+                               (1. - malha[ind].cell(fim).FW) * (1. - malha[ind].cell(fim).bet) /
                                (bo * rholliqIS[k]);
                 else
                     qostd[k] = 0.;
                 Rhocomp[k] = rc;
-                rhogIS[k] = malha[ind].celula[fim].flui.MasEspGas(pres, temp[k]);
-                cpl[k] = (1. - Bet[k]) * malha[ind].celula[fim].flui.CalorLiq(pres, temp[k]) +
-                         Bet[k] * malha[ind].celula[fim].fluicol.CalorLiq(pres, temp[k]);
-                cpg[k] = malha[ind].celula[fim].flui.CalorGas(pres, temp[k]);
-                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                rhogIS[k] = malha[ind].cell(fim).flui.MasEspGas(pres, temp[k]);
+                cpl[k] = (1. - Bet[k]) * malha[ind].cell(fim).flui.CalorLiq(pres, temp[k]) +
+                         Bet[k] * malha[ind].cell(fim).fluicol.CalorLiq(pres, temp[k]);
+                cpg[k] = malha[ind].cell(fim).flui.CalorGas(pres, temp[k]);
+                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                Qliq[k] = malha[ind].cell(fim + 1).QL;
                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                 Qcomp[k] = Qliq[k] * Bet[k];
-                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
-                Deng[k] = malha[ind].celula[fim].flui.Deng;
-                yco2[k] = malha[ind].celula[fim].flui.yco2;
-                Denag[k] = malha[ind].celula[fim].flui.Denag;
+                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
+                Deng[k] = malha[ind].cell(fim).flui.Deng;
+                yco2[k] = malha[ind].cell(fim).flui.yco2;
+                Denag[k] = malha[ind].cell(fim).flui.Denag;
 
                 noConv.qostdTot += qostd[k];
                 double qgtemp;
                 if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
                     qgtemp = qostd[k] * RGO[k];
                 else
-                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * 6.29 / 35.31467;
+                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].cell(fim).flui.RS(pres, temp[k]) * 6.29 / 35.31467;
                 if (qgtemp <= 1e-15)
-                    qgtemp = malha[ind].celula[fim + 1].MC / rhogST[k];
+                    qgtemp = malha[ind].cell(fim + 1).MC / rhogST[k];
                 noConv.qgstdTot += qgtemp;
                 noConv.dengmist += Deng[k] * qgtemp;
                 noConv.yco2mist += yco2[k] * qgtemp;
@@ -6032,57 +6032,57 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                 noConv.denagmist += Denag[k] * qw1;
                 noConv.mliqmist += Mliq[k];
                 noConv.mliqCmist += Mcomp[k];
-                noConv.TRmist += Mcomp[k] * malha[ind].celula[fim].fluicol.TR;
+                noConv.TRmist += Mcomp[k] * malha[ind].cell(fim).fluicol.TR;
                 noConv.mgasmist += Mgas[k];
                 noConv.cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
                 noConv.tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * temp[k];
-                noConv.LVisL += qostd[k] * malha[ind].celula[fim].flui.VisOM(noConv.tL);
-                noConv.LVisH += qostd[k] * malha[ind].celula[fim].flui.VisOM(noConv.tH);
+                noConv.LVisL += qostd[k] * malha[ind].cell(fim).flui.VisOM(noConv.tL);
+                noConv.LVisH += qostd[k] * malha[ind].cell(fim).flui.VisOM(noConv.tH);
                 noConv.Qlmist += Qliq[k];
                 noConv.qlmistStd += (qw1 + qostd[k] +
-                                     Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                         malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                   malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                         malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.qcmistStd += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.betmist += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                   malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             }
-        } else if (malha[ind].celula[fim + 1].MC < 0) {
+        } else if (malha[ind].cell(fim + 1).MC < 0) {
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
-                double bo = malha[ind].celula[fim].flui.BOFunc(
-                    malha[ind].pGSup, malha[ind].celula[fim].temp);
-                RGO[k] = malha[ind].celula[fim].flui.RGO;
+                double bo = malha[ind].cell(fim).flui.BOFunc(
+                    malha[ind].pGSup, malha[ind].cell(fim).temp);
+                RGO[k] = malha[ind].cell(fim).flui.RGO;
                 double pres = malha[ind].pGSup;
                 malha[ind].calcTempFim();
                 temp[k] = malha[ind].tempSup;
-                Bet[k] = malha[ind].celula[fim].bet;
+                Bet[k] = malha[ind].cell(fim).bet;
 
-                BSW[k] = malha[ind].celula[fim].flui.BSW;
-                rhogST[k] = malha[ind].celula[fim].flui.Deng * 1.225;
-                double rp = malha[ind].celula[fim].flui.MasEspLiq(pres, temp[k]);
-                double rc = malha[ind].celula[fim].fluicol.MasEspFlu(pres, temp[k]);
+                BSW[k] = malha[ind].cell(fim).flui.BSW;
+                rhogST[k] = malha[ind].cell(fim).flui.Deng * 1.225;
+                double rp = malha[ind].cell(fim).flui.MasEspLiq(pres, temp[k]);
+                double rc = malha[ind].cell(fim).fluicol.MasEspFlu(pres, temp[k]);
                 rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-                if (malha[ind].celula[fim + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                    qostd[k] = malha[ind].celula[fim + 1].Mliqini *
-                               (1. - malha[ind].celula[fim].FW) * (1. - malha[ind].celula[fim].bet) /
+                if (malha[ind].cell(fim + 1).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                    qostd[k] = malha[ind].cell(fim + 1).Mliqini *
+                               (1. - malha[ind].cell(fim).FW) * (1. - malha[ind].cell(fim).bet) /
                                (bo * rholliqIS[k]);
                 else
                     qostd[k] = 0.;
                 Rhocomp[k] = rc;
-                Mliq[k] = malha[ind].celula[fim + 1].Mliqini;
-                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                Mliq[k] = malha[ind].cell(fim + 1).Mliqini;
+                Qliq[k] = malha[ind].cell(fim + 1).QL;
                 Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
                 Qcomp[k] = Qliq[k] * Bet[k];
-                Mgas[k] = malha[ind].celula[fim + 1].MC - malha[ind].celula[fim + 1].Mliqini;
-                Denag[k] = malha[ind].celula[fim].flui.Denag;
+                Mgas[k] = malha[ind].cell(fim + 1).MC - malha[ind].cell(fim + 1).Mliqini;
+                Denag[k] = malha[ind].cell(fim).flui.Denag;
 
                 double qgtemp;
                 if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
                     qgtemp = qostd[k] * RGO[k];
                 else
-                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * 6.29 / 35.31467;
+                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].cell(fim).flui.RS(pres, temp[k]) * 6.29 / 35.31467;
                 if (qgtemp <= 1e-15)
-                    qgtemp = malha[ind].celula[fim + 1].MC / rhogST[k];
+                    qgtemp = malha[ind].cell(fim + 1).MC / rhogST[k];
                 noConv.qgstdTotNeg += qgtemp;
                 double qw1;
                 if ((1. - BSW[k]) > 0)
@@ -6093,10 +6093,10 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
                 noConv.mliqCmistNeg += Mcomp[k];
                 noConv.mgasmistNeg += Mgas[k];
                 noConv.qlmistStdNeg += (qw1 + qostd[k] +
-                                        Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                            malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-                noConv.qcmistStdNeg += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                        malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                        Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                            malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+                noConv.qcmistStdNeg += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                        malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
             }
         }
     }
@@ -6111,53 +6111,53 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
         if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1 && ind != auxMaster) {
             kpos++;
             int ini = 0;
-            double bo = malha[ind].celula[ini].flui.BOFunc(
-                malha[indAflu].pGSup, malha[ind].celula[ini].temp);
-            RGO[k] = malha[ind].celula[ini].flui.RGO;
+            double bo = malha[ind].cell(ini).flui.BOFunc(
+                malha[indAflu].pGSup, malha[ind].cell(ini).temp);
+            RGO[k] = malha[ind].cell(ini).flui.RGO;
             double pres = malha[indAflu].pGSup;
             malha[ind].calcTempFim();
             temp[k] = malha[ind].tempSup;
-            Bet[k] = malha[ind].celula[ini].bet;
+            Bet[k] = malha[ind].cell(ini).bet;
 
             if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
-                malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[ini].fluicol;
+                malha[i].cell(recb).acsr.injl.fluidocol = malha[ind].cell(ini).fluicol;
                 aplicaFluiCol = 1;
             }
-            BSW[k] = malha[ind].celula[ini].flui.BSW;
-            rhogST[k] = malha[ind].celula[ini].flui.Deng * 1.225;
-            API[k] = malha[ind].celula[ini].flui.API;
+            BSW[k] = malha[ind].cell(ini).flui.BSW;
+            rhogST[k] = malha[ind].cell(ini).flui.Deng * 1.225;
+            API[k] = malha[ind].cell(ini).flui.API;
             rhololeoST[k] = 1000. * 141.5 / (131.5 + API[k]);
-            double rp = malha[ind].celula[ini].flui.MasEspLiq(pres, temp[k]);
-            double rc = malha[ind].celula[ini].fluicol.MasEspFlu(pres, temp[k]);
+            double rp = malha[ind].cell(ini).flui.MasEspLiq(pres, temp[k]);
+            double rc = malha[ind].cell(ini).fluicol.MasEspFlu(pres, temp[k]);
             rholliqIS[k] = (1. - Bet[k]) * rp + Bet[k] * rc;
-            if (malha[ind].celula[ini].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                qostd[k] = -malha[ind].celula[ini + 1].Mliqini *
-                           (1. - malha[ind].celula[ini].FW) * (1. - malha[ind].celula[ini].bet) /
+            if (malha[ind].cell(ini).flui.dStockTankVaporMassFraction < 1. - 1e-15)
+                qostd[k] = -malha[ind].cell(ini + 1).Mliqini *
+                           (1. - malha[ind].cell(ini).FW) * (1. - malha[ind].cell(ini).bet) /
                            (bo * rholliqIS[k]);
             else
                 qostd[k] = 0.;
             Rhocomp[k] = rc;
-            rhogIS[k] = malha[ind].celula[ini].flui.MasEspGas(pres, temp[k]);
-            cpl[k] = (1. - Bet[k]) * malha[ind].celula[ini].flui.CalorLiq(pres, temp[k]) +
-                     Bet[k] * malha[ind].celula[ini].fluicol.CalorLiq(pres, temp[k]);
-            cpg[k] = malha[ind].celula[ini].flui.CalorGas(pres, temp[k]);
-            Mliq[k] = -malha[ind].celula[ini + 1].Mliqini;
-            Qliq[k] = -malha[ind].celula[ini + 1].QL;
+            rhogIS[k] = malha[ind].cell(ini).flui.MasEspGas(pres, temp[k]);
+            cpl[k] = (1. - Bet[k]) * malha[ind].cell(ini).flui.CalorLiq(pres, temp[k]) +
+                     Bet[k] * malha[ind].cell(ini).fluicol.CalorLiq(pres, temp[k]);
+            cpg[k] = malha[ind].cell(ini).flui.CalorGas(pres, temp[k]);
+            Mliq[k] = -malha[ind].cell(ini + 1).Mliqini;
+            Qliq[k] = -malha[ind].cell(ini + 1).QL;
             Mcomp[k] = Mliq[k] * Bet[k] * Rhocomp[k] / rholliqIS[k];
             Qcomp[k] = Qliq[k] * Bet[k];
-            Mgas[k] = -malha[ind].celula[ini + 1].MC + malha[ind].celula[ini + 1].Mliqini;
-            Deng[k] = malha[ind].celula[ini].flui.Deng;
-            yco2[k] = malha[ind].celula[ini].flui.yco2;
-            Denag[k] = malha[ind].celula[ini].flui.Denag;
+            Mgas[k] = -malha[ind].cell(ini + 1).MC + malha[ind].cell(ini + 1).Mliqini;
+            Deng[k] = malha[ind].cell(ini).flui.Deng;
+            yco2[k] = malha[ind].cell(ini).flui.yco2;
+            Denag[k] = malha[ind].cell(ini).flui.Denag;
 
             noConv.qostdTot += qostd[k];
             double qgtemp;
             if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
                 qgtemp = qostd[k] * RGO[k];
             else
-                qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[ini].flui.RS(pres, temp[k]) * 6.29 / 35.31467;
+                qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].cell(ini).flui.RS(pres, temp[k]) * 6.29 / 35.31467;
             if (qgtemp <= 1e-15)
-                qgtemp = -malha[ind].celula[ini + 1].MC / rhogST[k];
+                qgtemp = -malha[ind].cell(ini + 1).MC / rhogST[k];
             noConv.qgstdTot += qgtemp;
             noConv.dengmist += Deng[k] * qgtemp;
             noConv.yco2mist += yco2[k] * qgtemp;
@@ -6171,20 +6171,20 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
             noConv.denagmist += Denag[k] * qw1;
             noConv.mliqmist += Mliq[k];
             noConv.mliqCmist += Mcomp[k];
-            noConv.TRmist += Mcomp[k] * malha[ind].celula[ini].fluicol.TR;
+            noConv.TRmist += Mcomp[k] * malha[ind].cell(ini).fluicol.TR;
             noConv.mgasmist += Mgas[k];
             noConv.cpmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]);
             noConv.tempmist += (Mliq[k] * cpl[k] + Mgas[k] * cpg[k]) * temp[k];
-            noConv.LVisL += qostd[k] * malha[ind].celula[ini].flui.VisOM(noConv.tL);
-            noConv.LVisH += qostd[k] * malha[ind].celula[ini].flui.VisOM(noConv.tH);
+            noConv.LVisL += qostd[k] * malha[ind].cell(ini).flui.VisOM(noConv.tL);
+            noConv.LVisH += qostd[k] * malha[ind].cell(ini).flui.VisOM(noConv.tH);
             noConv.Qlmist += Qliq[k];
             noConv.qlmistStd += (qw1 + qostd[k] +
-                                 Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-            noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                 malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
-            noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                               malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                 Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                     malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+            noConv.qcmistStd += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                                 malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
+            noConv.betmist += (Qcomp[k] * malha[i].cell(recb).fluicol.MasEspFlu(pres, temp[k]) /
+                               malha[i].cell(recb).fluicol.MasEspFlu(1.001, 15.));
         }
     }
     if (kpos > 0) {
@@ -6196,25 +6196,25 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
             noConv.LVisH = noConv.LVisH / noConv.qostdTot;
         } else {
             noConv.RGOmist = 140000.;
-            noConv.apimist = malha[i].celula[0].flui.API;
-            noConv.LVisL = malha[i].celula[recb].flui.VisOM(noConv.tL);
-            noConv.LVisH = malha[i].celula[recb].flui.VisOM(noConv.tH);
+            noConv.apimist = malha[i].cell(0).flui.API;
+            noConv.LVisL = malha[i].cell(recb).flui.VisOM(noConv.tL);
+            noConv.LVisH = malha[i].cell(recb).flui.VisOM(noConv.tH);
         }
         if (noConv.qgstdTot > (*arqRede.vg1dSP).localtiny) {
             noConv.dengmist = noConv.dengmist / noConv.qgstdTot;
             noConv.yco2mist = noConv.yco2mist / noConv.qgstdTot;
         } else {
-            noConv.dengmist = malha[i].celula[recb].flui.Deng;
-            noConv.yco2mist = malha[i].celula[recb].flui.yco2;
+            noConv.dengmist = malha[i].cell(recb).flui.Deng;
+            noConv.yco2mist = malha[i].cell(recb).flui.yco2;
         }
         if ((noConv.qostdTot + noConv.qwmist) > (*arqRede.vg1dSP).localtiny)
             noConv.bswmist = noConv.qwmist / (noConv.qostdTot + noConv.qwmist);
         else
-            noConv.bswmist = malha[i].celula[recb].flui.BSW;
+            noConv.bswmist = malha[i].cell(recb).flui.BSW;
         if (noConv.qwmist > (*arqRede.vg1dSP).localtiny)
             noConv.denagmist = noConv.denagmist / noConv.qwmist;
         else
-            noConv.denagmist = malha[i].celula[recb].flui.Denag;
+            noConv.denagmist = malha[i].cell(recb).flui.Denag;
         if (noConv.cpmist > (*arqRede.vg1dSP).localtiny)
             noConv.tempmist = noConv.tempmist / noConv.cpmist;
         else
@@ -6239,8 +6239,8 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
         noConv.betmist = 0.;
         int ind = arqRede.malha[i].afluente[0];
         int fim = malha[ind].ncel - 1;
-        noConv.tempmist = malha[ind].celula[fim].temp;
-        noConv.TRmist = malha[ind].celula[fim].fluicol.TR;
+        noConv.tempmist = malha[ind].cell(fim).temp;
+        noConv.TRmist = malha[ind].cell(fim).fluicol.TR;
     }
     noConv.qlmistStd *= 86400;
     noConv.qlmistStdNeg *= 86400;
@@ -6297,64 +6297,64 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                 Resolv[i] == 0 && inativo[i] == 0) {
                 if (arqRede.malha[i].perm == 1) {
                     (*arqRede.vg1dSP).qualTramo = i;
-                    if (malha[i].arq.ConContEntrada == 0) {
+                    if (malha[i].config().ConContEntrada == 0) {
                         int reverso = 0;
-                        if (malha[i].celula[0].acsr.tipo == 1) {
-                            if (malha[i].celula[0].acsr.injg.QGas < 0)
+                        if (malha[i].cell(0).acsr.tipo == 1) {
+                            if (malha[i].cell(0).acsr.injg.QGas < 0)
                                 reverso = 1;
-                        } else if (malha[i].celula[0].acsr.tipo == 2) {
-                            if (malha[i].celula[0].acsr.injl.QLiq < 0)
+                        } else if (malha[i].cell(0).acsr.tipo == 2) {
+                            if (malha[i].cell(0).acsr.injl.QLiq < 0)
                                 reverso = 1;
-                        } else if (malha[i].celula[0].acsr.tipo == 10) {
-                            if ((malha[i].celula[0].acsr.injm.MassC +
-                                 malha[i].celula[0].acsr.injm.MassG + malha[i].celula[0].acsr.injm.MassP) < 0)
+                        } else if (malha[i].cell(0).acsr.tipo == 10) {
+                            if ((malha[i].cell(0).acsr.injm.MassC +
+                                 malha[i].cell(0).acsr.injm.MassG + malha[i].cell(0).acsr.injm.MassP) < 0)
                                 reverso = 1;
                         }
                         malha[i].modoPerm = 1;
                         if (reverso == 0) {
-                            if (malha[i].arq.chokep.abertura[0] > 0.6) {
+                            if (malha[i].config().chokep.abertura[0] > 0.6) {
                                 if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0) { // mudancaChute
 
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].celulaG[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].celulaG[0].duto.area / (*arqRede.vg1dSP).arearef;
-                                    if (malha[i].arq.lingas == 1 && malha[i].celulaG[0].tipoCC == 0) {
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 0 && malha[i].gasCell(0).tipoCC == 0)
+                                        malha[i].config().gasinj.vazgas[0] = 150000 * malha[i].gasCell(0).duto.area / (*arqRede.vg1dSP).arearef;
+                                    if (malha[i].config().lingas == 1 && malha[i].gasCell(0).tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
                                         double multVazGas;
-                                        malha[i].celulaG[0].tipoCC = 1;
+                                        malha[i].gasCell(0).tipoCC = 1;
                                         malha[i].buscaProdPfundoPerm();
-                                        double testaPres1 = malha[i].celulaG[0].pres;
-                                        malha[i].arq.gasinj.vazgas[0] *= 1.05;
-                                        malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres);
-                                        double testaPres2 = malha[i].celulaG[0].pres;
+                                        double testaPres1 = malha[i].gasCell(0).pres;
+                                        malha[i].config().gasinj.vazgas[0] *= 1.05;
+                                        malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres);
+                                        double testaPres2 = malha[i].gasCell(0).pres;
                                         if (testaPres1 < testaPres2) {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 1.05;
                                             else
                                                 multVazGas = 0.95;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         } else {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 0.95;
                                             else
                                                 multVazGas = 1.05;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         }
                                         while (ciclo > 0.9e9 && konta < 10) {
-                                            malha[i].celulaG[0].tipoCC = 1;
+                                            malha[i].gasCell(0).tipoCC = 1;
                                             if (konta > 0)
                                                 malha[i].buscaProdPfundoPerm();
-                                            malha[i].celulaG[0].tipoCC = 0;
-                                            ciclo = malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres, konta);
+                                            malha[i].gasCell(0).tipoCC = 0;
+                                            ciclo = malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres, konta);
                                             if (ciclo > 0.9e9) {
-                                                malha[i].arq.gasinj.vazgas[0] *= multVazGas;
+                                                malha[i].config().gasinj.vazgas[0] *= multVazGas;
                                                 cout << "#################NOVA TENTATIVA PARA GL COM CONDICAO DE PRESSAO########################" << endl;
                                             }
                                             konta++;
                                             if (konta > 10) {
                                                 ciclo = 0.8e10;
                                                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                                                if (malha[i].arq.transiente == 0)
+                                                if (malha[i].config().transiente == 0)
                                                     NumError(
                                                         "Falha na busca de solucao permanente para sistema com GL e condicao de pressao");
                                             }
@@ -6364,56 +6364,56 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                         valor = malha[i].buscaProdPfundoPerm();
                                     }
                                 } else { // mudancaChute
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 1 && malha[i].celulaG[0].tipoCC == 0) {
-                                        malha[i].celulaG[0].tipoCC = 1;
-                                        malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres);
-                                        malha[i].celulaG[0].tipoCC = 0;
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 1 && malha[i].gasCell(0).tipoCC == 0) {
+                                        malha[i].gasCell(0).tipoCC = 1;
+                                        malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres);
+                                        malha[i].gasCell(0).tipoCC = 0;
                                     }
-                                    valor = malha[i].buscaProdPfundoPerm(malha[i].celula[0].pres);
+                                    valor = malha[i].buscaProdPfundoPerm(malha[i].cell(0).pres);
                                     //}//mudancaChute
                                 }
                             } else {
                                 if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0) { // mudancaChute
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].celulaG[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].celulaG[0].duto.area / (*arqRede.vg1dSP).arearef;
-                                    if (malha[i].arq.lingas == 1 && malha[i].celulaG[0].tipoCC == 0) {
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 0 && malha[i].gasCell(0).tipoCC == 0)
+                                        malha[i].config().gasinj.vazgas[0] = 150000 * malha[i].gasCell(0).duto.area / (*arqRede.vg1dSP).arearef;
+                                    if (malha[i].config().lingas == 1 && malha[i].gasCell(0).tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
                                         double multVazGas;
-                                        malha[i].celulaG[0].tipoCC = 1;
+                                        malha[i].gasCell(0).tipoCC = 1;
                                         malha[i].buscaProdPfundoPerm2();
-                                        double testaPres1 = malha[i].celulaG[0].pres;
-                                        malha[i].arq.gasinj.vazgas[0] *= 1.05;
-                                        malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres);
-                                        double testaPres2 = malha[i].celulaG[0].pres;
+                                        double testaPres1 = malha[i].gasCell(0).pres;
+                                        malha[i].config().gasinj.vazgas[0] *= 1.05;
+                                        malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres);
+                                        double testaPres2 = malha[i].gasCell(0).pres;
                                         if (testaPres1 < testaPres2) {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 1.05;
                                             else
                                                 multVazGas = 0.95;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         } else {
-                                            if (malha[i].celulaG[0].pres > testaPres1)
+                                            if (malha[i].gasCell(0).pres > testaPres1)
                                                 multVazGas = 0.95;
                                             else
                                                 multVazGas = 1.05;
-                                            malha[i].arq.gasinj.vazgas[0] /= 1.05;
+                                            malha[i].config().gasinj.vazgas[0] /= 1.05;
                                         }
                                         while (ciclo > 0.9e9 && konta < 10) {
-                                            malha[i].celulaG[0].tipoCC = 1;
+                                            malha[i].gasCell(0).tipoCC = 1;
                                             if (konta > 0)
                                                 malha[i].buscaProdPfundoPerm2();
-                                            malha[i].celulaG[0].tipoCC = 0;
-                                            ciclo = malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres, konta);
+                                            malha[i].gasCell(0).tipoCC = 0;
+                                            ciclo = malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres, konta);
                                             if (ciclo > 0.9e9) {
-                                                malha[i].arq.gasinj.vazgas[0] *= multVazGas;
+                                                malha[i].config().gasinj.vazgas[0] *= multVazGas;
                                                 cout << "#################NOVA TENTATIVA PARA GL COM CONDICAO DE PRESSAO########################" << endl;
                                             }
                                             konta++;
                                             if (konta > 10) {
                                                 ciclo = 0.8e10;
                                                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                                                if (malha[i].arq.transiente == 0)
+                                                if (malha[i].config().transiente == 0)
                                                     NumError(
                                                         "Falha na busca de solucao permanente para sistema com GL e condicao de pressao");
                                             }
@@ -6422,12 +6422,12 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                     else
                                         valor = malha[i].buscaProdPfundoPerm2();
                                 } else { // mudancaChute
-                                    if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 1 && malha[i].celulaG[0].tipoCC == 0) {
-                                        malha[i].celulaG[0].tipoCC = 1;
-                                        malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres);
-                                        malha[i].celulaG[0].tipoCC = 0;
+                                    if (malha[i].config().lingas == 1 && malha[i].config().gasinj.chuteVaz == 1 && malha[i].gasCell(0).tipoCC == 0) {
+                                        malha[i].gasCell(0).tipoCC = 1;
+                                        malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres);
+                                        malha[i].gasCell(0).tipoCC = 0;
                                     }
-                                    valor = malha[i].buscaProdPfundoPerm2(malha[i].celula[0].pres);
+                                    valor = malha[i].buscaProdPfundoPerm2(malha[i].cell(0).pres);
                                     //}//mudancaChute
                                 }
                             }
@@ -6435,21 +6435,21 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                             if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
                                 valor = malha[i].buscaProdPfundoPermRev();
                             else
-                                valor = malha[i].buscaProdPfundoPermRev(malha[i].celula[0].pres);
+                                valor = malha[i].buscaProdPfundoPermRev(malha[i].cell(0).pres);
                         }
                     } // alteracao4XXXXXXXXXXXX
                     else {
                         double chutemass = 0.;
-                        if (malha[i].celula[0].acsr.tipo == 2) {
-                            chutemass = malha[i].celula[0].acsr.injl.QLiq;
+                        if (malha[i].cell(0).acsr.tipo == 2) {
+                            chutemass = malha[i].cell(0).acsr.injl.QLiq;
                             if (fabs(chutemass) < 1e-5)
                                 chutemass = 100.;
                         } else {
-                            chutemass = malha[i].celula[0].acsr.injg.QGas;
+                            chutemass = malha[i].cell(0).acsr.injg.QGas;
                             if (fabs(chutemass) < 1e-5)
                                 chutemass = 1000.;
                         }
-                        if (malha[i].arq.chokep.abertura[0] > 0.6)
+                        if (malha[i].config().chokep.abertura[0] > 0.6)
                             malha[i].buscaProdPresPresPerm(chutemass);
                         else
                             malha[i].buscaProdPresPresPerm2(chutemass);
@@ -6457,9 +6457,9 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                 } else {
                     valor = 0;
                     int icol = arqRede.malha[i].coleta[0];
-                    malha[i].pGSup = malha[icol].celula[0].pres;
-                    malha[i].tGSup = malha[icol].celula[0].temp;
-                    malha[i].tempSup = malha[icol].celula[0].temp;
+                    malha[i].pGSup = malha[icol].cell(0).pres;
+                    malha[i].tGSup = malha[icol].cell(0).temp;
+                    malha[i].tempSup = malha[icol].cell(0).temp;
                 }
                 if (valor < -1e9 || valor > 1e9) {
                     inativo[i] = 1;
@@ -6525,23 +6525,23 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                             if (derivaP == 0) {
                                 for (int icol = 0; icol < nderiva; icol++) {
                                     int aux = arqRede.malha[ind].coleta[icol];
-                                    if (malha[aux].arq.perm == 1) {
+                                    if (malha[aux].config().perm == 1) {
                                         double mult = 1.0;
-                                        if (malha[aux].arq.ConContEntrada == 2)
+                                        if (malha[aux].config().ConContEntrada == 2)
                                             mult = -1.;
-                                        dcol.push_back(malha[aux].celula[0].duto.dia * mult);
+                                        dcol.push_back(malha[aux].cell(0).duto.dia * mult);
                                     }
                                 }
                                 sort(dcol.begin(), dcol.end());
 
                                 for (int icol = 0; icol < nderiva; icol++) {
                                     int aux = arqRede.malha[ind].coleta[icol];
-                                    if (malha[aux].arq.perm == 1) {
+                                    if (malha[aux].config().perm == 1) {
                                         double mult = 1.0;
-                                        if (malha[aux].arq.ConContEntrada == 2)
+                                        if (malha[aux].config().ConContEntrada == 2)
                                             mult = -1.;
                                         for (int icol2 = 0; icol2 < nderiva; icol2++) {
-                                            if (fabs(dcol[icol2] - malha[aux].celula[0].duto.dia * mult) < 1.e-15 && carregado[icol2] == 0) {
+                                            if (fabs(dcol[icol2] - malha[aux].cell(0).duto.dia * mult) < 1.e-15 && carregado[icol2] == 0) {
                                                 ordCol[icol2] = aux;
                                                 carregado[icol2] = 1;
                                                 icol2 = nderiva;
@@ -6560,7 +6560,7 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                 int icol2 = 0;
                                 while (icol2 < nderiva - 1) {
                                     int aux2 = arqRede.malha[ind].coleta[icol2];
-                                    if (malha[aux2].arq.perm == 1) {
+                                    if (malha[aux2].config().perm == 1) {
                                         if (aux2 != aux) {
                                             ordCol[icol2] = aux2;
                                             carregado[icol2] = 1;
@@ -6575,7 +6575,7 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                             int icol2 = 0;
                             for (int icol = 0; icol < nderiva; icol++) {
                                 int aux = arqRede.malha[ind].coleta[icol];
-                                if (malha[aux].arq.perm == 1) {
+                                if (malha[aux].config().perm == 1) {
                                     if (aux != novaDeriva) {
                                         ordCol[icol2] = aux;
                                         carregado[icol2] = 1;
@@ -6600,19 +6600,19 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                         Vcr<int> colneg(nderiva);
                         for (int icol = 0; icol < nderiva; icol++) {
                             int aux = arqRede.malha[ind].coleta[icol];
-                            if (malha[aux].arq.perm == 1) {
-                                if (malha[aux].celula[0].acsr.tipo == 1) {
-                                    if (malha[aux].celula[0].acsr.injg.QGas < 0) {
+                            if (malha[aux].config().perm == 1) {
+                                if (malha[aux].cell(0).acsr.tipo == 1) {
+                                    if (malha[aux].cell(0).acsr.injg.QGas < 0) {
                                         colneg[ncolneg] = aux;
                                         ncolneg++;
                                     }
-                                } else if (malha[aux].celula[0].acsr.tipo == 2) {
-                                    if (malha[aux].celula[0].acsr.injl.QLiq < 0) {
+                                } else if (malha[aux].cell(0).acsr.tipo == 2) {
+                                    if (malha[aux].cell(0).acsr.injl.QLiq < 0) {
                                         colneg[ncolneg] = aux;
                                         ncolneg++;
                                     }
-                                } else if (malha[aux].celula[0].acsr.tipo == 10) {
-                                    if ((malha[aux].celula[0].acsr.injm.MassP + malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassC) < 0) {
+                                } else if (malha[aux].cell(0).acsr.tipo == 10) {
+                                    if ((malha[aux].cell(0).acsr.injm.MassP + malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassC) < 0) {
                                         colneg[ncolneg] = aux;
                                         ncolneg++;
                                     }
@@ -6626,15 +6626,15 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                         for (int iaflu = 0; iaflu < naflu; iaflu++) {
                             int celProp = 1 - verificaFonteDuplaReversa(malha, auxMaster);
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
-                            malha[indaflu].fluiRevRede = malha[auxMaster].celula[celProp].flui;
-                            malha[indaflu].tempRev = malha[auxMaster].celula[0].temp;
+                            malha[indaflu].fluiRevRede = malha[auxMaster].cell(celProp).flui;
+                            malha[indaflu].tempRev = malha[auxMaster].cell(0).temp;
                             if ((*arqRede.vg1dSP).fluidoRede == 0)
-                                malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[celProp].acsr.injg.razCompGas;
+                                malha[indaflu].config().razCompGasReves = malha[auxMaster].cell(celProp).acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
                             int aux = ordCol[icol];
                             if (arqRede.malha[aux].ncoleta == 0) {
-                                malha[aux].fluiRevRede = malha[aux].arq.flup[0];
+                                malha[aux].fluiRevRede = malha[aux].config().flup[0];
                             }
                         }
 
@@ -6648,147 +6648,147 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                         if (totBloq1 > 0) {
                             totalizaCicloRede(malha, arqRede, inativo, indativo, naflu, i, recb, nBloq1, noConv1, auxMaster);
                             if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                if (malha[i].celula[recb].acsr.injl.FluidoPro.flashCompleto == 2)
-                                    malha[i].celula[recb].acsr.injl.FluidoPro.flashCompleto = 0;
-                                malha[i].celula[recb].acsr.tipo = 2;
-                                malha[i].celula[recb].acsr.injl.bet = noConv1.betmist;
-                                malha[i].celula[recb].acsr.injl.temp = noConv1.tempmist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.RGO = noConv1.RGOmist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.Deng = noConv1.dengmist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.Denag = noConv1.denagmist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.yco2 = noConv1.yco2mist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.API = noConv1.apimist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.BSW = noConv1.bswmist;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.TempL = noConv1.tL;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.TempH = noConv1.tH;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.LVisL = noConv1.LVisL;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.LVisH = noConv1.LVisH;
-                                malha[i].celula[recb].acsr.injl.FluidoPro.RenovaFluido();
-                                malha[i].celula[recb].acsr.injl.fluidocol.TR = noConv1.TRmist;
+                                if (malha[i].cell(recb).acsr.injl.FluidoPro.flashCompleto == 2)
+                                    malha[i].cell(recb).acsr.injl.FluidoPro.flashCompleto = 0;
+                                malha[i].cell(recb).acsr.tipo = 2;
+                                malha[i].cell(recb).acsr.injl.bet = noConv1.betmist;
+                                malha[i].cell(recb).acsr.injl.temp = noConv1.tempmist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.RGO = noConv1.RGOmist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.Deng = noConv1.dengmist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.Denag = noConv1.denagmist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.yco2 = noConv1.yco2mist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.API = noConv1.apimist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.BSW = noConv1.bswmist;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.TempL = noConv1.tL;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.TempH = noConv1.tH;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.LVisL = noConv1.LVisL;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.LVisH = noConv1.LVisH;
+                                malha[i].cell(recb).acsr.injl.FluidoPro.RenovaFluido();
+                                malha[i].cell(recb).acsr.injl.fluidocol.TR = noConv1.TRmist;
 
-                                malha[i].celula[recb].acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
+                                malha[i].cell(recb).acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
 
                             } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                if (malha[i].celula[recb].acsr.injg.FluidoPro.flashCompleto == 2)
-                                    malha[i].celula[recb].acsr.injg.FluidoPro.flashCompleto = 0;
-                                malha[i].celula[recb].acsr.tipo = 1;
-                                malha[i].celula[recb].acsr.injg.seco = 0;
-                                malha[i].celula[recb].acsr.injg.temp = noConv1.tempmist;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.RGO = noConv1.RGOmist;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.API = noConv1.apimist;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.BSW = noConv1.bswmist;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.TempL = noConv1.tL;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.TempH = noConv1.tH;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.LVisL = noConv1.LVisL;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.LVisH = noConv1.LVisH;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.Deng = noConv1.dengmist;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.yco2 = noConv1.yco2mist;
-                                malha[i].celula[recb].acsr.injg.FluidoPro.RenovaFluido();
-                                malha[i].celula[recb].acsr.injg.fluidocol.TR = noConv1.TRmist;
+                                if (malha[i].cell(recb).acsr.injg.FluidoPro.flashCompleto == 2)
+                                    malha[i].cell(recb).acsr.injg.FluidoPro.flashCompleto = 0;
+                                malha[i].cell(recb).acsr.tipo = 1;
+                                malha[i].cell(recb).acsr.injg.seco = 0;
+                                malha[i].cell(recb).acsr.injg.temp = noConv1.tempmist;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.RGO = noConv1.RGOmist;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.API = noConv1.apimist;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.BSW = noConv1.bswmist;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.TempL = noConv1.tL;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.TempH = noConv1.tH;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.LVisL = noConv1.LVisL;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.LVisH = noConv1.LVisH;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.Deng = noConv1.dengmist;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.yco2 = noConv1.yco2mist;
+                                malha[i].cell(recb).acsr.injg.FluidoPro.RenovaFluido();
+                                malha[i].cell(recb).acsr.injg.fluidocol.TR = noConv1.TRmist;
 
                                 noConv1.qgstdTot *= 86400.;
-                                malha[i].celula[recb].acsr.injg.QGas = noConv1.qgstdTot + noConv1.qgstdTotNeg * 86400.;
-                                if (fabs(malha[i].celula[recb].acsr.injg.QGas) > 1e-15)
-                                    malha[i].celula[recb].acsr.injg.razCompGas = (noConv1.qcmistStd + noConv1.qcmistStdNeg) /
-                                                                                 malha[i].celula[recb].acsr.injg.QGas;
+                                malha[i].cell(recb).acsr.injg.QGas = noConv1.qgstdTot + noConv1.qgstdTotNeg * 86400.;
+                                if (fabs(malha[i].cell(recb).acsr.injg.QGas) > 1e-15)
+                                    malha[i].cell(recb).acsr.injg.razCompGas = (noConv1.qcmistStd + noConv1.qcmistStdNeg) /
+                                                                                 malha[i].cell(recb).acsr.injg.QGas;
                                 else
-                                    malha[i].celula[recb].acsr.injg.razCompGas = 0.;
+                                    malha[i].cell(recb).acsr.injg.razCompGas = 0.;
 
                             } else {
-                                if (malha[i].celula[recb].acsr.injm.FluidoPro.flashCompleto == 2)
-                                    malha[i].celula[recb].acsr.injm.FluidoPro.flashCompleto = 0;
-                                malha[i].celula[recb].acsr.tipo = 10;
-                                malha[i].celula[recb].acsr.injm.temp = noConv1.tempmist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.RGO = noConv1.RGOmist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.Deng = noConv1.dengmist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.Denag = noConv1.denagmist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.yco2 = noConv1.yco2mist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.API = noConv1.apimist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.BSW = noConv1.bswmist;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.TempL = noConv1.tL;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.TempH = noConv1.tH;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.LVisL = noConv1.LVisL;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.LVisH = noConv1.LVisH;
-                                malha[i].celula[recb].acsr.injm.FluidoPro.RenovaFluido();
-                                malha[i].celula[recb].acsr.injm.fluidocol.TR = noConv1.TRmist;
+                                if (malha[i].cell(recb).acsr.injm.FluidoPro.flashCompleto == 2)
+                                    malha[i].cell(recb).acsr.injm.FluidoPro.flashCompleto = 0;
+                                malha[i].cell(recb).acsr.tipo = 10;
+                                malha[i].cell(recb).acsr.injm.temp = noConv1.tempmist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.RGO = noConv1.RGOmist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.Deng = noConv1.dengmist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.Denag = noConv1.denagmist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.yco2 = noConv1.yco2mist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.API = noConv1.apimist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.BSW = noConv1.bswmist;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.TempL = noConv1.tL;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.TempH = noConv1.tH;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.LVisL = noConv1.LVisL;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.LVisH = noConv1.LVisH;
+                                malha[i].cell(recb).acsr.injm.FluidoPro.RenovaFluido();
+                                malha[i].cell(recb).acsr.injm.fluidocol.TR = noConv1.TRmist;
 
-                                malha[i].celula[recb].acsr.injm.MassP = noConv1.mliqmist - noConv1.mliqCmist +
+                                malha[i].cell(recb).acsr.injm.MassP = noConv1.mliqmist - noConv1.mliqCmist +
                                                                         noConv1.mliqmistNeg - noConv1.mliqCmistNeg;
-                                malha[i].celula[recb].acsr.injm.MassC = noConv1.mliqCmist + noConv1.mliqCmistNeg;
-                                malha[i].celula[recb].acsr.injm.MassG = noConv1.mgasmist + noConv1.mgasmistNeg;
+                                malha[i].cell(recb).acsr.injm.MassC = noConv1.mliqCmist + noConv1.mliqCmistNeg;
+                                malha[i].cell(recb).acsr.injm.MassG = noConv1.mgasmist + noConv1.mgasmistNeg;
                             }
                         }
                         if (totBloq2 > 0) {
                             totalizaCicloRede(malha, arqRede, inativo, indativo, naflu, col2, recb, nBloq2, noConv2, auxMaster);
                             if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                if (malha[col2].celula[recb].acsr.injl.FluidoPro.flashCompleto == 2)
-                                    malha[col2].celula[recb].acsr.injl.FluidoPro.flashCompleto = 0;
-                                malha[col2].celula[recb].acsr.tipo = 2;
-                                malha[col2].celula[recb].acsr.injl.bet = noConv2.betmist;
-                                malha[col2].celula[recb].acsr.injl.temp = noConv2.tempmist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.RGO = noConv2.RGOmist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.Deng = noConv2.dengmist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.Denag = noConv2.denagmist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.yco2 = noConv2.yco2mist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.API = noConv2.apimist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.BSW = noConv2.bswmist;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.TempL = noConv2.tL;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.TempH = noConv2.tH;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.LVisL = noConv2.LVisL;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.LVisH = noConv2.LVisH;
-                                malha[col2].celula[recb].acsr.injl.FluidoPro.RenovaFluido();
-                                malha[col2].celula[recb].acsr.injl.fluidocol.TR = noConv2.TRmist;
+                                if (malha[col2].cell(recb).acsr.injl.FluidoPro.flashCompleto == 2)
+                                    malha[col2].cell(recb).acsr.injl.FluidoPro.flashCompleto = 0;
+                                malha[col2].cell(recb).acsr.tipo = 2;
+                                malha[col2].cell(recb).acsr.injl.bet = noConv2.betmist;
+                                malha[col2].cell(recb).acsr.injl.temp = noConv2.tempmist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.RGO = noConv2.RGOmist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.Deng = noConv2.dengmist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.Denag = noConv2.denagmist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.yco2 = noConv2.yco2mist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.API = noConv2.apimist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.BSW = noConv2.bswmist;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.TempL = noConv2.tL;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.TempH = noConv2.tH;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.LVisL = noConv2.LVisL;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.LVisH = noConv2.LVisH;
+                                malha[col2].cell(recb).acsr.injl.FluidoPro.RenovaFluido();
+                                malha[col2].cell(recb).acsr.injl.fluidocol.TR = noConv2.TRmist;
 
-                                malha[col2].celula[recb].acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
+                                malha[col2].cell(recb).acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
 
                             } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                if (malha[col2].celula[recb].acsr.injg.FluidoPro.flashCompleto == 2)
-                                    malha[col2].celula[recb].acsr.injg.FluidoPro.flashCompleto = 0;
-                                malha[col2].celula[recb].acsr.tipo = 1;
-                                malha[col2].celula[recb].acsr.injg.seco = 0;
-                                malha[col2].celula[recb].acsr.injg.temp = noConv2.tempmist;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.RGO = noConv2.RGOmist;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.API = noConv2.apimist;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.BSW = noConv2.bswmist;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.TempL = noConv2.tL;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.TempH = noConv2.tH;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.LVisL = noConv2.LVisL;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.LVisH = noConv2.LVisH;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.Deng = noConv2.dengmist;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.yco2 = noConv2.yco2mist;
-                                malha[col2].celula[recb].acsr.injg.FluidoPro.RenovaFluido();
-                                malha[col2].celula[recb].acsr.injg.fluidocol.TR = noConv2.TRmist;
+                                if (malha[col2].cell(recb).acsr.injg.FluidoPro.flashCompleto == 2)
+                                    malha[col2].cell(recb).acsr.injg.FluidoPro.flashCompleto = 0;
+                                malha[col2].cell(recb).acsr.tipo = 1;
+                                malha[col2].cell(recb).acsr.injg.seco = 0;
+                                malha[col2].cell(recb).acsr.injg.temp = noConv2.tempmist;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.RGO = noConv2.RGOmist;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.API = noConv2.apimist;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.BSW = noConv2.bswmist;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.TempL = noConv2.tL;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.TempH = noConv2.tH;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.LVisL = noConv2.LVisL;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.LVisH = noConv2.LVisH;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.Deng = noConv2.dengmist;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.yco2 = noConv2.yco2mist;
+                                malha[col2].cell(recb).acsr.injg.FluidoPro.RenovaFluido();
+                                malha[col2].cell(recb).acsr.injg.fluidocol.TR = noConv2.TRmist;
 
                                 noConv2.qgstdTot *= 86400.;
-                                malha[col2].celula[recb].acsr.injg.QGas = noConv2.qgstdTot + noConv2.qgstdTotNeg * 86400.;
-                                if (fabs(malha[col2].celula[recb].acsr.injg.QGas) > 1e-15)
-                                    malha[col2].celula[recb].acsr.injg.razCompGas = (noConv2.qcmistStd + noConv2.qcmistStdNeg) /
-                                                                                    malha[col2].celula[recb].acsr.injg.QGas;
+                                malha[col2].cell(recb).acsr.injg.QGas = noConv2.qgstdTot + noConv2.qgstdTotNeg * 86400.;
+                                if (fabs(malha[col2].cell(recb).acsr.injg.QGas) > 1e-15)
+                                    malha[col2].cell(recb).acsr.injg.razCompGas = (noConv2.qcmistStd + noConv2.qcmistStdNeg) /
+                                                                                    malha[col2].cell(recb).acsr.injg.QGas;
                                 else
-                                    malha[col2].celula[recb].acsr.injg.razCompGas = 0.;
+                                    malha[col2].cell(recb).acsr.injg.razCompGas = 0.;
 
                             } else {
-                                if (malha[col2].celula[recb].acsr.injm.FluidoPro.flashCompleto == 2)
-                                    malha[col2].celula[recb].acsr.injm.FluidoPro.flashCompleto = 0;
-                                malha[col2].celula[recb].acsr.tipo = 10;
-                                malha[col2].celula[recb].acsr.injm.temp = noConv2.tempmist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.RGO = noConv2.RGOmist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.Deng = noConv2.dengmist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.Denag = noConv2.denagmist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.yco2 = noConv2.yco2mist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.API = noConv2.apimist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.BSW = noConv2.bswmist;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.TempL = noConv2.tL;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.TempH = noConv2.tH;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.LVisL = noConv2.LVisL;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.LVisH = noConv2.LVisH;
-                                malha[col2].celula[recb].acsr.injm.FluidoPro.RenovaFluido();
-                                malha[col2].celula[recb].acsr.injm.fluidocol.TR = noConv2.TRmist;
+                                if (malha[col2].cell(recb).acsr.injm.FluidoPro.flashCompleto == 2)
+                                    malha[col2].cell(recb).acsr.injm.FluidoPro.flashCompleto = 0;
+                                malha[col2].cell(recb).acsr.tipo = 10;
+                                malha[col2].cell(recb).acsr.injm.temp = noConv2.tempmist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.RGO = noConv2.RGOmist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.Deng = noConv2.dengmist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.Denag = noConv2.denagmist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.yco2 = noConv2.yco2mist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.API = noConv2.apimist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.BSW = noConv2.bswmist;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.TempL = noConv2.tL;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.TempH = noConv2.tH;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.LVisL = noConv2.LVisL;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.LVisH = noConv2.LVisH;
+                                malha[col2].cell(recb).acsr.injm.FluidoPro.RenovaFluido();
+                                malha[col2].cell(recb).acsr.injm.fluidocol.TR = noConv2.TRmist;
 
-                                malha[col2].celula[recb].acsr.injm.MassP = noConv2.mliqmist - noConv2.mliqCmist +
+                                malha[col2].cell(recb).acsr.injm.MassP = noConv2.mliqmist - noConv2.mliqCmist +
                                                                            noConv2.mliqmistNeg - noConv2.mliqCmistNeg;
-                                malha[col2].celula[recb].acsr.injm.MassC = noConv2.mliqCmist + noConv2.mliqCmistNeg;
-                                malha[col2].celula[recb].acsr.injm.MassG = noConv2.mgasmist + noConv2.mgasmistNeg;
+                                malha[col2].cell(recb).acsr.injm.MassC = noConv2.mliqCmist + noConv2.mliqCmistNeg;
+                                malha[col2].cell(recb).acsr.injm.MassG = noConv2.mgasmist + noConv2.mgasmistNeg;
                             }
                         }
 
@@ -6797,128 +6797,128 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                 int aux = ordCol[icol];
                                 (*arqRede.vg1dSP).qualTramo = aux;
                                 if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                    if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 2)
-                                        malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 0;
-                                    malha[aux].celula[0].acsr.tipo = 2;
-                                    malha[aux].celula[0].acsr.injl.bet = noConv.betmist;
-                                    malha[aux].celula[0].acsr.injl.temp = noConv.tempmist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.RGO = noConv.RGOmist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.Deng = noConv.dengmist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.Denag = noConv.denagmist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.yco2 = noConv.yco2mist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.API = noConv.apimist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.BSW = noConv.bswmist;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.TempL = noConv.tL;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.TempH = noConv.tH;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.LVisL = noConv.LVisL;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.LVisH = noConv.LVisH;
-                                    malha[aux].celula[0].acsr.injl.FluidoPro.RenovaFluido();
-                                    malha[aux].celula[0].acsr.injl.fluidocol.TR = noConv.TRmist;
+                                    if (malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto == 2)
+                                        malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto = 0;
+                                    malha[aux].cell(0).acsr.tipo = 2;
+                                    malha[aux].cell(0).acsr.injl.bet = noConv.betmist;
+                                    malha[aux].cell(0).acsr.injl.temp = noConv.tempmist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.RGO = noConv.RGOmist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.Deng = noConv.dengmist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.Denag = noConv.denagmist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.yco2 = noConv.yco2mist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.API = noConv.apimist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.BSW = noConv.bswmist;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.TempL = noConv.tL;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.TempH = noConv.tH;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.LVisL = noConv.LVisL;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.LVisH = noConv.LVisH;
+                                    malha[aux].cell(0).acsr.injl.FluidoPro.RenovaFluido();
+                                    malha[aux].cell(0).acsr.injl.fluidocol.TR = noConv.TRmist;
 
-                                    norma += pow((malha[aux].celula[0].acsr.injl.QLiq - (noConv.qlmistStd + noConv.qlmistStdNeg)) /
+                                    norma += pow((malha[aux].cell(0).acsr.injl.QLiq - (noConv.qlmistStd + noConv.qlmistStdNeg)) /
                                                      (noConv.qlmistStd + noConv.qlmistStdNeg),
                                                  2.);
-                                    malha[aux].celula[0].acsr.injl.QLiq = noConv.qlmistStd + noConv.qlmistStdNeg;
+                                    malha[aux].cell(0).acsr.injl.QLiq = noConv.qlmistStd + noConv.qlmistStdNeg;
 
-                                    malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
+                                    malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injl.FluidoPro;
                                 } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                    if (malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto == 2)
-                                        malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto = 0;
-                                    malha[aux].celula[0].acsr.tipo = 1;
-                                    malha[aux].celula[0].acsr.injg.seco = 0;
-                                    malha[aux].celula[0].acsr.injg.temp = noConv.tempmist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.RGO = noConv.RGOmist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.API = noConv.apimist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.BSW = noConv.bswmist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.TempL = noConv.tL;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.TempH = noConv.tH;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.LVisL = noConv.LVisL;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.LVisH = noConv.LVisH;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.Deng = noConv.dengmist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.yco2 = noConv.yco2mist;
-                                    malha[aux].celula[0].acsr.injg.FluidoPro.RenovaFluido();
-                                    malha[aux].celula[0].acsr.injg.fluidocol.TR = noConv.TRmist;
+                                    if (malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto == 2)
+                                        malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto = 0;
+                                    malha[aux].cell(0).acsr.tipo = 1;
+                                    malha[aux].cell(0).acsr.injg.seco = 0;
+                                    malha[aux].cell(0).acsr.injg.temp = noConv.tempmist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.RGO = noConv.RGOmist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.API = noConv.apimist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.BSW = noConv.bswmist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.TempL = noConv.tL;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.TempH = noConv.tH;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.LVisL = noConv.LVisL;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.LVisH = noConv.LVisH;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.Deng = noConv.dengmist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.yco2 = noConv.yco2mist;
+                                    malha[aux].cell(0).acsr.injg.FluidoPro.RenovaFluido();
+                                    malha[aux].cell(0).acsr.injg.fluidocol.TR = noConv.TRmist;
 
                                     noConv.qgstdTot *= 86400.;
-                                    norma += pow((malha[aux].celula[0].acsr.injg.QGas - (noConv.qgstdTot +
+                                    norma += pow((malha[aux].cell(0).acsr.injg.QGas - (noConv.qgstdTot +
                                                                                          noConv.qgstdTotNeg * 86400.)) /
                                                      (noConv.qgstdTot + noConv.qgstdTotNeg * 86400.),
                                                  2.);
-                                    malha[aux].celula[0].acsr.injg.QGas = noConv.qgstdTot +
+                                    malha[aux].cell(0).acsr.injg.QGas = noConv.qgstdTot +
                                                                           noConv.qgstdTotNeg * 86400.;
 
-                                    if (fabs(malha[aux].celula[0].acsr.injg.QGas) > 1e-15)
-                                        malha[aux].celula[0].acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
-                                                                                    malha[aux].celula[0].acsr.injg.QGas;
+                                    if (fabs(malha[aux].cell(0).acsr.injg.QGas) > 1e-15)
+                                        malha[aux].cell(0).acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
+                                                                                    malha[aux].cell(0).acsr.injg.QGas;
                                     else
-                                        malha[aux].celula[0].acsr.injg.razCompGas = 0.;
+                                        malha[aux].cell(0).acsr.injg.razCompGas = 0.;
 
-                                    malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
+                                    malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injg.FluidoPro;
                                 } else {
-                                    if (malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto == 2)
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto = 0;
-                                    malha[aux].celula[0].acsr.tipo = 10;
-                                    malha[aux].celula[0].acsr.injm.temp = noConv.tempmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.RGO = noConv.RGOmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.Deng = noConv.dengmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.Denag = noConv.denagmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.yco2 = noConv.yco2mist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.API = noConv.apimist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.BSW = noConv.bswmist;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.TempL = noConv.tL;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.TempH = noConv.tH;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.LVisL = noConv.LVisL;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.LVisH = noConv.LVisH;
-                                    malha[aux].celula[0].acsr.injm.FluidoPro.RenovaFluido();
-                                    malha[aux].celula[0].acsr.injm.fluidocol.TR = noConv.TRmist;
+                                    if (malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto == 2)
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto = 0;
+                                    malha[aux].cell(0).acsr.tipo = 10;
+                                    malha[aux].cell(0).acsr.injm.temp = noConv.tempmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.RGO = noConv.RGOmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.Deng = noConv.dengmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.Denag = noConv.denagmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.yco2 = noConv.yco2mist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.API = noConv.apimist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.BSW = noConv.bswmist;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.TempL = noConv.tL;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.TempH = noConv.tH;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.LVisL = noConv.LVisL;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.LVisH = noConv.LVisH;
+                                    malha[aux].cell(0).acsr.injm.FluidoPro.RenovaFluido();
+                                    malha[aux].cell(0).acsr.injm.fluidocol.TR = noConv.TRmist;
 
-                                    double massT = malha[aux].celula[0].acsr.injm.MassP + malha[aux].celula[0].acsr.injm.MassC +
-                                                   malha[aux].celula[0].acsr.injm.MassG;
+                                    double massT = malha[aux].cell(0).acsr.injm.MassP + malha[aux].cell(0).acsr.injm.MassC +
+                                                   malha[aux].cell(0).acsr.injm.MassG;
                                     norma += pow((massT - (noConv.mliqmist + noConv.mgasmist + noConv.mliqmistNeg + noConv.mgasmistNeg)) /
                                                      (noConv.mliqmist + noConv.mgasmist + noConv.mliqmistNeg + noConv.mgasmistNeg),
                                                  2.);
-                                    malha[aux].celula[0].acsr.injm.MassP = noConv.mliqmist - noConv.mliqCmist +
+                                    malha[aux].cell(0).acsr.injm.MassP = noConv.mliqmist - noConv.mliqCmist +
                                                                            noConv.mliqmistNeg - noConv.mliqCmistNeg;
-                                    malha[aux].celula[0].acsr.injm.MassC = noConv.mliqCmist + noConv.mliqCmistNeg;
-                                    malha[aux].celula[0].acsr.injm.MassG = noConv.mgasmist + noConv.mgasmistNeg;
+                                    malha[aux].cell(0).acsr.injm.MassC = noConv.mliqCmist + noConv.mliqCmistNeg;
+                                    malha[aux].cell(0).acsr.injm.MassG = noConv.mgasmist + noConv.mgasmistNeg;
 
-                                    malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                    malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                 }
 
                                 int trocou = trocaFonteColetor(malha, aux);
 
-                                double pini = malha[aux].celula[0].pres;
+                                double pini = malha[aux].cell(0).pres;
                                 if (arqRede.malha[aux].perm == 1) {
                                     malha[aux].modoPerm = 1;
                                     int reverso = 0;
-                                    if (malha[aux].celula[0].acsr.tipo == 1) {
-                                        if (malha[aux].celula[0].acsr.injg.QGas < 0)
+                                    if (malha[aux].cell(0).acsr.tipo == 1) {
+                                        if (malha[aux].cell(0).acsr.injg.QGas < 0)
                                             reverso = 1;
-                                    } else if (malha[aux].celula[0].acsr.tipo == 2) {
-                                        if (malha[aux].celula[0].acsr.injl.QLiq < 0)
+                                    } else if (malha[aux].cell(0).acsr.tipo == 2) {
+                                        if (malha[aux].cell(0).acsr.injl.QLiq < 0)
                                             reverso = 1;
-                                    } else if (malha[aux].celula[0].acsr.tipo == 10) {
-                                        if ((malha[aux].celula[0].acsr.injm.MassC +
-                                             malha[aux].celula[0].acsr.injm.MassG + malha[aux].celula[0].acsr.injm.MassP) < 0)
+                                    } else if (malha[aux].cell(0).acsr.tipo == 10) {
+                                        if ((malha[aux].cell(0).acsr.injm.MassC +
+                                             malha[aux].cell(0).acsr.injm.MassG + malha[aux].cell(0).acsr.injm.MassP) < 0)
                                             reverso = 1;
                                     }
                                     if (reverso == 0) {
-                                        if (malha[aux].arq.chokep.abertura[0] > 0.6) {
+                                        if (malha[aux].config().chokep.abertura[0] > 0.6) {
                                             if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm();
                                             else
-                                                valor = malha[aux].buscaProdPfundoPerm(malha[i].celula[0].pres);
+                                                valor = malha[aux].buscaProdPfundoPerm(malha[i].cell(0).pres);
                                         } else {
                                             if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm2();
                                             else
-                                                valor = malha[aux].buscaProdPfundoPerm2(malha[i].celula[0].pres);
+                                                valor = malha[aux].buscaProdPfundoPerm2(malha[i].cell(0).pres);
                                         }
                                     } else {
                                         if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
                                             valor = malha[aux].buscaProdPfundoPermRev();
                                         else
-                                            valor = malha[aux].buscaProdPfundoPermRev(malha[aux].celula[0].pres);
+                                            valor = malha[aux].buscaProdPfundoPermRev(malha[aux].cell(0).pres);
                                     }
                                 } else
                                     valor = 0;
@@ -6953,39 +6953,39 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                     }
                                     if (IndNorma[aux] == 0) {
                                         normaEvol[qNo].normaP0 = normaEvol[qNo].normaP1;
-                                        normaEvol[qNo].normaP1 = pow((malha[aux].celula[0].pres - pini) / pini, 2.);
-                                        norma += pow((malha[aux].celula[0].pres - pini) / pini, 2.);
+                                        normaEvol[qNo].normaP1 = pow((malha[aux].cell(0).pres - pini) / pini, 2.);
+                                        norma += pow((malha[aux].cell(0).pres - pini) / pini, 2.);
                                         IndNorma[aux] = 1;
                                         nnos++;
                                     }
                                     for (int iaflu = 0; iaflu < arqRede.malha[aux].nafluente; iaflu++) {
                                         int indaflu = arqRede.malha[aux].afluente[iaflu];
                                         if ((*arqRede.vg1dSP).fluidoRede == 1)
-                                            malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
+                                            malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injl.FluidoPro;
                                         else if ((*arqRede.vg1dSP).fluidoRede == 0)
-                                            malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
+                                            malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injg.FluidoPro;
                                         else
-                                            malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                            malha[indaflu].cell(malha[indaflu].ncel).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                         if (arqRede.malha[indaflu].perm == 1) {
                                             pini = malha[indaflu].pGSup;
                                             if (IndNorma[indaflu] == 0) {
                                                 IndNorma[indaflu] = 1;
                                                 if (arqRede.malha[indaflu].presimposta == 0) {
-                                                    norma += pow((malha[aux].celula[0].pres - pini) / pini, 2.);
+                                                    norma += pow((malha[aux].cell(0).pres - pini) / pini, 2.);
                                                     nnos++;
                                                 }
                                             }
                                             if (arqRede.malha[indaflu].presimposta == 0) {
                                                 if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5)
-                                                    malha[indaflu].pGSup = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[indaflu].pGSup;
+                                                    malha[indaflu].pGSup = (0.5) * malha[aux].cell(0).pres + (1. - 0.5) * malha[indaflu].pGSup;
                                                 else
-                                                    malha[indaflu].pGSup = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
+                                                    malha[indaflu].pGSup = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres +
                                                                            (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].pGSup;
                                             }
                                         } else {
-                                            malha[indaflu].pGSup = malha[aux].celula[0].pres;
-                                            malha[indaflu].tGSup = malha[aux].celula[0].temp;
-                                            malha[indaflu].tempSup = malha[aux].celula[0].temp;
+                                            malha[indaflu].pGSup = malha[aux].cell(0).pres;
+                                            malha[indaflu].tGSup = malha[aux].cell(0).temp;
+                                            malha[indaflu].tempSup = malha[aux].cell(0).temp;
                                         }
                                     }
                                 }
@@ -6996,19 +6996,19 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                     indaflu = arqRede.malha[aux].afluente[iaflu];
                                 }
                                 for (int icol2 = 0; icol2 < nderiva - 1; icol2++) {
-                                    norma += pow((malha[ordCol[icol2]].celula[0].pres - malha[aux].celula[0].pres) / malha[aux].celula[0].pres, 2.);
+                                    norma += pow((malha[ordCol[icol2]].cell(0).pres - malha[aux].cell(0).pres) / malha[aux].cell(0).pres, 2.);
                                     nnos++;
                                     if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
-                                        malha[ordCol[icol2]].celula[0].pres = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].cell(0).pres = (0.5) * malha[aux].cell(0).pres + (1. - 0.5) * malha[ordCol[icol2]].cell(0).pres;
                                     } else {
-                                        malha[ordCol[icol2]].celula[0].pres = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                              (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].cell(0).pres = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres +
+                                                                              (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].cell(0).pres;
                                     }
                                     if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
-                                        malha[ordCol[icol2]].presE = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].presE = (0.5) * malha[aux].cell(0).pres + (1. - 0.5) * malha[ordCol[icol2]].cell(0).pres;
                                     } else {
-                                        malha[ordCol[icol2]].presE = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                     (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].presE = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres +
+                                                                     (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].cell(0).pres;
                                     }
                                     malha[ordCol[icol2]].tempE = noConv.tempmist;
                                     malha[ordCol[icol2]].betaE = noConv.betmist;
@@ -7021,138 +7021,138 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                 int aux = ordCol[icol];
                                 if ((*arqRede.vg1dSP).iterRede == 0) {
                                     int indAflu = arqRede.malha[aux].afluente[0];
-                                    malha[aux].celula[0].pres = malha[indAflu].pGSup;
+                                    malha[aux].cell(0).pres = malha[indAflu].pGSup;
                                 }
                                 (*arqRede.vg1dSP).qualTramo = aux;
-                                if (malha[aux].arq.ConContEntrada != 2) {
-                                    if (malha[aux].arq.perm == 1) {
+                                if (malha[aux].config().ConContEntrada != 2) {
+                                    if (malha[aux].config().perm == 1) {
                                         if ((*arqRede.vg1dSP).fluidoRede != 0) {
-                                            if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 2)
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 0;
-                                            malha[aux].celula[0].acsr.tipo = 2;
-                                            malha[aux].celula[0].acsr.injl.bet = noConv.betmist;
-                                            malha[aux].celula[0].acsr.injl.temp = noConv.tempmist;
-                                            if ((*arqRede.vg1dSP).iterRede == 0 || malha[aux].celula[0].acsr.injl.QLiq > 0) {
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.RGO = noConv.RGOmist;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.Deng = noConv.dengmist;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.Denag = noConv.denagmist;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.yco2 = noConv.yco2mist;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.API = noConv.apimist;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.BSW = noConv.bswmist;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.TempL = noConv.tL;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.TempH = noConv.tH;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.LVisL = noConv.LVisL;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.LVisH = noConv.LVisH;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.RenovaFluido();
-                                                malha[aux].celula[0].acsr.injl.fluidocol.TR = noConv.TRmist;
+                                            if (malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto == 2)
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.flashCompleto = 0;
+                                            malha[aux].cell(0).acsr.tipo = 2;
+                                            malha[aux].cell(0).acsr.injl.bet = noConv.betmist;
+                                            malha[aux].cell(0).acsr.injl.temp = noConv.tempmist;
+                                            if ((*arqRede.vg1dSP).iterRede == 0 || malha[aux].cell(0).acsr.injl.QLiq > 0) {
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.RGO = noConv.RGOmist;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.Deng = noConv.dengmist;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.Denag = noConv.denagmist;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.yco2 = noConv.yco2mist;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.API = noConv.apimist;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.BSW = noConv.bswmist;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.TempL = noConv.tL;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.TempH = noConv.tH;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.LVisL = noConv.LVisL;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.LVisH = noConv.LVisH;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.RenovaFluido();
+                                                malha[aux].cell(0).acsr.injl.fluidocol.TR = noConv.TRmist;
                                             } else {
-                                                malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].fluiRevRede;
-                                                malha[aux].celula[0].acsr.injl.FluidoPro.RenovaFluido();
+                                                malha[aux].cell(0).acsr.injl.FluidoPro = malha[aux].fluiRevRede;
+                                                malha[aux].cell(0).acsr.injl.FluidoPro.RenovaFluido();
                                             }
 
-                                            malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
+                                            malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injl.FluidoPro;
                                         } else {
-                                            if (malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto == 2)
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto = 0;
-                                            malha[aux].celula[0].acsr.tipo = 1;
-                                            malha[aux].celula[0].acsr.injg.seco = 0;
-                                            malha[aux].celula[0].acsr.injg.temp = noConv.tempmist;
-                                            if ((*arqRede.vg1dSP).iterRede == 0 || malha[aux].celula[0].acsr.injg.QGas > 0) {
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.RGO = noConv.RGOmist;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.API = noConv.apimist;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.BSW = noConv.bswmist;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.TempL = noConv.tL;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.TempH = noConv.tH;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.LVisL = noConv.LVisL;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.LVisH = noConv.LVisH;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.Deng = noConv.dengmist;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.yco2 = noConv.yco2mist;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.RenovaFluido();
-                                                malha[aux].celula[0].acsr.injg.fluidocol.TR = noConv.TRmist;
+                                            if (malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto == 2)
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.flashCompleto = 0;
+                                            malha[aux].cell(0).acsr.tipo = 1;
+                                            malha[aux].cell(0).acsr.injg.seco = 0;
+                                            malha[aux].cell(0).acsr.injg.temp = noConv.tempmist;
+                                            if ((*arqRede.vg1dSP).iterRede == 0 || malha[aux].cell(0).acsr.injg.QGas > 0) {
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.RGO = noConv.RGOmist;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.API = noConv.apimist;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.BSW = noConv.bswmist;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.TempL = noConv.tL;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.TempH = noConv.tH;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.LVisL = noConv.LVisL;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.LVisH = noConv.LVisH;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.Deng = noConv.dengmist;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.yco2 = noConv.yco2mist;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.RenovaFluido();
+                                                malha[aux].cell(0).acsr.injg.fluidocol.TR = noConv.TRmist;
                                             } else {
-                                                malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].fluiRevRede;
-                                                malha[aux].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                                                malha[aux].cell(0).acsr.injg.FluidoPro = malha[aux].fluiRevRede;
+                                                malha[aux].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                                             }
 
-                                            malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
+                                            malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injg.FluidoPro;
                                         }
                                     }
                                 } else {
-                                    if (malha[aux].arq.perm == 1) {
-                                        if (malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto == 2)
-                                            malha[aux].celula[0].acsr.injm.FluidoPro.flashCompleto = 0;
-                                        malha[aux].celula[0].acsr.tipo = 10;
+                                    if (malha[aux].config().perm == 1) {
+                                        if (malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto == 2)
+                                            malha[aux].cell(0).acsr.injm.FluidoPro.flashCompleto = 0;
+                                        malha[aux].cell(0).acsr.tipo = 10;
 
-                                        malha[aux].celula[0].acsr.injm.temp = noConv.tempmist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.RGO = noConv.RGOmist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.Deng = noConv.dengmist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.Denag = noConv.denagmist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.yco2 = noConv.yco2mist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.API = noConv.apimist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.BSW = noConv.bswmist;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.TempL = noConv.tL;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.TempH = noConv.tH;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.LVisL = noConv.LVisL;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.LVisH = noConv.LVisH;
-                                        malha[aux].celula[0].acsr.injm.FluidoPro.RenovaFluido();
-                                        malha[aux].celula[0].acsr.injm.fluidocol.TR = noConv.TRmist;
+                                        malha[aux].cell(0).acsr.injm.temp = noConv.tempmist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.RGO = noConv.RGOmist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.Deng = noConv.dengmist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.Denag = noConv.denagmist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.yco2 = noConv.yco2mist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.API = noConv.apimist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.BSW = noConv.bswmist;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.TempL = noConv.tL;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.TempH = noConv.tH;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.LVisL = noConv.LVisL;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.LVisH = noConv.LVisH;
+                                        malha[aux].cell(0).acsr.injm.FluidoPro.RenovaFluido();
+                                        malha[aux].cell(0).acsr.injm.fluidocol.TR = noConv.TRmist;
 
-                                        malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
+                                        malha[aux].cell(0).flui = malha[aux].cell(0).acsr.injm.FluidoPro;
                                     }
                                 }
 
-                                if (malha[aux].arq.perm == 1) {
-                                    if (malha[aux].arq.ConContEntrada != 2) {
+                                if (malha[aux].config().perm == 1) {
+                                    if (malha[aux].config().ConContEntrada != 2) {
                                         for (int icol2 = icol; icol2 < nderiva; icol2++)
-                                            area += malha[ordCol[icol2]].celula[0].duto.area;
+                                            area += malha[ordCol[icol2]].cell(0).duto.area;
                                         int indicadorVP = aux;
                                         indicadorVP = -1;
                                         if (indicadorVP == -1) {
                                             if ((*arqRede.vg1dSP).iterRede == 0) {
                                                 if ((*arqRede.vg1dSP).fluidoRede != 0)
-                                                    chutemass = (noConv.qlmistStd + noConv.qlmistStdNeg) * malha[aux].celula[0].duto.area / area;
+                                                    chutemass = (noConv.qlmistStd + noConv.qlmistStdNeg) * malha[aux].cell(0).duto.area / area;
                                                 else {
                                                     chutemass = (noConv.qgstdTot * 86400. +
                                                                  noConv.qgstdTotNeg * 86400) *
-                                                                malha[aux].celula[0].duto.area / area;
+                                                                malha[aux].cell(0).duto.area / area;
                                                     if (fabs(chutemass) > 1e-15)
-                                                        malha[aux].celula[0].acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
+                                                        malha[aux].cell(0).acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
                                                                                                     (noConv.qgstdTot * 86400. + noConv.qgstdTotNeg * 86400);
                                                     else
-                                                        malha[aux].celula[0].acsr.injg.razCompGas = 0.;
+                                                        malha[aux].cell(0).acsr.injg.razCompGas = 0.;
                                                 }
                                             } else {
                                                 if ((*arqRede.vg1dSP).fluidoRede == 1)
-                                                    chutemass = malha[aux].celula[0].acsr.injl.QLiq;
+                                                    chutemass = malha[aux].cell(0).acsr.injl.QLiq;
                                                 else if ((*arqRede.vg1dSP).fluidoRede == 0)
-                                                    chutemass = malha[aux].celula[0].acsr.injg.QGas;
+                                                    chutemass = malha[aux].cell(0).acsr.injg.QGas;
                                             }
                                         }
                                         if (arqRede.malha[aux].perm == 1) {
                                             malha[aux].modoPerm = 1;
-                                            if (malha[aux].arq.ConContEntrada != 2) {
+                                            if (malha[aux].config().ConContEntrada != 2) {
                                                 if (chutemass > 0.) {
                                                     if (aux == 32) {
                                                     }
-                                                    if (malha[aux].arq.chokep.abertura[0] > 0.6)
+                                                    if (malha[aux].config().chokep.abertura[0] > 0.6)
                                                         valor = malha[aux].buscaProdPresPresPerm(chutemass, 1 * noConv.qgstdTot * 86400);
                                                     else
                                                         valor = malha[aux].buscaProdPresPresPerm2(chutemass, 1 * noConv.qgstdTot * 86400);
                                                 } else {
-                                                    malha[aux].celula[0].acsr.injg.razCompGas = malha[aux].arq.razCompGasReves;
+                                                    malha[aux].cell(0).acsr.injg.razCompGas = malha[aux].config().razCompGasReves;
                                                     valor = malha[aux].buscaProdPresPresPermRev(chutemass, -1 * noConv.qgstdTot * 86400);
                                                 }
                                                 if ((*arqRede.vg1dSP).fluidoRede != 0) {
-                                                    if (malha[aux].celula[0].acsr.injl.QLiq > (noConv.qlmistStd + noConv.qlmistStdNeg)) {
-                                                        malha[aux].celula[0].acsr.injl.QLiq = chutemass;
+                                                    if (malha[aux].cell(0).acsr.injl.QLiq > (noConv.qlmistStd + noConv.qlmistStdNeg)) {
+                                                        malha[aux].cell(0).acsr.injl.QLiq = chutemass;
                                                         cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo: " << aux << endl;
                                                         arqRede.malha[aux].principal = 1;
                                                     } else
                                                         arqRede.malha[aux].principal = 0;
                                                 } else {
-                                                    if (malha[aux].celula[0].acsr.injg.QGas > (noConv.qgstdTot * 86400 +
+                                                    if (malha[aux].cell(0).acsr.injg.QGas > (noConv.qgstdTot * 86400 +
                                                                                                noConv.qgstdTotNeg * 86400)) {
-                                                        malha[aux].celula[0].acsr.injg.QGas = chutemass;
+                                                        malha[aux].cell(0).acsr.injg.QGas = chutemass;
                                                         cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo: " << aux << endl;
                                                         arqRede.malha[aux].principal = 1;
                                                     } else
@@ -7180,32 +7180,32 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                         resolvGlob += Resolv[aux];
                                         ciclomalha++;
                                         if ((*arqRede.vg1dSP).fluidoRede == 1) {
-                                            if (arqRede.malha[aux].perm == 1 && (malha[aux].celula[0].acsr.injl.QLiq) > 0)
-                                                noConv.qlmistStd -= malha[aux].celula[0].acsr.injl.QLiq;
-                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq + 2121212121) < 1e-15)
+                                            if (arqRede.malha[aux].perm == 1 && (malha[aux].cell(0).acsr.injl.QLiq) > 0)
+                                                noConv.qlmistStd -= malha[aux].cell(0).acsr.injl.QLiq;
+                                            if (fabs(malha[aux].cell(0).acsr.injl.QLiq + 2121212121) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo  : " << aux << endl;
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
-                                            if (arqRede.malha[aux].perm == 1 && (malha[aux].celula[0].acsr.injg.QGas) > 0)
-                                                noConv.qgstdTot -= malha[aux].celula[0].acsr.injg.QGas / 86400;
-                                            if (fabs(malha[aux].celula[0].acsr.injg.QGas + 2121212121) < 1e-15)
+                                            if (arqRede.malha[aux].perm == 1 && (malha[aux].cell(0).acsr.injg.QGas) > 0)
+                                                noConv.qgstdTot -= malha[aux].cell(0).acsr.injg.QGas / 86400;
+                                            if (fabs(malha[aux].cell(0).acsr.injg.QGas + 2121212121) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
-                                                (malha[aux].celula[0].acsr.injl.QLiq) > 0) {
-                                                double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-                                                double vazmassc = rlcA * malha[aux].celula[0].acsr.injl.QLiq * malha[aux].celula[0].acsr.injl.bet / 86400;
-                                                double massic = malha[aux].celula[0].acsr.injl.QLiq *
-                                                                (1. - malha[aux].celula[0].acsr.injl.bet) / 86400;
-                                                double Rhogs = malha[aux].celula[0].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
-                                                double Rhols = (1000 * 141.5 / (131.5 + malha[aux].celula[0].acsr.injl.FluidoPro.API)) * (1 - malha[aux].celula[0].acsr.injl.FluidoPro.BSW) + 1000. * malha[aux].celula[0].acsr.injl.FluidoPro.Denag * malha[aux].celula[0].acsr.injl.FluidoPro.BSW;
-                                                double multiplicador = (Rhols + malha[aux].celula[0].acsr.injl.FluidoPro.RGO * Rhogs *
-                                                                                    (1 - malha[aux].celula[0].acsr.injl.FluidoPro.BSW));
+                                                (malha[aux].cell(0).acsr.injl.QLiq) > 0) {
+                                                double rlcA = malha[aux].cell(0).acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+                                                double vazmassc = rlcA * malha[aux].cell(0).acsr.injl.QLiq * malha[aux].cell(0).acsr.injl.bet / 86400;
+                                                double massic = malha[aux].cell(0).acsr.injl.QLiq *
+                                                                (1. - malha[aux].cell(0).acsr.injl.bet) / 86400;
+                                                double Rhogs = malha[aux].cell(0).acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+                                                double Rhols = (1000 * 141.5 / (131.5 + malha[aux].cell(0).acsr.injl.FluidoPro.API)) * (1 - malha[aux].cell(0).acsr.injl.FluidoPro.BSW) + 1000. * malha[aux].cell(0).acsr.injl.FluidoPro.Denag * malha[aux].cell(0).acsr.injl.FluidoPro.BSW;
+                                                double multiplicador = (Rhols + malha[aux].cell(0).acsr.injl.FluidoPro.RGO * Rhogs *
+                                                                                    (1 - malha[aux].cell(0).acsr.injl.FluidoPro.BSW));
                                                 massic *= multiplicador;
-                                                double fracmasshidra = malha[aux].celula[0].acsr.injl.FluidoPro.FracMassHidra(malha[aux].celula[0].pres, malha[aux].celula[0].temp);
+                                                double fracmasshidra = malha[aux].cell(0).acsr.injl.FluidoPro.FracMassHidra(malha[aux].cell(0).pres, malha[aux].cell(0).temp);
                                                 noConv.mliqmist -= ((1. - fracmasshidra) * massic + vazmassc);
                                                 noConv.mgasmist -= fracmasshidra * massic;
                                             }
-                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq + 2121212121) < 1e-15)
+                                            if (fabs(malha[aux].cell(0).acsr.injl.QLiq + 2121212121) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
                                         }
                                     } else {
@@ -7237,32 +7237,32 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                             Resolv[aux] = 1;
                                             resolvGlob += Resolv[aux];
                                             ciclomalha++;
-                                            double rlcA = malha[aux].celula[0].acsr.injm.fluidocol.MasEspFlu(1.001, 15.);
-                                            double Rhogs = malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
-                                            double Rhols = (1000 * 141.5 / (131.5 + malha[aux].celula[0].acsr.injm.FluidoPro.API)) * (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW) + 1000. * malha[aux].celula[0].acsr.injm.FluidoPro.Denag *
-                                                                                                                                                                                              malha[aux].celula[0].acsr.injm.FluidoPro.BSW;
-                                            double multiplicador = (Rhols + malha[aux].celula[0].acsr.injm.FluidoPro.RGO * Rhogs *
-                                                                                (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW));
-                                            double fracmasshidra = malha[aux].celula[0].acsr.injm.FluidoPro.FracMassHidra(malha[aux].celula[0].pres,
-                                                                                                                          malha[aux].celula[0].temp);
-                                            if ((*arqRede.vg1dSP).fluidoRede == 1 && malha[aux].celula[0].acsr.injm.MassP > 0.) {
+                                            double rlcA = malha[aux].cell(0).acsr.injm.fluidocol.MasEspFlu(1.001, 15.);
+                                            double Rhogs = malha[aux].cell(0).acsr.injm.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+                                            double Rhols = (1000 * 141.5 / (131.5 + malha[aux].cell(0).acsr.injm.FluidoPro.API)) * (1 - malha[aux].cell(0).acsr.injm.FluidoPro.BSW) + 1000. * malha[aux].cell(0).acsr.injm.FluidoPro.Denag *
+                                                                                                                                                                                              malha[aux].cell(0).acsr.injm.FluidoPro.BSW;
+                                            double multiplicador = (Rhols + malha[aux].cell(0).acsr.injm.FluidoPro.RGO * Rhogs *
+                                                                                (1 - malha[aux].cell(0).acsr.injm.FluidoPro.BSW));
+                                            double fracmasshidra = malha[aux].cell(0).acsr.injm.FluidoPro.FracMassHidra(malha[aux].cell(0).pres,
+                                                                                                                          malha[aux].cell(0).temp);
+                                            if ((*arqRede.vg1dSP).fluidoRede == 1 && malha[aux].cell(0).acsr.injm.MassP > 0.) {
                                                 if (arqRede.malha[aux].perm == 1) {
-                                                    noConv.qlmistStd -= (malha[aux].celula[0].acsr.injm.MassP * 86400. /
+                                                    noConv.qlmistStd -= (malha[aux].cell(0).acsr.injm.MassP * 86400. /
                                                                              ((1. - fracmasshidra) * multiplicador) +
-                                                                         malha[aux].celula[0].acsr.injm.MassC * 86400. / rlcA);
+                                                                         malha[aux].cell(0).acsr.injm.MassC * 86400. / rlcA);
                                                 }
-                                            } else if ((*arqRede.vg1dSP).fluidoRede == 0 && malha[aux].celula[0].acsr.injm.MassG > 0.) {
-                                                double tit = malha[aux].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
-                                                noConv.qgstdTot -= malha[aux].celula[0].acsr.injm.MassG * tit /
-                                                                   (malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225 * fracmasshidra);
-                                            } else if ((malha[aux].celula[0].acsr.injm.MassC + malha[aux].celula[0].acsr.injm.MassP +
-                                                        malha[aux].celula[0].acsr.injm.MassG) > 0.) {
-                                                noConv.mliqmist -= (malha[aux].celula[0].acsr.injm.MassC + malha[aux].celula[0].acsr.injm.MassP);
-                                                noConv.mgasmist -= malha[aux].celula[0].acsr.injm.MassG;
+                                            } else if ((*arqRede.vg1dSP).fluidoRede == 0 && malha[aux].cell(0).acsr.injm.MassG > 0.) {
+                                                double tit = malha[aux].cell(0).acsr.injm.FluidoPro.FracMassHidra(1., 20.);
+                                                noConv.qgstdTot -= malha[aux].cell(0).acsr.injm.MassG * tit /
+                                                                   (malha[aux].cell(0).acsr.injm.FluidoPro.Deng * 1.225 * fracmasshidra);
+                                            } else if ((malha[aux].cell(0).acsr.injm.MassC + malha[aux].cell(0).acsr.injm.MassP +
+                                                        malha[aux].cell(0).acsr.injm.MassG) > 0.) {
+                                                noConv.mliqmist -= (malha[aux].cell(0).acsr.injm.MassC + malha[aux].cell(0).acsr.injm.MassP);
+                                                noConv.mgasmist -= malha[aux].cell(0).acsr.injm.MassG;
                                             }
-                                            if (fabs(malha[aux].celula[0].acsr.injm.MassC +
-                                                     malha[aux].celula[0].acsr.injm.MassP +
-                                                     malha[aux].celula[0].acsr.injm.MassG + 2121212121) < 1e-15)
+                                            if (fabs(malha[aux].cell(0).acsr.injm.MassC +
+                                                     malha[aux].cell(0).acsr.injm.MassP +
+                                                     malha[aux].cell(0).acsr.injm.MassG + 2121212121) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
                                         }
                                     }
@@ -7288,50 +7288,50 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
 
 void alteraModoFluidoCompBlack(SProd *malha, int narq, Vcr<int> &calclat0, Vcr<int> &tipoFluido0) {
     for (int j = 0; j < narq; j++) {
-        malha[j].arq.flashCompleto = 0;
+        malha[j].config().flashCompleto = 0;
         calclat0[j] = malha[j].CalcLat;
         malha[j].CalcLat = 0;
-        tipoFluido0[j] = malha[j].arq.tipoFluido;
+        tipoFluido0[j] = malha[j].config().tipoFluido;
         (*malha[j].vg1dSP).blackOilTemp = 1;
-        malha[j].arq.tipoFluido = 0;
+        malha[j].config().tipoFluido = 0;
         malha[j].fluiRevRede.flashCompleto = 0;
         malha[j].fluiRevRede.modoBlackTemp = 0;
         for (int i = 0; i <= malha[j].ncel; i++) {
-            malha[j].celula[i].flui.flashCompleto = 0;
-            malha[j].celula[i].flui.modoBlackTemp = 0;
-            if (malha[j].celula[i].acsr.tipo == 1) {
-                malha[j].celula[i].acsr.injg.FluidoPro.flashCompleto = 0;
-                malha[j].celula[i].acsr.injg.FluidoPro.modoBlackTemp = 0;
-            } else if (malha[j].celula[i].acsr.tipo == 2) {
-                malha[j].celula[i].acsr.injl.FluidoPro.flashCompleto = 0;
-                malha[j].celula[i].acsr.injl.FluidoPro.modoBlackTemp = 0;
-            } else if (malha[j].celula[i].acsr.tipo == 3) {
-                malha[j].celula[i].acsr.ipr.FluidoPro.flashCompleto = 0;
-                malha[j].celula[i].acsr.ipr.FluidoPro.modoBlackTemp = 0;
-            } else if (malha[j].celula[i].acsr.tipo == 15) {
-                malha[j].celula[i].acsr.radialPoro.flup.flashCompleto = 0;
-                malha[j].celula[i].acsr.radialPoro.flup.modoBlackTemp = 0;
-                int ncelRad = malha[j].celula[i].acsr.radialPoro.ncel;
+            malha[j].cell(i).flui.flashCompleto = 0;
+            malha[j].cell(i).flui.modoBlackTemp = 0;
+            if (malha[j].cell(i).acsr.tipo == 1) {
+                malha[j].cell(i).acsr.injg.FluidoPro.flashCompleto = 0;
+                malha[j].cell(i).acsr.injg.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 2) {
+                malha[j].cell(i).acsr.injl.FluidoPro.flashCompleto = 0;
+                malha[j].cell(i).acsr.injl.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 3) {
+                malha[j].cell(i).acsr.ipr.FluidoPro.flashCompleto = 0;
+                malha[j].cell(i).acsr.ipr.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 15) {
+                malha[j].cell(i).acsr.radialPoro.flup.flashCompleto = 0;
+                malha[j].cell(i).acsr.radialPoro.flup.modoBlackTemp = 0;
+                int ncelRad = malha[j].cell(i).acsr.radialPoro.ncel;
                 for (int k = 0; k < ncelRad; k++) {
-                    malha[j].celula[i].acsr.radialPoro.celula[k].flup.flashCompleto = 0;
-                    malha[j].celula[i].acsr.radialPoro.celula[k].flup.modoBlackTemp = 0;
+                    malha[j].cell(i).acsr.radialPoro.celula[k].flup.flashCompleto = 0;
+                    malha[j].cell(i).acsr.radialPoro.celula[k].flup.modoBlackTemp = 0;
                 }
-            } else if (malha[j].celula[i].acsr.tipo == 16) {
-                malha[j].celula[i].acsr.poroso2D.dados.flup.flashCompleto = 0;
-                malha[j].celula[i].acsr.poroso2D.dados.flup.modoBlackTemp = 0;
-                int ncelRad = malha[j].celula[i].acsr.poroso2D.dados.transfer.ncel;
+            } else if (malha[j].cell(i).acsr.tipo == 16) {
+                malha[j].cell(i).acsr.poroso2D.dados.flup.flashCompleto = 0;
+                malha[j].cell(i).acsr.poroso2D.dados.flup.modoBlackTemp = 0;
+                int ncelRad = malha[j].cell(i).acsr.poroso2D.dados.transfer.ncel;
                 for (int k = 0; k < ncelRad; k++) {
-                    malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.flashCompleto = 0;
-                    malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.modoBlackTemp = 0;
+                    malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.flashCompleto = 0;
+                    malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.modoBlackTemp = 0;
                 }
-                int ncelEle = malha[j].celula[i].acsr.poroso2D.malha.nele;
+                int ncelEle = malha[j].cell(i).acsr.poroso2D.malha.nele;
                 for (int k = 0; k < ncelEle; k++) {
-                    malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.flashCompleto = 0;
-                    malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.modoBlackTemp = 0;
+                    malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.flashCompleto = 0;
+                    malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.modoBlackTemp = 0;
                 }
-            } else if (malha[j].celula[i].acsr.tipo == 10) {
-                malha[j].celula[i].acsr.injm.FluidoPro.flashCompleto = 0;
-                malha[j].celula[i].acsr.injm.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 10) {
+                malha[j].cell(i).acsr.injm.FluidoPro.flashCompleto = 0;
+                malha[j].cell(i).acsr.injm.FluidoPro.modoBlackTemp = 0;
             }
         }
     }
@@ -7339,52 +7339,52 @@ void alteraModoFluidoCompBlack(SProd *malha, int narq, Vcr<int> &calclat0, Vcr<i
 
 void alteraModoFluidoBlackComp(SProd *malha, int narq, Vcr<int> calclat0, Vcr<int> tipoFluido0) {
     for (int j = 0; j < narq; j++) {
-        malha[j].arq.flashCompleto = 2;
+        malha[j].config().flashCompleto = 2;
         malha[j].CalcLat = calclat0[j];
-        malha[j].arq.tipoFluido = tipoFluido0[j];
+        malha[j].config().tipoFluido = tipoFluido0[j];
         (*malha[j].vg1dSP).blackOilTemp = 0;
         malha[j].fluiRevRede.flashCompleto = 2;
         malha[j].fluiRevRede.modoBlackTemp = 0;
         for (int i = 0; i <= malha[j].ncel; i++) {
-            malha[j].celula[i].flui.flashCompleto = 2;
-            malha[j].celula[i].flui.modoBlackTemp = 0;
-            if (malha[j].celula[i].acsr.tipo == 1) {
-                malha[j].celula[i].acsr.injg.FluidoPro.flashCompleto = 2;
-                malha[j].celula[i].acsr.injg.FluidoPro.modoBlackTemp = 0;
-            } else if (malha[j].celula[i].acsr.tipo == 2) {
-                malha[j].celula[i].acsr.injl.FluidoPro.flashCompleto = 2;
-                malha[j].celula[i].acsr.injl.FluidoPro.modoBlackTemp = 0;
-            } else if (malha[j].celula[i].acsr.tipo == 3) {
-                malha[j].celula[i].acsr.ipr.FluidoPro.flashCompleto = 2;
-                malha[j].celula[i].acsr.ipr.FluidoPro.modoBlackTemp = 0;
-            } else if (malha[j].celula[i].acsr.tipo == 15) {
-                malha[j].celula[i].acsr.radialPoro.flup.flashCompleto = 2;
-                malha[j].celula[i].acsr.radialPoro.flup.modoBlackTemp = 0;
-                int ncelRad = malha[j].celula[i].acsr.radialPoro.ncel;
+            malha[j].cell(i).flui.flashCompleto = 2;
+            malha[j].cell(i).flui.modoBlackTemp = 0;
+            if (malha[j].cell(i).acsr.tipo == 1) {
+                malha[j].cell(i).acsr.injg.FluidoPro.flashCompleto = 2;
+                malha[j].cell(i).acsr.injg.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 2) {
+                malha[j].cell(i).acsr.injl.FluidoPro.flashCompleto = 2;
+                malha[j].cell(i).acsr.injl.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 3) {
+                malha[j].cell(i).acsr.ipr.FluidoPro.flashCompleto = 2;
+                malha[j].cell(i).acsr.ipr.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 15) {
+                malha[j].cell(i).acsr.radialPoro.flup.flashCompleto = 2;
+                malha[j].cell(i).acsr.radialPoro.flup.modoBlackTemp = 0;
+                int ncelRad = malha[j].cell(i).acsr.radialPoro.ncel;
                 for (int k = 0; k < ncelRad; k++) {
-                    malha[j].celula[i].acsr.radialPoro.celula[k].flup.flashCompleto = 2;
-                    malha[j].celula[i].acsr.radialPoro.celula[k].flup.modoBlackTemp = 0;
+                    malha[j].cell(i).acsr.radialPoro.celula[k].flup.flashCompleto = 2;
+                    malha[j].cell(i).acsr.radialPoro.celula[k].flup.modoBlackTemp = 0;
                 }
-            } else if (malha[j].celula[i].acsr.tipo == 16) {
-                malha[j].celula[i].acsr.poroso2D.dados.flup.flashCompleto = 2;
-                malha[j].celula[i].acsr.poroso2D.dados.flup.modoBlackTemp = 0;
-                int ncelRad = malha[j].celula[i].acsr.poroso2D.dados.transfer.ncel;
+            } else if (malha[j].cell(i).acsr.tipo == 16) {
+                malha[j].cell(i).acsr.poroso2D.dados.flup.flashCompleto = 2;
+                malha[j].cell(i).acsr.poroso2D.dados.flup.modoBlackTemp = 0;
+                int ncelRad = malha[j].cell(i).acsr.poroso2D.dados.transfer.ncel;
                 for (int k = 0; k < ncelRad; k++) {
-                    malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.flashCompleto = 2;
-                    malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.modoBlackTemp = 0;
+                    malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.flashCompleto = 2;
+                    malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.modoBlackTemp = 0;
                 }
-                int ncelEle = malha[j].celula[i].acsr.poroso2D.malha.nele;
+                int ncelEle = malha[j].cell(i).acsr.poroso2D.malha.nele;
                 for (int k = 0; k < ncelEle; k++) {
-                    malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.flashCompleto = 2;
-                    malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.modoBlackTemp = 0;
+                    malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.flashCompleto = 2;
+                    malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.modoBlackTemp = 0;
                 }
-            } else if (malha[j].celula[i].acsr.tipo == 10) {
-                malha[j].celula[i].acsr.injm.FluidoPro.flashCompleto = 2;
-                malha[j].celula[i].acsr.injm.FluidoPro.modoBlackTemp = 0;
+            } else if (malha[j].cell(i).acsr.tipo == 10) {
+                malha[j].cell(i).acsr.injm.FluidoPro.flashCompleto = 2;
+                malha[j].cell(i).acsr.injm.FluidoPro.modoBlackTemp = 0;
             }
         }
-        malha[j].celula[0].flui.npseudo = malha[j].celula[1].flui.npseudo;
-        malha[j].celula[malha[j].ncel].flui.npseudo = malha[j].celula[malha[j].ncel - 1].flui.npseudo;
+        malha[j].cell(0).flui.npseudo = malha[j].cell(1).flui.npseudo;
+        malha[j].cell(malha[j].ncel).flui.npseudo = malha[j].cell(malha[j].ncel - 1).flui.npseudo;
         malha[j].buscaIni = 0;
     }
 }
@@ -7393,7 +7393,7 @@ int convergeRede(SProd *malha, Rede &arqRede, int narq, Vcr<int> &inativo, int &
     double norma = 1000.;
     double limConvergeLocal = arqRede.limConverge;
     int convergeaux = 0;
-    if (malha[0].arq.flashCompleto == 0 && arqRede.fluidoRede == 0) {
+    if (malha[0].config().flashCompleto == 0 && arqRede.fluidoRede == 0) {
         limConvergeLocal *= 2.1;
         convergeaux = 1;
     }
@@ -7409,7 +7409,7 @@ int convergeRede(SProd *malha, Rede &arqRede, int narq, Vcr<int> &inativo, int &
         indativo = 0;
         for (int i = 0; i < narq; i++)
             indativo += inativo[i];
-        if (malha[0].arq.flashCompleto != 2) {
+        if (malha[0].config().flashCompleto != 2) {
             (*arqRede.vg1dSP).verificaTramo = 0;
             norma = cicloRede(malha, arqRede, inativo, indativo, normaEvol, bloq);
             if (convergeaux == 1 && (*arqRede.vg1dSP).iterRede > 20)
@@ -7438,82 +7438,82 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
     //  a jusante: a pressao do separador, definida como condicao de contorno
     double ciclo = 1.1e9; // esta variavel sera utilizada como indicacao de que a solucao permanente foi obtida ou ocorreu
     // algum problema de convergencia ou de marcha
-    if (sistem1.arq.pocinjec == 0) { // nao é um sistema de injecao
+    if (sistem1.config().pocinjec == 0) { // nao é um sistema de injecao
 
-        if (sistem1.arq.ConContEntrada == 0) { // condicao de contorno na entrada é uma fonte, de gas,
+        if (sistem1.config().ConContEntrada == 0) { // condicao de contorno na entrada é uma fonte, de gas,
             // de liquido, IPR, fonte de massa, meio poroso radial ou meio poroso 2D
             int reverso = 0;                        // variavel que indica se o escoamento segue o senido montante jusante pre-definido ou se encontra em sentido reverso
-            if (sistem1.celula[0].acsr.tipo == 1) { // caso a fonte no inicio do tramop seja uma fonte de gas e a sua vazao seja negativa
-                if (sistem1.celula[0].acsr.injg.QGas < 0)
+            if (sistem1.cell(0).acsr.tipo == 1) { // caso a fonte no inicio do tramop seja uma fonte de gas e a sua vazao seja negativa
+                if (sistem1.cell(0).acsr.injg.QGas < 0)
                     reverso = 1;
-            } else if (sistem1.celula[0].acsr.tipo == 2) { // caso a fonte no inicio do tramop seja uma fonte de liquido e a sua vazao seja negativa
-                if (sistem1.celula[0].acsr.injl.QLiq < 0)
+            } else if (sistem1.cell(0).acsr.tipo == 2) { // caso a fonte no inicio do tramop seja uma fonte de liquido e a sua vazao seja negativa
+                if (sistem1.cell(0).acsr.injl.QLiq < 0)
                     reverso = 1;
-            } else if (sistem1.celula[0].acsr.tipo == 10) { // caso a fonte no inicio do tramop seja uma fonte de massa e a sua vazao seja negativa
-                if ((sistem1.celula[0].acsr.injm.MassC + sistem1.celula[0].acsr.injm.MassG + sistem1.celula[0].acsr.injm.MassP) < 0)
+            } else if (sistem1.cell(0).acsr.tipo == 10) { // caso a fonte no inicio do tramop seja uma fonte de massa e a sua vazao seja negativa
+                if ((sistem1.cell(0).acsr.injm.MassC + sistem1.cell(0).acsr.injm.MassG + sistem1.cell(0).acsr.injm.MassP) < 0)
                     reverso = 1;
             }
             // observacao, este teste de escoamento reverso não é feito para IPR, radial poroso ou 2d poroso, pois não se sabe se
             // a fonte de contoirno nestes casos será negativo ou positivo sem se ter uma ideia de qual é a pressao de fundo que o
             // sistema tera de lidar
             if (reverso == 0) { // caso o escoamento siga o sentido montante-jusante pre definido
-                if (sistem1.celula[0].acsr.tipo == 1 && sistem1.celula[0].acsr.injg.seco == 1)
-                    sistem1.celula[0].flui.RGO =
-                        sistem1.celula[0].acsr.injg.FluidoPro.RGO = 1e6 + (*sistem1.vg1dSP).localtiny; // para o caso de fonte
+                if (sistem1.cell(0).acsr.tipo == 1 && sistem1.cell(0).acsr.injg.seco == 1)
+                    sistem1.cell(0).flui.RGO =
+                        sistem1.cell(0).acsr.injg.FluidoPro.RGO = 1e6 + (*sistem1.vg1dSP).localtiny; // para o caso de fonte
                 // de gas seco, neste caso, não existe condensado e, pelas limitações do modelo de propriedade black oil, é necessário admitir
                 // um valor de RGO nop sistema de produção, neste caso, impoe-se um valor muito alto de RGO, par que não cause impacto
                 // na simulacao de gas seco
-                if (sistem1.arq.chokep.abertura[0] > 0.6 && sistem1.arq.chokep.curvaDinamic == 0) { // choke muito aberto, nao e considerado ativo
+                if (sistem1.config().chokep.abertura[0] > 0.6 && sistem1.config().chokep.curvaDinamic == 0) { // choke muito aberto, nao e considerado ativo
                     // a opcao curvaDinamic é uma opcao muito especial, quando é 1 se deseja emular um comportamento dinamico do atuador da valvula,
                     // que respondera aa pressao na linha, aa pressao no atuador e a uma rigidez de mola, alem de considerar a massa do atuador,
                     // neste caso, definir quando a valvula estarar ativa seria uma funcao das condicoes de escoamento
-                    if (sistem1.arq.lingas == 1 && sistem1.arq.gasinj.chuteVaz == 0 &&
-                        sistem1.celulaG[0].tipoCC == 0) // caso em que se tem uma linha de servico associada
+                    if (sistem1.config().lingas == 1 && sistem1.config().gasinj.chuteVaz == 0 &&
+                        sistem1.gasCell(0).tipoCC == 0) // caso em que se tem uma linha de servico associada
                         // e a condicao de contorno e pressao de injecao de gas
                         // neste caso, necessita-se de um chute inicial de vazao de injecao, a solucao de pressao de injecao e
                         // mais dificil de se obter no algoritmo utilizado no Marlim 3, por isto, sempre faz-se uma primeira rodada
                         // com uma estimativa inicial obtida de uma solucao com vazao de injecao
                         // caso este chute nao seja fornecido no json
                         // faz-se uma estimativa:
-                        sistem1.arq.gasinj.vazgas[0] = 150000 * sistem1.celulaG[0].duto.area / (*sistem1.vg1dSP).arearef;
+                        sistem1.config().gasinj.vazgas[0] = 150000 * sistem1.gasCell(0).duto.area / (*sistem1.vg1dSP).arearef;
                     // com esta estimativa, faz-se uma primeira solucao
                     // permanente com condicao de contorno vazao de injecao
-                    if (sistem1.arq.lingas == 1 && sistem1.celulaG[0].tipoCC == 0) {
+                    if (sistem1.config().lingas == 1 && sistem1.gasCell(0).tipoCC == 0) {
                         int konta = 0;
                         double multVazGas;
-                        sistem1.celulaG[0].tipoCC = 1;
+                        sistem1.gasCell(0).tipoCC = 1;
                         sistem1.buscaProdPfundoPerm(inichute);
-                        double pref = sistem1.celula[0].pres;
-                        double testaPres1 = sistem1.celulaG[0].pres;
-                        sistem1.arq.gasinj.vazgas[0] *= 1.05;
+                        double pref = sistem1.cell(0).pres;
+                        double testaPres1 = sistem1.gasCell(0).pres;
+                        sistem1.config().gasinj.vazgas[0] *= 1.05;
                         if (inichute < 0)
-                            sistem1.buscaProdPfundoPerm(sistem1.celula[0].pres);
+                            sistem1.buscaProdPfundoPerm(sistem1.cell(0).pres);
                         else
                             sistem1.buscaProdPfundoPerm(inichute);
-                        double testaPres2 = sistem1.celulaG[0].pres;
+                        double testaPres2 = sistem1.gasCell(0).pres;
                         if (testaPres1 < testaPres2) {
                             if (sistem1.presiniG > testaPres1)
                                 multVazGas = 1.05;
                             else
                                 multVazGas = 0.95;
-                            sistem1.arq.gasinj.vazgas[0] /= 1.05;
+                            sistem1.config().gasinj.vazgas[0] /= 1.05;
                         } else {
                             if (sistem1.presiniG > testaPres1)
                                 multVazGas = 0.95;
                             else
                                 multVazGas = 1.05;
-                            sistem1.arq.gasinj.vazgas[0] /= 1.05;
+                            sistem1.config().gasinj.vazgas[0] /= 1.05;
                         }
                         while (fabs(ciclo) > 0.9e9 && konta < 10) {
-                            sistem1.celulaG[0].tipoCC = 1; // mudando para condicao vazao de injecao na linha de servico,
+                            sistem1.gasCell(0).tipoCC = 1; // mudando para condicao vazao de injecao na linha de servico,
                             // para se ter uma primeira estimativa da pressao de fundo
                             // solucao permanente com vazao de injecao
                             if (konta > 0) {
                                 ciclo = sistem1.buscaProdPfundoPerm(inichute, konta); // solucao de estimativa com vazao de injecao
-                                pref = sistem1.celula[0].pres;                        // utilizando a pressao de fundo obtida da
+                                pref = sistem1.cell(0).pres;                        // utilizando a pressao de fundo obtida da
                                                                // estimativa com vazao de injecao de gas-lift
                             }
-                            sistem1.celulaG[0].tipoCC = 0; // voltando para a condicao pressao de injecao
+                            sistem1.gasCell(0).tipoCC = 0; // voltando para a condicao pressao de injecao
                             // com o valor da pressao de fundo desta solucao, busca-se a solucao
                             // com condicao de contorno original, pressao de injecao
                             ciclo = sistem1.buscaProdPfundoPerm(pref, konta); // nova tentativa de convergencia,agora com um valor de chute inicial
@@ -7525,7 +7525,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                                 // convergencia nao foi atingida por se ter pouco injecao de gas, neste caso
                                 // retorna-se aa abordagem descrita anteriormente, mas aumenta-se o valor da estimativa de
                                 // quanto deve ser a vazao de gas
-                                sistem1.arq.gasinj.vazgas[0] *= multVazGas;
+                                sistem1.config().gasinj.vazgas[0] *= multVazGas;
                                 cout << "#################NOVA TENTATIVA PARA GL COM CONDICAO DE PRESSAO########################" << endl;
                             }
                             konta++;
@@ -7542,52 +7542,52 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                         ciclo = sistem1.buscaProdPfundoPerm(inichute); // solucao para o caso em nao se tem linha de servico,
                     // ou tendo linha de servico, esta tem uma condicao de contorno=vazao de injecao
                 } else { // caso em que o choke esta restrito o suficiente para ser considerado ativo
-                    if (sistem1.arq.lingas == 1 && sistem1.arq.gasinj.chuteVaz == 0 &&
-                        sistem1.celulaG[0].tipoCC == 0) // caso em que se tem uma linha de servico associada
+                    if (sistem1.config().lingas == 1 && sistem1.config().gasinj.chuteVaz == 0 &&
+                        sistem1.gasCell(0).tipoCC == 0) // caso em que se tem uma linha de servico associada
                         // e a condicao de contorno e pressao de injecao de gas
                         // neste caso, necessita-se de um chute inicial de vazao de injecao, a solucao de pressao de injecao e
                         // mais dificil de se obter no algoritmo utilizado no Marlim 3, por isto, sempre faz-se uma primeira rodada
                         // com uma estimativa inicial obtida de uma solucao com vazao de injecao
                         // caso este chute nao seja fornecido no json
                         // faz-se uma estimativa:
-                        sistem1.arq.gasinj.vazgas[0] = 150000 * sistem1.celulaG[0].duto.area / (*sistem1.vg1dSP).arearef;
+                        sistem1.config().gasinj.vazgas[0] = 150000 * sistem1.gasCell(0).duto.area / (*sistem1.vg1dSP).arearef;
                     // com esta estimativa, faz-se uma primeira solucao
                     // permanente com condicao de contorno vazao de injecao
-                    if (sistem1.arq.lingas == 1 && sistem1.celulaG[0].tipoCC == 0) {
+                    if (sistem1.config().lingas == 1 && sistem1.gasCell(0).tipoCC == 0) {
                         int konta = 0;
                         double multVazGas;
-                        sistem1.celulaG[0].tipoCC = 1;
+                        sistem1.gasCell(0).tipoCC = 1;
                         sistem1.buscaProdPfundoPerm2(inichute);
-                        double testaPres1 = sistem1.celulaG[0].pres;
-                        sistem1.arq.gasinj.vazgas[0] *= 1.05;
+                        double testaPres1 = sistem1.gasCell(0).pres;
+                        sistem1.config().gasinj.vazgas[0] *= 1.05;
                         if (inichute < 0)
-                            sistem1.buscaProdPfundoPerm2(sistem1.celula[0].pres);
+                            sistem1.buscaProdPfundoPerm2(sistem1.cell(0).pres);
                         else
                             sistem1.buscaProdPfundoPerm2(inichute);
-                        double testaPres2 = sistem1.celulaG[0].pres;
+                        double testaPres2 = sistem1.gasCell(0).pres;
                         if (testaPres1 < testaPres2) {
                             if (sistem1.presiniG > testaPres1)
                                 multVazGas = 1.05;
                             else
                                 multVazGas = 0.95;
-                            sistem1.arq.gasinj.vazgas[0] /= 1.05;
+                            sistem1.config().gasinj.vazgas[0] /= 1.05;
                         } else {
                             if (sistem1.presiniG > testaPres1)
                                 multVazGas = 0.95;
                             else
                                 multVazGas = 1.05;
-                            sistem1.arq.gasinj.vazgas[0] /= 1.05;
+                            sistem1.config().gasinj.vazgas[0] /= 1.05;
                         }
                         while (fabs(ciclo) > 0.9e9 && konta < 10) {
-                            sistem1.celulaG[0].tipoCC = 1;
+                            sistem1.gasCell(0).tipoCC = 1;
                             // solucao permanente com vazao de injecao
                             if (konta > 0) {
                                 ciclo = sistem1.buscaProdPfundoPerm2(inichute, konta); // solucao de estimativa com vazao de injecao
                             }
-                            sistem1.celulaG[0].tipoCC = 0; // voltando para a condicao pressao de injecao
+                            sistem1.gasCell(0).tipoCC = 0; // voltando para a condicao pressao de injecao
                                                            // com o valor da pressao de fundo desta solucao, busca-se a solucao
                                                            // com condicao de contorno original, pressao de injecao
-                            double pref = sistem1.celula[0].pres; // utilizando a pressao de fundo obtida da
+                            double pref = sistem1.cell(0).pres; // utilizando a pressao de fundo obtida da
                             // estimativa com vazao de injecao de gas-lift
                             ciclo = sistem1.buscaProdPfundoPerm2(pref, konta);
                             // se nao for possivel a convergencia, faz-se uma nova estimativa de vazao
@@ -7598,7 +7598,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                                 // convergencia nao foi atingida por se ter pouco injecao de gas, neste caso
                                 // retorna-se aa abordagem descrita anteriormente, mas aumenta-se o valor da estimativa de
                                 // quanto deve ser a vazao de gas
-                                sistem1.arq.gasinj.vazgas[0] *= multVazGas;
+                                sistem1.config().gasinj.vazgas[0] *= multVazGas;
                                 cout << "#################NOVA TENTATIVA PARA GL COM CONDICAO DE PRESSAO########################" << endl;
                             }
                             konta++;
@@ -7617,32 +7617,32 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                 }
             } else
                 ciclo = sistem1.buscaProdPfundoPermRev(inichute);
-        } else if (sistem1.arq.ConContEntrada == 1) { // caso em que a condicao de contorno e pressao na entrada do duto
+        } else if (sistem1.config().ConContEntrada == 1) { // caso em que a condicao de contorno e pressao na entrada do duto
             // o resultado que se deseja obter, oua  "informaco faltante" é
             // a vazao massica na entrada do duto
             double chutemass = 0.;
-            double tit = sistem1.arq.CCPres.tit[0]; // o titulo na entrada, junto com a pressão e a razao beta são
+            double tit = sistem1.config().CCPres.tit[0]; // o titulo na entrada, junto com a pressão e a razao beta são
             ProFlu fluCP;
-            if (sistem1.arq.CCPres.indFluido == -1)
-                fluCP = sistem1.celula[0].flui;
+            if (sistem1.config().CCPres.indFluido == -1)
+                fluCP = sistem1.cell(0).flui;
             else
-                fluCP = sistem1.arq.flup[sistem1.arq.CCPres.indFluido];
+                fluCP = sistem1.config().flup[sistem1.config().CCPres.indFluido];
             // valçores de condicao de contorno
-            if (tit < (1. - (*sistem1.vg1dSP).localtiny) && sistem1.arq.tipoFluido == 0) { // caso em que se injeta uma corrente bifasica,
+            if (tit < (1. - (*sistem1.vg1dSP).localtiny) && sistem1.config().tipoFluido == 0) { // caso em que se injeta uma corrente bifasica,
                 // preparacao das condicoes de entrada
                 // RGO de entrada para a solucao permanente neste caso, observar
                 // que nao se indica a RGO de entrada e sim o título de entrada
 
-                sistem1.tempE = sistem1.arq.CCPres.temperatura[0]; // temperatura de entrada
-                sistem1.presE = sistem1.arq.CCPres.pres[0];        // pressão de entrada
-                double rcst = sistem1.celula[0].fluicol.MasEspFlu(1.01, 15);
-                double rcis = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
+                sistem1.tempE = sistem1.config().CCPres.temperatura[0]; // temperatura de entrada
+                sistem1.presE = sistem1.config().CCPres.pres[0];        // pressão de entrada
+                double rcst = sistem1.cell(0).fluicol.MasEspFlu(1.01, 15);
+                double rcis = sistem1.cell(0).fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                 if ((1 - sistem1.betaE) > 1e-10)
-                    sistem1.betaE = sistem1.arq.CCPres.bet[0] * rcst / rcis; // beta na condicao in-situ
+                    sistem1.betaE = sistem1.config().CCPres.bet[0] * rcst / rcis; // beta na condicao in-situ
                 else
                     sistem1.betaE = 1.;
                 double rgoentrada = 0.;
-                if (sistem1.arq.flashCompleto != 2) { // obtencao da RGO  de entrada a partir do titulo, para casos que nao
+                if (sistem1.config().flashCompleto != 2) { // obtencao da RGO  de entrada a partir do titulo, para casos que nao
                     // envolva modelo composicional, no caso composicional, isto é obtido internamente pelo proprio modelo composicional
                     // propriedades standard
                     double rgST = fluCP.Deng * 1.225;
@@ -7661,10 +7661,10 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     double Ost = (1 - sistem1.betaE) * bo * (1 - fw);
                     double Wst = fw * (1 - sistem1.betaE);
                     double Cst = sistem1.betaE;
-                    sistem1.titE = sistem1.arq.CCPres.tit[0];
+                    sistem1.titE = sistem1.config().CCPres.tit[0];
                     if (sistem1.titE < 0) {
                         double titH = fluCP.FracMassHidra(sistem1.presE, sistem1.tempE);
-                        double rc = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
+                        double rc = sistem1.cell(0).fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                         double rlMix = sistem1.betaE * rc + (1. - sistem1.betaE) * rl;
                         double val1 = ((1. - sistem1.betaE) * rl * titH / (1. - titH));
                         sistem1.titE = val1 / (rlMix + val1);
@@ -7675,7 +7675,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                                      sistem1.titE * rcst * Cst;
                         rgoentrada /= ((1 - sistem1.titE) * rgST * Ost);
                     } else
-                        rgoentrada = sistem1.celula[0].flui.RGO;
+                        rgoentrada = sistem1.cell(0).flui.RGO;
                 }
 
                 if (rgoentrada > 1600.)
@@ -7686,55 +7686,55 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                 // o processo de convergencia, nela, será armazenada nesta fonte a vazao que se deseja obter e armazenada, aqui,
                 // se utiliza uma fonte de líquido, pois o titulo de entrada não é 1, caso seja 1, será utilizada uma fonte de gas
 
-                sistem1.celula[0].pres = sistem1.arq.CCPres.pres[0];
-                sistem1.celula[0].acsr.tipo = 2;
-                sistem1.celula[0].acsr.injl.bet = sistem1.betaE;
-                sistem1.celula[0].acsr.injl.temp = sistem1.arq.CCPres.temperatura[0];
-                sistem1.celula[0].acsr.injl.FluidoPro.TempL = fluCP.TempL;
-                sistem1.celula[0].acsr.injl.FluidoPro.TempH = fluCP.TempH;
-                sistem1.celula[0].acsr.injl.FluidoPro.LVisL = fluCP.LVisL;
-                sistem1.celula[0].acsr.injl.FluidoPro.LVisH = fluCP.LVisH;
-                if (sistem1.arq.flashCompleto != 2) { // se não for composicional
-                    sistem1.celula[0].acsr.injl.FluidoPro.RGO = rgoentrada;
-                    sistem1.celula[0].acsr.injl.FluidoPro.Deng = fluCP.Deng;
-                    sistem1.celula[0].acsr.injl.FluidoPro.Denag = fluCP.Denag;
-                    sistem1.celula[0].acsr.injl.FluidoPro.yco2 = fluCP.yco2;
-                    sistem1.celula[0].acsr.injl.FluidoPro.API = fluCP.API;
-                    sistem1.celula[0].acsr.injl.FluidoPro.BSW = fluCP.BSW;
-                    sistem1.celula[0].acsr.injl.FluidoPro.RenovaFluido();
+                sistem1.cell(0).pres = sistem1.config().CCPres.pres[0];
+                sistem1.cell(0).acsr.tipo = 2;
+                sistem1.cell(0).acsr.injl.bet = sistem1.betaE;
+                sistem1.cell(0).acsr.injl.temp = sistem1.config().CCPres.temperatura[0];
+                sistem1.cell(0).acsr.injl.FluidoPro.TempL = fluCP.TempL;
+                sistem1.cell(0).acsr.injl.FluidoPro.TempH = fluCP.TempH;
+                sistem1.cell(0).acsr.injl.FluidoPro.LVisL = fluCP.LVisL;
+                sistem1.cell(0).acsr.injl.FluidoPro.LVisH = fluCP.LVisH;
+                if (sistem1.config().flashCompleto != 2) { // se não for composicional
+                    sistem1.cell(0).acsr.injl.FluidoPro.RGO = rgoentrada;
+                    sistem1.cell(0).acsr.injl.FluidoPro.Deng = fluCP.Deng;
+                    sistem1.cell(0).acsr.injl.FluidoPro.Denag = fluCP.Denag;
+                    sistem1.cell(0).acsr.injl.FluidoPro.yco2 = fluCP.yco2;
+                    sistem1.cell(0).acsr.injl.FluidoPro.API = fluCP.API;
+                    sistem1.cell(0).acsr.injl.FluidoPro.BSW = fluCP.BSW;
+                    sistem1.cell(0).acsr.injl.FluidoPro.RenovaFluido();
                 } else { // caso composicional
                     fluCP.atualizaPropCompStandard();
                     fluCP.atualizaPropComp(sistem1.presE, sistem1.tempE);
                     double rl = fluCP.MasEspLiq(sistem1.presE, sistem1.tempE);
                     double titH = fluCP.FracMassHidra(sistem1.presE, sistem1.tempE);
-                    double rc = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
+                    double rc = sistem1.cell(0).fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                     double rlMix = sistem1.betaE * rc + (1. - sistem1.betaE) * rl;
                     double val1 = ((1. - sistem1.betaE) * rl * titH / (1. - titH));
                     sistem1.titE = val1 / (rlMix + val1);
-                    sistem1.celula[0].acsr.injl.FluidoPro = fluCP;
+                    sistem1.cell(0).acsr.injl.FluidoPro = fluCP;
                 }
-                sistem1.celula[0].fluiL = &sistem1.celula[0].acsr.injl.FluidoPro;
-                chutemass = 1000. * pow(sistem1.celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.); // estimativa
+                sistem1.cell(0).fluiL = &sistem1.cell(0).acsr.injl.FluidoPro;
+                chutemass = 1000. * pow(sistem1.cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.); // estimativa
                                                                                                     // de vazao de entrada na tubulkacao
             } else { // caso em que so se tem gas na entrada
                 double rgoentrada = 0.;
-                sistem1.celula[0].pres = sistem1.arq.CCPres.pres[0];
-                sistem1.celula[0].acsr.tipo = 1;
-                sistem1.celula[0].acsr.injg.temp = sistem1.arq.CCPres.temperatura[0];
-                sistem1.celula[0].acsr.injg.FluidoPro.TempL = fluCP.TempL;
-                sistem1.celula[0].acsr.injg.FluidoPro.TempH = fluCP.TempH;
-                sistem1.celula[0].acsr.injg.FluidoPro.LVisL = fluCP.LVisL;
-                sistem1.celula[0].acsr.injg.FluidoPro.LVisH = fluCP.LVisH;
-                if (sistem1.arq.flashCompleto != 2) {
+                sistem1.cell(0).pres = sistem1.config().CCPres.pres[0];
+                sistem1.cell(0).acsr.tipo = 1;
+                sistem1.cell(0).acsr.injg.temp = sistem1.config().CCPres.temperatura[0];
+                sistem1.cell(0).acsr.injg.FluidoPro.TempL = fluCP.TempL;
+                sistem1.cell(0).acsr.injg.FluidoPro.TempH = fluCP.TempH;
+                sistem1.cell(0).acsr.injg.FluidoPro.LVisL = fluCP.LVisL;
+                sistem1.cell(0).acsr.injg.FluidoPro.LVisH = fluCP.LVisH;
+                if (sistem1.config().flashCompleto != 2) {
                     double rgST = fluCP.Deng * 1.225;
                     double rg = fluCP.MasEspGas(sistem1.presE, sistem1.tempE);
                     double rl = fluCP.MasEspoleo(sistem1.presE, sistem1.tempE);
-                    double rcST = sistem1.celula[0].fluicol.MasEspFlu(1.01, 20.);
-                    double rc = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
+                    double rcST = sistem1.cell(0).fluicol.MasEspFlu(1.01, 20.);
+                    double rc = sistem1.cell(0).fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                     double val1;
                     double val2;
                     double titT;
-                    val1 = (rcST / rc) * (rg / rgST) * sistem1.arq.CCPres.bet[0] / tit;
+                    val1 = (rcST / rc) * (rg / rgST) * sistem1.config().CCPres.bet[0] / tit;
                     val2 = (rg / rl) * (1 - tit) / tit;
                     titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                     sistem1.titE = titT;
@@ -7742,77 +7742,77 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     rgoentrada = 1e6 + (*sistem1.vg1dSP).localtiny;
                     if (rgoentrada > 1400.)
                         rgoentrada = 1e6 + (*sistem1.vg1dSP).localtiny;
-                    fluCP.RGO = sistem1.celula[0].flui.RGO = sistem1.celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
-                    sistem1.celula[0].acsr.injg.FluidoPro.Deng = fluCP.Deng;
-                    sistem1.celula[0].acsr.injg.FluidoPro.Denag = fluCP.Denag;
-                    sistem1.celula[0].acsr.injg.FluidoPro.yco2 = fluCP.yco2;
-                    sistem1.celula[0].acsr.injg.FluidoPro.API = fluCP.API;
-                    sistem1.celula[0].acsr.injg.FluidoPro.BSW = fluCP.BSW;
-                    sistem1.celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                    fluCP.RGO = sistem1.cell(0).flui.RGO = sistem1.cell(0).acsr.injg.FluidoPro.RGO = rgoentrada;
+                    sistem1.cell(0).acsr.injg.FluidoPro.Deng = fluCP.Deng;
+                    sistem1.cell(0).acsr.injg.FluidoPro.Denag = fluCP.Denag;
+                    sistem1.cell(0).acsr.injg.FluidoPro.yco2 = fluCP.yco2;
+                    sistem1.cell(0).acsr.injg.FluidoPro.API = fluCP.API;
+                    sistem1.cell(0).acsr.injg.FluidoPro.BSW = fluCP.BSW;
+                    sistem1.cell(0).acsr.injg.FluidoPro.RenovaFluido();
                 } else {
                     fluCP.atualizaPropCompStandard();
                     fluCP.atualizaPropComp(sistem1.presE, sistem1.tempE);
                     double rgST = fluCP.Deng * 1.225;
                     double rg = fluCP.MasEspGas(sistem1.presE, sistem1.tempE);
                     double rl = fluCP.MasEspoleo(sistem1.presE, sistem1.tempE);
-                    double rcST = sistem1.celula[0].fluicol.MasEspFlu(1.01, 20.);
-                    double rc = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
-                    double val1 = (rcST / rc) * (rg / rgST) * sistem1.arq.CCPres.bet[0] / tit;
+                    double rcST = sistem1.cell(0).fluicol.MasEspFlu(1.01, 20.);
+                    double rc = sistem1.cell(0).fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
+                    double val1 = (rcST / rc) * (rg / rgST) * sistem1.config().CCPres.bet[0] / tit;
                     double val2 = (rg / rl) * (1 - tit) / tit;
                     double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                     sistem1.titE = titT;
                     sistem1.betaE = val1 / (val2 + val1);
-                    sistem1.celula[0].acsr.injg.FluidoPro = fluCP;
+                    sistem1.cell(0).acsr.injg.FluidoPro = fluCP;
                 }
                 if (tit >= (1. - (*sistem1.vg1dSP).localtiny)) {
-                    sistem1.celula[0].acsr.injg.seco = 0;
-                    sistem1.celula[0].acsr.injg.razCompGas = sistem1.arq.CCPres.bet[0];
+                    sistem1.cell(0).acsr.injg.seco = 0;
+                    sistem1.cell(0).acsr.injg.razCompGas = sistem1.config().CCPres.bet[0];
                 } else {
-                    sistem1.celula[0].acsr.injg.seco = 0;
-                    sistem1.celula[0].acsr.injg.razCompGas = sistem1.arq.CCPres.bet[0];
+                    sistem1.cell(0).acsr.injg.seco = 0;
+                    sistem1.cell(0).acsr.injg.razCompGas = sistem1.config().CCPres.bet[0];
                 }
-                chutemass = 10000. * pow(sistem1.celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.); // estimativa
+                chutemass = 10000. * pow(sistem1.cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.); // estimativa
                 // de vazao de entrada na tubulkacao
-                sistem1.celula[0].fluiL = &sistem1.celula[0].acsr.injg.FluidoPro;
+                sistem1.cell(0).fluiL = &sistem1.cell(0).acsr.injg.FluidoPro;
             }
             if (inichute > 0)
                 chutemass = inichute;
             // solucao permanente para condicao de pressao na entrada sem choke ativo
-            if (sistem1.arq.chokep.abertura[0] > 0.6)
+            if (sistem1.config().chokep.abertura[0] > 0.6)
                 ciclo = sistem1.buscaProdPresPresPerm(chutemass);
             // solucao permanente para condicao de pressao na entrada com choke ativo
             else {
-                if (sistem1.arq.chokep.abertura[0] > 1e-15)
+                if (sistem1.config().chokep.abertura[0] > 1e-15)
                     ciclo = sistem1.buscaProdPresPresPerm2(chutemass);
                 else
                     ciclo = sistem1.buscaProdPresPresPerm3(inichute);
             }
-        } else if (sistem1.arq.ConContEntrada == 2) { // caso em que a condicao de contorno e pressao e vazao de injecao
-            ciclo = sistem1.buscaProdPfundoPerm3(sistem1.arq.CCVPres.pres[0]);
+        } else if (sistem1.config().ConContEntrada == 2) { // caso em que a condicao de contorno e pressao e vazao de injecao
+            ciclo = sistem1.buscaProdPfundoPerm3(sistem1.config().CCVPres.pres[0]);
         }
 
     } else { // solucao para o caso em que o sistema é de poco injetor
-        sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
-        sistem1.arq.resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
-        if(sistem1.arq.nintermi>0)sistem1.arq.resumoIntermitencia(sistem1.celula, sistem1.indTramo);
-        if(sistem1.arq.nCelUnit>0){
-        	for(int iCelUni=0; iCelUni<sistem1.arq.nCelUnit; iCelUni++)
-        	sistem1.arq.relatorioCelulaUnitaria(sistem1.celula,sistem1.arq.celUnit[iCelUni].posicP, sistem1.indTramo);
+        sistem1.config().imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
+        sistem1.config().resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
+        if(sistem1.config().nintermi>0)sistem1.config().resumoIntermitencia(sistem1.celula, sistem1.indTramo);
+        if(sistem1.config().nCelUnit>0){
+        	for(int iCelUni=0; iCelUni<sistem1.config().nCelUnit; iCelUni++)
+        	sistem1.config().relatorioCelulaUnitaria(sistem1.celula,sistem1.config().celUnit[iCelUni].posicP, sistem1.indTramo);
         }
         // enterramento
         for (int j = 0; j <= sistem1.ncel; j++) {
-            if (sistem1.celula[j].calor.difus2D == 1) {
-                sistem1.celula[j].calor.poisson2D.imprimePermanente(sistem1.indTramo);
+            if (sistem1.cell(j).calor.difus2D == 1) {
+                sistem1.cell(j).calor.poisson2D.imprimePermanente(sistem1.indTramo);
             }
         }
         // ver a definicao das condicoes de contorno de poco injetor na classe leitura
-        if (sistem1.arq.condpocinj.CC == 1 || sistem1.arq.condpocinj.CC == 3)
+        if (sistem1.config().condpocinj.CC == 1 || sistem1.config().condpocinj.CC == 3)
             ciclo = sistem1.buscaInjPfundoPerm1(inichute);
-        else if (sistem1.arq.condpocinj.CC == 0)
+        else if (sistem1.config().condpocinj.CC == 0)
             ciclo = sistem1.buscaInjPfundoPerm2(inichute);
-        else if (sistem1.arq.condpocinj.CC == 2)
+        else if (sistem1.config().condpocinj.CC == 2)
             ciclo = sistem1.buscaInjPfundoPerm3(inichute);
-        else if (sistem1.arq.condpocinj.CC == 4)
+        else if (sistem1.config().condpocinj.CC == 4)
             ciclo = sistem1.buscaInjPfundoPerm4();
         else
             ciclo = sistem1.buscaInjPfundoPerm5(inichute);
@@ -7830,43 +7830,43 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
     sistem1.modoPerm = 1;
     double saida = -1.e10;
     // caso sem necessidade de fazer uma pre-simulacao black-oil para aumento de desempenho
-    if (sistem1.arq.flashCompleto != 2 ||
-        (sistem1.arq.pocinjec == 1 && sistem1.arq.condpocinj.CC == 4))
+    if (sistem1.config().flashCompleto != 2 ||
+        (sistem1.config().pocinjec == 1 && sistem1.config().condpocinj.CC == 4))
         saida = permanenteSimples(sistem1, chute0);
     else {
-        if (sistem1.arq.pocinjec == 0) {
+        if (sistem1.config().pocinjec == 0) {
             // alterando as "flags" que indicam que a simulacao e composicional para flags indicando que a simulacao sera black-oil
-            sistem1.arq.flashCompleto = 0;
+            sistem1.config().flashCompleto = 0;
             int calclat0 = sistem1.CalcLat;
             sistem1.CalcLat = 0;
-            int tipoFluido0 = sistem1.arq.tipoFluido;
-            sistem1.arq.tipoFluido = 0;
+            int tipoFluido0 = sistem1.config().tipoFluido;
+            sistem1.config().tipoFluido = 0;
             for (int i = 0; i <= sistem1.ncel; i++) {
-                sistem1.celula[i].flui.flashCompleto = 0;
-                if (sistem1.celula[i].acsr.tipo == 1)
-                    sistem1.celula[i].acsr.injg.FluidoPro.flashCompleto = 0;
-                else if (sistem1.celula[i].acsr.tipo == 2)
-                    sistem1.celula[i].acsr.injl.FluidoPro.flashCompleto = 0;
-                else if (sistem1.celula[i].acsr.tipo == 3)
-                    sistem1.celula[i].acsr.ipr.FluidoPro.flashCompleto = 0;
-                else if (sistem1.celula[i].acsr.tipo == 15) {
-                    sistem1.celula[i].acsr.radialPoro.flup.flashCompleto = 0;
-                    int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
+                sistem1.cell(i).flui.flashCompleto = 0;
+                if (sistem1.cell(i).acsr.tipo == 1)
+                    sistem1.cell(i).acsr.injg.FluidoPro.flashCompleto = 0;
+                else if (sistem1.cell(i).acsr.tipo == 2)
+                    sistem1.cell(i).acsr.injl.FluidoPro.flashCompleto = 0;
+                else if (sistem1.cell(i).acsr.tipo == 3)
+                    sistem1.cell(i).acsr.ipr.FluidoPro.flashCompleto = 0;
+                else if (sistem1.cell(i).acsr.tipo == 15) {
+                    sistem1.cell(i).acsr.radialPoro.flup.flashCompleto = 0;
+                    int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.radialPoro.celula[j].flup.flashCompleto = 0;
+                        sistem1.cell(i).acsr.radialPoro.celula[j].flup.flashCompleto = 0;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 16) {
-                    sistem1.celula[i].acsr.poroso2D.dados.flup.flashCompleto = 0;
-                    int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (sistem1.cell(i).acsr.tipo == 16) {
+                    sistem1.cell(i).acsr.poroso2D.dados.flup.flashCompleto = 0;
+                    int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 0;
+                        sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 0;
                     }
-                    int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
                     for (int j = 0; j < ncelEle; j++) {
-                        sistem1.celula[i].acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 0;
+                        sistem1.cell(i).acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 0;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 10)
-                    sistem1.celula[i].acsr.injm.FluidoPro.flashCompleto = 0;
+                } else if (sistem1.cell(i).acsr.tipo == 10)
+                    sistem1.cell(i).acsr.injm.FluidoPro.flashCompleto = 0;
             }
             // calculo de solucao como black oil
             saida = permanenteSimples(sistem1, chute0);
@@ -7874,50 +7874,50 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
             // preparando os valores de pressao ou vazao de fundo para serem utilizadas como chutes iniciais para
             // a solucao black-oil
             double inichute;
-            if (sistem1.arq.ConContEntrada == 0)
-                inichute = sistem1.celula[0].pres;
+            if (sistem1.config().ConContEntrada == 0)
+                inichute = sistem1.cell(0).pres;
             else {
-                double pl = sistem1.celula[1].presaux;
-                double tl = sistem1.celula[1].temp;
-                if (sistem1.celula[0].acsr.tipo == 1)
-                    inichute = (sistem1.celula[1].MC - sistem1.celula[1].Mliqini) * 86400 /
-                                   (sistem1.celula[1].flui.Deng * 1.225) +
-                               (1. - sistem1.celula[1].flui.BSW) *
-                                   sistem1.celula[1].QL * sistem1.celula[1].flui.RS(tl, pl) * 86400;
-                else if (sistem1.celula[0].acsr.tipo == 2)
-                    inichute = sistem1.celula[1].QL * 86400;
+                double pl = sistem1.cell(1).presaux;
+                double tl = sistem1.cell(1).temp;
+                if (sistem1.cell(0).acsr.tipo == 1)
+                    inichute = (sistem1.cell(1).MC - sistem1.cell(1).Mliqini) * 86400 /
+                                   (sistem1.cell(1).flui.Deng * 1.225) +
+                               (1. - sistem1.cell(1).flui.BSW) *
+                                   sistem1.cell(1).QL * sistem1.cell(1).flui.RS(tl, pl) * 86400;
+                else if (sistem1.cell(0).acsr.tipo == 2)
+                    inichute = sistem1.cell(1).QL * 86400;
             }
-            sistem1.arq.flashCompleto = 2;
+            sistem1.config().flashCompleto = 2;
             sistem1.CalcLat = calclat0;
-            sistem1.arq.tipoFluido = tipoFluido0;
+            sistem1.config().tipoFluido = tipoFluido0;
             for (int i = 0; i <= sistem1.ncel; i++) {
                 // retornando as "flags" que indicam qual modelo de calculo de propriedade de fluidos sera utilizada
                 // para a condicao composicional
-                sistem1.celula[i].flui.flashCompleto = 2;
-                if (sistem1.celula[i].acsr.tipo == 1)
-                    sistem1.celula[i].acsr.injg.FluidoPro.flashCompleto = 2;
-                else if (sistem1.celula[i].acsr.tipo == 2)
-                    sistem1.celula[i].acsr.injl.FluidoPro.flashCompleto = 2;
-                else if (sistem1.celula[i].acsr.tipo == 3)
-                    sistem1.celula[i].acsr.ipr.FluidoPro.flashCompleto = 2;
-                else if (sistem1.celula[i].acsr.tipo == 15) {
-                    sistem1.celula[i].acsr.radialPoro.flup.flashCompleto = 2;
-                    int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
+                sistem1.cell(i).flui.flashCompleto = 2;
+                if (sistem1.cell(i).acsr.tipo == 1)
+                    sistem1.cell(i).acsr.injg.FluidoPro.flashCompleto = 2;
+                else if (sistem1.cell(i).acsr.tipo == 2)
+                    sistem1.cell(i).acsr.injl.FluidoPro.flashCompleto = 2;
+                else if (sistem1.cell(i).acsr.tipo == 3)
+                    sistem1.cell(i).acsr.ipr.FluidoPro.flashCompleto = 2;
+                else if (sistem1.cell(i).acsr.tipo == 15) {
+                    sistem1.cell(i).acsr.radialPoro.flup.flashCompleto = 2;
+                    int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.radialPoro.celula[j].flup.flashCompleto = 2;
+                        sistem1.cell(i).acsr.radialPoro.celula[j].flup.flashCompleto = 2;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 16) {
-                    sistem1.celula[i].acsr.poroso2D.dados.flup.flashCompleto = 2;
-                    int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (sistem1.cell(i).acsr.tipo == 16) {
+                    sistem1.cell(i).acsr.poroso2D.dados.flup.flashCompleto = 2;
+                    int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 2;
+                        sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 2;
                     }
-                    int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
                     for (int j = 0; j < ncelEle; j++) {
-                        sistem1.celula[i].acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 2;
+                        sistem1.cell(i).acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 2;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 10)
-                    sistem1.celula[i].acsr.injm.FluidoPro.flashCompleto = 2;
+                } else if (sistem1.cell(i).acsr.tipo == 10)
+                    sistem1.cell(i).acsr.injm.FluidoPro.flashCompleto = 2;
             }
             sistem1.buscaIni = 0;
             // existem duas maneiras de fazer a solucao composicional, uma completa, todas as propriedades sao calculadas a
@@ -7927,118 +7927,118 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
             // black-oil, pode-se fazer um conjuntoi de tabelas flashs com o range de pressao e temperatura definido a partir doi resultado
             // desta simulacao, alem da estimativa de qual a composicao das correntes trecho a trecho, nbesta caso,
             // usa-se o metodo preparaTabelaDin
-            if (sistem1.arq.tabelaDinamica == 1)
+            if (sistem1.config().tabelaDinamica == 1)
                 preparaTabDin(sistem1);
             // calculo de solucao composicional
             saida = permanenteSimples(sistem1, inichute);
         } else {
             // neste namesapace faz-se algo similar ao que foi feito anteriormente para sistemas de producao ou exportacao,
             // para sistemas de injecao. Nestre caso, altera-se a "flag" que indica que o calcvulo não e composicional para black oil
-            sistem1.arq.flashCompleto = 3;
+            sistem1.config().flashCompleto = 3;
             int calclat0 = sistem1.CalcLat;
             sistem1.CalcLat = 0;
-            int tipoFluido0 = sistem1.arq.tipoFluido;
-            sistem1.arq.tipoFluido = 0;
+            int tipoFluido0 = sistem1.config().tipoFluido;
+            sistem1.config().tipoFluido = 0;
             for (int i = 0; i <= sistem1.ncel; i++) {
-                sistem1.celula[i].flui.flashCompleto = 3;
-                if (sistem1.celula[i].acsr.tipo == 1)
-                    sistem1.celula[i].acsr.injg.FluidoPro.flashCompleto = 3;
-                else if (sistem1.celula[i].acsr.tipo == 2)
-                    sistem1.celula[i].acsr.injl.FluidoPro.flashCompleto = 3;
-                else if (sistem1.celula[i].acsr.tipo == 3)
-                    sistem1.celula[i].acsr.ipr.FluidoPro.flashCompleto = 3;
-                else if (sistem1.celula[i].acsr.tipo == 15) {
-                    sistem1.celula[i].acsr.radialPoro.flup.flashCompleto = 3;
-                    int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
+                sistem1.cell(i).flui.flashCompleto = 3;
+                if (sistem1.cell(i).acsr.tipo == 1)
+                    sistem1.cell(i).acsr.injg.FluidoPro.flashCompleto = 3;
+                else if (sistem1.cell(i).acsr.tipo == 2)
+                    sistem1.cell(i).acsr.injl.FluidoPro.flashCompleto = 3;
+                else if (sistem1.cell(i).acsr.tipo == 3)
+                    sistem1.cell(i).acsr.ipr.FluidoPro.flashCompleto = 3;
+                else if (sistem1.cell(i).acsr.tipo == 15) {
+                    sistem1.cell(i).acsr.radialPoro.flup.flashCompleto = 3;
+                    int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.radialPoro.celula[j].flup.flashCompleto = 3;
+                        sistem1.cell(i).acsr.radialPoro.celula[j].flup.flashCompleto = 3;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 16) {
-                    sistem1.celula[i].acsr.poroso2D.dados.flup.flashCompleto = 3;
-                    int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (sistem1.cell(i).acsr.tipo == 16) {
+                    sistem1.cell(i).acsr.poroso2D.dados.flup.flashCompleto = 3;
+                    int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 3;
+                        sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 3;
                     }
-                    int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
                     for (int j = 0; j < ncelEle; j++) {
-                        sistem1.celula[i].acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 3;
+                        sistem1.cell(i).acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 3;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 10)
-                    sistem1.celula[i].acsr.injm.FluidoPro.flashCompleto = 3;
+                } else if (sistem1.cell(i).acsr.tipo == 10)
+                    sistem1.cell(i).acsr.injm.FluidoPro.flashCompleto = 3;
             }
             // solucao de poco injetor black oil
             saida = permanenteSimples(sistem1, chute0);
 
             // retorno para a "flag" que indica moidelo composicional
-            sistem1.arq.flashCompleto = 2;
+            sistem1.config().flashCompleto = 2;
             sistem1.CalcLat = calclat0;
-            sistem1.arq.tipoFluido = tipoFluido0;
+            sistem1.config().tipoFluido = tipoFluido0;
             for (int i = 0; i <= sistem1.ncel; i++) {
-                sistem1.celula[i].flui.flashCompleto = 2;
-                if (sistem1.celula[i].acsr.tipo == 1)
-                    sistem1.celula[i].acsr.injg.FluidoPro.flashCompleto = 2;
-                else if (sistem1.celula[i].acsr.tipo == 2)
-                    sistem1.celula[i].acsr.injl.FluidoPro.flashCompleto = 2;
-                else if (sistem1.celula[i].acsr.tipo == 3)
-                    sistem1.celula[i].acsr.ipr.FluidoPro.flashCompleto = 2;
-                else if (sistem1.celula[i].acsr.tipo == 15) {
-                    sistem1.celula[i].acsr.radialPoro.flup.flashCompleto = 2;
-                    int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
+                sistem1.cell(i).flui.flashCompleto = 2;
+                if (sistem1.cell(i).acsr.tipo == 1)
+                    sistem1.cell(i).acsr.injg.FluidoPro.flashCompleto = 2;
+                else if (sistem1.cell(i).acsr.tipo == 2)
+                    sistem1.cell(i).acsr.injl.FluidoPro.flashCompleto = 2;
+                else if (sistem1.cell(i).acsr.tipo == 3)
+                    sistem1.cell(i).acsr.ipr.FluidoPro.flashCompleto = 2;
+                else if (sistem1.cell(i).acsr.tipo == 15) {
+                    sistem1.cell(i).acsr.radialPoro.flup.flashCompleto = 2;
+                    int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.radialPoro.celula[j].flup.flashCompleto = 2;
+                        sistem1.cell(i).acsr.radialPoro.celula[j].flup.flashCompleto = 2;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 16) {
-                    sistem1.celula[i].acsr.poroso2D.dados.flup.flashCompleto = 2;
-                    int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (sistem1.cell(i).acsr.tipo == 16) {
+                    sistem1.cell(i).acsr.poroso2D.dados.flup.flashCompleto = 2;
+                    int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 2;
+                        sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[j].flup.flashCompleto = 2;
                     }
-                    int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
                     for (int j = 0; j < ncelEle; j++) {
-                        sistem1.celula[i].acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 2;
+                        sistem1.cell(i).acsr.poroso2D.malha.mlh2d[j].flup.flashCompleto = 2;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 10)
-                    sistem1.celula[i].acsr.injm.FluidoPro.flashCompleto = 2;
+                } else if (sistem1.cell(i).acsr.tipo == 10)
+                    sistem1.cell(i).acsr.injm.FluidoPro.flashCompleto = 2;
             }
             // preparacao do chute para poço injetor
             double chute;
-            if (sistem1.arq.condpocinj.CC == 1 || sistem1.arq.condpocinj.CC == 2 || sistem1.arq.condpocinj.CC == 3)
-                chute = sistem1.celula[0].acsr.injg.QGas;
+            if (sistem1.config().condpocinj.CC == 1 || sistem1.config().condpocinj.CC == 2 || sistem1.config().condpocinj.CC == 3)
+                chute = sistem1.cell(0).acsr.injg.QGas;
             else
                 chute = sistem1.pGSup;
             // prepara tabela dinamica, caso tenha sido solicitada
-            if (sistem1.arq.tabelaDinamica == 1)
+            if (sistem1.config().tabelaDinamica == 1)
                 preparaTabDin(sistem1);
             // solucao composicional
             saida = permanenteSimples(sistem1, chute);
         }
     }
     // impressão de perfis apos a obtencao de solucao permanente
-    if ((*sistem1.vg1dSP).chaverede == 0 && sistem1.arq.transiente == 0 && sistem1.arq.AP == 0) { // impŕessao de perfis e tendencias, quando a opcao transiente
+    if ((*sistem1.vg1dSP).chaverede == 0 && sistem1.config().transiente == 0 && sistem1.config().AP == 0) { // impŕessao de perfis e tendencias, quando a opcao transiente
         // nao esta ativa
-        sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
-        sistem1.arq.resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
-        if(sistem1.arq.nintermi>0)sistem1.arq.resumoIntermitencia(sistem1.celula, sistem1.indTramo);
-        if(sistem1.arq.nCelUnit>0){
-        	for(int iCelUni=0; iCelUni<sistem1.arq.nCelUnit; iCelUni++)
-        	sistem1.arq.relatorioCelulaUnitaria(sistem1.celula,sistem1.arq.celUnit[iCelUni].posicP, sistem1.indTramo);
+        sistem1.config().imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
+        sistem1.config().resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
+        if(sistem1.config().nintermi>0)sistem1.config().resumoIntermitencia(sistem1.celula, sistem1.indTramo);
+        if(sistem1.config().nCelUnit>0){
+        	for(int iCelUni=0; iCelUni<sistem1.config().nCelUnit; iCelUni++)
+        	sistem1.config().relatorioCelulaUnitaria(sistem1.celula,sistem1.config().celUnit[iCelUni].posicP, sistem1.indTramo);
         }
         // enterramento
         for (int j = 0; j <= sistem1.ncel; j++) {
-            if (sistem1.celula[j].calor.difus2D == 1) {
-                sistem1.celula[j].calor.poisson2D.imprimePermanente(sistem1.indTramo);
+            if (sistem1.cell(j).calor.difus2D == 1) {
+                sistem1.cell(j).calor.poisson2D.imprimePermanente(sistem1.indTramo);
             }
-            if (sistem1.celula[j].acsr.tipo == 16) {
+            if (sistem1.cell(j).acsr.tipo == 16) {
 
-                sistem1.celula[j].acsr.poroso2D.imprimePseudo();
+                sistem1.cell(j).acsr.poroso2D.imprimePseudo();
             }
-            if (sistem1.celula[j].acsr.tipo == 15) {
-                FullMtx<double> matrizsaida(sistem1.celula[j].acsr.radialPoro.nglobal, 11);
-                matrizsaida = sistem1.celula[j].acsr.radialPoro.perfil();
+            if (sistem1.cell(j).acsr.tipo == 15) {
+                FullMtx<double> matrizsaida(sistem1.cell(j).acsr.radialPoro.nglobal, 11);
+                matrizsaida = sistem1.cell(j).acsr.radialPoro.perfil();
                 ostringstream saida;
                 // saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << kontaTempoImp
                 saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << 0
-                      << "-" << sistem1.celula[j].acsr.radialPoro.posicMarlim << ".dat";
+                      << "-" << sistem1.cell(j).acsr.radialPoro.posicMarlim << ".dat";
                 string tmp = saida.str();
                 ofstream escreveIni(tmp.c_str(), ios_base::out);
                 escreveIni << "tempo = " << 0 << endl;
@@ -8048,21 +8048,21 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
             }
         }
         sistem1.kimpT = 1;
-        for (int i = 0; i < sistem1.arq.ntendp; i++) {
+        for (int i = 0; i < sistem1.config().ntendp; i++) {
             sistem1.ImprimeTrendPCab(i);
-            sistem1.arq.imprimeTrend(sistem1.celula, sistem1.MatTrendP[i], 0, i, 0);
+            sistem1.config().imprimeTrend(sistem1.celula, sistem1.MatTrendP[i], 0, i, 0);
             sistem1.ImprimeTrendP(i);
         }
-        if (sistem1.arq.lingas == 1) {
-            sistem1.arq.imprimeProfileG(sistem1.celulaG, sistem1.flutG, 0, sistem1.indTramo);
-            for (int i = 0; i < sistem1.arq.ntendg; i++) {
+        if (sistem1.config().lingas == 1) {
+            sistem1.config().imprimeProfileG(sistem1.celulaG, sistem1.flutG, 0, sistem1.indTramo);
+            for (int i = 0; i < sistem1.config().ntendg; i++) {
                 sistem1.ImprimeTrendGCab(i);
-                sistem1.arq.imprimeTrendG(sistem1.celulaG, sistem1.MatTrendG[i], 0, i, 0, 0);
+                sistem1.config().imprimeTrendG(sistem1.celulaG, sistem1.MatTrendG[i], 0, i, 0, 0);
                 sistem1.ImprimeTrendG(i);
             }
         }
     }
-    if ((*sistem1.vg1dSP).chaverede == 0 && sistem1.arq.transiente == 0) { // impressao do arquivo de log, quando a
+    if ((*sistem1.vg1dSP).chaverede == 0 && sistem1.config().transiente == 0) { // impressao do arquivo de log, quando a
         // opcao transiente nao esta ativa
         ostringstream saidaT;
         if (sistem1.indTramo < 0) {
@@ -8078,7 +8078,7 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
                        "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################",
                        "", "");
         }
-        if (sistem1.arq.saidaClassica == 1) {
+        if (sistem1.config().saidaClassica == 1) {
             srand(time(NULL));
             int frase = rand() % 15;
             escreveIni << "*******************************************************************************" << endl;
@@ -8116,64 +8116,64 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
 
         escreveIni.close();
     }
-    if (sistem1.arq.transiente == 1) {
+    if (sistem1.config().transiente == 1) {
 
         for (int j = 0; j <= sistem1.ncel; j++) {
-            if (sistem1.celula[j].calor.difus2D == 1) {
-                sistem1.celula[j].calor.poisson2D.imprimePermanente(sistem1.indTramo);
+            if (sistem1.cell(j).calor.difus2D == 1) {
+                sistem1.cell(j).calor.poisson2D.imprimePermanente(sistem1.indTramo);
             }
-            if (sistem1.celula[j].acsr.tipo == 16) {
+            if (sistem1.cell(j).acsr.tipo == 16) {
 
-                sistem1.celula[j].acsr.poroso2D.imprimePseudo();
-                if (sistem1.celula[j].acsr.poroso2D.dados.temp.tempoImp[0] <= 1e-15)
-                    sistem1.celula[j].acsr.poroso2D.kontaTempo++;
+                sistem1.cell(j).acsr.poroso2D.imprimePseudo();
+                if (sistem1.cell(j).acsr.poroso2D.dados.temp.tempoImp[0] <= 1e-15)
+                    sistem1.cell(j).acsr.poroso2D.kontaTempo++;
             }
-            if (sistem1.celula[j].acsr.tipo == 15) {
-                FullMtx<double> matrizsaida(sistem1.celula[j].acsr.radialPoro.nglobal, 11);
-                matrizsaida = sistem1.celula[j].acsr.radialPoro.perfil();
+            if (sistem1.cell(j).acsr.tipo == 15) {
+                FullMtx<double> matrizsaida(sistem1.cell(j).acsr.radialPoro.nglobal, 11);
+                matrizsaida = sistem1.cell(j).acsr.radialPoro.perfil();
                 ostringstream saida;
                 // saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << kontaTempoImp
                 saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << 0
-                      << "-" << sistem1.celula[j].acsr.radialPoro.posicMarlim << ".dat";
+                      << "-" << sistem1.cell(j).acsr.radialPoro.posicMarlim << ".dat";
                 string tmp = saida.str();
                 ofstream escreveIni(tmp.c_str(), ios_base::out);
                 escreveIni << "tempo = " << 0 << endl;
                 escreveIni << " raio (m) ;" << " raio (pol.) ;" << " pressao (kgf/cm2) ;" << " vazao total (sm3/d) ;" << " vazao de oleo (sm3/d) ;" << " vazao de gas (sm3/d) ;" << " vazao de agua (sm3/d) ;" << "saturacao de liquido (-) ;" << " saturacao de agua (-) ;" << " fracao volumetrica de gas homogeneo (-) ;" << endl;
                 escreveIni << matrizsaida;
                 escreveIni.close();
-                if (sistem1.celula[j].acsr.radialPoro.temp.tempoImp[0] <= 1e-15)
-                    sistem1.celula[j].acsr.radialPoro.kontaTempoImp++;
+                if (sistem1.cell(j).acsr.radialPoro.temp.tempoImp[0] <= 1e-15)
+                    sistem1.cell(j).acsr.radialPoro.kontaTempoImp++;
             }
         }
 
-        if (sistem1.arq.tabelaDinamica == 1) {
-            sistem1.arq.tabelaDinamica = 0;
+        if (sistem1.config().tabelaDinamica == 1) {
+            sistem1.config().tabelaDinamica = 0;
             for (int i = 0; i <= sistem1.ncel; i++) {
-                sistem1.celula[i].flui.tabelaDinamica = 0;
-                if (sistem1.celula[i].acsr.tipo == 1)
-                    sistem1.celula[i].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                else if (sistem1.celula[i].acsr.tipo == 2)
-                    sistem1.celula[i].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                else if (sistem1.celula[i].acsr.tipo == 3)
-                    sistem1.celula[i].acsr.ipr.FluidoPro.tabelaDinamica = 0;
-                else if (sistem1.celula[i].acsr.tipo == 15) {
-                    sistem1.celula[i].acsr.radialPoro.flup.tabelaDinamica = 0;
-                    int ncelRad = sistem1.celula[i].acsr.radialPoro.ncel;
+                sistem1.cell(i).flui.tabelaDinamica = 0;
+                if (sistem1.cell(i).acsr.tipo == 1)
+                    sistem1.cell(i).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                else if (sistem1.cell(i).acsr.tipo == 2)
+                    sistem1.cell(i).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                else if (sistem1.cell(i).acsr.tipo == 3)
+                    sistem1.cell(i).acsr.ipr.FluidoPro.tabelaDinamica = 0;
+                else if (sistem1.cell(i).acsr.tipo == 15) {
+                    sistem1.cell(i).acsr.radialPoro.flup.tabelaDinamica = 0;
+                    int ncelRad = sistem1.cell(i).acsr.radialPoro.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.radialPoro.celula[j].flup.tabelaDinamica = 0;
+                        sistem1.cell(i).acsr.radialPoro.celula[j].flup.tabelaDinamica = 0;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 16) {
-                    sistem1.celula[i].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-                    int ncelRad = sistem1.celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (sistem1.cell(i).acsr.tipo == 16) {
+                    sistem1.cell(i).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+                    int ncelRad = sistem1.cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int j = 0; j < ncelRad; j++) {
-                        sistem1.celula[i].acsr.poroso2D.dados.transfer.celula[j].flup.tabelaDinamica = 0;
+                        sistem1.cell(i).acsr.poroso2D.dados.transfer.celula[j].flup.tabelaDinamica = 0;
                     }
-                    int ncelEle = sistem1.celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = sistem1.cell(i).acsr.poroso2D.malha.nele;
                     for (int j = 0; j < ncelEle; j++) {
-                        sistem1.celula[i].acsr.poroso2D.malha.mlh2d[j].flup.tabelaDinamica = 0;
+                        sistem1.cell(i).acsr.poroso2D.malha.mlh2d[j].flup.tabelaDinamica = 0;
                     }
-                } else if (sistem1.celula[i].acsr.tipo == 10)
-                    sistem1.celula[i].acsr.injm.FluidoPro.tabelaDinamica = 0;
+                } else if (sistem1.cell(i).acsr.tipo == 10)
+                    sistem1.cell(i).acsr.injm.FluidoPro.tabelaDinamica = 0;
             }
         }
     }
@@ -8183,8 +8183,8 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
 void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson, SProd &sistem1) {
     // metodo em que e feita a sequencia de simulacoes de analise de sensibilidade, observando que a analise de sensibilidade e
     // feita apenas para tramos simples.
-    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
-                      sistem1.arq.flup, sistem1.arq.bcs, sistem1.arq.multiBcs, sistem1.arq.fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
+    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.config().celp,
+                      sistem1.config().flup, sistem1.config().bcs, sistem1.config().multiBcs, sistem1.config().fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
     // json onde se esta registradoas variaveis que estao envolvidas na analise de sensibilidade e os valores que se
     // testara destas variaveis na analise de sensibilidade
     int imprime = 0;
@@ -8196,15 +8196,15 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
     std::vector<std::pair<int, varSaida>> dadosAP;
 
     if (analisePara.vfp == 1 || analisePara.vfp == 3)
-        analisePara.cabecalhoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,sistem1.arq.multiBcs,
-								sistem1.arq.bvol, sistem1.arq.dpreq);
+        analisePara.cabecalhoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,sistem1.config().multiBcs,
+								sistem1.config().bvol, sistem1.config().dpreq);
     else if (analisePara.vfp == 0 || analisePara.vfp == 2)
-        analisePara.cabecalhoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                    sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                    sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,sistem1.arq.multiBcs,
-									sistem1.arq.bvol, sistem1.arq.dpreq);
+        analisePara.cabecalhoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                    sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                    sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,sistem1.config().multiBcs,
+									sistem1.config().bvol, sistem1.config().dpreq);
 
     ostringstream saidaAP;
     saidaAP << pathPrefixoArqSaida << "sucessoAP.dat"; // criacao de arquivo com relatorio de quais pontos de analise de sensibilidade tiveram sucesso e quais falharam
@@ -8215,11 +8215,11 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
     escreveAP.close();
     int indfalha[analisePara.nVariaveis];
     sistem1.kimpT = 1;
-    for (int i = 0; i < sistem1.arq.ntendp; i++) {
+    for (int i = 0; i < sistem1.config().ntendp; i++) {
         sistem1.ImprimeTrendPCab(i);
     }
-    if (sistem1.arq.lingas == 1) {
-        for (int i = 0; i < sistem1.arq.ntendg; i++) {
+    if (sistem1.config().lingas == 1) {
+        for (int i = 0; i < sistem1.config().ntendg; i++) {
             sistem1.ImprimeTrendGCab(i);
         }
     }
@@ -8257,17 +8257,17 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         vecArq[iSeq].vg1dSP = &vg1dTramo[iSeq];
     }
     double chute=-1;
-    if(sistem1.arq.pocinjec==0){
+    if(sistem1.config().pocinjec==0){
     	double falha0=SolveTramoSolteiro(sistem1);
     	if(fabs(falha0)<1e9){
-    		if(sistem1.arq.ConContEntrada==0)chute=sistem1.celula[0].pres;
+    		if(sistem1.config().ConContEntrada==0)chute=sistem1.cell(0).pres;
     		else{
-    			double pres=sistem1.celula[0].pres;
-    			double temp=sistem1.celula[0].temp;
-    			if(sistem1.celula[0].acsr.tipo==1)
-    				chute=sistem1.celula[0].QG*86400*sistem1.celula[0].flui.MasEspGas(pres, temp)/(sistem1.celula[0].flui.Deng*1.229);
-    			else if(sistem1.celula[0].acsr.tipo==2)
-    				chute=sistem1.celula[0].QL*86400*sistem1.celula[0].flui.MasEspLiq(pres, temp)/(sistem1.celula[0].flui.MasEspLiq(1.0, 20));
+    			double pres=sistem1.cell(0).pres;
+    			double temp=sistem1.cell(0).temp;
+    			if(sistem1.cell(0).acsr.tipo==1)
+    				chute=sistem1.cell(0).QG*86400*sistem1.cell(0).flui.MasEspGas(pres, temp)/(sistem1.cell(0).flui.Deng*1.229);
+    			else if(sistem1.cell(0).acsr.tipo==2)
+    				chute=sistem1.cell(0).QL*86400*sistem1.cell(0).flui.MasEspLiq(pres, temp)/(sistem1.cell(0).flui.MasEspLiq(1.0, 20));
     		}
     	}
     }
@@ -8292,39 +8292,39 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 
         if (analisePara.vfp == 1 || analisePara.vfp == 3){
             analisePara.selecaoAPsemImpre(sistem2.ncelGas, sistem2.chokeSup, sistem2.celula, sistem2.celulaG,
-                                          sistem2.arq.flup,
-                                          sistem2.arq.IPRS, sistem2.arq.valv, sistem2.arq.fonteg,
-                                          sistem2.arq.fontel, sistem2.arq.fontem, sistem2.arq.furo, sistem2.arq.bcs,
-										  sistem2.arq.multiBcs,sistem2.arq.bvol, sistem2.arq.dpreq,
+                                          sistem2.config().flup,
+                                          sistem2.config().IPRS, sistem2.config().valv, sistem2.config().fonteg,
+                                          sistem2.config().fontel, sistem2.config().fontem, sistem2.config().furo, sistem2.config().bcs,
+										  sistem2.config().multiBcs,sistem2.config().bvol, sistem2.config().dpreq,
                                           sistem2.pGSup, sistem2.temperatura, sistem2.presiniG, sistem2.tempiniG, vazgasG,
-                                          presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2.arq.correcao.dPdLHidro, sistem2.arq.correcao.dPdLFric,
-                                          sistem2.arq.correcao.dTdL);
+                                          presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2.config().correcao.dPdLHidro, sistem2.config().correcao.dPdLFric,
+                                          sistem2.config().correcao.dTdL);
 
         }
         else if (analisePara.vfp == 0 || analisePara.vfp == 2){
             analisePara.selecaoAPImexsemImpre(sistem2.ncelGas, sistem2.chokeSup, sistem2.celula, sistem2.celulaG,
-                                              sistem2.arq.flup,
-                                              sistem2.arq.IPRS, sistem2.arq.valv, sistem2.arq.fonteg,
-                                              sistem2.arq.fontel, sistem2.arq.fontem, sistem2.arq.furo, sistem2.arq.bcs,
-											  sistem2.arq.multiBcs,sistem2.arq.bvol, sistem2.arq.dpreq,
+                                              sistem2.config().flup,
+                                              sistem2.config().IPRS, sistem2.config().valv, sistem2.config().fonteg,
+                                              sistem2.config().fontel, sistem2.config().fontem, sistem2.config().furo, sistem2.config().bcs,
+											  sistem2.config().multiBcs,sistem2.config().bvol, sistem2.config().dpreq,
                                               sistem2.pGSup, sistem2.temperatura, sistem2.presiniG, sistem2.tempiniG, vazgasG,
-                                              presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2.arq.correcao.dPdLHidro, sistem2.arq.correcao.dPdLFric,
-                                              sistem2.arq.correcao.dTdL);
+                                              presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2.config().correcao.dPdLHidro, sistem2.config().correcao.dPdLFric,
+                                              sistem2.config().correcao.dTdL);
 
         }
         // variavei que precisam de um pos processamento para se encaixar na condicao de simulacao
-        if (sistem2.arq.lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
+        if (sistem2.config().lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
             // caso tenha linha de gas e analise de sensibilidade para vazao de injecao, a entrada no json e em stdM3,
             // mas no simulador, deve ser atualizada para a vazao massica
-            if (sistem2.arq.gasinj.tipoCC == 1) {
-                sistem2.celulaG[0].massfonteCH = vazgasG * (sistem2.arq.flug.Deng * 1.225) / 86400;
+            if (sistem2.config().gasinj.tipoCC == 1) {
+                sistem2.gasCell(0).massfonteCH = vazgasG * (sistem2.config().flug.Deng * 1.225) / 86400;
             }
         }
         if (analisePara.listaV.vchk == 1 && analisePara.APCHK.parserieAbre > 0) {
             // carregando o valo de abertuda do choke na variavel do sistema
-            sistem2.arq.chokep.abertura[0] = analisePara.APCHK.abertura[indChk];
+            sistem2.config().chokep.abertura[0] = analisePara.APCHK.abertura[indChk];
         }
-        if (sistem2.arq.ConContEntrada == 1 && analisePara.listaV.vpresent == 1) {
+        if (sistem2.config().ConContEntrada == 1 && analisePara.listaV.vpresent == 1) {
             // carregando os valores de analise de senisbilidadepara condicao de contorno a montante de pressao
             if (analisePara.APpEntrada.parseriePres > 0)
                 sistem2.presE = presE;
@@ -8334,7 +8334,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
                 sistem2.tempE = tempE;
             if (analisePara.APpEntrada.parserieTit > 0)
                 sistem2.titE = titE;
-        } else if (sistem2.arq.ConContEntrada == 2 && analisePara.listaV.vvazpresent == 1) {
+        } else if (sistem2.config().ConContEntrada == 2 && analisePara.listaV.vvazpresent == 1) {
             // carregando os valores de analise de senisbilidadepara condicao de contorno a montante de vazao e pressao
             if (analisePara.APvpEntrada.parseriePres > 0)
                 sistem2.presE = presE;
@@ -8344,21 +8344,21 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
                 sistem2.tempE = tempE;
             if (analisePara.APvpEntrada.parserieMass > 0) {
                 double tit;
-                tit = sistem2.arq.flup[0].FracMassHidra(sistem2.presE, sistem2.tempE);
+                tit = sistem2.config().flup[0].FracMassHidra(sistem2.presE, sistem2.tempE);
                 double vazC = vazE * betaE;
-                sistem2.celula[0].acsr.injm.MassC = vazC;
-                sistem2.celula[0].acsr.injm.MassG = (vazE - vazC) * tit;
-                sistem2.celula[0].acsr.injm.MassP = vazE - vazC - sistem2.celula[0].acsr.injm.MassG;
+                sistem2.cell(0).acsr.injm.MassC = vazC;
+                sistem2.cell(0).acsr.injm.MassG = (vazE - vazC) * tit;
+                sistem2.cell(0).acsr.injm.MassP = vazE - vazC - sistem2.cell(0).acsr.injm.MassG;
             }
-        } else if (sistem2.arq.pocinjec == 1 && analisePara.listaV.vpocinj == 1) {
+        } else if (sistem2.config().pocinjec == 1 && analisePara.listaV.vpocinj == 1) {
             // carregando os valores de analise de senisbilidade para condicao de contorno a montante de vazao, poco injetor
-            sistem2.arq.condpocinj.presfundo = presE;
-            if (sistem2.arq.flashCompleto == 0) {
-                sistem2.celula[0].acsr.injl.temp = tempE;
-                sistem2.celula[0].acsr.injl.QLiq = vazE;
-            } else if (sistem2.arq.flashCompleto == 1) {
-                sistem2.celula[0].acsr.injg.temp = tempE;
-                sistem2.celula[0].acsr.injg.QGas = vazE;
+            sistem2.config().condpocinj.presfundo = presE;
+            if (sistem2.config().flashCompleto == 0) {
+                sistem2.cell(0).acsr.injl.temp = tempE;
+                sistem2.cell(0).acsr.injl.QLiq = vazE;
+            } else if (sistem2.config().flashCompleto == 1) {
+                sistem2.cell(0).acsr.injg.temp = tempE;
+                sistem2.cell(0).acsr.injg.QGas = vazE;
             }
         }
 		#pragma omp critical
@@ -8379,36 +8379,36 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
             indfalha[iSeq] = -1;
 
         varSaida tempSaida;
-        tempSaida.presIni = sistem2.celula[0].pres;
-        tempSaida.tempFim = sistem2.celula[sistem2.ncel].temp;
+        tempSaida.presIni = sistem2.cell(0).pres;
+        tempSaida.tempFim = sistem2.cell(sistem2.ncel).temp;
         tempSaida.falha = indfalha[iSeq];
 		#pragma omp critical
 			dadosAP.emplace_back(iSeq,tempSaida);
         // impressão dos perfis e tendencias da analise de sensibilidade, caso sem construcao de tabela de pressao de fundo
         if(analisePara.tipoAP == 0 && analisePara.imprimePerfil==1){
-        	sistem2.arq.imprimeProfile(sistem2.celula, sistem2.flut, 0, sistem2.indTramo);
-        	sistem2.arq.resumoPermanente(sistem2.celula, sistem2.celulaG, sistem2.pGSup,
+        	sistem2.config().imprimeProfile(sistem2.celula, sistem2.flut, 0, sistem2.indTramo);
+        	sistem2.config().resumoPermanente(sistem2.celula, sistem2.celulaG, sistem2.pGSup,
                                      sistem2.presiniG, sistem2.indTramo);
-        	if(sistem2.arq.nintermi>0)sistem2.arq.resumoIntermitencia(sistem2.celula, sistem2.indTramo);
-        	if(sistem2.arq.nCelUnit>0){
-        		for(int iCelUni=0; iCelUni<sistem2.arq.nCelUnit; iCelUni++)
-        			sistem2.arq.relatorioCelulaUnitaria(sistem2.celula,sistem2.arq.celUnit[iCelUni].posicP, sistem2.indTramo);
+        	if(sistem2.config().nintermi>0)sistem2.config().resumoIntermitencia(sistem2.celula, sistem2.indTramo);
+        	if(sistem2.config().nCelUnit>0){
+        		for(int iCelUni=0; iCelUni<sistem2.config().nCelUnit; iCelUni++)
+        			sistem2.config().relatorioCelulaUnitaria(sistem2.celula,sistem2.config().celUnit[iCelUni].posicP, sistem2.indTramo);
         	}
         	// enterramento
         	for (int j = 0; j <= sistem2.ncel; j++) {
-            	if (sistem2.celula[j].calor.difus2D == 1) {
-                	sistem2.celula[j].calor.poisson2D.imprimePermanente(sistem2.indTramo);
+            	if (sistem2.cell(j).calor.difus2D == 1) {
+                	sistem2.cell(j).calor.poisson2D.imprimePermanente(sistem2.indTramo);
             	}
         	}
         	sistem2.kimpT = 1;
-        	for (int i = 0; i < sistem2.arq.ntendp; i++) {
-            	sistem2.arq.imprimeTrend(sistem2.celula, sistem2.MatTrendP[i], 0, i, 0);
+        	for (int i = 0; i < sistem2.config().ntendp; i++) {
+            	sistem2.config().imprimeTrend(sistem2.celula, sistem2.MatTrendP[i], 0, i, 0);
             	sistem2.ImprimeTrendP(i);
         	}
-        	if (sistem2.arq.lingas == 1) {
-            	sistem2.arq.imprimeProfileG(sistem2.celulaG, sistem2.flutG, 0, sistem2.indTramo);
-            	for (int i = 0; i < sistem2.arq.ntendg; i++) {
-                	sistem2.arq.imprimeTrendG(sistem2.celulaG, sistem2.MatTrendG[i], 0, i, 0, 0);
+        	if (sistem2.config().lingas == 1) {
+            	sistem2.config().imprimeProfileG(sistem2.celulaG, sistem2.flutG, 0, sistem2.indTramo);
+            	for (int i = 0; i < sistem2.config().ntendg; i++) {
+                	sistem2.config().imprimeTrendG(sistem2.celulaG, sistem2.MatTrendG[i], 0, i, 0, 0);
                 	sistem2.ImprimeTrendG(i);
             	}
         	}
@@ -8438,21 +8438,21 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         int indChk;
         imprime = 1;
         if (analisePara.vfp == 1) // analise de sensibilidade para problemas padrao ou para a curva de fundo Eclipse
-            analisePara.selecaoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                  sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                  sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-								  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.selecaoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                  sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                  sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+								  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                   sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                  presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                  sistem1.arq.correcao.dTdL, imprime);
+                                  presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                  sistem1.config().correcao.dTdL, imprime);
         else if (analisePara.vfp == 0) // anaslise de sensibilidade para curva de pressao de fundo Imex
-            analisePara.selecaoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                      sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                      sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-									  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.selecaoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                      sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                      sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+									  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                       sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                      sistem1.arq.correcao.dTdL, imprime);
+                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                      sistem1.config().correcao.dTdL, imprime);
         if (indfalha[iSeq] > 0)
             escreveAP2 << iSeq << " : " << " Resultado = " << "sucesso" << endl;
         else
@@ -8463,16 +8463,16 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         escreveVarInt.close();
         if (analisePara.vfp == 1 || analisePara.vfp == 3)
             analisePara.imprimeVarInteresseAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG,
-                                              sistem1.arq.flup,
-                                              sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                              sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-											  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq, iSeq);
+                                              sistem1.config().flup,
+                                              sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                              sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+											  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq, iSeq);
         else if (analisePara.vfp == 0 || analisePara.vfp == 2)
             analisePara.imprimeVarInteresseAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG,
-                                                  sistem1.arq.flup,
-                                                  sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                                  sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-												  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq, iSeq);
+                                                  sistem1.config().flup,
+                                                  sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                                  sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+												  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq, iSeq);
 
         if (analisePara.tipoAP != 0) {
             // caso de construcao de tabela VFP:
@@ -8481,13 +8481,13 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
                 BHP = dadosAP[iSeq].second.presIni;
             else
                 BHP = -1e10;
-            analisePara.tabelaGenerica(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                       sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                       sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-									   sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.tabelaGenerica(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                       sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                       sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+									   sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                        sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                       presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                       sistem1.arq.correcao.dTdL, BHP);
+                                       presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                       sistem1.config().correcao.dTdL, BHP);
         }
 
     }
@@ -8529,8 +8529,8 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson, SProd &sistem1) {
     // metodo em que e feita a sequencia de simulacoes de analise de sensibilidade, observando que a analise de sensibilidade e
     // feita apenas para tramos simples.
-    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
-                      sistem1.arq.flup, sistem1.arq.bcs, sistem1.arq.multiBcs, sistem1.arq.fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
+    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.config().celp,
+                      sistem1.config().flup, sistem1.config().bcs, sistem1.config().multiBcs, sistem1.config().fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
     // json onde se esta registradoas variaveis que estao envolvidas na analise de sensibilidade e os valores que se
     // testara destas variaveis na analise de sensibilidade
     int imprime = 0;
@@ -8544,11 +8544,11 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
     escreveAP.close();
 
     sistem1.kimpT = 1;
-    for (int i = 0; i < sistem1.arq.ntendp; i++) {
+    for (int i = 0; i < sistem1.config().ntendp; i++) {
         sistem1.ImprimeTrendPCab(i);
     }
-    if (sistem1.arq.lingas == 1) {
-        for (int i = 0; i < sistem1.arq.ntendg; i++) {
+    if (sistem1.config().lingas == 1) {
+        for (int i = 0; i < sistem1.config().ntendg; i++) {
             sistem1.ImprimeTrendGCab(i);
         }
     }
@@ -8563,7 +8563,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
     varGlob1D vg1dTramo[analisePara.nVariaveis];
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) {
         string nomeArquivoLogAP = nomeArquivoLog;
-        sistem2[iSeq] = SProd(sistem1.arq.impfile, nomeArquivoLogAP, validacaoJson, sistem1.arq.tipoSimulacao, &vg1dTramo[iSeq]);
+        sistem2[iSeq] = SProd(sistem1.config().impfile, nomeArquivoLogAP, validacaoJson, sistem1.config().tipoSimulacao, &vg1dTramo[iSeq]);
     }
 #pragma omp parallel for num_threads(analisePara.nthrdAP)
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) { // laco onde e calculado o permanente de cada combinacao
@@ -8582,26 +8582,26 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
         // construtor do objeto que representa o tramo
 
         analisePara.selecaoAPsemImpre(sistem2[iSeq].ncelGas, sistem2[iSeq].chokeSup, sistem2[iSeq].celula, sistem2[iSeq].celulaG,
-                                      sistem2[iSeq].arq.flup,
-                                      sistem2[iSeq].arq.IPRS, sistem2[iSeq].arq.valv, sistem2[iSeq].arq.fonteg,
-                                      sistem2[iSeq].arq.fontel, sistem2[iSeq].arq.fontem, sistem2[iSeq].arq.furo, sistem2[iSeq].arq.bcs,
-									  sistem2[iSeq].arq.multiBcs,sistem2[iSeq].arq.bvol, sistem2[iSeq].arq.dpreq,
+                                      sistem2[iSeq].config().flup,
+                                      sistem2[iSeq].config().IPRS, sistem2[iSeq].config().valv, sistem2[iSeq].config().fonteg,
+                                      sistem2[iSeq].config().fontel, sistem2[iSeq].config().fontem, sistem2[iSeq].config().furo, sistem2[iSeq].config().bcs,
+									  sistem2[iSeq].config().multiBcs,sistem2[iSeq].config().bvol, sistem2[iSeq].config().dpreq,
                                       sistem2[iSeq].pGSup, sistem2[iSeq].temperatura, sistem2[iSeq].presiniG, sistem2[iSeq].tempiniG, vazgasG,
-                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2[iSeq].arq.correcao.dPdLHidro, sistem2[iSeq].arq.correcao.dPdLFric,
-                                      sistem2[iSeq].arq.correcao.dTdL);
+                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem2[iSeq].config().correcao.dPdLHidro, sistem2[iSeq].config().correcao.dPdLFric,
+                                      sistem2[iSeq].config().correcao.dTdL);
         // variavei que precisam de um pos processamento para se encaixar na condicao de simulacao
-        if (sistem2[iSeq].arq.lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
+        if (sistem2[iSeq].config().lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
             // caso tenha linha de gas e analise de sensibilidade para vazao de injecao, a entrada no json e em stdM3,
             // mas no simulador, deve ser atualizada para a vazao massica
-            if (sistem2[iSeq].arq.gasinj.tipoCC == 1) {
-                sistem2[iSeq].celulaG[0].massfonteCH = vazgasG * (sistem2[iSeq].arq.flug.Deng * 1.225) / 86400;
+            if (sistem2[iSeq].config().gasinj.tipoCC == 1) {
+                sistem2[iSeq].gasCell(0).massfonteCH = vazgasG * (sistem2[iSeq].config().flug.Deng * 1.225) / 86400;
             }
         }
         if (analisePara.listaV.vchk == 1 && analisePara.APCHK.parserieAbre > 0) {
             // carregando o valo de abertuda do choke na variavel do sistema
-            sistem2[iSeq].arq.chokep.abertura[0] = analisePara.APCHK.abertura[indChk];
+            sistem2[iSeq].config().chokep.abertura[0] = analisePara.APCHK.abertura[indChk];
         }
-        if (sistem2[iSeq].arq.ConContEntrada == 1 && analisePara.listaV.vpresent == 1) {
+        if (sistem2[iSeq].config().ConContEntrada == 1 && analisePara.listaV.vpresent == 1) {
             // carregando os valores de analise de senisbilidadepara condicao de contorno a montante de pressao
             if (analisePara.APpEntrada.parseriePres > 0)
                 sistem2[iSeq].presE = presE;
@@ -8611,7 +8611,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
                 sistem2[iSeq].tempE = tempE;
             if (analisePara.APpEntrada.parserieTit > 0)
                 sistem2[iSeq].titE = titE;
-        } else if (sistem2[iSeq].arq.ConContEntrada == 2 && analisePara.listaV.vvazpresent == 1) {
+        } else if (sistem2[iSeq].config().ConContEntrada == 2 && analisePara.listaV.vvazpresent == 1) {
             // carregando os valores de analise de senisbilidadepara condicao de contorno a montante de vazao e pressao
             if (analisePara.APvpEntrada.parseriePres > 0)
                 sistem2[iSeq].presE = presE;
@@ -8621,21 +8621,21 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
                 sistem2[iSeq].tempE = tempE;
             if (analisePara.APvpEntrada.parserieMass > 0) {
                 double tit;
-                tit = sistem2[iSeq].arq.flup[0].FracMassHidra(sistem2[iSeq].presE, sistem2[iSeq].tempE);
+                tit = sistem2[iSeq].config().flup[0].FracMassHidra(sistem2[iSeq].presE, sistem2[iSeq].tempE);
                 double vazC = vazE * betaE;
-                sistem2[iSeq].celula[0].acsr.injm.MassC = vazC;
-                sistem2[iSeq].celula[0].acsr.injm.MassG = (vazE - vazC) * tit;
-                sistem2[iSeq].celula[0].acsr.injm.MassP = vazE - vazC - sistem2[iSeq].celula[0].acsr.injm.MassG;
+                sistem2[iSeq].cell(0).acsr.injm.MassC = vazC;
+                sistem2[iSeq].cell(0).acsr.injm.MassG = (vazE - vazC) * tit;
+                sistem2[iSeq].cell(0).acsr.injm.MassP = vazE - vazC - sistem2[iSeq].cell(0).acsr.injm.MassG;
             }
-        } else if (sistem2[iSeq].arq.pocinjec == 1 && analisePara.listaV.vpocinj == 1) {
+        } else if (sistem2[iSeq].config().pocinjec == 1 && analisePara.listaV.vpocinj == 1) {
             // carregando os valores de analise de senisbilidade para condicao de contorno a montante de vazao, poco injetor
-            sistem2[iSeq].arq.condpocinj.presfundo = presE;
-            if (sistem2[iSeq].arq.flashCompleto == 0) {
-                sistem2[iSeq].celula[0].acsr.injl.temp = tempE;
-                sistem2[iSeq].celula[0].acsr.injl.QLiq = vazE;
-            } else if (sistem2[iSeq].arq.flashCompleto == 1) {
-                sistem2[iSeq].celula[0].acsr.injg.temp = tempE;
-                sistem2[iSeq].celula[0].acsr.injg.QGas = vazE;
+            sistem2[iSeq].config().condpocinj.presfundo = presE;
+            if (sistem2[iSeq].config().flashCompleto == 0) {
+                sistem2[iSeq].cell(0).acsr.injl.temp = tempE;
+                sistem2[iSeq].cell(0).acsr.injl.QLiq = vazE;
+            } else if (sistem2[iSeq].config().flashCompleto == 1) {
+                sistem2[iSeq].cell(0).acsr.injg.temp = tempE;
+                sistem2[iSeq].cell(0).acsr.injg.QGas = vazE;
             }
         }
         cout << "Resolvendo Sequencia " << iSeq << " da analise de sensibilidade" << endl;
@@ -8652,29 +8652,29 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
             indfalha[iSeq] = -1;
 
         // impressão dos perfis e tendencias da analise de sensibilidade, caso sem construcao de tabela de pressao de fundo
-        sistem2[iSeq].arq.imprimeProfile(sistem2[iSeq].celula, sistem2[iSeq].flut, 0, sistem2[iSeq].indTramo);
-        sistem2[iSeq].arq.resumoPermanente(sistem2[iSeq].celula, sistem2[iSeq].celulaG, sistem2[iSeq].pGSup,
+        sistem2[iSeq].config().imprimeProfile(sistem2[iSeq].celula, sistem2[iSeq].flut, 0, sistem2[iSeq].indTramo);
+        sistem2[iSeq].config().resumoPermanente(sistem2[iSeq].celula, sistem2[iSeq].celulaG, sistem2[iSeq].pGSup,
                                            sistem2[iSeq].presiniG, sistem2[iSeq].indTramo);
-        if(sistem2[iSeq].arq.nintermi>0)sistem2[iSeq].arq.resumoIntermitencia(sistem2[iSeq].celula, sistem2[iSeq].indTramo);
-        if(sistem2[iSeq].arq.nCelUnit>0){
-        	for(int iCelUni=0; iCelUni<sistem2[iSeq].arq.nCelUnit; iCelUni++)
-        	sistem2[iSeq].arq.relatorioCelulaUnitaria(sistem2[iSeq].celula,sistem2[iSeq].arq.celUnit[iCelUni].posicP, sistem2[iSeq].indTramo);
+        if(sistem2[iSeq].config().nintermi>0)sistem2[iSeq].config().resumoIntermitencia(sistem2[iSeq].celula, sistem2[iSeq].indTramo);
+        if(sistem2[iSeq].config().nCelUnit>0){
+        	for(int iCelUni=0; iCelUni<sistem2[iSeq].config().nCelUnit; iCelUni++)
+        	sistem2[iSeq].config().relatorioCelulaUnitaria(sistem2[iSeq].celula,sistem2[iSeq].config().celUnit[iCelUni].posicP, sistem2[iSeq].indTramo);
         }
         // enterramento
         for (int j = 0; j <= sistem2[iSeq].ncel; j++) {
-            if (sistem2[iSeq].celula[j].calor.difus2D == 1) {
-                sistem2[iSeq].celula[j].calor.poisson2D.imprimePermanente(sistem2[iSeq].indTramo);
+            if (sistem2[iSeq].cell(j).calor.difus2D == 1) {
+                sistem2[iSeq].cell(j).calor.poisson2D.imprimePermanente(sistem2[iSeq].indTramo);
             }
         }
         sistem2[iSeq].kimpT = 1;
-        for (int i = 0; i < sistem2[iSeq].arq.ntendp; i++) {
-            sistem2[iSeq].arq.imprimeTrend(sistem2[iSeq].celula, sistem2[iSeq].MatTrendP[i], 0, i, 0);
+        for (int i = 0; i < sistem2[iSeq].config().ntendp; i++) {
+            sistem2[iSeq].config().imprimeTrend(sistem2[iSeq].celula, sistem2[iSeq].MatTrendP[i], 0, i, 0);
             sistem2[iSeq].ImprimeTrendP(i);
         }
-        if (sistem2[iSeq].arq.lingas == 1) {
-            sistem2[iSeq].arq.imprimeProfileG(sistem2[iSeq].celulaG, sistem2[iSeq].flutG, 0, sistem2[iSeq].indTramo);
-            for (int i = 0; i < sistem2[iSeq].arq.ntendg; i++) {
-                sistem2[iSeq].arq.imprimeTrendG(sistem2[iSeq].celulaG, sistem2[iSeq].MatTrendG[i], 0, i, 0, 0);
+        if (sistem2[iSeq].config().lingas == 1) {
+            sistem2[iSeq].config().imprimeProfileG(sistem2[iSeq].celulaG, sistem2[iSeq].flutG, 0, sistem2[iSeq].indTramo);
+            for (int i = 0; i < sistem2[iSeq].config().ntendg; i++) {
+                sistem2[iSeq].config().imprimeTrendG(sistem2[iSeq].celulaG, sistem2[iSeq].MatTrendG[i], 0, i, 0, 0);
                 sistem2[iSeq].ImprimeTrendG(i);
             }
         }
@@ -8694,21 +8694,21 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
         int indChk;
         imprime = 1;
         if (analisePara.vfp == 1) // analise de sensibilidade para problemas padrao ou para a curva de fundo Eclipse
-            analisePara.selecaoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                  sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                  sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-								  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.selecaoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                  sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                  sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+								  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                   sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                  presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                  sistem1.arq.correcao.dTdL, imprime);
+                                  presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                  sistem1.config().correcao.dTdL, imprime);
         else if (analisePara.vfp == 0) // anaslise de sensibilidade para curva de pressao de fundo Imex
-            analisePara.selecaoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                      sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                      sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-									  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.selecaoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                      sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                      sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+									  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                       sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                      sistem1.arq.correcao.dTdL, imprime);
+                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                      sistem1.config().correcao.dTdL, imprime);
         if (indfalha[iSeq] > 0)
             escreveAP2 << iSeq << " : " << " Resultado = " << "sucesso" << endl;
         else
@@ -8748,8 +8748,8 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
 void leituraAP(string nomeArquivoAP, SProd &sistem1) {
     // metodo em que e feita a sequencia de simulacoes de analise de sensibilidade, observando que a analise de sensibilidade e
     // feita apenas para tramos simples.
-    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
-                      sistem1.arq.flup, sistem1.arq.bcs,sistem1.arq.multiBcs, sistem1.arq.fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
+    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.config().celp,
+                      sistem1.config().flup, sistem1.config().bcs,sistem1.config().multiBcs, sistem1.config().fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
     // json onde se esta registradoas variaveis que estao envolvidas na analise de sensibilidade e os valores que se
     // testara destas variaveis na analise de sensibilidade
     double vazgasG;
@@ -8773,34 +8773,34 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
         // algumas variaveis ja se encontram na condicao correta para se apolicar no sistema de simulacao,
         // outras precisam de um "pos procesaamento"
         if (analisePara.vfp == 1 || analisePara.vfp == 3) // analise de sensibilidade para problemas padrao ou para a curva de fundo Eclipse
-            analisePara.selecaoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                  sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                  sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-								  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.selecaoAP(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                  sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                  sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+								  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                   sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                  presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                  sistem1.arq.correcao.dTdL, imprime);
+                                  presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                  sistem1.config().correcao.dTdL, imprime);
         else if (analisePara.vfp == 0 || analisePara.vfp == 2) // anaslise de sensibilidade para curva de pressao de fundo Imex
-            analisePara.selecaoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                      sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                      sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-									  sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.selecaoAPImex(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                      sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                      sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+									  sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                       sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                      sistem1.arq.correcao.dTdL, imprime);
+                                      presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                      sistem1.config().correcao.dTdL, imprime);
         // variavei que precisam de um pos processamento para se encaixar na condicao de simulacao
-        if (sistem1.arq.lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
+        if (sistem1.config().lingas > 0 && analisePara.listaV.vgasinj == 1 && analisePara.APGasInj.parserieVazGas > 0) {
             // caso tenha linha de gas e analise de sensibilidade para vazao de injecao, a entrada no json e em stdM3,
             // mas no simulador, deve ser atualizada para a vazao massica
-            if (sistem1.arq.gasinj.tipoCC == 1) {
-                sistem1.celulaG[0].massfonteCH = vazgasG * (sistem1.arq.flug.Deng * 1.225) / 86400;
+            if (sistem1.config().gasinj.tipoCC == 1) {
+                sistem1.gasCell(0).massfonteCH = vazgasG * (sistem1.config().flug.Deng * 1.225) / 86400;
             }
         }
         if (analisePara.listaV.vchk == 1 && analisePara.APCHK.parserieAbre > 0) {
             // carregando o valo de abertuda do choke na variavel do sistema
-            sistem1.arq.chokep.abertura[0] = analisePara.APCHK.abertura[indChk];
+            sistem1.config().chokep.abertura[0] = analisePara.APCHK.abertura[indChk];
         }
-        if (sistem1.arq.ConContEntrada == 1 && analisePara.listaV.vpresent == 1) {
+        if (sistem1.config().ConContEntrada == 1 && analisePara.listaV.vpresent == 1) {
             // carregando os valores de analise de senisbilidadepara condicao de contorno a montante de pressao
             if (analisePara.APpEntrada.parseriePres > 0)
                 sistem1.presE = presE;
@@ -8810,7 +8810,7 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
                 sistem1.tempE = tempE;
             if (analisePara.APpEntrada.parserieTit > 0)
                 sistem1.titE = titE;
-        } else if (sistem1.arq.ConContEntrada == 2 && analisePara.listaV.vvazpresent == 1) {
+        } else if (sistem1.config().ConContEntrada == 2 && analisePara.listaV.vvazpresent == 1) {
             // carregando os valores de analise de senisbilidadepara condicao de contorno a montante de vazao e pressao
             if (analisePara.APvpEntrada.parseriePres > 0)
                 sistem1.presE = presE;
@@ -8820,44 +8820,44 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
                 sistem1.tempE = tempE;
             if (analisePara.APvpEntrada.parserieMass > 0) {
                 double tit;
-                tit = sistem1.arq.flup[0].FracMassHidra(sistem1.presE, sistem1.tempE);
+                tit = sistem1.config().flup[0].FracMassHidra(sistem1.presE, sistem1.tempE);
                 double vazC = vazE * betaE;
-                sistem1.celula[0].acsr.injm.MassC = vazC;
-                sistem1.celula[0].acsr.injm.MassG = (vazE - vazC) * tit;
-                sistem1.celula[0].acsr.injm.MassP = vazE - vazC - sistem1.celula[0].acsr.injm.MassG;
+                sistem1.cell(0).acsr.injm.MassC = vazC;
+                sistem1.cell(0).acsr.injm.MassG = (vazE - vazC) * tit;
+                sistem1.cell(0).acsr.injm.MassP = vazE - vazC - sistem1.cell(0).acsr.injm.MassG;
             }
-        } else if (sistem1.arq.pocinjec == 1 && analisePara.listaV.vpocinj == 1) {
+        } else if (sistem1.config().pocinjec == 1 && analisePara.listaV.vpocinj == 1) {
             // carregando os valores de analise de senisbilidade para condicao de contorno a montante de vazao, poco injetor
-            sistem1.arq.condpocinj.presfundo = presE;
-            if (sistem1.arq.flashCompleto == 0) {
-                sistem1.celula[0].acsr.injl.temp = tempE;
-                sistem1.celula[0].acsr.injl.QLiq = vazE;
-            } else if (sistem1.arq.flashCompleto == 1) {
-                sistem1.celula[0].acsr.injg.temp = tempE;
-                sistem1.celula[0].acsr.injg.QGas = vazE;
+            sistem1.config().condpocinj.presfundo = presE;
+            if (sistem1.config().flashCompleto == 0) {
+                sistem1.cell(0).acsr.injl.temp = tempE;
+                sistem1.cell(0).acsr.injl.QLiq = vazE;
+            } else if (sistem1.config().flashCompleto == 1) {
+                sistem1.cell(0).acsr.injg.temp = tempE;
+                sistem1.cell(0).acsr.injg.QGas = vazE;
             }
         }
         double chute = -1.;
         cout << "Resolvendo Sequencia " << iSeq << " da analise de sensibilidade" << endl;
         (*sistem1.vg1dSP).sequenciaAP = iSeq;
-        if (iSeq == 0 || sistem1.arq.ConContEntrada == 2 || sistem1.arq.pocinjec == 1) {
+        if (iSeq == 0 || sistem1.config().ConContEntrada == 2 || sistem1.config().pocinjec == 1) {
             // se for o primeiro caso da analise de sensibilidade, não se usa nenhum valor para o chute, chute=-1
             chute = -1.;
             falha = SolveTramoSolteiro(sistem1, chute);
         } else {
             // para os casos de analise de sensibilidade subsequentes, se usa o valor da solução da analise de sensibilidade anterior como chute
-            int tipoChute = sistem1.arq.ConContEntrada;
+            int tipoChute = sistem1.config().ConContEntrada;
             if (tipoChute == 0) {
-                chute = sistem1.celula[0].pres;
+                chute = sistem1.cell(0).pres;
             } else {
-                if (sistem1.celula[0].acsr.tipo == 2)
-                    chute = sistem1.celula[0].acsr.injl.QLiq;
-                else if (sistem1.celula[0].acsr.tipo == 1)
-                    chute = sistem1.celula[0].acsr.injg.QGas;
+                if (sistem1.cell(0).acsr.tipo == 2)
+                    chute = sistem1.cell(0).acsr.injl.QLiq;
+                else if (sistem1.cell(0).acsr.tipo == 1)
+                    chute = sistem1.cell(0).acsr.injg.QGas;
             }
-            if (sistem1.arq.lingas == 1 && sistem1.celulaG[0].tipoCC == 0) {
-                sistem1.arq.gasinj.chuteVaz = 1;
-                sistem1.arq.gasinj.vazgas[0] = sistem1.celulaG[0].VGasR * 86400. / (sistem1.celulaG[0].flui.MasEspGas(1., 15.6));
+            if (sistem1.config().lingas == 1 && sistem1.gasCell(0).tipoCC == 0) {
+                sistem1.config().gasinj.chuteVaz = 1;
+                sistem1.config().gasinj.vazgas[0] = sistem1.gasCell(0).VGasR * 86400. / (sistem1.gasCell(0).flui.MasEspGas(1., 15.6));
             }
             if (iSeq == 153 || iSeq == 60) {
             }
@@ -8889,32 +8889,32 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
 
         if (analisePara.tipoAP == 0 && analisePara.imprimePerfil==1) {
             // impressão dos perfis e tendencias da analise de sensibilidade, caso sem construcao de tabela de pressao de fundo
-            sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
-            sistem1.arq.resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
-            if(sistem1.arq.nintermi>0)sistem1.arq.resumoIntermitencia(sistem1.celula, sistem1.indTramo);
-            if(sistem1.arq.nCelUnit>0){
-            	for(int iCelUni=0; iCelUni<sistem1.arq.nCelUnit; iCelUni++)
-            	sistem1.arq.relatorioCelulaUnitaria(sistem1.celula,sistem1.arq.celUnit[iCelUni].posicP, sistem1.indTramo);
+            sistem1.config().imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
+            sistem1.config().resumoPermanente(sistem1.celula, sistem1.celulaG, sistem1.pGSup, sistem1.presiniG, sistem1.indTramo);
+            if(sistem1.config().nintermi>0)sistem1.config().resumoIntermitencia(sistem1.celula, sistem1.indTramo);
+            if(sistem1.config().nCelUnit>0){
+            	for(int iCelUni=0; iCelUni<sistem1.config().nCelUnit; iCelUni++)
+            	sistem1.config().relatorioCelulaUnitaria(sistem1.celula,sistem1.config().celUnit[iCelUni].posicP, sistem1.indTramo);
             }
             // enterramento
             for (int j = 0; j <= sistem1.ncel; j++) {
-                if (sistem1.celula[j].calor.difus2D == 1) {
-                    sistem1.celula[j].calor.poisson2D.imprimePermanente(sistem1.indTramo);
+                if (sistem1.cell(j).calor.difus2D == 1) {
+                    sistem1.cell(j).calor.poisson2D.imprimePermanente(sistem1.indTramo);
                 }
             }
             sistem1.kimpT = 1;
-            for (int i = 0; i < sistem1.arq.ntendp; i++) {
+            for (int i = 0; i < sistem1.config().ntendp; i++) {
                 if (iSeq == 0)
                     sistem1.ImprimeTrendPCab(i);
-                sistem1.arq.imprimeTrend(sistem1.celula, sistem1.MatTrendP[i], 0, i, 0);
+                sistem1.config().imprimeTrend(sistem1.celula, sistem1.MatTrendP[i], 0, i, 0);
                 sistem1.ImprimeTrendP(i);
             }
-            if (sistem1.arq.lingas == 1) {
-                sistem1.arq.imprimeProfileG(sistem1.celulaG, sistem1.flutG, 0, sistem1.indTramo);
-                for (int i = 0; i < sistem1.arq.ntendg; i++) {
+            if (sistem1.config().lingas == 1) {
+                sistem1.config().imprimeProfileG(sistem1.celulaG, sistem1.flutG, 0, sistem1.indTramo);
+                for (int i = 0; i < sistem1.config().ntendg; i++) {
                     if (iSeq == 0)
                         sistem1.ImprimeTrendGCab(i);
-                    sistem1.arq.imprimeTrendG(sistem1.celulaG, sistem1.MatTrendG[i], 0, i, 0, 0);
+                    sistem1.config().imprimeTrendG(sistem1.celulaG, sistem1.MatTrendG[i], 0, i, 0, 0);
                     sistem1.ImprimeTrendG(i);
                 }
             }
@@ -8922,16 +8922,16 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
             // caso de construcao de tabela VFP:
             double BHP;
             if (fabs(falha) < 1e9)
-                BHP = sistem1.celula[0].pres;
+                BHP = sistem1.cell(0).pres;
             else
                 BHP = -1e10;
-            analisePara.tabelaGenerica(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.arq.flup,
-                                       sistem1.arq.IPRS, sistem1.arq.valv, sistem1.arq.fonteg,
-                                       sistem1.arq.fontel, sistem1.arq.fontem, sistem1.arq.furo, sistem1.arq.bcs,
-									   sistem1.arq.multiBcs,sistem1.arq.bvol, sistem1.arq.dpreq,
+            analisePara.tabelaGenerica(sistem1.ncelGas, sistem1.chokeSup, sistem1.celula, sistem1.celulaG, sistem1.config().flup,
+                                       sistem1.config().IPRS, sistem1.config().valv, sistem1.config().fonteg,
+                                       sistem1.config().fontel, sistem1.config().fontem, sistem1.config().furo, sistem1.config().bcs,
+									   sistem1.config().multiBcs,sistem1.config().bvol, sistem1.config().dpreq,
                                        sistem1.pGSup, sistem1.temperatura, sistem1.presiniG, sistem1.tempiniG, vazgasG,
-                                       presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
-                                       sistem1.arq.correcao.dTdL, BHP);
+                                       presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.config().correcao.dPdLHidro, sistem1.config().correcao.dPdLFric,
+                                       sistem1.config().correcao.dTdL, BHP);
         }
         (*sistem1.vg1dSP).contaExit = 0;
     }
@@ -9014,24 +9014,24 @@ void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
                 semPerm++;
             } else {
                 if (arqRede.malha[i].nafluente == 0 && resolvPerm[i] == 0) {
-                    if (malha[i].celula[0].acsr.tipo == 1 && fabs(malha[i].celula[0].acsr.injg.QGas) < 1e-15) {
-                        if (malha[i].arq.ConContEntrada != 2 || fabs(malha[i].arq.CCVPres.mass[0]) < 1e-15) {
+                    if (malha[i].cell(0).acsr.tipo == 1 && fabs(malha[i].cell(0).acsr.injg.QGas) < 1e-15) {
+                        if (malha[i].config().ConContEntrada != 2 || fabs(malha[i].config().CCVPres.mass[0]) < 1e-15) {
                             arqRede.malha[i].perm = 0;
                             resolvPerm[i] = 1;
                             totPerm++;
                             semPerm++;
                         }
-                    } else if (malha[i].celula[0].acsr.tipo == 2 && fabs(malha[i].celula[0].acsr.injl.QLiq) < 1e-15) {
-                        if (malha[i].arq.ConContEntrada != 2 || fabs(malha[i].arq.CCVPres.mass[0]) < 1e-15) {
+                    } else if (malha[i].cell(0).acsr.tipo == 2 && fabs(malha[i].cell(0).acsr.injl.QLiq) < 1e-15) {
+                        if (malha[i].config().ConContEntrada != 2 || fabs(malha[i].config().CCVPres.mass[0]) < 1e-15) {
                             arqRede.malha[i].perm = 0;
                             resolvPerm[i] = 1;
                             totPerm++;
                             semPerm++;
                         }
-                    } else if (malha[i].celula[0].acsr.tipo == 10 &&
-                               fabs(malha[i].celula[0].acsr.injm.MassC + malha[i].celula[0].acsr.injm.MassP +
-                                    malha[i].celula[0].acsr.injm.MassG) < 1e-15) {
-                        if (malha[i].arq.ConContEntrada != 2 || fabs(malha[i].arq.CCVPres.mass[0]) < 1e-15) {
+                    } else if (malha[i].cell(0).acsr.tipo == 10 &&
+                               fabs(malha[i].cell(0).acsr.injm.MassC + malha[i].cell(0).acsr.injm.MassP +
+                                    malha[i].cell(0).acsr.injm.MassG) < 1e-15) {
+                        if (malha[i].config().ConContEntrada != 2 || fabs(malha[i].config().CCVPres.mass[0]) < 1e-15) {
                             arqRede.malha[i].perm = 0;
                             resolvPerm[i] = 1;
                             totPerm++;
@@ -9051,7 +9051,7 @@ void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
                     }
                     if (afluPerm == arqRede.malha[i].nafluente) {
                         if (ativoAflu > 0) {
-                            if (malha[i].arq.ConContEntrada == 2 && fabs(malha[i].arq.CCVPres.mass[0]) <= 1e-15) {
+                            if (malha[i].config().ConContEntrada == 2 && fabs(malha[i].config().CCVPres.mass[0]) <= 1e-15) {
                                 arqRede.malha[i].perm = 0;
                                 resolvPerm[i] = 1;
                                 totPerm++;
@@ -9062,69 +9062,69 @@ void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
                             }
                         } else {
 
-                            if (malha[i].celula[0].acsr.tipo == 1 && fabs(malha[i].celula[0].acsr.injg.QGas) > 1e-15) {
+                            if (malha[i].cell(0).acsr.tipo == 1 && fabs(malha[i].cell(0).acsr.injg.QGas) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                            } else if (malha[i].celula[1].acsr.tipo == 1 && fabs(malha[i].celula[1].acsr.injg.QGas) > 1e-15) {
+                            } else if (malha[i].cell(1).acsr.tipo == 1 && fabs(malha[i].cell(1).acsr.injg.QGas) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                                if ((malha[i].celula[1].acsr.injg.QGas) > 1e-15) {
-                                    malha[i].celula[0].acsr.injg = malha[i].celula[1].acsr.injg;
-                                    malha[i].celula[1].acsr.tipo = 0;
-                                    malha[i].celula[0].acsr.tipo = 1;
-                                    if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
+                                if ((malha[i].cell(1).acsr.injg.QGas) > 1e-15) {
+                                    malha[i].cell(0).acsr.injg = malha[i].cell(1).acsr.injg;
+                                    malha[i].cell(1).acsr.tipo = 0;
+                                    malha[i].cell(0).acsr.tipo = 1;
+                                    if (malha[i].config().flashCompleto == 2 && malha[i].config().tabelaDinamica == 1) {
                                         malha[i].tabDin[0].celFim = malha[i].tabDin[1].celFim;
                                         malha[i].tabDin.erase(malha[i].tabDin.begin() + 1);
                                         malha[i].ntabDin--;
                                     }
                                 }
-                            } else if (malha[i].celula[0].acsr.tipo == 2 && fabs(malha[i].celula[0].acsr.injl.QLiq) > 1e-15) {
+                            } else if (malha[i].cell(0).acsr.tipo == 2 && fabs(malha[i].cell(0).acsr.injl.QLiq) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                            } else if (malha[i].celula[1].acsr.tipo == 2 && fabs(malha[i].celula[1].acsr.injl.QLiq) > 1e-15) {
+                            } else if (malha[i].cell(1).acsr.tipo == 2 && fabs(malha[i].cell(1).acsr.injl.QLiq) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                                if ((malha[i].celula[1].acsr.injl.QLiq) > 1e-15) {
-                                    malha[i].celula[0].acsr.injl = malha[i].celula[1].acsr.injl;
-                                    malha[i].celula[1].acsr.tipo = 0;
-                                    malha[i].celula[0].acsr.tipo = 2;
-                                    if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
+                                if ((malha[i].cell(1).acsr.injl.QLiq) > 1e-15) {
+                                    malha[i].cell(0).acsr.injl = malha[i].cell(1).acsr.injl;
+                                    malha[i].cell(1).acsr.tipo = 0;
+                                    malha[i].cell(0).acsr.tipo = 2;
+                                    if (malha[i].config().flashCompleto == 2 && malha[i].config().tabelaDinamica == 1) {
                                         malha[i].tabDin[0].celFim = malha[i].tabDin[1].celFim;
                                         malha[i].tabDin.erase(malha[i].tabDin.begin() + 1);
                                         malha[i].ntabDin--;
                                     }
                                 }
-                            } else if (malha[i].celula[0].acsr.tipo == 10 &&
-                                       fabs(malha[i].celula[0].acsr.injm.MassC + malha[i].celula[0].acsr.injm.MassP +
-                                            malha[i].celula[0].acsr.injm.MassG) > 1e-15) {
+                            } else if (malha[i].cell(0).acsr.tipo == 10 &&
+                                       fabs(malha[i].cell(0).acsr.injm.MassC + malha[i].cell(0).acsr.injm.MassP +
+                                            malha[i].cell(0).acsr.injm.MassG) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                            } else if (malha[i].celula[1].acsr.tipo == 10 &&
-                                       fabs(malha[i].celula[1].acsr.injm.MassC + malha[i].celula[1].acsr.injm.MassP +
-                                            malha[i].celula[1].acsr.injm.MassG) > 1e-15) {
+                            } else if (malha[i].cell(1).acsr.tipo == 10 &&
+                                       fabs(malha[i].cell(1).acsr.injm.MassC + malha[i].cell(1).acsr.injm.MassP +
+                                            malha[i].cell(1).acsr.injm.MassG) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                                if ((malha[i].celula[1].acsr.injm.MassC + malha[i].celula[1].acsr.injm.MassP +
-                                     malha[i].celula[1].acsr.injm.MassG) > 1e-15) {
-                                    malha[i].celula[0].acsr.injm = malha[i].celula[1].acsr.injm;
-                                    malha[i].celula[0].acsr.tipo = 10;
-                                    malha[i].celula[1].acsr.tipo = 0;
-                                    if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
+                                if ((malha[i].cell(1).acsr.injm.MassC + malha[i].cell(1).acsr.injm.MassP +
+                                     malha[i].cell(1).acsr.injm.MassG) > 1e-15) {
+                                    malha[i].cell(0).acsr.injm = malha[i].cell(1).acsr.injm;
+                                    malha[i].cell(0).acsr.tipo = 10;
+                                    malha[i].cell(1).acsr.tipo = 0;
+                                    if (malha[i].config().flashCompleto == 2 && malha[i].config().tabelaDinamica == 1) {
                                         malha[i].tabDin[0].celFim = malha[i].tabDin[1].celFim;
                                         malha[i].tabDin.erase(malha[i].tabDin.begin() + 1);
                                         malha[i].ntabDin--;
                                     }
                                 }
-                            } else if (malha[i].celula[0].acsr.tipo == 3) {
+                            } else if (malha[i].cell(0).acsr.tipo == 3) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                            } else if (malha[i].celula[0].acsr.tipo == 15) {
+                            } else if (malha[i].cell(0).acsr.tipo == 15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                            } else if (malha[i].celula[0].acsr.tipo == 16) {
+                            } else if (malha[i].cell(0).acsr.tipo == 16) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
-                            } else if (malha[i].arq.ConContEntrada == 2 && fabs(malha[i].arq.CCVPres.mass[0]) > 1e-15) {
+                            } else if (malha[i].config().ConContEntrada == 2 && fabs(malha[i].config().CCVPres.mass[0]) > 1e-15) {
                                 resolvPerm[i] = 1;
                                 totPerm++;
                             } else {
@@ -9152,29 +9152,29 @@ void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
                 for (int icol = 0; icol < arqRede.malha[indaflu].ncoleta; icol++) {
                     int indacol = arqRede.malha[indaflu].coleta[icol];
                     colPerm += arqRede.malha[indacol].perm;
-                    if (malha[indacol].arq.ConContEntrada == 2 && fabs(malha[indacol].arq.CCVPres.mass[0]) > 1e-15) {
+                    if (malha[indacol].config().ConContEntrada == 2 && fabs(malha[indacol].config().CCVPres.mass[0]) > 1e-15) {
                     }
                 }
 
                 if (afluPerm == 0 && colPerm > 1) {
                     arqRede.malha[indaflu].perm = 1;
-                    malha[indaflu].celula[0].acsr.tipo = malha[i].celula[0].acsr.tipo;
-                    if (malha[i].celula[0].acsr.tipo == 1) {
-                        malha[indaflu].celula[0].acsr.injg = malha[i].celula[0].acsr.injg;
-                        malha[indaflu].celula[0].acsr.injg.QGas = 500.;
-                        malha[indaflu].celula[0].acsr.injg.razCompGas = 0.;
-                        malha[indaflu].celula[0].acsr.injg.temp = malha[i].celula[0].temp;
-                    } else if (malha[i].celula[0].acsr.tipo == 2) {
-                        malha[indaflu].celula[0].acsr.injl = malha[i].celula[0].acsr.injl;
-                        malha[indaflu].celula[0].acsr.injl.QLiq = 5.;
-                        malha[indaflu].celula[0].acsr.injl.bet = 0.;
-                        malha[indaflu].celula[0].acsr.injl.temp = malha[i].celula[0].temp;
-                    } else if (malha[i].celula[0].acsr.tipo == 10) {
-                        malha[indaflu].celula[0].acsr.injm = malha[i].celula[0].acsr.injm;
-                        malha[indaflu].celula[0].acsr.injm.MassP = 0.01;
-                        malha[indaflu].celula[0].acsr.injm.MassC = 0.0;
-                        malha[indaflu].celula[0].acsr.injm.MassG = 0.004;
-                        malha[indaflu].celula[0].acsr.injm.temp = malha[i].celula[0].temp;
+                    malha[indaflu].cell(0).acsr.tipo = malha[i].cell(0).acsr.tipo;
+                    if (malha[i].cell(0).acsr.tipo == 1) {
+                        malha[indaflu].cell(0).acsr.injg = malha[i].cell(0).acsr.injg;
+                        malha[indaflu].cell(0).acsr.injg.QGas = 500.;
+                        malha[indaflu].cell(0).acsr.injg.razCompGas = 0.;
+                        malha[indaflu].cell(0).acsr.injg.temp = malha[i].cell(0).temp;
+                    } else if (malha[i].cell(0).acsr.tipo == 2) {
+                        malha[indaflu].cell(0).acsr.injl = malha[i].cell(0).acsr.injl;
+                        malha[indaflu].cell(0).acsr.injl.QLiq = 5.;
+                        malha[indaflu].cell(0).acsr.injl.bet = 0.;
+                        malha[indaflu].cell(0).acsr.injl.temp = malha[i].cell(0).temp;
+                    } else if (malha[i].cell(0).acsr.tipo == 10) {
+                        malha[indaflu].cell(0).acsr.injm = malha[i].cell(0).acsr.injm;
+                        malha[indaflu].cell(0).acsr.injm.MassP = 0.01;
+                        malha[indaflu].cell(0).acsr.injm.MassC = 0.0;
+                        malha[indaflu].cell(0).acsr.injm.MassG = 0.004;
+                        malha[indaflu].cell(0).acsr.injm.temp = malha[i].cell(0).temp;
                     }
                 }
             }
@@ -9186,29 +9186,29 @@ void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
                 double qTotG = 0.;
                 double qTotL = 0.;
                 double qTotM = 0.;
-                if (arqRede.malha[indaflu].perm == 1 && malha[indaflu].celula[0].acsr.tipo == 1) {
+                if (arqRede.malha[indaflu].perm == 1 && malha[indaflu].cell(0).acsr.tipo == 1) {
                     nQG++;
-                    qTotG += malha[indaflu].celula[0].acsr.injg.QGas;
-                } else if (arqRede.malha[indaflu].perm == 1 && malha[indaflu].celula[0].acsr.tipo == 2) {
+                    qTotG += malha[indaflu].cell(0).acsr.injg.QGas;
+                } else if (arqRede.malha[indaflu].perm == 1 && malha[indaflu].cell(0).acsr.tipo == 2) {
                     nQL++;
-                    qTotL += malha[indaflu].celula[0].acsr.injl.QLiq;
-                } else if (arqRede.malha[indaflu].perm == 1 && malha[indaflu].celula[0].acsr.tipo == 10) {
+                    qTotL += malha[indaflu].cell(0).acsr.injl.QLiq;
+                } else if (arqRede.malha[indaflu].perm == 1 && malha[indaflu].cell(0).acsr.tipo == 10) {
                     nQM++;
-                    qTotM += (malha[indaflu].celula[0].acsr.injm.MassP + malha[indaflu].celula[0].acsr.injm.MassC +
-                              malha[indaflu].celula[0].acsr.injm.MassG);
+                    qTotM += (malha[indaflu].cell(0).acsr.injm.MassP + malha[indaflu].cell(0).acsr.injm.MassC +
+                              malha[indaflu].cell(0).acsr.injm.MassG);
                 }
-                if (nQG == arqRede.malha[i].nafluente && malha[i].celula[1].acsr.tipo == 1) {
-                    if ((malha[i].celula[1].acsr.injg.QGas + qTotG) < 1e-15)
-                        malha[i].celula[1].acsr.injg.QGas += 500.;
-                } else if (nQL == arqRede.malha[i].nafluente && malha[i].celula[1].acsr.tipo == 2) {
-                    if ((malha[i].celula[1].acsr.injl.QLiq + qTotL) < 1e-15)
-                        malha[i].celula[1].acsr.injl.QLiq += 5.;
-                } else if (nQM == arqRede.malha[i].nafluente && malha[i].celula[1].acsr.tipo == 10) {
-                    double totM = (malha[i].celula[0].acsr.injm.MassP + malha[i].celula[0].acsr.injm.MassC +
-                                   malha[i].celula[0].acsr.injm.MassG);
+                if (nQG == arqRede.malha[i].nafluente && malha[i].cell(1).acsr.tipo == 1) {
+                    if ((malha[i].cell(1).acsr.injg.QGas + qTotG) < 1e-15)
+                        malha[i].cell(1).acsr.injg.QGas += 500.;
+                } else if (nQL == arqRede.malha[i].nafluente && malha[i].cell(1).acsr.tipo == 2) {
+                    if ((malha[i].cell(1).acsr.injl.QLiq + qTotL) < 1e-15)
+                        malha[i].cell(1).acsr.injl.QLiq += 5.;
+                } else if (nQM == arqRede.malha[i].nafluente && malha[i].cell(1).acsr.tipo == 10) {
+                    double totM = (malha[i].cell(0).acsr.injm.MassP + malha[i].cell(0).acsr.injm.MassC +
+                                   malha[i].cell(0).acsr.injm.MassG);
                     if ((totM + qTotL) < 1e-15) {
-                        malha[i].celula[1].acsr.injm.MassP += 0.01;
-                        malha[i].celula[1].acsr.injm.MassG += 0.004;
+                        malha[i].cell(1).acsr.injm.MassP += 0.01;
+                        malha[i].cell(1).acsr.injm.MassG += 0.004;
                     }
                 }
             }
@@ -9245,42 +9245,42 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
             // de escoamento assumido para a rede
             malha[i] = temporario; // carregando o tramo temporario no tramo i da malha
             malha[i].indTramo = i;
-            if (malha[i].arq.tabelaDinamica == 1) {
+            if (malha[i].config().tabelaDinamica == 1) {
                 // caso a opcao de tabela dinamica esteja ligada, como, para o modelo composicional, sempre, primeiramente, se faz um
                 // calculo inicial com modelo black oil, a opcao tabela dinamica e desligada temporariamente enquanto se esta no modo blackoil
                 for (int j = 0; j <= malha[i].ncel; j++) {
-                    malha[i].celula[j].flui.tabelaDinamica = 0;
-                    if (malha[i].celula[j].acsr.tipo == 1) {
-                        malha[i].celula[j].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 2) {
-                        malha[i].celula[j].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 3) {
-                        malha[i].celula[j].acsr.ipr.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 15) {
-                        malha[i].celula[j].acsr.radialPoro.flup.tabelaDinamica = 0;
-                        int ncelRad = malha[j].celula[i].acsr.radialPoro.ncel;
+                    malha[i].cell(j).flui.tabelaDinamica = 0;
+                    if (malha[i].cell(j).acsr.tipo == 1) {
+                        malha[i].cell(j).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 2) {
+                        malha[i].cell(j).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 3) {
+                        malha[i].cell(j).acsr.ipr.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 15) {
+                        malha[i].cell(j).acsr.radialPoro.flup.tabelaDinamica = 0;
+                        int ncelRad = malha[j].cell(i).acsr.radialPoro.ncel;
                         for (int k = 0; k < ncelRad; k++) {
-                            malha[j].celula[i].acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
+                            malha[j].cell(i).acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
                         }
-                    } else if (malha[i].celula[j].acsr.tipo == 16) {
-                        malha[i].celula[j].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-                        int ncelRad = malha[j].celula[i].acsr.poroso2D.dados.transfer.ncel;
+                    } else if (malha[i].cell(j).acsr.tipo == 16) {
+                        malha[i].cell(j).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+                        int ncelRad = malha[j].cell(i).acsr.poroso2D.dados.transfer.ncel;
                         for (int k = 0; k < ncelRad; k++) {
-                            malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
+                            malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
                         }
-                        int ncelEle = malha[j].celula[i].acsr.poroso2D.malha.nele;
+                        int ncelEle = malha[j].cell(i).acsr.poroso2D.malha.nele;
                         for (int k = 0; k < ncelEle; k++) {
-                            malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
+                            malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
                         }
-                    } else if (malha[i].celula[j].acsr.tipo == 10) {
-                        malha[i].celula[j].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 9 && malha[i].celula[j].acsr.fontechk.abertura > 1e-6) {
-                        malha[i].celula[j].acsr.fontechk.fluidoP.tabelaDinamica = 0;
-                        malha[i].celula[j].acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 10) {
+                        malha[i].cell(j).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 9 && malha[i].cell(j).acsr.fontechk.abertura > 1e-6) {
+                        malha[i].cell(j).acsr.fontechk.fluidoP.tabelaDinamica = 0;
+                        malha[i].cell(j).acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
                     }
                 }
             }
-            if (arqRede.malha[i].nafluente == 0 && malha[i].arq.ConContEntrada == 1) {
+            if (arqRede.malha[i].nafluente == 0 && malha[i].config().ConContEntrada == 1) {
                 // preparando o tramo para o caso em que este esta no inicio da rede e tem
                 // como condicao de contorno e pressao na entrada do tramo, neste caso, tem de se ter uma estimativa inicial de vazao
                 // neste tramo, alem disto, e necessario definir detalhes como o beta in-situ e o RGO
@@ -9288,7 +9288,7 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                 // e necessario colocar um acessorio de fonte, onde e armazendao a estimativa de vazao no inicio do tramo
                 // caso o fluido seja dominado por liquido, a fointe de armazenamento sera do tipo liquido
                 //  se gas, a fonte sera de gas
-                double tit = malha[i].arq.CCPres.tit[0];
+                double tit = malha[i].config().CCPres.tit[0];
                 /// atencao, verificar se aposicao do if esta correta.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if ((*arqRede.vg1dSP).fluidoRede == 0) {
                     if (arqRede.chutHol > 0.1)
@@ -9297,21 +9297,21 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                         arqRede.relax = 0.5;
                 }
                 ProFlu fluCP;
-                if (malha[i].arq.CCPres.indFluido == -1)
-                    fluCP = malha[i].celula[0].flui;
+                if (malha[i].config().CCPres.indFluido == -1)
+                    fluCP = malha[i].cell(0).flui;
                 else
-                    fluCP = malha[i].arq.flup[malha[i].arq.CCPres.indFluido];
+                    fluCP = malha[i].config().flup[malha[i].config().CCPres.indFluido];
 
                 if (tit < (1. - (*arqRede.vg1dSP).localtiny)) {
 
-                    malha[i].tempE = malha[i].arq.CCPres.temperatura[0];
-                    malha[i].presE = malha[i].arq.CCPres.pres[0];
+                    malha[i].tempE = malha[i].config().CCPres.temperatura[0];
+                    malha[i].presE = malha[i].config().CCPres.pres[0];
                     double rgoentrada = 0.;
-                    double rcst = malha[i].celula[0].fluicol.MasEspFlu(1.01, 15);
-                    double rcis = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                    malha[i].betaE = malha[i].arq.CCPres.bet[0] * rcst / rcis;
+                    double rcst = malha[i].cell(0).fluicol.MasEspFlu(1.01, 15);
+                    double rcis = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                    malha[i].betaE = malha[i].config().CCPres.bet[0] * rcst / rcis;
 
-                    if (malha[i].arq.flashCompleto != 2) {
+                    if (malha[i].config().flashCompleto != 2) {
                         double rgST = fluCP.Deng * 1.225;
                         double roST = 141.5 * 1000. / (131.5 + fluCP.API);
                         double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
@@ -9325,10 +9325,10 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                         double Ost = (1 - malha[i].betaE) * bo * (1 - fw);
                         double Wst = fw * (1 - malha[i].betaE);
                         double Cst = malha[i].betaE;
-                        malha[i].titE = malha[i].arq.CCPres.tit[0];
+                        malha[i].titE = malha[i].config().CCPres.tit[0];
                         if (malha[i].titE < 0) {
                             double titH = fluCP.FracMassHidra(malha[i].presE, malha[i].tempE);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double rlMix = malha[i].betaE * rc + (1. - malha[i].betaE) * rl;
                             double val1 = ((1. - malha[i].betaE) * rl * titH / (1. - titH));
                             malha[i].titE = val1 / (rlMix + val1);
@@ -9342,52 +9342,52 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                     if ((*arqRede.vg1dSP).fluidoRede == 1) { // dominado por liquido
                         if (rgoentrada > 1400.)
                             rgoentrada = 1400.;
-                        malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
-                        malha[i].celula[0].acsr.injl.bet = malha[i].betaE;
-                        malha[i].celula[0].acsr.injl.temp = malha[i].arq.CCPres.temperatura[0];
-                        malha[i].celula[0].acsr.injl.FluidoPro.BSW = fluCP.BSW;
-                        malha[i].celula[0].acsr.injl.FluidoPro.TempL = fluCP.TempL;
-                        malha[i].celula[0].acsr.injl.FluidoPro.TempH = fluCP.TempH;
-                        malha[i].celula[0].acsr.injl.FluidoPro.LVisL = fluCP.LVisL;
-                        malha[i].celula[0].acsr.injl.FluidoPro.LVisH = fluCP.LVisH;
-                        if (malha[i].arq.flashCompleto != 2) {
-                            malha[i].celula[0].acsr.injl.FluidoPro.RGO = rgoentrada;
-                            malha[i].celula[0].acsr.injl.FluidoPro.Deng = fluCP.Deng;
-                            malha[i].celula[0].acsr.injl.FluidoPro.Denag = fluCP.Denag;
-                            malha[i].celula[0].acsr.injl.FluidoPro.yco2 = fluCP.yco2;
-                            malha[i].celula[0].acsr.injl.FluidoPro.API = fluCP.API;
-                            malha[i].celula[0].acsr.injl.FluidoPro.RenovaFluido();
+                        malha[i].cell(0).pres = malha[i].config().CCPres.pres[0];
+                        malha[i].cell(0).acsr.injl.bet = malha[i].betaE;
+                        malha[i].cell(0).acsr.injl.temp = malha[i].config().CCPres.temperatura[0];
+                        malha[i].cell(0).acsr.injl.FluidoPro.BSW = fluCP.BSW;
+                        malha[i].cell(0).acsr.injl.FluidoPro.TempL = fluCP.TempL;
+                        malha[i].cell(0).acsr.injl.FluidoPro.TempH = fluCP.TempH;
+                        malha[i].cell(0).acsr.injl.FluidoPro.LVisL = fluCP.LVisL;
+                        malha[i].cell(0).acsr.injl.FluidoPro.LVisH = fluCP.LVisH;
+                        if (malha[i].config().flashCompleto != 2) {
+                            malha[i].cell(0).acsr.injl.FluidoPro.RGO = rgoentrada;
+                            malha[i].cell(0).acsr.injl.FluidoPro.Deng = fluCP.Deng;
+                            malha[i].cell(0).acsr.injl.FluidoPro.Denag = fluCP.Denag;
+                            malha[i].cell(0).acsr.injl.FluidoPro.yco2 = fluCP.yco2;
+                            malha[i].cell(0).acsr.injl.FluidoPro.API = fluCP.API;
+                            malha[i].cell(0).acsr.injl.FluidoPro.RenovaFluido();
                         } else {
                             fluCP.atualizaPropCompStandard();
                             fluCP.atualizaPropComp(malha[i].presE, malha[i].tempE);
                             double rl = fluCP.MasEspLiq(malha[i].presE, malha[i].tempE);
                             double titH = fluCP.FracMassHidra(malha[i].presE, malha[i].tempE);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double rlMix = malha[i].betaE * rc + (1. - malha[i].betaE) * rl;
                             double val1 = ((1. - malha[i].betaE) * rl * titH / (1. - titH));
                             malha[i].titE = val1 / (rlMix + val1);
-                            malha[i].celula[0].acsr.injl.FluidoPro = fluCP;
+                            malha[i].cell(0).acsr.injl.FluidoPro = fluCP;
                         }
-                        if (fabs(malha[i].celula[0].acsr.injl.QLiq) < 1e-15)
-                            malha[i].celula[0].acsr.injl.QLiq = 1000. * pow(malha[i].celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
-                        malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injl.FluidoPro;
+                        if (fabs(malha[i].cell(0).acsr.injl.QLiq) < 1e-15)
+                            malha[i].cell(0).acsr.injl.QLiq = 1000. * pow(malha[i].cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
+                        malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injl.FluidoPro;
                     } else {
-                        malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
-                        malha[i].celula[0].acsr.injg.seco = 0;
-                        malha[i].celula[0].acsr.injg.temp = malha[i].arq.CCPres.temperatura[0];
-                        malha[i].celula[0].acsr.injg.FluidoPro.BSW = fluCP.BSW;
-                        malha[i].celula[0].acsr.injg.FluidoPro.TempL = fluCP.TempL;
-                        malha[i].celula[0].acsr.injg.FluidoPro.TempH = fluCP.TempH;
-                        malha[i].celula[0].acsr.injg.FluidoPro.LVisL = fluCP.LVisL;
-                        malha[i].celula[0].acsr.injg.FluidoPro.LVisH = fluCP.LVisH;
-                        if (malha[i].arq.flashCompleto != 2) { // caso nao composicional
+                        malha[i].cell(0).pres = malha[i].config().CCPres.pres[0];
+                        malha[i].cell(0).acsr.injg.seco = 0;
+                        malha[i].cell(0).acsr.injg.temp = malha[i].config().CCPres.temperatura[0];
+                        malha[i].cell(0).acsr.injg.FluidoPro.BSW = fluCP.BSW;
+                        malha[i].cell(0).acsr.injg.FluidoPro.TempL = fluCP.TempL;
+                        malha[i].cell(0).acsr.injg.FluidoPro.TempH = fluCP.TempH;
+                        malha[i].cell(0).acsr.injg.FluidoPro.LVisL = fluCP.LVisL;
+                        malha[i].cell(0).acsr.injg.FluidoPro.LVisH = fluCP.LVisH;
+                        if (malha[i].config().flashCompleto != 2) { // caso nao composicional
                             double rgST = fluCP.Deng * 1.225;
                             double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                             double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                             double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                            double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
                             double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                             malha[i].titE = titT;
@@ -9395,13 +9395,13 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                             rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
                             if (rgoentrada > 1400.)
                                 rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
-                            fluCP.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
-                            malha[i].celula[0].acsr.injg.FluidoPro.Deng = fluCP.Deng;
-                            malha[i].celula[0].acsr.injg.FluidoPro.Denag = fluCP.Denag;
-                            malha[i].celula[0].acsr.injg.FluidoPro.yco2 = fluCP.yco2;
-                            malha[i].celula[0].acsr.injg.FluidoPro.API = fluCP.API;
-                            malha[i].celula[0].acsr.injg.FluidoPro.BSW = fluCP.BSW;
-                            malha[i].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                            fluCP.RGO = malha[i].cell(0).acsr.injg.FluidoPro.RGO = rgoentrada;
+                            malha[i].cell(0).acsr.injg.FluidoPro.Deng = fluCP.Deng;
+                            malha[i].cell(0).acsr.injg.FluidoPro.Denag = fluCP.Denag;
+                            malha[i].cell(0).acsr.injg.FluidoPro.yco2 = fluCP.yco2;
+                            malha[i].cell(0).acsr.injg.FluidoPro.API = fluCP.API;
+                            malha[i].cell(0).acsr.injg.FluidoPro.BSW = fluCP.BSW;
+                            malha[i].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                         } else { // caso composicional
                             fluCP.atualizaPropCompStandard();
                             fluCP.atualizaPropComp(malha[i].presE, malha[i].tempE);
@@ -9409,38 +9409,38 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                             double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                             double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                             double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                            double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
                             double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                             malha[i].titE = titT;
                             malha[i].betaE = val1 / (val2 + val1);
-                            malha[i].celula[0].acsr.injg.FluidoPro = fluCP;
+                            malha[i].cell(0).acsr.injg.FluidoPro = fluCP;
                         }
-                        malha[i].celula[0].acsr.injg.fluidocol = malha[i].arq.fluc;
-                        malha[i].celula[0].acsr.injg.razCompGas = malha[i].arq.CCPres.bet[0];
-                        if (malha[i].celula[0].acsr.injg.QGas < 1e-15)
-                            malha[i].celula[0].acsr.injg.QGas = 1000. * pow(malha[i].celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
-                        malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injg.FluidoPro;
+                        malha[i].cell(0).acsr.injg.fluidocol = malha[i].config().fluc;
+                        malha[i].cell(0).acsr.injg.razCompGas = malha[i].config().CCPres.bet[0];
+                        if (malha[i].cell(0).acsr.injg.QGas < 1e-15)
+                            malha[i].cell(0).acsr.injg.QGas = 1000. * pow(malha[i].cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
+                        malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injg.FluidoPro;
                     }
                 } else { // dominado por gas
                     double rgoentrada = 0.;
-                    malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
-                    malha[i].celula[0].acsr.injg.temp = malha[i].arq.CCPres.temperatura[0];
-                    malha[i].celula[0].acsr.injg.seco = 0;
-                    malha[i].celula[0].acsr.injg.FluidoPro.TempL = fluCP.TempL;
-                    malha[i].celula[0].acsr.injg.FluidoPro.TempH = fluCP.TempH;
-                    malha[i].celula[0].acsr.injg.FluidoPro.LVisL = fluCP.LVisL;
-                    malha[i].celula[0].acsr.injg.FluidoPro.LVisH = fluCP.LVisH;
-                    if (malha[i].arq.flashCompleto != 2) { // caso nao composicional
+                    malha[i].cell(0).pres = malha[i].config().CCPres.pres[0];
+                    malha[i].cell(0).acsr.injg.temp = malha[i].config().CCPres.temperatura[0];
+                    malha[i].cell(0).acsr.injg.seco = 0;
+                    malha[i].cell(0).acsr.injg.FluidoPro.TempL = fluCP.TempL;
+                    malha[i].cell(0).acsr.injg.FluidoPro.TempH = fluCP.TempH;
+                    malha[i].cell(0).acsr.injg.FluidoPro.LVisL = fluCP.LVisL;
+                    malha[i].cell(0).acsr.injg.FluidoPro.LVisH = fluCP.LVisH;
+                    if (malha[i].config().flashCompleto != 2) { // caso nao composicional
                         double rgST = fluCP.Deng * 1.225;
                         double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                         double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                        double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                        double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                        double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
                         double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                         malha[i].titE = titT;
@@ -9448,13 +9448,13 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                         rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
                         if (rgoentrada > 1400.)
                             rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
-                        fluCP.RGO = malha[i].celula[0].flui.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
-                        malha[i].celula[0].acsr.injg.FluidoPro.Deng = fluCP.Deng;
-                        malha[i].celula[0].acsr.injg.FluidoPro.Denag = fluCP.Denag;
-                        malha[i].celula[0].acsr.injg.FluidoPro.yco2 = fluCP.yco2;
-                        malha[i].celula[0].acsr.injg.FluidoPro.API = fluCP.API;
-                        malha[i].celula[0].acsr.injg.FluidoPro.BSW = fluCP.BSW;
-                        malha[i].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                        fluCP.RGO = malha[i].cell(0).flui.RGO = malha[i].cell(0).acsr.injg.FluidoPro.RGO = rgoentrada;
+                        malha[i].cell(0).acsr.injg.FluidoPro.Deng = fluCP.Deng;
+                        malha[i].cell(0).acsr.injg.FluidoPro.Denag = fluCP.Denag;
+                        malha[i].cell(0).acsr.injg.FluidoPro.yco2 = fluCP.yco2;
+                        malha[i].cell(0).acsr.injg.FluidoPro.API = fluCP.API;
+                        malha[i].cell(0).acsr.injg.FluidoPro.BSW = fluCP.BSW;
+                        malha[i].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                     } else { // caso composicional
                         fluCP.atualizaPropCompStandard();
                         fluCP.atualizaPropComp(malha[i].presE, malha[i].tempE);
@@ -9462,56 +9462,56 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
                         double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                         double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                        double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                        double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                        double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
                         double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                         malha[i].titE = titT;
                         malha[i].betaE = val1 / (val2 + val1);
-                        malha[i].celula[0].acsr.injg.FluidoPro = fluCP;
+                        malha[i].cell(0).acsr.injg.FluidoPro = fluCP;
                     }
-                    malha[i].celula[0].acsr.injg.fluidocol = malha[i].arq.fluc;
-                    malha[i].celula[0].acsr.injg.razCompGas = malha[i].arq.CCPres.bet[0];
-                    if (malha[i].celula[0].acsr.injg.QGas < 1e-15)
-                        malha[i].celula[0].acsr.injg.QGas = 10000. * pow(malha[i].celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
-                    malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injl.FluidoPro;
+                    malha[i].cell(0).acsr.injg.fluidocol = malha[i].config().fluc;
+                    malha[i].cell(0).acsr.injg.razCompGas = malha[i].config().CCPres.bet[0];
+                    if (malha[i].cell(0).acsr.injg.QGas < 1e-15)
+                        malha[i].cell(0).acsr.injg.QGas = 10000. * pow(malha[i].cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
+                    malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injl.FluidoPro;
                 }
             }
             // fazendo uma estimativa inicial da vazao total de liquido e gas que escoara na rede, para tanto,
             // se buscara as fontes de liquido e gas que estao computadas no inicio do tramo, observar que e uma estimativa imperfeita, pois
             // no caso de condicao de contorno pressao, esta vazao e apenas um chuet, alem de nao contabilizar a vazao em celulas que não a
             // inicial do tramo
-            if (malha[i].celula[0].acsr.tipo == 2 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;
-            else if (malha[i].celula[0].acsr.tipo == 1 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavazG += malha[i].celula[0].acsr.injg.QGas / 86400.;
-            else if (malha[i].celula[0].acsr.tipo == 10 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2) {
-                double massTot = malha[i].celula[0].acsr.injm.MassP + malha[i].celula[0].acsr.injm.MassG;
-                double rhopstd = 141.5 * 1000. / (malha[i].celula[0].acsr.injm.FluidoPro.API + 131.5);
-                double bsw = malha[i].celula[0].acsr.injm.FluidoPro.BSW;
-                double rhogstd = malha[i].celula[0].acsr.injm.FluidoPro.Deng * 1.225;
-                double tit = malha[i].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
+            if (malha[i].cell(0).acsr.tipo == 2 && arqRede.malha[i].perm == 1)
+                (*arqRede.vg1dSP).somavaz += malha[i].cell(0).acsr.injl.QLiq / 86400.;
+            else if (malha[i].cell(0).acsr.tipo == 1 && arqRede.malha[i].perm == 1)
+                (*arqRede.vg1dSP).somavazG += malha[i].cell(0).acsr.injg.QGas / 86400.;
+            else if (malha[i].cell(0).acsr.tipo == 10 && arqRede.malha[i].perm == 1 && malha[i].config().ConContEntrada != 2) {
+                double massTot = malha[i].cell(0).acsr.injm.MassP + malha[i].cell(0).acsr.injm.MassG;
+                double rhopstd = 141.5 * 1000. / (malha[i].cell(0).acsr.injm.FluidoPro.API + 131.5);
+                double bsw = malha[i].cell(0).acsr.injm.FluidoPro.BSW;
+                double rhogstd = malha[i].cell(0).acsr.injm.FluidoPro.Deng * 1.225;
+                double tit = malha[i].cell(0).acsr.injm.FluidoPro.FracMassHidra(1., 20.);
                 (*arqRede.vg1dSP).somavaz += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
-                                             malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.rholStd;
+                                             malha[i].cell(0).acsr.injm.MassC / malha[i].cell(0).acsr.injm.fluidocol.rholStd;
                 (*arqRede.vg1dSP).somavazG += massTot * tit / rhogstd;
             }
-            (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
+            (*arqRede.vg1dSP).somaarea += malha[i].cell(0).duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
             // referencia a razao entre a area do tramo e somaarea, esta razao sera aplicada para distribuir o chute inicial da vazao de cada tramo,
             // tomando somavaz e somavazG e aplicando a razao de area
             if (arqRede.malha[i].perm == 0)
                 contapermRede++; // contabilizando se o tramo esta com o permanente ligado, o numero de tramops dan rede
             // pode ser diferente do numero de tramso que efetivamente poarticipara do solver permanente da rede
-            temporario.arq.tabelaDinamica = 0;
+            temporario.config().tabelaDinamica = 0;
         }
         for (int i = 0; i < narq; i++) {
             malha[i].chuteHol = arqRede.chutHol; // o chutehol serve como uma estimativa inicial do holdup na rede para o calculo inicial
             // da variacao de pressao em cada tramo da rede devido aa hidrostatica
             if (arqRede.malha[i].ncoleta > 0) {
                 int icol = arqRede.malha[i].coleta[0];
-                malha[i].fluiRevRede = malha[icol].celula[0].flui; // computando o fluido do tramo coletor, caso no afluente
+                malha[i].fluiRevRede = malha[icol].cell(0).flui; // computando o fluido do tramo coletor, caso no afluente
                 // ocorra reversao do escoamento pre defindio, o fluido que escoarah no tramo afluente vira do fluido que se encontra no coletor
-                if (malha[i].arq.flashCompleto == 2)
+                if (malha[i].config().flashCompleto == 2)
                     malha[i].fluiRevRede.atualizaPropCompStandard();
             }
         }
@@ -9525,36 +9525,36 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
         malha[i] = temporario;
         malha[i].indTramo = i;
 
-        if (malha[i].arq.tabelaDinamica == 1) {
+        if (malha[i].config().tabelaDinamica == 1) {
             for (int j = 0; j <= malha[i].ncel; j++) {
-                malha[i].celula[j].flui.tabelaDinamica = 0;
-                if (malha[i].celula[j].acsr.tipo == 1) {
-                    malha[i].celula[j].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 2) {
-                    malha[i].celula[j].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 3) {
-                    malha[i].celula[j].acsr.ipr.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 15) {
-                    malha[i].celula[j].acsr.radialPoro.flup.tabelaDinamica = 0;
-                    int ncelRad = malha[j].celula[i].acsr.radialPoro.ncel;
+                malha[i].cell(j).flui.tabelaDinamica = 0;
+                if (malha[i].cell(j).acsr.tipo == 1) {
+                    malha[i].cell(j).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 2) {
+                    malha[i].cell(j).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 3) {
+                    malha[i].cell(j).acsr.ipr.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 15) {
+                    malha[i].cell(j).acsr.radialPoro.flup.tabelaDinamica = 0;
+                    int ncelRad = malha[j].cell(i).acsr.radialPoro.ncel;
                     for (int k = 0; k < ncelRad; k++) {
-                        malha[j].celula[i].acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
+                        malha[j].cell(i).acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
                     }
-                } else if (malha[i].celula[j].acsr.tipo == 16) {
-                    malha[i].celula[j].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-                    int ncelRad = malha[j].celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (malha[i].cell(j).acsr.tipo == 16) {
+                    malha[i].cell(j).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+                    int ncelRad = malha[j].cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int k = 0; k < ncelRad; k++) {
-                        malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
+                        malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
                     }
-                    int ncelEle = malha[j].celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = malha[j].cell(i).acsr.poroso2D.malha.nele;
                     for (int k = 0; k < ncelEle; k++) {
-                        malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
+                        malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
                     }
-                } else if (malha[i].celula[j].acsr.tipo == 10) {
-                    malha[i].celula[j].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 9 && malha[i].celula[j].acsr.fontechk.abertura > 1e-6) {
-                    malha[i].celula[j].acsr.fontechk.fluidoP.tabelaDinamica = 0;
-                    malha[i].celula[j].acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 10) {
+                    malha[i].cell(j).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 9 && malha[i].cell(j).acsr.fontechk.abertura > 1e-6) {
+                    malha[i].cell(j).acsr.fontechk.fluidoP.tabelaDinamica = 0;
+                    malha[i].cell(j).acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
                 }
             }
         }
@@ -9582,15 +9582,15 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                 }
             }
             for (int i = 0; i < narq; i++) {
-                if (arqRede.malha[i].nafluente == 0 && malha[i].celula[0].acsr.tipo == 1 && malha[i].celula[0].flui.flashCompleto == 1) {
-                    malha[i].celula[0].acsr.injg.FluidoPro = malha[i].celula[0].flui;
-                    malha[i].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                if (arqRede.malha[i].nafluente == 0 && malha[i].cell(0).acsr.tipo == 1 && malha[i].cell(0).flui.flashCompleto == 1) {
+                    malha[i].cell(0).acsr.injg.FluidoPro = malha[i].cell(0).flui;
+                    malha[i].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                 }
             }
 
             int chequeModFlui = 1;
             for (int i = 1; i < narq; i++) {
-                if (malha[i].arq.flashCompleto != malha[i - 1].arq.flashCompleto &&
+                if (malha[i].config().flashCompleto != malha[i - 1].config().flashCompleto &&
                     arqRede.malha[i].perm * arqRede.malha[i - 1].perm > 0) {
                     cout << "Malha com tramos com modelo de fluidos diferentes, tramos " << i << " e " << i - 1 << endl;
                     chequeModFlui = 0;
@@ -9598,7 +9598,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                 if (chequeModFlui == 0)
                     NumError("Malha com tramos com modelos de fluido diferentes");
 
-                if (malha[i].arq.tabelaDinamica != malha[i - 1].arq.tabelaDinamica &&
+                if (malha[i].config().tabelaDinamica != malha[i - 1].config().tabelaDinamica &&
                     arqRede.malha[i].perm * arqRede.malha[i - 1].perm > 0) {
                     cout << "Malha com tramos com modelo de fluidos diferentes, tramos - Tabela Dinamica" << i << " e " << i - 1 << endl;
                     chequeModFlui = 0;
@@ -9611,7 +9611,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                 while ((*arqRede.vg1dSP).restartRede == 1) {
                     vector<int> coletorfinal;
                     for (int i = 0; i < narq; i++)
-                        if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2)
+                        if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0 && arqRede.malha[i].perm == 1 && malha[i].config().ConContEntrada != 2)
                             coletorfinal.push_back(i);
                     sort(coletorfinal.begin(), coletorfinal.end());
                     int ncoletfim = coletorfinal.size();
@@ -9651,13 +9651,13 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                                 for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
                                     int ind = arqRede.malha[i].coleta[j];
                                     if (testeMon[ind] == 0) {
-                                        malha[ind].celula[0].pres = arqRede.malha[i].presJus;
+                                        malha[ind].cell(0).pres = arqRede.malha[i].presJus;
                                         testeMon[ind] = 1;
                                     }
                                 }
                             }
                             if (arqRede.malha[i].nafluente == 0) {
-                                malha[i].celula[0].pres = arqRede.malha[i].presMon;
+                                malha[i].cell(0).pres = arqRede.malha[i].presMon;
                                 testeMon[i] = 1;
                             }
                         }
@@ -9694,7 +9694,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                     (*arqRede.vg1dSP).restartRede = 0;
                     indativo = 0;
                     if (narq - semPerm > 1) {
-                        if (malha[0].arq.flashCompleto != 2)
+                        if (malha[0].config().flashCompleto != 2)
                             convergido = convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
                         else {
                             cout << "Iniciando modo Black-Oil" << endl;
@@ -9705,7 +9705,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                             if (convergido > 0) {
                                 cout << "Iniciando modo Composicional" << endl;
                                 alteraModoFluidoBlackComp(malha, narq, calclat0, tipoFluido0);
-                                if (malha[0].arq.tabelaDinamica == 1)
+                                if (malha[0].config().tabelaDinamica == 1)
                                     cicloRedeCompCego(malha, arqRede, inativo, indativo, bloq);
                                 (*arqRede.vg1dSP).iterRede = 1;
                                 convergido = convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
@@ -9716,7 +9716,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                         while (arqRede.malha[konta].perm == 0) {
                             konta++;
                         }
-                        SolveTramoSolteiro(malha[konta], malha[konta].arq.chutePerm);
+                        SolveTramoSolteiro(malha[konta], malha[konta].config().chutePerm);
                     }
                 }
                 if (convergido > 0)
@@ -9725,25 +9725,25 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                     cout << "Falha na Convergencia" << endl;
                 for (int i = 0; i < narq; i++) {
                     if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
-                        malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-                        malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-                        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-                        if(malha[i].arq.nCelUnit>0){
-                        	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-                        		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+                        malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+                        malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                        if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+                        if(malha[i].config().nCelUnit>0){
+                        	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+                        		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
                         }
                         // enterramento
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].calor.difus2D == 1) {
-                                malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+                            if (malha[i].cell(j).calor.difus2D == 1) {
+                                malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
                             }
                         }
-                        if (malha[i].arq.lingas == 1)
-                            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
+                        if (malha[i].config().lingas == 1)
+                            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
                         // enterramento
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].calor.difus2D == 1) {
-                                malha[i].celula[j].calor.poisson2D.imprimePermanente(i);
+                            if (malha[i].cell(j).calor.difus2D == 1) {
+                                malha[i].cell(j).calor.poisson2D.imprimePermanente(i);
                             }
                         }
                     }
@@ -9752,89 +9752,89 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
 
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
-                    malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-                    malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-                    if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-                    if(malha[i].arq.nCelUnit>0){
-                    	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-                    		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+                    malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+                    malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                    if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+                    if(malha[i].config().nCelUnit>0){
+                    	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+                    		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
                     }
                     malha[i].kimpT++;
-                    for (int j = 0; j < malha[i].arq.ntendp; j++) {
+                    for (int j = 0; j < malha[i].config().ntendp; j++) {
                         malha[i].ImprimeTrendPCab(j, nrede);
-                        malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
+                        malha[i].config().imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
                         malha[i].ImprimeTrendP(j, nrede);
                     }
-                    if (malha[i].arq.lingas == 1) {
-                        malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
-                        for (int j = 0; j < malha[i].arq.ntendg; j++) {
+                    if (malha[i].config().lingas == 1) {
+                        malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
+                        for (int j = 0; j < malha[i].config().ntendg; j++) {
                             malha[i].ImprimeTrendGCab(j, nrede);
-                            malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
+                            malha[i].config().imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
                             malha[i].ImprimeTrendG(j, nrede);
                         }
                     }
                     // enterramento
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        if (malha[i].celula[j].calor.difus2D == 1) {
-                            malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+                        if (malha[i].cell(j).calor.difus2D == 1) {
+                            malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
                         }
                     }
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        malha[i].celula[j].tempini = malha[i].celula[j].temp;
-                        malha[i].celula[j].presLini = malha[i].celula[j].presL;
-                        malha[i].celula[j].presini = malha[i].celula[j].pres;
-                        malha[i].celula[j].MRini = malha[i].celula[j].MR;
-                        malha[i].celula[j].MRini = malha[i].celula[j].MR;
-                        malha[i].celula[j].MliqiniR0 = malha[i].celula[j].MliqiniR;
-                        malha[i].celula[j].presLiniBuf = malha[i].celula[j].presL;
-                        malha[i].celula[j].MRiniBuf = malha[i].celula[j].MR;
-                        malha[i].celula[j].alfLini = malha[i].celula[j].alfL;
-                        malha[i].celula[j].alfRini = malha[i].celula[j].alfR;
-                        malha[i].celula[j].alfini = malha[i].celula[j].alf;
-                        malha[i].celula[j].betLini = malha[i].celula[j].betL;
-                        malha[i].celula[j].betRini = malha[i].celula[j].betR;
-                        malha[i].celula[j].betini = malha[i].celula[j].bet;
-                        malha[i].celula[j].FWini = malha[i].celula[j].FW;
-                        malha[i].celula[j].QLRini = malha[i].celula[j].QLR;
-                        malha[i].celula[j].alfPigEini = malha[i].celula[j].alfPigE;
-                        malha[i].celula[j].alfPigDini = malha[i].celula[j].alfPigD;
-                        malha[i].celula[j].betPigEini = malha[i].celula[j].betPigE;
-                        malha[i].celula[j].betPigDini = malha[i].celula[j].betPigD;
+                        malha[i].cell(j).tempini = malha[i].cell(j).temp;
+                        malha[i].cell(j).presLini = malha[i].cell(j).presL;
+                        malha[i].cell(j).presini = malha[i].cell(j).pres;
+                        malha[i].cell(j).MRini = malha[i].cell(j).MR;
+                        malha[i].cell(j).MRini = malha[i].cell(j).MR;
+                        malha[i].cell(j).MliqiniR0 = malha[i].cell(j).MliqiniR;
+                        malha[i].cell(j).presLiniBuf = malha[i].cell(j).presL;
+                        malha[i].cell(j).MRiniBuf = malha[i].cell(j).MR;
+                        malha[i].cell(j).alfLini = malha[i].cell(j).alfL;
+                        malha[i].cell(j).alfRini = malha[i].cell(j).alfR;
+                        malha[i].cell(j).alfini = malha[i].cell(j).alf;
+                        malha[i].cell(j).betLini = malha[i].cell(j).betL;
+                        malha[i].cell(j).betRini = malha[i].cell(j).betR;
+                        malha[i].cell(j).betini = malha[i].cell(j).bet;
+                        malha[i].cell(j).FWini = malha[i].cell(j).FW;
+                        malha[i].cell(j).QLRini = malha[i].cell(j).QLR;
+                        malha[i].cell(j).alfPigEini = malha[i].cell(j).alfPigE;
+                        malha[i].cell(j).alfPigDini = malha[i].cell(j).alfPigD;
+                        malha[i].cell(j).betPigEini = malha[i].cell(j).betPigE;
+                        malha[i].cell(j).betPigDini = malha[i].cell(j).betPigD;
 
-                        malha[i].celula[j].rpC = malha[i].celula[j].rpCi =
-                            malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].rgC = malha[i].celula[j].rgCi =
-                            malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].rcC = malha[i].celula[j].rcCi =
-                            malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].rpL = malha[i].celula[j].rpLi =
-                            malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-                        malha[i].celula[j].rgL = malha[i].celula[j].rgLi =
-                            malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-                        malha[i].celula[j].rcL = malha[i].celula[j].rcLi =
-                            malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].presL, malha[i].celula[j].tempL);
+                        malha[i].cell(j).rpC = malha[i].cell(j).rpCi =
+                            malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).rgC = malha[i].cell(j).rgCi =
+                            malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).rcC = malha[i].cell(j).rcCi =
+                            malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).rpL = malha[i].cell(j).rpLi =
+                            malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+                        malha[i].cell(j).rgL = malha[i].cell(j).rgLi =
+                            malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+                        malha[i].cell(j).rcL = malha[i].cell(j).rcLi =
+                            malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).presL, malha[i].cell(j).tempL);
 
-                        malha[i].celula[j].mipC = malha[i].celula[j].flui.ViscOleo(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].migC = malha[i].celula[j].flui.ViscGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].micC = malha[i].celula[j].fluicol.VisFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
+                        malha[i].cell(j).mipC = malha[i].cell(j).flui.ViscOleo(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).migC = malha[i].cell(j).flui.ViscGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).micC = malha[i].cell(j).fluicol.VisFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
 
                         if (j > 0) {
-                            malha[i].celula[j - 1].rpR = malha[i].celula[j - 1].rpRi = malha[i].celula[j].rpC;
-                            malha[i].celula[j - 1].rgR = malha[i].celula[j - 1].rgRi = malha[i].celula[j].rgC;
-                            malha[i].celula[j - 1].rcR = malha[i].celula[j - 1].rcRi = malha[i].celula[j].rcC;
+                            malha[i].cell(j - 1).rpR = malha[i].cell(j - 1).rpRi = malha[i].cell(j).rpC;
+                            malha[i].cell(j - 1).rgR = malha[i].cell(j - 1).rgRi = malha[i].cell(j).rgC;
+                            malha[i].cell(j - 1).rcR = malha[i].cell(j - 1).rcRi = malha[i].cell(j).rcC;
 
-                            malha[i].celula[j - 1].mipR = malha[i].celula[j].mipC;
-                            malha[i].celula[j - 1].migR = malha[i].celula[j].migC;
-                            malha[i].celula[j - 1].micR = malha[i].celula[j].micC;
+                            malha[i].cell(j - 1).mipR = malha[i].cell(j).mipC;
+                            malha[i].cell(j - 1).migR = malha[i].cell(j).migC;
+                            malha[i].cell(j - 1).micR = malha[i].cell(j).micC;
                         }
                         if (j == malha[i].ncel) {
-                            malha[i].celula[j].rpR = malha[i].celula[j].rpRi = malha[i].celula[j].rpC;
-                            malha[i].celula[j].rgR = malha[i].celula[j].rgRi = malha[i].celula[j].rgC;
-                            malha[i].celula[j].rcR = malha[i].celula[j].rcRi = malha[i].celula[j].rcC;
+                            malha[i].cell(j).rpR = malha[i].cell(j).rpRi = malha[i].cell(j).rpC;
+                            malha[i].cell(j).rgR = malha[i].cell(j).rgRi = malha[i].cell(j).rgC;
+                            malha[i].cell(j).rcR = malha[i].cell(j).rcRi = malha[i].cell(j).rcC;
 
-                            malha[i].celula[j].mipR = malha[i].celula[j].mipC;
-                            malha[i].celula[j].migR = malha[i].celula[j].migC;
-                            malha[i].celula[j].micR = malha[i].celula[j].micC;
+                            malha[i].cell(j).mipR = malha[i].cell(j).mipC;
+                            malha[i].cell(j).migR = malha[i].cell(j).migC;
+                            malha[i].cell(j).micR = malha[i].cell(j).micC;
                         }
                     }
                 }
@@ -9845,36 +9845,36 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
         }
     } else {
         int i = 0;
-        SolveTramoSolteiro(malha[0], malha[0].arq.chutePerm);
-        malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-        malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-        if(malha[i].arq.nCelUnit>0){
-        	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-        		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+        SolveTramoSolteiro(malha[0], malha[0].config().chutePerm);
+        malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+        malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+        if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+        if(malha[i].config().nCelUnit>0){
+        	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+        		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
         }
         malha[i].kimpT++;
-        for (int j = 0; j < malha[i].arq.ntendp; j++) {
+        for (int j = 0; j < malha[i].config().ntendp; j++) {
             malha[i].ImprimeTrendPCab(j, nrede);
-            malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
+            malha[i].config().imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
             malha[i].ImprimeTrendP(j, nrede);
         }
-        if (malha[i].arq.lingas == 1) {
-            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
-            for (int j = 0; j < malha[i].arq.ntendg; j++) {
+        if (malha[i].config().lingas == 1) {
+            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
+            for (int j = 0; j < malha[i].config().ntendg; j++) {
                 malha[i].ImprimeTrendGCab(j, nrede);
-                malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
+                malha[i].config().imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
                 malha[i].ImprimeTrendG(j, nrede);
             }
         }
         // enterramento
         for (int j = 0; j <= malha[i].ncel; j++) {
-            if (malha[i].celula[j].calor.difus2D == 1) {
-                malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+            if (malha[i].cell(j).calor.difus2D == 1) {
+                malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
             }
         }
-        if (malha[i].arq.lingas == 1)
-            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
+        if (malha[i].config().lingas == 1)
+            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
     }
 
     ostringstream relatSucesso;
@@ -9970,42 +9970,42 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
             // de escoamento assumido para a rede
             malha[i] = temporario; // carregando o tramo temporario no tramo i da malha
             malha[i].indTramo = i;
-            if (malha[i].arq.tabelaDinamica == 1) {
+            if (malha[i].config().tabelaDinamica == 1) {
                 // caso a opcao de tabela dinamica esteja ligada, como, para o modelo composicional, sempre, primeiramente, se faz um
                 // calculo inicial com modelo black oil, a opcao tabela dinamica e desligada temporariamente enquanto se esta no modo blackoil
                 for (int j = 0; j <= malha[i].ncel; j++) {
-                    malha[i].celula[j].flui.tabelaDinamica = 0;
-                    if (malha[i].celula[j].acsr.tipo == 1) {
-                        malha[i].celula[j].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 2) {
-                        malha[i].celula[j].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 3) {
-                        malha[i].celula[j].acsr.ipr.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 15) {
-                        malha[i].celula[j].acsr.radialPoro.flup.tabelaDinamica = 0;
-                        int ncelRad = malha[j].celula[i].acsr.radialPoro.ncel;
+                    malha[i].cell(j).flui.tabelaDinamica = 0;
+                    if (malha[i].cell(j).acsr.tipo == 1) {
+                        malha[i].cell(j).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 2) {
+                        malha[i].cell(j).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 3) {
+                        malha[i].cell(j).acsr.ipr.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 15) {
+                        malha[i].cell(j).acsr.radialPoro.flup.tabelaDinamica = 0;
+                        int ncelRad = malha[j].cell(i).acsr.radialPoro.ncel;
                         for (int k = 0; k < ncelRad; k++) {
-                            malha[j].celula[i].acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
+                            malha[j].cell(i).acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
                         }
-                    } else if (malha[i].celula[j].acsr.tipo == 16) {
-                        malha[i].celula[j].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-                        int ncelRad = malha[j].celula[i].acsr.poroso2D.dados.transfer.ncel;
+                    } else if (malha[i].cell(j).acsr.tipo == 16) {
+                        malha[i].cell(j).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+                        int ncelRad = malha[j].cell(i).acsr.poroso2D.dados.transfer.ncel;
                         for (int k = 0; k < ncelRad; k++) {
-                            malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
+                            malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
                         }
-                        int ncelEle = malha[j].celula[i].acsr.poroso2D.malha.nele;
+                        int ncelEle = malha[j].cell(i).acsr.poroso2D.malha.nele;
                         for (int k = 0; k < ncelEle; k++) {
-                            malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
+                            malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
                         }
-                    } else if (malha[i].celula[j].acsr.tipo == 10) {
-                        malha[i].celula[j].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                    } else if (malha[i].celula[j].acsr.tipo == 9 && malha[i].celula[j].acsr.fontechk.abertura > 1e-6) {
-                        malha[i].celula[j].acsr.fontechk.fluidoP.tabelaDinamica = 0;
-                        malha[i].celula[j].acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 10) {
+                        malha[i].cell(j).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                    } else if (malha[i].cell(j).acsr.tipo == 9 && malha[i].cell(j).acsr.fontechk.abertura > 1e-6) {
+                        malha[i].cell(j).acsr.fontechk.fluidoP.tabelaDinamica = 0;
+                        malha[i].cell(j).acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
                     }
                 }
             }
-            if (arqRede.malha[i].nafluente == 0 && malha[i].arq.ConContEntrada == 1) {
+            if (arqRede.malha[i].nafluente == 0 && malha[i].config().ConContEntrada == 1) {
                 // preparando o tramo para o caso em que este esta no inicio da rede e tem
                 // como condicao de contorno e pressao na entrada do tramo, neste caso, tem de se ter uma estimativa inicial de vazao
                 // neste tramo, alem disto, e necessario definir detalhes como o beta in-situ e o RGO
@@ -10013,7 +10013,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                 // e necessario colocar um acessorio de fonte, onde e armazendao a estimativa de vazao no inicio do tramo
                 // caso o fluido seja dominado por liquido, a fointe de armazenamento sera do tipo liquido
                 //  se gas, a fonte sera de gas
-                double tit = malha[i].arq.CCPres.tit[0];
+                double tit = malha[i].config().CCPres.tit[0];
                 /// atencao, verificar se aposicao do if esta correta.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if ((*arqRede.vg1dSP).fluidoRede == 0) {
                     if (arqRede.chutHol > 0.1)
@@ -10023,27 +10023,27 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                 }
                 if (tit < (1. - (*arqRede.vg1dSP).localtiny)) {
 
-                    malha[i].tempE = malha[i].arq.CCPres.temperatura[0];
-                    malha[i].presE = malha[i].arq.CCPres.pres[0];
+                    malha[i].tempE = malha[i].config().CCPres.temperatura[0];
+                    malha[i].presE = malha[i].config().CCPres.pres[0];
                     double rgoentrada = 0.;
-                    double rcst = malha[i].celula[0].fluicol.MasEspFlu(1.01, 15);
-                    double rcis = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                    malha[i].betaE = malha[i].arq.CCPres.bet[0] * rcst / rcis;
+                    double rcst = malha[i].cell(0).fluicol.MasEspFlu(1.01, 15);
+                    double rcis = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                    malha[i].betaE = malha[i].config().CCPres.bet[0] * rcst / rcis;
 
-                    if (malha[i].arq.flashCompleto != 2) {
-                        double rgST = malha[i].celula[0].flui.Deng * 1.225;
-                        double roST = 141.5 * 1000. / (131.5 + malha[i].celula[0].flui.API);
-                        double rw = malha[i].celula[0].flui.Denag * 1000.;
-                        double RSent = malha[i].celula[0].flui.RS(malha[i].presE, malha[i].tempE) * 6.29 / 35.31467;
-                        double bsw = malha[i].celula[0].flui.BSW;
-                        double bo = malha[i].celula[0].flui.BOFunc(malha[i].presE, malha[i].tempE);
-                        double ba = malha[i].celula[0].flui.BAFunc(malha[i].presE, malha[i].tempE);
+                    if (malha[i].config().flashCompleto != 2) {
+                        double rgST = malha[i].cell(0).flui.Deng * 1.225;
+                        double roST = 141.5 * 1000. / (131.5 + malha[i].cell(0).flui.API);
+                        double rw = malha[i].cell(0).flui.Denag * 1000.;
+                        double RSent = malha[i].cell(0).flui.RS(malha[i].presE, malha[i].tempE) * 6.29 / 35.31467;
+                        double bsw = malha[i].cell(0).flui.BSW;
+                        double bo = malha[i].cell(0).flui.BOFunc(malha[i].presE, malha[i].tempE);
+                        double ba = malha[i].cell(0).flui.BAFunc(malha[i].presE, malha[i].tempE);
                         double fw = bsw * ba / (bo + ba * bsw - bsw * bo);
 
                         double Ost = (1 - malha[i].betaE) * bo * (1 - fw);
                         double Wst = fw * (1 - malha[i].betaE);
                         double Cst = malha[i].betaE;
-                        malha[i].titE = malha[i].arq.CCPres.tit[0];
+                        malha[i].titE = malha[i].config().CCPres.tit[0];
 
                         rgoentrada = RSent * rgST * Ost + malha[i].titE * roST * Ost + malha[i].titE * rw * Wst +
                                      malha[i].titE * rcst * Cst;
@@ -10053,52 +10053,52 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                     if ((*arqRede.vg1dSP).fluidoRede == 1) { // dominado por liquido
                         if (rgoentrada > 1400.)
                             rgoentrada = 1400.;
-                        malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
-                        malha[i].celula[0].acsr.injl.bet = malha[i].betaE;
-                        malha[i].celula[0].acsr.injl.temp = malha[i].arq.CCPres.temperatura[0];
-                        malha[i].celula[0].acsr.injl.FluidoPro.BSW = malha[i].celula[0].flui.BSW;
-                        malha[i].celula[0].acsr.injl.FluidoPro.TempL = malha[i].celula[0].flui.TempL;
-                        malha[i].celula[0].acsr.injl.FluidoPro.TempH = malha[i].celula[0].flui.TempH;
-                        malha[i].celula[0].acsr.injl.FluidoPro.LVisL = malha[i].celula[0].flui.LVisL;
-                        malha[i].celula[0].acsr.injl.FluidoPro.LVisH = malha[i].celula[0].flui.LVisH;
-                        if (malha[i].arq.flashCompleto != 2) {
-                            malha[i].celula[0].acsr.injl.FluidoPro.RGO = rgoentrada;
-                            malha[i].celula[0].acsr.injl.FluidoPro.Deng = malha[i].celula[0].flui.Deng;
-                            malha[i].celula[0].acsr.injl.FluidoPro.Denag = malha[i].celula[0].flui.Denag;
-                            malha[i].celula[0].acsr.injl.FluidoPro.yco2 = malha[i].celula[0].flui.yco2;
-                            malha[i].celula[0].acsr.injl.FluidoPro.API = malha[i].celula[0].flui.API;
-                            malha[i].celula[0].acsr.injl.FluidoPro.RenovaFluido();
+                        malha[i].cell(0).pres = malha[i].config().CCPres.pres[0];
+                        malha[i].cell(0).acsr.injl.bet = malha[i].betaE;
+                        malha[i].cell(0).acsr.injl.temp = malha[i].config().CCPres.temperatura[0];
+                        malha[i].cell(0).acsr.injl.FluidoPro.BSW = malha[i].cell(0).flui.BSW;
+                        malha[i].cell(0).acsr.injl.FluidoPro.TempL = malha[i].cell(0).flui.TempL;
+                        malha[i].cell(0).acsr.injl.FluidoPro.TempH = malha[i].cell(0).flui.TempH;
+                        malha[i].cell(0).acsr.injl.FluidoPro.LVisL = malha[i].cell(0).flui.LVisL;
+                        malha[i].cell(0).acsr.injl.FluidoPro.LVisH = malha[i].cell(0).flui.LVisH;
+                        if (malha[i].config().flashCompleto != 2) {
+                            malha[i].cell(0).acsr.injl.FluidoPro.RGO = rgoentrada;
+                            malha[i].cell(0).acsr.injl.FluidoPro.Deng = malha[i].cell(0).flui.Deng;
+                            malha[i].cell(0).acsr.injl.FluidoPro.Denag = malha[i].cell(0).flui.Denag;
+                            malha[i].cell(0).acsr.injl.FluidoPro.yco2 = malha[i].cell(0).flui.yco2;
+                            malha[i].cell(0).acsr.injl.FluidoPro.API = malha[i].cell(0).flui.API;
+                            malha[i].cell(0).acsr.injl.FluidoPro.RenovaFluido();
                         } else {
-                            malha[i].celula[0].flui.atualizaPropCompStandard();
-                            malha[i].celula[0].flui.atualizaPropComp(malha[i].presE, malha[i].tempE);
-                            double rl = malha[i].celula[0].flui.MasEspLiq(malha[i].presE, malha[i].tempE);
-                            double titH = malha[i].celula[0].flui.FracMassHidra(malha[i].presE, malha[i].tempE);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            malha[i].cell(0).flui.atualizaPropCompStandard();
+                            malha[i].cell(0).flui.atualizaPropComp(malha[i].presE, malha[i].tempE);
+                            double rl = malha[i].cell(0).flui.MasEspLiq(malha[i].presE, malha[i].tempE);
+                            double titH = malha[i].cell(0).flui.FracMassHidra(malha[i].presE, malha[i].tempE);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double rlMix = malha[i].betaE * rc + (1. - malha[i].betaE) * rl;
                             double val1 = ((1. - malha[i].betaE) * rl * titH / (1. - titH));
                             malha[i].titE = val1 / (rlMix + val1);
-                            malha[i].celula[0].acsr.injl.FluidoPro = malha[i].celula[0].flui;
+                            malha[i].cell(0).acsr.injl.FluidoPro = malha[i].cell(0).flui;
                         }
-                        if (fabs(malha[i].celula[0].acsr.injl.QLiq) < 1e-15)
-                            malha[i].celula[0].acsr.injl.QLiq = 1000. * pow(malha[i].celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
-                        malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injl.FluidoPro;
+                        if (fabs(malha[i].cell(0).acsr.injl.QLiq) < 1e-15)
+                            malha[i].cell(0).acsr.injl.QLiq = 1000. * pow(malha[i].cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
+                        malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injl.FluidoPro;
                     } else {
-                        malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
-                        malha[i].celula[0].acsr.injg.seco = 0;
-                        malha[i].celula[0].acsr.injg.temp = malha[i].arq.CCPres.temperatura[0];
-                        malha[i].celula[0].acsr.injg.FluidoPro.BSW = malha[i].celula[0].flui.BSW;
-                        malha[i].celula[0].acsr.injg.FluidoPro.TempL = malha[i].celula[0].flui.TempL;
-                        malha[i].celula[0].acsr.injg.FluidoPro.TempH = malha[i].celula[0].flui.TempH;
-                        malha[i].celula[0].acsr.injg.FluidoPro.LVisL = malha[i].celula[0].flui.LVisL;
-                        malha[i].celula[0].acsr.injg.FluidoPro.LVisH = malha[i].celula[0].flui.LVisH;
-                        if (malha[i].arq.flashCompleto != 2) { // caso nao composicional
-                            double rgST = malha[i].celula[0].flui.Deng * 1.225;
-                            double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
-                            double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
-                            double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                        malha[i].cell(0).pres = malha[i].config().CCPres.pres[0];
+                        malha[i].cell(0).acsr.injg.seco = 0;
+                        malha[i].cell(0).acsr.injg.temp = malha[i].config().CCPres.temperatura[0];
+                        malha[i].cell(0).acsr.injg.FluidoPro.BSW = malha[i].cell(0).flui.BSW;
+                        malha[i].cell(0).acsr.injg.FluidoPro.TempL = malha[i].cell(0).flui.TempL;
+                        malha[i].cell(0).acsr.injg.FluidoPro.TempH = malha[i].cell(0).flui.TempH;
+                        malha[i].cell(0).acsr.injg.FluidoPro.LVisL = malha[i].cell(0).flui.LVisL;
+                        malha[i].cell(0).acsr.injg.FluidoPro.LVisH = malha[i].cell(0).flui.LVisH;
+                        if (malha[i].config().flashCompleto != 2) { // caso nao composicional
+                            double rgST = malha[i].cell(0).flui.Deng * 1.225;
+                            double rg = malha[i].cell(0).flui.MasEspGas(malha[i].presE, malha[i].tempE);
+                            double rl = malha[i].cell(0).flui.MasEspoleo(malha[i].presE, malha[i].tempE);
+                            double tit = malha[i].cell(0).flui.FracMass(malha[i].presE, malha[i].tempE);
+                            double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
                             double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                             malha[i].titE = titT;
@@ -10106,52 +10106,52 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                             rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
                             if (rgoentrada > 1400.)
                                 rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
-                            malha[i].celula[0].flui.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
-                            malha[i].celula[0].acsr.injg.FluidoPro.Deng = malha[i].celula[0].flui.Deng;
-                            malha[i].celula[0].acsr.injg.FluidoPro.Denag = malha[i].celula[0].flui.Denag;
-                            malha[i].celula[0].acsr.injg.FluidoPro.yco2 = malha[i].celula[0].flui.yco2;
-                            malha[i].celula[0].acsr.injg.FluidoPro.API = malha[i].celula[0].flui.API;
-                            malha[i].celula[0].acsr.injg.FluidoPro.BSW = malha[i].celula[0].flui.BSW;
-                            malha[i].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                            malha[i].cell(0).flui.RGO = malha[i].cell(0).acsr.injg.FluidoPro.RGO = rgoentrada;
+                            malha[i].cell(0).acsr.injg.FluidoPro.Deng = malha[i].cell(0).flui.Deng;
+                            malha[i].cell(0).acsr.injg.FluidoPro.Denag = malha[i].cell(0).flui.Denag;
+                            malha[i].cell(0).acsr.injg.FluidoPro.yco2 = malha[i].cell(0).flui.yco2;
+                            malha[i].cell(0).acsr.injg.FluidoPro.API = malha[i].cell(0).flui.API;
+                            malha[i].cell(0).acsr.injg.FluidoPro.BSW = malha[i].cell(0).flui.BSW;
+                            malha[i].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                         } else { // caso composicional
-                            malha[i].celula[0].flui.atualizaPropCompStandard();
-                            malha[i].celula[0].flui.atualizaPropComp(malha[i].presE, malha[i].tempE);
-                            double rgST = malha[i].celula[0].flui.Deng * 1.225;
-                            double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
-                            double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
-                            double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                            double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                            malha[i].cell(0).flui.atualizaPropCompStandard();
+                            malha[i].cell(0).flui.atualizaPropComp(malha[i].presE, malha[i].tempE);
+                            double rgST = malha[i].cell(0).flui.Deng * 1.225;
+                            double rg = malha[i].cell(0).flui.MasEspGas(malha[i].presE, malha[i].tempE);
+                            double rl = malha[i].cell(0).flui.MasEspoleo(malha[i].presE, malha[i].tempE);
+                            double tit = malha[i].cell(0).flui.FracMass(malha[i].presE, malha[i].tempE);
+                            double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                            double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                            double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
                             double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                             malha[i].titE = titT;
                             malha[i].betaE = val1 / (val2 + val1);
-                            malha[i].celula[0].acsr.injg.FluidoPro = malha[i].celula[0].flui;
+                            malha[i].cell(0).acsr.injg.FluidoPro = malha[i].cell(0).flui;
                         }
-                        malha[i].celula[0].acsr.injg.fluidocol = malha[i].arq.fluc;
-                        malha[i].celula[0].acsr.injg.razCompGas = malha[i].arq.CCPres.bet[0];
-                        if (malha[i].celula[0].acsr.injg.QGas < 1e-15)
-                            malha[i].celula[0].acsr.injg.QGas = 1000. * pow(malha[i].celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
-                        malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injg.FluidoPro;
+                        malha[i].cell(0).acsr.injg.fluidocol = malha[i].config().fluc;
+                        malha[i].cell(0).acsr.injg.razCompGas = malha[i].config().CCPres.bet[0];
+                        if (malha[i].cell(0).acsr.injg.QGas < 1e-15)
+                            malha[i].cell(0).acsr.injg.QGas = 1000. * pow(malha[i].cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
+                        malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injg.FluidoPro;
                     }
                 } else { // dominado por gas
                     double rgoentrada = 0.;
-                    malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
-                    malha[i].celula[0].acsr.injg.temp = malha[i].arq.CCPres.temperatura[0];
-                    malha[i].celula[0].acsr.injg.seco = 0;
-                    malha[i].celula[0].acsr.injg.FluidoPro.TempL = malha[i].celula[0].flui.TempL;
-                    malha[i].celula[0].acsr.injg.FluidoPro.TempH = malha[i].celula[0].flui.TempH;
-                    malha[i].celula[0].acsr.injg.FluidoPro.LVisL = malha[i].celula[0].flui.LVisL;
-                    malha[i].celula[0].acsr.injg.FluidoPro.LVisH = malha[i].celula[0].flui.LVisH;
-                    if (malha[i].arq.flashCompleto != 2) { // caso nao composicional
-                        double rgST = malha[i].celula[0].flui.Deng * 1.225;
-                        double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
-                        double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
-                        double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                        double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                    malha[i].cell(0).pres = malha[i].config().CCPres.pres[0];
+                    malha[i].cell(0).acsr.injg.temp = malha[i].config().CCPres.temperatura[0];
+                    malha[i].cell(0).acsr.injg.seco = 0;
+                    malha[i].cell(0).acsr.injg.FluidoPro.TempL = malha[i].cell(0).flui.TempL;
+                    malha[i].cell(0).acsr.injg.FluidoPro.TempH = malha[i].cell(0).flui.TempH;
+                    malha[i].cell(0).acsr.injg.FluidoPro.LVisL = malha[i].cell(0).flui.LVisL;
+                    malha[i].cell(0).acsr.injg.FluidoPro.LVisH = malha[i].cell(0).flui.LVisH;
+                    if (malha[i].config().flashCompleto != 2) { // caso nao composicional
+                        double rgST = malha[i].cell(0).flui.Deng * 1.225;
+                        double rg = malha[i].cell(0).flui.MasEspGas(malha[i].presE, malha[i].tempE);
+                        double rl = malha[i].cell(0).flui.MasEspoleo(malha[i].presE, malha[i].tempE);
+                        double tit = malha[i].cell(0).flui.FracMass(malha[i].presE, malha[i].tempE);
+                        double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                        double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
                         double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                         malha[i].titE = titT;
@@ -10159,70 +10159,70 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                         rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
                         if (rgoentrada > 1400.)
                             rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
-                        malha[i].celula[0].flui.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
-                        malha[i].celula[0].acsr.injg.FluidoPro.Deng = malha[i].celula[0].flui.Deng;
-                        malha[i].celula[0].acsr.injg.FluidoPro.Denag = malha[i].celula[0].flui.Denag;
-                        malha[i].celula[0].acsr.injg.FluidoPro.yco2 = malha[i].celula[0].flui.yco2;
-                        malha[i].celula[0].acsr.injg.FluidoPro.API = malha[i].celula[0].flui.API;
-                        malha[i].celula[0].acsr.injg.FluidoPro.BSW = malha[i].celula[0].flui.BSW;
-                        malha[i].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                        malha[i].cell(0).flui.RGO = malha[i].cell(0).acsr.injg.FluidoPro.RGO = rgoentrada;
+                        malha[i].cell(0).acsr.injg.FluidoPro.Deng = malha[i].cell(0).flui.Deng;
+                        malha[i].cell(0).acsr.injg.FluidoPro.Denag = malha[i].cell(0).flui.Denag;
+                        malha[i].cell(0).acsr.injg.FluidoPro.yco2 = malha[i].cell(0).flui.yco2;
+                        malha[i].cell(0).acsr.injg.FluidoPro.API = malha[i].cell(0).flui.API;
+                        malha[i].cell(0).acsr.injg.FluidoPro.BSW = malha[i].cell(0).flui.BSW;
+                        malha[i].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                     } else { // caso composicional
-                        malha[i].celula[0].flui.atualizaPropCompStandard();
-                        malha[i].celula[0].flui.atualizaPropComp(malha[i].presE, malha[i].tempE);
-                        double rgST = malha[i].celula[0].flui.Deng * 1.225;
-                        double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
-                        double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
-                        double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
-                        double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
-                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
+                        malha[i].cell(0).flui.atualizaPropCompStandard();
+                        malha[i].cell(0).flui.atualizaPropComp(malha[i].presE, malha[i].tempE);
+                        double rgST = malha[i].cell(0).flui.Deng * 1.225;
+                        double rg = malha[i].cell(0).flui.MasEspGas(malha[i].presE, malha[i].tempE);
+                        double rl = malha[i].cell(0).flui.MasEspoleo(malha[i].presE, malha[i].tempE);
+                        double tit = malha[i].cell(0).flui.FracMass(malha[i].presE, malha[i].tempE);
+                        double rcST = malha[i].cell(0).fluicol.MasEspFlu(1.01, 20.);
+                        double rc = malha[i].cell(0).fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
+                        double val1 = (rcST / rc) * (rg / rgST) * malha[i].config().CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
                         double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                         malha[i].titE = titT;
                         malha[i].betaE = val1 / (val2 + val1);
-                        malha[i].celula[0].acsr.injg.FluidoPro = malha[i].celula[0].flui;
+                        malha[i].cell(0).acsr.injg.FluidoPro = malha[i].cell(0).flui;
                     }
-                    malha[i].celula[0].acsr.injg.fluidocol = malha[i].arq.fluc;
-                    malha[i].celula[0].acsr.injg.razCompGas = malha[i].arq.CCPres.bet[0];
-                    if (malha[i].celula[0].acsr.injg.QGas < 1e-15)
-                        malha[i].celula[0].acsr.injg.QGas = 10000. * pow(malha[i].celula[0].duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
-                    malha[i].celula[0].fluiL = &malha[i].celula[0].acsr.injl.FluidoPro;
+                    malha[i].cell(0).acsr.injg.fluidocol = malha[i].config().fluc;
+                    malha[i].cell(0).acsr.injg.razCompGas = malha[i].config().CCPres.bet[0];
+                    if (malha[i].cell(0).acsr.injg.QGas < 1e-15)
+                        malha[i].cell(0).acsr.injg.QGas = 10000. * pow(malha[i].cell(0).duto.dia, 2.) / pow(6. * 2.54 / 100, 2.);
+                    malha[i].cell(0).fluiL = &malha[i].cell(0).acsr.injl.FluidoPro;
                 }
             }
             // fazendo uma estimativa inicial da vazao total de liquido e gas que escoara na rede, para tanto,
             // se buscara as fontes de liquido e gas que estao computadas no inicio do tramo, observar que e uma estimativa imperfeita, pois
             // no caso de condicao de contorno pressao, esta vazao e apenas um chuet, alem de nao contabilizar a vazao em celulas que não a
             // inicial do tramo
-            if (malha[i].celula[0].acsr.tipo == 2 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;
-            else if (malha[i].celula[0].acsr.tipo == 1 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavazG += malha[i].celula[0].acsr.injg.QGas / 86400.;
-            else if (malha[i].celula[0].acsr.tipo == 10 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2) {
-                double massTot = malha[i].celula[0].acsr.injm.MassP + malha[i].celula[0].acsr.injm.MassG;
-                double rhopstd = 141.5 * 1000. / (malha[i].celula[0].acsr.injm.FluidoPro.API + 131.5);
-                double bsw = malha[i].celula[0].acsr.injm.FluidoPro.BSW;
-                double rhogstd = malha[i].celula[0].acsr.injm.FluidoPro.Deng * 1.225;
-                double tit = malha[i].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
+            if (malha[i].cell(0).acsr.tipo == 2 && arqRede.malha[i].perm == 1)
+                (*arqRede.vg1dSP).somavaz += malha[i].cell(0).acsr.injl.QLiq / 86400.;
+            else if (malha[i].cell(0).acsr.tipo == 1 && arqRede.malha[i].perm == 1)
+                (*arqRede.vg1dSP).somavazG += malha[i].cell(0).acsr.injg.QGas / 86400.;
+            else if (malha[i].cell(0).acsr.tipo == 10 && arqRede.malha[i].perm == 1 && malha[i].config().ConContEntrada != 2) {
+                double massTot = malha[i].cell(0).acsr.injm.MassP + malha[i].cell(0).acsr.injm.MassG;
+                double rhopstd = 141.5 * 1000. / (malha[i].cell(0).acsr.injm.FluidoPro.API + 131.5);
+                double bsw = malha[i].cell(0).acsr.injm.FluidoPro.BSW;
+                double rhogstd = malha[i].cell(0).acsr.injm.FluidoPro.Deng * 1.225;
+                double tit = malha[i].cell(0).acsr.injm.FluidoPro.FracMassHidra(1., 20.);
                 (*arqRede.vg1dSP).somavaz += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
-                                             malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.rholStd;
+                                             malha[i].cell(0).acsr.injm.MassC / malha[i].cell(0).acsr.injm.fluidocol.rholStd;
                 (*arqRede.vg1dSP).somavazG += massTot * tit / rhogstd;
             }
-            (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
+            (*arqRede.vg1dSP).somaarea += malha[i].cell(0).duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
             // referencia a razao entre a area do tramo e somaarea, esta razao sera aplicada para distribuir o chute inicial da vazao de cada tramo,
             // tomando somavaz e somavazG e aplicando a razao de area
             if (arqRede.malha[i].perm == 0)
                 contapermRede++; // contabilizando se o tramo esta com o permanente ligado, o numero de tramops dan rede
             // pode ser diferente do numero de tramso que efetivamente poarticipara do solver permanente da rede
-            temporario.arq.tabelaDinamica = 0;
+            temporario.config().tabelaDinamica = 0;
         }
         for (int i = 0; i < narq; i++) {
             malha[i].chuteHol = arqRede.chutHol; // o chutehol serve como uma estimativa inicial do holdup na rede para o calculo inicial
             // da variacao de pressao em cada tramo da rede devido aa hidrostatica
             if (arqRede.malha[i].ncoleta > 0) {
                 int icol = arqRede.malha[i].coleta[0];
-                malha[i].fluiRevRede = malha[icol].celula[0].flui; // computando o fluido do tramo coletor, caso no afluente
+                malha[i].fluiRevRede = malha[icol].cell(0).flui; // computando o fluido do tramo coletor, caso no afluente
                 // ocorra reversao do escoamento pre defindio, o fluido que escoarah no tramo afluente vira do fluido que se encontra no coletor
-                if (malha[i].arq.flashCompleto == 2)
+                if (malha[i].config().flashCompleto == 2)
                     malha[i].fluiRevRede.atualizaPropCompStandard();
             }
         }
@@ -10234,15 +10234,15 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
         // Vcr<int> inativo(narq,0);//alteracao4
         if (semPerm < narq) { // numero de tramos sem vazao eh inferior ao numero de tramos da rede, pode-se resolver a rede
             for (int i = 0; i < narq; i++) {
-                if (arqRede.malha[i].nafluente == 0 && malha[i].celula[0].acsr.tipo == 1 && malha[i].celula[0].flui.flashCompleto == 1) {
-                    malha[i].celula[0].acsr.injg.FluidoPro = malha[i].celula[0].flui;
-                    malha[i].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+                if (arqRede.malha[i].nafluente == 0 && malha[i].cell(0).acsr.tipo == 1 && malha[i].cell(0).flui.flashCompleto == 1) {
+                    malha[i].cell(0).acsr.injg.FluidoPro = malha[i].cell(0).flui;
+                    malha[i].cell(0).acsr.injg.FluidoPro.RenovaFluido();
                 }
             }
 
             int chequeModFlui = 1;
             for (int i = 1; i < narq; i++) {
-                if (malha[i].arq.flashCompleto != malha[i - 1].arq.flashCompleto &&
+                if (malha[i].config().flashCompleto != malha[i - 1].config().flashCompleto &&
                     arqRede.malha[i].perm * arqRede.malha[i - 1].perm > 0) {
                     cout << "Malha com tramos com modelo de fluidos diferentes, tramos " << i << " e " << i - 1 << endl;
                     chequeModFlui = 0;
@@ -10250,7 +10250,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                 if (chequeModFlui == 0)
                     NumError("Malha com tramos com modelos de fluido diferentes");
 
-                if (malha[i].arq.tabelaDinamica != malha[i - 1].arq.tabelaDinamica &&
+                if (malha[i].config().tabelaDinamica != malha[i - 1].config().tabelaDinamica &&
                     arqRede.malha[i].perm * arqRede.malha[i - 1].perm > 0) {
                     cout << "Malha com tramos com modelo de fluidos diferentes, tramos - Tabela Dinamica" << i << " e " << i - 1 << endl;
                     chequeModFlui = 0;
@@ -10263,7 +10263,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                 while ((*arqRede.vg1dSP).restartRede == 1) {
                     vector<int> coletorfinal;
                     for (int i = 0; i < narq; i++)
-                        if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2)
+                        if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0 && arqRede.malha[i].perm == 1 && malha[i].config().ConContEntrada != 2)
                             coletorfinal.push_back(i);
                     sort(coletorfinal.begin(), coletorfinal.end());
                     int ncoletfim = coletorfinal.size();
@@ -10303,13 +10303,13 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                                 for (int j = 0; j < arqRede.malha[i].ncoleta; j++) {
                                     int ind = arqRede.malha[i].coleta[j];
                                     if (testeMon[ind] == 0) {
-                                        malha[ind].celula[0].pres = arqRede.malha[i].presJus;
+                                        malha[ind].cell(0).pres = arqRede.malha[i].presJus;
                                         testeMon[ind] = 1;
                                     }
                                 }
                             }
                             if (arqRede.malha[i].nafluente == 0) {
-                                malha[i].celula[0].pres = arqRede.malha[i].presMon;
+                                malha[i].cell(0).pres = arqRede.malha[i].presMon;
                                 testeMon[i] = 1;
                             }
                         }
@@ -10346,7 +10346,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                     (*arqRede.vg1dSP).restartRede = 0;
                     indativo = 0;
                     if (narq - semPerm > 1) {
-                        if (malha[0].arq.flashCompleto != 2)
+                        if (malha[0].config().flashCompleto != 2)
                             convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
                         else {
                             cout << "Iniciando modo Black-Oil" << endl;
@@ -10356,7 +10356,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                             convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
                             cout << "Iniciando modo Composicional" << endl;
                             alteraModoFluidoBlackComp(malha, narq, calclat0, tipoFluido0);
-                            if (malha[0].arq.tabelaDinamica == 1)
+                            if (malha[0].config().tabelaDinamica == 1)
                                 cicloRedeCompCego(malha, arqRede, inativo, indativo, bloq);
                             (*arqRede.vg1dSP).iterRede = 1;
                             convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
@@ -10366,31 +10366,31 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
                         while (arqRede.malha[konta].perm == 0) {
                             konta++;
                         }
-                        SolveTramoSolteiro(malha[konta], malha[konta].arq.chutePerm);
+                        SolveTramoSolteiro(malha[konta], malha[konta].config().chutePerm);
                     }
                 }
                 cout << "Convergencia atingida" << endl;
                 for (int i = 0; i < narq; i++) {
                     if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
-                        malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-                        malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-                        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-                        if(malha[i].arq.nCelUnit>0){
-                        	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-                        		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+                        malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+                        malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                        if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+                        if(malha[i].config().nCelUnit>0){
+                        	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+                        		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
                         }
                         // enterramento
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].calor.difus2D == 1) {
-                                malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+                            if (malha[i].cell(j).calor.difus2D == 1) {
+                                malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
                             }
                         }
-                        if (malha[i].arq.lingas == 1)
-                            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
+                        if (malha[i].config().lingas == 1)
+                            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
                         // enterramento
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].celula[j].calor.difus2D == 1) {
-                                malha[i].celula[j].calor.poisson2D.imprimePermanente(i);
+                            if (malha[i].cell(j).calor.difus2D == 1) {
+                                malha[i].cell(j).calor.poisson2D.imprimePermanente(i);
                             }
                         }
                     }
@@ -10399,75 +10399,75 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
 
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0 && arqRede.malha[i].perm == 1) {
-                    malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-                    malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-                    if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-                    if(malha[i].arq.nCelUnit>0){
-                    	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-                    		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+                    malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+                    malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+                    if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+                    if(malha[i].config().nCelUnit>0){
+                    	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+                    		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
                     }
                     // enterramento
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        if (malha[i].celula[j].calor.difus2D == 1) {
-                            malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+                        if (malha[i].cell(j).calor.difus2D == 1) {
+                            malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
                         }
                     }
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        malha[i].celula[j].tempini = malha[i].celula[j].temp;
-                        malha[i].celula[j].presLini = malha[i].celula[j].presL;
-                        malha[i].celula[j].presini = malha[i].celula[j].pres;
-                        malha[i].celula[j].MRini = malha[i].celula[j].MR;
-                        malha[i].celula[j].MRini = malha[i].celula[j].MR;
-                        malha[i].celula[j].MliqiniR0 = malha[i].celula[j].MliqiniR;
-                        malha[i].celula[j].presLiniBuf = malha[i].celula[j].presL;
-                        malha[i].celula[j].MRiniBuf = malha[i].celula[j].MR;
-                        malha[i].celula[j].alfLini = malha[i].celula[j].alfL;
-                        malha[i].celula[j].alfRini = malha[i].celula[j].alfR;
-                        malha[i].celula[j].alfini = malha[i].celula[j].alf;
-                        malha[i].celula[j].betLini = malha[i].celula[j].betL;
-                        malha[i].celula[j].betRini = malha[i].celula[j].betR;
-                        malha[i].celula[j].betini = malha[i].celula[j].bet;
-                        malha[i].celula[j].FWini = malha[i].celula[j].FW;
-                        malha[i].celula[j].QLRini = malha[i].celula[j].QLR;
-                        malha[i].celula[j].alfPigEini = malha[i].celula[j].alfPigE;
-                        malha[i].celula[j].alfPigDini = malha[i].celula[j].alfPigD;
-                        malha[i].celula[j].betPigEini = malha[i].celula[j].betPigE;
-                        malha[i].celula[j].betPigDini = malha[i].celula[j].betPigD;
+                        malha[i].cell(j).tempini = malha[i].cell(j).temp;
+                        malha[i].cell(j).presLini = malha[i].cell(j).presL;
+                        malha[i].cell(j).presini = malha[i].cell(j).pres;
+                        malha[i].cell(j).MRini = malha[i].cell(j).MR;
+                        malha[i].cell(j).MRini = malha[i].cell(j).MR;
+                        malha[i].cell(j).MliqiniR0 = malha[i].cell(j).MliqiniR;
+                        malha[i].cell(j).presLiniBuf = malha[i].cell(j).presL;
+                        malha[i].cell(j).MRiniBuf = malha[i].cell(j).MR;
+                        malha[i].cell(j).alfLini = malha[i].cell(j).alfL;
+                        malha[i].cell(j).alfRini = malha[i].cell(j).alfR;
+                        malha[i].cell(j).alfini = malha[i].cell(j).alf;
+                        malha[i].cell(j).betLini = malha[i].cell(j).betL;
+                        malha[i].cell(j).betRini = malha[i].cell(j).betR;
+                        malha[i].cell(j).betini = malha[i].cell(j).bet;
+                        malha[i].cell(j).FWini = malha[i].cell(j).FW;
+                        malha[i].cell(j).QLRini = malha[i].cell(j).QLR;
+                        malha[i].cell(j).alfPigEini = malha[i].cell(j).alfPigE;
+                        malha[i].cell(j).alfPigDini = malha[i].cell(j).alfPigD;
+                        malha[i].cell(j).betPigEini = malha[i].cell(j).betPigE;
+                        malha[i].cell(j).betPigDini = malha[i].cell(j).betPigD;
 
-                        malha[i].celula[j].rpC = malha[i].celula[j].rpCi =
-                            malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].rgC = malha[i].celula[j].rgCi =
-                            malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].rcC = malha[i].celula[j].rcCi =
-                            malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].rpL = malha[i].celula[j].rpLi =
-                            malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-                        malha[i].celula[j].rgL = malha[i].celula[j].rgLi =
-                            malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-                        malha[i].celula[j].rcL = malha[i].celula[j].rcLi =
-                            malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].presL, malha[i].celula[j].tempL);
+                        malha[i].cell(j).rpC = malha[i].cell(j).rpCi =
+                            malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).rgC = malha[i].cell(j).rgCi =
+                            malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).rcC = malha[i].cell(j).rcCi =
+                            malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).rpL = malha[i].cell(j).rpLi =
+                            malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+                        malha[i].cell(j).rgL = malha[i].cell(j).rgLi =
+                            malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+                        malha[i].cell(j).rcL = malha[i].cell(j).rcLi =
+                            malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).presL, malha[i].cell(j).tempL);
 
-                        malha[i].celula[j].mipC = malha[i].celula[j].flui.ViscOleo(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].migC = malha[i].celula[j].flui.ViscGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                        malha[i].celula[j].micC = malha[i].celula[j].fluicol.VisFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
+                        malha[i].cell(j).mipC = malha[i].cell(j).flui.ViscOleo(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).migC = malha[i].cell(j).flui.ViscGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                        malha[i].cell(j).micC = malha[i].cell(j).fluicol.VisFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
 
                         if (j > 0) {
-                            malha[i].celula[j - 1].rpR = malha[i].celula[j - 1].rpRi = malha[i].celula[j].rpC;
-                            malha[i].celula[j - 1].rgR = malha[i].celula[j - 1].rgRi = malha[i].celula[j].rgC;
-                            malha[i].celula[j - 1].rcR = malha[i].celula[j - 1].rcRi = malha[i].celula[j].rcC;
+                            malha[i].cell(j - 1).rpR = malha[i].cell(j - 1).rpRi = malha[i].cell(j).rpC;
+                            malha[i].cell(j - 1).rgR = malha[i].cell(j - 1).rgRi = malha[i].cell(j).rgC;
+                            malha[i].cell(j - 1).rcR = malha[i].cell(j - 1).rcRi = malha[i].cell(j).rcC;
 
-                            malha[i].celula[j - 1].mipR = malha[i].celula[j].mipC;
-                            malha[i].celula[j - 1].migR = malha[i].celula[j].migC;
-                            malha[i].celula[j - 1].micR = malha[i].celula[j].micC;
+                            malha[i].cell(j - 1).mipR = malha[i].cell(j).mipC;
+                            malha[i].cell(j - 1).migR = malha[i].cell(j).migC;
+                            malha[i].cell(j - 1).micR = malha[i].cell(j).micC;
                         }
                         if (j == malha[i].ncel) {
-                            malha[i].celula[j].rpR = malha[i].celula[j].rpRi = malha[i].celula[j].rpC;
-                            malha[i].celula[j].rgR = malha[i].celula[j].rgRi = malha[i].celula[j].rgC;
-                            malha[i].celula[j].rcR = malha[i].celula[j].rcRi = malha[i].celula[j].rcC;
+                            malha[i].cell(j).rpR = malha[i].cell(j).rpRi = malha[i].cell(j).rpC;
+                            malha[i].cell(j).rgR = malha[i].cell(j).rgRi = malha[i].cell(j).rgC;
+                            malha[i].cell(j).rcR = malha[i].cell(j).rcRi = malha[i].cell(j).rcC;
 
-                            malha[i].celula[j].mipR = malha[i].celula[j].mipC;
-                            malha[i].celula[j].migR = malha[i].celula[j].migC;
-                            malha[i].celula[j].micR = malha[i].celula[j].micC;
+                            malha[i].cell(j).mipR = malha[i].cell(j).mipC;
+                            malha[i].cell(j).migR = malha[i].cell(j).migC;
+                            malha[i].cell(j).micR = malha[i].cell(j).micC;
                         }
                     }
                 }
@@ -10486,55 +10486,55 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
         malha[i] = temporario;
         malha[i].indTramo = i;
 
-        if (malha[i].arq.tabelaDinamica == 1) {
+        if (malha[i].config().tabelaDinamica == 1) {
             for (int j = 0; j <= malha[i].ncel; j++) {
-                malha[i].celula[j].flui.tabelaDinamica = 0;
-                if (malha[i].celula[j].acsr.tipo == 1) {
-                    malha[i].celula[j].acsr.injg.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 2) {
-                    malha[i].celula[j].acsr.injl.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 3) {
-                    malha[i].celula[j].acsr.ipr.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 15) {
-                    malha[i].celula[j].acsr.radialPoro.flup.tabelaDinamica = 0;
-                    int ncelRad = malha[j].celula[i].acsr.radialPoro.ncel;
+                malha[i].cell(j).flui.tabelaDinamica = 0;
+                if (malha[i].cell(j).acsr.tipo == 1) {
+                    malha[i].cell(j).acsr.injg.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 2) {
+                    malha[i].cell(j).acsr.injl.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 3) {
+                    malha[i].cell(j).acsr.ipr.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 15) {
+                    malha[i].cell(j).acsr.radialPoro.flup.tabelaDinamica = 0;
+                    int ncelRad = malha[j].cell(i).acsr.radialPoro.ncel;
                     for (int k = 0; k < ncelRad; k++) {
-                        malha[j].celula[i].acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
+                        malha[j].cell(i).acsr.radialPoro.celula[k].flup.tabelaDinamica = 0;
                     }
-                } else if (malha[i].celula[j].acsr.tipo == 16) {
-                    malha[i].celula[j].acsr.poroso2D.dados.flup.tabelaDinamica = 0;
-                    int ncelRad = malha[j].celula[i].acsr.poroso2D.dados.transfer.ncel;
+                } else if (malha[i].cell(j).acsr.tipo == 16) {
+                    malha[i].cell(j).acsr.poroso2D.dados.flup.tabelaDinamica = 0;
+                    int ncelRad = malha[j].cell(i).acsr.poroso2D.dados.transfer.ncel;
                     for (int k = 0; k < ncelRad; k++) {
-                        malha[j].celula[i].acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
+                        malha[j].cell(i).acsr.poroso2D.dados.transfer.celula[k].flup.tabelaDinamica = 0;
                     }
-                    int ncelEle = malha[j].celula[i].acsr.poroso2D.malha.nele;
+                    int ncelEle = malha[j].cell(i).acsr.poroso2D.malha.nele;
                     for (int k = 0; k < ncelEle; k++) {
-                        malha[j].celula[i].acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
+                        malha[j].cell(i).acsr.poroso2D.malha.mlh2d[k].flup.tabelaDinamica = 0;
                     }
-                } else if (malha[i].celula[j].acsr.tipo == 10) {
-                    malha[i].celula[j].acsr.injm.FluidoPro.tabelaDinamica = 0;
-                } else if (malha[i].celula[j].acsr.tipo == 9 && malha[i].celula[j].acsr.fontechk.abertura > 1e-6) {
-                    malha[i].celula[j].acsr.fontechk.fluidoP.tabelaDinamica = 0;
-                    malha[i].celula[j].acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 10) {
+                    malha[i].cell(j).acsr.injm.FluidoPro.tabelaDinamica = 0;
+                } else if (malha[i].cell(j).acsr.tipo == 9 && malha[i].cell(j).acsr.fontechk.abertura > 1e-6) {
+                    malha[i].cell(j).acsr.fontechk.fluidoP.tabelaDinamica = 0;
+                    malha[i].cell(j).acsr.fontechk.fluidoPamb.tabelaDinamica = 0;
                 }
             }
         }
-        SolveTramoSolteiro(malha[0], malha[0].arq.chutePerm);
-        malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-        malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-        if(malha[i].arq.nCelUnit>0){
-        	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-        		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+        SolveTramoSolteiro(malha[0], malha[0].config().chutePerm);
+        malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+        malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+        if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+        if(malha[i].config().nCelUnit>0){
+        	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+        		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
         }
         // enterramento
         for (int j = 0; j <= malha[i].ncel; j++) {
-            if (malha[i].celula[j].calor.difus2D == 1) {
-                malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+            if (malha[i].cell(j).calor.difus2D == 1) {
+                malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
             }
         }
-        if (malha[i].arq.lingas == 1)
-            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
+        if (malha[i].config().lingas == 1)
+            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
     }
 
     ostringstream relatSucesso;
@@ -10582,26 +10582,26 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
     Vcr<double> razMast(narq);
     Vcr<int> celpos(narq);
     Vcr<int> kontasnp(narq, 1);
-    if (malha[indAnel].arq.ConContEntrada == 1) {
-        malha[indAnel].celula[0].acsr.injg.QGas = 0.;
-        malha[indAnel].celula[0].MC = malha[indAnel].celula[0].fontemassGR;
-        malha[indAnel].celula[0].Mliqini = 0.;
-        malha[indAnel].celula[0].Mliqini0 = malha[indAnel].celula[0].Mliqini;
-        malha[indAnel].celula[0].QL = 0;
-        malha[indAnel].celula[0].QLini = malha[indAnel].celula[0].QL;
-        double rhog = malha[indAnel].celula[0].flui.MasEspGas(
-            malha[indAnel].celula[0].pres, malha[indAnel].celula[0].temp);
-        malha[indAnel].celula[0].QG = (malha[indAnel].celula[0].MC - malha[indAnel].celula[0].Mliqini) / rhog;
-        malha[indAnel].celula[0].QGini = malha[indAnel].celula[0].QG;
-        malha[indAnel].celula[0].fontemassLR = 0.;
-        malha[indAnel].celula[0].fontemassCR = 0.;
-        malha[indAnel].celula[0].fontemassGR = 0.;
-        malha[indAnel].celula[0].fluiL = &malha[indAnel].celula[0].flui;
+    if (malha[indAnel].config().ConContEntrada == 1) {
+        malha[indAnel].cell(0).acsr.injg.QGas = 0.;
+        malha[indAnel].cell(0).MC = malha[indAnel].cell(0).fontemassGR;
+        malha[indAnel].cell(0).Mliqini = 0.;
+        malha[indAnel].cell(0).Mliqini0 = malha[indAnel].cell(0).Mliqini;
+        malha[indAnel].cell(0).QL = 0;
+        malha[indAnel].cell(0).QLini = malha[indAnel].cell(0).QL;
+        double rhog = malha[indAnel].cell(0).flui.MasEspGas(
+            malha[indAnel].cell(0).pres, malha[indAnel].cell(0).temp);
+        malha[indAnel].cell(0).QG = (malha[indAnel].cell(0).MC - malha[indAnel].cell(0).Mliqini) / rhog;
+        malha[indAnel].cell(0).QGini = malha[indAnel].cell(0).QG;
+        malha[indAnel].cell(0).fontemassLR = 0.;
+        malha[indAnel].cell(0).fontemassCR = 0.;
+        malha[indAnel].cell(0).fontemassGR = 0.;
+        malha[indAnel].cell(0).fluiL = &malha[indAnel].cell(0).flui;
     }
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
+        malha[i].config().tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
     }
     double dtteste;
     (*arqRede.vg1dSP).lixo5R = 0.;
@@ -10618,9 +10618,9 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
         for (int i = 0; i < narq; i++) {
             malha[i].dt = dtteste;
             for (int j = 0; j <= malha[i].ncel; j++) {
-                malha[i].celula[j].dt = malha[i].dt;
-                malha[i].celula[j].dt2 = malha[i].dt;
-                malha[i].celula[j].dtPig = malha[i].dt;
+                malha[i].cell(j).dt = malha[i].dt;
+                malha[i].cell(j).dt2 = malha[i].dt;
+                malha[i].cell(j).dtPig = malha[i].dt;
             }
         }
         if ((*arqRede.vg1dSP).lixo5 < 1e-5) {
@@ -10633,18 +10633,18 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
 
         for (int i = 0; i < narq; i++) {
             malha[i].reinicia = 0;
-            celpos[i] = malha[i].arq.master1.posic;
-            razMast0[i] = malha[i].celula[celpos[i]].acsr.chk.AreaGarg / malha[i].celula[celpos[i]].duto.area;
+            celpos[i] = malha[i].config().master1.posic;
+            razMast0[i] = malha[i].cell(celpos[i]).acsr.chk.AreaGarg / malha[i].cell(celpos[i]).duto.area;
             malha[i].solveLinGas();
 
-            malha[i].arq.atualiza(malha[i].noinicial, malha[i].noextremo, malha[i].derivaAnel,
+            malha[i].config().atualiza(malha[i].noinicial, malha[i].noextremo, malha[i].derivaAnel,
                                   malha[i].chokeSup,
                                   malha[i].chokeInj, malha[i].celula,
                                   malha[i].celulaG, malha[i].pGSup, malha[i].temperatura,
                                   malha[i].presiniG, malha[i].tempiniG,
                                   malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
-            razMast[i] = malha[i].celula[celpos[i]].acsr.chk.AreaGarg / malha[i].celula[celpos[i]].duto.area;
-            malha[i].modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
+            razMast[i] = malha[i].cell(celpos[i]).acsr.chk.AreaGarg / malha[i].cell(celpos[i]).duto.area;
+            malha[i].modeloCompleto = malha[i].config().correcaoMassaEspLiq;
             if (razMast[i] != razMast0[i])
                 malha[i].modeloCompleto = 0;
             if (malha[i].modeloCompleto == 1)
@@ -10652,11 +10652,11 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
         }
         for (int i = 0; i < dreno.size(); i++) {
             int ifposic = posicfonte[i];
-            malha[indAnel].celula[ifposic].acsr.injg.QGas = 0.;
+            malha[indAnel].cell(ifposic).acsr.injg.QGas = 0.;
             for (int j = 0; j < dreno[i].nmani; j++) {
                 int itramo = dreno[i].mani[j];
-                malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[itramo].celulaG[0].VGasR * 86400 /
-                                                                 malha[itramo].celulaG[0].flui.MasEspGas(1.0, 15.6);
+                malha[indAnel].cell(ifposic).acsr.injg.QGas -= malha[itramo].gasCell(0).VGasR * 86400 /
+                                                                 malha[itramo].gasCell(0).flui.MasEspGas(1.0, 15.6);
             }
         }
 
@@ -10672,13 +10672,13 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                 if (i != indAnel) {
                     if (malha[i].modeloCompleto == 0) {
                         for (int j = 0; j <= malha[i].ncel; j++)
-                            malha[i].celula[j].m2d = 0.;
+                            malha[i].cell(j).m2d = 0.;
                     } else {
                         for (int j = 0; j <= malha[i].ncel; j++) {
                             if (malha[i].TransMassModel == 0)
-                                malha[i].celula[j].m2d = 1.;
+                                malha[i].cell(j).m2d = 1.;
                             else
-                                malha[i].celula[j].m2d = 0.;
+                                malha[i].cell(j).m2d = 0.;
                         }
                     }
                     malha[i].EvoluiFrac(1., 1., kontaAcop);
@@ -10713,10 +10713,10 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                 malha[i].AtualizaPig();
                 malha[i].atenuaDtMax();
                 malha[i].calcCCpres(1., 1.);
-                if (malha[i].celula[malha[i].ncel].alf < 0.05 && malha[i].masChkSup == 1)
-                    malha[i].celula[malha[i].ncel].alf = 0.05;
-                if (malha[i].celula[celpos[i]].alf < 0.05 && razMast[i] <= malha[i].arq.master1.razareaativ)
-                    malha[i].celula[celpos[i]].alf = 0.05;
+                if (malha[i].cell(malha[i].ncel).alf < 0.05 && malha[i].masChkSup == 1)
+                    malha[i].cell(malha[i].ncel).alf = 0.05;
+                if (malha[i].cell(celpos[i]).alf < 0.05 && razMast[i] <= malha[i].config().master1.razareaativ)
+                    malha[i].cell(celpos[i]).alf = 0.05;
                 if (i != indAnel)
                     malha[i].renovaterm();
                 malha[i].SolveAcopPV();
@@ -10724,14 +10724,14 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                     malha[i].renova();
                 else {
                     for (int j = 0; j <= malha[i].ncel; j++)
-                        malha[i].celula[j].dpdt = (malha[i].termolivreP[2 * j + 1] -
-                                                   malha[i].celula[j].pres) /
-                                                  malha[i].celula[j].dt;
+                        malha[i].cell(j).dpdt = (malha[i].termolivreP[2 * j + 1] -
+                                                   malha[i].cell(j).pres) /
+                                                  malha[i].cell(j).dt;
                 }
                 if (kontaAcop != 1 * modeloCompletoGlob) {
                     malha[i].indpigPini = malha[i].indpigP;
                     for (int j = 0; j <= malha[i].ncel; j++)
-                        malha[i].celula[j].FeiticoDoTempo2();
+                        malha[i].cell(j).FeiticoDoTempo2();
                 }
             }
         }
@@ -10741,8 +10741,8 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
 
             for (int i = 0; i < narq; i++) {
                 malha[i].SolveTrans();
-                for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {
-                    if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
+                for (int kontasnp = 0; kontasnp < malha[i].config().nsnp; kontasnp++) {
+                    if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].config().tempsnp[kontasnp]) < malha[i].dt) {
                         WriteSnapShot(malha[i], kontasnp, i); // registro do arquivo SNP
                     }
                 }
@@ -10754,8 +10754,8 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
             int ifposic = posicfonte[i];
             for (int j = 0; j < dreno[i].nmani; j++) {
                 int itramo = dreno[i].mani[j];
-                malha[itramo].presiniG = malha[indAnel].celula[ifposic].pres;
-                malha[itramo].tempiniG = malha[indAnel].celula[ifposic].temp;
+                malha[itramo].presiniG = malha[indAnel].cell(ifposic).pres;
+                malha[itramo].tempiniG = malha[indAnel].cell(ifposic).temp;
             }
         }
 
@@ -10764,44 +10764,44 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
     }
 
     for (int i = 0; i < narq; i++)
-        WriteSnapShot(malha[i], malha[i].arq.nsnp, i);
+        WriteSnapShot(malha[i], malha[i].config().nsnp, i);
 }
 
 void calcPeriAnelGL(SProd *malha, int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
                     int iter, vector<fonteposic> dreno) {
 
-    for (int i = malha[indAnel].arq.ninjgas; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
-        int ifposic = posicfonte[i - malha[indAnel].arq.ninjgas];
-        for (int j = 0; j < dreno[i - malha[indAnel].arq.ninjgas].nmani; j++) {
-            int itramo = dreno[i - malha[indAnel].arq.ninjgas].mani[j];
-            int ndirve = dreno[i - malha[indAnel].arq.ninjgas].nmani;
-            malha[itramo].arq.gasinj.vazgas[0] = -malha[indAnel].celula[ifposic].acsr.injg.QGas / ndirve;
+    for (int i = malha[indAnel].config().ninjgas; i < malha[indAnel].config().ninjgas + dreno.size(); i++) {
+        int ifposic = posicfonte[i - malha[indAnel].config().ninjgas];
+        for (int j = 0; j < dreno[i - malha[indAnel].config().ninjgas].nmani; j++) {
+            int itramo = dreno[i - malha[indAnel].config().ninjgas].mani[j];
+            int ndirve = dreno[i - malha[indAnel].config().ninjgas].nmani;
+            malha[itramo].config().gasinj.vazgas[0] = -malha[indAnel].cell(ifposic).acsr.injg.QGas / ndirve;
             malha[itramo].chokeInj.tempEstag = malha[itramo].tempiniG =
-                malha[itramo].arq.gasinj.temperatura[0] = malha[indAnel].celula[ifposic].temp;
-            malha[itramo].celulaG[0].tipoCC = 1;
-            if (malha[itramo].arq.chokep.abertura[0] > 0.6) {
+                malha[itramo].config().gasinj.temperatura[0] = malha[indAnel].cell(ifposic).temp;
+            malha[itramo].gasCell(0).tipoCC = 1;
+            if (malha[itramo].config().chokep.abertura[0] > 0.6) {
                 if (iter == 0)
                     malha[itramo].buscaProdPfundoPerm();
-                malha[itramo].celulaG[0].tipoCC = 0;
-                malha[itramo].chokeInj.presEstag = malha[itramo].presiniG = malha[itramo].arq.gasinj.presinj[0] =
-                    malha[indAnel].celula[ifposic].pres;
-                malha[itramo].buscaProdPfundoPerm(malha[itramo].celula[0].pres);
+                malha[itramo].gasCell(0).tipoCC = 0;
+                malha[itramo].chokeInj.presEstag = malha[itramo].presiniG = malha[itramo].config().gasinj.presinj[0] =
+                    malha[indAnel].cell(ifposic).pres;
+                malha[itramo].buscaProdPfundoPerm(malha[itramo].cell(0).pres);
             } else {
                 if (iter == 0)
                     malha[itramo].buscaProdPfundoPerm2();
-                malha[itramo].celulaG[0].tipoCC = 0;
-                malha[itramo].chokeInj.presEstag = malha[itramo].presiniG = malha[itramo].arq.gasinj.presinj[0] = malha[indAnel].celula[ifposic].pres;
-                malha[itramo].buscaProdPfundoPerm2(malha[itramo].celula[0].pres);
+                malha[itramo].gasCell(0).tipoCC = 0;
+                malha[itramo].chokeInj.presEstag = malha[itramo].presiniG = malha[itramo].config().gasinj.presinj[0] = malha[indAnel].cell(ifposic).pres;
+                malha[itramo].buscaProdPfundoPerm2(malha[itramo].cell(0).pres);
             }
         }
     }
-    for (int i = malha[indAnel].arq.ninjgas; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
-        int ifposic = posicfonte[i - malha[indAnel].arq.ninjgas];
-        malha[indAnel].celula[ifposic].acsr.injg.QGas = 0.;
-        for (int j = 0; j < dreno[i - malha[indAnel].arq.ninjgas].nmani; j++) {
-            int itramo = dreno[i - malha[indAnel].arq.ninjgas].mani[j];
-            malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[itramo].celulaG[0].VGasR * 86400 /
-                                                             malha[itramo].celulaG[0].flui.MasEspGas(1.0, 15.6);
+    for (int i = malha[indAnel].config().ninjgas; i < malha[indAnel].config().ninjgas + dreno.size(); i++) {
+        int ifposic = posicfonte[i - malha[indAnel].config().ninjgas];
+        malha[indAnel].cell(ifposic).acsr.injg.QGas = 0.;
+        for (int j = 0; j < dreno[i - malha[indAnel].config().ninjgas].nmani; j++) {
+            int itramo = dreno[i - malha[indAnel].config().ninjgas].mani[j];
+            malha[indAnel].cell(ifposic).acsr.injg.QGas -= malha[itramo].gasCell(0).VGasR * 86400 /
+                                                             malha[itramo].gasCell(0).flui.MasEspGas(1.0, 15.6);
         }
     }
 }
@@ -10809,19 +10809,19 @@ void calcPeriAnelGL(SProd *malha, int narq, int nfontes, int *indfonte, int *ind
 double calcErroGL(SProd *malha, int narq, int nfontes, int *posicfonte, int indAnel,
                   vector<fonteposic> dreno) {
     double erro = 0;
-    for (int i = 0; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
+    for (int i = 0; i < malha[indAnel].config().ninjgas + dreno.size(); i++) {
         int ifposic;
-        if (i < malha[indAnel].arq.ninjgas)
-            ifposic = malha[indAnel].arq.fonteg[i].posicP;
+        if (i < malha[indAnel].config().ninjgas)
+            ifposic = malha[indAnel].config().fonteg[i].posicP;
         else
-            ifposic = posicfonte[i - malha[indAnel].arq.ninjgas];
-        erro += malha[indAnel].celula[ifposic].acsr.injg.QGas;
+            ifposic = posicfonte[i - malha[indAnel].config().ninjgas];
+        erro += malha[indAnel].cell(ifposic).acsr.injg.QGas;
     }
-    if (malha[indAnel].arq.ConContEntrada == 1)
-        erro += malha[indAnel].celula[0].acsr.injg.QGas;
+    if (malha[indAnel].config().ConContEntrada == 1)
+        erro += malha[indAnel].cell(0).acsr.injg.QGas;
     double divisor = 1;
-    if (fabs(malha[indAnel].celula[0].acsr.injg.QGas) > 0)
-        divisor = fabs(malha[indAnel].celula[0].acsr.injg.QGas);
+    if (fabs(malha[indAnel].cell(0).acsr.injg.QGas) > 0)
+        divisor = fabs(malha[indAnel].cell(0).acsr.injg.QGas);
     return erro / divisor;
 }
 
@@ -10890,82 +10890,82 @@ void conectaPrincipal(SProd *malha, int iP, int iS, int itera = 1) {
     for (int i = malha[iP].PrimSecIniRedeP; i >= malha[iP].PrimSecFimRedeP; i--) {
         int j = malha[iP].PrimSecIniRedeP + malha[iP].SecPrimIniRedeP - i;
         if (itera == 1)
-            malha[iP].celula[i].calor.Textern2 = malha[iS].celula[j].calor.Tcamada[0][0];
+            malha[iP].cell(i).calor.Textern2 = malha[iS].cell(j).calor.Tcamada[0][0];
         else
-            malha[iP].celula[i].calor.Textern2 = malha[iS].celula[j].calor.Textern1;
-        malha[iP].celula[i].calor.betext = malha[iS].celula[j].calor.betint;
+            malha[iP].cell(i).calor.Textern2 = malha[iS].cell(j).calor.Textern1;
+        malha[iP].cell(i).calor.betext = malha[iS].cell(j).calor.betint;
 
-        int icam = malha[iP].celula[i].calor.geom.ncamadas - 1;
-        int idisc = malha[iP].celula[i].calor.ncamada[icam] - 1;
+        int icam = malha[iP].cell(i).calor.geom.ncamadas - 1;
+        int idisc = malha[iP].cell(i).calor.ncamada[icam] - 1;
         if (itera == 1)
-            malha[iS].celula[j].calor.Tint2 = malha[iP].celula[i].calor.Tcamada[icam][idisc];
+            malha[iS].cell(j).calor.Tint2 = malha[iP].cell(i).calor.Tcamada[icam][idisc];
         else
-            malha[iS].celula[j].calor.Tint2 = malha[iS].celula[j].calor.Textern1;
-        malha[iP].celula[i].calor.colunaDia = malha[iS].celula[j].duto.dia;
-        malha[iP].celula[i].calor.geom.b = malha[iS].celula[j].calor.geom.a;
+            malha[iS].cell(j).calor.Tint2 = malha[iS].cell(j).calor.Textern1;
+        malha[iP].cell(i).calor.colunaDia = malha[iS].cell(j).duto.dia;
+        malha[iP].cell(i).calor.geom.b = malha[iS].cell(j).calor.geom.a;
 
         if (itera == 1)
-            malha[iP].celula[i].calor.Textern1 = malha[iS].celula[j].temp;
+            malha[iP].cell(i).calor.Textern1 = malha[iS].cell(j).temp;
         else
-            malha[iP].celula[i].calor.Textern1 = malha[iS].celula[j].calor.Textern1;
-        double cpg = malha[iS].celula[j].flui.CalorGas(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double rhog = malha[iS].celula[j].flui.MasEspGas(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double condg = malha[iS].celula[j].flui.CondGas(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double viscg = malha[iS].celula[j].flui.ViscGas(malha[iS].celula[j].pres, malha[iS].celula[j].temp) * 1.e-3;
-        double cplp = malha[iS].celula[j].flui.CalorLiq(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double rholp = malha[iS].celula[j].flui.MasEspLiq(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double condlp = malha[iS].celula[j].fluicol.CondLiq(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double visclp = malha[iS].celula[j].flui.ViscOleo(malha[iS].celula[j].pres, malha[iS].celula[j].temp) * 1.e-3;
-        double cplc = malha[iS].celula[j].fluicol.CalorLiq(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double rholc = malha[iS].celula[j].fluicol.MasEspFlu(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double condlc = malha[iS].celula[j].fluicol.CondLiq(malha[iS].celula[j].pres, malha[iS].celula[j].temp);
-        double visclc = malha[iS].celula[j].fluicol.VisFlu(malha[iS].celula[j].pres, malha[iS].celula[j].temp) * 1.e-3;
-        double alfExt = malha[iS].celula[j].alf;
-        double betExt = malha[iS].celula[j].bet;
+            malha[iP].cell(i).calor.Textern1 = malha[iS].cell(j).calor.Textern1;
+        double cpg = malha[iS].cell(j).flui.CalorGas(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double rhog = malha[iS].cell(j).flui.MasEspGas(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double condg = malha[iS].cell(j).flui.CondGas(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double viscg = malha[iS].cell(j).flui.ViscGas(malha[iS].cell(j).pres, malha[iS].cell(j).temp) * 1.e-3;
+        double cplp = malha[iS].cell(j).flui.CalorLiq(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double rholp = malha[iS].cell(j).flui.MasEspLiq(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double condlp = malha[iS].cell(j).fluicol.CondLiq(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double visclp = malha[iS].cell(j).flui.ViscOleo(malha[iS].cell(j).pres, malha[iS].cell(j).temp) * 1.e-3;
+        double cplc = malha[iS].cell(j).fluicol.CalorLiq(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double rholc = malha[iS].cell(j).fluicol.MasEspFlu(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double condlc = malha[iS].cell(j).fluicol.CondLiq(malha[iS].cell(j).pres, malha[iS].cell(j).temp);
+        double visclc = malha[iS].cell(j).fluicol.VisFlu(malha[iS].cell(j).pres, malha[iS].cell(j).temp) * 1.e-3;
+        double alfExt = malha[iS].cell(j).alf;
+        double betExt = malha[iS].cell(j).bet;
         double cplMix = (1. - betExt) * cplp + betExt * cplc;
         double rholMix = (1. - betExt) * rholp + betExt * rholc;
         double condlMix = (1. - betExt) * condlp + betExt * condlc;
         double visclMix = (1. - betExt) * visclp + betExt * visclc;
         if (itera == 1)
-            malha[iP].celula[i].calor.Vextern1 = (malha[iS].celula[j].QG) / (malha[iS].celula[j].duto.area) +
-                                                 malha[iS].celula[j].QL / (malha[iS].celula[j].duto.area);
+            malha[iP].cell(i).calor.Vextern1 = (malha[iS].cell(j).QG) / (malha[iS].cell(j).duto.area) +
+                                                 malha[iS].cell(j).QL / (malha[iS].cell(j).duto.area);
         else
-            malha[iP].celula[i].calor.Vextern1 = 100.;
+            malha[iP].cell(i).calor.Vextern1 = 100.;
 
-        malha[iP].celula[i].calor.kextern1 = alfExt * condg + (1. - alfExt) * condlMix;
-        malha[iP].celula[i].calor.cpextern1 = alfExt * cpg + (1. - alfExt) * cplMix;
-        malha[iP].celula[i].calor.rhoextern1 = alfExt * rhog + (1. - alfExt) * rholMix;
-        malha[iP].celula[i].calor.viscextern1 = alfExt * viscg + (1. - alfExt) * visclMix;
+        malha[iP].cell(i).calor.kextern1 = alfExt * condg + (1. - alfExt) * condlMix;
+        malha[iP].cell(i).calor.cpextern1 = alfExt * cpg + (1. - alfExt) * cplMix;
+        malha[iP].cell(i).calor.rhoextern1 = alfExt * rhog + (1. - alfExt) * rholMix;
+        malha[iP].cell(i).calor.viscextern1 = alfExt * viscg + (1. - alfExt) * visclMix;
     }
 }
 
 double chutePresRedeParalelaSec(SProd *malha, int iP, int iS, double pchute, int indPartida) {
     double betaChute = 0.;
     double taux;
-    if (malha[iS].celula[0].acsr.tipo == 2)
-        betaChute = malha[iS].celula[0].acsr.injl.bet;
+    if (malha[iS].cell(0).acsr.tipo == 2)
+        betaChute = malha[iS].cell(0).acsr.injl.bet;
     for (int i = indPartida; i > 0; i--) {
-        taux = malha[iS].arq.celp[i].textern;
-        if (taux < malha[iS].arq.tmin)
-            taux = malha[iS].arq.tmin;
-        double rhol = malha[iS].celula[i].flui.MasEspLiq(pchute, taux);
-        double rhog = malha[iS].celula[i].flui.MasEspGas(pchute, taux);
+        taux = malha[iS].config().celp[i].textern;
+        if (taux < malha[iS].config().tmin)
+            taux = malha[iS].config().tmin;
+        double rhol = malha[iS].cell(i).flui.MasEspLiq(pchute, taux);
+        double rhog = malha[iS].cell(i).flui.MasEspGas(pchute, taux);
         // se o sistema nao for um anel principal de GL
         // para a estimativa de pressao, se utilizara so a hidrostatica de liquido, o que dara um
         // chute inicial de pressao muito alta
         double alfa = 0.;
         if (betaChute < 0.5) {
-            double tit = malha[iS].celula[i].flui.FracMassHidra(pchute, taux);
+            double tit = malha[iS].cell(i).flui.FracMassHidra(pchute, taux);
             alfa = tit * rhol / (rhog - tit * rhog + tit * rhol);
         }
-        if (malha[iS].celula[0].acsr.tipo == 1)
+        if (malha[iS].cell(0).acsr.tipo == 1)
             alfa = 1.;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
-        double dxmed = 0.5 * (malha[iS].celula[i].dx + malha[iS].celula[i - 1].dx);
+        double dxmed = 0.5 * (malha[iS].cell(i).dx + malha[iS].cell(i - 1).dx);
         // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-        pchute += (rhomix * 9.81 * sin(malha[iS].celula[i].duto.teta) * dxmed) / 98066.5;
-        if (malha[iS].arq.usaTabela == 1 && (malha[iS].arq.tabent.pmax - pchute) < (*malha[iS].vg1dSP).localtiny)
-            pchute = 0.9 * malha[iS].arq.tabent.pmax;
+        pchute += (rhomix * 9.81 * sin(malha[iS].cell(i).duto.teta) * dxmed) / 98066.5;
+        if (malha[iS].config().usaTabela == 1 && (malha[iS].config().tabent.pmax - pchute) < (*malha[iS].vg1dSP).localtiny)
+            pchute = 0.9 * malha[iS].config().tabent.pmax;
     }
     if (pchute > 1000)
         pchute = 1000.; // pressao maxima de chute
@@ -10987,7 +10987,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
+        malha[i].config().tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
     }
 
     double dtteste;
@@ -11002,29 +11002,29 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
             conectaPrincipal(malha, iP, iS);
             int nacopP = malha[iP].PrimSecIniRedeP - malha[iP].PrimSecFimRedeP;
             for (int iacop = 0; iacop <= nacopP; iacop++) {
-                malha[iS].celula[malha[iS].SecPrimIniRedeP + iacop].fluxcalAcopRedeP =
-                    malha[iP].celula[malha[iP].PrimSecIniRedeP - iacop].fluxcalmed;
+                malha[iS].cell(malha[iS].SecPrimIniRedeP + iacop).fluxcalAcopRedeP =
+                    malha[iP].cell(malha[iP].PrimSecIniRedeP - iacop).fluxcalmed;
             }
         }
 
         for (int i = 0; i < narq; i++) {
-            if (malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].config().calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
                 FA_Hidrato solverHidrato(malha[i]);
                 solverHidrato.solverHidrato();
             }
 
-            if (malha[i].arq.lingas > 0 && malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].config().lingas > 0 && malha[i].config().calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
                 FA_Hidrato_Servico solverHidratoG(malha[i]);
                 solverHidratoG.solverHidratoG();
             }
 
-            if (malha[i].arq.flashCompleto == 2 && (*arqRede.vg1dSP).lixo5 < 1e-15) {
+            if (malha[i].config().flashCompleto == 2 && (*arqRede.vg1dSP).lixo5 < 1e-15) {
                 malha[i].atualizaMiniTab();
             }
 
             if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
-                for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].ntrend[j]);
+                for (int j = 0; j < malha[i].config().ntendp; j++) {
+                    malha[i].config().imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].ntrend[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -11032,7 +11032,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
         dtteste = 1e6;
         for (int i = 0; i < narq; i++) {
-            malha[i].modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
+            malha[i].modeloCompleto = malha[i].config().correcaoMassaEspLiq;
             malha[i].determinaDT();
             malha[i].dtauxCFL = malha[i].dt;
             malha[i].dtauxFinal = malha[i].dt;
@@ -11042,37 +11042,37 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
         for (int i = 0; i < narq; i++) {
             malha[i].dt = dtteste;
             for (int j = 0; j <= malha[i].ncel; j++) {
-                malha[i].celula[j].dt = malha[i].dt;
-                malha[i].celula[j].dt2 = malha[i].dt;
-                malha[i].celula[j].dtPig = malha[i].dt;
+                malha[i].cell(j).dt = malha[i].dt;
+                malha[i].cell(j).dt2 = malha[i].dt;
+                malha[i].cell(j).dtPig = malha[i].dt;
             }
         }
         for (int i = 0; i < narq; i++) {
             malha[i].reinicia = 0;
-            celpos[i] = malha[i].arq.master1.posic;
-            // razMast0[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
+            celpos[i] = malha[i].config().master1.posic;
+            // razMast0[i]=malha[i].cell(celpos[i]).acsr.chk.AreaGarg/malha[i].cell(celpos[i]).duto.area;//caso so Master
             malha[i].aberturaVal0(); // caso varias valvulas
             malha[i].solveLinGas();
             int presinterna = 1;
-            malha[i].arq.atualiza(malha[i].noinicial, presinterna, malha[i].derivaAnel,
+            malha[i].config().atualiza(malha[i].noinicial, presinterna, malha[i].derivaAnel,
                                   malha[i].chokeSup,
                                   malha[i].chokeInj, malha[i].celula,
                                   malha[i].celulaG, malha[i].pGSup, malha[i].temperatura,
                                   malha[i].presiniG, malha[i].tempiniG,
                                   malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
             malha[i].atualizaCC1();
-            for (int j = 0; j <= malha[i].arq.nvalv; j++)
+            for (int j = 0; j <= malha[i].config().nvalv; j++)
                 malha[i].vRazMastCrit[j] = 0.5; // caso varias valvulas
             malha[i].aberturaVal1();            // caso varias valvulas
-            for (int j = 0; j <= malha[i].arq.nvalv; j++)
+            for (int j = 0; j <= malha[i].config().nvalv; j++)
                 if (malha[i].vRazMast1[j] != malha[i].vRazMast0[j])
                     malha[i].modeloCompleto = 0; // caso varias valvulas
             if (malha[i].modeloCompleto == 1)
                 malha[i].avaliaVariaDpDt(); // caso varias valvulas
             if (malha[i].modeloCompleto == 0)
-                malha[i].arq.cicloAcopTerm = 0;
+                malha[i].config().cicloAcopTerm = 0;
             else
-                malha[i].arq.cicloAcopTerm = 1;
+                malha[i].config().cicloAcopTerm = 1;
         }
         int modeloCompletoGlob = 1;
         for (int i = 0; i < narq; i++) {
@@ -11095,59 +11095,59 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
                 if (malha[i].modeloCompleto == 0) {
                     for (int j = 0; j <= malha[i].ncel; j++)
-                        malha[i].celula[j].m2d = 0.;
+                        malha[i].cell(j).m2d = 0.;
                 } else {
                     for (int j = 0; j <= malha[i].ncel; j++) {
                         double razDp = 0.1;
                         double razDT = 1;
-                        if (j < celpos[i] && malha[i].celula[celpos[i]].acsr.chk.AreaGarg < 1e-15 * malha[i].celula[celpos[i]].acsr.chk.AreaTub) {
+                        if (j < celpos[i] && malha[i].cell(celpos[i]).acsr.chk.AreaGarg < 1e-15 * malha[i].cell(celpos[i]).acsr.chk.AreaTub) {
                             razDT = 1;
                         } else if (j == celpos[i] + 1 &&
-                                   malha[i].celula[celpos[i]].acsr.chk.AreaGarg < 1e-15 * malha[i].celula[celpos[i]].acsr.chk.AreaTub) {
+                                   malha[i].cell(celpos[i]).acsr.chk.AreaGarg < 1e-15 * malha[i].cell(celpos[i]).acsr.chk.AreaTub) {
                             razDT = 1;
                         }
-                        if ((fabs(malha[i].celula[j].dpdtIni) / malha[i].celula[j].pres < razDp) && fabs(malha[i].celula[j].dTdtIni) < razDT) {
+                        if ((fabs(malha[i].cell(j).dpdtIni) / malha[i].cell(j).pres < razDp) && fabs(malha[i].cell(j).dTdtIni) < razDT) {
                             if (malha[i].TransMassModel == 0)
-                                malha[i].celula[j].m2d = 1.;
+                                malha[i].cell(j).m2d = 1.;
                             else
-                                malha[i].celula[j].m2d = 0.;
-                            malha[i].celula[j].mudaDT = 1.;
+                                malha[i].cell(j).m2d = 0.;
+                            malha[i].cell(j).mudaDT = 1.;
                         } else {
-                            malha[i].celula[j].m2d = 0.;
-                            malha[i].celula[j].mudaDT = 0.;
+                            malha[i].cell(j).m2d = 0.;
+                            malha[i].cell(j).mudaDT = 0.;
                         }
                     }
                 }
-                if (malha[i].arq.estabCol == 1) {
+                if (malha[i].config().estabCol == 1) {
                     for (int j = 0; j <= celpos[i]; j++) {
-                        malha[i].celula[j].m2d = 0.;
-                        malha[i].celula[j].mudaDT = 0.;
-                        malha[i].celula[j].estabCol = 1;
+                        malha[i].cell(j).m2d = 0.;
+                        malha[i].cell(j).mudaDT = 0.;
+                        malha[i].cell(j).estabCol = 1;
                     }
                 }
 
                 malha[i].EvoluiFrac(1., 0., kontaAcop);
                 for (int j = 0; j <= malha[i].ncel; j++) {
-                    if (malha[i].celula[j].acsr.tipo == 15) {
-                        malha[i].celula[j].acsr.radialPoro.avancoSW(malha[i].dt);
-                        if (malha[i].celula[j].acsr.radialPoro.reinicia == -1) {
+                    if (malha[i].cell(j).acsr.tipo == 15) {
+                        malha[i].cell(j).acsr.radialPoro.avancoSW(malha[i].dt);
+                        if (malha[i].cell(j).acsr.radialPoro.reinicia == -1) {
                             if (malha[i].reinicia > -1)
                                 malha[i].reinicia = -1;
                         }
-                    } else if (malha[i].celula[j].acsr.tipo == 16) {
-                        malha[i].celula[j].acsr.poroso2D.avancoSW(malha[i].dt);
-                        if (malha[i].celula[j].acsr.poroso2D.reinicia == -1) {
+                    } else if (malha[i].cell(j).acsr.tipo == 16) {
+                        malha[i].cell(j).acsr.poroso2D.avancoSW(malha[i].dt);
+                        if (malha[i].cell(j).acsr.poroso2D.reinicia == -1) {
                             if (malha[i].reinicia > -1)
                                 malha[i].reinicia = -1;
                         }
                     }
                 }
-                if (malha[i].arq.correcaoMassaEspLiq == 1) {
+                if (malha[i].config().correcaoMassaEspLiq == 1) {
                     for (int j = 0; j < malha[i].ncel; j++)
-                        malha[i].celula[j + 1].mudaDTL = malha[i].celula[j].mudaDT;
+                        malha[i].cell(j + 1).mudaDTL = malha[i].cell(j).mudaDT;
                 }
 
-                if (kontaAcop == 0 && malha[i].arq.controleDTvalv == 1) {
+                if (kontaAcop == 0 && malha[i].config().controleDTvalv == 1) {
                     if (malha[i].reinicia > -1)
                         malha[i].restringeDTporValv(); // caso varias valvulas
                 }
@@ -11160,19 +11160,19 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                 for (int i = 0; i < narq; i++) {
                     malha[i].ReiniEvolFrac0();
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        if (malha[i].celula[j].acsr.tipo == 15) {
-                            malha[i].celula[j].acsr.radialPoro.reavaliaDT(malha[i].dt);
+                        if (malha[i].cell(j).acsr.tipo == 15) {
+                            malha[i].cell(j).acsr.radialPoro.reavaliaDT(malha[i].dt);
                         }
-                        if (malha[i].celula[j].acsr.tipo == 16) {
-                            malha[i].celula[j].acsr.poroso2D.reavaliaDT(malha[i].dt);
+                        if (malha[i].cell(j).acsr.tipo == 16) {
+                            malha[i].cell(j).acsr.poroso2D.reavaliaDT(malha[i].dt);
                         }
                     }
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        if (malha[i].celula[j].acsr.tipo == 15) {
-                            malha[i].celula[j].acsr.radialPoro.reiniciaEvoluiSW(malha[i].dt);
+                        if (malha[i].cell(j).acsr.tipo == 15) {
+                            malha[i].cell(j).acsr.radialPoro.reiniciaEvoluiSW(malha[i].dt);
                         }
-                        if (malha[i].celula[j].acsr.tipo == 16) {
-                            malha[i].celula[j].acsr.poroso2D.reiniciaEvoluiSW(malha[i].dt);
+                        if (malha[i].cell(j).acsr.tipo == 16) {
+                            malha[i].cell(j).acsr.poroso2D.reiniciaEvoluiSW(malha[i].dt);
                         }
                     }
                     if (malha[i].dt < dtteste) {
@@ -11186,11 +11186,11 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                     malha[i].EvoluiFrac(1., 0., kontaAcop);
                     malha[i].reinicia = 0;
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        if (malha[i].celula[j].acsr.tipo == 15) {
-                            malha[i].celula[j].acsr.radialPoro.avancoSWcorrec();
+                        if (malha[i].cell(j).acsr.tipo == 15) {
+                            malha[i].cell(j).acsr.radialPoro.avancoSWcorrec();
                         }
-                        if (malha[i].celula[j].acsr.tipo == 16) {
-                            malha[i].celula[j].acsr.poroso2D.avancoSWcorrec();
+                        if (malha[i].cell(j).acsr.tipo == 16) {
+                            malha[i].cell(j).acsr.poroso2D.avancoSWcorrec();
                         }
                     }
                 }
@@ -11207,55 +11207,55 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                     malha[i].atenuaDtMax();
 
                 if (modeloCompletoGlob == 1) {
-                    fonteC[i] = malha[i].celula[malha[i].ncel].fontemassCR;
-                    fonteP[i] = malha[i].celula[malha[i].ncel].fontemassLR;
-                    fonteG[i] = malha[i].celula[malha[i].ncel].fontemassGR;
+                    fonteC[i] = malha[i].cell(malha[i].ncel).fontemassCR;
+                    fonteP[i] = malha[i].cell(malha[i].ncel).fontemassLR;
+                    fonteG[i] = malha[i].cell(malha[i].ncel).fontemassGR;
                 }
 
                 malha[i].calcCCpres();
                 malha[i].renovaterm();
-                if (malha[i].celula[malha[i].ncel].alf < 0.05 && malha[i].masChkSup == 1)
-                    malha[i].celula[malha[i].ncel].alf = 0.05;
+                if (malha[i].cell(malha[i].ncel).alf < 0.05 && malha[i].masChkSup == 1)
+                    malha[i].cell(malha[i].ncel).alf = 0.05;
                 // caso varias valvulas
-                for (int j = 0; j <= malha[i].arq.nvalv; j++) {
+                for (int j = 0; j <= malha[i].config().nvalv; j++) {
                     int celposAux;
                     if (j > 0)
-                        celposAux = malha[i].arq.valv[j - 1].posicP;
+                        celposAux = malha[i].config().valv[j - 1].posicP;
                     else
                         celposAux = celpos[i];
-                    if (malha[i].celula[celposAux].alf < 0.05 && malha[i].vRazMast1[j] <= malha[i].arq.master1.razareaativ)
-                        malha[i].celula[celposAux].alf = 0.05;
+                    if (malha[i].cell(celposAux).alf < 0.05 && malha[i].vRazMast1[j] <= malha[i].config().master1.razareaativ)
+                        malha[i].cell(celposAux).alf = 0.05;
                 }
                 malha[i].SolveAcopPV();
 
                 if (kontaAcop < 1 * modeloCompletoGlob) {
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        malha[i].celula[j].dpdt = 1 * (malha[i].termolivreP[2 * j + 1] - malha[i].celula[j].pres) / malha[i].celula[j].dt;
-                        malha[i].celula[j].dpdtIni = malha[i].celula[j].dpdt;
+                        malha[i].cell(j).dpdt = 1 * (malha[i].termolivreP[2 * j + 1] - malha[i].cell(j).pres) / malha[i].cell(j).dt;
+                        malha[i].cell(j).dpdtIni = malha[i].cell(j).dpdt;
                     }
                 }
-                if (kontaAcop == 1 * modeloCompletoGlob || malha[i].arq.cicloAcopTerm == 1) {
+                if (kontaAcop == 1 * modeloCompletoGlob || malha[i].config().cicloAcopTerm == 1) {
                     malha[i].renova();
                 }
-                if (malha[i].arq.cicloAcopTerm == 1 && modeloCompletoGlob == 1) {
+                if (malha[i].config().cicloAcopTerm == 1 && modeloCompletoGlob == 1) {
                     if (kontaAcop < 1 * modeloCompletoGlob)
                         for (int j = 0; j <= malha[i].ncel; j++)
-                            malha[i].celula[j].dpdt = malha[i].celula[j].d2pdt2;
+                            malha[i].cell(j).dpdt = malha[i].cell(j).d2pdt2;
                     malha[i].marchaEnergTrans(kontaAcop, ciclomax);
                 }
                 if (kontaAcop != 1 * modeloCompletoGlob) {
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        malha[i].celula[j].FeiticoDoTempo2();
-                        if (malha[i].celula[j].acsr.tipo == 15) {
-                            malha[i].celula[j].acsr.radialPoro.FeiticoDoTempoSW();
-                        } else if (malha[i].celula[j].acsr.tipo == 16) {
-                            malha[i].celula[j].acsr.poroso2D.FeiticoDoTempoSW();
+                        malha[i].cell(j).FeiticoDoTempo2();
+                        if (malha[i].cell(j).acsr.tipo == 15) {
+                            malha[i].cell(j).acsr.radialPoro.FeiticoDoTempoSW();
+                        } else if (malha[i].cell(j).acsr.tipo == 16) {
+                            malha[i].cell(j).acsr.poroso2D.FeiticoDoTempoSW();
                         }
                     }
 
-                    malha[i].celula[malha[i].ncel].fontemassCR = fonteC[i];
-                    malha[i].celula[malha[i].ncel].fontemassLR = fonteP[i];
-                    malha[i].celula[malha[i].ncel].fontemassGR = fonteG[i];
+                    malha[i].cell(malha[i].ncel).fontemassCR = fonteC[i];
+                    malha[i].cell(malha[i].ncel).fontemassLR = fonteP[i];
+                    malha[i].cell(malha[i].ncel).fontemassGR = fonteG[i];
 
                     malha[i].aberto = malha[i].abertoini;
                     malha[i].tempoaberto = malha[i].tempoabertoini;
@@ -11263,7 +11263,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
             }
         }
         for (int i = 0; i < narq; i++) {
-            if (modeloCompletoGlob == 0 || malha[i].arq.cicloAcopTerm == 0) {
+            if (modeloCompletoGlob == 0 || malha[i].config().cicloAcopTerm == 0) {
                 for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
                     malha[i].marchaEnergTrans(ciclo, ciclomax);
                 }
@@ -11272,45 +11272,45 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
         for (int i = 0; i < nfontes; i++) {
             int celS = arqRede.conexFR[i].noS;
             int celP = arqRede.conexFR[i].noP;
-            malha[iP].celula[celP].acsr.fontechk.tamb = malha[iS].celula[celS].temp;
-            malha[iP].celula[celP].acsr.fontechk.pamb = malha[iS].celula[celS].pres;
-            malha[iP].celula[celP].acsr.fontechk.betISamb = malha[iS].celula[celS].bet;
-            malha[iP].celula[celP].acsr.fontechk.fluidoPamb = malha[iS].celula[celS].flui;
-            double alf = malha[iP].celula[celP].alf;
-            double bet = malha[iP].celula[celP].bet;
-            double pres = malha[iP].celula[celP].pres;
-            double temp = malha[iP].celula[celP].temp;
-            malha[iP].celula[celP].acsr.fontechk.fluidoP = malha[iP].celula[celP].flui;
-            malha[iP].celula[celP].acsr.fontechk.fluidocol = malha[iP].celula[celP].fluicol;
-            double rhog = malha[iP].celula[celP].flui.MasEspGas(pres, temp);
-            double rhoP = malha[iP].celula[celP].flui.MasEspLiq(pres, temp);
-            double rhoC = malha[iP].celula[celP].fluicol.MasEspFlu(pres, temp);
-            malha[iP].celula[celP].acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
-            malha[iP].celula[celP].acsr.fontechk.titamb = malha[iS].celula[celS].acsr.fontechk.titT;
+            malha[iP].cell(celP).acsr.fontechk.tamb = malha[iS].cell(celS).temp;
+            malha[iP].cell(celP).acsr.fontechk.pamb = malha[iS].cell(celS).pres;
+            malha[iP].cell(celP).acsr.fontechk.betISamb = malha[iS].cell(celS).bet;
+            malha[iP].cell(celP).acsr.fontechk.fluidoPamb = malha[iS].cell(celS).flui;
+            double alf = malha[iP].cell(celP).alf;
+            double bet = malha[iP].cell(celP).bet;
+            double pres = malha[iP].cell(celP).pres;
+            double temp = malha[iP].cell(celP).temp;
+            malha[iP].cell(celP).acsr.fontechk.fluidoP = malha[iP].cell(celP).flui;
+            malha[iP].cell(celP).acsr.fontechk.fluidocol = malha[iP].cell(celP).fluicol;
+            double rhog = malha[iP].cell(celP).flui.MasEspGas(pres, temp);
+            double rhoP = malha[iP].cell(celP).flui.MasEspLiq(pres, temp);
+            double rhoC = malha[iP].cell(celP).fluicol.MasEspFlu(pres, temp);
+            malha[iP].cell(celP).acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
+            malha[iP].cell(celP).acsr.fontechk.titamb = malha[iS].cell(celS).acsr.fontechk.titT;
         }
         for (int i = 0; i < nfontes; i++) {
             int celS = arqRede.conexFR[i].noS;
             int celP = arqRede.conexFR[i].noP;
-            malha[iS].celula[celS].acsr.fontechk.tamb = malha[iP].celula[celP].temp;
-            malha[iS].celula[celS].acsr.fontechk.pamb = malha[iP].celula[celP].pres;
-            malha[iS].celula[celS].acsr.fontechk.betISamb = malha[iP].celula[celP].bet;
-            malha[iS].celula[celS].acsr.fontechk.fluidoPamb = malha[iP].celula[celP].flui;
-            double alf = malha[iS].celula[celS].alf;
-            double bet = malha[iS].celula[celS].bet;
-            double pres = malha[iS].celula[celS].pres;
-            double temp = malha[iS].celula[celS].temp;
-            malha[iS].celula[celS].acsr.fontechk.fluidoP = malha[iS].celula[celS].flui;
-            malha[iS].celula[celS].acsr.fontechk.fluidocol = malha[iS].celula[celS].fluicol;
-            double rhog = malha[iS].celula[celS].flui.MasEspGas(pres, temp);
-            double rhoP = malha[iS].celula[celS].flui.MasEspLiq(pres, temp);
-            double rhoC = malha[iS].celula[celS].fluicol.MasEspFlu(pres, temp);
-            malha[iS].celula[celS].acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
-            malha[iS].celula[celS].acsr.fontechk.titamb = malha[iP].celula[celP].acsr.fontechk.titT;
+            malha[iS].cell(celS).acsr.fontechk.tamb = malha[iP].cell(celP).temp;
+            malha[iS].cell(celS).acsr.fontechk.pamb = malha[iP].cell(celP).pres;
+            malha[iS].cell(celS).acsr.fontechk.betISamb = malha[iP].cell(celP).bet;
+            malha[iS].cell(celS).acsr.fontechk.fluidoPamb = malha[iP].cell(celP).flui;
+            double alf = malha[iS].cell(celS).alf;
+            double bet = malha[iS].cell(celS).bet;
+            double pres = malha[iS].cell(celS).pres;
+            double temp = malha[iS].cell(celS).temp;
+            malha[iS].cell(celS).acsr.fontechk.fluidoP = malha[iS].cell(celS).flui;
+            malha[iS].cell(celS).acsr.fontechk.fluidocol = malha[iS].cell(celS).fluicol;
+            double rhog = malha[iS].cell(celS).flui.MasEspGas(pres, temp);
+            double rhoP = malha[iS].cell(celS).flui.MasEspLiq(pres, temp);
+            double rhoC = malha[iS].cell(celS).fluicol.MasEspFlu(pres, temp);
+            malha[iS].cell(celS).acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
+            malha[iS].cell(celS).acsr.fontechk.titamb = malha[iP].cell(celP).acsr.fontechk.titT;
         }
         for (int i = 0; i < narq; i++) {
             malha[i].SolveTrans(1., 1., 0., nrede);
-            for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {
-                if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
+            for (int kontasnp = 0; kontasnp < malha[i].config().nsnp; kontasnp++) {
+                if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].config().tempsnp[kontasnp]) < malha[i].dt) {
                     WriteSnapShot(malha[i], kontasnp, i); // registro do arquivo SNP
                 }
             }
@@ -11321,7 +11321,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
     }
 
     for (int i = 0; i < narq; i++) {
-        WriteSnapShot(malha[i], malha[i].arq.nsnp, i);
+        WriteSnapShot(malha[i], malha[i].config().nsnp, i);
     }
 }
 
@@ -11340,46 +11340,46 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
         malha[i].indTramo = i;
     }
     for (int i = 0; i < nfontes; i++) {
-        arqRede.conexFR[i].noP = malha[iP].arq.furo[arqRede.conexFR[i].noP].posicP;
-        arqRede.conexFR[i].noS = malha[iS].arq.furo[arqRede.conexFR[i].noS].posicP;
+        arqRede.conexFR[i].noP = malha[iP].config().furo[arqRede.conexFR[i].noP].posicP;
+        arqRede.conexFR[i].noS = malha[iS].config().furo[arqRede.conexFR[i].noS].posicP;
         int celS = arqRede.conexFR[i].noS;
         int celP = arqRede.conexFR[i].noP;
-        if (malha[iS].celula[celS].acsr.tipo == 9 && malha[iP].celula[celP].acsr.tipo == 9) {
-            malha[iS].celula[celS].fonteCompartilhada = 1;
-            malha[iS].celula[celS].multiFComp = -1.;
-            malha[iP].celula[celP].fonteCompartilhada = 1;
-            malha[iP].celula[celP].multiFComp = 1.;
+        if (malha[iS].cell(celS).acsr.tipo == 9 && malha[iP].cell(celP).acsr.tipo == 9) {
+            malha[iS].cell(celS).fonteCompartilhada = 1;
+            malha[iS].cell(celS).multiFComp = -1.;
+            malha[iP].cell(celP).fonteCompartilhada = 1;
+            malha[iP].cell(celP).multiFComp = 1.;
         } else {
             NumError("Rede paralela com fontes compartilhadas que não são do tipo 'fonteChoke'");
         }
     }
-    if (malha[iS].arq.ConContEntrada != 1 &&
-        (malha[iS].celula[0].acsr.tipo != 1 && malha[iS].celula[0].acsr.tipo != 2 && malha[iS].celula[0].acsr.tipo != 10))
+    if (malha[iS].config().ConContEntrada != 1 &&
+        (malha[iS].cell(0).acsr.tipo != 1 && malha[iS].cell(0).acsr.tipo != 2 && malha[iS].cell(0).acsr.tipo != 10))
         NumError("Tramo secundario da Rede paralela deve ter condicao de contorno de pressao, ou fonte de líquido, gás ou massa no início do tramo");
 
     malha[iP].redeParalelaP = 1;
     malha[iS].redeParalelaS = 1;
-    malha[iP].redeParalelaCCsecundario = malha[iS].arq.ConContEntrada;
-    malha[iS].redeParalelaCCsecundario = malha[iS].arq.ConContEntrada;
+    malha[iP].redeParalelaCCsecundario = malha[iS].config().ConContEntrada;
+    malha[iS].redeParalelaCCsecundario = malha[iS].config().ConContEntrada;
     double massGas = 0.;
     double massLiqP = 0.;
     double massLiqC = 0.;
-    if (malha[iS].arq.ConContEntrada == 0) {
-        if (malha[iS].celula[0].acsr.tipo == 1) {
-            massGas = malha[iS].celula[0].acsr.injg.QGas * malha[iS].celula[0].acsr.injg.FluidoPro.Deng * 1.225 / 86400;
+    if (malha[iS].config().ConContEntrada == 0) {
+        if (malha[iS].cell(0).acsr.tipo == 1) {
+            massGas = malha[iS].cell(0).acsr.injg.QGas * malha[iS].cell(0).acsr.injg.FluidoPro.Deng * 1.225 / 86400;
             massLiqP = 0.;
             massLiqC = 0.;
-        } else if (malha[iS].celula[0].acsr.tipo == 2) {
+        } else if (malha[iS].cell(0).acsr.tipo == 2) {
             massGas = 0.;
-            double beta = malha[iS].celula[0].acsr.injg.QGas * malha[iS].celula[0].acsr.injl.bet;
-            double rhoP = 141.5 / (131.5 + malha[iS].celula[0].acsr.injl.FluidoPro.API);
-            double rhoC = malha[iS].celula[0].acsr.injl.fluidocol.rholStd;
-            massLiqP = (1. - beta) * malha[iS].celula[0].acsr.injl.QLiq * rhoP / 86400;
-            massLiqC = beta * malha[iS].celula[0].acsr.injl.QLiq * rhoC / 86400;
-        } else if (malha[iS].celula[0].acsr.tipo == 10) {
-            massGas = malha[iS].celula[0].acsr.injm.MassG;
-            massLiqP = malha[iS].celula[0].acsr.injm.MassP;
-            massLiqC = malha[iS].celula[0].acsr.injm.MassC;
+            double beta = malha[iS].cell(0).acsr.injg.QGas * malha[iS].cell(0).acsr.injl.bet;
+            double rhoP = 141.5 / (131.5 + malha[iS].cell(0).acsr.injl.FluidoPro.API);
+            double rhoC = malha[iS].cell(0).acsr.injl.fluidocol.rholStd;
+            massLiqP = (1. - beta) * malha[iS].cell(0).acsr.injl.QLiq * rhoP / 86400;
+            massLiqC = beta * malha[iS].cell(0).acsr.injl.QLiq * rhoC / 86400;
+        } else if (malha[iS].cell(0).acsr.tipo == 10) {
+            massGas = malha[iS].cell(0).acsr.injm.MassG;
+            massLiqP = malha[iS].cell(0).acsr.injm.MassP;
+            massLiqC = malha[iS].cell(0).acsr.injm.MassC;
         }
         massGas /= nfontes;
         massLiqP /= nfontes;
@@ -11397,12 +11397,12 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
     malha[iS].verificaAcopRedeP = 0;
     malha[iS].verificaAcopRedeS = 0;
 
-    malha[iP].PrimSecIniRedeP = malha[iP].arq.acopPriRedeParalelaini();
-    malha[iP].PrimSecFimRedeP = malha[iP].arq.acopPriRedeParalelafim();
+    malha[iP].PrimSecIniRedeP = malha[iP].config().acopPriRedeParalelaini();
+    malha[iP].PrimSecFimRedeP = malha[iP].config().acopPriRedeParalelafim();
     malha[iS].PrimSecIniRedeP = malha[iP].PrimSecIniRedeP;
     malha[iS].PrimSecFimRedeP = malha[iP].PrimSecFimRedeP;
-    malha[iS].SecPrimIniRedeP = malha[iS].arq.acopSecRedeParalelaini();
-    malha[iS].SecPrimFimRedeP = malha[iS].arq.acopSecRedeParalelafim();
+    malha[iS].SecPrimIniRedeP = malha[iS].config().acopSecRedeParalelaini();
+    malha[iS].SecPrimFimRedeP = malha[iS].config().acopSecRedeParalelafim();
     malha[iP].SecPrimIniRedeP = malha[iS].SecPrimIniRedeP;
     malha[iP].SecPrimFimRedeP = malha[iS].SecPrimFimRedeP;
     if (malha[iP].PrimSecIniRedeP >= 0 && malha[iP].PrimSecFimRedeP >= 0 && malha[iS].PrimSecIniRedeP >= 0 && malha[iS].PrimSecFimRedeP >= 0) {
@@ -11418,8 +11418,8 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
     }
 
     double titSec;
-    if (malha[iS].arq.ConContEntrada == 1) {
-        titSec = malha[iS].arq.CCPres.tit[0];
+    if (malha[iS].config().ConContEntrada == 1) {
+        titSec = malha[iS].config().CCPres.tit[0];
         malha[iS].hidroTramoSecundario(titSec);
     }
 
@@ -11435,10 +11435,10 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
         for (int i = 0; i < nfontes; i++) {
             int celS = arqRede.conexFR[i].noS;
             int celP = arqRede.conexFR[i].noP;
-            malha[iP].celula[celP].acsr.fontechk.tamb = malha[iS].celula[celS].temp;
-            malha[iP].celula[celP].acsr.fontechk.pamb = malha[iS].celula[celS].pres;
-            malha[iP].celula[celP].acsr.fontechk.betISamb = malha[iS].celula[celS].bet;
-            malha[iP].celula[celP].acsr.fontechk.fluidoPamb = malha[iS].celula[celS].flui;
+            malha[iP].cell(celP).acsr.fontechk.tamb = malha[iS].cell(celS).temp;
+            malha[iP].cell(celP).acsr.fontechk.pamb = malha[iS].cell(celS).pres;
+            malha[iP].cell(celP).acsr.fontechk.betISamb = malha[iS].cell(celS).bet;
+            malha[iP].cell(celP).acsr.fontechk.fluidoPamb = malha[iS].cell(celS).flui;
             double alf;
             double bet;
             double pres;
@@ -11447,24 +11447,24 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
             double rhoP;
             double rhoC;
             if (konta > 0) {
-                alf = malha[iP].celula[celP].alf;
-                bet = malha[iP].celula[celP].bet;
-                pres = malha[iP].celula[celP].pres;
-                temp = malha[iP].celula[celP].temp;
-                malha[iP].celula[celP].acsr.fontechk.fluidoP = malha[iP].celula[celP].flui;
-                malha[iP].celula[celP].acsr.fontechk.fluidocol = malha[iP].celula[celP].fluicol;
-                rhog = malha[iP].celula[celP].flui.MasEspGas(pres, temp);
-                rhoP = malha[iP].celula[celP].flui.MasEspLiq(pres, temp);
-                rhoC = malha[iP].celula[celP].fluicol.MasEspFlu(pres, temp);
-                malha[iP].celula[celP].acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
-                malha[iP].celula[celP].acsr.fontechk.titamb = malha[iS].celula[celS].acsr.fontechk.titT;
+                alf = malha[iP].cell(celP).alf;
+                bet = malha[iP].cell(celP).bet;
+                pres = malha[iP].cell(celP).pres;
+                temp = malha[iP].cell(celP).temp;
+                malha[iP].cell(celP).acsr.fontechk.fluidoP = malha[iP].cell(celP).flui;
+                malha[iP].cell(celP).acsr.fontechk.fluidocol = malha[iP].cell(celP).fluicol;
+                rhog = malha[iP].cell(celP).flui.MasEspGas(pres, temp);
+                rhoP = malha[iP].cell(celP).flui.MasEspLiq(pres, temp);
+                rhoC = malha[iP].cell(celP).fluicol.MasEspFlu(pres, temp);
+                malha[iP].cell(celP).acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
+                malha[iP].cell(celP).acsr.fontechk.titamb = malha[iS].cell(celS).acsr.fontechk.titT;
             }
         }
         if (malha[iP].verificaAcopRedeP == 1 && malha[iS].verificaAcopRedeS == 1) {
             int nacopP = malha[iP].PrimSecIniRedeP - malha[iP].PrimSecFimRedeP;
             for (int iacop = 0; iacop <= nacopP; iacop++) {
-                malha[iP].celula[malha[iP].PrimSecIniRedeP - iacop].resAcopRedeP =
-                    malha[iS].celula[malha[iS].SecPrimIniRedeP + iacop].calor.resGlob;
+                malha[iP].cell(malha[iP].PrimSecIniRedeP - iacop).resAcopRedeP =
+                    malha[iS].cell(malha[iS].SecPrimIniRedeP + iacop).calor.resGlob;
             }
         }
         resulmed = (0.5 * resulP0 + 0.5 * resulP);
@@ -11476,32 +11476,32 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
         if (malha[iP].verificaAcopRedeP == 1 && malha[iS].verificaAcopRedeS == 1) {
             int nacopP = malha[iP].PrimSecIniRedeP - malha[iP].PrimSecFimRedeP;
             for (int iacop = 0; iacop <= nacopP; iacop++) {
-                malha[iS].celula[malha[iS].SecPrimIniRedeP + iacop].fluxcalAcopRedeP =
-                    malha[iP].celula[malha[iP].PrimSecIniRedeP - iacop].fluxcalmed;
+                malha[iS].cell(malha[iS].SecPrimIniRedeP + iacop).fluxcalAcopRedeP =
+                    malha[iP].cell(malha[iP].PrimSecIniRedeP - iacop).fluxcalmed;
             }
         }
         for (int i = 0; i < nfontes; i++) {
             int celS = arqRede.conexFR[i].noS;
             int celP = arqRede.conexFR[i].noP;
-            malha[iS].celula[celS].acsr.fontechk.tamb = malha[iP].celula[celP].temp;
-            malha[iS].celula[celS].acsr.fontechk.pamb = malha[iP].celula[celP].pres;
-            malha[iS].celula[celS].acsr.fontechk.betISamb = malha[iP].celula[celP].bet;
-            malha[iS].celula[celS].acsr.fontechk.fluidoPamb = malha[iP].celula[celP].flui;
-            double alf = malha[iS].celula[celS].alf;
-            double bet = malha[iS].celula[celS].bet;
-            double pres = malha[iS].celula[celS].pres;
-            double temp = malha[iS].celula[celS].temp;
-            malha[iS].celula[celS].acsr.fontechk.fluidoP = malha[iS].celula[celS].flui;
-            malha[iS].celula[celS].acsr.fontechk.fluidocol = malha[iS].celula[celS].fluicol;
-            double rhog = malha[iS].celula[celS].flui.MasEspGas(pres, temp);
-            double rhoP = malha[iS].celula[celS].flui.MasEspLiq(pres, temp);
-            double rhoC = malha[iS].celula[celS].fluicol.MasEspFlu(pres, temp);
-            malha[iS].celula[celS].acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
-            malha[iS].celula[celS].acsr.fontechk.titamb = malha[iP].celula[celP].acsr.fontechk.titT;
+            malha[iS].cell(celS).acsr.fontechk.tamb = malha[iP].cell(celP).temp;
+            malha[iS].cell(celS).acsr.fontechk.pamb = malha[iP].cell(celP).pres;
+            malha[iS].cell(celS).acsr.fontechk.betISamb = malha[iP].cell(celP).bet;
+            malha[iS].cell(celS).acsr.fontechk.fluidoPamb = malha[iP].cell(celP).flui;
+            double alf = malha[iS].cell(celS).alf;
+            double bet = malha[iS].cell(celS).bet;
+            double pres = malha[iS].cell(celS).pres;
+            double temp = malha[iS].cell(celS).temp;
+            malha[iS].cell(celS).acsr.fontechk.fluidoP = malha[iS].cell(celS).flui;
+            malha[iS].cell(celS).acsr.fontechk.fluidocol = malha[iS].cell(celS).fluicol;
+            double rhog = malha[iS].cell(celS).flui.MasEspGas(pres, temp);
+            double rhoP = malha[iS].cell(celS).flui.MasEspLiq(pres, temp);
+            double rhoC = malha[iS].cell(celS).fluicol.MasEspFlu(pres, temp);
+            malha[iS].cell(celS).acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
+            malha[iS].cell(celS).acsr.fontechk.titamb = malha[iP].cell(celP).acsr.fontechk.titT;
         }
         resulmed = (0.5 * resulS0 + 0.5 * resulS);
         resulS0 = resulS;
-        if (malha[iS].arq.ConContEntrada == 1) {
+        if (malha[iS].config().ConContEntrada == 1) {
             if (konta > 0 && resulS0 < 1e10 && resulS < 1e10)
                 resulS = SolveTramoSolteiro(malha[iS], resulmed);
             else
@@ -11509,7 +11509,7 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
         } else {
             int indPartida = arqRede.conexFR[0].noS;
             int indPartidaP = arqRede.conexFR[0].noP;
-            double pchute = chutePresRedeParalelaSec(malha, iP, iS, malha[iP].celula[indPartidaP].pres, indPartida);
+            double pchute = chutePresRedeParalelaSec(malha, iP, iS, malha[iP].cell(indPartidaP).pres, indPartida);
             resulS = SolveTramoSolteiro(malha[iS], pchute);
         }
         if (konta > 0) {
@@ -11528,112 +11528,112 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
 
     int nrede = 0;
     for (int i = 0; i < 2; i++) {
-        malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
-        malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
-        if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
-        if(malha[i].arq.nCelUnit>0){
-        	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-        		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
+        malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo, nrede);
+        malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo, nrede);
+        if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo,nrede);
+        if(malha[i].config().nCelUnit>0){
+        	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+        		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
         }
         malha[i].kimpT++;
-        for (int j = 0; j < malha[i].arq.ntendp; j++) {
+        for (int j = 0; j < malha[i].config().ntendp; j++) {
             malha[i].ImprimeTrendPCab(j, nrede);
-            malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
+            malha[i].config().imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
             malha[i].ImprimeTrendP(j, nrede);
         }
-        if (malha[i].arq.lingas == 1) {
-            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
-            for (int j = 0; j < malha[i].arq.ntendg; j++) {
+        if (malha[i].config().lingas == 1) {
+            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
+            for (int j = 0; j < malha[i].config().ntendg; j++) {
                 malha[i].ImprimeTrendGCab(j, nrede);
-                malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
+                malha[i].config().imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
                 malha[i].ImprimeTrendG(j, nrede);
             }
         }
         // enterramento
         for (int j = 0; j <= malha[i].ncel; j++) {
-            if (malha[i].celula[j].calor.difus2D == 1) {
-                malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+            if (malha[i].cell(j).calor.difus2D == 1) {
+                malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
             }
         }
-        if (malha[i].arq.lingas == 1)
-            malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
+        if (malha[i].config().lingas == 1)
+            malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo, nrede);
     }
 
     if (arqRede.chaveredeT == 1) {
         for (int i = 0; i < 2; i++) {
             // preparacao de algumas variaveis para a partida na simulacao transiente:
-            if (malha[i].arq.ConContEntrada == 1) {
-                if (malha[i].celula[0].acsr.tipo == 2) {
-                    malha[i].celula[0].acsr.injl.QLiq = 0.;
-                    malha[i].celula[0].MC = malha[i].celula[0].fontemassLR + malha[i].celula[0].fontemassCR + malha[i].celula[0].fontemassGR;
-                    malha[i].celula[0].MCini = malha[i].celula[0].MC;
-                    malha[i].celula[0].Mliqini = malha[i].celula[0].fontemassLR + malha[i].celula[0].fontemassCR;
-                    malha[i].celula[0].Mliqini0 = malha[i].celula[0].Mliqini;
-                    double rholMix = malha[i].celula[0].bet * malha[i].celula[0].fluicol.MasEspFlu(
-                                                                  malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    rholMix += (1. - malha[i].celula[0].bet) * malha[i].celula[0].flui.MasEspLiq(
-                                                                   malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QL = malha[i].celula[0].Mliqini / rholMix;
-                    malha[i].celula[0].QLini = malha[i].celula[0].QL;
-                    double rhog = malha[i].celula[0].flui.MasEspGas(
-                        malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QG = (malha[i].celula[0].MC - malha[i].celula[0].Mliqini) / rhog;
-                    malha[i].celula[0].QGini = malha[i].celula[0].QG;
-                    malha[i].celula[0].fontemassLR = 0.;
-                    malha[i].celula[0].fontemassCR = 0.;
-                    malha[i].celula[0].fontemassGR = 0.;
-                } else if (malha[i].celula[0].acsr.tipo == 1) {
-                    malha[i].celula[0].acsr.injg.QGas = 0.;
-                    malha[i].celula[0].MC = malha[i].celula[0].fontemassGR;
-                    malha[i].celula[0].MCini = malha[i].celula[0].MC;
-                    malha[i].celula[0].Mliqini = 0.;
-                    malha[i].celula[0].Mliqini0 = malha[i].celula[0].Mliqini;
-                    malha[i].celula[0].QL = 0.;
-                    malha[i].celula[0].QLini = malha[i].celula[0].QL;
-                    double rhog = malha[i].celula[0].flui.MasEspGas(
-                        malha[i].celula[0].pres, malha[i].celula[0].temp);
-                    malha[i].celula[0].QG = (malha[i].celula[0].MC - malha[i].celula[0].Mliqini) / rhog;
-                    malha[i].celula[0].QGini = malha[i].celula[0].QG;
-                    malha[i].celula[0].fontemassLR = 0.;
-                    malha[i].celula[0].fontemassCR = 0.;
-                    malha[i].celula[0].fontemassGR = 0.;
+            if (malha[i].config().ConContEntrada == 1) {
+                if (malha[i].cell(0).acsr.tipo == 2) {
+                    malha[i].cell(0).acsr.injl.QLiq = 0.;
+                    malha[i].cell(0).MC = malha[i].cell(0).fontemassLR + malha[i].cell(0).fontemassCR + malha[i].cell(0).fontemassGR;
+                    malha[i].cell(0).MCini = malha[i].cell(0).MC;
+                    malha[i].cell(0).Mliqini = malha[i].cell(0).fontemassLR + malha[i].cell(0).fontemassCR;
+                    malha[i].cell(0).Mliqini0 = malha[i].cell(0).Mliqini;
+                    double rholMix = malha[i].cell(0).bet * malha[i].cell(0).fluicol.MasEspFlu(
+                                                                  malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    rholMix += (1. - malha[i].cell(0).bet) * malha[i].cell(0).flui.MasEspLiq(
+                                                                   malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QL = malha[i].cell(0).Mliqini / rholMix;
+                    malha[i].cell(0).QLini = malha[i].cell(0).QL;
+                    double rhog = malha[i].cell(0).flui.MasEspGas(
+                        malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QG = (malha[i].cell(0).MC - malha[i].cell(0).Mliqini) / rhog;
+                    malha[i].cell(0).QGini = malha[i].cell(0).QG;
+                    malha[i].cell(0).fontemassLR = 0.;
+                    malha[i].cell(0).fontemassCR = 0.;
+                    malha[i].cell(0).fontemassGR = 0.;
+                } else if (malha[i].cell(0).acsr.tipo == 1) {
+                    malha[i].cell(0).acsr.injg.QGas = 0.;
+                    malha[i].cell(0).MC = malha[i].cell(0).fontemassGR;
+                    malha[i].cell(0).MCini = malha[i].cell(0).MC;
+                    malha[i].cell(0).Mliqini = 0.;
+                    malha[i].cell(0).Mliqini0 = malha[i].cell(0).Mliqini;
+                    malha[i].cell(0).QL = 0.;
+                    malha[i].cell(0).QLini = malha[i].cell(0).QL;
+                    double rhog = malha[i].cell(0).flui.MasEspGas(
+                        malha[i].cell(0).pres, malha[i].cell(0).temp);
+                    malha[i].cell(0).QG = (malha[i].cell(0).MC - malha[i].cell(0).Mliqini) / rhog;
+                    malha[i].cell(0).QGini = malha[i].cell(0).QG;
+                    malha[i].cell(0).fontemassLR = 0.;
+                    malha[i].cell(0).fontemassCR = 0.;
+                    malha[i].cell(0).fontemassGR = 0.;
                 }
             }
             for (int j = 0; j <= malha[i].ncel; j++) {
-                malha[i].celula[j].rpC = malha[i].celula[j].rpCi =
-                    malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                malha[i].celula[j].rgC = malha[i].celula[i].rgCi =
-                    malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                malha[i].celula[j].rcC = malha[i].celula[j].rcCi =
-                    malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                malha[i].celula[j].rpL = malha[i].celula[j].rpLi =
-                    malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-                malha[i].celula[j].rgL = malha[i].celula[j].rgLi =
-                    malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-                malha[i].celula[j].rcL = malha[i].celula[j].rcLi =
-                    malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].presL, malha[i].celula[j].tempL);
+                malha[i].cell(j).rpC = malha[i].cell(j).rpCi =
+                    malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                malha[i].cell(j).rgC = malha[i].cell(i).rgCi =
+                    malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                malha[i].cell(j).rcC = malha[i].cell(j).rcCi =
+                    malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                malha[i].cell(j).rpL = malha[i].cell(j).rpLi =
+                    malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+                malha[i].cell(j).rgL = malha[i].cell(j).rgLi =
+                    malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+                malha[i].cell(j).rcL = malha[i].cell(j).rcLi =
+                    malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).presL, malha[i].cell(j).tempL);
 
-                malha[i].celula[j].mipC = malha[i].celula[j].flui.ViscOleo(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                malha[i].celula[j].migC = malha[i].celula[j].flui.ViscGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-                malha[i].celula[j].micC = malha[i].celula[j].fluicol.VisFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
+                malha[i].cell(j).mipC = malha[i].cell(j).flui.ViscOleo(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                malha[i].cell(j).migC = malha[i].cell(j).flui.ViscGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+                malha[i].cell(j).micC = malha[i].cell(j).fluicol.VisFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
 
                 if (j > 0) {
-                    malha[i].celula[j - 1].rpR = malha[i].celula[j - 1].rpRi = malha[i].celula[j].rpC;
-                    malha[i].celula[j - 1].rgR = malha[i].celula[j - 1].rgRi = malha[i].celula[j].rgC;
-                    malha[i].celula[j - 1].rcR = malha[i].celula[j - 1].rcRi = malha[i].celula[j].rcC;
+                    malha[i].cell(j - 1).rpR = malha[i].cell(j - 1).rpRi = malha[i].cell(j).rpC;
+                    malha[i].cell(j - 1).rgR = malha[i].cell(j - 1).rgRi = malha[i].cell(j).rgC;
+                    malha[i].cell(j - 1).rcR = malha[i].cell(j - 1).rcRi = malha[i].cell(j).rcC;
 
-                    malha[i].celula[j - 1].mipR = malha[i].celula[j].mipC;
-                    malha[i].celula[j - 1].migR = malha[i].celula[j].migC;
-                    malha[i].celula[j - 1].micR = malha[i].celula[j].micC;
+                    malha[i].cell(j - 1).mipR = malha[i].cell(j).mipC;
+                    malha[i].cell(j - 1).migR = malha[i].cell(j).migC;
+                    malha[i].cell(j - 1).micR = malha[i].cell(j).micC;
                 }
                 if (j == malha[i].ncel) {
-                    malha[i].celula[j].rpR = malha[i].celula[j].rpRi = malha[i].celula[j].rpC;
-                    malha[i].celula[j].rgR = malha[i].celula[j].rgRi = malha[i].celula[j].rgC;
-                    malha[i].celula[j].rcR = malha[i].celula[j].rcRi = malha[i].celula[j].rcC;
+                    malha[i].cell(j).rpR = malha[i].cell(j).rpRi = malha[i].cell(j).rpC;
+                    malha[i].cell(j).rgR = malha[i].cell(j).rgRi = malha[i].cell(j).rgC;
+                    malha[i].cell(j).rcR = malha[i].cell(j).rcRi = malha[i].cell(j).rcC;
 
-                    malha[i].celula[j].mipR = malha[i].celula[j].mipC;
-                    malha[i].celula[j].migR = malha[i].celula[j].migC;
-                    malha[i].celula[j].micR = malha[i].celula[j].micC;
+                    malha[i].cell(j).mipR = malha[i].cell(j).mipC;
+                    malha[i].cell(j).migR = malha[i].cell(j).migC;
+                    malha[i].cell(j).micR = malha[i].cell(j).micC;
                 }
             }
         }
@@ -11716,18 +11716,18 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
     malha[indAnel] = temporario;
     for (int i = 0; i < dreno.size(); i++) {
         int iposp = posicdreno[i];
-        InjGas injgasMRT(0, 0, malha[indAnel].arq.flug);
-        malha[indAnel].celula[iposp].acsr.tipo = 1;
-        malha[indAnel].celula[iposp].acsr.injg = injgasMRT;
-        malha[indAnel].celula[iposp].acsr.injg.FluidoPro = malha[indAnel].celula[iposp].flui;
+        InjGas injgasMRT(0, 0, malha[indAnel].config().flug);
+        malha[indAnel].cell(iposp).acsr.tipo = 1;
+        malha[indAnel].cell(iposp).acsr.injg = injgasMRT;
+        malha[indAnel].cell(iposp).acsr.injg.FluidoPro = malha[indAnel].cell(iposp).flui;
     }
     malha[indAnel].indTramo = indAnel;
     malha[indAnel].chokeSup.AreaGarg = 0.;
-    if (malha[indAnel].arq.ConContEntrada == 1) {
-        malha[indAnel].tempE = malha[indAnel].arq.CCPres.temperatura[0];
-        malha[indAnel].presE = malha[indAnel].arq.CCPres.pres[0];
-        malha[indAnel].titE = malha[indAnel].arq.CCPres.tit[0];
-        malha[indAnel].betaE = malha[indAnel].arq.CCPres.bet[0];
+    if (malha[indAnel].config().ConContEntrada == 1) {
+        malha[indAnel].tempE = malha[indAnel].config().CCPres.temperatura[0];
+        malha[indAnel].presE = malha[indAnel].config().CCPres.pres[0];
+        malha[indAnel].titE = malha[indAnel].config().CCPres.tit[0];
+        malha[indAnel].betaE = malha[indAnel].config().CCPres.bet[0];
     }
 
     for (int i = 0; i < narq; i++) {
@@ -11735,94 +11735,94 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
         if (arqRede.malha[i].tipoanel == 0) {
             int ncelg = malha[i].ncelGas;
             for (int j = 0; j <= ncelg; j++) {
-                malha[i].celulaG[j].flui.Deng = malha[indAnel].celula[0].flui.Deng;
-                malha[i].celulaG[j].flui.yco2 = malha[indAnel].celula[0].flui.yco2;
-                malha[i].celulaG[j].flui.corrC = malha[indAnel].celula[0].flui.corrC;
-                malha[i].celulaG[j].flui.RenovaFluido();
+                malha[i].gasCell(j).flui.Deng = malha[indAnel].cell(0).flui.Deng;
+                malha[i].gasCell(j).flui.yco2 = malha[indAnel].cell(0).flui.yco2;
+                malha[i].gasCell(j).flui.corrC = malha[indAnel].cell(0).flui.corrC;
+                malha[i].gasCell(j).flui.RenovaFluido();
             }
         }
     }
 
     for (int i = 0; i < dreno.size(); i++)
-        malha[indAnel].celula[posicdreno[i]].acsr.injg.QGas = 0.;
+        malha[indAnel].cell(posicdreno[i]).acsr.injg.QGas = 0.;
     for (int i = 0; i < narq; i++) {
         if (i != indAnel) {
-            if (malha[i].arq.gasinj.chuteVaz == 0 && malha[indAnel].arq.ConContEntrada == 1) {
-                malha[i].arq.gasinj.vazgas[0] = 150000. * malha[i].celulaG[0].duto.area / (*arqRede.vg1dSP).arearef;
+            if (malha[i].config().gasinj.chuteVaz == 0 && malha[indAnel].config().ConContEntrada == 1) {
+                malha[i].config().gasinj.vazgas[0] = 150000. * malha[i].gasCell(0).duto.area / (*arqRede.vg1dSP).arearef;
                 int ifposic = posicfonte[indtramo[i]];
-                malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[i].arq.gasinj.vazgas[0];
-            } else if (malha[i].arq.gasinj.chuteVaz == 1) {
+                malha[indAnel].cell(ifposic).acsr.injg.QGas -= malha[i].config().gasinj.vazgas[0];
+            } else if (malha[i].config().gasinj.chuteVaz == 1) {
                 int ifposic = posicfonte[indtramo[i]];
-                malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[i].arq.gasinj.vazgas[0];
+                malha[indAnel].cell(ifposic).acsr.injg.QGas -= malha[i].config().gasinj.vazgas[0];
             }
         }
     }
-    if (malha[indAnel].arq.ConContEntrada == 1) {
-        malha[indAnel].celula[0].pres = malha[indAnel].arq.CCPres.pres[0];
-        malha[indAnel].celula[0].acsr.injg.temp = malha[indAnel].arq.CCPres.temperatura[0];
-        malha[indAnel].celula[0].flui.RGO = malha[indAnel].celula[0].acsr.injg.FluidoPro.RGO =
+    if (malha[indAnel].config().ConContEntrada == 1) {
+        malha[indAnel].cell(0).pres = malha[indAnel].config().CCPres.pres[0];
+        malha[indAnel].cell(0).acsr.injg.temp = malha[indAnel].config().CCPres.temperatura[0];
+        malha[indAnel].cell(0).flui.RGO = malha[indAnel].cell(0).acsr.injg.FluidoPro.RGO =
             1e6 + (*arqRede.vg1dSP).localtiny;
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.Deng = malha[indAnel].celula[0].flui.Deng;
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.yco2 = malha[indAnel].celula[0].flui.yco2;
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.RenovaFluido();
-        malha[indAnel].celula[0].fluiL = &malha[indAnel].celula[0].acsr.injg.FluidoPro;
-        double pres = malha[indAnel].celula[0].pres;
-        double temp = malha[indAnel].celula[0].temp = malha[indAnel].celula[0].calor.Textern1;
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.Deng = malha[indAnel].cell(0).flui.Deng;
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.yco2 = malha[indAnel].cell(0).flui.yco2;
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.RenovaFluido();
+        malha[indAnel].cell(0).fluiL = &malha[indAnel].cell(0).acsr.injg.FluidoPro;
+        double pres = malha[indAnel].cell(0).pres;
+        double temp = malha[indAnel].cell(0).temp = malha[indAnel].cell(0).calor.Textern1;
         for (int i = 1; i <= malha[indAnel].ncel; i++) {
-            double rhog = malha[indAnel].celula[i].flui.MasEspGas(pres, temp);
-            double tet = malha[indAnel].celula[i].duto.teta;
-            pres = malha[indAnel].celula[i].pres = pres - rhog * 9.81 * malha[indAnel].celula[i].dx * sin(tet) / 98066.5;
-            temp = malha[indAnel].celula[i].temp = malha[indAnel].celula[i].calor.Textern1;
+            double rhog = malha[indAnel].cell(i).flui.MasEspGas(pres, temp);
+            double tet = malha[indAnel].cell(i).duto.teta;
+            pres = malha[indAnel].cell(i).pres = pres - rhog * 9.81 * malha[indAnel].cell(i).dx * sin(tet) / 98066.5;
+            temp = malha[indAnel].cell(i).temp = malha[indAnel].cell(i).calor.Textern1;
         }
     } else {
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.Deng = malha[indAnel].celula[0].flui.Deng;
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.yco2 = malha[indAnel].celula[0].flui.yco2;
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.corrC = malha[indAnel].celula[0].flui.corrC;
-        malha[indAnel].celula[0].acsr.injg.FluidoPro.RenovaFluido();
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.Deng = malha[indAnel].cell(0).flui.Deng;
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.yco2 = malha[indAnel].cell(0).flui.yco2;
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.corrC = malha[indAnel].cell(0).flui.corrC;
+        malha[indAnel].cell(0).acsr.injg.FluidoPro.RenovaFluido();
         double qori = 0.;
-        for (int i = 0; i < malha[indAnel].arq.ninjgas; i++) {
-            int iinjg = malha[indAnel].arq.fonteg[i].posicP;
-            qori += malha[indAnel].celula[iinjg].acsr.injg.QGas;
+        for (int i = 0; i < malha[indAnel].config().ninjgas; i++) {
+            int iinjg = malha[indAnel].config().fonteg[i].posicP;
+            qori += malha[indAnel].cell(iinjg).acsr.injg.QGas;
         }
         double sumid = -qori / dreno.size();
         int fontemax = 0;
         int pocodist = -1;
-        for (int i = malha[indAnel].arq.ninjgas; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
-            int ifposic = posicdreno[i - malha[indAnel].arq.ninjgas];
+        for (int i = malha[indAnel].config().ninjgas; i < malha[indAnel].config().ninjgas + dreno.size(); i++) {
+            int ifposic = posicdreno[i - malha[indAnel].config().ninjgas];
             if (ifposic > fontemax) {
                 fontemax = ifposic;
-                pocodist = i - malha[indAnel].arq.ninjgas;
+                pocodist = i - malha[indAnel].config().ninjgas;
             }
-            malha[indAnel].celula[ifposic].acsr.injg.QGas = sumid;
-            malha[indAnel].celula[ifposic].acsr.injg.temp =
-                malha[indAnel].celula[ifposic].calor.Textern1;
+            malha[indAnel].cell(ifposic).acsr.injg.QGas = sumid;
+            malha[indAnel].cell(ifposic).acsr.injg.temp =
+                malha[indAnel].cell(ifposic).calor.Textern1;
         }
-        malha[indAnel].celula[0].flui.RGO =
-            malha[indAnel].celula[0].acsr.injg.FluidoPro.RGO = 1e6 + (*arqRede.vg1dSP).localtiny; // verificar
+        malha[indAnel].cell(0).flui.RGO =
+            malha[indAnel].cell(0).acsr.injg.FluidoPro.RGO = 1e6 + (*arqRede.vg1dSP).localtiny; // verificar
         int itramo = dreno[pocodist].mani[0];
-        malha[itramo].arq.gasinj.vazgas[0] = -sumid / dreno[pocodist].nmani;
-        malha[itramo].celulaG[0].tipoCC = 1;
-        if (malha[itramo].arq.chokep.abertura[0] > 0.6)
+        malha[itramo].config().gasinj.vazgas[0] = -sumid / dreno[pocodist].nmani;
+        malha[itramo].gasCell(0).tipoCC = 1;
+        if (malha[itramo].config().chokep.abertura[0] > 0.6)
             malha[itramo].buscaProdPfundoPerm();
         else
             malha[itramo].buscaProdPfundoPerm2();
 
         int ncel = malha[indAnel].ncel;
-        malha[indAnel].celula[ncel].pres = malha[itramo].celulaG[0].pres;
-        double pres = malha[indAnel].celula[ncel].pres;
-        double temp = malha[indAnel].celula[ncel].temp = malha[indAnel].celula[ncel].calor.Textern1;
+        malha[indAnel].cell(ncel).pres = malha[itramo].gasCell(0).pres;
+        double pres = malha[indAnel].cell(ncel).pres;
+        double temp = malha[indAnel].cell(ncel).temp = malha[indAnel].cell(ncel).calor.Textern1;
         for (int i = ncel - 1; i >= 0; i--) {
-            double rhog = malha[indAnel].celula[i + 1].flui.MasEspGas(pres, temp);
-            double tet = malha[indAnel].celula[i + 1].duto.teta;
-            pres = malha[indAnel].celula[i].pres = pres + rhog * 9.81 * malha[indAnel].celula[i + 1].dx * sin(tet) / 98066.5;
-            temp = malha[indAnel].celula[i].temp = malha[indAnel].celula[i].calor.Textern1;
+            double rhog = malha[indAnel].cell(i + 1).flui.MasEspGas(pres, temp);
+            double tet = malha[indAnel].cell(i + 1).duto.teta;
+            pres = malha[indAnel].cell(i).pres = pres + rhog * 9.81 * malha[indAnel].cell(i + 1).dx * sin(tet) / 98066.5;
+            temp = malha[indAnel].cell(i).temp = malha[indAnel].cell(i).calor.Textern1;
         }
     }
     double erro = 1000.;
     int iter = 0;
 
-    if (malha[indAnel].arq.ConContEntrada == 0) {
-        double pchute = malha[indAnel].celula[0].pres;
+    if (malha[indAnel].config().ConContEntrada == 0) {
+        double pchute = malha[indAnel].cell(0).pres;
         double pchute2 = pchute;
         double pbuffer = pchute;
         erro = objetCC0(malha, narq, nfontes, indfonte, indtramo, posicdreno, indAnel, pchute, iter, dreno);
@@ -11857,13 +11857,13 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
             calcPeriAnelGL(malha, narq, nfontes, indfonte, indtramo, posicdreno, indAnel, iter, dreno);
             erro = calcErroGL(malha, narq, nfontes, posicdreno, indAnel, dreno);
             double chutemass = 0.;
-            for (int i = 0; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
+            for (int i = 0; i < malha[indAnel].config().ninjgas + dreno.size(); i++) {
                 int ifposic;
-                if (i < malha[indAnel].arq.ninjgas)
-                    ifposic = malha[indAnel].arq.fonteg[i].posicP;
+                if (i < malha[indAnel].config().ninjgas)
+                    ifposic = malha[indAnel].config().fonteg[i].posicP;
                 else
-                    ifposic = posicdreno[i - malha[indAnel].arq.ninjgas];
-                chutemass -= malha[indAnel].celula[ifposic].acsr.injg.QGas;
+                    ifposic = posicdreno[i - malha[indAnel].config().ninjgas];
+                chutemass -= malha[indAnel].cell(ifposic).acsr.injg.QGas;
             }
             malha[indAnel].marchaProdPresPres1(chutemass);
             iter++;
@@ -11874,92 +11874,92 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
     cout << "Convergencia atingida" << endl;
     for (int i = 0; i < narq; i++)
         if (inativo[i] == 0) {
-            malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo);
-            malha[i].arq.resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo);
-            if(malha[i].arq.nintermi>0)malha[i].arq.resumoIntermitencia(malha[i].celula, malha[i].indTramo);
-            if(malha[i].arq.nCelUnit>0){
-            	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
-            		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo);
+            malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo);
+            malha[i].config().resumoPermanente(malha[i].celula, malha[i].celulaG, malha[i].pGSup, malha[i].presiniG, malha[i].indTramo);
+            if(malha[i].config().nintermi>0)malha[i].config().resumoIntermitencia(malha[i].celula, malha[i].indTramo);
+            if(malha[i].config().nCelUnit>0){
+            	for(int iCelUni=0; iCelUni<malha[i].config().nCelUnit; iCelUni++)
+            		malha[i].config().relatorioCelulaUnitaria(malha[i].celula,malha[i].config().celUnit[iCelUni].posicP, malha[i].indTramo);
             }
             // enterramento
             for (int j = 0; j <= malha[i].ncel; j++) {
-                if (malha[i].celula[j].calor.difus2D == 1) {
-                    malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+                if (malha[i].cell(j).calor.difus2D == 1) {
+                    malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
                 }
             }
-            if (malha[i].arq.lingas == 1)
-                malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
+            if (malha[i].config().lingas == 1)
+                malha[i].config().imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
         }
 
     for (int i = 0; i <= malha[indAnel].ncel; i++) {
-        malha[indAnel].celula[i].alf = 1.;
-        malha[indAnel].celula[i].alfL = 1.;
+        malha[indAnel].cell(i).alf = 1.;
+        malha[indAnel].cell(i).alfL = 1.;
     }
 
     for (int i = 0; i < narq; i++) {
 
         for (int j = 0; j <= malha[i].ncel; j++) {
-            malha[i].celula[j].tempini = malha[i].celula[j].temp;
-            malha[i].celula[j].presLini = malha[i].celula[j].presL;
-            malha[i].celula[j].presini = malha[i].celula[j].pres;
-            malha[i].celula[j].MRini = malha[i].celula[j].MR;
-            malha[i].celula[j].MRini = malha[i].celula[j].MR;
-            malha[i].celula[j].MliqiniR0 = malha[i].celula[j].MliqiniR;
-            malha[i].celula[j].presLiniBuf = malha[i].celula[j].presL;
-            malha[i].celula[j].MRiniBuf = malha[i].celula[j].MR;
-            malha[i].celula[j].alfLini = malha[i].celula[j].alfL;
-            malha[i].celula[j].alfRini = malha[i].celula[j].alfR;
-            malha[i].celula[j].alfini = malha[i].celula[j].alf;
-            malha[i].celula[j].betLini = malha[i].celula[j].betL;
-            malha[i].celula[j].betRini = malha[i].celula[j].betR;
-            malha[i].celula[j].betini = malha[i].celula[j].bet;
-            malha[i].celula[j].FWini = malha[i].celula[j].FW;
-            malha[i].celula[j].QLRini = malha[i].celula[j].QLR;
-            malha[i].celula[j].alfPigEini = malha[i].celula[j].alfPigE;
-            malha[i].celula[j].alfPigDini = malha[i].celula[j].alfPigD;
-            malha[i].celula[j].betPigEini = malha[i].celula[j].betPigE;
-            malha[i].celula[j].betPigDini = malha[i].celula[j].betPigD;
+            malha[i].cell(j).tempini = malha[i].cell(j).temp;
+            malha[i].cell(j).presLini = malha[i].cell(j).presL;
+            malha[i].cell(j).presini = malha[i].cell(j).pres;
+            malha[i].cell(j).MRini = malha[i].cell(j).MR;
+            malha[i].cell(j).MRini = malha[i].cell(j).MR;
+            malha[i].cell(j).MliqiniR0 = malha[i].cell(j).MliqiniR;
+            malha[i].cell(j).presLiniBuf = malha[i].cell(j).presL;
+            malha[i].cell(j).MRiniBuf = malha[i].cell(j).MR;
+            malha[i].cell(j).alfLini = malha[i].cell(j).alfL;
+            malha[i].cell(j).alfRini = malha[i].cell(j).alfR;
+            malha[i].cell(j).alfini = malha[i].cell(j).alf;
+            malha[i].cell(j).betLini = malha[i].cell(j).betL;
+            malha[i].cell(j).betRini = malha[i].cell(j).betR;
+            malha[i].cell(j).betini = malha[i].cell(j).bet;
+            malha[i].cell(j).FWini = malha[i].cell(j).FW;
+            malha[i].cell(j).QLRini = malha[i].cell(j).QLR;
+            malha[i].cell(j).alfPigEini = malha[i].cell(j).alfPigE;
+            malha[i].cell(j).alfPigDini = malha[i].cell(j).alfPigD;
+            malha[i].cell(j).betPigEini = malha[i].cell(j).betPigE;
+            malha[i].cell(j).betPigDini = malha[i].cell(j).betPigD;
 
-            malha[i].celula[j].rpC = malha[i].celula[j].rpCi =
-                malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].pres, malha[i].celula[j].temp);
-            malha[i].celula[j].rgC = malha[i].celula[j].rgCi =
-                malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-            malha[i].celula[j].rcC = malha[i].celula[j].rcCi =
-                malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
-            malha[i].celula[j].rpL = malha[i].celula[j].rpLi =
-                malha[i].celula[j].flui.MasEspLiq(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-            malha[i].celula[j].rgL = malha[i].celula[j].rgLi =
-                malha[i].celula[j].flui.MasEspGas(malha[i].celula[j].presL, malha[i].celula[j].tempL);
-            malha[i].celula[j].rcL = malha[i].celula[j].rcLi =
-                malha[i].celula[j].fluicol.MasEspFlu(malha[i].celula[j].presL, malha[i].celula[j].tempL);
+            malha[i].cell(j).rpC = malha[i].cell(j).rpCi =
+                malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).pres, malha[i].cell(j).temp);
+            malha[i].cell(j).rgC = malha[i].cell(j).rgCi =
+                malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+            malha[i].cell(j).rcC = malha[i].cell(j).rcCi =
+                malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
+            malha[i].cell(j).rpL = malha[i].cell(j).rpLi =
+                malha[i].cell(j).flui.MasEspLiq(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+            malha[i].cell(j).rgL = malha[i].cell(j).rgLi =
+                malha[i].cell(j).flui.MasEspGas(malha[i].cell(j).presL, malha[i].cell(j).tempL);
+            malha[i].cell(j).rcL = malha[i].cell(j).rcLi =
+                malha[i].cell(j).fluicol.MasEspFlu(malha[i].cell(j).presL, malha[i].cell(j).tempL);
 
-            malha[i].celula[j].mipC = malha[i].celula[j].flui.ViscOleo(malha[i].celula[j].pres, malha[i].celula[j].temp);
-            malha[i].celula[j].migC = malha[i].celula[j].flui.ViscGas(malha[i].celula[j].pres, malha[i].celula[j].temp);
-            malha[i].celula[j].micC = malha[i].celula[j].fluicol.VisFlu(malha[i].celula[j].pres, malha[i].celula[j].temp);
+            malha[i].cell(j).mipC = malha[i].cell(j).flui.ViscOleo(malha[i].cell(j).pres, malha[i].cell(j).temp);
+            malha[i].cell(j).migC = malha[i].cell(j).flui.ViscGas(malha[i].cell(j).pres, malha[i].cell(j).temp);
+            malha[i].cell(j).micC = malha[i].cell(j).fluicol.VisFlu(malha[i].cell(j).pres, malha[i].cell(j).temp);
 
             if (j > 0) {
-                malha[i].celula[j - 1].rpR = malha[i].celula[j - 1].rpRi = malha[i].celula[j].rpC;
-                malha[i].celula[j - 1].rgR = malha[i].celula[j - 1].rgRi = malha[i].celula[j].rgC;
-                malha[i].celula[j - 1].rcR = malha[i].celula[j - 1].rcRi = malha[i].celula[j].rcC;
+                malha[i].cell(j - 1).rpR = malha[i].cell(j - 1).rpRi = malha[i].cell(j).rpC;
+                malha[i].cell(j - 1).rgR = malha[i].cell(j - 1).rgRi = malha[i].cell(j).rgC;
+                malha[i].cell(j - 1).rcR = malha[i].cell(j - 1).rcRi = malha[i].cell(j).rcC;
 
-                malha[i].celula[j - 1].mipR = malha[i].celula[j].mipC;
-                malha[i].celula[j - 1].migR = malha[i].celula[j].migC;
-                malha[i].celula[j - 1].micR = malha[i].celula[j].micC;
+                malha[i].cell(j - 1).mipR = malha[i].cell(j).mipC;
+                malha[i].cell(j - 1).migR = malha[i].cell(j).migC;
+                malha[i].cell(j - 1).micR = malha[i].cell(j).micC;
             }
             if (j == malha[i].ncel) {
-                malha[i].celula[j].rpR = malha[i].celula[j].rpRi = malha[i].celula[j].rpC;
-                malha[i].celula[j].rgR = malha[i].celula[j].rgRi = malha[i].celula[j].rgC;
-                malha[i].celula[j].rcR = malha[i].celula[j].rcRi = malha[i].celula[j].rcC;
+                malha[i].cell(j).rpR = malha[i].cell(j).rpRi = malha[i].cell(j).rpC;
+                malha[i].cell(j).rgR = malha[i].cell(j).rgRi = malha[i].cell(j).rgC;
+                malha[i].cell(j).rcR = malha[i].cell(j).rcRi = malha[i].cell(j).rcC;
 
-                malha[i].celula[j].mipR = malha[i].celula[j].mipC;
-                malha[i].celula[j].migR = malha[i].celula[j].migC;
-                malha[i].celula[j].micR = malha[i].celula[j].micC;
+                malha[i].cell(j).mipR = malha[i].cell(j).mipC;
+                malha[i].cell(j).migR = malha[i].cell(j).migC;
+                malha[i].cell(j).micR = malha[i].cell(j).micC;
             }
         }
     }
     malha[indAnel].chokeSup.AreaGarg = 0.;
-    for (int i = 0; i < malha[indAnel].arq.chokep.parserie; i++)
-        malha[indAnel].arq.chokep.abertura[i] = 0.;
+    for (int i = 0; i < malha[indAnel].config().chokep.parserie; i++)
+        malha[indAnel].config().chokep.abertura[i] = 0.;
     (*arqRede.vg1dSP).modoTransiente = 1;
     (*arqRede.vg1dSP).RGOMax = 14000.;
     if (arqRede.chaveredeT == 1)
@@ -11976,12 +11976,12 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
 
 int chutePresRedeInj(int indprod, SProd *malha, Rede &arqRede, double chutehol,
                      Vcr<double> &razcolet, Vcr<double> &prescolet) {
-    double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
+    double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].cell(0).duto.area / (*arqRede.vg1dSP).somaarea;
     double presno = malha[indprod].hidroreversoInj(chutehol, vaz);
     int contarecur = 1;
     for (int i = 0; i < arqRede.malha[indprod].nafluente; i++) {
         int aflu = arqRede.malha[indprod].afluente[i];
-        malha[aflu].arq.condpocinj.presfundo = presno;
+        malha[aflu].config().condpocinj.presfundo = presno;
         razcolet[aflu] += 1.;
         prescolet[aflu] += presno;
         if (arqRede.malha[aflu].nafluente > 0)
@@ -12004,7 +12004,7 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
         for (int i = 0; i < narq; i++) {
             if (arqRede.malha[i].nafluente == 0 && Resolv[i] == 0 && inativo[i] == 0) {
                 malha[i].modoPerm = 1;
-                if (malha[i].arq.condpocinj.CC == 3)
+                if (malha[i].config().condpocinj.CC == 3)
                     valor = malha[i].buscaInjPfundoPerm1();
                 else
                     valor = malha[i].buscaInjPfundoPerm5();
@@ -12051,32 +12051,32 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
                     double tempmist = 0;
                     double qlmistStd = 0.;
                     double qgmistStd = 0.;
-                    if (malha[i].arq.flashCompleto == 0)
-                        malha[i].celula[0].acsr.injl.fluidocol = malha[i].celula[0].fluicol;
+                    if (malha[i].config().flashCompleto == 0)
+                        malha[i].cell(0).acsr.injl.fluidocol = malha[i].cell(0).fluicol;
                     else
-                        malha[i].celula[0].acsr.injg.FluidoPro = malha[i].celula[0].flui;
+                        malha[i].cell(0).acsr.injg.FluidoPro = malha[i].cell(0).flui;
 
                     for (int k = 0; k < naflu; k++) {
                         int ind = arqRede.malha[i].afluente[k];
                         if (inativo[ind] == 0) {
                             int fim = malha[ind].ncel - 1;
-                            temp[k] = (malha[ind].celula[fim + 1].dx * malha[ind].celula[fim + 1].temp + malha[ind].celula[fim + 1].dxL * malha[ind].celula[fim + 1].tempL) / (malha[ind].celula[fim + 1].dx + malha[ind].celula[fim + 1].dxL);
-                            double pres = malha[ind].celula[fim + 1].presaux;
-                            cpl[k] = malha[ind].celula[fim].fluicol.CalorLiq(pres, temp[k]);
-                            if (malha[ind].arq.flashCompleto == 0) {
-                                Mliq[k] = malha[ind].celula[fim].Mliqini;
-                                Qliq[k] = malha[ind].celula[fim + 1].QL;
+                            temp[k] = (malha[ind].cell(fim + 1).dx * malha[ind].cell(fim + 1).temp + malha[ind].cell(fim + 1).dxL * malha[ind].cell(fim + 1).tempL) / (malha[ind].cell(fim + 1).dx + malha[ind].cell(fim + 1).dxL);
+                            double pres = malha[ind].cell(fim + 1).presaux;
+                            cpl[k] = malha[ind].cell(fim).fluicol.CalorLiq(pres, temp[k]);
+                            if (malha[ind].config().flashCompleto == 0) {
+                                Mliq[k] = malha[ind].cell(fim).Mliqini;
+                                Qliq[k] = malha[ind].cell(fim + 1).QL;
                                 Qcomp[k] = Qliq[k];
                                 cpmist += (Mliq[k] * cpl[k]);
                                 tempmist += (Mliq[k] * cpl[k]) * temp[k];
-                                qlmistStd += (Qcomp[k] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k]) / malha[i].celula[0].fluicol.MasEspFlu(1.001, 15.));
+                                qlmistStd += (Qcomp[k] * malha[i].cell(0).fluicol.MasEspFlu(pres, temp[k]) / malha[i].cell(0).fluicol.MasEspFlu(1.001, 15.));
                             } else {
-                                Mgas[k] = malha[ind].celula[fim].MC - malha[ind].celula[fim].Mliqini;
-                                Qliq[k] = malha[ind].celula[fim + 1].QG;
+                                Mgas[k] = malha[ind].cell(fim).MC - malha[ind].cell(fim).Mliqini;
+                                Qliq[k] = malha[ind].cell(fim + 1).QG;
                                 Qcomp[k] = 0.;
                                 cpmist += (Mgas[k] * cpl[k]);
                                 tempmist += (Mgas[k] * cpl[k]) * temp[k];
-                                qgmistStd += (Qgas[k] * malha[i].celula[0].flui.MasEspGas(pres, temp[k]) / malha[i].celula[0].flui.MasEspGas(1.001, 15.));
+                                qgmistStd += (Qgas[k] * malha[i].cell(0).flui.MasEspGas(pres, temp[k]) / malha[i].cell(0).flui.MasEspGas(1.001, 15.));
                             }
                         }
                     }
@@ -12084,7 +12084,7 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
                         tempmist = tempmist / cpmist;
                     else
                         tempmist = 0.;
-                    if (malha[i].arq.flashCompleto == 0)
+                    if (malha[i].config().flashCompleto == 0)
                         qlmistStd *= 86400;
                     else
                         qgmistStd *= 86400;
@@ -12095,14 +12095,14 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
                     vector<double> dcol;
                     for (int icol = 0; icol < nderiva; icol++) {
                         int aux = arqRede.malha[ind].coleta[icol];
-                        dcol.push_back(malha[aux].celula[0].duto.dia);
+                        dcol.push_back(malha[aux].cell(0).duto.dia);
                     }
                     sort(dcol.begin(), dcol.end());
                     Vcr<int> carregado(nderiva, 0);
                     for (int icol = 0; icol < nderiva; icol++) {
                         int aux = arqRede.malha[ind].coleta[icol];
                         for (int icol2 = 0; icol2 < nderiva; icol2++) {
-                            if (dcol[icol2] == malha[aux].celula[0].duto.dia && carregado[icol2] == 0) {
+                            if (dcol[icol2] == malha[aux].cell(0).duto.dia && carregado[icol2] == 0) {
                                 ordCol[icol2] = aux;
                                 carregado[icol2] = 1;
                                 icol2 = nderiva;
@@ -12112,22 +12112,22 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
                     for (int icol = 0; icol < nderiva; icol++) {
                         if (icol == nderiva - 1) {
                             int aux = ordCol[icol];
-                            if (malha[aux].arq.flashCompleto == 0) {
-                                malha[aux].celula[0].acsr.injl.bet = 1.;
-                                malha[aux].celula[0].acsr.injl.temp = tempmist;
-                                malha[aux].celula[0].acsr.injl.QLiq = qlmistStd;
+                            if (malha[aux].config().flashCompleto == 0) {
+                                malha[aux].cell(0).acsr.injl.bet = 1.;
+                                malha[aux].cell(0).acsr.injl.temp = tempmist;
+                                malha[aux].cell(0).acsr.injl.QLiq = qlmistStd;
                             } else {
-                                malha[aux].celula[0].acsr.injg.temp = tempmist;
-                                malha[aux].celula[0].acsr.injg.QGas = qgmistStd;
+                                malha[aux].cell(0).acsr.injg.temp = tempmist;
+                                malha[aux].cell(0).acsr.injg.QGas = qgmistStd;
                             }
 
-                            double pini = malha[aux].celula[0].pres;
+                            double pini = malha[aux].cell(0).pres;
                             malha[aux].modoPerm = 1;
-                            if (malha[aux].celula[malha[aux].ncel].acsr.tipo == 3) {
-                                malha[aux].arq.condpocinj.CC = 0;
+                            if (malha[aux].cell(malha[aux].ncel).acsr.tipo == 3) {
+                                malha[aux].config().condpocinj.CC = 0;
                                 valor = malha[aux].buscaInjPfundoPerm2();
                             } else {
-                                malha[aux].arq.condpocinj.CC = 5;
+                                malha[aux].config().condpocinj.CC = 5;
                                 valor = malha[aux].buscaInjPfundoPerm5();
                             }
                             if (valor < -1e9 || valor > 1e9) {
@@ -12149,52 +12149,52 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
                             ciclomalha++;
                             if (inativo[aux] == 0) {
                                 if (IndNorma[aux] == 0) {
-                                    norma += pow(malha[aux].celula[0].pres - pini, 2.);
+                                    norma += pow(malha[aux].cell(0).pres - pini, 2.);
                                     IndNorma[aux] = 1;
                                     nnos++;
                                 }
                                 for (int iaflu = 0; iaflu < arqRede.malha[aux].nafluente; iaflu++) {
                                     int indaflu = arqRede.malha[aux].afluente[iaflu];
-                                    pini = malha[indaflu].arq.condpocinj.presfundo;
+                                    pini = malha[indaflu].config().condpocinj.presfundo;
                                     if (IndNorma[indaflu] == 0) {
                                         IndNorma[indaflu] = 1;
-                                        norma += pow(malha[indaflu].arq.condpocinj.presfundo - pini, 2.);
+                                        norma += pow(malha[indaflu].config().condpocinj.presfundo - pini, 2.);
                                         nnos++;
                                     }
-                                    malha[indaflu].arq.condpocinj.presfundo = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres + (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].arq.condpocinj.presfundo;
+                                    malha[indaflu].config().condpocinj.presfundo = ((*arqRede.vg1dSP).relax) * malha[aux].cell(0).pres + (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].config().condpocinj.presfundo;
                                 }
                             }
                             int indaflu = arqRede.malha[aux].afluente[0];
                             for (int icol2 = 0; icol2 < nderiva - 1; icol2++) {
-                                malha[ordCol[icol2]].celula[0].pres = malha[indaflu].arq.condpocinj.presfundo;
-                                malha[ordCol[icol2]].pGSup = malha[indaflu].arq.condpocinj.presfundo;
-                                malha[ordCol[icol2]].arq.condpocinj.presinj = malha[ordCol[icol2]].pGSup;
+                                malha[ordCol[icol2]].cell(0).pres = malha[indaflu].config().condpocinj.presfundo;
+                                malha[ordCol[icol2]].pGSup = malha[indaflu].config().condpocinj.presfundo;
+                                malha[ordCol[icol2]].config().condpocinj.presinj = malha[ordCol[icol2]].pGSup;
                             }
                         } else {
                             double chutemass = 0.;
                             double area = 0.;
                             int aux = ordCol[icol];
-                            if (malha[aux].arq.flashCompleto == 0) {
-                                malha[aux].celula[0].acsr.injl.bet = 1.;
-                                malha[aux].celula[0].acsr.injl.temp = tempmist;
+                            if (malha[aux].config().flashCompleto == 0) {
+                                malha[aux].cell(0).acsr.injl.bet = 1.;
+                                malha[aux].cell(0).acsr.injl.temp = tempmist;
                             } else
-                                malha[aux].celula[0].acsr.injg.temp = tempmist;
-                            malha[aux].arq.condpocinj.CC = 1;
+                                malha[aux].cell(0).acsr.injg.temp = tempmist;
+                            malha[aux].config().condpocinj.CC = 1;
 
                             for (int icol2 = icol; icol2 < nderiva; icol2++)
-                                area += malha[ordCol[icol2]].celula[0].duto.area;
-                            if (malha[aux].arq.flashCompleto == 0) {
-                                chutemass = qlmistStd * malha[aux].celula[0].duto.area / area;
-                                malha[aux].celula[0].acsr.injl.QLiq = chutemass;
+                                area += malha[ordCol[icol2]].cell(0).duto.area;
+                            if (malha[aux].config().flashCompleto == 0) {
+                                chutemass = qlmistStd * malha[aux].cell(0).duto.area / area;
+                                malha[aux].cell(0).acsr.injl.QLiq = chutemass;
                             } else {
-                                chutemass = qgmistStd * malha[aux].celula[0].duto.area / area;
-                                malha[aux].celula[0].acsr.injg.QGas = chutemass;
+                                chutemass = qgmistStd * malha[aux].cell(0).duto.area / area;
+                                malha[aux].cell(0).acsr.injg.QGas = chutemass;
                             }
                             malha[aux].modoPerm = 1;
-                            if (malha[aux].celula[malha[aux].ncel].acsr.tipo == 3)
-                                malha[aux].arq.condpocinj.CC = 1;
+                            if (malha[aux].cell(malha[aux].ncel).acsr.tipo == 3)
+                                malha[aux].config().condpocinj.CC = 1;
                             else
-                                malha[aux].arq.condpocinj.CC = 3;
+                                malha[aux].config().condpocinj.CC = 3;
                             valor = malha[aux].buscaInjPfundoPerm1();
                             cout << "convergencia tramo: " << aux << endl;
                             if (valor < -1e9 || valor > 1e9) {
@@ -12213,10 +12213,10 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
                             }
                             Resolv[aux] = 1;
                             ciclomalha++;
-                            if (malha[aux].arq.flashCompleto == 0)
-                                qlmistStd -= malha[aux].celula[0].acsr.injl.QLiq;
+                            if (malha[aux].config().flashCompleto == 0)
+                                qlmistStd -= malha[aux].cell(0).acsr.injl.QLiq;
                             else
-                                qgmistStd -= malha[aux].celula[0].acsr.injg.QGas;
+                                qgmistStd -= malha[aux].cell(0).acsr.injg.QGas;
                         }
                     }
                 }
@@ -12247,10 +12247,10 @@ void RedeInj(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoV
 
         malha[i] = temporario;
         malha[i].indTramo = i;
-        if (malha[i].celula[0].acsr.tipo == 2)
-            (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;
-        (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area;
-        testaFlashComp += malha[i].arq.flashCompleto;
+        if (malha[i].cell(0).acsr.tipo == 2)
+            (*arqRede.vg1dSP).somavaz += malha[i].cell(0).acsr.injl.QLiq / 86400.;
+        (*arqRede.vg1dSP).somaarea += malha[i].cell(0).duto.area;
+        testaFlashComp += malha[i].config().flashCompleto;
     }
     if (testaFlashComp != 0 && testaFlashComp != narq && testaFlashComp != 2 * narq)
         NumError("Rede com modelos de fluido diferentes");
@@ -12275,19 +12275,19 @@ void RedeInj(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoV
                 }
             }
             if (testaAflu == 1) {
-                malha[i].arq.condpocinj.presfundo = prescolet[i] / razcolet[i];
+                malha[i].config().condpocinj.presfundo = prescolet[i] / razcolet[i];
                 if (arqRede.malha[i].ncoleta > 0) {
                     int ncol = arqRede.malha[i].ncoleta;
                     for (int j = 0; j < ncol; j++) {
                         int qcol = arqRede.malha[i].coleta[j];
-                        malha[qcol].pGSup = malha[i].arq.condpocinj.presfundo;
-                        malha[qcol].arq.condpocinj.presinj = malha[i].arq.condpocinj.presfundo;
+                        malha[qcol].pGSup = malha[i].config().condpocinj.presfundo;
+                        malha[qcol].config().condpocinj.presinj = malha[i].config().condpocinj.presfundo;
                     }
                 }
-                if (malha[i].arq.condpocinj.vazinj > 1e-5) {
-                    malha[i].arq.condpocinj.CC = 5;
-                } else if (malha[i].arq.condpocinj.presinj > 1e-5) {
-                    malha[i].arq.condpocinj.CC = 3;
+                if (malha[i].config().condpocinj.vazinj > 1e-5) {
+                    malha[i].config().condpocinj.CC = 5;
+                } else if (malha[i].config().condpocinj.presinj > 1e-5) {
+                    malha[i].config().condpocinj.CC = 3;
                 }
             }
         }
@@ -12312,11 +12312,11 @@ void RedeInj(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoV
     cout << "Convergencia atingida" << endl;
     for (int i = 0; i < narq; i++)
         if (inativo[i] == 0) {
-            malha[i].arq.imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo);
+            malha[i].config().imprimeProfile(malha[i].celula, malha[i].flut, 0, malha[i].indTramo);
             // enterramento
             for (int j = 0; j <= malha[i].ncel; j++) {
-                if (malha[i].celula[j].calor.difus2D == 1) {
-                    malha[i].celula[j].calor.poisson2D.imprimePermanente(malha[i].indTramo);
+                if (malha[i].cell(j).calor.difus2D == 1) {
+                    malha[i].cell(j).calor.poisson2D.imprimePermanente(malha[i].indTramo);
                 }
             }
         }
@@ -12781,7 +12781,7 @@ int main(int argc, char **argv) {
                             // neste caso o tramo e retirado da rede interna, e e feita a resolucao permenente da rede interna, apos esta resolucao
                             // os perfis permanentes sao gravados.
                             // de producao e busca de sua solucao permanente
-                            saidaClassica = malha[i][0].arq.saidaClassica;
+                            saidaClassica = malha[i][0].config().saidaClassica;
                             // solucao transiente de uma rede de producao classica, sem anel.
                             if (vg1dRede[i].chaveredeT == 1 && arqRede.injec == 0 && (*arqRede.vg1dSP).chaveAnelGL == 0) {
                                 vg1dRede[i].RGOMax = 14000.;
@@ -12889,7 +12889,7 @@ int main(int argc, char **argv) {
                     // de uma rede de anel de GL, dentro deste metodo e feita a solucao permanente e
                     // eventualmente a solucao transiente tambem
 
-                    saidaClassica = malha[0].arq.saidaClassica;
+                    saidaClassica = malha[0].config().saidaClassica;
                     if (saidaClassica == 1) {
                         cout << "*******************************************************************************" << endl;
                         cout << "                                  UFA!!!!!!!!                                  " << endl;
@@ -12912,7 +12912,7 @@ int main(int argc, char **argv) {
                                  inativo, indativo, nomeArquivoLog, validacaoJson, arqRede.chaveredeT,
                                  tipoSimulacao_t::transiente, &vg1dRedeSimples);
 
-                    saidaClassica = malha[0].arq.saidaClassica;
+                    saidaClassica = malha[0].config().saidaClassica;
                     if (saidaClassica == 1) {
                         cout << "*******************************************************************************" << endl;
                         cout << "                                  UFA!!!!!!!!                                  " << endl;
@@ -12936,101 +12936,101 @@ int main(int argc, char **argv) {
 
             // atualiza objeto de logger com registros anteriores
             logger.setNomeArqEntrada(nomeArquivoEntrada);
-            saidaClassica = sistem1.arq.saidaClassica;
+            saidaClassica = sistem1.config().saidaClassica;
 
             // caso habilitado o calculo do permanente
-            if (sistem1.arq.perm == 1) {
-                if (sistem1.arq.AP == 0)
-                    SolveTramoSolteiro(sistem1, sistem1.arq.chutePerm); // solucao simples de permanente para um tramo simples
+            if (sistem1.config().perm == 1) {
+                if (sistem1.config().AP == 0)
+                    SolveTramoSolteiro(sistem1, sistem1.config().chutePerm); // solucao simples de permanente para um tramo simples
                 else {
     			ostringstream arquivoAPtemp;
-    			arquivoAPtemp<<pathArqEntrada<<sistem1.arq.arquivoAP;
+    			arquivoAPtemp<<pathArqEntrada<<sistem1.config().arquivoAP;
     			string arquivoAP = arquivoAPtemp.str();
-    			if(sistem1.arq.paralelAP==0)
+    			if(sistem1.config().paralelAP==0)
     				leituraAP(arquivoAP, sistem1);//solucao de analise de sensibilidade para tramo simples
     			else
     				leituraAPparalelo(arquivoAP, nomeArquivoLog, validacaoJson, sistem1);//solucao de analise de sensibilidade para tramo simples
                 }
 
-            } else if (sistem1.arq.perm == 2) { // quando a condicao de contorno nao e o resultado de um regime permanente mas a "foto" em algum momento de
+            } else if (sistem1.config().perm == 2) { // quando a condicao de contorno nao e o resultado de um regime permanente mas a "foto" em algum momento de
                 // uma simulacao transiente
                 // caso definido o restart da simulacao
                 ReadSnapShot(sistem1);
             }
-            if (sistem1.arq.transiente == 1) { // opcao transiente ativa, inicio do processo transiente
+            if (sistem1.config().transiente == 1) { // opcao transiente ativa, inicio do processo transiente
                 // preparacao de algumas variaveis para a partida na simulacao transiente:
-                if (sistem1.arq.ConContEntrada == 1) {
-                    if (sistem1.celula[0].acsr.tipo == 2) {
-                        sistem1.celula[0].acsr.injl.QLiq = 0.;
-                        sistem1.celula[0].MC = sistem1.celula[0].fontemassLR + sistem1.celula[0].fontemassCR + sistem1.celula[0].fontemassGR;
-                        sistem1.celula[0].MCini = sistem1.celula[0].MC;
-                        sistem1.celula[0].Mliqini = sistem1.celula[0].fontemassLR + sistem1.celula[0].fontemassCR;
-                        sistem1.celula[0].Mliqini0 = sistem1.celula[0].Mliqini;
-                        double rholMix = sistem1.celula[0].bet * sistem1.celula[0].fluicol.MasEspFlu(
-                                                                     sistem1.celula[0].pres, sistem1.celula[0].temp);
-                        rholMix += (1. - sistem1.celula[0].bet) * sistem1.celula[0].flui.MasEspLiq(
-                                                                      sistem1.celula[0].pres, sistem1.celula[0].temp);
-                        sistem1.celula[0].QL = sistem1.celula[0].Mliqini / rholMix;
-                        sistem1.celula[0].QLini = sistem1.celula[0].QL;
-                        double rhog = sistem1.celula[0].flui.MasEspGas(
-                            sistem1.celula[0].pres, sistem1.celula[0].temp);
-                        sistem1.celula[0].QG = (sistem1.celula[0].MC - sistem1.celula[0].Mliqini) / rhog;
-                        sistem1.celula[0].QGini = sistem1.celula[0].QG;
-                        sistem1.celula[0].fontemassLR = 0.;
-                        sistem1.celula[0].fontemassCR = 0.;
-                        sistem1.celula[0].fontemassGR = 0.;
-                    } else if (sistem1.celula[0].acsr.tipo == 1) {
-                        sistem1.celula[0].acsr.injg.QGas = 0.;
-                        sistem1.celula[0].MC = sistem1.celula[0].fontemassGR;
-                        sistem1.celula[0].MCini = sistem1.celula[0].MC;
-                        sistem1.celula[0].Mliqini = 0.;
-                        sistem1.celula[0].Mliqini0 = sistem1.celula[0].Mliqini;
-                        sistem1.celula[0].QL = 0.;
-                        sistem1.celula[0].QLini = sistem1.celula[0].QL;
-                        double rhog = sistem1.celula[0].flui.MasEspGas(
-                            sistem1.celula[0].pres, sistem1.celula[0].temp);
-                        sistem1.celula[0].QG = (sistem1.celula[0].MC - sistem1.celula[0].Mliqini) / rhog;
-                        sistem1.celula[0].QGini = sistem1.celula[0].QG;
-                        sistem1.celula[0].fontemassLR = 0.;
-                        sistem1.celula[0].fontemassCR = 0.;
-                        sistem1.celula[0].fontemassGR = 0.;
+                if (sistem1.config().ConContEntrada == 1) {
+                    if (sistem1.cell(0).acsr.tipo == 2) {
+                        sistem1.cell(0).acsr.injl.QLiq = 0.;
+                        sistem1.cell(0).MC = sistem1.cell(0).fontemassLR + sistem1.cell(0).fontemassCR + sistem1.cell(0).fontemassGR;
+                        sistem1.cell(0).MCini = sistem1.cell(0).MC;
+                        sistem1.cell(0).Mliqini = sistem1.cell(0).fontemassLR + sistem1.cell(0).fontemassCR;
+                        sistem1.cell(0).Mliqini0 = sistem1.cell(0).Mliqini;
+                        double rholMix = sistem1.cell(0).bet * sistem1.cell(0).fluicol.MasEspFlu(
+                                                                     sistem1.cell(0).pres, sistem1.cell(0).temp);
+                        rholMix += (1. - sistem1.cell(0).bet) * sistem1.cell(0).flui.MasEspLiq(
+                                                                      sistem1.cell(0).pres, sistem1.cell(0).temp);
+                        sistem1.cell(0).QL = sistem1.cell(0).Mliqini / rholMix;
+                        sistem1.cell(0).QLini = sistem1.cell(0).QL;
+                        double rhog = sistem1.cell(0).flui.MasEspGas(
+                            sistem1.cell(0).pres, sistem1.cell(0).temp);
+                        sistem1.cell(0).QG = (sistem1.cell(0).MC - sistem1.cell(0).Mliqini) / rhog;
+                        sistem1.cell(0).QGini = sistem1.cell(0).QG;
+                        sistem1.cell(0).fontemassLR = 0.;
+                        sistem1.cell(0).fontemassCR = 0.;
+                        sistem1.cell(0).fontemassGR = 0.;
+                    } else if (sistem1.cell(0).acsr.tipo == 1) {
+                        sistem1.cell(0).acsr.injg.QGas = 0.;
+                        sistem1.cell(0).MC = sistem1.cell(0).fontemassGR;
+                        sistem1.cell(0).MCini = sistem1.cell(0).MC;
+                        sistem1.cell(0).Mliqini = 0.;
+                        sistem1.cell(0).Mliqini0 = sistem1.cell(0).Mliqini;
+                        sistem1.cell(0).QL = 0.;
+                        sistem1.cell(0).QLini = sistem1.cell(0).QL;
+                        double rhog = sistem1.cell(0).flui.MasEspGas(
+                            sistem1.cell(0).pres, sistem1.cell(0).temp);
+                        sistem1.cell(0).QG = (sistem1.cell(0).MC - sistem1.cell(0).Mliqini) / rhog;
+                        sistem1.cell(0).QGini = sistem1.cell(0).QG;
+                        sistem1.cell(0).fontemassLR = 0.;
+                        sistem1.cell(0).fontemassCR = 0.;
+                        sistem1.cell(0).fontemassGR = 0.;
                     }
                 }
                 for (int i = 0; i <= sistem1.ncel; i++) {
-                    sistem1.celula[i].rpC = sistem1.celula[i].rpCi =
-                        sistem1.celula[i].flui.MasEspLiq(sistem1.celula[i].pres, sistem1.celula[i].temp);
-                    sistem1.celula[i].rgC = sistem1.celula[i].rgCi =
-                        sistem1.celula[i].flui.MasEspGas(sistem1.celula[i].pres, sistem1.celula[i].temp);
-                    sistem1.celula[i].rcC = sistem1.celula[i].rcCi =
-                        sistem1.celula[i].fluicol.MasEspFlu(sistem1.celula[i].pres, sistem1.celula[i].temp);
-                    sistem1.celula[i].rpL = sistem1.celula[i].rpLi =
-                        sistem1.celula[i].flui.MasEspLiq(sistem1.celula[i].presL, sistem1.celula[i].tempL);
-                    sistem1.celula[i].rgL = sistem1.celula[i].rgLi =
-                        sistem1.celula[i].flui.MasEspGas(sistem1.celula[i].presL, sistem1.celula[i].tempL);
-                    sistem1.celula[i].rcL = sistem1.celula[i].rcLi =
-                        sistem1.celula[i].fluicol.MasEspFlu(sistem1.celula[i].presL, sistem1.celula[i].tempL);
+                    sistem1.cell(i).rpC = sistem1.cell(i).rpCi =
+                        sistem1.cell(i).flui.MasEspLiq(sistem1.cell(i).pres, sistem1.cell(i).temp);
+                    sistem1.cell(i).rgC = sistem1.cell(i).rgCi =
+                        sistem1.cell(i).flui.MasEspGas(sistem1.cell(i).pres, sistem1.cell(i).temp);
+                    sistem1.cell(i).rcC = sistem1.cell(i).rcCi =
+                        sistem1.cell(i).fluicol.MasEspFlu(sistem1.cell(i).pres, sistem1.cell(i).temp);
+                    sistem1.cell(i).rpL = sistem1.cell(i).rpLi =
+                        sistem1.cell(i).flui.MasEspLiq(sistem1.cell(i).presL, sistem1.cell(i).tempL);
+                    sistem1.cell(i).rgL = sistem1.cell(i).rgLi =
+                        sistem1.cell(i).flui.MasEspGas(sistem1.cell(i).presL, sistem1.cell(i).tempL);
+                    sistem1.cell(i).rcL = sistem1.cell(i).rcLi =
+                        sistem1.cell(i).fluicol.MasEspFlu(sistem1.cell(i).presL, sistem1.cell(i).tempL);
 
-                    sistem1.celula[i].mipC = sistem1.celula[i].flui.ViscOleo(sistem1.celula[i].pres, sistem1.celula[i].temp);
-                    sistem1.celula[i].migC = sistem1.celula[i].flui.ViscGas(sistem1.celula[i].pres, sistem1.celula[i].temp);
-                    sistem1.celula[i].micC = sistem1.celula[i].fluicol.VisFlu(sistem1.celula[i].pres, sistem1.celula[i].temp);
+                    sistem1.cell(i).mipC = sistem1.cell(i).flui.ViscOleo(sistem1.cell(i).pres, sistem1.cell(i).temp);
+                    sistem1.cell(i).migC = sistem1.cell(i).flui.ViscGas(sistem1.cell(i).pres, sistem1.cell(i).temp);
+                    sistem1.cell(i).micC = sistem1.cell(i).fluicol.VisFlu(sistem1.cell(i).pres, sistem1.cell(i).temp);
 
                     if (i > 0) {
-                        sistem1.celula[i - 1].rpR = sistem1.celula[i - 1].rpRi = sistem1.celula[i].rpC;
-                        sistem1.celula[i - 1].rgR = sistem1.celula[i - 1].rgRi = sistem1.celula[i].rgC;
-                        sistem1.celula[i - 1].rcR = sistem1.celula[i - 1].rcRi = sistem1.celula[i].rcC;
+                        sistem1.cell(i - 1).rpR = sistem1.cell(i - 1).rpRi = sistem1.cell(i).rpC;
+                        sistem1.cell(i - 1).rgR = sistem1.cell(i - 1).rgRi = sistem1.cell(i).rgC;
+                        sistem1.cell(i - 1).rcR = sistem1.cell(i - 1).rcRi = sistem1.cell(i).rcC;
 
-                        sistem1.celula[i - 1].mipR = sistem1.celula[i].mipC;
-                        sistem1.celula[i - 1].migR = sistem1.celula[i].migC;
-                        sistem1.celula[i - 1].micR = sistem1.celula[i].micC;
+                        sistem1.cell(i - 1).mipR = sistem1.cell(i).mipC;
+                        sistem1.cell(i - 1).migR = sistem1.cell(i).migC;
+                        sistem1.cell(i - 1).micR = sistem1.cell(i).micC;
                     }
                     if (i == sistem1.ncel) {
-                        sistem1.celula[i].rpR = sistem1.celula[i].rpRi = sistem1.celula[i].rpC;
-                        sistem1.celula[i].rgR = sistem1.celula[i].rgRi = sistem1.celula[i].rgC;
-                        sistem1.celula[i].rcR = sistem1.celula[i].rcRi = sistem1.celula[i].rcC;
+                        sistem1.cell(i).rpR = sistem1.cell(i).rpRi = sistem1.cell(i).rpC;
+                        sistem1.cell(i).rgR = sistem1.cell(i).rgRi = sistem1.cell(i).rgC;
+                        sistem1.cell(i).rcR = sistem1.cell(i).rcRi = sistem1.cell(i).rcC;
 
-                        sistem1.celula[i].mipR = sistem1.celula[i].mipC;
-                        sistem1.celula[i].migR = sistem1.celula[i].migC;
-                        sistem1.celula[i].micR = sistem1.celula[i].micC;
+                        sistem1.cell(i).mipR = sistem1.cell(i).mipC;
+                        sistem1.cell(i).migR = sistem1.cell(i).migC;
+                        sistem1.cell(i).micR = sistem1.cell(i).micC;
                     }
                 }
                 // determinacao do incremento de tempo inicial da simulacao transiente
@@ -13040,21 +13040,21 @@ int main(int argc, char **argv) {
                 sistem1.modoPerm = 0;
                 vg1dTramo.modoTransiente = 1;
                 (*sistem1.vg1dSP).modoTransiente = 1;
-                if (sistem1.arq.modoDifus3D == 1) {
-                    int icel = sistem1.arq.celAcop[0].indCel;
-                    double hiv = sistem1.celula[icel].calor.hi;
-                    double hev = sistem1.celula[icel].calor.he; // sistem1.celula[icel].calor.he;
-                    double tiv = sistem1.celula[icel].temp;
-                    sistem1.poisson3D = solverP3D(sistem1.arq.modoDifus3DJson, sistem1.vg1dSP,
-                                                  sistem1.arq.nacop, sistem1.arq.geoAcop, hiv, hev, tiv);
-                    if (sistem1.arq.nacop != sistem1.poisson3D.dados.CC.nAcop)
+                if (sistem1.config().modoDifus3D == 1) {
+                    int icel = sistem1.config().celAcop[0].indCel;
+                    double hiv = sistem1.cell(icel).calor.hi;
+                    double hev = sistem1.cell(icel).calor.he; // sistem1.cell(icel).calor.he;
+                    double tiv = sistem1.cell(icel).temp;
+                    sistem1.poisson3D = solverP3D(sistem1.config().modoDifus3DJson, sistem1.vg1dSP,
+                                                  sistem1.config().nacop, sistem1.config().geoAcop, hiv, hev, tiv);
+                    if (sistem1.config().nacop != sistem1.poisson3D.dados.CC.nAcop)
                         NumError(
                             "O numero de acoplamentos indicados no json principal é diferente do numero de acoplamentos indicados no parse do solver 3D");
                     else {
-                        for (int iacop0 = 0; iacop0 < sistem1.arq.nacop; iacop0++) {
+                        for (int iacop0 = 0; iacop0 < sistem1.config().nacop; iacop0++) {
                             int inexistente = 1;
-                            for (int iacop1 = 0; iacop1 < sistem1.arq.nacop; iacop1++) {
-                                if (sistem1.arq.celAcop[iacop0].rotulo == sistem1.poisson3D.dados.CC.rotuloAcop[iacop1]) {
+                            for (int iacop1 = 0; iacop1 < sistem1.config().nacop; iacop1++) {
+                                if (sistem1.config().celAcop[iacop0].rotulo == sistem1.poisson3D.dados.CC.rotuloAcop[iacop1]) {
                                     inexistente = 0;
                                     sistem1.acertaIndAcop.push_back(iacop1);
                                     break;
@@ -13065,17 +13065,17 @@ int main(int argc, char **argv) {
                         }
                     }
 
-                    for (int iacop = 0; iacop < sistem1.arq.nacop; iacop++) {
-                        int icelAcop = sistem1.arq.celAcop[iacop].indCel;
+                    for (int iacop = 0; iacop < sistem1.config().nacop; iacop++) {
+                        int icelAcop = sistem1.config().celAcop[iacop].indCel;
                         int iacop1 = sistem1.acertaIndAcop[iacop];
-                        sistem1.poisson3D.dados.tInt[iacop1] = sistem1.celula[icelAcop].temp;
-                        double hiCel = sistem1.celula[icelAcop].calor.hInt();
+                        sistem1.poisson3D.dados.tInt[iacop1] = sistem1.cell(icelAcop).temp;
+                        double hiCel = sistem1.cell(icelAcop).calor.hInt();
                         sistem1.poisson3D.dados.hI[iacop1] = hiCel;
                     }
                     double tamb[sistem1.poisson3D.dados.CC.nRic];
                     for (int idir = 0; idir < sistem1.poisson3D.dados.CC.nRic; idir++) {
                         tamb[idir] = sistem1.poisson3D.dados.CC.ccRic[idir].valAmb[0];
-                        sistem1.poisson3D.dados.CC.ccRic[idir].valAmb[0] = sistem1.celula[icel].temp;
+                        sistem1.poisson3D.dados.CC.ccRic[idir].valAmb[0] = sistem1.cell(icel).temp;
                     }
                     sistem1.poisson3D.inicializaTransientePoisson();
                     int kontaperm = 0;
@@ -13101,7 +13101,7 @@ int main(int argc, char **argv) {
                         if ((*sistem1.vg1dSP).tempo > 100. && (*sistem1.vg1dSP).tempo < 1000.) {
                             for (int iric = 0; iric < sistem1.poisson3D.dados.CC.nRic; iric++) {
                                 sistem1.poisson3D.dados.CC.ccRic[iric].valAmb[0] =
-                                    sistem1.celula[icel].temp + (tamb[iric] - sistem1.celula[icel].temp) *
+                                    sistem1.cell(icel).temp + (tamb[iric] - sistem1.cell(icel).temp) *
                                                                     ((*sistem1.vg1dSP).tempo - 100.) / 900.;
                             }
                         }
@@ -13119,8 +13119,8 @@ int main(int argc, char **argv) {
                     // foi originalmente baseado em um sistema black-oil, teria problemas nas equacoes de transferencia de massa caso
                     // nao tenha um valor, mesmo que pequeno de oleo como referencia para o oleo morto
                     sistem1.SolveTrans(); // metodo onde se faz o avanco de tempo transiente
-                    for (int kontasnp = 0; kontasnp < sistem1.arq.nsnp; kontasnp++) {
-                        if (fabs((*sistem1.vg1dSP).lixo5 - sistem1.arq.tempsnp[kontasnp]) < sistem1.dt) {
+                    for (int kontasnp = 0; kontasnp < sistem1.config().nsnp; kontasnp++) {
+                        if (fabs((*sistem1.vg1dSP).lixo5 - sistem1.config().tempsnp[kontasnp]) < sistem1.dt) {
                             WriteSnapShot(sistem1, (*sistem1.vg1dSP).lixo5); // registro do arquivo SNP
                         }
                     }
@@ -13133,7 +13133,7 @@ int main(int argc, char **argv) {
                 cout << saidaTexto[frase] << endl;
                 cout << saidaSubTexto[frase] << endl;
                 cout << "*******************************************************************************" << endl;
-            } else if (sistem1.arq.saidaTela == 1)
+            } else if (sistem1.config().saidaTela == 1)
                 cout << "                                  FIM                                  " << endl;
 
             nowGlobFim = time(0);

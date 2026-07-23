@@ -33,6 +33,10 @@ project(Marlim3 VERSION ${MARLIM3_VERSION} LANGUAGES CXX Fortran)
 
 option(MARLIM_STATIC_GNU_RUNTIMES "Prefer static GNU runtimes where supported" ON)
 option(MARLIM_MINGW_STATIC "Build a fully static executable with MinGW" ON)
+# Selects between the legacy SisProd solver (SisProd_old.cpp, default) and the
+# new SisProd architecture (SisProd.cpp). Kept OFF until the new solver is a full
+# drop-in, so every existing flow and regression test keeps passing.
+option(MARLIM_USE_NEW_SISPROD "Use the new SisProd architecture instead of the legacy solver" OFF)
 set(MARLIM_FORTRAN_LIBS "" CACHE STRING "Additional Fortran runtime libraries to link explicitly")
 set(MARLIM_GCC_STATIC_LIB_DIR "" CACHE PATH "Directory containing static GNU runtime libraries for macOS builds")
 
@@ -120,6 +124,19 @@ if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 endif()
 
 add_executable(Marlim3 ${CXX_SOURCES} ${F90_SOURCES})
+
+# Always-defined marker: code that requires the full CMake build (e.g.
+# GradientCorrelations.h) can guard itself with #ifdef MARLIM_BUILD.
+target_compile_definitions(Marlim3 PRIVATE MARLIM_BUILD)
+
+# Implementation-selection flag for the SisProd migration. When ON, the new
+# architecture reports itself as active through marlim::sisprod2::usingNewSisProd.
+if(MARLIM_USE_NEW_SISPROD)
+    target_compile_definitions(Marlim3 PRIVATE MARLIM_USE_NEW_SISPROD)
+    message(STATUS "SisProd: new architecture selected (MARLIM_USE_NEW_SISPROD=ON)")
+else()
+    message(STATUS "SisProd: legacy solver selected (MARLIM_USE_NEW_SISPROD=OFF)")
+endif()
 
 target_include_directories(Marlim3 PRIVATE
     ${INCDIR}

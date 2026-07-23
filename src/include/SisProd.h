@@ -419,6 +419,30 @@ class SProd {
      * @brief Parsed user input and simulation configuration.
      */
     Ler arq;
+
+    /// Read-only access to the parsed configuration (Fase 1 encapsulation).
+    /// Prefer sis.config().field over sis.arq.field in Num4Main.cpp so that
+    /// future refactoring can narrow the visibility of arq without a big diff.
+    const Ler &config() const { return arq; }
+
+    /// Mutable access to the parsed configuration (needed by network loop
+    /// assignments such as malha[i].arq.ConContEntrada = 1).
+    Ler &config() { return arq; }
+
+    /// Read-only access to a production-line control volume (Fase 1 encapsulation).
+    /// Prefer sis.cell(i).field over sis.celula[i].field in Num4Main.cpp.
+    const Cel &cell(int i) const { return celula[i]; }
+
+    /// Mutable access to a production-line control volume.
+    Cel &cell(int i) { return celula[i]; }
+
+    /// Read-only access to a gas-line control volume (Fase 1 encapsulation).
+    /// Prefer sis.gasCell(i).field over sis.celulaG[i].field in Num4Main.cpp.
+    const CelG &gasCell(int i) const { return celulaG[i]; }
+
+    /// Mutable access to a gas-line control volume.
+    CelG &gasCell(int i) { return celulaG[i]; }
+
     /**
      * @brief Buffer used to write gas-line profiles.
      */
