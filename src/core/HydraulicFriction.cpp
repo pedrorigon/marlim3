@@ -19,7 +19,7 @@
  * Migration reference: issues/sisprod-migration-plan.md, regions R06 / R10.
  */
 
-#include "SisProd2.h"
+#include "SisProd.h"
 
 #include <cmath>
 

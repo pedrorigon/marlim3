@@ -12,7 +12,7 @@
  * Migration reference: issues/sisprod-migration-plan.md, region R03.
  */
 
-#include "SisProd2.h"
+#include "SisProd.h"
 
 #include <cmath>
 #include <limits>

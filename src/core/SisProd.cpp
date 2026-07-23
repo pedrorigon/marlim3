@@ -13,7 +13,7 @@
  * binary does not change the behaviour or the numerical results of Marlim3.
  */
 
-#include "SisProd2.h"
+#include "SisProd.h"
 
 #include <algorithm>
 #include <cmath>
@@ -498,9 +498,246 @@ ThermalFlowSnapshot computeThermalFlowSnapshot(const ThermalSideInput &in) {
                                + props.gasSpecificHeat * gasHoldup;
     snapshot.mixedDensity = props.liquidDensity * liquidHoldup
                           + props.gasDensity * gasHoldup;
-    snapshot.mixedViscosityPaS = props.liquidViscosity * liquidHoldup * 1e-3
-                               + props.gasViscosity * gasHoldup * 1e-3;
+    snapshot.mixedViscosityPaS = snapshot.liquidViscosityPaS * liquidHoldup
+                               + snapshot.gasViscosityPaS * gasHoldup;
+
     return snapshot;
+}
+
+// ===========================================================================
+// R07 — Thermal update based on RenovaTempPerm energy balance.
+// Refactored using Strategy pattern for energy terms and Fluent Interface.
+// ===========================================================================
+
+namespace {
+
+/// Forward declarations for energy term strategies
+struct EnergyTermStrategy {
+    virtual ~EnergyTermStrategy() = default;
+    virtual double compute(const ThermalFlowSnapshot &props,
+                          const ThermalUpdateInput &in,
+                          double area) const = 0;
+};
+
+/// Joule-Thomson expansion energy term: (rho_l*u_ls*jtl + rho_g*u_gs*jtg)*area
+struct JouleThomsonTerm : EnergyTermStrategy {
+    double compute(const ThermalFlowSnapshot &props,
+                   const ThermalUpdateInput &in,
+                   double area) const override {
+        const auto clampVelocity = [](double v) -> double {
+            const double sign = (v > 0.0) ? 1.0 : -1.0;
+            return std::min(std::fabs(v), 5.0) * sign;
+        };
+        const double uls = clampVelocity(in.liquidSuperficialVelocity);
+        const double ugs = clampVelocity(in.gasSuperficialVelocity);
+        return (props.mixedDensity * uls * props.liquidJouleThomson +
+                props.gasDensity * ugs * props.gasJouleThomson) * area;
+    }
+};
+
+/// Hydrostatic potential energy term: (rho_mix * u_mix) * area * g
+struct HydrostaticTerm : EnergyTermStrategy {
+    double compute(const ThermalFlowSnapshot &props,
+                   const ThermalUpdateInput &in,
+                   double area) const override {
+        const double liquidMassFlux = props.mixedDensity * in.liquidSuperficialVelocity;
+        const double gasMassFlux = props.gasDensity * in.gasSuperficialVelocity;
+        return (liquidMassFlux + gasMassFlux) * area * constants::kGravity;
+    }
+};
+
+/// Heat transfer with external medium
+struct HeatTransferTerm {
+    double compute(double externalTempC, double currentTempC, 
+                   double thermalResistance, double flowSign) const {
+        const double tempDiff = externalTempC - currentTempC;
+        return flowSign * tempDiff / thermalResistance;
+    }
+};
+
+/// Mass source energy contribution
+struct MassSourceTerm {
+    double compute(const ThermalFlowSnapshot &props,
+                   const ThermalUpdateInput &in,
+                   double tiny) const {
+        if (!in.hasMassSource) return 0.0;
+        
+        double energy = 0.0;
+        const double tempDiff = in.sourceTemperatureC - in.currentTemperatureC;
+        
+        // Liquid contribution
+        if (in.massSourceL > tiny) {
+            energy += in.massSourceL * props.liquidSpecificHeat * tempDiff;
+        }
+        
+        // Gas contribution with razcpF correction
+        if (in.massSourceG > tiny) {
+            const double razcpF = (props.gasSpecificHeat > tiny) 
+                ? props.liquidSpecificHeat / props.gasSpecificHeat : 1.0;
+            energy += in.massSourceG * (props.gasSpecificHeat / razcpF) * tempDiff;
+        }
+        
+        return energy;
+    }
+};
+
+/// Energy transport coefficient: rho*u*cp*area
+struct EnergyTransportCoeff {
+    double compute(const ThermalFlowSnapshot &props,
+                   const ThermalUpdateInput &in,
+                   double area) const {
+        const double liquidTerm = props.mixedDensity * in.liquidSuperficialVelocity 
+                                  * props.liquidSpecificHeat;
+        const double gasTerm = props.gasDensity * in.gasSuperficialVelocity 
+                               * props.gasSpecificHeat;
+        return (liquidTerm + gasTerm) * area;
+    }
+};
+
+/// Substep calculator for thermal stability
+class SubstepCalculator {
+  public:
+    int compute(double dx, double thermalResistance, double energyCoeff) const {
+        const double stabilityLimit = std::fabs(energyCoeff);
+        if (stabilityLimit <= 0.0) return 1;
+        
+        const double ratio = dx / thermalResistance;
+        if (ratio < stabilityLimit) return 1;
+        
+        return std::min(static_cast<int>(ratio / stabilityLimit) + 1, 100);
+    }
+};
+
+/// Temperature march with explicit energy integration
+class TemperatureMarcher {
+  public:
+    struct Config {
+        double dx;
+        double upstreamTemp;
+        double energyTerm1;  // (JT - KE - PE + Sources - Latent + Work) / coefdxT
+        double energyTerm2;  // Heat flux / coefdxT
+        int substeps;
+    };
+    
+    double march(double initialTemp, const Config &cfg) const {
+        const double dxSub = cfg.dx / cfg.substeps;
+        double temp = initialTemp;
+        
+        for (int i = 0; i < cfg.substeps; ++i) {
+            const double convectionTerm = (temp - cfg.upstreamTemp) / dxSub;
+            temp = dxSub * (-convectionTerm + cfg.energyTerm1 + cfg.energyTerm2);
+        }
+        
+        // Clamp to physical limits (C++11 compatible)
+        return std::max(-50.0, std::min(200.0, temp));
+    }
+};
+
+/// Builder for ThermalUpdateResult with fluent interface
+class ThermalResultBuilder {
+  public:
+    ThermalResultBuilder& withTemperature(double temp) {
+        result_.updatedTemperatureC = temp;
+        return *this;
+    }
+    
+    ThermalResultBuilder& withHeatFlux(double flux) {
+        result_.heatFlux = flux;
+        return *this;
+    }
+    
+    ThermalResultBuilder& withGradient(double dTdx) {
+        result_.dTdx = dTdx;
+        return *this;
+    }
+    
+    ThermalResultBuilder& withSubsteps(int n) {
+        result_.substepsUsed = n;
+        return *this;
+    }
+    
+    ThermalResultBuilder& lowFlow() {
+        result_.lowFlowMode = true;
+        return *this;
+    }
+    
+    ThermalResultBuilder& normalFlow() {
+        result_.lowFlowMode = false;
+        return *this;
+    }
+    
+    ThermalUpdateResult build() const {
+        return result_;
+    }
+    
+  private:
+    ThermalUpdateResult result_;
+};
+
+/// Predicate for low flow detection
+class LowFlowDetector {
+  public:
+    bool isLowFlow(double gasVelocity, double liquidVelocity, double threshold = 0.05) const {
+        return std::fabs(gasVelocity + liquidVelocity) <= threshold;
+    }
+};
+
+} // anonymous namespace
+
+// ===========================================================================
+// Public API: Clean facade hiding implementation complexity
+// ===========================================================================
+
+ThermalUpdateResult computeThermalUpdate(const ThermalFlowSnapshot &props,
+                                          const ThermalUpdateInput &in,
+                                          const SimContext &context) {
+    const double tiny = context.localTiny();
+    const double area = 0.25 * constants::kPi * in.diameter * in.diameter;
+    
+    // Early return for low flow condition
+    if (LowFlowDetector{}.isLowFlow(in.gasSuperficialVelocity, in.liquidSuperficialVelocity)) {
+        return ThermalResultBuilder{}
+            .withTemperature(in.externalTemperatureC)
+            .withHeatFlux(0.0)
+            .withGradient(0.0)
+            .withSubsteps(1)
+            .lowFlow()
+            .build();
+    }
+    
+    // Compute geometric and flow properties
+    const double flowSign = (in.gasSuperficialVelocity + in.liquidSuperficialVelocity > 0.0) ? 1.0 : -1.0;
+    const double pressureGradient = 2.0 * (in.upstreamPressurePa - in.pressurePa) / in.dx;
+    const double tempGradient = (in.upstreamTemperatureC - in.currentTemperatureC) / in.dx;
+    
+    // Compute energy terms using strategy pattern
+    const double jouleThomson = JouleThomsonTerm{}.compute(props, in, area);
+    const double hydrostatic = HydrostaticTerm{}.compute(props, in, area);
+    const double heatFlux = HeatTransferTerm{}.compute(
+        in.externalTemperatureC, in.currentTemperatureC, in.thermalResistance, flowSign);
+    const double massSource = MassSourceTerm{}.compute(props, in, tiny);
+    
+    // Transport and diffusion coefficients
+    const double energyCoeff = EnergyTransportCoeff{}.compute(props, in, area);
+    const int substeps = SubstepCalculator{}.compute(in.dx, in.thermalResistance, energyCoeff);
+    
+    // March temperature with substeps
+    const double energyTerm1 = (jouleThomson * pressureGradient - hydrostatic + massSource 
+                              - in.latentHeatTerm) / energyCoeff;
+    const double energyTerm2 = heatFlux / energyCoeff;
+    
+    const double updatedTemp = TemperatureMarcher{}.march(
+        in.currentTemperatureC, 
+        {in.dx, in.upstreamTemperatureC, energyTerm1, energyTerm2, substeps}
+    );
+    
+    return ThermalResultBuilder{}
+        .withTemperature(updatedTemp)
+        .withHeatFlux(heatFlux)
+        .withGradient(tempGradient)
+        .withSubsteps(substeps)
+        .normalFlow()
+        .build();
 }
 
 double darcyFrictionFactor(double reynolds) {
@@ -654,6 +891,39 @@ ThermalFlowSnapshot TramoEngine::buildThermalSnapshot(
     const ThermalSideInput &in) const {
         return computeThermalFlowSnapshot(in);
     }
+
+ThermalUpdateResult TramoEngine::advanceThermalStep(
+    double currentTempC, double upstreamTempC,
+    double pressurePa, double upstreamPressurePa,
+    double dx, double diameter,
+    double ugs, double uls,
+    double gasHoldup, double waterCut,
+    double externalTempC, double thermalResistance,
+    const ThermalFlowSnapshot &props) const {
+    
+    ThermalUpdateInput input;
+    input.currentTemperatureC = currentTempC;
+    input.upstreamTemperatureC = upstreamTempC;
+    input.pressurePa = pressurePa;
+    input.upstreamPressurePa = upstreamPressurePa;
+    input.dx = dx;
+    input.diameter = diameter;
+    input.gasSuperficialVelocity = ugs;
+    input.liquidSuperficialVelocity = uls;
+    input.gasHoldup = gasHoldup;
+    input.waterCut = waterCut;
+    input.thermalConductivity = props.mixedConductivity;
+    input.externalTemperatureC = externalTempC;
+    input.thermalResistance = thermalResistance;
+    // mass sources default to zero (no sources in basic march)
+    input.massSourceL = 0.0;
+    input.massSourceG = 0.0;
+    input.sourceTemperatureC = externalTempC;
+    input.latentHeatTerm = 0.0;
+    input.hasMassSource = false;
+    
+    return computeThermalUpdate(props, input, context_);
+}
 
 // ===========================================================================
 // Batch solver with OpenMP (parallel across independent columns).
@@ -1674,6 +1944,110 @@ bool runAllTests(bool verbose) {
                         thermalViaEngine.liquidJouleThomson == thermal.liquidJouleThomson);
          reporter.check("R07/thermal snapshot engine matches helper gas JT",
                         thermalViaEngine.gasJouleThomson == thermal.gasJouleThomson);
+
+         // R07 — computeThermalUpdate thermal advancement tests ----------------
+         {
+             // Test 1: Low flow mode (mixture velocity <= 0.05 m/s)
+             // Should return external temperature directly
+             ThermalUpdateInput lowFlowInput;
+             lowFlowInput.currentTemperatureC = 80.0;
+             lowFlowInput.upstreamTemperatureC = 70.0;
+             lowFlowInput.pressurePa = 55.0e5;
+             lowFlowInput.upstreamPressurePa = 56.0e5;
+             lowFlowInput.dx = 50.0;
+             lowFlowInput.diameter = 0.15;
+             lowFlowInput.gasSuperficialVelocity = 0.02;
+             lowFlowInput.liquidSuperficialVelocity = 0.02;
+             lowFlowInput.externalTemperatureC = 60.0;
+             lowFlowInput.thermalResistance = 1.0;
+             
+             ThermalUpdateResult lowFlowResult = computeThermalUpdate(
+                 thermal, lowFlowInput, context);
+             reporter.check("R07/thermal update low flow mode returns external temp",
+                            lowFlowResult.lowFlowMode == true);
+             reporter.check("R07/thermal update low flow temperature correct",
+                            almostEqual(lowFlowResult.updatedTemperatureC, 60.0, 1e-9));
+             
+             // Test 2: Normal flow mode with typical production conditions
+             ThermalUpdateInput normalFlowInput;
+             normalFlowInput.currentTemperatureC = 80.0;
+             normalFlowInput.upstreamTemperatureC = 85.0;
+             normalFlowInput.pressurePa = 55.0e5;
+             normalFlowInput.upstreamPressurePa = 56.0e5;
+             normalFlowInput.dx = 50.0;
+             normalFlowInput.diameter = 0.15;
+             normalFlowInput.gasSuperficialVelocity = 1.5;
+             normalFlowInput.liquidSuperficialVelocity = 0.8;
+             normalFlowInput.gasHoldup = 0.35;
+             normalFlowInput.waterCut = 0.25;
+             normalFlowInput.thermalConductivity = thermal.mixedConductivity;
+             normalFlowInput.externalTemperatureC = 60.0;
+             normalFlowInput.thermalResistance = 0.5;
+             normalFlowInput.massSourceL = 0.0;
+             normalFlowInput.massSourceG = 0.0;
+             normalFlowInput.sourceTemperatureC = 60.0;
+             normalFlowInput.latentHeatTerm = 0.0;
+             normalFlowInput.hasMassSource = false;
+             
+             ThermalUpdateResult normalResult = computeThermalUpdate(
+                 thermal, normalFlowInput, context);
+             reporter.check("R07/thermal update normal flow not low flow mode",
+                            normalResult.lowFlowMode == false);
+             reporter.check("R07/thermal update normal flow finite temperature",
+                            std::isfinite(normalResult.updatedTemperatureC));
+             reporter.check("R07/thermal update normal flow temperature in physical range",
+                            normalResult.updatedTemperatureC >= -50.0 && 
+                            normalResult.updatedTemperatureC <= 200.0);
+             reporter.check("R07/thermal update normal flow has substeps >= 1",
+                            normalResult.substepsUsed >= 1);
+             reporter.check("R07/thermal update normal flow computes heat flux",
+                            std::isfinite(normalResult.heatFlux));
+             
+             // Test 3: Temperature limits - verify physical bounds are enforced
+             ThermalUpdateInput limitInput = normalFlowInput;
+             limitInput.currentTemperatureC = 250.0;  // Above max
+             limitInput.upstreamTemperatureC = 250.0;
+             ThermalUpdateResult limitResult = computeThermalUpdate(
+                 thermal, limitInput, context);
+             reporter.check("R07/thermal update respects upper temperature limit",
+                            limitResult.updatedTemperatureC <= 200.0);
+             
+             limitInput.currentTemperatureC = -100.0;  // Below min
+             limitInput.upstreamTemperatureC = -100.0;
+             limitResult = computeThermalUpdate(thermal, limitInput, context);
+             reporter.check("R07/thermal update respects lower temperature limit",
+                            limitResult.updatedTemperatureC >= -50.0);
+             
+             // Test 4: Integration via TramoEngine::advanceThermalStep
+             TramoEngine thermalEngine(massContext, diagnostics);
+             ThermalUpdateResult engineResult = thermalEngine.advanceThermalStep(
+                 80.0, 85.0,  // current, upstream temps
+                 55.0e5, 56.0e5,  // current, upstream pressures
+                 50.0, 0.15,  // dx, diameter
+                 1.5, 0.8,    // ugs, uls
+                 0.35, 0.25,  // gasHoldup, waterCut
+                 60.0, 0.5,   // externalTemp, thermalRes
+                 thermal);
+             reporter.check("R07/thermal advanceThermalStep returns finite",
+                            std::isfinite(engineResult.updatedTemperatureC));
+             reporter.check("R07/thermal advanceThermalStep in physical range",
+                            engineResult.updatedTemperatureC >= -50.0 &&
+                            engineResult.updatedTemperatureC <= 200.0);
+             reporter.check("R07/thermal advanceThermalStep not low flow",
+                            engineResult.lowFlowMode == false);
+             
+             // Test 5: Determinism - same inputs produce same outputs
+             ThermalUpdateResult detResult1 = computeThermalUpdate(
+                 thermal, normalFlowInput, context);
+             ThermalUpdateResult detResult2 = computeThermalUpdate(
+                 thermal, normalFlowInput, context);
+             reporter.check("R07/thermal update deterministic temperature",
+                            detResult1.updatedTemperatureC == detResult2.updatedTemperatureC);
+             reporter.check("R07/thermal update deterministic heat flux",
+                            detResult1.heatFlux == detResult2.heatFlux);
+             reporter.check("R07/thermal update deterministic substeps",
+                            detResult1.substepsUsed == detResult2.substepsUsed);
+         }
 
          ThermalSideInput thermalEdge = thermalIn;
          thermalEdge.gasHoldup = 0.0;

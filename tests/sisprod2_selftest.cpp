@@ -3,14 +3,18 @@
  *
  * Standalone entry point for the new SisProd architecture test suite. It is not
  * part of the Marlim3 build; the pytest test tests/test_sisprod2.py compiles it
- * together with src/core/SisProd.cpp to validate the new implementation in
- * isolation.
+ * together with src/core/SisProd.cpp + modular files to validate the new
+ * implementation in isolation.
  *
- * Keeping the main here (instead of guarded by a macro inside the production
- * translation unit) means SisProd.cpp declares no main and stays clean.
+ * Structure (2026-07):
+ *   - SisProd.cpp (core)
+ *   - BlackOilProperties.cpp (R04)
+ *   - DriftFluxCorrelations.cpp (R03)
+ *   - HydraulicFriction.cpp (R06/R10)
+ *   - PressureGradientEngine.cpp (R05)
  */
 
-#include "SisProd2.h"
+#include "SisProd.h"
 
 #include <cstdio>
 #include <cstring>

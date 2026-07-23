@@ -11,7 +11,7 @@
 #define ARQUIVO_SCHEMA_REDE_JSON "schema_rede_1_0_0.json"
 
 #include "Log.h"
-#include "SisProd.h"
+#include "SisProd_old.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/pt_BR.h"
 #include "rapidjson/filereadstream.h"

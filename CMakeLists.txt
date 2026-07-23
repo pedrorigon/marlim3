@@ -80,6 +80,11 @@ configure_file(
 )
 
 file(GLOB CXX_SOURCES ${SRCDIR}/*.cpp)
+# New SisProd architecture files are now in src/core/ (flat structure)
+# and are automatically included by the GLOB above:
+#   BlackOilProperties.cpp, DriftFluxCorrelations.cpp
+#   HydraulicFriction.cpp, PressureGradientEngine.cpp
+
 set(F90_SOURCES
     ${FSRCDIR}/Constants.f90
     ${FSRCDIR}/DebugFacilities.f90
@@ -279,3 +284,39 @@ add_custom_command(TARGET Marlim3 POST_BUILD
 )
 
 install(TARGETS Marlim3 DESTINATION bin)
+
+# Parity test executable for validating SisProd migration (local use only, not CI)
+# Compares new sisprod2 functions against reference values from self-tests
+# Note: Does not link Fortran - only tests C++ modules
+add_executable(sisprod_parity_tests 
+    ${CMAKE_SOURCE_DIR}/tests/sisprod_parity_tests.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/DriftFluxCorrelations.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/BlackOilProperties.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/HydraulicFriction.cpp
+)
+
+target_compile_definitions(sisprod_parity_tests PRIVATE MARLIM_BUILD)
+
+target_include_directories(sisprod_parity_tests PRIVATE
+    ${INCDIR}
+    ${LIBDIR}
+)
+
+# No Fortran linking - parity tests compare new implementations
+# against reference values, not against legacy SProd (which needs Fortran)
+
+# Compile options
+target_compile_options(sisprod_parity_tests PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wall>
+    -fopenmp
+)
+
+set_target_properties(sisprod_parity_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+# Custom target to run parity tests manually
+add_custom_target(run_parity_tests
+    COMMAND ${CMAKE_BINARY_DIR}/sisprod_parity_tests
+    DEPENDS sisprod_parity_tests
+    COMMENT "Running SisProd parity tests (local validation only)"
+    VERBATIM
+)

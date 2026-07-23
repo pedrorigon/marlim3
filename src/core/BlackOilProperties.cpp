@@ -4,7 +4,7 @@
  * R04 — Black-oil fluid-property correlations (pure, no global state).
  */
 
-#include "SisProd2.h"
+#include "SisProd.h"
 
 #include <cmath>
 

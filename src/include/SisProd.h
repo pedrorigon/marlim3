@@ -1,1562 +1,993 @@
 /*
  * SisProd.h
  *
- * Created on: December 21, 2016
- *     Author: Eduardo
+ * Public interface of the SisProd architecture.
+ *
+ * This header keeps declarations, value types and inline accessors for:
+ * - Root finding and solvers
+ * - Stream mixing and fluid models
+ * - Drift-flux correlations (R03)
+ * - Black-oil properties (R04)
+ * - Pressure-gradient correlations (R05)
+ * - Hydraulic friction and equipment (R06/R10)
+ *
+ * Implementation files:
+ *   - SisProd.cpp           : Main implementation
+ *   - BlackOilProperties.cpp: R04 black-oil correlations
+ *   - DriftFluxCorrelations.cpp: R03 drift-flux (C0/Ud)
+ *   - HydraulicFriction.cpp : R06 friction + R10 GLV
+ *   - PressureGradientEngine.cpp: R05 pressure-gradient dispatcher
+ *
+ * Legacy interface preserved in SisProd_old.h (class SProd).
+ *
+ * Implementation selection controlled by MARLIM_USE_NEW_SISPROD (see CMakeLists.txt).
  */
 
-#ifndef SISPROD_H_
-#define SISPROD_H_
-#define _USE_MATH_DEFINES // Enables M_PI on supported platforms
+#ifndef MARLIM_SISPROD_H_
+#define MARLIM_SISPROD_H_
 
-#include "Acidentes2.h"
-#include "Bcsm2.h"
-#include "BombaVol.h"
-#include "FerramentasNumericas.h"
-#include "FonteMas.h"
-#include "FonteMassCHK.h"
-#include "Geometria.h"
-#include "GradientCorrelations.h"
-#include "Leitura.h"
-#include "Log.h"
-#include "Matriz.h"
-#include "PropFlu.h"
-#include "PropFluCol.h"
-#include "TrocaCalor.h"
-#include "Vetor.h"
-#include "acessorios.h"
-#include "celula3.h"
-#include "celulaGas.h"
-#include "chokegas.h"
-#include "criterioIntermiSevera.h"
-#include "dados3DPoisson.h"
-#include "estrat.h"
-#include "estruturaTabDin.h"
-#include "mapa.h"
-#include "multiBCS.h"
-#include "solver3DPoisson.h"
-#include "variaveisGlobais1D.h"
-#include <ctime>
-#include <fstream>
-#include <iostream>
-#include <math.h>
-#include <omp.h>
-#include <sstream>
-#include <stdio.h>
-#include <string.h>
+#include <cstddef>
+#include <functional>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
-using namespace std;
-
-/// Application or simulator version string.
-extern string versao;
-/// Global simulation start timestamp.
-extern time_t nowGlobIni;
-/// Broken-down local time corresponding to nowGlobIni.
-extern tm *ltmGlobIni;
-/// Day component of the simulation start time.
-extern int diaIni;
-/// Hour component of the simulation start time.
-extern int horaIni;
-/// Minute component of the simulation start time.
-extern int minutoIni;
-/// Second component of the simulation start time.
-extern int segundoIni;
-/// Global simulation end timestamp.
-extern time_t nowGlobFim;
-/// Broken-down local time corresponding to nowGlobFim.
-extern tm *ltmGlobFim;
-
-/**
- * @brief Models and solves a one-dimensional production system.
- *
- * The class owns the production and gas-service-line state, fluid-property
- * tables, boundary conditions, network-coupling data, transient buffers,
- * and steady-state/transient solution procedures.
- */
-class SProd {
-  public:
-    /**
-     * @brief Selects the specific-heat model used by the black-oil formulation. The value is read from the JSON
-     * input and determines whether specific heat is calculated by the internal black-oil model or obtained
-     * from a PVT table.
-     */
-    int ModelCp;
-    /**
-     * @brief Selects the liquid Joule-Thomson model used by the black-oil formulation. The value is read from the
-     * JSON input and determines whether the coefficient is calculated internally or obtained from a PVT
-     * table.
-     */
-    int Modeljtl;
-    /**
-     * @brief Enables latent-heat calculations for black-oil simulations.
-     */
-    int CalcLat;
-    /**
-     * @brief Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil
-     * ratio, and light/heavy mass fractions.
-     */
-    int trackRGO;
-    /**
-     * @brief Enables transport equations for gas density and the gas-phase CO2 molar fraction.
-     */
-    int trackDeng;
-    /**
-     * @brief Number of gas sources; retained for compatibility with arq.ninjgas.
-     */
-    int ninjgas;
-    /**
-     * @brief Indicates whether a gas service line is coupled to the production system.
-     */
-    int lingas;
-    /**
-     * @brief Indicates that the current case represents an injection well.
-     */
-    int injPoc;
-
-    /**
-     * @brief Section index when this object belongs to a pipeline network.
-     */
-    int indTramo;
-    /**
-     * @brief Number of control volumes in the production line.
-     */
-    int ncel;
-    /**
-     * @brief Requests rollback and time-step reevaluation when at least one control volume produces a holdup or
-     * volume fraction outside the physical [0, 1] range.
-     */
-    int reinicia;
-
-    /**
-     * @brief Control parameter for slowly varying thermal coupling.
-     */
-    double trocaTermicaLenta;
-    /**
-     * @brief Recent Master1 ratio values for the active state.
-     */
-    double vRazMast1[10];
-    /**
-     * @brief Recent Master1 ratio values for the inactive state.
-     */
-    double vRazMast0[10];
-    /**
-     * @brief Critical Master1 ratio history used by the switching logic.
-     */
-    double vRazMastCrit[10];
-
-    /**
-     * @brief Current inlet pressure boundary condition.
-     */
-    double presE;
-    /**
-     * @brief Current inlet temperature boundary condition.
-     */
-    double tempE;
-    /**
-     * @brief Current inlet gas mass fraction.
-     */
-    double titE;
-    /**
-     * @brief Computed inlet void fraction.
-     */
-    double alfE;
-    /**
-     * @brief Computed inlet complementary-liquid fraction.
-     */
-    double betaE;
-    /**
-     * @brief Inlet pressure stored at the previous time level.
-     */
-    double presEini;
-    /**
-     * @brief Inlet temperature stored at the previous time level.
-     */
-    double tempEini;
-    /**
-     * @brief Inlet gas mass fraction stored at the previous time level.
-     */
-    double titEini;
-    /**
-     * @brief Inlet void fraction stored at the previous time level.
-     */
-    double alfEini;
-    /**
-     * @brief Inlet complementary-liquid fraction stored at the previous time level.
-     */
-    double betaEini;
-
-    /**
-     * @brief Pressure in the last production-line control volume. When the surface choke is open, this value is
-     * equal to the separator pressure.
-     */
-    double presfim;
-    /**
-     * @brief Previous-time-level value of presfim.
-     */
-    double presfimini;
-    /**
-     * @brief Gas mass fraction imposed during reverse flow at the last control volume. Used only by transient
-     * network simulations.
-     */
-    double titRev;
-    /**
-     * @brief Previous-time-level value of titRev.
-     */
-    double titRevini;
-    /**
-     * @brief Complementary-liquid fraction imposed during reverse flow at the last control volume. Used only by
-     * transient network simulations.
-     */
-    double betaRev;
-    /**
-     * @brief Previous-time-level value of betaRev.
-     */
-    double betaRevini;
-    /**
-     * @brief Separator pressure or pressure at the inlet of the downstream network section.
-     */
-    double pGSup;
-    /**
-     * @brief Previous-time-level value of pGSup.
-     */
-    double pGSupIni;
-    /**
-     * @brief Previous-time-level downstream or separator temperature.
-     */
-    double tGSupIni;
-    /**
-     * @brief Separator temperature or temperature at the inlet of the downstream section.
-     */
-    double tGSup;
-    /**
-     * @brief Production-line inlet temperature when no inlet-pressure boundary condition is imposed.
-     */
-    double temperatura;
-
-    /**
-     * @brief Reserved mass-flow state; currently unused.
-     */
-    double masSup;
-    /**
-     * @brief Reserved temperature state; currently unused.
-     */
-    double tempSup;
-    /**
-     * @brief Number of control volumes in the gas service line.
-     */
-    int ncelGas;
-    /**
-     * @brief Gas-injection pressure.
-     */
-    double presiniG;
-    /**
-     * @brief Gas-injection temperature in the service line.
-     */
-    double tempiniG;
-    /**
-     * @brief Reserved source mass-flow value; currently unused.
-     */
-    double massfonte;
-    /**
-     * @brief CFL safety factor, typically set to 0.8.
-     */
-    double mult;
-
-    /**
-     * @brief Time-averaged pressure in the final production-line control volume. Used to decide whether the
-     * surface choke behaves as a localized pressure loss or as a discharge-flow model.
-     */
-    double presMedMov;
-    /**
-     * @brief Time-averaged mixture volumetric flux in the final production-line control volume. Used by the
-     * surface-choke operating-mode logic.
-     */
-    double jMedMov;
-    /**
-     * @brief Time-averaged void fraction in the final production-line control volume. Used by the surface-choke
-     * operating-mode logic.
-     */
-    double alfMedMov;
-    /**
-     * @brief Start time of the moving-average window.
-     */
-    double tMedMov;
-    /**
-     * @brief Duration of the moving-average window.
-     */
-    double ktMedMov;
-    /**
-     * @brief Accumulated pressure used to compute presMedMov.
-     */
-    double pTotal;
-    /**
-     * @brief Accumulated mixture flux used to compute jMedMov.
-     */
-    double jTotal;
-    /**
-     * @brief Accumulated void fraction used to compute alfMedMov.
-     */
-    double alfTotal;
-    /**
-     * @brief Pressure samples used by the moving-average calculation.
-     */
-    vector<double> presVet;
-    /**
-     * @brief Mixture-flux samples used by the moving-average calculation.
-     */
-    vector<double> jVet;
-    /**
-     * @brief Void-fraction samples used by the moving-average calculation.
-     */
-    vector<double> alfVet;
-    /**
-     * @brief Time samples associated with the moving-average window.
-     */
-    vector<double> tVet;
-
-    /**
-     * @brief Current surface-choke open/closed state.
-     */
-    int aberto;
-    /**
-     * @brief Previous-time-level surface-choke state.
-     */
-    int abertoini;
-    /**
-     * @brief Counter that delays transitions out of active-choke mode.
-     */
-    int tempoaberto;
-    /**
-     * @brief Previous-time-level value of tempoaberto.
-     */
-    int tempoabertoini;
-    /**
-     * @brief Current Master1 valve state.
-     */
-    int EstadoMaster1;
-    /**
-     * @brief Counter used while changing the Master1 state.
-     */
-    int contaMaster1;
-    /**
-     * @brief Indicates whether the surface choke is active.
-     */
-    int masChkSup;
-    /**
-     * @brief Previous-time-level value of masChkSup.
-     */
-    int masChkSupini;
-    /**
-     * @brief Signals a surface-choke operating-mode transition.
-     */
-    int mudaModoChk;
-    /**
-     * @brief Previous-time-level value of mudaModoChk.
-     */
-    int mudaModoChkini;
-    /**
-     * @brief Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3
-     * = disabled.
-     */
-    int TransMassModel;
-    /**
-     * @brief Number of pigs currently moving through the line.
-     */
-    int indpigP;
-    /**
-     * @brief Previous-time-level value of indpigP.
-     */
-    int indpigPini;
-    /**
-     * @brief Number of pigs scheduled for launch.
-     */
-    int npig;
-    /**
-     * @brief Cell indices where pigs are received.
-     */
-    int *receb;
-
-    /**
-     * @brief Number of points in the fluid-property tables.
-     */
-    int npontos;
-    /**
-     * @brief Number of production fluids.
-     */
-    int nfluP;
-    /**
-     * @brief Black-oil gas-compressibility-factor table.
-     */
-    double **zdranP;
-    /**
-     * @brief Pressure derivative of the black-oil compressibility-factor table.
-     */
-    double **dzdpP;
-    /**
-     * @brief Temperature derivative of the black-oil compressibility-factor table.
-     */
-    double **dzdtP;
-    /**
-     * @brief Black-oil gas specific-heat table.
-     */
-    double **cpg;
-    /**
-     * @brief Black-oil produced-liquid specific-heat table.
-     */
-    double **cpl;
-    /**
-     * @brief Temperature derivative of liquid density.
-     */
-    double **drholdT;
-    /**
-     * @brief Black-oil latent-heat table.
-     */
-    double **HLat;
-
-    /**
-     * @brief Parsed user input and simulation configuration.
-     */
-    Ler arq;
-
-    /// Read-only access to the parsed configuration (Fase 1 encapsulation).
-    /// Prefer sis.config().field over sis.arq.field in Num4Main.cpp so that
-    /// future refactoring can narrow the visibility of arq without a big diff.
-    const Ler &config() const { return arq; }
-
-    /// Mutable access to the parsed configuration (needed by network loop
-    /// assignments such as malha[i].arq.ConContEntrada = 1).
-    Ler &config() { return arq; }
-
-    /// Read-only access to a production-line control volume (Fase 1 encapsulation).
-    /// Prefer sis.cell(i).field over sis.celula[i].field in Num4Main.cpp.
-    const Cel &cell(int i) const { return celula[i]; }
-
-    /// Mutable access to a production-line control volume.
-    Cel &cell(int i) { return celula[i]; }
-
-    /// Read-only access to a gas-line control volume (Fase 1 encapsulation).
-    /// Prefer sis.gasCell(i).field over sis.celulaG[i].field in Num4Main.cpp.
-    const CelG &gasCell(int i) const { return celulaG[i]; }
-
-    /// Mutable access to a gas-line control volume.
-    CelG &gasCell(int i) { return celulaG[i]; }
-
-    /**
-     * @brief Buffer used to write gas-line profiles.
-     */
-    FullMtx<double> flutG;
-    /**
-     * @brief Buffer used to write production-line profiles.
-     */
-    FullMtx<double> flut;
-    /**
-     * @brief Global pressure-velocity coupling matrix for the gas line.
-     */
-    BandMtx<double> matglobG;
-    /**
-     * @brief Right-hand side and solution vector for the gas-line pressure-velocity system.
-     */
-    Vcr<double> termolivreG;
-    /**
-     * @brief Global pressure-velocity coupling matrix for the multiphase production line.
-     */
-    BandMtx<double> matglobP;
-    /**
-     * @brief Right-hand side and solution vector for the production-line pressure-velocity system.
-     */
-    Vcr<double> termolivreP;
-
-    /**
-     * @brief Current time step.
-     */
-    double dt;
-    /**
-     * @brief Time step used at the previous time level.
-     */
-    double dtini;
-    /**
-     * @brief Simulation end time.
-     */
-    double tfinal;
-
-    /**
-     * @brief Production-line cell indices associated with gas-lift valves.
-     */
-    int *posicVGLP;
-    /**
-     * @brief Service-line cell indices associated with gas-lift valves.
-     */
-    int *posicVGLG;
-
-    /**
-     * @brief Number of scheduled Master1 opening events.
-     */
-    int nabreM1;
-    /**
-     * @brief Number of scheduled Master1 closing events.
-     */
-    int nfechaM1;
-    /**
-     * @brief Times at which Master1 closes.
-     */
-    double *fechaM1;
-    /**
-     * @brief Times at which Master1 opens.
-     */
-    double *abreM1;
-
-    /**
-     * @brief Gas-line cells where radial temperature profiles are written.
-     */
-    int *ncelperftransg;
-    /**
-     * @brief Maximum number of samples stored for each gas-line trend.
-     */
-    int *TrendLengthG;
-    /**
-     * @brief Buffered gas-line trend data.
-     */
-    double ***MatTrendG;
-    /**
-     * @brief Times at which gas-line trend buffers are reset.
-     */
-    double *resettrendg;
-    /**
-     * @brief Number of gas-line trend samples currently stored.
-     */
-    int *ntrendg;
-    /**
-     * @brief Number of gas-line trend samples stored before the last flush.
-     */
-    int *ntrendgB;
-    /**
-     * @brief Maximum number of wall-temperature samples stored for each gas-line trend.
-     */
-    int *TrendLengthTransG;
-    /**
-     * @brief Buffered gas-line wall-temperature trend data.
-     */
-    double ***MatTrendTransG;
-    /**
-     * @brief Times at which gas-line wall-temperature buffers are reset.
-     */
-    double *resettrendtransg;
-    /**
-     * @brief Number of gas-line wall-temperature samples currently stored.
-     */
-    int *ntrendtransg;
-    /**
-     * @brief Number of gas-line wall-temperature samples stored before the last flush.
-     */
-    int *ntrendtransgB;
-
-    /**
-     * @brief Production-line cells where radial temperature profiles are written.
-     */
-    int *ncelperftransp;
-    /**
-     * @brief Maximum number of samples stored for each production-line trend.
-     */
-    int *TrendLengthP;
-    /**
-     * @brief Buffered production-line trend data.
-     */
-    double ***MatTrendP;
-    /**
-     * @brief Times at which production-line trend buffers are reset.
-     */
-    double *resettrend;
-    /**
-     * @brief Number of production-line trend samples currently stored.
-     */
-    int *ntrend;
-    /**
-     * @brief Number of production-line trend samples stored before the last flush.
-     */
-    int *ntrendB;
-    /**
-     * @brief Maximum number of wall-temperature samples stored for each production-line trend.
-     */
-    int *TrendLengthTransP;
-    /**
-     * @brief Buffered production-line wall-temperature trend data.
-     */
-    double ***MatTrendTransP;
-    /**
-     * @brief Times at which production-line wall-temperature buffers are reset.
-     */
-    double *resettrendtrans;
-    /**
-     * @brief Number of production-line wall-temperature samples currently stored.
-     */
-    int *ntrendtrans;
-    /**
-     * @brief Number of production-line wall-temperature samples stored before the last flush.
-     */
-    int *ntrendtransB;
-
-    /**
-     * @brief Service-line index where column-annulus thermal coupling begins.
-     */
-    int AnulaColunaIni;
-    /**
-     * @brief Service-line index where column-annulus thermal coupling ends.
-     */
-    int AnulaColunaFim;
-    /**
-     * @brief Production-column index aligned with AnulaColunaIni.
-     */
-    int ColunaAnulaIni;
-    /**
-     * @brief Production-column index aligned with AnulaColunaFim.
-     */
-    int ColunaAnulaFim;
-    /**
-     * @brief Indicates whether column-annulus thermal coupling is enabled.
-     */
-    int verificaAcop;
-    /**
-     * @brief Secondary-line index where parallel-network coupling with the primary line begins.
-     */
-    int SecPrimIniRedeP;
-    /**
-     * @brief Secondary-line index where parallel-network coupling with the primary line ends.
-     */
-    int SecPrimFimRedeP;
-    /**
-     * @brief Primary-line index aligned with SecPrimIniRedeP.
-     */
-    int PrimSecIniRedeP;
-    /**
-     * @brief Primary-line index aligned with SecPrimFimRedeP.
-     */
-    int PrimSecFimRedeP;
-    /**
-     * @brief Indicates thermal coupling on the primary branch of a parallel network.
-     */
-    int verificaAcopRedeP;
-    /**
-     * @brief Indicates thermal coupling on the secondary branch of a parallel network.
-     */
-    int verificaAcopRedeS;
-
-    /**
-     * @brief Current production-profile output index.
-     */
-    int kontaTempoProf;
-    /**
-     * @brief Current gas-line profile output index.
-     */
-    int kontaTempoProfG;
-    /**
-     * @brief Current production-wall-temperature profile output index.
-     */
-    int kontaTempoTransProf;
-    /**
-     * @brief Current gas-line wall-temperature profile output index.
-     */
-    int kontaTempoTransProfG;
-    /**
-     * @brief In-memory stream used to assemble event-log output.
-     */
-    ostringstream saidaLog;
-    /**
-     * @brief Event-log file name.
-     */
-    string tmpLog;
-    /**
-     * @brief Number of events written to the event log.
-     */
-    int contaLog;
-
-    /**
-     * @brief Smallest production-line control-volume length.
-     */
-    double menorDx;
-    /**
-     * @brief Number of iterations used to bracket the initial steady-state root.
-     */
-    int iterperm;
-    /**
-     * @brief Simulation time-step counter.
-     */
-    int kSP;
-    /**
-     * @brief Controls event-log output frequency.
-     */
-    int KontaImprime;
-    /**
-     * @brief Index of the next scheduled simulation event.
-     */
-    int indevento;
-    /**
-     * @brief Reserved steady-state mode flag; currently unused.
-     */
-    int modoPerm;
-    /**
-     * @brief Current complete-model activation state.
-     */
-    int modeloCompleto;
-    /**
-     * @brief Previous complete-model activation state.
-     */
-    int modeloCompleto0;
-    /**
-     * @brief Counter used when switching between model formulations.
-     */
-    int kontaMudaModelo;
-
-    /**
-     * @brief History of recently accepted time steps.
-     */
-    vector<double> dtSim;
-    /**
-     * @brief History of time steps proposed by the CFL criterion.
-     */
-    vector<double> dtCFL;
-    /**
-     * @brief Average time step proposed by the CFL criterion.
-     */
-    double dtCFLMed;
-    /**
-     * @brief Average time step actually used by the simulation.
-     */
-    double dtSimMed;
-    /**
-     * @brief Indicates that time-step growth must remain restricted.
-     */
-    int restriDt;
-    /**
-     * @brief Number of remaining steps under the current time-step restriction.
-     */
-    int kontarestriDt;
-    /**
-     * @brief Counter for segregation-related time-step restrictions.
-     */
-    int kontarestriSegrega;
-    /**
-     * @brief Accumulated CFL time steps used to compute dtCFLMed.
-     */
-    double dtCFLTotal;
-    /**
-     * @brief Accumulated accepted time steps used to compute dtSimMed.
-     */
-    double dtSimTotal;
-    /**
-     * @brief Auxiliary CFL time-step accumulator.
-     */
-    double dtauxCFL;
-    /**
-     * @brief Auxiliary accepted-time-step accumulator.
-     */
-    double dtauxFinal;
-    /**
-     * @brief Counts alternating liquid-flow oscillations near an active surface choke.
-     */
-    int kontaGolfada;
-
-    /**
-     * @brief Surface-choke model.
-     */
-    choke chokeSup;
-    /**
-     * @brief Gas-injection choke model.
-     */
-    ChokeGas chokeInj;
-    /**
-     * @brief Gas-lift valves installed in the system.
-     */
-    ChokeGas *chokeVGL;
-    /**
-     * @brief Gas service-line control volumes.
-     */
-    CelG *celulaG;
-    /**
-     * @brief Multiphase production-line control volumes.
-     */
-    Cel *celula;
-
-    /**
-     * @brief Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table
-     * is separate from the full PVTSim fluid-property model.
-     */
-    double *PBPVTSim;
-    /**
-     * @brief Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This
-     * table is separate from the full PVTSim fluid-property model.
-     */
-    double *TBPVTSim;
-    /**
-     * @brief Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its
-     * expensive calculation during the simulation.
-     */
-    double **RSLivia;
-    /**
-     * @brief Enables reading bubble-pressure and bubble-temperature tables in black-oil mode.
-     */
-    int LerPB;
-    /**
-     * @brief Enables reading a solution-gas-ratio table in black-oil mode.
-     */
-    int lerRS;
-
-    /**
-     * @brief Current service-line cell containing the completion-fluid/gas interface.
-     */
-    int celInter;
-    /**
-     * @brief Maximum time step that keeps the unloading interface within one gas-line cell.
-     */
-    double dtInter;
-    /**
-     * @brief Current completion-fluid/gas interface velocity.
-     */
-    double velInter;
-    /**
-     * @brief Previous-time-level interface cell.
-     */
-    int celInterIni;
-    /**
-     * @brief Previous-time-level interface-limited time step.
-     */
-    double dtInterIni;
-    /**
-     * @brief Previous-time-level interface velocity.
-     */
-    double velInterIni;
-
-    /**
-     * @brief Time horizon used by the gas-lift unloading controller.
-     */
-    double tempMedContDesc;
-    /**
-     * @brief Maximum number of flow samples retained by the unloading PI controller.
-     */
-    double maxVecContDesc;
-    /**
-     * @brief Average maximum completion-fluid mass flow through the gas-lift valves.
-     */
-    double vazmedDesc;
-    /**
-     * @brief Averaging interval used for gas-lift-valve mass flow.
-     */
-    double tempmedDEsc;
-    /**
-     * @brief Maximum valve mass-flow samples used by the unloading controller.
-     */
-    vector<double> vazmaxMedDesc;
-    /**
-     * @brief Time-step samples associated with the unloading-flow average.
-     */
-    vector<double> dtDesc;
-
-    /**
-     * @brief Indicates that the section outlet is not connected to another network section.
-     */
-    int noextremo;
-    /**
-     * @brief Indicates that the section inlet is not connected to another network section.
-     */
-    int noinicial;
-    /**
-     * @brief Indicates that this section is a branch of a gas-lift ring network.
-     */
-    int derivaAnel;
-
-    /**
-     * @brief Intermediate production-liquid inflow estimate for a network section.
-     */
-    double fontemassPRBuf;
-    /**
-     * @brief Intermediate complementary-liquid inflow estimate for a network section.
-     */
-    double fontemassCRBuf;
-    /**
-     * @brief Intermediate gas inflow estimate for a network section.
-     */
-    double fontemassGRBuf;
-
-    /**
-     * @brief Temporary-network flag; currently expected to remain zero.
-     */
-    int redeTemporario;
-
-    /**
-     * @brief Trend-output cycle counter; a value of one triggers header output.
-     */
-    double kimpT;
-
-    /**
-     * @brief Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It
-     * mitigates a pressure blind spot when the upstream side contains only liquid and increases if the
-     * problem persists.
-     */
-    double momentoDesesp;
-
-    /**
-     * @brief Recent maximum pressure-change rates.
-     */
-    vector<double> taxaDpMax;
-    /**
-     * @brief Average maximum pressure-change rate.
-     */
-    double DpMaxMed;
-
-    /**
-     * @brief Recent maximum temperature-change rates.
-     */
-    vector<double> taxaDTMax;
-    /**
-     * @brief Average maximum temperature-change rate.
-     */
-    double DTMaxMed;
-    /**
-     * @brief Initial holdup estimate used by the steady-state solver.
-     */
-    double chuteHol;
-    /**
-     * @brief Controls the search for an initial steady-state estimate.
-     */
-    int buscaIni;
-
-    /**
-     * @brief Dynamic fluid-property tables.
-     */
-    vector<tabelaDinamica> tabDin;
-    /**
-     * @brief Number of dynamic property tables.
-     */
-    int ntabDin;
-    /**
-     * @brief Counter controlling compositional-property refreshes.
-     */
-    int kontaRenovaComp;
-    /**
-     * @brief Section-blocking state.
-     */
-    int bloq;
-
-    /**
-     * @brief Fluid state received from downstream during reverse network flow.
-     */
-    ProFlu fluiRevRede;
-    /**
-     * @brief Temperature associated with reverse network flow.
-     */
-    double tempRev;
-    /**
-     * @brief Indicates reverse flow in the steady-state network solution.
-     */
-    int revPerm;
-    /**
-     * @brief Index corrections used by coupled thermal sections.
-     */
-    vector<int> acertaIndAcop;
-    /**
-     * @brief Shared one-dimensional simulation settings.
-     */
-    varGlob1D *vg1dSP;
-    /**
-     * @brief Three-dimensional Poisson solver used by the thermal model.
-     */
-    solverP3D poisson3D;
-    /**
-     * @brief Minimum time step allowed by the current cycle.
-     */
-    double dtCicMin;
-
-    /**
-     * @brief Production cells handled by the two-dimensional Poisson model.
-     */
-    vector<int> indCelPoisson2D;
-    /**
-     * @brief Number of cells handled by the two-dimensional Poisson model.
-     */
-    int nCelulaPoisson2D;
-    /**
-     * @brief Indicates that the thermal source term is disabled.
-     */
-    int semTermo;
-    /**
-     * @brief Current steady-state convergence monitor.
-     */
-    double monitConvPerm;
-    /**
-     * @brief Reference value for the steady-state convergence monitor.
-     */
-    double monitConvPermBase;
-    /**
-     * @brief Signals that the time step must be adjusted.
-     */
-    int alteraTempo;
-
-    /**
-     * @brief Initial source indices for parallel-network coupling.
-     */
-    vector<int> indFonteRedeParalelaIni;
-    /**
-     * @brief Initial production-liquid sources for the parallel network.
-     */
-    vector<double> fonteMpRedeParalelaIni;
-    /**
-     * @brief Initial complementary-liquid sources for the parallel network.
-     */
-    vector<double> fonteMcRedeParalelaIni;
-    /**
-     * @brief Initial gas sources for the parallel network.
-     */
-    vector<double> fonteMgRedeParalelaIni;
-    /**
-     * @brief Boundary-condition type applied to the secondary parallel-network branch.
-     */
-    int redeParalelaCCsecundario;
-    /**
-     * @brief Primary branch index in a parallel network.
-     */
-    int redeParalelaP;
-    /**
-     * @brief Secondary branch index in a parallel network.
-     */
-    int redeParalelaS;
-
-    vector<int> kontaTempoCelUni;
-
-    const char *saidaTextoSis[15] = {"                          Post Coitum Omine Animal Triste Est                   ",
-                                     "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
-                                     "      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
-                                     "                   Infeliz e o espirito ansioso pelo futuro.                    ",
-                                     "                                    Memento Mori                                ",
-                                     " Somente um progresso calmo e constante, livre de precipitacao, conduz ao objetivo.",
-                                     "             Paciencia, nove mulheres nao conseguem gerar uma crianca em um mes. ",
-                                     "                  A necessidade e a mae da inovacao, mas a paciencia e o pai    ",
-                                     "O sucesso nao e uma linha reta, e um jogo de resistencia, e cada tropeco e apenas um degrau a mais para a vitoria!",
-                                     "                        Quem vive de navegar, o vento e quem lhe comanda                ",
-                                     "    Uma vez me perguntaram o que achava da passagem do tempo, e eu disse: sou contra    ",
-                                     "                 Nao importa o quanto voce va devagar, desde que nao pare                ",
-                                     "Um simulador que resolve uma parada de producao, comeca avancando pequenos incrementos de tempo",
-                                     "                            Nada e permanente, exceto a mudanca                           ",
-                                     "                  Uma jornada de mil quilometros comeca com um unico passo                "};
-    const char *saidaSubTextoSis[15] = {
-        "                         Galeno de Pergamo do Transiente Longo                          ",
-        "                     J. California Cooper depois da simulacao divergir                  ",
-        "                                Marcel Proust no CrossFit                               ",
-        "                              Seneca do Mindfulness                                     ",
-        "                                   Zuleica da Funeraria                                 ",
-        "                                       China In Box                                     ",
-        "                                      Tiao do Linkedin                                  ",
-        "                                      Marcao da Oficina                                 ",
-        "                                    Mario Pascal do Insta                               ",
-        "                          Seu Pereira na feira de artesanatos numericos                 ",
-        "                        Luis Fernando Verissimo das Simulacoes Permanentes              ",
-        "                             Confucio vendo a simulacao emperrar                       ",
-        "                               Confucio das simulacoes sem fim                         ",
-        "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
-        "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    "};
-
-    /// Constructs and initializes a production-system simulation from the input and log files.
-    SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-          tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = 0, int TD = -1, int vbloq = 0,
-          int temporario = 0,
-          int reverso = 0,
-          double *compfonte = 0,
-          int *posicfonte = 0,
-          int nfontes = 0,
-          int redeperm = 1);
-    /// Creates an empty production-system object.
-    SProd();
-
-    /// Releases dynamically allocated simulation buffers and cell arrays.
-    ~SProd() {
-        if (arq.lingas > 0)
-            delete[] celulaG;
-        if (chokeVGL!=0 && arq.lingas > 0)
-            delete[] chokeVGL;
-        if (posicVGLP!=0 && arq.lingas > 0)
-            delete[] posicVGLP;
-        if (posicVGLG!=0 && arq.lingas > 0)
-            delete[] posicVGLG;
-        if (nabreM1 > 0)
-            delete[] abreM1;
-        if (nfechaM1 > 0)
-            delete[] fechaM1;
-
-        if (arq.nperfistransp > 0)
-            delete[] ncelperftransp;
-        if (arq.nperfistransg > 0 && arq.lingas > 0)
-            delete[] ncelperftransg;
-
-        if (arq.ntendp > 0 && redeTemporario == 0) {
-            for (int i = 0; i < arq.ntendp && MatTrendP && TrendLengthP; i++) {
-                if (MatTrendP[i]) {
-                    for (int j = 0; j < TrendLengthP[i]; j++)
-                        delete[] MatTrendP[i][j];
-                    delete[] MatTrendP[i];
-                }
-            }
-            if (MatTrendP!=0)
-                delete[] MatTrendP;
-            if (TrendLengthP!=0)
-                delete[] TrendLengthP;
-            if (resettrend!=0)
-                delete[] resettrend;
-            if (ntrend!=0)
-                delete[] ntrend;
-            if (ntrendB!=0)
-                delete[] ntrendB;
-        }
-
-        if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0) {
-            for (int i = 0; i < arq.ntendg && MatTrendG && TrendLengthG; i++) {
-                if (MatTrendG[i]) {
-                    for (int j = 0; j < TrendLengthG[i]; j++)
-                        delete[] MatTrendG[i][j];
-                    delete[] MatTrendG[i];
-                }
-            }
-            if (MatTrendG!=0)
-                delete[] MatTrendG;
-            if (TrendLengthG!=0)
-                delete[] TrendLengthG;
-            if (resettrendg!=0)
-                delete[] resettrendg;
-            if (ntrendg!=0)
-                delete[] ntrendg;
-            if (ntrendgB!=0)
-                delete[] ntrendgB;
-        }
-
-        if (arq.ntendtransp > 0 && redeTemporario == 0) {
-            for (int i = 0; i < arq.ntendtransp && MatTrendTransP && TrendLengthTransP; i++) {
-                if (MatTrendTransP[i]) {
-                    for (int j = 0; j < TrendLengthTransP[i]; j++)
-                        delete[] MatTrendTransP[i][j];
-                    delete[] MatTrendTransP[i];
-                }
-            }
-            if (MatTrendTransP!=0)
-                delete[] MatTrendTransP;
-            if (TrendLengthTransP!=0)
-                delete[] TrendLengthTransP;
-            if (resettrendtrans!=0)
-                delete[] resettrendtrans;
-            if (ntrendtrans!=0)
-                delete[] ntrendtrans;
-            if (ntrendtransB!=0)
-                delete[] ntrendtransB;
-        }
-
-        if (arq.ntendtransg > 0 && redeTemporario == 0) {
-            for (int i = 0; i < arq.ntendtransg && MatTrendTransG && TrendLengthTransG; i++) {
-                if (MatTrendTransG[i]) {
-                    for (int j = 0; j < TrendLengthTransG[i]; j++)
-                        delete[] MatTrendTransG[i][j];
-                    delete[] MatTrendTransG[i];
-                }
-            }
-            if (MatTrendTransG!=0)
-                delete[] MatTrendTransG;
-            if (TrendLengthTransG!=0)
-                delete[] TrendLengthTransG;
-            if (resettrendtransg!=0)
-                delete[] resettrendtransg;
-            if (ntrendtransg!=0)
-                delete[] ntrendtransg;
-            if (ntrendtransgB!=0)
-                delete[] ntrendtransgB;
-        }
-
-        int ndiv = arq.tabent.npont - 1;
-        if (CalcLat > 0 && arq.flashCompleto == 0) {
-            for (int i = 0; i < ndiv + 2; i++)
-                delete[] HLat[i];
-            delete[] HLat;
-        }
-
-        if (LerPB > 0) {
-            delete[] PBPVTSim;
-            delete[] TBPVTSim;
-            if (lerRS == 1) {
-                for (int i = 0; i < ndiv + 2; i++)
-                    delete[] RSLivia[i];
-                delete[] RSLivia;
-            }
-        }
-
-        if (ncel > 0)
-            delete[] celula;
-        if (npig > 0)
-            delete[] receb;
-        if (arq.tabelaDinamica == 1)
-            tabDin.clear();
-    }
-
-    /// Performs a deep copy of the production-system state.
-    SProd &operator=(const SProd &);
-
-    /// Copies an already parsed system configuration without reading the JSON file again.
-    void copiaSemJson(Ler &, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq,
-                      double vbetaRev, double vbetaRevini, double vtitRev, double vtitRevini,
-                      double vdtCicMin);
-
-    /// Builds the production section after input parsing.
-    void montasistema(double *compfonte = 0,
-                      int *posicfonte = 0,
-                      int nfontes = 0);
-
-    /// Initializes the gas service line for gas-lift unloading.
-    void HidroDescargaG();
-    /// Initializes the production line for gas-lift unloading.
-    void HidroDescargaP();
-
-    /// Estimates the gas-injection pressure correction required to avoid erosional valve velocity.
-    double prescordesc(double velmax, int ivalv, double fator, int sinal);
-    /// Computes the unloading injection-pressure correction for one gas-lift valve.
-    double CalcPresValvDesc(double velGarg, int ivalv);
-    /// Controls injection and upstream-choke pressures from gas-lift-valve flow rates.
-    double BuscaPresInjDesc();
-
-    /// Updates gas-line state after solving pressure-velocity coupling.
-    void renovaGas();
-    /// Updates intermediate gas-line state during network convergence.
-    void renovaGasBuf();
-
-    /// Calculates gas-lift-valve opening area from calibration and operating conditions.
-    double areaValvCali(double PCal, double TCal, double PVO, double PT,
-                        double dextern, double areagarg, double Rvalv, double Temp);
-    /// Advances the temperature of one gas-line control volume.
-    void calctempGas(int i, double tempantiga, int modoPerm = 0);
-    /// Solves gas-line pressure and flow in the completion-fluid region during unloading.
-    void resolveDescarga();
-    /// Updates gas-line temperature in the completion-fluid region during unloading.
-    void tempDescarga(int i);
-    /// Advances the completion-fluid/gas interface in the service line.
-    void avancInter();
-    /// Calculates gas temperature across a gas-lift valve using the Joule-Thomson model.
-    double TempDescGL(int igl);
-    /// Maps gas-lift-valve positions to gas-line control volumes.
-    void ValvGasTrans();
-    /// Advances the coupled gas-line pressure, velocity, and temperature solution.
-    void subtempoGas();
-    /// Advances the intermediate gas-line state used by network convergence.
-    void subtempoGasBuf();
-
-    /// Exchanges heat-transfer data between the production column and annulus.
-    void conectaColuna();
-    /// Interpolates latent heat from enthalpy tables.
-    double interpolaHLatente(double pres, double temp);
-    /// Advances the temperature of one production-line control volume.
-    void calctemp(int i, double tempantiga, int modoPerm = 0);
-
-    /// Returns the mixture enthalpy helper value; currently unused.
-    double calcHmix(int i);
-    /// Returns the mixture-energy helper value; currently unused.
-    double energmix(int i, int jp0, int jt, double razp);
-    /// Updates temperature from enthalpy; currently unused.
-    void calcTempEntalp(int i);
-    /// Evaluates thermal mass-transfer terms; currently unused.
-    void calcTransMassTermo(int i);
-
-    /// Calculates flow through Master1 while it operates as a choke.
-    void FonteValv(int ind);
-    /// Stores source terms from the previous time level for possible rollback.
-    void salvaFonte();
-    /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
-    void renovaFonte(int ind);
-    /// Stores previous void fractions and updates pig motion and reception.
-    void renovaalbetini();
-    /// Caches cell and face densities to avoid repeated property calculations.
-    void renovaMasEsp();
-
-    /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
-    void BhagwatGhajar(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                       double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                       double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
-    void BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                          double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                          double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Choi drift-flux correlation.
-    void Choi(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-              double ug1, double ul1, double dia, double rug, double tet, double &c0,
-              double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Hibiki-Ishii drift-flux correlation.
-    void HibikiIshii(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                     double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                     double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Franca-Lahey drift-flux correlation.
-    void FrancaLahey(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                     double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                     double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud for dispersed flow.
-    void C0UdDisperso(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                      double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                      double &ud, double correcHor = 1., int estabCol = 0);
-    /// Evaluates C0 and Ud for annular or churn flow.
-    void C0UdAnularChurn(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                         double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                         double &ud, double correcHor = 1., int estabCol = 0);
-    /// Evaluates C0 and Ud for stratified flow.
-    void C0UdEstratificado(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                           double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                           double &ud, double correcHor = 1., int estabCol = 0);
-
-    /// Selects and evaluates the slip correlation at a production-line face.
-    void CalcC0Ud(int ind, double &c0, double &ud);
-    /// Evaluates slip parameters for the intermediate network state.
-    void CalcC0UdBuf(int ind, double &c0, double &ud);
-    /// Evaluates slip parameters at the inlet of an internal network section.
-    void CalcC0UdIni(int ind, double &c0, double &ud);
-    /// Evaluates slip parameters at the inlet of an internal network section.
-    void CalcC0UdIniBuf(int ind, double &c0, double &ud);
-
-    /// Applies hydrostatic and friction corrections; currently unused.
-    void correcHidroFric(int i, double &hidro, double &fric);
-    /// Prepares auxiliary data for a local fluid-property table.
-    void auxMiniTab(ProFlu &flu);
-    /// Generates the local fluid-property table.
-    void geraMiniTabFlu();
-
-    /// Loads pressure-velocity results into cell and face state variables.
-    void renova(int expli = 0);
-    /// Updates phase and mixture flow rates.
-    void renovaVaz();
-    /// Updates only section-end states during intermediate network convergence.
-    void renovaBuffer();
-    /// Copies previous states when an active choke bypasses the intermediate network solve.
-    void renovaBufferCego();
-
-    /// Returns the sign of a value; currently unused.
-    int sign(double var);
-
-    /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
-    void renovaTemp();
-    /// Evaluates wax deposition and its effects.
-    void avaliaParafina();
-    /// Transports black-oil properties such as GOR, API, gas density, and CO2 fraction.
-    void renovaRGOdgYco2(ProFlu fluiRev = ProFlu());
-    /// Transports compositional molar fractions.
-    void renovaFracMol(ProFlu fluiRev = ProFlu());
-    /// Applies the alternate compositional molar-fraction transport update.
-    void renovaFracMol2(ProFlu fluiRev = ProFlu());
-    /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
-    void renovaterm(int aflu = 0);
-    /// Computes T1 and T2 at the outlet of an internal network section.
-    void renovatermAfluFim();
-    /// Computes T1 and T2 at the inlet of an internal network section.
-    void renovatermColIni();
-
-    /// Calculates outlet-choke flow from the last-cell and separator pressures.
-    void calcCCpres(double titRev = 1., double alfRev = 1., double betRev = 0.);
-    /// Calculates outlet-choke flow for the intermediate network state.
-    void calcCCBuffer(double titRev = 1., double alfRev = 1., double betRev = 0.);
-
-    /// Selects a stable time step from CFL and additional model restrictions.
-    void determinaDT(int vexpli = 0);
-    /// Selects a stable time step from CFL and additional model restrictions.
-    void determinaDTExpli();
-    /// Limits time-step growth when accepted steps remain well below the CFL estimate.
-    void atenuaDtMax();
-    /// Checks whether liquid-density variation requires the complete formulation.
-    void avaliaVariaDpDt(double razMast = 0, double razMast0 = 0, int vexpli = 0);
-    /// Updates the valve logic for the active-state formulation.
-    void aberturaVal1();
-    /// Updates the valve logic for the inactive-state formulation.
-    void aberturaVal0();
-    /// Restricts the time step during valve-state transitions.
-    void restringeDTporValv();
-
-    /// Advances the gas-injection system and prepares its coupling with the production line.
-    void solveLinGas();
-    /// Advances phase volume fractions.
-    void EvoluiFrac(double alfrev = 1., double betrev = 0., int ciclo = 0);
-    /// Restores the initial fraction state after an invalid update.
-    void ReiniEvolFrac0();
-    /// Stores only the volume fractions required by fraction rollback.
-    void SubReiniEvolFrac();
-    /// Restores previous volume fractions after a nonphysical update.
-    void ReiniEvolFrac();
-    /// Updates phase fractions in cells affected by a moving pig.
-    void AtualizaPig();
-    /// Assembles and solves the global pressure-velocity coupling system.
-    void SolveAcopPV(int vexpli = 0, int ciclo = 0);
-
-    /// Prepares the multidimensional heat-diffusion problem for one cell.
-    void prepDifusCalorND(int i);
-    /// Advances the transient energy equation.
-    void marchaEnergTrans(int ciclo = 0, int ciclomax = 0);
-    /// Refreshes local dynamic fluid-property tables.
-    void atualizaMiniTab();
-    /// Updates the first boundary condition.
-    void atualizaCC1();
-
-    /// Advances the complete transient production-system solution and handles output and logging.
-    void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
-                    int nrede = -1, ProFlu fluiRev = ProFlu());
-
-    /// Appends one production-line trend sample to its output buffer.
-    void ImprimeTrendP(int i, int nrede = -1);
-    /// Appends one production-line trend sample to its output buffer.
-    void ImprimeTrendPCab(int i, int nrede = -1);
-    /// Appends one gas-line trend sample to its output buffer.
-    void ImprimeTrendG(int i, int nrede = -1);
-    /// Appends one gas-line trend sample to its output buffer.
-    void ImprimeTrendGCab(int i, int nrede = -1);
-    /// Appends one production-line wall-temperature trend sample.
-    void ImprimeTrendTransP(int i);
-    /// Appends one production-line wall-temperature trend sample.
-    void ImprimeTrendTransPCab(int i);
-    /// Appends one gas-line wall-temperature trend sample.
-    void ImprimeTrendTransG(int i);
-    /// Appends one gas-line wall-temperature trend sample.
-    void ImprimeTrendTransGCab(int i);
-
-    /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
-    double marchaProdPerm1(double pchute);
-    /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
-    double marchaProdPerm1Rev(double pchute);
-    /// Marches the steady production solution using a bottomhole-pressure guess with an outlet choke.
-    double marchaProdPerm2(double pchute);
-    /// Brackets and solves the bottomhole-pressure root for marchaProdPerm1.
-    double buscaProdPfundoPerm(double chute = -1., int kontaTenta = -1);
-    /// Brackets and solves the reverse-flow bottomhole-pressure root.
-    double buscaProdPfundoPermRev(double chute = -1.);
-    /// Brackets and solves the bottomhole-pressure root for marchaProdPerm2.
-    double buscaProdPfundoPerm2(double chute = -1., int kontaTenta = -1);
-    /// Runs a direct march when inlet pressure and flow rate are known.
-    double buscaProdPfundoPerm3(double pentrada);
-    /// Marches the steady production solution using a bottomhole mass-flow guess.
-    double marchaProdPresPres1(double mchute);
-    /// Marches the steady production solution using a bottomhole mass-flow guess.
-    double marchaProdPresPres1Rev(double mchute);
-    /// Brackets and solves the mass-flow root for marchaProdPresPres1.
-    double buscaProdPresPresPerm(double mchute, double maxvaz = 0., int kontaiter = 0);
-    /// Brackets and solves the reverse-flow mass-flow root.
-    double buscaProdPresPresPermRev(double mchute, double maxvaz = 0., int kontaiter = 0);
-    /// Marches the steady production solution for the second pressure-pressure boundary formulation.
-    double marchaProdPresPres2(double mchute);
-    /// Brackets and solves the mass-flow root for marchaProdPresPres2.
-    double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
-    /// Marches the steady production solution for the third pressure-pressure boundary formulation.
-    double marchaProdPresPres3(double mchute);
-    /// Brackets and solves the mass-flow root for marchaProdPresPres3.
-    double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
-
-    /// Marches the steady gas line with prescribed injection pressure and a mass-flow guess.
-    double marchaGasPerm1(double chutemass = -1);
-    /// Marches the steady gas line with prescribed injection flow and a pressure guess.
-    double marchaGasPerm2(double pchute, double chutemass = -1);
-    /// Marches the steady gas line across the injection choke using a downstream-pressure guess.
-    double marchaGasPerm3(double pchute);
-    /// Brackets and solves the pressure root for marchaGasPerm2.
-    double buscaGasPresPerm2();
-    /// Brackets and solves the pressure root for marchaGasPerm3.
-    double buscaGasPresPerm3();
-
-    /// Marches pressure from the previous cell center to the downstream face.
-    void RenovaPresPermMon(int i, int RK);
-    /// Marches pressure from the last cell center to the outlet face.
-    double RenovaPresPermNcel();
-    /// Calculates the pressure contribution caused by an area change.
-    double calcDpArea(int i, double rhomix, double rey, double jmix);
-    /// Marches pressure from the upstream face to the current cell center.
-    void RenovaPresPermJus(int i, int RK);
-    /// Corrects gas density in one control volume.
-    void corrDeng(int i);
-    /// Updates steady-state mass flow and fluid state after a source term.
-    void RenovaMassPerm(int i);
-    /// Updates steady-state mass flow for reverse flow.
-    void RenovaMassPermRev(int i);
-    /// Updates steady-state mass flow and pseudocomponent composition after a source term.
-    void RenovaMassPermComp(int i);
-    /// Updates steady-state mass flow and pseudocomponent composition after a source term.
-    void RenovaMassPermCompRev(int i);
-    /// Calculates steady-state slip parameters at a downstream face.
-    void CalcC0UdPerm(int ind, double &c0, double &ud);
-    /// Calculates steady-state interphase mass transfer.
-    void RenovaTransMassPerm(int i);
-    /// Calculates steady-state interphase mass transfer.
-    void RenovaTransMassPermGas(int i);
-    /// Marches steady-state temperature from cell i-1 to cell i.
-    void RenovaTempPerm(int i, int RK);
-    /// Marches steady-state temperature in the reverse direction.
-    void RenovaTempPermRev(int i, int RK);
-
-    /// Adds pump pressure gain at the upstream face of a production cell.
-    void atualizaPeriPmonProd(int i);
-    /// Synchronizes neighboring face pressures after updating a cell-center pressure.
-    void atualizaPeriPjusProd(int i);
-    /// Synchronizes neighboring face temperatures after updating a cell-center temperature.
-    void atualizaPeriTempProd(int i);
-
-    /// Marches steady-state pressure along the gas service line.
-    void RenovaPresGasPerm(int i);
-    /// Estimates gas-line pressure variation without advancing the full pressure march.
-    double delpGasPerm(int i);
-    /// Estimates pressure variation in an injection-well system.
-    double delpInjPerm(int i);
-    /// Calculates gas-lift-valve flow from gas-line and production-line pressures.
-    void calcVazGasPerm(int i);
-    /// Initializes gas-lift-valve flow estimates before the steady-state march.
-    void IniciaVazValvGasPerm(int i);
-    /// Marches steady-state gas-line temperature from cell i-1 to cell i.
-    void RenovaTempGasPerm(int i);
-
-    /// Exchanges steady-state heat-transfer data between column and annulus.
-    void conectaColunaPerm();
-    /// Initializes estimated column-annulus heat transfer before the steady-state march.
-    void IniciaconectaColunaPerm();
-
-    /// Refreshes fluid properties.
-    void atualizaProp();
-    /// Updates steady-state velocities and thermal terms.
-    void atualizaVelTermPerm();
-    /// Calculates the pseudo-transient time step.
-    void calcDTPseudoTrans();
-
-    /// Marches the steady injection-well solution using a pressure or flow-rate guess.
-    double marchaInjPerm1(double chute);
-    /// Solves injection cases CC1 and CC3.
-    double buscaInjPfundoPerm1(double chute = -1.);
-    /// Solves injection case CC0.
-    double buscaInjPfundoPerm2(double chute = -1.);
-    /// Solves injection case CC2.
-    double buscaInjPfundoPerm3(double chute = -1.);
-    /// Solves injection case CC4.
-    double buscaInjPfundoPerm4();
-    /// Solves injection case CC5.
-    double buscaInjPfundoPerm5(double chute = -1.);
-
-    /// Dispatches the selected production, gas-line, or injection steady-state marching method.
-    double multMarcha(double chute, int prod, int tipoCC);
-
-    /// Returns the magnitude of the first argument with the sign of the second.
-    double SIGN(double a, double b);
-    /// Finds a root using Brent's method; currently unused.
-    double zbrent(double, double, int prod, int tipoCC,
-                  double tol = 0.00001, double epsn = 0.00001, int maxit = 100);
-    /// Finds a root using the false-position method; currently unused.
-    double falsacorda(double a, double b, int prod, int tipoCC);
-    /// Finds a root using Ridders' method.
-    double zriddr(double x1, double x2, int prod, int tipoCC);
-
-    /// Estimates steady production-network node pressures from hydrostatics.
-    double hidroreverso(double hol, double vaz = 0, double vazG = 0);
-    /// Estimates steady injection-network node pressures from hydrostatics.
-    double hidroreversoInj(double hol, double vaz = 0);
-    /// Estimates secondary-branch pressures in a parallel production network.
-    double hidroTramoSecundario(double titulo);
-    /// Builds a hydrostatic estimate for the gas service line.
-    void hidroLinServ();
-
-    /// Solves the secondary-branch flow rate in a steady parallel network.
-    double buscaTramoSecVazPerm(double pPartida, int indPartida);
-    /// Marches the steady secondary branch of a parallel network.
-    double marchaTramoSecVaz(double pchute, double chutemass = -1);
-
-    /// Calculates temperature downstream from the surface choke for network coupling.
-    void calcTempFim();
+namespace marlim {
+namespace sisprod2 {
+
+// ---------------------------------------------------------------------------
+// Physical constants. Kept in the header because they are compile-time values
+// shared by several translation units.
+// ---------------------------------------------------------------------------
+namespace constants {
+const double kGravity = 9.80665;            // m / s^2
+const double kStandardPressure = 1.01325e5; // Pa (one atmosphere)
+const double kPi = 3.14159265358979323846;
+const double kPressureFloor = 1.0e3;        // Pa, floor for density evaluation
+} // namespace constants
+
+// Relative-tolerance floating-point comparison (defined in the .cpp).
+bool almostEqual(double a, double b, double relativeTolerance);
+
+// ---------------------------------------------------------------------------
+// Implementation selection flag. Reports which SisProd implementation the build
+// selected through the MARLIM_USE_NEW_SISPROD compile option.
+// ---------------------------------------------------------------------------
+bool usingNewSisProd();
+const char *activeSisProdImplementation();
+
+// ---------------------------------------------------------------------------
+// 1. Typed results (replace signalling by cout and termination by exit).
+// ---------------------------------------------------------------------------
+enum class SolveStatus {
+    Ok,
+    MaxIterations,
+    OutOfRange,
+    NotBracketed,
+    NotANumber
 };
 
-#endif /* SISPROD_H_ */
+const char *toString(SolveStatus status);
+
+struct SolveResult {
+    SolveStatus status;
+    double value;      // e.g. the bottomhole pressure that was found
+    int iterations;
+    std::string detail;
+
+    SolveResult() : status(SolveStatus::Ok), value(0.0), iterations(0) {}
+
+    bool ok() const { return status == SolveStatus::Ok; }
+};
+
+struct StepResult {
+    bool advanced;        // the time step was accepted
+    bool needsRollback;   // at least one cell left the physical range
+    double timeStepUsed;  // the time step actually applied
+    std::string detail;
+
+    StepResult() : advanced(false), needsRollback(false), timeStepUsed(0.0) {}
+};
+
+// ---------------------------------------------------------------------------
+// 2. Simulation context (encapsulates the shared global state that today is
+//    varGlob1D* vg1dSP and the (*vg1dSP).lixo5 clock). Trivial accessors stay
+//    inline; there is no behaviour to move out.
+// ---------------------------------------------------------------------------
+class SimContext {
+  public:
+    SimContext()
+        : simulationTime_(0.0), threadCount_(1), localTiny_(1e-15),
+          maxGasOilRatio_(1e7) {}
+
+    double simulationTime() const { return simulationTime_; }
+    int threadCount() const { return threadCount_; }
+    double localTiny() const { return localTiny_; }
+    double maxGasOilRatio() const { return maxGasOilRatio_; }
+
+    void setSimulationTime(double time) { simulationTime_ = time; }
+    void setThreadCount(int count) { threadCount_ = count > 0 ? count : 1; }
+    void setLocalTiny(double value) { localTiny_ = value; }
+    void setMaxGasOilRatio(double value) { maxGasOilRatio_ = value; }
+
+    void advanceTime(double timeStep) { simulationTime_ += timeStep; }
+
+  private:
+    double simulationTime_;
+    int threadCount_;
+    double localTiny_;
+    double maxGasOilRatio_;
+};
+
+// ---------------------------------------------------------------------------
+// 3. Diagnostics and observability (structured logging that replaces the cout
+//    calls scattered through the physics).
+// ---------------------------------------------------------------------------
+enum class LogLevel { Debug, Info, Warning, Error };
+
+const char *toString(LogLevel level);
+
+struct LogRecord {
+    LogLevel level;
+    std::string operation;
+    int sectionIndex;   // tramo index, or -1
+    double time;
+    std::string message;
+
+    LogRecord() : level(LogLevel::Info), sectionIndex(-1), time(0.0) {}
+};
+
+class Diagnostics {
+  public:
+    virtual ~Diagnostics() {}
+    virtual void log(const LogRecord &record) = 0;
+    virtual void reportSolve(const std::string &operation,
+                             const SolveResult &result) = 0;
+};
+
+// Silent sink, useful in tests and in parallel regions.
+class NullDiagnostics : public Diagnostics {
+  public:
+    void log(const LogRecord &) override {}
+    void reportSolve(const std::string &, const SolveResult &) override {}
+};
+
+// Writes structured lines to a std::ostream. Behaviour defined in the .cpp.
+class OstreamDiagnostics : public Diagnostics {
+  public:
+    explicit OstreamDiagnostics(std::ostream &out);
+    void log(const LogRecord &record) override;
+    void reportSolve(const std::string &operation,
+                     const SolveResult &result) override;
+    int failureCount() const { return failureCount_; }
+
+  private:
+    std::ostream &out_;
+    int failureCount_;
+};
+
+// ---------------------------------------------------------------------------
+// 4. Generic root finders. Brent as the production solver and bisection as an
+//    independent reference used by the automatic comparison. The residual is
+//    injected as a std::function, which removes the multMarcha indirection and
+//    unifies the duplicated zbrent and zriddr routines.
+// ---------------------------------------------------------------------------
+typedef std::function<double(double)> ResidualFunction;
+
+class RootFinder {
+  public:
+    static SolveResult solveBracketed(const ResidualFunction &residual,
+                                      double lowerBound, double upperBound,
+                                      double tolerance = 1e-9,
+                                      int maxIterations = 100);
+
+    static SolveResult solveBisection(const ResidualFunction &residual,
+                                      double lowerBound, double upperBound,
+                                      double tolerance = 1e-9,
+                                      int maxIterations = 200);
+};
+
+// ---------------------------------------------------------------------------
+// 4b. Flow-correlation selector (used by ProductionColumn and R05 dispatcher).
+//     Declared here — before ProductionColumn — so that marchToWellheadPhysical
+//     can use it as a default parameter.
+// ---------------------------------------------------------------------------
+/// Correlation selector. IDs mirror the legacy integer codes used by
+/// SProd::executarCorrelacao so the two paths can be cross-checked.
+enum class FlowCorrelationId : int {
+    PoettmannCarpenter = 0,
+    BaxendellThomas    = 1,
+    FancherBrown       = 2,
+    HagedornBrown      = 3,
+    DunsRos            = 4,
+    Orkiszewski        = 5,
+    BeggsAndBrill      = 6,
+    MukherjeeeBrill    = 7,
+    Aziz               = 8,
+    Gray               = 9,
+};
+
+// ---------------------------------------------------------------------------
+// 4c. R04 — Black-oil fluid-property correlations (pure, no global state).
+//     Defined in SisProd_r04.cpp (requires PropFlu.h / MARLIM_BUILD).
+//     Mirrors ProFlu methods for the flashCompleto==0 analytical branch.
+//
+// Units: pressure in kgf/cm2, temperature in °C, output in SI where noted.
+// ---------------------------------------------------------------------------
+/// Gas compressibility factor (Dranchuk-Abou-Kassem + Gopal seed).
+/// @param Deng  Gas specific gravity (air = 1).
+/// @param PC    Critical pressure (psia).
+/// @param TC    Critical temperature (Rankine).
+double zFactor(double pres, double temp, double Deng, double PC, double TC);
+
+/// In-situ gas density via real-gas equation of state (kg/m3).
+double gasDensityBlackOil(double pres, double temp,
+                           double Deng, double PC, double TC);
+
+/// Gas dynamic viscosity via Lee-Kesler correlation (cP).
+double gasViscosityBlackOil(double pres, double temp,
+                             double Deng, double PC, double TC);
+
+/// Solution gas-oil ratio via Standing correlation (ft3/bbl).
+/// @param Avb,Bvb,Cvb  Standing/Vasquez-Beggs coefficients from arq.*
+double solutionGOR(double pres, double temp, double API,
+                   double Deng, double Avb, double Bvb, double Cvb);
+
+/// Oil formation volume factor via Vasquez-Beggs (RB/STB), below bubble point.
+/// @param rs  Solution GOR in ft3/bbl (from solutionGOR or measured).
+double oilFVF(double pres, double temp, double API, double Deng, double rs);
+
+/// Water density via Meehan correlation (kg/m3).
+double waterDensityBlackOil(double pres, double temp, double Denag);
+
+/// Water formation volume factor (RB/STB).
+double waterFVFBlackOil(double pres, double temp, double Denag);
+
+/// Oil density for the analytical black-oil branch (kg/m3).
+double oilDensityBlackOil(double pres, double temp, double API,
+                          double Deng, double rs, double rDgD = 1.0);
+
+/// Oil-water mixture density for the analytical black-oil branch (kg/m3).
+double liquidDensityBlackOil(double pres, double temp, double API,
+                             double Deng, double BSW, double Denag,
+                             double rs, double rDgD = 1.0);
+
+/// Water viscosity correlation used by ProFlu::VisAgua (cP).
+double waterViscosityBlackOil(double temp);
+
+/// Dead-oil viscosity via Beggs-Robinson (cP).
+double deadOilViscosityBeggsRobinson(double temp, double API);
+
+/// Dead-oil viscosity via ASTM interpolation (cP).
+double deadOilViscosityASTM(double temp, double API,
+                            double TempL, double LVisL,
+                            double TempH, double LVisH);
+
+/// Saturated live-oil viscosity via Beggs-Robinson (cP).
+double oilViscosityBlackOil(double rs, double deadOilViscosity);
+
+/// Oil-water mixture viscosity in the analytical branch (cP).
+double liquidViscosityBlackOil(double pres, double temp, double API,
+                               double Deng, double BSW, double Denag,
+                               double rs, double rDgD,
+                               double TempL, double LVisL,
+                               double TempH, double LVisH);
+
+/// Liquid specific heat (oil-water mixture) in J/(kg K).
+double liquidSpecificHeatBlackOil(double pres, double temp, double API,
+                                  double Deng, double BSW, double Denag,
+                                  double rs, double rDgD = 1.0);
+
+/// Gas specific heat in J/(kg K).
+double gasSpecificHeatBlackOil(double pres, double temp, double Deng,
+                               double PCis, double TCis,
+                               double yco2 = 0.0, double rDgL = 1.0);
+
+/// Derivative of oil density with respect to temperature (kg/m3/°C).
+double liquidDensityDerivativeTBlackOil(double pres, double temp, double API,
+                                        double Deng, double rs,
+                                        double rDgD = 1.0);
+
+/// Liquid thermal conductivity in W/(m K) for the analytical black-oil branch.
+double liquidThermalConductivityBlackOil(double pres, double temp,
+                                         double API, double Deng,
+                                         double BSW, double Denag,
+                                         double rs, double rDgD = 1.0);
+
+/// Gas thermal conductivity in W/(m K) for the analytical black-oil branch.
+double gasThermalConductivityBlackOil(double pres, double temp);
+
+/// Liquid Joule-Thomson term used in the analytical RenovaTempPerm branch.
+double liquidJouleThomsonBlackOil(double pres, double temp, double API,
+                                  double Deng, double BSW, double Denag,
+                                  double rs, double rDgD = 1.0,
+                                  double liquidSimple = 0.0);
+
+/// Gas Joule-Thomson term used in the analytical RenovaTempPerm branch.
+double gasJouleThomsonBlackOil(double pres, double temp,
+                               double Deng, double PCis, double TCis,
+                               double rhog = -1.0);
+
+/// Liquid enthalpy in J/kg for the analytical black-oil branch.
+double liquidEnthalpyBlackOil(double pres, double temp,
+                              double API, double Deng,
+                              double BSW, double Denag,
+                              double rs, double rDgD = 1.0);
+
+/// Gas enthalpy in J/kg for the analytical black-oil branch.
+double gasEnthalpyBlackOil(double pres, double temp,
+                           double Deng, double PCis, double TCis,
+                           double yco2 = 0.0, double rDgL = 1.0);
+
+// ---------------------------------------------------------------------------
+// 5. Standard-condition streams and stream mixing (Strategy). Deduplicates the
+//    repeated core of RenovaMassPerm and its variants.
+// ---------------------------------------------------------------------------
+struct StandardStream {
+    double oilRate;       // standard oil volumetric rate
+    double waterRate;     // standard water volumetric rate
+    double gasRate;       // standard gas volumetric rate
+    double oilApi;        // API gravity of the oil
+    double gasDensity;    // gas relative density
+    double co2Fraction;   // molar CO2 fraction in the gas
+    double waterDensity;  // water relative density
+
+    StandardStream()
+        : oilRate(0.0), waterRate(0.0), gasRate(0.0), oilApi(30.0),
+          gasDensity(0.8), co2Fraction(0.0), waterDensity(1.0) {}
+
+    double basicSedimentAndWater() const {
+        const double liquid = oilRate + waterRate;
+        return liquid > 0.0 ? waterRate / liquid : 0.0;
+    }
+    double gasOilRatio() const {
+        return oilRate > 0.0 ? gasRate / oilRate : 0.0;
+    }
+
+    static double apiToRelativeDensity(double api) {
+        return 141.5 / (131.5 + api);
+    }
+    static double relativeDensityToApi(double relativeDensity) {
+        return 141.5 / relativeDensity - 131.5;
+    }
+};
+
+// Combines two standard streams (defined in the .cpp).
+StandardStream blend(const StandardStream &upstream,
+                     const StandardStream &source, double tiny = 1e-15);
+
+// Accessory types, today encoded as celula[i-1].acsr.tipo.
+enum class AccessoryType {
+    None = 0,
+    GasSource = 1,
+    LiquidSource = 2,
+    Ipr = 3,
+    MassSource = 10
+};
+
+// Mass-marching strategy. Replaces the giant duplicated switch of
+// RenovaMassPerm. Behaviour defined in the .cpp.
+class StreamMixing {
+  public:
+    static StandardStream march(const StandardStream &upstream,
+                                AccessoryType type, const StandardStream &source,
+                                const SimContext &context);
+};
+
+// ---------------------------------------------------------------------------
+// 6. Black-oil fluid model (pure, deterministic). Constructors and getters stay
+//    inline; the property correlations live in the .cpp.
+// ---------------------------------------------------------------------------
+class FluidModel {
+  public:
+    FluidModel()
+        : liquidDensity_(800.0), standardGasDensity_(1.2),
+          standardPressure_(constants::kStandardPressure), viscosity_(2.0e-3) {}
+
+    FluidModel(double liquidDensity, double standardGasDensity, double viscosity)
+        : liquidDensity_(liquidDensity), standardGasDensity_(standardGasDensity),
+          standardPressure_(constants::kStandardPressure),
+          viscosity_(viscosity) {}
+
+    double liquidDensity() const { return liquidDensity_; }
+    double viscosity() const { return viscosity_; }
+
+    double gasDensityAt(double pressure) const;
+    double massQualityFromGasOilRatio(double gasOilRatio) const;
+    double mixtureDensity(double pressure, double massQuality) const;
+
+  private:
+    double liquidDensity_;
+    double standardGasDensity_;
+    double standardPressure_;
+    double viscosity_;
+};
+
+/// Lightweight analytical black-oil adapter that maps a `StandardStream`
+/// plus local pressure/temperature into the R04 pure-property helpers.
+/// This is the first real consumer-side bridge between the new pressure march
+/// and the ported analytical `flashCompleto==0` property correlations.
+struct BlackOilState {
+    double pressureKgfCm2;
+    double temperatureC;
+    double api;
+    double gasSpecificGravity;
+    double co2Fraction;
+    double waterCut;
+    double waterRelativeDensity;
+    double solutionGor;
+    double oilFvf;
+    double waterFvf;
+    double gasDensity;
+    double oilDensity;
+    double liquidDensity;
+    double gasViscosity;
+    double liquidViscosity;
+    double liquidSpecificHeat;
+    double gasSpecificHeat;
+    double oilDensityDerivativeT;
+    double zFactorGas;
+
+    BlackOilState()
+        : pressureKgfCm2(1.0), temperatureC(60.0), api(30.0),
+          gasSpecificGravity(0.75), co2Fraction(0.0), waterCut(0.0),
+          waterRelativeDensity(1.0), solutionGor(0.0), oilFvf(1.0),
+          waterFvf(1.0), gasDensity(1.2), oilDensity(850.0),
+          liquidDensity(850.0), gasViscosity(0.01), liquidViscosity(1.0),
+          liquidSpecificHeat(2000.0), gasSpecificHeat(2000.0),
+          oilDensityDerivativeT(0.0), zFactorGas(1.0) {}
+};
+
+/// Build a local black-oil property snapshot from a `StandardStream`.
+/// Pressure is given in Pa and temperature in K to match the new architecture;
+/// the implementation converts to the legacy analytical-correlation units.
+BlackOilState makeBlackOilState(const StandardStream &stream,
+                                double pressurePa,
+                                double temperatureK);
+
+// Darcy friction factor (defined in the .cpp).
+double darcyFrictionFactor(double reynolds);
+
+// ---------------------------------------------------------------------------
+// 7. Production column and its geometry. Bottomhole is index 0, wellhead is the
+//    last index. Each segment may carry an accessory source.
+// ---------------------------------------------------------------------------
+struct PipeSegment {
+    double length;        // m
+    double diameter;      // m
+    double inclination;   // rad from horizontal (vertical = pi/2)
+    AccessoryType accessory;
+    StandardStream sourceStream;
+
+    PipeSegment()
+        : length(100.0), diameter(0.15), inclination(constants::kPi / 2.0),
+          accessory(AccessoryType::None) {}
+
+    double crossSectionArea() const {
+        const double radius = 0.5 * diameter;
+        return constants::kPi * radius * radius;
+    }
+    double verticalRise() const; // defined in the .cpp (uses std::sin)
+};
+
+struct ProfilePoint {
+    double pressure;
+    double mixtureDensity;
+    double velocity;
+    double gasOilRatio;
+};
+
+class ProductionColumn {
+  public:
+    ProductionColumn(const FluidModel &fluid, double massFlowRate)
+        : fluid_(fluid), massFlowRate_(massFlowRate) {}
+
+    void addSegment(const PipeSegment &segment) { segments_.push_back(segment); }
+    void reserveSegments(std::size_t count) { segments_.reserve(count); }
+
+    const FluidModel &fluid() const { return fluid_; }
+    std::size_t segmentCount() const { return segments_.size(); }
+    double massFlowRate() const { return massFlowRate_; }
+
+    void setInletStream(const StandardStream &stream) { inletStream_ = stream; }
+    const StandardStream &inletStream() const { return inletStream_; }
+
+    double totalVerticalHeight() const;
+
+    // Marches the pressure from bottomhole to wellhead and returns the wellhead
+    // pressure. This loop is inherently sequential (each cell depends on the
+    // previous one), so it must not be parallelised. Parallelism is applied one
+    // level up, across independent columns (see solveBatch).
+    double marchToWellhead(double bottomholePressure, const SimContext &context,
+                           std::vector<ProfilePoint> *profileOut = nullptr) const;
+
+    /// Same march but using a full two-phase pressure-gradient correlation
+    /// (default: Beggs & Brill) instead of the simplified homogeneous model.
+    /// This is the R05 physics-complete path.  Results differ from
+    /// marchToWellhead because of holdup slip; the two paths converge as
+    /// the flow becomes homogeneous (high Re, small drift velocity).
+    double marchToWellheadPhysical(
+        double bottomholePressure, const SimContext &context,
+        FlowCorrelationId correlationId = FlowCorrelationId::BeggsAndBrill,
+        std::vector<ProfilePoint> *profileOut = nullptr) const;
+
+  private:
+    FluidModel fluid_;
+    double massFlowRate_;
+    StandardStream inletStream_;
+    std::vector<PipeSegment> segments_;
+};
+
+// ---------------------------------------------------------------------------
+// 7b. First real R04 consumer extracted from the legacy RenovaTransMassPerm
+//     block. Keeps the legacy formula but sources RS/Bo/Ba from BlackOilState.
+// ---------------------------------------------------------------------------
+struct PhaseTransferSideInput {
+    double pressurePa;
+    double temperatureK;
+    double pressureAuxPa;
+    double liquidRate;
+    double waterCut;
+    double gasSpecificGravity;
+    double dissolvedGasDensityRatio;
+    double pigFraction;
+    StandardStream stream;
+
+    PhaseTransferSideInput()
+        : pressurePa(constants::kStandardPressure), temperatureK(333.15),
+          pressureAuxPa(constants::kStandardPressure), liquidRate(0.0),
+          waterCut(0.0), gasSpecificGravity(0.75),
+          dissolvedGasDensityRatio(1.0), pigFraction(0.0) {}
+};
+
+struct PhaseTransferInput {
+    PhaseTransferSideInput center;
+    PhaseTransferSideInput left;
+    PhaseTransferSideInput right;
+    double cellLength;
+    bool accessoryIsNone;
+
+    PhaseTransferInput()
+        : cellLength(1.0), accessoryIsNone(true) {}
+};
+
+/// Output bundle for the first integrated mass-march + phase-transfer step.
+struct MassMarchResult {
+    StandardStream mixedStream;
+    double phaseTransferRate;
+
+    MassMarchResult() : phaseTransferRate(0.0) {}
+};
+
+struct ThermalSideInput {
+    double pressurePa;
+    double temperatureK;
+    double gasHoldup;
+    double waterCut;
+    double gasSuperficialVelocity;
+    double liquidSuperficialVelocity;
+    StandardStream stream;
+
+    ThermalSideInput()
+        : pressurePa(constants::kStandardPressure), temperatureK(333.15),
+          gasHoldup(0.0), waterCut(0.0), gasSuperficialVelocity(0.0),
+          liquidSuperficialVelocity(0.0) {}
+};
+
+struct ThermalFlowSnapshot {
+    double liquidDensity;
+    double gasDensity;
+    double liquidSpecificHeat;
+    double gasSpecificHeat;
+    double liquidEnthalpy;
+    double gasEnthalpy;
+    double latentHeat;
+    double liquidJouleThomson;
+    double gasJouleThomson;
+    double liquidViscosityPaS;
+    double gasViscosityPaS;
+    double mixedConductivity;
+    double mixedSpecificHeat;
+    double mixedDensity;
+    double mixedViscosityPaS;
+
+    ThermalFlowSnapshot()
+        : liquidDensity(0.0), gasDensity(0.0), liquidSpecificHeat(0.0),
+          gasSpecificHeat(0.0), liquidEnthalpy(0.0),
+          gasEnthalpy(0.0), latentHeat(0.0),
+          liquidJouleThomson(0.0),
+          gasJouleThomson(0.0),
+          liquidViscosityPaS(0.0), gasViscosityPaS(0.0),
+          mixedConductivity(0.0), mixedSpecificHeat(0.0),
+          mixedDensity(0.0), mixedViscosityPaS(0.0) {}
+};
+
+/// Pure helper extracted from the liquid/thermal-property block used by
+/// `RenovaTempPerm`, sourcing analytical black-oil properties from R04.
+ThermalFlowSnapshot computeThermalFlowSnapshot(const ThermalSideInput &in);
+
+/// Pure helper extracted from the legacy `RenovaTransMassPerm` formula.
+/// Returns the phase-transfer source term divided by cell length.
+double computePhaseTransferRate(const PhaseTransferInput &in);
+
+// ---------------------------------------------------------------------------
+// 7c. R07 — Thermal marching updated from RenovaTempPerm.
+//     Pure helper that computes temperature update based on energy balance
+//     including convection, Joule-Thomson, heat transfer, and potential energy.
+// ---------------------------------------------------------------------------
+/// Input bundle for thermal update computation.
+/// Mirrors the local variables used in RenovaTempPerm for energy balance.
+struct ThermalUpdateInput {
+    double currentTemperatureC;      // Current cell temperature in Celsius
+    double upstreamTemperatureC;       // Temperature from upstream cell (for dT/dx)
+    double pressurePa;               // Local pressure in Pascals
+    double upstreamPressurePa;       // Upstream pressure (for dp/dx)
+    double dx;                       // Cell length in meters
+    double diameter;                 // Pipe inner diameter in meters
+    double gasSuperficialVelocity;   // Gas superficial velocity (m/s)
+    double liquidSuperficialVelocity; // Liquid superficial velocity (m/s)
+    double gasHoldup;                // Gas volume fraction
+    double waterCut;                 // Water cut in liquid phase
+    double thermalConductivity;       // Mixed thermal conductivity (W/m·K)
+    double externalTemperatureC;    // External/geothermal temperature (°C)
+    double thermalResistance;         // Overall thermal resistance (K·m²/W)
+    double massSourceL;              // Liquid mass source term (kg/m³/s)
+    double massSourceG;              // Gas mass source term (kg/m³/s)
+    double sourceTemperatureC;       // Temperature of mass source (°C)
+    double latentHeatTerm;           // Latent heat term (W/m³)
+    bool hasMassSource;              // Whether there's an active mass source
+    
+    ThermalUpdateInput()
+        : currentTemperatureC(60.0), upstreamTemperatureC(60.0),
+          pressurePa(constants::kStandardPressure), upstreamPressurePa(constants::kStandardPressure),
+          dx(100.0), diameter(0.15),
+          gasSuperficialVelocity(0.0), liquidSuperficialVelocity(0.0),
+          gasHoldup(0.0), waterCut(0.0),
+          thermalConductivity(1.0), externalTemperatureC(60.0),
+          thermalResistance(1.0), massSourceL(0.0), massSourceG(0.0),
+          sourceTemperatureC(60.0), latentHeatTerm(0.0),
+          hasMassSource(false) {}
+};
+
+/// Output bundle for thermal update computation.
+struct ThermalUpdateResult {
+    double updatedTemperatureC;   // Updated temperature after march
+    double heatFlux;            // Heat flux to external medium (W/m²)
+    double dTdx;                // Temperature gradient computed
+    bool lowFlowMode;           // True if fallback to external temperature was used
+    int substepsUsed;           // Number of substeps for stability
+    
+    ThermalUpdateResult()
+        : updatedTemperatureC(60.0), heatFlux(0.0), dTdx(0.0),
+          lowFlowMode(false), substepsUsed(1) {}
+};
+
+/// Pure helper extracted from RenovaTempPerm.
+/// Computes temperature update based on energy balance equation including:
+/// - Convective term (dT/dx)
+/// - Joule-Thomson expansion
+/// - Heat transfer with external medium
+/// - Potential energy change
+/// - Mass source terms
+/// - Latent heat effects
+/// 
+/// @param thermalProps Pre-computed thermal properties from computeThermalFlowSnapshot
+/// @param in Input parameters for the thermal update
+/// @param context Simulation context for tiny values and limits
+/// @return ThermalUpdateResult with updated temperature and metadata
+ThermalUpdateResult computeThermalUpdate(const ThermalFlowSnapshot &thermalProps,
+                                          const ThermalUpdateInput &in,
+                                          const SimContext &context);
+
+// ---------------------------------------------------------------------------
+// 8. Facade (TramoEngine) and the shared steady-state helpers.
+// ---------------------------------------------------------------------------
+struct SteadyStateRequest {
+    double separatorPressure;   // wellhead boundary condition (Pa)
+    double searchMargin;        // upper search margin above the hydrostatic guess
+    double tolerance;
+    int maxIterations;
+    int sectionIndex;
+
+    SteadyStateRequest()
+        : separatorPressure(constants::kStandardPressure), searchMargin(2.0),
+          tolerance(1e-3), maxIterations(100), sectionIndex(-1) {}
+
+    SteadyStateRequest(double separator, double margin, double tol, int maxIter,
+                       int section)
+        : separatorPressure(separator), searchMargin(margin), tolerance(tol),
+          maxIterations(maxIter), sectionIndex(section) {}
+};
+
+// Shared by the solver and the comparison so both paths solve the same
+// equation. Defined in the .cpp.
+ResidualFunction makeWellheadResidual(const ProductionColumn &column,
+                                      const SimContext &context,
+                                      double separatorPressure);
+
+void wellheadSearchBounds(const ProductionColumn &column,
+                          const SteadyStateRequest &request, double &lowerBound,
+                          double &upperBound);
+
+class TramoEngine {
+  public:
+    TramoEngine(SimContext &context, Diagnostics &diagnostics)
+        : context_(context), diagnostics_(diagnostics) {}
+
+    SolveResult solveBracketed(const std::string &operation,
+                               const ResidualFunction &residual,
+                               double lowerBound, double upperBound,
+                               double tolerance, int maxIterations);
+
+    SolveResult solveBottomholePressure(const ProductionColumn &column,
+                                        const SteadyStateRequest &request);
+
+    StandardStream marchMass(const StandardStream &upstream, AccessoryType type,
+                             const StandardStream &source) const;
+
+    MassMarchResult marchMassWithPhaseTransfer(
+        const StandardStream &upstream, AccessoryType type,
+        const StandardStream &source,
+        const PhaseTransferInput &phaseTransferInput) const;
+
+    ThermalFlowSnapshot buildThermalSnapshot(const ThermalSideInput &in) const;
+
+    /// R07 thermal advancement step.
+    /// Computes temperature update using energy balance from RenovaTempPerm logic.
+    /// Integrates thermal property snapshot with convective, Joule-Thomson,
+    /// heat transfer and source terms.
+    ThermalUpdateResult advanceThermalStep(
+        double currentTempC, double upstreamTempC,
+        double pressurePa, double upstreamPressurePa,
+        double dx, double diameter,
+        double ugs, double uls,
+        double gasHoldup, double waterCut,
+        double externalTempC, double thermalResistance,
+        const ThermalFlowSnapshot &props) const;
+
+    const SimContext &context() const { return context_; }
+
+  private:
+    SimContext &context_;
+    Diagnostics &diagnostics_;
+};
+
+// ---------------------------------------------------------------------------
+// 9. Batch solver with OpenMP. Each column is solved independently, so the loop
+//    is embarrassingly parallel and safe. Defined in the .cpp.
+// ---------------------------------------------------------------------------
+std::vector<SolveResult>
+solveBatch(const std::vector<ProductionColumn> &columns,
+           const std::vector<SteadyStateRequest> &requests,
+           const SimContext &context);
+
+// ---------------------------------------------------------------------------
+// 10. Trend buffer — lightweight channel-based ring for observability.
+//     Header-only (trivial inline); no behaviour moved to the .cpp.
+// ---------------------------------------------------------------------------
+class TrendBuffer {
+  public:
+    TrendBuffer(std::size_t channelCount, std::size_t capacity)
+        : channels_(channelCount), capacity_(capacity) {}
+
+    void append(std::size_t channel, double value) {
+        if (channel < channels_.size() && channels_[channel].size() < capacity_)
+            channels_[channel].push_back(value);
+    }
+
+    std::size_t channelCount() const { return channels_.size(); }
+    std::size_t size(std::size_t channel) const {
+        return channel < channels_.size() ? channels_[channel].size() : 0;
+    }
+    const std::vector<double> &channel(std::size_t index) const {
+        return channels_[index];
+    }
+
+    void reset() {
+        for (std::size_t c = 0; c < channels_.size(); ++c)
+            channels_[c].clear();
+    }
+
+  private:
+    std::vector<std::vector<double> > channels_;
+    std::size_t capacity_;
+};
+
+// ---------------------------------------------------------------------------
+// 11. R03 — Two-phase drift-flux correlations (C0 / Ud).
+//
+// All functions are pure (no global state, no virtual calls). They mirror the
+// legacy SProd methods verbatim; the only change is that they are free
+// functions taking explicit parameters instead of using `arq.*` fields.
+//
+// Naming convention:
+//   c0  — distribution parameter (dimensionless)
+//   ud  — drift velocity (m/s)
+//   tet — pipe inclination angle (rad, +pi/2 = vertical upward)
+//   rug — absolute roughness (m)
+//   dia — inner diameter (m)
+//   alf — void fraction (gas volume fraction, 0–1)
+//   reymix  — mixture Reynolds number
+//   reymixL — liquid-only Reynolds number (used by the Mod variant)
+//   ug1, ul1 — gas / liquid volumetric flow rates (m³/s)
+//   rhol, rhog — liquid / gas densities (kg/m³)
+//   tensup — surface tension (N/m)
+//   correcHor — horizontal correction factor for Ud
+// ---------------------------------------------------------------------------
+void bhagwatGhajar(double rhol, double rhog, double tensup, double alf,
+                   double reymix, double reymixL, double ug1, double ul1,
+                   double dia, double rug, double tet,
+                   double &c0, double &ud, double correcHor);
+
+void bhagwatGhajarMod(double rhol, double rhog, double tensup, double alf,
+                      double reymix, double reymixL, double ug1, double ul1,
+                      double dia, double rug, double tet,
+                      double &c0, double &ud, double correcHor);
+
+void choi(double rhol, double rhog, double tensup, double alf,
+          double reymix, double reymixL, double ug1, double ul1,
+          double dia, double rug, double tet,
+          double &c0, double &ud, double correcHor);
+
+void hibikiIshii(double rhol, double rhog, double tensup, double alf,
+                 double reymix, double reymixL, double ug1, double ul1,
+                 double dia, double rug, double tet,
+                 double &c0, double &ud, double correcHor);
+
+void francaLahey(double rhol, double rhog, double tensup, double alf,
+                 double reymix, double reymixL, double ug1, double ul1,
+                 double dia, double rug, double tet,
+                 double &c0, double &ud, double correcHor);
+
+// Dispatcher correlations — select the kernel via an integer mode parameter
+// (replaces the arq.CorreDisper / arq.CorreAnular / arq.CorreEstrat switch).
+// mode: 0=Choi 1=BhagwatGhajar 2=FrancaLahey 3=HibikiIshii
+//       4=BhagwatGhajarMod 5=hybrid(angle-blended BhagwatGhajarMod/Choi)
+void c0UdDisperso(double rhol, double rhog, double tensup, double alf,
+                  double reymix, double reymixL, double ug1, double ul1,
+                  double dia, double rug, double tet,
+                  double &c0, double &ud, double correcHor, int mode);
+
+void c0UdAnularChurn(double rhol, double rhog, double tensup, double alf,
+                     double reymix, double reymixL, double ug1, double ul1,
+                     double dia, double rug, double tet,
+                     double &c0, double &ud, double correcHor, int mode);
+
+void c0UdEstratificado(double rhol, double rhog, double tensup, double alf,
+                       double reymix, double reymixL, double ug1, double ul1,
+                       double dia, double rug, double tet,
+                       double &c0, double &ud, double correcHor, int mode);
+
+// ---------------------------------------------------------------------------
+// 12. R05 — Two-phase pressure-gradient correlation dispatcher.
+//
+// FlowCorrelationId is declared in section 4b (above ProductionColumn).
+// PressureGradientInput/Result are typed bundles that replace the long
+// argument lists of the legacy GradientCorrelations free functions.
+// computePressureGradient() calls the requested function and returns
+// the unified result.  All physics is in GradientCorrelations.cpp (existing,
+// pure C); this wrapper adds type safety and unit-tests the dispatch.
+// ---------------------------------------------------------------------------
+
+/// Input bundle for computePressureGradient().
+struct PressureGradientInput {
+    double inclinationRad;      // pipe inclination (rad, +π/2 = vertical up)
+    double diameter;            // inner diameter (m)
+    double roughness;           // absolute roughness (m)
+    double pressure;            // local pressure (Pa)
+    double mixtureVelocity;     // in-situ mixture velocity (m/s)
+    double liquidFraction;      // input liquid volume fraction (no-slip)
+    double gasDensity;          // in-situ gas density (kg/m³)
+    double liquidDensity;       // in-situ liquid density (kg/m³)
+    double gasViscosity;        // gas dynamic viscosity (Pa·s)
+    double liquidViscosity;     // liquid dynamic viscosity (Pa·s)
+    double surfaceTension;      // gas–liquid surface tension (N/m)
+    double temperature;         // local temperature (K)
+    double compressibilityFactor; // gas Z-factor (dimensionless)
+    double waterFraction;       // water cut in liquid phase (0–1)
+    double productionRate;      // volumetric production rate (m³/s) — FancherBrown only
+
+    PressureGradientInput()
+        : inclinationRad(constants::kPi / 2.0),
+          diameter(0.10), roughness(1e-4), pressure(1e6),
+          mixtureVelocity(1.0), liquidFraction(0.5),
+          gasDensity(1.2), liquidDensity(850.0),
+          gasViscosity(1.5e-5), liquidViscosity(2e-3),
+          surfaceTension(0.03), temperature(320.0),
+          compressibilityFactor(1.0), waterFraction(0.0),
+          productionRate(0.0) {}
+};
+
+/// Output bundle for computePressureGradient().
+struct PressureGradientResult {
+    double holdup;       // in-situ liquid holdup (0–1)
+    double frictionGrad; // friction pressure gradient (Pa/m)
+    double gravityGrad;  // gravity pressure gradient (Pa/m)
+    double accelGrad;    // acceleration pressure gradient (Pa/m)
+    double totalGrad;    // total pressure gradient (Pa/m)
+    double reynolds;     // mixture Reynolds number
+    unsigned char flowType; // flow-pattern flag (correlation-specific)
+    SolveStatus status;     // Ok unless the correlationId was unknown
+
+    PressureGradientResult()
+        : holdup(0.0), frictionGrad(0.0), gravityGrad(0.0),
+          accelGrad(0.0), totalGrad(0.0), reynolds(0.0),
+          flowType(0), status(SolveStatus::Ok) {}
+};
+
+/// Dispatcher: select the correlation by id and compute the pressure gradient.
+/// Defined in SisProd_r05.cpp.
+PressureGradientResult computePressureGradient(FlowCorrelationId correlationId,
+                                               const PressureGradientInput &in);
+
+// ---------------------------------------------------------------------------
+// 13. R06/R10 — Hydraulic friction and gas-lift valve kernels.
+//
+// Pure functions with no global state. Ported verbatim from the SProd
+// methods of the same name. References:
+//   - colebrookFrictionFactor: Colebrook–White iterative friction factor
+//     (identical algorithm used in bhagwatGhajar and in SProd::fric/Rey).
+//   - areaValvCali: gas-lift GLV aperture calculation (R10, SProd::areaValvCali).
+// ---------------------------------------------------------------------------
+/// Darcy friction factor via Colebrook–White equation.
+/// Turbulent (Re > 2400): Halland seed + two refinement steps (converges to
+/// within 1e-5 of the exact implicit solution for any Re and ε/D).
+/// Laminar: 64/Re.
+///
+/// @param reynolds   Mixture (or single-phase) Reynolds number.
+/// @param relRoughness  Relative pipe roughness ε/D (dimensionless).
+/// @returns Darcy friction factor f (dimensionless, f > 0).
+double colebrookFrictionFactor(double reynolds, double relRoughness);
+
+/// Gas-lift GLV opening fraction (0 = closed, 1 = fully open).
+/// Mirrors SProd::areaValvCali verbatim; all inputs are in the legacy
+/// unit system (pressures in psi-gauge unless noted, diameter in metres,
+/// temperature in degrees Fahrenheit).
+///
+/// @param PCal     Calibration (dome) pressure (psi).
+/// @param TCal     Calibration temperature (°F).
+/// @param PVO      Casing pressure at valve depth (psi).
+/// @param PT       Tubing pressure at valve depth (psi).
+/// @param dextern  Outer diameter of the GLV body (m).
+/// @param areagarg Throat area of the GLV (m²).
+/// @param Rvalv    Bellows area / port area ratio (dimensionless, 0 < Rvalv < 1).
+/// @param Temp     Bottomhole temperature (°F).
+/// @returns Valve opening fraction in [0, 1].
+double areaValvCali(double PCal, double TCal, double PVO, double PT,
+                    double dextern, double areagarg, double Rvalv, double Temp);
+
+// ---------------------------------------------------------------------------
+// 14. Scenario builder used by tests and comparison (defined in the .cpp).
+// ---------------------------------------------------------------------------
+ProductionColumn buildVerticalWell(const FluidModel &fluid, double massFlowRate,
+                                   std::size_t segmentCount, double segmentLength,
+                                   double diameter, double inletGasOilRatio);
+
+// ---------------------------------------------------------------------------
+// 15. Automatic comparison between two implementations.
+// ---------------------------------------------------------------------------
+struct ComparisonRecord {
+    std::string name;
+    double reference;
+    double candidate;
+    double absoluteError;
+    bool withinTolerance;
+};
+
+ComparisonRecord makeComparison(const std::string &name, double reference,
+                                double candidate, double absoluteTolerance);
+
+std::vector<ComparisonRecord> runReferenceComparison(double tolerance);
+
+bool comparisonPassed(const std::vector<ComparisonRecord> &records);
+
+// ---------------------------------------------------------------------------
+// 16. Test entry points (defined in the .cpp).
+// ---------------------------------------------------------------------------
+bool runAllTests(bool verbose);
+bool runSelfTest();
+
+} // namespace sisprod2
+} // namespace marlim
+
+#endif // MARLIM_SISPROD_H_
