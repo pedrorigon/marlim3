@@ -90,10 +90,10 @@ Legenda: `[ ]` pendente · `[~]` estrutura existe, física não portada · `[x]`
 - [x] R01 Root-finding numérico (`zbrent`, `zriddr`, `SIGN`, `falsacorda`) → `RootFinder` (Brent). Estrutura equivalente pronta; caracterização comprovada contra brentReference (re-implementação independente NR Brent) em 8 funções matemáticas com raízes analíticas conhecidas (polinômios, trig, transcendentais, stiff) a 1e-12; todas passam a 1e-6 contra o analítico. 40/40 testes no selftest.
 - [~] R02 Mistura de correntes (`RenovaMassPerm` switch por `acsr.tipo`) → `StreamMixing`/`blend`. Padrão pronto; física real (RGO/Deng/yco2/BSW/API/bet com PVT) não portada.
 - [x] R03 Correlações bifásicas C0/Ud (`BhagwatGhajar`, `Choi`, `HibikiIshii`, `FrancaLahey`, `C0Ud*`, `CalcC0Ud*`). Portadas como funções livres puras em `src/core/SisProd_r03.cpp`; dispatchers recebem modo por parâmetro inteiro em vez de `arq.CorreDisper/Anular/Estrat`. Bateria de 20 testes de caracterização em `runAllTests` (valores de referência verificados por Python); 60/60 selftest.
-- [ ] R04 Propriedades de fluido (`renovaRGOdgYco2`, `renovaFracMol`, `renovaFracMol2`, `corrDeng`, `geraMiniTabFlu`).
+- [ ] R04 Propriedades de fluido (`renovaRGOdgYco2`, `renovaFracMol`, `renovaFracMol2`, `corrDeng`, `geraMiniTabFlu`). **Parcial**: portadas correlações analíticas puras do branch `flashCompleto==0` em `src/core/SisProd_r04.cpp`: `zFactor`, `gasDensityBlackOil`, `gasViscosityBlackOil`, `solutionGOR`, `oilFVF`, `waterDensityBlackOil`, `waterFVFBlackOil`, `oilDensityBlackOil`, `liquidDensityBlackOil`, `waterViscosityBlackOil`, `deadOilViscosityBeggsRobinson`, `deadOilViscosityASTM`, `oilViscosityBlackOil`, `liquidViscosityBlackOil`, `liquidSpecificHeatBlackOil`, `gasSpecificHeatBlackOil`, `liquidDensityDerivativeTBlackOil`. **Primeiro consumidor real integrado**: `BlackOilState` + `makeBlackOilState()` alimentando `ProductionColumn::marchToWellheadPhysical()` em `src/core/SisProd.cpp`. Ainda faltam ramos tabelados/PVTSim/composicional e integração com `RenovaMassPerm`.
 - [ ] R05 Marcha de massa/composição permanente (`RenovaMassPerm/Rev/Comp/CompRev`).
 - [ ] R06 Marcha de pressão permanente (`RenovaPresPerm*`, `marchaProdPresPres*`, `calcDpArea`).
-- [ ] R07 Marcha térmica/energia (`renovaterm*`, `RenovaTempPerm*`, `calctemp`, `calcTempEntalp`, `marchaEnergTrans`, `poisson3D`).
+- [ ] R07 Marcha térmica/energia (`renovaterm*`, `RenovaTempPerm*`, `calctemp`, `calcTempEntalp`, `marchaEnergTrans`, `poisson3D`). **Parcial**: extraído um primeiro bloco líquido/térmico derivado de `RenovaTempPerm` para helper puro `computeThermalFlowSnapshot()` em `src/core/SisProd.cpp`, reusando `BlackOilState`/R04 para `MasEspLiq`/`CalorLiq`/`ViscOleo` e `CalorGas`/`ViscGas`. **Concluído neste estágio:** placeholders de condutividade substituídos por correlações analíticas derivadas de `ProFlu::CondLiq` e `ProFlu::CondGas`, expostas como `liquidThermalConductivityBlackOil()` e `gasThermalConductivityBlackOil()` em `src/core/SisProd_r04.cpp`. Exposto no fluxo principal via `TramoEngine::buildThermalSnapshot()`.
 - [ ] R08 Solvers permanentes (produção/gás/injeção): `marchaProdPerm*`, `buscaProdPfundoPerm*`, `marchaGasPerm*`, `marchaInjPerm1`, `buscaInjPfundoPerm1..5`.
 - [ ] R09 Transiente (`SolveTrans`, `SolveAcopPV`, `EvoluiFrac`, `determinaDT`, `renova*`, rollback via `reinicia`).
 - [ ] R10 Controle de equipamentos (chokes `resolveDescarga`/`ValvGasTrans`, gas-lift, Master1 `aberturaVal*`, pigs `AtualizaPig`).
@@ -123,6 +123,7 @@ Legenda: `[ ]` pendente · `[~]` estrutura existe, física não portada · `[x]`
 - [x] R05 `marchToWellheadPhysical()`: marcha de pressão com física real de correlações de gradiente bifásico. 9 testes adicionais. `FlowCorrelationId` movido para seção 4b.
 - [x] Paridade dual-run ampliada: 6/6 demos IGUAIS a 1e-6 (inclui extended-ESP, MultiESP, shutdown-combined).
 - [ ] R04–R09 física acoplada completa — requer `CellState` wrapper para extrair o núcleo de marcha. `RenovaMassPerm` depende de `ProFlu.BOFunc/BAFunc/RS/MasEspGas` (532 chamadas PVT) — portagem direta inviável sem portar `ProFlu`.
+  - [~] R04 branch analítico `flashCompleto==0` expandido em `SisProd_r04.cpp`; primeiro consumidor real ligado via `BlackOilState` em `marchToWellheadPhysical()`; faltam tabelas/PVTSim/composicional e integração com `RenovaMassPerm`.
 
 ### Fase 3 — Portar física acoplada (verificada por dual-run end-to-end)
 - [ ] R04 → R05 → R06 → R07 → R08 → R09, uma região por vez, cada uma extraída do `SisProd_old.cpp` e validada por `compare_sisprod_impls.py` a 1e-6 sobre os demos e `data/models`.
@@ -193,6 +194,7 @@ esperado:
 - Fase 2/R01 (`RootFinder`): **CONCLUÍDA** — 73/73 testes.
 - Fase 2/R03 (C0/Ud): **CONCLUÍDA** — `SisProd_r03.cpp`.
 - Fase 2/R05 (dispatcher + `marchToWellheadPhysical`): **CONCLUÍDA** — `SisProd_r05.cpp`, 36 testes totais via `#ifdef MARLIM_BUILD`.
+- Fase 2/R04 (branch analítico `flashCompleto==0`): **PARCIAL** — helpers puros expandidos em `SisProd_r04.cpp`, consumidor real integrado em `marchToWellheadPhysical`, bloco de transferência de fase integrado ao fluxo principal de marcha de massa e primeiro bloco líquido/térmico derivado de `RenovaTempPerm` integrado ao fluxo principal térmico da nova arquitetura; faltam os demais ramos de massa/energia e os caminhos tabelados/PVTSim/composicional.
 - Fase 2/R06+R10 (Colebrook + areaValvCali): **CONCLUÍDA** — `SisProd_r06.cpp`, 13 testes.
 - Fase 1/R14 (encapsulamento `Num4Main.cpp`): **CONCLUÍDA** — ~5414 acessos diretos eliminados.
 - **Paridade dual-run: 6/6 demos IGUAIS a 1e-6** (`simplifiedProduction`, `2zones-2GLVs`, `2zones-PA`, `extended-ESP-pumpEfic`, `extended-shutdown`, `MultiESP`, `injec-Liq`).
@@ -200,17 +202,16 @@ esperado:
 
 **Bloqueio identificado:** R04–R09 (física acoplada) dependem de `ProFlu` (modelo PVT black-oil com 532 chamadas internas a `BOFunc/BAFunc/RS/MasEspGas`). Portar `RenovaMassPerm` sem portar `ProFlu` completo é inviável. `ProFlu` depende de tabelas PVT, formatos de arquivo `.tab`/`.CTM`, e interpolação — escopo de portagem muito maior.
 
-**Próxima ação — Fase 3 (portar `ProFlu` básico) ou Fase 4 (virar a chave com `MARLIM_USE_NEW_SISPROD=ON`):**
+**Próxima ação — continuar Fase 2/R04 em direção ao uso real em R05/R09:**
 
-### Opção A — Fase 2/R13 (TrendBuffer + saidaLog observability)
-Portado o `TrendBuffer` (já existe em `SisProd2.h`). Falta integrar com o sistema de saída de arquivos `.dat`. Menor impacto mas completa a observabilidade.
+- ### Opção A — Levar o adaptador para `RenovaMassPerm`
+  Reusar `BlackOilState` / `makeBlackOilState()` e o novo `computePhaseTransferRate()` para atacar o próximo bloco pequeno de `RenovaMassPerm` além do já integrado em `TramoEngine::marchMassWithPhaseTransfer()`, preferencialmente um trecho que também consuma `MasEspLiq`/`ViscOleo`/`CalorLiq`.
 
-### Opção B — Portar `ProFlu` básico (black-oil puro, sem tabelas PVT)
-Criar `BlackOilModel` em `SisProd2.h` com as correlações analíticas de Bo/Rs/Ba/MasEspGas/MasEspLiq/ViscGas/ViscOleo do modelo black-oil que não dependem de tabela. Isso desbloqueia R04–R09.
+### Opção B — Portar derivadas/restantes utilidades térmicas do branch analítico
+- Cobrir `drhodp`, `drhodt` do gás, entalpias/JT/condutividade e demais auxiliares ainda usados por R07, substituindo os placeholders locais de condutividade do `computeThermalFlowSnapshot()`.
+- Cobrir `drhodp`, `drhodt` do gás, entalpias/JT e demais auxiliares ainda usados por R07. A parte de condutividade já foi portada neste estágio.
 
-### Opção C — Completar a matriz de cobertura com testes de caracterização
-Identificar outros kernels puros ainda não cobertos (e.g., `calcHmix`, `energmix`, conversões de unidade) e adicioná-los.
+### Opção C — Portar `corrDeng` / `renovaRGOdgYco2`
+Atacar o pré-processamento de propriedades de fluido antes da marcha, reduzindo dependência de `ProFlu` no caminho de entrada.
 
-**Recomendação:** Opção B (BlackOilModel) — é o pré-requisito para R04–R09 e a única que avança a paridade física real.
-
-Depois de cada checkpoint, **atualizar este arquivo** (seções 5, 6, 8 e 11).
+- **Recomendação:** Opção B — portar agora entalpias e/ou termos Joule-Thomson do branch analítico (`JTL`, `JTG`, eventualmente `EntalpLiq`/`EntalpGas`) para reduzir os placeholders/aproximações remanescentes no caminho térmico recém-integrado.

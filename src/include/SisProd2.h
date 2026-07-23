@@ -236,6 +236,66 @@ double solutionGOR(double pres, double temp, double API,
 /// @param rs  Solution GOR in ft3/bbl (from solutionGOR or measured).
 double oilFVF(double pres, double temp, double API, double Deng, double rs);
 
+/// Water density via Meehan correlation (kg/m3).
+double waterDensityBlackOil(double pres, double temp, double Denag);
+
+/// Water formation volume factor (RB/STB).
+double waterFVFBlackOil(double pres, double temp, double Denag);
+
+/// Oil density for the analytical black-oil branch (kg/m3).
+double oilDensityBlackOil(double pres, double temp, double API,
+                          double Deng, double rs, double rDgD = 1.0);
+
+/// Oil-water mixture density for the analytical black-oil branch (kg/m3).
+double liquidDensityBlackOil(double pres, double temp, double API,
+                             double Deng, double BSW, double Denag,
+                             double rs, double rDgD = 1.0);
+
+/// Water viscosity correlation used by ProFlu::VisAgua (cP).
+double waterViscosityBlackOil(double temp);
+
+/// Dead-oil viscosity via Beggs-Robinson (cP).
+double deadOilViscosityBeggsRobinson(double temp, double API);
+
+/// Dead-oil viscosity via ASTM interpolation (cP).
+double deadOilViscosityASTM(double temp, double API,
+                            double TempL, double LVisL,
+                            double TempH, double LVisH);
+
+/// Saturated live-oil viscosity via Beggs-Robinson (cP).
+double oilViscosityBlackOil(double rs, double deadOilViscosity);
+
+/// Oil-water mixture viscosity in the analytical branch (cP).
+double liquidViscosityBlackOil(double pres, double temp, double API,
+                               double Deng, double BSW, double Denag,
+                               double rs, double rDgD,
+                               double TempL, double LVisL,
+                               double TempH, double LVisH);
+
+/// Liquid specific heat (oil-water mixture) in J/(kg K).
+double liquidSpecificHeatBlackOil(double pres, double temp, double API,
+                                  double Deng, double BSW, double Denag,
+                                  double rs, double rDgD = 1.0);
+
+/// Gas specific heat in J/(kg K).
+double gasSpecificHeatBlackOil(double pres, double temp, double Deng,
+                               double PCis, double TCis,
+                               double yco2 = 0.0, double rDgL = 1.0);
+
+/// Derivative of oil density with respect to temperature (kg/m3/°C).
+double liquidDensityDerivativeTBlackOil(double pres, double temp, double API,
+                                        double Deng, double rs,
+                                        double rDgD = 1.0);
+
+/// Liquid thermal conductivity in W/(m K) for the analytical black-oil branch.
+double liquidThermalConductivityBlackOil(double pres, double temp,
+                                         double API, double Deng,
+                                         double BSW, double Denag,
+                                         double rs, double rDgD = 1.0);
+
+/// Gas thermal conductivity in W/(m K) for the analytical black-oil branch.
+double gasThermalConductivityBlackOil(double pres, double temp);
+
 // ---------------------------------------------------------------------------
 // 5. Standard-condition streams and stream mixing (Strategy). Deduplicates the
 //    repeated core of RenovaMassPerm and its variants.
@@ -320,6 +380,48 @@ class FluidModel {
     double viscosity_;
 };
 
+/// Lightweight analytical black-oil adapter that maps a `StandardStream`
+/// plus local pressure/temperature into the R04 pure-property helpers.
+/// This is the first real consumer-side bridge between the new pressure march
+/// and the ported analytical `flashCompleto==0` property correlations.
+struct BlackOilState {
+    double pressureKgfCm2;
+    double temperatureC;
+    double api;
+    double gasSpecificGravity;
+    double co2Fraction;
+    double waterCut;
+    double waterRelativeDensity;
+    double solutionGor;
+    double oilFvf;
+    double waterFvf;
+    double gasDensity;
+    double oilDensity;
+    double liquidDensity;
+    double gasViscosity;
+    double liquidViscosity;
+    double liquidSpecificHeat;
+    double gasSpecificHeat;
+    double oilDensityDerivativeT;
+    double zFactorGas;
+
+    BlackOilState()
+        : pressureKgfCm2(1.0), temperatureC(60.0), api(30.0),
+          gasSpecificGravity(0.75), co2Fraction(0.0), waterCut(0.0),
+          waterRelativeDensity(1.0), solutionGor(0.0), oilFvf(1.0),
+          waterFvf(1.0), gasDensity(1.2), oilDensity(850.0),
+          liquidDensity(850.0), gasViscosity(0.01), liquidViscosity(1.0),
+          liquidSpecificHeat(2000.0), gasSpecificHeat(2000.0),
+          oilDensityDerivativeT(0.0), zFactorGas(1.0) {}
+};
+
+/// Build a local black-oil property snapshot from a `StandardStream`.
+/// Pressure is given in Pa and temperature in K to match the new architecture;
+/// the implementation converts to the legacy analytical-correlation units.
+BlackOilState makeBlackOilState(const StandardStream &stream,
+                                double pressurePa,
+                                double temperatureK);
+
 // Darcy friction factor (defined in the .cpp).
 double darcyFrictionFactor(double reynolds);
 
@@ -394,6 +496,89 @@ class ProductionColumn {
 };
 
 // ---------------------------------------------------------------------------
+// 7b. First real R04 consumer extracted from the legacy RenovaTransMassPerm
+//     block. Keeps the legacy formula but sources RS/Bo/Ba from BlackOilState.
+// ---------------------------------------------------------------------------
+struct PhaseTransferSideInput {
+    double pressurePa;
+    double temperatureK;
+    double pressureAuxPa;
+    double liquidRate;
+    double waterCut;
+    double gasSpecificGravity;
+    double dissolvedGasDensityRatio;
+    double pigFraction;
+    StandardStream stream;
+
+    PhaseTransferSideInput()
+        : pressurePa(constants::kStandardPressure), temperatureK(333.15),
+          pressureAuxPa(constants::kStandardPressure), liquidRate(0.0),
+          waterCut(0.0), gasSpecificGravity(0.75),
+          dissolvedGasDensityRatio(1.0), pigFraction(0.0) {}
+};
+
+struct PhaseTransferInput {
+    PhaseTransferSideInput center;
+    PhaseTransferSideInput left;
+    PhaseTransferSideInput right;
+    double cellLength;
+    bool accessoryIsNone;
+
+    PhaseTransferInput()
+        : cellLength(1.0), accessoryIsNone(true) {}
+};
+
+/// Output bundle for the first integrated mass-march + phase-transfer step.
+struct MassMarchResult {
+    StandardStream mixedStream;
+    double phaseTransferRate;
+
+    MassMarchResult() : phaseTransferRate(0.0) {}
+};
+
+struct ThermalSideInput {
+    double pressurePa;
+    double temperatureK;
+    double gasHoldup;
+    double waterCut;
+    double gasSuperficialVelocity;
+    double liquidSuperficialVelocity;
+    StandardStream stream;
+
+    ThermalSideInput()
+        : pressurePa(constants::kStandardPressure), temperatureK(333.15),
+          gasHoldup(0.0), waterCut(0.0), gasSuperficialVelocity(0.0),
+          liquidSuperficialVelocity(0.0) {}
+};
+
+struct ThermalFlowSnapshot {
+    double liquidDensity;
+    double gasDensity;
+    double liquidSpecificHeat;
+    double gasSpecificHeat;
+    double liquidViscosityPaS;
+    double gasViscosityPaS;
+    double mixedConductivity;
+    double mixedSpecificHeat;
+    double mixedDensity;
+    double mixedViscosityPaS;
+
+    ThermalFlowSnapshot()
+        : liquidDensity(0.0), gasDensity(0.0), liquidSpecificHeat(0.0),
+          gasSpecificHeat(0.0), liquidViscosityPaS(0.0), gasViscosityPaS(0.0),
+          mixedConductivity(0.0), mixedSpecificHeat(0.0), mixedDensity(0.0),
+          mixedViscosityPaS(0.0) {}
+};
+
+/// Pure helper extracted from the liquid/thermal-property block used by
+/// `RenovaTempPerm`, sourcing analytical black-oil properties from R04.
+ThermalFlowSnapshot computeThermalFlowSnapshot(const ThermalSideInput &in);
+
+/// Pure helper extracted from the legacy `RenovaTransMassPerm` formula.
+/// Returns the phase-transfer source term divided by cell length.
+double computePhaseTransferRate(const PhaseTransferInput &in);
+
+// ---------------------------------------------------------------------------
 // 8. Facade (TramoEngine) and the shared steady-state helpers.
 // ---------------------------------------------------------------------------
 struct SteadyStateRequest {
@@ -438,6 +623,13 @@ class TramoEngine {
 
     StandardStream marchMass(const StandardStream &upstream, AccessoryType type,
                              const StandardStream &source) const;
+
+    MassMarchResult marchMassWithPhaseTransfer(
+        const StandardStream &upstream, AccessoryType type,
+        const StandardStream &source,
+        const PhaseTransferInput &phaseTransferInput) const;
+
+    ThermalFlowSnapshot buildThermalSnapshot(const ThermalSideInput &in) const;
 
     const SimContext &context() const { return context_; }
 

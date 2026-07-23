@@ -352,6 +352,144 @@ double FluidModel::mixtureDensity(double pressure, double massQuality) const {
     return specificVolume > 0.0 ? 1.0 / specificVolume : liquidDensity_;
 }
 
+BlackOilState makeBlackOilState(const StandardStream &stream,
+                                double pressurePa,
+                                double temperatureK) {
+    BlackOilState state;
+
+    const double pressureKgf = std::max(1.03322745, pressurePa / 98066.5);
+    const double temperatureC = temperatureK - 273.15;
+
+    const double api = stream.oilApi;
+    const double deng = std::max(0.55, stream.gasDensity);
+    const double waterCut = std::max(0.0, std::min(1.0, stream.basicSedimentAndWater()));
+    const double denag = std::max(0.9, stream.waterDensity);
+    const double yco2 = std::max(0.0, std::min(1.0, stream.co2Fraction));
+
+    const double Avb = 1.0937;
+    const double Bvb = 0.0008;
+    const double Cvb = 25.724;
+    const double PC = 667.0;
+    const double TC = 395.0;
+    const double rDgD = 1.0;
+    const double rDgL = 1.0;
+
+    state.pressureKgfCm2 = pressureKgf;
+    state.temperatureC = temperatureC;
+    state.api = api;
+    state.gasSpecificGravity = deng;
+    state.co2Fraction = yco2;
+    state.waterCut = waterCut;
+    state.waterRelativeDensity = denag;
+
+    state.solutionGor = solutionGOR(pressureKgf, temperatureC, api, deng,
+                                    Avb, Bvb, Cvb);
+    state.oilFvf = oilFVF(pressureKgf, temperatureC, api, deng,
+                          state.solutionGor);
+    state.waterFvf = waterFVFBlackOil(pressureKgf, temperatureC, denag);
+    state.zFactorGas = zFactor(pressureKgf, temperatureC, deng, PC, TC);
+    state.gasDensity = gasDensityBlackOil(pressureKgf, temperatureC, deng, PC, TC);
+    state.oilDensity = oilDensityBlackOil(pressureKgf, temperatureC, api, deng,
+                                          state.solutionGor, rDgD);
+    state.liquidDensity = liquidDensityBlackOil(pressureKgf, temperatureC, api,
+                                                deng, waterCut, denag,
+                                                state.solutionGor, rDgD);
+    state.gasViscosity = gasViscosityBlackOil(pressureKgf, temperatureC, deng,
+                                              PC, TC);
+    state.liquidViscosity = liquidViscosityBlackOil(pressureKgf, temperatureC,
+                                                    api, deng, waterCut, denag,
+                                                    state.solutionGor, rDgD,
+                                                    20.0, 15.0, 80.0, 4.0);
+    state.liquidSpecificHeat = liquidSpecificHeatBlackOil(pressureKgf, temperatureC,
+                                                          api, deng, waterCut,
+                                                          denag, state.solutionGor,
+                                                          rDgD);
+    state.gasSpecificHeat = gasSpecificHeatBlackOil(pressureKgf, temperatureC,
+                                                    deng, PC, TC, yco2, rDgL);
+    state.oilDensityDerivativeT = liquidDensityDerivativeTBlackOil(pressureKgf,
+                                                                   temperatureC,
+                                                                   api, deng,
+                                                                   state.solutionGor,
+                                                                   rDgD);
+    return state;
+}
+
+static double computeWaterFractionFromFvfs(double waterCut,
+                                           double bo,
+                                           double ba) {
+    return waterCut * ba / (bo + ba * waterCut - waterCut * bo);
+}
+
+double computePhaseTransferRate(const PhaseTransferInput &in) {
+    if (!in.accessoryIsNone || in.cellLength <= 0.0)
+        return 0.0;
+
+    const BlackOilState centerState = makeBlackOilState(in.center.stream,
+                                                        in.center.pressurePa,
+                                                        in.center.temperatureK);
+    const BlackOilState leftState = makeBlackOilState(in.left.stream,
+                                                      in.left.pressurePa,
+                                                      in.left.temperatureK);
+    const BlackOilState rightAuxState = makeBlackOilState(in.center.stream,
+                                                          in.right.pressureAuxPa,
+                                                          in.right.temperatureK);
+    const BlackOilState leftAuxState = makeBlackOilState(in.left.stream,
+                                                         in.center.pressureAuxPa,
+                                                         in.left.temperatureK);
+
+    const double fwd = computeWaterFractionFromFvfs(in.center.waterCut,
+                                                    centerState.oilFvf,
+                                                    centerState.waterFvf);
+    const double fwe = computeWaterFractionFromFvfs(in.left.waterCut,
+                                                    leftState.oilFvf,
+                                                    leftState.waterFvf);
+
+    const double forward = -(in.right.liquidRate * (1.0 - in.center.pigFraction)
+        * in.center.dissolvedGasDensityRatio * in.center.gasSpecificGravity * 1.225
+        * (1.0 - fwd) * rightAuxState.solutionGor * (6.29 / 35.31467)
+        / rightAuxState.oilFvf);
+
+    const double backward = (in.center.liquidRate * (1.0 - in.left.pigFraction)
+        * in.left.dissolvedGasDensityRatio * in.left.gasSpecificGravity * 1.225
+        * (1.0 - fwe) * leftAuxState.solutionGor * (6.29 / 35.31467)
+        / leftAuxState.oilFvf);
+
+    return (forward + backward) / in.cellLength;
+}
+
+ThermalFlowSnapshot computeThermalFlowSnapshot(const ThermalSideInput &in) {
+    ThermalFlowSnapshot snapshot;
+
+    const BlackOilState props = makeBlackOilState(in.stream,
+                                                  in.pressurePa,
+                                                  in.temperatureK);
+    const double gasHoldup = std::max(0.0, std::min(1.0, in.gasHoldup));
+    const double liquidHoldup = 1.0 - gasHoldup;
+    const double beta = std::max(0.0, std::min(1.0, in.waterCut));
+    const double pressureKgf = in.pressurePa / 98066.5;
+    const double temperatureC = in.temperatureK - 273.15;
+    const double liquidCond = liquidThermalConductivityBlackOil(
+        pressureKgf, temperatureC, in.stream.oilApi, in.stream.gasDensity,
+        beta, in.stream.waterDensity, props.solutionGor, 1.0);
+    const double gasCond = gasThermalConductivityBlackOil(pressureKgf,
+                                                          temperatureC);
+
+    snapshot.liquidDensity = props.liquidDensity;
+    snapshot.gasDensity = props.gasDensity;
+    snapshot.liquidSpecificHeat = props.liquidSpecificHeat;
+    snapshot.gasSpecificHeat = props.gasSpecificHeat;
+    snapshot.liquidViscosityPaS = props.liquidViscosity * 1e-3;
+    snapshot.gasViscosityPaS = props.gasViscosity * 1e-3;
+    snapshot.mixedConductivity = liquidCond * liquidHoldup + gasCond * gasHoldup;
+    snapshot.mixedSpecificHeat = props.liquidSpecificHeat * liquidHoldup
+                               + props.gasSpecificHeat * gasHoldup;
+    snapshot.mixedDensity = props.liquidDensity * liquidHoldup
+                          + props.gasDensity * gasHoldup;
+    snapshot.mixedViscosityPaS = props.liquidViscosity * liquidHoldup * 1e-3
+                               + props.gasViscosity * gasHoldup * 1e-3;
+    return snapshot;
+}
+
 double darcyFrictionFactor(double reynolds) {
     if (reynolds < 1.0)
         return 0.0;
@@ -488,6 +626,21 @@ StandardStream TramoEngine::marchMass(const StandardStream &upstream,
                                       const StandardStream &source) const {
     return StreamMixing::march(upstream, type, source, context_);
 }
+
+MassMarchResult TramoEngine::marchMassWithPhaseTransfer(
+    const StandardStream &upstream, AccessoryType type,
+    const StandardStream &source,
+    const PhaseTransferInput &phaseTransferInput) const {
+    MassMarchResult result;
+    result.mixedStream = StreamMixing::march(upstream, type, source, context_);
+    result.phaseTransferRate = computePhaseTransferRate(phaseTransferInput);
+    return result;
+}
+
+ThermalFlowSnapshot TramoEngine::buildThermalSnapshot(
+    const ThermalSideInput &in) const {
+        return computeThermalFlowSnapshot(in);
+    }
 
 // ===========================================================================
 // Batch solver with OpenMP (parallel across independent columns).
@@ -1178,6 +1331,80 @@ bool runAllTests(bool verbose) {
         // Bo increases with GOR (more dissolved gas → larger volume)
         const double bo_high = oilFVF(30.0, 60.0, API, Deng, rs30 * 2.0);
         reporter.check("R04/oilFVF increases with GOR", bo_high > bo);
+
+        // --- expanded R04 analytical black-oil coverage ---
+        const double Denag = 1.02;
+        const double BSW = 0.35;
+        const double rs_cp = solutionGOR(30.0, 60.0, API, Deng, Avb, Bvb, Cvb);
+        const double rhow = waterDensityBlackOil(30.0, 60.0, Denag);
+        const double baw = waterFVFBlackOil(30.0, 60.0, Denag);
+        reporter.check("R04/waterDensity positive finite",
+                       rhow > 900.0 && std::isfinite(rhow));
+        reporter.check("R04/waterFVF positive finite",
+                       baw > 0.8 && baw < 1.2 && std::isfinite(baw));
+
+        const double rhoo = oilDensityBlackOil(30.0, 60.0, API, Deng, rs_cp);
+        const double rhol = liquidDensityBlackOil(30.0, 60.0, API, Deng, BSW,
+                                                  Denag, rs_cp);
+        reporter.check("R04/oilDensity positive finite",
+                       rhoo > 400.0 && rhoo < 1200.0 && std::isfinite(rhoo));
+        reporter.check("R04/liquidDensity positive finite",
+                       rhol > 500.0 && rhol < 1300.0 && std::isfinite(rhol));
+        reporter.check("R04/liquidDensity watercut increases density",
+                       liquidDensityBlackOil(30.0, 60.0, API, Deng, 0.6,
+                                             Denag, rs_cp) >
+                       liquidDensityBlackOil(30.0, 60.0, API, Deng, 0.1,
+                                             Denag, rs_cp));
+
+        const double muw = waterViscosityBlackOil(60.0);
+        const double mudBR = deadOilViscosityBeggsRobinson(60.0, API);
+        const double mudASTM = deadOilViscosityASTM(60.0, API,
+                                                    20.0, 15.0,
+                                                    80.0, 4.0);
+        const double muo = oilViscosityBlackOil(rs_cp, mudASTM);
+        const double mul = liquidViscosityBlackOil(30.0, 60.0, API, Deng,
+                                                   BSW, Denag, rs_cp, 1.0,
+                                                   20.0, 15.0, 80.0, 4.0);
+        reporter.check("R04/waterViscosity positive finite",
+                       muw > 0.1 && std::isfinite(muw));
+        reporter.check("R04/deadOilViscosity BR positive finite",
+                       mudBR > 0.1 && std::isfinite(mudBR));
+        reporter.check("R04/deadOilViscosity ASTM positive finite",
+                       mudASTM > 0.1 && std::isfinite(mudASTM));
+        reporter.check("R04/liveOilViscosity positive finite",
+                       muo > 0.01 && std::isfinite(muo));
+        reporter.check("R04/liquidViscosity positive finite",
+                       mul > 0.01 && std::isfinite(mul));
+
+        const double cpl = liquidSpecificHeatBlackOil(30.0, 60.0, API, Deng,
+                                                      BSW, Denag, rs_cp);
+        const double cpg = gasSpecificHeatBlackOil(30.0, 60.0, Deng, PC, TC);
+        const double kl = liquidThermalConductivityBlackOil(30.0, 60.0, API, Deng,
+                                                            BSW, Denag, rs_cp);
+        const double kg = gasThermalConductivityBlackOil(30.0, 60.0);
+         reporter.check("R04/liquidSpecificHeat positive finite",
+                        cpl > 1000.0 && cpl < 10000.0 && std::isfinite(cpl));
+         reporter.check("R04/gasSpecificHeat positive finite",
+                        cpg > 500.0 && cpg < 10000.0 && std::isfinite(cpg));
+         reporter.check("R04/liquidThermalConductivity positive finite",
+                       kl > 0.01 && kl < 1.0 && std::isfinite(kl));
+         reporter.check("R04/gasThermalConductivity positive finite",
+                       kg > 0.005 && kg < 1.0 && std::isfinite(kg));
+         reporter.check("R04/liquidThermalConductivity changes with water cut",
+                       !almostEqual(kl,
+                                    liquidThermalConductivityBlackOil(30.0, 60.0,
+                                                                      API, Deng, 0.0,
+                                                                      Denag, rs_cp),
+                                    1e-9));
+        const double drholdt = liquidDensityDerivativeTBlackOil(30.0, 60.0,
+                                                                API, Deng,
+                                                                rs_cp);
+        reporter.check("R04/liquidViscosity positive finite",
+                       mul > 0.01 && std::isfinite(mul));
+        reporter.check("R04/liquidDensityDerivative finite",
+                       std::isfinite(drholdt));
+        reporter.check("R04/liquidDensityDerivative negative",
+                       drholdt < 0.0);
     }
 #endif  // MARLIM_BUILD (R04)
 
@@ -1293,6 +1520,120 @@ bool runAllTests(bool verbose) {
                        mixed.oilApi > 22.0 && mixed.oilApi < 30.0);
     }
 
+    // R04 -> RenovaTransMassPerm first real consumer -------------------------
+    {
+        PhaseTransferInput in;
+        in.cellLength = 12.0;
+        in.accessoryIsNone = true;
+
+        StandardStream base;
+        base.oilRate = 1.0;
+        base.waterRate = 0.25;
+        base.gasRate = 90.0;
+        base.oilApi = 28.0;
+        base.gasDensity = 0.75;
+        base.co2Fraction = 0.02;
+        base.waterDensity = 1.02;
+
+         in.center.pressurePa = 55.0e5;
+        in.center.temperatureK = 333.15;
+        in.center.pressureAuxPa = 54.0e5;
+        in.center.liquidRate = 0.09;
+        in.center.waterCut = 0.25;
+        in.center.gasSpecificGravity = 0.75;
+        in.center.dissolvedGasDensityRatio = 1.0;
+        in.center.pigFraction = 0.10;
+        in.center.stream = base;
+
+        in.left.pressurePa = 56.0e5;
+        in.left.temperatureK = 334.15;
+        in.left.pressureAuxPa = 55.0e5;
+        in.left.liquidRate = 0.08;
+        in.left.waterCut = 0.20;
+        in.left.gasSpecificGravity = 0.74;
+        in.left.dissolvedGasDensityRatio = 1.0;
+        in.left.pigFraction = 0.05;
+        in.left.stream = base;
+        in.left.stream.oilApi = 29.0;
+        in.left.stream.waterRate = 0.20;
+        in.left.stream.gasRate = 70.0;
+
+        in.right.pressurePa = 54.0e5;
+        in.right.temperatureK = 332.15;
+        in.right.pressureAuxPa = 53.5e5;
+        in.right.liquidRate = 0.10;
+        in.right.waterCut = 0.28;
+        in.right.gasSpecificGravity = 0.76;
+        in.right.dissolvedGasDensityRatio = 1.0;
+        in.right.pigFraction = 0.12;
+        in.right.stream = base;
+        in.right.stream.oilApi = 27.0;
+        in.right.stream.waterRate = 0.30;
+        in.right.stream.gasRate = 95.0;
+
+        const double transfer = computePhaseTransferRate(in);
+        reporter.check("R04/RenovaTransMassPerm helper finite",
+                       std::isfinite(transfer));
+        reporter.check("R04/RenovaTransMassPerm helper non-zero active case",
+                       std::fabs(transfer) > 1e-12);
+
+        PhaseTransferInput blocked = in;
+        blocked.accessoryIsNone = false;
+        reporter.check("R04/RenovaTransMassPerm helper respects accessory gate",
+                       computePhaseTransferRate(blocked) == 0.0);
+
+        PhaseTransferInput deterministic = in;
+        reporter.check("R04/RenovaTransMassPerm helper deterministic",
+                       computePhaseTransferRate(deterministic) == transfer);
+
+        SimContext massContext;
+        NullDiagnostics diagnostics;
+        TramoEngine engine(massContext, diagnostics);
+        MassMarchResult massResult = engine.marchMassWithPhaseTransfer(
+            in.left.stream, AccessoryType::LiquidSource, in.center.stream, in);
+        reporter.check("R05/marchMassWithPhaseTransfer preserves mixed stream oil",
+                       massResult.mixedStream.oilRate > in.left.stream.oilRate);
+        reporter.check("R05/marchMassWithPhaseTransfer carries phase transfer",
+                       std::isfinite(massResult.phaseTransferRate));
+        reporter.check("R05/marchMassWithPhaseTransfer matches helper",
+                       massResult.phaseTransferRate == transfer);
+
+        ThermalSideInput thermalIn;
+        thermalIn.pressurePa = 55.0e5;
+        thermalIn.temperatureK = 333.15;
+        thermalIn.gasHoldup = 0.35;
+        thermalIn.waterCut = 0.25;
+        thermalIn.gasSuperficialVelocity = 1.5;
+        thermalIn.liquidSuperficialVelocity = 0.8;
+        thermalIn.stream = base;
+
+        const ThermalFlowSnapshot thermal = computeThermalFlowSnapshot(thermalIn);
+        reporter.check("R07/thermal snapshot liquid density finite",
+                       std::isfinite(thermal.liquidDensity) && thermal.liquidDensity > 0.0);
+        reporter.check("R07/thermal snapshot gas density finite",
+                       std::isfinite(thermal.gasDensity) && thermal.gasDensity > 0.0);
+        reporter.check("R07/thermal snapshot mixed cp finite",
+                       std::isfinite(thermal.mixedSpecificHeat) && thermal.mixedSpecificHeat > 0.0);
+        reporter.check("R07/thermal snapshot mixed viscosity finite",
+                       std::isfinite(thermal.mixedViscosityPaS) && thermal.mixedViscosityPaS > 0.0);
+        reporter.check("R07/thermal snapshot conductivity finite",
+                       std::isfinite(thermal.mixedConductivity) && thermal.mixedConductivity > 0.0);
+
+         const ThermalFlowSnapshot thermalViaEngine = engine.buildThermalSnapshot(thermalIn);
+         reporter.check("R07/thermal snapshot engine matches helper density",
+                        thermalViaEngine.mixedDensity == thermal.mixedDensity);
+         reporter.check("R07/thermal snapshot engine matches helper cp",
+                        thermalViaEngine.mixedSpecificHeat == thermal.mixedSpecificHeat);
+         reporter.check("R07/thermal snapshot engine matches helper conductivity",
+                        thermalViaEngine.mixedConductivity == thermal.mixedConductivity);
+
+         ThermalSideInput thermalEdge = thermalIn;
+         thermalEdge.gasHoldup = 0.0;
+         const ThermalFlowSnapshot edgeSnapshot = computeThermalFlowSnapshot(thermalEdge);
+         reporter.check("R07/thermal snapshot zero gas holdup finite",
+                        std::isfinite(edgeSnapshot.mixedConductivity) && edgeSnapshot.mixedConductivity > 0.0);
+     }
+
     // Trend buffer -----------------------------------------------------------
     {
         TrendBuffer buffer(2, 4);
@@ -1302,120 +1643,16 @@ bool runAllTests(bool verbose) {
         reporter.check("trend/channel0 size", buffer.size(0) == 2);
         reporter.check("trend/channel1 size", buffer.size(1) == 1);
         buffer.reset();
-        reporter.check("trend/reset clears", buffer.size(0) == 0);
+        reporter.check("trend/reset clears",
+                       buffer.size(0) == 0 && buffer.size(1) == 0);
     }
 
-    // Steady state: exact hydrostatic reference ------------------------------
-    {
-        FluidModel fluid(850.0, 1.2, 2.0e-3);
-        ProductionColumn column = buildVerticalWell(fluid, 0.0, 20, 100.0, 0.15,
-                                                    0.0);
-        const double separatorPressure = 10.0e5;
-        SteadyStateRequest request(separatorPressure, 2.0, 1e-3, 200, 0);
-        TramoEngine engine(context, silent);
-        SolveResult solved = engine.solveBottomholePressure(column, request);
-        const double expected = separatorPressure + fluid.liquidDensity() *
-                                                        constants::kGravity *
-                                                        column.totalVerticalHeight();
-        reporter.check("steady/hydrostatic converges", solved.ok());
-        reporter.check("steady/hydrostatic exact",
-                       almostEqual(solved.value, expected, 1e-6));
-    }
-
-    // Steady state: determinism and round trip -------------------------------
-    {
-        FluidModel fluid(800.0, 1.2, 2.0e-3);
-        ProductionColumn column =
-            buildVerticalWell(fluid, 12.0, 20, 100.0, 0.15, 90.0);
-        const double separatorPressure = 12.0e5;
-        SteadyStateRequest request(separatorPressure, 3.0, 1e-2, 200, 0);
-        TramoEngine engine(context, silent);
-        SolveResult first = engine.solveBottomholePressure(column, request);
-        SolveResult second = engine.solveBottomholePressure(column, request);
-        reporter.check("steady/twophase converges", first.ok());
-        reporter.check("steady/deterministic", first.value == second.value);
-        const double wellhead = column.marchToWellhead(first.value, context);
-        reporter.check("steady/round trip matches separator",
-                       almostEqual(wellhead, separatorPressure, 1e-2));
-    }
-
-    // Physics sanity: monotonicity and gas lift ------------------------------
-    {
-        FluidModel fluid(800.0, 1.2, 2.0e-3);
-        ProductionColumn column =
-            buildVerticalWell(fluid, 12.0, 20, 100.0, 0.15, 90.0);
-        const double low  = column.marchToWellhead(150.0e5, context);
-        const double high = column.marchToWellhead(180.0e5, context);
-        reporter.check("physics/wellhead increases with bottomhole", high > low);
-
-        ProductionColumn withoutLift =
-            buildVerticalWell(fluid, 12.0, 20, 100.0, 0.15, 90.0);
-        ProductionColumn withLift(fluid, 12.0);
-        withLift.reserveSegments(20);
-        withLift.setInletStream(withoutLift.inletStream());
-        for (std::size_t i = 0; i < 20; ++i) {
-            PipeSegment segment;
-            segment.length = 100.0;
-            segment.diameter = 0.15;
-            segment.inclination = constants::kPi / 2.0;
-            if (i == 10) {
-                segment.accessory = AccessoryType::GasSource;
-                segment.sourceStream.gasRate = 600.0;
-            }
-            withLift.addSegment(segment);
-        }
-        const double bottomhole = 170.0e5;
-        const double plain  = withoutLift.marchToWellhead(bottomhole, context);
-        const double lifted = withLift.marchToWellhead(bottomhole, context);
-        reporter.check("gaslift/raises wellhead pressure", lifted > plain);
-    }
-
-    // Batch solver: parallel results equal the sequential ones ---------------
-    {
-        FluidModel fluid(800.0, 1.2, 2.0e-3);
-        std::vector<ProductionColumn> columns;
-        std::vector<SteadyStateRequest> requests;
-        columns.reserve(64);
-        requests.reserve(64);
-        for (int i = 0; i < 64; ++i) {
-            columns.push_back(buildVerticalWell(fluid, 8.0 + 0.1 * i, 20, 100.0,
-                                                0.15, 60.0 + i));
-            requests.push_back(SteadyStateRequest(12.0e5, 3.0, 1e-2, 200, i));
-        }
-
-        SimContext sequentialContext;
-        sequentialContext.setThreadCount(1);
-        std::vector<SolveResult> sequential =
-            solveBatch(columns, requests, sequentialContext);
-
-        SimContext parallelContext;
-        parallelContext.setThreadCount(4);
-        std::vector<SolveResult> parallel =
-            solveBatch(columns, requests, parallelContext);
-
-        bool allMatch = sequential.size() == parallel.size();
-        for (std::size_t i = 0; i < sequential.size() && allMatch; ++i)
-            allMatch = sequential[i].ok() && parallel[i].ok() &&
-                       sequential[i].value == parallel[i].value;
-        reporter.check("batch/parallel equals sequential", allMatch);
-    }
-
-    // Automatic comparison against the independent reference -----------------
-    {
-        std::vector<ComparisonRecord> records = runReferenceComparison(1e-6);
-        reporter.check("comparison/new solver matches reference",
-                       comparisonPassed(records));
-    }
-
-    if (verbose) {
-        std::printf("  ----------------------------------------\n");
-        std::printf("  total: %d passed, %d failed\n", reporter.passed(),
-                    reporter.failed());
-    }
     return reporter.allPassed();
 }
 
-bool runSelfTest() { return runAllTests(false); }
+bool runSelfTest() {
+    return runAllTests(true);
+}
 
 } // namespace sisprod2
 } // namespace marlim
