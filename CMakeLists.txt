@@ -293,9 +293,14 @@ add_executable(sisprod_parity_tests
     ${CMAKE_SOURCE_DIR}/src/core/DriftFluxCorrelations.cpp
     ${CMAKE_SOURCE_DIR}/src/core/BlackOilProperties.cpp
     ${CMAKE_SOURCE_DIR}/src/core/HydraulicFriction.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/SisProd.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/PressureGradientEngine.cpp
 )
 
 target_compile_definitions(sisprod_parity_tests PRIVATE MARLIM_BUILD)
+
+# Link OpenMP runtime (required by sisprod_parity_tests)
+target_link_libraries(sisprod_parity_tests PRIVATE gomp)
 
 target_include_directories(sisprod_parity_tests PRIVATE
     ${INCDIR}
