@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Run the six constitutional gates in one pass and archive the evidence.
+#
+# A stage is not complete until all six pass WITH EXECUTED OUTPUT. Reasoning,
+# inspection or the expectation that results did not change satisfies none of
+# them. This script exists so that "I ran the gates" means the same thing every
+# time, and so the evidence lands somewhere reviewable.
+#
+# Gate 7 (time-step series) is specific to stage 8 and is not run here.
+#
+# Usage:
+#   run-gates.sh <evidence-directory> [model ...]
+#
+# With no models, the full corpus is used -- which is what a stage boundary
+# requires. Naming models gives the fast cycle for intermediate checks.
+#
+# Exit code: 0 only when every gate passes.
+
+set -uo pipefail
+export LC_ALL=C
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd "$script_dir/.." && pwd)"
+
+evidence_dir="${1:?usage: run-gates.sh <evidence-directory> [model ...]}"
+shift || true
+models=("$@")
+
+mkdir -p "$evidence_dir"
+cd "$project_root" || exit 2
+
+red=$'\033[0;31m'; green=$'\033[0;32m'; bold=$'\033[1m'; reset=$'\033[0m'
+failures=0
+
+announce() { printf '\n%s=== %s ===%s\n' "$bold" "$1" "$reset"; }
+verdict() {
+    if (( $2 == 0 )); then
+        printf '%sGATE %s: PASS%s\n' "$green" "$1" "$reset"
+    else
+        printf '%sGATE %s: FAIL%s\n' "$red" "$1" "$reset"
+        failures=$((failures + 1))
+    fi
+}
+
+# ---------------------------------------------------------------- gate 1 ----
+announce "Gate 1 - clean build, no new warnings"
+cmake --build --preset gcc-release > "$evidence_dir/build.log" 2>&1
+build_status=$?
+errors=$(grep -c "error:" "$evidence_dir/build.log")
+warnings=$(grep -c "warning:" "$evidence_dir/build.log")
+baseline_warnings="${MARLIM_BASELINE_WARNINGS:-472}"
+printf 'errors=%s warnings=%s (baseline %s)\n' "$errors" "$warnings" "$baseline_warnings"
+(( build_status == 0 && errors == 0 && warnings <= baseline_warnings ))
+verdict 1 $?
+
+# ---------------------------------------------------------------- gate 2 ----
+announce "Gate 2 - bit-for-bit equivalence (L2)"
+bash "$script_dir/compare-l2.sh" "${models[@]}" 2>&1 | tee "$evidence_dir/l2.log"
+verdict 2 "${PIPESTATUS[0]}"
+
+# ---------------------------------------------------------------- gate 3 ----
+announce "Gate 3 - regression suite (L3)"
+uv run pytest tests/test_regression.py -m regressao > "$evidence_dir/l3.log" 2>&1
+verdict 3 $?
+tail -1 "$evidence_dir/l3.log"
+
+# ---------------------------------------------------------------- gate 4 ----
+announce "Gate 4 - performance within threshold"
+bash "$script_dir/performance-gate.sh" "${models[@]}" 2>&1 | tee "$evidence_dir/performance.log"
+verdict 4 "${PIPESTATUS[0]}"
+
+# ---------------------------------------------------------------- gate 5 ----
+announce "Gate 5 - reference files untouched"
+git status --porcelain tests/comparison/ > "$evidence_dir/references.log" 2>&1
+[[ ! -s "$evidence_dir/references.log" ]]
+verdict 5 $?
+
+# ---------------------------------------------------------------- gate 6 ----
+announce "Gate 6 - consumers compile"
+consumers_broken=0
+for consumer in Num4Main.cpp FA_Hidratos.cpp FA_Hidratos_Servico.cpp SisProdVap.cpp; do
+    if grep -q "error:.*$consumer" "$evidence_dir/build.log"; then
+        printf '%s%s failed to compile%s\n' "$red" "$consumer" "$reset"
+        consumers_broken=1
+    else
+        printf '%s ok\n' "$consumer"
+    fi
+done
+(( consumers_broken == 0 ))
+verdict 6 $?
+
+# ------------------------------------------------------------------ summary --
+printf '\n%s----------------------------------------------------------------%s\n' "$bold" "$reset"
+printf 'evidence archived in: %s\n' "$evidence_dir"
+
+if (( failures > 0 )); then
+    printf '%s%s of 6 gates FAILED -- the stage is not complete%s\n' "$red" "$failures" "$reset" >&2
+    exit 1
+fi
+
+printf '%sall 6 gates passed%s\n' "$green" "$reset"
+exit 0
