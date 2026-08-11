@@ -29,6 +29,13 @@
 # What changes is the estimator, so that the comparison is about the code rather
 # than about scheduler luck.
 #
+# Loosening the threshold to sit above the noise was considered and rejected: it
+# would let a real 10% regression through, and the safe direction for a
+# correctness-adjacent gate is to keep it strict and make the measurement
+# trustworthy instead. When the gate does fail, the instruction is to re-run on
+# an idle machine before treating it as a regression -- a false alarm costs one
+# re-run, while a missed regression costs the user every day after release.
+#
 # Usage:
 #   performance-gate.sh                # every model in the baseline timings
 #   performance-gate.sh <model> ...    # only the named models

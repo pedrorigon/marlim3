@@ -30,9 +30,14 @@ CURRENT_BINARY="${MARLIM_BIN:-$project_root/build/Marlim3}"
 WORK_DIR="${MARLIM_L2_DIR:-$(mktemp -d -t marlim3-l2-XXXXXX)}"
 
 # Files kept out of the comparison, with the reason:
-#   _stdout.txt  console decoration; not a result artifact
-#   time.txt     harness instrumentation, not engine output
-EXCLUDED='^(_stdout\.txt|time\.txt)$'
+#   time.txt   harness instrumentation, not engine output
+#
+# _stdout.txt IS compared. It is mostly decoration -- the drawn phrase and a
+# banner -- but it also carries "ARQUIVO DE LOG:" and any error the engine
+# prints only to the console. Excluding it would leave a blind spot exactly
+# where a behaviour change is most likely to surface first, and the normalizer
+# already handles everything in it that legitimately varies between runs.
+EXCLUDED='^(time\.txt)$'
 
 red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; reset=$'\033[0m'
 
