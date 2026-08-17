@@ -1,54 +1,52 @@
 #!/usr/bin/env bash
-# Verification gate 4: wall-clock performance against the stored baseline.
+# Gate 4 -- has the refactoring made the engine slower?
 #
-# Design notes, derived from measurements taken in stage 0 (T008)
-# -------------------------------------------------------------
-# Naively comparing "median of 3" against a 3% threshold does not work on this
-# corpus. Measured run-to-run spread of the SAME binary on an idle machine:
+# HOW THE COMPARISON IS MADE, AND WHY
 #
-#     parada-longo-Combinado-BCS-GLC-PIG-completo   19.5%
-#     BCS-longo-eficMotor                           17.1%
-#     MultiBCS                                      10.1%
-#     2zones-2GLVs-2-Check-correcThermProf           8.1%
+# Both sides are measured now, alternately, in one session: the baseline commit
+# is built from source and its binary is run head-to-head against the working
+# tree's binary, model by model. Nothing is read from a file written on an
+# earlier day.
 #
-# The noise floor is up to 6x the 3% threshold of SC-005/FR-024. A gate built on
-# the median would fail correct refactorings and pass real regressions.
+# The two designs this replaces both failed, for reasons worth keeping:
 #
-# Two decisions follow:
+#   1. Stored timings. A baseline captured once freezes one draw of a noisy
+#      estimator. When that draw is fast, every later comparison inherits the
+#      error and re-running cannot fix it -- the defective side of the comparison
+#      is the side already on disk. Measured: a stored minimum of 125.278 s that
+#      three later sessions put at 131.32, 131.93 and 135.40, producing "5.3%
+#      regression" verdicts on source nobody had touched.
 #
-#   1. Use the MINIMUM, not the median. Timing noise is one-sided: interference
-#      only ever adds time, never removes it. The fastest of N runs is the least
-#      contaminated estimate of the true cost, and it is far more stable than
-#      the median across repetitions.
+#   2. A preserved baseline BINARY. Better, but it ages against the environment.
+#      The binary kept from 10 Aug stopped reproducing its own capture after a
+#      system library update pulled in libmvec: same source, same compiler, same
+#      flags, 99 of 102 output files different. Comparing a binary built then
+#      against one built now measures the toolchain as much as the code.
 #
-#   2. Skip models below MIN_MEASURABLE_SECONDS. The two fastest models finish
-#      in about 0.4 s. They are measurable -- an earlier reading of 0.00 s came
-#      from timing in whole seconds, not from the models being too fast -- and
-#      their relative spread is in line with the rest of the corpus. They are
-#      skipped anyway because 3% of 0.4 s is 12 ms, a budget smaller than
-#      process startup variance, so the percentage is arithmetically defined but
-#      carries no information about the code.
+# Building the baseline commit at comparison time removes both. Both binaries
+# come from the same compiler and the same libraries, and both meet the same
+# machine load at the same moment, so what differs between them is the source.
 #
-# The 3% threshold itself comes from the specification and is NOT changed here.
-# What changes is the estimator, so that the comparison is about the code rather
-# than about scheduler luck.
+# The build is cached: it is redone only when the baseline commit changes or the
+# cached tree is missing.
 #
-# Loosening the threshold to sit above the noise was considered and rejected: it
-# would let a real 10% regression through, and the safe direction for a
-# correctness-adjacent gate is to keep it strict and make the measurement
-# trustworthy instead. When the gate does fail, the instruction is to re-run on
-# an idle machine before treating it as a regression -- a false alarm costs one
-# re-run, while a missed regression costs the user every day after release.
+# THE MACHINE IS NOT IDLE, AND CANNOT BE MADE IDLE
+#
+# Earlier versions instructed the operator to "re-run on an idle machine". That
+# advice was unusable: this is a desktop in use, with a browser, a shell and
+# long-running user processes taking ~60% of the CPU and varying on their own.
+# Pairing is what makes measurement possible here -- it does not need a quiet
+# machine, only that both binaries meet the same machine.
 #
 # Usage:
-#   performance-gate.sh                # every model in the baseline timings
-#   performance-gate.sh <model> ...    # only the named models
+#   performance-gate.sh                 full corpus
+#   performance-gate.sh <model> ...     only the named models
 #
 # Environment:
 #   MARLIM_BIN            binary under test (default build/Marlim3)
-#   MARLIM_BASELINE       baseline root (default ~/marlim3-baseline)
-#   MARLIM_PERF_REPS      repetitions per model (default 3)
+#   MARLIM_PERF_REPS      alternating repetitions per side (default 3)
 #   MARLIM_PERF_THRESHOLD regression threshold in percent (default 3)
+#   MARLIM_PERF_TREE      cached baseline worktree (default ~/marlim3-perf-baseline)
 #
 # Exit code: 0 when no model regresses beyond the threshold; 1 otherwise.
 
@@ -68,21 +66,73 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 
 BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
-BASELINE_TIMINGS="$BASELINE_DIR/tempos-baseline.txt"
+BASELINE_OUTPUTS="$BASELINE_DIR/saidas"
 CURRENT_BINARY="${MARLIM_BIN:-$project_root/build/Marlim3}"
+PERF_TREE="${MARLIM_PERF_TREE:-$HOME/marlim3-perf-baseline}"
 REPETITIONS="${MARLIM_PERF_REPS:-3}"
 THRESHOLD="${MARLIM_PERF_THRESHOLD:-3}"
 MIN_MEASURABLE_SECONDS=5
 
 red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; reset=$'\033[0m'
 
-[[ -x "$CURRENT_BINARY" ]] || { printf '%scurrent binary missing: %s%s\n' "$red" "$CURRENT_BINARY" "$reset" >&2; exit 2; }
-[[ -f "$BASELINE_TIMINGS" ]] || { printf '%sbaseline timings missing: %s (run T008)%s\n' "$red" "$BASELINE_TIMINGS" "$reset" >&2; exit 2; }
+[[ -x "$CURRENT_BINARY" ]] || {
+    printf '%scurrent binary missing: %s%s\n' "$red" "$CURRENT_BINARY" "$reset" >&2; exit 2; }
+
+BASELINE_COMMIT="$(cat "$BASELINE_DIR/commit" 2>/dev/null)"
+[[ -n "$BASELINE_COMMIT" ]] || {
+    printf '%sno baseline commit recorded at %s/commit%s\n' "$red" "$BASELINE_DIR" "$reset" >&2; exit 2; }
 
 cd "$project_root" || exit 2
 
 work_dir="$(mktemp -d -t marlim3-perf-XXXXXX)"
 trap 'rm -rf "$work_dir"' EXIT
+
+# ------------------------------------------------ baseline build, cached ----
+# Rebuilding the baseline for every gate run would cost minutes on a comparison
+# that does not change between runs, so the tree is kept and reused. It is
+# rebuilt when the recorded baseline commit moves, which is the only thing that
+# invalidates it.
+baseline_binary="$PERF_TREE/tree/build/Marlim3"
+stamp="$PERF_TREE/built-from-commit"
+
+ensure_baseline_build() {
+    if [[ -x "$baseline_binary" && "$(cat "$stamp" 2>/dev/null)" == "$BASELINE_COMMIT" ]]; then
+        printf 'baseline binary: cached build of %s\n' "${BASELINE_COMMIT:0:9}"
+        return 0
+    fi
+
+    printf '%sbuilding baseline commit %s (cached for later runs)%s\n' \
+           "$yellow" "${BASELINE_COMMIT:0:9}" "$reset"
+
+    git -C "$project_root" worktree remove --force "$PERF_TREE/tree" > /dev/null 2>&1
+    rm -rf "$PERF_TREE"
+    git -C "$project_root" worktree prune
+    mkdir -p "$PERF_TREE"
+
+    git -C "$project_root" worktree add --detach "$PERF_TREE/tree" "$BASELINE_COMMIT" > /dev/null 2>&1 || {
+        printf '%scould not create a worktree at %s%s\n' "$red" "$BASELINE_COMMIT" "$reset" >&2
+        return 1
+    }
+
+    (
+        cd "$PERF_TREE/tree" || exit 1
+        cmake --preset gcc-release > "$PERF_TREE/build.log" 2>&1 &&
+        cmake --build --preset gcc-release >> "$PERF_TREE/build.log" 2>&1
+    ) || {
+        printf '%sbaseline build failed -- see %s/build.log%s\n' "$red" "$PERF_TREE" "$reset" >&2
+        return 1
+    }
+
+    [[ -x "$baseline_binary" ]] || {
+        printf '%sbaseline build produced no binary at %s%s\n' "$red" "$baseline_binary" "$reset" >&2
+        return 1
+    }
+
+    printf '%s' "$BASELINE_COMMIT" > "$stamp"
+    printf '%sbaseline built%s\n' "$green" "$reset"
+}
+
+ensure_baseline_build || exit 2
 
 locate_model() {
     local name="$1"
@@ -91,17 +141,42 @@ locate_model() {
     return 1
 }
 
-baseline_seconds() {
-    awk -v want="$1" '$2 == want { gsub(",", ".", $1); print $1; exit }' "$BASELINE_TIMINGS"
+# Time one run of one binary. Prints elapsed seconds.
+#
+# Both binaries are invoked from the project root against the same input files,
+# so the inputs are identical by construction and only the executable differs.
+time_once() {
+    local binary="$1" input_path="$2" run_dir="$3"
+    local started finished
+    mkdir -p "$run_dir"
+    started=$(date +%s.%N)
+    "$binary" -s TRANSIENTE -i "$input_path" -p demos/ \
+              -d "$run_dir" -o "$run_dir/run.log" \
+              > "$run_dir/_stdout.txt" 2>&1
+    finished=$(date +%s.%N)
+    rm -rf "$run_dir"
+    awk -v a="$started" -v b="$finished" 'BEGIN { printf "%.3f", b - a }'
+}
+
+keep_fastest() {
+    local candidate="$1" incumbent="$2"
+    if [[ -z "$incumbent" ]] || awk -v e="$candidate" -v f="$incumbent" 'BEGIN { exit !(e < f) }'; then
+        printf '%s' "$candidate"
+    else
+        printf '%s' "$incumbent"
+    fi
 }
 
 if (( $# > 0 )); then
     models=("$@")
 else
-    mapfile -t models < <(awk '{print $2}' "$BASELINE_TIMINGS")
+    mapfile -t models < <(cd "$BASELINE_OUTPUTS" && ls -d */ 2>/dev/null | tr -d '/')
 fi
 
-printf '%-52s %10s %10s %8s\n' "MODEL" "BASELINE" "CURRENT" "DELTA"
+(( ${#models[@]} > 0 )) || {
+    printf '%sno models to measure%s\n' "$red" "$reset" >&2; exit 2; }
+
+printf '\n%-52s %10s %10s %8s\n' "MODEL" "BASELINE" "CURRENT" "DELTA"
 printf '%s\n' "--------------------------------------------------------------------------------"
 
 regressions=0
@@ -109,57 +184,59 @@ skipped=0
 measured=0
 
 for model in "${models[@]}"; do
-    reference="$(baseline_seconds "$model")"
-    [[ -n "$reference" ]] || { printf '%-52s %10s\n' "$model" "no baseline"; continue; }
-
-    if awk -v r="$reference" -v m="$MIN_MEASURABLE_SECONDS" 'BEGIN { exit !(r < m) }'; then
-        printf '%-52s %10.2f %10s %8s   %sskipped: below %ss, timer resolution%s\n' \
-               "$model" "$reference" "-" "-" "$yellow" "$MIN_MEASURABLE_SECONDS" "$reset"
-        skipped=$((skipped + 1))
-        continue
-    fi
-
     input_path="$(locate_model "$model")" || {
         printf '%-52s %10s\n' "$model" "input missing"
         regressions=$((regressions + 1)); continue
     }
 
-    fastest=""
+    # Alternate the two binaries rather than measuring all of one and then all
+    # of the other. Whatever the machine does during the run -- a browser waking
+    # up, a background job starting -- then lands on both sides instead of on
+    # whichever side happened to run while it happened.
+    best_base=""; best_curr=""
     for (( rep = 1; rep <= REPETITIONS; rep++ )); do
-        run_dir="$work_dir/$model-$rep"; mkdir -p "$run_dir"
-        started=$(date +%s.%N)
-        "$CURRENT_BINARY" -s TRANSIENTE -i "$input_path" -p demos/ \
-                          -d "$run_dir" -o "$run_dir/$model.log" \
-                          > "$run_dir/_stdout.txt" 2>&1
-        finished=$(date +%s.%N)
-        elapsed=$(awk -v a="$started" -v b="$finished" 'BEGIN { printf "%.3f", b - a }')
-        rm -rf "$run_dir"
-        if [[ -z "$fastest" ]] || awk -v e="$elapsed" -v f="$fastest" 'BEGIN { exit !(e < f) }'; then
-            fastest="$elapsed"
-        fi
+        elapsed="$(time_once "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep")"
+        best_base="$(keep_fastest "$elapsed" "$best_base")"
+        elapsed="$(time_once "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep")"
+        best_curr="$(keep_fastest "$elapsed" "$best_curr")"
     done
 
-    delta=$(awk -v r="$reference" -v c="$fastest" 'BEGIN { printf "%.1f", (c - r) / r * 100 }')
+    # The floor is judged on the freshly measured baseline, not on a stored
+    # number, so it tracks the machine the gate is actually running on. Below
+    # it, 3% is smaller than process start-up variance and carries no
+    # information about the code.
+    if awk -v r="$best_base" -v m="$MIN_MEASURABLE_SECONDS" 'BEGIN { exit !(r < m) }'; then
+        printf '%-52s %10.2f %10.2f %8s   %sskipped: below %ss, timer resolution%s\n' \
+               "$model" "$best_base" "$best_curr" "-" "$yellow" "$MIN_MEASURABLE_SECONDS" "$reset"
+        skipped=$((skipped + 1))
+        continue
+    fi
+
+    delta=$(awk -v r="$best_base" -v c="$best_curr" 'BEGIN { printf "%.1f", (c - r) / r * 100 }')
     measured=$((measured + 1))
 
     if awk -v d="$delta" -v t="$THRESHOLD" 'BEGIN { exit !(d > t) }'; then
         printf '%-52s %10.2f %10.2f %7s%%   %sREGRESSION%s\n' \
-               "$model" "$reference" "$fastest" "$delta" "$red" "$reset"
+               "$model" "$best_base" "$best_curr" "$delta" "$red" "$reset"
         regressions=$((regressions + 1))
     else
-        printf '%-52s %10.2f %10.2f %7s%%\n' "$model" "$reference" "$fastest" "$delta"
+        printf '%-52s %10.2f %10.2f %7s%%\n' "$model" "$best_base" "$best_curr" "$delta"
     fi
 done
 
 echo
-printf 'estimator            : minimum of %d runs (noise is one-sided)\n' "$REPETITIONS"
+printf 'comparison           : baseline commit %s built now, alternated with the working tree\n' "${BASELINE_COMMIT:0:9}"
+printf 'estimator            : minimum of %d alternating runs per side (noise is one-sided)\n' "$REPETITIONS"
 printf 'threshold            : %s%%\n' "$THRESHOLD"
 printf 'models measured      : %d\n' "$measured"
 printf 'models skipped       : %d (baseline below %ss)\n' "$skipped" "$MIN_MEASURABLE_SECONDS"
 
 if (( regressions > 0 )); then
-    printf '%sPERFORMANCE GATE FAILED -- %d model(s) beyond %s%%%s\n' "$red" "$regressions" "$THRESHOLD" "$reset" >&2
-    printf '%sRe-run on an idle machine before concluding: measured noise reaches 19.5%%.%s\n' "$yellow" "$reset" >&2
+    printf '%sPERFORMANCE GATE FAILED -- %d model(s) beyond %s%%%s\n' \
+           "$red" "$regressions" "$THRESHOLD" "$reset" >&2
+    printf '%sBoth binaries were built from the same toolchain and measured in the same\n' "$yellow"
+    printf 'session, so this is not explained by a stale baseline or by machine load.\n'
+    printf 'Re-run once to rule out a transient, then treat it as a real regression.%s\n' "$reset" >&2
     exit 1
 fi
 
