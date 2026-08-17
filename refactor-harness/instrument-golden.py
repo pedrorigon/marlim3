@@ -49,8 +49,17 @@ CORRELATIONS = (
 CLOSURE_SOURCE = "src/core/DriftFluxClosure.cpp"
 CLOSURE_NAMESPACE = "driftflux::correlations"
 
+# The captured columns, in order. The two tuples are the same twelve quantities
+# under the names each file uses: SisProd.cpp still has the inherited ones, and
+# the extracted module was renamed to English when it moved. The order must stay
+# aligned so the recorded tables keep comparing column for column.
 CORRELATION_ARGS = ("rhol", "rhog", "tensup", "alf", "reymix", "reymixL",
                     "ug1", "ul1", "dia", "rug", "tet", "correcHor")
+CORRELATION_ARGS_EXTRACTED = (
+    "liquidDensity", "gasDensity", "surfaceTension", "voidFraction",
+    "mixtureReynolds", "liquidReynolds", "gasFlowRate", "liquidFlowRate",
+    "diameter", "roughness", "inclinationAngle", "horizontalCorrection")
+assert len(CORRELATION_ARGS) == len(CORRELATION_ARGS_EXTRACTED)
 
 SOLVERS = {
     "zbrent":     ("double", "double x1, double x2, int prod, int tipoCC, double tol, double epsn, int maxit",
@@ -151,18 +160,19 @@ def locate_correlations(lines: list[str]) -> dict[str, int]:
     return found
 
 
-def instrument_correlations(source: str) -> tuple[str, set[str]]:
+def instrument_correlations(source: str, extracted: bool = False) -> tuple[str, set[str]]:
     """Inject the capture call before each correlation's closing brace.
 
     Returns the patched source and the set of correlations actually found, so
     the caller can tell which file they live in.
     """
+    args = CORRELATION_ARGS_EXTRACTED if extracted else CORRELATION_ARGS
     lines = source.splitlines(keepends=True)
     located = locate_correlations(lines)
     # Patch from the bottom up so earlier line numbers stay valid.
     for name, closing in sorted(located.items(), key=lambda item: -item[1]):
-        fields = " ".join("%a" for _ in CORRELATION_ARGS) + " %a %a"
-        values = ", ".join(CORRELATION_ARGS) + ", c0, ud"
+        fields = " ".join("%a" for _ in args) + " %a %a"
+        values = ", ".join(args) + ", c0, ud"
         call = (f'    {{ std::FILE *gf = golden_capture::sink("{name}");\n'
                 f'      if (gf) std::fprintf(gf, "{fields}\\n", {values}); }}\n')
         lines.insert(closing, call)
@@ -327,7 +337,7 @@ def main() -> int:
     in_closure: set[str] = set()
     if closure.exists():
         closure_text = closure.read_text(encoding="utf-8", errors="replace")
-        closure_text, in_closure = instrument_correlations(closure_text)
+        closure_text, in_closure = instrument_correlations(closure_text, extracted=True)
         if in_closure:
             closure_text = add_logger(closure_text)
             closure.write_text(closure_text, encoding="utf-8")

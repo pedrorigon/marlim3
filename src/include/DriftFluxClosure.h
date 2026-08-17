@@ -13,29 +13,34 @@ namespace driftflux {
 namespace correlations {
 
 /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
-void BhagwatGhajar(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                   double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                   double &ud, double correcHor);
+void BhagwatGhajar(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                   double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
+                   double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
+                   double horizontalCorrection);
 
 /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
-void BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                      double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                      double &ud, double correcHor);
+void BhagwatGhajarMod(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                      double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                      double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
+                      double &c0, double &ud, double horizontalCorrection);
 
 /// Evaluates C0 and Ud using the Choi drift-flux correlation.
-void Choi(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-          double ug1, double ul1, double dia, double rug, double tet, double &c0,
-          double &ud, double correcHor);
+void Choi(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+          double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
+          double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
+          double horizontalCorrection);
 
 /// Evaluates C0 and Ud using the Hibiki-Ishii drift-flux correlation.
-void HibikiIshii(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                 double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                 double &ud, double correcHor);
+void HibikiIshii(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                 double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
+                 double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
+                 double horizontalCorrection);
 
 /// Evaluates C0 and Ud using the Franca-Lahey drift-flux correlation.
-void FrancaLahey(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                 double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                 double &ud, double correcHor);
+void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                 double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
+                 double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
+                 double horizontalCorrection);
 
 /// Correlation selected by the aggregators below, resolved from the integer
 /// configuration field before the call.
@@ -55,21 +60,25 @@ void FrancaLahey(double rhol, double rhog, double tensup, double alf, double rey
 /// Evaluates C0 and Ud for dispersed flow, using the already-resolved
 /// correlationIndex (arq.CorreDisper at the call site) instead of reading the
 /// configuration itself.
-void C0UdDisperso(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                  double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                  double &ud, double correcHor, int estabCol, int correlationIndex);
+void C0UdDisperso(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
+                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
+                  double horizontalCorrection, int estabCol, int correlationIndex);
 
 /// Evaluates C0 and Ud for annular or churn flow, using the already-resolved
 /// correlationIndex (arq.CorreAnular at the call site).
-void C0UdAnularChurn(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                     double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                     double &ud, double correcHor, int estabCol, int correlationIndex);
+void C0UdAnularChurn(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                     double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                     double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
+                     double &c0, double &ud, double horizontalCorrection, int estabCol, int correlationIndex);
 
 /// Evaluates C0 and Ud for stratified flow, using the already-resolved
 /// correlationIndex (arq.CorreEstrat at the call site).
-void C0UdEstratificado(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                       double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                       double &ud, double correcHor, int estabCol, int correlationIndex);
+void C0UdEstratificado(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                       double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                       double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
+                       double &c0, double &ud, double horizontalCorrection, int estabCol,
+                       int correlationIndex);
 
 }  // namespace correlations
 }  // namespace driftflux
