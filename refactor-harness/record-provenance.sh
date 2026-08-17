@@ -63,6 +63,25 @@ collect() {
     fi
 }
 
+# The manifest answers two questions whose answers mean opposite things.
+#
+#   Did the ENVIRONMENT move? That is outside our control and is the D-11
+#     signal: a system change once invalidated the baseline while source,
+#     compiler, flags and link options all matched what had been recorded.
+#
+#   Did the SOURCE move? That is the work happening. From stage 1 onward it
+#     changes at every stage, by construction.
+#
+# Comparing them as one blob made the check report CHANGED on every run from
+# stage 1 on, with "run verify-baseline.sh before trusting any gate below"
+# attached to it. An alarm that fires every time is one the operator learns to
+# skip, and this one exists for the rare case where skipping it is expensive.
+#
+# cmakelists_sha stays on the environment side deliberately: it carries the
+# build flags, and -ffp-contract=off living there is exactly the kind of change
+# that would invalidate the baseline without touching a line of source.
+SOURCE_KEYS='^(source_commit|sisprod_cpp_sha|sisprod_h_sha)'
+
 if [[ "${1:-}" == "--check" ]]; then
     [[ -f "$manifest" ]] || {
         printf '%sno manifest at %s -- run without --check first%s\n' "$red" "$manifest" "$reset" >&2
@@ -73,18 +92,44 @@ if [[ "${1:-}" == "--check" ]]; then
     collect > "$current"
 
     # captured_at always differs and says nothing about drift.
-    if diff <(grep -v '^captured_at' "$manifest") <(grep -v '^captured_at' "$current") > /dev/null; then
-        printf '%sPROVENANCE UNCHANGED since the baseline was captured%s\n' "$green" "$reset"
+    recorded_env="$(mktemp)"; current_env="$(mktemp)"
+    recorded_src="$(mktemp)"; current_src="$(mktemp)"
+    trap 'rm -f "$current" "$recorded_env" "$current_env" "$recorded_src" "$current_src"' EXIT
+
+    grep -vE "^captured_at|$SOURCE_KEYS" "$manifest" > "$recorded_env"
+    grep -vE "^captured_at|$SOURCE_KEYS" "$current"  > "$current_env"
+    grep -E "$SOURCE_KEYS" "$manifest" > "$recorded_src"
+    grep -E "$SOURCE_KEYS" "$current"  > "$current_src"
+
+    environment_moved=0
+    diff "$recorded_env" "$current_env" > /dev/null || environment_moved=1
+    source_moved=0
+    diff "$recorded_src" "$current_src" > /dev/null || source_moved=1
+
+    if (( environment_moved )); then
+        printf '%sPROVENANCE CHANGED since the baseline was captured:%s\n' "$yellow" "$reset"
+        diff "$recorded_env" "$current_env" | grep '^[<>]' | sed 's/^/  /'
+        if (( source_moved )); then
+            printf '%s  (the source also differs, which is expected during refactoring)%s\n' \
+                   "$yellow" "$reset"
+        fi
+        printf '\n%sA change here does not by itself invalidate the baseline, and no change\n' "$yellow"
+        printf 'here proves it is still valid. Run verify-baseline.sh to find out --\n'
+        printf 'rebuilding and comparing is the only thing that answers the question.%s\n' "$reset"
+        exit 1
+    fi
+
+    if (( source_moved )); then
+        printf '%sPROVENANCE UNCHANGED -- environment identical to the baseline%s\n' "$green" "$reset"
+        printf 'The source differs, which is what a refactoring stage is:\n'
+        diff "$recorded_src" "$current_src" | grep '^[<>]' | sed 's/^/  /'
+        printf 'Equivalence of the built result is what gates 2 and 3 answer; this\n'
+        printf 'check only watches the environment underneath them.\n'
         exit 0
     fi
 
-    printf '%sPROVENANCE CHANGED since the baseline was captured:%s\n' "$yellow" "$reset"
-    diff <(grep -v '^captured_at' "$manifest") <(grep -v '^captured_at' "$current") \
-        | grep '^[<>]' | sed 's/^/  /'
-    printf '\n%sA change here does not by itself invalidate the baseline, and no change\n' "$yellow"
-    printf 'here proves it is still valid. Run verify-baseline.sh to find out --\n'
-    printf 'rebuilding and comparing is the only thing that answers the question.%s\n' "$reset"
-    exit 1
+    printf '%sPROVENANCE UNCHANGED since the baseline was captured%s\n' "$green" "$reset"
+    exit 0
 fi
 
 mkdir -p "$BASELINE_DIR"
