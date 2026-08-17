@@ -144,6 +144,35 @@ announce "Gate 4 - performance within threshold"
 bash "$script_dir/performance-gate.sh" "${models[@]}" 2>&1 | tee "$evidence_dir/performance.log"
 verdict 4 "${PIPESTATUS[0]}"
 
+# ------------------------------------------------------ supplementary L0 ----
+# Not a constitutional gate, but reported alongside them because for most of
+# this file it is the only verification that exists.
+#
+# Coverage measurement found that the corpus exercises 29.3% of the executable
+# lines of SisProd.cpp and never runs 81 of its 153 functions. For those, gates
+# 2 and 3 compare the output of code that did not execute, and stay green
+# whatever the extraction did to it. L0 compares the moved body token for token
+# against the baseline commit, which proves the move was literal even when
+# nothing runs it.
+#
+# It is advisory here rather than blocking, because a stage legitimately renames
+# locals and decomposes functions, both of which change the token stream. The
+# extraction tasks call it directly on the specific functions they move, where
+# the expected answer is exact equality.
+announce "Supplementary - structural comparison against the baseline commit (L0)"
+baseline_source="$(mktemp -d -t marlim3-l0-XXXXXX)"
+if git -C "$project_root" worktree add --detach "$baseline_source/tree" \
+       "$(cat "$BASELINE_DIR/commit" 2>/dev/null || echo 0f3b64f)" > /dev/null 2>&1; then
+    python3 "$script_dir/verify-structural.py" \
+        --baseline "$baseline_source/tree/src/core/SisProd.cpp" \
+        --current "$project_root/src/core/SisProd.cpp" \
+        --all 2>&1 | tail -20 | tee "$evidence_dir/l0.log"
+    git -C "$project_root" worktree remove --force "$baseline_source/tree" > /dev/null 2>&1
+else
+    printf '%scould not create a worktree for the baseline commit%s\n' "$yellow" "$reset"
+fi
+rm -rf "$baseline_source"
+
 # ---------------------------------------------------------------- gate 5 ----
 announce "Gate 5 - reference files untouched"
 git status --porcelain tests/comparison/ > "$evidence_dir/references.log" 2>&1
