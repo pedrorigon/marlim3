@@ -44,6 +44,24 @@ verdict() {
     fi
 }
 
+# ------------------------------------------------------------ pre-flight ----
+# Before any gate runs, check whether the environment still matches the one the
+# baseline came from. This is not one of the six constitutional gates; it is the
+# question that has to be answered before their results mean anything.
+#
+# When it went unasked, a system change invalidated the baseline silently and
+# the next full run failed L2 on a binary built from unmodified source. That
+# failure is indistinguishable from a refactoring bug until you know to suspect
+# the baseline, so the check runs first and says which it is.
+announce "Pre-flight - is the baseline still valid on this machine?"
+bash "$script_dir/record-provenance.sh" --check 2>&1 | tee "$evidence_dir/provenance.log"
+provenance_status="${PIPESTATUS[0]}"
+
+if (( provenance_status != 0 )); then
+    printf '%sThe environment differs from the one that produced the baseline.%s\n' "$yellow" "$reset"
+    printf '%sRun verify-baseline.sh before trusting any gate below.%s\n' "$yellow" "$reset"
+fi
+
 # ---------------------------------------------------------------- gate 1 ----
 announce "Gate 1 - clean build, no new warnings"
 cmake --build --preset gcc-release > "$evidence_dir/build.log" 2>&1
@@ -149,6 +167,12 @@ verdict 6 $?
 # ------------------------------------------------------------------ summary --
 printf '\n%s----------------------------------------------------------------%s\n' "$bold" "$reset"
 printf 'evidence archived in: %s\n' "$evidence_dir"
+
+if (( provenance_status != 0 )); then
+    printf '%snote: the environment changed since the baseline was captured.%s\n' "$yellow" "$reset"
+    printf '%sIf a gate failed, confirm with verify-baseline.sh before blaming the code.%s\n' \
+           "$yellow" "$reset"
+fi
 
 if (( failures > 0 )); then
     printf '%s%s of 6 gates FAILED -- the stage is not complete%s\n' "$red" "$failures" "$reset" >&2
