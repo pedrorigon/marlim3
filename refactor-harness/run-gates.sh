@@ -22,6 +22,8 @@ export LC_ALL=C
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 
+BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
+
 evidence_dir="${1:?usage: run-gates.sh <evidence-directory> [model ...]}"
 shift || true
 models=("$@")
@@ -47,12 +49,50 @@ announce "Gate 1 - clean build, no new warnings"
 cmake --build --preset gcc-release > "$evidence_dir/build.log" 2>&1
 build_status=$?
 errors=$(grep -c "error:" "$evidence_dir/build.log")
-warnings=$(grep -c "warning:" "$evidence_dir/build.log")
 compiled=$(grep -c "Building CXX object" "$evidence_dir/build.log")
-baseline_warnings="${MARLIM_BASELINE_WARNINGS:-472}"
 
-printf 'compiled=%s errors=%s warnings=%s (baseline %s)\n' \
-       "$compiled" "$errors" "$warnings" "$baseline_warnings"
+# Warnings are compared as a SET OF IDENTITIES (file:line:column plus warning
+# type), never as a count.
+#
+# Counting does not work here. A parallel build interleaves compiler output, so
+# the same source can produce a different number of log lines from run to run --
+# the baseline recorded 472 and an identical rebuild produced 485, with zero
+# warnings disappearing, which is the signature of lost output rather than of
+# new diagnostics. Worse, a count says nothing useful even when accurate: as
+# SisProd.cpp is decomposed its 249 warnings migrate to the new modules, so the
+# total is expected to move while no warning is actually new.
+#
+# What "no new warnings" means is that no file:line:type appears that was not
+# there before. That is what this compares.
+warning_identities() {
+    grep "warning:" "$1" \
+        | sed -E 's/^.*(src\/[^:]+:[0-9]+:[0-9]+).*(\[-W[a-z-]+\]).*/\1 \2/' \
+        | grep '^src/' | sort -u
+}
+
+baseline_build_log="${MARLIM_BASELINE_BUILD_LOG:-$BASELINE_DIR/logs/build-baseline.log}"
+current_warnings="$evidence_dir/warnings-current.txt"
+new_warnings="$evidence_dir/warnings-new.txt"
+
+warning_identities "$evidence_dir/build.log" > "$current_warnings"
+
+if [[ -f "$baseline_build_log" ]]; then
+    comm -13 <(warning_identities "$baseline_build_log") "$current_warnings" > "$new_warnings"
+    introduced=$(wc -l < "$new_warnings")
+else
+    : > "$new_warnings"
+    introduced=0
+    printf '%sno baseline build log at %s -- cannot check for new warnings%s\n' \
+           "$yellow" "$baseline_build_log" "$reset"
+fi
+
+printf 'compiled=%s errors=%s warnings=%s new=%s\n' \
+       "$compiled" "$errors" "$(wc -l < "$current_warnings")" "$introduced"
+
+if (( introduced > 0 )); then
+    printf '%snew warning identities:%s\n' "$red" "$reset"
+    head -10 "$new_warnings" | sed 's/^/      /'
+fi
 
 # An incremental build with nothing to do emits zero warnings and would pass the
 # comparison without having verified anything. Say so, rather than reporting a
@@ -62,7 +102,7 @@ if (( compiled == 0 )); then
     printf '%sRun a clean build before the stage boundary.%s\n' "$yellow" "$reset"
 fi
 
-(( build_status == 0 && errors == 0 && warnings <= baseline_warnings ))
+(( build_status == 0 && errors == 0 && introduced == 0 ))
 verdict 1 $?
 
 # ---------------------------------------------------------------- gate 2 ----
