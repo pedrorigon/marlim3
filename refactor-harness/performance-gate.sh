@@ -21,9 +21,13 @@
 #      contaminated estimate of the true cost, and it is far more stable than
 #      the median across repetitions.
 #
-#   2. Skip models below MIN_MEASURABLE_SECONDS. Two models complete in under
-#      one second, below timer resolution, and a percentage against a ~0 s
-#      baseline is undefined.
+#   2. Skip models below MIN_MEASURABLE_SECONDS. The two fastest models finish
+#      in about 0.4 s. They are measurable -- an earlier reading of 0.00 s came
+#      from timing in whole seconds, not from the models being too fast -- and
+#      their relative spread is in line with the rest of the corpus. They are
+#      skipped anyway because 3% of 0.4 s is 12 ms, a budget smaller than
+#      process startup variance, so the percentage is arithmetically defined but
+#      carries no information about the code.
 #
 # The 3% threshold itself comes from the specification and is NOT changed here.
 # What changes is the estimator, so that the comparison is about the code rather

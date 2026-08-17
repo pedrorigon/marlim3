@@ -29,7 +29,7 @@ models=("$@")
 mkdir -p "$evidence_dir"
 cd "$project_root" || exit 2
 
-red=$'\033[0;31m'; green=$'\033[0;32m'; bold=$'\033[1m'; reset=$'\033[0m'
+red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; bold=$'\033[1m'; reset=$'\033[0m'
 failures=0
 
 announce() { printf '\n%s=== %s ===%s\n' "$bold" "$1" "$reset"; }
@@ -48,8 +48,20 @@ cmake --build --preset gcc-release > "$evidence_dir/build.log" 2>&1
 build_status=$?
 errors=$(grep -c "error:" "$evidence_dir/build.log")
 warnings=$(grep -c "warning:" "$evidence_dir/build.log")
+compiled=$(grep -c "Building CXX object" "$evidence_dir/build.log")
 baseline_warnings="${MARLIM_BASELINE_WARNINGS:-472}"
-printf 'errors=%s warnings=%s (baseline %s)\n' "$errors" "$warnings" "$baseline_warnings"
+
+printf 'compiled=%s errors=%s warnings=%s (baseline %s)\n' \
+       "$compiled" "$errors" "$warnings" "$baseline_warnings"
+
+# An incremental build with nothing to do emits zero warnings and would pass the
+# comparison without having verified anything. Say so, rather than reporting a
+# pass that carries no information.
+if (( compiled == 0 )); then
+    printf '%sno translation unit was recompiled -- this gate is vacuous.%s\n' "$yellow" "$reset"
+    printf '%sRun a clean build before the stage boundary.%s\n' "$yellow" "$reset"
+fi
+
 (( build_status == 0 && errors == 0 && warnings <= baseline_warnings ))
 verdict 1 $?
 
@@ -60,8 +72,13 @@ verdict 2 "${PIPESTATUS[0]}"
 
 # ---------------------------------------------------------------- gate 3 ----
 announce "Gate 3 - regression suite (L3)"
-uv run pytest tests/test_regression.py -m regressao > "$evidence_dir/l3.log" 2>&1
-verdict 3 $?
+# Piped into tee rather than redirected to a file: `uv run` exits 120 and
+# produces no output at all when its stdout is a regular file, while the same
+# command through a pipe runs normally. Redirecting made this gate report FAIL
+# on a suite that passes -- a false failure, which is the one kind of gate
+# result that trains people to stop trusting the gate.
+uv run pytest tests/test_regression.py -m regressao 2>&1 | tee "$evidence_dir/l3.log"
+verdict 3 "${PIPESTATUS[0]}"
 tail -1 "$evidence_dir/l3.log"
 
 # ---------------------------------------------------------------- gate 4 ----

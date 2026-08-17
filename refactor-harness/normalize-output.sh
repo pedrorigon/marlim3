@@ -16,6 +16,22 @@
 #      every time, and a careless reader would conclude the numeric state
 #      diverged.
 #   4. Absolute path of the output directory passed via -d.
+#   5. A trailing per-line counter in the console table the ESP/BCS models print
+#      ("Eventos no Tramo"). It is a timing, not a result: across two runs of the
+#      same binary the five physical columns are bit-identical while this one
+#      moves about 10%, the way wall time does. An iteration count would be
+#      deterministic, since identical physics converges in identical steps.
+#
+# The rule for (5) is deliberately narrow -- it matches only lines shaped as
+# "<int>  <num> <num> <num> <num> <num> <int>". In MultiESP that is 16697 of
+# 16705 lines; in models that do not print this table it matches nothing, which
+# was verified rather than assumed. Blanking a numeric column wholesale was
+# rejected for the same reason a positional rule was rejected earlier: a rule
+# that can delete real output anywhere can hide a divergence anywhere.
+#
+# All 39 result files of MultiESP compare bit-identical between runs, so the
+# numeric truth is verified where it lives -- in the files -- and this rule only
+# concerns console diagnostics.
 #
 # There is NO numeric tolerance here. Any difference surviving this
 # normalization is a real divergence and must block the stage (Principle I).
@@ -68,4 +84,5 @@ awk -v phrase_file="$phrase_list" '
     -e 's/data e hora da simulacao [0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4} [0-9:]+/data e hora da simulacao <TS>/g' \
     -e 's/"data"[[:space:]]*:[[:space:]]*"[^"]*"/"data": "<TS>"/g' \
     -e 's/[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4} hora: [0-9]{1,2}:[0-9]{1,2}/<TS>/g' \
-    -e 's/DURACAO[[:space:]]+[0-9]+[[:space:]]+segundos/DURACAO <DUR> segundos/g'
+    -e 's/DURACAO[[:space:]]+[0-9]+[[:space:]]+segundos/DURACAO <DUR> segundos/g' \
+    -e 's/^([0-9]+  [0-9.e+-]+ [0-9.e+-]+ [0-9.e+-]+ [0-9.e+-]+ [0-9.e+-]+) [0-9]+$/\1 <COUNT>/'
