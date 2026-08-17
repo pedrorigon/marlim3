@@ -193,12 +193,28 @@ for model in "${models[@]}"; do
     # of the other. Whatever the machine does during the run -- a browser waking
     # up, a background job starting -- then lands on both sides instead of on
     # whichever side happened to run while it happened.
+    #
+    # The order is swapped every repetition (baseline first, then current first)
+    # so each binary spends the same number of runs in each position. Running one
+    # of them always second would hand it whatever the position is worth: warm
+    # caches, a settled clock, a finished background task. That advantage would
+    # be small but one-directional, and this gate only fails on positive deltas,
+    # so a bias favouring the working tree is a bias toward passing -- it would
+    # hide exactly the regressions the gate exists to catch. Counterbalancing
+    # removes the whole class by construction instead of arguing it is small.
     best_base=""; best_curr=""
     for (( rep = 1; rep <= REPETITIONS; rep++ )); do
-        elapsed="$(time_once "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep")"
-        best_base="$(keep_fastest "$elapsed" "$best_base")"
-        elapsed="$(time_once "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep")"
-        best_curr="$(keep_fastest "$elapsed" "$best_curr")"
+        if (( rep % 2 == 1 )); then
+            elapsed="$(time_once "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep")"
+            best_base="$(keep_fastest "$elapsed" "$best_base")"
+            elapsed="$(time_once "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep")"
+            best_curr="$(keep_fastest "$elapsed" "$best_curr")"
+        else
+            elapsed="$(time_once "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep")"
+            best_curr="$(keep_fastest "$elapsed" "$best_curr")"
+            elapsed="$(time_once "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep")"
+            best_base="$(keep_fastest "$elapsed" "$best_base")"
+        fi
     done
 
     # The floor is judged on the freshly measured baseline, not on a stored
