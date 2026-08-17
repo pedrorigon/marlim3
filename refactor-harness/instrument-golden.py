@@ -29,14 +29,25 @@ import re
 import sys
 from pathlib import Path
 
-# name -> (first_line, closing_brace_line) in the pristine baseline.
-CORRELATIONS = {
-    "BhagwatGhajar":    (4905, 4988),
-    "BhagwatGhajarMod": (4990, 5072),
-    "Choi":             (5074, 5088),
-    "HibikiIshii":      (5090, 5105),
-    "FrancaLahey":      (5107, 5121),
-}
+# The drift-flux correlations, located by signature rather than by line number.
+#
+# They started out in src/core/SisProd.cpp as SProd members and moved to
+# src/core/DriftFluxClosure.cpp as free functions in driftflux::correlations.
+# Absolute line numbers were correct for exactly one commit; searching for the
+# signature works before and after the extraction, which is also the rule the
+# refactoring tasks impose on every move.
+CORRELATIONS = (
+    "BhagwatGhajar",
+    "BhagwatGhajarMod",
+    "Choi",
+    "HibikiIshii",
+    "FrancaLahey",
+)
+
+# Where the correlations live once extracted. Empty/absent means the tree is
+# still pristine and they are in SisProd.cpp.
+CLOSURE_SOURCE = "src/core/DriftFluxClosure.cpp"
+CLOSURE_NAMESPACE = "driftflux::correlations"
 
 CORRELATION_ARGS = ("rhol", "rhog", "tensup", "alf", "reymix", "reymixL",
                     "ug1", "ul1", "dia", "rug", "tet", "correcHor")
@@ -118,17 +129,44 @@ inline std::FILE *sink(const char *name) {
 '''
 
 
-def instrument_correlations(source: str) -> str:
+def locate_correlations(lines: list[str]) -> dict[str, int]:
+    """Map correlation name -> index of its closing-brace line.
+
+    Matches `void <name>(` with or without an `SProd::` qualifier, then scans
+    for the closing brace in column zero. Every correlation has a single exit,
+    so that brace is the one logging must precede.
+    """
+    found: dict[str, int] = {}
+    for name in CORRELATIONS:
+        opening = re.compile(rf"^\s*void\s+(?:SProd::)?{name}\s*\(")
+        for index, line in enumerate(lines):
+            if not opening.match(line):
+                continue
+            closing = index
+            while closing < len(lines) and not lines[closing].startswith("}"):
+                closing += 1
+            if closing < len(lines):
+                found[name] = closing
+            break
+    return found
+
+
+def instrument_correlations(source: str) -> tuple[str, set[str]]:
+    """Inject the capture call before each correlation's closing brace.
+
+    Returns the patched source and the set of correlations actually found, so
+    the caller can tell which file they live in.
+    """
     lines = source.splitlines(keepends=True)
+    located = locate_correlations(lines)
     # Patch from the bottom up so earlier line numbers stay valid.
-    for name, (_, closing) in sorted(CORRELATIONS.items(),
-                                     key=lambda item: -item[1][1]):
+    for name, closing in sorted(located.items(), key=lambda item: -item[1]):
         fields = " ".join("%a" for _ in CORRELATION_ARGS) + " %a %a"
         values = ", ".join(CORRELATION_ARGS) + ", c0, ud"
         call = (f'    {{ std::FILE *gf = golden_capture::sink("{name}");\n'
                 f'      if (gf) std::fprintf(gf, "{fields}\\n", {values}); }}\n')
-        lines.insert(closing - 1, call)
-    return "".join(lines)
+        lines.insert(closing, call)
+    return "".join(lines), set(located)
 
 
 def instrument_solvers(source: str) -> str:
@@ -182,6 +220,7 @@ SWEEP = '''
 void SProd::goldenSweep(const char *path) {
     std::FILE *out = std::fopen(path, "w");
     if (!out) return;
+__CORRELATION_SCOPE__
 
     const double liquidDensities[]  = {700.0, 850.0, 1000.0};
     const double gasDensities[]     = {5.0, 50.0, 200.0};
@@ -232,11 +271,21 @@ TRIGGER = """
 """
 
 
-def add_sweep(source: str, header: str) -> tuple[str, str]:
-    source += SWEEP
+def add_sweep(source: str, header: str, extracted: bool) -> tuple[str, str]:
+    # Once the correlations move into driftflux::correlations they are no
+    # longer members, so the sweep needs them in scope. It must stay a using
+    # directive rather than qualified calls: the table's first column comes
+    # from stringifying the macro argument, and `driftflux::correlations::Choi`
+    # there would diverge from the recorded golden for a non-numerical reason.
+    # Drops the whole placeholder line when pristine, so instrumenting an
+    # un-extracted tree still reproduces the recorded golden byte for byte.
+    scope = (f"    using namespace {CLOSURE_NAMESPACE};\n" if extracted else "")
+    source += SWEEP.replace("__CORRELATION_SCOPE__\n", scope)
+    if extracted and '#include "DriftFluxClosure.h"' not in source:
+        source = source.replace('#include "SisProd.h"',
+                                '#include "SisProd.h"\n#include "DriftFluxClosure.h"', 1)
     # Fire the sweep from the first line of the main constructor body, before
     # any input parsing, so it needs no model file.
-    marker = "void SProd::montasistema"
     ctor = source.find("SProd::SProd(")
     if ctor >= 0:
         body = source.find("{", ctor)
@@ -248,6 +297,13 @@ def add_sweep(source: str, header: str) -> tuple[str, str]:
     return source, header
 
 
+def add_logger(source: str) -> str:
+    """Place the capture logger after the last #include, so it sees <cstdio>."""
+    last_include = source.rfind("\n#include")
+    end_of_line = source.find("\n", last_include + 1)
+    return source[:end_of_line + 1] + LOGGER + source[end_of_line + 1:]
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print(__doc__)
@@ -256,28 +312,43 @@ def main() -> int:
     tree = Path(sys.argv[1])
     cpp = tree / "src/core/SisProd.cpp"
     hpp = tree / "src/include/SisProd.h"
+    closure = tree / CLOSURE_SOURCE
 
     source = cpp.read_text(encoding="utf-8", errors="replace")
     if "golden_capture" in source:
         print("already instrumented; aborting", file=sys.stderr)
         return 1
 
-    source = instrument_correlations(source)
+    # Before the extraction the correlations are in SisProd.cpp; after it they
+    # are in DriftFluxClosure.cpp. Instrument wherever they actually are.
+    source, in_sisprod = instrument_correlations(source)
     source = instrument_solvers(source)
 
+    in_closure: set[str] = set()
+    if closure.exists():
+        closure_text = closure.read_text(encoding="utf-8", errors="replace")
+        closure_text, in_closure = instrument_correlations(closure_text)
+        if in_closure:
+            closure_text = add_logger(closure_text)
+            closure.write_text(closure_text, encoding="utf-8")
+
+    located = in_sisprod | in_closure
+    missing = [name for name in CORRELATIONS if name not in located]
+    if missing:
+        print(f"correlations not found: {', '.join(missing)}", file=sys.stderr)
+        return 1
+
     header_text = hpp.read_text(encoding="utf-8", errors="replace")
-    source, header_text = add_sweep(source, header_text)
+    source, header_text = add_sweep(source, header_text, extracted=bool(in_closure))
 
-    # The logger goes after the last #include so it sees <cstdio> etc.
-    last_include = source.rfind("\n#include")
-    end_of_line = source.find("\n", last_include + 1)
-    source = source[:end_of_line + 1] + LOGGER + source[end_of_line + 1:]
-
-    cpp.write_text(source, encoding="utf-8")
+    cpp.write_text(add_logger(source), encoding="utf-8")
     hpp.write_text(instrument_header(header_text), encoding="utf-8")
 
     print(f"instrumented {cpp}")
-    print(f"  correlations: {', '.join(sorted(CORRELATIONS))}")
+    if in_closure:
+        print(f"instrumented {closure}")
+    print(f"  correlations: {', '.join(sorted(located))}"
+          f"{' (extracted)' if in_closure else ''}")
     print(f"  solvers     : {', '.join(sorted(SOLVERS))}")
     return 0
 
