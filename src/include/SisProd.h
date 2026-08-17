@@ -1249,39 +1249,6 @@ class SProd {
     /// Caches cell and face densities to avoid repeated property calculations.
     void renovaMasEsp();
 
-    /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
-    void BhagwatGhajar(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                       double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                       double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
-    void BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                          double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                          double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Choi drift-flux correlation.
-    void Choi(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-              double ug1, double ul1, double dia, double rug, double tet, double &c0,
-              double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Hibiki-Ishii drift-flux correlation.
-    void HibikiIshii(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                     double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                     double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud using the Franca-Lahey drift-flux correlation.
-    void FrancaLahey(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                     double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                     double &ud, double correcHor = 1.);
-    /// Evaluates C0 and Ud for dispersed flow.
-    void C0UdDisperso(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                      double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                      double &ud, double correcHor = 1., int estabCol = 0);
-    /// Evaluates C0 and Ud for annular or churn flow.
-    void C0UdAnularChurn(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                         double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                         double &ud, double correcHor = 1., int estabCol = 0);
-    /// Evaluates C0 and Ud for stratified flow.
-    void C0UdEstratificado(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                           double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                           double &ud, double correcHor = 1., int estabCol = 0);
-
     /// Selects and evaluates the slip correlation at a production-line face.
     void CalcC0Ud(int ind, double &c0, double &ud);
     /// Evaluates slip parameters for the intermediate network state.

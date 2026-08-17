@@ -6,6 +6,7 @@
  */
 #define _USE_MATH_DEFINES // para M_PI
 #include "SisProd.h"
+#include "DriftFluxClosure.h"
 #include "FA_Hidratos.h"
 #include "FA_Hidratos_Servico.h"
 #include "OutputI18n.h"
@@ -4902,348 +4903,6 @@ void SProd::renovaMasEsp() {
     celula[ncel].micR = celula[ncel].micC;
 }
 
-void SProd::BhagwatGhajar(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                          double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                          double &ud, double correcHor) {
-
-    double Beta, Froude, MassQuality, termo1, termo2, C01, C1;
-    double termoud1, termoud2, La, C2, C3, C4;
-    double A1 = M_PI * dia * dia / 4.;
-    double rhomix = alf * rhog + (1. - alf) * rhol;
-
-    double sinal = 1.;
-    if (tet < 0.)
-        sinal = 1.;
-    if (tet == 0) {
-        int para;
-        para = 1.;
-    }
-
-    double rmed = alf * rhog + (1. - alf) * rhol;
-    Froude = sqrt(rhog / (rhol - rhog)) * ((ug1) / A1) / sqrt(9.81 * dia * sinal * cos(tet));
-    MassQuality = (rhog * fabs(ug1) / A1) / ((rhog * fabs(ug1) / A1) + (rhol * fabs(ul1) / A1));
-    Beta = (fabs(ug1) / A1) / ((fabs(ug1) / A1) + (fabs(ul1) / A1));
-
-    double eps;      // rugosidade relativa.
-    eps = rug / dia; // rug - rugosidade absoluta. eps - rugosidade relativa
-
-    if (reymix < 0.0000001)
-        reymix = 0.0000001;
-    double fat, valHalland, den, dif;
-    int III;
-    if (reymix > 2400) { // regime turbulento do escoamento
-        valHalland = (1 / (-18e-1 * log10(pow((eps / (3.7)), 1.11) + (69e-1 / (reymix + 1e-15)))));
-        valHalland *= valHalland; // Halland.
-        III = 0;
-    repeat7:
-        III = III + 1;
-        den = -2 * log10(((eps) / 3.7) + 2.51 / ((reymix + 1e-15) * sqrt(abs(valHalland))));
-        fat = 1 / (den * den); // Colebrook.
-        dif = abs(fat - valHalland);
-        valHalland = fat;
-        if (dif >= 1e-3)
-            goto repeat7;
-    } else {                  // regime laminar
-        fat = 64. / (reymix); // 16.
-    }
-
-    double rgrl2 = rhog / rhol;
-    rgrl2 *= rgrl2;
-    double reymix2 = reymix / 1000;
-    reymix2 *= reymix2;
-    termo1 = (2 - rgrl2) / (1 + reymix2);
-    termo2 = (pow(((1 + rgrl2 * sinal * cos(tet)) / (1 + cos(tet))), (1 - alf) / 5.)) /
-             (1 + 1 / reymix2);
-    C1 = 0.2; // duto circular ou anular. Retangular seria 0.4.
-    C01 = (C1 - C1 * sqrt(rhog / rhol)) * (pow((2.6 - Beta), 0.15) - sqrt(fat)) * pow((1 - MassQuality), 1.5);
-    if (ug1 * ul1 < 0.)
-        C01 = 0;
-    if (tet >= -50 * M_PI / 180. && tet <= 0 && Froude <= 0.1)
-        C01 = 0.0;
-    c0 = termo1 + termo2 + C01; // Calculo do ParÃƒÂ¢metro de Distribuicao.
-
-    double viscl1 = dia * (fabs(ug1 / A1) + fabs(ul1 / A1)) * rhomix / reymix;
-    termoud1 = (0.35 * sin(tet) + 0.45 * cos(tet) * sinal);
-    termoud2 = sqrt((9.81 * dia * (rhol - rhog) / rhol)) * sqrt(1 - alf);
-    if (viscl1 / 0.001 > 10) {
-        C2 = pow((0.434 / (log10(viscl1 / 0.001))), 0.15);
-    } else {
-        C2 = 1.0;
-    }
-    La = sqrt(tensup / (9.81 * (rhol - rhog))) / dia;
-    if (La < 0.025) {
-        C3 = pow((La / 0.025), 0.90);
-    } else {
-        C3 = 1.0;
-        ;
-    }
-    C4 = 1.0;
-    if (tet >= -(50 * M_PI / 180.) && tet < 0 && Froude <= 0.1)
-        C4 = -1.0;
-    ud = correcHor * termoud1 * termoud2 * C2 * C3 * C4; // Calculo da Velocidade de Deslizamento.
-    if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet > 0. && ud < 0.)
-        ud = fabs(ud);
-    else if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet < 0. && ud > 0.)
-        ud = -fabs(ud);
-}
-
-void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                             double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                             double &ud, double correcHor) {
-    double Beta, Froude, MassQuality, termo1, termo2, C01, C1;
-    double termoud1, termoud2, La, C2, C3, C4;
-    double A1 = M_PI * dia * dia / 4.;
-    double rhomix = alf * rhog + (1. - alf) * rhol;
-
-    double sinal = 1.;
-    if (tet < 0.)
-        sinal = 1.;
-    if (tet == 0) {
-        int para;
-        para = 1.;
-    }
-
-    double rmed = alf * rhog + (1. - alf) * rhol;
-    Froude = sqrt(rhog / (rhol - rhog)) * ((ug1) / A1) / sqrt(9.81 * dia * sinal * cos(tet));
-    MassQuality = (rhog * fabs(ug1) / A1) / ((rhog * fabs(ug1) / A1) + (rhol * fabs(ul1) / A1));
-    Beta = (fabs(ug1) / A1) / ((fabs(ug1) / A1) + (fabs(ul1) / A1));
-
-    double eps;      // rugosidade relativa.
-    eps = rug / dia; // rug - rugosidade absoluta. eps - rugosidade relativa
-
-    if (reymixL < 0.0000001)
-        reymixL = 0.0000001;
-    double fat, valHalland, den, dif;
-    int III;
-    if (reymixL > 2400) { // regime turbulento do escoamento
-        valHalland = (1 / (-18e-1 * log10(pow((eps / (3.7)), 1.11) + (69e-1 / (reymixL + 1e-15)))));
-        valHalland *= valHalland; // Halland.
-        III = 0;
-    repeat7:
-        III = III + 1;
-        den = -2 * log10(((eps) / 3.7) + 2.51 / ((reymixL + 1e-15) * sqrt(abs(valHalland))));
-        fat = 1 / (den * den); // Colebrook.
-        dif = abs(fat - valHalland);
-        valHalland = fat;
-        if (dif >= 1e-3)
-            goto repeat7;
-    } else {                   // regime laminar
-        fat = 64. / (reymixL); // 16.
-    }
-
-    double rgrl2 = rhog / rhol;
-    rgrl2 *= rgrl2;
-    double reymix2 = reymixL / 1000;
-    reymix2 *= reymix2;
-    termo1 = (2 - rgrl2) / (1 + reymix2);
-    termo2 = (pow(((1 + rgrl2 * sinal * cos(tet)) / (1 + cos(tet))), (1 - alf) / 5.)) /
-             (1 + 1 / reymix2);
-    C1 = 0.2; // duto circular ou anular. Retangular seria 0.4.
-    C01 = (C1 - C1 * sqrt(rhog / rhol)) * (pow((2.6 - Beta), 0.15) - sqrt(fat)) * pow((1 - MassQuality), 1.5);
-    if (ug1 * ul1 < 0.)
-        C01 = 0;
-    if (tet >= -50 * M_PI / 180. && tet <= 0 && Froude <= 0.1)
-        C01 = 0.0;
-    c0 = termo1 + termo2 + C01; // Calculo do ParÃƒÂ¢metro de Distribuicao.
-
-    double viscl1 = dia * (fabs(ug1 / A1) + fabs(ul1 / A1)) * rhomix / reymixL;
-    termoud1 = (0.35 * sin(tet) + 0.45 * cos(tet) * sinal);
-    termoud2 = sqrt((9.81 * dia * (rhol - rhog) / rhol)) * sqrt(1 - alf);
-    if (viscl1 / 0.001 > 10) {
-        C2 = pow((0.434 / (log10(viscl1 / 0.001))), 0.15);
-    } else {
-        C2 = 1.0;
-    }
-    La = sqrt(tensup / (9.81 * (rhol - rhog))) / dia;
-    if (La < 0.025) {
-        C3 = pow((La / 0.025), 0.90);
-    } else {
-        C3 = 1.0;
-        ;
-    }
-    C4 = 1.0;
-    if (tet >= -(50 * M_PI / 180.) && tet < 0 && Froude <= 0.1)
-        C4 = -1.0;
-    ud = correcHor * termoud1 * termoud2 * C2 * C3 * C4; // Calculo da Velocidade de Deslizamento.
-    if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet > 0. && ud < 0.)
-        ud = fabs(ud);
-    else if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet < 0. && ud > 0.)
-        ud = -fabs(ud);
-}
-
-void SProd::Choi(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                 double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                 double &ud, double correcHor) {
-
-    double sinal = 1.;
-    if (tet < 0.)
-        sinal = -1.;
-    double A1 = M_PI * dia * dia / 4.;
-    ud = correcHor * sinal * 0.0246 * cos(tet) + 1.606 * pow(9.82 * tensup * (rhol - rhog) / (rhol * rhol), 0.25) * sin(tet);
-    c0 = 2. / (1 + pow(reymix / 1000., 2.)) + (1.2 - 0.2 * sqrt(rhog / rhol) * (1 - exp(-18 * alf))) / (1 + pow(1000. / reymix, 2.));
-    if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet > 0. && ud < 0.)
-        ud = fabs(ud);
-    else if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet < 0. && ud > 0.)
-        ud = -fabs(ud);
-}
-
-void SProd::HibikiIshii(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                        double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                        double &ud, double correcHor) {
-
-    double sinal = 1.;
-    if (tet < 0.) {
-        sinal = -1.;
-    }
-    double A1 = M_PI * dia * dia / 4.;
-    c0 = 1. + (1. - alf) / (alf + 4. * sqrt(rhog / rhol));
-    ud = (correcHor * sinal * (1. - alf) / (alf + 4. * sqrt(rhog / rhol))) * sqrt(9.82 * fabs(sin(tet)) * dia * (rhol - rhog) * (1. - alf) / (0.015 * rhol));
-    if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet > 0. && ud < 0.)
-        ud = fabs(ud);
-    else if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet < 0. && ud > 0.)
-        ud = -fabs(ud);
-}
-
-void SProd::FrancaLahey(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                        double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                        double &ud, double correcHor) {
-
-    double sinal = 1.;
-    if (tet < 0.)
-        sinal = -1.;
-    c0 = 1.04;
-    ud = correcHor * sinal * 0.466;
-    double A1 = M_PI * dia * dia / 4.;
-    if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet > 0. && ud < 0.)
-        ud = fabs(ud);
-    else if ((fabs(ug1 / A1) + fabs(ul1 / A1)) < 0.01 && tet < 0. && ud > 0.)
-        ud = -fabs(ud);
-}
-
-void SProd::C0UdDisperso(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                         double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                         double &ud, double correcHor, int estabCol) {
-
-    // case 0:
-    switch (arq.CorreDisper) {
-    case 0:
-        Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-             ud, correcHor);
-        break;
-    case 1:
-        BhagwatGhajar(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                      c0, ud, correcHor);
-        break;
-    case 4:
-        BhagwatGhajarMod(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                         c0, ud, correcHor);
-        break;
-    case 5:
-        if (fabs(tet) < 5 * M_PI / 180.)
-            BhagwatGhajar(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                          c0, ud, correcHor);
-        else if (fabs(tet) > 20 * M_PI / 180.)
-            Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-                 ud, correcHor);
-        else {
-            double raz = (fabs(tet) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
-            BhagwatGhajarMod(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                             c0, ud, correcHor);
-            double c0temp = c0;
-            double udtemp = ud;
-            Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-                 ud, correcHor);
-            c0 = raz * c0 + (1. - raz) * c0temp;
-            ud = raz * ud + (1. - raz) * udtemp;
-        }
-        break;
-    }
-}
-void SProd::C0UdAnularChurn(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                            double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                            double &ud, double correcHor, int estabCol) {
-
-    switch (arq.CorreAnular) {
-    case 3:
-        HibikiIshii(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                    c0, ud, correcHor);
-        break;
-    case 0:
-        Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-             c0, ud, correcHor);
-        break;
-    case 1:
-        BhagwatGhajar(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                      c0, ud, correcHor);
-        break;
-    case 4:
-        BhagwatGhajarMod(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                         c0, ud, correcHor);
-        break;
-    case 5:
-        if (fabs(tet) < 5 * M_PI / 180.)
-            BhagwatGhajar(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                          c0, ud, correcHor);
-        else if (fabs(tet) > 20 * M_PI / 180.)
-            Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-                 ud, correcHor);
-        else {
-            double raz = (fabs(tet) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
-            BhagwatGhajarMod(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                             c0, ud, correcHor);
-            double c0temp = c0;
-            double udtemp = ud;
-            Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-                 ud, correcHor);
-            c0 = raz * c0 + (1. - raz) * c0temp;
-            ud = raz * ud + (1. - raz) * udtemp;
-        }
-        break;
-    }
-}
-void SProd::C0UdEstratificado(double rhol, double rhog, double tensup, double alf, double reymix, double reymixL,
-                              double ug1, double ul1, double dia, double rug, double tet, double &c0,
-                              double &ud, double correcHor, int estabCol) {
-    // case 0:
-    switch (arq.CorreEstrat) {
-    case (2):
-        FrancaLahey(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                    c0, ud, correcHor);
-        break;
-    case (0):
-        Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-             c0, ud, correcHor);
-        break;
-    case (1):
-        BhagwatGhajar(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                      c0, ud, correcHor);
-        break;
-    case (4):
-        BhagwatGhajarMod(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                         c0, ud, correcHor);
-        break;
-    case 5:
-        if (fabs(tet) < 5 * M_PI / 180.)
-            BhagwatGhajar(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                          c0, ud, correcHor);
-        else if (fabs(tet) > 20 * M_PI / 180.)
-            Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-                 ud, correcHor);
-        else {
-            double raz = (fabs(tet) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
-            BhagwatGhajarMod(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet,
-                             c0, ud, correcHor);
-            double c0temp = c0;
-            double udtemp = ud;
-            Choi(rhol, rhog, tensup, alf, reymix, reymixL, ug1, ul1, dia, rug, tet, c0,
-                 ud, correcHor);
-            c0 = raz * c0 + (1. - raz) * c0temp;
-            ud = raz * ud + (1. - raz) * udtemp;
-        }
-        break;
-    }
-}
-
 void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
     int timeStep = 20;
     celula[ind].transic0 = celula[ind].transic;
@@ -5472,10 +5131,10 @@ void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
                     double c0E;
                     double udE;
 
-                    C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol);
-                    C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
 
                     double mult0, mult1;
                     mult0 = 1.;
@@ -5512,12 +5171,12 @@ void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
                                    celula[ind].duto.teta, tensup1, arq.mapaArranjo, vg1dSP);
                 xarr1 = testamapa2.verificaArr();
 
-                C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol);
+                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
 
                 if (xarr1 == -2) {
-                    C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
                 }
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
@@ -5747,10 +5406,10 @@ void SProd::CalcC0UdBuf(int ind, double &c0, double &ud) {
                     double udD;
                     double c0E;
                     double udE;
-                    C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol);
-                    C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
 
                     double mult0, mult1;
                     mult0 = 1.;
@@ -5783,11 +5442,11 @@ void SProd::CalcC0UdBuf(int ind, double &c0, double &ud) {
             }
             if (xarr1 != -1) {
 
-                C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol);
+                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
                 if (xarr1 == -2) {
-                    C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
                 }
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
@@ -5981,10 +5640,10 @@ void SProd::CalcC0UdIni(int ind, double &c0, double &ud) {
                     double udD;
                     double c0E;
                     double udE;
-                    C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol);
-                    C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
                     double mult0, mult1;
                     mult0 = 1.;
                     if (ul0 < 0.)
@@ -6020,11 +5679,11 @@ void SProd::CalcC0UdIni(int ind, double &c0, double &ud) {
                                    celula[ind].duto.teta, tensup1, arq.mapaArranjo, vg1dSP);
                 xarr1 = testamapa2.verificaArr();
 
-                C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol);
+                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
                 if (xarr1 == -2) {
-                    C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
                 }
 
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
@@ -6211,10 +5870,10 @@ void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
                     double udD;
                     double c0E;
                     double udE;
-                    C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol);
-                    C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
                     double mult0, mult1;
                     mult0 = 1.;
                     if (ul0 < 0.)
@@ -6245,11 +5904,11 @@ void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
             }
             if (xarr1 != -1) {
 
-                C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol);
+                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
                 if (xarr1 == -2) {
-                    C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
                 }
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
@@ -22842,10 +22501,10 @@ void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
                         double udD;
                         double c0E;
                         double udE;
-                        C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                     c0D, udD, correcHor, celula[ind].estabCol);
-                        C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                          c0E, udE, correcHor, celula[ind].estabCol);
+                        driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                     c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                        driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                          c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
 
                         double mult0, mult1;
                         mult0 = 1.;
@@ -22879,11 +22538,11 @@ void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
                                        sinalAng * celula[ind].duto.teta, tensup1, arq.mapaArranjo, vg1dSP);
                     xarr1 = testamapa2.verificaArr();
 
-                    C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0, ud, correcHor, celula[ind].estabCol);
+                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                 c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
                     if (xarr1 == -2) {
-                        C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                        c0, ud, correcHor, celula[ind].estabCol);
+                        driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
+                                        c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
                     }
                     celula[ind].arranjo = xarr1;
                     if (ind > 0)
