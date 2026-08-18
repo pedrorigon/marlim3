@@ -130,7 +130,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--baseline", required=True)
-    parser.add_argument("--current", required=True)
+    parser.add_argument("--current", required=True, action="append",
+                        help="repeatable. Pass every file the baseline's functions may "
+                             "now live in: after an extraction the moved bodies are in "
+                             "a new module, and comparing against the old file alone "
+                             "reports them as having disappeared")
     parser.add_argument("--function", action="append", default=[])
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--allow-renames", action="store_true",
@@ -138,7 +142,9 @@ def main() -> int:
     args = parser.parse_args()
 
     baseline = function_bodies(args.baseline)
-    current = function_bodies(args.current)
+    current: dict[str, str] = {}
+    for path in args.current:
+        current.update(function_bodies(path))
 
     if args.all:
         targets = sorted(set(baseline) & set(current))

@@ -69,34 +69,68 @@ build_status=$?
 errors=$(grep -c "error:" "$evidence_dir/build.log")
 compiled=$(grep -c "Building CXX object" "$evidence_dir/build.log")
 
-# Warnings are compared as a SET OF IDENTITIES (file:line:column plus warning
-# type), never as a count.
+# Warnings are compared as PER-FLAG GLOBAL COUNTS. No flag may increase.
 #
-# Counting does not work here. A parallel build interleaves compiler output, so
-# the same source can produce a different number of log lines from run to run --
-# the baseline recorded 472 and an identical rebuild produced 485, with zero
-# warnings disappearing, which is the signature of lost output rather than of
-# new diagnostics. Worse, a count says nothing useful even when accurate: as
-# SisProd.cpp is decomposed its 249 warnings migrate to the new modules, so the
-# total is expected to move while no warning is actually new.
+# Three schemes came before this one, and each failed on the thing this program
+# actually does.
 #
-# What "no new warnings" means is that no file:line:type appears that was not
-# there before. That is what this compares.
-warning_identities() {
-    grep "warning:" "$1" \
-        | sed -E 's/^.*(src\/[^:]+:[0-9]+:[0-9]+).*(\[-W[a-z-]+\]).*/\1 \2/' \
-        | grep '^src/' | sort -u
+# A raw total fails because a parallel build interleaves compiler output: the
+# baseline recorded 472 where an identical rebuild produced 485, with zero
+# warnings disappearing -- lost log lines, not new diagnostics (E-08).
+#
+# Replacing the total with file:line:column identities fixed that and broke
+# under code movement. Stage 1 lifted 342 lines out of SisProd.cpp, every
+# warning below them shifted line, and the gate reported 250 new diagnostics
+# while the multiset was conserved exactly, 485 to 485.
+#
+# Keying on (file, message) fails too: a warning follows its code into the new
+# module, and renaming a local rewrites the message text. Both are deliberate
+# steps of every extraction stage.
+#
+# What survives moving code between files and renaming locals is the count per
+# warning flag. A genuinely new diagnostic raises one of those counts; a
+# migration does not. The blind spot is real and declared: one warning vanishing
+# while another appears under the same flag would cancel out. The per-file
+# breakdown is written to disk for exactly that case -- it is what made the
+# stage-1 migration legible.
+#
+# GCC quotes identifiers typographically under a UTF-8 locale and in ASCII under
+# LC_ALL=C. The baseline log was captured under the former and this build runs
+# under the latter, so message text is normalized before it is compared (E-04).
+normalize_quotes() { sed -e "s/\xe2\x80\x98/'/g; s/\xe2\x80\x99/'/g" "$1"; }
+
+# Not every diagnostic carries a [-Wflag]: the rapidjson C++20 comparison
+# warning has none. Bucketing those under [no-flag] rather than dropping them
+# keeps a new unflagged warning from being invisible to this gate.
+warning_flag_counts() {
+    normalize_quotes "$1" | grep "warning:" \
+        | sed -E 's/^.*(\[-W[a-z-]+\]).*/\1/; t; s/.*/[no-flag]/' \
+        | sort | uniq -c | awk '{ printf "%s %s\n", $2, $1 }' | sort
+}
+
+warning_details() {
+    normalize_quotes "$1" | grep "warning:" \
+        | sed -E 's|^.*/(src/[^:]+):[0-9]+:[0-9]+: warning: (.*)$|\1 :: \2|' \
+        | grep '^src/' | sort | uniq -c | sed 's/^ *//'
 }
 
 baseline_build_log="${MARLIM_BASELINE_BUILD_LOG:-$BASELINE_DIR/logs/build-baseline.log}"
-current_warnings="$evidence_dir/warnings-current.txt"
+current_flags="$evidence_dir/warning-flags-current.txt"
+baseline_flags="$evidence_dir/warning-flags-baseline.txt"
 new_warnings="$evidence_dir/warnings-new.txt"
 
-warning_identities "$evidence_dir/build.log" > "$current_warnings"
+warning_flag_counts "$evidence_dir/build.log" > "$current_flags"
+total_warnings=$(awk '{ sum += $2 } END { print sum + 0 }' "$current_flags")
 
 if [[ -f "$baseline_build_log" ]]; then
-    comm -13 <(warning_identities "$baseline_build_log") "$current_warnings" > "$new_warnings"
+    warning_flag_counts "$baseline_build_log" > "$baseline_flags"
+    # Any flag whose count grew, including flags absent from the baseline.
+    join -a1 -a2 -e 0 -o 0,1.2,2.2 "$baseline_flags" "$current_flags" \
+        | awk '$3 > $2 { printf "%s %d -> %d\n", $1, $2, $3 }' > "$new_warnings"
     introduced=$(wc -l < "$new_warnings")
+    # Advisory: where warnings moved, which a per-flag count cannot show.
+    diff <(warning_details "$baseline_build_log") <(warning_details "$evidence_dir/build.log") \
+        > "$evidence_dir/warning-migration.txt" 2>&1 || true
 else
     : > "$new_warnings"
     introduced=0
@@ -104,12 +138,14 @@ else
            "$yellow" "$baseline_build_log" "$reset"
 fi
 
-printf 'compiled=%s errors=%s warnings=%s new=%s\n' \
-       "$compiled" "$errors" "$(wc -l < "$current_warnings")" "$introduced"
+printf 'compiled=%s errors=%s warnings=%s flags-increased=%s\n' \
+       "$compiled" "$errors" "$total_warnings" "$introduced"
 
 if (( introduced > 0 )); then
-    printf '%snew warning identities:%s\n' "$red" "$reset"
-    head -10 "$new_warnings" | sed 's/^/      /'
+    printf '%swarning flags that increased:%s\n' "$red" "$reset"
+    sed 's/^/      /' "$new_warnings"
+    printf '%ssee %s for where each warning moved%s\n' \
+           "$yellow" "$evidence_dir/warning-migration.txt" "$reset"
 fi
 
 # An incremental build with nothing to do emits zero warnings and would pass the
@@ -163,9 +199,19 @@ announce "Supplementary - structural comparison against the baseline commit (L0)
 baseline_source="$(mktemp -d -t marlim3-l0-XXXXXX)"
 if git -C "$project_root" worktree add --detach "$baseline_source/tree" \
        "$(cat "$BASELINE_DIR/commit" 2>/dev/null || echo 0f3b64f)" > /dev/null 2>&1; then
+    # Compare against SisProd.cpp AND every module this refactoring introduced,
+    # so a function that moved as planned is found and compared rather than
+    # reported as having vanished. Extracted modules are exactly the src/core
+    # sources that do not exist in the baseline commit, which keeps this correct
+    # as later stages add more of them.
+    l0_targets=(--current "$project_root/src/core/SisProd.cpp")
+    for candidate in "$project_root"/src/core/*.cpp; do
+        [[ -e "$baseline_source/tree/src/core/$(basename "$candidate")" ]] \
+            || l0_targets+=(--current "$candidate")
+    done
     python3 "$script_dir/verify-structural.py" \
         --baseline "$baseline_source/tree/src/core/SisProd.cpp" \
-        --current "$project_root/src/core/SisProd.cpp" \
+        "${l0_targets[@]}" \
         --all 2>&1 | tail -20 | tee "$evidence_dir/l0.log"
     git -C "$project_root" worktree remove --force "$baseline_source/tree" > /dev/null 2>&1
 else
