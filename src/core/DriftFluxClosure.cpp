@@ -18,6 +18,15 @@ namespace driftflux {
 namespace correlations {
 namespace {
 
+/// Sign carried by the duct inclination, negative for downward flow.
+///
+/// Choi, Hibiki Ishii and Franca Lahey all derive it the same way. It is a
+/// plain comparison rather than copysign, which would return -1 for negative
+/// zero where the original returns 1.
+inline double inclinationSignOf(double inclinationAngle) {
+    return inclinationAngle < 0. ? -1. : 1.;
+}
+
 /// Cross sectional area of a circular duct.
 inline double ductArea(double diameter) {
     return M_PI * diameter * diameter / 4.;
@@ -134,16 +143,13 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     const double mixtureViscosity = diameter * (fabs(gasFlowRate / flowArea) + fabs(liquidFlowRate / flowArea)) * mixtureDensity / reynoldsNumber;
     const double inclinationFactor = (0.35 * sin(inclinationAngle) + 0.45 * cos(inclinationAngle) * inclinationSign);
     const double buoyancyVelocityScale = sqrt((9.81 * diameter * (liquidDensity - gasDensity) / liquidDensity)) * sqrt(1 - voidFraction);
-    double viscosityCorrection = 1.0;
-    if (mixtureViscosity / 0.001 > 10)
-        viscosityCorrection = pow((0.434 / (log10(mixtureViscosity / 0.001))), 0.15);
+    const double viscosityCorrection =
+        (mixtureViscosity / 0.001 > 10) ? pow((0.434 / (log10(mixtureViscosity / 0.001))), 0.15) : 1.0;
     const double laplaceNumber = sqrt(surfaceTension / (9.81 * (liquidDensity - gasDensity))) / diameter;
-    double laplaceCorrection = 1.0;
-    if (laplaceNumber < 0.025)
-        laplaceCorrection = pow((laplaceNumber / 0.025), 0.90);
-    double downwardFlowSign = 1.0;
-    if (inclinationAngle >= -(50 * M_PI / 180.) && inclinationAngle < 0 && froudeNumber <= 0.1)
-        downwardFlowSign = -1.0;
+    const double laplaceCorrection =
+        (laplaceNumber < 0.025) ? pow((laplaceNumber / 0.025), 0.90) : 1.0;
+    const double downwardFlowSign =
+        (inclinationAngle >= -(50 * M_PI / 180.) && inclinationAngle < 0 && froudeNumber <= 0.1) ? -1.0 : 1.0;
     ud = horizontalCorrection * inclinationFactor * buoyancyVelocityScale * viscosityCorrection * laplaceCorrection * downwardFlowSign; // Calculo da Velocidade de Deslizamento.
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
@@ -172,9 +178,7 @@ void Choi(double liquidDensity, double gasDensity, double surfaceTension, double
           double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
           double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
           double horizontalCorrection) {
-    double inclinationSign = 1.;
-    if (inclinationAngle < 0.)
-        inclinationSign = -1.;
+    const double inclinationSign = inclinationSignOf(inclinationAngle);
     const double flowArea = ductArea(diameter);
     ud = horizontalCorrection * inclinationSign * 0.0246 * cos(inclinationAngle) + 1.606 * pow(9.82 * surfaceTension * (liquidDensity - gasDensity) / (liquidDensity * liquidDensity), 0.25) * sin(inclinationAngle);
     c0 = 2. / (1 + pow(mixtureReynolds / 1000., 2.)) + (1.2 - 0.2 * sqrt(gasDensity / liquidDensity) * (1 - exp(-18 * voidFraction))) / (1 + pow(1000. / mixtureReynolds, 2.));
@@ -185,10 +189,7 @@ void HibikiIshii(double liquidDensity, double gasDensity, double surfaceTension,
                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
                  double horizontalCorrection) {
-    double inclinationSign = 1.;
-    if (inclinationAngle < 0.) {
-        inclinationSign = -1.;
-    }
+    const double inclinationSign = inclinationSignOf(inclinationAngle);
     const double flowArea = ductArea(diameter);
     c0 = 1. + (1. - voidFraction) / (voidFraction + 4. * sqrt(gasDensity / liquidDensity));
     ud = (horizontalCorrection * inclinationSign * (1. - voidFraction) / (voidFraction + 4. * sqrt(gasDensity / liquidDensity))) * sqrt(9.82 * fabs(sin(inclinationAngle)) * diameter * (liquidDensity - gasDensity) * (1. - voidFraction) / (0.015 * liquidDensity));
@@ -199,9 +200,7 @@ void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension,
                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
                  double horizontalCorrection) {
-    double inclinationSign = 1.;
-    if (inclinationAngle < 0.)
-        inclinationSign = -1.;
+    const double inclinationSign = inclinationSignOf(inclinationAngle);
     c0 = 1.04;
     ud = horizontalCorrection * inclinationSign * 0.466;
     const double flowArea = ductArea(diameter);
