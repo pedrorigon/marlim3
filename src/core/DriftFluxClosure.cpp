@@ -60,15 +60,23 @@ inline void alignDriftWithInclination(double gasFlowRate, double liquidFlowRate,
 /// @param reynoldsNumber    Reynolds number, already floored away from zero.
 /// @return Darcy friction factor.
 ///
-/// @warning The iteration has no upper bound on its count. The original code
-///          kept a counter but never tested it, so a stalled Colebrook fixed
-///          point would spin forever. Preserved as written, see the stage 1
-///          findings.
+/// The fixed point converges in at most two iterations over a grid far wider
+/// than anything the engine produces, Reynolds from 1e-9 to 1e12 and roughness
+/// from smooth to 1e-2, so the bound below is insurance and never binds. It is
+/// checked after the body runs, which keeps the loop a do while and leaves the
+/// arithmetic untouched.
+///
+/// A stall was never the real hazard anyway: if the iterate turns into NaN the
+/// convergence delta does too, and a NaN comparison is false, so the loop
+/// exits on its own.
 double darcyFrictionFactor(double relativeRoughness, double reynoldsNumber) {
     if (reynoldsNumber > 2400) { // regime turbulento do escoamento
         double frictionFactorEstimate =
             (1 / (-18e-1 * log10(pow((relativeRoughness / (3.7)), 1.11) + (69e-1 / (reynoldsNumber + 1e-15)))));
         frictionFactorEstimate *= frictionFactorEstimate; // Haaland.
+        // Never reached in practice, see the note above.
+        constexpr int kMaxColebrookIterations = 100;
+        int iterations = 0;
         double frictionFactor;
         double convergenceDelta;
         do {
@@ -77,7 +85,7 @@ double darcyFrictionFactor(double relativeRoughness, double reynoldsNumber) {
             frictionFactor = 1 / (colebrookDenominator * colebrookDenominator); // Colebrook.
             convergenceDelta = abs(frictionFactor - frictionFactorEstimate);
             frictionFactorEstimate = frictionFactor;
-        } while (convergenceDelta >= 1e-3);
+        } while (convergenceDelta >= 1e-3 && ++iterations < kMaxColebrookIterations);
         return frictionFactor;
     }
     return 64. / (reynoldsNumber); // 16.
@@ -98,12 +106,21 @@ double darcyFrictionFactor(double relativeRoughness, double reynoldsNumber) {
 ///
 /// @param reynoldsNumber Reynolds number the variant selects, mixture or liquid.
 ///
-/// @warning inclinationSign is assigned 1 on both branches, so the conditional
-///          is dead and the value is always 1. Choi, Hibiki Ishii and Franca
-///          Lahey all assign -1 for downward flow. Substituting -1 here would
-///          make the Froude radicand negative and yield NaN, so the correction
-///          is not a one line change. Left exactly as found, see
-///          evidencia/estagio-1/achado-sinal-bhagwatghajar.md.
+/// @note This variant carries no flow direction sign, unlike Choi, Hibiki Ishii
+///       and Franca Lahey. The original code declared one, then assigned 1 on
+///       both branches of a test on the inclination, so it was always 1 and the
+///       branch was dead. It has been folded away, which changes nothing.
+///
+///       Substituting -1, the reading the dead branch invites, is not a fix. It
+///       drives the Froude radicand negative, and although the resulting NaN
+///       never reaches c0 or ud, it makes both guards below permanently false,
+///       so the duct shape term would stop being zeroed and downwardFlowSign
+///       would stop flipping for downward low Froude flow. A published
+///       correlation does not carry guards that can never fire, which is the
+///       argument that this variant simply has no such sign.
+///
+///       Direction is handled here by downwardFlowSign, factor C4 of the
+///       published model. See evidencia/estagio-1/achado-sinal-bhagwatghajar.md.
 void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                        double reynoldsNumber, double gasFlowRate, double liquidFlowRate, double diameter,
                        double roughness, double inclinationAngle, double &c0, double &ud,
@@ -111,11 +128,8 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     const double flowArea = ductArea(diameter);
     const double mixtureDensity = voidFraction * gasDensity + (1. - voidFraction) * liquidDensity;
 
-    double inclinationSign = 1.;
-    if (inclinationAngle < 0.)
-        inclinationSign = 1.;
 
-    const double froudeNumber = sqrt(gasDensity / (liquidDensity - gasDensity)) * ((gasFlowRate) / flowArea) / sqrt(9.81 * diameter * inclinationSign * cos(inclinationAngle));
+    const double froudeNumber = sqrt(gasDensity / (liquidDensity - gasDensity)) * ((gasFlowRate) / flowArea) / sqrt(9.81 * diameter * cos(inclinationAngle));
     const double massQuality = (gasDensity * fabs(gasFlowRate) / flowArea) / ((gasDensity * fabs(gasFlowRate) / flowArea) + (liquidDensity * fabs(liquidFlowRate) / flowArea));
     const double noSlipGasFraction = (fabs(gasFlowRate) / flowArea) / ((fabs(gasFlowRate) / flowArea) + (fabs(liquidFlowRate) / flowArea));
 
@@ -130,7 +144,7 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     double scaledReynoldsSquared = reynoldsNumber / 1000;
     scaledReynoldsSquared *= scaledReynoldsSquared;
     const double distributionTerm1 = (2 - densityRatioSquared) / (1 + scaledReynoldsSquared);
-    const double distributionTerm2 = (pow(((1 + densityRatioSquared * inclinationSign * cos(inclinationAngle)) / (1 + cos(inclinationAngle))), (1 - voidFraction) / 5.)) /
+    const double distributionTerm2 = (pow(((1 + densityRatioSquared * cos(inclinationAngle)) / (1 + cos(inclinationAngle))), (1 - voidFraction) / 5.)) /
              (1 + 1 / scaledReynoldsSquared);
     const double ductShapeCoefficient = 0.2; // duto circular ou anular. Retangular seria 0.4.
     double ductShapeTerm = (ductShapeCoefficient - ductShapeCoefficient * sqrt(gasDensity / liquidDensity)) * (pow((2.6 - noSlipGasFraction), 0.15) - sqrt(frictionFactor)) * pow((1 - massQuality), 1.5);
@@ -141,7 +155,7 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     c0 = distributionTerm1 + distributionTerm2 + ductShapeTerm; // Calculo do Parametro de Distribuicao.
 
     const double mixtureViscosity = diameter * (fabs(gasFlowRate / flowArea) + fabs(liquidFlowRate / flowArea)) * mixtureDensity / reynoldsNumber;
-    const double inclinationFactor = (0.35 * sin(inclinationAngle) + 0.45 * cos(inclinationAngle) * inclinationSign);
+    const double inclinationFactor = (0.35 * sin(inclinationAngle) + 0.45 * cos(inclinationAngle));
     const double buoyancyVelocityScale = sqrt((9.81 * diameter * (liquidDensity - gasDensity) / liquidDensity)) * sqrt(1 - voidFraction);
     const double viscosityCorrection =
         (mixtureViscosity / 0.001 > 10) ? pow((0.434 / (log10(mixtureViscosity / 0.001))), 0.15) : 1.0;
