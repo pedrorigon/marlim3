@@ -240,132 +240,123 @@ void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension,
         ud = -fabs(ud);
 }
 
+namespace {
+
+/// Selector 5: blend two correlations across the inclination band between 5 and
+/// 20 degrees. Identical in all three regimes, and the most delicate arithmetic
+/// in this file, which is why it lives in one place now instead of three.
+///
+/// Two things here are load-bearing and must not be tidied. BhagwatGhajarMod
+/// runs BEFORE Choi because both write c0 and ud, so the order decides which
+/// result the temporaries hold. And the interpolation keeps the form
+/// blendRatio*x + (1 - blendRatio)*xMod: rearranging it to
+/// xMod + blendRatio*(x - xMod) is algebraically identical and rounds
+/// differently.
+void blendAcrossInclination(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                      double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                      double liquidFlowRate, double diameter, double roughness,
+                      double inclinationAngle, double &c0, double &ud,
+                      double horizontalCorrection) {
+    if (fabs(inclinationAngle) < 5 * M_PI / 180.)
+        BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+    else if (fabs(inclinationAngle) > 20 * M_PI / 180.)
+        Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+    else {
+        double blendRatio = (fabs(inclinationAngle) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
+        BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        double c0BhagwatGhajarMod = c0;
+        double udBhagwatGhajarMod = ud;
+        Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        c0 = blendRatio * c0 + (1. - blendRatio) * c0BhagwatGhajarMod;
+        ud = blendRatio * ud + (1. - blendRatio) * udBhagwatGhajarMod;
+    }
+}
+
+/// The selectors every regime accepts. Anything else falls through and leaves
+/// c0 and ud exactly as the caller passed them -- the original switches carried
+/// no default, and that silence is observable behaviour rather than an
+/// oversight, so it is preserved deliberately.
+void applyCommonCorrelation(int correlationIndex, double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
+                      double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                      double liquidFlowRate, double diameter, double roughness,
+                      double inclinationAngle, double &c0, double &ud,
+                      double horizontalCorrection) {
+    switch (correlationIndex) {
+    case 0:
+        Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        break;
+    case 1:
+        BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        break;
+    case 4:
+        BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        break;
+    case 5:
+        blendAcrossInclination(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        break;
+    }
+}
+
+}  // namespace
+
 void C0UdDisperso(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
-                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
-                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
+                  double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                  double liquidFlowRate, double diameter, double roughness,
+                  double inclinationAngle, double &c0, double &ud,
                   double horizontalCorrection, int estabCol, int correlationIndex) {
-
-    // case 0:
-    switch (correlationIndex) {
-    case 0:
-        Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-             ud, horizontalCorrection);
-        break;
-    case 1:
-        BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                      c0, ud, horizontalCorrection);
-        break;
-    case 4:
-        BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                         c0, ud, horizontalCorrection);
-        break;
-    case 5:
-        if (fabs(inclinationAngle) < 5 * M_PI / 180.)
-            BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                          c0, ud, horizontalCorrection);
-        else if (fabs(inclinationAngle) > 20 * M_PI / 180.)
-            Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-                 ud, horizontalCorrection);
-        else {
-            double blendRatio = (fabs(inclinationAngle) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
-            BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                             c0, ud, horizontalCorrection);
-            double c0BhagwatGhajarMod = c0;
-            double udBhagwatGhajarMod = ud;
-            Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-                 ud, horizontalCorrection);
-            c0 = blendRatio * c0 + (1. - blendRatio) * c0BhagwatGhajarMod;
-            ud = blendRatio * ud + (1. - blendRatio) * udBhagwatGhajarMod;
-        }
-        break;
-    }
+    applyCommonCorrelation(correlationIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                            liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                            inclinationAngle, c0, ud, horizontalCorrection);
 }
+
 void C0UdAnularChurn(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
-                     double mixtureReynolds, double liquidReynolds, double gasFlowRate,
-                     double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                     double &c0, double &ud, double horizontalCorrection, int estabCol, int correlationIndex) {
-
-    switch (correlationIndex) {
-    case 3:
-        HibikiIshii(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                    c0, ud, horizontalCorrection);
-        break;
-    case 0:
-        Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-             c0, ud, horizontalCorrection);
-        break;
-    case 1:
-        BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                      c0, ud, horizontalCorrection);
-        break;
-    case 4:
-        BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                         c0, ud, horizontalCorrection);
-        break;
-    case 5:
-        if (fabs(inclinationAngle) < 5 * M_PI / 180.)
-            BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                          c0, ud, horizontalCorrection);
-        else if (fabs(inclinationAngle) > 20 * M_PI / 180.)
-            Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-                 ud, horizontalCorrection);
-        else {
-            double blendRatio = (fabs(inclinationAngle) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
-            BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                             c0, ud, horizontalCorrection);
-            double c0BhagwatGhajarMod = c0;
-            double udBhagwatGhajarMod = ud;
-            Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-                 ud, horizontalCorrection);
-            c0 = blendRatio * c0 + (1. - blendRatio) * c0BhagwatGhajarMod;
-            ud = blendRatio * ud + (1. - blendRatio) * udBhagwatGhajarMod;
-        }
-        break;
+                  double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                  double liquidFlowRate, double diameter, double roughness,
+                  double inclinationAngle, double &c0, double &ud,
+                  double horizontalCorrection, int estabCol, int correlationIndex) {
+    // Hibiki-Ishii is accepted in this regime and in no other.
+    if (correlationIndex == 3) {
+        HibikiIshii(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        return;
     }
+    applyCommonCorrelation(correlationIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                            liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                            inclinationAngle, c0, ud, horizontalCorrection);
 }
+
 void C0UdEstratificado(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
-                       double mixtureReynolds, double liquidReynolds, double gasFlowRate,
-                       double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                       double &c0, double &ud, double horizontalCorrection, int estabCol,
-                       int correlationIndex) {
-    // case 0:
-    switch (correlationIndex) {
-    case (2):
-        FrancaLahey(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                    c0, ud, horizontalCorrection);
-        break;
-    case (0):
-        Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-             c0, ud, horizontalCorrection);
-        break;
-    case (1):
-        BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                      c0, ud, horizontalCorrection);
-        break;
-    case (4):
-        BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                         c0, ud, horizontalCorrection);
-        break;
-    case 5:
-        if (fabs(inclinationAngle) < 5 * M_PI / 180.)
-            BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                          c0, ud, horizontalCorrection);
-        else if (fabs(inclinationAngle) > 20 * M_PI / 180.)
-            Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-                 ud, horizontalCorrection);
-        else {
-            double blendRatio = (fabs(inclinationAngle) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
-            BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-                             c0, ud, horizontalCorrection);
-            double c0BhagwatGhajarMod = c0;
-            double udBhagwatGhajarMod = ud;
-            Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0,
-                 ud, horizontalCorrection);
-            c0 = blendRatio * c0 + (1. - blendRatio) * c0BhagwatGhajarMod;
-            ud = blendRatio * ud + (1. - blendRatio) * udBhagwatGhajarMod;
-        }
-        break;
+                  double mixtureReynolds, double liquidReynolds, double gasFlowRate,
+                  double liquidFlowRate, double diameter, double roughness,
+                  double inclinationAngle, double &c0, double &ud,
+                  double horizontalCorrection, int estabCol, int correlationIndex) {
+    // Franca-Lahey is accepted in this regime and in no other.
+    if (correlationIndex == 2) {
+        FrancaLahey(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                  liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                  inclinationAngle, c0, ud, horizontalCorrection);
+        return;
     }
+    applyCommonCorrelation(correlationIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
+                            liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
+                            inclinationAngle, c0, ud, horizontalCorrection);
 }
 
 }  // namespace correlations
