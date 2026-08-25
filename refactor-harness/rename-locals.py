@@ -13,7 +13,15 @@ varGlob1D are surface (FR-038), and here they are always reached through a
 `state.` field or a `.` access, which this tool never rewrites.
 
 Usage: rename-locals.py <file> <scope> <old> <new> [...]
-       scope is a function name, or ALL for file scope.
+       scope is a function name, ALL for file scope, or Function@first-last
+       to restrict the rewrite to those absolute lines.
+
+The Function@first-last form exists because function scope is too coarse when
+the same name is declared twice in sibling blocks -- two `for (int j ...)` in
+one function are distinct variables, and giving both the same new name is not a
+collapse but does produce a name that lies about one of them. Collisions are
+still checked across the WHOLE function, so narrowing the rewrite never
+narrows the safety check.
 
 Exit code: 0 when every rename applied; 1 on the first refusal.
 """
@@ -44,7 +52,22 @@ def scope_span(lines: list[str], scope: str) -> tuple[int, int]:
 
 def rename(text: str, scope: str, old: str, new: str) -> tuple[str, int]:
     lines = text.split("\n")
+    limit = None
+    if "@" in scope:
+        scope, span = scope.split("@", 1)
+        first, last = (int(part) for part in span.split("-"))
+        limit = (first - 1, last)
     start, end = scope_span(lines, scope)
+    if limit is not None:
+        if not (start <= limit[0] and limit[1] <= end):
+            raise ValueError(f"{scope}: lines {limit[0] + 1}-{limit[1]} lie "
+                             f"outside the function ({start + 1}-{end})")
+        guard = "\n".join(lines[start:end])
+        clash = re.compile(rf"(?<![\w.]){re.escape(new)}\b")
+        if any(clash.finditer(guard)):
+            raise ValueError(f"{scope}: {new!r} already occurs in the function -- "
+                             f"renaming {old!r} to it would collapse two identifiers")
+        start, end = limit
     body = "\n".join(lines[start:end])
 
     # Occurrences that are neither a field access nor inside a string literal.

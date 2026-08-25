@@ -32,10 +32,10 @@ namespace {
 ///
 /// Identical in all eight writers, including the comment, which is why it is
 /// the one piece shared without a hook.
-void reportProducedFile(const TrendState &state, const string &tmp) {
+void reportProducedFile(const TrendState &state, const string &fileName) {
     // caso nao seja simulacao POCO_INJETOR
     if (state.inputData.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
-        arqRelatorioPerfis << tmp.c_str() << endl;
+        arqRelatorioPerfis << fileName.c_str() << endl;
         arqRelatorioPerfis.flush();
     }
 }
@@ -53,16 +53,16 @@ void reportProducedFile(const TrendState &state, const string &tmp) {
 template <typename BuildName, typename WriteCaptions>
 void writeTrendHeaderFile(const TrendState &state, BuildName buildName,
                           WriteCaptions writeCaptions, bool blankLineBeforeClose) {
-    string tmp = buildName();
-    ofstream escreveTrend(tmp.c_str(), ios_base::out);
+    string fileName = buildName();
+    ofstream trendFile(fileName.c_str(), ios_base::out);
     if (state.printPassCount == 1) {
-        writeCaptions(escreveTrend);
-        escreveTrend << endl;
+        writeCaptions(trendFile);
+        trendFile << endl;
     }
     if (blankLineBeforeClose)
-        escreveTrend << endl;
-    escreveTrend.close();
-    reportProducedFile(state, tmp);
+        trendFile << endl;
+    trendFile.close();
+    reportProducedFile(state, fileName);
 }
 
 /// The skeleton the four row writers share.
@@ -80,250 +80,250 @@ template <typename BuildName>
 void writeTrendRowsFile(const TrendState &state, int windowSize, int columnCount,
                         double **series, int sourceBase, BuildName buildName,
                         bool supportsApSequence, bool blankLineBeforeClose) {
-    FullMtx<double> saidatrend(windowSize, columnCount);
-    for (int k = 0; k < windowSize; k++)
-        for (int j = 0; j < columnCount; j++)
-            saidatrend[k][j] = series[k + sourceBase][j];
-    string tmp = buildName();
-    ofstream escreveTrend(tmp.c_str(), ios_base::app);
-    int nc = saidatrend.col();
-    int nl = saidatrend.lin();
+    FullMtx<double> window(windowSize, columnCount);
+    for (int sourceRow = 0; sourceRow < windowSize; sourceRow++)
+        for (int sourceColumn = 0; sourceColumn < columnCount; sourceColumn++)
+            window[sourceRow][sourceColumn] = series[sourceRow + sourceBase][sourceColumn];
+    string fileName = buildName();
+    ofstream trendFile(fileName.c_str(), ios_base::app);
+    int columnsToWrite = window.col();
+    int rowsToWrite = window.lin();
     const bool apSequenceColumn =
         supportsApSequence && state.branchIndex < 0 && state.inputData.AP == 1;
     if (apSequenceColumn)
-        nc++;
-    for (int i = 0; i < nl; i++) {
-        if (saidatrend[i][0] <= -9999)
+        columnsToWrite++;
+    for (int rowIndex = 0; rowIndex < rowsToWrite; rowIndex++) {
+        if (window[rowIndex][0] <= -9999)
             break;
-        for (int j = 0; j < nc; j++) {
-            escreveTrend.width(20);
-            escreveTrend.precision(19);
+        for (int columnIndex = 0; columnIndex < columnsToWrite; columnIndex++) {
+            trendFile.width(20);
+            trendFile.precision(19);
             if (apSequenceColumn) {
-                if (j == 0)
-                    escreveTrend << (*state.globals).sequenciaAP << " ; ";
+                if (columnIndex == 0)
+                    trendFile << (*state.globals).sequenciaAP << " ; ";
                 else
-                    escreveTrend << saidatrend[i][j - 1] << " ; ";
+                    trendFile << window[rowIndex][columnIndex - 1] << " ; ";
             } else
-                escreveTrend << saidatrend[i][j] << " ; ";
+                trendFile << window[rowIndex][columnIndex] << " ; ";
         }
-        escreveTrend << endl;
+        trendFile << endl;
     }
     if (blankLineBeforeClose)
-        escreveTrend << endl;
-    escreveTrend.close();
-    reportProducedFile(state, tmp);
+        trendFile << endl;
+    trendFile.close();
+    reportProducedFile(state, fileName);
 }
 
 } // namespace
 
 /// Writes the column captions of a production-line trend file.
-void writeProductionTrendHeader(const TrendState &state, int i, int nrede) {
+void writeProductionTrendHeader(const TrendState &state, int trendIndex, int networkIndex) {
     if (state.inputData.ntendp > 0) {
-        const auto t = [&state](const char *pt, const char *en) {
-            return output_i18n::tr(state.inputData.idiomaSaida, pt, en);
+        const auto translate = [&state](const char *ptBrText, const char *enText) {
+            return output_i18n::tr(state.inputData.idiomaSaida, ptBrText, enText);
         };
         writeTrendHeaderFile(
             state,
             [&] {
-            ostringstream saidaT;
-            if (state.branchIndex < 0 && state.inputData.AP == 0) {
-                saidaT << pathPrefixoArqSaida << "TENDP" << "-" << round(state.inputData.trendp[i].comp) << ".dat";
-            } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                saidaT << pathPrefixoArqSaida << "TENDP-AP-" << round(state.inputData.trendp[i].comp) << ".dat";
-            } else {
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << nrede << "-" << "TENDP" << "-" << state.inputData.trendp[i].comp << ".dat";
-            }
-            return saidaT.str();
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0 && state.inputData.AP == 0) {
+                    fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << round(state.inputData.trendp[trendIndex].comp) << ".dat";
+                } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
+                    fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << round(state.inputData.trendp[trendIndex].comp) << ".dat";
+                } else {
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
+                }
+                return fileNameStream.str();
             },
-            [&](ofstream &escreveTrend) {
-                double comprimento = 0;
-                int posicn = state.inputData.trendp[i].posic;
-                for (int k = 0; k <= posicn; k++)
-                    comprimento += state.inputData.celp[k].dx;
-                escreveTrend << t("# Comprimento a partir do Fundo de Poco (m) = ", "# Length from Bottomhole (m) = ") << comprimento << endl;
-                escreveTrend << t("# Rotulo = ", "# Label = ") << state.inputData.trendp[i].rotulo << endl;
-                escreveTrend << t("# Indice da Celula = ", "# Cell index = ") << state.inputData.trendp[i].posic << endl;
-                if (state.branchIndex < 0 && state.inputData.AP == 1)
-                    escreveTrend << t(" Sequencia AP ;", " SA sequence ;");
-                escreveTrend << t(" Tempo (s) ;", " Time (s) ;");
-                if (state.inputData.trendp[i].pres == 1)
-                    escreveTrend << t(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
-                if (state.inputData.trendp[i].temp == 1)
-                    escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
-                if (state.inputData.trendp[i].hol == 1)
-                    escreveTrend << t(" Holdup de liquido (-) ;", " Liquid holdup (-) ;");
-                if (state.inputData.trendp[i].FVH == 1)
-                    escreveTrend << t(" Fracao Volumetrica Hidrato (-) ;", " Hydrate volumetric fraction (-) ;"); // solver de Hidratos - chris
-                if (state.inputData.trendp[i].bet == 1)
-                    escreveTrend << t(" Fracao vol. de liquido complementar (-) ;", " Complementary liquid vol. fraction (-) ;");
-                if (state.inputData.trendp[i].ugs == 1)
-                    escreveTrend << t(" Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;");
-                if (state.inputData.trendp[i].uls == 1)
-                    escreveTrend << t(" Velocidade superficial do liquido (m/s) ;", " Liquid superficial velocity (m/s) ;");
-                if (state.inputData.trendp[i].ug == 1)
-                    escreveTrend << t(" Velocidade do gas (m/s) ;", " Gas velocity (m/s) ;");
-                if (state.inputData.trendp[i].ul == 1)
-                    escreveTrend << t(" Velocidade do liquido (m/s) ;", " Liquid velocity (m/s) ;");
-                if (state.inputData.trendp[i].arra == 1)
-                    escreveTrend << t(" Indicador de arranjo de fases (-) ;", " Phase pattern indicator (-) ;");
-                if (state.inputData.trendp[i].viscl == 1)
-                    escreveTrend << t(" Viscosidade do Liquido (cP) ;", " Liquid viscosity (cP) ;");
-                if (state.inputData.trendp[i].viscg == 1)
-                    escreveTrend << t(" Viscosidade do Gas (cP) ;", " Gas viscosity (cP) ;");
-                if (state.inputData.trendp[i].rhog == 1)
-                    escreveTrend << t(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
-                if (state.inputData.trendp[i].rhol == 1)
-                    escreveTrend << t(" Massa Especifica do Liquido (kg/m3) ;", " Liquid density (kg/m3) ;");
-                if (state.inputData.trendp[i].rhoMix == 1)
-                    escreveTrend << t(" Massa Especifica da Mistura (kg/m3) ;", " Mixture density (kg/m3) ;");
-                if (state.inputData.trendp[i].masg == 1)
-                    escreveTrend << t(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
-                if (state.inputData.trendp[i].masl == 1)
-                    escreveTrend << t(" Vazao Massica do Liquido (kg/s) ;", " Liquid mass flow rate (kg/s) ;");
-                if (state.inputData.trendp[i].c0 == 1)
-                    escreveTrend << t(" Coeficiente de distribuição: C0 (-) ;", " Distribution coefficient: C0 (-) ;");
-                if (state.inputData.trendp[i].ud == 1)
-                    escreveTrend << t(" Velocidade de escorregamento: Ud (m/s) ;", " Slip velocity: Ud (m/s) ;");
-                if (state.inputData.trendp[i].RGO == 1)
-                    escreveTrend << " RGO (Sm3/Sm3) ;";
-                if (state.inputData.trendp[i].deng == 1)
-                    escreveTrend << t(" Densidade do Gas (-) ;", " Gas specific gravity (-) ;");
-                if (state.inputData.trendp[i].yco2 == 1)
-                    escreveTrend << t(" Fracao Molar de CO2 (-) ;", " CO2 molar fraction (-) ;");
-                if (state.inputData.trendp[i].calor == 1)
-                    escreveTrend << t(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
-                if (state.inputData.trendp[i].masstrans == 1)
-                    escreveTrend << t(" Transferencia de Massa entre Fases (kg / [s m]) ;", " Interphase mass transfer (kg / [s m]) ;");
-                if (state.inputData.trendp[i].qlst == 1)
-                    escreveTrend << t(" Vazao volumetrica standard de oleo morto (Sm3/d) ;", " Standard dead oil volumetric flow rate (Sm3/d) ;");
-                if (state.inputData.trendp[i].qlwst == 1)
-                    escreveTrend << t(" Vazao volumetrica standard de oleo morto + agua (Sm3/d) ;", " Standard dead oil + water volumetric flow rate (Sm3/d) ;");
-                if (state.inputData.trendp[i].qlstTot == 1)
-                    escreveTrend << t(" Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) ;", " Standard dead oil + water + complementary liquid volumetric flow rate (Sm3/d) ;");
-                if (state.inputData.trendp[i].qgst == 1)
-                    escreveTrend << t(" Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) ;", " Standard free + dissolved gas volumetric flow rate (Sm3/d) ;");
-                if (state.inputData.trendp[i].api == 1)
-                    escreveTrend << t(" Grau API (-) ;", " API gravity (-) ;");
-                if (state.inputData.trendp[i].bsw == 1)
-                    escreveTrend << " BSW (-) ;";
-                if (state.inputData.trendp[i].hidro == 1)
-                    escreveTrend << t(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
-                if (state.inputData.trendp[i].fric == 1)
-                    escreveTrend << t(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
-                if (state.inputData.trendp[i].dengD == 1)
-                    escreveTrend << t(" Densidade Gas Dissolvido In Situ (-) ;", " In-situ dissolved gas specific gravity (-) ;");
-                if (state.inputData.trendp[i].dengL == 1)
-                    escreveTrend << t(" Densidade Gas Livre In Situ (-) ;", " In-situ free gas specific gravity (-) ;");
-                if (state.inputData.trendp[i].mlFonte == 1)
-                    escreveTrend << t(" Fonte massica - Liq. (Hidrocarb+Agua) (kg/s);", " Mass source - Liq. (Hydrocarbon+Water) (kg/s);");
-                if (state.inputData.trendp[i].mgFonte == 1)
-                    escreveTrend << t(" Fonte massica - Gas (kg/s);", " Mass source - Gas (kg/s);");
-                if (state.inputData.trendp[i].mcFonte == 1)
-                    escreveTrend << t(" Fonte massica - Liq. Complementar (kg/s);", " Mass source - Complementary liquid (kg/s);");
-                if (state.inputData.trendp[i].dpB == 1)
-                    escreveTrend << t(" Incremento de pressao de Bombeio (kgf/cm2);", " Pump pressure increment (kgf/cm2);");
-                if (state.inputData.trendp[i].potB == 1)
-                    escreveTrend << t(" Potencia de Bombeio (kW);", " Pump power (kW);");
-                if (state.inputData.trendp[i].tempChokeJus == 1)
-                    escreveTrend << t(" Temperatura a Jusante do Choke de Superficie (C);", " Surface choke downstream temperature (C);");
-                if (state.inputData.trendp[i].reyi == 1)
-                    escreveTrend << t(" Reynolds interno da mistura (-) ;", " Internal mixture Reynolds (-) ;");
-                if (state.inputData.trendp[i].reye == 1)
-                    escreveTrend << t(" Reynolds externo (-) ;", " External Reynolds (-) ;");
-                if (state.inputData.trendp[i].Fr == 1)
-                    escreveTrend << t(" Froud (-) ;", " Froude (-) ;");
-                if (state.inputData.trendp[i].grashi == 1)
-                    escreveTrend << t(" Grashof interno da mistura (-) ;", " Internal mixture Grashof (-) ;");
-                if (state.inputData.trendp[i].grashe == 1)
-                    escreveTrend << t(" Grashof externo (-) ;", " External Grashof (-) ;");
-                if (state.inputData.trendp[i].nusi == 1)
-                    escreveTrend << t(" Nusselt interno da mistura (-) ;", " Internal mixture Nusselt (-) ;");
-                if (state.inputData.trendp[i].nuse == 1)
-                    escreveTrend << t(" Nusselt externo (-) ;", " External Nusselt (-) ;");
-                if (state.inputData.trendp[i].hi == 1)
-                    escreveTrend << t(" Coeficiente de pelicula interno da mistura (W/(m2.K)) ;", " Internal mixture film coefficient (W/(m2.K)) ;");
-                if (state.inputData.trendp[i].he == 1)
-                    escreveTrend << t(" Coeficiente de pelicula externo (W/(m2.K)) ;", " External film coefficient (W/(m2.K)) ;");
-                if (state.inputData.trendp[i].pri == 1)
-                    escreveTrend << t(" Prandtl interno da mistura (-) ;", " Internal mixture Prandtl (-) ;");
-                if (state.inputData.trendp[i].pre == 1)
-                    escreveTrend << t(" Prandtl externo (-) ;", " External Prandtl (-) ;");
-                if (state.inputData.trendp[i].Rs == 1)
-                    escreveTrend << t(" Razao de Solubilidade (-) ;", " Solubility ratio (-) ;");
-                if (state.inputData.trendp[i].Bo == 1)
-                    escreveTrend << t(" Fator Volume de Formacao (-) ;", " Formation volume factor (-) ;");
-                if (state.inputData.trendp[i].volMonM1PT == 1)
-                    escreveTrend << t(" Volume de liquido a montante da Master1, a PT, m3 ;", " Liquid volume upstream of Master1, at PT, m3 ;");
-                if (state.inputData.trendp[i].volJusM1PT == 1)
-                    escreveTrend << t(" Volume de liquido a jusante da Master1, a PT, m3 ;", " Liquid volume downstream of Master1, at PT, m3 ;");
-                if (state.inputData.trendp[i].volMonM1ST == 1)
-                    escreveTrend << t(" Volume de liquido a montante da Master1, standard, m3 ;", " Liquid volume upstream of Master1, standard, m3 ;");
-                if (state.inputData.trendp[i].volJusM1ST == 1)
-                    escreveTrend << t(" Volume de liquido a jusante da Master1, standard, m3 ;", " Liquid volume downstream of Master1, standard, m3 ;");
-                if (state.inputData.trendp[i].inventarioGas == 1)
-                    escreveTrend << t(" Inventario de Gas em toda a tubulação, standard, m3 ;", " Gas inventory in whole tubing, standard, m3 ;");
-                if (state.inputData.trendp[i].inventarioLiq == 1)
-                    escreveTrend << t(" Inventario de Liquido em toda a tubulação, standard, m3 ;", " Liquid inventory in whole tubing, standard, m3 ;");
-                if (state.inputData.trendp[i].diamInt == 1)
-                    escreveTrend << t(" Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;");
-                if (state.inputData.trendp[i].TempParede == 1)
-                    escreveTrend << t(" Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;");
-                if (state.inputData.trendp[i].subResfria == 1)
-                    escreveTrend << t(" Subresfriamento, C ;", " Subcooling, C ;");
-                if (state.inputData.trendp[i].dadosParafina == 1) {
-                    escreveTrend << t(" TIAC (C) C;", " TIAC (C) C;");
-                    escreveTrend << t(" Cp Parafina (J/[kg C]) C;", " Paraffin Cp (J/[kg C]) C;");
-                    escreveTrend << t(" Condutividade Termica Parafina (W / [m K]) C;", " Paraffin thermal conductivity (W / [m K]) C;");
-                    escreveTrend << t(" Massa Especifica Parafina (kg/m3) C;", " Paraffin density (kg/m3) C;");
-                    escreveTrend << t(" Massa molar do Liquido Parafina (kg/mol) C;", " Paraffin liquid molar mass (kg/mol) C;");
-                    escreveTrend << t(" Difusividade Massica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
-                    escreveTrend << t(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
-                    escreveTrend << t(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
-                    escreveTrend << t(" Vazao Massica de Parafina por Difusao (kg/(s)) C;", " Paraffin mass rate (kg/(s)) C;");
-                    escreveTrend << t(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
-                    escreveTrend << t(" Condutividade do deposito (W/(m-K)) C;", " Deposit conductivity (W/(m-K)) C;");
-                    escreveTrend << t(" Temperatura da Interface do deposito (C) C;", " Deposit interface temperature (C) C;");
-                }
-                if (state.inputData.trendp[i].autoVal == 1) {
-                    for (int konta1 = 0; konta1 < 3; konta1++) {
-                        escreveTrend << t(" Celeridade, familia de onda ", " Celerity, wave family ") << konta1 << t(" m/s ;", " m/s ;");
+            [&](ofstream &trendFile) {
+                    double lengthFromOrigin = 0;
+                    int lastCellIndex = state.inputData.trendp[trendIndex].posic;
+                    for (int cell = 0; cell <= lastCellIndex; cell++)
+                        lengthFromOrigin += state.inputData.celp[cell].dx;
+                    trendFile << translate("# Comprimento a partir do Fundo de Poco (m) = ", "# Length from Bottomhole (m) = ") << lengthFromOrigin << endl;
+                    trendFile << translate("# Rotulo = ", "# Label = ") << state.inputData.trendp[trendIndex].rotulo << endl;
+                    trendFile << translate("# Indice da Celula = ", "# Cell index = ") << state.inputData.trendp[trendIndex].posic << endl;
+                    if (state.branchIndex < 0 && state.inputData.AP == 1)
+                        trendFile << translate(" Sequencia AP ;", " SA sequence ;");
+                    trendFile << translate(" Tempo (s) ;", " Time (s) ;");
+                    if (state.inputData.trendp[trendIndex].pres == 1)
+                        trendFile << translate(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
+                    if (state.inputData.trendp[trendIndex].temp == 1)
+                        trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
+                    if (state.inputData.trendp[trendIndex].hol == 1)
+                        trendFile << translate(" Holdup de liquido (-) ;", " Liquid holdup (-) ;");
+                    if (state.inputData.trendp[trendIndex].FVH == 1)
+                        trendFile << translate(" Fracao Volumetrica Hidrato (-) ;", " Hydrate volumetric fraction (-) ;"); // solver de Hidratos - chris
+                    if (state.inputData.trendp[trendIndex].bet == 1)
+                        trendFile << translate(" Fracao vol. de liquido complementar (-) ;", " Complementary liquid vol. fraction (-) ;");
+                    if (state.inputData.trendp[trendIndex].ugs == 1)
+                        trendFile << translate(" Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;");
+                    if (state.inputData.trendp[trendIndex].uls == 1)
+                        trendFile << translate(" Velocidade superficial do liquido (m/s) ;", " Liquid superficial velocity (m/s) ;");
+                    if (state.inputData.trendp[trendIndex].ug == 1)
+                        trendFile << translate(" Velocidade do gas (m/s) ;", " Gas velocity (m/s) ;");
+                    if (state.inputData.trendp[trendIndex].ul == 1)
+                        trendFile << translate(" Velocidade do liquido (m/s) ;", " Liquid velocity (m/s) ;");
+                    if (state.inputData.trendp[trendIndex].arra == 1)
+                        trendFile << translate(" Indicador de arranjo de fases (-) ;", " Phase pattern indicator (-) ;");
+                    if (state.inputData.trendp[trendIndex].viscl == 1)
+                        trendFile << translate(" Viscosidade do Liquido (cP) ;", " Liquid viscosity (cP) ;");
+                    if (state.inputData.trendp[trendIndex].viscg == 1)
+                        trendFile << translate(" Viscosidade do Gas (cP) ;", " Gas viscosity (cP) ;");
+                    if (state.inputData.trendp[trendIndex].rhog == 1)
+                        trendFile << translate(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
+                    if (state.inputData.trendp[trendIndex].rhol == 1)
+                        trendFile << translate(" Massa Especifica do Liquido (kg/m3) ;", " Liquid density (kg/m3) ;");
+                    if (state.inputData.trendp[trendIndex].rhoMix == 1)
+                        trendFile << translate(" Massa Especifica da Mistura (kg/m3) ;", " Mixture density (kg/m3) ;");
+                    if (state.inputData.trendp[trendIndex].masg == 1)
+                        trendFile << translate(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
+                    if (state.inputData.trendp[trendIndex].masl == 1)
+                        trendFile << translate(" Vazao Massica do Liquido (kg/s) ;", " Liquid mass flow rate (kg/s) ;");
+                    if (state.inputData.trendp[trendIndex].c0 == 1)
+                        trendFile << translate(" Coeficiente de distribuição: C0 (-) ;", " Distribution coefficient: C0 (-) ;");
+                    if (state.inputData.trendp[trendIndex].ud == 1)
+                        trendFile << translate(" Velocidade de escorregamento: Ud (m/s) ;", " Slip velocity: Ud (m/s) ;");
+                    if (state.inputData.trendp[trendIndex].RGO == 1)
+                        trendFile << " RGO (Sm3/Sm3) ;";
+                    if (state.inputData.trendp[trendIndex].deng == 1)
+                        trendFile << translate(" Densidade do Gas (-) ;", " Gas specific gravity (-) ;");
+                    if (state.inputData.trendp[trendIndex].yco2 == 1)
+                        trendFile << translate(" Fracao Molar de CO2 (-) ;", " CO2 molar fraction (-) ;");
+                    if (state.inputData.trendp[trendIndex].calor == 1)
+                        trendFile << translate(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
+                    if (state.inputData.trendp[trendIndex].masstrans == 1)
+                        trendFile << translate(" Transferencia de Massa entre Fases (kg / [s m]) ;", " Interphase mass transfer (kg / [s m]) ;");
+                    if (state.inputData.trendp[trendIndex].qlst == 1)
+                        trendFile << translate(" Vazao volumetrica standard de oleo morto (Sm3/d) ;", " Standard dead oil volumetric flow rate (Sm3/d) ;");
+                    if (state.inputData.trendp[trendIndex].qlwst == 1)
+                        trendFile << translate(" Vazao volumetrica standard de oleo morto + agua (Sm3/d) ;", " Standard dead oil + water volumetric flow rate (Sm3/d) ;");
+                    if (state.inputData.trendp[trendIndex].qlstTot == 1)
+                        trendFile << translate(" Vazao volumetrica standard de oleo morto + agua + liquido complementar (Sm3/d) ;", " Standard dead oil + water + complementary liquid volumetric flow rate (Sm3/d) ;");
+                    if (state.inputData.trendp[trendIndex].qgst == 1)
+                        trendFile << translate(" Vazao volumetrica standard de gas livre + dissolvido (Sm3/d) ;", " Standard free + dissolved gas volumetric flow rate (Sm3/d) ;");
+                    if (state.inputData.trendp[trendIndex].api == 1)
+                        trendFile << translate(" Grau API (-) ;", " API gravity (-) ;");
+                    if (state.inputData.trendp[trendIndex].bsw == 1)
+                        trendFile << " BSW (-) ;";
+                    if (state.inputData.trendp[trendIndex].hidro == 1)
+                        trendFile << translate(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
+                    if (state.inputData.trendp[trendIndex].fric == 1)
+                        trendFile << translate(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
+                    if (state.inputData.trendp[trendIndex].dengD == 1)
+                        trendFile << translate(" Densidade Gas Dissolvido In Situ (-) ;", " In-situ dissolved gas specific gravity (-) ;");
+                    if (state.inputData.trendp[trendIndex].dengL == 1)
+                        trendFile << translate(" Densidade Gas Livre In Situ (-) ;", " In-situ free gas specific gravity (-) ;");
+                    if (state.inputData.trendp[trendIndex].mlFonte == 1)
+                        trendFile << translate(" Fonte massica - Liq. (Hidrocarb+Agua) (kg/s);", " Mass source - Liq. (Hydrocarbon+Water) (kg/s);");
+                    if (state.inputData.trendp[trendIndex].mgFonte == 1)
+                        trendFile << translate(" Fonte massica - Gas (kg/s);", " Mass source - Gas (kg/s);");
+                    if (state.inputData.trendp[trendIndex].mcFonte == 1)
+                        trendFile << translate(" Fonte massica - Liq. Complementar (kg/s);", " Mass source - Complementary liquid (kg/s);");
+                    if (state.inputData.trendp[trendIndex].dpB == 1)
+                        trendFile << translate(" Incremento de pressao de Bombeio (kgf/cm2);", " Pump pressure increment (kgf/cm2);");
+                    if (state.inputData.trendp[trendIndex].potB == 1)
+                        trendFile << translate(" Potencia de Bombeio (kW);", " Pump power (kW);");
+                    if (state.inputData.trendp[trendIndex].tempChokeJus == 1)
+                        trendFile << translate(" Temperatura a Jusante do Choke de Superficie (C);", " Surface choke downstream temperature (C);");
+                    if (state.inputData.trendp[trendIndex].reyi == 1)
+                        trendFile << translate(" Reynolds interno da mistura (-) ;", " Internal mixture Reynolds (-) ;");
+                    if (state.inputData.trendp[trendIndex].reye == 1)
+                        trendFile << translate(" Reynolds externo (-) ;", " External Reynolds (-) ;");
+                    if (state.inputData.trendp[trendIndex].Fr == 1)
+                        trendFile << translate(" Froud (-) ;", " Froude (-) ;");
+                    if (state.inputData.trendp[trendIndex].grashi == 1)
+                        trendFile << translate(" Grashof interno da mistura (-) ;", " Internal mixture Grashof (-) ;");
+                    if (state.inputData.trendp[trendIndex].grashe == 1)
+                        trendFile << translate(" Grashof externo (-) ;", " External Grashof (-) ;");
+                    if (state.inputData.trendp[trendIndex].nusi == 1)
+                        trendFile << translate(" Nusselt interno da mistura (-) ;", " Internal mixture Nusselt (-) ;");
+                    if (state.inputData.trendp[trendIndex].nuse == 1)
+                        trendFile << translate(" Nusselt externo (-) ;", " External Nusselt (-) ;");
+                    if (state.inputData.trendp[trendIndex].hi == 1)
+                        trendFile << translate(" Coeficiente de pelicula interno da mistura (W/(m2.K)) ;", " Internal mixture film coefficient (W/(m2.K)) ;");
+                    if (state.inputData.trendp[trendIndex].he == 1)
+                        trendFile << translate(" Coeficiente de pelicula externo (W/(m2.K)) ;", " External film coefficient (W/(m2.K)) ;");
+                    if (state.inputData.trendp[trendIndex].pri == 1)
+                        trendFile << translate(" Prandtl interno da mistura (-) ;", " Internal mixture Prandtl (-) ;");
+                    if (state.inputData.trendp[trendIndex].pre == 1)
+                        trendFile << translate(" Prandtl externo (-) ;", " External Prandtl (-) ;");
+                    if (state.inputData.trendp[trendIndex].Rs == 1)
+                        trendFile << translate(" Razao de Solubilidade (-) ;", " Solubility ratio (-) ;");
+                    if (state.inputData.trendp[trendIndex].Bo == 1)
+                        trendFile << translate(" Fator Volume de Formacao (-) ;", " Formation volume factor (-) ;");
+                    if (state.inputData.trendp[trendIndex].volMonM1PT == 1)
+                        trendFile << translate(" Volume de liquido a montante da Master1, a PT, m3 ;", " Liquid volume upstream of Master1, at PT, m3 ;");
+                    if (state.inputData.trendp[trendIndex].volJusM1PT == 1)
+                        trendFile << translate(" Volume de liquido a jusante da Master1, a PT, m3 ;", " Liquid volume downstream of Master1, at PT, m3 ;");
+                    if (state.inputData.trendp[trendIndex].volMonM1ST == 1)
+                        trendFile << translate(" Volume de liquido a montante da Master1, standard, m3 ;", " Liquid volume upstream of Master1, standard, m3 ;");
+                    if (state.inputData.trendp[trendIndex].volJusM1ST == 1)
+                        trendFile << translate(" Volume de liquido a jusante da Master1, standard, m3 ;", " Liquid volume downstream of Master1, standard, m3 ;");
+                    if (state.inputData.trendp[trendIndex].inventarioGas == 1)
+                        trendFile << translate(" Inventario de Gas em toda a tubulação, standard, m3 ;", " Gas inventory in whole tubing, standard, m3 ;");
+                    if (state.inputData.trendp[trendIndex].inventarioLiq == 1)
+                        trendFile << translate(" Inventario de Liquido em toda a tubulação, standard, m3 ;", " Liquid inventory in whole tubing, standard, m3 ;");
+                    if (state.inputData.trendp[trendIndex].diamInt == 1)
+                        trendFile << translate(" Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;");
+                    if (state.inputData.trendp[trendIndex].TempParede == 1)
+                        trendFile << translate(" Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;");
+                    if (state.inputData.trendp[trendIndex].subResfria == 1)
+                        trendFile << translate(" Subresfriamento, C ;", " Subcooling, C ;");
+                    if (state.inputData.trendp[trendIndex].dadosParafina == 1) {
+                        trendFile << translate(" TIAC (C) C;", " TIAC (C) C;");
+                        trendFile << translate(" Cp Parafina (J/[kg C]) C;", " Paraffin Cp (J/[kg C]) C;");
+                        trendFile << translate(" Condutividade Termica Parafina (W / [m K]) C;", " Paraffin thermal conductivity (W / [m K]) C;");
+                        trendFile << translate(" Massa Especifica Parafina (kg/m3) C;", " Paraffin density (kg/m3) C;");
+                        trendFile << translate(" Massa molar do Liquido Parafina (kg/mol) C;", " Paraffin liquid molar mass (kg/mol) C;");
+                        trendFile << translate(" Difusividade Massica Parafina (m2/s) C;", " Paraffin mass diffusivity (m2/s) C;");
+                        trendFile << translate(" Fluxo Massico de Parafina Total (kg/(m2-s)) C;", " Total paraffin mass flux (kg/(m2-s)) C;");
+                        trendFile << translate(" Fluxo Massico de Parafina por Difusao (kg/(m2-s)) C;", " Paraffin diffusive mass flux (kg/(m2-s)) C;");
+                        trendFile << translate(" Vazao Massica de Parafina por Difusao (kg/(s)) C;", " Paraffin mass rate (kg/(s)) C;");
+                        trendFile << translate(" Gradiente de concentracao de parafina (1/m) C;", " Paraffin concentration gradient (1/m) C;");
+                        trendFile << translate(" Condutividade do deposito (W/(m-K)) C;", " Deposit conductivity (W/(m-K)) C;");
+                        trendFile << translate(" Temperatura da Interface do deposito (C) C;", " Deposit interface temperature (C) C;");
                     }
-                }
-                if (state.inputData.trendp[i].autoVel == 1) {
-                    for (int konta1 = 0; konta1 < 3; konta1++) {
-                        for (int konta2 = 0; konta2 < 3; konta2++)
-                            escreveTrend << t(" Componente do autovetor, condicao adiabatica, familia de onda = ", " Eigenvector component, adiabatic condition, wave family = ") << konta1 << t("termo = ", " term = ") << konta2 << " ;";
+                    if (state.inputData.trendp[trendIndex].autoVal == 1) {
+                        for (int waveFamily = 0; waveFamily < 3; waveFamily++) {
+                            trendFile << translate(" Celeridade, familia de onda ", " Celerity, wave family ") << waveFamily << translate(" m/s ;", " m/s ;");
+                        }
                     }
-                }
-                if (state.inputData.trendp[i].flutuacao == 1) {
-                    for (int konta1 = 0; konta1 < 3; konta1++) {
-                        escreveTrend << t(" Componente de flutuacao da familia de onda ", " Fluctuation component of wave family ") << konta1 << " ;";
+                    if (state.inputData.trendp[trendIndex].autoVel == 1) {
+                        for (int waveFamily = 0; waveFamily < 3; waveFamily++) {
+                            for (int eigenvectorTerm = 0; eigenvectorTerm < 3; eigenvectorTerm++)
+                                trendFile << translate(" Componente do autovetor, condicao adiabatica, familia de onda = ", " Eigenvector component, adiabatic condition, wave family = ") << waveFamily << translate("termo = ", " term = ") << eigenvectorTerm << " ;";
+                        }
                     }
-                }
+                    if (state.inputData.trendp[trendIndex].flutuacao == 1) {
+                        for (int waveFamily = 0; waveFamily < 3; waveFamily++) {
+                            trendFile << translate(" Componente de flutuacao da familia de onda ", " Fluctuation component of wave family ") << waveFamily << " ;";
+                        }
+                    }
             },
             /*blankLineBeforeClose=*/false);
     }
 }
 
 /// Appends the buffered rows of a production-line trend file.
-void writeProductionTrendRows(const TrendState &state, int i, int nrede) {
+void writeProductionTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
     if (state.inputData.ntendp > 0) {
         writeTrendRowsFile(
             state,
-            state.productionCount[i] - state.productionCountBase[i] + 1,
-            state.inputData.nvartrendp[i] + 1,
-            state.productionBuffer[i],
-            state.productionCountBase[i],
+            state.productionCount[trendIndex] - state.productionCountBase[trendIndex] + 1,
+            state.inputData.nvartrendp[trendIndex] + 1,
+            state.productionBuffer[trendIndex],
+            state.productionCountBase[trendIndex],
             [&] {
-            ostringstream saidaT;
-            if (state.branchIndex < 0 && state.inputData.AP == 0) {
-                saidaT << pathPrefixoArqSaida << "TENDP" << "-" << state.inputData.trendp[i].comp << ".dat";
-            } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                saidaT << pathPrefixoArqSaida << "TENDP-AP-" << round(state.inputData.trendp[i].comp) << ".dat";
-            } else {
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << nrede << "-" << "TENDP" << "-" << state.inputData.trendp[i].comp << ".dat";
-            }
-            return saidaT.str();
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0 && state.inputData.AP == 0) {
+                    fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
+                } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
+                    fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << round(state.inputData.trendp[trendIndex].comp) << ".dat";
+                } else {
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
+                }
+                return fileNameStream.str();
             },
             /*supportsApSequence=*/true,
             /*blankLineBeforeClose=*/false);
@@ -331,121 +331,121 @@ void writeProductionTrendRows(const TrendState &state, int i, int nrede) {
 }
 
 /// Writes the column captions of a service-line trend file.
-void writeServiceTrendHeader(const TrendState &state, int i, int nrede) {
+void writeServiceTrendHeader(const TrendState &state, int trendIndex, int networkIndex) {
     if (state.inputData.ntendg > 0 && state.inputData.lingas > 0) {
-        const auto t = [&state](const char *pt, const char *en) {
-            return output_i18n::tr(state.inputData.idiomaSaida, pt, en);
+        const auto translate = [&state](const char *ptBrText, const char *enText) {
+            return output_i18n::tr(state.inputData.idiomaSaida, ptBrText, enText);
         };
         writeTrendHeaderFile(
             state,
             [&] {
-            ostringstream saidaT;
-            if (state.branchIndex < 0 && state.inputData.AP == 0)
-                saidaT << pathPrefixoArqSaida << "TENDG" << "-" << state.inputData.trendg[i].comp << ".dat";
-            else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                saidaT << pathPrefixoArqSaida << "TENDG-AP-" << state.inputData.trendg[i].comp << ".dat";
-            } else
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << nrede << "-" << "TENDG" << "-" << state.inputData.trendg[i].comp << ".dat";
-            return saidaT.str();
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0 && state.inputData.AP == 0)
+                    fileNameStream << pathPrefixoArqSaida << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
+                else if (state.branchIndex < 0 && state.inputData.AP == 1) {
+                    fileNameStream << pathPrefixoArqSaida << "TENDG-AP-" << state.inputData.trendg[trendIndex].comp << ".dat";
+                } else
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
+                return fileNameStream.str();
             },
-            [&](ofstream &escreveTrend) {
-                double comprimento = 0;
-                int posicn = state.inputData.trendg[i].posic;
-                for (int k = 0; k <= posicn; k++)
-                    comprimento += state.inputData.celg[k].dx;
-                escreveTrend << t("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ") << comprimento << endl;
-                escreveTrend << t("# Rotulo = ", "# Label = ") << state.inputData.trendg[i].rotulo << endl;
-                escreveTrend << t("# Indice da Celula = ", "# Cell index = ") << state.inputData.trendg[i].posic << endl;
-                if (state.branchIndex < 0 && state.inputData.AP == 1)
-                    escreveTrend << t(" Sequencia AP ;", " SA sequence ;");
-                escreveTrend << t(" Tempo (s) ;", " Time (s) ;");
-                if (state.inputData.trendg[i].pres == 1)
-                    escreveTrend << t(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
-                if (state.inputData.trendg[i].temp == 1)
-                    escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
-                if (state.inputData.trendg[i].ugs == 1)
-                    escreveTrend << t(" Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;");
-                if (state.inputData.trendg[i].ug == 1)
-                    escreveTrend << t(" Velocidade do gas (m/s) ;", " Gas velocity (m/s) ;");
-                if (state.inputData.trendg[i].tens == 1)
-                    escreveTrend << t(" Tensao Cisalhante (N/m2) ;", " Shear stress (N/m2) ;");
-                if (state.inputData.trendg[i].viscg == 1)
-                    escreveTrend << t(" Viscosidade do Gas (cP) ;", " Gas viscosity (cP) ;");
-                if (state.inputData.trendg[i].rhog == 1)
-                    escreveTrend << t(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
-                if (state.inputData.trendg[i].masg == 1)
-                    escreveTrend << t(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
-                if (state.inputData.trendg[i].hidro == 1)
-                    escreveTrend << t(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
-                if (state.inputData.trendg[i].FVHG == 1)
-                    escreveTrend << t(" FVHG (-) ;", " FVHG (-) ;");
-                if (state.inputData.trendg[i].fric == 1)
-                    escreveTrend << t(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
-                if (state.inputData.trendg[i].calor == 1)
-                    escreveTrend << t(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
-                if (state.inputData.trendg[i].qgst == 1)
-                    escreveTrend << t(" Vazao volumetrica standard de Gas (Sm3/d) ;", " Standard gas volumetric flow rate (Sm3/d) ;");
-                if (state.inputData.trendg[i].pEstagVGL == 1)
-                    escreveTrend << t(" Pressao de Estagnacao VGL (kgf/cm²) ;", " VGL stagnation pressure (kgf/cm2) ;");
-                if (state.inputData.trendg[i].tEstagVGL == 1)
-                    escreveTrend << t(" Temperatura de Estagnacao VGL (C) ;", " VGL stagnation temperature (C) ;");
-                if (state.inputData.trendg[i].pGargVGL == 1)
-                    escreveTrend << t(" Pressao na Garganta VGL (kgf/cm²) ;", " VGL throat pressure (kgf/cm2) ;");
-                if (state.inputData.trendg[i].tGargVGL == 1)
-                    escreveTrend << t(" Temperatura na Garganta VGL (C) ;", " VGL throat temperature (C) ;");
-                if (state.inputData.trendg[i].velgarg == 1)
-                    escreveTrend << t(" Velocidade na VGL (m/s) ;", " Velocity in VGL (m/s) ;");
-                if (state.inputData.trendg[i].qVGL == 1)
-                    escreveTrend << t(" Vazao volumetrica na VGL (mÂ³/s) ;", " Volumetric flow rate in VGL (m3/s) ;");
-                if (state.inputData.trendg[i].reyi == 1)
-                    escreveTrend << t(" Reynolds interno (-) ;", " Internal Reynolds (-) ;");
-                if (state.inputData.trendg[i].reye == 1)
-                    escreveTrend << t(" Reynolds externo (-) ;", " External Reynolds (-) ;");
-                if (state.inputData.trendg[i].grashi == 1)
-                    escreveTrend << t(" Grashof interno (-) ;", " Internal Grashof (-) ;");
-                if (state.inputData.trendg[i].grashe == 1)
-                    escreveTrend << t(" Grashof externo (-) ;", " External Grashof (-) ;");
-                if (state.inputData.trendg[i].nusi == 1)
-                    escreveTrend << t(" Nusselt interno (-) ;", " Internal Nusselt (-) ;");
-                if (state.inputData.trendg[i].nuse == 1)
-                    escreveTrend << t(" Nusselt externo (-) ;", " External Nusselt (-) ;");
-                if (state.inputData.trendg[i].hi == 1)
-                    escreveTrend << t(" Coeficiente de pelicula interno (W/[m2 K]) ;", " Internal film coefficient (W/[m2 K]) ;");
-                if (state.inputData.trendg[i].he == 1)
-                    escreveTrend << t(" Coeficiente de pelicula externo (W/[m2 K]) ;", " External film coefficient (W/[m2 K]) ;");
-                if (state.inputData.trendg[i].pri == 1)
-                    escreveTrend << t(" Prandtl interno (-) ;", " Internal Prandtl (-) ;");
-                if (state.inputData.trendg[i].pre == 1)
-                    escreveTrend << t(" Prandtl externo (-) ;", " External Prandtl (-) ;");
-                if (state.inputData.trendg[i].diamInt == 1)
-                    escreveTrend << t(" Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;");
-                if (state.inputData.trendg[i].TempParede == 1)
-                    escreveTrend << t(" Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;");
-                if (state.inputData.trendg[i].subResfria == 1)
-                    escreveTrend << t(" Subresfriamento, C ;", " Subcooling, C ;");
+            [&](ofstream &trendFile) {
+                    double lengthFromOrigin = 0;
+                    int lastCellIndex = state.inputData.trendg[trendIndex].posic;
+                    for (int cell = 0; cell <= lastCellIndex; cell++)
+                        lengthFromOrigin += state.inputData.celg[cell].dx;
+                    trendFile << translate("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ") << lengthFromOrigin << endl;
+                    trendFile << translate("# Rotulo = ", "# Label = ") << state.inputData.trendg[trendIndex].rotulo << endl;
+                    trendFile << translate("# Indice da Celula = ", "# Cell index = ") << state.inputData.trendg[trendIndex].posic << endl;
+                    if (state.branchIndex < 0 && state.inputData.AP == 1)
+                        trendFile << translate(" Sequencia AP ;", " SA sequence ;");
+                    trendFile << translate(" Tempo (s) ;", " Time (s) ;");
+                    if (state.inputData.trendg[trendIndex].pres == 1)
+                        trendFile << translate(" Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;");
+                    if (state.inputData.trendg[trendIndex].temp == 1)
+                        trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
+                    if (state.inputData.trendg[trendIndex].ugs == 1)
+                        trendFile << translate(" Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;");
+                    if (state.inputData.trendg[trendIndex].ug == 1)
+                        trendFile << translate(" Velocidade do gas (m/s) ;", " Gas velocity (m/s) ;");
+                    if (state.inputData.trendg[trendIndex].tens == 1)
+                        trendFile << translate(" Tensao Cisalhante (N/m2) ;", " Shear stress (N/m2) ;");
+                    if (state.inputData.trendg[trendIndex].viscg == 1)
+                        trendFile << translate(" Viscosidade do Gas (cP) ;", " Gas viscosity (cP) ;");
+                    if (state.inputData.trendg[trendIndex].rhog == 1)
+                        trendFile << translate(" Massa Especifica do Gas (kg/m3) ;", " Gas density (kg/m3) ;");
+                    if (state.inputData.trendg[trendIndex].masg == 1)
+                        trendFile << translate(" Vazao Massica do Gas (kg/s) ;", " Gas mass flow rate (kg/s) ;");
+                    if (state.inputData.trendg[trendIndex].hidro == 1)
+                        trendFile << translate(" Termo Hidrostatico (Pa/m) ;", " Hydrostatic term (Pa/m) ;");
+                    if (state.inputData.trendg[trendIndex].FVHG == 1)
+                        trendFile << translate(" FVHG (-) ;", " FVHG (-) ;");
+                    if (state.inputData.trendg[trendIndex].fric == 1)
+                        trendFile << translate(" Termo Friccao (Pa/m) ;", " Friction term (Pa/m) ;");
+                    if (state.inputData.trendg[trendIndex].calor == 1)
+                        trendFile << translate(" Fluxo de calor entre escoamento e parede (W/m) ;", " Heat flow between flow and wall (W/m) ;");
+                    if (state.inputData.trendg[trendIndex].qgst == 1)
+                        trendFile << translate(" Vazao volumetrica standard de Gas (Sm3/d) ;", " Standard gas volumetric flow rate (Sm3/d) ;");
+                    if (state.inputData.trendg[trendIndex].pEstagVGL == 1)
+                        trendFile << translate(" Pressao de Estagnacao VGL (kgf/cm²) ;", " VGL stagnation pressure (kgf/cm2) ;");
+                    if (state.inputData.trendg[trendIndex].tEstagVGL == 1)
+                        trendFile << translate(" Temperatura de Estagnacao VGL (C) ;", " VGL stagnation temperature (C) ;");
+                    if (state.inputData.trendg[trendIndex].pGargVGL == 1)
+                        trendFile << translate(" Pressao na Garganta VGL (kgf/cm²) ;", " VGL throat pressure (kgf/cm2) ;");
+                    if (state.inputData.trendg[trendIndex].tGargVGL == 1)
+                        trendFile << translate(" Temperatura na Garganta VGL (C) ;", " VGL throat temperature (C) ;");
+                    if (state.inputData.trendg[trendIndex].velgarg == 1)
+                        trendFile << translate(" Velocidade na VGL (m/s) ;", " Velocity in VGL (m/s) ;");
+                    if (state.inputData.trendg[trendIndex].qVGL == 1)
+                        trendFile << translate(" Vazao volumetrica na VGL (mÂ³/s) ;", " Volumetric flow rate in VGL (m3/s) ;");
+                    if (state.inputData.trendg[trendIndex].reyi == 1)
+                        trendFile << translate(" Reynolds interno (-) ;", " Internal Reynolds (-) ;");
+                    if (state.inputData.trendg[trendIndex].reye == 1)
+                        trendFile << translate(" Reynolds externo (-) ;", " External Reynolds (-) ;");
+                    if (state.inputData.trendg[trendIndex].grashi == 1)
+                        trendFile << translate(" Grashof interno (-) ;", " Internal Grashof (-) ;");
+                    if (state.inputData.trendg[trendIndex].grashe == 1)
+                        trendFile << translate(" Grashof externo (-) ;", " External Grashof (-) ;");
+                    if (state.inputData.trendg[trendIndex].nusi == 1)
+                        trendFile << translate(" Nusselt interno (-) ;", " Internal Nusselt (-) ;");
+                    if (state.inputData.trendg[trendIndex].nuse == 1)
+                        trendFile << translate(" Nusselt externo (-) ;", " External Nusselt (-) ;");
+                    if (state.inputData.trendg[trendIndex].hi == 1)
+                        trendFile << translate(" Coeficiente de pelicula interno (W/[m2 K]) ;", " Internal film coefficient (W/[m2 K]) ;");
+                    if (state.inputData.trendg[trendIndex].he == 1)
+                        trendFile << translate(" Coeficiente de pelicula externo (W/[m2 K]) ;", " External film coefficient (W/[m2 K]) ;");
+                    if (state.inputData.trendg[trendIndex].pri == 1)
+                        trendFile << translate(" Prandtl interno (-) ;", " Internal Prandtl (-) ;");
+                    if (state.inputData.trendg[trendIndex].pre == 1)
+                        trendFile << translate(" Prandtl externo (-) ;", " External Prandtl (-) ;");
+                    if (state.inputData.trendg[trendIndex].diamInt == 1)
+                        trendFile << translate(" Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;");
+                    if (state.inputData.trendg[trendIndex].TempParede == 1)
+                        trendFile << translate(" Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;");
+                    if (state.inputData.trendg[trendIndex].subResfria == 1)
+                        trendFile << translate(" Subresfriamento, C ;", " Subcooling, C ;");
             },
             /*blankLineBeforeClose=*/true);
     }
 }
 
 /// Appends the buffered rows of a service-line trend file.
-void writeServiceTrendRows(const TrendState &state, int i, int nrede) {
+void writeServiceTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
     if (state.inputData.ntendg > 0 && state.inputData.lingas > 0) {
         writeTrendRowsFile(
             state,
-            state.serviceCount[i] - state.serviceCountBase[i] + 1,
-            state.inputData.nvartrendg[i] + 1,
-            state.serviceBuffer[i],
-            state.serviceCountBase[i],
+            state.serviceCount[trendIndex] - state.serviceCountBase[trendIndex] + 1,
+            state.inputData.nvartrendg[trendIndex] + 1,
+            state.serviceBuffer[trendIndex],
+            state.serviceCountBase[trendIndex],
             [&] {
-            ostringstream saidaT;
-            if (state.branchIndex < 0 && state.inputData.AP == 0)
-                saidaT << pathPrefixoArqSaida << "TENDG" << "-" << state.inputData.trendg[i].comp << ".dat";
-            else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                saidaT << pathPrefixoArqSaida << "TENDG-AP-" << state.inputData.trendg[i].comp << ".dat";
-            } else
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << nrede << "-" << "TENDG" << "-" << state.inputData.trendg[i].comp << ".dat";
-            return saidaT.str();
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0 && state.inputData.AP == 0)
+                    fileNameStream << pathPrefixoArqSaida << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
+                else if (state.branchIndex < 0 && state.inputData.AP == 1) {
+                    fileNameStream << pathPrefixoArqSaida << "TENDG-AP-" << state.inputData.trendg[trendIndex].comp << ".dat";
+                } else
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
+                return fileNameStream.str();
             },
             /*supportsApSequence=*/true,
             /*blankLineBeforeClose=*/false);
@@ -453,28 +453,28 @@ void writeServiceTrendRows(const TrendState &state, int i, int nrede) {
 }
 
 /// Writes the captions of a production cross-section temperature trend.
-void writeProductionCrossSectionTrendHeader(const TrendState &state, int i) {
+void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransp > 0) {
-        const auto t = [&state](const char *pt, const char *en) {
-            return output_i18n::tr(state.inputData.idiomaSaida, pt, en);
+        const auto translate = [&state](const char *ptBrText, const char *enText) {
+            return output_i18n::tr(state.inputData.idiomaSaida, ptBrText, enText);
         };
         writeTrendHeaderFile(
             state,
             [&] {
-            int poscel = state.inputData.trendtransp[i].comp;
-            int poscam = state.inputData.trendtransp[i].camada - 1;
-            int posdiscre = state.inputData.trendtransp[i].discre - 1;
-            ostringstream saidaT;
-            if (state.branchIndex < 0)
-                saidaT << pathPrefixoArqSaida << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            else
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            return saidaT.str();
+                int cellPosition = state.inputData.trendtransp[trendIndex].comp;
+                int layerIndex = state.inputData.trendtransp[trendIndex].camada - 1;
+                int discretizationIndex = state.inputData.trendtransp[trendIndex].discre - 1;
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0)
+                    fileNameStream << pathPrefixoArqSaida << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                else
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                return fileNameStream.str();
             },
-            [&](ofstream &escreveTrend) {
-                escreveTrend << t("# Rotulo = ", "# Label = ") << state.inputData.trendtransp[i].rotulo << endl;
-                escreveTrend << t(" Tempo (s) ; ", " Time (s) ; ");
-                escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
+            [&](ofstream &trendFile) {
+                    trendFile << translate("# Rotulo = ", "# Label = ") << state.inputData.trendtransp[trendIndex].rotulo << endl;
+                    trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
+                    trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
             },
             /*blankLineBeforeClose=*/false);
     }
@@ -485,24 +485,24 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int i) {
 /// sourceBase is 0, not crossSectionCountBase[i]: the baseline sizes the window
 /// from the counters but always copies from the start of the buffer (A4-04).
 /// Passing the zero explicitly is what keeps that visible.
-void writeProductionCrossSectionTrendRows(const TrendState &state, int i) {
+void writeProductionCrossSectionTrendRows(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransp > 0) {
         writeTrendRowsFile(
             state,
-            state.crossSectionCount[i] - state.crossSectionCountBase[i] + 1,
+            state.crossSectionCount[trendIndex] - state.crossSectionCountBase[trendIndex] + 1,
             2,
-            state.productionCrossSectionBuffer[i],
+            state.productionCrossSectionBuffer[trendIndex],
             0,
             [&] {
-            int poscel = state.inputData.trendtransp[i].comp;
-            int poscam = state.inputData.trendtransp[i].camada - 1;
-            int posdiscre = state.inputData.trendtransp[i].discre - 1;
-            ostringstream saidaT;
-            if (state.branchIndex < 0)
-                saidaT << pathPrefixoArqSaida << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            else
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            return saidaT.str();
+                int cellPosition = state.inputData.trendtransp[trendIndex].comp;
+                int layerIndex = state.inputData.trendtransp[trendIndex].camada - 1;
+                int discretizationIndex = state.inputData.trendtransp[trendIndex].discre - 1;
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0)
+                    fileNameStream << pathPrefixoArqSaida << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                else
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                return fileNameStream.str();
             },
             /*supportsApSequence=*/false,
             /*blankLineBeforeClose=*/true);
@@ -510,28 +510,28 @@ void writeProductionCrossSectionTrendRows(const TrendState &state, int i) {
 }
 
 /// Writes the captions of a service cross-section temperature trend.
-void writeServiceCrossSectionTrendHeader(const TrendState &state, int i) {
+void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransg > 0 && state.inputData.lingas > 0) {
-        const auto t = [&state](const char *pt, const char *en) {
-            return output_i18n::tr(state.inputData.idiomaSaida, pt, en);
+        const auto translate = [&state](const char *ptBrText, const char *enText) {
+            return output_i18n::tr(state.inputData.idiomaSaida, ptBrText, enText);
         };
         writeTrendHeaderFile(
             state,
             [&] {
-            int poscel = state.inputData.trendtransg[i].comp;
-            int poscam = state.inputData.trendtransg[i].camada - 1;
-            int posdiscre = state.inputData.trendtransg[i].discre - 1;
-            ostringstream saidaT;
-            if (state.branchIndex < 0)
-                saidaT << pathPrefixoArqSaida << "TENDTRANSG" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            else
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            return saidaT.str();
+                int cellPosition = state.inputData.trendtransg[trendIndex].comp;
+                int layerIndex = state.inputData.trendtransg[trendIndex].camada - 1;
+                int discretizationIndex = state.inputData.trendtransg[trendIndex].discre - 1;
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0)
+                    fileNameStream << pathPrefixoArqSaida << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                else
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                return fileNameStream.str();
             },
-            [&](ofstream &escreveTrend) {
-                escreveTrend << t("# Rotulo = ", "# Label = ") << state.inputData.trendtransg[i].rotulo << endl;
-                escreveTrend << t(" Tempo (s) ; ", " Time (s) ; ");
-                escreveTrend << t(" Temperatura (C) ;", " Temperature (C) ;");
+            [&](ofstream &trendFile) {
+                    trendFile << translate("# Rotulo = ", "# Label = ") << state.inputData.trendtransg[trendIndex].rotulo << endl;
+                    trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
+                    trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
             },
             /*blankLineBeforeClose=*/false);
     }
@@ -541,24 +541,24 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int i) {
 ///
 /// Reads the PRODUCTION cross-section counters, and copies from the start of the
 /// buffer. Both are baseline behaviour (A4-01, A4-04), preserved deliberately.
-void writeServiceCrossSectionTrendRows(const TrendState &state, int i) {
+void writeServiceCrossSectionTrendRows(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransg > 0 && state.inputData.lingas > 0) {
         writeTrendRowsFile(
             state,
-            state.crossSectionCount[i] - state.crossSectionCountBase[i] + 1,
+            state.crossSectionCount[trendIndex] - state.crossSectionCountBase[trendIndex] + 1,
             2,
-            state.serviceCrossSectionBuffer[i],
+            state.serviceCrossSectionBuffer[trendIndex],
             0,
             [&] {
-            int poscel = state.inputData.trendtransg[i].comp;
-            int poscam = state.inputData.trendtransg[i].camada - 1;
-            int posdiscre = state.inputData.trendtransg[i].discre - 1;
-            ostringstream saidaT;
-            if (state.branchIndex < 0)
-                saidaT << pathPrefixoArqSaida << "TENDTRANSG" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            else
-                saidaT << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << poscel << "-" << poscam << "-" << posdiscre << ".dat";
-            return saidaT.str();
+                int cellPosition = state.inputData.trendtransg[trendIndex].comp;
+                int layerIndex = state.inputData.trendtransg[trendIndex].camada - 1;
+                int discretizationIndex = state.inputData.trendtransg[trendIndex].discre - 1;
+                ostringstream fileNameStream;
+                if (state.branchIndex < 0)
+                    fileNameStream << pathPrefixoArqSaida << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                else
+                    fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                return fileNameStream.str();
             },
             /*supportsApSequence=*/false,
             /*blankLineBeforeClose=*/true);
