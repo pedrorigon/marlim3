@@ -13,12 +13,17 @@
 #include <chrono>
 #include <math.h>
 
+void SProd::resolveDriftSelectors() {
+    driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
+}
+
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
              int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
                                                            flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), matglobP(2 * arq.ncelp, 3, 2), termolivreP(
                                                                                                                                                        2 * arq.ncelp),
                                                            matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg) {
+    resolveDriftSelectors();
 
     zdranP = 0;
     dzdpP = 0;
@@ -178,6 +183,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
 SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), matglobP(2 * 1, 3, 2), termolivreP(2 * 1), matglobG(
                                                                                                                                     3 * 1, 5, 5),
                  termolivreG(3 * 1) {
+    resolveDriftSelectors();
     tfinal = 0;
     dtini = 0;
     contaLog = 0;
@@ -537,6 +543,7 @@ SProd &SProd::operator=(const SProd &sp) {
     }
 
     arq = sp.arq;
+    resolveDriftSelectors();
     flut = sp.flut;
     flutG = sp.flutG;
     matglobP = sp.matglobP;
@@ -840,6 +847,7 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
     }
 
     arq.copiaSemJson(sp);
+    resolveDriftSelectors();
     flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1);
     flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1);
     matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2);
@@ -5104,7 +5112,7 @@ void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
                 estratificado testamapa(dia1, ul1, ug1, rlm, rgm, viscl1 / pow(10., 3.), viscg1 / pow(10., 3.), hol0,
                                         celula[ind].duto.teta, celula[ind].duto.rug / dia1);
 
-                if (arq.CorreEstrat == 2)
+                if (driftSelectors.stratified == 2)
                     testamapa.mapaTD();
                 else
                     testamapa.mapaTD(1);
@@ -5132,9 +5140,9 @@ void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
                     double udE;
 
                     driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                                 c0D, udD, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                     driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
+                                      c0E, udE, correcHor, celula[ind].estabCol, driftSelectors.stratified);
 
                     double mult0, mult1;
                     mult0 = 1.;
@@ -5172,15 +5180,15 @@ void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
                 xarr1 = testamapa2.verificaArr();
 
                 driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                             c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
 
                 if (xarr1 == -2) {
                     driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
+                                    c0, ud, correcHor, celula[ind].estabCol, driftSelectors.annularChurn);
                 }
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
-                    if (arq.CorreAnular == 3 && arq.CorreDisper == 1)
+                    if (driftSelectors.annularChurn == 3 && driftSelectors.dispersed == 1)
                         atenua = 200;
                 }
 
@@ -5407,9 +5415,9 @@ void SProd::CalcC0UdBuf(int ind, double &c0, double &ud) {
                     double c0E;
                     double udE;
                     driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                                 c0D, udD, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                     driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
+                                      c0E, udE, correcHor, celula[ind].estabCol, driftSelectors.stratified);
 
                     double mult0, mult1;
                     mult0 = 1.;
@@ -5443,14 +5451,14 @@ void SProd::CalcC0UdBuf(int ind, double &c0, double &ud) {
             if (xarr1 != -1) {
 
                 driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                             c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                 if (xarr1 == -2) {
                     driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
+                                    c0, ud, correcHor, celula[ind].estabCol, driftSelectors.annularChurn);
                 }
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
-                    if (arq.CorreAnular == 3 && arq.CorreDisper == 1)
+                    if (driftSelectors.annularChurn == 3 && driftSelectors.dispersed == 1)
                         atenua = 200;
                 }
 
@@ -5641,9 +5649,9 @@ void SProd::CalcC0UdIni(int ind, double &c0, double &ud) {
                     double c0E;
                     double udE;
                     driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                                 c0D, udD, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                     driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
+                                      c0E, udE, correcHor, celula[ind].estabCol, driftSelectors.stratified);
                     double mult0, mult1;
                     mult0 = 1.;
                     if (ul0 < 0.)
@@ -5680,15 +5688,15 @@ void SProd::CalcC0UdIni(int ind, double &c0, double &ud) {
                 xarr1 = testamapa2.verificaArr();
 
                 driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                             c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                 if (xarr1 == -2) {
                     driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
+                                    c0, ud, correcHor, celula[ind].estabCol, driftSelectors.annularChurn);
                 }
 
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
-                    if (arq.CorreAnular == 3 && arq.CorreDisper == 1)
+                    if (driftSelectors.annularChurn == 3 && driftSelectors.dispersed == 1)
                         atenua = 200;
                 }
                 if (celula[ind].arranjo != 0) {
@@ -5871,9 +5879,9 @@ void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
                     double c0E;
                     double udE;
                     driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                                 c0D, udD, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                     driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
+                                      c0E, udE, correcHor, celula[ind].estabCol, driftSelectors.stratified);
                     double mult0, mult1;
                     mult0 = 1.;
                     if (ul0 < 0.)
@@ -5905,14 +5913,14 @@ void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
             if (xarr1 != -1) {
 
                 driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                             c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                 if (xarr1 == -2) {
                     driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                    c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
+                                    c0, ud, correcHor, celula[ind].estabCol, driftSelectors.annularChurn);
                 }
                 if (fabs(ug1 / celula[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
-                    if (arq.CorreAnular == 3 && arq.CorreDisper == 1)
+                    if (driftSelectors.annularChurn == 3 && driftSelectors.dispersed == 1)
                         atenua = 200;
                 }
 
@@ -22502,9 +22510,9 @@ void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
                         double c0E;
                         double udE;
                         driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                     c0D, udD, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                                     c0D, udD, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                         driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                          c0E, udE, correcHor, celula[ind].estabCol, arq.CorreEstrat);
+                                          c0E, udE, correcHor, celula[ind].estabCol, driftSelectors.stratified);
 
                         double mult0, mult1;
                         mult0 = 1.;
@@ -22539,10 +22547,10 @@ void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
                     xarr1 = testamapa2.verificaArr();
 
                     driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                 c0, ud, correcHor, celula[ind].estabCol, arq.CorreDisper);
+                                 c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
                     if (xarr1 == -2) {
                         driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                                        c0, ud, correcHor, celula[ind].estabCol, arq.CorreAnular);
+                                        c0, ud, correcHor, celula[ind].estabCol, driftSelectors.annularChurn);
                     }
                     celula[ind].arranjo = xarr1;
                     if (ind > 0)

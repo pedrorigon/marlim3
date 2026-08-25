@@ -57,6 +57,22 @@ void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension,
 ///   4  BhagwatGhajarMod  accepted by all three
 ///   5  angle blend       accepted by all three
 
+/// The correlation each flow regime selects, read from configuration once per
+/// run rather than on every cell.
+///
+/// The three fields are constant for a whole simulation: the engine parses them
+/// from the input file and never writes them again. Holding them together says
+/// so, and lets the per cell path stop consulting configuration, which is what
+/// the performance requirement asks for.
+///
+/// The values are the ones documented above. Each regime accepts its own subset
+/// and ignores the rest, so the fields are not interchangeable.
+struct RegimeSelectors {
+    int dispersed;    ///< arq.CorreDisper, accepts 0, 1, 4 and 5.
+    int annularChurn; ///< arq.CorreAnular, accepts 3 as well.
+    int stratified;   ///< arq.CorreEstrat, accepts 2 as well.
+};
+
 /// Evaluates C0 and Ud for dispersed flow, using the already-resolved
 /// correlationIndex (arq.CorreDisper at the call site) instead of reading the
 /// configuration itself.

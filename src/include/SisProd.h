@@ -10,6 +10,7 @@
 #define _USE_MATH_DEFINES // Enables M_PI on supported platforms
 
 #include "Acidentes2.h"
+#include "DriftFluxClosure.h"
 #include "Bcsm2.h"
 #include "BombaVol.h"
 #include "FerramentasNumericas.h"
@@ -421,6 +422,13 @@ class SProd {
      * @brief Parsed user input and simulation configuration.
      */
     Ler arq;
+    /**
+     * @brief Drift-flux correlation chosen for each flow regime.
+     *
+     * Resolved from arq once, when the object is built, so the per cell path
+     * never reads configuration. Kept beside arq because that is its source.
+     */
+    driftflux::correlations::RegimeSelectors driftSelectors;
     /**
      * @brief Buffer used to write gas-line profiles.
      */
@@ -1504,6 +1512,16 @@ class SProd {
 
     /// Calculates temperature downstream from the surface choke for network coupling.
     void calcTempFim();
+
+  private:
+    /**
+     * @brief Caches the drift-flux correlation of each regime from arq.
+     *
+     * Called wherever arq is built or replaced, so driftSelectors never goes
+     * stale. Keeping it in one place is what stops the four call sites from
+     * drifting apart.
+     */
+    void resolveDriftSelectors();
 };
 
 #endif /* SISPROD_H_ */
