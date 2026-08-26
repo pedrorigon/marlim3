@@ -61,6 +61,16 @@ CORRELATION_ARGS_EXTRACTED = (
     "diameter", "roughness", "inclinationAngle", "horizontalCorrection")
 assert len(CORRELATION_ARGS) == len(CORRELATION_ARGS_EXTRACTED)
 
+# Solvers are wrapped rather than injected into, because they have several
+# `return` statements and a probe before the closing brace would miss most
+# calls.
+#
+# Which of these exist depends on the tree. In the pristine baseline all three
+# are SProd members. From stage 2 on, zbrent and falsacorda are free templates
+# in namespace rootfinding -- they have no caller anywhere and never executed,
+# so nothing is lost by not capturing them -- and SProd::zriddr survives as the
+# binding between the production domain and rootfinding::zriddr, with the same
+# signature it always had. Instrument whichever are present; require zriddr.
 SOLVERS = {
     "zbrent":     ("double", "double x1, double x2, int prod, int tipoCC, double tol, double epsn, int maxit",
                    "x1, x2, prod, tipoCC, tol, epsn, maxit",
@@ -73,6 +83,18 @@ SOLVERS = {
                    "x1, x2, prod, tipoCC",
                    [("x1", "%a"), ("x2", "%a"), ("prod", "%d"), ("tipoCC", "%d")]),
 }
+REQUIRED_SOLVERS = ("zriddr",)
+
+# The objective the solvers evaluate. Counting calls to it turns the capture
+# from "same root" into "same trajectory", which is the difference that matters:
+# two different convergence paths can land on the same value, and comparing only
+# the returned root would not tell them apart.
+#
+# The counter wraps SProd::multMarcha rather than anything inside a solver, and
+# that is what makes it survive the extraction. Before it, zriddr calls
+# multMarcha directly; after it, the objective lambda does. Both go through this
+# wrapper, so the recorded column means the same thing on both sides.
+COUNTED = ("multMarcha", "double", "double chute, int prod, int tipoCC", "chute, prod, tipoCC")
 
 LOGGER = '''
 // ---- L1 golden capture (temporary instrumentation, never committed) ----
@@ -133,6 +155,14 @@ inline std::FILE *sink(const char *name) {
     return channel->file;
 }
 
+// Objective evaluations so far. A solver records the delta across its own call,
+// which is its iteration count in the only unit that is comparable across the
+// extraction.
+inline long long &evaluations() {
+    static long long total = 0;
+    return total;
+}
+
 }
 // ---- end L1 golden capture ----
 '''
@@ -179,36 +209,66 @@ def instrument_correlations(source: str, extracted: bool = False) -> tuple[str, 
     return "".join(lines), set(located)
 
 
-def instrument_solvers(source: str) -> str:
+def instrument_solvers(source: str) -> tuple[str, set[str]]:
+    """Wrap each solver present, plus the objective counter.
+
+    Returns the patched source and the set of solvers actually wrapped, so the
+    caller can insist on the ones that must be there and stay quiet about the
+    ones a later stage legitimately moved out of the class.
+    """
+    name, ret, params, args = COUNTED
+    if f"{ret} SProd::{name}({params})" not in source:
+        raise SystemExit(f"{name} not found as `{ret} SProd::{name}({params})` -- "
+                         "the signature moved and the counter would silently "
+                         "record nothing")
+    source = source.replace(f"{ret} SProd::{name}({params})",
+                            f"{ret} SProd::{name}__golden_impl({params})", 1)
+    source += f'''
+{ret} SProd::{name}({params}) {{
+    ++golden_capture::evaluations();
+    return {name}__golden_impl({args});
+}}
+'''
+
+    wrapped: set[str] = set()
     for name, (ret, params, args, logged) in SOLVERS.items():
+        definition = f"{ret} SProd::{name}({params})"
+        if definition not in source:
+            continue
+        wrapped.add(name)
         # Rename the definition; declarations in the header get the same
         # treatment separately.
-        source = source.replace(f"{ret} SProd::{name}({params})",
+        source = source.replace(definition,
                                 f"{ret} SProd::{name}__golden_impl({params})", 1)
 
-        fields = " ".join(fmt for _, fmt in logged) + " %a"
+        fields = " ".join(fmt for _, fmt in logged) + " %a %lld"
         values = ", ".join(arg for arg, _ in logged)
         wrapper = f'''
 {ret} SProd::{name}({params}) {{
+    long long before = golden_capture::evaluations();
     {ret} result = {name}__golden_impl({args});
     {{ std::FILE *gf = golden_capture::sink("{name}");
-      if (gf) std::fprintf(gf, "{fields}\\n", {values}, result); }}
+      if (gf) std::fprintf(gf, "{fields}\\n", {values}, result,
+                           golden_capture::evaluations() - before); }}
     return result;
 }}
 '''
         source += wrapper
-    return source
+    return source, wrapped
 
 
-def instrument_header(header: str) -> str:
-    for name, (ret, params, _, _) in SOLVERS.items():
+def instrument_header(header: str, wrapped: set[str]) -> str:
+    targets = [(n, SOLVERS[n][0], SOLVERS[n][1]) for n in wrapped]
+    targets.append((COUNTED[0], COUNTED[1], COUNTED[2]))
+    for name, ret, params in targets:
         # Declare the renamed implementation next to the original declaration.
         pattern = re.compile(rf"(\n\s*{ret}\s+{name}\s*\([^;]*\);)")
         match = pattern.search(header)
-        if match:
-            header = header.replace(
-                match.group(1),
-                match.group(1) + f"\n    {ret} {name}__golden_impl({params});", 1)
+        if not match:
+            raise SystemExit(f"no declaration of {name} to sit beside in SisProd.h")
+        header = header.replace(
+            match.group(1),
+            match.group(1) + f"\n    {ret} {name}__golden_impl({params});", 1)
     return header
 
 
@@ -301,9 +361,24 @@ def add_sweep(source: str, header: str, extracted: bool) -> tuple[str, str]:
         body = source.find("{", ctor)
         newline = source.find("\n", body)
         source = source[:newline + 1] + TRIGGER + source[newline + 1:]
-    header = header.replace("    double zbrent(double, double, int prod, int tipoCC,",
-                            "    void goldenSweep(const char *path);\n"
-                            "    double zbrent(double, double, int prod, int tipoCC,", 1)
+    # goldenSweep has to be declared inside the class. The old anchor was the
+    # zbrent declaration, which stage 2 removed -- and a .replace() that matches
+    # nothing returns the string unchanged, so the sweep would simply never be
+    # declared. Try several anchors and refuse to continue if none is there,
+    # rather than producing an instrumented tree that quietly captures nothing.
+    anchors = (
+        "    double multMarcha(double chute, int prod, int tipoCC);",
+        "    double zriddr(double x1, double x2, int prod, int tipoCC);",
+        "    void renovaTemp();",
+    )
+    for anchor in anchors:
+        if anchor in header:
+            header = header.replace(
+                anchor, "    void goldenSweep(const char *path);\n" + anchor, 1)
+            break
+    else:
+        raise SystemExit("no anchor left in SisProd.h to declare goldenSweep beside; "
+                         "tried:\n  " + "\n  ".join(anchors))
     return source, header
 
 
@@ -332,7 +407,12 @@ def main() -> int:
     # Before the extraction the correlations are in SisProd.cpp; after it they
     # are in DriftFluxClosure.cpp. Instrument wherever they actually are.
     source, in_sisprod = instrument_correlations(source)
-    source = instrument_solvers(source)
+    source, wrapped = instrument_solvers(source)
+    missing_solvers = [n for n in REQUIRED_SOLVERS if n not in wrapped]
+    if missing_solvers:
+        print(f"solvers not found as SProd members: {', '.join(missing_solvers)}",
+              file=sys.stderr)
+        return 1
 
     in_closure: set[str] = set()
     if closure.exists():
@@ -351,15 +431,21 @@ def main() -> int:
     header_text = hpp.read_text(encoding="utf-8", errors="replace")
     source, header_text = add_sweep(source, header_text, extracted=bool(in_closure))
 
+    header_text = instrument_header(header_text, wrapped)
+    if "goldenSweep" not in header_text:
+        print("goldenSweep was never declared -- refusing to write", file=sys.stderr)
+        return 1
+
     cpp.write_text(add_logger(source), encoding="utf-8")
-    hpp.write_text(instrument_header(header_text), encoding="utf-8")
+    hpp.write_text(header_text, encoding="utf-8")
 
     print(f"instrumented {cpp}")
     if in_closure:
         print(f"instrumented {closure}")
     print(f"  correlations: {', '.join(sorted(located))}"
           f"{' (extracted)' if in_closure else ''}")
-    print(f"  solvers     : {', '.join(sorted(SOLVERS))}")
+    print(f"  solvers     : {', '.join(sorted(wrapped))}")
+    print(f"  counter     : {COUNTED[0]}")
     return 0
 
 
