@@ -58,7 +58,19 @@ trap 'rm -rf "$work"' EXIT
     printf '%sno reference at %s -- capture it first%s\n' "$red" "$reference" "$reset" >&2
     exit 2
 }
-git -C "$project_root" show "$baseline_commit:src/core/SisProd.cpp" > "$work/pristine.cpp"
+# The token checker that applies AFTER T037r. solver-move.py compares against the
+# pristine commit and so fails on all three solvers once the locals are renamed --
+# using it here would make every `passes` case report success whether or not the
+# corruption was injected, which is the vacuous-gate failure this programme keeps
+# rediscovering. verify-structural.py --allow-renames against the pre-rename
+# commit ignores names but not structure, so it still has something to say.
+PRE_RENAME_COMMIT="${MARLIM_PRE_RENAME_COMMIT:-6724c7a}"
+git -C "$project_root" show "$PRE_RENAME_COMMIT:src/include/RootFindingSolvers.h" \
+    > "$work/pre-rename.h" || {
+    printf '%scannot read %s:src/include/RootFindingSolvers.h%s\n' \
+           "$red" "$PRE_RENAME_COMMIT" "$reset" >&2
+    exit 2
+}
 
 failures=0
 
@@ -88,7 +100,20 @@ attempt() {
 
     case "$expect:$status" in
         control:0)
-            printf '%s%-52s PASSES (control)%s\n' "$green" "$label" "$reset" ;;
+            # The control has to pass the token checker too. If it did not, every
+            # `passes` case below would report "caught by tokens" without the
+            # corruption having anything to do with it.
+            if python3 "$script_dir/verify-structural.py" \
+                   --baseline "$work/pre-rename.h" \
+                   --current "$inc/RootFindingSolvers.h" \
+                   --function zbrent --function falsacorda --function zriddr \
+                   --function SIGN --allow-renames > /dev/null 2>&1; then
+                printf '%s%-52s PASSES (control, both checkers)%s\n' "$green" "$label" "$reset"
+            else
+                printf '%s%-52s CONTROL FAILS THE TOKEN CHECKER%s\n' "$red" "$label" "$reset"
+                printf '   every "caught by tokens" below would be vacuous\n'
+                failures=$((failures + 1))
+            fi ;;
         control:*)
             printf '%s%-52s CONTROL FAILED%s\n' "$red" "$label" "$reset"
             printf '%s\n' "$out" | sed 's/^/   /'
@@ -101,15 +126,16 @@ attempt() {
         passes:0)
             # Declared invisible to the sweep. Prove the token comparison sees it.
             local token_out token_status
-            token_out="$(python3 "$script_dir/solver-move.py" check "$work/pristine.cpp" \
-                          "$inc/RootFindingSolvers.h" \
-                          "$project_root/src/core/SisProd.cpp" \
-                          "$project_root/src/core/RootFindingSolvers.cpp" 2>&1)"
+            token_out="$(python3 "$script_dir/verify-structural.py" \
+                          --baseline "$work/pre-rename.h" \
+                          --current "$inc/RootFindingSolvers.h" \
+                          --function zbrent --function falsacorda --function zriddr \
+                          --function SIGN --allow-renames 2>&1)"
             token_status=$?
             if (( token_status != 0 )); then
                 printf '%s%-52s invisible here, caught by tokens%s   %s\n' \
                        "$green" "$label" "$reset" \
-                       "$(printf '%s\n' "$token_out" | grep -m1 '^FAIL' || true)"
+                       "$(printf '%s\n' "$token_out" | grep -m1 '^DIFFERS' || true)"
             else
                 printf '%s%-52s INVISIBLE TO BOTH CHECKERS%s\n' "$red" "$label" "$reset"
                 failures=$((failures + 1))
@@ -136,39 +162,39 @@ attempt "control: header untouched" "" control
 printf '\n%sbehaviour changed -- the sweep must catch these%s\n' "$bold" "$reset"
 
 attempt "zbrent: 0.5 * tol becomes 0.25 * tol" \
-        "$(swap "'+ 0.5 * tol;'" "'+ 0.25 * tol;'")" caught
+        "$(swap "'+ 0.5 * absoluteTolerance;'" "'+ 0.25 * absoluteTolerance;'")" caught
 attempt "zbrent: q and r swapped in the interpolation" \
-        "$(swap "'q = fa / fc;\n                    r = fb / fc;'" "'q = fb / fc;\n                    r = fa / fc;'")" caught
+        "$(swap "'stepDenominator = previousValue / oppositeSignValue;\n                    valueRatioOpposite = currentValue / oppositeSignValue;'" "'stepDenominator = currentValue / oppositeSignValue;\n                    valueRatioOpposite = previousValue / oppositeSignValue;'")" caught
 attempt "falsacorda: bracket arms swapped" \
-        "$(swap "'? (b = c) : (a = c, u = w);'" "'? (a = c, u = w) : (b = c);'")" caught
+        "$(swap "'? (bracketHigh = midpoint) : (bracketLow = midpoint, lowValue = midpointValue);'" "'? (bracketLow = midpoint, lowValue = midpointValue) : (bracketHigh = midpoint);'")" caught
 attempt "falsacorda: bisection midpoint drifts" \
-        "$(swap "'c = a + e;'" "'c = a + e * 1.0000001;'")" caught
+        "$(swap "'midpoint = bracketLow + halfWidth;'" "'midpoint = bracketLow + halfWidth * 1.0000001;'")" caught
 attempt "zriddr: xacc 1e-5 -> 2e-5 (path, not root)" \
-        "$(swap "'double xacc = 1e-5;'" "'double xacc = 2e-5;'")" caught
+        "$(swap "'double rootAccuracy = 1e-5;'" "'double rootAccuracy = 2e-5;'")" caught
 attempt "zbrent: iteration budget starts at 1" \
-        "$(swap "'for (int iter = 0; iter < maxit; iter++)'" "'for (int iter = 1; iter < maxit; iter++)'")" caught
+        "$(swap "'oppositeSignValue = currentValue;\n        for (int iteration = 0;'" "'oppositeSignValue = currentValue;\n        for (int iteration = 1;'")" caught
 attempt "zriddr: A2-05 guard removed, division unreachable" \
-        "$(swap "'                if(j>minit)return xmin;\n            }\n            double xnew'" "'                return xmin;\n            }\n            double xnew'")" caught
+        "$(swap "'                if(iteration>minimumIterations)return bestPoint;\n            }\n            double nextPoint'" "'                return bestPoint;\n            }\n            double nextPoint'")" caught
 attempt "zriddr: guard 1e9 -> 1e11" \
-        "$(swap "'if (fabs(fl) > 1e9 || fabs(fh) > 1e9)'" "'if (fabs(fl) > 1e11 || fabs(fh) > 1e11)'")" caught
+        "$(swap "'if (fabs(lowValue) > 1e9 || fabs(highValue) > 1e9)'" "'if (fabs(lowValue) > 1e11 || fabs(highValue) > 1e11)'")" caught
 attempt "zriddr: widening step 1.0001 -> 1.001, both arms" \
-        "$(swap "'                        x1 *= 1.0001;'" "'                        x1 *= 1.001;'" 2)" caught
+        "$(swap "'                        bracketLow *= 1.0001;'" "'                        bracketLow *= 1.001;'" 2)" caught
 attempt "SIGN: copysign instead of the comparison" \
-        "$(swap "'return (b >= 0 ? 1.0 : -1.0) * fabs(a);'" "'return copysign(fabs(a), b);'")" caught
+        "$(swap "'return (signSource >= 0 ? 1.0 : -1.0) * fabs(magnitude);'" "'return copysign(fabs(magnitude), signSource);'")" caught
 
 printf '\n%sinvisible to the sweep by construction -- tokens must catch these%s\n' \
        "$yellow" "$reset"
 
 attempt "multiplication commuted (bit-identical in IEEE)" \
-        "$(swap "'(b - a) * (r - 1.0)'" "'(r - 1.0) * (b - a)'")" passes
+        "$(swap "'(currentEstimate - previousEstimate) * (valueRatioOpposite - 1.0)'" "'(valueRatioOpposite - 1.0) * (currentEstimate - previousEstimate)'")" passes
 attempt "2.0 * x * y regrouped (2.0 is a power of two)" \
-        "$(swap "'2.0 * xm * q * (q - r)'" "'2.0 * (xm * q * (q - r))'")" passes
+        "$(swap "'2.0 * halfBracketWidth * stepDenominator * (stepDenominator - valueRatioOpposite)'" "'2.0 * (halfBracketWidth * stepDenominator * (stepDenominator - valueRatioOpposite))'")" passes
 attempt "e *= 0.5 spelled out (identical by definition)" \
-        "$(swap "'        e *= 0.5;'" "'        e = e * 0.5;'")" passes
+        "$(swap "'        halfWidth *= 0.5;'" "'        halfWidth = halfWidth * 0.5;'")" passes
 attempt "reassociated (q-1)*(r-1)*(s-1) -- see note" \
-        "$(swap "'q = (q - 1.0) * (r - 1.0) * (s - 1.0);'" "'q = (q - 1.0) * ((r - 1.0) * (s - 1.0));'")" passes
+        "$(swap "'stepDenominator = (stepDenominator - 1.0) * (valueRatioOpposite - 1.0) * (valueRatioPrevious - 1.0);'" "'stepDenominator = (stepDenominator - 1.0) * ((valueRatioOpposite - 1.0) * (valueRatioPrevious - 1.0));'")" passes
 attempt "A2-02 dead branch collapsed (arms are equal)" \
-        "$(swap "'    if (revPerm == 0) {\n        fl = objective(x1);\n        fh = objective(x2);\n    } else {\n        fl = objective(x1);\n        fh = objective(x2);\n    }'" "'    fl = objective(x1);\n    fh = objective(x2);'")" passes
+        "$(swap "'    if (reverseMarch == 0) {\n        lowValue = objective(bracketLow);\n        highValue = objective(bracketHigh);\n    } else {\n        lowValue = objective(bracketLow);\n        highValue = objective(bracketHigh);\n    }'" "'    lowValue = objective(bracketLow);\n    highValue = objective(bracketHigh);'")" passes
 
 printf '\n'
 if (( failures > 0 )); then
