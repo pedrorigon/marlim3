@@ -199,8 +199,30 @@ def main() -> int:
         return 0
 
     if mode == "check":
+        module = open(second, encoding="utf-8").read()
+        # This check answers one question: was the move literal? It can only
+        # answer it while the module still has the shape the move produced.
+        # Later steps of the stage regrouped the state, folded the writers onto
+        # shared skeletons, renamed the locals and corrected four defects --
+        # after any of those, the substitution table no longer inverts, and
+        # emitting a token diff would report a failure that is not one. Say so
+        # instead: a verifier that cries wolf is worse than no verifier.
+        # A field that existed only in the shape the move produced. The scalar
+        # fields survived the later regrouping, so testing for those would let
+        # the check run on a module it can no longer invert.
+        if MEMBERS["MatTrendP"] not in module:
+            print("This module has been restructured past the literal move, so\n"
+                  "the substitution table no longer inverts. The move itself was\n"
+                  "verified at the commit that performed it:\n"
+                  "    git show 9167524:src/core/SisProdTrendOutput.cpp > /tmp/moved.cpp\n"
+                  "    trend-move.py check <baseline SisProd.cpp> /tmp/moved.cpp\n"
+                  "Everything after that commit is verified by\n"
+                  "refactor-harness/verify-trend-writers.sh, which compares the\n"
+                  "bytes the writers produce rather than the tokens they are\n"
+                  "made of.", file=sys.stderr)
+            return 2
         baseline = carve(open(first, encoding="utf-8").read())
-        current = carve_new(open(second, encoding="utf-8").read())
+        current = carve_new(module)
         failures = 0
         for old, new in FUNCTIONS.items():
             if new not in current:

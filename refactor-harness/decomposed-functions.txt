@@ -49,7 +49,7 @@ copiaSemJson
 # The eight bodies moved to SisProdTrendOutput.cpp and were folded onto two
 # skeletons; these are the forwarders that keep the public signatures (FR-032),
 # since Num4Main.cpp calls four of them from 28 sites. Verified by
-# verify-trend-writers.sh -- 888 files over 96 configurations, byte identical --
+# verify-trend-writers.sh -- 864 files over 96 configurations, byte identical --
 # which is the only check that reaches the four cross-section writers.
 ImprimeTrendP
 ImprimeTrendPCab

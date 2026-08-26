@@ -369,16 +369,19 @@ constexpr double kEndOfSamplesMarker = -9999;
 constexpr int kValueWidth = 20;
 constexpr int kValuePrecision = 19;
 
+/// The two columns every cross-section trend carries: time and temperature.
+constexpr int kCrossSectionColumnCount = 2;
+
 /// The skeleton the four header writers share.
 ///
 /// writeCaptions is the hook, and it is a template parameter rather than a
 /// function pointer or a virtual, so the compiler inlines it and no indirect
 /// call appears in the generated code (FR-022).
 ///
-/// blankLineBeforeClose is a value, not a mode flag. Only the service header
-/// asks for it, and it lands OUTSIDE the print-pass guard, so a service trend
-/// file starts with a blank line even on the passes that write no captions.
-/// That asymmetry comes from the baseline and is preserved.
+/// blankLineBeforeClose is a value, not a mode flag. Of the four headers only
+/// the service one asks for it, and it lands OUTSIDE the print-pass guard, so a
+/// service trend file starts with a blank line even on the passes that write no
+/// captions. That asymmetry comes from the baseline and is preserved.
 template <typename WriteCaptions>
 void writeTrendHeaderFile(const TrendState &state, const string &fileName,
                           WriteCaptions writeCaptions, bool blankLineBeforeClose) {
@@ -423,9 +426,6 @@ void writeTrendRowsFile(const TrendState &state, const string &fileName,
             }
         });
 }
-
-/// The two columns every cross-section trend carries: time and temperature.
-constexpr int kCrossSectionColumnCount = 2;
 
 } // namespace
 

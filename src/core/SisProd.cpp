@@ -12940,10 +12940,13 @@ namespace {
 
 /// Binds the state the trend writers are allowed to read.
 ///
-/// Designated initialisers, not positional: four fields are double*** and four
-/// are int*, so a positional swap would compile silently and print the wrong
-/// buffer. Every field is a reference or a pointer, never a copy -- the caller
-/// advances the counters between the header call and the row call.
+/// Designated initialisers, not positional: the four series have identical
+/// types, so a positional swap would compile in silence and hand a writer
+/// another line's buffer. Naming each one makes that a compile error.
+///
+/// Every field is a reference or a pointer, never a copy -- the caller advances
+/// the counters between the header call and the row call, so a copy would be
+/// read at the wrong moment.
 trendoutput::TrendState trendStateOf(const SProd &system) {
     return trendoutput::TrendState{
         .inputData = system.arq,
