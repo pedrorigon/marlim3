@@ -169,16 +169,16 @@ double zbrent(double bracketLow, double bracketHigh, Objective &&objective, doub
 /// travel in `monitor` and the solver keeps only the composition
 /// `monitor(objective(x))` -- the same order of operations the original had.
 ///
-/// `revPerm` selects nothing today: all three branches that test it have
+/// `reverseMarch` selects nothing today: all three branches that test it have
 /// identical arms. They are kept verbatim rather than collapsed. Collapsing
 /// would be behaviour-preserving -- reading an int member has no side effect --
 /// but the branch is the only surviving evidence that someone meant to treat
 /// the reverse march differently here, and erasing it would make that
 /// unrecoverable from the code. See A2-02 to A2-04 in evidencia/anomalias.md.
 ///
-/// `minit` is a minimum iteration count derived from the input deck at the
-/// binding site. It also gates three early returns that would otherwise be
-/// unconditional, which is how the division at A2-05 becomes reachable.
+/// `minimumIterations` is derived from the input deck at the binding site. It
+/// also gates three early returns that would otherwise be unconditional, which
+/// is how the division at A2-05 becomes reachable.
 template <typename Objective, typename Monitor>
 double zriddr(double bracketLow, double bracketHigh, Objective &&objective, Monitor &&monitor,
               int reverseMarch, int minimumIterations) {
