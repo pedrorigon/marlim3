@@ -328,9 +328,9 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
         [&] {
             ostringstream fileNameStream;
             if (state.branchIndex < 0 && state.inputData.AP == 0) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << round(state.inputData.trendp[trendIndex].comp) << ".dat";
+                fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
             } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << round(state.inputData.trendp[trendIndex].comp) << ".dat";
+                fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << state.inputData.trendp[trendIndex].comp << ".dat";
             } else {
                 fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
             }
@@ -373,7 +373,7 @@ void writeProductionTrendRows(const TrendState &state, int trendIndex, int netwo
             if (state.branchIndex < 0 && state.inputData.AP == 0) {
                 fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
             } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << round(state.inputData.trendp[trendIndex].comp) << ".dat";
+                fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << state.inputData.trendp[trendIndex].comp << ".dat";
             } else {
                 fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
             }
@@ -470,10 +470,8 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIn
 
 void writeProductionCrossSectionTrendRows(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransp > 0) {
-        // firstRow is 0, not countBase: the baseline sizes the window from the
-        // counters but always copies from the start of the buffer.
         const SampleWindow window{state.productionCrossSection.samples[trendIndex],
-                                  0,
+                                  state.productionCrossSection.countBase[trendIndex],
                                   pendingRowCount(state.productionCrossSection, trendIndex),
                                   kCrossSectionColumnCount};
         writeTrendRowsFile(state, window,
@@ -507,7 +505,7 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex
             if (state.branchIndex < 0)
                 fileNameStream << pathPrefixoArqSaida << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
             else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
             return fileNameStream.str();
         },
             [&](ofstream &trendFile) {
@@ -522,7 +520,7 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex
 void writeServiceCrossSectionTrendRows(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransg > 0 && state.inputData.lingas > 0) {
         const SampleWindow window{state.serviceCrossSection.samples[trendIndex],
-                                  0,
+                                  state.serviceCrossSection.countBase[trendIndex],
                                   pendingRowCount(state.serviceCrossSection, trendIndex),
                                   kCrossSectionColumnCount};
         writeTrendRowsFile(state, window,
@@ -534,7 +532,7 @@ void writeServiceCrossSectionTrendRows(const TrendState &state, int trendIndex) 
             if (state.branchIndex < 0)
                 fileNameStream << pathPrefixoArqSaida << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
             else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
+                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
             return fileNameStream.str();
         },
                            /*supportsApSequence=*/false,

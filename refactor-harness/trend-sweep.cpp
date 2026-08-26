@@ -323,6 +323,11 @@ int main(int argc, char **argv) {
         int serviceBase[kSeries] = {2, 1};
         int crossCount[kSeries] = {4, 3};
         int crossBase[kSeries] = {1, 1};
+        // Deliberately different from the production pair: a writer reading the
+        // wrong group then shows up as a difference instead of as a
+        // coincidence.
+        int serviceCrossCount[kSeries] = {3, 4};
+        int serviceCrossBase[kSeries] = {2, 1};
 
         varGlob1D globals;
         globals.sequenciaAP = 3 + configuration % 4;
@@ -338,10 +343,7 @@ int main(int argc, char **argv) {
             .production = {productionBuffer, productionCount, productionBase},
             .service = {serviceBuffer, serviceCount, serviceBase},
             .productionCrossSection = {productionCross, crossCount, crossBase},
-            // Bound to the PRODUCTION counters, mirroring trendStateOf: the
-            // service cross-section writer reading the wrong group is baseline
-            // behaviour, and the harness has to reproduce it to be comparable.
-            .serviceCrossSection = {serviceCross, crossCount, crossBase}};
+            .serviceCrossSection = {serviceCross, serviceCrossCount, serviceCrossBase}};
 
         arqRelatorioPerfis.open((directory + "_reported.txt").c_str(), ios_base::out);
         for (int s = 0; s < kSeries; s++) {
