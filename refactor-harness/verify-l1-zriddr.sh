@@ -70,20 +70,37 @@ trap 'rm -rf "$work"' EXIT
 capture_dir="$work/capture"
 mkdir -p "$capture_dir"
 
-models=()
-while IFS= read -r deck; do
-    models+=("$(basename "$deck" .mr3)")
-done < <(find "$project_root/demos" -maxdepth 1 -name '*.mr3' | sort)
+# The corpus is what the baseline captured, enumerated the same way compare-l2.sh
+# enumerates it. Listing demos/*.mr3 instead finds only SEVEN of the fourteen
+# models: the Portuguese-language half lives in demos/pt-br/. That is how the
+# first run of this script produced exactly half the golden's calls -- and it
+# would have looked like a real divergence rather than a script that had not
+# looked everywhere.
+BASELINE_OUTPUTS="${MARLIM_BASELINE:-$HOME/marlim3-baseline}/saidas"
+[[ -d "$BASELINE_OUTPUTS" ]] || {
+    printf '%sbaseline outputs missing: %s%s\n' "$red" "$BASELINE_OUTPUTS" "$reset" >&2
+    exit 2
+}
+mapfile -t models < <(cd "$BASELINE_OUTPUTS" && ls -d */ | tr -d '/')
+(( ${#models[@]} > 0 )) || { printf '%sno models in %s%s\n' "$red" "$BASELINE_OUTPUTS" "$reset" >&2; exit 2; }
 
-(( ${#models[@]} > 0 )) || { printf '%sno models in demos/%s\n' "$red" "$reset" >&2; exit 2; }
+locate_model() {
+    [[ -f "$project_root/demos/$1.mr3" ]] && { echo "$project_root/demos/$1.mr3"; return 0; }
+    [[ -f "$project_root/demos/pt-br/$1.mr3" ]] && { echo "$project_root/demos/pt-br/$1.mr3"; return 0; }
+    return 1
+}
 
 printf 'running %d model(s) with stride %s\n' "${#models[@]}" "$STRIDE"
 for model in "${models[@]}"; do
-    printf '  %s' "$model"
-    MARLIM_GOLDEN_DIR="$capture_dir" MARLIM_GOLDEN_STRIDE="$STRIDE" \
-        "$binary" -s TRANSIENTE -i "$project_root/demos/$model.mr3" -p "$project_root/demos/" \
-                  -d "$work/out-$model" -o "$work/$model.log" > /dev/null 2>&1
-    printf '\n'
+    deck="$(locate_model "$model")" || {
+        printf '%s  %s: no deck under demos/ or demos/pt-br/%s\n' "$red" "$model" "$reset" >&2
+        exit 2
+    }
+    printf '  %s\n' "$model"
+    ( cd "$project_root" && \
+      MARLIM_GOLDEN_DIR="$capture_dir" MARLIM_GOLDEN_STRIDE="$STRIDE" \
+        "$binary" -s TRANSIENTE -i "$deck" -p demos/ \
+                  -d "$work/out-$model" -o "$work/$model.log" > /dev/null 2>&1 )
 done
 
 current="$capture_dir/zriddr.txt"
