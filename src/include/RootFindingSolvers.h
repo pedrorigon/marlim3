@@ -197,7 +197,15 @@ double zbrent(double bracketLow, double bracketHigh, Objective &&objective, doub
 ///
 /// `minimumIterations` is derived from the input deck at the binding site. It
 /// also gates three early returns that would otherwise be unconditional, which
-/// is how the division at A2-05 becomes reachable.
+/// is how the division at A2-05 becomes reachable. Deriving it before the solve
+/// rather than inside it is safe because nothing in SisProd.cpp assigns the flag
+/// it comes from -- all seven assignments are in Leitura.cpp, parsing decks.
+///
+/// `reverseMarch` is passed once, on entry, and the original read it three times
+/// during the iteration. That is only safe because those three branches have
+/// identical arms today. If A2-02 is ever corrected so that they differ, this
+/// has to go back to being read inside the loop -- the value can change mid
+/// solve, since SisProd.cpp assigns revPerm in eighteen places.
 template <typename Objective, typename Monitor>
 double zriddr(double bracketLow, double bracketHigh, Objective &&objective, Monitor &&monitor,
               int reverseMarch, int minimumIterations) {
