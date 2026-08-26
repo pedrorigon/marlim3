@@ -78,26 +78,34 @@ fi
 # now the only place they still surface, which is a reason to keep them visible
 # rather than silence them with -Wno-.
 #
-# Anything else is a diagnostic this stage introduced, and fails the run.
-expected_warnings() {
+# Compared as counts PER FLAG, not by message text. The first version of this
+# check listed the messages, including "'e' may be used uninitialized" -- and
+# T037r renamed e to previousStep, so the diagnostic changed text without
+# changing meaning and the check failed on a rename it was never meant to
+# police. That is D1-10 again, at a smaller scale: an identity that anchors on
+# something the work legitimately changes.
+expected_warning_flags() {
     cat <<'EXPECTED'
-warning: unused variable 'multFC' [-Wunused-variable]
-warning: 'e' may be used uninitialized in this function [-Wmaybe-uninitialized]
+[-Wmaybe-uninitialized] 1
+[-Wunused-variable] 1
 EXPECTED
 }
 
 # GCC quotes identifiers typographically under a UTF-8 locale and in ASCII under
 # LC_ALL=C; normalize before comparing, as gate 1 learned to (E-04).
-observed_warnings() {
+observed_warning_flags() {
     sed -e "s/\xe2\x80\x98/'/g; s/\xe2\x80\x99/'/g" "$work/build.log" \
-        | grep -o "warning: .*" | sort -u
+        | grep "warning:" \
+        | sed -E 's/^.*(\[-W[a-z-]+\]).*/\1/; t; s/.*/[no-flag]/' \
+        | sort | uniq -c | awk '{ printf "%s %s\n", $2, $1 }' | sort
 }
 
-unexpected="$(comm -23 <(observed_warnings) <(expected_warnings | sort -u))"
-if [[ -n "$unexpected" ]]; then
-    printf '%sthe sweep driver produced diagnostics this stage introduced:%s\n' \
+if ! diff <(expected_warning_flags | sort) <(observed_warning_flags) > /dev/null 2>&1; then
+    printf '%sthe sweep driver'"'"'s diagnostics are not the two inherited ones:%s\n' \
            "$red" "$reset" >&2
-    printf '%s\n' "$unexpected" | sed 's/^/  /' >&2
+    diff <(expected_warning_flags | sort) <(observed_warning_flags) | sed 's/^/  /' >&2
+    printf '%sfull output:%s\n' "$yellow" "$reset" >&2
+    grep "warning:" "$work/build.log" | sed 's/^/  /' >&2
     exit 2
 fi
 

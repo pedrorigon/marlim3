@@ -205,10 +205,17 @@ if git -C "$project_root" worktree add --detach "$baseline_source/tree" \
     # sources that do not exist in the baseline commit, which keeps this correct
     # as later stages add more of them.
     l0_targets=(--current "$project_root/src/core/SisProd.cpp")
-    for candidate in "$project_root"/src/core/*.cpp; do
-        [[ -e "$baseline_source/tree/src/core/$(basename "$candidate")" ]] \
+    for candidate in "$project_root"/src/core/*.cpp "$project_root"/src/include/*.h; do
+        base="$(basename "$candidate")"
+        [[ -e "$baseline_source/tree/src/core/$base" || -e "$baseline_source/tree/src/include/$base" ]] \
             || l0_targets+=(--current "$candidate")
     done
+    # Headers are searched too, and not for symmetry. Stage 2 moved zbrent,
+    # falsacorda and zriddr into RootFindingSolvers.h, because a template
+    # parameterised by the objective has to be defined where it is instantiated.
+    # Looking only at src/core/*.cpp would report all three as MISSING -- the
+    # exact failure this loop was written to prevent, one stage after it was
+    # written.
     # --declared keeps the functions each stage restructured on purpose out of
     # the failure count, so the failures that remain are the ones nobody
     # planned. Without it the report accumulates one permanent difference per

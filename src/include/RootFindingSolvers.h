@@ -27,8 +27,8 @@ namespace rootfinding {
 /// inline, and defined here rather than in the .cpp, because zriddr calls it
 /// three times per iteration. Out of line it would become a cross-TU call in
 /// the one solver that is actually hot.
-inline double SIGN(double a, double b) {
-    return (b >= 0 ? 1.0 : -1.0) * fabs(a);
+inline double SIGN(double magnitude, double signSource) {
+    return (signSource >= 0 ? 1.0 : -1.0) * fabs(magnitude);
 }
 
 /// Sign of a value, as -1 or 1, with zero counting as negative.
@@ -36,7 +36,7 @@ inline double SIGN(double a, double b) {
 /// It has no caller anywhere in the project and never had one; it is preserved
 /// because removing dead code is a behaviour change this programme is not
 /// authorised to make. Out of line precisely because nothing calls it.
-int sign(double var);
+int sign(double value);
 
 /// Reports that a solver exhausted its iteration budget.
 ///
@@ -52,25 +52,25 @@ void reportIterationLimit(const char *message);
 /// verification is structural: refactor-harness/solver-move.py inverts the move
 /// and compares the token stream against the pristine baseline.
 template <typename Objective>
-double falsacorda(double a, double b, Objective &&objective) {
-    double u = objective(a);
-    double e = b - a;
-    double c;
-    int maxit = 100;
-    double delta = 0.001;
-    double epsn = 0.001;
+double falsacorda(double bracketLow, double bracketHigh, Objective &&objective) {
+    double lowValue = objective(bracketLow);
+    double halfWidth = bracketHigh - bracketLow;
+    double midpoint;
+    int maximumIterations = 100;
+    double intervalTolerance = 0.001;
+    double valueTolerance = 0.001;
     double multFC = 0.5;
 
-    for (int k = 1; k <= maxit; k++) { // this block treats the 'falsacorda' properly
-        e = b - a;
-        e *= 0.5;
-        c = a + e;
-        double w = objective(c);
-        if (fabs(e) < delta || fabs(w) < epsn)
-            return c;
-        ((u > 0 && w < 0) || (u < 0 && w > 0)) ? (b = c) : (a = c, u = w);
+    for (int iteration = 1; iteration <= maximumIterations; iteration++) { // this block treats the 'falsacorda' properly
+        halfWidth = bracketHigh - bracketLow;
+        halfWidth *= 0.5;
+        midpoint = bracketLow + halfWidth;
+        double midpointValue = objective(midpoint);
+        if (fabs(halfWidth) < intervalTolerance || fabs(midpointValue) < valueTolerance)
+            return midpoint;
+        ((lowValue > 0 && midpointValue < 0) || (lowValue < 0 && midpointValue > 0)) ? (bracketHigh = midpoint) : (bracketLow = midpoint, lowValue = midpointValue);
     }
-    return c;
+    return midpoint;
 }
 
 /// Finds a root by Brent's method: bracketing with inverse quadratic
@@ -84,76 +84,76 @@ double falsacorda(double a, double b, Objective &&objective) {
 /// covers it is solver-move.py for the move and verify-solvers.sh, which
 /// instantiates and exercises it, for everything after.
 template <typename Objective>
-double zbrent(double x1, double x2, Objective &&objective, double tol, double epsn, int maxit) {
-    double EPS = epsn;
-    double a = x1;
-    double b = x2;
-    double c = x2;
-    double fa = objective(a);
-    double fb = objective(b);
-    if (fabs(fa) > 1e9 || fabs(fb) > 1e9)
+double zbrent(double bracketLow, double bracketHigh, Objective &&objective, double absoluteTolerance, double relativeTolerance, int maximumIterations) {
+    double relativePrecision = relativeTolerance;
+    double previousEstimate = bracketLow;
+    double currentEstimate = bracketHigh;
+    double oppositeSignPoint = bracketHigh;
+    double previousValue = objective(previousEstimate);
+    double currentValue = objective(currentEstimate);
+    if (fabs(previousValue) > 1e9 || fabs(currentValue) > 1e9)
         return 1e10;
-    double e = 0.;
-    double d, fc, p, q, r, s, tol1, xm;
+    double previousStep = 0.;
+    double step, oppositeSignValue, stepNumerator, stepDenominator, valueRatioOpposite, valueRatioPrevious, workingTolerance, halfBracketWidth;
 
-    if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) {
-        double val;
-        val = falsacorda(x1, x2, objective);
-        return val;
+    if ((previousValue > 0.0 && currentValue > 0.0) || (previousValue < 0.0 && currentValue < 0.0)) {
+        double fallbackRoot;
+        fallbackRoot = falsacorda(bracketLow, bracketHigh, objective);
+        return fallbackRoot;
     } else {
-        fc = fb;
-        for (int iter = 0; iter < maxit; iter++) {
-            if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
-                c = a;
-                fc = fa;
-                e = d = b - a;
+        oppositeSignValue = currentValue;
+        for (int iteration = 0; iteration < maximumIterations; iteration++) {
+            if ((currentValue > 0.0 && oppositeSignValue > 0.0) || (currentValue < 0.0 && oppositeSignValue < 0.0)) {
+                oppositeSignPoint = previousEstimate;
+                oppositeSignValue = previousValue;
+                previousStep = step = currentEstimate - previousEstimate;
             }
-            if (fabs(fc) < fabs(fb)) {
-                a = b;
-                b = c;
-                c = a;
-                fa = fb;
-                fb = fc;
-                fc = fa;
+            if (fabs(oppositeSignValue) < fabs(currentValue)) {
+                previousEstimate = currentEstimate;
+                currentEstimate = oppositeSignPoint;
+                oppositeSignPoint = previousEstimate;
+                previousValue = currentValue;
+                currentValue = oppositeSignValue;
+                oppositeSignValue = previousValue;
             }
-            tol1 = 2.0 * EPS * fabs(b) + 0.5 * tol;
-            xm = 0.5 * (c - b);
-            if (fabs(xm) <= tol1 || fb == 0.0)
-                return b;
-            if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
-                s = fb / fa;
-                if (a == c) {
-                    p = 2.0 * xm * s;
-                    q = 1.0 - s;
+            workingTolerance = 2.0 * relativePrecision * fabs(currentEstimate) + 0.5 * absoluteTolerance;
+            halfBracketWidth = 0.5 * (oppositeSignPoint - currentEstimate);
+            if (fabs(halfBracketWidth) <= workingTolerance || currentValue == 0.0)
+                return currentEstimate;
+            if (fabs(previousStep) >= workingTolerance && fabs(previousValue) > fabs(currentValue)) {
+                valueRatioPrevious = currentValue / previousValue;
+                if (previousEstimate == oppositeSignPoint) {
+                    stepNumerator = 2.0 * halfBracketWidth * valueRatioPrevious;
+                    stepDenominator = 1.0 - valueRatioPrevious;
                 } else {
-                    q = fa / fc;
-                    r = fb / fc;
-                    p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
-                    q = (q - 1.0) * (r - 1.0) * (s - 1.0);
+                    stepDenominator = previousValue / oppositeSignValue;
+                    valueRatioOpposite = currentValue / oppositeSignValue;
+                    stepNumerator = valueRatioPrevious * (2.0 * halfBracketWidth * stepDenominator * (stepDenominator - valueRatioOpposite) - (currentEstimate - previousEstimate) * (valueRatioOpposite - 1.0));
+                    stepDenominator = (stepDenominator - 1.0) * (valueRatioOpposite - 1.0) * (valueRatioPrevious - 1.0);
                 }
-                if (p > 0.0)
-                    q = -q;
-                p = fabs(p);
-                double min1 = 3.0 * xm * q - fabs(tol1 * q);
-                double min2 = fabs(e * q);
-                if (2.0 * p < (min1 < min2 ? min1 : min2)) {
-                    e = d;
-                    d = p / q;
+                if (stepNumerator > 0.0)
+                    stepDenominator = -stepDenominator;
+                stepNumerator = fabs(stepNumerator);
+                double interpolationLimit = 3.0 * halfBracketWidth * stepDenominator - fabs(workingTolerance * stepDenominator);
+                double previousStepLimit = fabs(previousStep * stepDenominator);
+                if (2.0 * stepNumerator < (interpolationLimit < previousStepLimit ? interpolationLimit : previousStepLimit)) {
+                    previousStep = step;
+                    step = stepNumerator / stepDenominator;
                 } else {
-                    d = xm;
-                    e = d;
+                    step = halfBracketWidth;
+                    previousStep = step;
                 }
             } else {
-                d = xm;
-                e = d;
+                step = halfBracketWidth;
+                previousStep = step;
             }
-            a = b;
-            fa = fb;
-            if (fabs(d) > tol1)
-                b += d;
+            previousEstimate = currentEstimate;
+            previousValue = currentValue;
+            if (fabs(step) > workingTolerance)
+                currentEstimate += step;
             else
-                b += SIGN(tol1, xm);
-            fb = objective(b);
+                currentEstimate += SIGN(workingTolerance, halfBracketWidth);
+            currentValue = objective(currentEstimate);
         }
         reportIterationLimit("Metodo Van Winjngaarden-Dekker-Brent para calcular zero de funcaoo atingiu maximo de iteracoes");
         return 0.0;
@@ -180,131 +180,131 @@ double zbrent(double x1, double x2, Objective &&objective, double tol, double ep
 /// binding site. It also gates three early returns that would otherwise be
 /// unconditional, which is how the division at A2-05 becomes reachable.
 template <typename Objective, typename Monitor>
-double zriddr(double x1, double x2, Objective &&objective, Monitor &&monitor,
-              int revPerm, int minit) {
-    double xacc = 1e-5;
-    int maxit = 100;
-    double fmin;
-    double xmin;
-    double fl;
-    double fh;
-    if (revPerm == 0) {
-        fl = objective(x1);
-        fh = objective(x2);
+double zriddr(double bracketLow, double bracketHigh, Objective &&objective, Monitor &&monitor,
+              int reverseMarch, int minimumIterations) {
+    double rootAccuracy = 1e-5;
+    int maximumIterations = 100;
+    double bestValue;
+    double bestPoint;
+    double lowValue;
+    double highValue;
+    if (reverseMarch == 0) {
+        lowValue = objective(bracketLow);
+        highValue = objective(bracketHigh);
     } else {
-        fl = objective(x1);
-        fh = objective(x2);
+        lowValue = objective(bracketLow);
+        highValue = objective(bracketHigh);
     }
-    if (fabs(fl) > 1e9 || fabs(fh) > 1e9)
+    if (fabs(lowValue) > 1e9 || fabs(highValue) > 1e9)
         return 1e10;
-    if (fl >= 0.) {
-        if (fl > 0.9e10) {
-            x1 *= 0.9999;
-            fl = objective(x1);
+    if (lowValue >= 0.) {
+        if (lowValue > 0.9e10) {
+            bracketLow *= 0.9999;
+            lowValue = objective(bracketLow);
         } else {
-            int konta = 0;
-            while (konta < 100 && fl > 0.) {
-                if (revPerm == 0) {
-                    if (x2 < x1)
-                        x1 *= 1.0001;
+            int attempts = 0;
+            while (attempts < 100 && lowValue > 0.) {
+                if (reverseMarch == 0) {
+                    if (bracketHigh < bracketLow)
+                        bracketLow *= 1.0001;
                     else
-                        x1 *= 0.999;
+                        bracketLow *= 0.999;
                 } else {
-                    if (x2 < x1)
-                        x1 *= 1.0001;
+                    if (bracketHigh < bracketLow)
+                        bracketLow *= 1.0001;
                     else
-                        x1 *= 0.999;
+                        bracketLow *= 0.999;
                 }
-                fl = objective(x1);
-                konta++;
+                lowValue = objective(bracketLow);
+                attempts++;
             }
         }
-    } else if (fh <= 0.) {
-        if (fh < -0.9e10) {
-            x2 *= 1.00001;
-            fh = objective(x2);
+    } else if (highValue <= 0.) {
+        if (highValue < -0.9e10) {
+            bracketHigh *= 1.00001;
+            highValue = objective(bracketHigh);
         } else {
-            int konta = 0;
-            while (konta < 100 && fh < 0.) {
-                if (revPerm == 0) {
-                    if (x1 < x2)
-                        x2 *= 1.0001;
+            int attempts = 0;
+            while (attempts < 100 && highValue < 0.) {
+                if (reverseMarch == 0) {
+                    if (bracketLow < bracketHigh)
+                        bracketHigh *= 1.0001;
                     else
-                        x2 *= 0.999;
+                        bracketHigh *= 0.999;
                 } else {
-                    if (x1 < x2)
-                        x2 *= 1.0001;
+                    if (bracketLow < bracketHigh)
+                        bracketHigh *= 1.0001;
                     else
-                        x2 *= 0.999;
+                        bracketHigh *= 0.999;
                 }
-                fh = objective(x2);
-                konta++;
+                highValue = objective(bracketHigh);
+                attempts++;
             }
         }
     }
-    if (fabs(fh) < fabs(fl)) {
-        fmin = fh;
-        xmin = x2;
+    if (fabs(highValue) < fabs(lowValue)) {
+        bestValue = highValue;
+        bestPoint = bracketHigh;
     } else {
-        fmin = fl;
-        xmin = x1;
+        bestValue = lowValue;
+        bestPoint = bracketLow;
     }
-    if ((fl > 0.0 && fh < 0.0) || (fl < 0.0 && fh > 0.0)) {
-        double xl = x1;
-        double xh = x2;
-        double ans = -1.e20;
-        for (int j = 0; j < maxit; j++) {
-            double xm = 0.5 * (xl + xh);
-            double fm = monitor(objective(xm));
-            if (fabs(fm) < fabs(fmin)) {
-                fmin = fm;
-                xmin = xm;
+    if ((lowValue > 0.0 && highValue < 0.0) || (lowValue < 0.0 && highValue > 0.0)) {
+        double intervalLow = bracketLow;
+        double intervalHigh = bracketHigh;
+        double previousAnswer = -1.e20;
+        for (int iteration = 0; iteration < maximumIterations; iteration++) {
+            double midpoint = 0.5 * (intervalLow + intervalHigh);
+            double midpointValue = monitor(objective(midpoint));
+            if (fabs(midpointValue) < fabs(bestValue)) {
+                bestValue = midpointValue;
+                bestPoint = midpoint;
             }
-            double s = sqrt(fm * fm - fl * fh);
-            if (s == 0.0) {
-                fmin = objective(xmin);
-                if(j>minit)return xmin;
+            double discriminant = sqrt(midpointValue * midpointValue - lowValue * highValue);
+            if (discriminant == 0.0) {
+                bestValue = objective(bestPoint);
+                if(iteration>minimumIterations)return bestPoint;
             }
-            double xnew = xm + (xm - xl) * ((fl >= fh ? 1.0 : -1.0) * fm / s);
-            if (fabs(xnew - ans) <= xacc) {
-                fmin = objective(xmin);
-                if(j>minit)return xmin;
+            double nextPoint = midpoint + (midpoint - intervalLow) * ((lowValue >= highValue ? 1.0 : -1.0) * midpointValue / discriminant);
+            if (fabs(nextPoint - previousAnswer) <= rootAccuracy) {
+                bestValue = objective(bestPoint);
+                if(iteration>minimumIterations)return bestPoint;
             }
-            ans = xnew;
-            double fnew = monitor(objective(ans));
-            if (fabs(fnew) < fabs(fmin)) {
-                fmin = fnew;
-                xmin = ans;
+            previousAnswer = nextPoint;
+            double nextValue = monitor(objective(previousAnswer));
+            if (fabs(nextValue) < fabs(bestValue)) {
+                bestValue = nextValue;
+                bestPoint = previousAnswer;
             }
-            if (fabs(fnew) <= xacc) {
-                fmin = objective(xmin);
-                if(j>minit)return xmin;
+            if (fabs(nextValue) <= rootAccuracy) {
+                bestValue = objective(bestPoint);
+                if(iteration>minimumIterations)return bestPoint;
             }
-            if (SIGN(fm, fnew) != fm) {
-                xl = xm;
-                fl = fm;
-                xh = ans;
-                fh = fnew;
-            } else if (SIGN(fl, fnew) != fl) {
-                xh = ans;
-                fh = fnew;
-            } else if (SIGN(fh, fnew) != fh) {
-                xl = ans;
-                fl = fnew;
+            if (SIGN(midpointValue, nextValue) != midpointValue) {
+                intervalLow = midpoint;
+                lowValue = midpointValue;
+                intervalHigh = previousAnswer;
+                highValue = nextValue;
+            } else if (SIGN(lowValue, nextValue) != lowValue) {
+                intervalHigh = previousAnswer;
+                highValue = nextValue;
+            } else if (SIGN(highValue, nextValue) != highValue) {
+                intervalLow = previousAnswer;
+                lowValue = nextValue;
             } else
                 return -1.e10;
-            if (fabs(xh - xl) <= xacc) {
-                fmin = objective(xmin);
-                return xmin;
+            if (fabs(intervalHigh - intervalLow) <= rootAccuracy) {
+                bestValue = objective(bestPoint);
+                return bestPoint;
             }
         }
         return 1.e10;
     } else {
-        if (fabs(fl) <= xacc) {
-            return x1;
+        if (fabs(lowValue) <= rootAccuracy) {
+            return bracketLow;
         }
-        if (fabs(fh) <= xacc) {
-            return x2;
+        if (fabs(highValue) <= rootAccuracy) {
+            return bracketHigh;
         }
         return -1e10;
     }

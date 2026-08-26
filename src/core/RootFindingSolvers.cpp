@@ -8,8 +8,8 @@
 
 namespace rootfinding {
 
-int sign(double var) {
-    if (var <= 0.)
+int sign(double value) {
+    if (value <= 0.)
         return -1;
     else
         return 1;

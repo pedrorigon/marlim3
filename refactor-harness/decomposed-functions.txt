@@ -59,3 +59,35 @@ ImprimeTrendTransP
 ImprimeTrendTransPCab
 ImprimeTrendTransG
 ImprimeTrendTransGCab
+
+# --- stage 2: root-finding solvers ----------------------------------------
+# The three solvers lost `prod` and `tipoCC` from every call: what was
+# multMarcha(x, prod, tipoCC) is now objective(x), so the token stream differs
+# from the baseline by construction at nineteen sites. zriddr also gained a
+# monitor callable, and the two lines deriving minit from the input deck moved
+# to the binding site.
+#
+# Verified two ways, because neither alone reaches everything. solver-move.py
+# inverted the substitution table and compared 1615 tokens against the pristine
+# commit exactly -- the only check that reaches zbrent and falsacorda, which
+# have no call site in the project and never execute. verify-solvers.sh then
+# swept all three over synthetic objectives, 912 configurations recording every
+# evaluation in order, and that is what guards them after T037r renamed the
+# locals and the token comparison stopped applying.
+zbrent
+falsacorda
+zriddr
+
+# SIGN and sign moved with their bodies untouched; only T037r's rename of their
+# parameters changed the token stream. Declared because the supplementary check
+# runs WITHOUT --allow-renames, so a rename reads there as a difference. With
+# that flag they compare equal, and verify-solvers.sh exercises both directly --
+# 25 SIGN cases and 5 sign cases, over the values where each one branches.
+SIGN
+sign
+
+# multMarcha's four-deep conditional chain became a pure selector plus a flat
+# switch. Verified by verify-dispatch.py: the original chain, carved out of the
+# baseline commit, compiled beside the new selector and swept over 2240
+# combinations of the five selectors, including the three rows no model reaches.
+multMarcha
