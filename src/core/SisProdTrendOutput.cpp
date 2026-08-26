@@ -180,7 +180,7 @@ constexpr FixedColumn kParaffinColumns[] = {
 };
 
 template <typename Trend, std::size_t Count>
-void writeOptionalColumns(ofstream &trendFile, const CaptionTranslator &translate,
+void writeOptionalColumns(ostream &trendFile, const CaptionTranslator &translate,
                           const Trend &trend,
                           const OptionalColumn<Trend> (&columns)[Count]) {
     for (const OptionalColumn<Trend> &column : columns)
@@ -189,7 +189,7 @@ void writeOptionalColumns(ofstream &trendFile, const CaptionTranslator &translat
 }
 
 template <std::size_t Count>
-void writeFixedColumns(ofstream &trendFile, const CaptionTranslator &translate,
+void writeFixedColumns(ostream &trendFile, const CaptionTranslator &translate,
                        const FixedColumn (&columns)[Count]) {
     for (const FixedColumn &column : columns)
         trendFile << translate(column.ptBrText, column.enText);
@@ -198,23 +198,65 @@ void writeFixedColumns(ofstream &trendFile, const CaptionTranslator &translate,
 /// The three wave families the characteristic analysis reports.
 constexpr int kWaveFamilyCount = 3;
 
-void writeWaveCelerityColumns(ofstream &trendFile, const CaptionTranslator &translate) {
+void writeWaveCelerityColumns(ostream &trendFile, const CaptionTranslator &translate) {
     for (int waveFamily = 0; waveFamily < kWaveFamilyCount; waveFamily++) {
         trendFile << translate(" Celeridade, familia de onda ", " Celerity, wave family ") << waveFamily << translate(" m/s ;", " m/s ;");
     }
 }
 
-void writeEigenvectorColumns(ofstream &trendFile, const CaptionTranslator &translate) {
+void writeEigenvectorColumns(ostream &trendFile, const CaptionTranslator &translate) {
     for (int waveFamily = 0; waveFamily < kWaveFamilyCount; waveFamily++) {
         for (int eigenvectorTerm = 0; eigenvectorTerm < kWaveFamilyCount; eigenvectorTerm++)
             trendFile << translate(" Componente do autovetor, condicao adiabatica, familia de onda = ", " Eigenvector component, adiabatic condition, wave family = ") << waveFamily << translate("termo = ", " term = ") << eigenvectorTerm << " ;";
     }
 }
 
-void writeFluctuationColumns(ofstream &trendFile, const CaptionTranslator &translate) {
+void writeFluctuationColumns(ostream &trendFile, const CaptionTranslator &translate) {
     for (int waveFamily = 0; waveFamily < kWaveFamilyCount; waveFamily++) {
         trendFile << translate(" Componente de flutuacao da familia de onda ", " Fluctuation component of wave family ") << waveFamily << " ;";
     }
+}
+
+/// Distance from the line origin to the trend cell, accumulated cell by cell.
+///
+/// Templated on the cell type because the production and service meshes are
+/// different structs that happen to share a dx. The accumulation order is the
+/// baseline's and must stay that way: reordering a floating-point sum changes
+/// its result.
+template <typename Cell>
+double lengthFromOrigin(const Cell *cells, int lastCellIndex) {
+    double length = 0;
+    for (int cell = 0; cell <= lastCellIndex; cell++)
+        length += cells[cell].dx;
+    return length;
+}
+
+/// The metadata block both line-trend headers open with.
+///
+/// The two differ only in which mesh measures the distance and what that
+/// distance is measured from -- the wellbore for production, the platform for
+/// service.
+template <typename Trend, typename Cell>
+void writeLineTrendMetadata(ostream &trendFile, const CaptionTranslator &translate,
+                            const TrendState &state, const Trend &trend,
+                            const Cell *cells, const char *originPtBrText,
+                            const char *originEnText) {
+    const double length = lengthFromOrigin(cells, trend.posic);
+    trendFile << translate(originPtBrText, originEnText) << length << endl;
+    trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
+    trendFile << translate("# Indice da Celula = ", "# Cell index = ") << trend.posic << endl;
+    if (state.branchIndex < 0 && state.inputData.AP == 1)
+        trendFile << translate(" Sequencia AP ;", " SA sequence ;");
+    trendFile << translate(" Tempo (s) ;", " Time (s) ;");
+}
+
+/// Every cross-section trend carries the same two columns, whichever line it
+/// belongs to.
+void writeCrossSectionCaptions(ostream &trendFile, const CaptionTranslator &translate,
+                               const detTRENDTrans &trend) {
+    trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
+    trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
+    trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
 }
 
 // ------------------------------------------------------------- file names --
@@ -270,9 +312,6 @@ string crossSectionTrendFileName(const TrendState &state, const char *prefix,
 // --------------------------------------------------------------- reporting --
 
 /// Records a produced file in the profile report.
-///
-/// Identical in all eight writers, comment included, which is why it is the one
-/// piece shared without a hook.
 void reportProducedFile(const TrendState &state, const string &fileName) {
     // caso nao seja simulacao POCO_INJETOR
     if (state.inputData.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
@@ -282,6 +321,23 @@ void reportProducedFile(const TrendState &state, const string &fileName) {
 }
 
 // --------------------------------------------------------------- skeletons --
+
+/// Opens a trend file, lets the caller fill it, then closes and reports it.
+///
+/// Every trend file this module produces goes through here, which is the point:
+/// reporting the file to the profile index is not something a writer can forget
+/// to do, because it is not a writer's job any more.
+template <typename WriteContent>
+void produceTrendFile(const TrendState &state, const string &fileName,
+                      ios_base::openmode mode, bool blankLineBeforeClose,
+                      WriteContent writeContent) {
+    ofstream trendFile(fileName.c_str(), mode);
+    writeContent(trendFile);
+    if (blankLineBeforeClose)
+        trendFile << endl;
+    trendFile.close();
+    reportProducedFile(state, fileName);
+}
 
 /// The block of samples one row writer emits.
 ///
@@ -320,21 +376,19 @@ constexpr int kValuePrecision = 19;
 /// call appears in the generated code (FR-022).
 ///
 /// blankLineBeforeClose is a value, not a mode flag. Only the service header
-/// emits that line, and it emits it OUTSIDE the print-pass guard, so a service
-/// trend file starts with a blank line even on the passes that write no
-/// captions. That asymmetry comes from the baseline and is preserved.
+/// asks for it, and it lands OUTSIDE the print-pass guard, so a service trend
+/// file starts with a blank line even on the passes that write no captions.
+/// That asymmetry comes from the baseline and is preserved.
 template <typename WriteCaptions>
 void writeTrendHeaderFile(const TrendState &state, const string &fileName,
                           WriteCaptions writeCaptions, bool blankLineBeforeClose) {
-    ofstream trendFile(fileName.c_str(), ios_base::out);
-    if (state.printPassCount == 1) {
-        writeCaptions(trendFile);
-        trendFile << endl;
-    }
-    if (blankLineBeforeClose)
-        trendFile << endl;
-    trendFile.close();
-    reportProducedFile(state, fileName);
+    produceTrendFile(state, fileName, ios_base::out, blankLineBeforeClose,
+                     [&](ofstream &trendFile) {
+                         if (state.printPassCount == 1) {
+                             writeCaptions(trendFile);
+                             trendFile << endl;
+                         }
+                     });
 }
 
 /// The skeleton the four row writers share.
@@ -346,29 +400,28 @@ void writeTrendHeaderFile(const TrendState &state, const string &fileName,
 void writeTrendRowsFile(const TrendState &state, const string &fileName,
                         const SampleWindow &window, bool supportsApSequence,
                         bool blankLineBeforeClose) {
-    ofstream trendFile(fileName.c_str(), ios_base::app);
-    const bool apSequenceColumn =
-        supportsApSequence && state.branchIndex < 0 && state.inputData.AP == 1;
+    produceTrendFile(
+        state, fileName, ios_base::app, blankLineBeforeClose,
+        [&](ofstream &trendFile) {
+            const bool apSequenceColumn =
+                supportsApSequence && state.branchIndex < 0 && state.inputData.AP == 1;
 
-    trendFile.precision(kValuePrecision);
-    for (int rowIndex = 0; rowIndex < window.rowCount; rowIndex++) {
-        const double *row = window.samples[window.firstRow + rowIndex];
-        if (row[0] <= kEndOfSamplesMarker)
-            break;
-        if (apSequenceColumn) {
-            trendFile.width(kValueWidth);
-            trendFile << (*state.globals).sequenciaAP << " ; ";
-        }
-        for (int columnIndex = 0; columnIndex < window.columnCount; columnIndex++) {
-            trendFile.width(kValueWidth);
-            trendFile << row[columnIndex] << " ; ";
-        }
-        trendFile << endl;
-    }
-    if (blankLineBeforeClose)
-        trendFile << endl;
-    trendFile.close();
-    reportProducedFile(state, fileName);
+            trendFile.precision(kValuePrecision);
+            for (int rowIndex = 0; rowIndex < window.rowCount; rowIndex++) {
+                const double *row = window.samples[window.firstRow + rowIndex];
+                if (row[0] <= kEndOfSamplesMarker)
+                    break;
+                if (apSequenceColumn) {
+                    trendFile.width(kValueWidth);
+                    trendFile << (*state.globals).sequenciaAP << " ; ";
+                }
+                for (int columnIndex = 0; columnIndex < window.columnCount; columnIndex++) {
+                    trendFile.width(kValueWidth);
+                    trendFile << row[columnIndex] << " ; ";
+                }
+                trendFile << endl;
+            }
+        });
 }
 
 /// The two columns every cross-section trend carries: time and temperature.
@@ -385,15 +438,10 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
         writeTrendHeaderFile(
             state, lineTrendFileName(state, "TENDP", trend.comp, networkIndex),
             [&](ofstream &trendFile) {
-                double lengthFromOrigin = 0;
-                for (int cell = 0; cell <= trend.posic; cell++)
-                    lengthFromOrigin += state.inputData.celp[cell].dx;
-                trendFile << translate("# Comprimento a partir do Fundo de Poco (m) = ", "# Length from Bottomhole (m) = ") << lengthFromOrigin << endl;
-                trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
-                trendFile << translate("# Indice da Celula = ", "# Cell index = ") << trend.posic << endl;
-                if (state.branchIndex < 0 && state.inputData.AP == 1)
-                    trendFile << translate(" Sequencia AP ;", " SA sequence ;");
-                trendFile << translate(" Tempo (s) ;", " Time (s) ;");
+                writeLineTrendMetadata(trendFile, translate, state, trend,
+                                       state.inputData.celp,
+                                       "# Comprimento a partir do Fundo de Poco (m) = ",
+                                       "# Length from Bottomhole (m) = ");
                 writeOptionalColumns(trendFile, translate, trend, kProductionColumns);
                 if (trend.dadosParafina == 1)
                     writeFixedColumns(trendFile, translate, kParaffinColumns);
@@ -425,15 +473,10 @@ void writeServiceTrendHeader(const TrendState &state, int trendIndex, int networ
         writeTrendHeaderFile(
             state, lineTrendFileName(state, "TENDG", trend.comp, networkIndex),
             [&](ofstream &trendFile) {
-                double lengthFromOrigin = 0;
-                for (int cell = 0; cell <= trend.posic; cell++)
-                    lengthFromOrigin += state.inputData.celg[cell].dx;
-                trendFile << translate("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ") << lengthFromOrigin << endl;
-                trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
-                trendFile << translate("# Indice da Celula = ", "# Cell index = ") << trend.posic << endl;
-                if (state.branchIndex < 0 && state.inputData.AP == 1)
-                    trendFile << translate(" Sequencia AP ;", " SA sequence ;");
-                trendFile << translate(" Tempo (s) ;", " Time (s) ;");
+                writeLineTrendMetadata(trendFile, translate, state, trend,
+                                       state.inputData.celg,
+                                       "# Comprimento a partir da Plataforma (m) = ",
+                                       "# Length from Platform (m) = ");
                 writeOptionalColumns(trendFile, translate, trend, kServiceColumns);
             },
             /*blankLineBeforeClose=*/true);
@@ -457,11 +500,7 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIn
         writeTrendHeaderFile(
             state,
             crossSectionTrendFileName(state, "TENDTRANSP", crossSectionPositionOf(trend)),
-            [&](ofstream &trendFile) {
-                trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
-                trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
-                trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
-            },
+            [&](ofstream &trendFile) { writeCrossSectionCaptions(trendFile, translate, trend); },
             /*blankLineBeforeClose=*/false);
     }
 }
@@ -484,11 +523,7 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex
         writeTrendHeaderFile(
             state,
             crossSectionTrendFileName(state, "TENDTRANSG", crossSectionPositionOf(trend)),
-            [&](ofstream &trendFile) {
-                trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
-                trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
-                trendFile << translate(" Temperatura (C) ;", " Temperature (C) ;");
-            },
+            [&](ofstream &trendFile) { writeCrossSectionCaptions(trendFile, translate, trend); },
             /*blankLineBeforeClose=*/false);
     }
 }
