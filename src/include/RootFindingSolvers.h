@@ -46,7 +46,20 @@ int sign(double value);
 /// of every translation unit that includes this header.
 void reportIterationLimit(const char *message);
 
-/// Finds a root by the false-position method, bisecting the bracket.
+/// Finds a root by bisection -- despite the name, which says false position.
+///
+/// The name is Portuguese for "false chord", the regula falsi. The body is not
+/// that: it takes the midpoint of the bracket, not the intercept of the secant,
+/// and the rest of the loop is a textbook bisection update. The loop carries a
+/// comment from the original -- "this block treats the 'falsacorda' properly",
+/// with the name in quotes -- and multFC, the unused 0.5 below, is the very
+/// multiplier hardcoded into the line that halves the interval. Whoever wrote
+/// it knew. See A2-06 in evidencia/anomalias.md.
+///
+/// The name is kept because renaming a function is not in this stage's scope
+/// and the stage contract fixes it. If it is ever renamed, the right name is
+/// bisect, not falsePosition -- that would make the name lie with more
+/// authority.
 ///
 /// Reachable only from zbrent, which nothing calls, so it never executes. Its
 /// verification is structural: refactor-harness/solver-move.py inverts the move
@@ -83,6 +96,12 @@ double falsacorda(double bracketLow, double bracketHigh, Objective &&objective) 
 /// uninstantiated template is only parsed, neither can the compiler. What
 /// covers it is solver-move.py for the move and verify-solvers.sh, which
 /// instantiates and exercises it, for everything after.
+///
+/// The declaration this replaced carried default arguments -- tol and epsn both
+/// 0.00001, maxit 100. They are not reproduced, because a default on a function
+/// with no caller only invites one to be written without thinking about the
+/// tolerance; the values are recorded here instead, since they are the only
+/// statement anyone ever made about what this solver expects.
 template <typename Objective>
 double zbrent(double bracketLow, double bracketHigh, Objective &&objective, double absoluteTolerance, double relativeTolerance, int maximumIterations) {
     double relativePrecision = relativeTolerance;
