@@ -217,6 +217,56 @@ void writeFluctuationColumns(ofstream &trendFile, const CaptionTranslator &trans
     }
 }
 
+// ------------------------------------------------------------- file names --
+
+/// Builds the name of a production- or service-line trend file.
+///
+/// One builder for all four line writers. It could only become one once the
+/// captions file and the data file agreed on how to spell the position: the
+/// header used to round it, and round() on an int yields a double, which
+/// ostream prints in exponent form at or above 1e6 -- sending the two halves of
+/// the same trend to two different files.
+string lineTrendFileName(const TrendState &state, const char *prefix,
+                         int position, int networkIndex) {
+    ostringstream fileNameStream;
+    fileNameStream << pathPrefixoArqSaida;
+    if (state.branchIndex < 0)
+        fileNameStream << prefix << (state.inputData.AP == 1 ? "-AP-" : "-") << position;
+    else
+        fileNameStream << "Tramo" << state.branchIndex << "-R-" << networkIndex
+                       << "-" << prefix << "-" << position;
+    fileNameStream << ".dat";
+    return fileNameStream.str();
+}
+
+/// Where a cross-section trend is sampled: the cell, the wall layer, and the
+/// discretisation point inside that layer.
+struct CrossSectionPosition {
+    int cell;
+    int layer;
+    int discretization;
+};
+
+CrossSectionPosition crossSectionPositionOf(const detTRENDTrans &trend) {
+    return {trend.comp, trend.camada - 1, trend.discre - 1};
+}
+
+/// Builds the name of a cross-section temperature trend file.
+///
+/// Also one builder for both writers, and also only after a fix: the service
+/// writer spelled its branch-path file TENDTRANSP, so inside a network it
+/// overwrote the production trend of the same branch.
+string crossSectionTrendFileName(const TrendState &state, const char *prefix,
+                                 const CrossSectionPosition &position) {
+    ostringstream fileNameStream;
+    fileNameStream << pathPrefixoArqSaida;
+    if (state.branchIndex >= 0)
+        fileNameStream << "Tramo" << state.branchIndex << "-";
+    fileNameStream << prefix << "-" << position.cell << "-" << position.layer
+                   << "-" << position.discretization << ".dat";
+    return fileNameStream.str();
+}
+
 // --------------------------------------------------------------- reporting --
 
 /// Records a produced file in the profile report.
@@ -236,9 +286,9 @@ void reportProducedFile(const TrendState &state, const string &fileName) {
 /// The block of samples one row writer emits.
 ///
 /// Rows are read straight out of the trend buffer. An earlier form copied the
-/// window into a FullMtx first, which allocated one vector per row on every
-/// call -- some four thousand calls per run -- to hand the same values to the
-/// same loop in the same order.
+/// window into a FullMtx first, allocating one vector per row on every call --
+/// some four thousand calls per run -- to hand the same values to the same loop
+/// in the same order.
 struct SampleWindow {
     double **samples;
     int firstRow;
@@ -246,23 +296,36 @@ struct SampleWindow {
     int columnCount;
 };
 
+/// Rows recorded since the last write, for one series of a trend group.
+int pendingRowCount(const TrendSeries &series, int trendIndex) {
+    return series.count[trendIndex] - series.countBase[trendIndex] + 1;
+}
+
+SampleWindow windowOf(const TrendSeries &series, int trendIndex, int columnCount) {
+    return {series.samples[trendIndex], series.countBase[trendIndex],
+            pendingRowCount(series, trendIndex), columnCount};
+}
+
 /// Rows at or below this value in column zero end the file.
 constexpr double kEndOfSamplesMarker = -9999;
 
+/// Field width and precision of every value written to a trend file.
+constexpr int kValueWidth = 20;
+constexpr int kValuePrecision = 19;
+
 /// The skeleton the four header writers share.
 ///
-/// buildName and writeCaptions are the hooks. They are template parameters
-/// rather than function pointers or virtuals, so the compiler inlines them and
-/// no indirect call appears in the generated code (FR-022).
+/// writeCaptions is the hook, and it is a template parameter rather than a
+/// function pointer or a virtual, so the compiler inlines it and no indirect
+/// call appears in the generated code (FR-022).
 ///
 /// blankLineBeforeClose is a value, not a mode flag. Only the service header
 /// emits that line, and it emits it OUTSIDE the print-pass guard, so a service
 /// trend file starts with a blank line even on the passes that write no
 /// captions. That asymmetry comes from the baseline and is preserved.
-template <typename BuildName, typename WriteCaptions>
-void writeTrendHeaderFile(const TrendState &state, BuildName buildName,
+template <typename WriteCaptions>
+void writeTrendHeaderFile(const TrendState &state, const string &fileName,
                           WriteCaptions writeCaptions, bool blankLineBeforeClose) {
-    const string fileName = buildName();
     ofstream trendFile(fileName.c_str(), ios_base::out);
     if (state.printPassCount == 1) {
         writeCaptions(trendFile);
@@ -276,30 +339,28 @@ void writeTrendHeaderFile(const TrendState &state, BuildName buildName,
 
 /// The skeleton the four row writers share.
 ///
-/// The AP sequence column exists only for the production and service lines. It
-/// is emitted once ahead of the data columns rather than tested inside the
-/// column loop, which is both one conditional fewer per value and a truer
-/// description: it is a prefix, not a special case of a data column.
-template <typename BuildName>
-void writeTrendRowsFile(const TrendState &state, const SampleWindow &window,
-                        BuildName buildName, bool supportsApSequence,
+/// The AP sequence column exists only for the line trends. It is emitted once
+/// ahead of the data columns rather than tested inside the column loop, which
+/// is one conditional fewer per value and a truer description: it is a prefix,
+/// not a special case of a data column.
+void writeTrendRowsFile(const TrendState &state, const string &fileName,
+                        const SampleWindow &window, bool supportsApSequence,
                         bool blankLineBeforeClose) {
-    const string fileName = buildName();
     ofstream trendFile(fileName.c_str(), ios_base::app);
     const bool apSequenceColumn =
         supportsApSequence && state.branchIndex < 0 && state.inputData.AP == 1;
 
-    trendFile.precision(19);
+    trendFile.precision(kValuePrecision);
     for (int rowIndex = 0; rowIndex < window.rowCount; rowIndex++) {
         const double *row = window.samples[window.firstRow + rowIndex];
         if (row[0] <= kEndOfSamplesMarker)
             break;
         if (apSequenceColumn) {
-            trendFile.width(20);
+            trendFile.width(kValueWidth);
             trendFile << (*state.globals).sequenciaAP << " ; ";
         }
         for (int columnIndex = 0; columnIndex < window.columnCount; columnIndex++) {
-            trendFile.width(20);
+            trendFile.width(kValueWidth);
             trendFile << row[columnIndex] << " ; ";
         }
         trendFile << endl;
@@ -310,10 +371,8 @@ void writeTrendRowsFile(const TrendState &state, const SampleWindow &window,
     reportProducedFile(state, fileName);
 }
 
-/// Rows recorded since the last write, for one series of a trend group.
-int pendingRowCount(const TrendSeries &series, int trendIndex) {
-    return series.count[trendIndex] - series.countBase[trendIndex] + 1;
-}
+/// The two columns every cross-section trend carries: time and temperature.
+constexpr int kCrossSectionColumnCount = 2;
 
 } // namespace
 
@@ -324,22 +383,10 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
         const CaptionTranslator translate{state.inputData.idiomaSaida};
         const detTRENDP &trend = state.inputData.trendp[trendIndex];
         writeTrendHeaderFile(
-            state,
-        [&] {
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0 && state.inputData.AP == 0) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
-            } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << state.inputData.trendp[trendIndex].comp << ".dat";
-            } else {
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
-            }
-            return fileNameStream.str();
-        },
+            state, lineTrendFileName(state, "TENDP", trend.comp, networkIndex),
             [&](ofstream &trendFile) {
                 double lengthFromOrigin = 0;
-                const int lastCellIndex = trend.posic;
-                for (int cell = 0; cell <= lastCellIndex; cell++)
+                for (int cell = 0; cell <= trend.posic; cell++)
                     lengthFromOrigin += state.inputData.celp[cell].dx;
                 trendFile << translate("# Comprimento a partir do Fundo de Poco (m) = ", "# Length from Bottomhole (m) = ") << lengthFromOrigin << endl;
                 trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
@@ -363,24 +410,11 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
 
 void writeProductionTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
     if (state.inputData.ntendp > 0) {
-        const SampleWindow window{state.production.samples[trendIndex],
-                                  state.production.countBase[trendIndex],
-                                  pendingRowCount(state.production, trendIndex),
-                                  state.inputData.nvartrendp[trendIndex] + 1};
-        writeTrendRowsFile(state, window,
-        [&] {
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0 && state.inputData.AP == 0) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
-            } else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                fileNameStream << pathPrefixoArqSaida << "TENDP-AP-" << state.inputData.trendp[trendIndex].comp << ".dat";
-            } else {
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDP" << "-" << state.inputData.trendp[trendIndex].comp << ".dat";
-            }
-            return fileNameStream.str();
-        },
-                           /*supportsApSequence=*/true,
-                           /*blankLineBeforeClose=*/false);
+        const detTRENDP &trend = state.inputData.trendp[trendIndex];
+        writeTrendRowsFile(
+            state, lineTrendFileName(state, "TENDP", trend.comp, networkIndex),
+            windowOf(state.production, trendIndex, state.inputData.nvartrendp[trendIndex] + 1),
+            /*supportsApSequence=*/true, /*blankLineBeforeClose=*/false);
     }
 }
 
@@ -389,21 +423,10 @@ void writeServiceTrendHeader(const TrendState &state, int trendIndex, int networ
         const CaptionTranslator translate{state.inputData.idiomaSaida};
         const detTRENDG &trend = state.inputData.trendg[trendIndex];
         writeTrendHeaderFile(
-            state,
-        [&] {
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0 && state.inputData.AP == 0)
-                fileNameStream << pathPrefixoArqSaida << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
-            else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                fileNameStream << pathPrefixoArqSaida << "TENDG-AP-" << state.inputData.trendg[trendIndex].comp << ".dat";
-            } else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
-            return fileNameStream.str();
-        },
+            state, lineTrendFileName(state, "TENDG", trend.comp, networkIndex),
             [&](ofstream &trendFile) {
                 double lengthFromOrigin = 0;
-                const int lastCellIndex = trend.posic;
-                for (int cell = 0; cell <= lastCellIndex; cell++)
+                for (int cell = 0; cell <= trend.posic; cell++)
                     lengthFromOrigin += state.inputData.celg[cell].dx;
                 trendFile << translate("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ") << lengthFromOrigin << endl;
                 trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
@@ -419,28 +442,13 @@ void writeServiceTrendHeader(const TrendState &state, int trendIndex, int networ
 
 void writeServiceTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
     if (state.inputData.ntendg > 0 && state.inputData.lingas > 0) {
-        const SampleWindow window{state.service.samples[trendIndex],
-                                  state.service.countBase[trendIndex],
-                                  pendingRowCount(state.service, trendIndex),
-                                  state.inputData.nvartrendg[trendIndex] + 1};
-        writeTrendRowsFile(state, window,
-        [&] {
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0 && state.inputData.AP == 0)
-                fileNameStream << pathPrefixoArqSaida << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
-            else if (state.branchIndex < 0 && state.inputData.AP == 1) {
-                fileNameStream << pathPrefixoArqSaida << "TENDG-AP-" << state.inputData.trendg[trendIndex].comp << ".dat";
-            } else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-R-" << networkIndex << "-" << "TENDG" << "-" << state.inputData.trendg[trendIndex].comp << ".dat";
-            return fileNameStream.str();
-        },
-                           /*supportsApSequence=*/true,
-                           /*blankLineBeforeClose=*/false);
+        const detTRENDG &trend = state.inputData.trendg[trendIndex];
+        writeTrendRowsFile(
+            state, lineTrendFileName(state, "TENDG", trend.comp, networkIndex),
+            windowOf(state.service, trendIndex, state.inputData.nvartrendg[trendIndex] + 1),
+            /*supportsApSequence=*/true, /*blankLineBeforeClose=*/false);
     }
 }
-
-/// The two columns every cross-section trend carries: time and temperature.
-constexpr int kCrossSectionColumnCount = 2;
 
 void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransp > 0) {
@@ -448,17 +456,7 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIn
         const detTRENDTrans &trend = state.inputData.trendtransp[trendIndex];
         writeTrendHeaderFile(
             state,
-        [&] {
-            int cellPosition = state.inputData.trendtransp[trendIndex].comp;
-            int layerIndex = state.inputData.trendtransp[trendIndex].camada - 1;
-            int discretizationIndex = state.inputData.trendtransp[trendIndex].discre - 1;
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0)
-                fileNameStream << pathPrefixoArqSaida << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            return fileNameStream.str();
-        },
+            crossSectionTrendFileName(state, "TENDTRANSP", crossSectionPositionOf(trend)),
             [&](ofstream &trendFile) {
                 trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
                 trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
@@ -470,24 +468,12 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIn
 
 void writeProductionCrossSectionTrendRows(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransp > 0) {
-        const SampleWindow window{state.productionCrossSection.samples[trendIndex],
-                                  state.productionCrossSection.countBase[trendIndex],
-                                  pendingRowCount(state.productionCrossSection, trendIndex),
-                                  kCrossSectionColumnCount};
-        writeTrendRowsFile(state, window,
-        [&] {
-            int cellPosition = state.inputData.trendtransp[trendIndex].comp;
-            int layerIndex = state.inputData.trendtransp[trendIndex].camada - 1;
-            int discretizationIndex = state.inputData.trendtransp[trendIndex].discre - 1;
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0)
-                fileNameStream << pathPrefixoArqSaida << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSP" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            return fileNameStream.str();
-        },
-                           /*supportsApSequence=*/false,
-                           /*blankLineBeforeClose=*/true);
+        const detTRENDTrans &trend = state.inputData.trendtransp[trendIndex];
+        writeTrendRowsFile(
+            state,
+            crossSectionTrendFileName(state, "TENDTRANSP", crossSectionPositionOf(trend)),
+            windowOf(state.productionCrossSection, trendIndex, kCrossSectionColumnCount),
+            /*supportsApSequence=*/false, /*blankLineBeforeClose=*/true);
     }
 }
 
@@ -497,17 +483,7 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex
         const detTRENDTrans &trend = state.inputData.trendtransg[trendIndex];
         writeTrendHeaderFile(
             state,
-        [&] {
-            int cellPosition = state.inputData.trendtransg[trendIndex].comp;
-            int layerIndex = state.inputData.trendtransg[trendIndex].camada - 1;
-            int discretizationIndex = state.inputData.trendtransg[trendIndex].discre - 1;
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0)
-                fileNameStream << pathPrefixoArqSaida << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            return fileNameStream.str();
-        },
+            crossSectionTrendFileName(state, "TENDTRANSG", crossSectionPositionOf(trend)),
             [&](ofstream &trendFile) {
                 trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
                 trendFile << translate(" Tempo (s) ; ", " Time (s) ; ");
@@ -519,24 +495,12 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex
 
 void writeServiceCrossSectionTrendRows(const TrendState &state, int trendIndex) {
     if (state.inputData.ntendtransg > 0 && state.inputData.lingas > 0) {
-        const SampleWindow window{state.serviceCrossSection.samples[trendIndex],
-                                  state.serviceCrossSection.countBase[trendIndex],
-                                  pendingRowCount(state.serviceCrossSection, trendIndex),
-                                  kCrossSectionColumnCount};
-        writeTrendRowsFile(state, window,
-        [&] {
-            int cellPosition = state.inputData.trendtransg[trendIndex].comp;
-            int layerIndex = state.inputData.trendtransg[trendIndex].camada - 1;
-            int discretizationIndex = state.inputData.trendtransg[trendIndex].discre - 1;
-            ostringstream fileNameStream;
-            if (state.branchIndex < 0)
-                fileNameStream << pathPrefixoArqSaida << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            else
-                fileNameStream << pathPrefixoArqSaida << "Tramo" << state.branchIndex << "-" << "TENDTRANSG" << "-" << cellPosition << "-" << layerIndex << "-" << discretizationIndex << ".dat";
-            return fileNameStream.str();
-        },
-                           /*supportsApSequence=*/false,
-                           /*blankLineBeforeClose=*/true);
+        const detTRENDTrans &trend = state.inputData.trendtransg[trendIndex];
+        writeTrendRowsFile(
+            state,
+            crossSectionTrendFileName(state, "TENDTRANSG", crossSectionPositionOf(trend)),
+            windowOf(state.serviceCrossSection, trendIndex, kCrossSectionColumnCount),
+            /*supportsApSequence=*/false, /*blankLineBeforeClose=*/true);
     }
 }
 
