@@ -15,8 +15,21 @@
 # changed, but only rebuilding and comparing tells you whether it mattered.
 #
 # Usage:
-#   record-provenance.sh            write the manifest next to the baseline
-#   record-provenance.sh --check    compare the current environment against it
+#   record-provenance.sh --check      compare the current environment against it
+#   record-provenance.sh --capture    write the manifest next to the baseline
+#   record-provenance.sh --capture --force   overwrite an existing manifest
+#
+# Writing requires --capture, and refuses to clobber an existing manifest
+# without --force. It used to write on a bare invocation, which is one keystroke
+# away from --check and destroys the only record of what produced the baseline:
+# the environment fields become today's, and the source fields become the
+# refactored tree's instead of the pristine commit's. After that the drift alarm
+# compares the present against itself and can never fire again.
+#
+# That is the same shape as E-05 and E1-01 -- an artifact silently replaced, and
+# every later verification measuring the wrong thing while reporting green. A
+# reference that the verification depends on must not be overwritable by a
+# command whose intent was to read it.
 
 set -uo pipefail
 export LC_ALL=C
@@ -130,6 +143,21 @@ if [[ "${1:-}" == "--check" ]]; then
 
     printf '%sPROVENANCE UNCHANGED since the baseline was captured%s\n' "$green" "$reset"
     exit 0
+fi
+
+if [[ "${1:-}" != "--capture" ]]; then
+    printf '%sno mode given.%s\n' "$red" "$reset" >&2
+    printf '  --check     compare the current environment against the manifest\n' >&2
+    printf '  --capture   write the manifest (this REPLACES the drift reference)\n' >&2
+    exit 2
+fi
+
+if [[ -f "$manifest" && "${2:-}" != "--force" ]]; then
+    printf '%srefusing to overwrite %s%s\n' "$red" "$manifest" "$reset" >&2
+    printf 'It records what produced the baseline. Replacing it resets the drift\n' >&2
+    printf 'reference to the present, so the next --check compares now against now.\n' >&2
+    printf 'Recapture only when the baseline itself was recaptured; pass --force.\n' >&2
+    exit 2
 fi
 
 mkdir -p "$BASELINE_DIR"
