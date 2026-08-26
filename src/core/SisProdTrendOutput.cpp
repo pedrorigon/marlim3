@@ -375,8 +375,10 @@ constexpr int kCrossSectionColumnCount = 2;
 /// The skeleton the four header writers share.
 ///
 /// writeCaptions is the hook, and it is a template parameter rather than a
-/// function pointer or a virtual, so the compiler inlines it and no indirect
-/// call appears in the generated code (FR-022).
+/// function pointer or a virtual, so it resolves at compile time and the
+/// Template Method adds no indirect dispatch of its own (FR-022). The object
+/// file does contain indirect calls, all of them into the standard library's
+/// iostreams, exactly as the baseline did.
 ///
 /// blankLineBeforeClose is a value, not a mode flag. Of the four headers only
 /// the service one asks for it, and it lands OUTSIDE the print-pass guard, so a
@@ -411,8 +413,8 @@ void writeTrendRowsFile(const TrendState &state, const string &fileName,
 
             trendFile.precision(kValuePrecision);
             for (int rowIndex = 0; rowIndex < window.rowCount; rowIndex++) {
-                const double *row = window.samples[window.firstRow + rowIndex];
-                if (row[0] <= kEndOfSamplesMarker)
+                const double *sampleRow = window.samples[window.firstRow + rowIndex];
+                if (sampleRow[0] <= kEndOfSamplesMarker)
                     break;
                 if (apSequenceColumn) {
                     trendFile.width(kValueWidth);
@@ -420,7 +422,7 @@ void writeTrendRowsFile(const TrendState &state, const string &fileName,
                 }
                 for (int columnIndex = 0; columnIndex < window.columnCount; columnIndex++) {
                     trendFile.width(kValueWidth);
-                    trendFile << row[columnIndex] << " ; ";
+                    trendFile << sampleRow[columnIndex] << " ; ";
                 }
                 trendFile << endl;
             }
