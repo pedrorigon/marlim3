@@ -12950,16 +12950,13 @@ trendoutput::TrendState trendStateOf(const SProd &system) {
         .globals = system.vg1dSP,
         .branchIndex = system.indTramo,
         .printPassCount = system.kimpT,
-        .productionBuffer = system.MatTrendP,
-        .productionCount = system.ntrend,
-        .productionCountBase = system.ntrendB,
-        .serviceBuffer = system.MatTrendG,
-        .serviceCount = system.ntrendg,
-        .serviceCountBase = system.ntrendgB,
-        .productionCrossSectionBuffer = system.MatTrendTransP,
-        .serviceCrossSectionBuffer = system.MatTrendTransG,
-        .crossSectionCount = system.ntrendtrans,
-        .crossSectionCountBase = system.ntrendtransB};
+        .production = {system.MatTrendP, system.ntrend, system.ntrendB},
+        .service = {system.MatTrendG, system.ntrendg, system.ntrendgB},
+        // Both cross-section groups are bound to the PRODUCTION counters. That
+        // is baseline behaviour, preserved deliberately; see
+        // specs/001-refatoracao-sisprod/evidencia/trend-diff.md, A4-01.
+        .productionCrossSection = {system.MatTrendTransP, system.ntrendtrans, system.ntrendtransB},
+        .serviceCrossSection = {system.MatTrendTransG, system.ntrendtrans, system.ntrendtransB}};
 }
 
 } // namespace

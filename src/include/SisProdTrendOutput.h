@@ -10,16 +10,12 @@
 /// write files, and nothing here feeds back into the numerics.
 ///
 /// The writers take their state through TrendState instead of reading it from
-/// SProd. Two reasons. It names, in one place, the fourteen pieces of state a
-/// trend writer is allowed to touch, so the module cannot quietly grow a
-/// dependency on the rest of the simulator. And it makes the writers callable
-/// without an SProd at all, which is what lets a dedicated harness exercise
-/// them against synthetic buffers -- the only verification available for the
-/// four cross-section writers, which the demo corpus never executes.
-///
-/// Every field is a reference or a pointer into the owner's state, never a
-/// copy: a copy would be read when the state is built rather than when the
-/// writer runs, and the call site updates the counters between calls.
+/// SProd. Two reasons. It names, in one place, the state a trend writer is
+/// allowed to touch, so the module cannot quietly grow a dependency on the rest
+/// of the simulator. And it makes the writers callable without an SProd at all,
+/// which is what lets a dedicated harness exercise them against synthetic
+/// buffers -- the only verification available for the four cross-section
+/// writers, which the demo corpus never executes.
 
 // Declared, not included: TrendState only holds a reference and a pointer to
 // these, so the header stays free of the input-deck and globals headers.
@@ -28,7 +24,26 @@ struct varGlob1D;
 
 namespace trendoutput {
 
+/// One trend group: the sample buffer and the window still to be written.
+///
+/// The four groups are uniform, which is the point. Before this shape the four
+/// buffers and their counters were eight loose fields, and one writer read the
+/// wrong pair -- a defect no amount of care at the call site would have made
+/// visible, because nothing tied a buffer to its counters.
+struct TrendSeries {
+    /// Samples, indexed [series][row][column] -- MatTrend*.
+    double ***samples;
+    /// Rows recorded so far, per series -- ntrend*.
+    const int *count;
+    /// Rows already written, per series -- ntrend*B.
+    const int *countBase;
+};
+
 /// The state a trend writer reads, and the only state it may read.
+///
+/// Every field is a reference or a pointer into the owner's state, never a
+/// copy: the call site advances the counters between the header call and the
+/// row call, so a copy would be read at the wrong moment.
 struct TrendState {
     /// Input deck and configuration -- SProd::arq.
     const Ler &inputData;
@@ -36,31 +51,18 @@ struct TrendState {
     const varGlob1D *globals;
     /// Branch index; negative outside a network -- SProd::indTramo.
     const int &branchIndex;
-    /// Count of output passes so far; the header is written on the first --
+    /// Count of output passes so far; captions go out on the first --
     /// SProd::kimpT.
     const double &printPassCount;
 
-    /// Production-line trend buffer and window -- MatTrendP, ntrend, ntrendB.
-    double ***productionBuffer;
-    const int *productionCount;
-    const int *productionCountBase;
-
-    /// Service-line trend buffer and window -- MatTrendG, ntrendg, ntrendgB.
-    double ***serviceBuffer;
-    const int *serviceCount;
-    const int *serviceCountBase;
-
-    /// Cross-section temperature buffers -- MatTrendTransP, MatTrendTransG.
-    double ***productionCrossSectionBuffer;
-    double ***serviceCrossSectionBuffer;
-
-    /// Cross-section window -- ntrendtrans, ntrendtransB.
-    ///
-    /// Read by BOTH cross-section row writers. The service writer reading the
-    /// production counters is a defect preserved from the baseline; see
-    /// evidencia/trend-diff.md, A4-01.
-    const int *crossSectionCount;
-    const int *crossSectionCountBase;
+    /// MatTrendP, ntrend, ntrendB.
+    TrendSeries production;
+    /// MatTrendG, ntrendg, ntrendgB.
+    TrendSeries service;
+    /// MatTrendTransP, ntrendtrans, ntrendtransB.
+    TrendSeries productionCrossSection;
+    /// MatTrendTransG, ntrendtransg, ntrendtransgB.
+    TrendSeries serviceCrossSection;
 };
 
 /// Writes the column captions of a production-line trend file, truncating it.

@@ -335,16 +335,13 @@ int main(int argc, char **argv) {
             .globals = &globals,
             .branchIndex = branchIndex,
             .printPassCount = printPassCount,
-            .productionBuffer = productionBuffer,
-            .productionCount = productionCount,
-            .productionCountBase = productionBase,
-            .serviceBuffer = serviceBuffer,
-            .serviceCount = serviceCount,
-            .serviceCountBase = serviceBase,
-            .productionCrossSectionBuffer = productionCross,
-            .serviceCrossSectionBuffer = serviceCross,
-            .crossSectionCount = crossCount,
-            .crossSectionCountBase = crossBase};
+            .production = {productionBuffer, productionCount, productionBase},
+            .service = {serviceBuffer, serviceCount, serviceBase},
+            .productionCrossSection = {productionCross, crossCount, crossBase},
+            // Bound to the PRODUCTION counters, mirroring trendStateOf: the
+            // service cross-section writer reading the wrong group is baseline
+            // behaviour, and the harness has to reproduce it to be comparable.
+            .serviceCrossSection = {serviceCross, crossCount, crossBase}};
 
         arqRelatorioPerfis.open((directory + "_reported.txt").c_str(), ios_base::out);
         for (int s = 0; s < kSeries; s++) {
