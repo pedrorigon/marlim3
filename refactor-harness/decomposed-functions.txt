@@ -1,0 +1,61 @@
+# Functions the refactoring has deliberately restructured, by stage.
+#
+# Why this file exists
+# --------------------
+# The supplementary L0 check compares every function of the baseline SisProd.cpp
+# against wherever it lives now, token for token. A stage that decomposes a
+# function, adds a parameter or requalifies a call changes the token stream on
+# purpose, and the check reports it. That is correct, and it is also noise that
+# accumulates: by the tenth stage the report would carry a hundred permanent
+# differences, and a function that vanished for a bad reason would be
+# indistinguishable from one that moved as planned.
+#
+# Naming a function here says: this stage changed its token stream on purpose,
+# and verified it some other way. Everything NOT named here must still be
+# token-for-token identical. A name here that turns out to compare equal is
+# reported as a stale declaration, so the list cannot rot.
+#
+# This is not a way to silence a failure. It is a way to keep the remaining
+# failures worth reading.
+
+# --- stage 1: drift-flux correlations -------------------------------------
+# The five correlations were deduplicated (BhagwatGhajar and its Mod variant
+# share a core) and the three aggregators take the resolved selector as a
+# parameter instead of reading arq. Verified by the L1 sweep: 10125 correlation
+# cases and 87480 aggregator cases, bit for bit.
+BhagwatGhajar
+BhagwatGhajarMod
+Choi
+HibikiIshii
+FrancaLahey
+C0UdDisperso
+C0UdAnularChurn
+C0UdEstratificado
+
+# The five CalcC0Ud variants only requalify their calls into
+# driftflux::correlations and read the cached selectors.
+CalcC0Ud
+CalcC0UdBuf
+CalcC0UdIni
+CalcC0UdIniBuf
+CalcC0UdPerm
+
+# resolveDriftSelectors() is called from the three places arq is built.
+SProd
+operator=
+copiaSemJson
+
+# --- stage 4: trend output ------------------------------------------------
+# The eight bodies moved to SisProdTrendOutput.cpp and were folded onto two
+# skeletons; these are the forwarders that keep the public signatures (FR-032),
+# since Num4Main.cpp calls four of them from 28 sites. Verified by
+# verify-trend-writers.sh -- 888 files over 96 configurations, byte identical --
+# which is the only check that reaches the four cross-section writers.
+ImprimeTrendP
+ImprimeTrendPCab
+ImprimeTrendG
+ImprimeTrendGCab
+ImprimeTrendTransP
+ImprimeTrendTransPCab
+ImprimeTrendTransG
+ImprimeTrendTransGCab

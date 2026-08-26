@@ -209,10 +209,16 @@ if git -C "$project_root" worktree add --detach "$baseline_source/tree" \
         [[ -e "$baseline_source/tree/src/core/$(basename "$candidate")" ]] \
             || l0_targets+=(--current "$candidate")
     done
+    # --declared keeps the functions each stage restructured on purpose out of
+    # the failure count, so the failures that remain are the ones nobody
+    # planned. Without it the report accumulates one permanent difference per
+    # decomposed function, and by the last stage a function that vanished for a
+    # bad reason is indistinguishable from one that moved as designed.
     python3 "$script_dir/verify-structural.py" \
         --baseline "$baseline_source/tree/src/core/SisProd.cpp" \
         "${l0_targets[@]}" \
-        --all 2>&1 | tail -20 | tee "$evidence_dir/l0.log"
+        --declared "$script_dir/decomposed-functions.txt" \
+        --all 2>&1 | grep -vE '^OK ' | tail -40 | tee "$evidence_dir/l0.log"
     git -C "$project_root" worktree remove --force "$baseline_source/tree" > /dev/null 2>&1
 else
     printf '%scould not create a worktree for the baseline commit%s\n' "$yellow" "$reset"

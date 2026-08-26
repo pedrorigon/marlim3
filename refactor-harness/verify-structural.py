@@ -35,6 +35,13 @@ harmless. Use --allow-renames when verifying the rename step itself.
 Usage:
     verify-structural.py --baseline <file> --current <file> --function <name>
     verify-structural.py --baseline <file> --current <file> --all
+    verify-structural.py ... --declared refactor-harness/decomposed-functions.txt
+
+--declared names the functions a stage restructured on purpose and verified some
+other way. They are reported as DECLARED and kept out of the failure count, so
+that the failures which remain are the ones nobody planned. A declared function
+that compares equal is reported as a STALE declaration: the list has to shrink
+when the reason for an entry goes away, or it stops meaning anything.
 
 Exit code: 0 when every compared body matches; 1 otherwise.
 """
@@ -137,6 +144,9 @@ def main() -> int:
                              "reports them as having disappeared")
     parser.add_argument("--function", action="append", default=[])
     parser.add_argument("--all", action="store_true")
+    parser.add_argument("--declared",
+                        help="file listing functions restructured on purpose; "
+                             "one name per line, # comments allowed")
     parser.add_argument("--allow-renames", action="store_true",
                         help="ignore identifier names; compare structure and literals only")
     args = parser.parse_args()
@@ -158,7 +168,15 @@ def main() -> int:
         print("no functions to compare", file=sys.stderr)
         return 2
 
+    declared: set[str] = set()
+    if args.declared:
+        with open(args.declared, encoding="utf-8") as handle:
+            declared = {line.split("#", 1)[0].strip() for line in handle}
+        declared.discard("")
+
     failures = 0
+    declared_count = 0
+    stale = 0
     for name in missing:
         print(f"MISSING  {name}: present in baseline, absent from current", file=sys.stderr)
         failures += 1
@@ -174,13 +192,28 @@ def main() -> int:
             expected, actual = strip_names(expected), strip_names(actual)
 
         if expected == actual:
-            print(f"OK       {name} ({len(expected)} tokens)")
+            if name in declared:
+                # The entry outlived its reason. Left in place, the list would
+                # keep excusing a function nobody is changing any more.
+                print(f"STALE    {name}: declared as restructured, but identical "
+                      f"-- remove it from {args.declared}")
+                stale += 1
+            else:
+                print(f"OK       {name} ({len(expected)} tokens)")
+        elif name in declared:
+            print(f"DECLARED {name}: restructured on purpose, verified elsewhere")
+            declared_count += 1
         else:
             print(f"DIFFERS  {name}", file=sys.stderr)
             print("      " + first_difference(expected, actual), file=sys.stderr)
             failures += 1
 
-    print(f"\ncompared {len(targets)} function(s), {failures} failure(s)")
+    summary = f"\ncompared {len(targets)} function(s), {failures} undeclared failure(s)"
+    if declared:
+        summary += f", {declared_count} declared"
+        if stale:
+            summary += f", {stale} STALE declaration(s)"
+    print(summary)
     return 1 if failures else 0
 
 
