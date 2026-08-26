@@ -1282,9 +1282,6 @@ class SProd {
     /// Copies previous states when an active choke bypasses the intermediate network solve.
     void renovaBufferCego();
 
-    /// Returns the sign of a value; currently unused.
-    int sign(double var);
-
     /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
     void renovaTemp();
     /// Evaluates wax deposition and its effects.
@@ -1486,14 +1483,12 @@ class SProd {
     /// Dispatches the selected production, gas-line, or injection steady-state marching method.
     double multMarcha(double chute, int prod, int tipoCC);
 
-    /// Returns the magnitude of the first argument with the sign of the second.
-    double SIGN(double a, double b);
-    /// Finds a root using Brent's method; currently unused.
-    double zbrent(double, double, int prod, int tipoCC,
-                  double tol = 0.00001, double epsn = 0.00001, int maxit = 100);
-    /// Finds a root using the false-position method; currently unused.
-    double falsacorda(double a, double b, int prod, int tipoCC);
-    /// Finds a root using Ridders' method.
+    /// Solves for the steady-state boundary condition by Ridders' method.
+    ///
+    /// Binds the production domain to rootfinding::zriddr: it captures prod and
+    /// tipoCC in the objective, derives the minimum iteration count from the
+    /// input deck, and carries the convergence monitor. The algorithm itself no
+    /// longer knows about any of that.
     double zriddr(double x1, double x2, int prod, int tipoCC);
 
     /// Estimates steady production-network node pressures from hydrostatics.

@@ -10,6 +10,7 @@
 #include "FA_Hidratos.h"
 #include "FA_Hidratos_Servico.h"
 #include "OutputI18n.h"
+#include "RootFindingSolvers.h"
 #include "SisProdTrendOutput.h"
 #include <chrono>
 #include <math.h>
@@ -6765,13 +6766,6 @@ void SProd::renovaBufferCego() {
     fontemassPRBuf = celula[fim + 1].fontemassLR;
 
     fontemassGRBuf = celula[fim + 1].fontemassGR;
-}
-
-int SProd::sign(double var) {
-    if (var <= 0.)
-        return -1;
-    else
-        return 1;
 }
 
 void SProd::renovaTemp() {
@@ -24732,274 +24726,101 @@ double SProd::buscaInjPfundoPerm5(double chute) {
     }
 }
 
+namespace {
+
+/// The nine rows of the steady-state march dispatch table.
+///
+/// Named after the methods they select, deliberately: a dispatch table is read
+/// by checking that each row goes where it says, and `case
+/// SteadyMarch::marchaProdPresPres1Rev: return marchaProdPresPres1Rev(chute);`
+/// makes a mis-wired row visible without cross-referencing anything.
+enum class SteadyMarch {
+    marchaInjPerm1,
+    marchaGasPerm2,
+    marchaGasPerm3,
+    marchaProdPerm1,
+    marchaProdPerm1Rev,
+    marchaProdPerm2,
+    marchaProdPresPres1,
+    marchaProdPresPres1Rev,
+    marchaProdPresPres2,
+};
+
+/// Resolves the four selectors to one row of the table.
+///
+/// This was a conditional chain nested four deep inside multMarcha. Pulled out,
+/// it is a pure function of five values -- which is what makes the table
+/// verifiable: refactor-harness/verify-dispatch.py sweeps every combination of
+/// the selectors against the original chain carved out of the baseline commit.
+/// Nothing else can check this. The corpus reaches six of the nine rows, and a
+/// mis-wired row among the other three would leave every gate green.
+///
+/// Documented row by row in evidencia/tabela-despacho.md.
+SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int reverseMarch,
+                              double productionChokeOpening) {
+    if (injectorWell != 0)
+        return SteadyMarch::marchaInjPerm1;
+    if (prod == 0)
+        return tipoCC == 0 ? SteadyMarch::marchaGasPerm2 : SteadyMarch::marchaGasPerm3;
+    if (prod == 1) {
+        if (tipoCC != 0)
+            return SteadyMarch::marchaProdPerm2;
+        return reverseMarch == 0 ? SteadyMarch::marchaProdPerm1
+                                 : SteadyMarch::marchaProdPerm1Rev;
+    }
+    if (tipoCC != 0) {
+        // A2-01. Both arms select the same march, and they are kept apart
+        // rather than collapsed. Collapsing would be behaviour-preserving --
+        // reading the choke opening has no side effect -- but this branch is
+        // the only surviving evidence that a choice was meant to happen here,
+        // and marchaProdPresPres3 exists. See evidencia/anomalias.md.
+        return productionChokeOpening > 1e-15 ? SteadyMarch::marchaProdPresPres2
+                                              : SteadyMarch::marchaProdPresPres2;
+    }
+    return reverseMarch == 0 ? SteadyMarch::marchaProdPresPres1
+                             : SteadyMarch::marchaProdPresPres1Rev;
+}
+
+}  // namespace
+
 double SProd::multMarcha(double chute, int prod, int tipoCC) {
-    if (arq.pocinjec == 0) {
-        if (prod == 0) {
-            if (tipoCC == 0)
-                return marchaGasPerm2(chute);
-            else
-                return marchaGasPerm3(chute);
-        } else {
-            if (prod == 1) {
-                if (tipoCC == 0) {
-                    if (revPerm == 0)
-                        return marchaProdPerm1(chute);
-                    else
-                        return marchaProdPerm1Rev(chute);
-                } else
-                    return marchaProdPerm2(chute);
-            } else {
-                if (tipoCC == 0) {
-                    if (revPerm == 0)
-                        return marchaProdPresPres1(chute);
-                    else
-                        return marchaProdPresPres1Rev(chute);
-                } else {
-                    if (arq.chokep.abertura[0] > 1e-15)
-                        return marchaProdPresPres2(chute);
-                    else
-                        return marchaProdPresPres2(chute);
-                }
-            }
-        }
-    } else
-        return marchaInjPerm1(chute);
-}
-double SProd::SIGN(double a, double b) {
-    return (b >= 0 ? 1.0 : -1.0) * fabs(a);
-}
-double SProd::zbrent(double x1, double x2, int prod, int tipoCC, double tol, double epsn, int maxit) {
-    double EPS = epsn;
-    double a = x1;
-    double b = x2;
-    double c = x2;
-    double fa = multMarcha(a, prod, tipoCC);
-    double fb = multMarcha(b, prod, tipoCC);
-    if (fabs(fa) > 1e9 || fabs(fb) > 1e9)
-        return 1e10;
-    double e = 0.;
-    double d, fc, p, q, r, s, tol1, xm;
-
-    if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) {
-        double val;
-        val = falsacorda(x1, x2, prod, tipoCC);
-        return val;
-    } else {
-        fc = fb;
-        for (int iter = 0; iter < maxit; iter++) {
-            if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
-                c = a;
-                fc = fa;
-                e = d = b - a;
-            }
-            if (fabs(fc) < fabs(fb)) {
-                a = b;
-                b = c;
-                c = a;
-                fa = fb;
-                fb = fc;
-                fc = fa;
-            }
-            tol1 = 2.0 * EPS * fabs(b) + 0.5 * tol;
-            xm = 0.5 * (c - b);
-            if (fabs(xm) <= tol1 || fb == 0.0)
-                return b;
-            if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
-                s = fb / fa;
-                if (a == c) {
-                    p = 2.0 * xm * s;
-                    q = 1.0 - s;
-                } else {
-                    q = fa / fc;
-                    r = fb / fc;
-                    p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
-                    q = (q - 1.0) * (r - 1.0) * (s - 1.0);
-                }
-                if (p > 0.0)
-                    q = -q;
-                p = fabs(p);
-                double min1 = 3.0 * xm * q - fabs(tol1 * q);
-                double min2 = fabs(e * q);
-                if (2.0 * p < (min1 < min2 ? min1 : min2)) {
-                    e = d;
-                    d = p / q;
-                } else {
-                    d = xm;
-                    e = d;
-                }
-            } else {
-                d = xm;
-                e = d;
-            }
-            a = b;
-            fa = fb;
-            if (fabs(d) > tol1)
-                b += d;
-            else
-                b += SIGN(tol1, xm);
-            fb = multMarcha(b, prod, tipoCC);
-        }
-        NumError("Metodo Van Winjngaarden-Dekker-Brent para calcular zero de funcaoo atingiu maximo de iteracoes");
-        return 0.0;
+    switch (selectSteadyMarch(arq.pocinjec, prod, tipoCC, revPerm, arq.chokep.abertura[0])) {
+    case SteadyMarch::marchaGasPerm2:         return marchaGasPerm2(chute);
+    case SteadyMarch::marchaGasPerm3:         return marchaGasPerm3(chute);
+    case SteadyMarch::marchaProdPerm1:        return marchaProdPerm1(chute);
+    case SteadyMarch::marchaProdPerm1Rev:     return marchaProdPerm1Rev(chute);
+    case SteadyMarch::marchaProdPerm2:        return marchaProdPerm2(chute);
+    case SteadyMarch::marchaProdPresPres1:    return marchaProdPresPres1(chute);
+    case SteadyMarch::marchaProdPresPres1Rev: return marchaProdPresPres1Rev(chute);
+    case SteadyMarch::marchaProdPresPres2:    return marchaProdPresPres2(chute);
+    // Falls out of the switch rather than returning inside it. An exhaustive
+    // switch over a scoped enum still trips -Wreturn-type on GCC 11, and gate 1
+    // admits no new warnings; a default: label would add an unreachable path
+    // the original did not have.
+    case SteadyMarch::marchaInjPerm1:         break;
     }
+    return marchaInjPerm1(chute);
 }
-
-double SProd::falsacorda(double a, double b, int prod, int tipoCC) {
-    double u = multMarcha(a, prod, tipoCC);
-    double e = b - a;
-    double c;
-    int maxit = 100;
-    double delta = 0.001;
-    double epsn = 0.001;
-    double multFC = 0.5;
-
-    for (int k = 1; k <= maxit; k++) { // this block treats the 'falsacorda' properly
-        e = b - a;
-        e *= 0.5;
-        c = a + e;
-        double w = multMarcha(c, prod, tipoCC);
-        if (fabs(e) < delta || fabs(w) < epsn)
-            return c;
-        ((u > 0 && w < 0) || (u < 0 && w > 0)) ? (b = c) : (a = c, u = w);
-    }
-    return c;
-}
-
 double SProd::zriddr(double x1, double x2, int prod, int tipoCC) {
-    double xacc = 1e-5;
-    int maxit = 100;
-    double fmin;
-    double xmin;
-    double fl;
-    double fh;
-    if (revPerm == 0) {
-        fl = multMarcha(x1, prod, tipoCC);
-        fh = multMarcha(x2, prod, tipoCC);
-    } else {
-        fl = multMarcha(x1, prod, tipoCC);
-        fh = multMarcha(x2, prod, tipoCC);
-    }
-    if (fabs(fl) > 1e9 || fabs(fh) > 1e9)
-        return 1e10;
-    if (fl >= 0.) {
-        if (fl > 0.9e10) {
-            x1 *= 0.9999;
-            fl = multMarcha(x1, prod, tipoCC);
-        } else {
-            int konta = 0;
-            while (konta < 100 && fl > 0.) {
-                if (revPerm == 0) {
-                    if (x2 < x1)
-                        x1 *= 1.0001;
-                    else
-                        x1 *= 0.999;
-                } else {
-                    if (x2 < x1)
-                        x1 *= 1.0001;
-                    else
-                        x1 *= 0.999;
-                }
-                fl = multMarcha(x1, prod, tipoCC);
-                konta++;
-            }
-        }
-    } else if (fh <= 0.) {
-        if (fh < -0.9e10) {
-            x2 *= 1.00001;
-            fh = multMarcha(x2, prod, tipoCC);
-        } else {
-            int konta = 0;
-            while (konta < 100 && fh < 0.) {
-                if (revPerm == 0) {
-                    if (x1 < x2)
-                        x2 *= 1.0001;
-                    else
-                        x2 *= 0.999;
-                } else {
-                    if (x1 < x2)
-                        x2 *= 1.0001;
-                    else
-                        x2 *= 0.999;
-                }
-                fh = multMarcha(x2, prod, tipoCC);
-                konta++;
-            }
-        }
-    }
-    if (fabs(fh) < fabs(fl)) {
-        fmin = fh;
-        xmin = x2;
-    } else {
-        fmin = fl;
-        xmin = x1;
-    }
+    // Hoisted out of the solver: arq is input-deck configuration, and a
+    // generic root finder has no business reading it. minit gates three early
+    // returns inside the solver; see A2-05 in evidencia/anomalias.md for what
+    // that gating reaches.
     int minit=0;
     if(arq.acopColAnulPermForte == 1)minit=10;
-    if ((fl > 0.0 && fh < 0.0) || (fl < 0.0 && fh > 0.0)) {
-        double xl = x1;
-        double xh = x2;
-        double ans = -1.e20;
-        for (int j = 0; j < maxit; j++) {
-            double xm = 0.5 * (xl + xh);
-            double fm = multMarcha(xm, prod, tipoCC) / monitConvPermBase;
+    return rootfinding::zriddr(
+        x1, x2,
+        [&](double guess) { return multMarcha(guess, prod, tipoCC); },
+        // Domain feedback, kept on the domain side: the solver composes it as
+        // monitor(objective(x)), which is the order the original evaluated in.
+        [&](double residual) {
+            double normalized = residual / monitConvPermBase;
             if (prod != 0) {
-                monitConvPerm = fabs(fm);
+                monitConvPerm = fabs(normalized);
             }
-            if (fabs(fm) < fabs(fmin)) {
-                fmin = fm;
-                xmin = xm;
-            }
-            double s = sqrt(fm * fm - fl * fh);
-            if (s == 0.0) {
-                fmin = multMarcha(xmin, prod, tipoCC);
-                if(j>minit)return xmin;
-            }
-            double xnew = xm + (xm - xl) * ((fl >= fh ? 1.0 : -1.0) * fm / s);
-            if (fabs(xnew - ans) <= xacc) {
-                fmin = multMarcha(xmin, prod, tipoCC);
-                if(j>minit)return xmin;
-            }
-            ans = xnew;
-            double fnew = multMarcha(ans, prod, tipoCC) / monitConvPermBase;
-            if (prod != 0) {
-                monitConvPerm = fabs(fnew);
-            }
-            if (fabs(fnew) < fabs(fmin)) {
-                fmin = fnew;
-                xmin = ans;
-            }
-            if (fabs(fnew) <= xacc) {
-                fmin = multMarcha(xmin, prod, tipoCC);
-                if(j>minit)return xmin;
-            }
-            if (SIGN(fm, fnew) != fm) {
-                xl = xm;
-                fl = fm;
-                xh = ans;
-                fh = fnew;
-            } else if (SIGN(fl, fnew) != fl) {
-                xh = ans;
-                fh = fnew;
-            } else if (SIGN(fh, fnew) != fh) {
-                xl = ans;
-                fl = fnew;
-            } else
-                return -1.e10;
-            if (fabs(xh - xl) <= xacc) {
-                fmin = multMarcha(xmin, prod, tipoCC);
-                return xmin;
-            }
-        }
-        return 1.e10;
-    } else {
-        if (fabs(fl) <= xacc) {
-            return x1;
-        }
-        if (fabs(fh) <= xacc) {
-            return x2;
-        }
-        return -1e10;
-    }
+            return normalized;
+        },
+        revPerm, minit);
 }
 
 double SProd::hidroreverso(double hol, double vaz, double vazG) {
