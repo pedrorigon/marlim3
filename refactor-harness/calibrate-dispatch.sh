@@ -6,9 +6,18 @@
 # model, so a row wired to the wrong march there passes every gate. If this
 # checker is decorative, a third of the table is unverified.
 #
-# One case below is expected NOT to be caught, and is asserted to pass rather
-# than quietly skipped: moving the choke-opening threshold. Both arms of that
-# branch select the same march (A2-01), so no value of the threshold changes the
+# Two of the cases are not about wiring at all. The selector takes the choke
+# ARRAY, not its first element, so that the subscript happens only in the branch
+# that needs it -- as it did when this was a nested chain. Ler::copia_chokeSup
+# leaves chokep.abertura null when parserie is not positive, and reading it on
+# every dispatch would turn a conditional dereference into an unconditional one.
+# No corpus model takes that path, so no gate would say anything. Both the eager
+# call site and the eager selector are injected here and must be caught. The
+# first of the two is not hypothetical: it is what this stage wrote first.
+#
+# One case is expected NOT to be caught, and is asserted to pass rather than
+# quietly skipped: moving the choke-opening threshold. Both arms of that branch
+# select the same march (A2-01), so no value of the threshold changes the
 # result. Recording that as a known blind spot is the honest form; leaving it
 # out would suggest the checker sees more than it does.
 #
@@ -91,16 +100,24 @@ attempt "reverse march inverted in ProdPresPres1" caught \
         's/    return reverseMarch == 0 ? SteadyMarch::marchaProdPresPres1$/    return reverseMarch != 0 ? SteadyMarch::marchaProdPresPres1/' \
         'reverseMarch != 0 ? SteadyMarch::marchaProdPresPres1'
 
+attempt "call site subscripts the choke array eagerly" caught \
+        's/revPerm, arq\.chokep\.abertura))/revPerm, arq.chokep.abertura[0]))/' \
+        'arq.chokep.abertura[0]))'
+
+attempt "selector subscripts the choke array eagerly" caught \
+        's|^    if (injectorWell != 0)$|    const double eager = productionChokeOpening[0]; (void)eager;\n    if (injectorWell != 0)|' \
+        'const double eager = productionChokeOpening[0];'
+
 printf '\n%sdeclared blind spot%s\n' "$yellow" "$reset"
 attempt "choke threshold 1e-15 -> 1e-9 (A2-01 arms equal)" passes \
-        's/productionChokeOpening > 1e-15/productionChokeOpening > 1e-9/' \
-        'productionChokeOpening > 1e-9'
+        's/productionChokeOpening\[0\] > 1e-15/productionChokeOpening[0] > 1e-9/' \
+        'productionChokeOpening[0] > 1e-9'
 
 printf '\n'
 if (( failures > 0 )); then
     printf '%s%d calibration case(s) behaved unexpectedly%s\n' "$red" "$failures" "$reset" >&2
     exit 1
 fi
-printf '%sCALIBRATED -- six mis-wirings caught, one declared blind spot confirmed%s\n' \
+printf '%sCALIBRATED -- eight defects caught, one declared blind spot confirmed%s\n' \
        "$green" "$reset"
 exit 0

@@ -24756,8 +24756,14 @@ enum class SteadyMarch {
 /// mis-wired row among the other three would leave every gate green.
 ///
 /// Documented row by row in evidencia/tabela-despacho.md.
+/// productionChokeOpening is the array, not the value, so that the subscript
+/// happens only in the branch that needs it -- as it did when this was a nested
+/// chain. Ler::copia_chokeSup leaves chokep.abertura null when parserie is not
+/// positive, and reading it on every dispatch would turn a conditional
+/// dereference into an unconditional one. No corpus model takes that path, so
+/// no gate would have said anything.
 SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int reverseMarch,
-                              double productionChokeOpening) {
+                              const double *productionChokeOpening) {
     if (injectorWell != 0)
         return SteadyMarch::marchaInjPerm1;
     if (prod == 0)
@@ -24774,8 +24780,8 @@ SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int revers
         // reading the choke opening has no side effect -- but this branch is
         // the only surviving evidence that a choice was meant to happen here,
         // and marchaProdPresPres3 exists. See evidencia/anomalias.md.
-        return productionChokeOpening > 1e-15 ? SteadyMarch::marchaProdPresPres2
-                                              : SteadyMarch::marchaProdPresPres2;
+        return productionChokeOpening[0] > 1e-15 ? SteadyMarch::marchaProdPresPres2
+                                                 : SteadyMarch::marchaProdPresPres2;
     }
     return reverseMarch == 0 ? SteadyMarch::marchaProdPresPres1
                              : SteadyMarch::marchaProdPresPres1Rev;
@@ -24784,7 +24790,7 @@ SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int revers
 }  // namespace
 
 double SProd::multMarcha(double chute, int prod, int tipoCC) {
-    switch (selectSteadyMarch(arq.pocinjec, prod, tipoCC, revPerm, arq.chokep.abertura[0])) {
+    switch (selectSteadyMarch(arq.pocinjec, prod, tipoCC, revPerm, arq.chokep.abertura)) {
     case SteadyMarch::marchaGasPerm2:         return marchaGasPerm2(chute);
     case SteadyMarch::marchaGasPerm3:         return marchaGasPerm3(chute);
     case SteadyMarch::marchaProdPerm1:        return marchaProdPerm1(chute);

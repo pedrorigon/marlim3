@@ -24,8 +24,13 @@ So both sides are carved out of source and compiled together:
   * the current side, selectSteadyMarch, taken verbatim from SisProd.cpp.
 
 Then every combination of the selectors is swept and compared. The choke opening
-includes values on both sides of the 1e-15 threshold, the threshold itself, and
-a NaN, because `NaN > 1e-15` is false and that is a path.
+is passed as the ARRAY, not the value, and the sweep includes a null one: the
+original subscripts it only inside one branch, and Ler::copia_chokeSup leaves
+chokep.abertura null when parserie is not positive. A selector that read it
+eagerly would turn a conditional dereference into an unconditional one, which no
+corpus model and therefore no gate would notice. The values include both sides of
+the 1e-15 threshold, the threshold itself, and a NaN, because `NaN > 1e-15` is
+false and that is a path.
 
 Usage:
     verify-dispatch.py [--baseline-commit 0f3b64f] [--show]
@@ -58,10 +63,10 @@ MARCHES = (
 BASELINE_RULES = (
     (r"^double SProd::multMarcha\(double chute, int prod, int tipoCC\) \{",
      "SteadyMarch baselineSelect(int injectorWell, int prod, int tipoCC,\n"
-     "                           int reverseMarch, double productionChokeOpening) {"),
+     "                           int reverseMarch, const double *productionChokeOpening) {"),
     (r"\barq\.pocinjec\b", "injectorWell"),
     (r"\brevPerm\b", "reverseMarch"),
-    (r"\barq\.chokep\.abertura\[0\]", "productionChokeOpening"),
+    (r"\barq\.chokep\.abertura", "productionChokeOpening"),
     (r"\breturn (marcha\w+)\(chute\);", r"return SteadyMarch::\1;"),
 )
 
@@ -101,23 +106,35 @@ int main() {{
     const int prods[] = {{{prod}}};
     const int tipoCCs[] = {{{tipoCC}}};
     const int reverseMarches[] = {{{reverseMarch}}};
-    const double openings[] = {{{productionChokeOpening}}};
+
+    const double openingValues[] = {{{productionChokeOpening}}};
+
+    // The openings are passed as ARRAYS, and one of them is null. Ler::copia_chokeSup
+    // leaves chokep.abertura null when parserie is not positive, and the original chain
+    // subscripts it only inside one branch. A selector that reads it eagerly would
+    // dereference null on every dispatch -- and no corpus model takes that path, so no
+    // gate would have said anything. Here it crashes, which is the point.
+    const double *openings[] = {{
+        &openingValues[0], &openingValues[1], &openingValues[2], &openingValues[3],
+        &openingValues[4], &openingValues[5], &openingValues[6], nullptr,
+    }};
 
     long long compared = 0, differing = 0;
     for (int injectorWell : injectorWells)
     for (int prod : prods)
     for (int tipoCC : tipoCCs)
     for (int reverseMarch : reverseMarches)
-    for (double opening : openings) {{
+    for (const double *opening : openings) {{
         SteadyMarch expected = baselineSelect(injectorWell, prod, tipoCC, reverseMarch, opening);
         SteadyMarch actual = selectSteadyMarch(injectorWell, prod, tipoCC, reverseMarch, opening);
         ++compared;
         if (expected != actual) {{
             ++differing;
             if (differing <= 10)
-                std::printf("DIFF pocinjec=%d prod=%d tipoCC=%d revPerm=%d abertura=%.17g"
+                std::printf("DIFF pocinjec=%d prod=%d tipoCC=%d revPerm=%d abertura=%s"
                             "  baseline=%s current=%s\\n",
-                            injectorWell, prod, tipoCC, reverseMarch, opening,
+                            injectorWell, prod, tipoCC, reverseMarch,
+                            opening ? "value" : "NULL",
                             nameOf(expected), nameOf(actual));
         }}
     }}
@@ -140,6 +157,54 @@ def carve(source: str, pattern: str) -> str:
             if opened and depth == 0:
                 return "\n".join(lines[start:probe + 1])
     raise SystemExit(f"no definition matching {pattern!r}")
+
+
+# What SProd::multMarcha must pass as the choke argument. The sweep below compiles
+# only the selector, so an eager subscript at the CALL SITE -- passing
+# arq.chokep.abertura[0] instead of arq.chokep.abertura -- would be invisible to
+# it. That is the mistake this check exists for, because it is the one that was
+# actually made: it turns the original's conditional dereference into an
+# unconditional one, and Ler::copia_chokeSup leaves that pointer null when
+# parserie is not positive.
+CALL_SITE = "selectSteadyMarch(arq.pocinjec, prod, tipoCC, revPerm, arq.chokep.abertura)"
+
+
+def check_call_site(source: str) -> str | None:
+    """None when multMarcha hands the selector the array; a message otherwise."""
+    body = carve(source, r"double SProd::multMarcha\(")
+    if CALL_SITE in body:
+        return None
+    if "arq.chokep.abertura[0]" in body:
+        return ("multMarcha subscripts the choke array before the call:\n"
+                "      it passes arq.chokep.abertura[0], so the dereference happens on\n"
+                "      EVERY dispatch. The original only subscripted it inside one\n"
+                "      branch, and the pointer can be null. Pass the array.")
+    return ("multMarcha does not call the selector as expected.\n"
+            f"      expected: {CALL_SITE}")
+
+
+def check_lazy_subscript(selector: str) -> str | None:
+    """None when the selector subscripts the choke array only where it must.
+
+    Checked structurally rather than by running with a null pointer. A null was
+    tried first and did not work: the read is dead if its value is unused, and
+    at -O2 the compiler deletes it, so the sweep reported no difference on a
+    selector that dereferences null on every call. A checker whose negative case
+    depends on the optimiser not eliding the fault is not a checker.
+    """
+    hits = [line.strip() for line in selector.split("\n")
+            if "productionChokeOpening[" in line]
+    if len(hits) != 1:
+        return (f"the selector subscripts the choke array {len(hits)} time(s); "
+                "expected exactly 1")
+    guard = selector.find("if (tipoCC != 0) {")
+    subscript = selector.find("productionChokeOpening[")
+    if guard < 0 or subscript < guard:
+        return ("the selector subscripts the choke array outside the branch that\n"
+                "      needs it, so the dereference happens on every dispatch. The\n"
+                "      original only subscripted it inside `if (tipoCC != 0)`, and\n"
+                "      Ler::copia_chokeSup can leave that pointer null.")
+    return None
 
 
 def to_selector(body: str) -> str:
@@ -181,6 +246,11 @@ def main() -> int:
     if args.show:
         print(baseline)
         return 0
+
+    complaint = check_call_site(current) or check_lazy_subscript(selector)
+    if complaint:
+        print(f"CHOKE READ WRONG -- {complaint}", file=sys.stderr)
+        return 1
 
     driver = DRIVER.format(
         enumerators="".join(f"    {m},\n" for m in MARCHES).rstrip(),
