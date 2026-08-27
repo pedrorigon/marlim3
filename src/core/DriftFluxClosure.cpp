@@ -368,6 +368,196 @@ namespace coefficient {
  * betneg -> ul0 -> mult0, dead in all five, is A3-07.
  */
 
+namespace {
+
+/*
+ * Data Source Policy.
+ *
+ * The contract named five sources, one per variant. Measurement says there are
+ * THREE: CalcC0Ud and CalcC0UdIni read exactly the same fields, and so do
+ * CalcC0UdBuf and CalcC0UdIniBuf -- the initialisation variants are not a
+ * different source, they are different control flow over the same source, which
+ * is not something a data-source policy can express. What actually varies is
+ * instantaneous versus buffered versus steady state.
+ *
+ * The hooks are called AT THE POINT OF USE, never hoisted into a local at the
+ * top of a body. A call substituted for an expression is evaluated where the
+ * expression was; a value read once and reused is not, and the difference is
+ * exactly how a conditional read became unconditional in the root-finding
+ * stage. gasForSign and gasFlowRate are separate hooks because they are
+ * separate expressions in the instantaneous variants: the sign tests read QG,
+ * while the flow rate is MC - Mliqini.
+ *
+ * Stateless structs with static members, resolved at compile time, defined in
+ * the same translation unit as their only callers: no indirect call survives.
+ */
+
+/// Instantaneous state -- SProd::CalcC0Ud and SProd::CalcC0UdIni.
+struct InstantaneousSource {
+    static double gasForSign(const Cel *cells, int index) { return cells[index].QG; }
+    static double gasFlowRate(const Cel *cells, int index) {
+        return cells[index].MC - cells[index].Mliqini;
+    }
+    static double liquidFlowRate(const Cel *cells, int index) { return cells[index].Mliqini; }
+};
+
+/// Buffered network state -- SProd::CalcC0UdBuf and SProd::CalcC0UdIniBuf.
+struct BufferedSource {
+    static double gasForSign(const Cel *cells, int index) {
+        return cells[index].MCBuf - cells[index].MliqiniBuf;
+    }
+    static double gasFlowRate(const Cel *cells, int index) {
+        return cells[index].MCBuf - cells[index].MliqiniBuf;
+    }
+    static double liquidFlowRate(const Cel *cells, int index) { return cells[index].MliqiniBuf; }
+};
+
+/// Steady state -- SProd::CalcC0UdPerm. It takes the magnitude of both rates and
+/// never tests their sign, so it has no gasForSign.
+struct SteadyStateSource {
+    static double gasFlowRate(const Cel *cells, int index) {
+        return fabs(cells[index].MC - cells[index].Mliqini);
+    }
+    static double liquidFlowRate(const Cel *cells, int index) {
+        return fabs(cells[index].Mliqini);
+    }
+};
+
+/// The flow rates and the two Reynolds numbers built from them.
+struct FlowScales {
+    double gasRate;      ///< ug1
+    double liquidRate;   ///< ul1
+    double diameter;     ///< dia1
+    double area;         ///< A1
+    double mixture;      ///< nrey
+    double liquid;       ///< nreyl
+};
+
+/// Flow rates, duct size and Reynolds numbers -- the one block that is both
+/// identical in all five variants AND parameterised by where the rates come
+/// from. 145 tokens, proven identical across the five before being shared.
+///
+/// The duct diameter is chosen INSIDE this function, not passed in, because the
+/// original reads cells[ind - 1].duto.a only when ind > 0 && ug1 >= 0. Taking it
+/// as an argument would make that read unconditional.
+template <typename Source>
+FlowScales flowScalesOf(const ClosureState &state, int ind, double rgm, double rlm,
+                        double hns, double viscl1, double viscg1) {
+    double ug1 = Source::gasFlowRate(state.cells, ind) / rgm;
+    double ul1 = Source::liquidFlowRate(state.cells, ind) / rlm;
+    double dia1 = state.cells[ind].duto.a;
+    if (ind > 0 && ug1 >= 0)
+        dia1 = state.cells[ind - 1].duto.a;
+    double A1 = M_PI * dia1 * dia1 / 4.;
+
+    double rmed = hns * rlm + (1 - hns) * rgm;
+    double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
+    double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
+    double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+    return FlowScales{ug1, ul1, dia1, A1, nrey, nreyl};
+}
+
+/// Dispersed and stratified closure, evaluated as a pair. 167 tokens, identical
+/// in all five.
+///
+/// mult0 and mult1 are dead -- assigned from ul0 and ul1 and never read, in
+/// every variant. They are kept because they are part of the block that was
+/// proven identical, and because deleting them would erase the only evidence
+/// that a weighting was once intended here (A3-06).
+void evaluateRegimePair(const ClosureState &state, int ind, double rlm, double rgm,
+                        double tensup1, double alf0, double nrey, double nreyl,
+                        double ug1, double ul1, double dia1, double ang,
+                        double correcHor, double ul0,
+                        double &c0D, double &udD, double &c0E, double &udE) {
+    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1,
+                                          state.cells[ind].duto.rug, ang, c0D, udD, correcHor,
+                                          state.cells[ind].estabCol, state.selectors.dispersed);
+    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1,
+                                               state.cells[ind].duto.rug, ang, c0E, udE, correcHor,
+                                               state.cells[ind].estabCol, state.selectors.stratified);
+
+    double mult0, mult1;
+    mult0 = 1.;
+    if (ul0 < 0.)
+        mult0 = 0.;
+    mult1 = 0.;
+    if (ul1 < 0.)
+        mult1 = 1.;
+}
+
+/// Blends the dispersed and stratified results by superficial velocity, with a
+/// linear ramp between jmin and jmax. 128 tokens, identical in all five.
+///
+/// The ramp is written (1. - raz) * c0E + raz * c0D and MUST stay that way: the
+/// algebraically equal c0D + (1. - raz) * (c0E - c0D) rounds differently.
+void blendBySuperficialVelocity(double ug1, double ul1, double A1, double c0D, double udD,
+                                double c0E, double udE, double &c0, double &ud) {
+    double jmax = 0.05;
+    double jmin = 0.005;
+    if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
+        c0 = c0E;
+        ud = udE;
+    } else if ((fabs(ug1) + fabs(ul1)) / A1 < jmin) {
+        c0 = c0D;
+        ud = udD;
+    } else {
+        double raz = (jmax - (fabs(ug1) + fabs(ul1)) / A1) / (jmax - jmin);
+        c0 = ((1. - raz) * c0E + raz * c0D);
+        ud = ((1. - raz) * udE + raz * udD);
+    }
+}
+
+/// Dispersed closure, upgraded to annular/churn when the pattern says so.
+/// 132 tokens, identical in all five.
+void evaluateDispersedOrAnnular(const ClosureState &state, int ind, double rlm, double rgm,
+                                double tensup1, double alf0, double nrey, double nreyl,
+                                double ug1, double ul1, double dia1, double ang,
+                                double correcHor, int xarr1, double &c0, double &ud) {
+    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1,
+                                          state.cells[ind].duto.rug, ang, c0, ud, correcHor,
+                                          state.cells[ind].estabCol, state.selectors.dispersed);
+    if (xarr1 == -2) {
+        driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1,
+                                                 dia1, state.cells[ind].duto.rug, ang, c0, ud,
+                                                 correcHor, state.cells[ind].estabCol,
+                                                 state.selectors.annularChurn);
+    }
+}
+
+/// Discards the computed slip when the deck disables it. 113 tokens; the five
+/// bodies carried two spellings of it, differing only in which configuration
+/// field is read -- escorregaTran in the four transient variants, escorregaPerm
+/// in the steady-state one -- and in writing the second zero of the last line as
+/// `0.` in two of them and `0` in the other three.
+///
+/// The field is a parameter, which is what makes the two spellings one. The
+/// zero is not a second difference to preserve: `0 * ud` converts the int to
+/// 0.0 before multiplying, so it IS `0. * ud`, same operation and same rounding.
+///
+/// Everything above the two assignments is dead: correcaoUd and correcaoCo are
+/// computed, clamped, and then multiplied by zero. Preserved, not removed --
+/// c0 is forced to 1 and ud to 0 whenever slip is off, and the arithmetic that
+/// says so is the record of what was once intended (A3-06).
+void applyNoSlipOverride(const Cel *cells, int ind, int slipEnabled, double &c0, double &ud) {
+    if (slipEnabled == 0) {
+        double ulsmed = cells[ind].QL / cells[ind].duto.area;
+        double correcaoUd = 1 - (ulsmed - 0.15) / 0.35;
+        double correcaoCo = c0 - (c0 - 1) * (ulsmed - 0.15) / 0.35;
+        if (correcaoUd > 1.)
+            correcaoUd = 1.;
+        if (correcaoUd < 0.)
+            correcaoUd = 0.;
+        if (correcaoCo > c0)
+            correcaoCo = c0;
+        if (correcaoCo < 1)
+            correcaoCo = 1;
+        c0 = 1. + 0 * correcaoCo;
+        ud = 0. + 0. * ud * correcaoUd;
+    }
+}
+
+}  // namespace
+
 void instantaneous(const ClosureState &state, int ind, double &c0, double &ud) {
     int timeStep = 20;
     state.cells[ind].transic0 = state.cells[ind].transic;
@@ -519,18 +709,13 @@ void instantaneous(const ClosureState &state, int ind, double &c0, double &ud) {
             viscg1 = state.cells[ind - 1].flui.ViscGas(pmed, tmed);
         }
 
-        double ug1 = (state.cells[ind].MC - state.cells[ind].Mliqini) / rgm;
-        double ul1 = state.cells[ind].Mliqini / rlm;
-        double dia1 = state.cells[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = state.cells[ind - 1].duto.a;
-
-        double A1 = M_PI * dia1 * dia1 / 4.;
-
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+        const FlowScales scales = flowScalesOf<InstantaneousSource>(state, ind, rgm, rlm, hns, viscl1, viscg1);
+        double ug1 = scales.gasRate;
+        double ul1 = scales.liquidRate;
+        const double dia1 = scales.diameter;
+        const double A1 = scales.area;
+        const double nrey = scales.mixture;
+        const double nreyl = scales.liquid;
 
         int xarr1 = 1;
         double dtot = state.cells[ind].dxL + state.cells[ind].dx;
@@ -591,38 +776,12 @@ void instantaneous(const ClosureState &state, int ind, double &c0, double &ud) {
                     state.cells[ind - 1].arranjoR = testamapa.arr;
                     state.cells[ind - 1].perdaEstratL = testamapa.fatorperdaLiq;
                     state.cells[ind - 1].perdaEstratG = testamapa.fatorperdaGas;
-                    double c0D;
-                    double udD;
-                    double c0E;
-                    double udE;
-
-                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, state.cells[ind].estabCol, state.selectors.stratified);
-
-                    double mult0, mult1;
-                    mult0 = 1.;
-                    if (ul0 < 0.)
-                        mult0 = 0.;
-                    mult1 = 0.;
-                    if (ul1 < 0.)
-                        mult1 = 1.;
+                    double c0D, udD, c0E, udE;
+                    evaluateRegimePair(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                       ug1, ul1, dia1, ang, correcHor, ul0, c0D, udD, c0E, udE);
                     double alf0E = state.cells[ind - 1].alf;
 
-                    double jmax = 0.05;
-                    double jmin = 0.005;
-                    if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
-                        c0 = c0E;
-                        ud = udE;
-                    } else if ((fabs(ug1) + fabs(ul1)) / A1 < jmin) {
-                        c0 = c0D;
-                        ud = udD;
-                    } else {
-                        double raz = (jmax - (fabs(ug1) + fabs(ul1)) / A1) / (jmax - jmin);
-                        c0 = ((1. - raz) * c0E + raz * c0D);
-                        ud = ((1. - raz) * udE + raz * udD);
-                    }
+                    blendBySuperficialVelocity(ug1, ul1, A1, c0D, udD, c0E, udE, c0, ud);
 
                     if (state.cells[ind].transic > 0) {
                         c0 = (c0 * state.cells[ind].transic + state.cells[ind].c0 * (atenua - state.cells[ind].transic)) / atenua;
@@ -636,13 +795,8 @@ void instantaneous(const ClosureState &state, int ind, double &c0, double &ud) {
                                    state.cells[ind].duto.teta, tensup1, state.input.mapaArranjo, state.globals);
                 xarr1 = testamapa2.verificaArr();
 
-                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                             c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-
-                if (xarr1 == -2) {
-                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                    c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.annularChurn);
-                }
+                evaluateDispersedOrAnnular(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                          ug1, ul1, dia1, ang, correcHor, xarr1, c0, ud);
                 if (fabs(ug1 / state.cells[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
                     if (state.selectors.annularChurn == 3 && state.selectors.dispersed == 1)
@@ -670,21 +824,7 @@ void instantaneous(const ClosureState &state, int ind, double &c0, double &ud) {
             state.cells[ind].udSpare = ud;
         }
     }
-    if (state.input.escorregaTran == 0) {
-        double ulsmed = state.cells[ind].QL / state.cells[ind].duto.area;
-        double correcaoUd = 1 - (ulsmed - 0.15) / 0.35;
-        double correcaoCo = c0 - (c0 - 1) * (ulsmed - 0.15) / 0.35;
-        if (correcaoUd > 1.)
-            correcaoUd = 1.;
-        if (correcaoUd < 0.)
-            correcaoUd = 0.;
-        if (correcaoCo > c0)
-            correcaoCo = c0;
-        if (correcaoCo < 1)
-            correcaoCo = 1;
-        c0 = 1. + 0 * correcaoCo;
-        ud = 0. + 0. * ud * correcaoUd;
-    }
+    applyNoSlipOverride(state.cells, ind, state.input.escorregaTran, c0, ud);
 }
 
 void buffered(const ClosureState &state, int ind, double &c0, double &ud) {
@@ -822,17 +962,13 @@ void buffered(const ClosureState &state, int ind, double &c0, double &ud) {
             viscg1 = state.cells[ind - 1].flui.ViscGas(pmed, tmed);
         }
 
-        double ug1 = (state.cells[ind].MCBuf - state.cells[ind].MliqiniBuf) / rgm;
-        double ul1 = (state.cells[ind].MliqiniBuf) / rlm;
-        double dia1 = state.cells[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = state.cells[ind - 1].duto.a;
-        double A1 = M_PI * dia1 * dia1 / 4.;
-
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+        const FlowScales scales = flowScalesOf<BufferedSource>(state, ind, rgm, rlm, hns, viscl1, viscg1);
+        double ug1 = scales.gasRate;
+        double ul1 = scales.liquidRate;
+        const double dia1 = scales.diameter;
+        const double A1 = scales.area;
+        const double nrey = scales.mixture;
+        const double nreyl = scales.liquid;
 
         int xarr1 = 1;
         double dtot = state.cells[ind].dxL + state.cells[ind].dx;
@@ -867,37 +1003,12 @@ void buffered(const ClosureState &state, int ind, double &c0, double &ud) {
                 xarr1 = state.cells[ind].arranjo;
                 if (xarr1 == -1) {
 
-                    double c0D;
-                    double udD;
-                    double c0E;
-                    double udE;
-                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, state.cells[ind].estabCol, state.selectors.stratified);
-
-                    double mult0, mult1;
-                    mult0 = 1.;
-                    if (ul0 < 0.)
-                        mult0 = 0.;
-                    mult1 = 0.;
-                    if (ul1 < 0.)
-                        mult1 = 1.;
+                    double c0D, udD, c0E, udE;
+                    evaluateRegimePair(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                       ug1, ul1, dia1, ang, correcHor, ul0, c0D, udD, c0E, udE);
                     double alf0E = state.cells[ind - 1].alf;
 
-                    double jmax = 0.05;
-                    double jmin = 0.005;
-                    if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
-                        c0 = c0E;
-                        ud = udE;
-                    } else if ((fabs(ug1) + fabs(ul1)) / A1 < jmin) {
-                        c0 = c0D;
-                        ud = udD;
-                    } else {
-                        double raz = (jmax - (fabs(ug1) + fabs(ul1)) / A1) / (jmax - jmin);
-                        c0 = ((1. - raz) * c0E + raz * c0D);
-                        ud = ((1. - raz) * udE + raz * udD);
-                    }
+                    blendBySuperficialVelocity(ug1, ul1, A1, c0D, udD, c0E, udE, c0, ud);
 
                     if (state.cells[ind].transic > 0) {
                         c0 = (c0 * state.cells[ind].transic + state.cells[ind].c0 * (atenua - state.cells[ind].transic)) / atenua;
@@ -907,12 +1018,8 @@ void buffered(const ClosureState &state, int ind, double &c0, double &ud) {
             }
             if (xarr1 != -1) {
 
-                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                             c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                if (xarr1 == -2) {
-                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                    c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.annularChurn);
-                }
+                evaluateDispersedOrAnnular(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                          ug1, ul1, dia1, ang, correcHor, xarr1, c0, ud);
                 if (fabs(ug1 / state.cells[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
                     if (state.selectors.annularChurn == 3 && state.selectors.dispersed == 1)
@@ -930,21 +1037,7 @@ void buffered(const ClosureState &state, int ind, double &c0, double &ud) {
             state.cells[ind].udSpare = ud;
         }
     }
-    if (state.input.escorregaTran == 0) {
-        double ulsmed = state.cells[ind].QL / state.cells[ind].duto.area;
-        double correcaoUd = 1 - (ulsmed - 0.15) / 0.35;
-        double correcaoCo = c0 - (c0 - 1) * (ulsmed - 0.15) / 0.35;
-        if (correcaoUd > 1.)
-            correcaoUd = 1.;
-        if (correcaoUd < 0.)
-            correcaoUd = 0.;
-        if (correcaoCo > c0)
-            correcaoCo = c0;
-        if (correcaoCo < 1)
-            correcaoCo = 1;
-        c0 = 1. + 0 * correcaoCo;
-        ud = 0. + 0 * ud * correcaoUd;
-    }
+    applyNoSlipOverride(state.cells, ind, state.input.escorregaTran, c0, ud);
 }
 
 void initialization(const ClosureState &state, int ind, double &c0, double &ud) {
@@ -1055,17 +1148,13 @@ void initialization(const ClosureState &state, int ind, double &c0, double &ud) 
             viscg1 = (*state.cells[ind].fluiL).ViscGas(pmed, tmed);
         }
 
-        double ug1 = (state.cells[ind].MC - state.cells[ind].Mliqini) / rgm;
-        double ul1 = state.cells[ind].Mliqini / rlm;
-        double dia1 = state.cells[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = state.cells[ind - 1].duto.a;
-        double A1 = M_PI * dia1 * dia1 / 4.;
-
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+        const FlowScales scales = flowScalesOf<InstantaneousSource>(state, ind, rgm, rlm, hns, viscl1, viscg1);
+        double ug1 = scales.gasRate;
+        double ul1 = scales.liquidRate;
+        const double dia1 = scales.diameter;
+        const double A1 = scales.area;
+        const double nrey = scales.mixture;
+        const double nreyl = scales.liquid;
 
         int xarr1 = 1;
         double dtot = state.cells[ind].dxL + state.cells[ind].dx;
@@ -1101,36 +1190,12 @@ void initialization(const ClosureState &state, int ind, double &c0, double &ud) 
                     } else
                         state.cells[ind].transic = 0;
                     state.cells[ind].arranjo = xarr1 = testamapa.arr;
-                    double c0D;
-                    double udD;
-                    double c0E;
-                    double udE;
-                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, state.cells[ind].estabCol, state.selectors.stratified);
-                    double mult0, mult1;
-                    mult0 = 1.;
-                    if (ul0 < 0.)
-                        mult0 = 0.;
-                    mult1 = 0.;
-                    if (ul1 < 0.)
-                        mult1 = 1.;
+                    double c0D, udD, c0E, udE;
+                    evaluateRegimePair(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                       ug1, ul1, dia1, ang, correcHor, ul0, c0D, udD, c0E, udE);
                     double alf0E = state.inletVoidFraction;
 
-                    double jmax = 0.05;
-                    double jmin = 0.005;
-                    if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
-                        c0 = c0E;
-                        ud = udE;
-                    } else if ((fabs(ug1) + fabs(ul1)) / A1 < jmin) {
-                        c0 = c0D;
-                        ud = udD;
-                    } else {
-                        double raz = (jmax - (fabs(ug1) + fabs(ul1)) / A1) / (jmax - jmin);
-                        c0 = ((1. - raz) * c0E + raz * c0D);
-                        ud = ((1. - raz) * udE + raz * udD);
-                    }
+                    blendBySuperficialVelocity(ug1, ul1, A1, c0D, udD, c0E, udE, c0, ud);
 
                     if (state.cells[ind].transic > 0) {
                         c0 = (c0 * state.cells[ind].transic + state.cells[ind].c0 * (atenua - state.cells[ind].transic)) / atenua;
@@ -1144,12 +1209,8 @@ void initialization(const ClosureState &state, int ind, double &c0, double &ud) 
                                    state.cells[ind].duto.teta, tensup1, state.input.mapaArranjo, state.globals);
                 xarr1 = testamapa2.verificaArr();
 
-                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                             c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                if (xarr1 == -2) {
-                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                    c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.annularChurn);
-                }
+                evaluateDispersedOrAnnular(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                          ug1, ul1, dia1, ang, correcHor, xarr1, c0, ud);
 
                 if (fabs(ug1 / state.cells[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
@@ -1176,21 +1237,7 @@ void initialization(const ClosureState &state, int ind, double &c0, double &ud) 
             state.cells[ind].udSpare = ud;
         }
     }
-    if (state.input.escorregaTran == 0) {
-        double ulsmed = state.cells[ind].QL / state.cells[ind].duto.area;
-        double correcaoUd = 1 - (ulsmed - 0.15) / 0.35;
-        double correcaoCo = c0 - (c0 - 1) * (ulsmed - 0.15) / 0.35;
-        if (correcaoUd > 1.)
-            correcaoUd = 1.;
-        if (correcaoUd < 0.)
-            correcaoUd = 0.;
-        if (correcaoCo > c0)
-            correcaoCo = c0;
-        if (correcaoCo < 1)
-            correcaoCo = 1;
-        c0 = 1. + 0 * correcaoCo;
-        ud = 0. + 0 * ud * correcaoUd;
-    }
+    applyNoSlipOverride(state.cells, ind, state.input.escorregaTran, c0, ud);
 }
 
 void bufferedInitialization(const ClosureState &state, int ind, double &c0, double &ud) {
@@ -1299,17 +1346,13 @@ void bufferedInitialization(const ClosureState &state, int ind, double &c0, doub
             viscg1 = (*state.cells[ind].fluiL).ViscGas(pmed, tmed);
         }
 
-        double ug1 = (state.cells[ind].MCBuf - state.cells[ind].MliqiniBuf) / rgm;
-        double ul1 = state.cells[ind].MliqiniBuf / rlm;
-        double dia1 = state.cells[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = state.cells[ind - 1].duto.a;
-        double A1 = M_PI * dia1 * dia1 / 4.;
-
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+        const FlowScales scales = flowScalesOf<BufferedSource>(state, ind, rgm, rlm, hns, viscl1, viscg1);
+        double ug1 = scales.gasRate;
+        double ul1 = scales.liquidRate;
+        const double dia1 = scales.diameter;
+        const double A1 = scales.area;
+        const double nrey = scales.mixture;
+        const double nreyl = scales.liquid;
 
         int xarr1 = 1;
         double dtot = state.cells[ind].dxL + state.cells[ind].dx;
@@ -1331,35 +1374,11 @@ void bufferedInitialization(const ClosureState &state, int ind, double &c0, doub
                 xarr1 = state.cells[ind].arranjo;
                 if (xarr1 == -1) {
 
-                    double c0D;
-                    double udD;
-                    double c0E;
-                    double udE;
-                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                 c0D, udD, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                    driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                      c0E, udE, correcHor, state.cells[ind].estabCol, state.selectors.stratified);
-                    double mult0, mult1;
-                    mult0 = 1.;
-                    if (ul0 < 0.)
-                        mult0 = 0.;
-                    mult1 = 0.;
-                    if (ul1 < 0.)
-                        mult1 = 1.;
+                    double c0D, udD, c0E, udE;
+                    evaluateRegimePair(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                       ug1, ul1, dia1, ang, correcHor, ul0, c0D, udD, c0E, udE);
 
-                    double jmax = 0.05;
-                    double jmin = 0.005;
-                    if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
-                        c0 = c0E;
-                        ud = udE;
-                    } else if ((fabs(ug1) + fabs(ul1)) / A1 < jmin) {
-                        c0 = c0D;
-                        ud = udD;
-                    } else {
-                        double raz = (jmax - (fabs(ug1) + fabs(ul1)) / A1) / (jmax - jmin);
-                        c0 = ((1. - raz) * c0E + raz * c0D);
-                        ud = ((1. - raz) * udE + raz * udD);
-                    }
+                    blendBySuperficialVelocity(ug1, ul1, A1, c0D, udD, c0E, udE, c0, ud);
 
                     if (state.cells[ind].transic > 0) {
                         c0 = (c0 * state.cells[ind].transic + state.cells[ind].c0 * (atenua - state.cells[ind].transic)) / atenua;
@@ -1369,12 +1388,8 @@ void bufferedInitialization(const ClosureState &state, int ind, double &c0, doub
             }
             if (xarr1 != -1) {
 
-                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                             c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                if (xarr1 == -2) {
-                    driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                    c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.annularChurn);
-                }
+                evaluateDispersedOrAnnular(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                          ug1, ul1, dia1, ang, correcHor, xarr1, c0, ud);
                 if (fabs(ug1 / state.cells[ind].duto.area) > 5. && alf0 >= 0.75) {
                     atenua = 20;
                     if (state.selectors.annularChurn == 3 && state.selectors.dispersed == 1)
@@ -1391,21 +1406,7 @@ void bufferedInitialization(const ClosureState &state, int ind, double &c0, doub
             state.cells[ind].udSpare = ud;
         }
     }
-    if (state.input.escorregaTran == 0) {
-        double ulsmed = state.cells[ind].QL / state.cells[ind].duto.area;
-        double correcaoUd = 1 - (ulsmed - 0.15) / 0.35;
-        double correcaoCo = c0 - (c0 - 1) * (ulsmed - 0.15) / 0.35;
-        if (correcaoUd > 1.)
-            correcaoUd = 1.;
-        if (correcaoUd < 0.)
-            correcaoUd = 0.;
-        if (correcaoCo > c0)
-            correcaoCo = c0;
-        if (correcaoCo < 1)
-            correcaoCo = 1;
-        c0 = 1. + 0 * correcaoCo;
-        ud = 0. + 0 * ud * correcaoUd;
-    }
+    applyNoSlipOverride(state.cells, ind, state.input.escorregaTran, c0, ud);
 }
 
 void steadyState(const ClosureState &state, int ind, double &c0, double &ud) {
@@ -1484,17 +1485,13 @@ void steadyState(const ClosureState &state, int ind, double &c0, double &ud) {
             rgm = (*state.cells[ind].fluiL).MasEspGas(pmed, tmed);
         viscg1 = (*state.cells[ind].fluiL).ViscGas(pmed, tmed);
 
-        double ug1 = fabs(state.cells[ind].MC - state.cells[ind].Mliqini) / rgm;
-        double ul1 = fabs(state.cells[ind].Mliqini) / rlm;
-        double dia1 = state.cells[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = state.cells[ind - 1].duto.a;
-        double A1 = M_PI * dia1 * dia1 / 4.;
-
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+        const FlowScales scales = flowScalesOf<SteadyStateSource>(state, ind, rgm, rlm, hns, viscl1, viscg1);
+        double ug1 = scales.gasRate;
+        double ul1 = scales.liquidRate;
+        const double dia1 = scales.diameter;
+        const double A1 = scales.area;
+        const double nrey = scales.mixture;
+        const double nreyl = scales.liquid;
 
         int xarr1 = 1;
         double dtot = state.cells[ind].dxL + state.cells[ind].dx;
@@ -1540,39 +1537,14 @@ void steadyState(const ClosureState &state, int ind, double &c0, double &ud) {
                             state.cells[ind - 1].perdaEstratG = testamapa.fatorperdaGas;
                         }
 
-                        double c0D;
-                        double udD;
-                        double c0E;
-                        double udE;
-                        driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                     c0D, udD, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                        driftflux::correlations::C0UdEstratificado(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                          c0E, udE, correcHor, state.cells[ind].estabCol, state.selectors.stratified);
-
-                        double mult0, mult1;
-                        mult0 = 1.;
-                        if (ul0 < 0.)
-                            mult0 = 0.;
-                        mult1 = 0.;
-                        if (ul1 < 0.)
-                            mult1 = 1.;
+                        double c0D, udD, c0E, udE;
+                        evaluateRegimePair(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                           ug1, ul1, dia1, ang, correcHor, ul0, c0D, udD, c0E, udE);
                         double alf0E = state.cells[ind].alf;
                         if (ind > 0)
                             alf0E = state.cells[ind - 1].alf;
 
-                        double jmax = 0.05;
-                        double jmin = 0.005;
-                        if ((fabs(ug1) + fabs(ul1)) / A1 > jmax) {
-                            c0 = c0E;
-                            ud = udE;
-                        } else if ((fabs(ug1) + fabs(ul1)) / A1 < jmin) {
-                            c0 = c0D;
-                            ud = udD;
-                        } else {
-                            double raz = (jmax - (fabs(ug1) + fabs(ul1)) / A1) / (jmax - jmin);
-                            c0 = ((1. - raz) * c0E + raz * c0D);
-                            ud = ((1. - raz) * udE + raz * udD);
-                        }
+                        blendBySuperficialVelocity(ug1, ul1, A1, c0D, udD, c0E, udE, c0, ud);
                     }
                 }
                 if (xarr1 == 1) {
@@ -1581,12 +1553,8 @@ void steadyState(const ClosureState &state, int ind, double &c0, double &ud) {
                                        sinalAng * state.cells[ind].duto.teta, tensup1, state.input.mapaArranjo, state.globals);
                     xarr1 = testamapa2.verificaArr();
 
-                    driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                 c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.dispersed);
-                    if (xarr1 == -2) {
-                        driftflux::correlations::C0UdAnularChurn(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, state.cells[ind].duto.rug, ang,
-                                        c0, ud, correcHor, state.cells[ind].estabCol, state.selectors.annularChurn);
-                    }
+                    evaluateDispersedOrAnnular(state, ind, rlm, rgm, tensup1, alf0, nrey, nreyl,
+                                              ug1, ul1, dia1, ang, correcHor, xarr1, c0, ud);
                     state.cells[ind].arranjo = xarr1;
                     if (ind > 0)
                         state.cells[ind - 1].arranjoR = xarr1;
@@ -1604,21 +1572,7 @@ void steadyState(const ClosureState &state, int ind, double &c0, double &ud) {
             state.cells[ind].udSpare = ud;
         }
     }
-    if (state.input.escorregaPerm == 0) {
-        double ulsmed = state.cells[ind].QL / state.cells[ind].duto.area;
-        double correcaoUd = 1 - (ulsmed - 0.15) / 0.35;
-        double correcaoCo = c0 - (c0 - 1) * (ulsmed - 0.15) / 0.35;
-        if (correcaoUd > 1.)
-            correcaoUd = 1.;
-        if (correcaoUd < 0.)
-            correcaoUd = 0.;
-        if (correcaoCo > c0)
-            correcaoCo = c0;
-        if (correcaoCo < 1)
-            correcaoCo = 1;
-        c0 = 1. + 0 * correcaoCo;
-        ud = 0. + 0. * ud * correcaoUd;
-    }
+    applyNoSlipOverride(state.cells, ind, state.input.escorregaPerm, c0, ud);
 }
 
 }  // namespace coefficient
