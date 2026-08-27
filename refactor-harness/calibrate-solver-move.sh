@@ -18,6 +18,10 @@
 # testing anything, which happened once already while calibrating a different
 # verifier.
 #
+# Runs against the commit where the move landed, not the working tree:
+# solver-move.py compares token streams against the pristine commit and so stops
+# applying once T037r renames the locals. Override with MARLIM_MOVE_COMMIT.
+#
 # Usage: calibrate-solver-move.sh
 # Exit code: 0 when the control passes and every corruption is caught.
 
@@ -36,6 +40,23 @@ trap 'rm -rf "$work"' EXIT
 
 git -C "$project_root" show "$BASELINE_COMMIT:src/core/SisProd.cpp" > "$work/pristine.cpp" || exit 2
 
+# The sources are taken from the commit where the move landed, NOT from the
+# working tree. solver-move.py compares against the pristine commit token for
+# token, so it stops applying the moment T037r renames a local -- by design.
+# Pointing this calibration at the working tree made every case fail once the
+# rename happened, which says nothing about the tool.
+#
+# Pinning it here keeps it a reproducible statement about solver-move.py itself:
+# these fourteen corruptions are caught, and they still are. A later stage that
+# reuses the substitution-table pattern needs that to remain checkable.
+MOVE_COMMIT="${MARLIM_MOVE_COMMIT:-6724c7a}"
+for f in src/include/RootFindingSolvers.h src/core/RootFindingSolvers.cpp src/core/SisProd.cpp; do
+    git -C "$project_root" show "$MOVE_COMMIT:$f" > "$work/$(basename "$f")" || {
+        printf '%scannot read %s:%s%s\n' "$red" "$MOVE_COMMIT" "$f" "$reset" >&2
+        exit 2
+    }
+done
+
 failures=0
 
 # Runs the checker over a copy of the four files, with one of them patched.
@@ -45,9 +66,9 @@ attempt() {
     local label="$1" target="$2" script="$3" proof="$4"
     local dir="$work/case"
     rm -rf "$dir"; mkdir -p "$dir"
-    cp "$project_root/src/include/RootFindingSolvers.h" "$dir/RootFindingSolvers.h"
-    cp "$project_root/src/core/RootFindingSolvers.cpp"   "$dir/RootFindingSolvers.cpp"
-    cp "$project_root/src/core/SisProd.cpp"              "$dir/SisProd.cpp"
+    cp "$work/RootFindingSolvers.h"   "$dir/RootFindingSolvers.h"
+    cp "$work/RootFindingSolvers.cpp" "$dir/RootFindingSolvers.cpp"
+    cp "$work/SisProd.cpp"            "$dir/SisProd.cpp"
 
     local file
     case "$target" in
