@@ -175,23 +175,23 @@ struct ClosureState {
 
 /// Slip parameters at a production-line face, from the instantaneous state.
 /// Was SProd::CalcC0Ud.
-void instantaneous(const ClosureState &state, int ind, double &c0, double &ud);
+void instantaneous(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters for the intermediate network state, from the buffered
 /// fields. Was SProd::CalcC0UdBuf.
-void buffered(const ClosureState &state, int ind, double &c0, double &ud);
+void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters at the inlet of an internal network section.
 /// Was SProd::CalcC0UdIni.
-void initialization(const ClosureState &state, int ind, double &c0, double &ud);
+void initialization(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters at the inlet of an internal network section, from the
 /// buffered fields. Was SProd::CalcC0UdIniBuf.
-void bufferedInitialization(const ClosureState &state, int ind, double &c0, double &ud);
+void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Steady-state slip parameters at a downstream face.
 /// Was SProd::CalcC0UdPerm.
-void steadyState(const ClosureState &state, int ind, double &c0, double &ud);
+void steadyState(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 }  // namespace coefficient
 }  // namespace driftflux
