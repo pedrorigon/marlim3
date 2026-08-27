@@ -1,9 +1,52 @@
 // Standalone sweep of the three regime aggregators, every selector value.
-// Links only DriftFluxClosure.cpp -- no simulator, no input files. This is
-// possible only because the namespace is pure, and it covers the selectors the
-// demo corpus never reaches (it pins CorreDisper to 1).
+// No simulator and no input files: every argument below is this file's own.
+// That is possible only because the namespace is pure, and it covers the
+// selectors the demo corpus never reaches (it pins CorreDisper to 1).
+//
+// Since stage 3 the project objects have to be linked in as well. Not because
+// anything here needs them, but because driftflux::coefficient now shares the
+// translation unit (R-011 puts both namespaces in one pair) and its bodies
+// reference Cel, Ler and the flow-pattern maps. The globals below exist only to
+// satisfy that link -- they are the file-scope definitions from Num4Main.cpp,
+// which holds main() and so cannot come along.
 #include "DriftFluxClosure.h"
+#include "Leitura.h"
+#include "SisProd.h"
+#include "estruturas.h"
+
 #include <cstdio>
+#include <fstream>
+#include <string>
+
+using namespace std;
+
+ofstream arqRelatorioPerfis;
+string pathPrefixoArqSaida("");
+Logger logger("");
+int nthrdMatriz = 1;
+string versao("harness");
+string pathArqEntrada("");
+string pathArqExtEntrada("");
+string arqSaidaSnapShot("");
+string diretorioSaida("");
+string nomeRedePrincipal;
+int logRede = 0;
+int redeLeitura = 0;
+int diaIni, horaIni, minutoIni, segundoIni;
+time_t nowGlobIni, nowGlobFim;
+tm *ltmGlobIni;
+tm *ltmGlobFim;
+detTempo tempVF;
+detProp prop;
+detMapProp mapprop;
+detCI CI;
+detCC CC;
+SProd *ptrSistemaProducao;
+tipoSimulacao_t tipoSimulacao = tipoSimulacao_t::transiente;
+const char *saidaTexto[16] = {"", "", "", "", "", "", "", "",
+                              "", "", "", "", "", "", "", ""};
+const char *saidaSubTexto[16] = {"", "", "", "", "", "", "", "",
+                                 "", "", "", "", "", "", "", ""};
 
 using namespace driftflux::correlations;
 

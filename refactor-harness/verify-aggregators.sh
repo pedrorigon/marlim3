@@ -11,11 +11,19 @@
 # L3 compare the output of code that did not run and stay green whatever
 # happens to it.
 #
-# Since the aggregators are pure, they can be called directly. This sweep links
-# only DriftFluxClosure.cpp: no simulator, no model file, no configuration. It
-# covers every selector each regime accepts, plus values outside every accepted
-# set, where c0 and ud MUST come back untouched -- the switches carry no
-# default, and that silence is observable behaviour.
+# Since the aggregators are pure, they can be called directly: no model file and
+# no configuration are read, and the values below are the sweep's own. It covers
+# every selector each regime accepts, plus values outside every accepted set,
+# where c0 and ud MUST come back untouched -- the switches carry no default, and
+# that silence is observable behaviour.
+#
+# Until stage 3 this linked DriftFluxClosure.cpp and nothing else. That stopped
+# being possible when driftflux::coefficient joined the same translation unit
+# (R-011 puts both namespaces in one pair): the coefficient bodies reference
+# Cel, Ler and the two flow-pattern map classes, and the whole object file is
+# linked whether the sweep calls into it or not. So the project objects come
+# along now. What is verified is unchanged -- the aggregators are still called
+# directly with the sweep's own arguments.
 #
 # Usage:
 #   verify-aggregators.sh                 compare against the stored golden
@@ -40,12 +48,24 @@ trap 'rm -rf "$work_dir"' EXIT
 # -ffp-contract=off matches CMakeLists.txt:135. Without it the compiler may fuse
 # a multiply and an add, which changes the result and would make this harness
 # disagree with the engine for a reason that has nothing to do with the code.
-if ! g++ -std=c++20 -O2 -ffp-contract=off -I"$project_root/src/include" \
+objects_dir="${MARLIM_BUILD:-$project_root/build}/CMakeFiles/Marlim3.dir"
+mapfile -t objects < <(find "$objects_dir/src" -name '*.o' \
+                            ! -name 'Num4Main.cpp.o' \
+                            ! -name 'DriftFluxClosure.cpp.o' | sort)
+if (( ${#objects[@]} == 0 )); then
+    printf '%sno objects under %s -- build the project first%s\n' \
+           "$red" "$objects_dir" "$reset" >&2
+    exit 2
+fi
+
+if ! g++ -std=c++20 -O2 -ffp-contract=off -fopenmp \
+         -I"$project_root/src/include" -I"$project_root/src/thirdparty" \
          -o "$work_dir/sweep" \
          "$script_dir/sweep-aggregators.cpp" \
-         "$project_root/src/core/DriftFluxClosure.cpp" 2> "$work_dir/build.log"; then
+         "$project_root/src/core/DriftFluxClosure.cpp" \
+         "${objects[@]}" -lgfortran 2> "$work_dir/build.log"; then
     printf '%sthe sweep did not compile%s\n' "$red" "$reset" >&2
-    cat "$work_dir/build.log" >&2
+    grep -v 'warning: relocation' "$work_dir/build.log" >&2
     exit 2
 fi
 

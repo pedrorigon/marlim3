@@ -34,6 +34,15 @@ C0UdEstratificado
 
 # The five CalcC0Ud variants only requalify their calls into
 # driftflux::correlations and read the cached selectors.
+#
+# --- stage 3 moved their bodies out entirely --------------------------------
+# What is left in SisProd.cpp under these names is a delegation that builds a
+# ClosureState and calls driftflux::coefficient. The bodies moved token for
+# token, verified by c0ud-move.py, which inverts the substitution table and
+# compares 13556 tokens against the commit the move started from -- the only
+# check that reaches CalcC0UdBuf, CalcC0UdIni and CalcC0UdIniBuf, none of which
+# the corpus executes. verify-c0ud.sh then covers behaviour across 7315 rows,
+# calibrated against 14 injected defects.
 CalcC0Ud
 CalcC0UdBuf
 CalcC0UdIni
