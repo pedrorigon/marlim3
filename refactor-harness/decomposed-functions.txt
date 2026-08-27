@@ -84,7 +84,11 @@ ImprimeTrendTransGCab
 # evaluation in order, and that is what guards them after T037r renamed the
 # locals and the token comparison stopped applying.
 zbrent
-falsacorda
+# Renamed outright after the stage-2 gate cycle: falsacorda is Portuguese for
+# "false chord", the regula falsi, and the body has never been that -- it takes
+# the midpoint. Nothing calls it, so there is no forwarder under the old name
+# and the check has to be told where the body went.
+falsacorda -> bisect
 zriddr
 
 # SIGN and sign moved with their bodies untouched; only T037r's rename of their

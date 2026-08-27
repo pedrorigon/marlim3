@@ -62,7 +62,13 @@ TOKEN = re.compile(r"""
 
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
-SIGNATURE = re.compile(r"^[A-Za-z_][\w:<>,~&*=!\[\]\s]*\(")
+# A definition may open with C++ attributes: [[nodiscard]] double f(...).
+# Without the optional group below the line does not start with a letter and
+# the definition is invisible -- which is how SIGN, zbrent and falsacorda
+# went from compared to MISSING when a commit after stage 2's gate cycle
+# added [[nodiscard]] to them. The check reported three functions as having
+# vanished, and nothing had.
+SIGNATURE = re.compile(r"^(?:\[\[[\w:,\s]*\]\]\s*)?[A-Za-z_][\w:<>,~&*=!\[\]\s]*\(")
 NOT_A_DEFINITION = re.compile(
     r"^\s*(#|//|/\*|\*|\}|using|namespace|struct|class|typedef|template|extern|"
     r"return|else|public|private|protected|enum|union)"
@@ -168,17 +174,56 @@ def main() -> int:
         print("no functions to compare", file=sys.stderr)
         return 2
 
+    # An entry may be "old" or "old -> new". The arrow form says a stage renamed
+    # the function outright, so the baseline name will never be found in the
+    # current tree and MISSING would be the wrong verdict: the check follows the
+    # arrow and compares against the new name instead. Stage 2 renamed falsacorda
+    # to bisect after its gate cycle had run, and the next cycle reported a
+    # function as having vanished when it had simply been renamed as planned.
     declared: set[str] = set()
+    renamed_to: dict[str, str] = {}
     if args.declared:
         with open(args.declared, encoding="utf-8") as handle:
-            declared = {line.split("#", 1)[0].strip() for line in handle}
+            for line in handle:
+                entry = line.split("#", 1)[0].strip()
+                if not entry:
+                    continue
+                if "->" in entry:
+                    old_name, new_name = (part.strip() for part in entry.split("->", 1))
+                    declared.add(old_name)
+                    renamed_to[old_name] = new_name
+                else:
+                    declared.add(entry)
         declared.discard("")
 
     failures = 0
     declared_count = 0
     stale = 0
     for name in missing:
-        print(f"MISSING  {name}: present in baseline, absent from current", file=sys.stderr)
+        target = renamed_to.get(name)
+        if target and target in current:
+            # Declared rename: compare the baseline body against the body that
+            # now carries the new name, so the check keeps its teeth instead of
+            # being silenced by the declaration.
+            expected = tokenize(baseline[name])
+            actual = tokenize(current[target])
+            if args.allow_renames:
+                expected, actual = strip_names(expected), strip_names(actual)
+            if expected == actual:
+                print(f"STALE    {name} -> {target}: identical, so the rename is "
+                      f"the only change -- drop the arrow in {args.declared}")
+                stale += 1
+            else:
+                print(f"DECLARED {name} -> {target}: renamed on purpose, "
+                      f"verified elsewhere")
+                declared_count += 1
+            continue
+        if target:
+            print(f"MISSING  {name}: declared as renamed to {target}, and "
+                  f"{target} is absent too", file=sys.stderr)
+        else:
+            print(f"MISSING  {name}: present in baseline, absent from current",
+                  file=sys.stderr)
         failures += 1
 
     for name in targets:
