@@ -46,26 +46,22 @@ int sign(double value);
 /// of every translation unit that includes this header.
 void reportIterationLimit(const char *message);
 
-/// Finds a root by bisection -- despite the name, which says false position.
+/// Finds a root by bisection: halve the bracket, keep the half that still
+/// straddles the sign change.
 ///
-/// The name is Portuguese for "false chord", the regula falsi. The body is not
-/// that: it takes the midpoint of the bracket, not the intercept of the secant,
-/// and the rest of the loop is a textbook bisection update. The loop carries a
-/// comment from the original -- "this block treats the 'falsacorda' properly",
-/// with the name in quotes -- and multFC, the unused 0.5 below, is the very
-/// multiplier hardcoded into the line that halves the interval. Whoever wrote
-/// it knew. See A2-06 in evidencia/anomalias.md.
-///
-/// The name is kept because renaming a function is not in this stage's scope
-/// and the stage contract fixes it. If it is ever renamed, the right name is
-/// bisect, not falsePosition -- that would make the name lie with more
-/// authority.
+/// Was SProd::falsacorda -- Portuguese for "false chord", the regula falsi --
+/// and the body was never that. It takes the midpoint of the bracket, not the
+/// intercept of the secant. Whoever wrote it knew: the loop carries the original
+/// comment "this block treats the 'falsacorda' properly", with the name in
+/// quotes, and multFC below is the unused 0.5 that the halving line hardcodes.
+/// Renamed rather than translated, because falsePosition would have made the
+/// name lie with more authority. See A2-06 in evidencia/anomalias.md.
 ///
 /// Reachable only from zbrent, which nothing calls, so it never executes. Its
-/// verification is structural: refactor-harness/solver-move.py inverts the move
-/// and compares the token stream against the pristine baseline.
+/// verification is refactor-harness/solver-move.py for the move and
+/// verify-solvers.sh, which instantiates and exercises it, for everything since.
 template <typename Objective>
-double falsacorda(double bracketLow, double bracketHigh, Objective &&objective) {
+double bisect(double bracketLow, double bracketHigh, Objective &&objective) {
     double lowValue = objective(bracketLow);
     double halfWidth = bracketHigh - bracketLow;
     double midpoint;
@@ -87,8 +83,8 @@ double falsacorda(double bracketLow, double bracketHigh, Objective &&objective) 
 }
 
 /// Finds a root by Brent's method: bracketing with inverse quadratic
-/// interpolation, falling back to false position when the interval does not
-/// bracket a sign change.
+/// interpolation, falling back to bisection when the interval does not bracket
+/// a sign change.
 ///
 /// Measured over the whole tree, this has NO call site. It is moved as it
 /// stands, and never runs. Two consequences worth stating where they will be
@@ -117,7 +113,7 @@ double zbrent(double bracketLow, double bracketHigh, Objective &&objective, doub
 
     if ((previousValue > 0.0 && currentValue > 0.0) || (previousValue < 0.0 && currentValue < 0.0)) {
         double fallbackRoot;
-        fallbackRoot = falsacorda(bracketLow, bracketHigh, objective);
+        fallbackRoot = bisect(bracketLow, bracketHigh, objective);
         return fallbackRoot;
     } else {
         oppositeSignValue = currentValue;

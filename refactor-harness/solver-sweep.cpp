@@ -4,8 +4,9 @@
 // Two things this covers that nothing else does.
 //
 // First, instantiation. zbrent has no call site anywhere in the project and
-// falsacorda is reachable only from inside it, so after the extraction they are
-// templates that nothing instantiates -- and an uninstantiated template is only
+// bisect (ex-falsacorda) is reachable only from inside it, so after the
+// extraction they are templates that nothing instantiates -- and an
+// uninstantiated template is only
 // parsed, never type-checked. Without this driver the compiler would not look
 // at 96 of the 240 moved lines.
 //
@@ -160,7 +161,7 @@ int main(int argc, char **argv) {
                 ++configurations;
             }
 
-            // ---- zbrent, and through it falsacorda. Never reached in the
+            // ---- zbrent, and through it bisect. Never reached in the
             // product; this is the only place either one runs at all.
             Objective brent{shape};
             std::fprintf(out, "zbrent %s %a %a\n",
@@ -182,12 +183,12 @@ int main(int argc, char **argv) {
             std::fprintf(out, "  root %a evals %lld\n", starvedRoot, starved.calls);
             ++configurations;
 
-            // ---- falsacorda on its own, so a defect in it is attributable to
+            // ---- bisect on its own, so a defect in it is attributable to
             // it rather than showing up only through zbrent's fallback.
             Objective chord{shape};
-            std::fprintf(out, "falsacorda %s %a %a\n",
+            std::fprintf(out, "bisect %s %a %a\n",
                          nameOf(shape), bracket.low, bracket.high);
-            double chordRoot = rootfinding::falsacorda(bracket.low, bracket.high, chord);
+            double chordRoot = rootfinding::bisect(bracket.low, bracket.high, chord);
             std::fprintf(out, "  root %a evals %lld\n", chordRoot, chord.calls);
             ++configurations;
         }
