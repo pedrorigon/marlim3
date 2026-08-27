@@ -24752,8 +24752,11 @@ enum class SteadyMarch {
 /// it is a pure function of five values -- which is what makes the table
 /// verifiable: refactor-harness/verify-dispatch.py sweeps every combination of
 /// the selectors against the original chain carved out of the baseline commit.
-/// Nothing else can check this. The corpus reaches six of the nine rows, and a
-/// mis-wired row among the other three would leave every gate green.
+/// Nothing else can check this. Measured over the 360 zriddr calls the corpus
+/// makes, only three (prod, tipoCC) pairs ever occur -- (0,0), (1,0) and (1,1) --
+/// so the corpus reaches at most FOUR of the nine rows. The injection row, the
+/// second gas-line row and all three pressure-pressure rows never run, and a
+/// mis-wired row among those five would leave every gate green.
 ///
 /// Documented row by row in evidencia/tabela-despacho.md.
 /// productionChokeOpening is the array, not the value, so that the subscript

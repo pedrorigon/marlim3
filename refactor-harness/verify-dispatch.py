@@ -3,10 +3,12 @@
 
 C-C6 of contracts/busca-raiz.md requires the new selection to produce exactly
 the same march for every combination of the five selectors. No gate can check
-that. multMarcha is only reachable from zriddr, and the thirteen call sites pass
-just six of the nine rows; the other three -- the injection row and the two
-gas-line rows -- are selected by no model in the corpus. A row wired to the
-wrong march there leaves L2 and L3 green.
+that. multMarcha is only reachable from zriddr, and the corpus is far narrower
+than the table: over the 360 zriddr calls it makes, only three (prod, tipoCC)
+pairs ever occur -- (0,0) 346 times, (1,0) four times, (1,1) ten times. That
+reaches at most FOUR of the nine rows. The injection row, the second gas-line
+row and all three pressure-pressure rows are selected by no model, and a row
+wired to the wrong march among those five leaves L2 and L3 green.
 
 Nor is the check something to do by reading. The original is a conditional chain
 nested four deep whose leaves are eight different methods, and one of its
