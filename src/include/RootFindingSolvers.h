@@ -20,14 +20,43 @@
 // there, so overload resolution is the one they were written against.
 #include <math.h>
 
+// For the two concepts below. Both are lightweight and neither drags in
+// anything that could change overload resolution for fabs or sqrt.
+#include <concepts>
+#include <type_traits>
+
 namespace rootfinding {
+
+/// A residual function a solver drives to zero: position in, residual out.
+///
+/// Constrained rather than left as a bare `typename`, and the reason is
+/// specific to this module. zbrent and bisect have no call site in the product,
+/// so the only thing that ever instantiates them is the verification harness. A
+/// caller that passes the wrong shape would otherwise get a page of diagnostics
+/// from inside the arithmetic, naming variables it never heard of, instead of
+/// one line saying the argument does not satisfy ObjectiveFunction.
+template <typename Function>
+concept ObjectiveFunction =
+    std::invocable<Function, double> &&
+    std::convertible_to<std::invoke_result_t<Function, double>, double>;
+
+/// Post-processing a solver applies to a residual before using it.
+///
+/// Same shape as ObjectiveFunction and a different role, which is why it has
+/// its own name: zriddr composes them as monitor(objective(x)), and reading
+/// that signature should not require working out which double means what.
+template <typename Function>
+concept ResidualMonitor = ObjectiveFunction<Function>;
 
 /// Magnitude of the first argument carrying the sign of the second.
 ///
 /// inline, and defined here rather than in the .cpp, because zriddr calls it
 /// three times per iteration. Out of line it would become a cross-TU call in
 /// the one solver that is actually hot.
-inline double SIGN(double magnitude, double signSource) {
+/// \param magnitude   Value whose absolute value is taken.
+/// \param signSource  Value whose sign is applied; zero counts as positive.
+/// \return |magnitude|, signed like signSource.
+[[nodiscard]] inline double SIGN(double magnitude, double signSource) {
     return (signSource >= 0 ? 1.0 : -1.0) * fabs(magnitude);
 }
 
@@ -36,7 +65,10 @@ inline double SIGN(double magnitude, double signSource) {
 /// It has no caller anywhere in the project and never had one; it is preserved
 /// because removing dead code is a behaviour change this programme is not
 /// authorised to make. Out of line precisely because nothing calls it.
-int sign(double value);
+///
+/// \param value  Value to inspect.
+/// \return -1 when value <= 0, otherwise 1.
+[[nodiscard]] int sign(double value);
 
 /// Reports that a solver exhausted its iteration budget.
 ///
@@ -44,6 +76,8 @@ int sign(double value);
 /// together with `using namespace std;` at file scope and the colliding
 /// zbrent/zriddr templates. Reaching it through the .cpp keeps all of that out
 /// of every translation unit that includes this header.
+///
+/// \param message  Text handed to NumError verbatim.
 void reportIterationLimit(const char *message);
 
 /// Finds a root by bisection: halve the bracket, keep the half that still
@@ -60,8 +94,14 @@ void reportIterationLimit(const char *message);
 /// Reachable only from zbrent, which nothing calls, so it never executes. Its
 /// verification is refactor-harness/solver-move.py for the move and
 /// verify-solvers.sh, which instantiates and exercises it, for everything since.
-template <typename Objective>
-double bisect(double bracketLow, double bracketHigh, Objective &&objective) {
+/// \tparam Objective  Residual function; see the ObjectiveFunction concept.
+/// \param bracketLow   Interval endpoint the sign test treats as the low side.
+/// \param bracketHigh  Interval endpoint the sign test treats as the high side.
+/// \param objective    Evaluated once before the loop and once per iteration.
+/// \return The midpoint reached when the interval or the residual falls below
+///         its tolerance, or the last midpoint if the budget runs out.
+template <ObjectiveFunction Objective>
+[[nodiscard]] double bisect(double bracketLow, double bracketHigh, Objective &&objective) {
     double lowValue = objective(bracketLow);
     double halfWidth = bracketHigh - bracketLow;
     double midpoint;
@@ -98,8 +138,17 @@ double bisect(double bracketLow, double bracketHigh, Objective &&objective) {
 /// with no caller only invites one to be written without thinking about the
 /// tolerance; the values are recorded here instead, since they are the only
 /// statement anyone ever made about what this solver expects.
-template <typename Objective>
-double zbrent(double bracketLow, double bracketHigh, Objective &&objective, double absoluteTolerance, double relativeTolerance, int maximumIterations) {
+/// \tparam Objective          Residual function; see the ObjectiveFunction concept.
+/// \param bracketLow          Interval endpoint.
+/// \param bracketHigh         Interval endpoint.
+/// \param objective           Evaluated twice up front, then once per iteration.
+/// \param absoluteTolerance   Absolute half-width the bracket must reach.
+/// \param relativeTolerance   Relative precision scaling the working tolerance.
+/// \param maximumIterations   Iteration budget before reportIterationLimit fires.
+/// \return The root, or 1e10 when either endpoint evaluates beyond 1e9, or 0.0
+///         when the budget is exhausted.
+template <ObjectiveFunction Objective>
+[[nodiscard]] double zbrent(double bracketLow, double bracketHigh, Objective &&objective, double absoluteTolerance, double relativeTolerance, int maximumIterations) {
     double relativePrecision = relativeTolerance;
     double previousEstimate = bracketLow;
     double currentEstimate = bracketHigh;
@@ -202,8 +251,20 @@ double zbrent(double bracketLow, double bracketHigh, Objective &&objective, doub
 /// identical arms today. If A2-02 is ever corrected so that they differ, this
 /// has to go back to being read inside the loop -- the value can change mid
 /// solve, since SisProd.cpp assigns revPerm in eighteen places.
-template <typename Objective, typename Monitor>
-double zriddr(double bracketLow, double bracketHigh, Objective &&objective, Monitor &&monitor,
+/// \tparam Objective          Residual function; see the ObjectiveFunction concept.
+/// \tparam Monitor            Residual post-processing; see ResidualMonitor.
+/// \param bracketLow          Endpoint where the residual is expected negative.
+/// \param bracketHigh         Endpoint where the residual is expected positive.
+/// \param objective           Evaluated twelve times per solve on the raw path.
+/// \param monitor             Applied to the two evaluations that feed the
+///                            convergence monitor, as monitor(objective(x)).
+/// \param reverseMarch        Selects nothing today; see A2-02 above.
+/// \param minimumIterations   Iterations that must pass before the three early
+///                            returns are honoured.
+/// \return The best position found, or 1e10 / -1e10 / 1.e10 sentinels for the
+///         out-of-range, no-bracket and budget-exhausted cases respectively.
+template <ObjectiveFunction Objective, ResidualMonitor Monitor>
+[[nodiscard]] double zriddr(double bracketLow, double bracketHigh, Objective &&objective, Monitor &&monitor,
               int reverseMarch, int minimumIterations) {
     double rootAccuracy = 1e-5;
     int maximumIterations = 100;
