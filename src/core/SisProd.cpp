@@ -24775,11 +24775,21 @@ SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int revers
                                  : SteadyMarch::marchaProdPerm1Rev;
     }
     if (tipoCC != 0) {
-        // A2-01. Both arms select the same march, and they are kept apart
-        // rather than collapsed. Collapsing would be behaviour-preserving --
-        // reading the choke opening has no side effect -- but this branch is
-        // the only surviving evidence that a choice was meant to happen here,
-        // and marchaProdPresPres3 exists. See evidencia/anomalias.md.
+        // A2-01. Both arms select the same march, and that is correct, not a
+        // bug -- which took measuring to establish. The obvious reading is that
+        // the else should reach marchaProdPresPres3, since that function exists,
+        // has no caller, and Num4Main splits on this very condition to choose
+        // buscaProdPresPresPerm3. It should not. marchaProdPresPres2 already
+        // reduces to marchaProdPresPres3 when the choke is shut: the throat area
+        // is `abertura[0] * area`, so vazmaxSachd and vazmassSachd both go to
+        // zero with it, and the residual becomes the same `0. - MR` that
+        // marchaProdPresPres3 returns literally. Routing here to
+        // marchaProdPresPres3 would swap a guarded, general march for a narrower
+        // ancestor -- a regression wearing the shape of a fix.
+        //
+        // The branch is kept rather than collapsed because it is the only
+        // surviving record that the two cases were once distinct. See A2-01 in
+        // evidencia/anomalias.md for the measurement.
         return productionChokeOpening[0] > 1e-15 ? SteadyMarch::marchaProdPresPres2
                                                  : SteadyMarch::marchaProdPresPres2;
     }

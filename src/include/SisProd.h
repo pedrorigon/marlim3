@@ -1390,9 +1390,24 @@ class SProd {
     double marchaProdPresPres2(double mchute);
     /// Brackets and solves the mass-flow root for marchaProdPresPres2.
     double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
-    /// Marches the steady production solution for the third pressure-pressure boundary formulation.
+    /// Marches the steady production solution for the third pressure-pressure
+    /// boundary formulation: marchaProdPresPres2 with the choke's throughput
+    /// forced to zero, which is the closed-choke case.
+    ///
+    /// Unused. Nothing in the project calls it, and that is not an oversight:
+    /// marchaProdPresPres2 already reduces to exactly this when the choke is
+    /// shut, because the throat area is `abertura[0] * area` and both
+    /// vazmaxSachd and vazmassSachd scale to zero with it -- leaving the same
+    /// `0. - celula[ncel - 1].MR` residual this function returns literally.
+    /// Measured, not assumed; see evidencia/anomalias.md, A2-01.
     double marchaProdPresPres3(double mchute);
-    /// Brackets and solves the mass-flow root for marchaProdPresPres3.
+    /// Brackets and solves the mass-flow root for the closed-choke case, chosen
+    /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
+    ///
+    /// It reaches marchaProdPresPres2, NOT marchaProdPresPres3 -- via
+    /// zriddr(.., 2, 1) and multMarcha. That is correct behaviour by the
+    /// reduction described above, and the comment used to say
+    /// marchaProdPresPres3, which reads as a bug and is not one.
     double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
 
     /// Marches the steady gas line with prescribed injection pressure and a mass-flow guess.
