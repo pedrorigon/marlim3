@@ -18,6 +18,22 @@
 # be reporting a broken harness rather than a detected defect -- the silent half
 # of E2-05.
 #
+# THE CASES TARGET src/core/DriftFluxClosure.cpp, NOT SisProd.cpp.
+#
+# They used to target SisProd.cpp, because that is where the five bodies lived
+# when this file was written. Re-running the calibration at the END of stage 3 --
+# which is the rule, not a formality -- reported CORRUPTION NOT INJECTED fourteen
+# times: the bodies had moved, folded onto shared helpers, and had 229 locals
+# renamed, so not one of the patterns still matched. Nothing was silently
+# approved, because a case must prove the defect is PRESENT before running the
+# harness; without that guard this file would have printed fourteen greens
+# having tested nothing.
+#
+# The lesson generalises past this stage: a calibration is written against a
+# particular text, and every stage that rewrites that text invalidates it. When
+# stage 5 or 7 moves this code again, these patterns break again, and the fix is
+# to re-point them -- never to relax the guard that noticed.
+#
 # Usage: calibrate-c0ud.sh [golden]
 set -uo pipefail
 export LC_ALL=C
@@ -95,158 +111,161 @@ PY
 }
 
 printf 'control -- untouched source must PASS, or nothing below means anything\n'
-run_case "control" "SisProd.cpp" "" "" "invisible"
+run_case "control" "DriftFluxClosure.cpp" "" "" "invisible"
 if (( fail > 0 )); then
     printf '%sthe control failed: the harness disagrees with its own golden%s\n' "$red" "$reset" >&2
     exit 1
 fi
 
-printf '\nCalcC0Ud -- executes in the corpus\n'
-run_case "base/simplify-0QG+1QL" "SisProd.cpp" \
-    "if (((0. * celula[ind].QG + 1 * celula[ind].QL) < 0.))" \
-    "if ((celula[ind].QL < 0.))" "caught"
-run_case "base/correcHor-neighbour" "SisProd.cpp" \
-    "if (celula[ind - 1].acsr.tipo != 5 || celula[ind - 1].acsr.chk.AreaGarg > 1e-10) {" \
-    "if (celula[ind].acsr.tipo != 5 || celula[ind].acsr.chk.AreaGarg > 1e-10) {" "caught"
+printf '\ninstantaneous (was CalcC0Ud) -- executes in the corpus\n'
+run_case "inst/simplify-0QG+1QL" "DriftFluxClosure.cpp" \
+    "if (((0. * state.cells[cellIndex].QG + 1 * state.cells[cellIndex].QL) < 0.))" \
+    "if ((state.cells[cellIndex].QL < 0.))" "caught"
+run_case "inst/correcHor-neighbour" "DriftFluxClosure.cpp" \
+    "if (state.cells[cellIndex - 1].acsr.tipo != 5 || state.cells[cellIndex - 1].acsr.chk.AreaGarg > 1e-10) {" \
+    "if (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {" "caught"
+run_case "inst/map-dispatch" "DriftFluxClosure.cpp" \
+    "                    testamapa.mapaTD();
+                else
+                    testamapa.mapaTD(1);" \
+    "                    testamapa.mapaTD(1);
+                else
+                    testamapa.mapaTD();" "caught"
 
-printf '\nCalcC0UdBuf -- NEVER executes in the corpus\n'
-run_case "buf/drop-A3-01-betI" "SisProd.cpp" \
-    "        betI = celula[ind].betPigE;     // duvidabeta
-        double betneg;" \
-    "        double betneg;" "caught"
-run_case "buf/second-phase-cond" "SisProd.cpp" \
-    "            if (xarr1 != -1) {
+printf '\nbuffered (was CalcC0UdBuf) -- NEVER executes in the corpus\n'
+run_case "buf/drop-A3-01-betI" "DriftFluxClosure.cpp" \
+    "        betI = state.cells[cellIndex].betPigE;     // duvidabeta
+        double betneg;
+        if (cellIndex > 0) {
+            betneg = state.cells[cellIndex - 1].betL;" \
+    "        double betneg;
+        if (cellIndex > 0) {
+            betneg = state.cells[cellIndex - 1].betL;" "caught"
+run_case "buf/second-phase-cond" "DriftFluxClosure.cpp" \
+    "            if (flowPattern != -1) {" \
+    "            if (flowPattern == 1) {" "caught"
+run_case "buf/pmed-weighting" "DriftFluxClosure.cpp" \
+    "        meanPressure = lengthRatio * state.cells[cellIndex].presBuf + (1 - lengthRatio) * state.cells[cellIndex].presLBuf;" \
+    "        meanPressure = (1 - lengthRatio) * state.cells[cellIndex].presBuf + lengthRatio * state.cells[cellIndex].presLBuf;" "caught"
 
-                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
-                if (xarr1 == -2) {" \
-    "            if (xarr1 == 1) {
-
-                driftflux::correlations::C0UdDisperso(rlm, rgm, tensup1, alf0, nrey, nreyl, ug1, ul1, dia1, celula[ind].duto.rug, ang,
-                             c0, ud, correcHor, celula[ind].estabCol, driftSelectors.dispersed);
-                if (xarr1 == -2) {" "caught"
-run_case "buf/pmed-weighting" "SisProd.cpp" \
-    "pmed = razdx * celula[ind].presBuf + (1 - razdx) * celula[ind].presLBuf;" \
-    "pmed = (1 - razdx) * celula[ind].presBuf + razdx * celula[ind].presLBuf;" "caught"
-
-printf '\nCalcC0UdIni -- NEVER executes in the corpus\n'
-run_case "ini/fix-A3-05-else" "SisProd.cpp" \
-    "                            if (celula[ind].transic > 19)
-                                celula[ind].transic = 0;
+printf '\ninitialization (was CalcC0UdIni) -- NEVER executes in the corpus\n'
+run_case "ini/fix-A3-05-else" "DriftFluxClosure.cpp" \
+    "                            if (state.cells[cellIndex].transic > 19)
+                                state.cells[cellIndex].transic = 0;
                         }
                     } else
-                        celula[ind].transic = 0;
-                    celula[ind].arranjo = xarr1 = testamapa.arr;" \
-    "                            if (celula[ind].transic > 19)
-                                celula[ind].transic = 0;
+                        state.cells[cellIndex].transic = 0;
+                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;" \
+    "                            if (state.cells[cellIndex].transic > 19)
+                                state.cells[cellIndex].transic = 0;
                         } else
-                            celula[ind].transic = 0;
+                            state.cells[cellIndex].transic = 0;
                     }
-                    celula[ind].arranjo = xarr1 = testamapa.arr;" "caught"
-run_case "ini/add-arranjoR" "SisProd.cpp" \
-    "                    celula[ind].arranjo = xarr1 = testamapa.arr;
-                    double c0D;" \
-    "                    celula[ind].arranjo = xarr1 = testamapa.arr;
-                    celula[ind - 1].arranjoR = testamapa.arr;
-                    double c0D;" "caught"
-run_case "ini/mapaTD-dispatch" "SisProd.cpp" \
+                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;" "caught"
+run_case "ini/add-arranjoR" "DriftFluxClosure.cpp" \
+    "                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
+                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;" \
+    "                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
+                    state.cells[cellIndex - 1].arranjoR = testamapa.arr;
+                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;" "caught"
+run_case "ini/mapaTD-dispatch" "DriftFluxClosure.cpp" \
     "                testamapa.mapaTD();
-                xarr1 = testamapa.arr;
-                if (xarr1 == -1) {
-                    if (celula[ind].arranjo != 0) {" \
+                flowPattern = testamapa.arr;
+                if (flowPattern == -1) {
+                    if (state.cells[cellIndex].arranjo != 0) {" \
     "                testamapa.mapaTD(1);
-                xarr1 = testamapa.arr;
-                if (xarr1 == -1) {
-                    if (celula[ind].arranjo != 0) {" "caught"
+                flowPattern = testamapa.arr;
+                if (flowPattern == -1) {
+                    if (state.cells[cellIndex].arranjo != 0) {" "caught"
 
-printf '\nCalcC0UdIniBuf -- NEVER executes in the corpus\n'
-run_case "inibuf/add-ncel-pmed" "SisProd.cpp" \
-    "        pmed = presE;
-        if (ind > 0)
-            pmed0 = presE;
+printf '\nbufferedInitialization (was CalcC0UdIniBuf) -- NEVER executes\n'
+run_case "inibuf/add-ncel-pmed" "DriftFluxClosure.cpp" \
+    "        meanPressure = state.inletPressure;
+        if (cellIndex > 0)
+            upstreamMeanPressure = state.inletPressure;
         else
-            pmed0 = presE;" \
-    "        pmed = presE;
-        if (ind > 0)
-            pmed0 = presE;
+            upstreamMeanPressure = state.inletPressure;
+        double meanTemperature = state.inletTemperature;" \
+    "        meanPressure = state.inletPressure;
+        if (cellIndex > 0)
+            upstreamMeanPressure = state.inletPressure;
         else
-            pmed0 = presE;
-        if (ind == ncel)
-            pmed = celula[ind].pres;" "caught"
-run_case "inibuf/buffered-source" "SisProd.cpp" \
-    "        double ug1 = (celula[ind].MCBuf - celula[ind].MliqiniBuf) / rgm;
-        double ul1 = celula[ind].MliqiniBuf / rlm;
-        double dia1 = celula[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = celula[ind - 1].duto.a;
-        double A1 = M_PI * dia1 * dia1 / 4.;
+            upstreamMeanPressure = state.inletPressure;
+        if (cellIndex == state.lastCell)
+            meanPressure = state.cells[cellIndex].pres;
+        double meanTemperature = state.inletTemperature;" "caught"
+run_case "inibuf/wrong-source" "DriftFluxClosure.cpp" \
+    "        const FlowScales scales = flowScalesOf<BufferedSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
+        double gasFlowRate = scales.gasRate;
+        double liquidFlowRate = scales.liquidRate;
+        const double diameter = scales.diameter;
+        const double flowArea = scales.area;
+        const double mixtureReynolds = scales.mixture;
+        const double liquidReynolds = scales.liquid;
 
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+        int flowPattern = 1;
+        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
+        double leftCellLength = state.cells[cellIndex].dxL;
+        double cellLength = state.cells[cellIndex].dx;
+        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
+        double transitionWindow = 20.;" \
+    "        const FlowScales scales = flowScalesOf<InstantaneousSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
+        double gasFlowRate = scales.gasRate;
+        double liquidFlowRate = scales.liquidRate;
+        const double diameter = scales.diameter;
+        const double flowArea = scales.area;
+        const double mixtureReynolds = scales.mixture;
+        const double liquidReynolds = scales.liquid;
 
-        int xarr1 = 1;
-        double dtot = celula[ind].dxL + celula[ind].dx;
-        double razL = celula[ind].dxL;
-        double raz = celula[ind].dx;
-        double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta) / dtot;
-        double atenua = 20.;" \
-    "        double ug1 = (celula[ind].MC - celula[ind].Mliqini) / rgm;
-        double ul1 = celula[ind].MliqiniBuf / rlm;
-        double dia1 = celula[ind].duto.a;
-        if (ind > 0 && ug1 >= 0)
-            dia1 = celula[ind - 1].duto.a;
-        double A1 = M_PI * dia1 * dia1 / 4.;
+        int flowPattern = 1;
+        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
+        double leftCellLength = state.cells[cellIndex].dxL;
+        double cellLength = state.cells[cellIndex].dx;
+        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
+        double transitionWindow = 20.;" "caught"
 
-        double rmed = hns * rlm + (1 - hns) * rgm;
-        double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
-        double nrey = dia1 * rmed * (fabs(ug1) / A1 + fabs(ul1) / A1) / visc;
-        double nreyl = dia1 * rlm * (fabs(ug1) / A1 + fabs(ul1) / A1) / (viscl1 / 1000.);
+printf '\nsteadyState (was CalcC0UdPerm) -- executes in the corpus\n'
+run_case "perm/fix-A3-02-ang" "DriftFluxClosure.cpp" \
+    "        double inclinationAngle = (leftCellLength * state.cells[cellIndex].dutoL.teta + cellLength * state.cells[cellIndex].duto.teta) / totalLength;" \
+    "        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;" "caught"
+run_case "perm/fix-A3-03-razdx" "DriftFluxClosure.cpp" \
+    "        double lengthRatio = state.cells[cellIndex].dx / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);" \
+    "        double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);" "caught"
+run_case "perm/slip-field" "DriftFluxClosure.cpp" \
+    "    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaPerm, c0, ud);" \
+    "    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaTran, c0, ud);" "caught"
 
-        int xarr1 = 1;
-        double dtot = celula[ind].dxL + celula[ind].dx;
-        double razL = celula[ind].dxL;
-        double raz = celula[ind].dx;
-        double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta) / dtot;
-        double atenua = 20.;" "caught"
+printf '\nshared helpers -- a defect here reaches all five at once\n'
+run_case "helper/blend-reassociate" "DriftFluxClosure.cpp" \
+    "        c0 = ((1. - blendRatio) * stratifiedC0 + blendRatio * dispersedC0);" \
+    "        c0 = (dispersedC0 + (1. - blendRatio) * (stratifiedC0 - dispersedC0));" "caught"
+run_case "helper/diameter-unconditional" "DriftFluxClosure.cpp" \
+    "    double diameter = state.cells[cellIndex].duto.a;
+    if (cellIndex > 0 && gasRate >= 0)
+        diameter = state.cells[cellIndex - 1].duto.a;" \
+    "    double diameter = state.cells[cellIndex].duto.a;
+    if (cellIndex > 0)
+        diameter = state.cells[cellIndex - 1].duto.a;" "caught"
+run_case "helper/noslip-threshold" "DriftFluxClosure.cpp" \
+    "        double driftCorrection = 1 - (meanSuperficialLiquidVelocity - 0.15) / 0.35;" \
+    "        double driftCorrection = 1 - (meanSuperficialLiquidVelocity - 0.16) / 0.35;" "invisible"
 
-printf '\nCalcC0UdPerm -- executes in the corpus\n'
-run_case "perm/fix-A3-02-ang" "SisProd.cpp" \
-    "        double ang = (razL * celula[ind].dutoL.teta + raz * celula[ind].duto.teta) / dtot;
-        double sinalAng = 1.;" \
-    "        double ang = (raz * celula[ind].dutoL.teta + razL * celula[ind].duto.teta) / dtot;
-        double sinalAng = 1.;" "caught"
-run_case "perm/fix-A3-03-razdx" "SisProd.cpp" \
-    "        double razdx = celula[ind].dx / (celula[ind].dx + celula[ind].dxL);" \
-    "        double razdx = celula[ind].dxL / (celula[ind].dx + celula[ind].dxL);" "caught"
-run_case "perm/slip-field" "SisProd.cpp" \
-    "    if (arq.escorregaPerm == 0) {" "    if (arq.escorregaTran == 0) {" "caught"
-
-printf '\ndeclared blind spots -- these MUST pass, and are covered by the token comparison\n'
-# betneg feeds ul0, ul0 feeds nothing but `if (ul0 < 0.) mult0 = 0.', and mult0
-# is never read. The chain betneg -> ul0 -> mult0 is dead in ALL FIVE variants
-# (verified by reading every mention of the three names in each body), so no
-# corruption confined to it can be observed by any behavioural harness. This is
-# the same shape as A2-02 in stage 2, where the anomaly itself is what makes a
-# transformation safe. Guarded by the token comparison instead.
-run_case "dead-chain-0.99QG" "SisProd.cpp" \
-    "if ((0.99 * celula[ind - 1].QG + 0.01 * celula[ind - 1].QL) < 0.)" \
-    "if ((celula[ind - 1].QG + (celula[ind - 1].QL - celula[ind - 1].QG) * 0.01) < 0.)" "invisible"
-run_case "dead-local-mult0" "SisProd.cpp" \
-    "                    double mult0, mult1;
-                    mult0 = 1.;
-                    if (ul0 < 0.)
-                        mult0 = 0.;" \
-    "                    double mult0, mult1;
-                    mult0 = 2.;
-                    if (ul0 < 0.)
-                        mult0 = 0.;" "invisible"
-run_case "dead-local-timeStep" "SisProd.cpp" \
+printf '\ndeclared blind spots -- these MUST pass; the token comparison covers them\n'
+# betneg feeds upstreamLiquidFlowRate, which feeds nothing but
+# `if (upstreamLiquidFlowRate < 0.) mult0 = 0.', and mult0 is never read. The
+# chain is dead in ALL FIVE variants, so no behavioural harness can observe a
+# corruption confined to it -- including the 0.99*QG + 0.01*QL expression the
+# contract requires preserved literally (A3-07).
+run_case "dead-chain-0.99QG" "DriftFluxClosure.cpp" \
+    "if ((0.99 * state.cells[cellIndex - 1].QG + 0.01 * state.cells[cellIndex - 1].QL) < 0.)" \
+    "if ((state.cells[cellIndex - 1].QG + (state.cells[cellIndex - 1].QL - state.cells[cellIndex - 1].QG) * 0.01) < 0.)" "invisible"
+run_case "dead-local-mult0" "DriftFluxClosure.cpp" \
+    "    mult0 = 1.;" "    mult0 = 2.;" "invisible"
+run_case "dead-local-timeStep" "DriftFluxClosure.cpp" \
     "    int timeStep = 20;
-    celula[ind].transic0 = celula[ind].transic;" \
+    state.cells[cellIndex].transic0 = state.cells[cellIndex].transic;" \
     "    int timeStep = 21;
-    celula[ind].transic0 = celula[ind].transic;" "invisible"
+    state.cells[cellIndex].transic0 = state.cells[cellIndex].transic;" "invisible"
 
 printf '\n'
 if (( fail == 0 )); then
