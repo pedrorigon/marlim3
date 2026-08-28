@@ -424,6 +424,12 @@ struct SteadyStateSource {
 };
 
 /// The flow rates and the two Reynolds numbers built from them.
+///
+/// The five call sites take these apart with a structured binding, so THE ORDER
+/// OF THESE FIELDS IS LOAD-BEARING: reordering them silently rebinds every call
+/// site to the wrong values. It replaced six lines of hand unpacking per body,
+/// which had the same hazard five times over and no reason for anyone to check
+/// it -- `const double diameter = scales.area;` would have compiled.
 struct FlowScales {
     double gasRate;      ///< ug1
     double liquidRate;   ///< ul1
@@ -440,9 +446,18 @@ struct FlowScales {
 /// The duct diameter is chosen INSIDE this function, not passed in, because the
 /// original reads cells[ind - 1].duto.a only when ind > 0 && ug1 >= 0. Taking it
 /// as an argument would make that read unconditional.
+///
+/// The four phase properties are in one order -- liquid, then gas, for the
+/// densities and again for the viscosities. They were not, at first: the
+/// densities went gas-then-liquid while the viscosities went liquid-then-gas,
+/// and since all four are double, a call site that got a pair the wrong way
+/// round would have compiled in silence and returned wrong Reynolds numbers.
+/// Nothing here can catch that; only the order being unsurprising can.
 template <typename Source>
-FlowScales flowScalesOf(const ClosureState &state, int cellIndex, double gasDensity, double liquidDensity,
-                        double noSlipLiquidHoldup, double liquidViscosity, double gasViscosity) {
+FlowScales flowScalesOf(const ClosureState &state, int cellIndex,
+                        double liquidDensity, double gasDensity,
+                        double liquidViscosity, double gasViscosity,
+                        double noSlipLiquidHoldup) {
     double gasRate = Source::gasFlowRate(state.cells, cellIndex) / gasDensity;
     double liquidRate = Source::liquidFlowRate(state.cells, cellIndex) / liquidDensity;
     double diameter = state.cells[cellIndex].duto.a;
@@ -709,13 +724,9 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
             gasViscosity = state.cells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
         }
 
-        const FlowScales scales = flowScalesOf<InstantaneousSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+        auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
+            flowScalesOf<InstantaneousSource>(state, cellIndex, liquidDensity, gasDensity,
+                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -962,13 +973,9 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
             gasViscosity = state.cells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
         }
 
-        const FlowScales scales = flowScalesOf<BufferedSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+        auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
+            flowScalesOf<BufferedSource>(state, cellIndex, liquidDensity, gasDensity,
+                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1148,13 +1155,9 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
             gasViscosity = (*state.cells[cellIndex].fluiL).ViscGas(meanPressure, meanTemperature);
         }
 
-        const FlowScales scales = flowScalesOf<InstantaneousSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+        auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
+            flowScalesOf<InstantaneousSource>(state, cellIndex, liquidDensity, gasDensity,
+                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1346,13 +1349,9 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
             gasViscosity = (*state.cells[cellIndex].fluiL).ViscGas(meanPressure, meanTemperature);
         }
 
-        const FlowScales scales = flowScalesOf<BufferedSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+        auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
+            flowScalesOf<BufferedSource>(state, cellIndex, liquidDensity, gasDensity,
+                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1485,13 +1484,9 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
             gasDensity = (*state.cells[cellIndex].fluiL).MasEspGas(meanPressure, meanTemperature);
         gasViscosity = (*state.cells[cellIndex].fluiL).ViscGas(meanPressure, meanTemperature);
 
-        const FlowScales scales = flowScalesOf<SteadyStateSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+        auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
+            flowScalesOf<SteadyStateSource>(state, cellIndex, liquidDensity, gasDensity,
+                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
