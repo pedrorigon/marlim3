@@ -44,6 +44,15 @@
  * several `if (ind > 0)` -- without the run depending on undefined behaviour.
  *
  * Usage: c0ud-sweep            writes the table to stdout
+ *        c0ud-sweep --bench N runs the sweep N times and prints nothing
+ *
+ * --bench exists because one pass is far under a second, which is too short
+ * to time. It drives the SAME code by the same path; it only suppresses the
+ * printing, so a timing run and a recording run exercise the same work.
+ * Note what it can and cannot say: the sweep spends most of its time inside
+ * ProFlu, which is identical on both sides of the comparison, so a measured
+ * delta UNDERSTATES the delta of the closure code itself. Directional, not a
+ * number to quote.
  */
 #include "Leitura.h"
 #include "SisProd.h"
@@ -51,6 +60,7 @@
 #include "variaveisGlobais1D.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <fstream>
 #include <string>
@@ -473,8 +483,12 @@ void resetCells(SProd &sp, Cel *cells, const Scenario &s, int ind) {
     sp.arq.mapaArranjo = 0;
 }
 
+bool gQuiet = false;
+
 void record(const char *variant, const Scenario &s, int ind,
             double c0, double ud, const Cel *cells) {
+    if (gQuiet)
+        return;
     const Cel &here = cells[ind];
     const Cel &prev = cells[ind - 1];
     printf("%-14s %-18s ind=%d c0=%a ud=%a arranjo=%d transic=%d transic0=%d "
@@ -487,7 +501,13 @@ void record(const char *variant, const Scenario &s, int ind,
 
 }  // namespace
 
-int main() {
+int main(int argc, char **argv) {
+    long repeats = 1;
+    bool quiet = false;
+    if (argc == 3 && std::string(argv[1]) == "--bench") {
+        repeats = std::atol(argv[2]);
+        quiet = true;
+    }
     varGlob1D globals;
 
     // Deliberately leaked, as in trend-sweep.cpp: ~SProd frees arrays keyed off
@@ -500,10 +520,12 @@ int main() {
     Cel *cells = storage + 1;
     sp.celula = cells;
 
+    gQuiet = quiet;
     static Scenario scenarios[512];
     int scenarioCount = 0;
     buildScenarios(scenarios, scenarioCount);
 
+    for (long pass = 0; pass < repeats; pass++)
     for (int si = 0; si < scenarioCount; si++) {
         const Scenario &s = scenarios[si];
         for (int ind = 0; ind <= kCells - 1; ind++) {
