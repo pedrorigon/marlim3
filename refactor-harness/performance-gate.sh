@@ -44,7 +44,8 @@
 #
 # Environment:
 #   MARLIM_BIN            binary under test (default build/Marlim3)
-#   MARLIM_PERF_REPS      alternating repetitions per side (default 3)
+#   MARLIM_PERF_REPS      minimum alternating repetitions per side (default 4;
+#                         odd values are promoted to the next even value)
 #   MARLIM_PERF_THRESHOLD regression threshold in percent (default 3)
 #   MARLIM_PERF_TREE      cached baseline worktree (default ~/marlim3-perf-baseline)
 #
@@ -69,11 +70,23 @@ BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
 BASELINE_OUTPUTS="$BASELINE_DIR/saidas"
 CURRENT_BINARY="${MARLIM_BIN:-$project_root/build/Marlim3}"
 PERF_TREE="${MARLIM_PERF_TREE:-$HOME/marlim3-perf-baseline}"
-REPETITIONS="${MARLIM_PERF_REPS:-3}"
+REQUESTED_REPETITIONS="${MARLIM_PERF_REPS:-4}"
 THRESHOLD="${MARLIM_PERF_THRESHOLD:-3}"
 MIN_MEASURABLE_SECONDS=5
 
 red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; reset=$'\033[0m'
+
+[[ "$REQUESTED_REPETITIONS" =~ ^[1-9][0-9]*$ ]] || {
+    printf '%sMARLIM_PERF_REPS must be a positive integer, got %s%s\n' \
+           "$red" "$REQUESTED_REPETITIONS" "$reset" >&2
+    exit 2
+}
+REPETITIONS="$REQUESTED_REPETITIONS"
+if (( REPETITIONS % 2 != 0 )); then
+    REPETITIONS=$((REPETITIONS + 1))
+    printf '%spromoting MARLIM_PERF_REPS=%d to %d so run order is balanced%s\n' \
+           "$yellow" "$REQUESTED_REPETITIONS" "$REPETITIONS" "$reset"
+fi
 
 [[ -x "$CURRENT_BINARY" ]] || {
     printf '%scurrent binary missing: %s%s\n' "$red" "$CURRENT_BINARY" "$reset" >&2; exit 2; }
@@ -147,15 +160,32 @@ locate_model() {
 # so the inputs are identical by construction and only the executable differs.
 time_once() {
     local binary="$1" input_path="$2" run_dir="$3"
-    local started finished
+    local started finished exit_code
     mkdir -p "$run_dir"
     started=$(date +%s.%N)
     "$binary" -s TRANSIENTE -i "$input_path" -p demos/ \
               -d "$run_dir" -o "$run_dir/run.log" \
               > "$run_dir/_stdout.txt" 2>&1
+    exit_code=$?
     finished=$(date +%s.%N)
+    if (( exit_code != 0 )); then
+        printf '%srun failed with exit %d: %s %s; output retained at %s%s\n' \
+               "$red" "$exit_code" "$binary" "$input_path" "$run_dir" "$reset" >&2
+        return 1
+    fi
     rm -rf "$run_dir"
     awk -v a="$started" -v b="$finished" 'BEGIN { printf "%.3f", b - a }'
+}
+
+time_or_abort() {
+    local output_name="$1" binary="$2" input_path="$3" run_dir="$4" measured
+    if ! measured="$(time_once "$binary" "$input_path" "$run_dir")"; then
+        printf '%sPERFORMANCE GATE ABORTED -- failed simulations are not timings%s\n' \
+               "$red" "$reset" >&2
+        trap - EXIT
+        exit 2
+    fi
+    printf -v "$output_name" '%s' "$measured"
 }
 
 keep_fastest() {
@@ -205,14 +235,14 @@ for model in "${models[@]}"; do
     best_base=""; best_curr=""
     for (( rep = 1; rep <= REPETITIONS; rep++ )); do
         if (( rep % 2 == 1 )); then
-            elapsed="$(time_once "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep")"
+            time_or_abort elapsed "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep"
             best_base="$(keep_fastest "$elapsed" "$best_base")"
-            elapsed="$(time_once "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep")"
+            time_or_abort elapsed "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep"
             best_curr="$(keep_fastest "$elapsed" "$best_curr")"
         else
-            elapsed="$(time_once "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep")"
+            time_or_abort elapsed "$CURRENT_BINARY" "$input_path" "$work_dir/c-$model-$rep"
             best_curr="$(keep_fastest "$elapsed" "$best_curr")"
-            elapsed="$(time_once "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep")"
+            time_or_abort elapsed "$baseline_binary" "$input_path" "$work_dir/b-$model-$rep"
             best_base="$(keep_fastest "$elapsed" "$best_base")"
         fi
     done
@@ -242,7 +272,8 @@ done
 
 echo
 printf 'comparison           : baseline commit %s built now, alternated with the working tree\n' "${BASELINE_COMMIT:0:9}"
-printf 'estimator            : minimum of %d alternating runs per side (noise is one-sided)\n' "$REPETITIONS"
+printf 'estimator            : minimum of %d balanced alternating runs per side (requested %d; noise is one-sided)\n' \
+    "$REPETITIONS" "$REQUESTED_REPETITIONS"
 printf 'threshold            : %s%%\n' "$THRESHOLD"
 printf 'models measured      : %d\n' "$measured"
 printf 'models skipped       : %d (baseline below %ss)\n' "$skipped" "$MIN_MEASURABLE_SECONDS"
@@ -254,6 +285,12 @@ if (( regressions > 0 )); then
     printf 'session, so this is not explained by a stale baseline or by machine load.\n'
     printf 'Re-run once to rule out a transient, then treat it as a real regression.%s\n' "$reset" >&2
     exit 1
+fi
+
+if (( measured == 0 )); then
+    printf '%sPERFORMANCE GATE NOT EVALUATED -- no model reached the %ss measurement floor%s\n' \
+           "$yellow" "$MIN_MEASURABLE_SECONDS" "$reset" >&2
+    exit 2
 fi
 
 printf '%sPERFORMANCE GATE PASSED -- no model beyond %s%%%s\n' "$green" "$THRESHOLD" "$reset"
