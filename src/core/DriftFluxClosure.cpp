@@ -365,7 +365,13 @@ namespace coefficient {
  * arq.escorregaPerm ends the calculation. Six preserved anomalies are
  * catalogued as A3-01 to A3-06 in
  * specs/001-refatoracao-sisprod/evidencia/c0ud-diff.md; the dead chain
- * betneg -> ul0 -> mult0, dead in all five, is A3-07.
+ * betneg -> upstreamLiquidFlowRate -> mult0, dead in all five, is A3-07.
+ *
+ * The `// duvidabeta` and `// testeBeta` markers below are the original
+ * author's, kept where they were. They are Portuguese for "beta doubt" and
+ * "beta test", and they sit on the assignments of betI and betneg -- which is
+ * anomaly A3-01, where a later unconditional assignment makes the selection
+ * above it dead. They are evidence that someone was unsure here, so they stay.
  */
 
 namespace {
@@ -394,30 +400,42 @@ namespace {
 
 /// Instantaneous state -- SProd::CalcC0Ud and SProd::CalcC0UdIni.
 struct InstantaneousSource {
+    /// Value whose SIGN the variant tests. Not the flow rate: these variants
+    /// branch on QG but divide MC - Mliqini by the density.
     static double gasForSign(const Cel *cells, int index) { return cells[index].QG; }
+    /// Gas mass flow: total minus its liquid part.
     static double gasFlowRate(const Cel *cells, int index) {
         return cells[index].MC - cells[index].Mliqini;
     }
+    /// Liquid mass flow.
     static double liquidFlowRate(const Cel *cells, int index) { return cells[index].Mliqini; }
 };
 
 /// Buffered network state -- SProd::CalcC0UdBuf and SProd::CalcC0UdIniBuf.
 struct BufferedSource {
+    /// Value whose SIGN the variant tests. Here it is the same expression as the
+    /// flow rate, unlike the instantaneous source; both hooks are kept so the
+    /// two roles stay distinguishable at the call sites.
     static double gasForSign(const Cel *cells, int index) {
         return cells[index].MCBuf - cells[index].MliqiniBuf;
     }
+    /// Buffered gas mass flow: total minus its liquid part.
     static double gasFlowRate(const Cel *cells, int index) {
         return cells[index].MCBuf - cells[index].MliqiniBuf;
     }
+    /// Buffered liquid mass flow.
     static double liquidFlowRate(const Cel *cells, int index) { return cells[index].MliqiniBuf; }
 };
 
 /// Steady state -- SProd::CalcC0UdPerm. It takes the magnitude of both rates and
 /// never tests their sign, so it has no gasForSign.
 struct SteadyStateSource {
+    /// Gas mass flow, magnitude only -- the steady-state variant never branches
+    /// on direction, which is why this source has no gasForSign.
     static double gasFlowRate(const Cel *cells, int index) {
         return fabs(cells[index].MC - cells[index].Mliqini);
     }
+    /// Liquid mass flow, magnitude only.
     static double liquidFlowRate(const Cel *cells, int index) {
         return fabs(cells[index].Mliqini);
     }
@@ -431,11 +449,11 @@ struct SteadyStateSource {
 /// liquid-then-gas, an asymmetry with no reason behind it and no way for the
 /// compiler to notice a call site that got it wrong.
 struct PhaseProperties {
-    double liquidDensity;
-    double gasDensity;
-    double liquidViscosity;
-    double gasViscosity;
-    double noSlipLiquidHoldup;
+    double liquidDensity;       ///< rlm
+    double gasDensity;          ///< rgm
+    double liquidViscosity;     ///< viscl1
+    double gasViscosity;        ///< viscg1
+    double noSlipLiquidHoldup;  ///< hns
 };
 
 /// The scalars the closure helpers below read, named instead of counted.
@@ -455,18 +473,18 @@ struct PhaseProperties {
 /// between construction and use writes them today -- but "nothing writes it
 /// today" is how a read moves without anyone noticing.
 struct MixtureProperties {
-    const double &liquidDensity;
-    const double &gasDensity;
-    const double &surfaceTension;
-    const double &voidFraction;
-    const double &gasFlowRate;
-    const double &liquidFlowRate;
-    const double &diameter;
-    const double &flowArea;
-    const double &mixtureReynolds;
-    const double &liquidReynolds;
-    const double &inclinationAngle;
-    const double &horizontalCorrection;
+    const double &liquidDensity;         ///< rlm
+    const double &gasDensity;            ///< rgm
+    const double &surfaceTension;        ///< tensup1
+    const double &voidFraction;          ///< alf0
+    const double &gasFlowRate;           ///< ug1, a volumetric rate
+    const double &liquidFlowRate;        ///< ul1, a volumetric rate
+    const double &diameter;              ///< dia1
+    const double &flowArea;              ///< A1
+    const double &mixtureReynolds;       ///< nrey
+    const double &liquidReynolds;        ///< nreyl
+    const double &inclinationAngle;      ///< ang
+    const double &horizontalCorrection;  ///< correcHor
 };
 
 /// The dispersed and stratified closures, evaluated as a pair and then blended.
@@ -476,10 +494,10 @@ struct MixtureProperties {
 /// together they are named at every use, and the two helpers now agree on one
 /// shape: one fills it, the other reads it.
 struct RegimePair {
-    double dispersedC0;
-    double dispersedUd;
-    double stratifiedC0;
-    double stratifiedUd;
+    double dispersedC0;   ///< c0D
+    double dispersedUd;   ///< udD
+    double stratifiedC0;  ///< c0E
+    double stratifiedUd;  ///< udE
 };
 
 /// The flow rates and the two Reynolds numbers built from them.
@@ -834,15 +852,15 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                 //  / ((1 - betneg) * state.cells[cellIndex].flui.MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature)
                 upstreamLiquidFlowRate = state.cells[cellIndex - 1].Mliqini / ((1 - betneg) * state.cells[cellIndex].rpLi + betneg * state.cells[cellIndex].rcLi);
 
-                estratificado testamapa(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
+                estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                         state.cells[cellIndex].duto.teta, state.cells[cellIndex].duto.rug / diameter);
 
                 if (state.selectors.stratified == 2)
-                    testamapa.mapaTD();
+                    stratifiedMap.mapaTD();
                 else
-                    testamapa.mapaTD(1);
+                    stratifiedMap.mapaTD(1);
 
-                flowPattern = testamapa.arr;
+                flowPattern = stratifiedMap.arr;
 
                 if (flowPattern == -1) {
                     if (state.cells[cellIndex].arranjo != 0) {
@@ -855,10 +873,10 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                         } else
                             state.cells[cellIndex].transic = 0;
                     }
-                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
-                    state.cells[cellIndex - 1].arranjoR = testamapa.arr;
-                    state.cells[cellIndex - 1].perdaEstratL = testamapa.fatorperdaLiq;
-                    state.cells[cellIndex - 1].perdaEstratG = testamapa.fatorperdaGas;
+                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
+                    state.cells[cellIndex - 1].arranjoR = stratifiedMap.arr;
+                    state.cells[cellIndex - 1].perdaEstratL = stratifiedMap.fatorperdaLiq;
+                    state.cells[cellIndex - 1].perdaEstratG = stratifiedMap.fatorperdaGas;
                     RegimePair pair;
                     evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.cells[cellIndex - 1].alf;
@@ -873,9 +891,9 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
             }
             if (flowPattern == 1) {
 
-                arranjo testamapa2(diameter, liquidFlowRate / flowArea, gasFlowRate / flowArea, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
+                arranjo flowPatternMap(diameter, liquidFlowRate / flowArea, gasFlowRate / flowArea, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                    state.cells[cellIndex].duto.teta, surfaceTension, state.input.mapaArranjo, state.globals);
-                flowPattern = testamapa2.verificaArr();
+                flowPattern = flowPatternMap.verificaArr();
 
                 evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
                 if (fabs(gasFlowRate / state.cells[cellIndex].duto.area) > 5. && voidFraction >= 0.75) {
@@ -1286,11 +1304,11 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                 upstreamGasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / (*state.cells[cellIndex].fluiL).MasEspGas(upstreamMeanPressure, upstreamMeanTemperature);
                 upstreamLiquidFlowRate = state.cells[cellIndex].Mliqini / ((1 - betneg) * (*state.cells[cellIndex].fluiL).MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature) + betneg * state.cells[cellIndex].fluicol.MasEspFlu(upstreamMeanPressure, upstreamMeanTemperature));
 
-                estratificado testamapa(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
+                estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                         state.cells[cellIndex].duto.teta, state.cells[cellIndex].duto.rug / diameter);
 
-                testamapa.mapaTD();
-                flowPattern = testamapa.arr;
+                stratifiedMap.mapaTD();
+                flowPattern = stratifiedMap.arr;
                 if (flowPattern == -1) {
                     if (state.cells[cellIndex].arranjo != 0) {
                         if (((state.cells[cellIndex].arranjo != flowPattern) || state.cells[cellIndex].transic > 0)) {
@@ -1302,7 +1320,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                         }
                     } else
                         state.cells[cellIndex].transic = 0;
-                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
+                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
                     RegimePair pair;
                     evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.inletVoidFraction;
@@ -1317,9 +1335,9 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
             }
             if (flowPattern == 1) {
 
-                arranjo testamapa2(diameter, liquidFlowRate / flowArea, gasFlowRate / flowArea, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
+                arranjo flowPatternMap(diameter, liquidFlowRate / flowArea, gasFlowRate / flowArea, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                    state.cells[cellIndex].duto.teta, surfaceTension, state.input.mapaArranjo, state.globals);
-                flowPattern = testamapa2.verificaArr();
+                flowPattern = flowPatternMap.verificaArr();
 
                 evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
 
@@ -1660,11 +1678,11 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                         upstreamLiquidFlowRate = fabs(state.cells[cellIndex - 1].Mliqini) / ((1 - betneg) * state.cells[cellIndex].flui.MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature) + betneg * state.cells[cellIndex].fluicol.MasEspFlu(upstreamMeanPressure, upstreamMeanTemperature));
                     }
 
-                    estratificado testamapa(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
+                    estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                             inclinationSign * state.cells[cellIndex].duto.teta, state.cells[cellIndex].duto.rug / diameter);
 
-                    testamapa.mapaTD();
-                    flowPattern = testamapa.arr;
+                    stratifiedMap.mapaTD();
+                    flowPattern = stratifiedMap.arr;
                     if (flowPattern == -1) {
                         if (((state.cells[cellIndex].arranjo != flowPattern) || state.cells[cellIndex].transic > 0)) {
                             if ((state.cells[cellIndex].arranjo != flowPattern) && state.cells[cellIndex].transic > 0)
@@ -1673,11 +1691,11 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                             if (state.cells[cellIndex].transic > 19)
                                 state.cells[cellIndex].transic = 0;
                         }
-                        state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
+                        state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
                         if (cellIndex > 0) {
-                            state.cells[cellIndex - 1].arranjoR = testamapa.arr;
-                            state.cells[cellIndex - 1].perdaEstratL = testamapa.fatorperdaLiq;
-                            state.cells[cellIndex - 1].perdaEstratG = testamapa.fatorperdaGas;
+                            state.cells[cellIndex - 1].arranjoR = stratifiedMap.arr;
+                            state.cells[cellIndex - 1].perdaEstratL = stratifiedMap.fatorperdaLiq;
+                            state.cells[cellIndex - 1].perdaEstratG = stratifiedMap.fatorperdaGas;
                         }
 
                         RegimePair pair;
@@ -1691,9 +1709,9 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                 }
                 if (flowPattern == 1) {
 
-                    arranjo testamapa2(diameter, liquidFlowRate / flowArea, gasFlowRate / flowArea, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
+                    arranjo flowPatternMap(diameter, liquidFlowRate / flowArea, gasFlowRate / flowArea, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                        inclinationSign * state.cells[cellIndex].duto.teta, surfaceTension, state.input.mapaArranjo, state.globals);
-                    flowPattern = testamapa2.verificaArr();
+                    flowPattern = flowPatternMap.verificaArr();
 
                     evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
                     state.cells[cellIndex].arranjo = flowPattern;
