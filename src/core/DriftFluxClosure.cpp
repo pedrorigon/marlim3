@@ -441,6 +441,148 @@ struct SteadyStateSource {
     }
 };
 
+/// No-slip liquid holdup at the face, for the transient variants.
+///
+/// Identical in CalcC0Ud and CalcC0UdBuf once the sign source is the policy's:
+/// the two differed only in reading QG against MCBuf - MliqiniBuf, which is
+/// exactly what gasForSign is for. The hook is called at each test, never read
+/// once into a local, so a value the original consulted twice is still consulted
+/// twice.
+///
+/// The two localtiny guards are the original's: the first replaces a holdup
+/// derived from a vanishing gas rate, the second rejects one that has collapsed
+/// onto either end of its range.
+template <typename Source>
+double transientNoSlipHoldup(const ClosureState &state, int cellIndex) {
+    double noSlipLiquidHoldup;
+    if (cellIndex > 0)
+        noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
+    else
+        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alf;
+    if (Source::gasForSign(state.cells, cellIndex) < 0)
+        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+    if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).localtiny * 1e-5) {
+        if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny)
+            noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
+        else if (fabs(state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
+            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+        else
+            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
+    }
+    if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
+        noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
+    return noSlipLiquidHoldup;
+}
+
+/// Duct inclination seen by the face, for the transient variants.
+///
+/// The length-weighted mean of the two duct inclinations, overridden two cells
+/// downstream of a shut choke by whichever single duct the flow actually comes
+/// from. Identical in CalcC0Ud and CalcC0UdBuf once the sign source is the
+/// policy's.
+///
+/// The weighting reads cellLength against dutoL and leftCellLength against
+/// duto -- crossed, which is the usual interpolation. CalcC0UdPerm weights it
+/// the other way round and therefore does NOT use this function; that is
+/// anomaly A3-02, preserved.
+template <typename Source>
+double transientInclinationAngle(const ClosureState &state, int cellIndex) {
+    const double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
+    const double cellLength = state.cells[cellIndex].dx;
+    const double leftCellLength = state.cells[cellIndex].dxL;
+    double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
+    if (cellIndex >= 2) {
+        if (state.cells[cellIndex - 2].acsr.tipo == 5 && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
+            if (Source::gasForSign(state.cells, cellIndex) >= 0)
+                inclinationAngle = state.cells[cellIndex].duto.teta;
+            else
+                inclinationAngle = state.cells[cellIndex].dutoR.teta;
+        } else {
+            if (Source::gasForSign(state.cells, cellIndex) >= 0)
+                inclinationAngle = state.cells[cellIndex].dutoL.teta;
+            else
+                inclinationAngle = state.cells[cellIndex].duto.teta;
+        }
+    }
+    return inclinationAngle;
+}
+
+/// Sign correction applied to the drift term on a horizontal face.
+///
+/// Identical in the four transient variants except for WHICH cell's accessory
+/// opens the guard: CalcC0Ud reads the upstream one, the other three read the
+/// face's own. That difference is anomaly A3-01's neighbour -- site 14 of the
+/// normalized comparison -- and it is preserved by making the accessory cell a
+/// parameter rather than by picking one and calling the rest wrong.
+///
+/// The two arms differ in more than the accessory: the first requires both
+/// junction angles to agree in sign, the second reads the downstream angle
+/// alone. So the guard is not decorative, and a call site that passed the wrong
+/// cell would change results wherever the two cells carry different accessories.
+double horizontalCorrectionOf(const ClosureState &state, int cellIndex, int accessoryCellIndex) {
+    double horizontalCorrection = 1.;
+    if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
+        if (state.cells[accessoryCellIndex].acsr.tipo != 5 || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {
+            if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
+                horizontalCorrection = -1.;
+            else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
+                horizontalCorrection = 1.;
+        } else {
+            if (state.cells[cellIndex].angDir < 0)
+                horizontalCorrection = -1.;
+            else if (state.cells[cellIndex].angDir > 0)
+                horizontalCorrection = 1.;
+        }
+    }
+    return horizontalCorrection;
+}
+
+/// No-slip liquid holdup at the face, for the initialisation variants.
+///
+/// Same shape as the transient one, reading the inlet void fraction instead of
+/// the neighbouring cell's. Identical in CalcC0UdIni and CalcC0UdIniBuf once the
+/// sign source is the policy's.
+///
+/// One guard mixes the two: the second condition of the else-if still tests
+/// cells[cellIndex - 1].alfPigD while everything around it moved to the inlet
+/// fraction. That is anomaly A3-04, an incomplete substitution in the original,
+/// and it is preserved exactly -- correcting it here would change results in a
+/// variant no model in the corpus executes.
+template <typename Source>
+double inletNoSlipHoldup(const ClosureState &state, int cellIndex) {
+    double noSlipLiquidHoldup = 1 - state.inletVoidFraction;
+    if (Source::gasForSign(state.cells, cellIndex) < 0)
+        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+    if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).localtiny * 1e-5) {
+        if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.inletVoidFraction) > (*state.globals).localtiny && fabs(1. - state.inletVoidFraction) > (*state.globals).localtiny)
+            noSlipLiquidHoldup = 1 - state.inletVoidFraction;
+        else if (fabs(state.inletVoidFraction) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
+            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+        else
+            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
+    }
+    if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
+        noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
+    return noSlipLiquidHoldup;
+}
+
+/// No slip while a pig occupies the face: the drift terms are forced off and the
+/// flow pattern is pinned to slug.
+///
+/// This is the body of BOTH arms of the pig guard in the two transient variants,
+/// textually identical in all four places -- the conditions differ, what they do
+/// does not. Sharing it does not merge the branches: it makes the fact that they
+/// agree visible, the way the root-finding stage argued a preserved branch is
+/// worth keeping precisely as a marker.
+void applyPigOverride(const ClosureState &state, int cellIndex, double &c0, double &ud) {
+    c0 = 1.;
+    ud = 0.;
+    state.cells[cellIndex].arranjo = 1.;
+    state.cells[cellIndex - 1].arranjoR = 1.;
+    state.cells[cellIndex - 1].perdaEstratL = 0.;
+    state.cells[cellIndex - 1].perdaEstratG = 0.;
+}
+
 /// The phase properties the flow scales are built from.
 ///
 /// Same reasoning as MixtureProperties: five adjacent doubles is five chances to
@@ -467,6 +609,9 @@ struct PhaseProperties {
 /// against locals of the same name, a transposition is visible on the line
 /// where it happens.
 ///
+/// Constructed once per variant, immediately before the Reynolds guard that
+/// gates both helpers.
+///
 /// The fields are REFERENCES, for the reason ClosureState holds references:
 /// several of these locals are assigned again further down, and a copy taken
 /// here would freeze the value at construction rather than at use. Nothing
@@ -486,6 +631,103 @@ struct MixtureProperties {
     const double &inclinationAngle;      ///< ang
     const double &horizontalCorrection;  ///< correcHor
 };
+
+/// Pressure and temperature the property model is evaluated at, for CalcC0Ud.
+///
+/// Used once, and named because it is one question answered over twenty lines:
+/// at what conditions are the phase properties taken.
+///
+/// Three assignments here are immediately overwritten, and that is the
+/// original's shape, not an oversight in the move: the length-weighted mean
+/// temperature is replaced by the left cell's, which is replaced again by the
+/// face's or by the surface temperature. The upstream pressure and temperature
+/// it also computes are never read by anything -- part of the dead chain
+/// catalogued as A3-06 -- and are kept because removing them would change the
+/// token stream of code no model in the corpus executes.
+struct MeanConditions {
+    double pressure;     ///< pmed
+    double temperature;  ///< tmed
+};
+
+MeanConditions instantaneousMeanConditions(const ClosureState &state, int cellIndex,
+                                           double lengthRatio, double upstreamLengthRatio) {
+    double meanPressure;
+    double upstreamMeanPressure = 0.;
+
+    meanPressure = state.cells[cellIndex].presaux;
+    if (cellIndex > 0)
+        upstreamMeanPressure = state.cells[cellIndex - 1].presaux;
+    if (cellIndex == state.lastCell)
+        meanPressure = state.cells[cellIndex].pres;
+    else
+        upstreamMeanPressure = state.cells[cellIndex].presaux;
+    double meanTemperature = lengthRatio * state.cells[cellIndex].temp + (1 - lengthRatio) * state.cells[cellIndex].tempL;
+    meanTemperature = state.cells[cellIndex].tempL;
+    if (state.cells[cellIndex].VTemper < 0.)
+        meanTemperature = state.cells[cellIndex].temp;
+    double upstreamMeanTemperature;
+    if (cellIndex > 0)
+        upstreamMeanTemperature = upstreamLengthRatio * state.cells[cellIndex - 1].temp + (1 - upstreamLengthRatio) * state.cells[cellIndex - 1].tempL;
+    else
+        upstreamMeanTemperature = meanTemperature;
+    if (cellIndex < state.lastCell)
+        meanTemperature = state.cells[cellIndex].temp;
+    else
+        meanTemperature = state.gasSurfaceTemperature;
+    return MeanConditions{meanPressure, meanTemperature};
+}
+
+/// Phase properties at the face, from the instantaneous state.
+///
+/// Used once, by CalcC0Ud, and named rather than inlined because it is one
+/// question -- what are the two phases like here -- answered over thirty lines
+/// in the middle of a much longer one.
+///
+/// It is the only variant that consults the cached densities rpCi, rcCi and
+/// rgCi: at the two ends of the line it calls the property model, and in between
+/// it takes the cache. The other four always call the model. That asymmetry is
+/// the original's and is preserved.
+///
+/// The `// testeBeta` marker on the first branch is the original author's; see
+/// the note on the preserved anomalies above.
+PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cellIndex, double betI,
+                                             double meanPressure, double meanTemperature,
+                                             double noSlipLiquidHoldup, double &surfaceTension) {
+    double liquidDensity;
+    double liquidViscosity;
+    if (state.cells[cellIndex].QL < 0.) { // testeBeta
+        if (cellIndex == 0 || cellIndex == state.lastCell)
+            liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
+        else
+            liquidDensity = (1 - betI) * state.cells[cellIndex].rpCi + betI * state.cells[cellIndex].rcCi;
+        liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
+        surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
+    } else {
+        if (cellIndex == 0 || cellIndex == state.lastCell)
+            liquidDensity = (1 - betI) * state.cells[cellIndex - 1].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex - 1].fluicol.MasEspFlu(meanPressure, meanTemperature);
+        else
+            liquidDensity = (1 - betI) * state.cells[cellIndex].rpCi + betI * state.cells[cellIndex - 1].rcCi;
+        liquidViscosity = (1 - betI) * state.cells[cellIndex - 1].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex - 1].fluicol.VisFlu(meanPressure, meanTemperature);
+        surfaceTension = (1 - betI) * state.cells[cellIndex - 1].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex - 1].fluicol.TensSuper(meanPressure, meanTemperature);
+    }
+
+    double gasDensity;
+    double gasViscosity;
+    if (state.cells[cellIndex].QG < 0.) {
+        if (cellIndex == 0 || cellIndex == state.lastCell)
+            gasDensity = state.cells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
+        else
+            gasDensity = state.cells[cellIndex].rgCi;
+        gasViscosity = state.cells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
+    } else {
+        if (cellIndex == 0 || cellIndex == state.lastCell)
+            gasDensity = state.cells[cellIndex - 1].flui.MasEspGas(meanPressure, meanTemperature);
+        else
+            gasDensity = state.cells[cellIndex].rgCi;
+        gasViscosity = state.cells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
+    }
+    return PhaseProperties{liquidDensity, gasDensity, liquidViscosity, gasViscosity, noSlipLiquidHoldup};
+}
 
 /// The dispersed and stratified closures, evaluated as a pair and then blended.
 ///
@@ -650,19 +892,9 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex - 1].velPig > 0 && state.cells[cellIndex - 1].estadoPig == 1) {
-        c0 = 1.;
-        ud = 0.;
-        state.cells[cellIndex].arranjo = 1.;
-        state.cells[cellIndex - 1].arranjoR = 1.;
-        state.cells[cellIndex - 1].perdaEstratL = 0.;
-        state.cells[cellIndex - 1].perdaEstratG = 0.;
+        applyPigOverride(state, cellIndex, c0, ud);
     } else if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
-        c0 = 1.;
-        ud = 0.;
-        state.cells[cellIndex].arranjo = 1.;
-        state.cells[cellIndex - 1].arranjoR = 1.;
-        state.cells[cellIndex - 1].perdaEstratL = 0.;
-        state.cells[cellIndex - 1].perdaEstratG = 0.;
+        applyPigOverride(state, cellIndex, c0, ud);
     } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
@@ -672,22 +904,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         else
             upstreamLengthRatio = lengthRatio;
 
-        if (cellIndex > 0)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
-        else
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alf;
-        if (state.cells[cellIndex].QG < 0)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-        if (fabs(state.cells[cellIndex].QG) < (*state.globals).localtiny * 1e-5) {
-            if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
-            else if (fabs(state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-            else
-                noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
-        }
-        if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
-            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
+        noSlipLiquidHoldup = transientNoSlipHoldup<InstantaneousSource>(state, cellIndex);
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
@@ -719,79 +936,20 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         } else
             betneg = state.cells[cellIndex].bet;
 
-        double meanPressure;
-        double upstreamMeanPressure = 0.;
+        const MeanConditions conditions =
+            instantaneousMeanConditions(state, cellIndex, lengthRatio, upstreamLengthRatio);
+        const double meanPressure = conditions.pressure;
+        const double meanTemperature = conditions.temperature;
 
-        meanPressure = state.cells[cellIndex].presaux;
-        if (cellIndex > 0)
-            upstreamMeanPressure = state.cells[cellIndex - 1].presaux;
-        if (cellIndex == state.lastCell)
-            meanPressure = state.cells[cellIndex].pres;
-        else
-            upstreamMeanPressure = state.cells[cellIndex].presaux;
-        double meanTemperature = lengthRatio * state.cells[cellIndex].temp + (1 - lengthRatio) * state.cells[cellIndex].tempL;
-        meanTemperature = state.cells[cellIndex].tempL;
-        if (state.cells[cellIndex].VTemper < 0.)
-            meanTemperature = state.cells[cellIndex].temp;
-        double upstreamMeanTemperature;
-        if (cellIndex > 0)
-            upstreamMeanTemperature = upstreamLengthRatio * state.cells[cellIndex - 1].temp + (1 - upstreamLengthRatio) * state.cells[cellIndex - 1].tempL;
-        else
-            upstreamMeanTemperature = meanTemperature;
-        if (cellIndex < state.lastCell)
-            meanTemperature = state.cells[cellIndex].temp;
-        else
-            meanTemperature = state.gasSurfaceTemperature;
+        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex - 1);
 
-        double horizontalCorrection = 1.;
-        if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
-            if (state.cells[cellIndex - 1].acsr.tipo != 5 || state.cells[cellIndex - 1].acsr.chk.AreaGarg > 1e-10) {
-                if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            } else {
-                if (state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            }
-        }
-
-        double liquidDensity;
-        double liquidViscosity;
         double surfaceTension;
-        if (state.cells[cellIndex].QL < 0.) { // testeBeta
-            if (cellIndex == 0 || cellIndex == state.lastCell)
-                liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
-            else
-                liquidDensity = (1 - betI) * state.cells[cellIndex].rpCi + betI * state.cells[cellIndex].rcCi;
-            liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
-            surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
-        } else {
-            if (cellIndex == 0 || cellIndex == state.lastCell)
-                liquidDensity = (1 - betI) * state.cells[cellIndex - 1].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex - 1].fluicol.MasEspFlu(meanPressure, meanTemperature);
-            else
-                liquidDensity = (1 - betI) * state.cells[cellIndex].rpCi + betI * state.cells[cellIndex - 1].rcCi;
-            liquidViscosity = (1 - betI) * state.cells[cellIndex - 1].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex - 1].fluicol.VisFlu(meanPressure, meanTemperature);
-            surfaceTension = (1 - betI) * state.cells[cellIndex - 1].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex - 1].fluicol.TensSuper(meanPressure, meanTemperature);
-        }
-
-        double gasDensity;
-        double gasViscosity;
-        if (state.cells[cellIndex].QG < 0.) {
-            if (cellIndex == 0 || cellIndex == state.lastCell)
-                gasDensity = state.cells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
-            else
-                gasDensity = state.cells[cellIndex].rgCi;
-            gasViscosity = state.cells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
-        } else {
-            if (cellIndex == 0 || cellIndex == state.lastCell)
-                gasDensity = state.cells[cellIndex - 1].flui.MasEspGas(meanPressure, meanTemperature);
-            else
-                gasDensity = state.cells[cellIndex].rgCi;
-            gasViscosity = state.cells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
-        }
+        const PhaseProperties phases = instantaneousPhaseProperties(
+            state, cellIndex, betI, meanPressure, meanTemperature, noSlipLiquidHoldup, surfaceTension);
+        const double liquidDensity = phases.liquidDensity;
+        const double gasDensity = phases.gasDensity;
+        const double liquidViscosity = phases.liquidViscosity;
+        const double gasViscosity = phases.gasViscosity;
 
         auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
             flowScalesOf<InstantaneousSource>(state, cellIndex,
@@ -802,29 +960,10 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                                  .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
-        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
-        double cellLength = state.cells[cellIndex].dx;
-        double leftCellLength = state.cells[cellIndex].dxL;
-        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
-        if (cellIndex >= 2) {
-            if (state.cells[cellIndex - 2].acsr.tipo == 5 && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
-                if (state.cells[cellIndex].QG >= 0)
-                    inclinationAngle = state.cells[cellIndex].duto.teta;
-                else
-                    inclinationAngle = state.cells[cellIndex].dutoR.teta;
-            } else {
-                if (state.cells[cellIndex].QG >= 0)
-                    inclinationAngle = state.cells[cellIndex].dutoL.teta;
-                else
-                    inclinationAngle = state.cells[cellIndex].duto.teta;
-            }
-        }
+        const double inclinationAngle = transientInclinationAngle<InstantaneousSource>(state, cellIndex);
 
         double transitionWindow = 20;
 
-        // Named once, so the eleven values the two closure helpers need cannot
-        // be transposed at a call site. References, not copies: gasFlowRate and
-        // liquidFlowRate are assigned again inside the guard below.
         const MixtureProperties mix{
             .liquidDensity = liquidDensity,
             .gasDensity = gasDensity,
@@ -933,19 +1072,9 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex - 1].velPig > 0 && state.cells[cellIndex - 1].estadoPig == 1) {
-        c0 = 1.;
-        ud = 0.;
-        state.cells[cellIndex].arranjo = 1.;
-        state.cells[cellIndex - 1].arranjoR = 1.;
-        state.cells[cellIndex - 1].perdaEstratL = 0.;
-        state.cells[cellIndex - 1].perdaEstratG = 0.;
+        applyPigOverride(state, cellIndex, c0, ud);
     } else if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
-        c0 = 1.;
-        ud = 0.;
-        state.cells[cellIndex].arranjo = 1.;
-        state.cells[cellIndex - 1].arranjoR = 1.;
-        state.cells[cellIndex - 1].perdaEstratL = 0.;
-        state.cells[cellIndex - 1].perdaEstratG = 0.;
+        applyPigOverride(state, cellIndex, c0, ud);
     } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
@@ -955,22 +1084,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         else
             upstreamLengthRatio = lengthRatio;
 
-        if (cellIndex > 0)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
-        else
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alf;
-        if ((state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) < 0)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-        if (fabs((state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf)) < (*state.globals).localtiny * 1e-5) {
-            if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
-            else if (fabs(state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-            else
-                noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
-        }
-        if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
-            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
+        noSlipLiquidHoldup = transientNoSlipHoldup<BufferedSource>(state, cellIndex);
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
@@ -1023,20 +1137,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         else
             upstreamMeanTemperature = meanTemperature;
 
-        double horizontalCorrection = 1.;
-        if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
-            if (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {
-                if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            } else {
-                if (state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            }
-        }
+        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
@@ -1070,27 +1171,8 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
                                  .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
-        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
-        double leftCellLength = state.cells[cellIndex].dxL;
-        double cellLength = state.cells[cellIndex].dx;
-        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
-        if (cellIndex >= 2) {
-            if (state.cells[cellIndex - 2].acsr.tipo == 5 && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
-                if ((state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) >= 0)
-                    inclinationAngle = state.cells[cellIndex].duto.teta;
-                else
-                    inclinationAngle = state.cells[cellIndex].dutoR.teta;
-            } else {
-                if ((state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) >= 0)
-                    inclinationAngle = state.cells[cellIndex].dutoL.teta;
-                else
-                    inclinationAngle = state.cells[cellIndex].duto.teta;
-            }
-        }
+        const double inclinationAngle = transientInclinationAngle<BufferedSource>(state, cellIndex);
         double transitionWindow = 20;
-        // Named once, so the eleven values the two closure helpers need cannot
-        // be transposed at a call site. References, not copies: gasFlowRate and
-        // liquidFlowRate are assigned again inside the guard below.
         const MixtureProperties mix{
             .liquidDensity = liquidDensity,
             .gasDensity = gasDensity,
@@ -1168,20 +1250,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
     } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
 
-        noSlipLiquidHoldup = 1 - state.inletVoidFraction;
-
-        if (state.cells[cellIndex].QG < 0)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-        if (fabs(state.cells[cellIndex].QG) < (*state.globals).localtiny * 1e-5) {
-            if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.inletVoidFraction) > (*state.globals).localtiny && fabs(1. - state.inletVoidFraction) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1 - state.inletVoidFraction;
-            else if (fabs(state.inletVoidFraction) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-            else
-                noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
-        }
-        if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
-            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
+        noSlipLiquidHoldup = inletNoSlipHoldup<InstantaneousSource>(state, cellIndex);
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
@@ -1224,20 +1293,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         double upstreamMeanTemperature;
         upstreamMeanTemperature = meanTemperature;
 
-        double horizontalCorrection = 1.;
-        if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
-            if (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {
-                if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            } else {
-                if (state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            }
-        }
+        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
@@ -1276,9 +1332,6 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         double cellLength = state.cells[cellIndex].dx;
         double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
         double transitionWindow = 20.;
-        // Named once, so the eleven values the two closure helpers need cannot
-        // be transposed at a call site. References, not copies: gasFlowRate and
-        // liquidFlowRate are assigned again inside the guard below.
         const MixtureProperties mix{
             .liquidDensity = liquidDensity,
             .gasDensity = gasDensity,
@@ -1383,20 +1436,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
     } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
 
-        noSlipLiquidHoldup = 1 - state.inletVoidFraction;
-
-        if ((state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) < 0)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-        if (fabs(state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) < (*state.globals).localtiny * 1e-5) {
-            if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.inletVoidFraction) > (*state.globals).localtiny && fabs(1. - state.inletVoidFraction) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1 - state.inletVoidFraction;
-            else if (fabs(state.inletVoidFraction) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
-                noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-            else
-                noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
-        }
-        if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
-            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
+        noSlipLiquidHoldup = inletNoSlipHoldup<BufferedSource>(state, cellIndex);
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
@@ -1437,20 +1477,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         double upstreamMeanTemperature;
         upstreamMeanTemperature = meanTemperature;
 
-        double horizontalCorrection = 1.;
-        if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
-            if (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {
-                if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            } else {
-                if (state.cells[cellIndex].angDir < 0)
-                    horizontalCorrection = -1.;
-                else if (state.cells[cellIndex].angDir > 0)
-                    horizontalCorrection = 1.;
-            }
-        }
+        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
@@ -1489,9 +1516,6 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         double cellLength = state.cells[cellIndex].dx;
         double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
         double transitionWindow = 20.;
-        // Named once, so the eleven values the two closure helpers need cannot
-        // be transposed at a call site. References, not copies: gasFlowRate and
-        // liquidFlowRate are assigned again inside the guard below.
         const MixtureProperties mix{
             .liquidDensity = liquidDensity,
             .gasDensity = gasDensity,
@@ -1646,9 +1670,6 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
         if (fabs(state.cells[cellIndex].MC) > 1e-15)
             inclinationSign = state.cells[cellIndex].MC / fabs(state.cells[cellIndex].MC);
         if (gasDensity < 0.9 * liquidDensity) {
-        // Named once, so the eleven values the two closure helpers need cannot
-        // be transposed at a call site. References, not copies: gasFlowRate and
-        // liquidFlowRate are assigned again inside the guard below.
         const MixtureProperties mix{
             .liquidDensity = liquidDensity,
             .gasDensity = gasDensity,
