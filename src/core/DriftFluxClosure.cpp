@@ -423,6 +423,65 @@ struct SteadyStateSource {
     }
 };
 
+/// The phase properties the flow scales are built from.
+///
+/// Same reasoning as MixtureProperties: five adjacent doubles is five chances to
+/// transpose a pair with nothing to catch it. This one bit before it was caught:
+/// the densities were passed gas-then-liquid while the viscosities went
+/// liquid-then-gas, an asymmetry with no reason behind it and no way for the
+/// compiler to notice a call site that got it wrong.
+struct PhaseProperties {
+    double liquidDensity;
+    double gasDensity;
+    double liquidViscosity;
+    double gasViscosity;
+    double noSlipLiquidHoldup;
+};
+
+/// The scalars the closure helpers below read, named instead of counted.
+///
+/// evaluateRegimePair and evaluateDispersedOrAnnular took eleven and twelve
+/// doubles positionally, in the order the correlation signatures use. That order
+/// is a real convention and worth keeping, but eleven adjacent doubles is also
+/// eleven chances to transpose a pair silently -- every one of them is the same
+/// type, so neither the compiler nor the sweep would say a word about a call
+/// site that swapped two. Built once per body with designated initializers,
+/// against locals of the same name, a transposition is visible on the line
+/// where it happens.
+///
+/// The fields are REFERENCES, for the reason ClosureState holds references:
+/// several of these locals are assigned again further down, and a copy taken
+/// here would freeze the value at construction rather than at use. Nothing
+/// between construction and use writes them today -- but "nothing writes it
+/// today" is how a read moves without anyone noticing.
+struct MixtureProperties {
+    const double &liquidDensity;
+    const double &gasDensity;
+    const double &surfaceTension;
+    const double &voidFraction;
+    const double &gasFlowRate;
+    const double &liquidFlowRate;
+    const double &diameter;
+    const double &flowArea;
+    const double &mixtureReynolds;
+    const double &liquidReynolds;
+    const double &inclinationAngle;
+    const double &horizontalCorrection;
+};
+
+/// The dispersed and stratified closures, evaluated as a pair and then blended.
+///
+/// They travelled as four loose doubles between the two helpers, which is four
+/// values of one type in a row and no way for anything to notice a swap. Kept
+/// together they are named at every use, and the two helpers now agree on one
+/// shape: one fills it, the other reads it.
+struct RegimePair {
+    double dispersedC0;
+    double dispersedUd;
+    double stratifiedC0;
+    double stratifiedUd;
+};
+
 /// The flow rates and the two Reynolds numbers built from them.
 ///
 /// The five call sites take these apart with a structured binding, so THE ORDER
@@ -454,21 +513,18 @@ struct FlowScales {
 /// round would have compiled in silence and returned wrong Reynolds numbers.
 /// Nothing here can catch that; only the order being unsurprising can.
 template <typename Source>
-FlowScales flowScalesOf(const ClosureState &state, int cellIndex,
-                        double liquidDensity, double gasDensity,
-                        double liquidViscosity, double gasViscosity,
-                        double noSlipLiquidHoldup) {
-    double gasRate = Source::gasFlowRate(state.cells, cellIndex) / gasDensity;
-    double liquidRate = Source::liquidFlowRate(state.cells, cellIndex) / liquidDensity;
+FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhaseProperties &phases) {
+    double gasRate = Source::gasFlowRate(state.cells, cellIndex) / phases.gasDensity;
+    double liquidRate = Source::liquidFlowRate(state.cells, cellIndex) / phases.liquidDensity;
     double diameter = state.cells[cellIndex].duto.a;
     if (cellIndex > 0 && gasRate >= 0)
         diameter = state.cells[cellIndex - 1].duto.a;
     double flowArea = M_PI * diameter * diameter / 4.;
 
-    double mixtureDensity = noSlipLiquidHoldup * liquidDensity + (1 - noSlipLiquidHoldup) * gasDensity;
-    double mixtureViscosity = (noSlipLiquidHoldup * liquidViscosity + (1 - noSlipLiquidHoldup) * gasViscosity) / pow(10., 3.);
+    double mixtureDensity = phases.noSlipLiquidHoldup * phases.liquidDensity + (1 - phases.noSlipLiquidHoldup) * phases.gasDensity;
+    double mixtureViscosity = (phases.noSlipLiquidHoldup * phases.liquidViscosity + (1 - phases.noSlipLiquidHoldup) * phases.gasViscosity) / pow(10., 3.);
     double mixtureReynolds = diameter * mixtureDensity * (fabs(gasRate) / flowArea + fabs(liquidRate) / flowArea) / mixtureViscosity;
-    double liquidReynolds = diameter * liquidDensity * (fabs(gasRate) / flowArea + fabs(liquidRate) / flowArea) / (liquidViscosity / 1000.);
+    double liquidReynolds = diameter * phases.liquidDensity * (fabs(gasRate) / flowArea + fabs(liquidRate) / flowArea) / (phases.liquidViscosity / 1000.);
     return FlowScales{gasRate, liquidRate, diameter, flowArea, mixtureReynolds, liquidReynolds};
 }
 
@@ -479,16 +535,13 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex,
 /// every variant. They are kept because they are part of the block that was
 /// proven identical, and because deleting them would erase the only evidence
 /// that a weighting was once intended here (A3-06).
-void evaluateRegimePair(const ClosureState &state, int cellIndex, double liquidDensity, double gasDensity,
-                        double surfaceTension, double voidFraction, double mixtureReynolds, double liquidReynolds,
-                        double gasFlowRate, double liquidFlowRate, double diameter, double inclinationAngle,
-                        double horizontalCorrection, double upstreamLiquidFlowRate,
-                        double &dispersedC0, double &dispersedUd, double &stratifiedC0, double &stratifiedUd) {
-    driftflux::correlations::C0UdDisperso(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter,
-                                          state.cells[cellIndex].duto.rug, inclinationAngle, dispersedC0, dispersedUd, horizontalCorrection,
+void evaluateRegimePair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
+                        double upstreamLiquidFlowRate, RegimePair &pair) {
+    driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
+                                          state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.dispersedC0, pair.dispersedUd, mix.horizontalCorrection,
                                           state.cells[cellIndex].estabCol, state.selectors.dispersed);
-    driftflux::correlations::C0UdEstratificado(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter,
-                                               state.cells[cellIndex].duto.rug, inclinationAngle, stratifiedC0, stratifiedUd, horizontalCorrection,
+    driftflux::correlations::C0UdEstratificado(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
+                                               state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.stratifiedC0, pair.stratifiedUd, mix.horizontalCorrection,
                                                state.cells[cellIndex].estabCol, state.selectors.stratified);
 
     double mult0, mult1;
@@ -496,7 +549,7 @@ void evaluateRegimePair(const ClosureState &state, int cellIndex, double liquidD
     if (upstreamLiquidFlowRate < 0.)
         mult0 = 0.;
     mult1 = 0.;
-    if (liquidFlowRate < 0.)
+    if (mix.liquidFlowRate < 0.)
         mult1 = 1.;
 }
 
@@ -505,36 +558,34 @@ void evaluateRegimePair(const ClosureState &state, int cellIndex, double liquidD
 ///
 /// The ramp is written (1. - raz) * c0E + raz * c0D and MUST stay that way: the
 /// algebraically equal c0D + (1. - raz) * (c0E - c0D) rounds differently.
-void blendBySuperficialVelocity(double gasFlowRate, double liquidFlowRate, double flowArea, double dispersedC0, double dispersedUd,
-                                double stratifiedC0, double stratifiedUd, double &c0, double &ud) {
+void blendBySuperficialVelocity(const MixtureProperties &mix, const RegimePair &pair,
+                                double &c0, double &ud) {
     double maxSuperficialVelocity = 0.05;
     double minSuperficialVelocity = 0.005;
-    if ((fabs(gasFlowRate) + fabs(liquidFlowRate)) / flowArea > maxSuperficialVelocity) {
-        c0 = stratifiedC0;
-        ud = stratifiedUd;
-    } else if ((fabs(gasFlowRate) + fabs(liquidFlowRate)) / flowArea < minSuperficialVelocity) {
-        c0 = dispersedC0;
-        ud = dispersedUd;
+    if ((fabs(mix.gasFlowRate) + fabs(mix.liquidFlowRate)) / mix.flowArea > maxSuperficialVelocity) {
+        c0 = pair.stratifiedC0;
+        ud = pair.stratifiedUd;
+    } else if ((fabs(mix.gasFlowRate) + fabs(mix.liquidFlowRate)) / mix.flowArea < minSuperficialVelocity) {
+        c0 = pair.dispersedC0;
+        ud = pair.dispersedUd;
     } else {
-        double blendRatio = (maxSuperficialVelocity - (fabs(gasFlowRate) + fabs(liquidFlowRate)) / flowArea) / (maxSuperficialVelocity - minSuperficialVelocity);
-        c0 = ((1. - blendRatio) * stratifiedC0 + blendRatio * dispersedC0);
-        ud = ((1. - blendRatio) * stratifiedUd + blendRatio * dispersedUd);
+        double blendRatio = (maxSuperficialVelocity - (fabs(mix.gasFlowRate) + fabs(mix.liquidFlowRate)) / mix.flowArea) / (maxSuperficialVelocity - minSuperficialVelocity);
+        c0 = ((1. - blendRatio) * pair.stratifiedC0 + blendRatio * pair.dispersedC0);
+        ud = ((1. - blendRatio) * pair.stratifiedUd + blendRatio * pair.dispersedUd);
     }
 }
 
 /// Dispersed closure, upgraded to annular/churn when the pattern says so.
 /// 132 tokens, identical in all five.
-void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, double liquidDensity, double gasDensity,
-                                double surfaceTension, double voidFraction, double mixtureReynolds, double liquidReynolds,
-                                double gasFlowRate, double liquidFlowRate, double diameter, double inclinationAngle,
-                                double horizontalCorrection, int flowPattern, double &c0, double &ud) {
-    driftflux::correlations::C0UdDisperso(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter,
-                                          state.cells[cellIndex].duto.rug, inclinationAngle, c0, ud, horizontalCorrection,
+void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
+                                int flowPattern, double &c0, double &ud) {
+    driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
+                                          state.cells[cellIndex].duto.rug, mix.inclinationAngle, c0, ud, mix.horizontalCorrection,
                                           state.cells[cellIndex].estabCol, state.selectors.dispersed);
     if (flowPattern == -2) {
-        driftflux::correlations::C0UdAnularChurn(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate,
-                                                 diameter, state.cells[cellIndex].duto.rug, inclinationAngle, c0, ud,
-                                                 horizontalCorrection, state.cells[cellIndex].estabCol,
+        driftflux::correlations::C0UdAnularChurn(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate,
+                                                 mix.diameter, state.cells[cellIndex].duto.rug, mix.inclinationAngle, c0, ud,
+                                                 mix.horizontalCorrection, state.cells[cellIndex].estabCol,
                                                  state.selectors.annularChurn);
     }
 }
@@ -725,8 +776,12 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         }
 
         auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
-            flowScalesOf<InstantaneousSource>(state, cellIndex, liquidDensity, gasDensity,
-                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
+            flowScalesOf<InstantaneousSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -749,6 +804,23 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
 
         double transitionWindow = 20;
 
+        // Named once, so the eleven values the two closure helpers need cannot
+        // be transposed at a call site. References, not copies: gasFlowRate and
+        // liquidFlowRate are assigned again inside the guard below.
+        const MixtureProperties mix{
+            .liquidDensity = liquidDensity,
+            .gasDensity = gasDensity,
+            .surfaceTension = surfaceTension,
+            .voidFraction = voidFraction,
+            .gasFlowRate = gasFlowRate,
+            .liquidFlowRate = liquidFlowRate,
+            .diameter = diameter,
+            .flowArea = flowArea,
+            .mixtureReynolds = mixtureReynolds,
+            .liquidReynolds = liquidReynolds,
+            .inclinationAngle = inclinationAngle,
+            .horizontalCorrection = horizontalCorrection,
+        };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 double upstreamGasFlowRate;
@@ -787,12 +859,11 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                     state.cells[cellIndex - 1].arranjoR = testamapa.arr;
                     state.cells[cellIndex - 1].perdaEstratL = testamapa.fatorperdaLiq;
                     state.cells[cellIndex - 1].perdaEstratG = testamapa.fatorperdaGas;
-                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;
-                    evaluateRegimePair(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                       gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, upstreamLiquidFlowRate, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd);
+                    RegimePair pair;
+                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.cells[cellIndex - 1].alf;
 
-                    blendBySuperficialVelocity(gasFlowRate, liquidFlowRate, flowArea, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd, c0, ud);
+                    blendBySuperficialVelocity(mix, pair, c0, ud);
 
                     if (state.cells[cellIndex].transic > 0) {
                         c0 = (c0 * state.cells[cellIndex].transic + state.cells[cellIndex].c0 * (transitionWindow - state.cells[cellIndex].transic)) / transitionWindow;
@@ -806,8 +877,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                                    state.cells[cellIndex].duto.teta, surfaceTension, state.input.mapaArranjo, state.globals);
                 flowPattern = testamapa2.verificaArr();
 
-                evaluateDispersedOrAnnular(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                          gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, flowPattern, c0, ud);
+                evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
                 if (fabs(gasFlowRate / state.cells[cellIndex].duto.area) > 5. && voidFraction >= 0.75) {
                     transitionWindow = 20;
                     if (state.selectors.annularChurn == 3 && state.selectors.dispersed == 1)
@@ -974,8 +1044,12 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         }
 
         auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
-            flowScalesOf<BufferedSource>(state, cellIndex, liquidDensity, gasDensity,
-                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
+            flowScalesOf<BufferedSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -996,6 +1070,23 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
             }
         }
         double transitionWindow = 20;
+        // Named once, so the eleven values the two closure helpers need cannot
+        // be transposed at a call site. References, not copies: gasFlowRate and
+        // liquidFlowRate are assigned again inside the guard below.
+        const MixtureProperties mix{
+            .liquidDensity = liquidDensity,
+            .gasDensity = gasDensity,
+            .surfaceTension = surfaceTension,
+            .voidFraction = voidFraction,
+            .gasFlowRate = gasFlowRate,
+            .liquidFlowRate = liquidFlowRate,
+            .diameter = diameter,
+            .flowArea = flowArea,
+            .mixtureReynolds = mixtureReynolds,
+            .liquidReynolds = liquidReynolds,
+            .inclinationAngle = inclinationAngle,
+            .horizontalCorrection = horizontalCorrection,
+        };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 double upstreamGasFlowRate;
@@ -1010,12 +1101,11 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
                 flowPattern = state.cells[cellIndex].arranjo;
                 if (flowPattern == -1) {
 
-                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;
-                    evaluateRegimePair(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                       gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, upstreamLiquidFlowRate, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd);
+                    RegimePair pair;
+                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.cells[cellIndex - 1].alf;
 
-                    blendBySuperficialVelocity(gasFlowRate, liquidFlowRate, flowArea, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd, c0, ud);
+                    blendBySuperficialVelocity(mix, pair, c0, ud);
 
                     if (state.cells[cellIndex].transic > 0) {
                         c0 = (c0 * state.cells[cellIndex].transic + state.cells[cellIndex].c0 * (transitionWindow - state.cells[cellIndex].transic)) / transitionWindow;
@@ -1025,8 +1115,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
             }
             if (flowPattern != -1) {
 
-                evaluateDispersedOrAnnular(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                          gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, flowPattern, c0, ud);
+                evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
                 if (fabs(gasFlowRate / state.cells[cellIndex].duto.area) > 5. && voidFraction >= 0.75) {
                     transitionWindow = 20;
                     if (state.selectors.annularChurn == 3 && state.selectors.dispersed == 1)
@@ -1156,8 +1245,12 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         }
 
         auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
-            flowScalesOf<InstantaneousSource>(state, cellIndex, liquidDensity, gasDensity,
-                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
+            flowScalesOf<InstantaneousSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1165,6 +1258,23 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         double cellLength = state.cells[cellIndex].dx;
         double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
         double transitionWindow = 20.;
+        // Named once, so the eleven values the two closure helpers need cannot
+        // be transposed at a call site. References, not copies: gasFlowRate and
+        // liquidFlowRate are assigned again inside the guard below.
+        const MixtureProperties mix{
+            .liquidDensity = liquidDensity,
+            .gasDensity = gasDensity,
+            .surfaceTension = surfaceTension,
+            .voidFraction = voidFraction,
+            .gasFlowRate = gasFlowRate,
+            .liquidFlowRate = liquidFlowRate,
+            .diameter = diameter,
+            .flowArea = flowArea,
+            .mixtureReynolds = mixtureReynolds,
+            .liquidReynolds = liquidReynolds,
+            .inclinationAngle = inclinationAngle,
+            .horizontalCorrection = horizontalCorrection,
+        };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 double upstreamGasFlowRate;
@@ -1193,12 +1303,11 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                     } else
                         state.cells[cellIndex].transic = 0;
                     state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
-                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;
-                    evaluateRegimePair(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                       gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, upstreamLiquidFlowRate, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd);
+                    RegimePair pair;
+                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.inletVoidFraction;
 
-                    blendBySuperficialVelocity(gasFlowRate, liquidFlowRate, flowArea, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd, c0, ud);
+                    blendBySuperficialVelocity(mix, pair, c0, ud);
 
                     if (state.cells[cellIndex].transic > 0) {
                         c0 = (c0 * state.cells[cellIndex].transic + state.cells[cellIndex].c0 * (transitionWindow - state.cells[cellIndex].transic)) / transitionWindow;
@@ -1212,8 +1321,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                                    state.cells[cellIndex].duto.teta, surfaceTension, state.input.mapaArranjo, state.globals);
                 flowPattern = testamapa2.verificaArr();
 
-                evaluateDispersedOrAnnular(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                          gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, flowPattern, c0, ud);
+                evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
 
                 if (fabs(gasFlowRate / state.cells[cellIndex].duto.area) > 5. && voidFraction >= 0.75) {
                     transitionWindow = 20;
@@ -1350,8 +1458,12 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         }
 
         auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
-            flowScalesOf<BufferedSource>(state, cellIndex, liquidDensity, gasDensity,
-                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
+            flowScalesOf<BufferedSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1359,6 +1471,23 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         double cellLength = state.cells[cellIndex].dx;
         double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
         double transitionWindow = 20.;
+        // Named once, so the eleven values the two closure helpers need cannot
+        // be transposed at a call site. References, not copies: gasFlowRate and
+        // liquidFlowRate are assigned again inside the guard below.
+        const MixtureProperties mix{
+            .liquidDensity = liquidDensity,
+            .gasDensity = gasDensity,
+            .surfaceTension = surfaceTension,
+            .voidFraction = voidFraction,
+            .gasFlowRate = gasFlowRate,
+            .liquidFlowRate = liquidFlowRate,
+            .diameter = diameter,
+            .flowArea = flowArea,
+            .mixtureReynolds = mixtureReynolds,
+            .liquidReynolds = liquidReynolds,
+            .inclinationAngle = inclinationAngle,
+            .horizontalCorrection = horizontalCorrection,
+        };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 double upstreamGasFlowRate;
@@ -1373,11 +1502,10 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
                 flowPattern = state.cells[cellIndex].arranjo;
                 if (flowPattern == -1) {
 
-                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;
-                    evaluateRegimePair(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                       gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, upstreamLiquidFlowRate, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd);
+                    RegimePair pair;
+                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
 
-                    blendBySuperficialVelocity(gasFlowRate, liquidFlowRate, flowArea, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd, c0, ud);
+                    blendBySuperficialVelocity(mix, pair, c0, ud);
 
                     if (state.cells[cellIndex].transic > 0) {
                         c0 = (c0 * state.cells[cellIndex].transic + state.cells[cellIndex].c0 * (transitionWindow - state.cells[cellIndex].transic)) / transitionWindow;
@@ -1387,8 +1515,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
             }
             if (flowPattern != -1) {
 
-                evaluateDispersedOrAnnular(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                          gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, flowPattern, c0, ud);
+                evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
                 if (fabs(gasFlowRate / state.cells[cellIndex].duto.area) > 5. && voidFraction >= 0.75) {
                     transitionWindow = 20;
                     if (state.selectors.annularChurn == 3 && state.selectors.dispersed == 1)
@@ -1485,8 +1612,12 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
         gasViscosity = (*state.cells[cellIndex].fluiL).ViscGas(meanPressure, meanTemperature);
 
         auto [gasFlowRate, liquidFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds] =
-            flowScalesOf<SteadyStateSource>(state, cellIndex, liquidDensity, gasDensity,
-                                liquidViscosity, gasViscosity, noSlipLiquidHoldup);
+            flowScalesOf<SteadyStateSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1497,6 +1628,23 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
         if (fabs(state.cells[cellIndex].MC) > 1e-15)
             inclinationSign = state.cells[cellIndex].MC / fabs(state.cells[cellIndex].MC);
         if (gasDensity < 0.9 * liquidDensity) {
+        // Named once, so the eleven values the two closure helpers need cannot
+        // be transposed at a call site. References, not copies: gasFlowRate and
+        // liquidFlowRate are assigned again inside the guard below.
+        const MixtureProperties mix{
+            .liquidDensity = liquidDensity,
+            .gasDensity = gasDensity,
+            .surfaceTension = surfaceTension,
+            .voidFraction = voidFraction,
+            .gasFlowRate = gasFlowRate,
+            .liquidFlowRate = liquidFlowRate,
+            .diameter = diameter,
+            .flowArea = flowArea,
+            .mixtureReynolds = mixtureReynolds,
+            .liquidReynolds = liquidReynolds,
+            .inclinationAngle = inclinationAngle,
+            .horizontalCorrection = horizontalCorrection,
+        };
             if (mixtureReynolds > 1e-30) {
                 if (fabs(0 * inclinationAngle + inclinationSign * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                     double upstreamGasFlowRate;
@@ -1532,14 +1680,13 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                             state.cells[cellIndex - 1].perdaEstratG = testamapa.fatorperdaGas;
                         }
 
-                        double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;
-                        evaluateRegimePair(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                           gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, upstreamLiquidFlowRate, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd);
+                        RegimePair pair;
+                        evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                         double alf0E = state.cells[cellIndex].alf;
                         if (cellIndex > 0)
                             alf0E = state.cells[cellIndex - 1].alf;
 
-                        blendBySuperficialVelocity(gasFlowRate, liquidFlowRate, flowArea, dispersedC0, dispersedUd, stratifiedC0, stratifiedUd, c0, ud);
+                        blendBySuperficialVelocity(mix, pair, c0, ud);
                     }
                 }
                 if (flowPattern == 1) {
@@ -1548,8 +1695,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                                        inclinationSign * state.cells[cellIndex].duto.teta, surfaceTension, state.input.mapaArranjo, state.globals);
                     flowPattern = testamapa2.verificaArr();
 
-                    evaluateDispersedOrAnnular(state, cellIndex, liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds, liquidReynolds,
-                                              gasFlowRate, liquidFlowRate, diameter, inclinationAngle, horizontalCorrection, flowPattern, c0, ud);
+                    evaluateDispersedOrAnnular(state, cellIndex, mix, flowPattern, c0, ud);
                     state.cells[cellIndex].arranjo = flowPattern;
                     if (cellIndex > 0)
                         state.cells[cellIndex - 1].arranjoR = flowPattern;
