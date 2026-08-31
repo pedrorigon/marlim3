@@ -11,6 +11,7 @@
 #include "FA_Hidratos_Servico.h"
 #include "OutputI18n.h"
 #include "RootFindingSolvers.h"
+#include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 #include <chrono>
 #include <math.h>
@@ -3346,67 +3347,21 @@ void SProd::conectaColuna() {
     }
 }
 
-double SProd::interpolaHLatente(double pres, double temp) {
-    int ndiv = arq.tabent.npont - 1;
-    int ipres = 0.;
-    int itemp = 0.;
-    int ipmarcador;
-    int itmarcador;
-    double latt;
-    if (pres < HLat[1][0] || pres >= HLat[ndiv + 1][0] || temp < HLat[0][1] || temp >= HLat[0][ndiv + 1])
-        latt = 0.;
+namespace {
 
-    else {
-        int e, m, d;
-        e = 1;
-        d = ndiv + 1;
-        while (e <= d) {
-            m = (e + d) / 2;
-            ipmarcador = m;
-            if (m == 1) {
-                ipres = m;
-                break;
-            } else if (m == ndiv + 1 && HLat[m][0] == pres) {
-                ipres = m - 1;
-                break;
-            }
-            if (HLat[m][0] > pres && HLat[m - 1][0] <= pres) {
-                ipres = m - 1;
-                break;
-            }
-            if (HLat[m][0] < pres)
-                e = m + 1;
-            else
-                d = m - 1;
-        }
-        e = 1;
-        d = ndiv + 1;
-        while (e <= d) {
-            m = (e + d) / 2;
-            itmarcador = m;
-            if (m == 1) {
-                itemp = m;
-                break;
-            } else if (m == ndiv + 1 && HLat[0][m] == temp) {
-                itemp = m - 1;
-                break;
-            }
-            if (HLat[0][m] > temp && HLat[0][m - 1] <= temp) {
-                itemp = m - 1;
-                break;
-            }
-            if (HLat[0][m - 1] < temp)
-                e = m + 1;
-            else
-                d = m - 1;
-        }
-        double razpres = (HLat[ipres][0] - pres) / (HLat[ipres][0] - HLat[ipres + 1][0]);
-        double raztemp = (HLat[0][itemp] - temp) / (HLat[0][itemp] - HLat[0][itemp + 1]);
-        double latp1 = (1 - razpres) * (HLat[ipres][itemp]) + razpres * (HLat[ipres + 1][itemp]);
-        double latp2 = (1 - razpres) * (HLat[ipres][itemp + 1]) + razpres * (HLat[ipres + 1][itemp + 1]);
-        latt = (1 - raztemp) * latp1 + raztemp * latp2;
-    }
-    return latt;
+sisprod::thermal::ThermalState thermalStateOf(const SProd &system) {
+    return sisprod::thermal::ThermalState{
+        .cells = system.celula,
+        .input = system.arq,
+        .latentHeatTable = system.HLat,
+    };
+}
+
+}  // namespace
+
+double SProd::interpolaHLatente(double pres, double temp) {
+    return sisprod::thermal::interpolateLatentHeat(
+        thermalStateOf(*this), pres, temp);
 }
 
 void SProd::calctemp(int i, double tempantiga, int modoPerm) {
@@ -3827,213 +3782,13 @@ void SProd::calctemp(int i, double tempantiga, int modoPerm) {
 }
 
 double SProd::calcHmix(int i) {
-
-    double dx = celula[i].dx;
-    double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-    double dia = celula[i].duto.a;
-    double area = 0.25 * M_PI * dia * dia;
-    double alfmed = celula[i].alf;
-    double betmed = celula[i].bet;
-    double alfmed0 = celula[i].alfini;
-    double betmed0 = celula[i].betini;
-    double pmed = celula[i].pres;
-    double pmed0 = celula[i].presini;
-    double tmed = celula[i].temp;
-    double ugsL;
-    double ulsL;
-    double ugsR;
-    double ulsR;
-
-    ugsL = celula[i].QG / area;
-    ulsL = celula[i].QL / area;
-    ugsR = celula[i + 1].QG / area;
-    ulsR = celula[i + 1].QL / area;
-
-    double betL = celula[i].bet;
-    double betR = celula[i].bet;
-    if (ugsL > 0.)
-        betL = celula[i - 1].bet;
-    if (ugsL < 0.)
-        betL = celula[i + 1].bet;
-
-    double ugsmed = 0.5 * (ugsL + ugsR);
-    double ulsmed = 0.5 * (ulsL + ulsR);
-
-    double presL = celula[i].presaux;
-    double presR = celula[i + 1].presaux;
-    if ((celula[i].acsr.tipo == 5 && celula[i].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i].duto.area) ||
-        (celula[i].acsr.tipo == 4 && celula[i].acsr.bcs.freq > 0) ||
-        (celula[i].acsr.tipo == 8 && celula[i].acsr.bvol.freq > 0.) ||
-        (celula[i].acsr.tipo == 7 && fabs(celula[i].acsr.delp) > 0.) ||
-        (celula[i].acsr.tipo == 17 && celula[i].acsr.multibcs.freq > 0)) {
-        presR = celula[i].pres + (celula[i].pres - celula[i].presaux) * 0.5;
-    }
-
-    double tmedL = celula[i].tempL;
-    if (celula[i].VTemper < 0.)
-        tmedL = celula[i].temp;
-    double tmedR = celula[i].temp;
-    if (celula[i + 1].VTemper < 0.)
-        tmedR = celula[i].tempR;
-
-    double rhog = celula[i].flui.MasEspGas(pmed0, tmed);
-    double rhop = celula[i].flui.MasEspLiq(pmed0, tmed);
-    double rhoc = celula[i].fluicol.MasEspFlu(pmed0, tmed);
-    double rhog1 = celula[i].flui.MasEspGas(pmed, tmed);
-    double rhop1 = celula[i].flui.MasEspLiq(pmed, tmed);
-    double hg = celula[i].flui.EntalpGas(pmed0, tmed);
-    double hp = celula[i].flui.EntalpLiq(pmed0, tmed);
-    double hc = celula[i].fluicol.CalorLiq(pmed0, tmed) * tmed; // corrigir entalpia
-
-    double rhogL = celula[i].flui.MasEspGas(presL, tmedL);
-    double rhopL = celula[i].flui.MasEspLiq(presL, tmedL);
-    double rhocL = celula[i].fluicol.MasEspFlu(presL, tmedL);
-    double hgL = celula[i].flui.EntalpGas(presL, tmedL);
-    double hpL = celula[i].flui.EntalpLiq(presL, tmedL);
-    double hcL = celula[i].fluicol.CalorLiq(presL, tmedL) * tmedL; // corrigir entalpia
-
-    double rhogR = celula[i].flui.MasEspGas(presR, tmedR);
-    double rhopR = celula[i].flui.MasEspLiq(presR, tmedR);
-    double rhocR = celula[i].fluicol.MasEspFlu(presR, tmedR);
-    double hgR = celula[i].flui.EntalpGas(presR, tmedR);
-    double hpR = celula[i].flui.EntalpLiq(presR, tmedR);
-    double hcR = celula[i].fluicol.CalorLiq(presR, tmedR) * tmedR; // corrigir entalpia
-
-    double energintmixT0 = rhog * alfmed0 * (hg - pmed0 * 98066.5 / rhog) + rhop * (1 - betmed0) * (1. - alfmed0) * (hp - pmed0 * 98066.5 / rhop) +
-                           betmed0 * rhoc * (1. - alfmed0) * (hc - pmed0 * 98066.5 / rhoc);
-    double fluxHL = rhogL * ugsL * hgL + rhopL * (1. - betL) * ulsL * hpL + rhocL * betL * ulsL * hcL;
-    double fluxHR = rhogR * ugsR * hgR + rhopR * (1. - betR) * ulsR * hpR + rhocR * betR * ulsR * hcR;
-    double delFlux = (fluxHR - fluxHL) / dx;
-    double hidro = (rhog1 * ugsmed + (1 - betmed) * ulsmed * rhop1 + betmed * ulsmed) * sin(celula[i].duto.teta) * 9.82;
-
-    double fontemassG = 0.;
-    double fontemassL = 0.;
-    double fontemassC = 0.;
-    double tfonte = celula[i].temp;
-    double hgF;
-    double hlF;
-    double hcF = 0.;
-
-    if (celula[i].acsr.tipo == 1) {
-        tfonte = celula[i].acsr.injg.temp;
-        hgF = celula[i].acsr.injg.FluidoPro.EntalpGas(celula[i].pres, tfonte);
-        hlF = 0;
-        hcF = 0;
-    } else if (celula[i].acsr.tipo == 2) {
-        tfonte = celula[i].acsr.injl.temp;
-        hgF = celula[i].acsr.injl.FluidoPro.EntalpGas(celula[i].pres, tfonte);
-        hlF = celula[i].acsr.injl.FluidoPro.EntalpLiq(celula[i].pres, tfonte);
-        hcF = celula[i].acsr.injl.fluidocol.CalorLiq(celula[i].pres, tfonte) * tfonte
-            /*entalpia fluido complementar a ser corrigida*/;
-    } else if (celula[i].acsr.tipo == 3) {
-        tfonte = celula[i].acsr.ipr.Tres;
-        hgF = celula[i].acsr.ipr.FluidoPro.EntalpGas(celula[i].pres, tfonte);
-        hlF = celula[i].acsr.ipr.FluidoPro.EntalpLiq(celula[i].pres, tfonte);
-        hcF = 0;
-    } else if (celula[i].acsrL != 0) {
-        if ((*celula[i].acsrL).tipo == 5) {
-            if ((*celula[i].acsrL).chk.AreaGarg < arq.master1.razareaativ * celula[i].dutoL.area && (*celula[i].acsrL).chk.AreaGarg > 1e-5 * celula[i].dutoL.area) {
-                double tE = celula[i - 1].temp;
-                double alfE = celula[i - 1].alf;
-                double betE = celula[i - 1].bet;
-
-                double rholp = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-                double rholc = celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-                double rholmix = (1 - betE) * rholp + betE * rholc;
-
-                double alfJ = celula[i].alf;
-                double betJ = celula[i].bet;
-                double rholpJ = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp);
-                double rholcJ = celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-                double rholmixJ = (1 - betJ) * rholpJ + betJ * rholcJ;
-
-                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp)) * 9.82 / 98600.;
-                double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp)) * 9.82 / 98600.;
-
-                double tit = alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp) / (celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp) * alfE + rholmix * (1. - alfE));
-
-                double jtlM = (1. - betE) * celula[i - 1].flui.JTL(celula[i - 1].pres - hidroM, celula[i - 1].temp) - betE / rholcJ;
-                double jtgM = celula[i - 1].flui.JTG(celula[i - 1].pres - hidroM, celula[i - 1].temp);
-                tfonte = tE + ((1. - tit) * jtlM + tit * jtgM) * (celula[i].pres + hidroJ - celula[i - 1].pres - hidroM);
-
-                hgF = celula[i - 1].flui.EntalpGas(celula[i - 1].pres, tfonte);
-                hlF = celula[i - 1].flui.EntalpLiq(celula[i - 1].pres, tfonte);
-                hcF = celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, tfonte) * tfonte;
-                /*entalpia fluido complementar a ser corrigida*/
-
-            } else {
-                tfonte = celula[i].temp;
-                hgF = celula[i - 1].flui.EntalpGas(celula[i - 1].pres, celula[i - 1].temp);
-                hlF = celula[i - 1].flui.EntalpLiq(celula[i - 1].pres, celula[i - 1].temp);
-                hcF = celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, celula[i - 1].temp) * tfonte;
-                /*entalpia fluido complementar a ser corrigida*/
-            }
-        } else if ((*celula[i].acsrL).tipo == 8) {
-            double alfM = celula[i - 1].alf;
-            double betM = celula[i - 1].bet;
-
-            double n = (*celula[i].acsrL).bvol.npoli;
-            double ypres = (celula[i].pres) / (celula[i - 1].pres);
-            tfonte = celula[i - 1].temp * pow(ypres, (n - 1) / n);
-
-            hgF = celula[i - 1].flui.EntalpGas(celula[i - 1].pres, tfonte);
-            hlF = celula[i - 1].flui.EntalpLiq(celula[i - 1].pres, tfonte);
-            hcF = celula[i - 1].fluicol.CalorLiq(celula[i - 1].pres, tfonte) * tfonte;
-            /*entalpia fluido complementar a ser corrigida*/
-        } else {
-            hgF = 0.;
-            hlF = 0.;
-        }
-    } else {
-        hgF = 0.;
-        hlF = 0.;
-    }
-
-    fontemassL = 0;
-    fontemassG = 0;
-    if (celula[i].fontemassLR > 0.)
-        fontemassL = hlF * celula[i].fontemassLR / dx;
-    if (celula[i].fontemassCR > 0.)
-        fontemassL += hcF * celula[i].fontemassCR / dx;
-    if (fontemassG > 0.)
-        fontemassG = hgF * celula[i].fontemassGR / dx;
-
-    return energintmixT0 - (delFlux + hidro - (fontemassG + fontemassL) / area) * celula[i].dt;
+    return sisprod::thermal::computeMixtureEnthalpy(
+        thermalStateOf(*this), i);
 }
 
 double SProd::energmix(int i, int jp0, int jt, double razp) {
-    int jp1 = jp0 + 1;
-
-    double pres0 = celula[i].flui.rhogF[jp0][0];
-    double pres1 = celula[i].flui.rhogF[jp1][0];
-    double temp = celula[i].flui.rhogF[0][jt];
-    double alfmed = celula[i].alf;
-    double betmed = celula[i].bet;
-
-    double rhogp0 = celula[i].flui.rhogF[jp0][jt];
-    double rhogp1 = celula[i].flui.rhogF[jp1][jt];
-    double hgp0 = celula[i].flui.HgF[jp0][jt];
-    double hgp1 = celula[i].flui.HgF[jp1][jt];
-
-    double rholp0 = celula[i].flui.rholF[jp0][jt];
-    double rholp1 = celula[i].flui.rholF[jp1][jt];
-    double hlp0 = celula[i].flui.HlF[jp0][jt];
-    double hlp1 = celula[i].flui.HlF[jp1][jt];
-
-    double rhocp0 = celula[i].fluicol.MasEspFlu(pres0, temp);
-    double rhocp1 = celula[i].fluicol.MasEspFlu(pres1, temp);
-    double hlc0 = celula[i].fluicol.CalorLiq(pres0, temp) * temp; // corrigir entalpia
-    double hlc1 = celula[i].fluicol.CalorLiq(pres1, temp) * temp; // corrigir en;talpia
-
-    double energ0 = alfmed * rhogp0 * (hgp0 - pres0 * 98066.5 / rhogp0) +
-                    (1 - alfmed) * (1 - betmed) * rholp0 * (hlp0 - pres0 * 98066.5 / rholp0) +
-                    (1 - alfmed) * (betmed)*rhocp0 * (hlc0 - pres0 * 98066.5 / rhocp0);
-
-    double energ1 = alfmed * rhogp1 * (hgp1 - pres1 * 98066.5 / rhogp0) +
-                    (1 - alfmed) * (1 - betmed) * rholp1 * (hlp1 - pres1 * 98066.5 / rholp1) +
-                    (1 - alfmed) * (betmed)*rhocp1 * (hlc1 - pres1 * 98066.5 / rhocp1);
-
-    return razp * energ0 + (1. - razp) * energ1;
+    return sisprod::thermal::interpolateMixtureEnergy(
+        thermalStateOf(*this), i, jp0, jt, razp);
 }
 
 void SProd::calcTempEntalp(int i) {

@@ -104,3 +104,13 @@ sign
 # baseline commit, compiled beside the new selector and swept over 2240
 # combinations of the five selectors, including the three rows no model reaches.
 multMarcha
+
+# --- stage 5: thermal calculation ----------------------------------------
+# T061 moved the first three scalar thermal kernels to SisProdThermal.cpp.
+# thermal-move.py inverts the signature and ThermalState substitutions and
+# compares 3491 tokens exactly. verify-thermal.sh drives all three through the
+# preserved public SProd methods; 43 rows remain byte-identical, and the
+# calibration catches a corruption in each moved body.
+interpolaHLatente
+calcHmix
+energmix
