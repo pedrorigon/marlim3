@@ -130,3 +130,10 @@ calctemp
 # tokens and 1986 helper tokens separately. calcTransMassTermo remains dead.
 calcTempEntalp
 calcTransMassTermo
+
+# T064 first moved renovaTemp whole and proved its 7039-token inverse against
+# the pre-move commit. It was then split into inlet initialization, property
+# preparation, derivative updates, model selection and model application. The
+# decomposition checker compares 8370 tokens across the main body and five
+# helpers, and is calibrated against seven independent corruptions.
+renovaTemp

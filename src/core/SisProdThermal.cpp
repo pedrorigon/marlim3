@@ -1100,4 +1100,775 @@ void computeThermalMassTransfer(const ThermalState &state, int i) {
     state.cells[i].FonteMudaFase /= latente;
 }
 
+namespace {
+
+void initializeDistributedMassTransferInlet(
+    const ThermalState &state, int cellIndex,
+    double &previousLiquidDensity, double &previousOilVolumeFactor,
+    double &previousSolutionGasRatio,
+    double &previousSolutionGasPressureDerivative) {
+    state.cells[0].transmassLini = state.cells[0].transmassL;
+    state.cells[0].transmassL = 0.;
+    state.sourceUpdater(cellIndex);
+    state.cells[1].fontemassLLini = state.cells[1].fontemassLL;
+    state.cells[1].fontemassLL = state.cells[0].fontemassLR;
+    state.cells[1].fontemassCLini = state.cells[1].fontemassCL;
+    state.cells[1].fontemassCL = state.cells[0].fontemassCR;
+    state.cells[1].fontemassGLini = state.cells[1].fontemassGL;
+    state.cells[1].fontemassGL = state.cells[0].fontemassGR;
+    previousLiquidDensity =
+        (1 - state.cells[cellIndex].bet) *
+            state.cells[cellIndex].flui.MasEspLiq(
+                state.cells[cellIndex].pres, state.cells[cellIndex].temp) +
+        state.cells[cellIndex].bet *
+            state.cells[cellIndex].fluicol.MasEspFlu(
+                state.cells[cellIndex].pres, state.cells[cellIndex].temp);
+    previousOilVolumeFactor = state.cells[cellIndex].flui.BOFunc(
+        state.cells[cellIndex].pres, state.cells[cellIndex].temp);
+    previousSolutionGasRatio = state.cells[cellIndex].flui.RS(
+        state.cells[cellIndex].pres, state.cells[cellIndex].temp);
+    if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
+        double boL0 = state.cells[cellIndex].flui.BOFunc(
+            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].temp);
+        double rsL0 = state.cells[cellIndex].flui.RS(
+            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].temp);
+        previousSolutionGasPressureDerivative =
+            (previousSolutionGasRatio / previousOilVolumeFactor -
+             rsL0 / boL0) /
+            (state.cells[cellIndex].pres * 0.001);
+    } else {
+        ProFlu flutemp = state.cells[cellIndex].flui;
+        flutemp.atualizaPropComp(
+            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].temp, flutemp.dCalculatedBeta,
+            flutemp.oCalculatedLiqComposition,
+            flutemp.oCalculatedVapComposition, state.input.pocinjec);
+        double boL0 = flutemp.BOFunc(
+            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].temp);
+        double rsL0 = flutemp.RS(
+            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].temp);
+        previousSolutionGasPressureDerivative =
+            (previousSolutionGasRatio / previousOilVolumeFactor -
+             rsL0 / boL0) /
+            (state.cells[cellIndex].pres * 0.001);
+    }
+    ProFlu flutemp = state.cells[cellIndex].flui;
+}
+
+struct DistributedMassTransferProperties {
+    double downstreamWaterFraction;
+    double upstreamWaterFraction;
+    double cellWaterFraction;
+    double liquidDensity;
+    double gasDensity;
+    double downstreamComposition;
+    double upstreamComposition;
+    double mixtureLiquidDensity;
+    double downstreamOilVolumeFactor;
+    double downstreamSolutionGasRatio;
+    double downstreamSolutionGasPressureDerivative;
+    double cellOilVolumeFactor;
+    double cellSolutionGasRatio;
+    double cellSolutionGasPressureDerivative;
+    double cellSolutionGasTemperatureDerivative;
+};
+
+DistributedMassTransferProperties prepareDistributedMassTransferProperties(
+    const ThermalState &state, int i, double tmed, ProFlu &flue,
+    ProFlu &flud) {
+    double fwd;
+    double fwe;
+    double boC = state.cells[i - 1].flui.BOFunc(
+        state.cells[i - 1].pres, state.cells[i - 1].temp);
+    double baC = state.cells[i - 1].flui.BAFunc(
+        state.cells[i - 1].pres, state.cells[i - 1].temp);
+    double fwC = state.cells[i - 1].flui.BSW * baC /
+                 (boC + baC * state.cells[i - 1].flui.BSW -
+                  state.cells[i - 1].flui.BSW * boC);
+    if (state.cells[i].Mliqini < 0.) {
+        flud = state.cells[i].flui;
+        double bo1 = flud.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        double ba1 = flud.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        fwd = flud.BSW * ba1 / (bo1 + ba1 * flud.BSW - flud.BSW * bo1);
+    } else {
+        flud = state.cells[i - 1].flui;
+        double bo1 = flud.BOFunc(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        double ba1 = flud.BAFunc(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        fwd = flud.BSW * ba1 / (bo1 + ba1 * flud.BSW - flud.BSW * bo1);
+    }
+    if (state.cells[i - 1].Mliqini < 0) {
+        flue = state.cells[i - 1].flui;
+        double bo0 = flue.BOFunc(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        double ba0 = flue.BAFunc(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        fwe = flue.BSW * ba0 / (bo0 + ba0 * flue.BSW - flue.BSW * bo0);
+
+    } else {
+        if (i > 1) {
+            flue = state.cells[i - 2].flui;
+            double bo0 = flue.BOFunc(
+                state.cells[i - 2].pres, state.cells[i - 2].temp);
+            double ba0 = flue.BAFunc(
+                state.cells[i - 2].pres, state.cells[i - 2].temp);
+            fwe = flue.BSW * ba0 /
+                  (bo0 + ba0 * flue.BSW - flue.BSW * bo0);
+        } else {
+            flue = state.cells[i - 1].flui;
+            double bo0 = flue.BOFunc(
+                state.cells[i - 1].pres, state.cells[i - 1].temp);
+            double ba0 = flue.BAFunc(
+                state.cells[i - 1].pres, state.cells[i - 1].temp);
+            fwe = flue.BSW * ba0 /
+                  (bo0 + ba0 * flue.BSW - flue.BSW * bo0);
+        }
+    }
+
+    double rl;
+    double rg;
+    double betI;
+
+    // casoComp
+
+    rl = flud.MasEspLiq(state.cells[i].presaux, tmed);
+    if (state.cells[i].Mliqini < 0)
+        betI = state.cells[i].bet; // testeBeta
+    else
+        betI = state.cells[i].betL;
+
+    rg = flud.MasEspGas(state.cells[i].presaux, tmed);
+
+    double betL = state.cells[i - 1].betL;
+    if (state.cells[i - 1].Mliqini < 0)
+        betL = state.cells[i - 1].bet; // testeBeta
+
+    if (i > 0)
+        betI = state.cells[i - 1].betPigD;
+    if (state.cells[i].Mliqini < 0)
+        betI = state.cells[i].betPigE; // testeBeta
+    if (i > 1)
+        betL = state.cells[i - 2].betPigD;
+    if (state.cells[i - 1].Mliqini < 0)
+        betL = state.cells[i - 1].betPigE; // testebeta
+
+    double rhol = (1 - betI) * rl +
+                  betI * state.cells[i].fluicol.MasEspFlu(
+                             state.cells[i].presaux, tmed);
+    double boR;
+    double rsR;
+    double boR0;
+    double rsR0;
+    if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
+        boR = flud.BOFunc(state.cells[i].presaux, tmed);
+        rsR = flud.RS(state.cells[i].presaux, tmed);
+        boR0 = flud.BOFunc(state.cells[i].presaux * 0.999, tmed);
+        rsR0 = flud.RS(state.cells[i].presaux * 0.999, tmed);
+    } else {
+        boR = flud.BOFunc(state.cells[i].presaux, tmed);
+        rsR = flud.RS(state.cells[i].presaux, tmed);
+        flud.atualizaPropComp(
+            state.cells[i].presaux * 0.999, tmed, flud.dCalculatedBeta,
+            flud.oCalculatedLiqComposition,
+            flud.oCalculatedVapComposition, state.input.pocinjec);
+        boR0 = flud.BOFunc(state.cells[i].presaux * 0.999, tmed);
+        rsR0 = flud.RS(state.cells[i].presaux * 0.999, tmed);
+    } // casoComp
+    double DRsBoR =
+        (rsR / boR - rsR0 / boR0) / (state.cells[i].presaux * 0.001);
+    double boM;
+    double rsM;
+    double boM0;
+    double rsM0;
+    if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
+        boM = state.cells[i - 1].flui.BOFunc(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        rsM = state.cells[i - 1].flui.RS(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        boM0 = state.cells[i - 1].flui.BOFunc(
+            state.cells[i - 1].pres * 0.999, state.cells[i - 1].temp);
+        rsM0 = state.cells[i - 1].flui.RS(
+            state.cells[i - 1].pres * 0.999, state.cells[i - 1].temp);
+    } else {
+        boM = state.cells[i - 1].flui.BOFunc(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        rsM = state.cells[i - 1].flui.RS(
+            state.cells[i - 1].pres, state.cells[i - 1].temp);
+        ProFlu flutemp = state.cells[i - 1].flui;
+        flutemp.atualizaPropComp(
+            state.cells[i - 1].pres * 0.999,
+            state.cells[i - 1].temp, flutemp.dCalculatedBeta,
+            flutemp.oCalculatedLiqComposition,
+            flutemp.oCalculatedVapComposition, state.input.pocinjec);
+        boM0 = flutemp.BOFunc(
+            state.cells[i - 1].pres * 0.999, state.cells[i - 1].temp);
+        rsM0 = flutemp.RS(
+            state.cells[i - 1].pres * 0.999, state.cells[i - 1].temp);
+    } // casoComp
+    double DRsBoM =
+        (rsM / boM - rsM0 / boM0) / (state.cells[i - 1].pres * 0.001);
+    double boM0T = 0.;
+    double rsM0T = 0.;
+    double DRsBoMT = 0;
+    if (state.input.cicloAcopTerm == 1) {
+        if (state.input.flashCompleto != 2 ||
+            state.input.miniTabAtraso > 0) {
+            boM0T = state.cells[i - 1].flui.BOFunc(
+                state.cells[i - 1].pres,
+                state.cells[i - 1].temp * 0.999);
+            rsM0T = state.cells[i - 1].flui.RS(
+                state.cells[i - 1].pres,
+                state.cells[i - 1].temp * 0.999);
+        } else {
+            ProFlu flutemp = state.cells[i - 1].flui;
+            flutemp.atualizaPropComp(
+                state.cells[i - 1].pres,
+                state.cells[i - 1].temp * 0.999,
+                flutemp.dCalculatedBeta,
+                flutemp.oCalculatedLiqComposition,
+                flutemp.oCalculatedVapComposition, state.input.pocinjec);
+            boM0T = flutemp.BOFunc(
+                state.cells[i - 1].pres,
+                state.cells[i - 1].temp * 0.999);
+            rsM0T = flutemp.RS(
+                state.cells[i - 1].pres,
+                state.cells[i - 1].temp * 0.999);
+        } // casoComp
+        DRsBoMT = (rsM / boM - rsM0T / boM0T) /
+                   (state.cells[i - 1].temp * 0.001);
+    }
+
+    return DistributedMassTransferProperties{
+        .downstreamWaterFraction = fwd,
+        .upstreamWaterFraction = fwe,
+        .cellWaterFraction = fwC,
+        .liquidDensity = rl,
+        .gasDensity = rg,
+        .downstreamComposition = betI,
+        .upstreamComposition = betL,
+        .mixtureLiquidDensity = rhol,
+        .downstreamOilVolumeFactor = boR,
+        .downstreamSolutionGasRatio = rsR,
+        .downstreamSolutionGasPressureDerivative = DRsBoR,
+        .cellOilVolumeFactor = boM,
+        .cellSolutionGasRatio = rsM,
+        .cellSolutionGasPressureDerivative = DRsBoM,
+        .cellSolutionGasTemperatureDerivative = DRsBoMT,
+    };
+}
+
+struct DistributedMassTransferCoefficients {
+    double activeDerivative;
+    double spatialCoupling;
+    double flowArea;
+};
+
+DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
+    const ThermalState &state, int i, double fwC, const ProFlu &flud,
+    double DRsBoM, double DRsBoMT) {
+    double ativa = 1.;
+    double limipres = 10;
+    if (state.completeModel == 1)
+        limipres = 0;
+    if (state.cells[i - 1].pres < limipres ||
+        state.massTransferModel != 0)
+        ativa = 0.;
+    double acop = 1.;
+    if (i < 2 || i == state.lastCell)
+        acop = 0;
+
+    double A1 = state.cells[i].dutoL.area;
+    state.cells[i - 1].ativaDeri = ativa;
+    state.cells[i - 1].DTransDtp =
+        ativa * A1 * (1. - state.cells[i - 1].alf) *
+        (1. - state.cells[i - 1].bet) * (1. - fwC) * flud.Deng *
+        1.225 * DRsBoM * (6.29 / 35.31467);
+    state.cells[i].DTransDtpL = state.cells[i - 1].DTransDtp;
+    if (i == state.lastCell) {
+        double boM;
+        double rsM;
+        double boM0;
+        double rsM0;
+        if (state.input.flashCompleto != 2 ||
+            state.input.miniTabAtraso > 0) {
+            boM = state.cells[i].flui.BOFunc(
+                state.cells[i].pres, state.cells[i].temp);
+            rsM = state.cells[i].flui.RS(
+                state.cells[i].pres, state.cells[i].temp);
+            boM0 = state.cells[i].flui.BOFunc(
+                state.cells[i].pres * 0.999, state.cells[i].temp);
+            rsM0 = state.cells[i].flui.RS(
+                state.cells[i].pres * 0.999, state.cells[i].temp);
+        } else {
+            boM = state.cells[i].flui.BOFunc(
+                state.cells[i].pres, state.cells[i].temp);
+            rsM = state.cells[i].flui.RS(
+                state.cells[i].pres, state.cells[i].temp);
+            ProFlu flutemp = state.cells[i].flui;
+            flutemp.atualizaPropComp(
+                state.cells[i].pres * 0.999, state.cells[i].temp,
+                flutemp.dCalculatedBeta,
+                flutemp.oCalculatedLiqComposition,
+                flutemp.oCalculatedVapComposition, state.input.pocinjec);
+            boM0 = flutemp.BOFunc(
+                state.cells[i].pres * 0.999, state.cells[i].temp);
+            rsM0 = flutemp.RS(
+                state.cells[i].pres * 0.999, state.cells[i].temp);
+        } // casoComp
+        double DRsBoM =
+            (rsM / boM - rsM0 / boM0) / (state.cells[i].pres * 0.001);
+        state.cells[i].DTransDtp =
+            ativa * A1 * (1. - state.cells[i].alf) *
+            (1. - state.cells[i].bet) * (1. - fwC) * flud.Deng *
+            1.225 * DRsBoM * (6.29 / 35.31467);
+    }
+    if (state.input.cicloAcopTerm == 1) {
+        state.cells[i - 1].DTransDtT =
+            ativa * A1 * (1. - state.cells[i - 1].alf) *
+            (1. - state.cells[i - 1].bet) * (1. - fwC) * flud.Deng *
+            1.225 * DRsBoMT * (6.29 / 35.31467);
+        state.cells[i].DTransDtTL = state.cells[i - 1].DTransDtT;
+        if (i == state.lastCell) {
+            double boM;
+            double rsM;
+            double boM0;
+            double rsM0;
+            if (state.input.flashCompleto != 2 ||
+                state.input.miniTabAtraso > 0) {
+                boM = state.cells[i].flui.BOFunc(
+                    state.cells[i].pres, state.cells[i].temp);
+                rsM = state.cells[i].flui.RS(
+                    state.cells[i].pres, state.cells[i].temp);
+                boM0 = state.cells[i].flui.BOFunc(
+                    state.cells[i].pres * 0.999, state.cells[i].temp);
+                rsM0 = state.cells[i].flui.RS(
+                    state.cells[i].pres * 0.999, state.cells[i].temp);
+            } else {
+                boM = state.cells[i].flui.BOFunc(
+                    state.cells[i].pres, state.cells[i].temp);
+                rsM = state.cells[i].flui.RS(
+                    state.cells[i].pres, state.cells[i].temp);
+                ProFlu flutemp = state.cells[i].flui;
+                flutemp.atualizaPropComp(
+                    state.cells[i].pres * 0.999, state.cells[i].temp,
+                    flutemp.dCalculatedBeta,
+                    flutemp.oCalculatedLiqComposition,
+                    flutemp.oCalculatedVapComposition,
+                    state.input.pocinjec);
+                boM0 = flutemp.BOFunc(
+                    state.cells[i].pres * 0.999, state.cells[i].temp);
+                rsM0 = flutemp.RS(
+                    state.cells[i].pres * 0.999, state.cells[i].temp);
+            } // casoComp
+            double DRsBoM =
+                (rsM / boM - rsM0 / boM0) /
+                (state.cells[i].pres * 0.001);
+            state.cells[i].DTransDtT =
+                ativa * A1 * (1. - state.cells[i].alf) *
+                (1. - state.cells[i].bet) * (1. - fwC) * flud.Deng *
+                1.225 * DRsBoMT * (6.29 / 35.31467);
+        }
+    }
+
+    return DistributedMassTransferCoefficients{
+        .activeDerivative = ativa,
+        .spatialCoupling = acop,
+        .flowArea = A1,
+    };
+}
+
+void selectDistributedMassTransferModel(
+    const ThermalState &state, int i, double &tmed, double &tmedL,
+    double ABSjL) {
+    tmed = state.cells[i - 1].temp;
+    if (state.cells[i].VTemper < 0.)
+        tmed = state.cells[i].temp;
+    tmedL = state.cells[i - 1].tempL;
+    if (state.cells[i - 1].VTemper < 0.)
+        tmedL = state.cells[i - 1].temp;
+
+    state.cells[i - 1].TMModel = state.massTransferModel;
+    if (state.massTransferModel != 3) {
+        if ((((state.cells[i - 1].alf < 0.001) ||
+              (state.cells[i - 1].alf > 0.999) ||
+              (state.cells[i - 1].bet > 0.999 &&
+               state.cells[i - 1].alf < 0.999)) &&
+             ABSjL < 0.1) ||
+            state.cells[i - 1].flui.RGO >= (*state.globals).RGOMax)
+            state.cells[i - 1].TMModel = 3;
+        else if (state.cells[i - 1].estadoPig == 1)
+            state.cells[i - 1].TMModel = 3;
+        else if (state.cells[i - 1].acsr.tipo == 2 ||
+                 state.cells[i - 1].acsr.tipo == 3 ||
+                 state.cells[i - 1].acsr.tipo == 9 ||
+                 state.cells[i - 1].acsr.tipo == 15 ||
+                 state.cells[i - 1].acsr.tipo == 16)
+            state.cells[i - 1].TMModel = 3;
+        else if (i >= 2) {
+            if (state.cells[i - 2].acsr.tipo == 5 &&
+                (state.cells[i - 2].acsr.chk.AreaGarg <
+                 (1e-3 + state.input.master1.razareaativ) *
+                     state.cells[i - 2].duto.area))
+                state.cells[i - 1].TMModel = 3;
+            else if (state.cells[i - 2].acsr.tipo == 4 ||
+                     state.cells[i - 2].acsr.tipo == 7 ||
+                     state.cells[i - 2].acsr.tipo == 17)
+                state.cells[i - 1].TMModel = 0;
+        }
+        if (state.input.flashCompleto == 2) {
+            double titTeste = state.cells[i - 1].flui.FracMass(
+                state.cells[i - 1].pres, state.cells[i - 1].temp);
+            if (titTeste > 1.0 - 1e-2 || titTeste < 1e-2)
+                state.cells[i - 1].TMModel = 3;
+        }
+    }
+    if (state.cells[i - 1].TMModel == 0 &&
+        state.cells[i - 1].alf <= (*state.globals).CritCond)
+        state.cells[i - 1].TMModel = 1;
+    if (state.cells[i - 1].TMModel == 0 && i == state.lastCell)
+        state.cells[i - 1].TMModel = 1;
+    if (i == state.lastCell)
+        state.cells[i].FonteMudaFase = 0.;
+}
+
+void applyDistributedMassTransferModel(
+    const ThermalState &state, int i, double &tmed, double &tmedL,
+    double ABSjL, const ProFlu &flue, const ProFlu &flud, double fwd,
+    double fwe, double fwC, double betI, double betL, double rhol,
+    double boR, double rsR, double DRsBoR, double boM, double rsM,
+    double ativa, double acop, double A1, double rhol0, double boL,
+    double rsL, double DRsBoL) {
+    selectDistributedMassTransferModel(state, i, tmed, tmedL, ABSjL);
+
+    state.cells[i - 1].fontedissolv = 0.;
+
+    state.cells[i - 1].transmassRini = state.cells[i - 1].transmassR;
+    state.cells[i - 1].FonteMudaFaseini =
+        state.cells[i - 1].FonteMudaFase;
+    state.cells[i].DTransDxRini = state.cells[i].DTransDxR;
+    state.cells[i].DTransDxLini = state.cells[i].DTransDxL;
+    state.cells[i].DTransDt1ini = state.cells[i].DTransDt1;
+    state.cells[i].DTransDt0ini = state.cells[i].DTransDt0;
+    state.cells[i].DTransDxRpini = state.cells[i].DTransDxRp;
+    state.cells[i].DTransDxLpini = state.cells[i].DTransDxLp;
+    state.cells[i - 1].CoefDTLini = state.cells[i - 1].CoefDTL;
+    state.cells[i - 1].coefTransBetini =
+        state.cells[i - 1].coefTransBet;
+    state.cells[i].transmassLini = state.cells[i].transmassL;
+
+    state.cells[i].TMModelL = state.cells[i - 1].TMModel;
+    state.cells[i - 1].FonteMudaFase = 0.;
+    if (state.cells[i - 1].TMModel == 0 ||
+        state.cells[i - 1].TMModel == 1) {
+
+        state.cells[i - 1].transmassR =
+            -(state.cells[i].QL * (1 - betI) * (flud.rDgD) * flud.Deng *
+              1.225 * (1. - fwd) * rsR * (6.29 / 35.31467) / boR) +
+            (state.cells[i - 1].QL * (1 - betL) * (flue.rDgD) *
+             flue.Deng * 1.225 * (1. - fwe) * rsL * (6.29 / 35.31467) /
+             boL);
+
+        state.cells[i - 1].transmassR /= state.cells[i - 1].dx;
+        state.cells[i - 1].transmassR += state.cells[i - 1].fontedissolv;
+        state.cells[i].transmassL = state.cells[i - 1].transmassR;
+        state.cells[i - 1].FonteMudaFase =
+            state.cells[i - 1].transmassR -
+            state.cells[i - 1].DTransDtp * state.cells[i - 1].d2pdt2 -
+            state.cells[i - 1].DTransDtT * state.cells[i - 1].dTdtIni;
+        if (state.cells[i - 1].TMModel == 1) {
+            state.cells[i - 1].transmassR -=
+                ativa * ((1. - state.cells[i - 1].bet) *
+                         (1. - state.cells[i - 1].alf) * (1. - fwC) * A1 *
+                         (state.cells[i - 1].flui.rDgD) *
+                         state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                         (6.29 / 35.31467) / boM) /
+                state.cells[i - 1].dt;
+            state.cells[i - 1].transmassR +=
+                ativa * ((1. - state.cells[i - 1].betini) *
+                         (1. - state.cells[i - 1].alfini) * (1. - fwC) * A1 *
+                         (state.cells[i - 1].flui.rDgD) *
+                         state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                         (6.29 / 35.31467) / boM) /
+                state.cells[i - 1].dt;
+
+            state.cells[i].transmassL = state.cells[i - 1].transmassR;
+            state.cells[i - 1].FonteMudaFase =
+                state.cells[i - 1].transmassR;
+        }
+        if (state.cells[i - 1].TMModel == 0) {
+            state.cells[i - 1].FonteMudaFase -=
+                ativa * ((1. - state.cells[i - 1].bet) *
+                         (1. - state.cells[i - 1].alf) * (1. - fwC) * A1 *
+                         (state.cells[i - 1].flui.rDgD) *
+                         state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                         (6.29 / 35.31467) / boM) /
+                state.cells[i - 1].dt;
+            state.cells[i - 1].FonteMudaFase +=
+                ativa * ((1. - state.cells[i - 1].betini) *
+                         (1. - state.cells[i - 1].alfini) * (1. - fwC) * A1 *
+                         (state.cells[i - 1].flui.rDgD) *
+                         state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                         (6.29 / 35.31467) / boM) /
+                state.cells[i - 1].dt;
+        }
+
+        if (state.cells[i - 1].TMModel == 0) {
+            state.cells[i].DTransDxR =
+                -((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
+                  (1. - fwd) * rsR * (6.29 / 35.31467) / boR) /
+                (rhol * state.cells[i - 1].dx);
+            state.cells[i].DtransDxLinear =
+                -acop * state.cells[i].QL *
+                    ((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
+                     (1. - fwd) * (6.29 / 35.31467) *
+                     (DRsBoR * state.cells[i].dpresaux)) /
+                    (state.cells[i - 1].dx) +
+                acop * state.cells[i].QL *
+                    ((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
+                     (1. - fwd) * (6.29 / 35.31467) *
+                     (DRsBoR * state.cells[i].presaux)) /
+                    (state.cells[i - 1].dx);
+            state.cells[i].DTransDxRp =
+                -acop * state.cells[i].QL *
+                ((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
+                 (1. - fwd) * (6.29 / 35.31467) * 0.5 * DRsBoR) /
+                (state.cells[i - 1].dx);
+            state.cells[i].DTransDxL =
+                ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
+                 (1. - fwe) * rsL * (6.29 / 35.31467) / boL) /
+                (rhol0 * state.cells[i - 1].dx);
+            state.cells[i].DtransDxLinear =
+                state.cells[i].DtransDxLinear +
+                acop * state.cells[i - 1].QL *
+                    ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
+                     (1. - fwe) * (6.29 / 35.31467) *
+                     (DRsBoL * state.cells[i - 1].dpresaux)) /
+                    (state.cells[i - 1].dx) -
+                acop * state.cells[i - 1].QL *
+                    ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
+                     (1. - fwe) * (6.29 / 35.31467) *
+                     (DRsBoL * state.cells[i - 1].presaux)) /
+                    (state.cells[i - 1].dx);
+            state.cells[i].DTransDxLp =
+                acop * state.cells[i - 1].QL *
+                ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
+                 (1. - fwe) * (6.29 / 35.31467) * 0.5 * DRsBoL) /
+                (state.cells[i - 1].dx);
+            state.cells[i].DTransDt1 =
+                -ativa * ((1. - fwC) * A1 *
+                          (state.cells[i - 1].flui.rDgD) *
+                          state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                          (6.29 / 35.31467) / boM);
+            state.cells[i].DTransDt0 = -state.cells[i].DTransDt1;
+
+            state.cells[i - 1].CoefDTR =
+                -((1. - state.cells[i - 1].bet) * (1. - fwC) * A1 *
+                  (state.cells[i - 1].flui.rDgD) *
+                  state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                  (6.29 / 35.31467) / boM);
+            state.cells[i - 1].CoefDTL = -state.cells[i - 1].CoefDTR;
+            state.cells[i - 1].coefTransBet =
+                ((1. - fwC) * A1 * (state.cells[i - 1].flui.rDgD) *
+                 state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                 (6.29 / 35.31467) / boM);
+
+            // state.cells[i-1].DTransDtp=((1. - state.cells[i - 1].bet) * (1. - state.cells[i - 1].alf) * (1. - fwC)*A1
+            state.cells[i].transmassL -=
+                ativa * ((1. - state.cells[i - 1].bet) *
+                         (1. - state.cells[i - 1].alf) * (1. - fwC) * A1 *
+                         (state.cells[i - 1].flui.rDgD) *
+                         state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                         (6.29 / 35.31467) / boM) /
+                state.cells[i - 1].dt;
+            state.cells[i].transmassL +=
+                ativa * ((1. - state.cells[i - 1].betini) *
+                         (1. - state.cells[i - 1].alfini) * (1. - fwC) * A1 *
+                         (state.cells[i - 1].flui.rDgD) *
+                         state.cells[i - 1].flui.Deng * 1.225 * rsM *
+                         (6.29 / 35.31467) / boM) /
+                state.cells[i - 1].dt;
+
+        } else {
+            state.cells[i].DTransDxR = 0.;
+            state.cells[i].DTransDxL = 0.;
+            state.cells[i].DTransDt1 = 0.;
+            state.cells[i].DTransDxRp = 0.;
+            state.cells[i].DTransDxLp = 0.;
+            if (state.input.desligaDeriTransMassDTemp == 1) {
+                state.cells[i - 1].DTransDtT = 0;
+                state.cells[i].DTransDtTL = 0.;
+            }
+            state.cells[i - 1].CoefDTR = 0.;
+            state.cells[i - 1].CoefDTL = 0.;
+            state.cells[i - 1].coefTransBet = 0.;
+        }
+    }
+}
+
+}  // namespace
+
+void updateDistributedMassTransfer(const ThermalState &state) {
+    // #pragma omp parallel for num_threads(state.input.nthrd)
+    double rhol0 = 0.;
+    double boL = 0.;
+    double rsL = 0.;
+    double DRsBoL = 0.;
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (i != 0 && i != state.lastCell + 1) {
+
+            if ((*state.globals).lixo5 >= 12264.7 && i == state.lastCell - 1) {
+                int para;
+                para = 0;
+            }
+
+            state.sourceUpdater(i);
+
+            if (i < state.lastCell) {
+                state.cells[i + 1].fontemassLLini = state.cells[i].fontemassLR;
+                state.cells[i + 1].fontemassCLini = state.cells[i].fontemassCR;
+                state.cells[i + 1].fontemassGLini = state.cells[i].fontemassGR;
+                state.cells[i + 1].fontemassLL = state.cells[i].fontemassLR;
+                state.cells[i + 1].fontemassCL = state.cells[i].fontemassCR;
+                state.cells[i + 1].fontemassGL = state.cells[i].fontemassGR;
+            }
+            double razdx = state.cells[i - 1].dx / (state.cells[i].dx + state.cells[i].dxL);
+            double razdxL = state.cells[i].dx / (state.cells[i - 1].dx + state.cells[i - 1].dxL);
+            double tmed = razdx * state.cells[i].temp + (1 - razdx) * state.cells[i - 1].temp;
+            double tmedL = razdxL * state.cells[i].tempL + (1 - razdxL) * state.cells[i - 1].tempL;
+            tmed = state.cells[i - 1].temp;
+            if (state.cells[i].VTemper < 0.)
+                tmed = state.cells[i].temp;
+            tmedL = state.cells[i - 1].tempL;
+            if (state.cells[i - 1].VTemper < 0.)
+                tmedL = state.cells[i - 1].temp;
+
+            double dia = state.cells[i].duto.a;
+            double area = 0.25 * M_PI * dia * dia;
+            double ugsmed = (state.cells[i].QG) / (area);
+            double ulsmed = state.cells[i].QL / (area);
+            double j = ugsmed + ulsmed;
+            double ABSjL = (fabs(state.cells[i - 1].QG) + fabs(state.cells[i - 1].QL)) / state.cells[i - 1].duto.area;
+
+            ProFlu flue;
+            ProFlu flud;
+            DistributedMassTransferProperties properties =
+                prepareDistributedMassTransferProperties(
+                    state, i, tmed, flue, flud);
+            double fwd = properties.downstreamWaterFraction;
+            double fwe = properties.upstreamWaterFraction;
+            double fwC = properties.cellWaterFraction;
+            double rl = properties.liquidDensity;
+            double rg = properties.gasDensity;
+            double betI = properties.downstreamComposition;
+            double betL = properties.upstreamComposition;
+            double rhol = properties.mixtureLiquidDensity;
+            double boR = properties.downstreamOilVolumeFactor;
+            double rsR = properties.downstreamSolutionGasRatio;
+            double DRsBoR =
+                properties.downstreamSolutionGasPressureDerivative;
+            double boM = properties.cellOilVolumeFactor;
+            double rsM = properties.cellSolutionGasRatio;
+            double DRsBoM = properties.cellSolutionGasPressureDerivative;
+            double DRsBoMT =
+                properties.cellSolutionGasTemperatureDerivative;
+            DistributedMassTransferCoefficients coefficients =
+                updateDistributedMassTransferDerivatives(
+                    state, i, fwC, flud, DRsBoM, DRsBoMT);
+            double ativa = coefficients.activeDerivative;
+            double acop = coefficients.spatialCoupling;
+            double A1 = coefficients.flowArea;
+
+            applyDistributedMassTransferModel(
+                state, i, tmed, tmedL, ABSjL, flue, flud, fwd, fwe,
+                fwC, betI, betL, rhol, boR, rsR, DRsBoR, boM, rsM,
+                ativa, acop, A1, rhol0, boL, rsL, DRsBoL);
+            if (state.cells[i - 1].TMModel == -2) {
+                double veltit;
+                if (state.cells[i].alfL > (*state.globals).localtiny && betI < (1. - (*state.globals).localtiny))
+                    veltit = (state.cells[i].QG * rg + state.cells[i].QL * (1. - betI) * rl) / (A1 * (state.cells[i].alfL * rg + (1. - state.cells[i].alfL) * (1. - betI) * rl));
+                else
+                    veltit = 0.;
+                double tit = state.cells[i - 1].flui.FracMassHidra(state.cells[i - 1].pres, state.cells[i - 1].temp);
+                double raz = 0.999;
+                double dtit = (tit - state.cells[i - 1].flui.FracMassHidra(state.cells[i - 1].pres * raz, state.cells[i - 1].temp)) / ((1 - raz) * state.cells[i - 1].pres);
+                double dpres;
+                dpres = (state.cells[i].presaux - state.cells[i - 1].presaux) / state.cells[i].dxL;
+                state.cells[i].transmassL = state.cells[i - 1].transmassR = 1 * (state.cells[i].alfL * rg + (1. - state.cells[i].alfL) * (1. - betI) * rl) * veltit * (dpres * dtit) * A1;
+
+                state.cells[i].DTransDxR = 0.;
+                state.cells[i].DTransDxL = 0.;
+                state.cells[i].DTransDt1 = 0.;
+                state.cells[i].DTransDt0 = 0.;
+                if (state.input.desligaDeriTransMassDTemp == 1) {
+                    state.cells[i - 1].DTransDtT = 0;
+                    state.cells[i].DTransDtTL = 0.;
+                }
+                state.cells[i - 1].CoefDTR = 0.;
+                state.cells[i - 1].CoefDTL = 0.;
+                state.cells[i - 1].coefTransBet = 0.;
+            }
+            if (state.cells[i - 1].TMModel == 3) {
+                state.cells[i].transmassL = state.cells[i - 1].transmassR = 0.;
+                state.cells[i].DTransDxR = 0.;
+                state.cells[i].DTransDxL = 0.;
+                state.cells[i].DTransDt1 = 0.;
+                state.cells[i].DTransDt0 = 0.;
+                state.cells[i].DTransDxRp = 0.;
+                state.cells[i].DTransDxLp = 0.;
+                state.cells[i - 1].CoefDTR = 0.;
+                state.cells[i - 1].CoefDTL = 0.;
+                state.cells[i - 1].coefTransBet = 0.;
+                if (state.input.desligaDeriTransMassDTemp == 1) {
+                    state.cells[i - 1].DTransDtT = 0;
+                    state.cells[i].DTransDtTL = 0.;
+                }
+            }
+            if (state.cells[i - 1].transmassR > 0 && (state.cells[i].alfL > (1. - (*state.globals).localtiny) || state.cells[i].betL > (1. - (*state.globals).localtiny))) {
+                state.cells[i].transmassL = state.cells[i - 1].transmassR = -(*state.globals).localtiny;
+                state.cells[i].DTransDxR = 0.;
+                state.cells[i].DTransDxL = 0.;
+                state.cells[i].DTransDt1 = 0.;
+                state.cells[i].DTransDt0 = 0.;
+                state.cells[i].DTransDxRp = 0.;
+                state.cells[i].DTransDxLp = 0.;
+                state.cells[i - 1].CoefDTR = 0.;
+                state.cells[i - 1].CoefDTL = 0.;
+                state.cells[i - 1].coefTransBet = 0.;
+                if (state.input.desligaDeriTransMassDTemp == 1) {
+                    state.cells[i - 1].DTransDtT = 0;
+                    state.cells[i].DTransDtTL = 0.;
+                }
+            }
+            if (state.cells[i - 1].transmassR < 0 && state.cells[i].alfL < (*state.globals).localtiny) {
+                state.cells[i].transmassL = state.cells[i - 1].transmassR = (*state.globals).localtiny;
+                state.cells[i].DTransDxR = 0.;
+                state.cells[i].DTransDxL = 0.;
+                state.cells[i].DTransDt1 = 0.;
+                state.cells[i].DTransDt0 = 0.;
+                state.cells[i].DTransDxRp = 0.;
+                state.cells[i].DTransDxLp = 0.;
+                state.cells[i - 1].CoefDTR = 0.;
+                state.cells[i - 1].CoefDTL = 0.;
+                state.cells[i - 1].coefTransBet = 0.;
+                if (state.input.desligaDeriTransMassDTemp == 1) {
+                    state.cells[i - 1].DTransDtT = 0;
+                    state.cells[i].DTransDtTL = 0.;
+                }
+            }
+            rhol0 = rhol;
+            boL = boR;
+            rsL = rsR;
+            DRsBoL = DRsBoR;
+
+        } else if (i == 0)
+            initializeDistributedMassTransferInlet(
+                state, i, rhol0, boL, rsL, DRsBoL);
+    }
+}
+
 }  // namespace sisprod::thermal

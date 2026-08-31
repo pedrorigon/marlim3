@@ -15,6 +15,11 @@ Usage:
     thermal-move.py delegate-t063 <function> <sisprod.cpp> <rewritten-sisprod.cpp>
     thermal-move.py check-t063 <function> <baseline-sisprod.cpp> <extracted.cpp>
     thermal-move.py check-t063-decomposition <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py extract-renova-temp <sisprod.cpp> <fragment.cpp>
+    thermal-move.py install-renova-temp <sisprod.cpp> <thermal-in.cpp> <thermal-out.cpp>
+    thermal-move.py delegate-renova-temp <sisprod.cpp> <rewritten-sisprod.cpp>
+    thermal-move.py check-renova-temp <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py check-renova-temp-decomposition <baseline-sisprod.cpp> <extracted.cpp>
 """
 from __future__ import annotations
 
@@ -88,6 +93,22 @@ T063_FUNCTIONS = {
         },
     },
 }
+
+RENOVA_TEMP_MEMBERS = {
+    **CALCTEMP_MEMBERS,
+    "modeloCompleto": "state.completeModel",
+    "TransMassModel": "state.massTransferModel",
+}
+RENOVA_TEMP_FIELD_TO_MEMBER = {
+    field.split(".", 1)[1]: member
+    for member, field in RENOVA_TEMP_MEMBERS.items()
+}
+RENOVA_TEMP_MEMBER_RE = re.compile(
+    r"\b(" + "|".join(RENOVA_TEMP_MEMBERS) + r")\b"
+)
+RENOVA_TEMP_FIELD_RE = re.compile(
+    r"\bstate\.(" + "|".join(RENOVA_TEMP_FIELD_TO_MEMBER) + r")\b"
+)
 
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
@@ -315,6 +336,32 @@ def inverse_t063(old_name: str, body: str) -> str:
     return re.sub(
         rf"^void {new_name}\(const ThermalState &state, (.*?)\) \{{",
         rf"void SProd::{old_name}(\1) {{",
+        body,
+        count=1,
+    )
+
+
+def forward_renova_temp(body: str) -> str:
+    body = re.sub(
+        r"^void SProd::renovaTemp\(\) \{",
+        r"void updateDistributedMassTransfer(const ThermalState &state) {",
+        body,
+        count=1,
+    )
+    body = RENOVA_TEMP_MEMBER_RE.sub(
+        lambda match: RENOVA_TEMP_MEMBERS[match.group(1)], body
+    )
+    return re.sub(r"\brenovaFonte\(", "state.sourceUpdater(", body)
+
+
+def inverse_renova_temp(body: str) -> str:
+    body = re.sub(r"\bstate\.sourceUpdater\(", "renovaFonte(", body)
+    body = RENOVA_TEMP_FIELD_RE.sub(
+        lambda match: RENOVA_TEMP_FIELD_TO_MEMBER[match.group(1)], body
+    )
+    return re.sub(
+        r"^void updateDistributedMassTransfer\(const ThermalState &state\) \{",
+        r"void SProd::renovaTemp() {",
         body,
         count=1,
     )
@@ -562,6 +609,284 @@ def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
     return 1 if failures else 0
 
 
+def require_renova_temp(source_path: str) -> tuple[int, int, str]:
+    source = open(source_path, encoding="utf-8").read()
+    body = carve_named(source, r"void SProd::renovaTemp\(\)")
+    if body is None:
+        raise ValueError("expected one SProd::renovaTemp body, found none")
+    return body
+
+
+def extract_renova_temp(source_path: str, output_path: str) -> int:
+    start, end, body = require_renova_temp(source_path)
+    open(output_path, "w", encoding="utf-8").write(
+        forward_renova_temp(body) + "\n"
+    )
+    print(f"renovaTemp             {start + 1}-{end + 1}")
+    print(f"extracted renovaTemp into {output_path}")
+    return 0
+
+
+def install_renova_temp(
+    source_path: str, thermal_input_path: str, thermal_output_path: str
+) -> int:
+    _, _, body = require_renova_temp(source_path)
+    thermal = open(thermal_input_path, encoding="utf-8").read()
+    closing = "}  // namespace sisprod::thermal\n"
+    if thermal.count(closing) != 1:
+        raise ValueError("expected one thermal namespace closing marker")
+    replacement = forward_renova_temp(body) + "\n\n" + closing
+    open(thermal_output_path, "w", encoding="utf-8").write(
+        thermal.replace(closing, replacement, 1)
+    )
+    print(f"installed renovaTemp into {thermal_output_path}")
+    return 0
+
+
+def delegate_renova_temp(source_path: str, output_path: str) -> int:
+    source = open(source_path, encoding="utf-8").read()
+    start, end, _ = require_renova_temp(source_path)
+    wrapper = [
+        "void SProd::renovaTemp() {",
+        "    sisprod::thermal::updateDistributedMassTransfer(",
+        "        thermalStateOf(*this));",
+        "}",
+    ]
+    lines = source.split("\n")
+    lines[start:end + 1] = wrapper
+    open(output_path, "w", encoding="utf-8").write("\n".join(lines))
+    print(f"delegated renovaTemp lines {start + 1}-{end + 1}")
+    return 0
+
+
+def check_renova_temp(baseline_path: str, current_path: str) -> int:
+    baseline = carve_named(
+        open(baseline_path, encoding="utf-8").read(),
+        r"void SProd::renovaTemp\(\)",
+    )
+    current = carve_named(
+        open(current_path, encoding="utf-8").read(),
+        r"void updateDistributedMassTransfer\(const ThermalState &state\)",
+    )
+    if baseline is None or current is None:
+        print("MISSING  updateDistributedMassTransfer <- renovaTemp")
+        return 1
+    expected = tokenize(baseline[2])
+    actual = tokenize(inverse_renova_temp(current[2]))
+    if expected == actual:
+        print(
+            "OK       updateDistributedMassTransfer <- renovaTemp "
+            f"({len(expected)} tokens)"
+        )
+        return 0
+    position = first_difference(expected, actual)
+    print(
+        "DIFFERS  updateDistributedMassTransfer <- renovaTemp "
+        f"at token {position}"
+    )
+    print(f"  baseline: {' '.join(expected[max(0, position - 5):position + 6])}")
+    print(f"  current : {' '.join(actual[max(0, position - 5):position + 6])}")
+    return 1
+
+
+def text_between(text: str, start_marker: str, end_marker: str) -> str:
+    start = text.find(start_marker)
+    end = text.find(end_marker, start + len(start_marker))
+    if start < 0 or end < 0:
+        raise ValueError(
+            f"expected block between {start_marker!r} and {end_marker!r}"
+        )
+    return text[start:end]
+
+
+def function_core(body: str) -> str:
+    opening = body.find("{")
+    closing = body.rfind("}")
+    if opening < 0 or closing < opening:
+        raise ValueError("function braces not found")
+    return body[opening + 1:closing]
+
+
+def compare_token_blocks(
+    blocks: tuple[tuple[str, str, str], ...]
+) -> int:
+    failures = 0
+    for label, expected_text, actual_text in blocks:
+        expected = tokenize(expected_text)
+        actual = tokenize(actual_text)
+        if expected == actual:
+            print(f"OK       renovaTemp {label} ({len(expected)} tokens)")
+            continue
+        failures += 1
+        position = first_difference(expected, actual)
+        print(f"DIFFERS  renovaTemp {label} at token {position}")
+        print(
+            f"  expected: "
+            f"{' '.join(expected[max(0, position - 5):position + 6])}"
+        )
+        print(
+            f"  current : "
+            f"{' '.join(actual[max(0, position - 5):position + 6])}"
+        )
+    return failures
+
+
+def check_renova_temp_decomposition(
+    baseline_path: str, current_path: str
+) -> int:
+    baseline = require_renova_temp(baseline_path)
+    expected_main = forward_renova_temp(baseline[2])
+    current_source = open(current_path, encoding="utf-8").read()
+
+    signatures = {
+        "main": r"void updateDistributedMassTransfer\(const ThermalState &state\)",
+        "inlet": r"void initializeDistributedMassTransferInlet\(",
+        "properties": (
+            r"DistributedMassTransferProperties "
+            r"prepareDistributedMassTransferProperties\("
+        ),
+        "derivatives": (
+            r"DistributedMassTransferCoefficients "
+            r"updateDistributedMassTransferDerivatives\("
+        ),
+        "selection": r"void selectDistributedMassTransferModel\(",
+        "application": r"void applyDistributedMassTransferModel\(",
+    }
+    bodies = {
+        name: carve_named(current_source, signature)
+        for name, signature in signatures.items()
+    }
+    missing = [name for name, body in bodies.items() if body is None]
+    if missing:
+        print(f"MISSING  renovaTemp decomposition: {', '.join(missing)}")
+        return 1
+
+    property_start = "            double fwd;"
+    derivative_start = "            double ativa = 1.;"
+    selection_start = "            tmed = state.cells[i - 1].temp;"
+    tail_start = "            if (state.cells[i - 1].TMModel == -2) {"
+    inlet_start = "            state.cells[0].transmassLini"
+    inlet_end = "            ProFlu flutemp = state.cells[i].flui;"
+
+    expected_properties = text_between(
+        expected_main, property_start, derivative_start
+    )
+    expected_derivatives = text_between(
+        expected_main, derivative_start, selection_start
+    )
+    selection_position = expected_main.find(
+        selection_start, expected_main.find(derivative_start)
+    )
+    tail_position = expected_main.find(tail_start, selection_position)
+    if selection_position < 0 or tail_position < 0:
+        raise ValueError("renovaTemp selection/application block not found")
+    expected_selection_and_application = expected_main[
+        selection_position:tail_position
+    ]
+    application_start = "            state.cells[i - 1].fontedissolv = 0.;"
+    expected_selection = text_between(
+        expected_selection_and_application,
+        selection_start,
+        application_start,
+    )
+    expected_application = expected_selection_and_application[
+        expected_selection_and_application.find(application_start):
+    ]
+    inlet_body_end = "\n        }\n    }\n}"
+    expected_inlet = text_between(
+        expected_main, inlet_start, inlet_body_end
+    )
+
+    inlet_core = function_core(bodies["inlet"][2])
+    for new_name, old_name in (
+        ("previousLiquidDensity", "rhol0"),
+        ("previousOilVolumeFactor", "boL"),
+        ("previousSolutionGasRatio", "rsL"),
+        ("previousSolutionGasPressureDerivative", "DRsBoL"),
+        ("cellIndex", "i"),
+    ):
+        inlet_core = re.sub(rf"\b{new_name}\b", old_name, inlet_core)
+
+    properties_core = text_between(
+        function_core(bodies["properties"][2]),
+        "    double fwd;",
+        "\n\n    return DistributedMassTransferProperties{",
+    )
+    derivatives_core = text_between(
+        function_core(bodies["derivatives"][2]),
+        "    double ativa = 1.;",
+        "\n\n    return DistributedMassTransferCoefficients{",
+    )
+    selection_core = function_core(bodies["selection"][2])
+    application_core = function_core(bodies["application"][2])
+    application_core = application_core[
+        application_core.find("    state.cells[i - 1].fontedissolv = 0.;"):
+    ]
+
+    property_plumbing = """            DistributedMassTransferProperties properties =
+                prepareDistributedMassTransferProperties(
+                    state, i, tmed, flue, flud);
+            double fwd = properties.downstreamWaterFraction;
+            double fwe = properties.upstreamWaterFraction;
+            double fwC = properties.cellWaterFraction;
+            double rl = properties.liquidDensity;
+            double rg = properties.gasDensity;
+            double betI = properties.downstreamComposition;
+            double betL = properties.upstreamComposition;
+            double rhol = properties.mixtureLiquidDensity;
+            double boR = properties.downstreamOilVolumeFactor;
+            double rsR = properties.downstreamSolutionGasRatio;
+            double DRsBoR =
+                properties.downstreamSolutionGasPressureDerivative;
+            double boM = properties.cellOilVolumeFactor;
+            double rsM = properties.cellSolutionGasRatio;
+            double DRsBoM = properties.cellSolutionGasPressureDerivative;
+            double DRsBoMT =
+                properties.cellSolutionGasTemperatureDerivative;
+"""
+    derivative_plumbing = """            DistributedMassTransferCoefficients coefficients =
+                updateDistributedMassTransferDerivatives(
+                    state, i, fwC, flud, DRsBoM, DRsBoMT);
+            double ativa = coefficients.activeDerivative;
+            double acop = coefficients.spatialCoupling;
+            double A1 = coefficients.flowArea;
+
+"""
+    application_plumbing = """            applyDistributedMassTransferModel(
+                state, i, tmed, tmedL, ABSjL, flue, flud, fwd, fwe,
+                fwC, betI, betL, rhol, boR, rsR, DRsBoR, boM, rsM,
+                ativa, acop, A1, rhol0, boL, rsL, DRsBoL);
+"""
+    inlet_branch = text_between(
+        expected_main,
+        "        } else if (i == 0) {",
+        inlet_body_end,
+    ) + "\n        }"
+    inlet_plumbing = """        } else if (i == 0)
+            initializeDistributedMassTransferInlet(
+                state, i, rhol0, boL, rsL, DRsBoL);"""
+
+    expected_decomposed_main = expected_main.replace(
+        expected_properties, property_plumbing, 1
+    ).replace(
+        expected_derivatives, derivative_plumbing, 1
+    ).replace(
+        expected_selection_and_application, application_plumbing, 1
+    ).replace(
+        inlet_branch, inlet_plumbing, 1
+    )
+
+    failures = compare_token_blocks((
+        ("main", expected_decomposed_main, bodies["main"][2]),
+        ("inlet helper", expected_inlet, inlet_core),
+        ("properties helper", expected_properties, properties_core),
+        ("derivatives helper", expected_derivatives, derivatives_core),
+        ("selection helper", expected_selection, selection_core),
+        ("application helper", expected_application, application_core),
+    ))
+    return 1 if failures else 0
+
+
 def first_difference(expected: list[str], actual: list[str]) -> int:
     return next(
         (index for index, pair in enumerate(zip(expected, actual)) if pair[0] != pair[1]),
@@ -632,6 +957,8 @@ def main() -> int:
             return check_t063(old_name, first, second)
         if mode == "check-t063-decomposition" and len(sys.argv) == 4:
             return check_t063_decomposition(sys.argv[2], sys.argv[3])
+        if mode == "install-renova-temp" and len(sys.argv) == 5:
+            return install_renova_temp(sys.argv[2], sys.argv[3], sys.argv[4])
         if mode == "install-calctemp" and len(sys.argv) == 5:
             return install_calctemp(sys.argv[2], sys.argv[3], sys.argv[4])
         if len(sys.argv) != 4:
@@ -650,6 +977,14 @@ def main() -> int:
             return delegate_calctemp(first, second)
         if mode == "check-calctemp":
             return check_calctemp(first, second)
+        if mode == "extract-renova-temp":
+            return extract_renova_temp(first, second)
+        if mode == "delegate-renova-temp":
+            return delegate_renova_temp(first, second)
+        if mode == "check-renova-temp":
+            return check_renova_temp(first, second)
+        if mode == "check-renova-temp-decomposition":
+            return check_renova_temp_decomposition(first, second)
     except (OSError, ValueError, AttributeError) as error:
         print(error, file=sys.stderr)
         return 2

@@ -5,11 +5,19 @@
 
 class Cel;
 class Ler;
+class SProd;
 class choke;
 class solverP3D;
 struct varGlob1D;
 
 namespace sisprod::thermal {
+
+/// Direct adapter for the legacy source refresh owned by SProd.
+struct ThermalSourceUpdater {
+    SProd &system;
+
+    void operator()(int cellIndex) const;
+};
 
 /// State read by the first thermal kernels extracted from SProd.
 ///
@@ -33,6 +41,9 @@ struct ThermalState {
     const int &networkEndpoint;
     const double &gasSurfaceTemperature;
     const int &latentHeatEnabled;
+    ThermalSourceUpdater sourceUpdater;
+    const int &completeModel;
+    const int &massTransferModel;
 };
 
 /// Interpolates latent heat in the pressure-temperature table.
@@ -56,6 +67,9 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
 /// Updates one control-volume temperature from the thermal energy balance.
 void computeTemperature(const ThermalState &state, int cellIndex,
                         double previousTemperature, int steadyStateMode);
+
+/// Renews distributed phase-change mass transfer along the production cells.
+void updateDistributedMassTransfer(const ThermalState &state);
 
 }  // namespace sisprod::thermal
 
