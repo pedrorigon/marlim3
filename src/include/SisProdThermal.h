@@ -47,6 +47,12 @@ double interpolateMixtureEnergy(const ThermalState &state, int cellIndex,
                                 int pressureIndex, int temperatureIndex,
                                 double pressureRatio);
 
+/// Updates one control-volume temperature from tabulated mixture enthalpy.
+void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex);
+
+/// Computes the legacy thermal phase-change mass source for one cell.
+void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
+
 /// Updates one control-volume temperature from the thermal energy balance.
 void computeTemperature(const ThermalState &state, int cellIndex,
                         double previousTemperature, int steadyStateMode);

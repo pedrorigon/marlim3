@@ -8,10 +8,12 @@ project_root="$(cd "$script_dir/.." && pwd)"
 tool="$script_dir/thermal-move.py"
 baseline_ref="${MARLIM_THERMAL_MOVE_BASELINE:-f8dda67}"
 calctemp_baseline_ref="${MARLIM_CALCTEMP_MOVE_BASELINE:-16f7609}"
+t063_baseline_ref="${MARLIM_T063_MOVE_BASELINE:-f82e95b}"
 scratch="$(mktemp -d -t marlim3-thermal-move-cal-XXXXXX)"
 trap 'rm -rf "$scratch"' EXIT
 baseline="$scratch/SisProd-before-t061.cpp"
 calctemp_baseline="$scratch/SisProd-before-t062.cpp"
+t063_baseline="$scratch/SisProd-before-t063.cpp"
 
 git -C "$project_root" show "$baseline_ref:src/core/SisProd.cpp" > "$baseline" || {
     echo "cannot read thermal move baseline $baseline_ref" >&2
@@ -20,6 +22,11 @@ git -C "$project_root" show "$baseline_ref:src/core/SisProd.cpp" > "$baseline" |
 git -C "$project_root" show \
     "$calctemp_baseline_ref:src/core/SisProd.cpp" > "$calctemp_baseline" || {
     echo "cannot read calctemp move baseline $calctemp_baseline_ref" >&2
+    exit 2
+}
+git -C "$project_root" show \
+    "$t063_baseline_ref:src/core/SisProd.cpp" > "$t063_baseline" || {
+    echo "cannot read T063 move baseline $t063_baseline_ref" >&2
     exit 2
 }
 
@@ -136,6 +143,112 @@ run_calctemp_case calctemp-rate-limit \
 run_calctemp_case calctemp-missing \
     'void computeTemperature(const ThermalState &state, int i, double tempantiga, int modoPerm) {' \
     'void removedTemperature(const ThermalState &state, int i, double tempantiga, int modoPerm) {'
+
+run_t063_case() {
+    local name="$1" old_name="$2" from="$3" to="$4"
+    local control="$scratch/$name-control.cpp"
+    local candidate="$scratch/$name.cpp"
+    python3 "$tool" extract-t063 \
+        "$old_name" "$t063_baseline" "$control" > /dev/null || exit 2
+    python3 "$tool" check-t063 \
+        "$old_name" "$t063_baseline" "$control" > /dev/null || {
+        printf '  %-24s CONTROL FAILED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    }
+    cp "$control" "$candidate"
+    python3 - "$candidate" "$from" "$to" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+old = sys.argv[2]
+new = sys.argv[3]
+text = path.read_text()
+count = text.count(old)
+if count != 1:
+    print(f"expected mutation pattern once, found {count}", file=sys.stderr)
+    raise SystemExit(3)
+path.write_text(text.replace(old, new, 1))
+PY
+    if (( $? != 0 )) || cmp -s "$candidate" "$control"; then
+        printf '  %-24s MUTATION NOT INJECTED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    if python3 "$tool" check-t063 \
+        "$old_name" "$t063_baseline" "$candidate" > /dev/null 2>&1; then
+        printf '  %-24s MISSED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    printf '  %-24s caught\n' "$name"
+    passed=$((passed + 1))
+}
+
+run_t063_case enthalpy-loop calcTempEntalp \
+    'while (j < ndiv + 1 || (energint >= val1 && energint <= val2) ||' \
+    'while (j < ndiv + 1 && (energint >= val1 && energint <= val2) ||'
+
+run_t063_case mass-transfer-gravity calcTransMassTermo \
+    '* area * 9.82 * sin(state.cells[i].duto.teta);' \
+    '* area * 9.81 * sin(state.cells[i].duto.teta);'
+
+run_t063_case mass-transfer-latent calcTransMassTermo \
+    'state.cells[i].FonteMudaFase /= latente;' \
+    'state.cells[i].FonteMudaFase *= latente;'
+
+run_t063_case mass-transfer-missing calcTransMassTermo \
+    'void computeThermalMassTransfer(const ThermalState &state, int i) {' \
+    'void removedThermalMassTransfer(const ThermalState &state, int i) {'
+
+decomposition_control="$project_root/src/core/SisProdThermal.cpp"
+python3 "$tool" check-t063-decomposition \
+    "$t063_baseline" "$decomposition_control" > /dev/null || {
+    echo "T063 decomposition calibration control failed" >&2
+    exit 1
+}
+
+run_t063_decomposition_case() {
+    local name="$1" from="$2" to="$3"
+    local candidate="$scratch/$name.cpp"
+    cp "$decomposition_control" "$candidate"
+    python3 - "$candidate" "$from" "$to" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+old = sys.argv[2]
+new = sys.argv[3]
+text = path.read_text()
+count = text.count(old)
+if count != 1:
+    print(f"expected mutation pattern once, found {count}", file=sys.stderr)
+    raise SystemExit(3)
+path.write_text(text.replace(old, new, 1))
+PY
+    if (( $? != 0 )) || cmp -s "$candidate" "$decomposition_control"; then
+        printf '  %-24s MUTATION NOT INJECTED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    if python3 "$tool" check-t063-decomposition \
+        "$t063_baseline" "$candidate" > /dev/null 2>&1; then
+        printf '  %-24s MISSED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    printf '  %-24s caught\n' "$name"
+    passed=$((passed + 1))
+}
+
+run_t063_decomposition_case mass-source-helper \
+    'fontemassG = state.cells[i].fontemassGR / dx;' \
+    'fontemassG = state.cells[i].fontemassLR / dx;'
+
+run_t063_decomposition_case mass-source-main \
+    'sourceTerms.liquid + sourceTerms.gas + fluxcal' \
+    'sourceTerms.liquid - sourceTerms.gas + fluxcal'
 
 if (( failed > 0 )); then
     printf 'THERMAL MOVE CALIBRATION FAILED -- %d of %d case(s)\n' \

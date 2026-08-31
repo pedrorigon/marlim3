@@ -122,3 +122,11 @@ energmix
 # thermal sweep stayed byte-identical, and measure-functions.py reports zero
 # functions above 200 lines.
 calctemp
+
+# T063 moved calcTempEntalp and calcTransMassTermo through the same invertible
+# ThermalState substitution. The first compared equal over 465 tokens. The
+# second compared equal over 3887 tokens before its mass-source block was
+# extracted to satisfy SC-004; the decomposition checker verifies 2523 main
+# tokens and 1986 helper tokens separately. calcTransMassTermo remains dead.
+calcTempEntalp
+calcTransMassTermo

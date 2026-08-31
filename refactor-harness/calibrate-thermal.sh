@@ -105,7 +105,7 @@ run_case tabulated-gas-density SisProdThermal.cpp \
     'double energ1 = alfmed * rhogp1 * (hgp1 - pres1 * 98066.5 / rhogp0) +' \
     'double energ1 = alfmed * rhogp1 * (hgp1 - pres1 * 98066.5 / rhogp1) +' caught
 
-run_case enthalpy-search-condition SisProd.cpp \
+run_case enthalpy-search-condition SisProdThermal.cpp \
     'while (j < ndiv + 1 || (energint >= val1 && energint <= val2) ||' \
     'while (j < ndiv + 1 && (energint >= val1 && energint <= val2) ||' caught
 

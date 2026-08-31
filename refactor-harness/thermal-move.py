@@ -10,6 +10,11 @@ Usage:
     thermal-move.py install-calctemp <sisprod.cpp> <thermal-in.cpp> <thermal-out.cpp>
     thermal-move.py delegate-calctemp <sisprod.cpp> <rewritten-sisprod.cpp>
     thermal-move.py check-calctemp <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py extract-t063 <function> <sisprod.cpp> <fragment.cpp>
+    thermal-move.py install-t063 <function> <sisprod.cpp> <thermal-in.cpp> <thermal-out.cpp>
+    thermal-move.py delegate-t063 <function> <sisprod.cpp> <rewritten-sisprod.cpp>
+    thermal-move.py check-t063 <function> <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py check-t063-decomposition <baseline-sisprod.cpp> <extracted.cpp>
 """
 from __future__ import annotations
 
@@ -65,6 +70,24 @@ CALCTEMP_MEMBER_RE = re.compile(
 CALCTEMP_FIELD_RE = re.compile(
     r"\bstate\.(" + "|".join(CALCTEMP_FIELD_TO_MEMBER) + r")\b"
 )
+
+T063_FUNCTIONS = {
+    "calcTempEntalp": {
+        "new_name": "updateTemperatureFromEnthalpy",
+        "arguments": "i",
+        "calls": {
+            "calcHmix": "computeMixtureEnthalpy",
+            "energmix": "interpolateMixtureEnergy",
+        },
+    },
+    "calcTransMassTermo": {
+        "new_name": "computeThermalMassTransfer",
+        "arguments": "i",
+        "calls": {
+            "interpolaHLatente": "interpolateLatentHeat",
+        },
+    },
+}
 
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
@@ -195,6 +218,21 @@ def carve_new_calctemp(source: str) -> str | None:
     return None
 
 
+def carve_named(source: str, signature: str) -> tuple[int, int, str] | None:
+    lines = source.split("\n")
+    for start, line in enumerate(lines):
+        if not re.match(signature, line):
+            continue
+        depth = 0
+        opened = False
+        for end in range(start, len(lines)):
+            depth += lines[end].count("{") - lines[end].count("}")
+            opened = opened or "{" in lines[end]
+            if opened and depth == 0:
+                return start, end, "\n".join(lines[start:end + 1])
+    return None
+
+
 def forward(old_name: str, body: str) -> str:
     signature = re.match(rf"double SProd::{old_name}\((.*?)\) \{{", body).group(1)
     body = re.sub(
@@ -244,6 +282,39 @@ def inverse_calctemp(body: str) -> str:
     return re.sub(
         r"^void computeTemperature\(const ThermalState &state, (.*?)\) \{",
         r"void SProd::calctemp(\1) {",
+        body,
+        count=1,
+    )
+
+
+def forward_t063(old_name: str, body: str) -> str:
+    spec = T063_FUNCTIONS[old_name]
+    new_name = spec["new_name"]
+    body = re.sub(
+        rf"^void SProd::{old_name}\((.*?)\) \{{",
+        rf"void {new_name}(const ThermalState &state, \1) {{",
+        body,
+        count=1,
+    )
+    body = CALCTEMP_MEMBER_RE.sub(
+        lambda match: CALCTEMP_MEMBERS[match.group(1)], body
+    )
+    for old_call, new_call in spec["calls"].items():
+        body = re.sub(rf"\b{old_call}\(", f"{new_call}(state, ", body)
+    return body
+
+
+def inverse_t063(old_name: str, body: str) -> str:
+    spec = T063_FUNCTIONS[old_name]
+    new_name = spec["new_name"]
+    for old_call, new_call in spec["calls"].items():
+        body = re.sub(rf"\b{new_call}\(state, ", f"{old_call}(", body)
+    body = CALCTEMP_FIELD_RE.sub(
+        lambda match: CALCTEMP_FIELD_TO_MEMBER[match.group(1)], body
+    )
+    return re.sub(
+        rf"^void {new_name}\(const ThermalState &state, (.*?)\) \{{",
+        rf"void SProd::{old_name}(\1) {{",
         body,
         count=1,
     )
@@ -349,6 +420,148 @@ def delegate_calctemp(source_path: str, output_path: str) -> int:
     return 0
 
 
+def require_t063(source_path: str, old_name: str) -> tuple[int, int, str]:
+    if old_name not in T063_FUNCTIONS:
+        raise ValueError(f"unsupported T063 function: {old_name}")
+    source = open(source_path, encoding="utf-8").read()
+    body = carve_named(source, rf"void SProd::{old_name}\(")
+    if body is None:
+        raise ValueError(f"expected one SProd::{old_name} body, found none")
+    return body
+
+
+def extract_t063(old_name: str, source_path: str, output_path: str) -> int:
+    start, end, body = require_t063(source_path, old_name)
+    open(output_path, "w", encoding="utf-8").write(
+        forward_t063(old_name, body) + "\n"
+    )
+    print(f"{old_name:22} {start + 1}-{end + 1}")
+    print(f"extracted {old_name} into {output_path}")
+    return 0
+
+
+def install_t063(
+    old_name: str, source_path: str, thermal_input_path: str,
+    thermal_output_path: str
+) -> int:
+    _, _, body = require_t063(source_path, old_name)
+    thermal = open(thermal_input_path, encoding="utf-8").read()
+    closing = "}  // namespace sisprod::thermal\n"
+    if thermal.count(closing) != 1:
+        raise ValueError("expected one thermal namespace closing marker")
+    replacement = forward_t063(old_name, body) + "\n\n" + closing
+    open(thermal_output_path, "w", encoding="utf-8").write(
+        thermal.replace(closing, replacement, 1)
+    )
+    print(f"installed {old_name} into {thermal_output_path}")
+    return 0
+
+
+def delegate_t063(old_name: str, source_path: str, output_path: str) -> int:
+    source = open(source_path, encoding="utf-8").read()
+    start, end, body = require_t063(source_path, old_name)
+    signature = re.match(
+        rf"void SProd::{old_name}\((.*?)\) \{{", body
+    ).group(1)
+    spec = T063_FUNCTIONS[old_name]
+    wrapper = [
+        f"void SProd::{old_name}({signature}) {{",
+        f"    sisprod::thermal::{spec['new_name']}(",
+        f"        thermalStateOf(*this), {spec['arguments']});",
+        "}",
+    ]
+    lines = source.split("\n")
+    lines[start:end + 1] = wrapper
+    open(output_path, "w", encoding="utf-8").write("\n".join(lines))
+    print(f"delegated {old_name} lines {start + 1}-{end + 1}")
+    return 0
+
+
+def check_t063(old_name: str, baseline_path: str, current_path: str) -> int:
+    baseline = carve_named(
+        open(baseline_path, encoding="utf-8").read(),
+        rf"void SProd::{old_name}\(",
+    )
+    new_name = T063_FUNCTIONS[old_name]["new_name"]
+    current = carve_named(
+        open(current_path, encoding="utf-8").read(),
+        rf"void {new_name}\(const ThermalState &state",
+    )
+    if baseline is None or current is None:
+        print(f"MISSING  {new_name} <- {old_name}")
+        return 1
+    expected = tokenize(baseline[2])
+    actual = tokenize(inverse_t063(old_name, current[2]))
+    if expected == actual:
+        print(f"OK       {new_name} <- {old_name} ({len(expected)} tokens)")
+        return 0
+    position = first_difference(expected, actual)
+    print(f"DIFFERS  {new_name} <- {old_name} at token {position}")
+    print(f"  baseline: {' '.join(expected[max(0, position - 5):position + 6])}")
+    print(f"  current : {' '.join(actual[max(0, position - 5):position + 6])}")
+    return 1
+
+
+def thermal_mass_source_block(body: str) -> str:
+    start_marker = "    double fontemassG = 0.;"
+    end_marker = "        fontemassG = 0;"
+    start = body.find(start_marker)
+    end = body.find(end_marker, start)
+    if start < 0 or end < 0:
+        raise ValueError("thermal mass-source block not found")
+    return body[start:end + len(end_marker)]
+
+
+def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
+    old_name = "calcTransMassTermo"
+    baseline = require_t063(baseline_path, old_name)
+    expected_main = forward_t063(old_name, baseline[2])
+    expected_block = thermal_mass_source_block(expected_main)
+
+    current_source = open(current_path, encoding="utf-8").read()
+    current_main = carve_named(
+        current_source,
+        r"void computeThermalMassTransfer\(const ThermalState &state",
+    )
+    current_helper = carve_named(
+        current_source,
+        r"TemperatureSourceTerms computeThermalMassTransferSourceTerms\(",
+    )
+    if current_main is None or current_helper is None:
+        print("MISSING  decomposed thermal mass-transfer function or helper")
+        return 1
+
+    actual_block = thermal_mass_source_block(current_helper[2])
+    replacement = (
+        "    TemperatureSourceTerms sourceTerms =\n"
+        "        computeThermalMassTransferSourceTerms(state, i, dx);"
+    )
+    expected_main = expected_main.replace(expected_block, replacement, 1)
+    expected_main = expected_main.replace(
+        "fontemassL + fontemassG", "sourceTerms.liquid + sourceTerms.gas", 1
+    )
+
+    expected_main_tokens = tokenize(expected_main)
+    actual_main_tokens = tokenize(current_main[2])
+    expected_block_tokens = tokenize(expected_block)
+    actual_block_tokens = tokenize(actual_block)
+
+    failures = 0
+    for label, expected, actual in (
+        ("main", expected_main_tokens, actual_main_tokens),
+        ("source helper", expected_block_tokens, actual_block_tokens),
+    ):
+        if expected == actual:
+            print(f"OK       thermal mass-transfer {label} ({len(expected)} tokens)")
+            continue
+        failures += 1
+        position = first_difference(expected, actual)
+        print(f"DIFFERS  thermal mass-transfer {label} at token {position}")
+        print(f"  expected: {' '.join(expected[max(0, position - 5):position + 6])}")
+        print(f"  current : {' '.join(actual[max(0, position - 5):position + 6])}")
+    return 1 if failures else 0
+
+
 def first_difference(expected: list[str], actual: list[str]) -> int:
     return next(
         (index for index, pair in enumerate(zip(expected, actual)) if pair[0] != pair[1]),
@@ -400,11 +613,25 @@ def check_calctemp(baseline_path: str, current_path: str) -> int:
 
 
 def main() -> int:
-    if len(sys.argv) not in {4, 5}:
+    if len(sys.argv) not in {4, 5, 6}:
         print(__doc__, file=sys.stderr)
         return 2
     mode = sys.argv[1]
     try:
+        if mode == "install-t063" and len(sys.argv) == 6:
+            return install_t063(
+                sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+            )
+        if mode in {"extract-t063", "delegate-t063", "check-t063"} \
+                and len(sys.argv) == 5:
+            old_name, first, second = sys.argv[2:]
+            if mode == "extract-t063":
+                return extract_t063(old_name, first, second)
+            if mode == "delegate-t063":
+                return delegate_t063(old_name, first, second)
+            return check_t063(old_name, first, second)
+        if mode == "check-t063-decomposition" and len(sys.argv) == 4:
+            return check_t063_decomposition(sys.argv[2], sys.argv[3])
         if mode == "install-calctemp" and len(sys.argv) == 5:
             return install_calctemp(sys.argv[2], sys.argv[3], sys.argv[4])
         if len(sys.argv) != 4:
