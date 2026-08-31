@@ -6,6 +6,10 @@ Usage:
     thermal-move.py install <sisprod.cpp> <SisProdThermal.cpp>
     thermal-move.py delegate <sisprod.cpp> <rewritten-sisprod.cpp>
     thermal-move.py check   <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py extract-calctemp <sisprod.cpp> <output-fragment.cpp>
+    thermal-move.py install-calctemp <sisprod.cpp> <thermal-in.cpp> <thermal-out.cpp>
+    thermal-move.py delegate-calctemp <sisprod.cpp> <rewritten-sisprod.cpp>
+    thermal-move.py check-calctemp <baseline-sisprod.cpp> <extracted.cpp>
 """
 from __future__ import annotations
 
@@ -33,6 +37,34 @@ MEMBERS = {
 FIELD_TO_MEMBER = {field.split(".", 1)[1]: member for member, field in MEMBERS.items()}
 MEMBER_RE = re.compile(r"\b(" + "|".join(MEMBERS) + r")\b")
 FIELD_RE = re.compile(r"\bstate\.(" + "|".join(FIELD_TO_MEMBER) + r")\b")
+
+CALCTEMP_MEMBERS = {
+    "celula": "state.cells",
+    "arq": "state.input",
+    "vg1dSP": "state.globals",
+    "semTermo": "state.thermalSourceDisabled",
+    "verificaAcopRedeS": "state.productionNetworkCoupled",
+    "SecPrimIniRedeP": "state.primarySectionStart",
+    "SecPrimFimRedeP": "state.primarySectionEnd",
+    "acertaIndAcop": "state.coupledCellIndices",
+    "poisson3D": "state.poissonSolver",
+    "ncel": "state.lastCell",
+    "chokeSup": "state.surfaceChoke",
+    "masChkSup": "state.surfaceChokeMassCondition",
+    "noextremo": "state.networkEndpoint",
+    "tGSup": "state.gasSurfaceTemperature",
+    "CalcLat": "state.latentHeatEnabled",
+}
+CALCTEMP_FIELD_TO_MEMBER = {
+    field.split(".", 1)[1]: member
+    for member, field in CALCTEMP_MEMBERS.items()
+}
+CALCTEMP_MEMBER_RE = re.compile(
+    r"\b(" + "|".join(CALCTEMP_MEMBERS) + r")\b"
+)
+CALCTEMP_FIELD_RE = re.compile(
+    r"\bstate\.(" + "|".join(CALCTEMP_FIELD_TO_MEMBER) + r")\b"
+)
 
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
@@ -133,6 +165,36 @@ def carve_new(source: str) -> dict[str, str]:
     return found
 
 
+def carve_calctemp(source: str) -> tuple[int, int, str] | None:
+    lines = source.split("\n")
+    for start, line in enumerate(lines):
+        if not re.match(r"void SProd::calctemp\(", line):
+            continue
+        depth = 0
+        opened = False
+        for end in range(start, len(lines)):
+            depth += lines[end].count("{") - lines[end].count("}")
+            opened = opened or "{" in lines[end]
+            if opened and depth == 0:
+                return start, end, "\n".join(lines[start:end + 1])
+    return None
+
+
+def carve_new_calctemp(source: str) -> str | None:
+    lines = source.split("\n")
+    for start, line in enumerate(lines):
+        if not re.match(r"void computeTemperature\(const ThermalState &state", line):
+            continue
+        depth = 0
+        opened = False
+        for end in range(start, len(lines)):
+            depth += lines[end].count("{") - lines[end].count("}")
+            opened = opened or "{" in lines[end]
+            if opened and depth == 0:
+                return "\n".join(lines[start:end + 1])
+    return None
+
+
 def forward(old_name: str, body: str) -> str:
     signature = re.match(rf"double SProd::{old_name}\((.*?)\) \{{", body).group(1)
     body = re.sub(
@@ -152,6 +214,36 @@ def inverse(new_name: str, body: str) -> str:
     return re.sub(
         rf"^double {new_name}\(.*?\) \{{",
         f"double SProd::{REVERSE_FUNCTIONS[new_name]}({signature}) {{",
+        body,
+        count=1,
+    )
+
+
+def forward_calctemp(body: str) -> str:
+    body = re.sub(
+        r"^void SProd::calctemp\((.*?)\) \{",
+        r"void computeTemperature(const ThermalState &state, \1) {",
+        body,
+        count=1,
+    )
+    body = CALCTEMP_MEMBER_RE.sub(
+        lambda match: CALCTEMP_MEMBERS[match.group(1)], body
+    )
+    return re.sub(
+        r"\binterpolaHLatente\(", "interpolateLatentHeat(state, ", body
+    )
+
+
+def inverse_calctemp(body: str) -> str:
+    body = re.sub(
+        r"\binterpolateLatentHeat\(state, ", "interpolaHLatente(", body
+    )
+    body = CALCTEMP_FIELD_RE.sub(
+        lambda match: CALCTEMP_FIELD_TO_MEMBER[match.group(1)], body
+    )
+    return re.sub(
+        r"^void computeTemperature\(const ThermalState &state, (.*?)\) \{",
+        r"void SProd::calctemp(\1) {",
         body,
         count=1,
     )
@@ -209,6 +301,54 @@ def delegate(source_path: str, output_path: str) -> int:
     return 0
 
 
+def require_calctemp(source_path: str) -> tuple[int, int, str]:
+    body = carve_calctemp(open(source_path, encoding="utf-8").read())
+    if body is None:
+        raise ValueError("expected one SProd::calctemp body, found none")
+    return body
+
+
+def extract_calctemp(source_path: str, output_path: str) -> int:
+    start, end, body = require_calctemp(source_path)
+    open(output_path, "w", encoding="utf-8").write(forward_calctemp(body) + "\n")
+    print(f"calctemp               {start + 1}-{end + 1}")
+    print(f"extracted calctemp into {output_path}")
+    return 0
+
+
+def install_calctemp(
+    source_path: str, thermal_input_path: str, thermal_output_path: str
+) -> int:
+    _, _, body = require_calctemp(source_path)
+    thermal = open(thermal_input_path, encoding="utf-8").read()
+    closing = "}  // namespace sisprod::thermal\n"
+    if thermal.count(closing) != 1:
+        raise ValueError("expected one thermal namespace closing marker")
+    replacement = forward_calctemp(body) + "\n\n" + closing
+    open(thermal_output_path, "w", encoding="utf-8").write(
+        thermal.replace(closing, replacement, 1)
+    )
+    print(f"installed calctemp into {thermal_output_path}")
+    return 0
+
+
+def delegate_calctemp(source_path: str, output_path: str) -> int:
+    source = open(source_path, encoding="utf-8").read()
+    start, end, body = require_calctemp(source_path)
+    signature = re.match(r"void SProd::calctemp\((.*?)\) \{", body).group(1)
+    wrapper = [
+        f"void SProd::calctemp({signature}) {{",
+        "    sisprod::thermal::computeTemperature(",
+        "        thermalStateOf(*this), i, tempantiga, modoPerm);",
+        "}",
+    ]
+    lines = source.split("\n")
+    lines[start:end + 1] = wrapper
+    open(output_path, "w", encoding="utf-8").write("\n".join(lines))
+    print(f"delegated calctemp lines {start + 1}-{end + 1}")
+    return 0
+
+
 def first_difference(expected: list[str], actual: list[str]) -> int:
     return next(
         (index for index, pair in enumerate(zip(expected, actual)) if pair[0] != pair[1]),
@@ -241,18 +381,48 @@ def check(baseline_path: str, current_path: str) -> int:
     return 1 if failures else 0
 
 
+def check_calctemp(baseline_path: str, current_path: str) -> int:
+    baseline = carve_calctemp(open(baseline_path, encoding="utf-8").read())
+    current = carve_new_calctemp(open(current_path, encoding="utf-8").read())
+    if baseline is None or current is None:
+        print("MISSING  computeTemperature <- calctemp")
+        return 1
+    expected = tokenize(baseline[2])
+    actual = tokenize(inverse_calctemp(current))
+    if expected == actual:
+        print(f"OK       computeTemperature <- calctemp ({len(expected)} tokens)")
+        return 0
+    position = first_difference(expected, actual)
+    print(f"DIFFERS  computeTemperature <- calctemp at token {position}")
+    print(f"  baseline: {' '.join(expected[max(0, position - 5):position + 6])}")
+    print(f"  current : {' '.join(actual[max(0, position - 5):position + 6])}")
+    return 1
+
+
 def main() -> int:
-    if len(sys.argv) != 4:
+    if len(sys.argv) not in {4, 5}:
         print(__doc__, file=sys.stderr)
         return 2
-    mode, first, second = sys.argv[1:]
+    mode = sys.argv[1]
     try:
+        if mode == "install-calctemp" and len(sys.argv) == 5:
+            return install_calctemp(sys.argv[2], sys.argv[3], sys.argv[4])
+        if len(sys.argv) != 4:
+            print(__doc__, file=sys.stderr)
+            return 2
+        first, second = sys.argv[2:]
         if mode in {"extract", "install"}:
             return extract_or_install(mode, first, second)
         if mode == "delegate":
             return delegate(first, second)
         if mode == "check":
             return check(first, second)
+        if mode == "extract-calctemp":
+            return extract_calctemp(first, second)
+        if mode == "delegate-calctemp":
+            return delegate_calctemp(first, second)
+        if mode == "check-calctemp":
+            return check_calctemp(first, second)
     except (OSError, ValueError, AttributeError) as error:
         print(error, file=sys.stderr)
         return 2

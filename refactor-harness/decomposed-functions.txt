@@ -114,3 +114,11 @@ multMarcha
 interpolaHLatente
 calcHmix
 energmix
+
+# T062 first moved calctemp whole and proved its 5937-token inverse against the
+# pre-move commit. It was then split, one block at a time, into
+# prepareTemperatureBalance, computeKineticTemperatureTerm and
+# computeTemperatureSourceTerms. L2 passed after every split, the 43-row
+# thermal sweep stayed byte-identical, and measure-functions.py reports zero
+# functions above 200 lines.
+calctemp

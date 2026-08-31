@@ -1,8 +1,13 @@
 #ifndef SISPRODTHERMAL_H_
 #define SISPRODTHERMAL_H_
 
+#include <vector>
+
 class Cel;
 class Ler;
+class choke;
+class solverP3D;
+struct varGlob1D;
 
 namespace sisprod::thermal {
 
@@ -15,6 +20,19 @@ struct ThermalState {
     Cel *cells;
     const Ler &input;
     double **latentHeatTable;
+    varGlob1D *globals;
+    const int &thermalSourceDisabled;
+    const int &productionNetworkCoupled;
+    const int &primarySectionStart;
+    const int &primarySectionEnd;
+    const std::vector<int> &coupledCellIndices;
+    const solverP3D &poissonSolver;
+    const int &lastCell;
+    const choke &surfaceChoke;
+    const int &surfaceChokeMassCondition;
+    const int &networkEndpoint;
+    const double &gasSurfaceTemperature;
+    const int &latentHeatEnabled;
 };
 
 /// Interpolates latent heat in the pressure-temperature table.
@@ -28,6 +46,10 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex);
 double interpolateMixtureEnergy(const ThermalState &state, int cellIndex,
                                 int pressureIndex, int temperatureIndex,
                                 double pressureRatio);
+
+/// Updates one control-volume temperature from the thermal energy balance.
+void computeTemperature(const ThermalState &state, int cellIndex,
+                        double previousTemperature, int steadyStateMode);
 
 }  // namespace sisprod::thermal
 
