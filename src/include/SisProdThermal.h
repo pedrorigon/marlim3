@@ -19,6 +19,20 @@ struct ThermalSourceUpdater {
     void operator()(int cellIndex) const;
 };
 
+/// Direct adapter for the four legacy drift-closure entry points owned by SProd.
+struct ThermalClosureUpdater {
+    SProd &system;
+
+    void instantaneous(int cellIndex, double &distribution,
+                       double &driftVelocity) const;
+    void buffered(int cellIndex, double &distribution,
+                  double &driftVelocity) const;
+    void initialization(int cellIndex, double &distribution,
+                        double &driftVelocity) const;
+    void bufferedInitialization(int cellIndex, double &distribution,
+                                double &driftVelocity) const;
+};
+
 /// State read by the first thermal kernels extracted from SProd.
 ///
 /// This context grows only when a moved function demonstrates another state
@@ -44,6 +58,12 @@ struct ThermalState {
     ThermalSourceUpdater sourceUpdater;
     const int &completeModel;
     const int &massTransferModel;
+    ThermalClosureUpdater closureUpdater;
+    const double &inletPressure;
+    const double &inletTemperature;
+    const double &inletMassFraction;
+    double &inletVoidFraction;
+    const double &inletComposition;
 };
 
 /// Interpolates latent heat in the pressure-temperature table.
@@ -70,6 +90,15 @@ void computeTemperature(const ThermalState &state, int cellIndex,
 
 /// Renews distributed phase-change mass transfer along the production cells.
 void updateDistributedMassTransfer(const ThermalState &state);
+
+/// Computes the mixture-flow partition terms along the production cells.
+void updateFlowPartitionTerms(const ThermalState &state, int inflowMode);
+
+/// Computes mixture-flow partition terms at an internal-section outlet.
+void updateOutletFlowPartitionTerms(const ThermalState &state);
+
+/// Computes mixture-flow partition terms at an internal-section inlet.
+void updateInletFlowPartitionTerms(const ThermalState &state);
 
 }  // namespace sisprod::thermal
 

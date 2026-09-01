@@ -1871,4 +1871,1404 @@ void updateDistributedMassTransfer(const ThermalState &state) {
     }
 }
 
+namespace {
+
+void selectAndApplyInteriorFlowRegime(
+    const ThermalState &state, int i, Vcr<int> &bif, double ugs,
+    double uls, double ugs0, double uls0, double ugs1, double uls1,
+    double rgR, double rlR, double rg, double rl, double amed) {
+    bif[i] = 1;
+
+    if ((*state.globals).lixo5 > 29900) {
+        int para;
+        para = 0;
+    }
+
+    if (state.cells[i - 1].alfPigD <= (*state.globals).localtiny && state.cells[i].alfPigE <= (*state.globals).localtiny && state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+    } else if (state.cells[i - 1].alfPigD >= (1. - (*state.globals).localtiny) && state.cells[i].alfPigE >= (1. - (*state.globals).localtiny) && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+    } else if (state.cells[i - 1].acsr.tipo == 5 && state.cells[i - 1].acsr.chk.AreaGarg <= (1e-3)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+    }
+
+    else if (ugs >= 0 && state.cells[i - 1].alfPigD <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - (*state.globals).localtiny) && uls < 0 && uls0 < 0 && state.cells[i].duto.teta > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - 10 * (*state.globals).localtiny) && state.cells[i].duto.teta < 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 1;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alf >= state.cells[i + 1].alf && ugs1 < 0) {
+            bif[i] = 1;
+        }
+    } else if (ugs <= 0 && state.cells[i].alfPigE <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i - 1].alfPigD > (1. - (*state.globals).localtiny) && uls > 0 && uls1 > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfL >= state.cells[i - 1].alfL && ugs0 > 0) {
+            bif[i] = 1;
+        }
+        if (fabs(ugs) <= 1e-15 && fabs(uls) <= 1e-15 && state.cells[i].alf < state.cells[i - 1].alf && state.cells[i].duto.teta > 0) {
+            bif[i] = 1;
+        }
+    } else if (uls >= 0 && state.cells[i - 1].alfPigD >= 1. - 1 * (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= 1e-15 && state.cells[i].alfPigE < (*state.globals).localtiny && uls1 < 0) { // ATENCAO!!!!!!!!!!!!!!! não teria de ser bifásico, mono-liq só seo ângulo fosse negativo, não?
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        } else if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alfPigE < (*state.globals).localtiny && state.cells[i].fontemassGR >= (*state.globals).localtiny * 1e-5) { // ATENCAO!!!!!!!!!!!!!!!  sem sentido isto aqui
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alfPigE < (*state.globals).localtiny && state.cells[i].duto.teta >= 0) { // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
+                bif[i] = 1;
+            }
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alfPigE < (*state.globals).localtiny && state.cells[i].duto.teta < 0) { // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+        } else if ((fabs(uls) < 1e-15 && (uls1 < 0 || state.cells[i].duto.teta > 0) // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, estava || mudado para &&
+                    && ((state.cells[i].alfPigE <= (1 - 10 * (*state.globals).localtiny + .0 * state.cells[i].alfPigER) &&
+                         state.cells[i].alfPigER < 1 - 1 * (*state.globals).localtiny) ||
+                        state.cells[i].alfPigE <= 0.7)))
+            bif[i] = 1;
+
+    } else if (uls <= 0 && state.cells[i].alfPigE >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.cells[i - 1].alfPigD < (*state.globals).localtiny && uls0 > 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+
+        if (fabs(uls0) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i - 1].alfPigD < (*state.globals).localtiny && state.cells[i - 1].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+        } else if ((i > 1 && fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 2].alfPigD && state.cells[i - 2].alfPigD < 0.99) || state.cells[i - 1].alfPigD < 0.7)) && ugs >= 0.)
+            bif[i] = 1;
+        else if ((i > 1 && fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 2].alfPigD && state.cells[i - 2].alfPigD < 0.99) || state.cells[i - 1].alfPigD < 0.7)) && ugs >= 0)
+            bif[i] = 1;
+        else {
+            if ((fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7)) && ugs >= 0)
+                bif[i] = 1;
+            else if ((fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7)) && ugs >= 0)
+                bif[i] = 1;
+            else if ((fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7)) && ugs > 0)
+                bif[i] = 1;
+        }
+    }
+
+    if (bif[i] == 1) {
+
+        double c0;
+        double ud;
+        double alfmed;
+
+        alfmed = state.cells[i - 1].alfPigD;
+        if (ugs < 0)
+            alfmed = state.cells[i].alfPigE;
+        c0 = 1.2;
+        double dmed = state.cells[i].duto.a;
+        if (state.cells[i].MC >= 0)
+            dmed = state.cells[i].dutoL.a;
+        double sinal = 1.;
+        if (state.cells[i].duto.teta < 0.)
+            sinal = -1.;
+        ud = sinal * 0.32 * sqrt(9.82 * dmed);
+        if (fabs(rgR) / rlR > 0.9) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        if (fabs(state.cells[i].QG / (0.25 * M_PI * dmed * dmed * alfmed)) > 100. ||
+            fabs(state.cells[i].QL / (0.25 * M_PI * dmed * dmed * (1. - alfmed))) > 100.) {
+            c0 = 1.;
+            ud = 0.;
+        } else
+            state.closureUpdater.instantaneous(i, c0, ud);
+        state.cells[i].c0 = c0;
+        state.cells[i].ud = ud;
+        if (i == state.lastCell) {
+            double num = (1. - alfmed * c0);
+            double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
+            state.cells[i].term1 = num / den;
+            state.cells[i].term2 = (-amed * alfmed * rg * ud) / den;
+            double jlTeste0 = (ugs - alfmed * ud) / (alfmed * c0) - ugs;
+            double jlTeste = (ugs + uls) * (1. - c0 * alfmed) - alfmed * ud;
+            if ((jlTeste > 0. || jlTeste0 > 0.) && state.cells[i - 1].alfPigD > 1 - 1e-15) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+            if ((jlTeste < 0. || jlTeste0 < 0.) && state.cells[i].alfPigE > 1 - 1e-15) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+            if (state.cells[i - 1].acsr.tipo == 5 && state.cells[i - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[i - 1].duto.area) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+        }
+    }
+}
+
+void updateInteriorFlowPartitionCell(
+    const ThermalState &state, int i, Vcr<int> &bif, Vcr<int> &valv) {
+    if (i < state.lastCell) {
+        state.cells[i - 1].alfR = state.cells[i + 1].alfL = state.cells[i].alf;
+        state.cells[i - 1].betR = state.cells[i + 1].betL = state.cells[i].bet;
+    } else {
+        state.cells[i - 1].alfR = state.cells[i].alf;
+        state.cells[i - 1].betR = state.cells[i].bet;
+    }
+    valv[i] = 1;
+    if (state.cells[i - 1].acsr.tipo == 5 || state.cells[i - 1].acsr.tipo == 8) {
+        if ((*state.cells[i].acsrL).tipo == 5 && (*state.cells[i].acsrL).chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[i - 1].duto.area)
+            valv[i] = 0;
+        if ((*state.cells[i].acsrL).tipo == 8 && fabs((*state.cells[i].acsrL).bvol.freq) > 1)
+            valv[i] = 0;
+    }
+    if (valv[i] == 1) {
+        double razdx = state.cells[i].dxL / (state.cells[i].dx + state.cells[i].dxL);
+        double pmed;
+        if (i < state.lastCell)
+            pmed = state.cells[i].presaux;
+        else
+            pmed = state.cells[i].pres;
+        double tmed;
+        if (i < state.lastCell)
+            tmed = state.cells[i].temp * razdx + state.cells[i - 1].temp * (1. - razdx);
+        else
+            tmed = state.gasSurfaceTemperature;
+        if (state.cells[i].VTemper < 0.) {
+            if (i < state.lastCell)
+                tmed = state.cells[i].temp;
+            else
+                tmed = state.gasSurfaceTemperature;
+        }
+        double betI = state.cells[i - 1].betPigD;
+        double rl;
+        if (state.cells[i].QL < 0.) { // testeBeta
+            betI = state.cells[i].betPigE;
+            rl = (1 - betI) * state.cells[i].rpCi + betI * state.cells[i].rcCi;
+        } else {
+            betI = state.cells[i - 1].betPigD;
+            rl = (1 - betI) * state.cells[i - 1].rpCi + betI * state.cells[i - 1].rcCi;
+            // viscl1 = (1 - betI) * state.cells[i - 1].flui.ViscOleo(pmed, tmed)
+            // tensup1 = (1 - betI) * state.cells[i - 1].flui.TensSuper(pmed, tmed)
+        }
+        double rg;
+        double amed;
+        double hns;
+        if (state.cells[i].QG >= 0) {
+            amed = state.cells[i].dutoL.area;
+            hns = 1. - state.cells[i].alfL;
+            rg = state.cells[i - 1].rgCi;
+        } else {
+            rg = state.cells[i].rgCi;
+            amed = state.cells[i].duto.area;
+            hns = 1. - state.cells[i].alf;
+        }
+        double ugs = state.cells[i].QG / (amed);
+        double uls = state.cells[i].QL / (amed);
+        double dia1 = state.cells[i].duto.a;
+        if (ugs >= 0)
+            dia1 = state.cells[i - 1].duto.a;
+
+        double rmed = hns * rl + (1 - hns) * rg;
+        double ang = state.cells[i].duto.teta;
+        if (i >= 2) {
+            if (state.cells[i - 2].acsr.tipo == 5 && state.cells[i - 2].acsr.chk.AreaGarg <= (1e-3)) {
+                if (state.cells[i].QG >= 0)
+                    ang = state.cells[i].duto.teta;
+                else
+                    ang = state.cells[i].dutoR.teta;
+            } else {
+                if (state.cells[i].QG >= 0)
+                    ang = state.cells[i].dutoL.teta;
+                else
+                    ang = state.cells[i].duto.teta;
+            }
+        }
+        double sinal = 1.;
+        if (ang < 0.)
+            sinal = -1.;
+
+        double amedL = state.cells[i].dutoL.area;
+        double razdxL = state.cells[i - 1].dxL / (state.cells[i - 1].dx + state.cells[i - 1].dxL);
+        double betIL = 0.;
+        if (i < 2)
+            betIL = state.cells[i - 1].betL;
+        else
+            betIL = state.cells[i - 2].betPigD;
+        if (state.cells[i - 1].QL < 0.)
+            betIL = state.cells[i - 1].betPigE; // testeBeta
+        // betIL = state.cells[i - 1].betPigE;        //duvidabeta
+        double rgL = state.cells[i].rgLi;
+        double rlL = (1 - betIL) * state.cells[i].rpLi + betIL * state.cells[i].rcLi;
+        double ugs0 = (state.cells[i].ML - state.cells[i].MliqiniL) / (rgL * amedL);
+        double uls0 = (state.cells[i].MliqiniL) / (rlL * amedL);
+
+        double amedR = state.cells[i].dutoR.area;
+        double razdxR = state.cells[i].dxR / (state.cells[i].dxR + state.cells[i].dx);
+        double pmedR = state.cells[i].presauxR;
+        double tmedR = state.cells[i].temp * razdxR + state.cells[i].tempR * (1. - razdxR);
+        double betIR = state.cells[i].betPigD;
+        if (state.cells[i].QLR < 0.) { // testeBeta
+            if (i > state.lastCell - 2)
+                betIR = state.cells[i].betR;
+            else
+                betIR = state.cells[i + 1].betPigE;
+        }
+        double rgR = state.cells[i].rgRi;
+        double rlR = (1 - betIR) * state.cells[i].rpRi + betIR * state.cells[i].rcRi;
+        double ugs1 = (state.cells[i].MR - state.cells[i].MliqiniR) / (rgR * amedR);
+        double uls1 = (state.cells[i].MliqiniR) / (rlR * amedR);
+
+        selectAndApplyInteriorFlowRegime(
+            state, i, bif, ugs, uls, ugs0, uls0, ugs1, uls1,
+            rgR, rlR, rg, rl, amed);
+    } else {
+        state.cells[i].c0 = 1.;
+        state.cells[i].ud = 0.;
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        state.cells[i].term1L = state.cells[i - 1].term1;
+        state.cells[i].term2L = state.cells[i - 1].term2;
+        state.cells[i - 1].term1R = state.cells[i].term1;
+        state.cells[i - 1].term2R = state.cells[i].term2;
+    }
+}
+
+void updateOutletBoundaryFlowPartition(
+    const ThermalState &state, int i, Vcr<int> &bif) {
+    state.cells[state.lastCell - 1].alfR = state.cells[state.lastCell].alf;
+    state.cells[state.lastCell].alfR = state.cells[state.lastCell].alf;
+    state.cells[state.lastCell - 1].betR = state.cells[state.lastCell].bet;
+    state.cells[state.lastCell].betR = state.cells[state.lastCell].bet;
+
+    double razdx = state.cells[i].dxL / (state.cells[i].dx + state.cells[i].dxL);
+    double pmed = state.cells[i].presaux;
+    double tmed = state.cells[i].temp * razdx + state.cells[i - 1].temp * (1. - razdx);
+    double betI = state.cells[i].betL;
+    if (state.cells[i].QL < 0.)
+        betI = state.cells[i].bet; // testeBeta
+    // betI = state.cells[i].bet;            //duvidabeta
+    double rg = state.cells[i].flui.MasEspGas(pmed, tmed);
+    double rl = (1 - betI) * state.cells[i].flui.MasEspLiq(pmed, tmed) + betI * state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+    double amed = state.cells[i].duto.area;
+    if (state.cells[i].MC >= 0)
+        amed = state.cells[i].dutoL.area;
+    double ugs = state.cells[i].QG / (amed);
+    double uls = state.cells[i].QL / (amed);
+
+    double amedL = state.cells[i].dutoL.area;
+    double razdxL = state.cells[i - 1].dxL / (state.cells[i - 1].dx + state.cells[i - 1].dxL);
+    double pmedL = state.cells[i - 1].presaux;
+    double tmedL = state.cells[i - 1].temp * razdxL + state.cells[i - 1].tempL * (1. - razdxL);
+    double betIL = state.cells[i - 1].betL;
+    if (state.cells[i - 1].QL < 0.)
+        betIL = state.cells[i - 1].bet; // testeBeta
+    // betIL = state.cells[i - 1].bet;            //duvidabeta
+    double rgL = state.cells[i].flui.MasEspGas(pmedL, tmedL);
+    double rlL = (1 - betIL) * state.cells[i].flui.MasEspLiq(pmedL, tmedL) + betIL * state.cells[i].fluicol.MasEspFlu(pmedL, tmedL);
+    double uls0 = (state.cells[i].MliqiniL) / (rlL * amedL);
+
+    double amedR = state.cells[i].dutoR.area;
+    double razdxR = state.cells[i].dxR / (state.cells[i].dxR + state.cells[i].dx);
+    double pmedR = state.cells[i].pres;
+    double tmedR = state.cells[i].temp * razdxR + state.cells[i].tempR * (1. - razdxR);
+    double betIR = state.cells[i].bet;
+    double rgR = state.cells[i].flui.MasEspGas(pmedR, tmedR);
+    double rlR = (1 - betIR) * state.cells[i].flui.MasEspLiq(pmedR, tmedR) + betIR * state.cells[i].fluicol.MasEspFlu(pmedR, tmedR);
+    double uls1 = (state.cells[i].MliqiniR) / (rlR * amedR);
+
+    bif[i] = 1;
+
+    if (state.cells[i].alfL <= (*state.globals).localtiny && state.cells[i].alf <= (*state.globals).localtiny && state.cells[i].fontemassGL <= 0 && state.cells[i].fontemassGR <= 0) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1. - (*state.globals).localtiny;
+        state.cells[i].ud = 0.;
+        state.cells[i].arranjo = 0;
+    } else if (state.cells[i].alfL >= (1. - (*state.globals).localtiny) && state.cells[i].alf >= (1. - (*state.globals).localtiny) && state.cells[i].fontemassLL <= 0 && state.cells[i].fontemassLR <= 0) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1. - (*state.globals).localtiny;
+        state.cells[i].ud = 0.;
+        state.cells[i].arranjo = 0;
+    } else if (ugs > 0 && state.cells[i].alfL <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= 0. && state.cells[i].fontemassGR <= 0.)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1. - (*state.globals).localtiny;
+        state.cells[i].ud = 0.;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alf > (1. - (*state.globals).localtiny) && uls < 0 && uls0 < 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+    } else if (ugs < 0 && state.cells[i].alf <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= 0. && state.cells[i].fontemassGR <= 0.)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1. - (*state.globals).localtiny;
+        state.cells[i].ud = 0.;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfL > (1. - (*state.globals).localtiny) && uls > 0 && uls1 > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+    } else if (uls >= 0 && state.cells[i - 1].alf >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= 1e-15 && state.cells[i].alf < (*state.globals).localtiny && uls1 < 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        } else if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alf < (*state.globals).localtiny && state.cells[i].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+        } else if (fabs(uls) < 1e-15 && uls1 < 0 && state.cells[i].alf <= (1 - 1 * (*state.globals).localtiny))
+            bif[i] = 1;
+    }
+
+    else if (uls <= 0 && state.cells[i].alf >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1;
+        state.cells[i].ud = 0;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.cells[i - 1].alf < (*state.globals).localtiny && uls0 > 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+        if (fabs(uls0) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i - 1].alf < (*state.globals).localtiny && state.cells[i - 1].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+        } else if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 2].alfPigD && state.cells[i - 2].alfPigD < 0.99) || state.cells[i - 1].alfPigD < 0.7))
+            bif[i] = 1;
+        else if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 2].alfPigD && state.cells[i - 2].alfPigD < 0.99) || state.cells[i - 1].alfPigD < 0.7))
+            bif[i] = 1;
+        else {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7))
+                bif[i] = 1;
+            else if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7))
+                bif[i] = 1;
+        }
+    }
+
+    if (bif[i] == 1) {
+        double alfmed;
+        alfmed = state.cells[i].alfL;
+        double c0 = 1.2;
+        double dmed = state.cells[i].duto.a;
+        if (state.cells[i].MC >= 0)
+            dmed = state.cells[i].dutoL.a;
+        double sinal = 1.;
+        if (state.cells[i].duto.teta < 0.)
+            sinal = 1.;
+        double ud = sinal * 0.32 * sqrt(9.82 * dmed);
+        if (fabs(rgR) / rlR > 0.9) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        state.closureUpdater.instantaneous(i, c0, ud);
+        if (state.input.escorregamentoCelulaContorno == 0) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        state.cells[i].c0 = c0;
+        state.cells[i].ud = ud;
+        double num = (1. - alfmed * c0);
+        double den = 1. + alfmed * (rg / rl) * c0 - alfmed * c0;
+        state.cells[i].term1 = num / den;
+        state.cells[i].term2 = (-amed * alfmed * rg * ud) / den;
+
+        // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    }
+
+    state.cells[i].term1L = state.cells[i - 1].term1;
+    state.cells[i].term2L = state.cells[i - 1].term2;
+    state.cells[i - 1].term1R = state.cells[i].term1;
+    state.cells[i - 1].term2R = state.cells[i].term2;
+}
+
+void finalizeFlowPartitionTerms(
+    const ThermalState &state, const Vcr<int> &bif, const Vcr<int> &valv) {
+    int parada = 0;
+    for (int i = 1; i < state.lastCell; i++) {
+        if (state.cells[i].acsr.tipo == 5 && state.cells[i].acsr.chk.AreaGarg <= 1e-15 * state.cells[i].acsr.chk.AreaTub)
+            parada = 1;
+        else if (state.surfaceChoke.AreaGarg <= 1.e-15 * state.surfaceChoke.AreaTub)
+            parada = 1;
+    }
+
+    Vcr<double> c0V(state.lastCell, 0.);
+    Vcr<double> udV(state.lastCell, 0.);
+    for (int i = 1; i < state.lastCell; i++) {
+        c0V[i] = state.cells[i].c0;
+        udV[i] = state.cells[i].ud;
+        if (bif[i] == 1 && valv[i] == 1 && i > 2) {
+            int iViz = i - 1;
+            int iViz2 = i - 2;
+            if (state.cells[i].QG < 0) {
+                iViz = i + 1;
+                iViz2 = i;
+            }
+            if ((state.cells[iViz].acsr.tipo == 0 && (state.cells[iViz2].acsr.tipo != 5 || state.cells[iViz2].acsr.chk.AreaGarg > (1e-3))) &&
+                (state.cells[i].arranjo != state.cells[iViz].arranjo && bif[iViz] != 0)) {
+                c0V[i] = (state.cells[i].dx * state.cells[i].c0 + state.cells[iViz].dx * state.cells[iViz].c0) / (state.cells[i].dx + state.cells[iViz].dx);
+                if (state.cells[i].duto.teta * state.cells[iViz].duto.teta >= 0)
+                    udV[i] = (state.cells[i].dx * state.cells[i].ud + state.cells[iViz].dx * state.cells[iViz].ud) / (state.cells[i].dx + state.cells[iViz].dx);
+            } else if (i > 2) {
+                double ang;
+                double angL;
+                double dia;
+                double diaL;
+                if ((state.cells[i - 1].acsr.tipo == 0 && (state.cells[i - 2].acsr.tipo != 5 || state.cells[i - 2].acsr.chk.AreaGarg > (1e-3))) &&
+                    state.cells[i].QG >= 0) {
+                    ang = state.cells[i].duto.teta;
+                    angL = state.cells[i - 1].duto.teta;
+                    dia = state.cells[i].duto.dia;
+                    diaL = state.cells[i - 1].duto.dia;
+                    if (((ang != angL) && bif[iViz] != 0) ||
+                        (state.cells[i].arranjo != state.cells[iViz].arranjo && bif[iViz] != 0)) {
+                        c0V[i] = (state.cells[i].dx * state.cells[i].c0 + state.cells[i - 1].dx * state.cells[i - 1].c0) / (state.cells[i].dx + state.cells[i - 1].dx);
+                        if (ang * angL >= 0)
+                            udV[i] = (state.cells[i].dx * state.cells[i].ud + state.cells[i - 1].dx * state.cells[i - 1].ud) / (state.cells[i].dx + state.cells[i - 1].dx);
+                    }
+                } else if ((state.cells[i + 1].acsr.tipo == 0 && (state.cells[i].acsr.tipo != 5 || state.cells[i].acsr.chk.AreaGarg > (1e-3))) &&
+                           state.cells[i].QG < 0) {
+                    ang = state.cells[i].duto.teta;
+                    angL = state.cells[i + 1].duto.teta;
+                    dia = state.cells[i].duto.dia;
+                    diaL = state.cells[i + 1].duto.dia;
+                    if (((ang != angL) && bif[iViz] != 0) ||
+                        (state.cells[i].arranjo != state.cells[iViz].arranjo && bif[iViz] != 0)) {
+                        c0V[i] = (state.cells[i].dx * state.cells[i].c0 + state.cells[i + 1].dx * state.cells[i + 1].c0) / (state.cells[i].dx + state.cells[i + 1].dx);
+                        if (ang * angL >= 0)
+                            udV[i] = (state.cells[i].dx * state.cells[i].ud + state.cells[i + 1].dx * state.cells[i + 1].ud) / (state.cells[i].dx + state.cells[i + 1].dx);
+                    }
+                }
+            }
+        }
+    }
+
+    for (int i = 1; i < state.lastCell; i++) {
+        if (bif[i] == 1 && valv[i] == 1) {
+            double betI = state.cells[i - 1].betPigD;
+            double rl;
+
+            if (state.cells[i].QL < 0.) {
+                betI = state.cells[i].betPigE;
+                rl = (1 - betI) * state.cells[i].rpCi + betI * state.cells[i].rcCi;
+            } else {
+                betI = state.cells[i - 1].betPigD;
+                rl = (1 - betI) * state.cells[i - 1].rpCi + betI * state.cells[i - 1].rcCi;
+            }
+
+            double rg;
+            double amed;
+            double hns;
+            if (state.cells[i].QG >= 0) {
+                amed = state.cells[i].dutoL.area;
+                hns = 1. - state.cells[i].alfL;
+                rg = state.cells[i - 1].rgCi;
+            } else {
+                rg = state.cells[i].rgCi;
+                amed = state.cells[i].duto.area;
+                hns = 1. - state.cells[i].alf;
+            }
+            double ugs = state.cells[i].QG / (amed);
+            double uls = state.cells[i].QL / (amed);
+
+            double alfmed;
+            alfmed = state.cells[i - 1].alfPigD;
+            if (ugs < 0)
+                alfmed = state.cells[i].alfPigE;
+            double num = (1. - alfmed * state.cells[i].c0);
+            double den = 1 + state.cells[i].c0 * alfmed * ((rg / rl) - 1.);
+            state.cells[i].term1 = num / den;
+            state.cells[i].term2 = (-amed * alfmed * rg * state.cells[i].ud) / den;
+            double jlTeste0 = (ugs - alfmed * state.cells[i].ud) / (alfmed * state.cells[i].c0) - ugs;
+            double jlTeste = (ugs + uls) * (1. - state.cells[i].c0 * alfmed) - alfmed * state.cells[i].ud;
+            double MLTeste = state.cells[i].term1 * state.cells[i].MC + state.cells[i].term2;
+            double MGTeste = (1 - state.cells[i].term1) * state.cells[i].MC - state.cells[i].term2;
+            if ((jlTeste > 0. || jlTeste0 > 0.) && state.cells[i - 1].alfPigD > 1 - 1e-15) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+            if ((jlTeste < 0. || jlTeste0 < 0.) && state.cells[i].alfPigE > 1 - 1e-15) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+            if (state.cells[i - 1].acsr.tipo == 5 && state.cells[i - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[i - 1].duto.area) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+            if ((jlTeste < 0. || jlTeste0 < 0.) && ((fabs(state.cells[i - 1].QG / (amed)) + fabs(state.cells[i - 1].QL / (amed))) < 0.1) &&
+                (parada == 1 && state.input.modoSegrega == 1) && (state.cells[i].duto.teta > 0 && state.cells[i - 1].duto.teta <= 0) &&
+                (MLTeste > 0 && state.cells[i].term2 > 0) &&
+                ((1. - state.cells[i].alfL) /**fabs(sin(state.cells[i-1].duto.teta))*/ < (1. - state.cells[i].alf) /**fabs(sin(state.cells[i].duto.teta))*/)) {
+                state.cells[i].term2 = 0.;
+            }
+            if (state.cells[i].duto.teta > 0 && MGTeste < 0 && ((parada == 1 && state.input.modoSegrega == 1)) && state.cells[i].alfPigE > 1 - 1e-15) {
+                state.cells[i].term1 = 0.;
+                state.cells[i].term2 = 0.;
+            }
+        }
+    }
+    for (int i = 1; i <= state.lastCell; i++) {
+        state.cells[i].term1L = state.cells[i - 1].term1;
+        state.cells[i].term2L = state.cells[i - 1].term2;
+        state.cells[i - 1].term1R = state.cells[i].term1;
+        state.cells[i - 1].term2R = state.cells[i].term2;
+    }
+}
+
+void selectAndApplyInletBoundaryFlowRegime(
+    const ThermalState &state, int i, Vcr<int> &bif, double xc0,
+    double xud, double ugs, double uls, double uls1, double rgR,
+    double rlR, double rg, double rl, double amed) {
+    bif[i] = 1;
+
+    if ((*state.globals).lixo5 > 29900) {
+        int para;
+        para = 0;
+    }
+
+    if (state.inletVoidFraction < (*state.globals).localtiny && state.cells[i].alfPigE <= (*state.globals).localtiny && state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    } else if (state.inletVoidFraction >= (1. - (*state.globals).localtiny) && state.cells[i].alfPigE >= (1. - (*state.globals).localtiny) && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    } else if (ugs >= 0 && state.inletVoidFraction <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - (*state.globals).localtiny) && uls < 0 && state.cells[i].duto.teta > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - 1 * (*state.globals).localtiny) && state.cells[i].duto.teta < 0 && uls > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 1;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alf >= state.inletVoidFraction && uls < 0) {
+            bif[i] = 1;
+        }
+    } else if (ugs <= 0 && state.cells[i].alfPigE <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.inletVoidFraction > (1. - (*state.globals).localtiny) && uls > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.inletVoidFraction > (*state.globals).localtiny && uls > 0) {
+            bif[i] = 1;
+        }
+    } else if (uls >= 0 && state.inletVoidFraction >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= 1e-15 && state.cells[i].alfPigE < (*state.globals).localtiny && uls1 < 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        } else if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alfPigE < (*state.globals).localtiny && state.cells[i].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+        } else if (fabs(uls) < 1e-15 && uls1 < 0 && ((state.cells[i].alfPigE <= (1 - 1 * (*state.globals).localtiny + .0 * state.cells[i].alfPigER) && state.cells[i].alfPigER < 1 - 1 * (*state.globals).localtiny) || state.cells[i].alfPigE <= 0.7))
+            bif[i] = 1;
+
+    } else if (uls <= 0 && state.cells[i].alfPigE >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.inletVoidFraction < (*state.globals).localtiny && uls1 < 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif[i] = 0;
+        }
+
+        if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.inletVoidFraction < (*state.globals).localtiny) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif[i] = 0;
+            }
+        } else {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && ugs < 0 && (state.inletVoidFraction < 0.7))
+                bif[i] = 1;
+            else if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && ugs < 0 && (state.inletVoidFraction < 0.7))
+                bif[i] = 1;
+        }
+    }
+    if (uls > 0 && fabs(ugs) <= (*state.globals).localtiny * 1e-5 && state.inletVoidFraction > (*state.globals).localtiny && state.inletVoidFraction < 1 - (*state.globals).localtiny)
+        bif[i] = 1;
+    if (ugs > 0 && fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.inletVoidFraction > (*state.globals).localtiny && state.inletVoidFraction < 1 - (*state.globals).localtiny)
+        bif[i] = 1;
+    if (uls >= 0 && state.inletVoidFraction > 1 - (*state.globals).localtiny) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+    }
+    if (ugs >= 0 && state.inletVoidFraction < (*state.globals).localtiny) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif[i] = 0;
+    }
+
+    if (bif[i] == 1) {
+
+        double c0;
+        double ud;
+        double alfmed;
+
+        alfmed = state.inletVoidFraction;
+        if (ugs < 0)
+            alfmed = state.cells[i].alfPigE;
+        c0 = 1.2;
+        double dmed = state.cells[i].duto.a;
+        if (state.cells[i].MC >= 0)
+            dmed = state.cells[i].dutoL.a;
+        double sinal = 1.;
+        if (state.cells[i].duto.teta < 0.)
+            sinal = -1.;
+        ud = sinal * 0.32 * sqrt(9.82 * dmed);
+        if (fabs(rgR) / rlR > 0.9) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        state.closureUpdater.initialization(i, c0, ud);
+        state.cells[i].c0 = c0;
+        state.cells[i].ud = ud;
+        double num = (1. - alfmed * c0);
+        double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
+        state.cells[i].term1 = num / den;
+        state.cells[i].term2 = (-amed * alfmed * rg * ud) / den;
+    }
+}
+
+void selectAndApplyBufferedOutletFlowRegime(
+    const ThermalState &state, int i, double xc0, double xud,
+    double ugs, double uls, double ugs0, double uls0, double ugs1,
+    double uls1, double rgR, double rlR, double rg, double rl,
+    double amed) {
+    int bif = 1;
+
+    if ((*state.globals).lixo5 > 29900) {
+        int para;
+        para = 0;
+    }
+
+    if (state.cells[i - 1].alfPigD <= (*state.globals).localtiny && state.cells[i].alfPigE <= (*state.globals).localtiny && state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    } else if (state.cells[i - 1].alfPigD >= (1. - (*state.globals).localtiny) && state.cells[i].alfPigE >= (1. - (*state.globals).localtiny) && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    } else if (state.cells[i - 1].acsr.tipo == 5 && state.cells[i - 1].acsr.chk.AreaGarg <= (1e-3)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    }
+
+    else if (ugs >= 0 && state.cells[i - 1].alfPigD <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - (*state.globals).localtiny) && uls < 0 && uls0 < 0 && state.cells[i].duto.teta > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - 10 * (*state.globals).localtiny) && state.cells[i].duto.teta < 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif = 1;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alf >= state.cells[i + 1].alf && ugs1 < 0) {
+            bif = 1;
+        }
+    } else if (ugs <= 0 && state.cells[i].alfPigE <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i - 1].alfPigD > (1. - (*state.globals).localtiny) && uls > 0 && uls1 > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfL >= state.cells[i - 1].alfL && ugs0 > 0) {
+            bif = 1;
+        }
+    } else if (uls >= 0 && state.cells[i - 1].alfPigD >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= 1e-15 && state.cells[i].alfPigE < (*state.globals).localtiny && uls1 < 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        } else if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alfPigE < (*state.globals).localtiny && state.cells[i].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif = 0;
+            }
+        } else if (fabs(uls) < 1e-15 && uls1 < 0 && ((state.cells[i].alfPigE <= (1 - 1 * (*state.globals).localtiny + .0 * state.cells[i].alfPigER) && state.cells[i].alfPigER < 1 - 1 * (*state.globals).localtiny) || state.cells[i].alfPigE <= 0.7))
+            bif = 1;
+
+    } else if (uls <= 0 && state.cells[i].alfPigE >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.cells[i - 1].alfPigD < (*state.globals).localtiny && uls0 > 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        }
+
+        if (fabs(uls0) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i - 1].alfPigD < (*state.globals).localtiny && state.cells[i - 1].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif = 0;
+            }
+        } else if (i > 1 && fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 2].alfPigD && state.cells[i - 2].alfPigD < 0.99) || state.cells[i - 1].alfPigD < 0.7))
+            bif = 1;
+        else if (i > 1 && fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 2].alfPigD && state.cells[i - 2].alfPigD < 0.99) || state.cells[i - 1].alfPigD < 0.7))
+            bif = 1;
+        else {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7))
+                bif = 1;
+            else if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && uls0 > 0 && ((state.cells[i - 1].alfPigD <= 1.0 * state.cells[i - 1].alfL) || state.cells[i - 1].alfPigD < 0.7))
+                bif = 1;
+        }
+    }
+
+    if (ugs < 0 && state.cells[i].alf > (*state.globals).localtiny && state.cells[i].alf < 1. - (*state.globals).localtiny)
+        bif = 1;
+
+    if (bif == 1) {
+
+        double c0;
+        double ud;
+        double alfmed;
+
+        alfmed = state.cells[i - 1].alfPigD;
+        if (ugs < 0)
+            alfmed = state.cells[i].alfPigE;
+        c0 = 1.2;
+        double dmed = state.cells[i].duto.a;
+        if (state.cells[i].MC >= 0)
+            dmed = state.cells[i].dutoL.a;
+        double sinal = 1.;
+        if (state.cells[i].duto.teta < 0.)
+            sinal = -1.;
+        ud = sinal * 0.32 * sqrt(9.82 * dmed);
+        if (fabs(rgR) / rlR > 0.9) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        state.closureUpdater.buffered(i, c0, ud);
+        if (state.input.escorregamentoCelulaContorno == 0) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        double num = (1. - alfmed * c0);
+        double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
+        state.cells[i].term1 = num / den;
+        state.cells[i].term2 = (-amed * alfmed * rg * ud) / den;
+        if (state.cells[i - 1].acsr.tipo == 5 && state.cells[i - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[i - 1].duto.area) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+        }
+    }
+}
+
+void selectAndApplyBufferedInletFlowRegime(
+    const ThermalState &state, int i, double xc0, double xud,
+    double ugs, double uls, double uls1, double rgR, double rlR,
+    double rg, double rl, double amed) {
+    int bif = 1;
+
+    if ((*state.globals).lixo5 > 29900) {
+        int para;
+        para = 0;
+    }
+
+    if (state.inletVoidFraction < (*state.globals).localtiny && state.cells[i].alfPigE <= (*state.globals).localtiny && state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    } else if (state.inletVoidFraction >= (1. - (*state.globals).localtiny) && state.cells[i].alfPigE >= (1. - (*state.globals).localtiny) && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+    } else if (ugs >= 0 && state.inletVoidFraction <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - (*state.globals).localtiny) && uls < 0 && state.cells[i].duto.teta > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alfPigE > (1. - 1 * (*state.globals).localtiny) && state.cells[i].duto.teta < 0 && uls > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif = 1;
+        }
+        if (fabs(ugs) <= 1e-15 && state.cells[i].alf >= state.inletVoidFraction && uls < 0) {
+            bif = 1;
+        }
+    } else if (ugs <= 0 && state.cells[i].alfPigE <= (*state.globals).localtiny && (state.cells[i].fontemassGL <= (*state.globals).localtiny * 1e-5 && state.cells[i].fontemassGR <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 1.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(ugs) <= 1e-15 && state.inletVoidFraction > (1. - (*state.globals).localtiny) && uls > 0) {
+            state.cells[i].term1 = 0.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        }
+        if (fabs(ugs) <= 1e-15 && state.inletVoidFraction > (*state.globals).localtiny && uls > 0) {
+            bif = 1;
+        }
+    } else if (uls >= 0 && state.inletVoidFraction >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= 1e-15 && state.cells[i].alfPigE < (*state.globals).localtiny && uls1 < 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        } else if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].alfPigE < (*state.globals).localtiny && state.cells[i].fontemassGR >= (*state.globals).localtiny * 1e-5) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif = 0;
+            }
+        } else if (fabs(uls) < 1e-15 && uls1 < 0 && ((state.cells[i].alfPigE <= (1 - 1 * (*state.globals).localtiny + .0 * state.cells[i].alfPigER) && state.cells[i].alfPigER < 1 - 1 * (*state.globals).localtiny) || state.cells[i].alfPigE <= 0.7))
+            bif = 1;
+
+    } else if (uls <= 0 && state.cells[i].alfPigE >= 1. - (*state.globals).localtiny && ((state.cells[i].fontemassLL + state.cells[i].fontemassCL) <= (*state.globals).localtiny * 1e-5 && (state.cells[i].fontemassLR + state.cells[i].fontemassCR) <= (*state.globals).localtiny * 1e-5)) {
+        state.cells[i].term1 = 0.;
+        state.cells[i].term2 = 0.;
+        bif = 0;
+        state.cells[i].c0 = 1 + 0 * xc0;
+        state.cells[i].ud = 0 * xud;
+        state.cells[i].arranjo = 0;
+        if (fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.inletVoidFraction < (*state.globals).localtiny && uls1 < 0) {
+            state.cells[i].term1 = 1.;
+            state.cells[i].term2 = 0.;
+            bif = 0;
+        }
+
+        if (fabs(uls1) < (*state.globals).localtiny * 1e-5) {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.inletVoidFraction < (*state.globals).localtiny) {
+                state.cells[i].term1 = 1.;
+                state.cells[i].term2 = 0.;
+                bif = 0;
+            }
+        } else {
+            if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta < 0.95 * M_PI / 2. && ugs < 0 && (state.inletVoidFraction < 0.7))
+                bif = 1;
+            else if (fabs(uls) < (*state.globals).localtiny * 1e-5 && state.cells[i].duto.teta >= 0.95 * M_PI / 2. && ugs < 0 && (state.inletVoidFraction < 0.7))
+                bif = 1;
+        }
+    }
+    if (uls > 0 && fabs(ugs) <= (*state.globals).localtiny * 1e-5 && state.inletVoidFraction > (*state.globals).localtiny && state.inletVoidFraction < 1 - (*state.globals).localtiny)
+        bif = 1;
+    if (ugs > 0 && fabs(uls) <= (*state.globals).localtiny * 1e-5 && state.inletVoidFraction > (*state.globals).localtiny && state.inletVoidFraction < 1 - (*state.globals).localtiny)
+        bif = 1;
+
+    if (bif == 1) {
+
+        double c0;
+        double ud;
+        double alfmed;
+
+        alfmed = state.inletVoidFraction;
+        if (ugs < 0)
+            alfmed = state.cells[i].alfPigE;
+        c0 = 1.2;
+        double dmed = state.cells[i].duto.a;
+        if (state.cells[i].MC >= 0)
+            dmed = state.cells[i].dutoL.a;
+        double sinal = 1.;
+        if (state.cells[i].duto.teta < 0.)
+            sinal = -1.;
+        ud = sinal * 0.32 * sqrt(9.82 * dmed);
+        if (fabs(rgR) / rlR > 0.9) {
+            c0 = 1.;
+            ud = 0.;
+        }
+        state.closureUpdater.bufferedInitialization(i, c0, ud);
+
+        double num = (1. - alfmed * c0);
+        double den = 1 + c0 * alfmed * ((rg / rl) - 1.);
+        state.cells[i].term1 = num / den;
+        state.cells[i].term2 = (-amed * alfmed * rg * ud) / den;
+    }
+}
+
+}  // namespace
+
+void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
+    // #pragma omp parallel for num_threads(numthreads)
+    aflu = 0;
+    Vcr<int> bif(state.lastCell + 1, 0);
+    Vcr<int> valv(state.lastCell + 1, 1);
+    int imax = state.lastCell;
+    if (aflu == 1)
+        imax = state.lastCell + 1;
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].c0ini = state.cells[i].c0;
+        state.cells[i].udini = state.cells[i].ud;
+        if (i == state.lastCell && aflu == 1 && (*state.globals).lixo5 >= 1560) {
+            int para;
+            para = 0;
+        }
+        if (i != 0 && i != imax) {
+            updateInteriorFlowPartitionCell(state, i, bif, valv);
+        } else if (i == 0) {
+            if (state.input.ConContEntrada == 0) {
+                state.cells[1].alfL = state.cells[0].alf;
+                state.cells[0].alfL = state.cells[0].alf;
+                state.cells[1].betL = state.cells[0].bet;
+                state.cells[0].betL = state.cells[0].bet;
+                state.cells[0].term1 = 0.;
+                state.cells[0].term2 = 0.;
+                state.cells[0].term1L = 0.;
+                state.cells[0].term2L = 0.;
+            } else {
+                if (state.inletMassFraction < 1) {
+                    int para;
+                    para = 0;
+                }
+
+                double razdx = 0.5;
+                double pmed;
+                pmed = state.inletPressure;
+
+                double tmed;
+                if (state.cells[0].QL < 0.)
+                    tmed = state.cells[i].temp;
+                else
+                    tmed = state.inletTemperature;
+
+                double rg = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
+                double rl = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
+                double rcis = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+
+                double rlmist = state.inletComposition * rcis + (1 - state.inletComposition) * rl;
+                state.inletVoidFraction = (-state.inletMassFraction * rlmist / (state.inletMassFraction * rg - rg - state.inletMassFraction * rlmist)) / (state.cells[0].c0);
+
+                double betI;
+                double viscl1;
+                double tensup1;
+                if (state.cells[i].QL < 0.) { // testeBeta
+                    betI = state.cells[i].betPigE;
+                    rl = (1 - betI) * state.cells[i].flui.MasEspLiq(pmed, tmed) + betI * state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+                    viscl1 = (1 - betI) * state.cells[i].flui.ViscOleo(pmed, tmed) + betI * state.cells[i].fluicol.VisFlu(pmed, tmed);
+                    tensup1 = (1 - betI) * state.cells[i].flui.TensSuper(pmed, tmed) + betI * state.cells[i].fluicol.TensSuper(pmed, tmed);
+                } else {
+                    betI = state.inletComposition;
+                    rl = (1 - betI) * (*state.cells[i].fluiL).MasEspLiq(pmed, tmed) + betI * state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+                    viscl1 = (1 - betI) * (*state.cells[i].fluiL).ViscOleo(pmed, tmed) + betI * state.cells[i].fluicol.VisFlu(pmed, tmed);
+                    tensup1 = (1 - betI) * (*state.cells[i].fluiL).TensSuper(pmed, tmed) + betI * state.cells[i].fluicol.TensSuper(pmed, tmed);
+                }
+
+                double viscg1;
+                double amed;
+                double hns;
+                if (state.cells[i].QG >= 0) {
+                    amed = state.cells[i].duto.area;
+                    rg = (*state.cells[i].fluiL).MasEspGas(pmed, tmed);
+                    viscg1 = (*state.cells[i].fluiL).ViscGas(pmed, tmed);
+                    hns = 1. - state.inletVoidFraction;
+                } else {
+                    rg = state.cells[i].flui.MasEspGas(pmed, tmed);
+                    viscg1 = state.cells[i].flui.ViscGas(pmed, tmed);
+                    amed = state.cells[i].duto.area;
+                    hns = 1. - state.cells[i].alf;
+                }
+                double ugs = state.cells[i].QG / (amed);
+                double uls = state.cells[i].QL / (amed);
+                double dia1 = state.cells[i].duto.a;
+
+                double rmed = hns * rl + (1 - hns) * rg;
+                double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
+                double ang = state.cells[i].duto.teta;
+                double sinal = 1.;
+                if (ang < 0.)
+                    sinal = -1.;
+                double xc0 = 2.;
+                double xud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
+
+                double amedR = state.cells[i].dutoR.area;
+                double razdxR = state.cells[i].dx / (state.cells[i].dxR + state.cells[i].dx);
+                double pmedR = state.cells[i].presauxR;
+                double tmedR = state.cells[i].temp * razdxR + state.cells[i].tempL * (1. - razdxR);
+                double betIR = state.cells[i].betPigD;
+                if (state.cells[i].QLR < 0.) // testeBeta
+                    betIR = state.cells[i + 1].betPigE;
+
+                double rgR = state.cells[i].flui.MasEspGas(pmedR, tmedR);
+                double rlR = (1 - betIR) * state.cells[i].flui.MasEspLiq(pmedR, tmedR) + betIR * state.cells[i].fluicol.MasEspFlu(pmedR, tmedR);
+                double ugs1 = (state.cells[i].MR - state.cells[i].MliqiniR) / (rgR * amedR);
+                double uls1 = (state.cells[i].MliqiniR) / (rlR * amedR);
+
+                selectAndApplyInletBoundaryFlowRegime(
+                    state, i, bif, xc0, xud, ugs, uls, uls1,
+                    rgR, rlR, rg, rl, amed);
+                state.cells[1].term1L = state.cells[i].term1;
+                state.cells[1].term2L = state.cells[i].term2;
+
+                state.cells[1].alfL = state.cells[0].alf;
+                state.cells[0].alfL = state.inletVoidFraction;
+                state.cells[1].betL = state.cells[0].bet;
+                state.cells[0].betL = state.inletComposition;
+            }
+
+        } else if (aflu == 0) {
+            updateOutletBoundaryFlowPartition(state, i, bif);
+        }
+    }
+
+    finalizeFlowPartitionTerms(state, bif, valv);
+}
+void updateOutletFlowPartitionTerms(const ThermalState &state) {
+
+    int i = state.lastCell;
+
+    double razdx = state.cells[i].dx / (state.cells[i].dx + state.cells[i].dxL);
+    double pmed = state.cells[i].presBuf;
+    double tmed = state.gasSurfaceTemperature;
+    tmed = state.cells[i - 1].temp;
+    if (state.cells[i].VTemper < 0.)
+        tmed = state.gasSurfaceTemperature;
+    double betI = state.cells[i - 1].betPigD;
+    double rl;
+    double viscl1;
+    double tensup1;
+    if (state.cells[i].MliqiniBuf < 0.) { // testeBeta
+        betI = state.cells[i].betPigE;
+        rl = (1 - betI) * state.cells[i].flui.MasEspLiq(pmed, tmed) + betI * state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+        viscl1 = (1 - betI) * state.cells[i].flui.ViscOleo(pmed, tmed) + betI * state.cells[i].fluicol.VisFlu(pmed, tmed);
+        tensup1 = (1 - betI) * state.cells[i].flui.TensSuper(pmed, tmed) + betI * state.cells[i].fluicol.TensSuper(pmed, tmed);
+    } else {
+        betI = state.cells[i - 1].betPigD;
+        rl = (1 - betI) * state.cells[i - 1].flui.MasEspLiq(pmed, tmed) + betI * state.cells[i - 1].fluicol.MasEspFlu(pmed, tmed);
+        viscl1 = (1 - betI) * state.cells[i - 1].flui.ViscOleo(pmed, tmed) + betI * state.cells[i - 1].fluicol.VisFlu(pmed, tmed);
+        tensup1 = (1 - betI) * state.cells[i - 1].flui.TensSuper(pmed, tmed) + betI * state.cells[i - 1].fluicol.TensSuper(pmed, tmed);
+    }
+    double rg;
+    double viscg1;
+    double amed;
+    double hns;
+    if ((state.cells[i].MCBuf - state.cells[i].MliqiniBuf) >= 0) {
+        amed = state.cells[i].dutoL.area;
+        hns = 1. - state.cells[i].alfL;
+        rg = state.cells[i - 1].flui.MasEspGas(pmed, tmed);
+        viscg1 = state.cells[i - 1].flui.ViscGas(pmed, tmed);
+    } else {
+        rg = state.cells[i].flui.MasEspGas(pmed, tmed);
+        viscg1 = state.cells[i].flui.ViscGas(pmed, tmed);
+        amed = state.cells[i].duto.area;
+        hns = 1. - state.cells[i].alf;
+    }
+    double ugs = (state.cells[i].MCBuf - state.cells[i].MliqiniBuf) / (rg * amed);
+    double uls = (state.cells[i].MliqiniBuf) / (rl * amed);
+    double dia1 = state.cells[i].duto.a;
+    if (ugs >= 0)
+        dia1 = state.cells[i - 1].duto.a;
+
+    double rmed = hns * rl + (1 - hns) * rg;
+    double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
+    double nrey = dia1 * rmed * (fabs(ugs) / amed + fabs(uls) / amed) / visc;
+    double ang = state.cells[i].duto.teta;
+    if (i >= 2) {
+        if (state.cells[i - 2].acsr.tipo == 5 && state.cells[i - 2].acsr.chk.AreaGarg <= (1e-3)) {
+            if ((state.cells[i].MCBuf - state.cells[i].MliqiniBuf) >= 0)
+                ang = state.cells[i].duto.teta;
+            else
+                ang = state.cells[i].dutoR.teta;
+        } else {
+            if ((state.cells[i].MCBuf - state.cells[i].MliqiniBuf) >= 0)
+                ang = state.cells[i].dutoL.teta;
+            else
+                ang = state.cells[i].duto.teta;
+        }
+    }
+    double sinal = 1.;
+    if (ang < 0.)
+        sinal = -1.;
+    double xc0 = 2.;
+    double xud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
+
+    double amedL = state.cells[i].dutoL.area;
+    double razdxL = state.cells[i - 1].dxL / (state.cells[i - 1].dx + state.cells[i - 1].dxL);
+    double pmedL = state.cells[i - 1].presaux;
+    double tmedL = state.cells[i - 1].temp * razdxL + state.cells[i - 1].tempL * (1. - razdxL);
+    double betIL = 0.;
+    if (i < 2)
+        betIL = state.cells[i - 1].betL;
+    else
+        betIL = state.cells[i - 2].betPigD;
+    if (state.cells[i - 1].MliqiniBuf < 0.)
+        betIL = state.cells[i - 1].betPigE; // testeBeta
+    // betIL = state.cells[i - 1].betPigE;    //duvidabeta
+    double rgL = state.cells[i].flui.MasEspGas(pmedL, tmedL);
+    double rlL = (1 - betIL) * state.cells[i].flui.MasEspLiq(pmedL, tmedL) + betIL * state.cells[i].fluicol.MasEspFlu(pmedL, tmedL);
+    double ugs0 = (state.cells[i].MLBuf - state.cells[i].MliqiniLBuf) / (rgL * amedL);
+    double uls0 = (state.cells[i].MliqiniLBuf) / (rlL * amedL);
+
+    double amedR = state.cells[i].dutoR.area;
+    double razdxR = state.cells[i].dxR / (state.cells[i].dxR + state.cells[i].dx);
+    double pmedR = state.cells[i].presRBuf;
+    double tmedR = state.cells[i].temp * razdxR + state.cells[i].tempR * (1. - razdxR);
+    double betIR = state.cells[i].betPigD;
+    if (state.cells[i].MliqiniRBuf < 0.) { // testeBeta
+        if (i > state.lastCell - 2)
+            betIR = state.cells[i].betR;
+        else
+            betIR = state.cells[i + 1].betPigE;
+    }
+    double rgR = state.cells[i].flui.MasEspGas(pmedR, tmedR);
+    double rlR = (1 - betIR) * state.cells[i].flui.MasEspLiq(pmedR, tmedR) + betIR * state.cells[i].fluicol.MasEspFlu(pmedR, tmedR);
+    double ugs1 = (state.cells[i].MRBuf - state.cells[i].MliqiniRBuf) / (rgR * amedR);
+    double uls1 = (state.cells[i].MliqiniRBuf) / (rlR * amedR);
+
+    selectAndApplyBufferedOutletFlowRegime(
+        state, i, xc0, xud, ugs, uls, ugs0, uls0, ugs1, uls1,
+        rgR, rlR, rg, rl, amed);
+    state.cells[i].term1L = state.cells[i - 1].term1;
+    state.cells[i].term2L = state.cells[i - 1].term2;
+    state.cells[i - 1].term1R = state.cells[i].term1;
+    state.cells[i - 1].term2R = state.cells[i].term2;
+}
+void updateInletFlowPartitionTerms(const ThermalState &state) {
+
+    if (state.inletMassFraction < 1) {
+        int para;
+        para = 0;
+    }
+
+    int i = 0;
+
+    double razdx = 0.5;
+    double pmed;
+    pmed = state.inletPressure;
+
+    double tmed;
+    if (state.cells[0].MliqiniBuf < 0.)
+        tmed = state.cells[i].temp;
+    else
+        tmed = state.inletTemperature;
+
+    double betI;
+    double viscl1;
+    double tensup1;
+    double rg = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
+    double rl = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
+    double rcis = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+
+    double rlmist = state.inletComposition * rcis + (1 - state.inletComposition) * rl;
+    state.inletVoidFraction = (-state.inletMassFraction * rlmist / (state.inletMassFraction * rg - rg - state.inletMassFraction * rlmist)) / (state.cells[0].c0);
+
+    if ((state.cells[i].MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // duvidabeta
+        betI = state.cells[i].betPigE;
+        rl = (1 - betI) * state.cells[i].flui.MasEspLiq(pmed, tmed) + betI * state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+        viscl1 = (1 - betI) * state.cells[i].flui.ViscOleo(pmed, tmed) + betI * state.cells[i].fluicol.VisFlu(pmed, tmed);
+        tensup1 = (1 - betI) * state.cells[i].flui.TensSuper(pmed, tmed) + betI * state.cells[i].fluicol.TensSuper(pmed, tmed);
+    } else {
+        betI = state.inletComposition;
+        rl = (1 - betI) * (*state.cells[i].fluiL).MasEspLiq(pmed, tmed) + betI * state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+        viscl1 = (1 - betI) * (*state.cells[i].fluiL).ViscOleo(pmed, tmed) + betI * state.cells[i].fluicol.VisFlu(pmed, tmed);
+        tensup1 = (1 - betI) * (*state.cells[i].fluiL).TensSuper(pmed, tmed) + betI * state.cells[i].fluicol.TensSuper(pmed, tmed);
+    }
+    double viscg1;
+    double amed;
+    double hns;
+    if (state.cells[i].MCBuf - state.cells[0].MliqiniBuf >= 0) {
+        amed = state.cells[i].dutoL.area;
+        rg = (*state.cells[i].fluiL).MasEspGas(pmed, tmed);
+        viscg1 = (*state.cells[i].fluiL).ViscGas(pmed, tmed);
+        hns = 1. - state.inletVoidFraction;
+    } else {
+        rg = state.cells[i].flui.MasEspGas(pmed, tmed);
+        viscg1 = state.cells[i].flui.ViscGas(pmed, tmed);
+        amed = state.cells[i].duto.area;
+        hns = 1. - state.cells[i].alf;
+    }
+    double ugs = (state.cells[i].MCBuf - state.cells[i].MliqiniBuf) / (rg * amed);
+    double uls = state.cells[i].MliqiniBuf / (rl * amed);
+    double dia1 = state.cells[i].duto.a;
+    if (ugs >= 0)
+        dia1 = state.cells[i].duto.a;
+
+    double rmed = hns * rl + (1 - hns) * rg;
+    double visc = (hns * viscl1 + (1 - hns) * viscg1) / pow(10., 3.);
+    double ang = state.cells[i].duto.teta;
+    double sinal = 1.;
+    if (ang < 0.)
+        sinal = -1.;
+    double xc0 = 2.;
+    double xud = sinal * 0.0246 * cos(ang) + 1.606 * pow(9.82 * tensup1 * (rl - rg) / (rl * rl), 0.25) * sin(ang);
+
+    double amedR = state.cells[i].dutoR.area;
+    double razdxR = state.cells[i].dxR / (state.cells[i].dxR + state.cells[i].dx);
+    double pmedR = state.cells[i].presRBuf * razdxR + state.cells[i].presBuf * (1. - razdxR);
+    double tmedR = state.cells[i].temp * razdxR + state.cells[i].tempR * (1. - razdxR);
+    double betIR = state.cells[i].betPigD;
+    if (state.cells[i].QLR < 0.) // testeBeta
+        betIR = state.cells[i + 1].betPigE;
+
+    double rgR = state.cells[i].flui.MasEspGas(pmedR, tmedR);
+    double rlR = (1 - betIR) * state.cells[i].flui.MasEspLiq(pmedR, tmedR) + betIR * state.cells[i].fluicol.MasEspFlu(pmedR, tmedR);
+    double ugs1 = (state.cells[i].MRBuf - state.cells[i].MliqiniRBuf) / (rgR * amedR);
+    double uls1 = (state.cells[i].MliqiniRBuf) / (rlR * amedR);
+
+    selectAndApplyBufferedInletFlowRegime(
+        state, i, xc0, xud, ugs, uls, uls1, rgR, rlR, rg, rl,
+        amed);
+    state.cells[1].term1L = state.cells[i].term1;
+    state.cells[1].term2L = state.cells[i].term2;
+}
 }  // namespace sisprod::thermal

@@ -137,3 +137,14 @@ calcTransMassTermo
 # decomposition checker compares 8370 tokens across the main body and five
 # helpers, and is calibrated against seven independent corruptions.
 renovaTemp
+
+# T065 first moved the renovaterm family whole and proved exact inverses of
+# 11,783, 3,704 and 2,845 tokens. The main body was then split into interior
+# processing, inlet/outlet boundary handling and finalization; the two buffered
+# boundary functions each received a regime helper. The decomposition checker
+# expands all seven helper calls and reconstitutes the three original bodies,
+# comparing 18,332 tokens exactly. Its calibration catches nine independent
+# corruptions across the coordinators and helpers.
+renovaterm
+renovatermAfluFim
+renovatermColIni

@@ -10,12 +10,14 @@ baseline_ref="${MARLIM_THERMAL_MOVE_BASELINE:-f8dda67}"
 calctemp_baseline_ref="${MARLIM_CALCTEMP_MOVE_BASELINE:-16f7609}"
 t063_baseline_ref="${MARLIM_T063_MOVE_BASELINE:-f82e95b}"
 t064_baseline_ref="${MARLIM_T064_MOVE_BASELINE:-8c1742f}"
+t065_baseline_ref="${MARLIM_T065_MOVE_BASELINE:-4546f1e}"
 scratch="$(mktemp -d -t marlim3-thermal-move-cal-XXXXXX)"
 trap 'rm -rf "$scratch"' EXIT
 baseline="$scratch/SisProd-before-t061.cpp"
 calctemp_baseline="$scratch/SisProd-before-t062.cpp"
 t063_baseline="$scratch/SisProd-before-t063.cpp"
 t064_baseline="$scratch/SisProd-before-t064.cpp"
+t065_baseline="$scratch/SisProd-before-t065.cpp"
 
 git -C "$project_root" show "$baseline_ref:src/core/SisProd.cpp" > "$baseline" || {
     echo "cannot read thermal move baseline $baseline_ref" >&2
@@ -34,6 +36,11 @@ git -C "$project_root" show \
 git -C "$project_root" show \
     "$t064_baseline_ref:src/core/SisProd.cpp" > "$t064_baseline" || {
     echo "cannot read T064 move baseline $t064_baseline_ref" >&2
+    exit 2
+}
+git -C "$project_root" show \
+    "$t065_baseline_ref:src/core/SisProd.cpp" > "$t065_baseline" || {
+    echo "cannot read T065 move baseline $t065_baseline_ref" >&2
     exit 2
 }
 
@@ -324,6 +331,82 @@ run_t064_decomposition_case renova-main-model \
 run_t064_decomposition_case renova-missing-helper \
     'void selectDistributedMassTransferModel(' \
     'void removedDistributedMassTransferModel('
+
+t065_decomposition_control="$project_root/src/core/SisProdThermal.cpp"
+python3 "$tool" check-t065-decomposition \
+    "$t065_baseline" "$t065_decomposition_control" > /dev/null || {
+    echo "T065 decomposition calibration control failed" >&2
+    exit 1
+}
+
+run_t065_decomposition_case() {
+    local name="$1" from="$2" to="$3"
+    local candidate="$scratch/$name.cpp"
+    cp "$t065_decomposition_control" "$candidate"
+    python3 - "$candidate" "$from" "$to" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+old = sys.argv[2]
+new = sys.argv[3]
+text = path.read_text()
+count = text.count(old)
+if count != 1:
+    print(f"expected mutation pattern once, found {count}", file=sys.stderr)
+    raise SystemExit(3)
+path.write_text(text.replace(old, new, 1))
+PY
+    if (( $? != 0 )) || cmp -s "$candidate" "$t065_decomposition_control"; then
+        printf '  %-24s MUTATION NOT INJECTED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    if python3 "$tool" check-t065-decomposition \
+        "$t065_baseline" "$candidate" > /dev/null 2>&1; then
+        printf '  %-24s MISSED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    printf '  %-24s caught\n' "$name"
+    passed=$((passed + 1))
+}
+
+run_t065_decomposition_case flow-main-aflu \
+    'aflu = 0;' \
+    'aflu = 1;'
+
+run_t065_decomposition_case flow-interior-link \
+    'state.cells[i - 1].alfR = state.cells[i + 1].alfL = state.cells[i].alf;' \
+    'state.cells[i - 1].alfR = state.cells[i + 1].alfL = state.cells[i].bet;'
+
+run_t065_decomposition_case flow-interior-limit \
+    'fabs(state.cells[i].QG / (0.25 * M_PI * dmed * dmed * alfmed)) > 100.' \
+    'fabs(state.cells[i].QG / (0.25 * M_PI * dmed * dmed * alfmed)) > 101.'
+
+run_t065_decomposition_case flow-outlet-denominator \
+    'double den = 1. + alfmed * (rg / rl) * c0 - alfmed * c0;' \
+    'double den = 1. - alfmed * (rg / rl) * c0 - alfmed * c0;'
+
+run_t065_decomposition_case flow-final-jl \
+    'double jlTeste0 = (ugs - alfmed * state.cells[i].ud) / (alfmed * state.cells[i].c0) - ugs;' \
+    'double jlTeste0 = (ugs - alfmed * state.cells[i].ud) / (alfmed * state.cells[i].c0) + ugs;'
+
+run_t065_decomposition_case flow-inlet-closure \
+    'state.closureUpdater.initialization(i, c0, ud);' \
+    'state.closureUpdater.initialization(i, c0, -ud);'
+
+run_t065_decomposition_case flow-buffered-outlet \
+    'state.closureUpdater.buffered(i, c0, ud);' \
+    'state.closureUpdater.buffered(i, c0, -ud);'
+
+run_t065_decomposition_case flow-buffered-inlet \
+    'state.closureUpdater.bufferedInitialization(i, c0, ud);' \
+    'state.closureUpdater.bufferedInitialization(i, c0, -ud);'
+
+run_t065_decomposition_case flow-missing-helper \
+    'void updateOutletBoundaryFlowPartition(' \
+    'void removedOutletBoundaryFlowPartition('
 
 if (( failed > 0 )); then
     printf 'THERMAL MOVE CALIBRATION FAILED -- %d of %d case(s)\n' \

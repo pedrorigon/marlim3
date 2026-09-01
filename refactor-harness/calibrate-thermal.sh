@@ -113,13 +113,13 @@ run_case reverse-ambient-neighbor SisProd.cpp \
     'celula[i].temp = celula[i + 1].calor.Textern1;' \
     'celula[i].temp = celula[i - 1].calor.Textern1;' caught
 
-run_case outlet-boundary-index SisProd.cpp \
-    $'void SProd::renovatermAfluFim() {\n\n    int i = ncel;' \
-    $'void SProd::renovatermAfluFim() {\n\n    int i = ncel - 1;' caught
+run_case outlet-boundary-index SisProdThermal.cpp \
+    $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int i = state.lastCell;' \
+    $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int i = state.lastCell - 1;' caught
 
-run_case inlet-boundary-propagation SisProd.cpp \
-    $'    int i = 0;\n\n    double razdx = 0.5;' \
-    $'    int i = 1;\n\n    double razdx = 0.5;' caught
+run_case inlet-boundary-propagation SisProdThermal.cpp \
+    $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n    if (state.inletMassFraction < 1) {\n        int para;\n        para = 0;\n    }\n\n    int i = 0;' \
+    $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n    if (state.inletMassFraction < 1) {\n        int para;\n        para = 0;\n    }\n\n    int i = 1;' caught
 
 if (( failed > 0 )); then
     printf '%sTHERMAL CALIBRATION FAILED -- %d of %d case(s)%s\n' \

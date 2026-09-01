@@ -20,6 +20,11 @@ Usage:
     thermal-move.py delegate-renova-temp <sisprod.cpp> <rewritten-sisprod.cpp>
     thermal-move.py check-renova-temp <baseline-sisprod.cpp> <extracted.cpp>
     thermal-move.py check-renova-temp-decomposition <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py extract-t065 <function> <sisprod.cpp> <fragment.cpp>
+    thermal-move.py install-t065 <function> <sisprod.cpp> <thermal-in.cpp> <thermal-out.cpp>
+    thermal-move.py delegate-t065 <function> <sisprod.cpp> <rewritten-sisprod.cpp>
+    thermal-move.py check-t065 <function> <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py check-t065-decomposition <baseline-sisprod.cpp> <extracted.cpp>
 """
 from __future__ import annotations
 
@@ -109,6 +114,45 @@ RENOVA_TEMP_MEMBER_RE = re.compile(
 RENOVA_TEMP_FIELD_RE = re.compile(
     r"\bstate\.(" + "|".join(RENOVA_TEMP_FIELD_TO_MEMBER) + r")\b"
 )
+
+T065_FUNCTIONS = {
+    "renovaterm": {
+        "new_name": "updateFlowPartitionTerms",
+        "arguments": "aflu",
+    },
+    "renovatermAfluFim": {
+        "new_name": "updateOutletFlowPartitionTerms",
+        "arguments": "",
+    },
+    "renovatermColIni": {
+        "new_name": "updateInletFlowPartitionTerms",
+        "arguments": "",
+    },
+}
+T065_MEMBERS = {
+    **RENOVA_TEMP_MEMBERS,
+    "presE": "state.inletPressure",
+    "tempE": "state.inletTemperature",
+    "titE": "state.inletMassFraction",
+    "alfE": "state.inletVoidFraction",
+    "betaE": "state.inletComposition",
+}
+T065_FIELD_TO_MEMBER = {
+    field.split(".", 1)[1]: member
+    for member, field in T065_MEMBERS.items()
+}
+T065_MEMBER_RE = re.compile(
+    r"\b(" + "|".join(T065_MEMBERS) + r")\b"
+)
+T065_FIELD_RE = re.compile(
+    r"\bstate\.(" + "|".join(T065_FIELD_TO_MEMBER) + r")\b"
+)
+T065_CALLS = {
+    "CalcC0Ud": "state.closureUpdater.instantaneous",
+    "CalcC0UdBuf": "state.closureUpdater.buffered",
+    "CalcC0UdIni": "state.closureUpdater.initialization",
+    "CalcC0UdIniBuf": "state.closureUpdater.bufferedInitialization",
+}
 
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
@@ -367,6 +411,47 @@ def inverse_renova_temp(body: str) -> str:
     )
 
 
+def forward_t065(old_name: str, body: str) -> str:
+    spec = T065_FUNCTIONS[old_name]
+    new_name = spec["new_name"]
+    signature = re.match(
+        rf"void SProd::{old_name}\((.*?)\) \{{", body
+    ).group(1)
+    separator = ", " if signature else ""
+    body = re.sub(
+        rf"^void SProd::{old_name}\(.*?\) \{{",
+        f"void {new_name}(const ThermalState &state{separator}{signature}) {{",
+        body,
+        count=1,
+    )
+    body = T065_MEMBER_RE.sub(
+        lambda match: T065_MEMBERS[match.group(1)], body
+    )
+    for old_call, new_call in T065_CALLS.items():
+        body = re.sub(rf"\b{old_call}\(", f"{new_call}(", body)
+    return body
+
+
+def inverse_t065(old_name: str, body: str) -> str:
+    spec = T065_FUNCTIONS[old_name]
+    new_name = spec["new_name"]
+    for old_call, new_call in T065_CALLS.items():
+        body = re.sub(rf"\b{re.escape(new_call)}\(", f"{old_call}(", body)
+    body = T065_FIELD_RE.sub(
+        lambda match: T065_FIELD_TO_MEMBER[match.group(1)], body
+    )
+    signature = re.match(
+        rf"void {new_name}\(const ThermalState &state(?:, (.*?))?\) \{{",
+        body,
+    ).group(1) or ""
+    return re.sub(
+        rf"^void {new_name}\(.*?\) \{{",
+        f"void SProd::{old_name}({signature}) {{",
+        body,
+        count=1,
+    )
+
+
 def require_bodies(source_path: str) -> dict[str, tuple[int, int, str]]:
     bodies = carve(open(source_path, encoding="utf-8").read())
     missing = [name for name in FUNCTIONS if name not in bodies]
@@ -522,6 +607,212 @@ def delegate_t063(old_name: str, source_path: str, output_path: str) -> int:
     open(output_path, "w", encoding="utf-8").write("\n".join(lines))
     print(f"delegated {old_name} lines {start + 1}-{end + 1}")
     return 0
+
+
+def require_t065(source_path: str, old_name: str) -> tuple[int, int, str]:
+    if old_name not in T065_FUNCTIONS:
+        raise ValueError(f"unsupported T065 function: {old_name}")
+    source = open(source_path, encoding="utf-8").read()
+    body = carve_named(source, rf"void SProd::{old_name}\(")
+    if body is None:
+        raise ValueError(f"expected one SProd::{old_name} body, found none")
+    return body
+
+
+def extract_t065(old_name: str, source_path: str, output_path: str) -> int:
+    start, end, body = require_t065(source_path, old_name)
+    open(output_path, "w", encoding="utf-8").write(
+        forward_t065(old_name, body) + "\n"
+    )
+    print(f"{old_name:22} {start + 1}-{end + 1}")
+    print(f"extracted {old_name} into {output_path}")
+    return 0
+
+
+def install_t065(
+    old_name: str, source_path: str, thermal_input_path: str,
+    thermal_output_path: str
+) -> int:
+    _, _, body = require_t065(source_path, old_name)
+    thermal = open(thermal_input_path, encoding="utf-8").read()
+    closing = "}  // namespace sisprod::thermal\n"
+    if thermal.count(closing) != 1:
+        raise ValueError("expected one thermal namespace closing marker")
+    replacement = forward_t065(old_name, body) + "\n\n" + closing
+    open(thermal_output_path, "w", encoding="utf-8").write(
+        thermal.replace(closing, replacement, 1)
+    )
+    print(f"installed {old_name} into {thermal_output_path}")
+    return 0
+
+
+def delegate_t065(old_name: str, source_path: str, output_path: str) -> int:
+    source = open(source_path, encoding="utf-8").read()
+    start, end, body = require_t065(source_path, old_name)
+    signature = re.match(
+        rf"void SProd::{old_name}\((.*?)\) \{{", body
+    ).group(1)
+    spec = T065_FUNCTIONS[old_name]
+    arguments = spec["arguments"]
+    call_suffix = f", {arguments}" if arguments else ""
+    wrapper = [
+        f"void SProd::{old_name}({signature}) {{",
+        f"    sisprod::thermal::{spec['new_name']}(thermalStateOf(*this){call_suffix});",
+        "}",
+    ]
+    lines = source.split("\n")
+    lines[start:end + 1] = wrapper
+    open(output_path, "w", encoding="utf-8").write("\n".join(lines))
+    print(f"delegated {old_name} lines {start + 1}-{end + 1}")
+    return 0
+
+
+def check_t065(old_name: str, baseline_path: str, current_path: str) -> int:
+    baseline = carve_named(
+        open(baseline_path, encoding="utf-8").read(),
+        rf"void SProd::{old_name}\(",
+    )
+    new_name = T065_FUNCTIONS[old_name]["new_name"]
+    current = carve_named(
+        open(current_path, encoding="utf-8").read(),
+        rf"void {new_name}\(const ThermalState &state",
+    )
+    if baseline is None or current is None:
+        print(f"MISSING  {new_name} <- {old_name}")
+        return 1
+    expected = tokenize(baseline[2])
+    actual = tokenize(inverse_t065(old_name, current[2]))
+    if expected == actual:
+        print(f"OK       {new_name} <- {old_name} ({len(expected)} tokens)")
+        return 0
+    position = first_difference(expected, actual)
+    print(f"DIFFERS  {new_name} <- {old_name} at token {position}")
+    print(f"  baseline: {' '.join(expected[max(0, position - 5):position + 6])}")
+    print(f"  current : {' '.join(actual[max(0, position - 5):position + 6])}")
+    return 1
+
+
+def expand_helper_call(body: str, helper_name: str, helper_body: str) -> str:
+    marker = f"{helper_name}("
+    start = body.find(marker)
+    if start < 0 or body.find(marker, start + len(marker)) >= 0:
+        raise ValueError(f"expected exactly one call to {helper_name}")
+
+    cursor = start + len(helper_name)
+    depth = 0
+    while cursor < len(body):
+        current = body[cursor]
+        if current == "(":
+            depth += 1
+        elif current == ")":
+            depth -= 1
+            if depth == 0:
+                cursor += 1
+                break
+        cursor += 1
+    while cursor < len(body) and body[cursor].isspace():
+        cursor += 1
+    if cursor >= len(body) or body[cursor] != ";":
+        raise ValueError(f"unterminated call to {helper_name}")
+    return body[:start] + function_core(helper_body) + body[cursor + 1:]
+
+
+def check_t065_decomposition(baseline_path: str, current_path: str) -> int:
+    baseline_source = open(baseline_path, encoding="utf-8").read()
+    current_source = open(current_path, encoding="utf-8").read()
+    signatures = {
+        "main": r"void updateFlowPartitionTerms\(const ThermalState &state",
+        "interior": r"void updateInteriorFlowPartitionCell\(",
+        "interior regime": r"void selectAndApplyInteriorFlowRegime\(",
+        "outlet boundary": r"void updateOutletBoundaryFlowPartition\(",
+        "finalization": r"void finalizeFlowPartitionTerms\(",
+        "inlet regime": r"void selectAndApplyInletBoundaryFlowRegime\(",
+        "buffered outlet": (
+            r"void updateOutletFlowPartitionTerms\(const ThermalState &state"
+        ),
+        "buffered outlet regime": (
+            r"void selectAndApplyBufferedOutletFlowRegime\("
+        ),
+        "buffered inlet": (
+            r"void updateInletFlowPartitionTerms\(const ThermalState &state"
+        ),
+        "buffered inlet regime": (
+            r"void selectAndApplyBufferedInletFlowRegime\("
+        ),
+    }
+    bodies = {
+        name: carve_named(current_source, signature)
+        for name, signature in signatures.items()
+    }
+    missing = [name for name, body in bodies.items() if body is None]
+    if missing:
+        print(f"MISSING  T065 decomposition: {', '.join(missing)}")
+        return 1
+
+    interior = expand_helper_call(
+        bodies["interior"][2],
+        "selectAndApplyInteriorFlowRegime",
+        bodies["interior regime"][2],
+    )
+    expanded_main = bodies["main"][2]
+    for helper_name, helper_body in (
+        ("updateInteriorFlowPartitionCell", interior),
+        ("selectAndApplyInletBoundaryFlowRegime", bodies["inlet regime"][2]),
+        ("updateOutletBoundaryFlowPartition", bodies["outlet boundary"][2]),
+        ("finalizeFlowPartitionTerms", bodies["finalization"][2]),
+    ):
+        expanded_main = expand_helper_call(
+            expanded_main, helper_name, helper_body
+        )
+
+    expanded_outlet = expand_helper_call(
+        bodies["buffered outlet"][2],
+        "selectAndApplyBufferedOutletFlowRegime",
+        bodies["buffered outlet regime"][2],
+    )
+    expanded_inlet = expand_helper_call(
+        bodies["buffered inlet"][2],
+        "selectAndApplyBufferedInletFlowRegime",
+        bodies["buffered inlet regime"][2],
+    )
+
+    failures = 0
+    total = 0
+    expanded = {
+        "renovaterm": expanded_main,
+        "renovatermAfluFim": expanded_outlet,
+        "renovatermColIni": expanded_inlet,
+    }
+    for old_name, expanded_body in expanded.items():
+        baseline = carve_named(
+            baseline_source, rf"void SProd::{old_name}\("
+        )
+        if baseline is None:
+            print(f"MISSING  baseline SProd::{old_name}")
+            failures += 1
+            continue
+        expected = tokenize(baseline[2])
+        actual = tokenize(inverse_t065(old_name, expanded_body))
+        total += len(expected)
+        if expected == actual:
+            print(
+                f"OK       T065 decomposed {old_name} "
+                f"({len(expected)} tokens)"
+            )
+            continue
+        failures += 1
+        position = first_difference(expected, actual)
+        print(f"DIFFERS  T065 decomposed {old_name} at token {position}")
+        print(
+            f"  baseline: "
+            f"{' '.join(expected[max(0, position - 5):position + 6])}"
+        )
+        print(
+            f"  current : "
+            f"{' '.join(actual[max(0, position - 5):position + 6])}"
+        )
+    print(f"compared 3 decomposed bodies, {total} tokens, {failures} failure(s)")
+    return 1 if failures else 0
 
 
 def check_t063(old_name: str, baseline_path: str, current_path: str) -> int:
@@ -943,6 +1234,20 @@ def main() -> int:
         return 2
     mode = sys.argv[1]
     try:
+        if mode == "install-t065" and len(sys.argv) == 6:
+            return install_t065(
+                sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+            )
+        if mode in {"extract-t065", "delegate-t065", "check-t065"} \
+                and len(sys.argv) == 5:
+            old_name, first, second = sys.argv[2:]
+            if mode == "extract-t065":
+                return extract_t065(old_name, first, second)
+            if mode == "delegate-t065":
+                return delegate_t065(old_name, first, second)
+            return check_t065(old_name, first, second)
+        if mode == "check-t065-decomposition" and len(sys.argv) == 4:
+            return check_t065_decomposition(sys.argv[2], sys.argv[3])
         if mode == "install-t063" and len(sys.argv) == 6:
             return install_t063(
                 sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
