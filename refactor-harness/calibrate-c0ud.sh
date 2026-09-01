@@ -122,15 +122,17 @@ run_case "inst/simplify-0QG+1QL" "DriftFluxClosure.cpp" \
     "if (((0. * state.cells[cellIndex].QG + 1 * state.cells[cellIndex].QL) < 0.))" \
     "if ((state.cells[cellIndex].QL < 0.))" "caught"
 run_case "inst/correcHor-neighbour" "DriftFluxClosure.cpp" \
-    "if (state.cells[cellIndex - 1].acsr.tipo != 5 || state.cells[cellIndex - 1].acsr.chk.AreaGarg > 1e-10) {" \
+    "if (state.cells[accessoryCellIndex].acsr.tipo != 5 || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {" \
     "if (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {" "caught"
 run_case "inst/map-dispatch" "DriftFluxClosure.cpp" \
-    "                    testamapa.mapaTD();
+    "                if (state.selectors.stratified == 2)
+                    stratifiedMap.mapaTD();
                 else
-                    testamapa.mapaTD(1);" \
-    "                    testamapa.mapaTD(1);
+                    stratifiedMap.mapaTD(1);" \
+    "                if (state.selectors.stratified == 2)
+                    stratifiedMap.mapaTD(1);
                 else
-                    testamapa.mapaTD();" "caught"
+                    stratifiedMap.mapaTD();" "caught"
 
 printf '\nbuffered (was CalcC0UdBuf) -- NEVER executes in the corpus\n'
 run_case "buf/drop-A3-01-betI" "DriftFluxClosure.cpp" \
@@ -150,33 +152,23 @@ run_case "buf/pmed-weighting" "DriftFluxClosure.cpp" \
 
 printf '\ninitialization (was CalcC0UdIni) -- NEVER executes in the corpus\n'
 run_case "ini/fix-A3-05-else" "DriftFluxClosure.cpp" \
-    "                            if (state.cells[cellIndex].transic > 19)
-                                state.cells[cellIndex].transic = 0;
-                        }
-                    } else
+    "                    } else
                         state.cells[cellIndex].transic = 0;
-                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;" \
-    "                            if (state.cells[cellIndex].transic > 19)
-                                state.cells[cellIndex].transic = 0;
-                        } else
-                            state.cells[cellIndex].transic = 0;
-                    }
-                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;" "caught"
+                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;" \
+    "                    } else
+                        state.cells[cellIndex].transic = 1;
+                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;" "caught"
 run_case "ini/add-arranjoR" "DriftFluxClosure.cpp" \
-    "                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
-                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;" \
-    "                    state.cells[cellIndex].arranjo = flowPattern = testamapa.arr;
-                    state.cells[cellIndex - 1].arranjoR = testamapa.arr;
-                    double dispersedC0, dispersedUd, stratifiedC0, stratifiedUd;" "caught"
+    "                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
+                    RegimePair pair;" \
+    "                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
+                    state.cells[cellIndex - 1].arranjoR = stratifiedMap.arr;
+                    RegimePair pair;" "caught"
 run_case "ini/mapaTD-dispatch" "DriftFluxClosure.cpp" \
-    "                testamapa.mapaTD();
-                flowPattern = testamapa.arr;
-                if (flowPattern == -1) {
-                    if (state.cells[cellIndex].arranjo != 0) {" \
-    "                testamapa.mapaTD(1);
-                flowPattern = testamapa.arr;
-                if (flowPattern == -1) {
-                    if (state.cells[cellIndex].arranjo != 0) {" "caught"
+    "                stratifiedMap.mapaTD();
+                flowPattern = stratifiedMap.arr;" \
+    "                stratifiedMap.mapaTD(1);
+                flowPattern = stratifiedMap.arr;" "caught"
 
 printf '\nbufferedInitialization (was CalcC0UdIniBuf) -- NEVER executes\n'
 run_case "inibuf/add-ncel-pmed" "DriftFluxClosure.cpp" \
@@ -195,34 +187,24 @@ run_case "inibuf/add-ncel-pmed" "DriftFluxClosure.cpp" \
             meanPressure = state.cells[cellIndex].pres;
         double meanTemperature = state.inletTemperature;" "caught"
 run_case "inibuf/wrong-source" "DriftFluxClosure.cpp" \
-    "        const FlowScales scales = flowScalesOf<BufferedSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+    "            flowScalesOf<BufferedSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
-        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
-        double leftCellLength = state.cells[cellIndex].dxL;
-        double cellLength = state.cells[cellIndex].dx;
-        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
-        double transitionWindow = 20.;" \
-    "        const FlowScales scales = flowScalesOf<InstantaneousSource>(state, cellIndex, gasDensity, liquidDensity, noSlipLiquidHoldup, liquidViscosity, gasViscosity);
-        double gasFlowRate = scales.gasRate;
-        double liquidFlowRate = scales.liquidRate;
-        const double diameter = scales.diameter;
-        const double flowArea = scales.area;
-        const double mixtureReynolds = scales.mixture;
-        const double liquidReynolds = scales.liquid;
+        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;" \
+    "            flowScalesOf<InstantaneousSource>(state, cellIndex,
+                                {.liquidDensity = liquidDensity,
+                                 .gasDensity = gasDensity,
+                                 .liquidViscosity = liquidViscosity,
+                                 .gasViscosity = gasViscosity,
+                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
 
         int flowPattern = 1;
-        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
-        double leftCellLength = state.cells[cellIndex].dxL;
-        double cellLength = state.cells[cellIndex].dx;
-        double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
-        double transitionWindow = 20.;" "caught"
+        double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;" "caught"
 
 printf '\nsteadyState (was CalcC0UdPerm) -- executes in the corpus\n'
 run_case "perm/fix-A3-02-ang" "DriftFluxClosure.cpp" \
@@ -237,8 +219,8 @@ run_case "perm/slip-field" "DriftFluxClosure.cpp" \
 
 printf '\nshared helpers -- a defect here reaches all five at once\n'
 run_case "helper/blend-reassociate" "DriftFluxClosure.cpp" \
-    "        c0 = ((1. - blendRatio) * stratifiedC0 + blendRatio * dispersedC0);" \
-    "        c0 = (dispersedC0 + (1. - blendRatio) * (stratifiedC0 - dispersedC0));" "caught"
+    "        c0 = ((1. - blendRatio) * pair.stratifiedC0 + blendRatio * pair.dispersedC0);" \
+    "        c0 = (pair.dispersedC0 + (1. - blendRatio) * (pair.stratifiedC0 - pair.dispersedC0));" "caught"
 run_case "helper/diameter-unconditional" "DriftFluxClosure.cpp" \
     "    double diameter = state.cells[cellIndex].duto.a;
     if (cellIndex > 0 && gasRate >= 0)

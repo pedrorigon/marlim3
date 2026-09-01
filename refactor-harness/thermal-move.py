@@ -1350,10 +1350,12 @@ def check_t065_decomposition(baseline_path: str, current_path: str) -> int:
         expected = tokenize(baseline[2])
         actual = tokenize(inverse_t065(old_name, expanded_body))
         total += len(expected)
-        if expected == actual:
+        verdict = compare_tokens(expected, actual)
+        if verdict != "differs":
+            note = "" if verdict == "exact" else " modulo renames"
             print(
                 f"OK       T065 decomposed {old_name} "
-                f"({len(expected)} tokens)"
+                f"({len(expected)} tokens{note})"
             )
             continue
         failures += 1
@@ -1397,13 +1399,18 @@ def check_t063(old_name: str, baseline_path: str, current_path: str) -> int:
 
 
 def thermal_mass_source_block(body: str) -> str:
-    start_marker = "    double fontemassG = 0.;"
-    end_marker = "        fontemassG = 0;"
-    start = body.find(start_marker)
-    end = body.find(end_marker, start)
-    if start < 0 or end < 0:
-        raise ValueError("thermal mass-source block not found")
-    return body[start:end + len(end_marker)]
+    # Two spellings coexist on purpose: the pristine baseline still says
+    # fontemassG, while the current module says gasMassSourceTerm after T070r.
+    # This locator runs over both, so it has to know both.
+    for start_marker, end_marker in (
+        ("    double gasMassSourceTerm = 0.;", "        gasMassSourceTerm = 0;"),
+        ("    double fontemassG = 0.;", "        fontemassG = 0;"),
+    ):
+        start = body.find(start_marker)
+        end = body.find(end_marker, start) if start >= 0 else -1
+        if start >= 0 and end >= 0:
+            return body[start:end + len(end_marker)]
+    raise ValueError("thermal mass-source block not found")
 
 
 def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
@@ -1445,8 +1452,11 @@ def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
         ("main", expected_main_tokens, actual_main_tokens),
         ("source helper", expected_block_tokens, actual_block_tokens),
     ):
-        if expected == actual:
-            print(f"OK       thermal mass-transfer {label} ({len(expected)} tokens)")
+        verdict = compare_tokens(expected, actual)
+        if verdict != "differs":
+            note = "" if verdict == "exact" else " modulo renames"
+            print(f"OK       thermal mass-transfer {label} "
+                  f"({len(expected)} tokens{note})")
             continue
         failures += 1
         position = first_difference(expected, actual)
@@ -1536,14 +1546,32 @@ def check_renova_temp(baseline_path: str, current_path: str) -> int:
     return 1
 
 
+# T070r renamed the locals these markers point at. Each entry maps the marker
+# as it was written to the spelling the module uses now; both are tried, so the
+# locator keeps working against a pre-rename baseline and a renamed module
+# alike.
+MARKER_ALIASES = {
+    "    double fwd;": "    double downstreamWaterFraction;",
+    "    double ativa = 1.;": "    double activeDerivative = 1.;",
+}
+
+
 def text_between(text: str, start_marker: str, end_marker: str) -> str:
-    start = text.find(start_marker)
-    end = text.find(end_marker, start + len(start_marker))
-    if start < 0 or end < 0:
-        raise ValueError(
-            f"expected block between {start_marker!r} and {end_marker!r}"
-        )
-    return text[start:end]
+    for start_candidate in (start_marker, MARKER_ALIASES.get(start_marker)):
+        if start_candidate is None:
+            continue
+        start = text.find(start_candidate)
+        if start < 0:
+            continue
+        for end_candidate in (end_marker, MARKER_ALIASES.get(end_marker)):
+            if end_candidate is None:
+                continue
+            end = text.find(end_candidate, start + len(start_candidate))
+            if end >= 0:
+                return text[start:end]
+    raise ValueError(
+        f"expected block between {start_marker!r} and {end_marker!r}"
+    )
 
 
 def function_core(body: str) -> str:
@@ -1561,8 +1589,10 @@ def compare_token_blocks(
     for label, expected_text, actual_text in blocks:
         expected = tokenize(expected_text)
         actual = tokenize(actual_text)
-        if expected == actual:
-            print(f"OK       renovaTemp {label} ({len(expected)} tokens)")
+        verdict = compare_tokens(expected, actual)
+        if verdict != "differs":
+            note = "" if verdict == "exact" else " modulo renames"
+            print(f"OK       renovaTemp {label} ({len(expected)} tokens{note})")
             continue
         failures += 1
         position = first_difference(expected, actual)
@@ -1666,9 +1696,16 @@ def check_renova_temp_decomposition(
     )
     selection_core = function_core(bodies["selection"][2])
     application_core = function_core(bodies["application"][2])
-    application_core = application_core[
-        application_core.find("    state.cells[i - 1].fontedissolv = 0.;"):
-    ]
+    # T070r renamed i to cellIndex; try both so the locator survives the rename.
+    application_start = -1
+    for marker in ("    state.cells[cellIndex - 1].fontedissolv = 0.;",
+                   "    state.cells[i - 1].fontedissolv = 0.;"):
+        application_start = application_core.find(marker)
+        if application_start >= 0:
+            break
+    if application_start < 0:
+        raise ValueError("application helper start marker not found")
+    application_core = application_core[application_start:]
 
     property_plumbing = """            DistributedMassTransferProperties properties =
                 prepareDistributedMassTransferProperties(
@@ -1732,6 +1769,89 @@ def check_renova_temp_decomposition(
         ("application helper", expected_application, application_core),
     ))
     return 1 if failures else 0
+
+
+# C++ keywords and the literals/operators the tokenizer emits are never
+# renameable, so they anchor the comparison below.
+ALPHA_FIXED = {
+    "alignas", "alignof", "auto", "bool", "break", "case", "catch", "char",
+    "class", "const", "constexpr", "continue", "decltype", "default", "delete",
+    "do", "double", "else", "enum", "explicit", "extern", "false", "float",
+    "for", "friend", "goto", "if", "inline", "int", "long", "mutable",
+    "namespace", "new", "nullptr", "operator", "private", "protected",
+    "public", "register", "return", "short", "signed", "sizeof", "static",
+    "struct", "switch", "template", "this", "throw", "true", "try", "typedef",
+    "typename", "union", "unsigned", "using", "virtual", "void", "volatile",
+    "while",
+}
+
+
+def alpha_normalize(tokens: list[str]) -> list[str]:
+    """Relabel identifiers by first appearance; kept for callers that want it."""
+    canonical: dict[str, str] = {}
+    out: list[str] = []
+    previous = ""
+    for token in tokens:
+        renameable = ((token[:1].isalpha() or token[:1] == "_")
+                      and token not in ALPHA_FIXED
+                      and previous not in (".", "->"))
+        if renameable:
+            canonical.setdefault(token, f"#{len(canonical)}")
+            out.append(canonical[token])
+        else:
+            out.append(token)
+        previous = token
+    return out
+
+
+def rename_consistent(expected: list[str], actual: list[str]) -> bool:
+    """True when `actual` is `expected` under a consistent renaming.
+
+    After a deliberate rename (FR-039) a token comparison against a pre-rename
+    baseline cannot pass by construction. What still matters is whether the
+    computation, its literals and its order are unchanged, and whether each
+    variable is still the same variable wherever it appears.
+
+    The mapping is required to be a function from CURRENT to BASELINE, not a
+    bijection, because T070r's rename is legitimately one-to-many: `xc0` became
+    `c0` in most scopes and `distributionCoefficient` in the three where `c0`
+    already existed. Direction matters for what this catches. Substituting one
+    existing variable for another makes some current name stand for two baseline
+    names, which is reported; splitting one baseline name across two new ones is
+    not.
+
+    Struct fields (anything after `.` or `->`) are never renameable under
+    FR-038, so they must match exactly and anchor the comparison.
+    """
+    if len(expected) != len(actual):
+        return False
+    mapping: dict[str, str] = {}
+    previous = ""
+    for want, have in zip(expected, actual):
+        field = previous in (".", "->")
+        renameable = (
+            not field
+            and (want[:1].isalpha() or want[:1] == "_")
+            and (have[:1].isalpha() or have[:1] == "_")
+            and want not in ALPHA_FIXED
+            and have not in ALPHA_FIXED
+        )
+        if renameable:
+            if mapping.setdefault(have, want) != want:
+                return False
+        elif want != have:
+            return False
+        previous = want
+    return True
+
+
+def compare_tokens(expected: list[str], actual: list[str]) -> str:
+    """Return 'exact', 'alpha' or 'differs'."""
+    if expected == actual:
+        return "exact"
+    if rename_consistent(expected, actual):
+        return "alpha"
+    return "differs"
 
 
 def first_difference(expected: list[str], actual: list[str]) -> int:

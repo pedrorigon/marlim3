@@ -72,6 +72,17 @@ git -C "$project_root" show "$PRE_RENAME_COMMIT:src/include/RootFindingSolvers.h
     exit 2
 }
 
+# falsacorda was renamed outright to bisect after the stage-2 gate cycle, so the
+# pre-rename header and the current one disagree on the NAME as well as on the
+# locals, and verify-structural.py reports the function as missing.
+#
+# The name is rewritten in the scratch BASELINE rather than passed through
+# --declared. That flag would work, and it would also be a trap: --declared
+# keeps a function OUT OF THE FAILURE COUNT, so every corruption injected into
+# bisect below would stop being reported -- the vacuous gate this file exists to
+# prevent. Renaming in the baseline gives the mapping and nothing else.
+sed -i 's/\bfalsacorda\b/bisect/g' "$work/pre-rename.h"
+
 failures=0
 
 # Applies $2 (a python snippet given the header path as sys.argv[1]) to a copy
@@ -106,7 +117,7 @@ attempt() {
             if python3 "$script_dir/verify-structural.py" \
                    --baseline "$work/pre-rename.h" \
                    --current "$inc/RootFindingSolvers.h" \
-                   --function zbrent --function falsacorda --function zriddr \
+                   --function zbrent --function bisect --function zriddr \
                    --function SIGN --allow-renames > /dev/null 2>&1; then
                 printf '%s%-52s PASSES (control, both checkers)%s\n' "$green" "$label" "$reset"
             else
@@ -129,7 +140,7 @@ attempt() {
             token_out="$(python3 "$script_dir/verify-structural.py" \
                           --baseline "$work/pre-rename.h" \
                           --current "$inc/RootFindingSolvers.h" \
-                          --function zbrent --function falsacorda --function zriddr \
+                          --function zbrent --function bisect --function zriddr \
                           --function SIGN --allow-renames 2>&1)"
             token_status=$?
             if (( token_status != 0 )); then
