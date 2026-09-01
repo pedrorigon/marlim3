@@ -3500,4 +3500,375 @@ void advanceTransientEnergy(const ThermalState &state, int ciclo, int ciclomax) 
     }
 }
 
+void advanceSteadyTemperature(const ThermalState &state, int i, int RK) {
+    double dx = 0.5 * (state.cells[i].dx + state.cells[i - 1].dx);
+    double dxmed = 0.5 * (state.cells[i].dx + state.cells[i - 1].dx);
+    double dTdLmed = (state.cells[i].dx * state.cells[i].dTdLCor + state.cells[i - 1].dx * state.cells[i - 1].dTdLCor) / (state.cells[i].dx + state.cells[i - 1].dx);
+    double dia = state.cells[i - 1].duto.a;
+    double area = 0.25 * M_PI * dia * dia;
+    double alfmed;
+    double betmed;
+    double pmed;
+    double tmed;
+    if (RK == 0) {
+        alfmed = state.cells[i - 1].alf;
+        betmed = state.cells[i - 1].bet;
+        pmed = state.cells[i - 1].pres;
+        tmed = state.cells[i - 1].temp;
+    } else {
+        alfmed = state.cells[i].alf;
+        betmed = state.cells[i].bet;
+        pmed = state.cells[i].pres;
+        tmed = state.cells[i].temp;
+    }
+    double ugsmed;
+    ugsmed = state.cells[i].QG / area; // velocidade superficial de gas
+    double ulsmed;
+    ulsmed = state.cells[i].QL / area; // velocidade superficial de liquido
+    double sinalJ = 1.;
+    if (fabs(ugsmed + ulsmed) > 0.05 && state.thermalSourceDisabled == 0) { // calculo termico e feito para velocidades de mistura superiores a 0,1 m/s,
+        // para velocidades inferiores se admite que a temperatura do fluidoÃƒÂ© igual ÃƒÂ  temperatura ambiente
+        sinalJ = (ugsmed + ulsmed) / fabs(ugsmed + ulsmed);
+        double pmedi = state.cells[i].presaux + 0 * state.cells[i - 1].dpB / 98066.5;
+        double tmedi;
+        if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0) // temperatura na interface esquerda da celula
+            // caso em que se considera que ja foi
+            // feita uma iteracao e ja se tem a temperatura na celula i vinda da iteracao anterior
+            // isto pode dificultar a convergencia, quando se deseja a aceleracao da convergencia
+            // admite-se que a temperatura na fronteira esquerda ÃƒÂ© a temperatura da celula esquerda
+            tmedi = (state.cells[i].dx * state.cells[i].temp + state.cells[i].dxL * state.cells[i].tempL) / (state.cells[i].dx + state.cells[i].dxL);
+        else
+            tmedi = state.cells[i - 1].temp;
+        double rp = state.cells[i - 1].flui.MasEspLiq(pmed, tmed);    // celula[i].rpCi;
+        double rc = state.cells[i - 1].fluicol.MasEspFlu(pmed, tmed); // celula[i].rcCi;
+        double rhol = (1. - betmed) * rp + betmed * rc;
+        double rhog = state.cells[i - 1].flui.MasEspGas(pmed, tmed); // celula[i].rgCi;
+        double cpl = (1. - betmed) * state.cells[i - 1].flui.CalorLiq(pmedi, tmedi) + betmed * state.cells[i - 1].fluicol.CalorLiq(pmedi, tmedi);
+        double cpg = state.cells[i - 1].flui.CalorGas(pmedi, tmedi);
+        // jtl=Joule Thomson do liquido X cp
+        // jtg=Joule Thomson do gas X cp
+        /////??????????????????????????????????????????????????????????????????????????????????????????
+        double jtl = (1. - betmed) * state.cells[i - 1].flui.JTL(pmedi, tmedi) - betmed / rc;
+        /////??????????????????????????????????????????????????????????????????????????????????????????
+        if (state.input.pocinjec > 0 && state.input.condpocinj.tipoFlui == 2) {
+            jtl = -(1 + (tmedi + 273.14) * state.cells[i - 1].fluicol.DrhoDtFlu(pmedi, tmedi) / rc) / rc;
+        }
+        double jtg = state.cells[i - 1].flui.JTG(pmedi, tmedi);
+        // energia potencial:
+        double hidro = (rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(state.cells[i - 1].duto.teta);
+
+        if (i > 120) {
+            int para;
+            para = 0;
+        }
+
+        // definicao dos parametros internos na tubulacao para se obter a troca termica om o meio ambiente
+        state.cells[i - 1].calor.Tint = tmedi;
+        state.cells[i - 1].calor.Vint = fabs(ugsmed + ulsmed);
+        double condliq = (1. - betmed) * state.cells[i - 1].flui.CondLiq(pmedi, tmedi) + betmed * state.cells[i - 1].fluicol.CondLiq(pmedi, tmedi);
+        state.cells[i - 1].calor.kint = condliq * (1 - alfmed) + state.cells[i - 1].flui.CondGas(pmedi, tmedi) * alfmed;
+        state.cells[i - 1].calor.cpint = cpl * (1 - alfmed) + cpg * alfmed;
+        state.cells[i - 1].calor.rhoint = rhol * (1 - alfmed) + rhog * alfmed;
+        double viscliq = (1. - betmed) * state.cells[i - 1].flui.ViscOleo(pmedi, tmedi) + betmed * state.cells[i - 1].fluicol.VisFlu(pmedi, tmedi);
+        state.cells[i - 1].calor.viscint = viscliq * (1 - alfmed) * 1.e-3 + state.cells[i - 1].flui.ViscGas(pmedi, tmedi) * alfmed * 1.e-3;
+
+        double fluxrelax = 0; // variavel nao utilizada
+        if (state.steadyIteration > 0)
+            fluxrelax = state.cells[i - 1].fluxcalmed;
+        double resanul = 0.;
+        double fluxcal;
+        double fluxcalG;
+        // verifica se existe acoplamento com o anular:
+        if (state.input.lingas == 1 && (i - 1 <= state.annulusTubingStart && i - 1 >= state.annulusTubingEnd)) {
+            int j = state.annulusTubingStart + state.tubingAnnulusStart - (i - 1);
+            // caso tenha acoplamento:
+
+            if (state.steadyIteration == 0 && (i - 1) < state.annulusTubingStart) {
+                // na primeira iteracao, considera-se a resistencia do revestimento + cimento +
+                // formacao, nas outras iteracoes
+                // bastara determinar a troca termica entre a coluna e o gas do anular
+                // no modelo acoplado, a coluna nao tem a definicao da parede revestimento+cimento+formacao
+                // para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
+                // do anular, o que e feito aqui:
+                // obs:isto Ã© feito ate uma celula antes de se chegar na master (i-1)<ColunaAnulaIni,
+                // se esta fazendo igual ao que se faz no simulador involuta, para melhorar
+                // a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
+                // desde a primeira iteracao
+                state.gasCells[j].calor.Tint = tmedi;
+                state.gasCells[j].calor.Vint = 100;
+                state.gasCells[j].calor.kint = state.cells[i - 1].flui.CondGas(pmedi, tmedi);
+                state.gasCells[j].calor.cpint = cpg;
+                state.gasCells[j].calor.rhoint = rhog;
+                state.gasCells[j].calor.viscint = state.cells[i - 1].flui.ViscGas(pmedi, tmedi) * 1.e-3;
+                state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
+                resanul = state.gasCells[j].calor.resGlob;                // resistencia das paredes
+                // observe que nÃ£o se esta de fato interessado no fluxo de calor, mas apenas em obter a resistencia
+                // termica do conjunto de paredes a partir do revestimento em direcao aa formacao
+                state.cells[i - 1].calor.Vextern1 = 100.;
+                state.cells[i - 1].calor.kextern1 = state.gasCells[j].calor.kint;
+                state.cells[i - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+                state.cells[i - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+                state.cells[i - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+            } else { // apos a primeira iteracao, considera-se apenas a troca termica entre a coluna e o gas do anular
+                // passando pela parede da coluna, claro
+                resanul = 0.;
+                state.cells[i - 1].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
+                state.cells[i - 1].calor.kextern1 = state.gasCells[j].calor.kint;
+                state.cells[i - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+                state.cells[i - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+                state.cells[i - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+            }
+            if (state.steadyIteration == 0)
+                state.cells[i - 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
+            // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
+            else
+                state.cells[i - 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
+            // e a temperatura do gas
+        }
+        state.cells[i - 1].fluxcalmed = 0;
+        if (state.productionNetworkHeatCoupled == 1 && (i - 1) >= state.primaryNetworkSectionEnd && (i - 1) <= state.primaryNetworkSectionStart) {
+            fluxcal = sinalJ * state.cells[i - 1].calor.transperm(state.cells[i - 1].resAcopRedeP);
+        } else
+            fluxcal = sinalJ * state.cells[i - 1].calor.transperm(resanul);
+        state.cells[i - 1].fluxcalmed = fluxcal; // fluxo de calor na coluna
+
+        double coefdxT = (rhol * ulsmed * cpl + rhog * ugsmed * cpg) * area; // termo que multiplica
+        // a derivada Dt/Dx
+        double ulsmedTemp = ulsmed;
+        if ((*state.globals).blackOilTemp == 1 && fabs(ulsmed) > 5)
+            ulsmedTemp = 5 * ulsmed / ulsmed;
+        double ugsmedTemp = ugsmed;
+        if ((*state.globals).blackOilTemp == 1 && fabs(ugsmed) > 5)
+            ugsmedTemp = 5 * ugsmed / fabs(ugsmed);
+        double coefdxP = 1 * (rhol * ulsmedTemp * jtl + rhog * ugsmedTemp * jtg) * area; // termo que multiplica
+        // a derivada Dp/Dx
+        double dpdx;
+        if ((state.cells[i - 1].acsr.tipo != 4 || state.cells[i - 1].acsr.bcs.freq < 1) && state.cells[i - 1].acsr.tipo != 7)
+            // caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
+            //  e a pressao no centro de celula para o calculo de Dp/Dx
+            dpdx = 2. * (state.cells[i].presaux - state.cells[i - 1].pres) * 98066.5 / state.cells[i - 1].dx;
+        else {
+            // caso tenha BCS ou incremento de pressao  utiliza-se a pressao da celulaa esquerda
+            //  e a pressao no centro de celula para o calculoi de Dp/Dx
+            dpdx = 2. * (state.cells[i].presaux - state.cells[i - 1].pres) * 98066.5 / state.cells[i - 1].dx;
+        }
+        state.cells[i].VTemper = ulsmed; // esta velocidade so e util no caso transiente, Ã© armazenada aqui
+        // apenas para se ter um valor quando a simulacao transiente se iniciar
+        double dtdx = (-state.cells[i - 1].temp) / dxmed;
+
+        double cinetico = 0;
+        double ugmed0 = 0;
+        double ulmed0 = 0;
+        double ugmed = 0;
+        double ulmed = 0;
+        // termo de energia cinetica:
+        if (state.cells[i].acsr.tipo == 0 && state.cells[i - 1].acsr.tipo == 0 && i > 2) {
+            double dxCin = state.cells[i - 1].dx;
+            double diaaux = state.cells[i - 1].duto.a;
+            double areaaux = 0.25 * M_PI * diaaux * diaaux;
+
+            if (state.cells[i - 1].alf > 1e-3)
+                ugmed = ugsmed / state.cells[i - 1].alf;
+            if (state.cells[i - 1].alf < (1. - 1e-3))
+                ulmed = ulsmed / (1. - state.cells[i - 1].alf);
+
+            if (state.cells[i - 2].alf > 1e-3) {
+                ugmed0 = state.cells[i - 1].QG / (areaaux);
+                ugmed0 /= state.cells[i - 2].alf;
+            }
+            if (state.cells[i - 2].alf < (1. - 1e-3)) {
+                ulmed0 = state.cells[i - 1].QL / (areaaux);
+                ulmed0 /= (1. - state.cells[i - 2].alf);
+            }
+
+            if (state.input.nCompTotalUnidadesP / dxCin < 1e6)
+                cinetico = (state.cells[i].MC - state.cells[i].Mliqini) * ugmed * (ugmed - ugmed0) / dxCin + state.cells[i].Mliqini * ulmed * (ulmed - ulmed0) / dxCin;
+            else
+                cinetico = 0;
+        }
+
+        double fontemassG = 0.;
+        double fontemassL = 0.;
+        double fontemassC = 0.;
+        double tfonte = state.cells[i - 1].temp;
+        double cpgF;
+        double razcpF = 0.;
+        double cplF;
+
+        // calculo da energia adicionada no sistema devido a fontes de massa
+        if (state.cells[i - 1].acsr.tipo == 1) { // caso fonte de gas
+            tfonte = state.cells[i - 1].acsr.injg.temp;
+            cpgF = state.cells[i - 1].acsr.injg.FluidoPro.CalorGas(pmed, tfonte);
+            razcpF = state.cells[i - 1].acsr.injg.FluidoPro.ConstAdG(pmed, tfonte);
+            cplF = 0.;
+        } else if (state.cells[i - 1].acsr.tipo == 2) { // caso fonte de liquido
+            tfonte = state.cells[i - 1].acsr.injl.temp;
+            cpgF = 0.;
+            razcpF = 1.;
+            cplF = (1. - state.cells[i - 1].acsr.injl.bet) * state.cells[i - 1].acsr.injl.FluidoPro.CalorLiq(pmed, tmed) + state.cells[i - 1].acsr.injl.bet * state.cells[i - 1].acsr.injl.fluidocol.CalorLiq(pmed, tmed);
+        } else if (state.cells[i - 1].acsr.tipo == 3) { // caso IPR
+            tfonte = state.cells[i - 1].acsr.ipr.Tres;
+            cpgF = state.cells[i - 1].acsr.ipr.FluidoPro.CalorGas(pmed, tmed);
+            razcpF = state.cells[i - 1].acsr.ipr.FluidoPro.ConstAdG(pmed, tmed);
+            cplF = state.cells[i - 1].acsr.ipr.FluidoPro.CalorLiq(pmed, tmed);
+        } else if (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura > 1e-6 &&
+                   (state.cells[i - 1].fontemassCR + state.cells[i - 1].fontemassGR + state.cells[i - 1].fontemassLR) > 1e-9) {
+            // caso vazamento
+            tfonte = state.cells[i - 1].acsr.fontechk.tamb;
+            cpgF = state.cells[i - 1].acsr.fontechk.fluidoPamb.CalorGas(pmed, tmed);
+            razcpF = state.cells[i - 1].acsr.fontechk.fluidoPamb.ConstAdG(pmed, tmed);
+            cplF = (1. - state.cells[i - 1].acsr.fontechk.betISamb) *
+                       state.cells[i - 1].acsr.fontechk.fluidoPamb.CalorLiq(pmed, tmed) +
+                   state.cells[i - 1].acsr.fontechk.betISamb * state.cells[i - 1].acsr.fontechk.fluidocol.CalorLiq(pmed, tmed);
+        } else if (state.cells[i - 1].acsr.tipo == 15) { // caso IPR
+            tfonte = state.cells[i - 1].acsr.radialPoro.tRes;
+            cpgF = state.cells[i - 1].acsr.radialPoro.flup.CalorGas(pmed, tmed);
+            razcpF = state.cells[i - 1].acsr.radialPoro.flup.ConstAdG(pmed, tmed);
+            cplF = state.cells[i - 1].acsr.radialPoro.flup.CalorLiq(pmed, tmed);
+        } else if (state.cells[i - 1].acsr.tipo == 16) { // caso IPR
+            tfonte = state.cells[i - 1].acsr.poroso2D.dados.tRes;
+            cpgF = state.cells[i - 1].acsr.poroso2D.dados.flup.CalorGas(pmed, tmed);
+            razcpF = state.cells[i - 1].acsr.poroso2D.dados.flup.ConstAdG(pmed, tmed);
+            cplF = state.cells[i - 1].acsr.poroso2D.dados.flup.CalorLiq(pmed, tmed);
+        } else if (state.cells[i].acsrL != 0) {
+
+            cpgF = 0.;
+            razcpF = 1.;
+            cplF = 0.;
+        } else {
+            cpgF = 0.;
+            razcpF = 1.;
+            cplF = 0.;
+        }
+
+        fontemassL = 0;
+        if (state.cells[i - 1].fontemassLR > 0.)
+            fontemassL = state.cells[i - 1].fontemassLR / dx;
+        if (state.cells[i - 1].fontemassCR > 0.)
+            fontemassL += state.cells[i - 1].fontemassCR / dx;
+        fontemassL *= (cplF) * (tfonte - state.cells[i - 1].temp);
+
+        fontemassG = state.cells[i - 1].fontemassGR / dx;
+        if (fontemassG > 0.)
+            fontemassG *= (cpgF / razcpF) * (tfonte - state.cells[i - 1].temp);
+        else
+            fontemassG = 0;
+
+        // efeito do calor latente, quando este for solicitado
+        double latente = 0.;
+        if (isnan(state.cells[i - 1].FonteMudaFase))
+            state.cells[i - 1].FonteMudaFase = 0.;
+        double valTransMass = fabs(state.cells[i - 1].FonteMudaFase);
+        double sigTransMass = 1.;
+        if (valTransMass > 1e-25)
+            sigTransMass = state.cells[i - 1].FonteMudaFase / valTransMass;
+        if (state.input.limTransMass < valTransMass)
+            valTransMass = sigTransMass * state.input.limTransMass;
+        else
+            valTransMass *= sigTransMass;
+        if (state.cells[i].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[i].flui.dVaporMassFraction > (1e-15)) {
+            if (state.cells[i - 1].acsr.tipo == 1 || state.cells[i - 1].acsr.tipo == 2 || state.cells[i - 1].acsr.tipo == 3 || state.cells[i - 1].acsr.tipo == 15 || state.cells[i - 1].acsr.tipo == 16) {
+                state.cells[i - 1].FonteMudaFase = 0.;
+                valTransMass = 0.;
+            }
+            if (state.latentHeatEnabled > 0 && state.steadyIteration != 0 && state.input.flashCompleto == 0) {
+                latente = interpolateLatentHeat(state, pmed, tmed) * valTransMass;
+            } else if ((state.input.flashCompleto == 1 || state.input.flashCompleto == 2) && state.latentHeatEnabled > 0 && state.steadyIteration != 0) {
+                latente = (state.cells[i].flui.EntalpGas(pmed, tmed) -
+                           state.cells[i].flui.EntalpLiq(pmed, tmed)) *
+                          valTransMass;
+            } else
+                latente = 0;
+        }
+
+        double alfinter;
+        double alfinterL;
+        if (ugsmed > 0) {
+            alfinter = state.cells[i - 1].alf;
+            alfinterL = state.cells[i - 1].alfL;
+        } else {
+            alfinter = state.cells[i - 1].alfR;
+            alfinterL = state.cells[i - 1].alf;
+        }
+        double delvel;
+        if (alfinter > (*state.globals).localtiny && alfinter < (1. - (*state.globals).localtiny))
+            delvel = ugsmed / alfinter - ulsmed / (1. - alfinter);
+        else if (alfinter > (*state.globals).localtiny)
+            delvel = ugsmed;
+        else
+            delvel = ulsmed;
+        double verifica = area * state.cells[i].pres * 98600 * delvel * (alfinter - alfinterL) / state.cells[i].dx;
+
+        if (fabs(coefdxT) > (*state.globals).localtiny) {
+            // Energy terms for boundary work, potential and kinetic energy,
+            // mass sources, latent heat, and shaft work.
+            if (state.input.latente == 0)
+                latente = 0.;
+            else if (state.input.condlatente == 0 && latente < 0)
+                latente = 0.;
+            double parcenerg1 = dTdLmed * (coefdxP * dpdx - cinetico - (hidro) + (fontemassL + fontemassG) - latente + (state.cells[i - 1].potTermo + state.cells[i - 1].fonteCal) / dxmed) / coefdxT;
+            // portion of energy related to heat exchange
+            double parcenerg2 = dTdLmed * (fluxcal) / coefdxT;
+
+            // Check whether heat transfer is too fast for the explicit temperature update.
+            // If so, use additional substeps to prevent thermal instability.
+            int npasso;
+            double dxpasso;
+            double limiteEstab = fabs(coefdxT) / dTdLmed;
+            if (dxmed / (state.cells[i - 1].calor.resGlob + resanul) < (limiteEstab + 0. * 1000.)) { // Thermal resistance is not low.
+                npasso = 1;
+                dxpasso = dxmed;
+            } else {
+                // For low thermal resistance, determine the number of temperature update steps.
+                npasso = (dxmed / (state.cells[i - 1].calor.resGlob + resanul)) / (limiteEstab + 0 * 1000) + 1;
+                dxpasso = dxmed / npasso; // cell divided into npassos
+            }
+            double temppasso = state.cells[i - 1].temp;
+
+            temppasso = dxpasso * (-(-state.cells[i - 1].temp) / dxpasso + parcenerg1 + parcenerg2); // first step
+            for (int j = 1; j < npasso; j++) {                                                  // next steps
+                // Keep all energy terms except heat flow, which is recalculated at each step.
+                state.cells[i - 1].calor.Tint = temppasso;
+                state.cells[i - 1].calor.Vint = ugsmed + ulsmed;
+                condliq = (1. - betmed) * state.cells[i - 1].flui.CondLiq(pmed, temppasso) + betmed * state.cells[i - 1].fluicol.CondLiq(pmed, temppasso);
+                state.cells[i - 1].calor.kint = condliq * (1 - alfmed) + state.cells[i - 1].flui.CondGas(pmed, temppasso) * alfmed;
+                state.cells[i - 1].calor.cpint = cpl * (1 - alfmed) + cpg * alfmed;
+                state.cells[i - 1].calor.rhoint = rhol * (1 - alfmed) + rhog * alfmed;
+                viscliq = (1. - betmed) * state.cells[i - 1].flui.ViscOleo(pmed, temppasso) + betmed * state.cells[i - 1].fluicol.VisFlu(pmed, temppasso);
+                state.cells[i - 1].calor.viscint = viscliq * (1 - alfmed) * 1.e-3 + state.cells[i - 1].flui.ViscGas(pmed, temppasso) * alfmed * 1.e-3;
+                if (state.steadyIteration != 0 && state.input.lingas == 1 && (i - 1 <= state.annulusTubingStart && i - 1 >= state.annulusTubingEnd)) {
+                    int k = state.annulusTubingStart + state.tubingAnnulusStart - (i - 1);
+                    double dtext = (state.gasCells[k - 1].temp - state.gasCells[k].temp) / npasso;
+                    state.cells[i - 1].calor.Textern1 = state.gasCells[k].temp + (j - 1) * dtext;
+                }
+                fluxcal = sinalJ * state.cells[i - 1].calor.transperm(resanul);
+                state.cells[i - 1].fluxcalmed += fluxcal;
+                parcenerg2 = dTdLmed * (fluxcal) / coefdxT;
+                temppasso = dxpasso * (-(-temppasso) / dxpasso + parcenerg1 + parcenerg2);
+            }
+
+            state.cells[i].temp = temppasso;
+            state.cells[i - 1].fluxcalmed /= npasso;
+            state.cells[i - 1].fluxcalmed = 1. * state.cells[i - 1].fluxcalmed;
+
+            if (state.cells[i].temp < -50.)
+                state.cells[i].temp = -50.;
+            if (state.cells[i].temp > 200.)
+                state.cells[i].temp = 200.;
+        } else
+            state.cells[i].temp = state.cells[i].calor.Textern1;
+    } else { // case where the mixing speed is too low
+        state.cells[i].temp = state.cells[i - 1].calor.Textern1;
+        if (state.input.lingas == 1 && (i - 1 <= state.annulusTubingStart && i - 1 >= state.annulusTubingEnd)) {
+            int j = state.annulusTubingStart + state.tubingAnnulusStart - (i - 1);
+            state.cells[i - 1].calor.Vextern1 = 100.;
+            state.cells[i - 1].calor.kextern1 = state.gasCells[j].calor.kint;
+            state.cells[i - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+            state.cells[i - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+            state.cells[i - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+            double fluxcal = state.cells[i - 1].calor.transperm(0);
+        }
+    }
+}
+
 }  // namespace sisprod::thermal
