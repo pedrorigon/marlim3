@@ -39,8 +39,15 @@ def scope_span(lines: list[str], scope: str) -> tuple[int, int]:
     if scope == "ALL":
         return 0, len(lines)
     for start, line in enumerate(lines):
+        # A definition starts at column zero; a call site is indented. Without
+        # this the search happily returns the first CALL of the function and
+        # renames inside the caller instead -- silently, because the caller
+        # usually has none of the names being renamed.
+        if not re.match(rf"[\w:<>*&]+[\w:<>*&\s]*\b{re.escape(scope)}\s*\(", line) \
+                and not re.match(rf"{re.escape(scope)}\s*\(", line):
+            continue
         if re.search(rf"\b{re.escape(scope)}\s*\(", line) and "{" in "".join(
-                lines[start:start + 6]):
+                lines[start:start + 12]):
             depth, opened = 0, False
             for probe in range(start, len(lines)):
                 depth += lines[probe].count("{") - lines[probe].count("}")
