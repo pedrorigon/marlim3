@@ -4,6 +4,7 @@
 #include <vector>
 
 class Cel;
+class CelG;
 class Ler;
 class SProd;
 class choke;
@@ -48,6 +49,7 @@ struct ThermalEvolutionUpdater {
 /// here lets the module be called without granting it access to all of SProd.
 struct ThermalState {
     Cel *cells;
+    CelG *gasCells;
     const Ler &input;
     double **latentHeatTable;
     varGlob1D *globals;
@@ -79,6 +81,14 @@ struct ThermalState {
     const double &minimumCycleTimeStep;
     const std::vector<int> &poisson2DCellIndices;
     const int &poisson2DCellCount;
+    const int &steadyIteration;
+    const double &slowHeatTransferThreshold;
+    const int &annulusTubingStart;
+    const int &annulusTubingEnd;
+    const int &tubingAnnulusStart;
+    const int &productionNetworkHeatCoupled;
+    const int &primaryNetworkSectionEnd;
+    const int &primaryNetworkSectionStart;
 };
 
 /// Interpolates latent heat in the pressure-temperature table.
@@ -122,6 +132,14 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
 /// Advances the transient thermal-energy solution by one coupling cycle.
 void advanceTransientEnergy(const ThermalState &state, int cycle,
                             int maximumCycle);
+
+/// Advances the legacy steady-state temperature march in the direct direction.
+void advanceSteadyTemperature(const ThermalState &state, int cellIndex,
+                              int rungeKuttaStage);
+
+/// Advances the distinct legacy steady-state temperature march in reverse.
+void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex,
+                                     int rungeKuttaStage);
 
 }  // namespace sisprod::thermal
 
