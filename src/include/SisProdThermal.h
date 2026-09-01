@@ -5,6 +5,7 @@
 
 class Cel;
 class CelG;
+class ChokeGas;
 class Ler;
 class SProd;
 class choke;
@@ -89,6 +90,14 @@ struct ThermalState {
     const int &productionNetworkHeatCoupled;
     const int &primaryNetworkSectionEnd;
     const int &primaryNetworkSectionStart;
+    const int &gasCellCount;
+    ChokeGas *gasLiftChokes;
+    const double &gasSurfacePressure;
+    const double &outletPressure;
+    /// Written, not just read -- computeOutletTemperature assigns it.
+    double &surfaceTemperature;
+    const int &networkCoupled;
+    const int &tubingAnnulusEnd;
 };
 
 /// Interpolates latent heat in the pressure-temperature table.
@@ -140,6 +149,24 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex,
 /// Advances the distinct legacy steady-state temperature march in reverse.
 void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex,
                                      int rungeKuttaStage);
+
+/// Solves the gas-line temperature for one cell.
+void computeGasTemperature(const ThermalState &state, int cellIndex,
+                           double previousTemperature, int steadyMode);
+
+/// Temperature at the discharge of an accessory.
+void computeDischargeTemperature(const ThermalState &state, int cellIndex);
+
+/// Discharge temperature of a gas-lift valve.
+double computeGasLiftDischargeTemperature(const ThermalState &state,
+                                          int valveIndex);
+
+/// Propagates the cell temperature to its neighbours' interface fields.
+void updateProductionTemperaturePeriphery(const ThermalState &state,
+                                          int cellIndex);
+
+/// Surface temperature at the end of the production line.
+void computeOutletTemperature(const ThermalState &state);
 
 }  // namespace sisprod::thermal
 

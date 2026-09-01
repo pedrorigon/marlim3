@@ -492,6 +492,45 @@ void initializePropertyTables(Cel &cell, const Scenario &scenario) {
     cell.flui.HlF[2][2] += scenario.temperature * 17.;
 }
 
+// tempDescarga is reached in production only through arq.descarga == 1 ->
+// resolveDescarga(), a gas-lift unloading run that no demo model enables. The
+// corpus therefore never executes it and the L2 layer cannot speak for it,
+// which is why it is driven here directly.
+//
+// The observable state is split across two arrays on purpose: the routine
+// writes Tint, Vint, kint and cpint into celulaG[i-1].calor but rhoint and
+// viscint into celula[i-1].calor. That asymmetry is preserved from the legacy
+// body and is exactly the kind of thing a move must not quietly tidy up, so
+// both destinations are printed.
+void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
+                      const char *caseName, int gasIndex,
+                      double currentRatio, double previousRatio) {
+    resetCells(system, cells, scenario);
+    resetAnnulus(system, scenario);
+    for (int index = gasIndex - 1; index <= gasIndex; ++index) {
+        CelG &cell = system.celulaG[index];
+        const double scale = 1. + 0.05 * index;
+        cell.duto.a = 0.12 * scale;
+        cell.duto.area = M_PI * cell.duto.a * cell.duto.a / 4.;
+        cell.dx0 = 9. * scale;
+        cell.dxL = 8. * scale;
+        cell.pres = scenario.pressure * scale;
+        cell.VGasL = 0.55 * scale;
+    }
+    system.celulaG[gasIndex].razInter = currentRatio;
+    system.celulaG[gasIndex - 1].razInter = previousRatio;
+
+    system.tempDescarga(gasIndex);
+
+    const CelG &source = system.celulaG[gasIndex - 1];
+    const Cel &production = cells[gasIndex - 1];
+    printf("%-20s %-15s Tint=%a Vint=%a k=%a cp=%a rho=%a visc=%a prevR=%a nextL=%a\n",
+           "tempDescarga", caseName, source.calor.Tint, source.calor.Vint,
+           source.calor.kint, source.calor.cpint, production.calor.rhoint,
+           production.calor.viscint, source.tempR,
+           system.celulaG[gasIndex].tempL);
+}
+
 void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
     const double latentHeat = system.interpolaHLatente(
@@ -565,6 +604,15 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
                     PermMode::annulusFirst);
         runPermCase(system, cells, scenario, "annulus-later", 3, 0,
                     PermMode::annulusLater);
+    }
+
+    runDischargeCase(system, cells, scenario, scenario.name, 3, 0.30, 0.60);
+    if (scenario.pressure == 65.) {
+        // razInter below localtiny takes the liquid-density branch of vel1;
+        // the 0.8 and 0.5 pairs take the two ratio guards at and past 0.5.
+        runDischargeCase(system, cells, scenario, "disch-zero", 3, 0., 0.);
+        runDischargeCase(system, cells, scenario, "disch-gas", 3, 0.8, 0.8);
+        runDischargeCase(system, cells, scenario, "disch-half", 3, 0.5, 0.5);
     }
 
     resetCells(system, cells, scenario);
