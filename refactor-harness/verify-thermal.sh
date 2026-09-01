@@ -75,8 +75,8 @@ g++ -fopenmp -o "$scratch/thermal-sweep" "${compiled[@]}" "${objects[@]}" -lgfor
     exit 2
 }
 rows=$(wc -l < "$scratch/current.txt")
-(( rows == 43 )) || {
-    printf '%sexpected 43 rows, got %s%s\n' "$red" "$rows" "$reset" >&2
+(( rows == 73 )) || {
+    printf '%sexpected 73 rows, got %s%s\n' "$red" "$rows" "$reset" >&2
     exit 2
 }
 

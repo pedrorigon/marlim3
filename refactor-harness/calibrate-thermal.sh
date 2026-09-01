@@ -47,7 +47,7 @@ PY
         if (( $? != 0 )) || cmp -s "$project_root/src/core/$target" "$work/$target"; then
             printf '  %-28s %sCORRUPTION NOT INJECTED%s\n' "$name" "$red" "$reset"
             failed=$((failed + 1))
-            return
+            return 1
         fi
     fi
 
@@ -60,19 +60,63 @@ PY
         if (( exit_code == 0 )); then
             printf '  %-28s %spassed%s\n' "$name" "$green" "$reset"
             passed=$((passed + 1))
+            return 0
         else
             printf '  %-28s %sFAILED CONTROL%s\n%s\n' \
                    "$name" "$red" "$reset" "$output"
             failed=$((failed + 1))
+            return 1
         fi
     elif (( exit_code == 1 )); then
         printf '  %-28s %scaught%s\n' "$name" "$green" "$reset"
         passed=$((passed + 1))
+        return 0
     else
         printf '  %-28s %sMISSED OR INVALID%s exit=%d\n%s\n' \
                "$name" "$red" "$reset" "$exit_code" "$output"
         failed=$((failed + 1))
+        return 1
     fi
+}
+
+declare -a queued_names queued_targets queued_from queued_to queued_expectations
+
+queue_case() {
+    queued_names+=("$1")
+    queued_targets+=("$2")
+    queued_from+=("$3")
+    queued_to+=("$4")
+    queued_expectations+=("$5")
+}
+
+run_queued_cases() {
+    local jobs="${MARLIM_CAL_JOBS:-4}"
+    [[ "$jobs" =~ ^[1-9][0-9]*$ ]] || {
+        echo "MARLIM_CAL_JOBS must be a positive integer" >&2
+        return 2
+    }
+
+    local index=0 total="${#queued_names[@]}"
+    while (( index < total )); do
+        local -a pids=()
+        local batch=0
+        while (( index < total && batch < jobs )); do
+            run_case "${queued_names[index]}" "${queued_targets[index]}" \
+                "${queued_from[index]}" "${queued_to[index]}" \
+                "${queued_expectations[index]}" &
+            pids+=("$!")
+            index=$((index + 1))
+            batch=$((batch + 1))
+        done
+        local pid
+        for pid in "${pids[@]}"; do
+            if wait "$pid"; then
+                passed=$((passed + 1))
+            else
+                failed=$((failed + 1))
+            fi
+        done
+    done
 }
 
 run_case control SisProd.cpp "" "" pass
@@ -81,45 +125,99 @@ if (( failed > 0 )); then
     exit 1
 fi
 
-run_case latent-blend-order SisProdThermal.cpp \
+queue_case latent-blend-order SisProdThermal.cpp \
     'latt = (1 - raztemp) * latp1 + raztemp * latp2;' \
     'latt = (1 - raztemp) * latp2 + raztemp * latp1;' caught
 
-run_case mixture-energy-sign SisProdThermal.cpp \
+queue_case mixture-energy-sign SisProdThermal.cpp \
     'return energintmixT0 - (delFlux' \
     'return energintmixT0 + (delFlux' caught
 
-run_case boundary-temperature-write SisProd.cpp \
+queue_case boundary-temperature-write SisProd.cpp \
     $'void SProd::atualizaPeriTempProd(int i) {\n    if (i > 0)\n        celula[i - 1].tempR = celula[i].temp;' \
     $'void SProd::atualizaPeriTempProd(int i) {\n    if (i > 0)\n        celula[i - 1].tempR = celula[i].temp + 1.;' caught
 
-run_case outlet-temperature-source SisProd.cpp \
+queue_case outlet-temperature-source SisProd.cpp \
     'tempSup = celula[ncel - 1].temp;' \
     'tempSup = celula[ncel].temp;' caught
 
-run_case diffusion-preparation-area SisProdThermal.cpp \
+queue_case diffusion-preparation-area SisProdThermal.cpp \
     $'void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int i) {\n    double dia = state.cells[i].duto.a;\n    double area = 0.25 * M_PI * dia * dia;' \
     $'void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int i) {\n    double dia = state.cells[i].duto.a;\n    double area = 0.50 * M_PI * dia * dia;' caught
 
-run_case tabulated-gas-density SisProdThermal.cpp \
+queue_case tabulated-gas-density SisProdThermal.cpp \
     'double energ1 = alfmed * rhogp1 * (hgp1 - pres1 * 98066.5 / rhogp0) +' \
     'double energ1 = alfmed * rhogp1 * (hgp1 - pres1 * 98066.5 / rhogp1) +' caught
 
-run_case enthalpy-search-condition SisProdThermal.cpp \
+queue_case enthalpy-search-condition SisProdThermal.cpp \
     'while (j < ndiv + 1 || (energint >= val1 && energint <= val2) ||' \
     'while (j < ndiv + 1 && (energint >= val1 && energint <= val2) ||' caught
 
-run_case reverse-ambient-neighbor SisProd.cpp \
+queue_case reverse-ambient-neighbor SisProd.cpp \
     'celula[i].temp = celula[i + 1].calor.Textern1;' \
     'celula[i].temp = celula[i - 1].calor.Textern1;' caught
 
-run_case outlet-boundary-index SisProdThermal.cpp \
+queue_case outlet-boundary-index SisProdThermal.cpp \
     $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int i = state.lastCell;' \
     $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int i = state.lastCell - 1;' caught
 
-run_case inlet-boundary-propagation SisProdThermal.cpp \
+queue_case inlet-boundary-propagation SisProdThermal.cpp \
     $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n    if (state.inletMassFraction < 1) {\n        int para;\n        para = 0;\n    }\n\n    int i = 0;' \
     $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n    if (state.inletMassFraction < 1) {\n        int para;\n        para = 0;\n    }\n\n    int i = 1;' caught
+
+queue_case forward-hot-guard SisProd.cpp \
+    'if (fabs(ugsmed + ulsmed) > 0.05 && semTermo == 0) {' \
+    'if (fabs(ugsmed + ulsmed) > 1.e99 && semTermo == 0) {' caught
+
+queue_case reverse-hot-guard SisProd.cpp \
+    'if (fabs(ugsmed + ulsmed) > trocaTermicaLenta) {' \
+    'if (fabs(ugsmed + ulsmed) > trocaTermicaLenta && semTermo == 0) {' caught
+
+queue_case forward-ambient-neighbor SisProd.cpp \
+    'celula[i].temp = celula[i - 1].calor.Textern1;' \
+    'celula[i].temp = celula[i + 1].calor.Textern1;' caught
+
+queue_case reverse-signed-gas SisProd.cpp \
+    'ugsmed = fabs(celula[i + 1].QG) / area;' \
+    'ugsmed = celula[i + 1].QG / area;' caught
+
+queue_case reverse-interface-pressure SisProd.cpp \
+    'double pmedi = celula[i + 1].presaux - celula[i].dpB / 98066.5;' \
+    'double pmedi = celula[i + 1].presaux + celula[i].dpB / 98066.5;' caught
+
+queue_case forward-network-resistance SisProd.cpp \
+    'fluxcal = sinalJ * celula[i - 1].calor.transperm(celula[i - 1].resAcopRedeP);' \
+    'fluxcal = sinalJ * celula[i - 1].calor.transperm(resanul);' caught
+
+queue_case forward-velocity-cap SisProd.cpp \
+    'if ((*vg1dSP).blackOilTemp == 1 && fabs(ugsmed) > 5)' \
+    'if ((*vg1dSP).blackOilTemp == 2 && fabs(ugsmed) > 5)' caught
+
+queue_case reverse-bcs-gradient SisProd.cpp \
+    'dpdx = (pmedi - celula[i + 1].pres) * 98600. / dx;' \
+    'dpdx = (pmedi - celula[i + 1].pres) * 98066.5 / dx;' caught
+
+queue_case forward-latent-limit SisProd.cpp \
+    'if (arq.limTransMass < valTransMass)' \
+    'if (arq.limTransMass < valTransMass * 0.)' caught
+
+queue_case reverse-latent-sign SisProd.cpp \
+    'latente = -interpolaHLatente(pmed, tmed) * celula[i + 1].FonteMudaFase;' \
+    'latente = interpolaHLatente(pmed, tmed) * celula[i + 1].FonteMudaFase;' caught
+
+queue_case forward-latent-switch SisProd.cpp \
+    'if (arq.latente == 0)' \
+    'if (arq.latente == -1)' caught
+
+queue_case reverse-annulus-gradient SisProd.cpp \
+    'double dtext = (celulaG[k].temp - celulaG[k - 1].temp) / npasso;' \
+    'double dtext = (celulaG[k - 1].temp - celulaG[k].temp) / npasso;' caught
+
+queue_case forward-potential-sign SisProd.cpp \
+    'double hidro = (rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(celula[i - 1].duto.teta);' \
+    'double hidro = -(rhol * ulsmed + rhog * ugsmed) * area * 9.82 * sin(celula[i - 1].duto.teta);' caught
+
+run_queued_cases
 
 if (( failed > 0 )); then
     printf '%sTHERMAL CALIBRATION FAILED -- %d of %d case(s)%s\n' \
