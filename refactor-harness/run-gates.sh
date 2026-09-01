@@ -232,6 +232,22 @@ else
 fi
 rm -rf "$baseline_source"
 
+# ------------------------------------------- supplementary calibration ----
+# Every instrument, not only the one belonging to the stage being closed.
+#
+# These checks pin fixed text, and this programme moves and renames that text,
+# so each stage erodes the instruments of the stages before it -- silently, since
+# a pattern that no longer matches does not crash, it just stops testing. Closing
+# stage 5 found calibrate-thermal.sh with 23 of 24 cases unable to inject at all,
+# and calibrate-c0ud.sh with 7 of 21 dead since stage 3. Both had been reporting
+# nothing wrong, because nothing was being tested.
+#
+# Advisory rather than blocking: a stage in progress can legitimately leave an
+# instrument mid-repoint. It is reported next to the gates because that is where
+# someone will read it.
+announce "Supplementary - every calibration still detects error"
+bash "$script_dir/calibrate-all.sh" 2>&1 | tee "$evidence_dir/calibration.log" | tail -12
+
 # ---------------------------------------------------------------- gate 5 ----
 announce "Gate 5 - reference files untouched"
 git status --porcelain tests/comparison/ > "$evidence_dir/references.log" 2>&1
