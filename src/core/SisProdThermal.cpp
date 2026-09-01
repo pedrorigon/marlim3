@@ -3500,6 +3500,247 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
     }
 }
 
+/// Energy added to the cell by its mass sources, for the steady march.
+///
+/// Split out of advanceSteadyTemperature to satisfy SC-004. The block reads
+/// only the five values below and leaves exactly two: the gas and liquid
+/// source terms. Nothing else escaped it, which is what made the cut safe.
+TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
+                                                int cellIndex,
+                                                double meanPressure,
+                                                double meanTemperature,
+                                                double cellLength) {
+    double gasMassSourceTerm = 0.;
+    double liquidMassSourceTerm = 0.;
+    double fontemassC = 0.;
+    double sourceTemperature = state.cells[cellIndex - 1].temp;
+    double sourceGasSpecificHeat;
+    double sourceSpecificHeatRatio = 0.;
+    double sourceLiquidSpecificHeat;
+
+    // calculo da energia adicionada no sistema devido a fontes de massa
+    if (state.cells[cellIndex - 1].acsr.tipo == 1) { // caso fonte de gas
+        sourceTemperature = state.cells[cellIndex - 1].acsr.injg.temp;
+        sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
+        sourceLiquidSpecificHeat = 0.;
+    } else if (state.cells[cellIndex - 1].acsr.tipo == 2) { // caso fonte de liquido
+        sourceTemperature = state.cells[cellIndex - 1].acsr.injl.temp;
+        sourceGasSpecificHeat = 0.;
+        sourceSpecificHeatRatio = 1.;
+        sourceLiquidSpecificHeat = (1. - state.cells[cellIndex - 1].acsr.injl.bet) * state.cells[cellIndex - 1].acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + state.cells[cellIndex - 1].acsr.injl.bet * state.cells[cellIndex - 1].acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex - 1].acsr.tipo == 3) { // caso IPR
+        sourceTemperature = state.cells[cellIndex - 1].acsr.ipr.Tres;
+        sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex - 1].acsr.tipo == 9 && state.cells[cellIndex - 1].acsr.fontechk.abertura > 1e-6 &&
+               (state.cells[cellIndex - 1].fontemassCR + state.cells[cellIndex - 1].fontemassGR + state.cells[cellIndex - 1].fontemassLR) > 1e-9) {
+        // caso vazamento
+        sourceTemperature = state.cells[cellIndex - 1].acsr.fontechk.tamb;
+        sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = (1. - state.cells[cellIndex - 1].acsr.fontechk.betISamb) *
+                   state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
+               state.cells[cellIndex - 1].acsr.fontechk.betISamb * state.cells[cellIndex - 1].acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex - 1].acsr.tipo == 15) { // caso IPR
+        sourceTemperature = state.cells[cellIndex - 1].acsr.radialPoro.tRes;
+        sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex - 1].acsr.tipo == 16) { // caso IPR
+        sourceTemperature = state.cells[cellIndex - 1].acsr.poroso2D.dados.tRes;
+        sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex].acsrL != 0) {
+
+        sourceGasSpecificHeat = 0.;
+        sourceSpecificHeatRatio = 1.;
+        sourceLiquidSpecificHeat = 0.;
+    } else {
+        sourceGasSpecificHeat = 0.;
+        sourceSpecificHeatRatio = 1.;
+        sourceLiquidSpecificHeat = 0.;
+    }
+
+    liquidMassSourceTerm = 0;
+    if (state.cells[cellIndex - 1].fontemassLR > 0.)
+        liquidMassSourceTerm = state.cells[cellIndex - 1].fontemassLR / cellLength;
+    if (state.cells[cellIndex - 1].fontemassCR > 0.)
+        liquidMassSourceTerm += state.cells[cellIndex - 1].fontemassCR / cellLength;
+    liquidMassSourceTerm *= (sourceLiquidSpecificHeat) * (sourceTemperature - state.cells[cellIndex - 1].temp);
+
+    gasMassSourceTerm = state.cells[cellIndex - 1].fontemassGR / cellLength;
+    if (gasMassSourceTerm > 0.)
+        gasMassSourceTerm *= (sourceGasSpecificHeat / sourceSpecificHeatRatio) * (sourceTemperature - state.cells[cellIndex - 1].temp);
+    else
+        gasMassSourceTerm = 0;
+    return TemperatureSourceTerms{.gas = gasMassSourceTerm,
+                                  .liquid = liquidMassSourceTerm};
+}
+
+/// Annulus coupling for the steady march: fills the cell's external heat
+/// transfer state from the gas-line cell facing it, and returns the wall
+/// resistance that the flux calculation must add.
+///
+/// Split out of advanceSteadyTemperature to satisfy SC-004. Only the
+/// resistance leaves the block; everything else it computes is written
+/// straight into state.
+double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
+                                  double interfaceMeanPressure,
+                                  double interfaceMeanTemperature,
+                                  double gasSpecificHeat,
+                                  double gasDensity) {
+    double annulusResistance = 0.;
+    // verifica se existe acoplamento com o anular:
+    if (state.input.lingas == 1 && (cellIndex - 1 <= state.annulusTubingStart && cellIndex - 1 >= state.annulusTubingEnd)) {
+        int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex - 1);
+        // caso tenha acoplamento:
+
+        if (state.steadyIteration == 0 && (cellIndex - 1) < state.annulusTubingStart) {
+            // na primeira iteracao, considera-se a resistencia do revestimento + cimento +
+            // formacao, nas outras iteracoes
+            // bastara determinar a troca termica entre a coluna e o gas do anular
+            // no modelo acoplado, a coluna nao tem a definicao da parede revestimento+cimento+formacao
+            // para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
+            // do anular, o que e feito aqui:
+            // obs:isto Ã© feito ate uma celula antes de se chegar na master (cellIndex-1)<ColunaAnulaIni,
+            // se esta fazendo igual ao que se faz no simulador involuta, para melhorar
+            // a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
+            // desde a primeira iteracao
+            state.gasCells[j].calor.Tint = interfaceMeanTemperature;
+            state.gasCells[j].calor.Vint = 100;
+            state.gasCells[j].calor.kint = state.cells[cellIndex - 1].flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
+            state.gasCells[j].calor.cpint = gasSpecificHeat;
+            state.gasCells[j].calor.rhoint = gasDensity;
+            state.gasCells[j].calor.viscint = state.cells[cellIndex - 1].flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * 1.e-3;
+            state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
+            annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
+            // observe que nÃ£o se esta de fato interessado no fluxo de calor, mas apenas em obter a resistencia
+            // termica do conjunto de paredes a partir do revestimento em direcao aa formacao
+            state.cells[cellIndex - 1].calor.Vextern1 = 100.;
+            state.cells[cellIndex - 1].calor.kextern1 = state.gasCells[j].calor.kint;
+            state.cells[cellIndex - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+            state.cells[cellIndex - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+            state.cells[cellIndex - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+        } else { // apos a primeira iteracao, considera-se apenas a troca termica entre a coluna e o gas do anular
+            // passando pela parede da coluna, claro
+            annulusResistance = 0.;
+            state.cells[cellIndex - 1].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
+            state.cells[cellIndex - 1].calor.kextern1 = state.gasCells[j].calor.kint;
+            state.cells[cellIndex - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+            state.cells[cellIndex - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+            state.cells[cellIndex - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+        }
+        if (state.steadyIteration == 0)
+            state.cells[cellIndex - 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
+        // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
+        else
+            state.cells[cellIndex - 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
+        // e a temperatura do gas
+    }
+    return annulusResistance;
+}
+
+/// Kinetic-energy term of the steady march.
+///
+/// Split out of advanceSteadyTemperature to satisfy SC-004. The four velocity
+/// locals it needs are private to the block; only the kinetic term leaves it.
+double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
+                                double meanSuperficialGasVelocity,
+                                double meanSuperficialLiquidVelocity) {
+    double kineticTerm = 0;
+    double upstreamMeanGasVelocity = 0;
+    double upstreamMeanLiquidVelocity = 0;
+    double meanGasVelocity = 0;
+    double meanLiquidVelocity = 0;
+    // termo de energia cinetica:
+    if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex - 1].acsr.tipo == 0 && cellIndex > 2) {
+        double kineticCellLength = state.cells[cellIndex - 1].dx;
+        double upstreamDiameter = state.cells[cellIndex - 1].duto.a;
+        double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+
+        if (state.cells[cellIndex - 1].alf > 1e-3)
+            meanGasVelocity = meanSuperficialGasVelocity / state.cells[cellIndex - 1].alf;
+        if (state.cells[cellIndex - 1].alf < (1. - 1e-3))
+            meanLiquidVelocity = meanSuperficialLiquidVelocity / (1. - state.cells[cellIndex - 1].alf);
+
+        if (state.cells[cellIndex - 2].alf > 1e-3) {
+            upstreamMeanGasVelocity = state.cells[cellIndex - 1].QG / (upstreamFlowArea);
+            upstreamMeanGasVelocity /= state.cells[cellIndex - 2].alf;
+        }
+        if (state.cells[cellIndex - 2].alf < (1. - 1e-3)) {
+            upstreamMeanLiquidVelocity = state.cells[cellIndex - 1].QL / (upstreamFlowArea);
+            upstreamMeanLiquidVelocity /= (1. - state.cells[cellIndex - 2].alf);
+        }
+
+        if (state.input.nCompTotalUnidadesP / kineticCellLength < 1e6)
+            kineticTerm = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength + state.cells[cellIndex].Mliqini * meanLiquidVelocity * (meanLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength;
+        else
+            kineticTerm = 0;
+    }
+    return kineticTerm;
+}
+
+/// Latent-heat term of the steady march, with the interface void fractions
+/// and slip velocity it needs along the way.
+///
+/// Split out of advanceSteadyTemperature to satisfy SC-004. Only the latent
+/// term leaves the block. interfacialWorkTerm is computed here and never
+/// read -- T067 recorded it as a non-consumed local, and an exact move is not
+/// licence to delete it.
+double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
+                                   double flowArea, double meanPressure,
+                                   double meanTemperature,
+                                   double meanSuperficialGasVelocity,
+                                   double meanSuperficialLiquidVelocity) {
+    double latentHeatTerm = 0.;
+    if (isnan(state.cells[cellIndex - 1].FonteMudaFase))
+        state.cells[cellIndex - 1].FonteMudaFase = 0.;
+    double phaseChangeMassRate = fabs(state.cells[cellIndex - 1].FonteMudaFase);
+    double phaseChangeSign = 1.;
+    if (phaseChangeMassRate > 1e-25)
+        phaseChangeSign = state.cells[cellIndex - 1].FonteMudaFase / phaseChangeMassRate;
+    if (state.input.limTransMass < phaseChangeMassRate)
+        phaseChangeMassRate = phaseChangeSign * state.input.limTransMass;
+    else
+        phaseChangeMassRate *= phaseChangeSign;
+    if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
+        if (state.cells[cellIndex - 1].acsr.tipo == 1 || state.cells[cellIndex - 1].acsr.tipo == 2 || state.cells[cellIndex - 1].acsr.tipo == 3 || state.cells[cellIndex - 1].acsr.tipo == 15 || state.cells[cellIndex - 1].acsr.tipo == 16) {
+            state.cells[cellIndex - 1].FonteMudaFase = 0.;
+            phaseChangeMassRate = 0.;
+        }
+        if (state.latentHeatEnabled > 0 && state.steadyIteration != 0 && state.input.flashCompleto == 0) {
+            latentHeatTerm = interpolateLatentHeat(state, meanPressure, meanTemperature) * phaseChangeMassRate;
+        } else if ((state.input.flashCompleto == 1 || state.input.flashCompleto == 2) && state.latentHeatEnabled > 0 && state.steadyIteration != 0) {
+            latentHeatTerm = (state.cells[cellIndex].flui.EntalpGas(meanPressure, meanTemperature) -
+                       state.cells[cellIndex].flui.EntalpLiq(meanPressure, meanTemperature)) *
+                      phaseChangeMassRate;
+        } else
+            latentHeatTerm = 0;
+    }
+
+    double interfaceVoidFraction;
+    double leftInterfaceVoidFraction;
+    if (meanSuperficialGasVelocity > 0) {
+        interfaceVoidFraction = state.cells[cellIndex - 1].alf;
+        leftInterfaceVoidFraction = state.cells[cellIndex - 1].alfL;
+    } else {
+        interfaceVoidFraction = state.cells[cellIndex - 1].alfR;
+        leftInterfaceVoidFraction = state.cells[cellIndex - 1].alf;
+    }
+    double slipVelocity;
+    if (interfaceVoidFraction > (*state.globals).localtiny && interfaceVoidFraction < (1. - (*state.globals).localtiny))
+        slipVelocity = meanSuperficialGasVelocity / interfaceVoidFraction - meanSuperficialLiquidVelocity / (1. - interfaceVoidFraction);
+    else if (interfaceVoidFraction > (*state.globals).localtiny)
+        slipVelocity = meanSuperficialGasVelocity;
+    else
+        slipVelocity = meanSuperficialLiquidVelocity;
+    double interfacialWorkTerm = flowArea * state.cells[cellIndex].pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / state.cells[cellIndex].dx;
+    return latentHeatTerm;
+}
+
 void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rungeKuttaStage) {
     double cellLength = 0.5 * (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
     double meanCellLength = 0.5 * (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
@@ -3578,53 +3819,9 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double annulusResistance = 0.;
         double heatFlux;
         double gasHeatFlux;
-        // verifica se existe acoplamento com o anular:
-        if (state.input.lingas == 1 && (cellIndex - 1 <= state.annulusTubingStart && cellIndex - 1 >= state.annulusTubingEnd)) {
-            int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex - 1);
-            // caso tenha acoplamento:
-
-            if (state.steadyIteration == 0 && (cellIndex - 1) < state.annulusTubingStart) {
-                // na primeira iteracao, considera-se a resistencia do revestimento + cimento +
-                // formacao, nas outras iteracoes
-                // bastara determinar a troca termica entre a coluna e o gas do anular
-                // no modelo acoplado, a coluna nao tem a definicao da parede revestimento+cimento+formacao
-                // para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
-                // do anular, o que e feito aqui:
-                // obs:isto Ã© feito ate uma celula antes de se chegar na master (cellIndex-1)<ColunaAnulaIni,
-                // se esta fazendo igual ao que se faz no simulador involuta, para melhorar
-                // a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
-                // desde a primeira iteracao
-                state.gasCells[j].calor.Tint = interfaceMeanTemperature;
-                state.gasCells[j].calor.Vint = 100;
-                state.gasCells[j].calor.kint = state.cells[cellIndex - 1].flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
-                state.gasCells[j].calor.cpint = gasSpecificHeat;
-                state.gasCells[j].calor.rhoint = gasDensity;
-                state.gasCells[j].calor.viscint = state.cells[cellIndex - 1].flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * 1.e-3;
-                state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
-                annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
-                // observe que nÃ£o se esta de fato interessado no fluxo de calor, mas apenas em obter a resistencia
-                // termica do conjunto de paredes a partir do revestimento em direcao aa formacao
-                state.cells[cellIndex - 1].calor.Vextern1 = 100.;
-                state.cells[cellIndex - 1].calor.kextern1 = state.gasCells[j].calor.kint;
-                state.cells[cellIndex - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
-                state.cells[cellIndex - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
-                state.cells[cellIndex - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
-            } else { // apos a primeira iteracao, considera-se apenas a troca termica entre a coluna e o gas do anular
-                // passando pela parede da coluna, claro
-                annulusResistance = 0.;
-                state.cells[cellIndex - 1].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
-                state.cells[cellIndex - 1].calor.kextern1 = state.gasCells[j].calor.kint;
-                state.cells[cellIndex - 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
-                state.cells[cellIndex - 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
-                state.cells[cellIndex - 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
-            }
-            if (state.steadyIteration == 0)
-                state.cells[cellIndex - 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
-            // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
-            else
-                state.cells[cellIndex - 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
-            // e a temperatura do gas
-        }
+        annulusResistance = applySteadyAnnulusCoupling(
+            state, cellIndex, interfaceMeanPressure, interfaceMeanTemperature,
+            gasSpecificHeat, gasDensity);
         state.cells[cellIndex - 1].fluxcalmed = 0;
         if (state.productionNetworkHeatCoupled == 1 && (cellIndex - 1) >= state.primaryNetworkSectionEnd && (cellIndex - 1) <= state.primaryNetworkSectionStart) {
             heatFlux = mixtureFluxSign * state.cells[cellIndex - 1].calor.transperm(state.cells[cellIndex - 1].resAcopRedeP);
@@ -3656,148 +3853,19 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         // apenas para se ter um valor quando a simulacao transiente se iniciar
         double temperatureGradient = (-state.cells[cellIndex - 1].temp) / meanCellLength;
 
-        double kineticTerm = 0;
-        double upstreamMeanGasVelocity = 0;
-        double upstreamMeanLiquidVelocity = 0;
-        double meanGasVelocity = 0;
-        double meanLiquidVelocity = 0;
-        // termo de energia cinetica:
-        if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex - 1].acsr.tipo == 0 && cellIndex > 2) {
-            double kineticCellLength = state.cells[cellIndex - 1].dx;
-            double upstreamDiameter = state.cells[cellIndex - 1].duto.a;
-            double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+        double kineticTerm = computeSteadyKineticTerm(
+            state, cellIndex, meanSuperficialGasVelocity,
+            meanSuperficialLiquidVelocity);
 
-            if (state.cells[cellIndex - 1].alf > 1e-3)
-                meanGasVelocity = meanSuperficialGasVelocity / state.cells[cellIndex - 1].alf;
-            if (state.cells[cellIndex - 1].alf < (1. - 1e-3))
-                meanLiquidVelocity = meanSuperficialLiquidVelocity / (1. - state.cells[cellIndex - 1].alf);
-
-            if (state.cells[cellIndex - 2].alf > 1e-3) {
-                upstreamMeanGasVelocity = state.cells[cellIndex - 1].QG / (upstreamFlowArea);
-                upstreamMeanGasVelocity /= state.cells[cellIndex - 2].alf;
-            }
-            if (state.cells[cellIndex - 2].alf < (1. - 1e-3)) {
-                upstreamMeanLiquidVelocity = state.cells[cellIndex - 1].QL / (upstreamFlowArea);
-                upstreamMeanLiquidVelocity /= (1. - state.cells[cellIndex - 2].alf);
-            }
-
-            if (state.input.nCompTotalUnidadesP / kineticCellLength < 1e6)
-                kineticTerm = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength + state.cells[cellIndex].Mliqini * meanLiquidVelocity * (meanLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength;
-            else
-                kineticTerm = 0;
-        }
-
-        double gasMassSourceTerm = 0.;
-        double liquidMassSourceTerm = 0.;
-        double fontemassC = 0.;
-        double sourceTemperature = state.cells[cellIndex - 1].temp;
-        double sourceGasSpecificHeat;
-        double sourceSpecificHeatRatio = 0.;
-        double sourceLiquidSpecificHeat;
-
-        // calculo da energia adicionada no sistema devido a fontes de massa
-        if (state.cells[cellIndex - 1].acsr.tipo == 1) { // caso fonte de gas
-            sourceTemperature = state.cells[cellIndex - 1].acsr.injg.temp;
-            sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
-            sourceLiquidSpecificHeat = 0.;
-        } else if (state.cells[cellIndex - 1].acsr.tipo == 2) { // caso fonte de liquido
-            sourceTemperature = state.cells[cellIndex - 1].acsr.injl.temp;
-            sourceGasSpecificHeat = 0.;
-            sourceSpecificHeatRatio = 1.;
-            sourceLiquidSpecificHeat = (1. - state.cells[cellIndex - 1].acsr.injl.bet) * state.cells[cellIndex - 1].acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + state.cells[cellIndex - 1].acsr.injl.bet * state.cells[cellIndex - 1].acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex - 1].acsr.tipo == 3) { // caso IPR
-            sourceTemperature = state.cells[cellIndex - 1].acsr.ipr.Tres;
-            sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex - 1].acsr.tipo == 9 && state.cells[cellIndex - 1].acsr.fontechk.abertura > 1e-6 &&
-                   (state.cells[cellIndex - 1].fontemassCR + state.cells[cellIndex - 1].fontemassGR + state.cells[cellIndex - 1].fontemassLR) > 1e-9) {
-            // caso vazamento
-            sourceTemperature = state.cells[cellIndex - 1].acsr.fontechk.tamb;
-            sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = (1. - state.cells[cellIndex - 1].acsr.fontechk.betISamb) *
-                       state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
-                   state.cells[cellIndex - 1].acsr.fontechk.betISamb * state.cells[cellIndex - 1].acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex - 1].acsr.tipo == 15) { // caso IPR
-            sourceTemperature = state.cells[cellIndex - 1].acsr.radialPoro.tRes;
-            sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex - 1].acsr.tipo == 16) { // caso IPR
-            sourceTemperature = state.cells[cellIndex - 1].acsr.poroso2D.dados.tRes;
-            sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex].acsrL != 0) {
-
-            sourceGasSpecificHeat = 0.;
-            sourceSpecificHeatRatio = 1.;
-            sourceLiquidSpecificHeat = 0.;
-        } else {
-            sourceGasSpecificHeat = 0.;
-            sourceSpecificHeatRatio = 1.;
-            sourceLiquidSpecificHeat = 0.;
-        }
-
-        liquidMassSourceTerm = 0;
-        if (state.cells[cellIndex - 1].fontemassLR > 0.)
-            liquidMassSourceTerm = state.cells[cellIndex - 1].fontemassLR / cellLength;
-        if (state.cells[cellIndex - 1].fontemassCR > 0.)
-            liquidMassSourceTerm += state.cells[cellIndex - 1].fontemassCR / cellLength;
-        liquidMassSourceTerm *= (sourceLiquidSpecificHeat) * (sourceTemperature - state.cells[cellIndex - 1].temp);
-
-        gasMassSourceTerm = state.cells[cellIndex - 1].fontemassGR / cellLength;
-        if (gasMassSourceTerm > 0.)
-            gasMassSourceTerm *= (sourceGasSpecificHeat / sourceSpecificHeatRatio) * (sourceTemperature - state.cells[cellIndex - 1].temp);
-        else
-            gasMassSourceTerm = 0;
+        TemperatureSourceTerms steadySources = computeSteadySourceTerms(
+            state, cellIndex, meanPressure, meanTemperature, cellLength);
+        double gasMassSourceTerm = steadySources.gas;
+        double liquidMassSourceTerm = steadySources.liquid;
 
         // efeito do calor latente, quando este for solicitado
-        double latentHeatTerm = 0.;
-        if (isnan(state.cells[cellIndex - 1].FonteMudaFase))
-            state.cells[cellIndex - 1].FonteMudaFase = 0.;
-        double phaseChangeMassRate = fabs(state.cells[cellIndex - 1].FonteMudaFase);
-        double phaseChangeSign = 1.;
-        if (phaseChangeMassRate > 1e-25)
-            phaseChangeSign = state.cells[cellIndex - 1].FonteMudaFase / phaseChangeMassRate;
-        if (state.input.limTransMass < phaseChangeMassRate)
-            phaseChangeMassRate = phaseChangeSign * state.input.limTransMass;
-        else
-            phaseChangeMassRate *= phaseChangeSign;
-        if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
-            if (state.cells[cellIndex - 1].acsr.tipo == 1 || state.cells[cellIndex - 1].acsr.tipo == 2 || state.cells[cellIndex - 1].acsr.tipo == 3 || state.cells[cellIndex - 1].acsr.tipo == 15 || state.cells[cellIndex - 1].acsr.tipo == 16) {
-                state.cells[cellIndex - 1].FonteMudaFase = 0.;
-                phaseChangeMassRate = 0.;
-            }
-            if (state.latentHeatEnabled > 0 && state.steadyIteration != 0 && state.input.flashCompleto == 0) {
-                latentHeatTerm = interpolateLatentHeat(state, meanPressure, meanTemperature) * phaseChangeMassRate;
-            } else if ((state.input.flashCompleto == 1 || state.input.flashCompleto == 2) && state.latentHeatEnabled > 0 && state.steadyIteration != 0) {
-                latentHeatTerm = (state.cells[cellIndex].flui.EntalpGas(meanPressure, meanTemperature) -
-                           state.cells[cellIndex].flui.EntalpLiq(meanPressure, meanTemperature)) *
-                          phaseChangeMassRate;
-            } else
-                latentHeatTerm = 0;
-        }
-
-        double interfaceVoidFraction;
-        double leftInterfaceVoidFraction;
-        if (meanSuperficialGasVelocity > 0) {
-            interfaceVoidFraction = state.cells[cellIndex - 1].alf;
-            leftInterfaceVoidFraction = state.cells[cellIndex - 1].alfL;
-        } else {
-            interfaceVoidFraction = state.cells[cellIndex - 1].alfR;
-            leftInterfaceVoidFraction = state.cells[cellIndex - 1].alf;
-        }
-        double slipVelocity;
-        if (interfaceVoidFraction > (*state.globals).localtiny && interfaceVoidFraction < (1. - (*state.globals).localtiny))
-            slipVelocity = meanSuperficialGasVelocity / interfaceVoidFraction - meanSuperficialLiquidVelocity / (1. - interfaceVoidFraction);
-        else if (interfaceVoidFraction > (*state.globals).localtiny)
-            slipVelocity = meanSuperficialGasVelocity;
-        else
-            slipVelocity = meanSuperficialLiquidVelocity;
-        double interfacialWorkTerm = flowArea * state.cells[cellIndex].pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / state.cells[cellIndex].dx;
+        double latentHeatTerm = computeSteadyLatentHeatTerm(
+            state, cellIndex, flowArea, meanPressure, meanTemperature,
+            meanSuperficialGasVelocity, meanSuperficialLiquidVelocity);
 
         if (fabs(temperatureSpatialCoefficient) > (*state.globals).localtiny) {
             // Energy terms for boundary work, potential and kinetic energy,
@@ -3869,6 +3937,222 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             double heatFlux = state.cells[cellIndex - 1].calor.transperm(0);
         }
     }
+}
+
+/// Energy added to the cell by its mass sources, for the REVERSE march.
+///
+/// Deliberately separate from computeSteadySourceTerms: T067 proved the two
+/// marches diverge in thirteen non-unifiable ways, so the reverse flow keeps
+/// its own body rather than acquiring a direction flag.
+TemperatureSourceTerms computeReverseSteadySourceTerms(
+    const ThermalState &state, int cellIndex, double meanPressure,
+    double meanTemperature, double cellLength) {
+    double gasMassSourceTerm = 0.;
+    double liquidMassSourceTerm = 0.;
+    double sourceTemperature = state.cells[cellIndex + 1].temp;
+    double sourceGasSpecificHeat;
+    double sourceSpecificHeatRatio = 0.;
+    double sourceLiquidSpecificHeat;
+
+    // calculo da energia adicionada no sistema devido a fontes de massa
+    if (state.cells[cellIndex + 1].acsr.tipo == 1) { // caso fonte de gas
+        sourceTemperature = state.cells[cellIndex + 1].acsr.injg.temp;
+        sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
+        sourceLiquidSpecificHeat = 0.;
+    } else if (state.cells[cellIndex + 1].acsr.tipo == 2) { // caso fonte de liquido
+        sourceTemperature = state.cells[cellIndex + 1].acsr.injl.temp;
+        sourceGasSpecificHeat = 0.;
+        sourceSpecificHeatRatio = 1.;
+        sourceLiquidSpecificHeat = (1. - state.cells[cellIndex + 1].acsr.injl.bet) * state.cells[cellIndex + 1].acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + state.cells[cellIndex + 1].acsr.injl.bet * state.cells[cellIndex + 1].acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex + 1].acsr.tipo == 3) { // caso IPR
+        sourceTemperature = state.cells[cellIndex + 1].acsr.ipr.Tres;
+        sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex + 1].acsr.tipo == 15) { // caso IPR
+        sourceTemperature = state.cells[cellIndex + 1].acsr.radialPoro.tRes;
+        sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex + 1].acsr.tipo == 16) { // caso IPR
+        sourceTemperature = state.cells[cellIndex + 1].acsr.poroso2D.dados.tRes;
+        sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex + 1].acsr.tipo == 9 && state.cells[cellIndex + 1].acsr.fontechk.abertura > 1e-6 &&
+               (state.cells[cellIndex + 1].fontemassCR + state.cells[cellIndex + 1].fontemassGR + state.cells[cellIndex + 1].fontemassLR) > 1e-9) {
+        // caso vazamento
+        sourceTemperature = state.cells[cellIndex + 1].acsr.fontechk.tamb;
+        sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.CalorGas(meanPressure, meanTemperature);
+        sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.ConstAdG(meanPressure, meanTemperature);
+        sourceLiquidSpecificHeat = (1. - state.cells[cellIndex + 1].acsr.fontechk.betISamb) *
+                   state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
+               state.cells[cellIndex + 1].acsr.fontechk.betISamb * state.cells[cellIndex + 1].acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
+    } else if (state.cells[cellIndex + 1].acsr.tipo != 0) {
+
+        sourceGasSpecificHeat = 0.;
+        sourceSpecificHeatRatio = 1.;
+        sourceLiquidSpecificHeat = 0.;
+    } else {
+        sourceGasSpecificHeat = 0.;
+        sourceSpecificHeatRatio = 1.;
+        sourceLiquidSpecificHeat = 0.;
+    }
+
+    liquidMassSourceTerm = 0;
+    if (state.cells[cellIndex + 1].fontemassLR > 0.)
+        liquidMassSourceTerm = state.cells[cellIndex + 1].fontemassLR / cellLength;
+    if (state.cells[cellIndex + 1].fontemassCR > 0.)
+        liquidMassSourceTerm += state.cells[cellIndex + 1].fontemassCR / cellLength;
+    liquidMassSourceTerm *= (sourceLiquidSpecificHeat) * (sourceTemperature - state.cells[cellIndex + 1].temp);
+
+    gasMassSourceTerm = state.cells[cellIndex + 1].fontemassGR / cellLength;
+    if (gasMassSourceTerm > 0.)
+        gasMassSourceTerm *= (sourceGasSpecificHeat / sourceSpecificHeatRatio) * (sourceTemperature - state.cells[cellIndex + 1].temp);
+    else
+        gasMassSourceTerm = 0;
+    return TemperatureSourceTerms{.gas = gasMassSourceTerm,
+                                  .liquid = liquidMassSourceTerm};
+}
+
+/// Kinetic-energy term of the REVERSE march.
+///
+/// Separate body: divergence L09 records that the reverse guard, the length
+/// test and the signs all differ from the direct march.
+double computeReverseSteadyKineticTerm(
+    const ThermalState &state, int cellIndex,
+    double meanSuperficialGasVelocity,
+    double meanSuperficialLiquidVelocity) {
+    double kineticTerm = 0;
+    double upstreamMeanGasVelocity = 0;
+    double upstreamMeanLiquidVelocity = 0;
+    double meanGasVelocity = 0;
+    double meanLiquidVelocity = 0;
+    // termo de energia cinetica:
+    if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex + 1].acsr.tipo == 0 && cellIndex < state.lastCell) {
+        double kineticCellLength = state.cells[cellIndex + 1].dx;
+        double upstreamDiameter = state.cells[cellIndex + 1].duto.a;
+        double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+
+        if (state.cells[cellIndex + 1].alf > 1e-3)
+            meanGasVelocity = meanSuperficialGasVelocity / state.cells[cellIndex + 1].alf;
+        if (state.cells[cellIndex + 1].alf < (1. - 1e-3))
+            meanLiquidVelocity = meanSuperficialLiquidVelocity / (1. - state.cells[cellIndex + 1].alf);
+
+        if (state.cells[cellIndex].alf > 1e-3) {
+            upstreamMeanGasVelocity = fabs(state.cells[cellIndex].QG) / (upstreamFlowArea);
+            upstreamMeanGasVelocity /= state.cells[cellIndex].alf;
+        }
+        if (state.cells[cellIndex].alf < (1. - 1e-3)) {
+            upstreamMeanLiquidVelocity = fabs(state.cells[cellIndex].QL) / (upstreamFlowArea);
+            upstreamMeanLiquidVelocity /= (1. - state.cells[cellIndex].alf);
+        }
+
+        kineticTerm = -fabs(state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength -
+                   fabs(state.cells[cellIndex].Mliqini) * meanLiquidVelocity * (meanLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength;
+    }
+    return kineticTerm;
+}
+
+/// Latent-heat term of the REVERSE march.
+///
+/// Kept apart from computeSteadyLatentHeatTerm on purpose: divergence L11
+/// records that only the direct march sanitises NaN and clamps by
+/// limTransMass, so these bodies are not interchangeable.
+double computeReverseSteadyLatentHeatTerm(
+    const ThermalState &state, int cellIndex, double flowArea,
+    double meanPressure, double meanTemperature,
+    double meanSuperficialGasVelocity,
+    double meanSuperficialLiquidVelocity) {
+    double latentHeatTerm = 0.;
+    if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
+        if (state.cells[cellIndex + 1].acsr.tipo == 1 || state.cells[cellIndex + 1].acsr.tipo == 2 || state.cells[cellIndex + 1].acsr.tipo == 3 || state.cells[cellIndex + 1].acsr.tipo == 15 || state.cells[cellIndex + 1].acsr.tipo == 16)
+            state.cells[cellIndex + 1].FonteMudaFase =
+                0.;
+        if (state.latentHeatEnabled > 0 && state.steadyIteration != 0 && state.input.flashCompleto == 0) {
+            latentHeatTerm = -interpolateLatentHeat(state, meanPressure, meanTemperature) * state.cells[cellIndex + 1].FonteMudaFase;
+        } else if ((state.input.flashCompleto == 1 || state.input.flashCompleto == 2) && state.latentHeatEnabled > 0 && state.steadyIteration != 0) {
+            latentHeatTerm = -(state.cells[cellIndex].flui.EntalpGas(meanPressure, meanTemperature) -
+                        state.cells[cellIndex].flui.EntalpLiq(meanPressure, meanTemperature)) *
+                      state.cells[cellIndex + 1].FonteMudaFase;
+        } else
+            latentHeatTerm = 0;
+    }
+
+    //////trecho sem utilidade////////////////////////////////////////////////////////
+    double interfaceVoidFraction;
+    double leftInterfaceVoidFraction;
+    if (meanSuperficialGasVelocity > 0) {
+        interfaceVoidFraction = state.cells[cellIndex + 1].alf;
+        leftInterfaceVoidFraction = state.cells[cellIndex + 1].alfL;
+    } else {
+        interfaceVoidFraction = state.cells[cellIndex + 1].alfR;
+        leftInterfaceVoidFraction = state.cells[cellIndex + 1].alf;
+    }
+    double slipVelocity;
+    if (interfaceVoidFraction > (*state.globals).localtiny && interfaceVoidFraction < (1. - (*state.globals).localtiny))
+        slipVelocity = meanSuperficialGasVelocity / interfaceVoidFraction - meanSuperficialLiquidVelocity / (1. - interfaceVoidFraction);
+    else if (interfaceVoidFraction > (*state.globals).localtiny)
+        slipVelocity = meanSuperficialGasVelocity;
+    else
+        slipVelocity = meanSuperficialLiquidVelocity;
+    double interfacialWorkTerm = flowArea * state.cells[cellIndex + 1].pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / state.cells[cellIndex + 1].dx;
+    return latentHeatTerm;
+}
+
+/// Annulus coupling for the REVERSE march.
+///
+/// Separate from applySteadyAnnulusCoupling because the reverse flow faces
+/// cellIndex + 1 and, per divergence L06, never consults the production
+/// network resistance. Only the wall resistance leaves the block.
+double applyReverseSteadyAnnulusCoupling(
+    const ThermalState &state, int cellIndex,
+    double interfaceMeanPressure, double interfaceMeanTemperature,
+    double gasSpecificHeat, double gasDensity) {
+    double annulusResistance = 0.;
+    // checks if coupling with the annular space exists:
+    if (state.input.lingas == 1 && (cellIndex + 1 <= state.annulusTubingStart && cellIndex + 1 >= state.annulusTubingEnd)) {
+        int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex + 1);
+        // in case there is coupling:
+
+        if (state.steadyIteration == 0 && (cellIndex + 1) > state.annulusTubingEnd) {
+            // On the first iteration, include casing, cement, and formation resistance.
+            // Later iterations consider only heat transfer between the tubing and annular gas.
+            // For the coupled model, obtain the external resistance from the annulus heat-transfer model.
+            // Apply this up to the cell before the master valve to improve the ANM temperature estimate.
+            // At the ANM cell, consider only heat transfer with the gas from the first iteration.
+            state.gasCells[j].calor.Tint = interfaceMeanTemperature;
+            state.gasCells[j].calor.Vint = 100;
+            state.gasCells[j].calor.kint = state.cells[cellIndex + 1].flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
+            state.gasCells[j].calor.cpint = gasSpecificHeat;
+            state.gasCells[j].calor.rhoint = gasDensity;
+            state.gasCells[j].calor.viscint = state.cells[cellIndex + 1].flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * 1.e-3;
+            state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
+            annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
+            // Only the thermal resistance from the casing to the formation is needed, not the actual heat flow.
+            state.cells[cellIndex + 1].calor.Vextern1 = 100.;
+            state.cells[cellIndex + 1].calor.kextern1 = state.gasCells[j].calor.kint;
+            state.cells[cellIndex + 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+            state.cells[cellIndex + 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+            state.cells[cellIndex + 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+        } else { // After the first iteration, consider only heat transfer between the tubing and annular gas.
+            // Through the tubing wall.
+            annulusResistance = 0.;
+            state.cells[cellIndex + 1].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
+            state.cells[cellIndex + 1].calor.kextern1 = state.gasCells[j].calor.kint;
+            state.cells[cellIndex + 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
+            state.cells[cellIndex + 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
+            state.cells[cellIndex + 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
+        }
+        if (state.steadyIteration == 0)
+            state.cells[cellIndex + 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
+        // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
+        else
+            state.cells[cellIndex + 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
+        // e a temperatura do gas
+    }
+    return annulusResistance;
 }
 
 void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, int rungeKuttaStage) {
@@ -3946,47 +4230,9 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         double annulusResistance = 0.;
         double heatFlux;
         double gasHeatFlux;
-        // checks if coupling with the annular space exists:
-        if (state.input.lingas == 1 && (cellIndex + 1 <= state.annulusTubingStart && cellIndex + 1 >= state.annulusTubingEnd)) {
-            int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex + 1);
-            // in case there is coupling:
-
-            if (state.steadyIteration == 0 && (cellIndex + 1) > state.annulusTubingEnd) {
-                // On the first iteration, include casing, cement, and formation resistance.
-                // Later iterations consider only heat transfer between the tubing and annular gas.
-                // For the coupled model, obtain the external resistance from the annulus heat-transfer model.
-                // Apply this up to the cell before the master valve to improve the ANM temperature estimate.
-                // At the ANM cell, consider only heat transfer with the gas from the first iteration.
-                state.gasCells[j].calor.Tint = interfaceMeanTemperature;
-                state.gasCells[j].calor.Vint = 100;
-                state.gasCells[j].calor.kint = state.cells[cellIndex + 1].flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
-                state.gasCells[j].calor.cpint = gasSpecificHeat;
-                state.gasCells[j].calor.rhoint = gasDensity;
-                state.gasCells[j].calor.viscint = state.cells[cellIndex + 1].flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * 1.e-3;
-                state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
-                annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
-                // Only the thermal resistance from the casing to the formation is needed, not the actual heat flow.
-                state.cells[cellIndex + 1].calor.Vextern1 = 100.;
-                state.cells[cellIndex + 1].calor.kextern1 = state.gasCells[j].calor.kint;
-                state.cells[cellIndex + 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
-                state.cells[cellIndex + 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
-                state.cells[cellIndex + 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
-            } else { // After the first iteration, consider only heat transfer between the tubing and annular gas.
-                // Through the tubing wall.
-                annulusResistance = 0.;
-                state.cells[cellIndex + 1].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
-                state.cells[cellIndex + 1].calor.kextern1 = state.gasCells[j].calor.kint;
-                state.cells[cellIndex + 1].calor.cpextern1 = state.gasCells[j].calor.cpint;
-                state.cells[cellIndex + 1].calor.rhoextern1 = state.gasCells[j].calor.rhoint;
-                state.cells[cellIndex + 1].calor.viscextern1 = state.gasCells[j].calor.viscint;
-            }
-            if (state.steadyIteration == 0)
-                state.cells[cellIndex + 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
-            // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
-            else
-                state.cells[cellIndex + 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
-            // e a temperatura do gas
-        }
+        annulusResistance = applyReverseSteadyAnnulusCoupling(
+            state, cellIndex, interfaceMeanPressure, interfaceMeanTemperature,
+            gasSpecificHeat, gasDensity);
         state.cells[cellIndex + 1].fluxcalmed = 0;
         heatFlux = mixtureFluxSign * state.cells[cellIndex + 1].calor.transperm(annulusResistance);
         state.cells[cellIndex + 1].fluxcalmed = heatFlux; // fluxo de calor na coluna
@@ -4009,135 +4255,19 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         // apenas para se ter um valor quando a simulacao transiente se iniciar
         double temperatureGradient = (-state.cells[cellIndex + 1].temp) / meanCellLength;
 
-        double kineticTerm = 0;
-        double upstreamMeanGasVelocity = 0;
-        double upstreamMeanLiquidVelocity = 0;
-        double meanGasVelocity = 0;
-        double meanLiquidVelocity = 0;
-        // termo de energia cinetica:
-        if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex + 1].acsr.tipo == 0 && cellIndex < state.lastCell) {
-            double kineticCellLength = state.cells[cellIndex + 1].dx;
-            double upstreamDiameter = state.cells[cellIndex + 1].duto.a;
-            double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+        double kineticTerm = computeReverseSteadyKineticTerm(
+            state, cellIndex, meanSuperficialGasVelocity,
+            meanSuperficialLiquidVelocity);
 
-            if (state.cells[cellIndex + 1].alf > 1e-3)
-                meanGasVelocity = meanSuperficialGasVelocity / state.cells[cellIndex + 1].alf;
-            if (state.cells[cellIndex + 1].alf < (1. - 1e-3))
-                meanLiquidVelocity = meanSuperficialLiquidVelocity / (1. - state.cells[cellIndex + 1].alf);
-
-            if (state.cells[cellIndex].alf > 1e-3) {
-                upstreamMeanGasVelocity = fabs(state.cells[cellIndex].QG) / (upstreamFlowArea);
-                upstreamMeanGasVelocity /= state.cells[cellIndex].alf;
-            }
-            if (state.cells[cellIndex].alf < (1. - 1e-3)) {
-                upstreamMeanLiquidVelocity = fabs(state.cells[cellIndex].QL) / (upstreamFlowArea);
-                upstreamMeanLiquidVelocity /= (1. - state.cells[cellIndex].alf);
-            }
-
-            kineticTerm = -fabs(state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength -
-                       fabs(state.cells[cellIndex].Mliqini) * meanLiquidVelocity * (meanLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength;
-        }
-
-        double gasMassSourceTerm = 0.;
-        double liquidMassSourceTerm = 0.;
-        double sourceTemperature = state.cells[cellIndex + 1].temp;
-        double sourceGasSpecificHeat;
-        double sourceSpecificHeatRatio = 0.;
-        double sourceLiquidSpecificHeat;
-
-        // calculo da energia adicionada no sistema devido a fontes de massa
-        if (state.cells[cellIndex + 1].acsr.tipo == 1) { // caso fonte de gas
-            sourceTemperature = state.cells[cellIndex + 1].acsr.injg.temp;
-            sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
-            sourceLiquidSpecificHeat = 0.;
-        } else if (state.cells[cellIndex + 1].acsr.tipo == 2) { // caso fonte de liquido
-            sourceTemperature = state.cells[cellIndex + 1].acsr.injl.temp;
-            sourceGasSpecificHeat = 0.;
-            sourceSpecificHeatRatio = 1.;
-            sourceLiquidSpecificHeat = (1. - state.cells[cellIndex + 1].acsr.injl.bet) * state.cells[cellIndex + 1].acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + state.cells[cellIndex + 1].acsr.injl.bet * state.cells[cellIndex + 1].acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex + 1].acsr.tipo == 3) { // caso IPR
-            sourceTemperature = state.cells[cellIndex + 1].acsr.ipr.Tres;
-            sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex + 1].acsr.tipo == 15) { // caso IPR
-            sourceTemperature = state.cells[cellIndex + 1].acsr.radialPoro.tRes;
-            sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex + 1].acsr.tipo == 16) { // caso IPR
-            sourceTemperature = state.cells[cellIndex + 1].acsr.poroso2D.dados.tRes;
-            sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex + 1].acsr.tipo == 9 && state.cells[cellIndex + 1].acsr.fontechk.abertura > 1e-6 &&
-                   (state.cells[cellIndex + 1].fontemassCR + state.cells[cellIndex + 1].fontemassGR + state.cells[cellIndex + 1].fontemassLR) > 1e-9) {
-            // caso vazamento
-            sourceTemperature = state.cells[cellIndex + 1].acsr.fontechk.tamb;
-            sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.CalorGas(meanPressure, meanTemperature);
-            sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.ConstAdG(meanPressure, meanTemperature);
-            sourceLiquidSpecificHeat = (1. - state.cells[cellIndex + 1].acsr.fontechk.betISamb) *
-                       state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
-                   state.cells[cellIndex + 1].acsr.fontechk.betISamb * state.cells[cellIndex + 1].acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
-        } else if (state.cells[cellIndex + 1].acsr.tipo != 0) {
-
-            sourceGasSpecificHeat = 0.;
-            sourceSpecificHeatRatio = 1.;
-            sourceLiquidSpecificHeat = 0.;
-        } else {
-            sourceGasSpecificHeat = 0.;
-            sourceSpecificHeatRatio = 1.;
-            sourceLiquidSpecificHeat = 0.;
-        }
-
-        liquidMassSourceTerm = 0;
-        if (state.cells[cellIndex + 1].fontemassLR > 0.)
-            liquidMassSourceTerm = state.cells[cellIndex + 1].fontemassLR / cellLength;
-        if (state.cells[cellIndex + 1].fontemassCR > 0.)
-            liquidMassSourceTerm += state.cells[cellIndex + 1].fontemassCR / cellLength;
-        liquidMassSourceTerm *= (sourceLiquidSpecificHeat) * (sourceTemperature - state.cells[cellIndex + 1].temp);
-
-        gasMassSourceTerm = state.cells[cellIndex + 1].fontemassGR / cellLength;
-        if (gasMassSourceTerm > 0.)
-            gasMassSourceTerm *= (sourceGasSpecificHeat / sourceSpecificHeatRatio) * (sourceTemperature - state.cells[cellIndex + 1].temp);
-        else
-            gasMassSourceTerm = 0;
+        TemperatureSourceTerms reverseSources = computeReverseSteadySourceTerms(
+            state, cellIndex, meanPressure, meanTemperature, cellLength);
+        double gasMassSourceTerm = reverseSources.gas;
+        double liquidMassSourceTerm = reverseSources.liquid;
 
         // efeito do calor latente, quando este for solicitado
-        double latentHeatTerm = 0.;
-        if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
-            if (state.cells[cellIndex + 1].acsr.tipo == 1 || state.cells[cellIndex + 1].acsr.tipo == 2 || state.cells[cellIndex + 1].acsr.tipo == 3 || state.cells[cellIndex + 1].acsr.tipo == 15 || state.cells[cellIndex + 1].acsr.tipo == 16)
-                state.cells[cellIndex + 1].FonteMudaFase =
-                    0.;
-            if (state.latentHeatEnabled > 0 && state.steadyIteration != 0 && state.input.flashCompleto == 0) {
-                latentHeatTerm = -interpolateLatentHeat(state, meanPressure, meanTemperature) * state.cells[cellIndex + 1].FonteMudaFase;
-            } else if ((state.input.flashCompleto == 1 || state.input.flashCompleto == 2) && state.latentHeatEnabled > 0 && state.steadyIteration != 0) {
-                latentHeatTerm = -(state.cells[cellIndex].flui.EntalpGas(meanPressure, meanTemperature) -
-                            state.cells[cellIndex].flui.EntalpLiq(meanPressure, meanTemperature)) *
-                          state.cells[cellIndex + 1].FonteMudaFase;
-            } else
-                latentHeatTerm = 0;
-        }
-
-        //////trecho sem utilidade////////////////////////////////////////////////////////
-        double interfaceVoidFraction;
-        double leftInterfaceVoidFraction;
-        if (meanSuperficialGasVelocity > 0) {
-            interfaceVoidFraction = state.cells[cellIndex + 1].alf;
-            leftInterfaceVoidFraction = state.cells[cellIndex + 1].alfL;
-        } else {
-            interfaceVoidFraction = state.cells[cellIndex + 1].alfR;
-            leftInterfaceVoidFraction = state.cells[cellIndex + 1].alf;
-        }
-        double slipVelocity;
-        if (interfaceVoidFraction > (*state.globals).localtiny && interfaceVoidFraction < (1. - (*state.globals).localtiny))
-            slipVelocity = meanSuperficialGasVelocity / interfaceVoidFraction - meanSuperficialLiquidVelocity / (1. - interfaceVoidFraction);
-        else if (interfaceVoidFraction > (*state.globals).localtiny)
-            slipVelocity = meanSuperficialGasVelocity;
-        else
-            slipVelocity = meanSuperficialLiquidVelocity;
-        double interfacialWorkTerm = flowArea * state.cells[cellIndex + 1].pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / state.cells[cellIndex + 1].dx;
+        double latentHeatTerm = computeReverseSteadyLatentHeatTerm(
+            state, cellIndex, flowArea, meanPressure, meanTemperature,
+            meanSuperficialGasVelocity, meanSuperficialLiquidVelocity);
 
         if (fabs(temperatureSpatialCoefficient) > (*state.globals).localtiny) {
             // parecela de energia relacionada ao ytrabalho de fronteira, energia potencial,

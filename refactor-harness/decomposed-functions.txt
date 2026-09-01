@@ -156,3 +156,40 @@ renovatermColIni
 # unqualified SProd call again.
 prepDifusCalorND
 marchaEnergTrans
+
+# T068 moved both steady temperature marches whole, proving inverses of 4362
+# and 4097 tokens. T067 had shown they diverge in fifteen directional ways and
+# thirteen non-unifiable logic ways, so they were NOT unified: the two legacy
+# flows sit side by side with no reverseMode branch. An empirical search for
+# the longest identical contiguous block between the two moved bodies found
+# nine lines, all trivial zero-assignments, so nothing was shared.
+#
+# T071 then split each march into four helpers of its own -- sources, annulus
+# coupling, kinetic term, latent term -- to satisfy SC-004. The helpers are per
+# march and never shared, because L06, L09 and L11 make the reverse bodies
+# genuinely different. check-steady-decomposition.py inlines all four calls in
+# each march and compares 4924 and 4627 tokens against the pre-split commit;
+# calibrate-steady-decomposition.sh confirms it catches nine independent
+# corruptions.
+#
+# RenovaTempPermRev has ZERO coverage in the demo corpus, so L2 never enters
+# its body: the token proof plus the dedicated harness are its authority.
+RenovaTempPerm
+RenovaTempPermRev
+
+# T069 moved five thermal helpers. thermal-move.py inverts the ThermalState
+# substitution and compares 1213, 649, 299, 69 and 269 tokens exactly, with the
+# tokenizer calibrated against all seven forbidden transformations of the task
+# table.
+#
+# tempDescarga is reached only through arq.descarga == 1 -> resolveDescarga(),
+# a gas-lift unloading run no demo model enables, so neither L2 nor the harness
+# reached it. The thermal sweep was extended for it before the move was
+# committed: the reference table went from 73 to 80 rows, and the sweep built
+# against the pre-move commit and against the moved code yields identical
+# tables.
+calctempGas
+tempDescarga
+TempDescGL
+atualizaPeriTempProd
+calcTempFim
