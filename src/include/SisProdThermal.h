@@ -33,6 +33,14 @@ struct ThermalClosureUpdater {
                                 double &driftVelocity) const;
 };
 
+/// Direct adapter for the legacy transient coupling owned by SProd.
+struct ThermalEvolutionUpdater {
+    SProd &system;
+
+    void solvePressureVelocityCoupling(int cycle) const;
+    void renew() const;
+};
+
 /// State read by the first thermal kernels extracted from SProd.
 ///
 /// This context grows only when a moved function demonstrates another state
@@ -48,7 +56,7 @@ struct ThermalState {
     const int &primarySectionStart;
     const int &primarySectionEnd;
     const std::vector<int> &coupledCellIndices;
-    const solverP3D &poissonSolver;
+    solverP3D &poissonSolver;
     const int &lastCell;
     const choke &surfaceChoke;
     const int &surfaceChokeMassCondition;
@@ -64,6 +72,13 @@ struct ThermalState {
     const double &inletMassFraction;
     double &inletVoidFraction;
     const double &inletComposition;
+    ThermalEvolutionUpdater evolutionUpdater;
+    const int &surfaceChokeOpen;
+    const double &defaultInletTemperature;
+    const double &timeStep;
+    const double &minimumCycleTimeStep;
+    const std::vector<int> &poisson2DCellIndices;
+    const int &poisson2DCellCount;
 };
 
 /// Interpolates latent heat in the pressure-temperature table.
@@ -86,7 +101,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
 
 /// Updates one control-volume temperature from the thermal energy balance.
 void computeTemperature(const ThermalState &state, int cellIndex,
-                        double previousTemperature, int steadyStateMode);
+                        double previousTemperature, int steadyStateMode = 0);
 
 /// Renews distributed phase-change mass transfer along the production cells.
 void updateDistributedMassTransfer(const ThermalState &state);
@@ -99,6 +114,14 @@ void updateOutletFlowPartitionTerms(const ThermalState &state);
 
 /// Computes mixture-flow partition terms at an internal-section inlet.
 void updateInletFlowPartitionTerms(const ThermalState &state);
+
+/// Prepares the non-dimensional heat-diffusion properties for one cell.
+void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
+                                        int cellIndex);
+
+/// Advances the transient thermal-energy solution by one coupling cycle.
+void advanceTransientEnergy(const ThermalState &state, int cycle,
+                            int maximumCycle);
 
 }  // namespace sisprod::thermal
 

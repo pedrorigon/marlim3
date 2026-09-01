@@ -97,9 +97,9 @@ run_case outlet-temperature-source SisProd.cpp \
     'tempSup = celula[ncel - 1].temp;' \
     'tempSup = celula[ncel].temp;' caught
 
-run_case diffusion-preparation-area SisProd.cpp \
-    $'void SProd::prepDifusCalorND(int i) {\n    double dia = celula[i].duto.a;\n    double area = 0.25 * M_PI * dia * dia;' \
-    $'void SProd::prepDifusCalorND(int i) {\n    double dia = celula[i].duto.a;\n    double area = 0.50 * M_PI * dia * dia;' caught
+run_case diffusion-preparation-area SisProdThermal.cpp \
+    $'void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int i) {\n    double dia = state.cells[i].duto.a;\n    double area = 0.25 * M_PI * dia * dia;' \
+    $'void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int i) {\n    double dia = state.cells[i].duto.a;\n    double area = 0.50 * M_PI * dia * dia;' caught
 
 run_case tabulated-gas-density SisProdThermal.cpp \
     'double energ1 = alfmed * rhogp1 * (hgp1 - pres1 * 98066.5 / rhogp0) +' \

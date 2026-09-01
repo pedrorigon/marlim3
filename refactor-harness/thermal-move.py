@@ -25,6 +25,10 @@ Usage:
     thermal-move.py delegate-t065 <function> <sisprod.cpp> <rewritten-sisprod.cpp>
     thermal-move.py check-t065 <function> <baseline-sisprod.cpp> <extracted.cpp>
     thermal-move.py check-t065-decomposition <baseline-sisprod.cpp> <extracted.cpp>
+    thermal-move.py extract-t066 <function> <sisprod.cpp> <fragment.cpp>
+    thermal-move.py install-t066 <function> <sisprod.cpp> <thermal-in.cpp> <thermal-out.cpp>
+    thermal-move.py delegate-t066 <function> <sisprod.cpp> <rewritten-sisprod.cpp>
+    thermal-move.py check-t066 <function> <baseline-sisprod.cpp> <extracted.cpp>
 """
 from __future__ import annotations
 
@@ -154,7 +158,56 @@ T065_CALLS = {
     "CalcC0UdIniBuf": "state.closureUpdater.bufferedInitialization",
 }
 
+T066_FUNCTIONS = {
+    "prepDifusCalorND": {
+        "new_name": "prepareNonDimensionalHeatDiffusion",
+        "arguments": "i",
+    },
+    "marchaEnergTrans": {
+        "new_name": "advanceTransientEnergy",
+        "arguments": "ciclo, ciclomax",
+    },
+}
+T066_MEMBERS = {
+    **T065_MEMBERS,
+    "aberto": "state.surfaceChokeOpen",
+    "temperatura": "state.defaultInletTemperature",
+    "dt": "state.timeStep",
+    "dtCicMin": "state.minimumCycleTimeStep",
+    "indCelPoisson2D": "state.poisson2DCellIndices",
+    "nCelulaPoisson2D": "state.poisson2DCellCount",
+}
+T066_FIELD_TO_MEMBER = {
+    field.split(".", 1)[1]: member
+    for member, field in T066_MEMBERS.items()
+}
+T066_MEMBER_RE = re.compile(
+    r"(?<![\w.])(" + "|".join(T066_MEMBERS) + r")\b"
+)
+T066_FIELD_RE = re.compile(
+    r"(?<![\w.])state\.(" + "|".join(T066_FIELD_TO_MEMBER) + r")\b"
+)
+T066_CALLS = {
+    "calctemp": "computeTemperature",
+    "prepDifusCalorND": "prepareNonDimensionalHeatDiffusion",
+    "SolveAcopPV": "state.evolutionUpdater.solvePressureVelocityCoupling",
+    "renova": "state.evolutionUpdater.renew",
+}
+
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
+
+
+def substitute_outside_comments(
+    pattern: re.Pattern[str], replacement, text: str
+) -> str:
+    parts: list[str] = []
+    cursor = 0
+    for comment in COMMENT.finditer(text):
+        parts.append(pattern.sub(replacement, text[cursor:comment.start()]))
+        parts.append(comment.group(0))
+        cursor = comment.end()
+    parts.append(pattern.sub(replacement, text[cursor:]))
+    return "".join(parts)
 
 
 def scan_quoted(text: str, start: int) -> tuple[str, int]:
@@ -452,6 +505,63 @@ def inverse_t065(old_name: str, body: str) -> str:
     )
 
 
+def forward_t066(old_name: str, body: str) -> str:
+    spec = T066_FUNCTIONS[old_name]
+    new_name = spec["new_name"]
+    signature = re.match(
+        rf"void SProd::{old_name}\((.*?)\) \{{", body
+    ).group(1)
+    separator = ", " if signature else ""
+    body = re.sub(
+        rf"^void SProd::{old_name}\(.*?\) \{{",
+        f"void {new_name}(const ThermalState &state{separator}{signature}) {{",
+        body,
+        count=1,
+    )
+    body = substitute_outside_comments(
+        T066_MEMBER_RE,
+        lambda match: T066_MEMBERS[match.group(1)],
+        body,
+    )
+    for old_call, new_call in T066_CALLS.items():
+        call_prefix = "state, " if old_call in {
+            "calctemp", "prepDifusCalorND"
+        } else ""
+        body = substitute_outside_comments(
+            re.compile(rf"(?<![\w.]){old_call}\("),
+            f"{new_call}({call_prefix}",
+            body,
+        )
+    return body
+
+
+def inverse_t066(old_name: str, body: str) -> str:
+    spec = T066_FUNCTIONS[old_name]
+    new_name = spec["new_name"]
+    for old_call, new_call in reversed(tuple(T066_CALLS.items())):
+        call_prefix = "state, " if old_call in {
+            "calctemp", "prepDifusCalorND"
+        } else ""
+        body = re.sub(
+            rf"(?<![\w.]){re.escape(new_call)}\({re.escape(call_prefix)}",
+            f"{old_call}(",
+            body,
+        )
+    body = T066_FIELD_RE.sub(
+        lambda match: T066_FIELD_TO_MEMBER[match.group(1)], body
+    )
+    signature = re.match(
+        rf"void {new_name}\(const ThermalState &state(?:, (.*?))?\) \{{",
+        body,
+    ).group(1) or ""
+    return re.sub(
+        rf"^void {new_name}\(.*?\) \{{",
+        f"void SProd::{old_name}({signature}) {{",
+        body,
+        count=1,
+    )
+
+
 def require_bodies(source_path: str) -> dict[str, tuple[int, int, str]]:
     bodies = carve(open(source_path, encoding="utf-8").read())
     missing = [name for name in FUNCTIONS if name not in bodies]
@@ -665,6 +775,89 @@ def delegate_t065(old_name: str, source_path: str, output_path: str) -> int:
     open(output_path, "w", encoding="utf-8").write("\n".join(lines))
     print(f"delegated {old_name} lines {start + 1}-{end + 1}")
     return 0
+
+
+def require_t066(source_path: str, old_name: str) -> tuple[int, int, str]:
+    if old_name not in T066_FUNCTIONS:
+        raise ValueError(f"unsupported T066 function: {old_name}")
+    source = open(source_path, encoding="utf-8").read()
+    body = carve_named(source, rf"void SProd::{old_name}\(")
+    if body is None:
+        raise ValueError(f"expected one SProd::{old_name} body, found none")
+    return body
+
+
+def extract_t066(old_name: str, source_path: str, output_path: str) -> int:
+    start, end, body = require_t066(source_path, old_name)
+    open(output_path, "w", encoding="utf-8").write(
+        forward_t066(old_name, body) + "\n"
+    )
+    print(f"{old_name:22} {start + 1}-{end + 1}")
+    print(f"extracted {old_name} into {output_path}")
+    return 0
+
+
+def install_t066(
+    old_name: str, source_path: str, thermal_input_path: str,
+    thermal_output_path: str
+) -> int:
+    _, _, body = require_t066(source_path, old_name)
+    thermal = open(thermal_input_path, encoding="utf-8").read()
+    closing = "}  // namespace sisprod::thermal\n"
+    if thermal.count(closing) != 1:
+        raise ValueError("expected one thermal namespace closing marker")
+    replacement = forward_t066(old_name, body) + "\n\n" + closing
+    open(thermal_output_path, "w", encoding="utf-8").write(
+        thermal.replace(closing, replacement, 1)
+    )
+    print(f"installed {old_name} into {thermal_output_path}")
+    return 0
+
+
+def delegate_t066(old_name: str, source_path: str, output_path: str) -> int:
+    source = open(source_path, encoding="utf-8").read()
+    start, end, body = require_t066(source_path, old_name)
+    signature = re.match(
+        rf"void SProd::{old_name}\((.*?)\) \{{", body
+    ).group(1)
+    spec = T066_FUNCTIONS[old_name]
+    arguments = spec["arguments"]
+    call_suffix = f", {arguments}" if arguments else ""
+    wrapper = [
+        f"void SProd::{old_name}({signature}) {{",
+        f"    sisprod::thermal::{spec['new_name']}(thermalStateOf(*this){call_suffix});",
+        "}",
+    ]
+    lines = source.split("\n")
+    lines[start:end + 1] = wrapper
+    open(output_path, "w", encoding="utf-8").write("\n".join(lines))
+    print(f"delegated {old_name} lines {start + 1}-{end + 1}")
+    return 0
+
+
+def check_t066(old_name: str, baseline_path: str, current_path: str) -> int:
+    baseline = carve_named(
+        open(baseline_path, encoding="utf-8").read(),
+        rf"void SProd::{old_name}\(",
+    )
+    new_name = T066_FUNCTIONS[old_name]["new_name"]
+    current = carve_named(
+        open(current_path, encoding="utf-8").read(),
+        rf"void {new_name}\(const ThermalState &state",
+    )
+    if baseline is None or current is None:
+        print(f"MISSING  {new_name} <- {old_name}")
+        return 1
+    expected = tokenize(baseline[2])
+    actual = tokenize(inverse_t066(old_name, current[2]))
+    if expected == actual:
+        print(f"OK       {new_name} <- {old_name} ({len(expected)} tokens)")
+        return 0
+    position = first_difference(expected, actual)
+    print(f"DIFFERS  {new_name} <- {old_name} at token {position}")
+    print(f"  baseline: {' '.join(expected[max(0, position - 5):position + 6])}")
+    print(f"  current : {' '.join(actual[max(0, position - 5):position + 6])}")
+    return 1
 
 
 def check_t065(old_name: str, baseline_path: str, current_path: str) -> int:
@@ -1234,6 +1427,18 @@ def main() -> int:
         return 2
     mode = sys.argv[1]
     try:
+        if mode == "install-t066" and len(sys.argv) == 6:
+            return install_t066(
+                sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+            )
+        if mode in {"extract-t066", "delegate-t066", "check-t066"} \
+                and len(sys.argv) == 5:
+            old_name, first, second = sys.argv[2:]
+            if mode == "extract-t066":
+                return extract_t066(old_name, first, second)
+            if mode == "delegate-t066":
+                return delegate_t066(old_name, first, second)
+            return check_t066(old_name, first, second)
         if mode == "install-t065" and len(sys.argv) == 6:
             return install_t065(
                 sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]

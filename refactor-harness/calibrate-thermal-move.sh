@@ -11,6 +11,7 @@ calctemp_baseline_ref="${MARLIM_CALCTEMP_MOVE_BASELINE:-16f7609}"
 t063_baseline_ref="${MARLIM_T063_MOVE_BASELINE:-f82e95b}"
 t064_baseline_ref="${MARLIM_T064_MOVE_BASELINE:-8c1742f}"
 t065_baseline_ref="${MARLIM_T065_MOVE_BASELINE:-4546f1e}"
+t066_baseline_ref="${MARLIM_T066_MOVE_BASELINE:-0bc2e6f}"
 scratch="$(mktemp -d -t marlim3-thermal-move-cal-XXXXXX)"
 trap 'rm -rf "$scratch"' EXIT
 baseline="$scratch/SisProd-before-t061.cpp"
@@ -18,6 +19,7 @@ calctemp_baseline="$scratch/SisProd-before-t062.cpp"
 t063_baseline="$scratch/SisProd-before-t063.cpp"
 t064_baseline="$scratch/SisProd-before-t064.cpp"
 t065_baseline="$scratch/SisProd-before-t065.cpp"
+t066_baseline="$scratch/SisProd-before-t066.cpp"
 
 git -C "$project_root" show "$baseline_ref:src/core/SisProd.cpp" > "$baseline" || {
     echo "cannot read thermal move baseline $baseline_ref" >&2
@@ -41,6 +43,11 @@ git -C "$project_root" show \
 git -C "$project_root" show \
     "$t065_baseline_ref:src/core/SisProd.cpp" > "$t065_baseline" || {
     echo "cannot read T065 move baseline $t065_baseline_ref" >&2
+    exit 2
+}
+git -C "$project_root" show \
+    "$t066_baseline_ref:src/core/SisProd.cpp" > "$t066_baseline" || {
+    echo "cannot read T066 move baseline $t066_baseline_ref" >&2
     exit 2
 }
 
@@ -407,6 +414,68 @@ run_t065_decomposition_case flow-buffered-inlet \
 run_t065_decomposition_case flow-missing-helper \
     'void updateOutletBoundaryFlowPartition(' \
     'void removedOutletBoundaryFlowPartition('
+
+run_t066_case() {
+    local name="$1" old_name="$2" from="$3" to="$4"
+    local control="$scratch/$name-control.cpp"
+    local candidate="$scratch/$name.cpp"
+    python3 "$tool" extract-t066 \
+        "$old_name" "$t066_baseline" "$control" > /dev/null || exit 2
+    python3 "$tool" check-t066 \
+        "$old_name" "$t066_baseline" "$control" > /dev/null || {
+        printf '  %-24s CONTROL FAILED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    }
+    cp "$control" "$candidate"
+    python3 - "$candidate" "$from" "$to" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+old = sys.argv[2]
+new = sys.argv[3]
+text = path.read_text()
+count = text.count(old)
+if count != 1:
+    print(f"expected mutation pattern once, found {count}", file=sys.stderr)
+    raise SystemExit(3)
+path.write_text(text.replace(old, new, 1))
+PY
+    if (( $? != 0 )) || cmp -s "$candidate" "$control"; then
+        printf '  %-24s MUTATION NOT INJECTED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    if python3 "$tool" check-t066 \
+        "$old_name" "$t066_baseline" "$candidate" > /dev/null 2>&1; then
+        printf '  %-24s MISSED\n' "$name" >&2
+        failed=$((failed + 1))
+        return
+    fi
+    printf '  %-24s caught\n' "$name"
+    passed=$((passed + 1))
+}
+
+run_t066_case diffusion-area prepDifusCalorND \
+    'double area = 0.25 * M_PI * dia * dia;' \
+    'double area = 0.50 * M_PI * dia * dia;'
+
+run_t066_case diffusion-qualified-dt prepDifusCalorND \
+    'state.cells[i].calor.dt = state.cells[i].dt;' \
+    'state.cells[i].calor.state.timeStep = state.cells[i].state.timeStep;'
+
+run_t066_case energy-poisson-renew marchaEnergTrans \
+    'state.poissonSolver.renova();' \
+    'state.poissonSolver.state.evolutionUpdater.renew();'
+
+run_t066_case energy-cycle-step marchaEnergTrans \
+    'state.minimumCycleTimeStep != state.timeStep' \
+    'state.minimumCycleTimeStep == state.timeStep'
+
+run_t066_case energy-missing marchaEnergTrans \
+    'void advanceTransientEnergy(const ThermalState &state, int ciclo, int ciclomax) {' \
+    'void removedTransientEnergy(const ThermalState &state, int ciclo, int ciclomax) {'
 
 if (( failed > 0 )); then
     printf 'THERMAL MOVE CALIBRATION FAILED -- %d of %d case(s)\n' \

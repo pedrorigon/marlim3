@@ -148,3 +148,11 @@ renovaTemp
 renovaterm
 renovatermAfluFim
 renovatermColIni
+
+# T066 moved both transient-energy functions whole. thermal-move.py reverses
+# the ThermalState substitutions and direct coupling adapter, comparing 834 and
+# 1,630 tokens exactly. Its calibration includes the qualified `dt` and
+# `poissonSolver.renova()` cases so a member call cannot be mistaken for an
+# unqualified SProd call again.
+prepDifusCalorND
+marchaEnergTrans

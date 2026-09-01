@@ -3271,4 +3271,233 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     state.cells[1].term1L = state.cells[i].term1;
     state.cells[1].term2L = state.cells[i].term2;
 }
+void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int i) {
+    double dia = state.cells[i].duto.a;
+    double area = 0.25 * M_PI * dia * dia;
+    double alfmed = state.cells[i].alf;
+    double betmed = state.cells[i].bet;
+    double ugsmed;
+    double ulsmed;
+    if (i > 0 && (state.cells[i - 1].acsr.tipo != 5 ||
+                  state.cells[i - 1].acsr.chk.AreaGarg > (1e-3 + state.input.master1.razareaativ) * state.cells[i - 1].duto.area)) {
+        if (state.cells[i].alf > (*state.globals).localtiny)
+            ugsmed = state.cells[i].QG / area;
+        else {
+            ugsmed = 0.;
+        }
+        if (state.cells[i].alf < 1. - (*state.globals).localtiny)
+            ulsmed = state.cells[i].QL / area;
+        else {
+            ulsmed = 0.;
+        }
+    } else {
+        if (state.cells[i].alf > (*state.globals).localtiny)
+            ugsmed = state.cells[i + 1].QG / area;
+        else {
+            ugsmed = 0.;
+        }
+
+        if (state.cells[i].alf < 1. - (*state.globals).localtiny)
+            ulsmed = state.cells[i + 1].QL / area;
+        else {
+            ulsmed = 0.;
+        }
+    }
+    double rp = state.cells[i].rpC;
+    double rc = state.cells[i].rcC;
+    double rhol = (1. - betmed) * rp + betmed * rc;
+    double rhog = state.cells[i].rgC;
+    double cpl = (1. - betmed) * state.cells[i].flui.CalorLiq(state.cells[i].presini, state.cells[i].temp) + betmed * state.cells[i].fluicol.CalorLiq(state.cells[i].presini, state.cells[i].temp);
+    double cpg = state.cells[i].flui.CalorGas(state.cells[i].presini, state.cells[i].temp);
+
+    state.cells[i].calor.Tint = state.cells[i].temp;
+    state.cells[i].calor.dtL = state.cells[i].temp - state.cells[i - 1].tempini;
+    state.cells[i].calor.Vint = ugsmed + ulsmed;
+    state.cells[i].calor.dt = state.cells[i].dt;
+    double condliq = (1. - betmed) * state.cells[i].flui.CondLiq(state.cells[i].presini, state.cells[i].temp) + betmed * state.cells[i].fluicol.CondLiq(state.cells[i].presini, state.cells[i].temp); //(1. - betmed) * celula[i].flui.CondLiq(celula[i].pres, celula[i].temp)
+    state.cells[i].calor.kint = condliq * (1 - alfmed) + state.cells[i].flui.CondGas(state.cells[i].presini, state.cells[i].temp) * alfmed;                                                 // condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].pres, celula[i].temp) * alfmed;
+    state.cells[i].calor.cpint = cpl * (1 - alfmed) + cpg * alfmed;
+    state.cells[i].calor.rhoint = rhol * (1 - alfmed) + rhog * alfmed;
+    //(1. - betmed) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp)
+    double viscliq = (1. - betmed) * state.cells[i].mipC + betmed * state.cells[i].micC;
+    // viscliq * (1 - alfmed) * 1.e-3
+    state.cells[i].calor.viscint = viscliq * (1 - alfmed) * 1.e-3 + state.cells[i].migC * alfmed * 1.e-3;
+    double dtemp = state.cells[i].temp * 0.01;
+    if (fabs(state.cells[i].temp) < 1e-15)
+        dtemp = 0.1;
+    double rholdT = (1. - betmed) * state.cells[i].flui.MasEspLiq(state.cells[i].presini, state.cells[i].temp + dtemp) +
+                    betmed * state.cells[i].fluicol.MasEspFlu(state.cells[i].presini, state.cells[i].temp + dtemp) - rhol; //(1. - betmed) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp+dtemp) +
+    double rhogdT = state.cells[i].flui.MasEspGas(state.cells[i].presini, state.cells[i].temp + dtemp) - rhog;             // celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp+dtemp)-rhog;
+    state.cells[i].calor.betint = -(1 / state.cells[i].calor.rhoint) * (rholdT * (1 - alfmed) + rhogdT * alfmed) / (dtemp);
+}
+
+void advanceTransientEnergy(const ThermalState &state, int ciclo, int ciclomax) {
+    if (((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.chkv == 0) {
+        if (state.cells[state.lastCell - 1].MliqiniR < 0) {
+            state.cells[state.lastCell - 1].MR = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
+            state.cells[state.lastCell - 1].MliqiniR = 0;
+            state.cells[state.lastCell - 1].term1R = 0;
+            state.cells[state.lastCell - 1].term2R = 0;
+            state.cells[state.lastCell].MC = state.cells[state.lastCell].MC - state.cells[state.lastCell].Mliqini;
+            state.cells[state.lastCell].Mliqini = 0;
+            state.cells[state.lastCell].term1 = 0;
+            state.cells[state.lastCell].term2 = 0;
+        }
+        if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassCondition == 0 || state.surfaceChokeOpen == 1)) {
+            state.cells[state.lastCell - 1].QLR = 0;
+            state.cells[state.lastCell].QL = 0;
+        }
+    } else if ((state.input.chkv == 1 && state.surfaceChokeMassCondition == 0) || (state.input.chkv == 1 && state.surfaceChokeMassCondition == 1)) {
+        if (state.cells[state.lastCell - 1].MliqiniR < 0) {
+            state.cells[state.lastCell - 1].MR = 0.;
+            state.cells[state.lastCell - 1].MliqiniR = 0;
+            state.cells[state.lastCell - 1].term1R = 0;
+            state.cells[state.lastCell - 1].term2R = 0;
+            state.cells[state.lastCell].MC = 0.;
+            state.cells[state.lastCell].Mliqini = 0;
+            state.cells[state.lastCell].term1 = 0;
+            state.cells[state.lastCell].term2 = 0;
+        }
+        if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassCondition == 0 || state.surfaceChokeOpen == 1)) {
+            state.cells[state.lastCell - 1].QLR = 0;
+            state.cells[state.lastCell].QL = 0;
+        }
+    }
+
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // atencao!!!!!!!!!!!!!!!!!!
+    // existe uma questao que parece mal resolvida na resolucao desta marcha, nao foi feito nenhum teste para
+    // o caso em que a velocidade de transporte da temperatura é <0 neste caso, a temperatura na celula de indice
+    // não deveria entrar no metodo calctemp, ja que não e mais o caso de ser uma celula com condicao de
+    // contorno para temperatura??????????????????????????????????????????????????????????????????????/
+    //"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    state.cells[0].tempini = state.cells[0].temp;
+    if (state.input.ConContEntrada > 0)
+        state.cells[0].temp = state.inletTemperature;
+    else
+        state.cells[0].temp = state.defaultInletTemperature;
+    state.cells[0].dTdt = (state.cells[0].temp - state.cells[0].tempini) / state.timeStep;
+    state.cells[0].dTdtL = state.cells[0].dTdt;
+    state.cells[1].tempLini = state.cells[1].tempL;
+    state.cells[1].tempL = state.cells[0].temp;
+    for (int i = 1; i <= state.lastCell; i++) {
+        state.cells[i].tempini = state.cells[i].temp;
+    }
+    if (state.input.modoDifus3D == 0) {
+        if (state.poisson2DCellCount > 1) {
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+            for (int iP2D = 0; iP2D < state.poisson2DCellCount; iP2D++) {
+                int i = state.poisson2DCellIndices[iP2D];
+                if (i <= state.lastCell) {
+                    computeTemperature(state, i, state.cells[i].tempini);
+                } else {
+                    if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
+                        state.cells[i].temp = state.cells[i].calor.Textern1;
+                    else
+                        state.cells[i].temp = state.gasSurfaceTemperature;
+                }
+                state.cells[i].dTdt = (state.cells[i].temp - state.cells[i].tempini) / state.timeStep;
+                state.cells[i].dTdtIni = state.cells[i].dTdt;
+            }
+        }
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+        for (int i = 0; i <= state.lastCell; i++) {
+            if (i == 217) {
+                int para;
+                para = 0;
+            }
+            if (state.cells[i].calor.difus2D == 0) {
+                if (i <= state.lastCell) {
+                    computeTemperature(state, i, state.cells[i].tempini);
+                } else {
+                    if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
+                        state.cells[i].temp = state.cells[i].calor.Textern1;
+                    else
+                        state.cells[i].temp = state.gasSurfaceTemperature;
+                }
+                state.cells[i].dTdt = (state.cells[i].temp - state.cells[i].tempini) / state.timeStep;
+                state.cells[i].dTdtIni = state.cells[i].dTdt;
+            }
+        }
+    } else if (state.input.modoDifus3D == 1) {
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+        for (int i = 0; i <= state.lastCell; i++) {
+            int acoplado = -1;
+            int icelAcop;
+            for (int iacop = 0; iacop < state.input.nacop; iacop++) {
+                icelAcop = state.input.celAcop[iacop].indCel;
+                if (i == icelAcop) {
+                    acoplado = iacop;
+                    break;
+                }
+            }
+            if (acoplado != -1) {
+                prepareNonDimensionalHeatDiffusion(state, i);
+                int iacop1 = state.coupledCellIndices[acoplado];
+                state.poissonSolver.dados.tInt[iacop1] = state.cells[icelAcop].temp;
+                double hiCel = state.cells[icelAcop].calor.hInt();
+                state.poissonSolver.dados.hI[iacop1] = hiCel;
+            }
+        }
+        if (ciclo < ciclomax || ciclomax == 0 || state.minimumCycleTimeStep != state.timeStep) {
+            if (ciclo == ciclomax && ciclomax > 0)
+                state.poissonSolver.FeiticoDoTempo();
+            state.poissonSolver.transientePoisson(state.timeStep);
+        }
+        if (state.poisson2DCellCount > 1) {
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+            for (int iP2D = 0; iP2D < state.poisson2DCellCount; iP2D++) {
+                int i = state.poisson2DCellIndices[iP2D];
+                if (i <= state.lastCell) {
+                    computeTemperature(state, i, state.cells[i].tempini);
+                } else {
+                    if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
+                        state.cells[i].temp = state.cells[i].calor.Textern1;
+                    else
+                        state.cells[i].temp = state.gasSurfaceTemperature;
+                }
+                state.cells[i].dTdt = (state.cells[i].temp - state.cells[i].tempini) / state.timeStep;
+                state.cells[i].dTdtIni = state.cells[i].dTdt;
+            }
+        }
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+        for (int i = 0; i <= state.lastCell; i++) {
+            if (state.cells[i].calor.difus2D == 0) {
+                if (i <= state.lastCell) {
+                    computeTemperature(state, i, state.cells[i].tempini);
+                } else {
+                    if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
+                        state.cells[i].temp = state.cells[i].calor.Textern1;
+                    else
+                        state.cells[i].temp = state.gasSurfaceTemperature;
+                }
+                state.cells[i].dTdt = (state.cells[i].temp - state.cells[i].tempini) / state.timeStep;
+                state.cells[i].dTdtIni = state.cells[i].dTdt;
+            }
+        }
+    }
+    for (int i = 1; i <= state.lastCell; i++) {
+        state.cells[i].dTdtL = state.cells[i - 1].dTdt;
+        if (i < state.lastCell) {
+            state.cells[i + 1].tempLini = state.cells[i + 1].tempL;
+            state.cells[i + 1].tempL = state.cells[i].temp;
+        }
+        state.cells[i - 1].tempRini = state.cells[i - 1].tempR;
+        state.cells[i - 1].tempR = state.cells[i].temp;
+    }
+    if (ciclo < ciclomax) {
+        for (int k = 0; k <= state.lastCell; k++) {
+            state.cells[k].FeiticoDoTempo();
+        }
+    } else if (state.input.modoDifus3D == 1)
+        state.poissonSolver.renova();
+    if (state.completeModel == 0) {
+        if (ciclo < ciclomax) {
+            state.evolutionUpdater.solvePressureVelocityCoupling(ciclo);
+            state.evolutionUpdater.renew();
+        }
+    }
+}
+
 }  // namespace sisprod::thermal

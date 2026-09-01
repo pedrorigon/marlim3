@@ -3371,6 +3371,15 @@ void sisprod::thermal::ThermalClosureUpdater::bufferedInitialization(
     system.CalcC0UdIniBuf(cellIndex, distribution, driftVelocity);
 }
 
+void sisprod::thermal::ThermalEvolutionUpdater::solvePressureVelocityCoupling(
+    int cycle) const {
+    system.SolveAcopPV(cycle);
+}
+
+void sisprod::thermal::ThermalEvolutionUpdater::renew() const {
+    system.renova();
+}
+
 namespace {
 
 sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
@@ -3400,6 +3409,13 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
         .inletMassFraction = system.titE,
         .inletVoidFraction = system.alfE,
         .inletComposition = system.betaE,
+        .evolutionUpdater = {.system = system},
+        .surfaceChokeOpen = system.aberto,
+        .defaultInletTemperature = system.temperatura,
+        .timeStep = system.dt,
+        .minimumCycleTimeStep = system.dtCicMin,
+        .poisson2DCellIndices = system.indCelPoisson2D,
+        .poisson2DCellCount = system.nCelulaPoisson2D,
     };
 }
 
@@ -8310,232 +8326,11 @@ void SProd::SolveAcopPV(int vexpli, int ciclo) {
 }
 
 void SProd::prepDifusCalorND(int i) {
-    double dia = celula[i].duto.a;
-    double area = 0.25 * M_PI * dia * dia;
-    double alfmed = celula[i].alf;
-    double betmed = celula[i].bet;
-    double ugsmed;
-    double ulsmed;
-    if (i > 0 && (celula[i - 1].acsr.tipo != 5 ||
-                  celula[i - 1].acsr.chk.AreaGarg > (1e-3 + arq.master1.razareaativ) * celula[i - 1].duto.area)) {
-        if (celula[i].alf > (*vg1dSP).localtiny)
-            ugsmed = celula[i].QG / area;
-        else {
-            ugsmed = 0.;
-        }
-        if (celula[i].alf < 1. - (*vg1dSP).localtiny)
-            ulsmed = celula[i].QL / area;
-        else {
-            ulsmed = 0.;
-        }
-    } else {
-        if (celula[i].alf > (*vg1dSP).localtiny)
-            ugsmed = celula[i + 1].QG / area;
-        else {
-            ugsmed = 0.;
-        }
-
-        if (celula[i].alf < 1. - (*vg1dSP).localtiny)
-            ulsmed = celula[i + 1].QL / area;
-        else {
-            ulsmed = 0.;
-        }
-    }
-    double rp = celula[i].rpC;
-    double rc = celula[i].rcC;
-    double rhol = (1. - betmed) * rp + betmed * rc;
-    double rhog = celula[i].rgC;
-    double cpl = (1. - betmed) * celula[i].flui.CalorLiq(celula[i].presini, celula[i].temp) + betmed * celula[i].fluicol.CalorLiq(celula[i].presini, celula[i].temp);
-    double cpg = celula[i].flui.CalorGas(celula[i].presini, celula[i].temp);
-
-    celula[i].calor.Tint = celula[i].temp;
-    celula[i].calor.dtL = celula[i].temp - celula[i - 1].tempini;
-    celula[i].calor.Vint = ugsmed + ulsmed;
-    celula[i].calor.dt = celula[i].dt;
-    double condliq = (1. - betmed) * celula[i].flui.CondLiq(celula[i].presini, celula[i].temp) + betmed * celula[i].fluicol.CondLiq(celula[i].presini, celula[i].temp); //(1. - betmed) * celula[i].flui.CondLiq(celula[i].pres, celula[i].temp)
-    celula[i].calor.kint = condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].presini, celula[i].temp) * alfmed;                                                 // condliq * (1 - alfmed) + celula[i].flui.CondGas(celula[i].pres, celula[i].temp) * alfmed;
-    celula[i].calor.cpint = cpl * (1 - alfmed) + cpg * alfmed;
-    celula[i].calor.rhoint = rhol * (1 - alfmed) + rhog * alfmed;
-    //(1. - betmed) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp)
-    double viscliq = (1. - betmed) * celula[i].mipC + betmed * celula[i].micC;
-    // viscliq * (1 - alfmed) * 1.e-3
-    celula[i].calor.viscint = viscliq * (1 - alfmed) * 1.e-3 + celula[i].migC * alfmed * 1.e-3;
-    double dtemp = celula[i].temp * 0.01;
-    if (fabs(celula[i].temp) < 1e-15)
-        dtemp = 0.1;
-    double rholdT = (1. - betmed) * celula[i].flui.MasEspLiq(celula[i].presini, celula[i].temp + dtemp) +
-                    betmed * celula[i].fluicol.MasEspFlu(celula[i].presini, celula[i].temp + dtemp) - rhol; //(1. - betmed) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp+dtemp) +
-    double rhogdT = celula[i].flui.MasEspGas(celula[i].presini, celula[i].temp + dtemp) - rhog;             // celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp+dtemp)-rhog;
-    celula[i].calor.betint = -(1 / celula[i].calor.rhoint) * (rholdT * (1 - alfmed) + rhogdT * alfmed) / (dtemp);
+    sisprod::thermal::prepareNonDimensionalHeatDiffusion(thermalStateOf(*this), i);
 }
 
 void SProd::marchaEnergTrans(int ciclo, int ciclomax) {
-    if (((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1) && arq.chkv == 0) {
-        if (celula[ncel - 1].MliqiniR < 0) {
-            celula[ncel - 1].MR = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-            celula[ncel - 1].MliqiniR = 0;
-            celula[ncel - 1].term1R = 0;
-            celula[ncel - 1].term2R = 0;
-            celula[ncel].MC = celula[ncel].MC - celula[ncel].Mliqini;
-            celula[ncel].Mliqini = 0;
-            celula[ncel].term1 = 0;
-            celula[ncel].term2 = 0;
-        }
-        if (celula[ncel - 1].QLR < 0 && (masChkSup == 0 || aberto == 1)) {
-            celula[ncel - 1].QLR = 0;
-            celula[ncel].QL = 0;
-        }
-    } else if ((arq.chkv == 1 && masChkSup == 0) || (arq.chkv == 1 && masChkSup == 1)) {
-        if (celula[ncel - 1].MliqiniR < 0) {
-            celula[ncel - 1].MR = 0.;
-            celula[ncel - 1].MliqiniR = 0;
-            celula[ncel - 1].term1R = 0;
-            celula[ncel - 1].term2R = 0;
-            celula[ncel].MC = 0.;
-            celula[ncel].Mliqini = 0;
-            celula[ncel].term1 = 0;
-            celula[ncel].term2 = 0;
-        }
-        if (celula[ncel - 1].QLR < 0 && (masChkSup == 0 || aberto == 1)) {
-            celula[ncel - 1].QLR = 0;
-            celula[ncel].QL = 0;
-        }
-    }
-
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // atencao!!!!!!!!!!!!!!!!!!
-    // existe uma questao que parece mal resolvida na resolucao desta marcha, nao foi feito nenhum teste para
-    // o caso em que a velocidade de transporte da temperatura é <0 neste caso, a temperatura na celula de indice
-    // não deveria entrar no metodo calctemp, ja que não e mais o caso de ser uma celula com condicao de
-    // contorno para temperatura??????????????????????????????????????????????????????????????????????/
-    //"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    celula[0].tempini = celula[0].temp;
-    if (arq.ConContEntrada > 0)
-        celula[0].temp = tempE;
-    else
-        celula[0].temp = temperatura;
-    celula[0].dTdt = (celula[0].temp - celula[0].tempini) / dt;
-    celula[0].dTdtL = celula[0].dTdt;
-    celula[1].tempLini = celula[1].tempL;
-    celula[1].tempL = celula[0].temp;
-    for (int i = 1; i <= ncel; i++) {
-        celula[i].tempini = celula[i].temp;
-    }
-    if (arq.modoDifus3D == 0) {
-        if (nCelulaPoisson2D > 1) {
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-            for (int iP2D = 0; iP2D < nCelulaPoisson2D; iP2D++) {
-                int i = indCelPoisson2D[iP2D];
-                if (i <= ncel) {
-                    calctemp(i, celula[i].tempini);
-                } else {
-                    if ((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1)
-                        celula[i].temp = celula[i].calor.Textern1;
-                    else
-                        celula[i].temp = tGSup;
-                }
-                celula[i].dTdt = (celula[i].temp - celula[i].tempini) / dt;
-                celula[i].dTdtIni = celula[i].dTdt;
-            }
-        }
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-        for (int i = 0; i <= ncel; i++) {
-            if (i == 217) {
-                int para;
-                para = 0;
-            }
-            if (celula[i].calor.difus2D == 0) {
-                if (i <= ncel) {
-                    calctemp(i, celula[i].tempini);
-                } else {
-                    if ((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1)
-                        celula[i].temp = celula[i].calor.Textern1;
-                    else
-                        celula[i].temp = tGSup;
-                }
-                celula[i].dTdt = (celula[i].temp - celula[i].tempini) / dt;
-                celula[i].dTdtIni = celula[i].dTdt;
-            }
-        }
-    } else if (arq.modoDifus3D == 1) {
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-        for (int i = 0; i <= ncel; i++) {
-            int acoplado = -1;
-            int icelAcop;
-            for (int iacop = 0; iacop < arq.nacop; iacop++) {
-                icelAcop = arq.celAcop[iacop].indCel;
-                if (i == icelAcop) {
-                    acoplado = iacop;
-                    break;
-                }
-            }
-            if (acoplado != -1) {
-                prepDifusCalorND(i);
-                int iacop1 = acertaIndAcop[acoplado];
-                poisson3D.dados.tInt[iacop1] = celula[icelAcop].temp;
-                double hiCel = celula[icelAcop].calor.hInt();
-                poisson3D.dados.hI[iacop1] = hiCel;
-            }
-        }
-        if (ciclo < ciclomax || ciclomax == 0 || dtCicMin != dt) {
-            if (ciclo == ciclomax && ciclomax > 0)
-                poisson3D.FeiticoDoTempo();
-            poisson3D.transientePoisson(dt);
-        }
-        if (nCelulaPoisson2D > 1) {
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-            for (int iP2D = 0; iP2D < nCelulaPoisson2D; iP2D++) {
-                int i = indCelPoisson2D[iP2D];
-                if (i <= ncel) {
-                    calctemp(i, celula[i].tempini);
-                } else {
-                    if ((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1)
-                        celula[i].temp = celula[i].calor.Textern1;
-                    else
-                        celula[i].temp = tGSup;
-                }
-                celula[i].dTdt = (celula[i].temp - celula[i].tempini) / dt;
-                celula[i].dTdtIni = celula[i].dTdt;
-            }
-        }
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-        for (int i = 0; i <= ncel; i++) {
-            if (celula[i].calor.difus2D == 0) {
-                if (i <= ncel) {
-                    calctemp(i, celula[i].tempini);
-                } else {
-                    if ((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1)
-                        celula[i].temp = celula[i].calor.Textern1;
-                    else
-                        celula[i].temp = tGSup;
-                }
-                celula[i].dTdt = (celula[i].temp - celula[i].tempini) / dt;
-                celula[i].dTdtIni = celula[i].dTdt;
-            }
-        }
-    }
-    for (int i = 1; i <= ncel; i++) {
-        celula[i].dTdtL = celula[i - 1].dTdt;
-        if (i < ncel) {
-            celula[i + 1].tempLini = celula[i + 1].tempL;
-            celula[i + 1].tempL = celula[i].temp;
-        }
-        celula[i - 1].tempRini = celula[i - 1].tempR;
-        celula[i - 1].tempR = celula[i].temp;
-    }
-    if (ciclo < ciclomax) {
-        for (int k = 0; k <= ncel; k++) {
-            celula[k].FeiticoDoTempo();
-        }
-    } else if (arq.modoDifus3D == 1)
-        poisson3D.renova();
-    if (modeloCompleto == 0) {
-        if (ciclo < ciclomax) {
-            SolveAcopPV(ciclo);
-            renova();
-        }
-    }
+    sisprod::thermal::advanceTransientEnergy(thermalStateOf(*this), ciclo, ciclomax);
 }
 
 void SProd::atualizaMiniTab() {
