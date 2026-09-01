@@ -16,6 +16,12 @@
 #include <chrono>
 #include <math.h>
 
+namespace {
+// Defined further down, next to the rest of the thermal plumbing. Declared here
+// because the first delegates that need it appear before that definition.
+sisprod::thermal::ThermalState thermalStateOf(SProd &system);
+}  // namespace
+
 void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
 }
@@ -2526,103 +2532,7 @@ double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
 }
 
 void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
-
-    if (semTermo == 0) {
-        double dx = celulaG[i].dx0;
-        double dxmed = 0.5 * (celulaG[i].dx0 + celulaG[i - 1].dx0);
-        double area = celulaG[i].duto.area;
-        double ugsmed;
-        if (i < ncelGas)
-            ugsmed = celulaG[i].VGasR / celulaG[i].u1L;
-        else {
-            ugsmed = celulaG[i].VGasL / celulaG[i].u1L;
-        }
-        double rhog = celulaG[i].rg;
-        double cpg = celulaG[i].flui.CalorGas(celulaG[i].presini, celulaG[i].tempini);
-        double cvg = celulaG[i].flui.CalorGasVolMod(celulaG[i].presini, celulaG[i].tempini);
-        double jtg = celulaG[i].flui.JTG(celulaG[i].presini, celulaG[i].tempini);
-        double hidro = (rhog * ugsmed) * area * 9.82 * sin(celulaG[i].duto.teta);
-
-        celulaG[i].calor.Tint = celulaG[i].tempini;
-        celulaG[i].calor.dtL = celulaG[i].tempini - celulaG[i - 1].tempini;
-        celulaG[i].calor.Vint = ugsmed;
-        celulaG[i].calor.dt = celulaG[i].dt;
-        celulaG[i].calor.kint = celulaG[i].flui.CondGas(celulaG[i].presini, celulaG[i].tempini);
-        celulaG[i].calor.cpint = cpg;
-        celulaG[i].calor.rhoint = rhog;
-        celulaG[i].calor.viscint = celulaG[i].flui.ViscGas(celulaG[i].presini, celulaG[i].tempini) * 1.e-3;
-        double dtemp = celulaG[i].temp * 0.01;
-        if (fabs(celulaG[i].temp) < 1e-15)
-            dtemp = 0.1;
-        double rhogdT = celulaG[i].flui.MasEspGas(celulaG[i].presini, celulaG[i].tempini + dtemp) - rhog;
-        celulaG[i].calor.betint = -(1 / celulaG[i].calor.rhoint) * rhogdT / (dtemp);
-        if (modoPerm == 0)
-            celulaG[i].fluxcal = celulaG[i].calor.transtrans();
-        else
-            celulaG[i].fluxcal = celulaG[i].calor.transperm();
-        if (i >= AnulaColunaIni && i <= AnulaColunaFim && verificaAcop == 1) {
-            int kconecte = i - AnulaColunaIni;
-            int iconecte = ColunaAnulaIni - kconecte;
-            celulaG[i].fluxcal -= celula[iconecte].calor.fluxFim;
-        }
-
-        double razdx;
-        if (i < ncelGas)
-            razdx = dx / (dx + celulaG[i + 1].dx0);
-        else
-            razdx = dx / (dx + celulaG[i - 1].dx0);
-        double coefTempo = rhog * cvg * area;
-        double coefPresTempo = celulaG[i].flui.CalorGasPresMod(celulaG[i].presini, celulaG[i].tempini, celulaG[i].rg) *
-                               (rhog * area);
-
-        double coefdxT = rhog * ugsmed * cpg * area;
-        double coefdxP = rhog * ugsmed * jtg * area;
-        double dpdx;
-        if (i < ncelGas)
-            dpdx = 2. * (((1 - razdx) * celulaG[i + 1].presini + razdx * celulaG[i].presini) - celulaG[i].presini) * 98066.5 / dx;
-        else
-            dpdx = 2. * (celulaG[i].presini - ((1 - razdx) * celulaG[i - 1].presini + razdx * celulaG[i].presini)) * 98066.5 / dx;
-        double dtdx = (celulaG[i].tempini - celulaG[i - 1].tempini) / dxmed;
-        if (i < ncelGas)
-            if (ugsmed < 0)
-                dtdx = (celulaG[i + 1].tempini - celulaG[i].tempini) / dxmed;
-        if ((i == 1 && ugsmed <= 0) || (i == ncelGas && ugsmed <= 0))
-            dtdx = 0.;
-
-        double cinetico;
-        double deljmix = 0.;
-        double rhomix = rhog;
-        double ugsmed0 = celulaG[i].VGasL / celulaG[i - 1].u1L;
-        deljmix = (ugsmed - ugsmed0) / dx;
-
-        cinetico = rhomix * area * ugsmed * ugsmed * deljmix;
-
-        double fontemassG = 0.;
-        double fontemassL = 0.;
-
-        double fator = 1.;
-        if ((*vg1dSP).lixo5 < 1000.)
-            fator = 1.;
-
-        celulaG[i].temp = ((coefTempo / celulaG[i].dt) * celulaG[i].temp - (fator) * (coefPresTempo * (celulaG[i].pres - celulaG[i].presini) * 98066.5 / celulaG[i].dt) + celulaG[i].dTdLCor * (-coefdxT * dtdx + coefdxP * dpdx - cinetico - hidro + fontemassL + fontemassG + celulaG[i].fluxcal)) / (coefTempo / celulaG[i].dt);
-
-        if (celulaG[i].temp < -50.)
-            celulaG[i].temp = -50.;
-        if (celulaG[i].temp > 200.)
-            celulaG[i].temp = 200.;
-
-        if (i > 0)
-            celulaG[i - 1].tempR = celulaG[i].temp;
-        if (i < ncelGas)
-            celulaG[i + 1].tempL = celulaG[i].temp;
-    } else {
-        celulaG[i].temp = celulaG[i].calor.Textern1;
-
-        if (i > 0)
-            celulaG[i - 1].tempR = celulaG[i].temp;
-        if (i < ncelGas)
-            celulaG[i + 1].tempL = celulaG[i].temp;
-    }
+    sisprod::thermal::computeGasTemperature(thermalStateOf(*this), i, tempantiga, modoPerm);
 }
 
 void SProd::resolveDescarga() {
@@ -2738,51 +2648,7 @@ void SProd::resolveDescarga() {
 }
 
 void SProd::tempDescarga(int i) {
-    double dx0 = 0.5 * celulaG[i].dxL;
-    double dx1 = 0.5 * celulaG[i].dx0;
-    double RgasR = 0.;
-    if (celulaG[i].razInter <= 0.5)
-        RgasR = 2 * celulaG[i].razInter;
-    double RgasL = 0.;
-    if (celulaG[i - 1].razInter >= 0.5)
-        RgasL = 2 * (celulaG[i - 1].razInter - 0.5);
-    double LGasL = dx0 * RgasL;
-    double LGasR = dx1 * RgasR;
-    double LLiqL = dx0 - LGasL;
-    double LLiqR = dx1 - LGasR;
-    double LTotal = LLiqL + LLiqR + LGasL + LGasR;
-    double dia = celulaG[i - 1].duto.a;
-    double area = 0.25 * M_PI * dia * dia;
-    double pres;
-    double temp;
-
-    pres = celulaG[i - 1].pres;
-    temp = celulaG[i - 1].temp;
-    double rho = ((LLiqL + LLiqR) * celulaG[i].MasEspFlu(pres, temp) + (LGasL + LGasR) * celulaG[i].flui.MasEspGas(pres, temp)) / LTotal;
-
-    double vel1 = celulaG[i].VGasL / (celulaG[i].MasEspFlu(pres, temp) * celulaG[i - 1].duto.area);
-    if (celulaG[i].razInter > (*vg1dSP).localtiny)
-        vel1 = celulaG[i].VGasL / (celulaG[i].flui.MasEspGas(pres, temp) * celulaG[i - 1].duto.area);
-    double cpl = ((LLiqL + LLiqR) * celulaG[i].CalorLiq(pres, temp) + (LGasL + LGasR) * celulaG[i].flui.CalorGas(pres, temp)) / LTotal;
-
-    celulaG[i - 1].calor.Tint = temp;
-    celulaG[i - 1].calor.Vint = vel1;
-    double condliq = ((LLiqL + LLiqR) * celulaG[i - 1].CondLiq(pres, temp) + (LGasL + LGasR) * celulaG[i].flui.CondGas(pres, temp)) / LTotal;
-    celulaG[i - 1].calor.kint = condliq;
-    celulaG[i - 1].calor.cpint = cpl;
-    celula[i - 1].calor.rhoint = rho;
-    double viscliq = (((LLiqL + LLiqR) * celulaG[i].VisFlu(pres, temp) + (LGasL + LGasR) * celulaG[i].flui.ViscGas(pres, temp)) * 1e-3) / LTotal;
-    celula[i - 1].calor.viscint = viscliq;
-
-    double fluxcal = celula[i - 1].calor.transtrans();
-    if ((i - 1) >= AnulaColunaIni && (i - 1) <= AnulaColunaFim && verificaAcop == 1) {
-        int kconecte = (i - 1) - AnulaColunaIni;
-        int iconecte = ColunaAnulaIni - kconecte;
-        fluxcal -= celula[iconecte].calor.fluxFim;
-    }
-
-    celulaG[i - 1].tempR = celulaG[i].temp;
-    celulaG[i].tempL = celulaG[i - 1].temp;
+    sisprod::thermal::computeDischargeTemperature(thermalStateOf(*this), i);
 }
 
 void SProd::avancInter() {
@@ -2864,31 +2730,7 @@ void SProd::avancInter() {
 }
 
 double SProd::TempDescGL(int igl) {
-    int passo = floor((chokeVGL[igl].presEstag - chokeVGL[igl].presGarg) / 50) + 1;
-    double deltaP = -(chokeVGL[igl].presEstag - chokeVGL[igl].presGarg) / passo;
-    double PD0 = chokeVGL[igl].presEstag;
-    double PD = chokeVGL[igl].presEstag + deltaP;
-    double TD0 = chokeVGL[igl].tempEstag;
-    double T1;
-    for (int i = 0; i < passo; i++) {
-        double cpg = chokeVGL[igl].flui.CalorGas(PD0, TD0);
-        double DZDT = chokeVGL[igl].flui.DZDT(PD0, TD0);
-        double tK = TD0 + 273.23;
-        T1 = 1.0 / (1.0 / tK - ((286.998 / chokeVGL[igl].flui.Deng) * DZDT / cpg) * log((PD) / (PD0)));
-        PD0 = PD;
-        PD = PD - deltaP;
-        TD0 = T1 - 273.23;
-    }
-    if (passo == 0) {
-        if ((*vg1dSP).lixo5 > 1000) {
-            int para;
-            para = 0;
-        }
-        double cpg = chokeVGL[igl].flui.CalorGas(PD0, TD0);
-        double jtg = chokeVGL[igl].flui.JTG(PD0, TD0) / cpg;
-        TD0 -= jtg * (chokeVGL[igl].presEstag - chokeVGL[igl].presGarg) * 98066.52;
-    }
-    return TD0;
+    return sisprod::thermal::computeGasLiftDischargeTemperature(thermalStateOf(*this), igl);
 }
 
 void SProd::ValvGasTrans() {
@@ -3425,6 +3267,13 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
         .productionNetworkHeatCoupled = system.verificaAcopRedeP,
         .primaryNetworkSectionEnd = system.PrimSecFimRedeP,
         .primaryNetworkSectionStart = system.PrimSecIniRedeP,
+        .gasCellCount = system.ncelGas,
+        .gasLiftChokes = system.chokeVGL,
+        .gasSurfacePressure = system.pGSup,
+        .outletPressure = system.presfim,
+        .surfaceTemperature = system.tempSup,
+        .networkCoupled = system.verificaAcop,
+        .tubingAnnulusEnd = system.AnulaColunaFim,
     };
 }
 
@@ -18237,30 +18086,11 @@ void SProd::atualizaPeriPjusProd(int i) {
     celula[i].presini = celula[i].pres;
 }
 void SProd::atualizaPeriTempProd(int i) {
-    if (i > 0)
-        celula[i - 1].tempR = celula[i].temp;
-    if (i < ncel)
-        celula[i + 1].tempL = celula[i].temp;
-    celula[i].tempini = celula[i].temp;
+    sisprod::thermal::updateProductionTemperaturePeriphery(thermalStateOf(*this), i);
 }
 
 void SProd::calcTempFim() {
-
-    if (arq.chokep.abertura[0] <= 0.6 && arq.chokep.abertura[0] > (*vg1dSP).localtiny && presfim < pGSup) {
-        double masentrada = celula[ncel - 1].MR;
-        double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-        double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
-        double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
-        double betEF = celula[ncel].bet;
-        double tit = fabs(massgas / masentrada);
-
-        double jtlM = (1. - betEF) * celula[ncel].flui.JTL(celula[ncel].pres, celula[ncel].temp) - betEF / rholc; // alteraacao2
-        double jtgM = celula[ncel].flui.JTG(celula[ncel].pres, celula[ncel].temp);
-        tempSup = celula[ncel].temp + ((1. - tit) * jtlM + tit * jtgM) * (celula[ncel].pres - celula[ncel].pres); //????????
-                                                                                                                  //???????????????????????????????celula[ncel].pres - celula[ncel].pres????????????????????????????????????????????
-
-    } else
-        tempSup = celula[ncel - 1].temp;
+    sisprod::thermal::computeOutletTemperature(thermalStateOf(*this));
 }
 
 double SProd::delpGasPerm(int i) {
