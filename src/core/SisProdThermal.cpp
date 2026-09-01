@@ -3578,7 +3578,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double annulusResistance = 0.;
         double heatFlux;
         double gasHeatFlux;
-        // interfacialWorkTerm se existe acoplamento com o anular:
+        // verifica se existe acoplamento com o anular:
         if (state.input.lingas == 1 && (cellIndex - 1 <= state.annulusTubingStart && cellIndex - 1 >= state.annulusTubingEnd)) {
             int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex - 1);
             // caso tenha acoplamento:
@@ -3754,7 +3754,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         else
             gasMassSourceTerm = 0;
 
-        // efeito do calor latentHeatTerm, quando este for solicitado
+        // efeito do calor latente, quando este for solicitado
         double latentHeatTerm = 0.;
         if (isnan(state.cells[cellIndex - 1].FonteMudaFase))
             state.cells[cellIndex - 1].FonteMudaFase = 0.;
@@ -4104,7 +4104,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         else
             gasMassSourceTerm = 0;
 
-        // efeito do calor latentHeatTerm, quando este for solicitado
+        // efeito do calor latente, quando este for solicitado
         double latentHeatTerm = 0.;
         if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
             if (state.cells[cellIndex + 1].acsr.tipo == 1 || state.cells[cellIndex + 1].acsr.tipo == 2 || state.cells[cellIndex + 1].acsr.tipo == 3 || state.cells[cellIndex + 1].acsr.tipo == 15 || state.cells[cellIndex + 1].acsr.tipo == 16)
@@ -4141,7 +4141,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
 
         if (fabs(temperatureSpatialCoefficient) > (*state.globals).localtiny) {
             // parecela de energia relacionada ao ytrabalho de fronteira, energia potencial,
-            // energia cinetica, fontes de massa, calor latentHeatTerm e trabalho de eixo:
+            // energia cinetica, fontes de massa, calor latente e trabalho de eixo:
             double sourceTemperatureGradient = meanTemperatureGradientCorrection * (pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower) + (liquidMassSourceTerm + gasMassSourceTerm) - latentHeatTerm - state.cells[cellIndex + 1].potBT / meanCellLength) / temperatureSpatialCoefficient;
             // parcela de energia relacionada aa troca termica
             double heatFluxTemperatureGradient = meanTemperatureGradientCorrection * (heatFlux) / temperatureSpatialCoefficient;
