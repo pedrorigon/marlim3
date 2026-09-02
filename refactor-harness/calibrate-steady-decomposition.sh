@@ -60,7 +60,11 @@ probe computeSteadySourceTerms   's/sourceSpecificHeatRatio = 1\./sourceSpecific
 probe computeSteadySourceTerms   's/cellLength/meanCellLength/'            'data source swapped, direct sources'
 probe applySteadyAnnulusCoupling 's/100\./100.0001/'                       'literal in the direct annulus coupling'
 probe computeSteadyKineticTerm   's/1e-3/1e-4/'                            'tolerance in the direct kinetic term'
-probe computeSteadyLatentHeatTerm 's/1e-25/1e-24/'                         'tolerance in the direct latent term'
+# The literal this used to corrupt is now the named constant kPhaseChangeFloor,
+# so the probe targets the comparison itself instead. A pattern that no longer
+# matches is reported as SKIP and never counted as a pass -- which is how this
+# case announced that it had stopped testing.
+probe computeSteadyLatentHeatTerm 's/> kPhaseChangeFloor/>= kPhaseChangeFloor/' 'guard in the direct latent term'
 probe computeReverseSteadySourceTerms 's/cellIndex + 1/cellIndex - 1/'     'march direction flipped, reverse sources'
 probe computeReverseSteadyLatentHeatTerm 's/latentHeatTerm = 0\./latentHeatTerm = 0.1/' 'initial value, reverse latent term'
 probe applyReverseSteadyAnnulusCoupling 's/annulusResistance = 0\./annulusResistance = 1./' 'reverse annulus resistance'

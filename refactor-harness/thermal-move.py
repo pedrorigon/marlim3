@@ -1821,12 +1821,17 @@ def declared_constants(path: str = "src/core/SisProdThermal.cpp") -> dict[str, s
     If the constant ever stopped being the literal, the build would fail before
     this function was ever called. The table cannot drift from the truth.
     """
-    try:
-        text = open(path, encoding="utf-8").read()
-    except OSError:
-        return {}
-    return dict(re.findall(
-        r"static_assert\(\s*(\w+)\s*==\s*([0-9][0-9.eE+-]*)\s*,", text))
+    sources = [path, "src/include/SisProdConstants.h"]
+    found: dict[str, str] = {}
+    for source in sources:
+        try:
+            text = open(source, encoding="utf-8").read()
+        except OSError:
+            continue
+        # Both spellings: with a message and without.
+        found.update(re.findall(
+            r"static_assert\(\s*(\w+)\s*==\s*(-?[0-9][0-9.eE+-]*)\s*[,)]", text))
+    return found
 
 
 def rename_consistent(expected: list[str], actual: list[str]) -> bool:
@@ -1848,15 +1853,25 @@ def rename_consistent(expected: list[str], actual: list[str]) -> bool:
     Struct fields (anything after `.` or `->`) are never renameable under
     FR-038, so they must match exactly and anchor the comparison.
     """
-    if len(expected) != len(actual):
-        return False
     constants = declared_constants()
+    # A constant whose proven value is negative replaces TWO tokens -- the minus
+    # and the number -- with one identifier, so the streams differ in length
+    # before they differ in content. Walk them with independent cursors instead
+    # of zipping, and let one such constant consume both.
     mapping: dict[str, str] = {}
     previous = ""
-    for want, have in zip(expected, actual):
-        # A named constant standing in for the literal it is proven equal to.
-        if constants.get(have) == want:
+    i = j = 0
+    while i < len(expected) and j < len(actual):
+        want, have = expected[i], actual[j]
+        value = constants.get(have)
+        if value == want:
             previous = want
+            i += 1; j += 1
+            continue
+        if (value is not None and value.startswith("-") and want == "-"
+                and i + 1 < len(expected) and value[1:] == expected[i + 1]):
+            previous = expected[i + 1]
+            i += 2; j += 1
             continue
         field = previous in (".", "->")
         renameable = (
@@ -1872,7 +1887,8 @@ def rename_consistent(expected: list[str], actual: list[str]) -> bool:
         elif want != have:
             return False
         previous = want
-    return True
+        i += 1; j += 1
+    return i == len(expected) and j == len(actual)
 
 
 def compare_tokens(expected: list[str], actual: list[str]) -> str:
