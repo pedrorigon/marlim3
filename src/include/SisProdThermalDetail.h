@@ -131,6 +131,14 @@ struct SlugClosure {
     double meanDiameter;
 };
 
+/// Which face the upstream properties come from, decided by the sign of the
+/// gas flow rate, for the two drift-closure selectors that share the choice.
+struct UpstreamFaceBasis {
+    double gasDensity;
+    double flowArea;
+    double noSlipLiquidHoldup;
+};
+
 }  // namespace sisprod::thermal
 
 #endif  // SISPRODTHERMALDETAIL_H_

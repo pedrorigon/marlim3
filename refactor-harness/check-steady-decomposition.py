@@ -53,6 +53,16 @@ def helper_body(text, name, drop_leading=None):
 cur = open('src/core/SisProdThermal.cpp', encoding='utf-8').read()
 base = open(sys.argv[1], encoding='utf-8').read()
 
+# The baseline predates the removal of the fourteen breakpoint anchors -- guards
+# whose whole body declares an int, assigns zero to it and stops. They emit no
+# code, so removing them cannot move a number, but they are text and the
+# comparison is textual. Both sides are normalised, and the count is printed so
+# a silent change in the pattern is visible rather than inferred.
+cur, cur_anchors = tm.strip_debug_anchors(cur)
+base, base_anchors = tm.strip_debug_anchors(base)
+print(f"NOTE     ancoras de breakpoint normalizadas: {base_anchors} no baseline, "
+      f"{cur_anchors} no modulo atual")
+
 SPECS = [
  ("advanceSteadyTemperature", [
    ("computeSteadySourceTerms",      "TemperatureSourceTerms steadySources", 4, None),

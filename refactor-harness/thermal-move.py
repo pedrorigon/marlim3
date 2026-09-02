@@ -241,6 +241,34 @@ T068_CALLS = {
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
 
+# A breakpoint anchor: a guard whose entire body declares one int, assigns 0 to
+# it, and stops. It has no reads and no side effects, so the compiler emits
+# nothing for it; the original engineers used it to place a conditional
+# breakpoint in a debugger. Fourteen of them were removed from the module.
+#
+# The pattern below is deliberately narrow. The body must be EXACTLY the
+# declaration and the assignment: one extra statement, a different initial
+# value, or a second variable and it no longer matches, so a live block can
+# never be normalised away by accident. The guard condition is captured but not
+# inspected -- it is never evaluated in the comparison either way.
+DEBUG_ANCHOR = re.compile(
+    r'[ \t]*if \([^;{}]*\) \{\n'
+    r'[ \t]*int (parada|debugStop);\n'
+    r'[ \t]*\1 = 0\.?;\n'
+    r'[ \t]*\}\n')
+
+
+def strip_debug_anchors(text: str) -> tuple[str, int]:
+    """Remove every breakpoint anchor, returning the text and how many went.
+
+    Used by the structural checkers so that a baseline recorded before the
+    anchors were deleted still compares equal to the module today. Applied to
+    both sides, so re-introducing one is invisible to the comparison -- which is
+    correct: it is dead by construction.
+    """
+    return DEBUG_ANCHOR.subn('', text)
+
+
 def substitute_outside_comments(
     pattern: re.Pattern[str], replacement, text: str
 ) -> str:

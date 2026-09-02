@@ -82,10 +82,27 @@ def tokenize(text: str) -> list[str]:
     return [m.group(0) for m in TOKEN.finditer(COMMENT.sub(" ", text))]
 
 
+# A breakpoint anchor: a guard whose entire body declares one int, assigns zero
+# to it and stops. It compiles to nothing, and fourteen were deleted from the
+# thermal module. The baseline still carries them, so both sides are normalised
+# here -- otherwise every function that held one would be reported as changed
+# and the real differences would be lost in the noise.
+#
+# The pattern is deliberately narrow: the body must be EXACTLY the declaration
+# and the assignment. One extra statement and it no longer matches, so a live
+# block can never be normalised away. calibrate-steady-decomposition.sh injects
+# precisely that case and requires it to be detected.
+DEBUG_ANCHOR = re.compile(
+    r"[ \t]*if \([^;{}]*\) \{\n"
+    r"[ \t]*int (parada|debugStop);\n"
+    r"[ \t]*\1 = 0\.?;\n"
+    r"[ \t]*\}\n")
+
+
 def function_bodies(path: str) -> dict[str, str]:
     """Map function name -> source text, for every file-scope definition."""
     with open(path, encoding="utf-8", errors="replace") as handle:
-        lines = handle.readlines()
+        lines = DEBUG_ANCHOR.sub("", handle.read()).splitlines(keepends=True)
 
     bodies: dict[str, str] = {}
     index, total = 0, len(lines)
