@@ -70,6 +70,16 @@ probe computeReverseSteadyLatentHeatTerm 's/latentHeatTerm = 0\./latentHeatTerm 
 probe applyReverseSteadyAnnulusCoupling 's/annulusResistance = 0\./annulusResistance = 1./' 'reverse annulus resistance'
 probe advanceSteadyTemperature   's/temperatureSpatialCoefficient/pressureSpatialCoefficient/' 'coefficient swapped in the coordinator'
 
+# The checker normalises away breakpoint anchors -- guards whose entire body is
+# an int declaration and an assignment of zero -- because fourteen of them were
+# deleted from the module and the baseline still carries them. A normaliser that
+# is one character too generous stops being a normaliser and starts being a
+# blind spot, so this case injects a block that LOOKS like an anchor and carries
+# one live statement. It must still be detected.
+probe computeSteadyKineticTerm \
+    's/double kineticTerm/if (cellIndex == 3) { int debugStop; debugStop = 0; kineticTermScale = 0.; }\n    double kineticTerm/' \
+    'live statement hidden inside a breakpoint-anchor shape'
+
 cp "$scratch/pristine.cpp" "$target"
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"

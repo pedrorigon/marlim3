@@ -33,6 +33,14 @@ inline constexpr double kPascalPerKgfPerCm2Variant = 98066.52;
 inline constexpr double kBarrelPerCubicMetre = 6.29;
 inline constexpr double kCubicFootPerCubicMetre = 35.31467;
 
+/// Density of air at standard conditions, in kg/m3.
+///
+/// Every one of the twenty-three sites reads `<fluid>.Deng * 1.225`, where Deng
+/// is the gas specific gravity, so the product is the gas density at standard
+/// conditions. That is what fixes the meaning of the literal; it is not a
+/// tolerance and not a fitted coefficient.
+inline constexpr double kAirDensityAtStandardConditions = 1.225;
+
 /// Gravitational acceleration as this program uses it. Not 9.80665: the value
 /// is 9.82 throughout, and "correcting" it would change every hydrostatic term.
 inline constexpr double kGravity = 9.82;
@@ -98,6 +106,7 @@ static_assert(kPascalPerKgfPerCm2 == 98066.5);
 static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
 static_assert(kBarrelPerCubicMetre == 6.29);
 static_assert(kCubicFootPerCubicMetre == 35.31467);
+static_assert(kAirDensityAtStandardConditions == 1.225);
 static_assert(kGravity == 9.82);
 static_assert(kDerivativePerturbationFactor == 0.999);
 static_assert(kPhaseChangeFloor == 1e-25);
