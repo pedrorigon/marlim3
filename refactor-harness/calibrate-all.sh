@@ -80,6 +80,7 @@ run() {
 }
 
 run calibrate-thermal
+run calibrate-gaslift
 run calibrate-thermal-move
 run calibrate-c0ud
 run calibrate-solvers
