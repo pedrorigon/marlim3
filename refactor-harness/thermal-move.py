@@ -242,7 +242,12 @@ COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
 
 # A breakpoint anchor: a guard whose entire body declares one int, assigns 0 to
-# it, and stops. It has no reads and no side effects, so the compiler emits
+# it, and stops. The NAME is not part of the pattern -- the baselines spell it
+# para, parada and debugStop in different places, and a name-specific pattern
+# normalises one side of a comparison and not the other, which is worse than not
+# normalising at all. What makes it safe is the backreference: the variable
+# declared must be the one assigned, and nothing else may be in the block, so it
+# has no reads and cannot escape its scope. It has no reads and no side effects, so the compiler emits
 # nothing for it; the original engineers used it to place a conditional
 # breakpoint in a debugger. Fourteen of them were removed from the module.
 #
@@ -253,7 +258,7 @@ COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 # inspected -- it is never evaluated in the comparison either way.
 DEBUG_ANCHOR = re.compile(
     r'[ \t]*if \([^;{}]*\) \{\n'
-    r'[ \t]*int (parada|debugStop);\n'
+    r'[ \t]*int (\w+);\n'
     r'[ \t]*\1 = 0\.?;\n'
     r'[ \t]*\}\n')
 
@@ -317,7 +322,18 @@ def scan_number(text: str, start: int) -> tuple[str, int]:
 
 
 def tokenize(text: str) -> list[str]:
-    clean = COMMENT.sub(" ", text)
+    # Breakpoint anchors go before anything else, so every structural comparison
+    # in this tool is blind to them in the same way. They emit no code, and the
+    # fourteen in the thermal module were deleted while the baselines the checks
+    # compare against still carry theirs -- normalising here rather than in each
+    # check is what keeps twenty checks from each having to know.
+    #
+    # The blindness is bounded by how narrow the pattern is: the guard body must
+    # be EXACTLY an int declaration and an assignment of zero to that same
+    # variable. Anything else in it and the block survives into the token
+    # stream. calibrate-steady-decomposition.sh injects precisely that -- an
+    # anchor shape with one live statement inside -- and requires detection.
+    clean = COMMENT.sub(" ", strip_debug_anchors(text)[0])
     tokens: list[str] = []
     cursor = 0
     while cursor < len(clean):
@@ -1636,12 +1652,74 @@ def compare_token_blocks(
     return failures
 
 
+def inline_stage5_helpers(source: str) -> str:
+    """Put the stage-5 review helpers back inline, for the T064 control.
+
+    check_renova_temp_decomposition rebuilds updateDistributedMassTransfer from
+    the five helpers T064 split it into and compares the result against the
+    pre-move baseline. The stage-5 review added two more helpers INSIDE those
+    bodies -- clearMassTransferDerivatives and
+    lastCellSolutionGasPressureDerivative -- so the rebuilt text now contains
+    calls where the baseline has statements, and the control started failing on
+    a difference that is not a defect.
+
+    Retiring the control was the alternative and was rejected: it still tests
+    something real. Instead the two helpers are inlined first, which is the same
+    move the control already makes for the original five.
+
+    Every substitution count is asserted. A helper that is renamed, gains a
+    caller, or loses one makes this raise rather than quietly inline less and
+    report a pass on a comparison that no longer covers the code.
+    """
+    def core_of(name: str) -> str:
+        # The definition may carry an attribute before the return type, so the
+        # pattern allows one; carve_named anchors at column 0, which keeps it
+        # from matching an indented call site.
+        carved = carve_named(
+            source, rf"(?:\[\[\w+\]\] )?[\w][\w\s:<>*&]*\b{name}\(")
+        if carved is None:
+            raise ValueError(f"{name} not found; the T064 control cannot inline it")
+        body = function_core(carved[2])
+        return body.rstrip("\n")
+
+    clear_core = core_of("clearMassTransferDerivatives")
+    derivative_core = core_of("lastCellSolutionGasPressureDerivative")
+    # Drop the trailing return: inlined, the value is the local the callers name.
+    derivative_core = re.sub(
+        r"\n[ \t]*return cellSolutionGasPressureDerivative;\s*$", "", derivative_core)
+
+    def reindent(text: str, spaces: int) -> str:
+        lines = text.split("\n")
+        base = min((len(l) - len(l.lstrip()) for l in lines if l.strip()), default=0)
+        return "\n".join((" " * spaces + l[base:]) if l.strip() else l for l in lines)
+
+    replacements = [
+        ("                clearMassTransferDerivatives(state, cellIndex);",
+         reindent(clear_core, 16), 3),
+        ("        const double cellSolutionGasPressureDerivative =\n"
+         "            lastCellSolutionGasPressureDerivative(state, cellIndex);",
+         reindent(derivative_core, 8), 1),
+        ("            [[maybe_unused]] const double recomputedPressureDerivative =\n"
+         "                lastCellSolutionGasPressureDerivative(state, cellIndex);",
+         reindent(derivative_core, 12), 1),
+    ]
+    for call, body, expected in replacements:
+        found = source.count(call)
+        if found != expected:
+            raise ValueError(
+                f"expected {expected} call site(s) to inline, found {found}: "
+                f"{call.strip().splitlines()[0]}")
+        source = source.replace(call, body)
+    return source
+
+
 def check_renova_temp_decomposition(
     baseline_path: str, current_path: str
 ) -> int:
     baseline = require_renova_temp(baseline_path)
     expected_main = forward_renova_temp(baseline[2])
-    current_source = open(current_path, encoding="utf-8").read()
+    current_source = inline_stage5_helpers(
+        open(current_path, encoding="utf-8").read())
 
     signatures = {
         "main": r"void updateDistributedMassTransfer\(const ThermalState &state\)",

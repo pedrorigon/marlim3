@@ -83,7 +83,9 @@ def tokenize(text: str) -> list[str]:
 
 
 # A breakpoint anchor: a guard whose entire body declares one int, assigns zero
-# to it and stops. It compiles to nothing, and fourteen were deleted from the
+# to it and stops. The NAME is not part of the pattern -- baselines spell it para,
+# parada and debugStop -- so what makes it safe is the backreference plus the
+# body being exactly those two statements. It compiles to nothing, and fourteen were deleted from the
 # thermal module. The baseline still carries them, so both sides are normalised
 # here -- otherwise every function that held one would be reported as changed
 # and the real differences would be lost in the noise.
@@ -94,7 +96,7 @@ def tokenize(text: str) -> list[str]:
 # precisely that case and requires it to be detected.
 DEBUG_ANCHOR = re.compile(
     r"[ \t]*if \([^;{}]*\) \{\n"
-    r"[ \t]*int (parada|debugStop);\n"
+    r"[ \t]*int (\w+);\n"
     r"[ \t]*\1 = 0\.?;\n"
     r"[ \t]*\}\n")
 

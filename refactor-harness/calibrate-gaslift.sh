@@ -11,18 +11,28 @@ export LC_ALL=C
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
+# Two targets, because the gas-line update no longer lives where the coefficient
+# routines do: stage 6 moved renovaGas and renovaGasBuf into SisProdGasLift.cpp
+# and renamed their state along the way. A probe pins a fixed string, so a probe
+# left pointing at the old file stops injecting and stops testing -- which is
+# exactly what happened here and what the SKIP path exists to announce.
 target="$project_root/src/core/SisProd.cpp"
+target_gaslift="$project_root/src/core/SisProdGasLift.cpp"
 golden="$project_root/specs/001-refatoracao-sisprod/golden/gaslift-baseline.txt"
 
 red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; reset=$'\033[0m'
 scratch="$(mktemp -d -t marlim3-calgl-XXXXXX)"
-trap 'cp "$scratch/pristine.cpp" "$target"; rm -rf "$scratch"' EXIT
+trap 'cp "$scratch/pristine.cpp" "$target"; cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"; rm -rf "$scratch"' EXIT
 cp "$target" "$scratch/pristine.cpp"
+cp "$target_gaslift" "$scratch/pristine-gaslift.cpp"
 
 detected=0; missed=0; skipped=0
-probe() { # <label> <from> <to>
+probe() { # <label> <from> <to> [file-to-inject-into]
+    local into="${4:-$target}" pristine="$scratch/pristine.cpp"
+    [[ "$into" == "$target_gaslift" ]] && pristine="$scratch/pristine-gaslift.cpp"
     cp "$scratch/pristine.cpp" "$target"
-    python3 - "$target" "$2" "$3" <<'PY'
+    cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"
+    python3 - "$into" "$2" "$3" <<'PY'
 import pathlib, sys
 path = pathlib.Path(sys.argv[1]); old, new = sys.argv[2], sys.argv[3]
 text = path.read_text()
@@ -32,7 +42,7 @@ if count != 1:
     raise SystemExit(3)
 path.write_text(text.replace(old, new, 1))
 PY
-    if (( $? != 0 )) || cmp -s "$scratch/pristine.cpp" "$target"; then
+    if (( $? != 0 )) || cmp -s "$pristine" "$into"; then
         printf '%s  SKIP      %s (corruption did not apply)%s\n' "$yellow" "$1" "$reset"
         skipped=$((skipped + 1)); return
     fi
@@ -48,12 +58,11 @@ probe 'areaValvCali: calibration blend'   'PB80 = (PB80 + 14.6959488) * (80 + 46
 probe 'areaValvCali: opening cap'         'if (APE > areagarg)' 'if (APE > 2. * areagarg)'
 # The same assignment appears in renovaGas and renovaGasBuf; the preceding line
 # differs and pins this one to renovaGas.
-probe 'renovaGas: neighbour source'       'celulaG[i].pres = termolivreG[3 * i];
-            celulaG[i].presL = termolivreG[3 * i - 3];
-            celulaG[i].presR = termolivreG[3 * i + 3];' \
-                                          'celulaG[i].pres = termolivreG[3 * i];
-            celulaG[i].presL = termolivreG[3 * i - 2];
-            celulaG[i].presR = termolivreG[3 * i + 3];'
+probe 'updateGasLine: neighbour source'   'state.gasCells[i].presL = state.gasFreeTerms[3 * i - 3];
+            state.gasCells[i].presR = state.gasFreeTerms[3 * i + 3];' \
+                                          'state.gasCells[i].presL = state.gasFreeTerms[3 * i - 2];
+            state.gasCells[i].presR = state.gasFreeTerms[3 * i + 3];' \
+                                          "$target_gaslift"
 probe 'prescordesc: sign'                 'return sinal * precorr;' 'return -sinal * precorr;'
 probe 'prescordesc: throat area'          'pow(massica / chokeVGL[ivalv].areagarg, 2.)' \
                                           'pow(massica / chokeVGL[ivalv].areagarg, 3.)'
