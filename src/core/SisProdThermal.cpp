@@ -10,61 +10,79 @@
 
 namespace sisprod::thermal {
 
+namespace {
+
+/// Locates the interval of a monotonically increasing table axis that brackets
+/// `value`, by bisection.
+///
+/// The same nineteen-line loop appeared three times: twice in
+/// interpolateLatentHeat, over the pressure and the temperature axis of the
+/// latent-heat table, and once in updateTemperatureFromEnthalpy over the
+/// pressure axis of a property table. The three differed ONLY in which table
+/// they read and along which axis, so the axis arrives as a callable and the
+/// body is written once.
+///
+/// This is the policy-template shape the programme already uses -- the
+/// root-finding solvers take an ObjectiveFunction, the drift-flux closure takes
+/// a Source -- rather than a new idea introduced here.
+///
+/// The three are NOT identical, and the difference is the reason this parameter
+/// exists. The two pressure searches end by comparing axis(searchMiddle) with
+/// the value; the temperature search compares axis(searchMiddle - 1). Writing
+/// one loop that "obviously" covers all three silently changes the temperature
+/// axis, which is what a first attempt at this extraction did. The offset is
+/// therefore explicit, and the asymmetry is preserved rather than tidied away:
+/// it is observable, and this refactoring may not change an observable.
+///
+/// The arithmetic is untouched for the same reason, including two properties a
+/// reader might want to "fix": the midpoint is (low + high) / 2 rather than
+/// std::midpoint, and the guards compare doubles with ==.
+template <typename Axis>
+[[nodiscard]] int bracketingIndex(double value, int divisionCount, Axis &&axis,
+                                  int descendProbeOffset) {
+    int index = 0;
+    int searchLow = 1;
+    int searchHigh = divisionCount + 1;
+    int searchMiddle;
+    while (searchLow <= searchHigh) {
+        searchMiddle = (searchLow + searchHigh) / 2;
+        if (searchMiddle == 1) {
+            index = searchMiddle;
+            break;
+        } else if (searchMiddle == divisionCount + 1 && axis(searchMiddle) == value) {
+            index = searchMiddle - 1;
+            break;
+        }
+        if (axis(searchMiddle) > value && axis(searchMiddle - 1) <= value) {
+            index = searchMiddle - 1;
+            break;
+        }
+        if (axis(searchMiddle + descendProbeOffset) < value)
+            searchLow = searchMiddle + 1;
+        else
+            searchHigh = searchMiddle - 1;
+    }
+    return index;
+}
+
+}  // namespace
+
 
 double interpolateLatentHeat(const ThermalState &state, double pressure, double temperature) {
     int divisionCount = state.input.tabent.npont - 1;
     int pressureIndex = 0.;
     int temperatureIndex = 0.;
-    int pressureSearchMarker;
-    int temperatureSearchMarker;
     double latentHeat;
     if (pressure < state.latentHeatTable[1][0] || pressure >= state.latentHeatTable[divisionCount + 1][0] || temperature < state.latentHeatTable[0][1] || temperature >= state.latentHeatTable[0][divisionCount + 1])
         latentHeat = 0.;
 
     else {
-        int searchLow, searchMiddle, searchHigh;
-        searchLow = 1;
-        searchHigh = divisionCount + 1;
-        while (searchLow <= searchHigh) {
-            searchMiddle = (searchLow + searchHigh) / 2;
-            pressureSearchMarker = searchMiddle;
-            if (searchMiddle == 1) {
-                pressureIndex = searchMiddle;
-                break;
-            } else if (searchMiddle == divisionCount + 1 && state.latentHeatTable[searchMiddle][0] == pressure) {
-                pressureIndex = searchMiddle - 1;
-                break;
-            }
-            if (state.latentHeatTable[searchMiddle][0] > pressure && state.latentHeatTable[searchMiddle - 1][0] <= pressure) {
-                pressureIndex = searchMiddle - 1;
-                break;
-            }
-            if (state.latentHeatTable[searchMiddle][0] < pressure)
-                searchLow = searchMiddle + 1;
-            else
-                searchHigh = searchMiddle - 1;
-        }
-        searchLow = 1;
-        searchHigh = divisionCount + 1;
-        while (searchLow <= searchHigh) {
-            searchMiddle = (searchLow + searchHigh) / 2;
-            temperatureSearchMarker = searchMiddle;
-            if (searchMiddle == 1) {
-                temperatureIndex = searchMiddle;
-                break;
-            } else if (searchMiddle == divisionCount + 1 && state.latentHeatTable[0][searchMiddle] == temperature) {
-                temperatureIndex = searchMiddle - 1;
-                break;
-            }
-            if (state.latentHeatTable[0][searchMiddle] > temperature && state.latentHeatTable[0][searchMiddle - 1] <= temperature) {
-                temperatureIndex = searchMiddle - 1;
-                break;
-            }
-            if (state.latentHeatTable[0][searchMiddle - 1] < temperature)
-                searchLow = searchMiddle + 1;
-            else
-                searchHigh = searchMiddle - 1;
-        }
+        pressureIndex = bracketingIndex(
+            pressure, divisionCount,
+            [&](int index) { return state.latentHeatTable[index][0]; }, 0);
+        temperatureIndex = bracketingIndex(
+            temperature, divisionCount,
+            [&](int index) { return state.latentHeatTable[0][index]; }, -1);
         double pressureRatio = (state.latentHeatTable[pressureIndex][0] - pressure) / (state.latentHeatTable[pressureIndex][0] - state.latentHeatTable[pressureIndex + 1][0]);
         double temperatureRatio = (state.latentHeatTable[0][temperatureIndex] - temperature) / (state.latentHeatTable[0][temperatureIndex] - state.latentHeatTable[0][temperatureIndex + 1]);
         double latentHeatAtTemperatureIndex = (1 - pressureRatio) * (state.latentHeatTable[pressureIndex][temperatureIndex]) + pressureRatio * (state.latentHeatTable[pressureIndex + 1][temperatureIndex]);
@@ -289,40 +307,19 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
     double **propertyTable = state.cells[cellIndex].flui.rholF;
 
     int pressureIndex = 0;
-    int pressureSearchMarker;
     int divisionCount = state.cells[cellIndex].flui.npontos - 1;
     if (pressure < propertyTable[1][0] || pressure >= propertyTable[divisionCount + 1][0]) {
+        // Reported as a diagnostic and nothing else. It used to be followed by
+        // getchar(), which blocks waiting for a keypress: in a batch run that is
+        // a hang, not a diagnostic. Removed with the owner's authorisation. The
+        // branch has never fired -- no demo model executes this function, which
+        // is why it survived this long.
         cout << "pressure outside the table bounds";
-        // FIXME(owner): getchar() blocks waiting for a keypress. In a batch run
-        // that is not a diagnostic, it is a hang. The branch has never fired
-        // because no demo model executes this function, which is also why it
-        // survived. Removing it changes behaviour, so it is reported rather
-        // than deleted -- see evidencia/estagio-5/revisao-final.md.
-        getchar();
     }
 
-    int searchLow, searchMiddle, searchHigh;
-    searchLow = 1;
-    searchHigh = divisionCount + 1;
-    while (searchLow <= searchHigh) {
-        searchMiddle = (searchLow + searchHigh) / 2;
-        pressureSearchMarker = searchMiddle;
-        if (searchMiddle == 1) {
-            pressureIndex = searchMiddle;
-            break;
-        } else if (searchMiddle == divisionCount + 1 && propertyTable[searchMiddle][0] == pressure) {
-            pressureIndex = searchMiddle - 1;
-            break;
-        }
-        if (propertyTable[searchMiddle][0] > pressure && propertyTable[searchMiddle - 1][0] <= pressure) {
-            pressureIndex = searchMiddle - 1;
-            break;
-        }
-        if (propertyTable[searchMiddle][0] < pressure)
-            searchLow = searchMiddle + 1;
-        else
-            searchHigh = searchMiddle - 1;
-    }
+    pressureIndex = bracketingIndex(
+        pressure, divisionCount,
+        [&](int index) { return propertyTable[index][0]; }, 0);
 
     double pressureRatio = 1. - (propertyTable[pressureIndex][0] - pressure) / (propertyTable[pressureIndex][0] - propertyTable[pressureIndex + 1][0]);
 
