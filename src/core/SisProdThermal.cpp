@@ -1,5 +1,7 @@
 #include "SisProdThermal.h"
 
+#include "SisProdConstants.h"
+
 #include "Leitura.h"
 #include "celula3.h"
 #include "solver3DPoisson.h"
@@ -7,29 +9,6 @@
 #include <math.h>
 
 namespace sisprod::thermal {
-
-// Two literals in this file have a meaning certain enough to name. Both keep
-// their EXACT spelling as the value of the constant, and the static_asserts
-// below prove it: naming them cannot change a single bit, which is the only
-// condition under which this file may be edited at all.
-//
-// Everything else stays a literal on purpose. 0.999 looks like a finite
-// difference step and 1.225 * (6.29 / 35.31467) looks like a barrel-to-cubic-
-// foot conversion, but "looks like" is how a wrong name gets read as fact by
-// the next person -- the same rule that left `bet` alone in T070r.
-
-/// Pascals per kgf/cm^2. The pressure unit the input deck and the cell state
-/// use is kgf/cm^2; the energy and momentum balances need Pa.
-constexpr double kPascalPerKgfPerCm2 = 98066.5;
-
-/// Gravitational acceleration as this program uses it. Not 9.80665: the value
-/// is 9.82 throughout, and a "correction" would change results.
-constexpr double kGravity = 9.82;
-
-static_assert(kPascalPerKgfPerCm2 == 98066.5,
-              "the constant must be the literal it replaces, bit for bit");
-static_assert(kGravity == 9.82,
-              "the constant must be the literal it replaces, bit for bit");
 
 
 double interpolateLatentHeat(const ThermalState &state, double pressure, double temperature) {
@@ -130,11 +109,11 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
 
     double leftPressure = state.cells[cellIndex].presaux;
     double rightPressure = state.cells[cellIndex + 1].presaux;
-    if ((state.cells[cellIndex].acsr.tipo == 5 && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area) ||
-        (state.cells[cellIndex].acsr.tipo == 4 && state.cells[cellIndex].acsr.bcs.freq > 0) ||
-        (state.cells[cellIndex].acsr.tipo == 8 && state.cells[cellIndex].acsr.bvol.freq > 0.) ||
+    if ((state.cells[cellIndex].acsr.tipo == kAccessoryChoke && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area) ||
+        (state.cells[cellIndex].acsr.tipo == kAccessoryPump && state.cells[cellIndex].acsr.bcs.freq > 0) ||
+        (state.cells[cellIndex].acsr.tipo == kAccessoryVolumetricPump && state.cells[cellIndex].acsr.bvol.freq > 0.) ||
         (state.cells[cellIndex].acsr.tipo == 7 && fabs(state.cells[cellIndex].acsr.delp) > 0.) ||
-        (state.cells[cellIndex].acsr.tipo == 17 && state.cells[cellIndex].acsr.multibcs.freq > 0)) {
+        (state.cells[cellIndex].acsr.tipo == kAccessoryMultiPump && state.cells[cellIndex].acsr.multibcs.freq > 0)) {
         rightPressure = state.cells[cellIndex].pres + (state.cells[cellIndex].pres - state.cells[cellIndex].presaux) * 0.5;
     }
 
@@ -183,24 +162,24 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
     double sourceLiquidEnthalpy;
     double hcF = 0.;
 
-    if (state.cells[cellIndex].acsr.tipo == 1) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryGasInjection) {
         sourceTemperature = state.cells[cellIndex].acsr.injg.temp;
         sourceGasEnthalpy = state.cells[cellIndex].acsr.injg.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
         sourceLiquidEnthalpy = 0;
         hcF = 0;
-    } else if (state.cells[cellIndex].acsr.tipo == 2) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
         sourceTemperature = state.cells[cellIndex].acsr.injl.temp;
         sourceGasEnthalpy = state.cells[cellIndex].acsr.injl.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
         sourceLiquidEnthalpy = state.cells[cellIndex].acsr.injl.FluidoPro.EntalpLiq(state.cells[cellIndex].pres, sourceTemperature);
         hcF = state.cells[cellIndex].acsr.injl.fluidocol.CalorLiq(state.cells[cellIndex].pres, sourceTemperature) * sourceTemperature
             /*entalpia fluido complementar a ser corrigida*/;
-    } else if (state.cells[cellIndex].acsr.tipo == 3) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
         sourceTemperature = state.cells[cellIndex].acsr.ipr.Tres;
         sourceGasEnthalpy = state.cells[cellIndex].acsr.ipr.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
         sourceLiquidEnthalpy = state.cells[cellIndex].acsr.ipr.FluidoPro.EntalpLiq(state.cells[cellIndex].pres, sourceTemperature);
         hcF = 0;
     } else if (state.cells[cellIndex].acsrL != 0) {
-        if ((*state.cells[cellIndex].acsrL).tipo == 5) {
+        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryChoke) {
             if ((*state.cells[cellIndex].acsrL).chk.AreaGarg < state.input.master1.razareaativ * state.cells[cellIndex].dutoL.area && (*state.cells[cellIndex].acsrL).chk.AreaGarg > 1e-5 * state.cells[cellIndex].dutoL.area) {
                 double chokeUpstreamTemperature = state.cells[cellIndex - 1].temp;
                 double chokeUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
@@ -237,7 +216,7 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
                 hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) * sourceTemperature;
                 /*entalpia fluido complementar a ser corrigida*/
             }
-        } else if ((*state.cells[cellIndex].acsrL).tipo == 8) {
+        } else if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryVolumetricPump) {
             double pumpUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
             double betM = state.cells[cellIndex - 1].bet;
 
@@ -313,7 +292,12 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
     int pressureSearchMarker;
     int divisionCount = state.cells[cellIndex].flui.npontos - 1;
     if (pressure < propertyTable[1][0] || pressure >= propertyTable[divisionCount + 1][0]) {
-        cout << "pressÃƒÂ£o fora dos limites de tabela";
+        cout << "pressure outside the table bounds";
+        // FIXME(owner): getchar() blocks waiting for a keypress. In a batch run
+        // that is not a diagnostic, it is a hang. The branch has never fired
+        // because no demo model executes this function, which is also why it
+        // survived. Removing it changes behaviour, so it is reported rather
+        // than deleted -- see evidencia/estagio-5/revisao-final.md.
         getchar();
     }
 
@@ -354,10 +338,10 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
     double temperatureRatio = 1. - (lowerEnergy - mixtureInternalEnergy) / (lowerEnergy - upperEnergy);
     state.cells[cellIndex].temp = propertyTable[0][temperatureIndex] * temperatureRatio + (1. - temperatureRatio) * propertyTable[0][temperatureIndex + 1];
 
-    if (state.cells[cellIndex].temp < -50.)
-        state.cells[cellIndex].temp = -50.;
-    if (state.cells[cellIndex].temp > 200.)
-        state.cells[cellIndex].temp = 200.;
+    if (state.cells[cellIndex].temp < kMinimumTemperatureCelsius)
+        state.cells[cellIndex].temp = kMinimumTemperatureCelsius;
+    if (state.cells[cellIndex].temp > kMaximumTemperatureCelsius)
+        state.cells[cellIndex].temp = kMaximumTemperatureCelsius;
 }
 
 namespace {
@@ -404,7 +388,7 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
     double betmed = state.cells[cellIndex].bet;
     double meanSuperficialGasVelocity;
     double meanSuperficialLiquidVelocity;
-    if (cellIndex > 0 && (state.cells[cellIndex - 1].acsr.tipo != 5 ||
+    if (cellIndex > 0 && (state.cells[cellIndex - 1].acsr.tipo != kAccessoryChoke ||
                           state.cells[cellIndex - 1].acsr.chk.AreaGarg > (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area)) {
         if (state.cells[cellIndex].alf > (*state.globals).localtiny)
             meanSuperficialGasVelocity = state.cells[cellIndex].QG / flowArea;
@@ -533,7 +517,7 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     double meanLiquidVelocity = 0;
     double initialMeanGasVelocity = 0;
     double initialMeanLiquidVelocity = 0;
-    if (cellIndex <= state.lastCell - 1 && state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex + 1].acsr.tipo == 0) {
+    if (cellIndex <= state.lastCell - 1 && state.cells[cellIndex].acsr.tipo == kAccessoryNone && state.cells[cellIndex + 1].acsr.tipo == kAccessoryNone) {
 
         double kineticCellLength = state.cells[cellIndex].dx;
         double upstreamDiameter = state.cells[cellIndex].duto.a;
@@ -621,17 +605,17 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
     double sourceGasSpecificHeat;
     double sourceSpecificHeatRatio = 0.;
     double sourceLiquidSpecificHeat;
-    if (state.cells[cellIndex].acsr.tipo == 1) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryGasInjection) {
         sourceTemperature = state.cells[cellIndex].acsr.injg.temp;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.injg.FluidoPro.CalorGas(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injg.FluidoPro.ConstAdG(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = 0.;
-    } else if (state.cells[cellIndex].acsr.tipo == 2) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
         sourceTemperature = state.cells[cellIndex].acsr.injl.temp;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.injl.FluidoPro.CalorGas(state.cells[cellIndex].presini, state.cells[cellIndex].temp);                                                                                                                                        // state.cells[cellIndex].acsr.injl.FluidoPro.CalorGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injl.FluidoPro.CalorGas(state.cells[cellIndex].presini, state.cells[cellIndex].temp);                                                                                                                                      // state.cells[cellIndex].acsr.injl.FluidoPro.ConstAdG(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = (1. - state.cells[cellIndex].acsr.injl.bet) * state.cells[cellIndex].acsr.injl.FluidoPro.CalorLiq(state.cells[cellIndex].presini, state.cells[cellIndex].temp) + state.cells[cellIndex].acsr.injl.bet * state.cells[cellIndex].acsr.injl.fluidocol.CalorLiq(state.cells[cellIndex].presini, state.cells[cellIndex].temp); //(1. - state.cells[cellIndex].acsr.injl.bet) * state.cells[cellIndex].acsr.injl.FluidoPro.CalorLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp)
-    } else if (state.cells[cellIndex].acsr.tipo == 10) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryMultipleSource) {
         sourceTemperature = state.cells[cellIndex].acsr.injm.temp;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.injm.FluidoPro.CalorGas(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injm.FluidoPro.ConstAdG(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
@@ -641,17 +625,17 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                    titbet * state.cells[cellIndex].acsr.injl.fluidocol.CalorLiq(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         } else
             sourceLiquidSpecificHeat = 0.;
-    } else if (state.cells[cellIndex].acsr.tipo == 3) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
         sourceTemperature = state.cells[cellIndex].acsr.ipr.Tres;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.ipr.FluidoPro.CalorGas(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.ipr.FluidoPro.ConstAdG(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = state.cells[cellIndex].acsr.ipr.FluidoPro.CalorLiq(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
-    } else if (state.cells[cellIndex].acsr.tipo == 15) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryRadialPorous) {
         sourceTemperature = state.cells[cellIndex].acsr.radialPoro.tRes;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.radialPoro.flup.CalorGas(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.radialPoro.flup.ConstAdG(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = state.cells[cellIndex].acsr.radialPoro.flup.CalorLiq(state.cells[cellIndex].presini, state.cells[cellIndex].temp);
-    } else if (state.cells[cellIndex].acsr.tipo == 9) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryLeak) {
         double betM = state.cells[cellIndex].acsr.fontechk.betISamb;
         double ambientPressure = state.cells[cellIndex].acsr.fontechk.pamb;
         double ambientTemperature = state.cells[cellIndex].acsr.fontechk.tamb;
@@ -660,7 +644,7 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.fontechk.fluidoPamb.ConstAdG(ambientPressure, ambientTemperature);
         sourceTemperature = state.cells[cellIndex].acsr.fontechk.tamb;
     } else if (state.cells[cellIndex].acsrL != 0 && cellIndex < state.lastCell) {
-        if ((*state.cells[cellIndex].acsrL).tipo == 5 && (state.cells[cellIndex].fontemassLR + state.cells[cellIndex].fontemassCR + state.cells[cellIndex].fontemassGR) > 0.) {
+        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryChoke && (state.cells[cellIndex].fontemassLR + state.cells[cellIndex].fontemassCR + state.cells[cellIndex].fontemassGR) > 0.) {
             if ((*state.cells[cellIndex].acsrL).chk.AreaGarg < state.input.master1.razareaativ * state.cells[cellIndex].dutoL.area && (*state.cells[cellIndex].acsrL).chk.AreaGarg > 1e-5 * state.cells[cellIndex].dutoL.area) {
                 double upstreamTemperature = state.cells[cellIndex - 1].tempini;
                 double chokeUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
@@ -684,7 +668,7 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                 double upstreamLiquidJouleThomson = (1. - betE) * state.cells[cellIndex - 1].flui.JTL(state.cells[cellIndex - 1].presini - upstreamHydrostaticHead, state.cells[cellIndex - 1].tempini) - betE / rholcJ;                                                                                     //(1. - betE) * state.cells[cellIndex - 1].flui.JTL(state.cells[cellIndex - 1].pres - upstreamHydrostaticHead, state.cells[cellIndex - 1].temp)
                 double upstreamGasJouleThomson = state.cells[cellIndex - 1].flui.JTG(state.cells[cellIndex - 1].presini - upstreamHydrostaticHead, state.cells[cellIndex - 1].tempini);                                                                                                                   // state.cells[cellIndex - 1].flui.JTG(state.cells[cellIndex - 1].pres - upstreamHydrostaticHead, state.cells[cellIndex - 1].temp);
                 sourceTemperature = upstreamTemperature + ((1. - quality) * upstreamLiquidJouleThomson / sourceLiquidSpecificHeat + quality * upstreamGasJouleThomson / sourceGasSpecificHeat) *
-                                  (state.cells[cellIndex].pres + downstreamHydrostaticHead - state.cells[cellIndex - 1].pres - upstreamHydrostaticHead) * 98066.52;
+                                  (state.cells[cellIndex].pres + downstreamHydrostaticHead - state.cells[cellIndex - 1].pres - upstreamHydrostaticHead) * kPascalPerKgfPerCm2Variant;
 
                 sourceSpecificHeatRatio = state.cells[cellIndex - 1].flui.ConstAdG(state.cells[cellIndex - 1].presini, state.cells[cellIndex - 1].tempini);
 
@@ -694,7 +678,7 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                 sourceTemperature = state.cells[cellIndex].temp;
                 sourceSpecificHeatRatio = state.cells[cellIndex - 1].flui.ConstAdG(state.cells[cellIndex - 1].presini, state.cells[cellIndex - 1].tempini);
             }
-        } else if ((*state.cells[cellIndex].acsrL).tipo == 8) {
+        } else if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryVolumetricPump) {
             double betM = state.cells[cellIndex - 1].bet;
             sourceGasSpecificHeat = state.cells[cellIndex - 1].flui.CalorGas(state.cells[cellIndex - 1].presini, state.cells[cellIndex - 1].tempini);
             sourceLiquidSpecificHeat = (1. - betM) * state.cells[cellIndex - 1].flui.CalorLiq(state.cells[cellIndex - 1].presini, state.cells[cellIndex - 1].tempini) + betM * state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].presini, state.cells[cellIndex - 1].tempini);
@@ -752,24 +736,24 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
     double sourceGasSpecificHeat;
     double sourceSpecificHeatRatio = 0.;
     double sourceLiquidSpecificHeat;
-    if (state.cells[cellIndex].acsr.tipo == 1) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryGasInjection) {
         sourceTemperature = state.cells[cellIndex].acsr.injg.temp;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.injg.FluidoPro.CalorGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injg.FluidoPro.ConstAdG(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = 0.;
-    } else if (state.cells[cellIndex].acsr.tipo == 2) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
         sourceTemperature = state.cells[cellIndex].acsr.injl.temp;
         ;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.injl.FluidoPro.CalorGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injl.FluidoPro.ConstAdG(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = (1. - state.cells[cellIndex].acsr.injl.bet) * state.cells[cellIndex].acsr.injl.FluidoPro.CalorLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp) + state.cells[cellIndex].acsr.injl.bet * state.cells[cellIndex].acsr.injl.fluidocol.CalorLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
-    } else if (state.cells[cellIndex].acsr.tipo == 3) {
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
         sourceTemperature = state.cells[cellIndex].acsr.ipr.Tres;
         sourceGasSpecificHeat = state.cells[cellIndex].acsr.ipr.FluidoPro.CalorGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceSpecificHeatRatio = state.cells[cellIndex].acsr.ipr.FluidoPro.ConstAdG(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         sourceLiquidSpecificHeat = state.cells[cellIndex].acsr.ipr.FluidoPro.CalorLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
     } else if (state.cells[cellIndex].acsrL != 0) {
-        if ((*state.cells[cellIndex].acsrL).tipo == 5) {
+        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryChoke) {
             if ((*state.cells[cellIndex].acsrL).chk.AreaGarg < state.input.master1.razareaativ * state.cells[cellIndex].dutoL.area && (*state.cells[cellIndex].acsrL).chk.AreaGarg > 1e-5 * state.cells[cellIndex].dutoL.area) {
                 double upstreamTemperature = state.cells[cellIndex - 1].temp;
                 double chokeUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
@@ -804,7 +788,7 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
                 sourceTemperature = state.cells[cellIndex].temp;
                 sourceSpecificHeatRatio = state.cells[cellIndex - 1].flui.ConstAdG(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
             }
-        } else if ((*state.cells[cellIndex].acsrL).tipo == 8) {
+        } else if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryVolumetricPump) {
             double pumpUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
             double betM = state.cells[cellIndex - 1].bet;
             sourceGasSpecificHeat = state.cells[cellIndex - 1].flui.CalorGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
@@ -854,10 +838,10 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
             pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - state.cells[cellIndex].pres) * kPascalPerKgfPerCm2 / state.cells[cellIndex].dx;
         else
             pressureGradient = 2. * (state.cells[cellIndex].pres - state.cells[cellIndex].presaux) * kPascalPerKgfPerCm2 / state.cells[cellIndex].dx;
-        if (cellIndex > 0 && state.cells[cellIndex - 1].acsr.tipo == 5 &&
+        if (cellIndex > 0 && state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke &&
             state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area)
             pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - state.cells[cellIndex].pres) * kPascalPerKgfPerCm2 / state.cells[cellIndex].dx;
-        else if (cellIndex > 0 && state.cells[cellIndex].acsr.tipo == 5 &&
+        else if (cellIndex > 0 && state.cells[cellIndex].acsr.tipo == kAccessoryChoke &&
                  state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area) {
             pressureGradient = (state.cells[cellIndex].pres - state.cells[cellIndex - 1].pres) * kPascalPerKgfPerCm2 / balance.meanCellLength;
         } else if (cellIndex == 0)
@@ -873,14 +857,14 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
             if (cellIndex < state.lastCell)
                 if (state.cells[cellIndex].VTemper < 0)
                     temperatureGradient = (state.cells[cellIndex + 1].tempini - state.cells[cellIndex].temp) / (0.5 * (state.cells[cellIndex + 1].dx + state.cells[cellIndex].dx));
-            if (state.cells[cellIndex].acsr.tipo == 5 && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area && state.cells[cellIndex].VTemper <= 0)
+            if (state.cells[cellIndex].acsr.tipo == kAccessoryChoke && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area && state.cells[cellIndex].VTemper <= 0)
                 temperatureGradient = 0.;
-            if (cellIndex > 0 && state.cells[cellIndex - 1].acsr.tipo == 5 &&
+            if (cellIndex > 0 && state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke &&
                 state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area && state.cells[cellIndex].VTemper >= 0)
                 temperatureGradient = 0 * (state.cells[cellIndex + 1].tempini - state.cells[cellIndex].temp) / (0.5 * (state.cells[cellIndex + 1].dx + state.cells[cellIndex].dx));
             if ((cellIndex <= 1 && state.cells[cellIndex].VTemper <= 0) || (cellIndex == state.lastCell && state.cells[cellIndex].VTemper <= 0))
                 temperatureGradient = 0.;
-            if (state.cells[cellIndex].acsr.tipo == 8 && state.cells[cellIndex].acsr.bvol.freq > 1.) {
+            if (state.cells[cellIndex].acsr.tipo == kAccessoryVolumetricPump && state.cells[cellIndex].acsr.bvol.freq > 1.) {
                 pressureGradient = (state.cells[cellIndex].pres - state.cells[cellIndex - 1].pres) * kPascalPerKgfPerCm2 / balance.meanCellLength;
             }
 
@@ -892,7 +876,7 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
             double latentHeatTerm;
             double phaseChangeMassRate = fabs(state.cells[cellIndex].FonteMudaFase);
             double phaseChangeSign = 1.;
-            if (phaseChangeMassRate > 1e-25)
+            if (phaseChangeMassRate > kPhaseChangeFloor)
                 phaseChangeSign = state.cells[cellIndex].FonteMudaFase / phaseChangeMassRate;
             if (state.input.limTransMass < phaseChangeMassRate)
                 phaseChangeMassRate = phaseChangeSign * state.input.limTransMass;
@@ -944,13 +928,13 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
                                  (fabs(state.cells[cellIndex].temp - state.cells[cellIndex].tempini) / (state.cells[cellIndex].temp - state.cells[cellIndex].tempini)) * 10 * state.cells[cellIndex].dt;
             } else if (fabs(state.cells[cellIndex].temp - state.cells[cellIndex].tempini) / state.cells[cellIndex].dt > 1. && fabs(state.cells[cellIndex].VTemper) > 10 * balance.referenceMixtureVelocity)
                 state.cells[cellIndex].temp = state.cells[cellIndex].tempini;
-            double minimumTemperature = -50.;
+            double minimumTemperature = kMinimumTemperatureCelsius;
             if (state.input.usaTabela == 1)
                 minimumTemperature = state.input.tabent.tmin + 1.;
             if (state.cells[cellIndex].temp < minimumTemperature)
                 state.cells[cellIndex].temp = minimumTemperature;
-            if (state.cells[cellIndex].temp > 200.)
-                state.cells[cellIndex].temp = 200.;
+            if (state.cells[cellIndex].temp > kMaximumTemperatureCelsius)
+                state.cells[cellIndex].temp = kMaximumTemperatureCelsius;
         } else if (cellIndex == state.lastCell) {
             if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
                 state.cells[cellIndex].temp = state.cells[cellIndex].calor.Textern1;
@@ -1016,26 +1000,26 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
         pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - state.cells[cellIndex].pres) * kPascalPerKgfPerCm2 / state.cells[cellIndex].dx;
     else
         pressureGradient = 2. * (state.cells[cellIndex].pres - state.cells[cellIndex].presaux) * kPascalPerKgfPerCm2 / state.cells[cellIndex].dx;
-    if (state.cells[cellIndex].acsr.tipo == 5 && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area)
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryChoke && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area)
         pressureGradient = 2. * (state.cells[cellIndex].pres - state.cells[cellIndex].presaux) * kPascalPerKgfPerCm2 / state.cells[cellIndex].dx;
     state.cells[cellIndex].VTemper = temperatureSpatialCoefficient / timeCoefficient;
     double temperatureGradient = (state.cells[cellIndex].temp - state.cells[cellIndex - 1].temp) / meanCellLength;
     if (cellIndex < state.lastCell)
         if (state.cells[cellIndex].VTemper < 0)
             temperatureGradient = (state.cells[cellIndex + 1].temp - state.cells[cellIndex].temp) / (0.5 * (state.cells[cellIndex + 1].dx + state.cells[cellIndex].dx));
-    if (state.cells[cellIndex].acsr.tipo == 5 && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area && state.cells[cellIndex].VTemper <= 0)
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryChoke && state.cells[cellIndex].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area && state.cells[cellIndex].VTemper <= 0)
         temperatureGradient = 0.;
-    if (state.cells[cellIndex - 1].acsr.tipo == 5 && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area && state.cells[cellIndex].VTemper >= 0)
+    if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area && state.cells[cellIndex].VTemper >= 0)
         temperatureGradient = 0.;
     if ((cellIndex == 1 && state.cells[cellIndex].VTemper <= 0) || (cellIndex == state.lastCell && state.cells[cellIndex].VTemper <= 0))
         temperatureGradient = 0.;
-    if (state.cells[cellIndex].acsr.tipo == 4 && state.cells[cellIndex].acsr.bcs.freqnova > 1.) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryPump && state.cells[cellIndex].acsr.bcs.freqnova > 1.) {
         pressureGradient = 0.;
     }
-    if (state.cells[cellIndex].acsr.tipo == 8 && state.cells[cellIndex].acsr.bvol.freq > 1.) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryVolumetricPump && state.cells[cellIndex].acsr.bvol.freq > 1.) {
         pressureGradient = (state.cells[cellIndex].pres - state.cells[cellIndex - 1].pres) * kPascalPerKgfPerCm2 / meanCellLength;
     }
-    if (state.cells[cellIndex].acsr.tipo == 17 && state.cells[cellIndex].acsr.multibcs.freqnova > 1.) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryMultiPump && state.cells[cellIndex].acsr.multibcs.freqnova > 1.) {
         pressureGradient = 0.;
     }
 
@@ -1044,7 +1028,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     double upstreamMeanLiquidVelocity = 0;
     double meanGasVelocity = 0;
     double meanLiquidVelocity = 0.;
-    if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex - 1].acsr.tipo == 0 && cellIndex > 1) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryNone && state.cells[cellIndex - 1].acsr.tipo == kAccessoryNone && cellIndex > 1) {
 
         double kineticCellLength = state.cells[cellIndex - 1].dx;
         double upstreamDiameter = state.cells[cellIndex - 1].duto.a;
@@ -1153,10 +1137,10 @@ void initializeDistributedMassTransferInlet(
         state.cells[cellIndex].pres, state.cells[cellIndex].temp);
     if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
         double previousUpstreamOilVolumeFactor = state.cells[cellIndex].flui.BOFunc(
-            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].pres * kDerivativePerturbationFactor,
             state.cells[cellIndex].temp);
         double previousUpstreamSolutionGasRatio = state.cells[cellIndex].flui.RS(
-            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].pres * kDerivativePerturbationFactor,
             state.cells[cellIndex].temp);
         previousSolutionGasPressureDerivative =
             (previousSolutionGasRatio / previousOilVolumeFactor -
@@ -1165,15 +1149,15 @@ void initializeDistributedMassTransferInlet(
     } else {
         ProFlu flutemp = state.cells[cellIndex].flui;
         flutemp.atualizaPropComp(
-            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].pres * kDerivativePerturbationFactor,
             state.cells[cellIndex].temp, flutemp.dCalculatedBeta,
             flutemp.oCalculatedLiqComposition,
             flutemp.oCalculatedVapComposition, state.input.pocinjec);
         double previousUpstreamOilVolumeFactor = flutemp.BOFunc(
-            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].pres * kDerivativePerturbationFactor,
             state.cells[cellIndex].temp);
         double previousUpstreamSolutionGasRatio = flutemp.RS(
-            state.cells[cellIndex].pres * 0.999,
+            state.cells[cellIndex].pres * kDerivativePerturbationFactor,
             state.cells[cellIndex].temp);
         previousSolutionGasPressureDerivative =
             (previousSolutionGasRatio / previousOilVolumeFactor -
@@ -1291,17 +1275,17 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
         downstreamOilVolumeFactor = flud.BOFunc(state.cells[cellIndex].presaux, meanTemperature);
         downstreamSolutionGasRatio = flud.RS(state.cells[cellIndex].presaux, meanTemperature);
-        previousDownstreamOilVolumeFactor = flud.BOFunc(state.cells[cellIndex].presaux * 0.999, meanTemperature);
-        previousDownstreamSolutionGasRatio = flud.RS(state.cells[cellIndex].presaux * 0.999, meanTemperature);
+        previousDownstreamOilVolumeFactor = flud.BOFunc(state.cells[cellIndex].presaux * kDerivativePerturbationFactor, meanTemperature);
+        previousDownstreamSolutionGasRatio = flud.RS(state.cells[cellIndex].presaux * kDerivativePerturbationFactor, meanTemperature);
     } else {
         downstreamOilVolumeFactor = flud.BOFunc(state.cells[cellIndex].presaux, meanTemperature);
         downstreamSolutionGasRatio = flud.RS(state.cells[cellIndex].presaux, meanTemperature);
         flud.atualizaPropComp(
-            state.cells[cellIndex].presaux * 0.999, meanTemperature, flud.dCalculatedBeta,
+            state.cells[cellIndex].presaux * kDerivativePerturbationFactor, meanTemperature, flud.dCalculatedBeta,
             flud.oCalculatedLiqComposition,
             flud.oCalculatedVapComposition, state.input.pocinjec);
-        previousDownstreamOilVolumeFactor = flud.BOFunc(state.cells[cellIndex].presaux * 0.999, meanTemperature);
-        previousDownstreamSolutionGasRatio = flud.RS(state.cells[cellIndex].presaux * 0.999, meanTemperature);
+        previousDownstreamOilVolumeFactor = flud.BOFunc(state.cells[cellIndex].presaux * kDerivativePerturbationFactor, meanTemperature);
+        previousDownstreamSolutionGasRatio = flud.RS(state.cells[cellIndex].presaux * kDerivativePerturbationFactor, meanTemperature);
     } // casoComp
     double downstreamSolutionGasPressureDerivative =
         (downstreamSolutionGasRatio / downstreamOilVolumeFactor - previousDownstreamSolutionGasRatio / previousDownstreamOilVolumeFactor) / (state.cells[cellIndex].presaux * 0.001);
@@ -1315,9 +1299,9 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
         cellSolutionGasRatio = state.cells[cellIndex - 1].flui.RS(
             state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
         previousCellOilVolumeFactor = state.cells[cellIndex - 1].flui.BOFunc(
-            state.cells[cellIndex - 1].pres * 0.999, state.cells[cellIndex - 1].temp);
+            state.cells[cellIndex - 1].pres * kDerivativePerturbationFactor, state.cells[cellIndex - 1].temp);
         previousCellSolutionGasRatio = state.cells[cellIndex - 1].flui.RS(
-            state.cells[cellIndex - 1].pres * 0.999, state.cells[cellIndex - 1].temp);
+            state.cells[cellIndex - 1].pres * kDerivativePerturbationFactor, state.cells[cellIndex - 1].temp);
     } else {
         cellOilVolumeFactor = state.cells[cellIndex - 1].flui.BOFunc(
             state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
@@ -1325,14 +1309,14 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
         ProFlu flutemp = state.cells[cellIndex - 1].flui;
         flutemp.atualizaPropComp(
-            state.cells[cellIndex - 1].pres * 0.999,
+            state.cells[cellIndex - 1].pres * kDerivativePerturbationFactor,
             state.cells[cellIndex - 1].temp, flutemp.dCalculatedBeta,
             flutemp.oCalculatedLiqComposition,
             flutemp.oCalculatedVapComposition, state.input.pocinjec);
         previousCellOilVolumeFactor = flutemp.BOFunc(
-            state.cells[cellIndex - 1].pres * 0.999, state.cells[cellIndex - 1].temp);
+            state.cells[cellIndex - 1].pres * kDerivativePerturbationFactor, state.cells[cellIndex - 1].temp);
         previousCellSolutionGasRatio = flutemp.RS(
-            state.cells[cellIndex - 1].pres * 0.999, state.cells[cellIndex - 1].temp);
+            state.cells[cellIndex - 1].pres * kDerivativePerturbationFactor, state.cells[cellIndex - 1].temp);
     } // casoComp
     double cellSolutionGasPressureDerivative =
         (cellSolutionGasRatio / cellOilVolumeFactor - previousCellSolutionGasRatio / previousCellOilVolumeFactor) / (state.cells[cellIndex - 1].pres * 0.001);
@@ -1344,24 +1328,24 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             state.input.miniTabAtraso > 0) {
             shiftedCellOilVolumeFactor = state.cells[cellIndex - 1].flui.BOFunc(
                 state.cells[cellIndex - 1].pres,
-                state.cells[cellIndex - 1].temp * 0.999);
+                state.cells[cellIndex - 1].temp * kDerivativePerturbationFactor);
             shiftedCellSolutionGasRatio = state.cells[cellIndex - 1].flui.RS(
                 state.cells[cellIndex - 1].pres,
-                state.cells[cellIndex - 1].temp * 0.999);
+                state.cells[cellIndex - 1].temp * kDerivativePerturbationFactor);
         } else {
             ProFlu flutemp = state.cells[cellIndex - 1].flui;
             flutemp.atualizaPropComp(
                 state.cells[cellIndex - 1].pres,
-                state.cells[cellIndex - 1].temp * 0.999,
+                state.cells[cellIndex - 1].temp * kDerivativePerturbationFactor,
                 flutemp.dCalculatedBeta,
                 flutemp.oCalculatedLiqComposition,
                 flutemp.oCalculatedVapComposition, state.input.pocinjec);
             shiftedCellOilVolumeFactor = flutemp.BOFunc(
                 state.cells[cellIndex - 1].pres,
-                state.cells[cellIndex - 1].temp * 0.999);
+                state.cells[cellIndex - 1].temp * kDerivativePerturbationFactor);
             shiftedCellSolutionGasRatio = flutemp.RS(
                 state.cells[cellIndex - 1].pres,
-                state.cells[cellIndex - 1].temp * 0.999);
+                state.cells[cellIndex - 1].temp * kDerivativePerturbationFactor);
         } // casoComp
         cellSolutionGasTemperatureDerivative = (cellSolutionGasRatio / cellOilVolumeFactor - shiftedCellSolutionGasRatio / shiftedCellOilVolumeFactor) /
                    (state.cells[cellIndex - 1].temp * 0.001);
@@ -1411,7 +1395,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
     state.cells[cellIndex - 1].DTransDtp =
         activeDerivative * coefficientFlowArea * (1. - state.cells[cellIndex - 1].alf) *
         (1. - state.cells[cellIndex - 1].bet) * (1. - cellWaterFraction) * flud.Deng *
-        1.225 * cellSolutionGasPressureDerivative * (6.29 / 35.31467);
+        1.225 * cellSolutionGasPressureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
     state.cells[cellIndex].DTransDtpL = state.cells[cellIndex - 1].DTransDtp;
     if (cellIndex == state.lastCell) {
         double cellOilVolumeFactor;
@@ -1425,9 +1409,9 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
             cellSolutionGasRatio = state.cells[cellIndex].flui.RS(
                 state.cells[cellIndex].pres, state.cells[cellIndex].temp);
             previousCellOilVolumeFactor = state.cells[cellIndex].flui.BOFunc(
-                state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
             previousCellSolutionGasRatio = state.cells[cellIndex].flui.RS(
-                state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
         } else {
             cellOilVolumeFactor = state.cells[cellIndex].flui.BOFunc(
                 state.cells[cellIndex].pres, state.cells[cellIndex].temp);
@@ -1435,27 +1419,27 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
                 state.cells[cellIndex].pres, state.cells[cellIndex].temp);
             ProFlu flutemp = state.cells[cellIndex].flui;
             flutemp.atualizaPropComp(
-                state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp,
+                state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp,
                 flutemp.dCalculatedBeta,
                 flutemp.oCalculatedLiqComposition,
                 flutemp.oCalculatedVapComposition, state.input.pocinjec);
             previousCellOilVolumeFactor = flutemp.BOFunc(
-                state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
             previousCellSolutionGasRatio = flutemp.RS(
-                state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
         } // casoComp
         double cellSolutionGasPressureDerivative =
             (cellSolutionGasRatio / cellOilVolumeFactor - previousCellSolutionGasRatio / previousCellOilVolumeFactor) / (state.cells[cellIndex].pres * 0.001);
         state.cells[cellIndex].DTransDtp =
             activeDerivative * coefficientFlowArea * (1. - state.cells[cellIndex].alf) *
             (1. - state.cells[cellIndex].bet) * (1. - cellWaterFraction) * flud.Deng *
-            1.225 * cellSolutionGasPressureDerivative * (6.29 / 35.31467);
+            1.225 * cellSolutionGasPressureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
     }
     if (state.input.cicloAcopTerm == 1) {
         state.cells[cellIndex - 1].DTransDtT =
             activeDerivative * coefficientFlowArea * (1. - state.cells[cellIndex - 1].alf) *
             (1. - state.cells[cellIndex - 1].bet) * (1. - cellWaterFraction) * flud.Deng *
-            1.225 * cellSolutionGasTemperatureDerivative * (6.29 / 35.31467);
+            1.225 * cellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
         state.cells[cellIndex].DTransDtTL = state.cells[cellIndex - 1].DTransDtT;
         if (cellIndex == state.lastCell) {
             double cellOilVolumeFactor;
@@ -1469,9 +1453,9 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
                 cellSolutionGasRatio = state.cells[cellIndex].flui.RS(
                     state.cells[cellIndex].pres, state.cells[cellIndex].temp);
                 previousCellOilVolumeFactor = state.cells[cellIndex].flui.BOFunc(
-                    state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                    state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
                 previousCellSolutionGasRatio = state.cells[cellIndex].flui.RS(
-                    state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                    state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
             } else {
                 cellOilVolumeFactor = state.cells[cellIndex].flui.BOFunc(
                     state.cells[cellIndex].pres, state.cells[cellIndex].temp);
@@ -1479,15 +1463,15 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
                     state.cells[cellIndex].pres, state.cells[cellIndex].temp);
                 ProFlu flutemp = state.cells[cellIndex].flui;
                 flutemp.atualizaPropComp(
-                    state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp,
+                    state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp,
                     flutemp.dCalculatedBeta,
                     flutemp.oCalculatedLiqComposition,
                     flutemp.oCalculatedVapComposition,
                     state.input.pocinjec);
                 previousCellOilVolumeFactor = flutemp.BOFunc(
-                    state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                    state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
                 previousCellSolutionGasRatio = flutemp.RS(
-                    state.cells[cellIndex].pres * 0.999, state.cells[cellIndex].temp);
+                    state.cells[cellIndex].pres * kDerivativePerturbationFactor, state.cells[cellIndex].temp);
             } // casoComp
             double cellSolutionGasPressureDerivative =
                 (cellSolutionGasRatio / cellOilVolumeFactor - previousCellSolutionGasRatio / previousCellOilVolumeFactor) /
@@ -1495,7 +1479,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
             state.cells[cellIndex].DTransDtT =
                 activeDerivative * coefficientFlowArea * (1. - state.cells[cellIndex].alf) *
                 (1. - state.cells[cellIndex].bet) * (1. - cellWaterFraction) * flud.Deng *
-                1.225 * cellSolutionGasTemperatureDerivative * (6.29 / 35.31467);
+                1.225 * cellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
         }
     }
 
@@ -1519,29 +1503,29 @@ void selectDistributedMassTransferModel(
     state.cells[cellIndex - 1].TMModel = state.massTransferModel;
     if (state.massTransferModel != 3) {
         if ((((state.cells[cellIndex - 1].alf < 0.001) ||
-              (state.cells[cellIndex - 1].alf > 0.999) ||
-              (state.cells[cellIndex - 1].bet > 0.999 &&
-               state.cells[cellIndex - 1].alf < 0.999)) &&
+              (state.cells[cellIndex - 1].alf > kDerivativePerturbationFactor) ||
+              (state.cells[cellIndex - 1].bet > kDerivativePerturbationFactor &&
+               state.cells[cellIndex - 1].alf < kDerivativePerturbationFactor)) &&
              leftAbsoluteSuperficialVelocity < 0.1) ||
             state.cells[cellIndex - 1].flui.RGO >= (*state.globals).RGOMax)
             state.cells[cellIndex - 1].TMModel = 3;
         else if (state.cells[cellIndex - 1].estadoPig == 1)
             state.cells[cellIndex - 1].TMModel = 3;
-        else if (state.cells[cellIndex - 1].acsr.tipo == 2 ||
-                 state.cells[cellIndex - 1].acsr.tipo == 3 ||
-                 state.cells[cellIndex - 1].acsr.tipo == 9 ||
-                 state.cells[cellIndex - 1].acsr.tipo == 15 ||
-                 state.cells[cellIndex - 1].acsr.tipo == 16)
+        else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryLiquidInjection ||
+                 state.cells[cellIndex - 1].acsr.tipo == kAccessoryInflowPerformance ||
+                 state.cells[cellIndex - 1].acsr.tipo == kAccessoryLeak ||
+                 state.cells[cellIndex - 1].acsr.tipo == kAccessoryRadialPorous ||
+                 state.cells[cellIndex - 1].acsr.tipo == kAccessoryPorous2D)
             state.cells[cellIndex - 1].TMModel = 3;
         else if (cellIndex >= 2) {
-            if (state.cells[cellIndex - 2].acsr.tipo == 5 &&
+            if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryChoke &&
                 (state.cells[cellIndex - 2].acsr.chk.AreaGarg <
                  (1e-3 + state.input.master1.razareaativ) *
                      state.cells[cellIndex - 2].duto.area))
                 state.cells[cellIndex - 1].TMModel = 3;
-            else if (state.cells[cellIndex - 2].acsr.tipo == 4 ||
+            else if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryPump ||
                      state.cells[cellIndex - 2].acsr.tipo == 7 ||
-                     state.cells[cellIndex - 2].acsr.tipo == 17)
+                     state.cells[cellIndex - 2].acsr.tipo == kAccessoryMultiPump)
                 state.cells[cellIndex - 1].TMModel = 0;
         }
         if (state.input.flashCompleto == 2) {
@@ -1592,9 +1576,9 @@ void applyDistributedMassTransferModel(
 
         state.cells[cellIndex - 1].transmassR =
             -(state.cells[cellIndex].QL * (1 - betI) * (flud.rDgD) * flud.Deng *
-              1.225 * (1. - downstreamWaterFraction) * downstreamSolutionGasRatio * (6.29 / 35.31467) / downstreamOilVolumeFactor) +
+              1.225 * (1. - downstreamWaterFraction) * downstreamSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / downstreamOilVolumeFactor) +
             (state.cells[cellIndex - 1].QL * (1 - betL) * (flue.rDgD) *
-             flue.Deng * 1.225 * (1. - upstreamWaterFraction) * upstreamSolutionGasRatio * (6.29 / 35.31467) /
+             flue.Deng * 1.225 * (1. - upstreamWaterFraction) * upstreamSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) /
              upstreamOilVolumeFactor);
 
         state.cells[cellIndex - 1].transmassR /= state.cells[cellIndex - 1].dx;
@@ -1610,14 +1594,14 @@ void applyDistributedMassTransferModel(
                          (1. - state.cells[cellIndex - 1].alf) * (1. - cellWaterFraction) * coefficientFlowArea *
                          (state.cells[cellIndex - 1].flui.rDgD) *
                          state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                         (6.29 / 35.31467) / cellOilVolumeFactor) /
+                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor) /
                 state.cells[cellIndex - 1].dt;
             state.cells[cellIndex - 1].transmassR +=
                 activeDerivative * ((1. - state.cells[cellIndex - 1].betini) *
                          (1. - state.cells[cellIndex - 1].alfini) * (1. - cellWaterFraction) * coefficientFlowArea *
                          (state.cells[cellIndex - 1].flui.rDgD) *
                          state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                         (6.29 / 35.31467) / cellOilVolumeFactor) /
+                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor) /
                 state.cells[cellIndex - 1].dt;
 
             state.cells[cellIndex].transmassL = state.cells[cellIndex - 1].transmassR;
@@ -1630,91 +1614,90 @@ void applyDistributedMassTransferModel(
                          (1. - state.cells[cellIndex - 1].alf) * (1. - cellWaterFraction) * coefficientFlowArea *
                          (state.cells[cellIndex - 1].flui.rDgD) *
                          state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                         (6.29 / 35.31467) / cellOilVolumeFactor) /
+                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor) /
                 state.cells[cellIndex - 1].dt;
             state.cells[cellIndex - 1].FonteMudaFase +=
                 activeDerivative * ((1. - state.cells[cellIndex - 1].betini) *
                          (1. - state.cells[cellIndex - 1].alfini) * (1. - cellWaterFraction) * coefficientFlowArea *
                          (state.cells[cellIndex - 1].flui.rDgD) *
                          state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                         (6.29 / 35.31467) / cellOilVolumeFactor) /
+                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor) /
                 state.cells[cellIndex - 1].dt;
         }
 
         if (state.cells[cellIndex - 1].TMModel == 0) {
             state.cells[cellIndex].DTransDxR =
                 -((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
-                  (1. - downstreamWaterFraction) * downstreamSolutionGasRatio * (6.29 / 35.31467) / downstreamOilVolumeFactor) /
+                  (1. - downstreamWaterFraction) * downstreamSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / downstreamOilVolumeFactor) /
                 (liquidDensity * state.cells[cellIndex - 1].dx);
             state.cells[cellIndex].DtransDxLinear =
                 -spatialCoupling * state.cells[cellIndex].QL *
                     ((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
-                     (1. - downstreamWaterFraction) * (6.29 / 35.31467) *
+                     (1. - downstreamWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (downstreamSolutionGasPressureDerivative * state.cells[cellIndex].dpresaux)) /
                     (state.cells[cellIndex - 1].dx) +
                 spatialCoupling * state.cells[cellIndex].QL *
                     ((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
-                     (1. - downstreamWaterFraction) * (6.29 / 35.31467) *
+                     (1. - downstreamWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (downstreamSolutionGasPressureDerivative * state.cells[cellIndex].presaux)) /
                     (state.cells[cellIndex - 1].dx);
             state.cells[cellIndex].DTransDxRp =
                 -spatialCoupling * state.cells[cellIndex].QL *
                 ((1 - betI) * (flud.rDgD) * flud.Deng * 1.225 *
-                 (1. - downstreamWaterFraction) * (6.29 / 35.31467) * 0.5 * downstreamSolutionGasPressureDerivative) /
+                 (1. - downstreamWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * downstreamSolutionGasPressureDerivative) /
                 (state.cells[cellIndex - 1].dx);
             state.cells[cellIndex].DTransDxL =
                 ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
-                 (1. - upstreamWaterFraction) * upstreamSolutionGasRatio * (6.29 / 35.31467) / upstreamOilVolumeFactor) /
+                 (1. - upstreamWaterFraction) * upstreamSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / upstreamOilVolumeFactor) /
                 (previousMixtureLiquidDensity * state.cells[cellIndex - 1].dx);
             state.cells[cellIndex].DtransDxLinear =
                 state.cells[cellIndex].DtransDxLinear +
                 spatialCoupling * state.cells[cellIndex - 1].QL *
                     ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
-                     (1. - upstreamWaterFraction) * (6.29 / 35.31467) *
+                     (1. - upstreamWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (upstreamSolutionGasPressureDerivative * state.cells[cellIndex - 1].dpresaux)) /
                     (state.cells[cellIndex - 1].dx) -
                 spatialCoupling * state.cells[cellIndex - 1].QL *
                     ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
-                     (1. - upstreamWaterFraction) * (6.29 / 35.31467) *
+                     (1. - upstreamWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (upstreamSolutionGasPressureDerivative * state.cells[cellIndex - 1].presaux)) /
                     (state.cells[cellIndex - 1].dx);
             state.cells[cellIndex].DTransDxLp =
                 spatialCoupling * state.cells[cellIndex - 1].QL *
                 ((1 - betL) * (flue.rDgD) * flue.Deng * 1.225 *
-                 (1. - upstreamWaterFraction) * (6.29 / 35.31467) * 0.5 * upstreamSolutionGasPressureDerivative) /
+                 (1. - upstreamWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * upstreamSolutionGasPressureDerivative) /
                 (state.cells[cellIndex - 1].dx);
             state.cells[cellIndex].DTransDt1 =
                 -activeDerivative * ((1. - cellWaterFraction) * coefficientFlowArea *
                           (state.cells[cellIndex - 1].flui.rDgD) *
                           state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                          (6.29 / 35.31467) / cellOilVolumeFactor);
+                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor);
             state.cells[cellIndex].DTransDt0 = -state.cells[cellIndex].DTransDt1;
 
             state.cells[cellIndex - 1].CoefDTR =
                 -((1. - state.cells[cellIndex - 1].bet) * (1. - cellWaterFraction) * coefficientFlowArea *
                   (state.cells[cellIndex - 1].flui.rDgD) *
                   state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                  (6.29 / 35.31467) / cellOilVolumeFactor);
+                  (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor);
             state.cells[cellIndex - 1].CoefDTL = -state.cells[cellIndex - 1].CoefDTR;
             state.cells[cellIndex - 1].coefTransBet =
                 ((1. - cellWaterFraction) * coefficientFlowArea * (state.cells[cellIndex - 1].flui.rDgD) *
                  state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                 (6.29 / 35.31467) / cellOilVolumeFactor);
+                 (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor);
 
-            // state.cells[cellIndex-1].DTransDtp=((1. - state.cells[cellIndex - 1].bet) * (1. - state.cells[cellIndex - 1].alf) * (1. - cellWaterFraction)*coefficientFlowArea
             state.cells[cellIndex].transmassL -=
                 activeDerivative * ((1. - state.cells[cellIndex - 1].bet) *
                          (1. - state.cells[cellIndex - 1].alf) * (1. - cellWaterFraction) * coefficientFlowArea *
                          (state.cells[cellIndex - 1].flui.rDgD) *
                          state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                         (6.29 / 35.31467) / cellOilVolumeFactor) /
+                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor) /
                 state.cells[cellIndex - 1].dt;
             state.cells[cellIndex].transmassL +=
                 activeDerivative * ((1. - state.cells[cellIndex - 1].betini) *
                          (1. - state.cells[cellIndex - 1].alfini) * (1. - cellWaterFraction) * coefficientFlowArea *
                          (state.cells[cellIndex - 1].flui.rDgD) *
                          state.cells[cellIndex - 1].flui.Deng * 1.225 * cellSolutionGasRatio *
-                         (6.29 / 35.31467) / cellOilVolumeFactor) /
+                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / cellOilVolumeFactor) /
                 state.cells[cellIndex - 1].dt;
 
         } else {
@@ -1818,7 +1801,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
                 else
                     hydrateTransportVelocity = 0.;
                 double hydrateMassFraction = state.cells[cellIndex - 1].flui.FracMassHidra(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
-                double pressurePerturbationRatio = 0.999;
+                double pressurePerturbationRatio = kDerivativePerturbationFactor;
                 double hydrateFractionPressureDerivative = (hydrateMassFraction - state.cells[cellIndex - 1].flui.FracMassHidra(state.cells[cellIndex - 1].pres * pressurePerturbationRatio, state.cells[cellIndex - 1].temp)) / ((1 - pressurePerturbationRatio) * state.cells[cellIndex - 1].pres);
                 double pressureGradient;
                 pressureGradient = (state.cells[cellIndex].presaux - state.cells[cellIndex - 1].presaux) / state.cells[cellIndex].dxL;
@@ -1922,7 +1905,7 @@ void selectAndApplyInteriorFlowRegime(
         state.cells[cellIndex].c0 = 1;
         state.cells[cellIndex].ud = 0;
         state.cells[cellIndex].arranjo = 0;
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 5 && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3)) {
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3)) {
         state.cells[cellIndex].term1 = 0.;
         state.cells[cellIndex].term2 = 0.;
         bif[cellIndex] = 0;
@@ -2077,7 +2060,7 @@ void selectAndApplyInteriorFlowRegime(
                 state.cells[cellIndex].term1 = 0.;
                 state.cells[cellIndex].term2 = 0.;
             }
-            if (state.cells[cellIndex - 1].acsr.tipo == 5 && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area) {
+            if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area) {
                 state.cells[cellIndex].term1 = 0.;
                 state.cells[cellIndex].term2 = 0.;
             }
@@ -2095,10 +2078,10 @@ void updateInteriorFlowPartitionCell(
         state.cells[cellIndex - 1].betR = state.cells[cellIndex].bet;
     }
     valv[cellIndex] = 1;
-    if (state.cells[cellIndex - 1].acsr.tipo == 5 || state.cells[cellIndex - 1].acsr.tipo == 8) {
-        if ((*state.cells[cellIndex].acsrL).tipo == 5 && (*state.cells[cellIndex].acsrL).chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area)
+    if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke || state.cells[cellIndex - 1].acsr.tipo == kAccessoryVolumetricPump) {
+        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryChoke && (*state.cells[cellIndex].acsrL).chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area)
             valv[cellIndex] = 0;
-        if ((*state.cells[cellIndex].acsrL).tipo == 8 && fabs((*state.cells[cellIndex].acsrL).bvol.freq) > 1)
+        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryVolumetricPump && fabs((*state.cells[cellIndex].acsrL).bvol.freq) > 1)
             valv[cellIndex] = 0;
     }
     if (valv[cellIndex] == 1) {
@@ -2127,8 +2110,6 @@ void updateInteriorFlowPartitionCell(
         } else {
             betI = state.cells[cellIndex - 1].betPigD;
             liquidDensity = (1 - betI) * state.cells[cellIndex - 1].rpCi + betI * state.cells[cellIndex - 1].rcCi;
-            // viscl1 = (1 - betI) * state.cells[cellIndex - 1].flui.ViscOleo(meanPressure, meanTemperature)
-            // tensup1 = (1 - betI) * state.cells[cellIndex - 1].flui.TensSuper(meanPressure, meanTemperature)
         }
         double gasDensity;
         double flowArea;
@@ -2151,7 +2132,7 @@ void updateInteriorFlowPartitionCell(
         double mixtureDensity = noSlipLiquidHoldup * liquidDensity + (1 - noSlipLiquidHoldup) * gasDensity;
         double inclinationAngle = state.cells[cellIndex].duto.teta;
         if (cellIndex >= 2) {
-            if (state.cells[cellIndex - 2].acsr.tipo == 5 && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
+            if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
                 if (state.cells[cellIndex].QG >= 0)
                     inclinationAngle = state.cells[cellIndex].duto.teta;
                 else
@@ -2388,7 +2369,7 @@ void finalizeFlowPartitionTerms(
     const ThermalState &state, const Vcr<int> &bif, const Vcr<int> &valv) {
     int isShutIn = 0;
     for (int cellIndex = 1; cellIndex < state.lastCell; cellIndex++) {
-        if (state.cells[cellIndex].acsr.tipo == 5 && state.cells[cellIndex].acsr.chk.AreaGarg <= 1e-15 * state.cells[cellIndex].acsr.chk.AreaTub)
+        if (state.cells[cellIndex].acsr.tipo == kAccessoryChoke && state.cells[cellIndex].acsr.chk.AreaGarg <= 1e-15 * state.cells[cellIndex].acsr.chk.AreaTub)
             isShutIn = 1;
         else if (state.surfaceChoke.AreaGarg <= 1.e-15 * state.surfaceChoke.AreaTub)
             isShutIn = 1;
@@ -2406,7 +2387,7 @@ void finalizeFlowPartitionTerms(
                 neighborIndex = cellIndex + 1;
                 secondNeighborIndex = cellIndex;
             }
-            if ((state.cells[neighborIndex].acsr.tipo == 0 && (state.cells[secondNeighborIndex].acsr.tipo != 5 || state.cells[secondNeighborIndex].acsr.chk.AreaGarg > (1e-3))) &&
+            if ((state.cells[neighborIndex].acsr.tipo == kAccessoryNone && (state.cells[secondNeighborIndex].acsr.tipo != kAccessoryChoke || state.cells[secondNeighborIndex].acsr.chk.AreaGarg > (1e-3))) &&
                 (state.cells[cellIndex].arranjo != state.cells[neighborIndex].arranjo && bif[neighborIndex] != 0)) {
                 c0V[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].c0 + state.cells[neighborIndex].dx * state.cells[neighborIndex].c0) / (state.cells[cellIndex].dx + state.cells[neighborIndex].dx);
                 if (state.cells[cellIndex].duto.teta * state.cells[neighborIndex].duto.teta >= 0)
@@ -2416,7 +2397,7 @@ void finalizeFlowPartitionTerms(
                 double leftInclinationAngle;
                 double diameter;
                 double leftDiameter;
-                if ((state.cells[cellIndex - 1].acsr.tipo == 0 && (state.cells[cellIndex - 2].acsr.tipo != 5 || state.cells[cellIndex - 2].acsr.chk.AreaGarg > (1e-3))) &&
+                if ((state.cells[cellIndex - 1].acsr.tipo == kAccessoryNone && (state.cells[cellIndex - 2].acsr.tipo != kAccessoryChoke || state.cells[cellIndex - 2].acsr.chk.AreaGarg > (1e-3))) &&
                     state.cells[cellIndex].QG >= 0) {
                     inclinationAngle = state.cells[cellIndex].duto.teta;
                     leftInclinationAngle = state.cells[cellIndex - 1].duto.teta;
@@ -2428,7 +2409,7 @@ void finalizeFlowPartitionTerms(
                         if (inclinationAngle * leftInclinationAngle >= 0)
                             udV[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].ud + state.cells[cellIndex - 1].dx * state.cells[cellIndex - 1].ud) / (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
                     }
-                } else if ((state.cells[cellIndex + 1].acsr.tipo == 0 && (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > (1e-3))) &&
+                } else if ((state.cells[cellIndex + 1].acsr.tipo == kAccessoryNone && (state.cells[cellIndex].acsr.tipo != kAccessoryChoke || state.cells[cellIndex].acsr.chk.AreaGarg > (1e-3))) &&
                            state.cells[cellIndex].QG < 0) {
                     inclinationAngle = state.cells[cellIndex].duto.teta;
                     leftInclinationAngle = state.cells[cellIndex + 1].duto.teta;
@@ -2493,7 +2474,7 @@ void finalizeFlowPartitionTerms(
                 state.cells[cellIndex].term1 = 0.;
                 state.cells[cellIndex].term2 = 0.;
             }
-            if (state.cells[cellIndex - 1].acsr.tipo == 5 && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area) {
+            if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area) {
                 state.cells[cellIndex].term1 = 0.;
                 state.cells[cellIndex].term2 = 0.;
             }
@@ -2695,7 +2676,7 @@ void selectAndApplyBufferedOutletFlowRegime(
         state.cells[cellIndex].c0 = 1 + 0 * distributionCoefficient;
         state.cells[cellIndex].ud = 0 * driftVelocity;
         state.cells[cellIndex].arranjo = 0;
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 5 && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3)) {
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3)) {
         state.cells[cellIndex].term1 = 0.;
         state.cells[cellIndex].term2 = 0.;
         bif = 0;
@@ -2823,7 +2804,7 @@ void selectAndApplyBufferedOutletFlowRegime(
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
         state.cells[cellIndex].term1 = numerator / denominator;
         state.cells[cellIndex].term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
-        if (state.cells[cellIndex - 1].acsr.tipo == 5 && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area) {
+        if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area) {
             state.cells[cellIndex].term1 = 0.;
             state.cells[cellIndex].term2 = 0.;
         }
@@ -3148,7 +3129,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     double mixtureReynolds = diameter * mixtureDensity * (fabs(superficialGasVelocity) / flowArea + fabs(superficialLiquidVelocity) / flowArea) / mixtureViscosity;
     double inclinationAngle = state.cells[cellIndex].duto.teta;
     if (cellIndex >= 2) {
-        if (state.cells[cellIndex - 2].acsr.tipo == 5 && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
+        if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
             if ((state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) >= 0)
                 inclinationAngle = state.cells[cellIndex].duto.teta;
             else
@@ -3302,7 +3283,7 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     double betmed = state.cells[cellIndex].bet;
     double meanSuperficialGasVelocity;
     double meanSuperficialLiquidVelocity;
-    if (cellIndex > 0 && (state.cells[cellIndex - 1].acsr.tipo != 5 ||
+    if (cellIndex > 0 && (state.cells[cellIndex - 1].acsr.tipo != kAccessoryChoke ||
                   state.cells[cellIndex - 1].acsr.chk.AreaGarg > (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area)) {
         if (state.cells[cellIndex].alf > (*state.globals).localtiny)
             meanSuperficialGasVelocity = state.cells[cellIndex].QG / flowArea;
@@ -3548,22 +3529,22 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
     double sourceLiquidSpecificHeat;
 
     // calculo da energia adicionada no sistema devido a fontes de massa
-    if (state.cells[cellIndex - 1].acsr.tipo == 1) { // caso fonte de gas
+    if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryGasInjection) { // caso fonte de gas
         sourceTemperature = state.cells[cellIndex - 1].acsr.injg.temp;
         sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
         sourceLiquidSpecificHeat = 0.;
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 2) { // caso fonte de liquido
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryLiquidInjection) { // caso fonte de liquido
         sourceTemperature = state.cells[cellIndex - 1].acsr.injl.temp;
         sourceGasSpecificHeat = 0.;
         sourceSpecificHeatRatio = 1.;
         sourceLiquidSpecificHeat = (1. - state.cells[cellIndex - 1].acsr.injl.bet) * state.cells[cellIndex - 1].acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + state.cells[cellIndex - 1].acsr.injl.bet * state.cells[cellIndex - 1].acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 3) { // caso IPR
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryInflowPerformance) { // caso IPR
         sourceTemperature = state.cells[cellIndex - 1].acsr.ipr.Tres;
         sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 9 && state.cells[cellIndex - 1].acsr.fontechk.abertura > 1e-6 &&
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryLeak && state.cells[cellIndex - 1].acsr.fontechk.abertura > 1e-6 &&
                (state.cells[cellIndex - 1].fontemassCR + state.cells[cellIndex - 1].fontemassGR + state.cells[cellIndex - 1].fontemassLR) > 1e-9) {
         // caso vazamento
         sourceTemperature = state.cells[cellIndex - 1].acsr.fontechk.tamb;
@@ -3572,12 +3553,12 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
         sourceLiquidSpecificHeat = (1. - state.cells[cellIndex - 1].acsr.fontechk.betISamb) *
                    state.cells[cellIndex - 1].acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
                state.cells[cellIndex - 1].acsr.fontechk.betISamb * state.cells[cellIndex - 1].acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 15) { // caso IPR
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryRadialPorous) { // caso IPR
         sourceTemperature = state.cells[cellIndex - 1].acsr.radialPoro.tRes;
         sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = state.cells[cellIndex - 1].acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex - 1].acsr.tipo == 16) { // caso IPR
+    } else if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryPorous2D) { // caso IPR
         sourceTemperature = state.cells[cellIndex - 1].acsr.poroso2D.dados.tRes;
         sourceGasSpecificHeat = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex - 1].acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
@@ -3634,7 +3615,7 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
             // no modelo acoplado, a coluna nao tem a definicao da parede revestimento+cimento+formacao
             // para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
             // do anular, o que e feito aqui:
-            // obs:isto Ã© feito ate uma celula antes de se chegar na master (cellIndex-1)<ColunaAnulaIni,
+            // Note: done up to one cell before reaching the master, (cellIndex-1)<ColunaAnulaIni,
             // se esta fazendo igual ao que se faz no simulador involuta, para melhorar
             // a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
             // desde a primeira iteracao
@@ -3646,7 +3627,7 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
             state.gasCells[j].calor.viscint = state.cells[cellIndex - 1].flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * 1.e-3;
             state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
             annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
-            // observe que nÃ£o se esta de fato interessado no fluxo de calor, mas apenas em obter a resistencia
+            // The heat flux itself is not of interest here, only the resistance
             // termica do conjunto de paredes a partir do revestimento em direcao aa formacao
             state.cells[cellIndex - 1].calor.Vextern1 = 100.;
             state.cells[cellIndex - 1].calor.kextern1 = state.gasCells[j].calor.kint;
@@ -3664,7 +3645,7 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
         }
         if (state.steadyIteration == 0)
             state.cells[cellIndex - 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
-        // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
+        // uses the whole well resistance, so the external temperature is the geothermal one
         else
             state.cells[cellIndex - 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
         // e a temperatura do gas
@@ -3685,7 +3666,7 @@ double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
     double meanGasVelocity = 0;
     double meanLiquidVelocity = 0;
     // termo de energia cinetica:
-    if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex - 1].acsr.tipo == 0 && cellIndex > 2) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryNone && state.cells[cellIndex - 1].acsr.tipo == kAccessoryNone && cellIndex > 2) {
         double kineticCellLength = state.cells[cellIndex - 1].dx;
         double upstreamDiameter = state.cells[cellIndex - 1].duto.a;
         double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
@@ -3729,14 +3710,14 @@ double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
         state.cells[cellIndex - 1].FonteMudaFase = 0.;
     double phaseChangeMassRate = fabs(state.cells[cellIndex - 1].FonteMudaFase);
     double phaseChangeSign = 1.;
-    if (phaseChangeMassRate > 1e-25)
+    if (phaseChangeMassRate > kPhaseChangeFloor)
         phaseChangeSign = state.cells[cellIndex - 1].FonteMudaFase / phaseChangeMassRate;
     if (state.input.limTransMass < phaseChangeMassRate)
         phaseChangeMassRate = phaseChangeSign * state.input.limTransMass;
     else
         phaseChangeMassRate *= phaseChangeSign;
     if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
-        if (state.cells[cellIndex - 1].acsr.tipo == 1 || state.cells[cellIndex - 1].acsr.tipo == 2 || state.cells[cellIndex - 1].acsr.tipo == 3 || state.cells[cellIndex - 1].acsr.tipo == 15 || state.cells[cellIndex - 1].acsr.tipo == 16) {
+        if (state.cells[cellIndex - 1].acsr.tipo == kAccessoryGasInjection || state.cells[cellIndex - 1].acsr.tipo == kAccessoryLiquidInjection || state.cells[cellIndex - 1].acsr.tipo == kAccessoryInflowPerformance || state.cells[cellIndex - 1].acsr.tipo == kAccessoryRadialPorous || state.cells[cellIndex - 1].acsr.tipo == kAccessoryPorous2D) {
             state.cells[cellIndex - 1].FonteMudaFase = 0.;
             phaseChangeMassRate = 0.;
         }
@@ -3799,7 +3780,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
     meanSuperficialLiquidVelocity = state.cells[cellIndex].QL / flowArea; // velocidade superficial de liquido
     double mixtureFluxSign = 1.;
     if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > 0.05 && state.thermalSourceDisabled == 0) { // calculo termico e feito para velocidades de mistura superiores a 0,1 m/s,
-        // para velocidades inferiores se admite que a temperatura do fluidoÃƒÂ© igual ÃƒÂ  temperatura ambiente
+        // at lower velocities the fluid temperature is taken as the ambient temperature
         mixtureFluxSign = (meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) / fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
         double interfaceMeanPressure = state.cells[cellIndex].presaux + 0 * state.cells[cellIndex - 1].dpB / kPascalPerKgfPerCm2;
         double interfaceMeanTemperature;
@@ -3807,7 +3788,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             // caso em que se considera que ja foi
             // feita uma iteracao e ja se tem a temperatura na celula cellIndex vinda da iteracao anterior
             // isto pode dificultar a convergencia, quando se deseja a aceleracao da convergencia
-            // admite-se que a temperatura na fronteira esquerda ÃƒÂ© a temperatura da celula esquerda
+            // the temperature at the left boundary is taken as that of the left cell
             interfaceMeanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex].tempL) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
         else
             interfaceMeanTemperature = state.cells[cellIndex - 1].temp;
@@ -3871,7 +3852,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double pressureSpatialCoefficient = 1 * (liquidDensity * cappedMeanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * cappedMeanSuperficialGasVelocity * gasJouleThomson) * flowArea; // termo que multiplica
         // a derivada Dp/Dx
         double pressureGradient;
-        if ((state.cells[cellIndex - 1].acsr.tipo != 4 || state.cells[cellIndex - 1].acsr.bcs.freq < 1) && state.cells[cellIndex - 1].acsr.tipo != 7)
+        if ((state.cells[cellIndex - 1].acsr.tipo != kAccessoryPump || state.cells[cellIndex - 1].acsr.bcs.freq < 1) && state.cells[cellIndex - 1].acsr.tipo != 7)
             // caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
             //  e a pressao no centro de celula para o calculo de Dp/Dx
             pressureGradient = 2. * (state.cells[cellIndex].presaux - state.cells[cellIndex - 1].pres) * kPascalPerKgfPerCm2 / state.cells[cellIndex - 1].dx;
@@ -3880,7 +3861,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             //  e a pressao no centro de celula para o calculoi de Dp/Dx
             pressureGradient = 2. * (state.cells[cellIndex].presaux - state.cells[cellIndex - 1].pres) * kPascalPerKgfPerCm2 / state.cells[cellIndex - 1].dx;
         }
-        state.cells[cellIndex].VTemper = meanSuperficialLiquidVelocity; // esta velocidade so e util no caso transiente, Ã© armazenada aqui
+        state.cells[cellIndex].VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
         // apenas para se ter um valor quando a simulacao transiente se iniciar
         double temperatureGradient = (-state.cells[cellIndex - 1].temp) / meanCellLength;
 
@@ -3950,10 +3931,10 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             state.cells[cellIndex - 1].fluxcalmed /= subStepCount;
             state.cells[cellIndex - 1].fluxcalmed = 1. * state.cells[cellIndex - 1].fluxcalmed;
 
-            if (state.cells[cellIndex].temp < -50.)
-                state.cells[cellIndex].temp = -50.;
-            if (state.cells[cellIndex].temp > 200.)
-                state.cells[cellIndex].temp = 200.;
+            if (state.cells[cellIndex].temp < kMinimumTemperatureCelsius)
+                state.cells[cellIndex].temp = kMinimumTemperatureCelsius;
+            if (state.cells[cellIndex].temp > kMaximumTemperatureCelsius)
+                state.cells[cellIndex].temp = kMaximumTemperatureCelsius;
         } else
             state.cells[cellIndex].temp = state.cells[cellIndex].calor.Textern1;
     } else { // case where the mixing speed is too low
@@ -3991,32 +3972,32 @@ TemperatureSourceTerms computeReverseSteadySourceTerms(
     double sourceLiquidSpecificHeat;
 
     // calculo da energia adicionada no sistema devido a fontes de massa
-    if (state.cells[cellIndex + 1].acsr.tipo == 1) { // caso fonte de gas
+    if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryGasInjection) { // caso fonte de gas
         sourceTemperature = state.cells[cellIndex + 1].acsr.injg.temp;
         sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
         sourceLiquidSpecificHeat = 0.;
-    } else if (state.cells[cellIndex + 1].acsr.tipo == 2) { // caso fonte de liquido
+    } else if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryLiquidInjection) { // caso fonte de liquido
         sourceTemperature = state.cells[cellIndex + 1].acsr.injl.temp;
         sourceGasSpecificHeat = 0.;
         sourceSpecificHeatRatio = 1.;
         sourceLiquidSpecificHeat = (1. - state.cells[cellIndex + 1].acsr.injl.bet) * state.cells[cellIndex + 1].acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + state.cells[cellIndex + 1].acsr.injl.bet * state.cells[cellIndex + 1].acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex + 1].acsr.tipo == 3) { // caso IPR
+    } else if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryInflowPerformance) { // caso IPR
         sourceTemperature = state.cells[cellIndex + 1].acsr.ipr.Tres;
         sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex + 1].acsr.tipo == 15) { // caso IPR
+    } else if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryRadialPorous) { // caso IPR
         sourceTemperature = state.cells[cellIndex + 1].acsr.radialPoro.tRes;
         sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex + 1].acsr.tipo == 16) { // caso IPR
+    } else if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryPorous2D) { // caso IPR
         sourceTemperature = state.cells[cellIndex + 1].acsr.poroso2D.dados.tRes;
         sourceGasSpecificHeat = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = state.cells[cellIndex + 1].acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex + 1].acsr.tipo == 9 && state.cells[cellIndex + 1].acsr.fontechk.abertura > 1e-6 &&
+    } else if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryLeak && state.cells[cellIndex + 1].acsr.fontechk.abertura > 1e-6 &&
                (state.cells[cellIndex + 1].fontemassCR + state.cells[cellIndex + 1].fontemassGR + state.cells[cellIndex + 1].fontemassLR) > 1e-9) {
         // caso vazamento
         sourceTemperature = state.cells[cellIndex + 1].acsr.fontechk.tamb;
@@ -4025,7 +4006,7 @@ TemperatureSourceTerms computeReverseSteadySourceTerms(
         sourceLiquidSpecificHeat = (1. - state.cells[cellIndex + 1].acsr.fontechk.betISamb) *
                    state.cells[cellIndex + 1].acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
                state.cells[cellIndex + 1].acsr.fontechk.betISamb * state.cells[cellIndex + 1].acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (state.cells[cellIndex + 1].acsr.tipo != 0) {
+    } else if (state.cells[cellIndex + 1].acsr.tipo != kAccessoryNone) {
 
         sourceGasSpecificHeat = 0.;
         sourceSpecificHeatRatio = 1.;
@@ -4066,7 +4047,7 @@ double computeReverseSteadyKineticTerm(
     double meanGasVelocity = 0;
     double meanLiquidVelocity = 0;
     // termo de energia cinetica:
-    if (state.cells[cellIndex].acsr.tipo == 0 && state.cells[cellIndex + 1].acsr.tipo == 0 && cellIndex < state.lastCell) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryNone && state.cells[cellIndex + 1].acsr.tipo == kAccessoryNone && cellIndex < state.lastCell) {
         double kineticCellLength = state.cells[cellIndex + 1].dx;
         double upstreamDiameter = state.cells[cellIndex + 1].duto.a;
         double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
@@ -4103,7 +4084,7 @@ double computeReverseSteadyLatentHeatTerm(
     double meanSuperficialLiquidVelocity) {
     double latentHeatTerm = 0.;
     if (state.cells[cellIndex].flui.dVaporMassFraction < (1 - 1e-15) && state.cells[cellIndex].flui.dVaporMassFraction > (1e-15)) {
-        if (state.cells[cellIndex + 1].acsr.tipo == 1 || state.cells[cellIndex + 1].acsr.tipo == 2 || state.cells[cellIndex + 1].acsr.tipo == 3 || state.cells[cellIndex + 1].acsr.tipo == 15 || state.cells[cellIndex + 1].acsr.tipo == 16)
+        if (state.cells[cellIndex + 1].acsr.tipo == kAccessoryGasInjection || state.cells[cellIndex + 1].acsr.tipo == kAccessoryLiquidInjection || state.cells[cellIndex + 1].acsr.tipo == kAccessoryInflowPerformance || state.cells[cellIndex + 1].acsr.tipo == kAccessoryRadialPorous || state.cells[cellIndex + 1].acsr.tipo == kAccessoryPorous2D)
             state.cells[cellIndex + 1].FonteMudaFase =
                 0.;
         if (state.latentHeatEnabled > 0 && state.steadyIteration != 0 && state.input.flashCompleto == 0) {
@@ -4183,7 +4164,7 @@ double applyReverseSteadyAnnulusCoupling(
         }
         if (state.steadyIteration == 0)
             state.cells[cellIndex + 1].calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
-        // usa toda a resistencia termica do poco, a temperatura externa utilizada Ã© a geotermica
+        // uses the whole well resistance, so the external temperature is the geothermal one
         else
             state.cells[cellIndex + 1].calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
         // e a temperatura do gas
@@ -4280,7 +4261,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         double pressureSpatialCoefficient = 1. * (liquidDensity * meanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * meanSuperficialGasVelocity * gasJouleThomson) * flowArea; // termo que multiplica
         // a derivada Dp/Dx
         double pressureGradient;
-        if ((state.cells[cellIndex + 1].acsr.tipo != 4 || state.cells[cellIndex + 1].acsr.bcs.freq < 1) && state.cells[cellIndex + 1].acsr.tipo != 7)
+        if ((state.cells[cellIndex + 1].acsr.tipo != kAccessoryPump || state.cells[cellIndex + 1].acsr.bcs.freq < 1) && state.cells[cellIndex + 1].acsr.tipo != 7)
             // caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
             //  e a pressao no centro de celula para o calculo de Dp/Dx
             pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - state.cells[cellIndex + 1].pres) * kPascalPerKgfPerCm2 / state.cells[cellIndex + 1].dx;
@@ -4289,7 +4270,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
             //  e a pressao no centro de celula para o calculoi de Dp/Dx
             pressureGradient = (interfaceMeanPressure - state.cells[cellIndex + 1].pres) * 98600. / cellLength;
         }
-        state.cells[cellIndex].VTemper = meanSuperficialLiquidVelocity; // esta velocidade so e util no caso transiente, Ã© armazenada aqui
+        state.cells[cellIndex].VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
         // apenas para se ter um valor quando a simulacao transiente se iniciar
         double temperatureGradient = (-state.cells[cellIndex + 1].temp) / meanCellLength;
 
@@ -4358,10 +4339,10 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
             state.cells[cellIndex + 1].fluxcalmed /= subStepCount;
             state.cells[cellIndex + 1].fluxcalmed = 1. * state.cells[cellIndex + 1].fluxcalmed;
 
-            if (state.cells[cellIndex].temp < -50.)
-                state.cells[cellIndex].temp = -50.;
-            if (state.cells[cellIndex].temp > 200.)
-                state.cells[cellIndex].temp = 200.;
+            if (state.cells[cellIndex].temp < kMinimumTemperatureCelsius)
+                state.cells[cellIndex].temp = kMinimumTemperatureCelsius;
+            if (state.cells[cellIndex].temp > kMaximumTemperatureCelsius)
+                state.cells[cellIndex].temp = kMaximumTemperatureCelsius;
         } else
             state.cells[cellIndex].temp = state.cells[cellIndex].calor.Textern1;
     } else { // caso em que a velocidade da mistura e muito baixa
@@ -4459,10 +4440,10 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double prev
 
         state.gasCells[cellIndex].temp = ((timeCoefficient / state.gasCells[cellIndex].dt) * state.gasCells[cellIndex].temp - (pressureWorkFactor) * (pressureTimeCoefficient * (state.gasCells[cellIndex].pres - state.gasCells[cellIndex].presini) * kPascalPerKgfPerCm2 / state.gasCells[cellIndex].dt) + state.gasCells[cellIndex].dTdLCor * (-temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - hydrostaticPower + liquidMassSourceTerm + gasMassSourceTerm + state.gasCells[cellIndex].fluxcal)) / (timeCoefficient / state.gasCells[cellIndex].dt);
 
-        if (state.gasCells[cellIndex].temp < -50.)
-            state.gasCells[cellIndex].temp = -50.;
-        if (state.gasCells[cellIndex].temp > 200.)
-            state.gasCells[cellIndex].temp = 200.;
+        if (state.gasCells[cellIndex].temp < kMinimumTemperatureCelsius)
+            state.gasCells[cellIndex].temp = kMinimumTemperatureCelsius;
+        if (state.gasCells[cellIndex].temp > kMaximumTemperatureCelsius)
+            state.gasCells[cellIndex].temp = kMaximumTemperatureCelsius;
 
         if (cellIndex > 0)
             state.gasCells[cellIndex - 1].tempR = state.gasCells[cellIndex].temp;
@@ -4549,7 +4530,7 @@ double computeGasLiftDischargeTemperature(const ThermalState &state, int valveIn
         }
         double gasSpecificHeat = state.gasLiftChokes[valveIndex].flui.CalorGas(stageInletPressure, stageInletTemperature);
         double gasJouleThomson = state.gasLiftChokes[valveIndex].flui.JTG(stageInletPressure, stageInletTemperature) / gasSpecificHeat;
-        stageInletTemperature -= gasJouleThomson * (state.gasLiftChokes[valveIndex].presEstag - state.gasLiftChokes[valveIndex].presGarg) * 98066.52;
+        stageInletTemperature -= gasJouleThomson * (state.gasLiftChokes[valveIndex].presEstag - state.gasLiftChokes[valveIndex].presGarg) * kPascalPerKgfPerCm2Variant;
     }
     return stageInletTemperature;
 }
