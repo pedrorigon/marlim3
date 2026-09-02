@@ -11,6 +11,7 @@
 #include "FA_Hidratos_Servico.h"
 #include "OutputI18n.h"
 #include "RootFindingSolvers.h"
+#include "SisProdGasLift.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 #include <chrono>
@@ -20,6 +21,7 @@ namespace {
 // Defined further down, next to the rest of the thermal plumbing. Declared here
 // because the first delegates that need it appear before that definition.
 sisprod::thermal::ThermalState thermalStateOf(SProd &system);
+sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system);
 }  // namespace
 
 void SProd::resolveDriftSelectors() {
@@ -1016,69 +1018,7 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
 }
 
 void SProd::HidroDescargaG() {
-    celulaG[0].massfonteCH = 0;
-    double pmed;
-    double tmed;
-
-    if (arq.gasinj.tipoCC == 0 && arq.controDesc == 0)
-        pmed = arq.gasinj.presinj[0];
-    else {
-        pmed = 10.;
-        if (arq.controDesc == 1) {
-            pmed = arq.presIniDescG;
-            presiniG = arq.presIniDescG;
-        }
-    }
-
-    celulaG[0].presL = pmed;
-    celulaG[0].pres = pmed;
-    celulaG[0].presini = pmed;
-    celulaG[1].presL = pmed;
-    tmed = celulaG[0].calor.Textern1;
-    celulaG[0].tempL = tmed;
-    celulaG[0].temp = tmed;
-    celulaG[1].tempL = tmed;
-    double rho0 = celulaG[0].flui.MasEspGas(pmed, tmed);
-    double rho1;
-    celulaG[0].u1L = celulaG[0].duto.area * rho0;
-    celulaG[0].u1LL = celulaG[0].u1L;
-    celulaG[1].u1LL = celulaG[0].u1L;
-    celulaG[0].VGasL = 0;
-    celulaG[0].VGasR = 0;
-    celulaG[1].VGasL = 0;
-    celulaG[0].massfonteCH = 0.;
-    for (int i = 1; i <= ncelGas; i++) {
-        double A0 = celulaG[i - 1].duto.area;
-        double dx0 = 0.5 * celulaG[i].dxL;
-        double A1 = celulaG[i].duto.area;
-        double dx1 = 0.5 * celulaG[i].dx0;
-        pmed -= rho0 * 9.81 * dx0 * sin(celulaG[i - 1].duto.teta) / 98066.52;
-        tmed = celulaG[i].calor.Textern1;
-        if (i < celInter)
-            rho1 = celulaG[i].flui.MasEspGas(pmed, tmed);
-        else
-            rho1 = celulaG[i].MasEspFlu(pmed, tmed);
-        pmed -= rho1 * 9.81 * dx1 * sin(celulaG[i].duto.teta) / 98066.52;
-        rho0 = rho1;
-
-        celulaG[i].pres = pmed;
-        celulaG[i].presini = pmed;
-        celulaG[i - 1].presR = pmed;
-        celulaG[i].temp = tmed;
-        celulaG[i - 1].tempR = tmed;
-        celulaG[i].u1L = celulaG[i].duto.area * rho0;
-        celulaG[i - 1].u1R = celulaG[i].u1L;
-        celulaG[i].VGasR = 0;
-        celulaG[i - 1].VGasRR = 0;
-        celulaG[i].massfonteCH = 0.;
-        celulaG[i - 1].u1R = celulaG[i].u1L;
-        if (i < ncelGas) {
-            celulaG[i + 1].presL = pmed;
-            celulaG[i + 1].tempL = tmed;
-            celulaG[i + 1].u1LL = celulaG[i].u1L;
-            celulaG[i + 1].VGasL = 0;
-        }
-    }
+    sisprod::gaslift::computeGasUnloadingHydrostatics(gasLiftStateOf(*this));
 }
 
 void SProd::HidroDescargaP() {
@@ -2454,41 +2394,11 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 }
 
 void SProd::renovaGas() {
-    for (int i = 0; i <= ncelGas; i++) {
-        if (i != 0 && i != ncelGas) {
-            celulaG[i].pres = termolivreG[3 * i];
-            celulaG[i].presL = termolivreG[3 * i - 3];
-            celulaG[i].presR = termolivreG[3 * i + 3];
-            celulaG[i].VGasR = termolivreG[3 * i + 1];
-            celulaG[i].VGasL = termolivreG[3 * i - 2];
-            celulaG[i].VGasRR = termolivreG[3 * i + 4];
-        } else if (i == 0) {
-            celulaG[i].pres = termolivreG[3 * i];
-            celulaG[i].presL = celulaG[i].pres;
-            celulaG[i].presR = termolivreG[3 * i + 3];
-            celulaG[i].VGasR = termolivreG[3 * i + 1];
-            celulaG[i].VGasRR = termolivreG[3 * i + 4];
-            double auxpres = celulaG[i].presR;
-        } else {
-            celulaG[i].pres = termolivreG[3 * i];
-            celulaG[i].presL = termolivreG[3 * i - 3];
-            celulaG[i].VGasR = termolivreG[3 * i + 1];
-            celulaG[i].VGasL = termolivreG[3 * i - 2];
-            celulaG[i].presR = celulaG[i].pres;
-        }
-    }
+    sisprod::gaslift::updateGasLine(gasLiftStateOf(*this));
 }
 
 void SProd::renovaGasBuf() {
-    for (int i = 0; i <= ncelGas; i++) {
-        if (i != 0 && i != ncelGas) {
-            celulaG[i].VGasRBuf = termolivreG[3 * i + 1];
-        } else if (i == 0) {
-            celulaG[i].VGasRBuf = termolivreG[3 * i + 1];
-        } else {
-            celulaG[i].VGasRBuf = termolivreG[3 * i + 1];
-        }
-    }
+    sisprod::gaslift::updateBufferedGasLine(gasLiftStateOf(*this));
 }
 
 double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
@@ -3223,6 +3133,46 @@ void sisprod::thermal::ThermalEvolutionUpdater::renew() const {
 }
 
 namespace {
+
+sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system) {
+    return sisprod::gaslift::GasLiftState{
+        .gasCells = system.celulaG,
+        .cells = system.celula,
+        .input = system.arq,
+        .globals = system.vg1dSP,
+        .gasCellCount = system.ncelGas,
+        .lastCell = system.ncel,
+        .gasLiftChokes = system.chokeVGL,
+        .injectionChoke = system.chokeInj,
+        .gasValveCellIndices = system.posicVGLG,
+        .productionValveCellIndices = system.posicVGLP,
+        .gasSystemMatrix = system.matglobG,
+        .gasFreeTerms = system.termolivreG,
+        .annulusTubingStart = system.ColunaAnulaIni,
+        .annulusTubingEnd = system.ColunaAnulaFim,
+        .tubingAnnulusStart = system.AnulaColunaIni,
+        .tubingAnnulusEnd = system.AnulaColunaFim,
+        .steadyIteration = system.iterperm,
+        .networkCoupled = system.verificaAcop,
+        .thermalSourceDisabled = system.semTermo,
+        .initialGasPressure = system.presiniG,
+        .initialGasTemperature = system.tempiniG,
+        .gasSurfacePressure = system.pGSup,
+        .timeStep = system.dt,
+        .interfaceCell = system.celInter,
+        .interfaceVelocity = system.velInter,
+        .interfaceTimeStep = system.dtInter,
+        .initialInterfaceCell = system.celInterIni,
+        .initialInterfaceVelocity = system.velInterIni,
+        .initialInterfaceTimeStep = system.dtInterIni,
+        .meanUnloadingFlowRate = system.vazmedDesc,
+        .meanUnloadingTemperature = system.tempmedDEsc,
+        .maximumMeanUnloadingFlowRates = system.vazmaxMedDesc,
+        .unloadingTimeSteps = system.dtDesc,
+        .continuousMeanUnloadingTemperature = system.tempMedContDesc,
+        .maximumContinuousUnloadingCount = system.maxVecContDesc,
+    };
+}
 
 sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
     return sisprod::thermal::ThermalState{
