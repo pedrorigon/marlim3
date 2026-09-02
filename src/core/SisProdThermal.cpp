@@ -1,4 +1,5 @@
 #include "SisProdThermal.h"
+#include "SisProdThermalDetail.h"
 
 #include "SisProdConstants.h"
 
@@ -92,6 +93,92 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
     return latentHeat;
 }
 
+[[nodiscard]] SourceEnthalpy sourceEnthalpyOf(const ThermalState &state, int cellIndex) {
+    double sourceTemperature = state.cells[cellIndex].temp;
+    double sourceGasEnthalpy;
+    double sourceLiquidEnthalpy;
+    double hcF = 0.;
+
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryGasInjection) {
+        sourceTemperature = state.cells[cellIndex].acsr.injg.temp;
+        sourceGasEnthalpy = state.cells[cellIndex].acsr.injg.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
+        sourceLiquidEnthalpy = 0;
+        hcF = 0;
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
+        sourceTemperature = state.cells[cellIndex].acsr.injl.temp;
+        sourceGasEnthalpy = state.cells[cellIndex].acsr.injl.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
+        sourceLiquidEnthalpy = state.cells[cellIndex].acsr.injl.FluidoPro.EntalpLiq(state.cells[cellIndex].pres, sourceTemperature);
+        hcF = state.cells[cellIndex].acsr.injl.fluidocol.CalorLiq(state.cells[cellIndex].pres, sourceTemperature) * sourceTemperature
+            /*entalpia fluido complementar a ser corrigida*/;
+    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
+        sourceTemperature = state.cells[cellIndex].acsr.ipr.Tres;
+        sourceGasEnthalpy = state.cells[cellIndex].acsr.ipr.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
+        sourceLiquidEnthalpy = state.cells[cellIndex].acsr.ipr.FluidoPro.EntalpLiq(state.cells[cellIndex].pres, sourceTemperature);
+        hcF = 0;
+    } else if (state.cells[cellIndex].acsrL != 0) {
+        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryChoke) {
+            if ((*state.cells[cellIndex].acsrL).chk.AreaGarg < state.input.master1.razareaativ * state.cells[cellIndex].dutoL.area && (*state.cells[cellIndex].acsrL).chk.AreaGarg > 1e-5 * state.cells[cellIndex].dutoL.area) {
+                double chokeUpstreamTemperature = state.cells[cellIndex - 1].temp;
+                double chokeUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
+                double betE = state.cells[cellIndex - 1].bet;
+
+                double upstreamLiquidDensity = state.cells[cellIndex - 1].flui.MasEspLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
+                double rholc = state.cells[cellIndex - 1].fluicol.MasEspFlu(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
+                double upstreamMixtureLiquidDensity = (1 - betE) * upstreamLiquidDensity + betE * rholc;
+
+                double chokeDownstreamVoidFraction = state.cells[cellIndex].alf;
+                double betJ = state.cells[cellIndex].bet;
+                double downstreamLiquidDensity = state.cells[cellIndex].flui.MasEspLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
+                double rholcJ = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
+                double downstreamMixtureLiquidDensity = (1 - betJ) * downstreamLiquidDensity + betJ * rholcJ;
+
+                double upstreamHydrostaticHead = sin(state.cells[cellIndex - 1].duto.teta) * (0.5 * state.cells[cellIndex - 1].dx) * (upstreamMixtureLiquidDensity * (1 - chokeUpstreamVoidFraction) + chokeUpstreamVoidFraction * state.cells[cellIndex - 1].flui.MasEspGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp)) * kGravity / 98600.;
+                double downstreamHydrostaticHead = sin(state.cells[cellIndex].duto.teta) * (0.5 * state.cells[cellIndex].dx) * (downstreamMixtureLiquidDensity * (1 - chokeDownstreamVoidFraction) + chokeDownstreamVoidFraction * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp)) * kGravity / 98600.;
+
+                double quality = chokeUpstreamVoidFraction * state.cells[cellIndex - 1].flui.MasEspGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) / (state.cells[cellIndex - 1].flui.MasEspGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
+
+                double upstreamLiquidJouleThomson = (1. - betE) * state.cells[cellIndex - 1].flui.JTL(state.cells[cellIndex - 1].pres - upstreamHydrostaticHead, state.cells[cellIndex - 1].temp) - betE / rholcJ;
+                double upstreamGasJouleThomson = state.cells[cellIndex - 1].flui.JTG(state.cells[cellIndex - 1].pres - upstreamHydrostaticHead, state.cells[cellIndex - 1].temp);
+                sourceTemperature = chokeUpstreamTemperature + ((1. - quality) * upstreamLiquidJouleThomson + quality * upstreamGasJouleThomson) * (state.cells[cellIndex].pres + downstreamHydrostaticHead - state.cells[cellIndex - 1].pres - upstreamHydrostaticHead);
+
+                sourceGasEnthalpy = state.cells[cellIndex - 1].flui.EntalpGas(state.cells[cellIndex - 1].pres, sourceTemperature);
+                sourceLiquidEnthalpy = state.cells[cellIndex - 1].flui.EntalpLiq(state.cells[cellIndex - 1].pres, sourceTemperature);
+                hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, sourceTemperature) * sourceTemperature;
+                /*entalpia fluido complementar a ser corrigida*/
+
+            } else {
+                sourceTemperature = state.cells[cellIndex].temp;
+                sourceGasEnthalpy = state.cells[cellIndex - 1].flui.EntalpGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
+                sourceLiquidEnthalpy = state.cells[cellIndex - 1].flui.EntalpLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
+                hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) * sourceTemperature;
+                /*entalpia fluido complementar a ser corrigida*/
+            }
+        } else if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryVolumetricPump) {
+            double pumpUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
+            double betM = state.cells[cellIndex - 1].bet;
+
+            double polytropicExponent = (*state.cells[cellIndex].acsrL).bvol.npoli;
+            double pumpPressureRatio = (state.cells[cellIndex].pres) / (state.cells[cellIndex - 1].pres);
+            sourceTemperature = state.cells[cellIndex - 1].temp * pow(pumpPressureRatio, (polytropicExponent - 1) / polytropicExponent);
+
+            sourceGasEnthalpy = state.cells[cellIndex - 1].flui.EntalpGas(state.cells[cellIndex - 1].pres, sourceTemperature);
+            sourceLiquidEnthalpy = state.cells[cellIndex - 1].flui.EntalpLiq(state.cells[cellIndex - 1].pres, sourceTemperature);
+            hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, sourceTemperature) * sourceTemperature;
+            /*entalpia fluido complementar a ser corrigida*/
+        } else {
+            sourceGasEnthalpy = 0.;
+            sourceLiquidEnthalpy = 0.;
+        }
+    } else {
+        sourceGasEnthalpy = 0.;
+        sourceLiquidEnthalpy = 0.;
+    }
+    return SourceEnthalpy{.temperature = sourceTemperature,
+                          .gasEnthalpy = sourceGasEnthalpy,
+                          .liquidEnthalpy = sourceLiquidEnthalpy,
+                          .hcF = hcF};
+}
+
 double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
 
     double cellLength = state.cells[cellIndex].dx;
@@ -175,85 +262,11 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
     double gasMassSourceTerm = 0.;
     double liquidMassSourceTerm = 0.;
     double fontemassC = 0.;
-    double sourceTemperature = state.cells[cellIndex].temp;
-    double sourceGasEnthalpy;
-    double sourceLiquidEnthalpy;
-    double hcF = 0.;
-
-    if (state.cells[cellIndex].acsr.tipo == kAccessoryGasInjection) {
-        sourceTemperature = state.cells[cellIndex].acsr.injg.temp;
-        sourceGasEnthalpy = state.cells[cellIndex].acsr.injg.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
-        sourceLiquidEnthalpy = 0;
-        hcF = 0;
-    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
-        sourceTemperature = state.cells[cellIndex].acsr.injl.temp;
-        sourceGasEnthalpy = state.cells[cellIndex].acsr.injl.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
-        sourceLiquidEnthalpy = state.cells[cellIndex].acsr.injl.FluidoPro.EntalpLiq(state.cells[cellIndex].pres, sourceTemperature);
-        hcF = state.cells[cellIndex].acsr.injl.fluidocol.CalorLiq(state.cells[cellIndex].pres, sourceTemperature) * sourceTemperature
-            /*entalpia fluido complementar a ser corrigida*/;
-    } else if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
-        sourceTemperature = state.cells[cellIndex].acsr.ipr.Tres;
-        sourceGasEnthalpy = state.cells[cellIndex].acsr.ipr.FluidoPro.EntalpGas(state.cells[cellIndex].pres, sourceTemperature);
-        sourceLiquidEnthalpy = state.cells[cellIndex].acsr.ipr.FluidoPro.EntalpLiq(state.cells[cellIndex].pres, sourceTemperature);
-        hcF = 0;
-    } else if (state.cells[cellIndex].acsrL != 0) {
-        if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryChoke) {
-            if ((*state.cells[cellIndex].acsrL).chk.AreaGarg < state.input.master1.razareaativ * state.cells[cellIndex].dutoL.area && (*state.cells[cellIndex].acsrL).chk.AreaGarg > 1e-5 * state.cells[cellIndex].dutoL.area) {
-                double chokeUpstreamTemperature = state.cells[cellIndex - 1].temp;
-                double chokeUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
-                double betE = state.cells[cellIndex - 1].bet;
-
-                double upstreamLiquidDensity = state.cells[cellIndex - 1].flui.MasEspLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
-                double rholc = state.cells[cellIndex - 1].fluicol.MasEspFlu(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
-                double upstreamMixtureLiquidDensity = (1 - betE) * upstreamLiquidDensity + betE * rholc;
-
-                double chokeDownstreamVoidFraction = state.cells[cellIndex].alf;
-                double betJ = state.cells[cellIndex].bet;
-                double downstreamLiquidDensity = state.cells[cellIndex].flui.MasEspLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
-                double rholcJ = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
-                double downstreamMixtureLiquidDensity = (1 - betJ) * downstreamLiquidDensity + betJ * rholcJ;
-
-                double upstreamHydrostaticHead = sin(state.cells[cellIndex - 1].duto.teta) * (0.5 * state.cells[cellIndex - 1].dx) * (upstreamMixtureLiquidDensity * (1 - chokeUpstreamVoidFraction) + chokeUpstreamVoidFraction * state.cells[cellIndex - 1].flui.MasEspGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp)) * kGravity / 98600.;
-                double downstreamHydrostaticHead = sin(state.cells[cellIndex].duto.teta) * (0.5 * state.cells[cellIndex].dx) * (downstreamMixtureLiquidDensity * (1 - chokeDownstreamVoidFraction) + chokeDownstreamVoidFraction * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp)) * kGravity / 98600.;
-
-                double quality = chokeUpstreamVoidFraction * state.cells[cellIndex - 1].flui.MasEspGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) / (state.cells[cellIndex - 1].flui.MasEspGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
-
-                double upstreamLiquidJouleThomson = (1. - betE) * state.cells[cellIndex - 1].flui.JTL(state.cells[cellIndex - 1].pres - upstreamHydrostaticHead, state.cells[cellIndex - 1].temp) - betE / rholcJ;
-                double upstreamGasJouleThomson = state.cells[cellIndex - 1].flui.JTG(state.cells[cellIndex - 1].pres - upstreamHydrostaticHead, state.cells[cellIndex - 1].temp);
-                sourceTemperature = chokeUpstreamTemperature + ((1. - quality) * upstreamLiquidJouleThomson + quality * upstreamGasJouleThomson) * (state.cells[cellIndex].pres + downstreamHydrostaticHead - state.cells[cellIndex - 1].pres - upstreamHydrostaticHead);
-
-                sourceGasEnthalpy = state.cells[cellIndex - 1].flui.EntalpGas(state.cells[cellIndex - 1].pres, sourceTemperature);
-                sourceLiquidEnthalpy = state.cells[cellIndex - 1].flui.EntalpLiq(state.cells[cellIndex - 1].pres, sourceTemperature);
-                hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, sourceTemperature) * sourceTemperature;
-                /*entalpia fluido complementar a ser corrigida*/
-
-            } else {
-                sourceTemperature = state.cells[cellIndex].temp;
-                sourceGasEnthalpy = state.cells[cellIndex - 1].flui.EntalpGas(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
-                sourceLiquidEnthalpy = state.cells[cellIndex - 1].flui.EntalpLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp);
-                hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, state.cells[cellIndex - 1].temp) * sourceTemperature;
-                /*entalpia fluido complementar a ser corrigida*/
-            }
-        } else if ((*state.cells[cellIndex].acsrL).tipo == kAccessoryVolumetricPump) {
-            double pumpUpstreamVoidFraction = state.cells[cellIndex - 1].alf;
-            double betM = state.cells[cellIndex - 1].bet;
-
-            double polytropicExponent = (*state.cells[cellIndex].acsrL).bvol.npoli;
-            double pumpPressureRatio = (state.cells[cellIndex].pres) / (state.cells[cellIndex - 1].pres);
-            sourceTemperature = state.cells[cellIndex - 1].temp * pow(pumpPressureRatio, (polytropicExponent - 1) / polytropicExponent);
-
-            sourceGasEnthalpy = state.cells[cellIndex - 1].flui.EntalpGas(state.cells[cellIndex - 1].pres, sourceTemperature);
-            sourceLiquidEnthalpy = state.cells[cellIndex - 1].flui.EntalpLiq(state.cells[cellIndex - 1].pres, sourceTemperature);
-            hcF = state.cells[cellIndex - 1].fluicol.CalorLiq(state.cells[cellIndex - 1].pres, sourceTemperature) * sourceTemperature;
-            /*entalpia fluido complementar a ser corrigida*/
-        } else {
-            sourceGasEnthalpy = 0.;
-            sourceLiquidEnthalpy = 0.;
-        }
-    } else {
-        sourceGasEnthalpy = 0.;
-        sourceLiquidEnthalpy = 0.;
-    }
+    const SourceEnthalpy source = sourceEnthalpyOf(state, cellIndex);
+    const double sourceTemperature = source.temperature;
+    const double sourceGasEnthalpy = source.gasEnthalpy;
+    const double sourceLiquidEnthalpy = source.liquidEnthalpy;
+    const double hcF = source.hcF;
 
     liquidMassSourceTerm = 0;
     gasMassSourceTerm = 0;
@@ -343,42 +356,7 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
 
 namespace {
 
-struct TemperatureBalance {
-    double cellLength;
-    double meanCellLength;
-    double flowArea;
-    double voidFraction;
-    double bet;
-    double gasSuperficialVelocity;
-    double liquidSuperficialVelocity;
-    double referenceMixtureVelocity;
-    double rp;
-    double rc;
-    double liquidDensity;
-    double gasDensity;
-    double liquidHeatCapacity;
-    double liquidIsochoricHeatCapacity;
-    double gasHeatCapacity;
-    double gasIsochoricHeatCapacity;
-    double liquidJouleThomson;
-    double gasJouleThomson;
-    double hydrostaticPower;
-    double heatFlux;
-    double timeCoefficient;
-    double pressureTimeCoefficient;
-    double temperatureSpatialCoefficient;
-    double pressureSpatialCoefficient;
-};
-
-TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
-                                             int cellIndex,
-                                             int steadyStateMode) {
-    double cellLength = state.cells[cellIndex].dx;
-    double meanCellLength;
-    if (cellIndex > 0)
-        meanCellLength = 0.5 * (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
-    else
-        meanCellLength = 0.5 * state.cells[cellIndex].dx;
+[[nodiscard]] CellFlowBasis cellFlowBasisOf(const ThermalState &state, int cellIndex) {
     double diameter = state.cells[cellIndex].duto.a;
     double flowArea = 0.25 * M_PI * diameter * diameter;
     double meanVoidFraction = state.cells[cellIndex].alf;
@@ -409,6 +387,28 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
             meanSuperficialLiquidVelocity = 0.;
         }
     }
+    return CellFlowBasis{.flowArea = flowArea,
+                         .voidFraction = meanVoidFraction,
+                         .betmed = betmed,
+                         .gasSuperficialVelocity = meanSuperficialGasVelocity,
+                         .liquidSuperficialVelocity = meanSuperficialLiquidVelocity};
+}
+
+TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
+                                             int cellIndex,
+                                             int steadyStateMode) {
+    double cellLength = state.cells[cellIndex].dx;
+    double meanCellLength;
+    if (cellIndex > 0)
+        meanCellLength = 0.5 * (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
+    else
+        meanCellLength = 0.5 * state.cells[cellIndex].dx;
+    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);
+    const double flowArea = basis.flowArea;
+    const double meanVoidFraction = basis.voidFraction;
+    const double betmed = basis.betmed;
+    const double meanSuperficialGasVelocity = basis.gasSuperficialVelocity;
+    const double meanSuperficialLiquidVelocity = basis.liquidSuperficialVelocity;
     double referenceMixtureVelocity = fabs(meanSuperficialGasVelocity) + fabs(meanSuperficialLiquidVelocity);
     double rp = state.cells[cellIndex].rpC;
     double rc = state.cells[cellIndex].rcC;
@@ -586,11 +586,6 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     }
     return kineticTerm;
 }
-
-struct TemperatureSourceTerms {
-    double gas;
-    double liquid;
-};
 
 TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                                                       int cellIndex,
@@ -1164,24 +1159,6 @@ void initializeDistributedMassTransferInlet(
     ProFlu flutemp = state.cells[cellIndex].flui;
 }
 
-struct DistributedMassTransferProperties {
-    double downstreamWaterFraction;
-    double upstreamWaterFraction;
-    double cellWaterFraction;
-    double liquidDensity;
-    double gasDensity;
-    double downstreamComposition;
-    double upstreamComposition;
-    double mixtureLiquidDensity;
-    double downstreamOilVolumeFactor;
-    double downstreamSolutionGasRatio;
-    double downstreamSolutionGasPressureDerivative;
-    double cellOilVolumeFactor;
-    double cellSolutionGasRatio;
-    double cellSolutionGasPressureDerivative;
-    double cellSolutionGasTemperatureDerivative;
-};
-
 DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     const ThermalState &state, int cellIndex, double meanTemperature, ProFlu &flue,
     ProFlu &flud) {
@@ -1366,12 +1343,6 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
         .cellSolutionGasTemperatureDerivative = cellSolutionGasTemperatureDerivative,
     };
 }
-
-struct DistributedMassTransferCoefficients {
-    double activeDerivative;
-    double spatialCoupling;
-    double flowArea;
-};
 
 DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
     const ThermalState &state, int cellIndex, double cellWaterFraction, const ProFlu &flud,
@@ -1876,25 +1847,6 @@ void updateDistributedMassTransfer(const ThermalState &state) {
 }
 
 namespace {
-
-/// The drift-flux pair of the slug regime: C0 = 1.2 and ud = 0.32*sqrt(g*D),
-/// signed by the inclination, collapsing to the homogeneous limit (C0 = 1,
-/// ud = 0) once the density ratio passes 0.9.
-///
-/// These fourteen lines stood in all four regime selectors, byte for byte. What
-/// differs is the line BEFORE them, seeding meanVoidFraction from the pig field
-/// or from the inlet, so the seeding stays at each call site and only the
-/// proven-identical closure is shared -- the rule stage 3 settled on for the
-/// five CalcC0Ud variants: keep the divergent control flow, share what a
-/// normalised comparison proves equal.
-struct SlugClosure {
-    double c0;
-    double ud;
-    /// Read after the call by the interior selector only. Returned rather than
-    /// passed by reference so the other three callers do not carry a variable
-    /// they never read, which would trade duplication for a warning.
-    double meanDiameter;
-};
 
 /// meanVoidFraction is in-out: counter-current gas re-seeds it from alfPigE.
 [[nodiscard]] SlugClosure applySlugDriftClosure(
@@ -3279,37 +3231,12 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     state.cells[1].term2L = state.cells[cellIndex].term2;
 }
 void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex) {
-    double diameter = state.cells[cellIndex].duto.a;
-    double flowArea = 0.25 * M_PI * diameter * diameter;
-    double meanVoidFraction = state.cells[cellIndex].alf;
-    double betmed = state.cells[cellIndex].bet;
-    double meanSuperficialGasVelocity;
-    double meanSuperficialLiquidVelocity;
-    if (cellIndex > 0 && (state.cells[cellIndex - 1].acsr.tipo != kAccessoryChoke ||
-                  state.cells[cellIndex - 1].acsr.chk.AreaGarg > (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area)) {
-        if (state.cells[cellIndex].alf > (*state.globals).localtiny)
-            meanSuperficialGasVelocity = state.cells[cellIndex].QG / flowArea;
-        else {
-            meanSuperficialGasVelocity = 0.;
-        }
-        if (state.cells[cellIndex].alf < 1. - (*state.globals).localtiny)
-            meanSuperficialLiquidVelocity = state.cells[cellIndex].QL / flowArea;
-        else {
-            meanSuperficialLiquidVelocity = 0.;
-        }
-    } else {
-        if (state.cells[cellIndex].alf > (*state.globals).localtiny)
-            meanSuperficialGasVelocity = state.cells[cellIndex + 1].QG / flowArea;
-        else {
-            meanSuperficialGasVelocity = 0.;
-        }
-
-        if (state.cells[cellIndex].alf < 1. - (*state.globals).localtiny)
-            meanSuperficialLiquidVelocity = state.cells[cellIndex + 1].QL / flowArea;
-        else {
-            meanSuperficialLiquidVelocity = 0.;
-        }
-    }
+    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);
+    const double flowArea = basis.flowArea;
+    const double meanVoidFraction = basis.voidFraction;
+    const double betmed = basis.betmed;
+    const double meanSuperficialGasVelocity = basis.gasSuperficialVelocity;
+    const double meanSuperficialLiquidVelocity = basis.liquidSuperficialVelocity;
     double rp = state.cells[cellIndex].rpC;
     double rc = state.cells[cellIndex].rcC;
     double liquidDensity = (1. - betmed) * rp + betmed * rc;
