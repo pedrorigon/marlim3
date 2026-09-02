@@ -1877,6 +1877,47 @@ void updateDistributedMassTransfer(const ThermalState &state) {
 
 namespace {
 
+/// The drift-flux pair of the slug regime: C0 = 1.2 and ud = 0.32*sqrt(g*D),
+/// signed by the inclination, collapsing to the homogeneous limit (C0 = 1,
+/// ud = 0) once the density ratio passes 0.9.
+///
+/// These fourteen lines stood in all four regime selectors, byte for byte. What
+/// differs is the line BEFORE them, seeding meanVoidFraction from the pig field
+/// or from the inlet, so the seeding stays at each call site and only the
+/// proven-identical closure is shared -- the rule stage 3 settled on for the
+/// five CalcC0Ud variants: keep the divergent control flow, share what a
+/// normalised comparison proves equal.
+struct SlugClosure {
+    double c0;
+    double ud;
+    /// Read after the call by the interior selector only. Returned rather than
+    /// passed by reference so the other three callers do not carry a variable
+    /// they never read, which would trade duplication for a warning.
+    double meanDiameter;
+};
+
+/// meanVoidFraction is in-out: counter-current gas re-seeds it from alfPigE.
+[[nodiscard]] SlugClosure applySlugDriftClosure(
+    const ThermalState &state, int cellIndex, double superficialGasVelocity,
+    double rightGasDensity, double rightLiquidDensity,
+    double &meanVoidFraction) {
+    if (superficialGasVelocity < 0)
+        meanVoidFraction = state.cells[cellIndex].alfPigE;
+    double c0 = 1.2;
+    double meanDiameter = state.cells[cellIndex].duto.a;
+    if (state.cells[cellIndex].MC >= 0)
+        meanDiameter = state.cells[cellIndex].dutoL.a;
+    double inclinationSign = 1.;
+    if (state.cells[cellIndex].duto.teta < 0.)
+        inclinationSign = -1.;
+    double ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
+    if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
+        c0 = 1.;
+        ud = 0.;
+    }
+    return SlugClosure{.c0 = c0, .ud = ud, .meanDiameter = meanDiameter};
+}
+
 void selectAndApplyInteriorFlowRegime(
     const ThermalState &state, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
     double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
@@ -2020,22 +2061,13 @@ void selectAndApplyInteriorFlowRegime(
         double meanVoidFraction;
 
         meanVoidFraction = state.cells[cellIndex - 1].alfPigD;
-        if (superficialGasVelocity < 0)
-            meanVoidFraction = state.cells[cellIndex].alfPigE;
-        c0 = 1.2;
-        double meanDiameter = state.cells[cellIndex].duto.a;
-        if (state.cells[cellIndex].MC >= 0)
-            meanDiameter = state.cells[cellIndex].dutoL.a;
-        double inclinationSign = 1.;
-        if (state.cells[cellIndex].duto.teta < 0.)
-            inclinationSign = -1.;
-        ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
-        if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-        }
-        if (fabs(state.cells[cellIndex].QG / (0.25 * M_PI * meanDiameter * meanDiameter * meanVoidFraction)) > 100. ||
-            fabs(state.cells[cellIndex].QL / (0.25 * M_PI * meanDiameter * meanDiameter * (1. - meanVoidFraction))) > 100.) {
+        const SlugClosure slug = applySlugDriftClosure(
+            state, cellIndex, superficialGasVelocity, rightGasDensity,
+            rightLiquidDensity, meanVoidFraction);
+        c0 = slug.c0;
+        ud = slug.ud;
+        if (fabs(state.cells[cellIndex].QG / (0.25 * M_PI * slug.meanDiameter * slug.meanDiameter * meanVoidFraction)) > 100. ||
+            fabs(state.cells[cellIndex].QL / (0.25 * M_PI * slug.meanDiameter * slug.meanDiameter * (1. - meanVoidFraction))) > 100.) {
             c0 = 1.;
             ud = 0.;
         } else
@@ -2623,20 +2655,11 @@ void selectAndApplyInletBoundaryFlowRegime(
         double meanVoidFraction;
 
         meanVoidFraction = state.inletVoidFraction;
-        if (superficialGasVelocity < 0)
-            meanVoidFraction = state.cells[cellIndex].alfPigE;
-        c0 = 1.2;
-        double meanDiameter = state.cells[cellIndex].duto.a;
-        if (state.cells[cellIndex].MC >= 0)
-            meanDiameter = state.cells[cellIndex].dutoL.a;
-        double inclinationSign = 1.;
-        if (state.cells[cellIndex].duto.teta < 0.)
-            inclinationSign = -1.;
-        ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
-        if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-        }
+        const SlugClosure slug = applySlugDriftClosure(
+            state, cellIndex, superficialGasVelocity, rightGasDensity,
+            rightLiquidDensity, meanVoidFraction);
+        c0 = slug.c0;
+        ud = slug.ud;
         state.closureUpdater.initialization(cellIndex, c0, ud);
         state.cells[cellIndex].c0 = c0;
         state.cells[cellIndex].ud = ud;
@@ -2778,20 +2801,11 @@ void selectAndApplyBufferedOutletFlowRegime(
         double meanVoidFraction;
 
         meanVoidFraction = state.cells[cellIndex - 1].alfPigD;
-        if (superficialGasVelocity < 0)
-            meanVoidFraction = state.cells[cellIndex].alfPigE;
-        c0 = 1.2;
-        double meanDiameter = state.cells[cellIndex].duto.a;
-        if (state.cells[cellIndex].MC >= 0)
-            meanDiameter = state.cells[cellIndex].dutoL.a;
-        double inclinationSign = 1.;
-        if (state.cells[cellIndex].duto.teta < 0.)
-            inclinationSign = -1.;
-        ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
-        if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-        }
+        const SlugClosure slug = applySlugDriftClosure(
+            state, cellIndex, superficialGasVelocity, rightGasDensity,
+            rightLiquidDensity, meanVoidFraction);
+        c0 = slug.c0;
+        ud = slug.ud;
         state.closureUpdater.buffered(cellIndex, c0, ud);
         if (state.input.escorregamentoCelulaContorno == 0) {
             c0 = 1.;
@@ -2926,20 +2940,11 @@ void selectAndApplyBufferedInletFlowRegime(
         double meanVoidFraction;
 
         meanVoidFraction = state.inletVoidFraction;
-        if (superficialGasVelocity < 0)
-            meanVoidFraction = state.cells[cellIndex].alfPigE;
-        c0 = 1.2;
-        double meanDiameter = state.cells[cellIndex].duto.a;
-        if (state.cells[cellIndex].MC >= 0)
-            meanDiameter = state.cells[cellIndex].dutoL.a;
-        double inclinationSign = 1.;
-        if (state.cells[cellIndex].duto.teta < 0.)
-            inclinationSign = -1.;
-        ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
-        if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-        }
+        const SlugClosure slug = applySlugDriftClosure(
+            state, cellIndex, superficialGasVelocity, rightGasDensity,
+            rightLiquidDensity, meanVoidFraction);
+        c0 = slug.c0;
+        ud = slug.ud;
         state.closureUpdater.bufferedInitialization(cellIndex, c0, ud);
 
         double numerator = (1. - meanVoidFraction * c0);
