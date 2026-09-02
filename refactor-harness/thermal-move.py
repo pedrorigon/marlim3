@@ -1804,6 +1804,31 @@ def alpha_normalize(tokens: list[str]) -> list[str]:
     return out
 
 
+def declared_constants(path: str = "src/core/SisProdThermal.cpp") -> dict[str, str]:
+    """Read the literal a named constant stands for, from the source itself.
+
+    A constant introduced to replace a literal turns a number token into an
+    identifier token, which a token comparison against a pre-constant baseline
+    reports as a difference. Tolerating that needs a mapping -- and a mapping
+    typed by hand is a claim nobody checked.
+
+    So the mapping is read from the static_asserts that the compiler already
+    enforces:
+
+        constexpr double kGravity = 9.82;
+        static_assert(kGravity == 9.82, ...);
+
+    If the constant ever stopped being the literal, the build would fail before
+    this function was ever called. The table cannot drift from the truth.
+    """
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return {}
+    return dict(re.findall(
+        r"static_assert\(\s*(\w+)\s*==\s*([0-9][0-9.eE+-]*)\s*,", text))
+
+
 def rename_consistent(expected: list[str], actual: list[str]) -> bool:
     """True when `actual` is `expected` under a consistent renaming.
 
@@ -1825,9 +1850,14 @@ def rename_consistent(expected: list[str], actual: list[str]) -> bool:
     """
     if len(expected) != len(actual):
         return False
+    constants = declared_constants()
     mapping: dict[str, str] = {}
     previous = ""
     for want, have in zip(expected, actual):
+        # A named constant standing in for the literal it is proven equal to.
+        if constants.get(have) == want:
+            previous = want
+            continue
         field = previous in (".", "->")
         renameable = (
             not field

@@ -80,8 +80,14 @@ for march, helpers in SPECS:
     rebuilt = '\n'.join(lines)
     _, _, original = carve(base, march)
     a, b = tm.tokenize(original), tm.tokenize(rebuilt)
-    if a == b:
-        print(f"OK       {march} reconstituida <- 4 helpers ({len(a)} tokens)")
+    # compare_tokens accepts a named constant in place of the literal it is
+    # PROVEN equal to by a static_assert, and a consistent renaming -- both of
+    # which this module has undergone on purpose. It still rejects a changed
+    # literal, a reordering, or one variable substituted for another.
+    verdict = tm.compare_tokens(a, b)
+    if verdict != "differs":
+        note = "" if verdict == "exact" else " modulo renames and named constants"
+        print(f"OK       {march} reconstituida <- 4 helpers ({len(a)} tokens{note})")
     else:
         pos = tm.first_difference(a, b)
         print(f"DIFFERS  {march} no token {pos}")
