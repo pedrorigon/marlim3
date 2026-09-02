@@ -58,6 +58,13 @@ base = open(sys.argv[1], encoding='utf-8').read()
 # code, so removing them cannot move a number, but they are text and the
 # comparison is textual. Both sides are normalised, and the count is printed so
 # a silent change in the pattern is visible rather than inferred.
+# The review carved further helpers out of the bodies this control rebuilds --
+# setFlowPartitionTerms, clearDriftClosure, clearSourceSpecificHeats and the
+# rest. Their calls are put back inline first, which is the same move this
+# control already makes for the four helpers each march was split into. The
+# inliner raises if a listed helper stops being called, so the control cannot
+# quietly start comparing code it no longer covers.
+cur = tm.inline_leaf_helpers(cur)
 cur, cur_anchors = tm.strip_debug_anchors(cur)
 base, base_anchors = tm.strip_debug_anchors(base)
 print(f"NOTE     ancoras de breakpoint normalizadas: {base_anchors} no baseline, "

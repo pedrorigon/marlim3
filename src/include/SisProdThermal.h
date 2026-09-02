@@ -168,6 +168,114 @@ void updateProductionTemperaturePeriphery(const ThermalState &state,
 /// Surface temperature at the end of the production line.
 void computeOutletTemperature(const ThermalState &state);
 
+
+// ---------------------------------------------------------------------------
+// Values passed between the kernels inside SisProdThermal.cpp.
+//
+// These are not part of the module's interface -- no caller outside the .cpp
+// constructs or reads them. They live here so the shape of the data can be read
+// without reading the arithmetic that fills it.
+// ---------------------------------------------------------------------------
+
+/// The enthalpy the source term carries into the cell, and the temperature it
+/// arrives at. Produced by the accessory dispatch in sourceEnthalpyOf.
+struct SourceEnthalpy {
+    double temperature;
+    double gasEnthalpy;
+    double liquidEnthalpy;
+    /// Complementary-fluid heat. The legacy name is kept: three assignment
+    /// sites carry a comment saying it is still to be corrected.
+    double hcF;
+};
+
+/// Cell geometry and the superficial velocities the two preparation steps start
+/// from. The velocities come from this cell unless the upstream neighbour is a
+/// choke throttled below the active-area ratio, in which case they come from
+/// the cell downstream.
+struct CellFlowBasis {
+    double flowArea;
+    double voidFraction;
+    double betmed;
+    double gasSuperficialVelocity;
+    double liquidSuperficialVelocity;
+};
+
+struct TemperatureBalance {
+    double cellLength;
+    double meanCellLength;
+    double flowArea;
+    double voidFraction;
+    double bet;
+    double gasSuperficialVelocity;
+    double liquidSuperficialVelocity;
+    double referenceMixtureVelocity;
+    double rp;
+    double rc;
+    double liquidDensity;
+    double gasDensity;
+    double liquidHeatCapacity;
+    double liquidIsochoricHeatCapacity;
+    double gasHeatCapacity;
+    double gasIsochoricHeatCapacity;
+    double liquidJouleThomson;
+    double gasJouleThomson;
+    double hydrostaticPower;
+    double heatFlux;
+    double timeCoefficient;
+    double pressureTimeCoefficient;
+    double temperatureSpatialCoefficient;
+    double pressureSpatialCoefficient;
+};
+
+struct TemperatureSourceTerms {
+    double gas;
+    double liquid;
+};
+
+struct DistributedMassTransferProperties {
+    double downstreamWaterFraction;
+    double upstreamWaterFraction;
+    double cellWaterFraction;
+    double liquidDensity;
+    double gasDensity;
+    double downstreamComposition;
+    double upstreamComposition;
+    double mixtureLiquidDensity;
+    double downstreamOilVolumeFactor;
+    double downstreamSolutionGasRatio;
+    double downstreamSolutionGasPressureDerivative;
+    double cellOilVolumeFactor;
+    double cellSolutionGasRatio;
+    double cellSolutionGasPressureDerivative;
+    double cellSolutionGasTemperatureDerivative;
+};
+
+struct DistributedMassTransferCoefficients {
+    double activeDerivative;
+    double spatialCoupling;
+    double flowArea;
+};
+
+/// The drift-flux pair of the slug regime: C0 = 1.2 and ud = 0.32*sqrt(g*D),
+/// signed by the inclination, collapsing to the homogeneous limit (C0 = 1,
+/// ud = 0) once the density ratio passes 0.9.
+struct SlugClosure {
+    double c0;
+    double ud;
+    /// Read after the call by the interior selector only. Returned rather than
+    /// passed by reference so the other three callers do not carry a variable
+    /// they never read, which would trade duplication for a warning.
+    double meanDiameter;
+};
+
+/// Which face the upstream properties come from, decided by the sign of the
+/// gas flow rate, for the two drift-closure selectors that share the choice.
+struct UpstreamFaceBasis {
+    double gasDensity;
+    double flowArea;
+    double noSlipLiquidHoldup;
+};
+
 }  // namespace sisprod::thermal
 
 #endif  // SISPRODTHERMAL_H_

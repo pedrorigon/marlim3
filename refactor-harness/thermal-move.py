@@ -870,7 +870,7 @@ def check_t069(old_name: str, baseline_path: str, current_path: str) -> int:
     )
     new_name = T069_FUNCTIONS[old_name]["new_name"]
     current = carve_named(
-        open(current_path, encoding="utf-8").read(),
+        read_current(current_path),
         rf"[\w:<>*&\s]+{new_name}\(const ThermalState &state",
     )
     if baseline is None or current is None:
@@ -1224,7 +1224,7 @@ def check_t068(old_name: str, baseline_path: str, current_path: str) -> int:
     )
     new_name = T068_FUNCTIONS[old_name]["new_name"]
     current = carve_named(
-        open(current_path, encoding="utf-8").read(),
+        read_current(current_path),
         rf"void {new_name}\(const ThermalState &state",
     )
     if baseline is None or current is None:
@@ -1249,7 +1249,7 @@ def check_t066(old_name: str, baseline_path: str, current_path: str) -> int:
     )
     new_name = T066_FUNCTIONS[old_name]["new_name"]
     current = carve_named(
-        open(current_path, encoding="utf-8").read(),
+        read_current(current_path),
         rf"void {new_name}\(const ThermalState &state",
     )
     if baseline is None or current is None:
@@ -1274,7 +1274,7 @@ def check_t065(old_name: str, baseline_path: str, current_path: str) -> int:
     )
     new_name = T065_FUNCTIONS[old_name]["new_name"]
     current = carve_named(
-        open(current_path, encoding="utf-8").read(),
+        read_current(current_path),
         rf"void {new_name}\(const ThermalState &state",
     )
     if baseline is None or current is None:
@@ -1319,7 +1319,7 @@ def expand_helper_call(body: str, helper_name: str, helper_body: str) -> str:
 
 def check_t065_decomposition(baseline_path: str, current_path: str) -> int:
     baseline_source = open(baseline_path, encoding="utf-8").read()
-    current_source = open(current_path, encoding="utf-8").read()
+    current_source = read_current(current_path)
     signatures = {
         "main": r"void updateFlowPartitionTerms\(const ThermalState &state",
         "interior": r"void updateInteriorFlowPartitionCell\(",
@@ -1424,7 +1424,7 @@ def check_t063(old_name: str, baseline_path: str, current_path: str) -> int:
     )
     new_name = T063_FUNCTIONS[old_name]["new_name"]
     current = carve_named(
-        open(current_path, encoding="utf-8").read(),
+        read_current(current_path),
         rf"void {new_name}\(const ThermalState &state",
     )
     if baseline is None or current is None:
@@ -1463,7 +1463,7 @@ def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
     expected_main = forward_t063(old_name, baseline[2])
     expected_block = thermal_mass_source_block(expected_main)
 
-    current_source = open(current_path, encoding="utf-8").read()
+    current_source = read_current(current_path)
     current_main = carve_named(
         current_source,
         r"void computeThermalMassTransfer\(const ThermalState &state",
@@ -1566,7 +1566,7 @@ def check_renova_temp(baseline_path: str, current_path: str) -> int:
         r"void SProd::renovaTemp\(\)",
     )
     current = carve_named(
-        open(current_path, encoding="utf-8").read(),
+        read_current(current_path),
         r"void updateDistributedMassTransfer\(const ThermalState &state\)",
     )
     if baseline is None or current is None:
@@ -1652,64 +1652,120 @@ def compare_token_blocks(
     return failures
 
 
-def inline_stage5_helpers(source: str) -> str:
-    """Put the stage-5 review helpers back inline, for the T064 control.
+def read_current(path: str) -> str:
+    """Read the module as the structural checks want to see it.
 
-    check_renova_temp_decomposition rebuilds updateDistributedMassTransfer from
-    the five helpers T064 split it into and compares the result against the
-    pre-move baseline. The stage-5 review added two more helpers INSIDE those
-    bodies -- clearMassTransferDerivatives and
-    lastCellSolutionGasPressureDerivative -- so the rebuilt text now contains
-    calls where the baseline has statements, and the control started failing on
-    a difference that is not a defect.
-
-    Retiring the control was the alternative and was rejected: it still tests
-    something real. Instead the two helpers are inlined first, which is the same
-    move the control already makes for the original five.
-
-    Every substitution count is asserted. A helper that is renamed, gains a
-    caller, or loses one makes this raise rather than quietly inline less and
-    report a pass on a comparison that no longer covers the code.
+    Every check in this file compares today's module against a baseline
+    recorded before some split. Helpers carved out since then put calls where
+    the baseline has statements, so they are put back inline here, in one place,
+    rather than in each check.
     """
-    def core_of(name: str) -> str:
-        # The definition may carry an attribute before the return type, so the
-        # pattern allows one; carve_named anchors at column 0, which keeps it
-        # from matching an indented call site.
+    return inline_leaf_helpers(open(path, encoding="utf-8").read())
+
+
+LEAF_HELPERS = (
+    "clearMassTransferDerivatives",
+    "lastCellSolutionGasPressureDerivative",
+    "setFlowPartitionTerms",
+    "clearDriftClosure",
+    "clearSourceSpecificHeats",
+    "applyNoSlipClosure",
+)
+
+
+def _split_arguments(text: str) -> list[str]:
+    """Split a call's argument list at top-level commas."""
+    parts: list[str] = []
+    depth = 0
+    current = ""
+    for character in text:
+        if character in "([{":
+            depth += 1
+        elif character in ")]}":
+            depth -= 1
+        if character == "," and depth == 0:
+            parts.append(current.strip())
+            current = ""
+            continue
+        current += character
+    if current.strip():
+        parts.append(current.strip())
+    return parts
+
+
+def inline_leaf_helpers(source: str, names: tuple[str, ...] = LEAF_HELPERS) -> str:
+    """Substitute each named helper's body back at its call sites.
+
+    The decomposition controls rebuild a function from the helpers it was split
+    into and compare the result against a baseline recorded before the split.
+    Every further helper carved out of those bodies puts a call where the
+    baseline has statements, and the control fails on a difference that is not a
+    defect. Inlining first is the same move the controls already make for the
+    split they were written for.
+
+    Only straight-line helpers belong in LEAF_HELPERS: parameters are
+    substituted textually, so a helper with locals of its own, control flow that
+    uses a parameter as an lvalue in a way the caller cannot see, or a name that
+    collides with a caller's, would inline wrongly. Every helper listed is a run
+    of assignments or a single computation ending in a return.
+
+    A helper that is present but never called raises, rather than silently
+    inlining nothing and letting the control report a pass on a comparison that
+    no longer covers the code.
+    """
+    for name in names:
         carved = carve_named(
             source, rf"(?:\[\[\w+\]\] )?[\w][\w\s:<>*&]*\b{name}\(")
         if carved is None:
-            raise ValueError(f"{name} not found; the T064 control cannot inline it")
-        body = function_core(carved[2])
-        return body.rstrip("\n")
+            continue
+        definition = carved[2]
+        signature = definition[:definition.index("{")]
+        parameters = [
+            re.sub(r"^.*?(\w+)$", r"\1", part.strip().rstrip("&*"))
+            for part in _split_arguments(
+                signature[signature.index("(") + 1:signature.rindex(")")])
+        ]
+        body = function_core(definition).rstrip("\n")
+        body = re.sub(r"\n[ \t]*return\s+\w+;\s*$", "", body)
 
-    clear_core = core_of("clearMassTransferDerivatives")
-    derivative_core = core_of("lastCellSolutionGasPressureDerivative")
-    # Drop the trailing return: inlined, the value is the local the callers name.
-    derivative_core = re.sub(
-        r"\n[ \t]*return cellSolutionGasPressureDerivative;\s*$", "", derivative_core)
-
-    def reindent(text: str, spaces: int) -> str:
-        lines = text.split("\n")
-        base = min((len(l) - len(l.lstrip()) for l in lines if l.strip()), default=0)
-        return "\n".join((" " * spaces + l[base:]) if l.strip() else l for l in lines)
-
-    replacements = [
-        ("                clearMassTransferDerivatives(state, cellIndex);",
-         reindent(clear_core, 16), 3),
-        ("        const double cellSolutionGasPressureDerivative =\n"
-         "            lastCellSolutionGasPressureDerivative(state, cellIndex);",
-         reindent(derivative_core, 8), 1),
-        ("            [[maybe_unused]] const double recomputedPressureDerivative =\n"
-         "                lastCellSolutionGasPressureDerivative(state, cellIndex);",
-         reindent(derivative_core, 12), 1),
-    ]
-    for call, body, expected in replacements:
-        found = source.count(call)
-        if found != expected:
-            raise ValueError(
-                f"expected {expected} call site(s) to inline, found {found}: "
-                f"{call.strip().splitlines()[0]}")
-        source = source.replace(call, body)
+        replacements = 0
+        while True:
+            call = re.search(
+                rf"^([ \t]*)(?:\[\[\w+\]\]\s*)?"
+                rf"(?:const\s+\w+\s+\w+\s*=\s*\n?[ \t]*)?{name}\(",
+                source, re.MULTILINE)
+            if call is None:
+                break
+            open_paren = source.index("(", call.end() - 1)
+            depth, cursor = 0, open_paren
+            while True:
+                if source[cursor] == "(":
+                    depth += 1
+                elif source[cursor] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                cursor += 1
+            end = source.index(";", cursor) + 1
+            arguments = _split_arguments(source[open_paren + 1:cursor])
+            if len(arguments) != len(parameters):
+                raise ValueError(
+                    f"{name}: {len(arguments)} arguments for "
+                    f"{len(parameters)} parameters")
+            inlined = body
+            for parameter, argument in zip(parameters, arguments):
+                inlined = re.sub(rf"\b{parameter}\b",
+                                 argument.replace("\\", "\\\\"), inlined)
+            indent = call.group(1)
+            stripped = [l for l in inlined.split("\n") if l.strip()]
+            base = min(len(l) - len(l.lstrip()) for l in stripped)
+            inlined = "\n".join(
+                indent + l[base:] if l.strip() else l for l in inlined.split("\n"))
+            source = source[:call.start()] + inlined + source[end:]
+            replacements += 1
+        if replacements == 0:
+            raise ValueError(f"{name} is defined but never called; the control "
+                             f"would compare code it no longer covers")
     return source
 
 
@@ -1718,8 +1774,7 @@ def check_renova_temp_decomposition(
 ) -> int:
     baseline = require_renova_temp(baseline_path)
     expected_main = forward_renova_temp(baseline[2])
-    current_source = inline_stage5_helpers(
-        open(current_path, encoding="utf-8").read())
+    current_source = read_current(current_path)
 
     signatures = {
         "main": r"void updateDistributedMassTransfer\(const ThermalState &state\)",
@@ -2015,7 +2070,7 @@ def first_difference(expected: list[str], actual: list[str]) -> int:
 
 def check(baseline_path: str, current_path: str) -> int:
     baseline = carve(open(baseline_path, encoding="utf-8").read())
-    current = carve_new(open(current_path, encoding="utf-8").read())
+    current = carve_new(read_current(current_path))
     failures = 0
     total = 0
     for old_name, new_name in FUNCTIONS.items():
@@ -2040,7 +2095,7 @@ def check(baseline_path: str, current_path: str) -> int:
 
 def check_calctemp(baseline_path: str, current_path: str) -> int:
     baseline = carve_calctemp(open(baseline_path, encoding="utf-8").read())
-    current = carve_new_calctemp(open(current_path, encoding="utf-8").read())
+    current = carve_new_calctemp(read_current(current_path))
     if baseline is None or current is None:
         print("MISSING  computeTemperature <- calctemp")
         return 1
