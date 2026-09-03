@@ -138,8 +138,8 @@ queue_case mixture-energy-sign SisProdThermal.cpp \
     'return previousMixtureInternalEnergy + (enthalpyFluxDivergence' caught
 
 queue_case boundary-temperature-write SisProdThermal.cpp \
-    $'void updateProductionTemperaturePeriphery(const ThermalState &state, int cellIndex) {\n    if (cellIndex > 0)\n        state.cells[cellIndex - 1].tempR = state.cells[cellIndex].temp;' \
-    $'void updateProductionTemperaturePeriphery(const ThermalState &state, int cellIndex) {\n    if (cellIndex > 0)\n        state.cells[cellIndex - 1].tempR = state.cells[cellIndex].temp + 1.;' caught
+    'leftCell.tempR = cell.temp;' \
+    'leftCell.tempR = cell.temp + 1.;' caught
 
 queue_case outlet-temperature-source SisProdThermal.cpp \
     'state.surfaceTemperature = state.cells[state.lastCell - 1].temp;' \
@@ -150,8 +150,8 @@ queue_case outlet-temperature-source SisProdThermal.cpp \
 # callers at once. The case moves to the first line still exclusive to the
 # diffusion preparation: the liquid density built from the two-phase fractions.
 queue_case diffusion-preparation-area SisProdThermal.cpp \
-    $'void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex) {\n    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);' \
-    $'void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex) {\n    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex + 1);' caught
+    $'    Cel &leftCell = state.cells[cellIndex - 1];\n    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);' \
+    $'    Cel &leftCell = state.cells[cellIndex - 1];\n    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex + 1);' caught
 
 queue_case tabulated-gas-density SisProdThermal.cpp \
     'double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * kPascalPerKgfPerCm2 / lowerGasDensity) +' \
@@ -162,8 +162,8 @@ queue_case enthalpy-search-condition SisProdThermal.cpp \
     'while (temperatureIndex < divisionCount + 1 && (mixtureInternalEnergy >= lowerEnergy && mixtureInternalEnergy <= upperEnergy) ||' caught
 
 queue_case reverse-ambient-neighbor SisProdThermal.cpp \
-    'state.cells[cellIndex].temp = state.cells[cellIndex + 1].calor.Textern1;' \
-    'state.cells[cellIndex].temp = state.cells[cellIndex - 1].calor.Textern1;' caught
+    'cell.temp = rightCell.calor.Textern1;' \
+    'cell.temp = state.cells[cellIndex - 1].calor.Textern1;' caught
 
 queue_case outlet-boundary-index SisProdThermal.cpp \
     $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int cellIndex = state.lastCell;' \
@@ -184,38 +184,38 @@ queue_case reverse-hot-guard SisProdThermal.cpp \
     'if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > state.slowHeatTransferThreshold && state.thermalSourceDisabled == 0) {' caught
 
 queue_case forward-ambient-neighbor SisProdThermal.cpp \
-    'state.cells[cellIndex].temp = state.cells[cellIndex - 1].calor.Textern1;' \
-    'state.cells[cellIndex].temp = state.cells[cellIndex + 1].calor.Textern1;' caught
+    'cell.temp = leftCell.calor.Textern1;' \
+    'cell.temp = state.cells[cellIndex + 1].calor.Textern1;' caught
 
 queue_case reverse-signed-gas SisProdThermal.cpp \
-    'meanSuperficialGasVelocity = fabs(state.cells[cellIndex + 1].QG) / flowArea;' \
-    'meanSuperficialGasVelocity = state.cells[cellIndex + 1].QG / flowArea;' caught
+    'meanSuperficialGasVelocity = fabs(rightCell.QG) / flowArea;' \
+    'meanSuperficialGasVelocity = rightCell.QG / flowArea;' caught
 
 queue_case reverse-interface-pressure SisProdThermal.cpp \
-    'double interfaceMeanPressure = state.cells[cellIndex + 1].presaux - state.cells[cellIndex].dpB / kPascalPerKgfPerCm2;' \
-    'double interfaceMeanPressure = state.cells[cellIndex + 1].presaux + state.cells[cellIndex].dpB / kPascalPerKgfPerCm2;' caught
+    'double interfaceMeanPressure = rightCell.presaux - cell.dpB / kPascalPerKgfPerCm2;' \
+    'double interfaceMeanPressure = rightCell.presaux + cell.dpB / kPascalPerKgfPerCm2;' caught
 
 queue_case forward-network-resistance SisProdThermal.cpp \
-    'heatFlux = mixtureFluxSign * state.cells[cellIndex - 1].calor.transperm(state.cells[cellIndex - 1].resAcopRedeP);' \
-    'heatFlux = mixtureFluxSign * state.cells[cellIndex - 1].calor.transperm(annulusResistance);' caught
+    'heatFlux = mixtureFluxSign * leftCell.calor.transperm(leftCell.resAcopRedeP);' \
+    'heatFlux = mixtureFluxSign * leftCell.calor.transperm(annulusResistance);' caught
 
 queue_case forward-velocity-cap SisProdThermal.cpp \
-    'if ((*state.globals).blackOilTemp == 1 && fabs(meanSuperficialGasVelocity) > 5)' \
-    'if ((*state.globals).blackOilTemp == 2 && fabs(meanSuperficialGasVelocity) > 5)' caught
+    'if (globals.blackOilTemp == 1 && fabs(meanSuperficialGasVelocity) > 5)' \
+    'if (globals.blackOilTemp == 2 && fabs(meanSuperficialGasVelocity) > 5)' caught
 
 queue_case reverse-bcs-gradient SisProdThermal.cpp \
-    'pressureGradient = (interfaceMeanPressure - state.cells[cellIndex + 1].pres) * 98600. / cellLength;' \
-    'pressureGradient = (interfaceMeanPressure - state.cells[cellIndex + 1].pres) * 98066.5 / cellLength;' caught
+    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * 98600. / cellLength;' \
+    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * 98066.5 / cellLength;' caught
 
 # Two bodies carry this guard; the cellIndex - 1 read pins it to the forward
 # steady march rather than to computeTemperature.
 queue_case forward-latent-limit SisProdThermal.cpp \
-    $'phaseChangeSign = state.cells[cellIndex - 1].FonteMudaFase / phaseChangeMassRate;\n    if (state.input.limTransMass < phaseChangeMassRate)' \
-    $'phaseChangeSign = state.cells[cellIndex - 1].FonteMudaFase / phaseChangeMassRate;\n    if (state.input.limTransMass < phaseChangeMassRate * 0.)' caught
+    $'phaseChangeSign = leftCell.FonteMudaFase / phaseChangeMassRate;\n    if (state.input.limTransMass < phaseChangeMassRate)' \
+    $'phaseChangeSign = leftCell.FonteMudaFase / phaseChangeMassRate;\n    if (state.input.limTransMass < phaseChangeMassRate * 0.)' caught
 
 queue_case reverse-latent-sign SisProdThermal.cpp \
-    'latentHeatTerm = -interpolateLatentHeat(state, meanPressure, meanTemperature) * state.cells[cellIndex + 1].FonteMudaFase;' \
-    'latentHeatTerm = interpolateLatentHeat(state, meanPressure, meanTemperature) * state.cells[cellIndex + 1].FonteMudaFase;' caught
+    'latentHeatTerm = -interpolateLatentHeat(state, meanPressure, meanTemperature) * rightCell.FonteMudaFase;' \
+    'latentHeatTerm = interpolateLatentHeat(state, meanPressure, meanTemperature) * rightCell.FonteMudaFase;' caught
 
 # Same guard appears in computeTemperature; the preceding comment pins this one
 # to the forward steady march.
@@ -228,8 +228,8 @@ queue_case reverse-annulus-gradient SisProdThermal.cpp \
     'double externalTemperatureStep = (state.gasCells[k - 1].temp - state.gasCells[k].temp) / subStepCount;' caught
 
 queue_case forward-potential-sign SisProdThermal.cpp \
-    'double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(state.cells[cellIndex - 1].duto.teta);' \
-    'double hydrostaticPower = -(liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(state.cells[cellIndex - 1].duto.teta);' caught
+    'double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(leftCell.duto.teta);' \
+    'double hydrostaticPower = -(liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(leftCell.duto.teta);' caught
 
 
 run_queued_cases

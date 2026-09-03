@@ -80,6 +80,18 @@ probe computeSteadyKineticTerm \
     's/double kineticTerm/if (cellIndex == 3) { int debugStop; debugStop = 0; kineticTermScale = 0.; }\n    double kineticTerm/' \
     'live statement hidden inside a breakpoint-anchor shape'
 
+# expand_aliases restores what a `Cel &rightCell = ...` declaration stands for
+# before comparing. Thirty-eight functions declare one, so an expansion that is
+# not scoped to the declaring function lets any of them speak for all -- and a
+# declaration pointed at the wrong neighbour is repaired by a correct one
+# elsewhere before the comparison sees it. That is not hypothetical: the
+# file-wide first version of expand_aliases missed exactly this, and this case
+# is why. The corruption is one character, in a line that is not arithmetic, and
+# it redirects forty-six reads.
+probe computeReverseSteadySourceTerms \
+    's/Cel &rightCell = state.cells\[cellIndex + 1\];/Cel \&rightCell = state.cells[cellIndex - 1];/' \
+    'alias declaration pointed at the wrong neighbour'
+
 cp "$scratch/pristine.cpp" "$target"
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"

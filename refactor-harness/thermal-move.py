@@ -1652,6 +1652,68 @@ def compare_token_blocks(
     return failures
 
 
+ALIAS_DECLARATION = re.compile(
+    r"^([ \t]*)(?:const )?(?:Cel|CelG|varGlob1D|ProFlu|Ler) &(\w+) = ([^;]+);\n",
+    re.MULTILINE)
+
+
+def expand_aliases(source: str) -> str:
+    """Undo reference aliases, restoring the expression each one stands for.
+
+    The module binds `Cel &cell = state.cells[cellIndex];` at the top of a
+    function and then writes `cell.alf`. A reference is the same object, so this
+    is invisible at runtime -- but it is six tokens against one, and the
+    structural checks compare token streams against baselines written before the
+    aliases existed. Expanding is exact: the declaration says precisely what text
+    the name stood for.
+
+    Expansion is scoped to the function that declares the alias. It has to be:
+    thirty-eight functions declare a `cell`, and a file-wide substitution would
+    let whichever declaration was found first speak for all of them -- so a
+    declaration corrupted to point at the wrong neighbour would be replaced by a
+    correct one from elsewhere and the corruption would vanish before any
+    comparison saw it. calibrate-steady-decomposition.sh injects exactly that,
+    by flipping cellIndex + 1 to cellIndex - 1 in one alias declaration, and
+    requires it to be detected.
+    """
+    lines = source.split("\n")
+    output: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        is_definition = (
+            re.match(r"^[\w:<>*&\[\]][\w\s:<>*&\[\]]*?\b\w+\(", line)
+            and not line.startswith(("//", "/*", " ")))
+        if not is_definition:
+            output.append(line)
+            index += 1
+            continue
+        depth, end, opened = 0, index, False
+        while end < len(lines):
+            depth += lines[end].count("{") - lines[end].count("}")
+            opened = opened or "{" in lines[end]
+            if opened and depth == 0:
+                break
+            end += 1
+        if not opened:
+            output.append(line)
+            index += 1
+            continue
+        body = "\n".join(lines[index:end + 1])
+        for _, name, expression in ALIAS_DECLARATION.findall(body):
+            replacement = expression.strip()
+            if replacement.startswith("*"):
+                replacement = f"({replacement})"
+            body = re.sub(rf"(?<![.\w]){name}\.", replacement + ".", body)
+        body = ALIAS_DECLARATION.sub("", body)
+        body = re.sub(
+            r"^[ \t]*// Aliases, not copies: the same objects under shorter names\.\n",
+            "", body, flags=re.MULTILINE)
+        output.extend(body.split("\n"))
+        index = end + 1
+    return "\n".join(output)
+
+
 def read_current(path: str) -> str:
     """Read the module as the structural checks want to see it.
 
@@ -1660,7 +1722,8 @@ def read_current(path: str) -> str:
     the baseline has statements, so they are put back inline here, in one place,
     rather than in each check.
     """
-    return inline_leaf_helpers(open(path, encoding="utf-8").read())
+    return inline_leaf_helpers(
+        expand_aliases(open(path, encoding="utf-8").read()))
 
 
 LEAF_HELPERS = (
