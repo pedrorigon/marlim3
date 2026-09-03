@@ -240,6 +240,14 @@ struct DistributedMassTransferProperties {
     double cellSolutionGasTemperatureDerivative;
 };
 
+/// Upstream properties seeded at the inlet before the mass-transfer sweep.
+struct InletMassTransferSeed {
+    double liquidDensity;
+    double oilVolumeFactor;
+    double solutionGasRatio;
+    double solutionGasPressureDerivative;
+};
+
 struct DistributedMassTransferCoefficients {
     double activeDerivative;
     double spatialCoupling;

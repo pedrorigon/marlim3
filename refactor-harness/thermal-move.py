@@ -1706,8 +1706,21 @@ def expand_aliases(source: str) -> str:
             index += 1
             continue
         body = "\n".join(lines[index:end + 1])
+        # A name declared twice in one function must stand for the same text
+        # both times. Loop-scoped aliases make that possible to violate: two
+        # loops could bind `cell` to different neighbours, and expanding with
+        # whichever declaration came first would repair one of them out of
+        # existence. Refuse instead of guessing.
+        bindings: dict[str, set[str]] = {}
         for _, name, expression in ALIAS_DECLARATION.findall(body):
-            replacement = expression.strip()
+            bindings.setdefault(name, set()).add(expression.strip())
+        for name, expressions in bindings.items():
+            if len(expressions) > 1:
+                raise ValueError(
+                    f"alias '{name}' is bound to {len(expressions)} different "
+                    f"expressions in one function: {sorted(expressions)}")
+        for name, expressions in bindings.items():
+            replacement = expressions.pop()
             if replacement.startswith("*"):
                 replacement = f"({replacement})"
             body = re.sub(rf"(?<![.\w]){name}\.", replacement + ".", body)
@@ -1716,10 +1729,23 @@ def expand_aliases(source: str) -> str:
         # bare expression where the name now stands, so bare is what matches. A
         # name used inside a larger expression would then tokenise differently
         # from the baseline and be reported -- which is the safe direction.
-        for _, name, expression in NAMED_GUARD.findall(body):
+        # The declarations go FIRST. Substituting the name while its own
+        # declaration is still present rewrites the declaration into nonsense --
+        # `const bool <expr> = <expr>;` -- which then no longer matches the
+        # pattern that would have removed it.
+        guards = NAMED_GUARD.findall(body)
+        names = {name for _, name, _ in guards}
+        for name in names:
+            expressions = {re.sub(r"\s+", " ", e.strip())
+                           for _, n, e in guards if n == name}
+            if len(expressions) > 1:
+                raise ValueError(
+                    f"guard '{name}' is bound to {len(expressions)} different "
+                    f"expressions in one function: {sorted(expressions)}")
+        body = NAMED_GUARD.sub("", body)
+        for _, name, expression in guards:
             body = re.sub(rf"(?<![.\w]){name}\b",
                           re.sub(r"\s+", " ", expression.strip()), body)
-        body = NAMED_GUARD.sub("", body)
         body = re.sub(
             r"^[ \t]*// Aliases, not copies: the same objects under shorter names\.\n",
             "", body, flags=re.MULTILINE)
@@ -1856,7 +1882,7 @@ def check_renova_temp_decomposition(
 
     signatures = {
         "main": r"void updateDistributedMassTransfer\(const ThermalState &state\)",
-        "inlet": r"void initializeDistributedMassTransferInlet\(",
+        "inlet": r"InletMassTransferSeed initializeDistributedMassTransferInlet\(",
         "properties": (
             r"DistributedMassTransferProperties "
             r"prepareDistributedMassTransferProperties\("
@@ -1913,7 +1939,12 @@ def check_renova_temp_decomposition(
         expected_main, inlet_start, inlet_body_end
     )
 
-    inlet_core = function_core(bodies["inlet"][2])
+    # The helper now declares its four results and returns them in a struct,
+    # so the comparison runs between the first real statement and that return.
+    inlet_core = text_between(
+        function_core(bodies["inlet"][2]),
+        "    state.cells[0].transmassLini",
+        "\n    return InletMassTransferSeed{")
     for new_name, old_name in (
         ("previousLiquidDensity", "rhol0"),
         ("previousOilVolumeFactor", "boL"),
@@ -1980,9 +2011,14 @@ def check_renova_temp_decomposition(
         "        } else if (i == 0) {",
         inlet_body_end,
     ) + "\n        }"
-    inlet_plumbing = """        } else if (i == 0)
-            initializeDistributedMassTransferInlet(
-                state, i, rhol0, boL, rsL, DRsBoL);"""
+    inlet_plumbing = """        } else if (i == 0) {
+            const InletMassTransferSeed seed =
+                initializeDistributedMassTransferInlet(state, i);
+            rhol0 = seed.liquidDensity;
+            boL = seed.oilVolumeFactor;
+            rsL = seed.solutionGasRatio;
+            DRsBoL = seed.solutionGasPressureDerivative;
+        }"""
 
     expected_decomposed_main = expected_main.replace(
         expected_properties, property_plumbing, 1

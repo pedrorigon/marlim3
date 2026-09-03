@@ -334,8 +334,8 @@ run_t064_decomposition_case renova-application-rate \
     'leftCell.transmassR *='
 
 run_t064_decomposition_case renova-main-model \
-    'state.cells[cellIndex - 1].TMModel == -2' \
-    'state.cells[cellIndex - 1].TMModel == -3'
+    'leftCell.TMModel == -2' \
+    'leftCell.TMModel == -3'
 
 run_t064_decomposition_case renova-missing-helper \
     'void selectDistributedMassTransferModel(' \
