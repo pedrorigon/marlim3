@@ -138,8 +138,8 @@ queue_case mixture-energy-sign SisProdThermal.cpp \
     'return previousMixtureInternalEnergy + (enthalpyFluxDivergence' caught
 
 queue_case boundary-temperature-write SisProdThermal.cpp \
-    'leftCell.tempR = cell.temp;' \
-    'leftCell.tempR = cell.temp + 1.;' caught
+    $'    if (cellIndex > 0)\n        leftCell.tempR = cell.temp;' \
+    $'    if (cellIndex > 0)\n        leftCell.tempR = cell.temp + 1.;' caught
 
 queue_case outlet-temperature-source SisProdThermal.cpp \
     'state.surfaceTemperature = state.cells[state.lastCell - 1].temp;' \

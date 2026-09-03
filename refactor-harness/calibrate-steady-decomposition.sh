@@ -101,6 +101,14 @@ probe computeSteadyKineticTerm \
     's/double kineticTerm = 0;/const bool kineticTermIsCapped = velocityScale > 0;\n    if (kineticTermIsCapped) { }\n    double kineticTerm = 0;/' \
     'hoisted guard introduced into a march helper'
 
+# Loop-scoped aliases let one function bind the same name twice. If the two
+# bindings ever disagree, expanding with whichever came first would repair one
+# of them out of existence -- the same blind spot as the file-wide expansion,
+# one level down. expand_aliases refuses; this case proves it refuses.
+probe computeSteadySourceTerms \
+    's/Cel &cell = state.cells\[cellIndex\];/Cel \&cell = state.cells[cellIndex];\n    if (cellIndex > 0) { Cel \&cell = state.cells[cellIndex - 1]; (void)cell; }/' \
+    'one alias name bound to two different cells'
+
 cp "$scratch/pristine.cpp" "$target"
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"
