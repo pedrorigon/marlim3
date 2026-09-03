@@ -2466,8 +2466,44 @@ void applyNoSlipClosure(const ThermalState &state, int cellIndex, double term1,
     cell.arranjo = 0;
 }
 
-void selectAndApplyInletBoundaryFlowRegime(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
+/// The two inlet regime selectors differ in three places only; each policy
+/// supplies those three and shares everything else.
+struct InletBoundaryRegime {
+    static void applyInletOverrides(const ThermalState &state, int cellIndex,
+                                    int &branchFlag, double superficialGasVelocity,
+                                    double superficialLiquidVelocity) {
+        varGlob1D &globals = *state.globals;
+        if (superficialLiquidVelocity >= 0 && state.inletVoidFraction > 1 - globals.localtiny) {
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
+        }
+        if (superficialGasVelocity >= 0 && state.inletVoidFraction < globals.localtiny) {
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
+        }
+    }
+
+    static void updateClosure(const ThermalState &state, int cellIndex, double &c0,
+                              double &ud) {
+        state.closureUpdater.initialization(cellIndex, c0, ud);
+        state.cells[cellIndex].c0 = c0;
+        state.cells[cellIndex].ud = ud;
+    }
+};
+
+struct BufferedInletRegime {
+    static void applyInletOverrides(const ThermalState &, int, int &, double, double) {}
+
+    static void updateClosure(const ThermalState &state, int cellIndex, double &c0,
+                              double &ud) {
+        state.closureUpdater.bufferedInitialization(cellIndex, c0, ud);
+    }
+};
+
+/// Chooses the flow regime at the inlet boundary and applies its closure.
+/// `branchFlag` is the caller's bif: an array element for the instantaneous
+/// pass, a local for the buffered one.
+template <typename Regime>
+void selectAndApplyInletRegime(
+    const ThermalState &state, int cellIndex, int &branchFlag, double distributionCoefficient,
     double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity,
     double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea) {
     varGlob1D &globals = *state.globals;
@@ -2476,78 +2512,74 @@ void selectAndApplyInletBoundaryFlowRegime(
         cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
     const bool noLiquidSourceOnEitherFace =
         (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
-    bif[cellIndex] = 1;
+    branchFlag = 1;
 
 
     if (state.inletVoidFraction < globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
-        applyNoSlipClosure(state, cellIndex, 1., bif[cellIndex], distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
                            driftVelocity);
     } else if (state.inletVoidFraction >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif[cellIndex], distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
     } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.localtiny && (noGasSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 1., bif[cellIndex], distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && cell.duto.teta > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - 1 * globals.localtiny) && cell.duto.teta < 0 && superficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 1);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 1);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= state.inletVoidFraction && superficialLiquidVelocity < 0) {
-            bif[cellIndex] = 1;
+            branchFlag = 1;
         }
     } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 1., bif[cellIndex], distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > (1. - globals.localtiny) && superficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > globals.localtiny && superficialLiquidVelocity > 0) {
-            bif[cellIndex] = 1;
+            branchFlag = 1;
         }
     } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif[cellIndex], distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
         } else if (fabs(rightSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.fontemassGR >= globals.localtiny * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
             }
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.localtiny + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.localtiny) || cell.alfPigE <= 0.7))
-            bif[cellIndex] = 1;
+            branchFlag = 1;
 
     } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif[cellIndex], distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
         }
 
         if (fabs(rightSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
             }
         } else {
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
-                bif[cellIndex] = 1;
+                branchFlag = 1;
             else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
-                bif[cellIndex] = 1;
+                branchFlag = 1;
         }
     }
     if (superficialLiquidVelocity > 0 && fabs(superficialGasVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction > globals.localtiny && state.inletVoidFraction < 1 - globals.localtiny)
-        bif[cellIndex] = 1;
+        branchFlag = 1;
     if (superficialGasVelocity > 0 && fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction > globals.localtiny && state.inletVoidFraction < 1 - globals.localtiny)
-        bif[cellIndex] = 1;
-    if (superficialLiquidVelocity >= 0 && state.inletVoidFraction > 1 - globals.localtiny) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
-    }
-    if (superficialGasVelocity >= 0 && state.inletVoidFraction < globals.localtiny) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
-    }
+        branchFlag = 1;
+    Regime::applyInletOverrides(state, cellIndex, branchFlag,
+                                superficialGasVelocity, superficialLiquidVelocity);
 
-    if (bif[cellIndex] == 1) {
+    if (branchFlag == 1) {
 
         double c0;
         double ud;
@@ -2559,15 +2591,24 @@ void selectAndApplyInletBoundaryFlowRegime(
             rightLiquidDensity, meanVoidFraction);
         c0 = slug.c0;
         ud = slug.ud;
-        state.closureUpdater.initialization(cellIndex, c0, ud);
-        cell.c0 = c0;
-        cell.ud = ud;
+        Regime::updateClosure(state, cellIndex, c0, ud);
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
         cell.term1 = numerator / denominator;
         cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
     }
 }
+
+void selectAndApplyInletBoundaryFlowRegime(
+    const ThermalState &state, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity,
+    double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea) {
+    selectAndApplyInletRegime<InletBoundaryRegime>(
+        state, cellIndex, bif[cellIndex], distributionCoefficient, driftVelocity,
+        superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
+        rightGasDensity, rightLiquidDensity, gasDensity, liquidDensity, flowArea);
+}
+
 
 void selectAndApplyBufferedOutletFlowRegime(
     const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
@@ -2687,96 +2728,11 @@ void selectAndApplyBufferedInletFlowRegime(
     const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity, double rightLiquidDensity,
     double gasDensity, double liquidDensity, double flowArea) {
-    varGlob1D &globals = *state.globals;
-    Cel &cell = state.cells[cellIndex];
-    const bool noGasSourceOnEitherFace =
-        cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
-    const bool noLiquidSourceOnEitherFace =
-        (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
     int bif = 1;
-
-
-    if (state.inletVoidFraction < globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
-        applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
-                           driftVelocity);
-    } else if (state.inletVoidFraction >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
-                           driftVelocity);
-    } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.localtiny && (noGasSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
-                           driftVelocity);
-        if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && cell.duto.teta > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif, 0);
-        }
-        if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - 1 * globals.localtiny) && cell.duto.teta < 0 && superficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif, 1);
-        }
-        if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= state.inletVoidFraction && superficialLiquidVelocity < 0) {
-            bif = 1;
-        }
-    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
-                           driftVelocity);
-        if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > (1. - globals.localtiny) && superficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif, 0);
-        }
-        if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > globals.localtiny && superficialLiquidVelocity > 0) {
-            bif = 1;
-        }
-    } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
-                           driftVelocity);
-        if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
-        } else if (fabs(rightSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.fontemassGR >= globals.localtiny * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
-            }
-        } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.localtiny + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.localtiny) || cell.alfPigE <= 0.7))
-            bif = 1;
-
-    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
-                           driftVelocity);
-        if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
-        }
-
-        if (fabs(rightSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
-            }
-        } else {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
-                bif = 1;
-            else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
-                bif = 1;
-        }
-    }
-    if (superficialLiquidVelocity > 0 && fabs(superficialGasVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction > globals.localtiny && state.inletVoidFraction < 1 - globals.localtiny)
-        bif = 1;
-    if (superficialGasVelocity > 0 && fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction > globals.localtiny && state.inletVoidFraction < 1 - globals.localtiny)
-        bif = 1;
-
-    if (bif == 1) {
-
-        double c0;
-        double ud;
-        double meanVoidFraction;
-
-        meanVoidFraction = state.inletVoidFraction;
-        const SlugClosure slug = applySlugDriftClosure(
-            state, cellIndex, superficialGasVelocity, rightGasDensity,
-            rightLiquidDensity, meanVoidFraction);
-        c0 = slug.c0;
-        ud = slug.ud;
-        state.closureUpdater.bufferedInitialization(cellIndex, c0, ud);
-
-        double numerator = (1. - meanVoidFraction * c0);
-        double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
-        cell.term1 = numerator / denominator;
-        cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
-    }
+    selectAndApplyInletRegime<BufferedInletRegime>(
+        state, cellIndex, bif, distributionCoefficient, driftVelocity,
+        superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
+        rightGasDensity, rightLiquidDensity, gasDensity, liquidDensity, flowArea);
 }
 
 }  // namespace
