@@ -64,7 +64,10 @@ base = open(sys.argv[1], encoding='utf-8').read()
 # control already makes for the four helpers each march was split into. The
 # inliner raises if a listed helper stops being called, so the control cannot
 # quietly start comparing code it no longer covers.
-cur = tm.inline_leaf_helpers(cur)
+# Reference aliases are expanded before anything else: `cell.alf` is the same
+# object as state.cells[cellIndex].alf at runtime but six tokens fewer here, and
+# the baseline predates them.
+cur = tm.inline_leaf_helpers(tm.expand_aliases(cur))
 cur, cur_anchors = tm.strip_debug_anchors(cur)
 base, base_anchors = tm.strip_debug_anchors(base)
 print(f"NOTE     ancoras de breakpoint normalizadas: {base_anchors} no baseline, "

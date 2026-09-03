@@ -266,8 +266,8 @@ PY
 # The mass-source tail is textually identical in both source helpers, so the
 # mutation targets a line unique to the T063 one.
 run_t063_decomposition_case mass-source-helper \
-    'sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injg.FluidoPro.ConstAdG(state.cells[cellIndex].pres, state.cells[cellIndex].temp);' \
-    'sourceSpecificHeatRatio = state.cells[cellIndex].acsr.injg.FluidoPro.ConstAdG(state.cells[cellIndex].presini, state.cells[cellIndex].temp);'
+    'sourceSpecificHeatRatio = cell.acsr.injg.FluidoPro.ConstAdG(cell.pres, cell.temp);' \
+    'sourceSpecificHeatRatio = cell.acsr.injg.FluidoPro.ConstAdG(cell.presini, cell.temp);'
 
 run_t063_decomposition_case mass-source-main \
     'sourceTerms.liquid + sourceTerms.gas + heatFlux' \
@@ -330,8 +330,8 @@ run_t064_decomposition_case renova-model-threshold \
     'leftAbsoluteSuperficialVelocity <= 0.1)'
 
 run_t064_decomposition_case renova-application-rate \
-    'state.cells[cellIndex - 1].transmassR /=' \
-    'state.cells[cellIndex - 1].transmassR *='
+    'leftCell.transmassR /=' \
+    'leftCell.transmassR *='
 
 run_t064_decomposition_case renova-main-model \
     'state.cells[cellIndex - 1].TMModel == -2' \
