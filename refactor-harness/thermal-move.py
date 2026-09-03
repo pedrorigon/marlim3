@@ -1656,6 +1656,12 @@ ALIAS_DECLARATION = re.compile(
     r"^([ \t]*)(?:const )?(?:Cel|CelG|varGlob1D|ProFlu|Ler) &(\w+) = ([^;]+);\n",
     re.MULTILINE)
 
+# A guard hoisted out of a chain: `const bool useTabulatedPvt = <expr>;`, used
+# where the expression itself used to be. Like an alias it is invisible at
+# runtime but collapses many tokens into one, and the baselines predate it.
+NAMED_GUARD = re.compile(
+    r"^([ \t]*)const bool (\w+) =\s*([^;]+);\n", re.MULTILINE)
+
 
 def expand_aliases(source: str) -> str:
     """Undo reference aliases, restoring the expression each one stands for.
@@ -1706,6 +1712,14 @@ def expand_aliases(source: str) -> str:
                 replacement = f"({replacement})"
             body = re.sub(rf"(?<![.\w]){name}\.", replacement + ".", body)
         body = ALIAS_DECLARATION.sub("", body)
+        # Named guards expand WITHOUT added parentheses: the baseline carries the
+        # bare expression where the name now stands, so bare is what matches. A
+        # name used inside a larger expression would then tokenise differently
+        # from the baseline and be reported -- which is the safe direction.
+        for _, name, expression in NAMED_GUARD.findall(body):
+            body = re.sub(rf"(?<![.\w]){name}\b",
+                          re.sub(r"\s+", " ", expression.strip()), body)
+        body = NAMED_GUARD.sub("", body)
         body = re.sub(
             r"^[ \t]*// Aliases, not copies: the same objects under shorter names\.\n",
             "", body, flags=re.MULTILINE)
@@ -1733,6 +1747,7 @@ LEAF_HELPERS = (
     "clearDriftClosure",
     "clearSourceSpecificHeats",
     "applyNoSlipClosure",
+    "snapshotMassTransferState",
 )
 
 
@@ -1934,19 +1949,15 @@ def check_renova_temp_decomposition(
     property_plumbing = """            DistributedMassTransferProperties properties =
                 prepareDistributedMassTransferProperties(
                     state, i, tmed, flue, flud);
-            double fwd = properties.downstreamWaterFraction;
-            double fwe = properties.upstreamWaterFraction;
             double fwC = properties.cellWaterFraction;
             double rl = properties.liquidDensity;
             double rg = properties.gasDensity;
             double betI = properties.downstreamComposition;
-            double betL = properties.upstreamComposition;
             double rhol = properties.mixtureLiquidDensity;
             double boR = properties.downstreamOilVolumeFactor;
             double rsR = properties.downstreamSolutionGasRatio;
             double DRsBoR =
                 properties.downstreamSolutionGasPressureDerivative;
-            double boM = properties.cellOilVolumeFactor;
             double rsM = properties.cellSolutionGasRatio;
             double DRsBoM = properties.cellSolutionGasPressureDerivative;
             double DRsBoMT =
@@ -1961,8 +1972,7 @@ def check_renova_temp_decomposition(
 
 """
     application_plumbing = """            applyDistributedMassTransferModel(
-                state, i, tmed, tmedL, ABSjL, flue, flud, fwd, fwe,
-                fwC, betI, betL, rhol, boR, rsR, DRsBoR, boM, rsM,
+                state, i, tmed, tmedL, ABSjL, flue, flud, properties,
                 ativa, acop, A1, rhol0, boL, rsL, DRsBoL);
 """
     inlet_branch = text_between(

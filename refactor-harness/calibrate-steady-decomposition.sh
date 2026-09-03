@@ -92,6 +92,15 @@ probe computeReverseSteadySourceTerms \
     's/Cel &rightCell = state.cells\[cellIndex + 1\];/Cel \&rightCell = state.cells[cellIndex - 1];/' \
     'alias declaration pointed at the wrong neighbour'
 
+# expand_aliases also expands hoisted guards -- `const bool name = <expr>;` used
+# where the expression used to be. Same hazard as the alias: an expansion that is
+# not scoped to the declaring function lets one declaration speak for all. The
+# corruption flips the comparison in the DECLARATION, which is a line that never
+# reads like arithmetic, and changes every site the name covers.
+probe computeSteadyKineticTerm \
+    's/double kineticTerm = 0;/const bool kineticTermIsCapped = velocityScale > 0;\n    if (kineticTermIsCapped) { }\n    double kineticTerm = 0;/' \
+    'hoisted guard introduced into a march helper'
+
 cp "$scratch/pristine.cpp" "$target"
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"
