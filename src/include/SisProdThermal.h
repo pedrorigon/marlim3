@@ -43,11 +43,8 @@ struct ThermalEvolutionUpdater {
     void renew() const;
 };
 
-/// State read by the first thermal kernels extracted from SProd.
-///
-/// This context grows only when a moved function demonstrates another state
-/// dependency. Keeping the cell array, input deck and latent-heat table named
-/// here lets the module be called without granting it access to all of SProd.
+/// The slice of SProd's state this module reads, so it can be called without
+/// access to all of SProd.
 struct ThermalState {
     Cel *cells;
     CelG *gasCells;
@@ -169,13 +166,8 @@ void updateProductionTemperaturePeriphery(const ThermalState &state,
 void computeOutletTemperature(const ThermalState &state);
 
 
-// ---------------------------------------------------------------------------
-// Values passed between the kernels inside SisProdThermal.cpp.
-//
-// These are not part of the module's interface -- no caller outside the .cpp
-// constructs or reads them. They live here so the shape of the data can be read
-// without reading the arithmetic that fills it.
-// ---------------------------------------------------------------------------
+// Values passed between the kernels inside SisProdThermal.cpp. Not part of the
+// module's interface -- nothing outside the .cpp constructs or reads them.
 
 /// The enthalpy the source term carries into the cell, and the temperature it
 /// arrives at. Produced by the accessory dispatch in sourceEnthalpyOf.
@@ -188,10 +180,8 @@ struct SourceEnthalpy {
     double hcF;
 };
 
-/// Cell geometry and the superficial velocities the two preparation steps start
-/// from. The velocities come from this cell unless the upstream neighbour is a
-/// choke throttled below the active-area ratio, in which case they come from
-/// the cell downstream.
+/// Cell geometry and superficial velocities. They come from this cell unless the
+/// upstream neighbour is a throttled choke, in which case from the downstream one.
 struct CellFlowBasis {
     double flowArea;
     double voidFraction;

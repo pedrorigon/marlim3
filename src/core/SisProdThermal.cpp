@@ -12,19 +12,12 @@ namespace sisprod::thermal {
 
 namespace {
 
-/// Locates the interval of a monotonically increasing table axis that brackets
-/// `value`, by bisection. Returns the index of the interval's lower end.
+/// Bisects a monotonically increasing table axis, returning the lower end of the
+/// interval bracketing `value`. `axis(i)` yields the i-th coordinate.
 ///
-/// `axis(i)` yields the i-th coordinate; `divisionCount` is the number of
-/// intervals, so valid coordinates run 1..divisionCount + 1.
-///
-/// `descendProbeOffset` selects which coordinate the descend test probes:
-/// 0 for the pressure axes, -1 for the temperature axis. The two are not
-/// interchangeable -- they choose different intervals at the grid points -- so
-/// callers must pass the offset their axis was tabulated with.
-///
-/// Do not rewrite the midpoint as std::midpoint or relax the == guards: both
-/// change which index comes back on exact grid points.
+/// `descendProbeOffset` is 0 for the pressure axes and -1 for the temperature
+/// axis; they pick different intervals at grid points, so it is not optional.
+/// The midpoint and the == guards must stay as written for the same reason.
 template <typename Axis>
 [[nodiscard]] int bracketingIndex(double value, int divisionCount, Axis &&axis,
                                   int descendProbeOffset) {
@@ -81,7 +74,6 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
 }
 
 [[nodiscard]] SourceEnthalpy sourceEnthalpyOf(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double sourceTemperature = cell.temp;
@@ -169,14 +161,10 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
                           .hcF = hcF};
 }
 
-/// Whether the accessory on this cell forces a pressure discontinuity across
-/// it, so the downstream pressure must be extrapolated rather than read.
-///
-/// True for a choke throttled to the active-area ratio, for a running pump of
-/// any of the three kinds, and for a device with a prescribed pressure drop.
+/// Whether the accessory forces a pressure discontinuity, so the downstream
+/// pressure must be extrapolated rather than read.
 [[nodiscard]] bool accessoryImposesPressureJump(const ThermalState &state,
                                                 int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     return (cell.acsr.tipo == kAccessoryChoke &&
             cell.acsr.chk.AreaGarg <=
@@ -186,8 +174,6 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
             cell.acsr.bcs.freq > 0) ||
            (cell.acsr.tipo == kAccessoryVolumetricPump &&
             cell.acsr.bvol.freq > 0.) ||
-           // 7 has no name in acessorios.h; the header's numbering is already
-           // known to disagree with the code elsewhere, so it is left as read.
            (cell.acsr.tipo == 7 &&
             fabs(cell.acsr.delp) > 0.) ||
            (cell.acsr.tipo == kAccessoryMultiPump &&
@@ -195,7 +181,6 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
 }
 
 double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -296,7 +281,6 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
 }
 
 double interpolateMixtureEnergy(const ThermalState &state, int cellIndex, int pressureIndex, int temperatureIndex, double pressureRatio) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     int nextPressureIndex = pressureIndex + 1;
 
@@ -333,7 +317,6 @@ double interpolateMixtureEnergy(const ThermalState &state, int cellIndex, int pr
 }
 
 void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     double pressure = cell.pres;
     double **propertyTable = cell.flui.rholF;
@@ -341,11 +324,6 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
     int pressureIndex = 0;
     int divisionCount = cell.flui.npontos - 1;
     if (pressure < propertyTable[1][0] || pressure >= propertyTable[divisionCount + 1][0]) {
-        // Reported as a diagnostic and nothing else. It used to be followed by
-        // getchar(), which blocks waiting for a keypress: in a batch run that is
-        // a hang, not a diagnostic. Removed with the owner's authorisation. The
-        // branch has never fired -- no demo model executes this function, which
-        // is why it survived this long.
         cout << "pressure outside the table bounds";
     }
 
@@ -376,9 +354,7 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex) {
 namespace {
 
 [[nodiscard]] CellFlowBasis cellFlowBasisOf(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -422,7 +398,6 @@ namespace {
 TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
                                              int cellIndex,
                                              int steadyStateMode) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double cellLength = cell.dx;
@@ -535,7 +510,6 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
 
 double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
                                      TemperatureBalance &balance) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -632,7 +606,6 @@ void clearSourceSpecificHeats(double &sourceGasSpecificHeat,
 TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                                                       int cellIndex,
                                                       double cellLength) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasMassSourceTerm = 0.;
@@ -765,7 +738,6 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
 
 TemperatureSourceTerms computeThermalMassTransferSourceTerms(
     const ThermalState &state, int cellIndex, double cellLength) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasMassSourceTerm = 0.;
@@ -865,9 +837,7 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
 }  // namespace
 
 void computeTemperature(const ThermalState &state, int cellIndex, double previousTemperature, int steadyMode) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -985,9 +955,7 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
 }
 
 void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -1155,7 +1123,6 @@ void initializeDistributedMassTransferInlet(
     double &previousLiquidDensity, double &previousOilVolumeFactor,
     double &previousSolutionGasRatio,
     double &previousSolutionGasPressureDerivative) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     state.cells[0].transmassLini = state.cells[0].transmassL;
     state.cells[0].transmassL = 0.;
@@ -1212,9 +1179,12 @@ void initializeDistributedMassTransferInlet(
 DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     const ThermalState &state, int cellIndex, double meanTemperature, ProFlu &flue,
     ProFlu &flud) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
+    const bool useTabulatedPvt =
+        state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0;
+    const bool cellHasNegativeInitialLiquidMass = cell.Mliqini < 0;
+    const bool upstreamHasNegativeInitialLiquidMass = leftCell.Mliqini < 0;
     double downstreamWaterFraction;
     double upstreamWaterFraction;
     double cellOilFormationVolumeFactor = leftCell.flui.BOFunc(
@@ -1237,7 +1207,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             leftCell.pres, leftCell.temp);
         downstreamWaterFraction = flud.BSW * downstreamWaterFormationVolumeFactor / (downstreamOilFormationVolumeFactor + downstreamWaterFormationVolumeFactor * flud.BSW - flud.BSW * downstreamOilFormationVolumeFactor);
     }
-    if (leftCell.Mliqini < 0) {
+    if (upstreamHasNegativeInitialLiquidMass) {
         flue = leftCell.flui;
         double upstreamOilFormationVolumeFactor = flue.BOFunc(
             leftCell.pres, leftCell.temp);
@@ -1272,7 +1242,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     // casoComp
 
     liquidDensity = flud.MasEspLiq(cell.presaux, meanTemperature);
-    if (cell.Mliqini < 0)
+    if (cellHasNegativeInitialLiquidMass)
         betI = cell.bet; // testeBeta
     else
         betI = cell.betL;
@@ -1280,16 +1250,16 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     gasDensity = flud.MasEspGas(cell.presaux, meanTemperature);
 
     double betL = leftCell.betL;
-    if (leftCell.Mliqini < 0)
+    if (upstreamHasNegativeInitialLiquidMass)
         betL = leftCell.bet; // testeBeta
 
     if (cellIndex > 0)
         betI = leftCell.betPigD;
-    if (cell.Mliqini < 0)
+    if (cellHasNegativeInitialLiquidMass)
         betI = cell.betPigE; // testeBeta
     if (cellIndex > 1)
         betL = state.cells[cellIndex - 2].betPigD;
-    if (leftCell.Mliqini < 0)
+    if (upstreamHasNegativeInitialLiquidMass)
         betL = leftCell.betPigE; // testebeta
 
     double mixtureLiquidDensity = (1 - betI) * liquidDensity +
@@ -1299,7 +1269,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     double downstreamSolutionGasRatio;
     double previousDownstreamOilVolumeFactor;
     double previousDownstreamSolutionGasRatio;
-    if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
+    if (useTabulatedPvt) {
         downstreamOilVolumeFactor = flud.BOFunc(cell.presaux, meanTemperature);
         downstreamSolutionGasRatio = flud.RS(cell.presaux, meanTemperature);
         previousDownstreamOilVolumeFactor = flud.BOFunc(cell.presaux * kDerivativePerturbationFactor, meanTemperature);
@@ -1320,7 +1290,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     double cellSolutionGasRatio;
     double previousCellOilVolumeFactor;
     double previousCellSolutionGasRatio;
-    if (state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0) {
+    if (useTabulatedPvt) {
         cellOilVolumeFactor = leftCell.flui.BOFunc(
             leftCell.pres, leftCell.temp);
         cellSolutionGasRatio = leftCell.flui.RS(
@@ -1351,8 +1321,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     double shiftedCellSolutionGasRatio = 0.;
     double cellSolutionGasTemperatureDerivative = 0;
     if (state.input.cicloAcopTerm == 1) {
-        if (state.input.flashCompleto != 2 ||
-            state.input.miniTabAtraso > 0) {
+        if (useTabulatedPvt) {
             shiftedCellOilVolumeFactor = leftCell.flui.BOFunc(
                 leftCell.pres,
                 leftCell.temp * kDerivativePerturbationFactor);
@@ -1397,18 +1366,13 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     };
 }
 
-/// The solution-gas pressure derivative recomputed on the LAST cell.
+/// The solution-gas pressure derivative recomputed on the LAST cell. Not pure:
+/// BOFunc and RS run against the cell's own fluid object.
 ///
-/// Not pure: BOFunc and RS run against the cell's own fluid object. The
-/// compositional path perturbs a copy, so the cell keeps whatever those leave
-/// behind.
-///
-/// Known defect: the DTransDtT caller calls this and then scales by the
-/// temperature derivative instead, discarding the result. Fixing it changes
-/// results and is left to the model owner.
+/// Known defect: the DTransDtT caller discards this and scales by the
+/// temperature derivative instead.
 [[nodiscard]] double lastCellSolutionGasPressureDerivative(const ThermalState &state,
                                                            int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     double cellOilVolumeFactor;
     double cellSolutionGasRatio;
@@ -1448,9 +1412,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
 DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
     const ThermalState &state, int cellIndex, double cellWaterFraction, const ProFlu &flud,
     double cellSolutionGasPressureDerivative, double cellSolutionGasTemperatureDerivative) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
-    // Aliases, not copies: the same objects under shorter names.
     Cel &leftCell = state.cells[cellIndex - 1];
     double activeDerivative = 1.;
     double pressureLimit = 10;
@@ -1485,9 +1447,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
             kAirDensityAtStandardConditions * cellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
         cell.DTransDtTL = leftCell.DTransDtT;
         if (cellIndex == state.lastCell) {
-            // Computed and then NOT used: the assignment below reaches for the
-            // caller's temperature derivative. Kept because the call is not pure --
-            // BOFunc and RS run against the cell's own fluid object.
+            // Not used: the assignment below reaches for the temperature derivative.
             [[maybe_unused]] const double recomputedPressureDerivative =
                 lastCellSolutionGasPressureDerivative(state, cellIndex);
             cell.DTransDtT =
@@ -1507,7 +1467,6 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
 void selectDistributedMassTransferModel(
     const ThermalState &state, int cellIndex, double &meanTemperature, double &leftMeanTemperature,
     double leftAbsoluteSuperficialVelocity) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     meanTemperature = leftCell.temp;
@@ -1561,20 +1520,10 @@ void selectDistributedMassTransferModel(
         cell.FonteMudaFase = 0.;
 }
 
-void applyDistributedMassTransferModel(
-    const ThermalState &state, int cellIndex, double &meanTemperature, double &leftMeanTemperature,
-    double leftAbsoluteSuperficialVelocity, const ProFlu &flue, const ProFlu &flud, double downstreamWaterFraction,
-    double upstreamWaterFraction, double cellWaterFraction, double betI, double betL, double liquidDensity,
-    double downstreamOilVolumeFactor, double downstreamSolutionGasRatio, double downstreamSolutionGasPressureDerivative, double cellOilVolumeFactor, double cellSolutionGasRatio,
-    double activeDerivative, double spatialCoupling, double coefficientFlowArea, double previousMixtureLiquidDensity, double upstreamOilVolumeFactor,
-    double upstreamSolutionGasRatio, double upstreamSolutionGasPressureDerivative) {
-    // Aliases, not copies: the same objects under shorter names.
+/// Copies the mass-transfer state of the face into its *ini counterparts.
+void snapshotMassTransferState(const ThermalState &state, int cellIndex) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
-    selectDistributedMassTransferModel(state, cellIndex, meanTemperature, leftMeanTemperature, leftAbsoluteSuperficialVelocity);
-
-    leftCell.fontedissolv = 0.;
-
     leftCell.transmassRini = leftCell.transmassR;
     leftCell.FonteMudaFaseini =
         leftCell.FonteMudaFase;
@@ -1588,6 +1537,33 @@ void applyDistributedMassTransferModel(
     leftCell.coefTransBetini =
         leftCell.coefTransBet;
     cell.transmassLini = cell.transmassL;
+}
+
+void applyDistributedMassTransferModel(
+    const ThermalState &state, int cellIndex, double &meanTemperature, double &leftMeanTemperature,
+    double leftAbsoluteSuperficialVelocity, const ProFlu &flue, const ProFlu &flud,
+    const DistributedMassTransferProperties &properties,
+    double activeDerivative, double spatialCoupling, double coefficientFlowArea, double previousMixtureLiquidDensity, double upstreamOilVolumeFactor,
+    double upstreamSolutionGasRatio, double upstreamSolutionGasPressureDerivative) {
+    const double downstreamWaterFraction = properties.downstreamWaterFraction;
+    const double upstreamWaterFraction = properties.upstreamWaterFraction;
+    const double cellWaterFraction = properties.cellWaterFraction;
+    const double betI = properties.downstreamComposition;
+    const double betL = properties.upstreamComposition;
+    const double liquidDensity = properties.mixtureLiquidDensity;
+    const double downstreamOilVolumeFactor = properties.downstreamOilVolumeFactor;
+    const double downstreamSolutionGasRatio = properties.downstreamSolutionGasRatio;
+    const double downstreamSolutionGasPressureDerivative =
+        properties.downstreamSolutionGasPressureDerivative;
+    const double cellOilVolumeFactor = properties.cellOilVolumeFactor;
+    const double cellSolutionGasRatio = properties.cellSolutionGasRatio;
+    Cel &cell = state.cells[cellIndex];
+    Cel &leftCell = state.cells[cellIndex - 1];
+    selectDistributedMassTransferModel(state, cellIndex, meanTemperature, leftMeanTemperature, leftAbsoluteSuperficialVelocity);
+
+    leftCell.fontedissolv = 0.;
+
+    snapshotMassTransferState(state, cellIndex);
 
     cell.TMModelL = leftCell.TMModel;
     leftCell.FonteMudaFase = 0.;
@@ -1740,13 +1716,8 @@ void applyDistributedMassTransferModel(
 }  // namespace
 
 /// Zeroes every mass-transfer derivative on the face between cellIndex - 1 and
-/// cellIndex.
-///
-/// The transmass value itself is not set here: callers assign it, and they do
-/// not all assign the same thing. Two nearby blocks zero only a subset of these
-/// fields and are not callers.
+/// cellIndex. The transmass value itself is left to the caller.
 void clearMassTransferDerivatives(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     cell.DTransDxR = 0.;
@@ -1807,19 +1778,15 @@ void updateDistributedMassTransfer(const ThermalState &state) {
             DistributedMassTransferProperties properties =
                 prepareDistributedMassTransferProperties(
                     state, cellIndex, meanTemperature, upstreamFluid, downstreamFluid);
-            double downstreamWaterFraction = properties.downstreamWaterFraction;
-            double upstreamWaterFraction = properties.upstreamWaterFraction;
             double cellWaterFraction = properties.cellWaterFraction;
             double liquidDensity = properties.liquidDensity;
             double gasDensity = properties.gasDensity;
             double betI = properties.downstreamComposition;
-            double betL = properties.upstreamComposition;
             double mixtureLiquidDensity = properties.mixtureLiquidDensity;
             double downstreamOilVolumeFactor = properties.downstreamOilVolumeFactor;
             double downstreamSolutionGasRatio = properties.downstreamSolutionGasRatio;
             double downstreamSolutionGasPressureDerivative =
                 properties.downstreamSolutionGasPressureDerivative;
-            double cellOilVolumeFactor = properties.cellOilVolumeFactor;
             double cellSolutionGasRatio = properties.cellSolutionGasRatio;
             double cellSolutionGasPressureDerivative = properties.cellSolutionGasPressureDerivative;
             double cellSolutionGasTemperatureDerivative =
@@ -1832,8 +1799,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
             double coefficientFlowArea = coefficients.flowArea;
 
             applyDistributedMassTransferModel(
-                state, cellIndex, meanTemperature, leftMeanTemperature, leftAbsoluteSuperficialVelocity, upstreamFluid, downstreamFluid, downstreamWaterFraction, upstreamWaterFraction,
-                cellWaterFraction, betI, betL, mixtureLiquidDensity, downstreamOilVolumeFactor, downstreamSolutionGasRatio, downstreamSolutionGasPressureDerivative, cellOilVolumeFactor, cellSolutionGasRatio,
+                state, cellIndex, meanTemperature, leftMeanTemperature, leftAbsoluteSuperficialVelocity, upstreamFluid, downstreamFluid, properties,
                 activeDerivative, spatialCoupling, coefficientFlowArea, previousMixtureLiquidDensity, upstreamOilVolumeFactor, upstreamSolutionGasRatio, upstreamSolutionGasPressureDerivative);
             if (state.cells[cellIndex - 1].TMModel == -2) {
                 double hydrateTransportVelocity;
@@ -1890,7 +1856,6 @@ namespace {
     const ThermalState &state, int cellIndex, double superficialGasVelocity,
     double rightGasDensity, double rightLiquidDensity,
     double &meanVoidFraction) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     if (superficialGasVelocity < 0)
         meanVoidFraction = cell.alfPigE;
@@ -1912,7 +1877,6 @@ namespace {
 /// Which face the upstream properties come from, decided by the sign of the gas
 /// flow rate: the left duct and cell when QG >= 0, this cell's duct otherwise.
 [[nodiscard]] UpstreamFaceBasis upstreamFaceBasisOf(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasDensity;
@@ -1932,12 +1896,8 @@ namespace {
                              .noSlipLiquidHoldup = noSlipLiquidHoldup};
 }
 
-/// Sets the flow-partition terms of a cell and the branch flag that records
-/// which regime chose them.
-///
-/// `term1` is 1. when the liquid partition is full and 0. when it is empty;
-/// term2 is always zero here. `branchFlag` is the caller's bif, scalar or
-/// array element.
+/// Sets the flow-partition terms and the branch flag. `term1` is 1. when the
+/// liquid partition is full, 0. when empty.
 void setFlowPartitionTerms(const ThermalState &state, int cellIndex, double term1,
                            int &branchFlag, int flagValue) {
     state.cells[cellIndex].term1 = term1;
@@ -1948,7 +1908,6 @@ void setFlowPartitionTerms(const ThermalState &state, int cellIndex, double term
 /// Clears the drift-flux closure of a cell: unit distribution, no drift
 /// velocity, no flow-pattern label.
 void clearDriftClosure(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     cell.c0 = 1;
     cell.ud = 0;
@@ -1959,18 +1918,21 @@ void selectAndApplyInteriorFlowRegime(
     const ThermalState &state, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
     double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
     double rightGasDensity, double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
+    const bool noGasSourceOnEitherFace =
+        cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
+    const bool noLiquidSourceOnEitherFace =
+        (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
     bif[cellIndex] = 1;
 
 
-    if (leftCell.alfPigD <= globals.localtiny && cell.alfPigE <= globals.localtiny && cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5) {
+    if (leftCell.alfPigD <= globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
         setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
-    } else if (leftCell.alfPigD >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (leftCell.alfPigD >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
     } else if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3)) {
@@ -1978,7 +1940,7 @@ void selectAndApplyInteriorFlowRegime(
         clearDriftClosure(state, cellIndex);
     }
 
-    else if (superficialGasVelocity >= 0 && leftCell.alfPigD <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    else if (superficialGasVelocity >= 0 && leftCell.alfPigD <= globals.localtiny && (noGasSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && leftSuperficialLiquidVelocity < 0 && cell.duto.teta > 0) {
@@ -1990,7 +1952,7 @@ void selectAndApplyInteriorFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= rightCell.alf && rightSuperficialGasVelocity < 0) {
             bif[cellIndex] = 1;
         }
-    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialGasVelocity) <= 1e-15 && leftCell.alfPigD > (1. - globals.localtiny) && superficialLiquidVelocity > 0 && rightSuperficialLiquidVelocity > 0) {
@@ -2002,7 +1964,7 @@ void selectAndApplyInteriorFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && fabs(superficialLiquidVelocity) <= 1e-15 && cell.alf < leftCell.alf && cell.duto.teta > 0) {
             bif[cellIndex] = 1;
         }
-    } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - 1 * globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - 1 * globals.localtiny && (noLiquidSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) { // ATENCAO!!!!!!!!!!!!!!! não teria de ser bifásico, mono-liq só seo ângulo fosse negativo, não?
@@ -2023,7 +1985,7 @@ void selectAndApplyInteriorFlowRegime(
                         cell.alfPigE <= 0.7)))
             bif[cellIndex] = 1;
 
-    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && leftCell.alfPigD < globals.localtiny && leftSuperficialLiquidVelocity > 0) {
@@ -2093,7 +2055,6 @@ void selectAndApplyInteriorFlowRegime(
 
 void updateInteriorFlowPartitionCell(
     const ThermalState &state, int cellIndex, Vcr<int> &bif, Vcr<int> &valv) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -2215,10 +2176,11 @@ void updateInteriorFlowPartitionCell(
 
 void updateOutletBoundaryFlowPartition(
     const ThermalState &state, int cellIndex, Vcr<int> &bif) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
+    const bool noLiquidSourceOnEitherFace =
+        (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
     state.cells[state.lastCell - 1].alfR = state.cells[state.lastCell].alf;
     state.cells[state.lastCell].alfR = state.cells[state.lastCell].alf;
     state.cells[state.lastCell - 1].betR = state.cells[state.lastCell].bet;
@@ -2288,7 +2250,7 @@ void updateOutletBoundaryFlowPartition(
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfL > (1. - globals.localtiny) && superficialLiquidVelocity > 0 && rightSuperficialLiquidVelocity > 0) {
             setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         }
-    } else if (superficialLiquidVelocity >= 0 && leftCell.alf >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity >= 0 && leftCell.alf >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alf < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
@@ -2301,7 +2263,7 @@ void updateOutletBoundaryFlowPartition(
             bif[cellIndex] = 1;
     }
 
-    else if (superficialLiquidVelocity <= 0 && cell.alf >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    else if (superficialLiquidVelocity <= 0 && cell.alf >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && leftCell.alf < globals.localtiny && leftSuperficialLiquidVelocity > 0) {
@@ -2360,6 +2322,29 @@ void updateOutletBoundaryFlowPartition(
     leftCell.term2R = cell.term2;
 }
 
+/// Blends the drift closure of a cell with a neighbour when the two disagree on
+/// inclination or on flow pattern. `blendIndex` is the cell whose c0V/udV entry
+/// the caller is filling.
+void blendNeighbourDriftClosure(const ThermalState &state, int cellIndex,
+                                int neighbourIndex, int blendIndex,
+                                const Vcr<int> &bif,
+                                Vcr<double> &c0V, Vcr<double> &udV) {
+    double inclinationAngle;
+    double leftInclinationAngle;
+    double diameter;
+    double leftDiameter;
+    inclinationAngle = state.cells[cellIndex].duto.teta;
+    leftInclinationAngle = state.cells[neighbourIndex].duto.teta;
+    diameter = state.cells[cellIndex].duto.dia;
+    leftDiameter = state.cells[neighbourIndex].duto.dia;
+    if (((inclinationAngle != leftInclinationAngle) && bif[blendIndex] != 0) ||
+        (state.cells[cellIndex].arranjo != state.cells[blendIndex].arranjo && bif[blendIndex] != 0)) {
+        c0V[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].c0 + state.cells[neighbourIndex].dx * state.cells[neighbourIndex].c0) / (state.cells[cellIndex].dx + state.cells[neighbourIndex].dx);
+        if (inclinationAngle * leftInclinationAngle >= 0)
+            udV[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].ud + state.cells[neighbourIndex].dx * state.cells[neighbourIndex].ud) / (state.cells[cellIndex].dx + state.cells[neighbourIndex].dx);
+    }
+}
+
 void finalizeFlowPartitionTerms(
     const ThermalState &state, const Vcr<int> &bif, const Vcr<int> &valv) {
     int isShutIn = 0;
@@ -2388,34 +2373,14 @@ void finalizeFlowPartitionTerms(
                 if (state.cells[cellIndex].duto.teta * state.cells[neighborIndex].duto.teta >= 0)
                     udV[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].ud + state.cells[neighborIndex].dx * state.cells[neighborIndex].ud) / (state.cells[cellIndex].dx + state.cells[neighborIndex].dx);
             } else if (cellIndex > 2) {
-                double inclinationAngle;
-                double leftInclinationAngle;
-                double diameter;
-                double leftDiameter;
                 if ((state.cells[cellIndex - 1].acsr.tipo == kAccessoryNone && (state.cells[cellIndex - 2].acsr.tipo != kAccessoryChoke || state.cells[cellIndex - 2].acsr.chk.AreaGarg > (1e-3))) &&
                     state.cells[cellIndex].QG >= 0) {
-                    inclinationAngle = state.cells[cellIndex].duto.teta;
-                    leftInclinationAngle = state.cells[cellIndex - 1].duto.teta;
-                    diameter = state.cells[cellIndex].duto.dia;
-                    leftDiameter = state.cells[cellIndex - 1].duto.dia;
-                    if (((inclinationAngle != leftInclinationAngle) && bif[neighborIndex] != 0) ||
-                        (state.cells[cellIndex].arranjo != state.cells[neighborIndex].arranjo && bif[neighborIndex] != 0)) {
-                        c0V[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].c0 + state.cells[cellIndex - 1].dx * state.cells[cellIndex - 1].c0) / (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
-                        if (inclinationAngle * leftInclinationAngle >= 0)
-                            udV[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].ud + state.cells[cellIndex - 1].dx * state.cells[cellIndex - 1].ud) / (state.cells[cellIndex].dx + state.cells[cellIndex - 1].dx);
-                    }
+                blendNeighbourDriftClosure(state, cellIndex, cellIndex - 1,
+                                           neighborIndex, bif, c0V, udV);
                 } else if ((state.cells[cellIndex + 1].acsr.tipo == kAccessoryNone && (state.cells[cellIndex].acsr.tipo != kAccessoryChoke || state.cells[cellIndex].acsr.chk.AreaGarg > (1e-3))) &&
                            state.cells[cellIndex].QG < 0) {
-                    inclinationAngle = state.cells[cellIndex].duto.teta;
-                    leftInclinationAngle = state.cells[cellIndex + 1].duto.teta;
-                    diameter = state.cells[cellIndex].duto.dia;
-                    leftDiameter = state.cells[cellIndex + 1].duto.dia;
-                    if (((inclinationAngle != leftInclinationAngle) && bif[neighborIndex] != 0) ||
-                        (state.cells[cellIndex].arranjo != state.cells[neighborIndex].arranjo && bif[neighborIndex] != 0)) {
-                        c0V[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].c0 + state.cells[cellIndex + 1].dx * state.cells[cellIndex + 1].c0) / (state.cells[cellIndex].dx + state.cells[cellIndex + 1].dx);
-                        if (inclinationAngle * leftInclinationAngle >= 0)
-                            udV[cellIndex] = (state.cells[cellIndex].dx * state.cells[cellIndex].ud + state.cells[cellIndex + 1].dx * state.cells[cellIndex + 1].ud) / (state.cells[cellIndex].dx + state.cells[cellIndex + 1].dx);
-                    }
+                blendNeighbourDriftClosure(state, cellIndex, cellIndex + 1,
+                                           neighborIndex, bif, c0V, udV);
                 }
             }
         }
@@ -2485,18 +2450,13 @@ void finalizeFlowPartitionTerms(
     }
 }
 
-/// Collapses a cell onto the no-slip closure: no drift, no distribution, no
-/// flow-pattern label.
+/// Collapses a cell onto the no-slip closure. `term1` is 1. for single-phase
+/// liquid, 0. for single-phase gas.
 ///
-/// `term1` is 1. when the cell is single-phase liquid, 0. when single-phase
-/// gas. `branchFlag` is the caller's bif, scalar or array element.
-///
-/// Do not fold the two products to 1 and 0: under IEEE-754, 0 * x is NaN for
-/// non-finite x, and the build does not enable -ffast-math.
+/// Do not fold the two products to 1 and 0: 0 * x is NaN for non-finite x.
 void applyNoSlipClosure(const ThermalState &state, int cellIndex, double term1,
                         int &branchFlag, double distributionCoefficient,
                         double driftVelocity) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     cell.term1 = term1;
     cell.term2 = 0.;
@@ -2510,19 +2470,22 @@ void selectAndApplyInletBoundaryFlowRegime(
     const ThermalState &state, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
     double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity,
     double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
+    const bool noGasSourceOnEitherFace =
+        cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
+    const bool noLiquidSourceOnEitherFace =
+        (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
     bif[cellIndex] = 1;
 
 
-    if (state.inletVoidFraction < globals.localtiny && cell.alfPigE <= globals.localtiny && cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5) {
+    if (state.inletVoidFraction < globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
         applyNoSlipClosure(state, cellIndex, 1., bif[cellIndex], distributionCoefficient,
                            driftVelocity);
-    } else if (state.inletVoidFraction >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (state.inletVoidFraction >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif[cellIndex], distributionCoefficient,
                            driftVelocity);
-    } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.localtiny && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., bif[cellIndex], distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && cell.duto.teta > 0) {
@@ -2534,7 +2497,7 @@ void selectAndApplyInletBoundaryFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= state.inletVoidFraction && superficialLiquidVelocity < 0) {
             bif[cellIndex] = 1;
         }
-    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., bif[cellIndex], distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > (1. - globals.localtiny) && superficialLiquidVelocity > 0) {
@@ -2543,7 +2506,7 @@ void selectAndApplyInletBoundaryFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > globals.localtiny && superficialLiquidVelocity > 0) {
             bif[cellIndex] = 1;
         }
-    } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif[cellIndex], distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
@@ -2555,7 +2518,7 @@ void selectAndApplyInletBoundaryFlowRegime(
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.localtiny + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.localtiny) || cell.alfPigE <= 0.7))
             bif[cellIndex] = 1;
 
-    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif[cellIndex], distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
@@ -2611,18 +2574,21 @@ void selectAndApplyBufferedOutletFlowRegime(
     double superficialGasVelocity, double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity,
     double rightSuperficialLiquidVelocity, double rightGasDensity, double rightLiquidDensity, double gasDensity, double liquidDensity,
     double flowArea) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
+    const bool noGasSourceOnEitherFace =
+        cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
+    const bool noLiquidSourceOnEitherFace =
+        (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
     int bif = 1;
 
 
-    if (leftCell.alfPigD <= globals.localtiny && cell.alfPigE <= globals.localtiny && cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5) {
+    if (leftCell.alfPigD <= globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
         applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
                            driftVelocity);
-    } else if (leftCell.alfPigD >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (leftCell.alfPigD >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
                            driftVelocity);
     } else if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3)) {
@@ -2630,7 +2596,7 @@ void selectAndApplyBufferedOutletFlowRegime(
                            driftVelocity);
     }
 
-    else if (superficialGasVelocity >= 0 && leftCell.alfPigD <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    else if (superficialGasVelocity >= 0 && leftCell.alfPigD <= globals.localtiny && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && leftSuperficialLiquidVelocity < 0 && cell.duto.teta > 0) {
@@ -2642,7 +2608,7 @@ void selectAndApplyBufferedOutletFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= rightCell.alf && rightSuperficialGasVelocity < 0) {
             bif = 1;
         }
-    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && leftCell.alfPigD > (1. - globals.localtiny) && superficialLiquidVelocity > 0 && rightSuperficialLiquidVelocity > 0) {
@@ -2651,7 +2617,7 @@ void selectAndApplyBufferedOutletFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfL >= leftCell.alfL && leftSuperficialGasVelocity > 0) {
             bif = 1;
         }
-    } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
@@ -2663,7 +2629,7 @@ void selectAndApplyBufferedOutletFlowRegime(
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.localtiny + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.localtiny) || cell.alfPigE <= 0.7))
             bif = 1;
 
-    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && leftCell.alfPigD < globals.localtiny && leftSuperficialLiquidVelocity > 0) {
@@ -2721,19 +2687,22 @@ void selectAndApplyBufferedInletFlowRegime(
     const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity, double rightLiquidDensity,
     double gasDensity, double liquidDensity, double flowArea) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
+    const bool noGasSourceOnEitherFace =
+        cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
+    const bool noLiquidSourceOnEitherFace =
+        (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
     int bif = 1;
 
 
-    if (state.inletVoidFraction < globals.localtiny && cell.alfPigE <= globals.localtiny && cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5) {
+    if (state.inletVoidFraction < globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
         applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
                            driftVelocity);
-    } else if (state.inletVoidFraction >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (state.inletVoidFraction >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
                            driftVelocity);
-    } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.localtiny && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && cell.duto.teta > 0) {
@@ -2745,7 +2714,7 @@ void selectAndApplyBufferedInletFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= state.inletVoidFraction && superficialLiquidVelocity < 0) {
             bif = 1;
         }
-    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5)) {
+    } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > (1. - globals.localtiny) && superficialLiquidVelocity > 0) {
@@ -2754,7 +2723,7 @@ void selectAndApplyBufferedInletFlowRegime(
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > globals.localtiny && superficialLiquidVelocity > 0) {
             bif = 1;
         }
-    } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
@@ -2766,7 +2735,7 @@ void selectAndApplyBufferedInletFlowRegime(
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.localtiny + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.localtiny) || cell.alfPigE <= 0.7))
             bif = 1;
 
-    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && ((cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5)) {
+    } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
@@ -3123,7 +3092,6 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     state.cells[1].term2L = state.cells[cellIndex].term2;
 }
 void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);
@@ -3160,14 +3128,9 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     cell.calor.betint = -(1 / cell.calor.rhoint) * (liquidDensityChange * (1 - meanVoidFraction) + gasDensityChange * meanVoidFraction) / (temperaturePerturbation);
 }
 
-/// Refreshes one cell's temperature and the rate of change that feeds the next
-/// step.
-///
-/// Beyond lastCell the temperature comes from the external boundary or the gas
-/// surface; that branch is reachable only from callers whose index comes from
-/// poisson2DCellIndices.
+/// Refreshes one cell's temperature and its rate of change. Beyond lastCell the
+/// temperature comes from the external boundary or the gas surface.
 void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     if (cellIndex <= state.lastCell) {
         computeTemperature(state, cellIndex, cell.tempini);
@@ -3305,19 +3268,14 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
 }
 
 /// Energy added to the cell by its mass sources, for the steady march.
-///
-/// Reads only the five values below and leaves exactly two: the gas and liquid
-/// source terms.
 namespace {
-// Helpers of the steady march. Implementation, not interface: internal
-// linkage keeps them out of the module's exported symbols.
+// Helpers of the steady march; internal linkage keeps them unexported.
 
 TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
                                                 int cellIndex,
                                                 double meanPressure,
                                                 double meanTemperature,
                                                 double cellLength) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasMassSourceTerm = 0.;
@@ -3390,16 +3348,12 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
 
 /// Annulus coupling for the steady march: fills the cell's external heat
 /// transfer state from the gas-line cell facing it, and returns the wall
-/// resistance that the flux calculation must add.
-///
-/// Only the resistance is returned; everything else it computes is written
-/// straight into state.
+/// resistance.
 double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
                                   double interfaceMeanPressure,
                                   double interfaceMeanTemperature,
                                   double gasSpecificHeat,
                                   double gasDensity) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &leftCell = state.cells[cellIndex - 1];
     double annulusResistance = 0.;
     // verifica se existe acoplamento com o anular:
@@ -3453,13 +3407,9 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
 }
 
 /// Kinetic-energy term of the steady march.
-///
-/// The four velocity locals it needs stay private; only the kinetic term is
-/// returned.
 double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
                                 double meanSuperficialGasVelocity,
                                 double meanSuperficialLiquidVelocity) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double kineticTerm = 0;
@@ -3495,19 +3445,14 @@ double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
     return kineticTerm;
 }
 
-/// Latent-heat term of the steady march, with the interface void fractions
-/// and slip velocity it needs along the way.
-///
-/// Only the latent term leaves the block. interfacialWorkTerm is computed and
-/// never read.
+/// Latent-heat term of the steady march. interfacialWorkTerm is computed here
+/// and never read.
 double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
                                    double flowArea, double meanPressure,
                                    double meanTemperature,
                                    double meanSuperficialGasVelocity,
                                    double meanSuperficialLiquidVelocity) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double latentHeatTerm = 0.;
@@ -3559,10 +3504,8 @@ double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
 }  // namespace
 
 void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rungeKuttaStage) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &leftCell = state.cells[cellIndex - 1];
     double cellLength = 0.5 * (cell.dx + leftCell.dx);
     double meanCellLength = 0.5 * (cell.dx + leftCell.dx);
@@ -3758,17 +3701,12 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
 }
 
 /// Energy added to the cell by its mass sources, for the REVERSE march.
-///
-/// Separate from computeSteadySourceTerms: the two marches diverge in thirteen
-/// places, so the reverse flow has its own body rather than a direction flag.
 namespace {
-// Helpers of the steady march. Implementation, not interface: internal
-// linkage keeps them out of the module's exported symbols.
+// Helpers of the steady march; internal linkage keeps them unexported.
 
 TemperatureSourceTerms computeReverseSteadySourceTerms(
     const ThermalState &state, int cellIndex, double meanPressure,
     double meanTemperature, double cellLength) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &rightCell = state.cells[cellIndex + 1];
     double gasMassSourceTerm = 0.;
     double liquidMassSourceTerm = 0.;
@@ -3838,14 +3776,10 @@ TemperatureSourceTerms computeReverseSteadySourceTerms(
 }
 
 /// Kinetic-energy term of the REVERSE march.
-///
-/// Separate body: divergence L09 records that the reverse guard, the length
-/// test and the signs all differ from the direct march.
 double computeReverseSteadyKineticTerm(
     const ThermalState &state, int cellIndex,
     double meanSuperficialGasVelocity,
     double meanSuperficialLiquidVelocity) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &rightCell = state.cells[cellIndex + 1];
     double kineticTerm = 0;
@@ -3879,19 +3813,14 @@ double computeReverseSteadyKineticTerm(
     return kineticTerm;
 }
 
-/// Latent-heat term of the REVERSE march.
-///
-/// Kept apart from computeSteadyLatentHeatTerm on purpose: divergence L11
-/// records that only the direct march sanitises NaN and clamps by
-/// limTransMass, so these bodies are not interchangeable.
+/// Latent-heat term of the REVERSE march. Unlike the direct march, it does not
+/// sanitise NaN or clamp by limTransMass.
 double computeReverseSteadyLatentHeatTerm(
     const ThermalState &state, int cellIndex, double flowArea,
     double meanPressure, double meanTemperature,
     double meanSuperficialGasVelocity,
     double meanSuperficialLiquidVelocity) {
-    // Aliases, not copies: the same objects under shorter names.
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &rightCell = state.cells[cellIndex + 1];
     double latentHeatTerm = 0.;
@@ -3930,16 +3859,12 @@ double computeReverseSteadyLatentHeatTerm(
     return latentHeatTerm;
 }
 
-/// Annulus coupling for the REVERSE march.
-///
-/// Separate from applySteadyAnnulusCoupling because the reverse flow faces
-/// cellIndex + 1 and, per divergence L06, never consults the production
-/// network resistance. Only the wall resistance leaves the block.
+/// Annulus coupling for the REVERSE march: faces cellIndex + 1 and never
+/// consults the production network resistance.
 double applyReverseSteadyAnnulusCoupling(
     const ThermalState &state, int cellIndex,
     double interfaceMeanPressure, double interfaceMeanTemperature,
     double gasSpecificHeat, double gasDensity) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &rightCell = state.cells[cellIndex + 1];
     double annulusResistance = 0.;
     // checks if coupling with the annular space exists:
@@ -3989,10 +3914,8 @@ double applyReverseSteadyAnnulusCoupling(
 }  // namespace
 
 void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, int rungeKuttaStage) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     varGlob1D &globals = *state.globals;
-    // Aliases, not copies: the same objects under shorter names.
     Cel &rightCell = state.cells[cellIndex + 1];
     double cellLength = 0.5 * (cell.dx + rightCell.dx);
     double meanCellLength = 0.5 * (cell.dx + rightCell.dx);
@@ -4275,7 +4198,6 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double prev
 }
 
 void computeDischargeTemperature(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &leftCell = state.cells[cellIndex - 1];
     double leftHalfLength = 0.5 * state.gasCells[cellIndex].dxL;
     double rightHalfLength = 0.5 * state.gasCells[cellIndex].dx0;
@@ -4349,7 +4271,6 @@ double computeGasLiftDischargeTemperature(const ThermalState &state, int valveIn
 }
 
 void updateProductionTemperaturePeriphery(const ThermalState &state, int cellIndex) {
-    // Aliases, not copies: the same objects under shorter names.
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
