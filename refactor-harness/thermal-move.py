@@ -40,6 +40,7 @@ Usage:
 """
 from __future__ import annotations
 
+import functools
 import re
 import sys
 
@@ -808,7 +809,7 @@ def inverse_t069(old_name: str, body: str) -> str:
 def require_t069(source_path: str, old_name: str) -> tuple[int, int, str]:
     if old_name not in T069_FUNCTIONS:
         raise ValueError(f"unsupported T069 function: {old_name}")
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     body = carve_named(source, rf"[\w:<>*&\s]+SProd::{old_name}\(")
     if body is None:
         raise ValueError(f"expected one SProd::{old_name} body, found none")
@@ -843,7 +844,7 @@ def install_t069(
 
 
 def delegate_t069(old_name: str, source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, body = require_t069(source_path, old_name)
     return_type, _, signature = _t069_signature(body)
     spec = T069_FUNCTIONS[old_name]
@@ -865,7 +866,7 @@ def delegate_t069(old_name: str, source_path: str, output_path: str) -> int:
 
 def check_t069(old_name: str, baseline_path: str, current_path: str) -> int:
     baseline = carve_named(
-        open(baseline_path, encoding="utf-8").read(),
+        read_baseline(baseline_path),
         rf"[\w:<>*&\s]+SProd::{old_name}\(",
     )
     new_name = T069_FUNCTIONS[old_name]["new_name"]
@@ -921,7 +922,7 @@ def extract_or_install(mode: str, source_path: str, output_path: str) -> int:
 
 
 def delegate(source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     bodies = require_bodies(source_path)
     lines = source.split("\n")
     ordered_names = sorted(FUNCTIONS, key=lambda name: bodies[name][0], reverse=True)
@@ -972,7 +973,7 @@ def install_calctemp(
 
 
 def delegate_calctemp(source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, body = require_calctemp(source_path)
     signature = re.match(r"void SProd::calctemp\((.*?)\) \{", body).group(1)
     wrapper = [
@@ -991,7 +992,7 @@ def delegate_calctemp(source_path: str, output_path: str) -> int:
 def require_t063(source_path: str, old_name: str) -> tuple[int, int, str]:
     if old_name not in T063_FUNCTIONS:
         raise ValueError(f"unsupported T063 function: {old_name}")
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     body = carve_named(source, rf"void SProd::{old_name}\(")
     if body is None:
         raise ValueError(f"expected one SProd::{old_name} body, found none")
@@ -1026,7 +1027,7 @@ def install_t063(
 
 
 def delegate_t063(old_name: str, source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, body = require_t063(source_path, old_name)
     signature = re.match(
         rf"void SProd::{old_name}\((.*?)\) \{{", body
@@ -1048,7 +1049,7 @@ def delegate_t063(old_name: str, source_path: str, output_path: str) -> int:
 def require_t065(source_path: str, old_name: str) -> tuple[int, int, str]:
     if old_name not in T065_FUNCTIONS:
         raise ValueError(f"unsupported T065 function: {old_name}")
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     body = carve_named(source, rf"void SProd::{old_name}\(")
     if body is None:
         raise ValueError(f"expected one SProd::{old_name} body, found none")
@@ -1083,7 +1084,7 @@ def install_t065(
 
 
 def delegate_t065(old_name: str, source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, body = require_t065(source_path, old_name)
     signature = re.match(
         rf"void SProd::{old_name}\((.*?)\) \{{", body
@@ -1106,7 +1107,7 @@ def delegate_t065(old_name: str, source_path: str, output_path: str) -> int:
 def require_t066(source_path: str, old_name: str) -> tuple[int, int, str]:
     if old_name not in T066_FUNCTIONS:
         raise ValueError(f"unsupported T066 function: {old_name}")
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     body = carve_named(source, rf"void SProd::{old_name}\(")
     if body is None:
         raise ValueError(f"expected one SProd::{old_name} body, found none")
@@ -1141,7 +1142,7 @@ def install_t066(
 
 
 def delegate_t066(old_name: str, source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, body = require_t066(source_path, old_name)
     signature = re.match(
         rf"void SProd::{old_name}\((.*?)\) \{{", body
@@ -1164,7 +1165,7 @@ def delegate_t066(old_name: str, source_path: str, output_path: str) -> int:
 def require_t068(source_path: str, old_name: str) -> tuple[int, int, str]:
     if old_name not in T068_FUNCTIONS:
         raise ValueError(f"unsupported T068 function: {old_name}")
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     body = carve_named(source, rf"void SProd::{old_name}\(")
     if body is None:
         raise ValueError(f"expected one SProd::{old_name} body, found none")
@@ -1199,7 +1200,7 @@ def install_t068(
 
 
 def delegate_t068(old_name: str, source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, body = require_t068(source_path, old_name)
     signature = re.match(
         rf"void SProd::{old_name}\((.*?)\) \{{", body
@@ -1219,7 +1220,7 @@ def delegate_t068(old_name: str, source_path: str, output_path: str) -> int:
 
 def check_t068(old_name: str, baseline_path: str, current_path: str) -> int:
     baseline = carve_named(
-        open(baseline_path, encoding="utf-8").read(),
+        read_baseline(baseline_path),
         rf"void SProd::{old_name}\(",
     )
     new_name = T068_FUNCTIONS[old_name]["new_name"]
@@ -1244,7 +1245,7 @@ def check_t068(old_name: str, baseline_path: str, current_path: str) -> int:
 
 def check_t066(old_name: str, baseline_path: str, current_path: str) -> int:
     baseline = carve_named(
-        open(baseline_path, encoding="utf-8").read(),
+        read_baseline(baseline_path),
         rf"void SProd::{old_name}\(",
     )
     new_name = T066_FUNCTIONS[old_name]["new_name"]
@@ -1269,7 +1270,7 @@ def check_t066(old_name: str, baseline_path: str, current_path: str) -> int:
 
 def check_t065(old_name: str, baseline_path: str, current_path: str) -> int:
     baseline = carve_named(
-        open(baseline_path, encoding="utf-8").read(),
+        read_baseline(baseline_path),
         rf"void SProd::{old_name}\(",
     )
     new_name = T065_FUNCTIONS[old_name]["new_name"]
@@ -1318,7 +1319,7 @@ def expand_helper_call(body: str, helper_name: str, helper_body: str) -> str:
 
 
 def check_t065_decomposition(baseline_path: str, current_path: str) -> int:
-    baseline_source = open(baseline_path, encoding="utf-8").read()
+    baseline_source = read_baseline(baseline_path)
     current_source = read_current(current_path)
     signatures = {
         "main": r"void updateFlowPartitionTerms\(const ThermalState &state",
@@ -1419,7 +1420,7 @@ def check_t065_decomposition(baseline_path: str, current_path: str) -> int:
 
 def check_t063(old_name: str, baseline_path: str, current_path: str) -> int:
     baseline = carve_named(
-        open(baseline_path, encoding="utf-8").read(),
+        read_baseline(baseline_path),
         rf"void SProd::{old_name}\(",
     )
     new_name = T063_FUNCTIONS[old_name]["new_name"]
@@ -1511,7 +1512,7 @@ def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
 
 
 def require_renova_temp(source_path: str) -> tuple[int, int, str]:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     body = carve_named(source, r"void SProd::renovaTemp\(\)")
     if body is None:
         raise ValueError("expected one SProd::renovaTemp body, found none")
@@ -1545,7 +1546,7 @@ def install_renova_temp(
 
 
 def delegate_renova_temp(source_path: str, output_path: str) -> int:
-    source = open(source_path, encoding="utf-8").read()
+    source = read_baseline(source_path)
     start, end, _ = require_renova_temp(source_path)
     wrapper = [
         "void SProd::renovaTemp() {",
@@ -1562,7 +1563,7 @@ def delegate_renova_temp(source_path: str, output_path: str) -> int:
 
 def check_renova_temp(baseline_path: str, current_path: str) -> int:
     baseline = carve_named(
-        open(baseline_path, encoding="utf-8").read(),
+        read_baseline(baseline_path),
         r"void SProd::renovaTemp\(\)",
     )
     current = carve_named(
@@ -1650,6 +1651,190 @@ def compare_token_blocks(
             f"{' '.join(actual[max(0, position - 5):position + 6])}"
         )
     return failures
+
+
+# Calls with no effect beyond their return value. A dead local whose
+# initialiser calls only these can be deleted without changing what the program
+# does; one that calls anything else cannot, and is left alone. Every name here
+# was checked to be a const member function of a class with no mutable members
+# and no const_cast in the body.
+PURE_CALLS = frozenset({
+    "fabs", "sin", "cos", "sqrt", "pow", "exp", "log", "tan", "atan",
+    "ViscOleo", "ViscGas", "VisFlu", "MasEspLiq", "MasEspGas", "MasEspFlu",
+    "BOFunc", "RS", "CalorLiq", "CalorGas",
+})
+
+_CALL = re.compile(r"([A-Za-z_]\w*)\s*\(")
+# `return x;` and `break x;` parse as "<type> <name>;" to a regex, which would
+# make a read look like a second declaration and hide it from the read count.
+_NOT_A_TYPE = r"(?!(?:return|break|continue|else|if|for|while|do|case|goto)\b)"
+# Scalars only. A class-typed local runs a constructor and a destructor, and
+# deleting it deletes whatever those do -- `ProFlu flutemp = cell.flui;` sits
+# dead before a return in this module and is NOT removable for that reason.
+# -Wall draws the same line, and for the same reason.
+_SCALAR = r"(?:double|float|int|long|short|unsigned|bool|char|size_t)"
+_DECLARATION = re.compile(
+    rf"^\s*{_NOT_A_TYPE}(?:const\s+)?{_SCALAR}\s+&?(\w+)\s*(?:=|;)")
+
+
+def _statement_end(lines: list[str], start: int) -> int:
+    end = start
+    while ";" not in lines[end]:
+        end += 1
+    return end
+
+
+@functools.lru_cache(maxsize=8)
+def strip_dead_locals(source: str) -> str:
+    """Delete locals that are declared, possibly assigned, and never read.
+
+    The baselines these checks compare against still carry the dead locals that
+    the module has since deleted. Removing them from the baseline the same way
+    keeps the comparison exact instead of drowning it in differences that are
+    not defects.
+
+    Applied to the BASELINE side only. That direction is deliberate: a dead
+    local re-introduced into the module would survive into its token stream,
+    find nothing to match on the stripped baseline, and be reported. Stripping
+    both sides would hide it.
+
+    A local is removed only when every statement that touches it -- the
+    declaration and every assignment -- calls nothing outside PURE_CALLS, and
+    only when the guard of a statement that is the sole body of an if or else
+    calls nothing at all. Anything else stays, whatever the warning says.
+    """
+    lines = source.split("\n")
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if (not re.match(r"^[\w:<>*&\[\]][\w\s:<>*&\[\]]*?\b\w+\(", line)
+                or line.startswith((" ", "//", "/*", "#"))):
+            index += 1
+            continue
+        depth, end, opened = 0, index, False
+        while end < len(lines):
+            depth += lines[end].count("{") - lines[end].count("}")
+            opened = opened or "{" in lines[end]
+            if opened and depth == 0:
+                break
+            end += 1
+        if not opened:
+            index += 1
+            continue
+        body = lines[index:end + 1]
+        body = _strip_body(body)
+        lines[index:end + 1] = body
+        index = index + len(body)
+    return "\n".join(lines)
+
+
+def _strip_body(body: list[str]) -> list[str]:
+    while True:
+        removed = False
+        names = []
+        for j, line in enumerate(body):
+            match = _DECLARATION.match(line)
+            if match and not re.match(r"^\s*(return|else|if|for|while)\b", line):
+                names.append((j, match.group(1)))
+        for j, name in names:
+            # A local can only be read inside the block that declares it, and
+            # the module has inner declarations that shadow an outer name which
+            # IS read. Searching the whole function would see that outer read
+            # and conclude, wrongly, that the inner one is alive.
+            depth = 0
+            for line in body[:j + 1]:
+                depth += line.count("{") - line.count("}")
+            scope_end = len(body) - 1
+            running = depth
+            for k in range(j + 1, len(body)):
+                running += body[k].count("{") - body[k].count("}")
+                if running < depth:
+                    scope_end = k
+                    break
+            statements = []
+            for k, line in enumerate(body):
+                if not (j <= k <= scope_end):
+                    continue
+                if (re.search(rf"(?<![.\w]){name}\s*=[^=]", line)
+                        or re.fullmatch(
+                            rf"\s*{_NOT_A_TYPE}(?:const\s+)?{_SCALAR}\s+&?{name};", line)):
+                    statements.append((k, _statement_end(body, k)))
+            if not statements:
+                continue
+            covered = set()
+            for a, b in statements:
+                covered.update(range(a, b + 1))
+            reads = 0
+            for k in range(j, scope_end + 1):
+                if k not in covered and re.search(rf"(?<![.\w]){name}\b", body[k]):
+                    reads += 1
+            if reads:
+                continue
+            impure = set()
+            for a, b in statements:
+                text = " ".join(body[a:b + 1])
+                right = text.split("=", 1)[1] if "=" in text else ""
+                impure |= {c for c in _CALL.findall(right)} - PURE_CALLS
+            if impure:
+                # The call has effects, so it stays; only the variable goes.
+                # Sound only when the whole right-hand side is the call, which
+                # is why the shape is checked rather than assumed.
+                rewrites = []
+                for a, b in statements:
+                    if b != a:
+                        break
+                    m = re.match(rf"^(\s*){_SCALAR}\s+{name}\s*=\s*(.+;)\s*$", body[a])
+                    if not m:
+                        break
+                    rewrites.append((a, m.group(1) + m.group(2)))
+                else:
+                    for a, text in rewrites:
+                        body[a] = text
+                    removed = True
+                    break
+                continue
+            drop = set(covered)
+            ok = True
+            for a, _ in statements:
+                if a == 0:
+                    continue
+                guard = body[a - 1].strip()
+                if guard.startswith(("if", "else")) and not guard.endswith("{"):
+                    if {c for c in _CALL.findall(guard)} - {"if"} - PURE_CALLS:
+                        ok = False
+                        break
+                    drop.add(a - 1)
+            if not ok:
+                continue
+            body = [l for k, l in enumerate(body) if k not in drop]
+            removed = True
+            break
+        if not removed:
+            return _drop_empty_blocks(body)
+
+
+def _drop_empty_blocks(body: list[str]) -> list[str]:
+    """Remove guards whose body the stripping emptied.
+
+    Only when the condition calls nothing: an empty block whose guard calls
+    something still runs that call, so the guard stays and the difference is
+    reported rather than swallowed.
+    """
+    while True:
+        for j in range(len(body) - 1):
+            head, tail = body[j].strip(), body[j + 1].strip()
+            if not head.endswith("{") or not head.startswith(("if", "else")):
+                continue
+            if {c for c in _CALL.findall(head)} - {"if"} - PURE_CALLS:
+                continue
+            if tail == "}":
+                del body[j:j + 2]
+                break
+            if tail == "} else {" and j + 2 < len(body) and body[j + 2].strip() == "}":
+                del body[j:j + 3]
+                break
+        else:
+            return body
 
 
 ALIAS_DECLARATION = re.compile(
@@ -1754,6 +1939,30 @@ def expand_aliases(source: str) -> str:
     return "\n".join(output)
 
 
+# [[maybe_unused]] marks a local the module keeps deliberately: removing it
+# would delete a call with effects, or would put a token-exact control out of
+# step with a baseline that still declares it. The attribute carries no code, so
+# both sides drop it before comparing.
+MAYBE_UNUSED = re.compile(r"\[\[maybe_unused\]\]\s*")
+
+
+def read_baseline(path: str) -> str:
+    """Read a baseline with its dead locals stripped.
+
+    Stripping is SYMMETRIC -- read_current strips too -- because most functions
+    in the baseline were never touched and still carry their dead locals in the
+    module as well. Stripping one side only would report every one of them as a
+    difference.
+
+    The cost of symmetry is that a dead local re-introduced into the module
+    becomes invisible HERE. It does not become invisible: -Wunused-variable is
+    exactly the instrument for it, and gate 1 fails a build that produces a
+    warning the baseline did not. This check is for structure; that one is for
+    dead code, and each should do its own job.
+    """
+    return MAYBE_UNUSED.sub("", open(path, encoding="utf-8").read())
+
+
 def read_current(path: str) -> str:
     """Read the module as the structural checks want to see it.
 
@@ -1763,7 +1972,7 @@ def read_current(path: str) -> str:
     rather than in each check.
     """
     return inline_leaf_helpers(
-        expand_aliases(open(path, encoding="utf-8").read()))
+        expand_aliases(MAYBE_UNUSED.sub("", open(path, encoding="utf-8").read())))
 
 
 LEAF_HELPERS = (
@@ -2178,7 +2387,7 @@ def first_difference(expected: list[str], actual: list[str]) -> int:
 
 
 def check(baseline_path: str, current_path: str) -> int:
-    baseline = carve(open(baseline_path, encoding="utf-8").read())
+    baseline = carve(read_baseline(baseline_path))
     current = carve_new(read_current(current_path))
     failures = 0
     total = 0
@@ -2203,7 +2412,7 @@ def check(baseline_path: str, current_path: str) -> int:
 
 
 def check_calctemp(baseline_path: str, current_path: str) -> int:
-    baseline = carve_calctemp(open(baseline_path, encoding="utf-8").read())
+    baseline = carve_calctemp(read_baseline(baseline_path))
     current = carve_new_calctemp(read_current(current_path))
     if baseline is None or current is None:
         print("MISSING  computeTemperature <- calctemp")

@@ -51,7 +51,7 @@ def helper_body(text, name, drop_leading=None):
 
 
 cur = open('src/core/SisProdThermal.cpp', encoding='utf-8').read()
-base = open(sys.argv[1], encoding='utf-8').read()
+base = tm.MAYBE_UNUSED.sub('', open(sys.argv[1], encoding='utf-8').read())
 
 # The baseline predates the removal of the fourteen breakpoint anchors -- guards
 # whose whole body declares an int, assigns zero to it and stops. They emit no
@@ -67,7 +67,7 @@ base = open(sys.argv[1], encoding='utf-8').read()
 # Reference aliases are expanded before anything else: `cell.alf` is the same
 # object as state.cells[cellIndex].alf at runtime but six tokens fewer here, and
 # the baseline predates them.
-cur = tm.inline_leaf_helpers(tm.expand_aliases(cur))
+cur = tm.inline_leaf_helpers(tm.expand_aliases(tm.MAYBE_UNUSED.sub('', cur)))
 cur, cur_anchors = tm.strip_debug_anchors(cur)
 base, base_anchors = tm.strip_debug_anchors(base)
 print(f"NOTE     ancoras de breakpoint normalizadas: {base_anchors} no baseline, "
