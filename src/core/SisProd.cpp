@@ -2403,42 +2403,7 @@ void SProd::renovaGasBuf() {
 
 double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
                            double dextern, double areagarg, double Rvalv, double Temp) {
-    // PCal: Calibration pressure.
-    // PVO: Casing pressure.
-    // PT: Tubing pressure.
-    // Rvalv: Area ratio.
-    // Temp: Bottom-hole temperature in Fahrenheit.
-
-    double PB80 = PCal * (1 - Rvalv);
-    PB80 = (PB80 + 14.6959488) * (80 + 460.67) / (TCal * 1.8 + 491.67) - 14.6959488;
-    double PBT = PB80 * (1 + 0.00215 * (Temp - 80));
-    double compara = PVO * (1 - Rvalv) + PT * Rvalv;
-    double abertura = 0.;
-    if (compara > PBT)
-        abertura = 1.;
-
-    double areafol = areagarg / Rvalv;
-    double BSR;
-    if (dextern * 100. / 2.54 > 1.1)
-        BSR = 500.0 * areafol;
-    else
-        BSR = 1950.0 * areafol;
-    double XMVS = ((PVO - PBT) * areafol - (PVO - PT) * areagarg) / BSR;
-
-    // IF THE VALVE IS CLOSED, QG = 0
-    if (XMVS <= 0.0)
-        abertura = 0.;
-
-    double DP = sqrt(areagarg * 4. / M_PI);
-    double RP = DP / 2.0;
-    double RB = sqrt(areafol / M_PI);
-    double APE = M_PI * RP * XMVS * (XMVS + 2.0 * sqrt(RB * RB - RP * RP));
-    APE = APE / sqrt((XMVS + sqrt(RB * RB - RP * RP)) * (XMVS + sqrt(RB * RB - RP * RP)) + RP * RP);
-    if (APE > areagarg)
-        APE = areagarg;
-    abertura = APE / areagarg;
-
-    return abertura;
+    return sisprod::gaslift::calibratedValveArea(PCal, TCal, PVO, PT, dextern, areagarg, Rvalv, Temp);
 }
 
 void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
@@ -2737,90 +2702,11 @@ void SProd::ValvGasTrans() {
 }
 
 double SProd::prescordesc(double vazmax, int ivalv, double fator, int sinal) {
-    int iG = posicVGLG[ivalv];
-    int iP = posicVGLP[ivalv];
-    double pmed = celula[iP].pres;
-    chokeVGL[ivalv].presEstag = celulaG[iG].pres;
-    chokeVGL[ivalv].tempEstag = celulaG[iG].temp;
-    double rho0 = celulaG[iG].MasEspFlu(chokeVGL[ivalv].presEstag, chokeVGL[ivalv].tempEstag);
-    double massica = (fator * arq.vazDescControl - vazmax) * rho0;
-    double precorr = 0.;
-    precorr = pow(massica / chokeVGL[ivalv].areagarg, 2.) / (2. * rho0 * 98066.52);
-    return sinal * precorr;
+    return sisprod::gaslift::unloadingPressureCorrection(gasLiftStateOf(*this), vazmax, ivalv, fator, sinal);
 }
 
 double SProd::CalcPresValvDesc(double vazGarg, int ivalv) {
-
-    double velmax = 0;
-    double laz1 = 0.1;
-    double laz2 = 0.4;
-
-    double pmed;
-    double tmed;
-    double massica;
-    pmed = pGSup;
-    arq.presMaxDesc = 100000.;
-    for (int i = ncel; i >= 0; i--) {
-
-        double tmed = celula[i].temp;
-        double A1 = celula[i].duto.area;
-        double S1 = celula[i].duto.peri;
-        double dx1 = celula[i].dx;
-        double rhoG = celula[i].flui.MasEspGas(pmed, tmed);
-        double rhoP = celula[i].flui.MasEspLiq(pmed, tmed);
-        double rhoC = celula[i].fluicol.MasEspFlu(pmed, tmed);
-        double viscG = celula[i].flui.ViscGas(pmed, tmed);
-        double viscP = celula[i].flui.ViscOleo(pmed, tmed);
-        double viscC = celula[i].fluicol.VisFlu(pmed, tmed);
-        double alf = celula[i].alf;
-        double bet = celula[i].bet;
-        double rholiq = bet * rhoC + (1. - bet) * rhoP;
-        double viscliq = bet * viscC + (1. - bet) * viscP;
-        double rhomix = alf * rhoG + (1. - alf) * rholiq;
-        double viscmix = alf * viscG + (1. - alf) * viscliq;
-        double vel1 = celula[i].QL / (A1 * rholiq) + celula[i].QG / (A1 * rhoG);
-        double re1;
-        if (fabs(vel1) > 1e-15) {
-            if (celula[i].duto.revest == 0)
-                re1 = celula[i].Rey(celula[i].duto.a, vel1, rhomix, viscmix);
-            else {
-                double dhid = 4 * A1 / S1;
-                re1 = celula[i].Rey(dhid, vel1, rhomix, viscmix);
-            }
-        }
-        double f1;
-        if (fabs(vel1) > 1e-15)
-            f1 = celula[i].fric(re1, celula[i].duto.rug / celula[i].duto.a);
-        else
-            f1 = 0.;
-        double tens1 = f1 * rhomix * vel1 * fabs(vel1) / 2.;
-        pmed -= (-9.82 * rhomix * sin(celula[i].duto.teta) - tens1 * S1 / A1) * dx1 / 98066.5;
-        if (celula[i].acsr.tipo == 3) {
-            double auxpresmax = celula[i].acsr.ipr.Pres - (pmed - pGSup);
-            if (auxpresmax < arq.presMaxDesc)
-                arq.presMaxDesc = auxpresmax;
-        }
-    }
-    if (pGSup >= arq.presMaxDesc * 0.9999999 && vazGarg > (1 - laz1) * arq.vazDescControl && celulaG[0].VGasR > 0.) {
-        double precorr = prescordesc(vazGarg, ivalv, (1 - laz1), -1);
-        if (fabs(precorr) > 0.01 * presiniG * celula[0].dt)
-            precorr = (fabs(precorr) / precorr) * 0.01 * presiniG * celula[0].dt;
-        presiniG += precorr;
-        if (presiniG < arq.presMinDescG) {
-            presiniG = arq.presMinDescG;
-        }
-
-    } else if (vazGarg <= (1 - laz2) * arq.vazDescControl && pGSup <= arq.presMinDesc * 1.0000001) {
-        double precorr = prescordesc(vazGarg, ivalv, 1 - laz2, 1);
-        if (fabs(precorr) > 0.01 * presiniG * celula[0].dt)
-            precorr = (fabs(precorr) / precorr) * 0.01 * presiniG * celula[0].dt;
-        presiniG += precorr;
-        if (presiniG > arq.presMaxDescG) {
-            presiniG = arq.presMaxDescG;
-        }
-    }
-
-    return velmax;
+    return sisprod::gaslift::computeUnloadingValvePressure(gasLiftStateOf(*this), vazGarg, ivalv);
 }
 
 double SProd::BuscaPresInjDesc() {

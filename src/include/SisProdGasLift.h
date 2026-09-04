@@ -38,8 +38,11 @@ struct GasLiftState {
     /// Production cells -- SProd::celula. The gas line reads the tubing it
     /// feeds, and writes back at the connection points.
     Cel *cells;
-    /// Input deck -- SProd::arq.
-    const Ler &input;
+    /// Input deck -- SProd::arq. NOT const: the unloading schedule uses
+    /// presMaxDesc as scratch, recomputing it as a minimum over the IPR
+    /// accessories and writing it back. Declaring it const would have been a
+    /// claim this module does not honour.
+    Ler &input;
     /// Shared 1D globals -- SProd::vg1dSP.
     varGlob1D *globals;
 
@@ -134,7 +137,7 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
 
 /// Pressure at an unloading valve.
 double computeUnloadingValvePressure(const GasLiftState &state,
-                                     double pressure, int valveIndex);
+                                     double throatFlowRate, int valveIndex);
 
 /// Searches the injection pressure that satisfies the unloading schedule.
 void searchUnloadingInjectionPressure(const GasLiftState &state);
