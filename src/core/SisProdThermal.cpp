@@ -796,7 +796,7 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
                 sourceSpecificHeatRatio = leftCell.flui.ConstAdG(leftCell.pres, leftCell.temp);
             }
         } else if ((*cell.acsrL).tipo == kAccessoryVolumetricPump) {
-            double pumpUpstreamVoidFraction = leftCell.alf;
+            [[maybe_unused]] double pumpUpstreamVoidFraction = leftCell.alf;
             double betM = leftCell.bet;
             sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.pres, leftCell.temp);
             sourceLiquidSpecificHeat = (1. - betM) * leftCell.flui.CalorLiq(leftCell.pres, leftCell.temp) + betM * leftCell.fluicol.CalorLiq(leftCell.pres, leftCell.temp);
@@ -1778,7 +1778,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
             double flowArea = 0.25 * M_PI * diameter * diameter;
             double meanSuperficialGasVelocity = (cell.QG) / (flowArea);
             double meanSuperficialLiquidVelocity = cell.QL / (flowArea);
-            double mixtureSuperficialVelocity = meanSuperficialGasVelocity + meanSuperficialLiquidVelocity;
+            [[maybe_unused]] double mixtureSuperficialVelocity = meanSuperficialGasVelocity + meanSuperficialLiquidVelocity;
             double leftAbsoluteSuperficialVelocity = (fabs(leftCell.QG) + fabs(leftCell.QL)) / leftCell.duto.area;
 
             ProFlu upstreamFluid;
@@ -1795,7 +1795,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
             double downstreamSolutionGasRatio = properties.downstreamSolutionGasRatio;
             double downstreamSolutionGasPressureDerivative =
                 properties.downstreamSolutionGasPressureDerivative;
-            double cellSolutionGasRatio = properties.cellSolutionGasRatio;
+            [[maybe_unused]] double cellSolutionGasRatio = properties.cellSolutionGasRatio;
             double cellSolutionGasPressureDerivative = properties.cellSolutionGasPressureDerivative;
             double cellSolutionGasTemperatureDerivative =
                 properties.cellSolutionGasTemperatureDerivative;
@@ -2087,23 +2087,6 @@ void updateInteriorFlowPartitionCell(
             valv[cellIndex] = 0;
     }
     if (valv[cellIndex] == 1) {
-        double lengthRatio = cell.dxL / (cell.dx + cell.dxL);
-        double meanPressure;
-        if (hasDownstreamCell)
-            meanPressure = cell.presaux;
-        else
-            meanPressure = cell.pres;
-        double meanTemperature;
-        if (hasDownstreamCell)
-            meanTemperature = cell.temp * lengthRatio + leftCell.temp * (1. - lengthRatio);
-        else
-            meanTemperature = state.gasSurfaceTemperature;
-        if (cell.VTemper < 0.) {
-            if (hasDownstreamCell)
-                meanTemperature = cell.temp;
-            else
-                meanTemperature = state.gasSurfaceTemperature;
-        }
         double betI = leftCell.betPigD;
         double liquidDensity;
         if (cell.QL < 0.) { // testeBeta
@@ -2116,30 +2099,9 @@ void updateInteriorFlowPartitionCell(
         const UpstreamFaceBasis upstream = upstreamFaceBasisOf(state, cellIndex);
         const double gasDensity = upstream.gasDensity;
         const double flowArea = upstream.flowArea;
-        const double noSlipLiquidHoldup = upstream.noSlipLiquidHoldup;
         double superficialGasVelocity = cell.QG / (flowArea);
         double superficialLiquidVelocity = cell.QL / (flowArea);
-        double diameter = cell.duto.a;
-        if (superficialGasVelocity >= 0)
-            diameter = leftCell.duto.a;
 
-        double inclinationAngle = cell.duto.teta;
-        if (cellIndex >= 2) {
-            if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
-                if (cell.QG >= 0)
-                    inclinationAngle = cell.duto.teta;
-                else
-                    inclinationAngle = cell.dutoR.teta;
-            } else {
-                if (cell.QG >= 0)
-                    inclinationAngle = cell.dutoL.teta;
-                else
-                    inclinationAngle = cell.duto.teta;
-            }
-        }
-        double inclinationSign = 1.;
-        if (inclinationAngle < 0.)
-            inclinationSign = -1.;
 
         double leftFlowArea = cell.dutoL.area;
         double betIL = 0.;
@@ -2156,7 +2118,6 @@ void updateInteriorFlowPartitionCell(
         double leftSuperficialLiquidVelocity = (cell.MliqiniL) / (leftLiquidDensity * leftFlowArea);
 
         double rightFlowArea = cell.dutoR.area;
-        double rightLengthRatio = cell.dxR / (cell.dxR + cell.dx);
         double betIR = cell.betPigD;
         if (cell.QLR < 0.) { // testeBeta
             if (cellIndex > state.lastCell - 2)
@@ -2219,7 +2180,6 @@ void updateOutletBoundaryFlowPartition(
     if (leftCell.QL < 0.)
         betIL = leftCell.bet; // testeBeta
     // betIL = leftCell.bet;            //duvidabeta
-    double leftGasDensity = cell.flui.MasEspGas(leftMeanPressure, leftMeanTemperature);
     double leftLiquidDensity = (1 - betIL) * cell.flui.MasEspLiq(leftMeanPressure, leftMeanTemperature) + betIL * cell.fluicol.MasEspFlu(leftMeanPressure, leftMeanTemperature);
     double leftSuperficialLiquidVelocity = (cell.MliqiniL) / (leftLiquidDensity * leftFlowArea);
 
@@ -2791,29 +2751,23 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 state.inletVoidFraction = (-state.inletMassFraction * liquidMixtureDensity / (state.inletMassFraction * gasDensity - gasDensity - state.inletMassFraction * liquidMixtureDensity)) / (state.cells[0].c0);
 
                 double betI;
-                double liquidViscosity;
                 double surfaceTension;
                 if (cell.QL < 0.) { // testeBeta
                     betI = cell.betPigE;
                     liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-                    liquidViscosity = (1 - betI) * cell.flui.ViscOleo(meanPressure, meanTemperature) + betI * cell.fluicol.VisFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
                 } else {
                     betI = state.inletComposition;
                     liquidDensity = (1 - betI) * (*cell.fluiL).MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-                    liquidViscosity = (1 - betI) * (*cell.fluiL).ViscOleo(meanPressure, meanTemperature) + betI * cell.fluicol.VisFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * (*cell.fluiL).TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
                 }
 
-                double gasViscosity;
                 double flowArea;
                 if (cell.QG >= 0) {
                     flowArea = cell.duto.area;
                     gasDensity = (*cell.fluiL).MasEspGas(meanPressure, meanTemperature);
-                    gasViscosity = (*cell.fluiL).ViscGas(meanPressure, meanTemperature);
                 } else {
                     gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
-                    gasViscosity = cell.flui.ViscGas(meanPressure, meanTemperature);
                     flowArea = cell.duto.area;
                 }
                 double superficialGasVelocity = cell.QG / (flowArea);
@@ -2871,42 +2825,28 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
         meanTemperature = state.gasSurfaceTemperature;
     double betI = leftCell.betPigD;
     double liquidDensity;
-    double liquidViscosity;
     double surfaceTension;
     if (cell.MliqiniBuf < 0.) { // testeBeta
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-        liquidViscosity = (1 - betI) * cell.flui.ViscOleo(meanPressure, meanTemperature) + betI * cell.fluicol.VisFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     } else {
         betI = leftCell.betPigD;
         liquidDensity = (1 - betI) * leftCell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * leftCell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-        liquidViscosity = (1 - betI) * leftCell.flui.ViscOleo(meanPressure, meanTemperature) + betI * leftCell.fluicol.VisFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * leftCell.flui.TensSuper(meanPressure, meanTemperature) + betI * leftCell.fluicol.TensSuper(meanPressure, meanTemperature);
     }
     double gasDensity;
-    double gasViscosity;
     double flowArea;
-    double noSlipLiquidHoldup;
     if (bufferedGasMassIsPositive) {
         flowArea = cell.dutoL.area;
-        noSlipLiquidHoldup = 1. - cell.alfL;
         gasDensity = leftCell.flui.MasEspGas(meanPressure, meanTemperature);
-        gasViscosity = leftCell.flui.ViscGas(meanPressure, meanTemperature);
     } else {
         gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
-        gasViscosity = cell.flui.ViscGas(meanPressure, meanTemperature);
         flowArea = cell.duto.area;
-        noSlipLiquidHoldup = 1. - cell.alf;
     }
     double superficialGasVelocity = (cell.MCBuf - cell.MliqiniBuf) / (gasDensity * flowArea);
     double superficialLiquidVelocity = (cell.MliqiniBuf) / (liquidDensity * flowArea);
-    double diameter = cell.duto.a;
-    if (superficialGasVelocity >= 0)
-        diameter = leftCell.duto.a;
 
-    double mixtureDensity = noSlipLiquidHoldup * liquidDensity + (1 - noSlipLiquidHoldup) * gasDensity;
-    double mixtureViscosity = (noSlipLiquidHoldup * liquidViscosity + (1 - noSlipLiquidHoldup) * gasViscosity) / pow(10., 3.);
     double inclinationAngle = cell.duto.teta;
     if (cellIndex >= 2) {
         if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
@@ -2984,7 +2924,6 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
         meanTemperature = state.inletTemperature;
 
     double betI;
-    double liquidViscosity;
     double surfaceTension;
     double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
     double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
@@ -2996,30 +2935,22 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // duvidabeta
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-        liquidViscosity = (1 - betI) * cell.flui.ViscOleo(meanPressure, meanTemperature) + betI * cell.fluicol.VisFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     } else {
         betI = state.inletComposition;
         liquidDensity = (1 - betI) * (*cell.fluiL).MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-        liquidViscosity = (1 - betI) * (*cell.fluiL).ViscOleo(meanPressure, meanTemperature) + betI * cell.fluicol.VisFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * (*cell.fluiL).TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     }
-    double gasViscosity;
     double flowArea;
     if (cell.MCBuf - state.cells[0].MliqiniBuf >= 0) {
         flowArea = cell.dutoL.area;
         gasDensity = (*cell.fluiL).MasEspGas(meanPressure, meanTemperature);
-        gasViscosity = (*cell.fluiL).ViscGas(meanPressure, meanTemperature);
     } else {
         gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
-        gasViscosity = cell.flui.ViscGas(meanPressure, meanTemperature);
         flowArea = cell.duto.area;
     }
     double superficialGasVelocity = (cell.MCBuf - cell.MliqiniBuf) / (gasDensity * flowArea);
     double superficialLiquidVelocity = cell.MliqiniBuf / (liquidDensity * flowArea);
-    double diameter = cell.duto.a;
-    if (superficialGasVelocity >= 0)
-        diameter = cell.duto.a;
 
     double inclinationAngle = cell.duto.teta;
     double inclinationSign = 1.;
@@ -3237,7 +3168,7 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasMassSourceTerm = 0.;
     double liquidMassSourceTerm = 0.;
-    double fontemassC = 0.;
+    [[maybe_unused]] double fontemassC = 0.;
     double sourceTemperature = leftCell.temp;
     double sourceGasSpecificHeat;
     double sourceSpecificHeatRatio = 0.;
@@ -3454,7 +3385,7 @@ double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
         slipVelocity = meanSuperficialGasVelocity;
     else
         slipVelocity = meanSuperficialLiquidVelocity;
-    double interfacialWorkTerm = flowArea * cell.pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
+    [[maybe_unused]] double interfacialWorkTerm = flowArea * cell.pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
     return latentHeatTerm;
 }
 
@@ -3531,12 +3462,12 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double liquidViscosity = (1. - betmed) * leftCell.flui.ViscOleo(interfaceMeanPressure, interfaceMeanTemperature) + betmed * leftCell.fluicol.VisFlu(interfaceMeanPressure, interfaceMeanTemperature);
         leftCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * 1.e-3 + leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * 1.e-3;
 
-        double relaxedHeatFlux = 0; // variavel nao utilizada
+        [[maybe_unused]] double relaxedHeatFlux = 0; // variavel nao utilizada
         if (state.steadyIteration > 0)
             relaxedHeatFlux = leftCell.fluxcalmed;
         double annulusResistance = 0.;
         double heatFlux;
-        double gasHeatFlux;
+        [[maybe_unused]] double gasHeatFlux;
         annulusResistance = applySteadyAnnulusCoupling(
             state, cellIndex, interfaceMeanPressure, interfaceMeanTemperature,
             gasSpecificHeat, gasDensity);
@@ -3569,7 +3500,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         }
         cell.VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
         // apenas para se ter um valor quando a simulacao transiente se iniciar
-        double temperatureGradient = (-leftCell.temp) / meanCellLength;
+        [[maybe_unused]] double temperatureGradient = (-leftCell.temp) / meanCellLength;
 
         double kineticTerm = computeSteadyKineticTerm(
             state, cellIndex, meanSuperficialGasVelocity,
@@ -3652,7 +3583,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             leftCell.calor.cpextern1 = state.gasCells[j].calor.cpint;
             leftCell.calor.rhoextern1 = state.gasCells[j].calor.rhoint;
             leftCell.calor.viscextern1 = state.gasCells[j].calor.viscint;
-            double heatFlux = leftCell.calor.transperm(0);
+            [[maybe_unused]] double heatFlux = leftCell.calor.transperm(0);
         }
     }
 }
@@ -3812,7 +3743,7 @@ double computeReverseSteadyLatentHeatTerm(
         slipVelocity = meanSuperficialGasVelocity;
     else
         slipVelocity = meanSuperficialLiquidVelocity;
-    double interfacialWorkTerm = flowArea * rightCell.pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / rightCell.dx;
+    [[maybe_unused]] double interfacialWorkTerm = flowArea * rightCell.pres * 98600 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / rightCell.dx;
     return latentHeatTerm;
 }
 
@@ -3938,12 +3869,12 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         double liquidViscosity = (1. - betmed) * rightCell.flui.ViscOleo(interfaceMeanPressure, interfaceMeanTemperature) + betmed * rightCell.fluicol.VisFlu(interfaceMeanPressure, interfaceMeanTemperature);
         rightCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * 1.e-3 + rightCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * 1.e-3;
 
-        double relaxedHeatFlux = 0;
+        [[maybe_unused]] double relaxedHeatFlux = 0;
         if (state.steadyIteration > 0)
             relaxedHeatFlux = rightCell.fluxcalmed;
         double annulusResistance = 0.;
         double heatFlux;
-        double gasHeatFlux;
+        [[maybe_unused]] double gasHeatFlux;
         annulusResistance = applyReverseSteadyAnnulusCoupling(
             state, cellIndex, interfaceMeanPressure, interfaceMeanTemperature,
             gasSpecificHeat, gasDensity);
@@ -3967,7 +3898,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         }
         cell.VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
         // apenas para se ter um valor quando a simulacao transiente se iniciar
-        double temperatureGradient = (-rightCell.temp) / meanCellLength;
+        [[maybe_unused]] double temperatureGradient = (-rightCell.temp) / meanCellLength;
 
         double kineticTerm = computeReverseSteadyKineticTerm(
             state, cellIndex, meanSuperficialGasVelocity,
@@ -4049,7 +3980,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
             rightCell.calor.cpextern1 = state.gasCells[j].calor.cpint;
             rightCell.calor.rhoextern1 = state.gasCells[j].calor.rhoint;
             rightCell.calor.viscextern1 = state.gasCells[j].calor.viscint;
-            double heatFlux = rightCell.calor.transperm(0);
+            [[maybe_unused]] double heatFlux = rightCell.calor.transperm(0);
         }
     }
 }
@@ -4170,7 +4101,6 @@ void computeDischargeTemperature(const ThermalState &state, int cellIndex) {
     double leftLiquidLength = leftHalfLength - leftGasLength;
     double rightLiquidLength = rightHalfLength - rightGasLength;
     double totalLength = leftLiquidLength + rightLiquidLength + leftGasLength + rightGasLength;
-    double diameter = state.gasCells[cellIndex - 1].duto.a;
     double pressure;
     double temperature;
 
@@ -4244,7 +4174,6 @@ void computeOutletTemperature(const ThermalState &state) {
     if (state.input.chokep.abertura[0] <= 0.6 && state.input.chokep.abertura[0] > (*state.globals).localtiny && state.outletPressure < state.gasSurfacePressure) {
         double inletMassFlow = state.cells[state.lastCell - 1].MR;
         double gasMassFlow = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
-        double liquidDensity = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double betEF = state.cells[state.lastCell].bet;
         double quality = fabs(gasMassFlow / inletMassFlow);

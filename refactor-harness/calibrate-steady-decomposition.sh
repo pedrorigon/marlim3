@@ -109,6 +109,15 @@ probe computeSteadySourceTerms \
     's/Cel &cell = state.cells\[cellIndex\];/Cel \&cell = state.cells[cellIndex];\n    if (cellIndex > 0) { Cel \&cell = state.cells[cellIndex - 1]; (void)cell; }/' \
     'one alias name bound to two different cells'
 
+# [[maybe_unused]] is dropped from both sides before comparing. That is one
+# token and no analysis, but a normaliser is a blind spot until something proves
+# otherwise: the attribute must not carry the DECLARATION away with it. The
+# corruption changes the initialiser of a variable that wears the attribute, in
+# a march helper, and it must still be detected.
+probe computeSteadyLatentHeatTerm \
+    's/\[\[maybe_unused\]\] double interfacialWorkTerm = flowArea/[[maybe_unused]] double interfacialWorkTerm = 2. * flowArea/' \
+    'initialiser changed on a [[maybe_unused]] declaration'
+
 cp "$scratch/pristine.cpp" "$target"
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"
