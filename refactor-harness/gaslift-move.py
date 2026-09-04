@@ -38,6 +38,8 @@ FUNCTIONS = {
     # delegation did not compile, which is how that was found.
     "CalcPresValvDesc": {"new_name": "computeUnloadingValvePressure",
                          "arguments": "vazGarg, ivalv"},
+    "resolveDescarga": {"new_name": "solveUnloading", "arguments": ""},
+    "avancInter": {"new_name": "advanceInterface", "arguments": ""},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -50,10 +52,19 @@ CALLS = {
     "HidroDescargaG": ("computeGasUnloadingHydrostatics", True),
     "renovaGas": ("updateGasLine", True),
     "renovaGasBuf": ("updateBufferedGasLine", True),
+    "resolveDescarga": ("solveUnloading", True),
+    "avancInter": ("advanceInterface", True),
 }
 
 # SProd member -> GasLiftState field. Longest first when the pattern is built, so
 # a short name cannot claim the prefix of a longer one (ncel vs ncelGas).
+# Calls the moved bodies make back into SProd, routed through an adapter the
+# state carries. tempDescarga is still an SProd member; the gas line reaches the
+# thermal module through it rather than growing a ThermalState of its own.
+CALLBACKS = {
+    "tempDescarga": "state.temperatureUpdater.dischargeTemperature",
+}
+
 MEMBERS = {
     "celulaG": "state.gasCells",
     "celula": "state.cells",
@@ -62,6 +73,9 @@ MEMBERS = {
     "ncelGas": "state.gasCellCount",
     "ncel": "state.lastCell",
     "termolivreG": "state.gasFreeTerms",
+    # SProd::dt. Longest-first ordering matters: dtInter and dtDesc must claim
+    # their names before the bare dt can.
+    "dt": "state.timeStep",
     "celInter": "state.interfaceCell",
     "presiniG": "state.initialGasPressure",
     "tempiniG": "state.initialGasTemperature",
@@ -193,6 +207,9 @@ def forward(old_name: str, body: str) -> str:
         prefix = "state, " if needs_state else ""
         body = substitute_outside_comments(
             re.compile(rf"(?<![\w.>]){called}\("), f"{renamed}({prefix}", body)
+    for member, adapter in CALLBACKS.items():
+        body = substitute_outside_comments(
+            re.compile(rf"(?<![\w.>]){member}\("), f"{adapter}(", body)
     return body
 
 
@@ -206,6 +223,8 @@ def inverse(old_name: str, body: str) -> str:
         prefix = "state, " if needs_state else ""
         body = re.sub(rf"(?<![\w.>]){re.escape(renamed)}\({re.escape(prefix)}",
                       f"{called}(", body)
+    for member, adapter in CALLBACKS.items():
+        body = re.sub(rf"(?<![\w.>]){re.escape(adapter)}\(", f"{member}(", body)
     body = FIELD_RE.sub(lambda m: FIELD_TO_MEMBER[m.group(1)], body)
     if stateless:
         pattern = re.compile(

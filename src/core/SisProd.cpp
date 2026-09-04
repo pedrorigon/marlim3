@@ -2411,115 +2411,7 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
 }
 
 void SProd::resolveDescarga() {
-    int nvalv = arq.nvalvgas;
-    for (int i = celInter; i <= ncelGas; i++) {
-        double dx0 = 0.5 * celulaG[i].dxL;
-        double dx1 = 0.5 * celulaG[i].dx0;
-        double RgasR = 1.;
-        if (celulaG[i].razInter <= 0.5)
-            RgasR = 2 * celulaG[i].razInter;
-        double RgasL = 0.;
-        if (celulaG[i - 1].razInter >= 0.5)
-            RgasL = 2 * (celulaG[i - 1].razInter - 0.5);
-        double LGasL = dx0 * RgasL;
-        double LGasR = dx1 * RgasR;
-        double LLiqL = dx0 - LGasL;
-        double LLiqR = dx1 - LGasR;
-        double temp = celulaG[i - 1].temp;
-        double pres = celulaG[i - 1].pres;
-        double rhoL = celulaG[i].MasEspFlu(pres, temp);
-        double viscL = celulaG[i].VisFlu(pres, temp);
-        double rhoG = celulaG[i].flui.MasEspGas(pres, temp);
-        double viscG = celulaG[i].flui.ViscGas(pres, temp);
-        double vel1 = celulaG[i].VGasL / (rhoL * celulaG[i - 1].duto.area);
-        if (celulaG[i].razInter > (*vg1dSP).localtiny)
-            vel1 = celulaG[i].VGasL / (rhoG * celulaG[i - 1].duto.area);
-        double vel2 = celulaG[i].VGasL / (rhoL * celulaG[i].duto.area);
-        if (celulaG[i].razInter > (*vg1dSP).localtiny)
-            vel2 = celulaG[i].VGasL / (rhoG * celulaG[i].duto.area);
-        double re1G;
-        double re1L;
-        double re2G;
-        double re2L;
-        if (celulaG[i - 1].duto.revest == 0)
-            re1L = celulaG[i - 1].Rey(celulaG[i - 1].duto.a, vel1, rhoL, viscL);
-        else {
-            double dhid = 4 * celulaG[i - 1].duto.area / celulaG[i - 1].duto.peri;
-            re1L = celulaG[i - 1].Rey(dhid, vel1, rhoL, viscL);
-        }
-        if (celulaG[i].duto.revest == 0)
-            re2L = celulaG[i].Rey(celulaG[i].duto.a, vel2, rhoL, viscL);
-        else {
-            double dhid = 4 * celulaG[i].duto.area / celulaG[i].duto.peri;
-            re2L = celulaG[i].Rey(dhid, vel2, rhoL, viscL);
-        }
-        if (celulaG[i - 1].duto.revest == 0)
-            re1G = celulaG[i - 1].Rey(celulaG[i - 1].duto.a, vel1, rhoG, viscG);
-        else {
-            double dhid = 4 * celulaG[i - 1].duto.area / celulaG[i - 1].duto.peri;
-            re1G = celulaG[i - 1].Rey(dhid, vel1, rhoG, viscG);
-        }
-        if (celulaG[i].duto.revest == 0)
-            re2G = celulaG[i].Rey(celulaG[i].duto.a, vel2, rhoG, viscG);
-        else {
-            double dhid = 4 * celulaG[i].duto.area / celulaG[i].duto.peri;
-            re2G = celulaG[i].Rey(dhid, vel2, rhoG, viscG);
-        }
-        double f1L = celulaG[i - 1].fric(re1L, celulaG[i - 1].duto.rug / celulaG[i - 1].duto.a) * LLiqL;
-        double f2L = celulaG[i].fric(re2L, celulaG[i].duto.rug / celulaG[i].duto.a) * LLiqR;
-        double hidro1L = 1 * (9.82 * sin(celulaG[i - 1].duto.teta) * rhoL) * LLiqL;
-        double hidro2L = 1 * (9.82 * sin(celulaG[i].duto.teta) * rhoL) * LLiqR;
-        double f1G = celulaG[i - 1].fric(re1G, celulaG[i - 1].duto.rug / celulaG[i - 1].duto.a) * LGasL;
-        double f2G = celulaG[i].fric(re2G, celulaG[i].duto.rug / celulaG[i].duto.a) * LGasR;
-        double hidro1G = 1 * (9.82 * sin(celulaG[i - 1].duto.teta) * rhoG) * LGasL;
-        double hidro2G = 1 * (9.82 * sin(celulaG[i].duto.teta) * rhoG) * LGasR;
-        celulaG[i].pres = celulaG[i - 1].pres + (-0.5 * (f1L * rhoL + f1G * rhoG) * vel1 * fabs(vel1) * celulaG[i - 1].duto.peri / celulaG[i - 1].duto.area - 0.5 * (f2L * rhoL + f2G * rhoG) * vel2 * fabs(vel2) * celulaG[i].duto.peri / celulaG[i].duto.area - hidro1L - hidro2L - hidro1G - hidro2G) / 98066.52;
-        celulaG[i].presL = celulaG[i - 1].pres;
-        celulaG[i - 1].presR = celulaG[i].pres;
-
-        tempDescarga(i);
-
-        celulaG[i].u1L = ((1. - celulaG[i].razInter) * celulaG[i].MasEspFlu(celulaG[i].pres, celulaG[i].temp) + celulaG[i].razInter * celulaG[i].flui.MasEspGas(pres, temp)) * celulaG[i].duto.area;
-        celulaG[i - 1].u1R = celulaG[i].u1L;
-        celulaG[i].u1LL = celulaG[i - 1].u1L;
-    }
-
-    double Qtotal = 0.;
-    for (int i = celInter; i <= ncelGas; i++) {
-        double temp = celulaG[i].temp;
-        double pres = celulaG[i].pres;
-        double rhoL = celulaG[i].MasEspFlu(pres, temp);
-        double rhoG = celulaG[i].flui.MasEspGas(pres, temp);
-        double qfonte = celulaG[i].massfonteCH / rhoL;
-        if (celulaG[i].razInter > 0.5)
-            qfonte = celulaG[i].massfonteCH / rhoG;
-        Qtotal += qfonte;
-    }
-    double temp = celulaG[celInter].temp;
-    double pres = celulaG[celInter].pres;
-    double rhoL = celulaG[celInter].MasEspFlu(pres, temp);
-    double rhoG = celulaG[celInter].flui.MasEspGas(pres, temp);
-    celulaG[celInter].VGasL = Qtotal * rhoG;
-    celulaG[celInter - 1].VGasR = celulaG[celInter].VGasL;
-    celulaG[celInter - 2].VGasRR = celulaG[celInter].VGasL;
-    for (int i = celInter; i <= ncelGas; i++) {
-        double temp = celulaG[i].temp;
-        double pres = celulaG[i].pres;
-        double rhoL = celulaG[i].MasEspFlu(pres, temp);
-        double rhoG = celulaG[i].flui.MasEspGas(pres, temp);
-        double qfonte = celulaG[i].massfonteCH / rhoL;
-        if (celulaG[i].razInter > 0.5)
-            qfonte = celulaG[i].massfonteCH / rhoG;
-        Qtotal -= qfonte;
-        if (i < ncelGas) {
-            celulaG[i + 1].VGasL = (Qtotal)*rhoL;
-            celulaG[i].VGasR = celulaG[i + 1].VGasL;
-        } else
-            celulaG[i].VGasR = 0.;
-        celulaG[i - 1].VGasRR = celulaG[i].VGasL;
-    }
-
-    velInter = celulaG[celInter + 1].VGasL / (celulaG[celInter + 1].MasEspFlu(celulaG[celInter + 1].pres, celulaG[celInter + 1].temp) * celulaG[celInter].duto.area);
+    sisprod::gaslift::solveUnloading(gasLiftStateOf(*this));
 }
 
 void SProd::tempDescarga(int i) {
@@ -2527,81 +2419,7 @@ void SProd::tempDescarga(int i) {
 }
 
 void SProd::avancInter() {
-
-    celulaG[celInter].razInter = (celulaG[celInter].razInterIni * celulaG[celInter].dx0 + velInter * dt) / celulaG[celInter].dx0;
-    if (celInter == (ncelGas - 1) && celulaG[celInter].razInter >= 0.99) {
-
-        double pmed = celulaG[celInter].pres;
-        double tmed = celulaG[celInter].temp;
-        double A1 = celulaG[celInter].duto.area;
-        double rho1 = celulaG[celInter].flui.MasEspGas(pmed, tmed);
-        double rhoL = celulaG[celInter].MasEspFlu(pmed, tmed);
-        celulaG[celInter].VGasR = celulaG[celInter].VGasR * rho1 / rhoL;
-        celulaG[celInter].u1L = A1 * rho1;
-        celulaG[celInter - 1].u1R = celulaG[celInter].u1L;
-        celulaG[celInter - 1].VGasRR = celulaG[celInter].VGasR;
-        celulaG[celInter + 1].u1LL = celulaG[celInter].u1L;
-        celulaG[celInter + 1].VGasL = celulaG[celInter].VGasR;
-
-        celulaG[celInter].razInter = 1.0;
-        celulaG[celInter + 1].razInter = 1.0;
-
-        celInter++;
-
-        celulaG[celInter].presini = celulaG[celInter].pres;
-        pmed = celulaG[celInter].pres;
-        tmed = celulaG[celInter].temp;
-        A1 = celulaG[celInter].duto.area;
-        rho1 = celulaG[celInter].flui.MasEspGas(pmed, tmed);
-        rhoL = celulaG[celInter].MasEspFlu(pmed, tmed);
-        celulaG[celInter].VGasR = 0 * celulaG[celInter].VGasR * rho1 / rhoL;
-        celulaG[celInter].u1L = A1 * rho1;
-        celulaG[celInter].u1R = A1 * rho1;
-        celulaG[celInter - 1].u1R = celulaG[celInter].u1L;
-        celulaG[celInter - 1].VGasRR = celulaG[celInter].VGasR;
-
-        celInter = 1e7;
-        arq.descarga = 0;
-    }
-
-    if (arq.descarga == 1) {
-        if (((celulaG[celInter].razInter <= (*vg1dSP).localtiny) && (celulaG[celInter].razInter >= -(*vg1dSP).localtiny)))
-            celulaG[celInter].razInter =
-                0;
-        else if (celulaG[celInter].razInter < -(*vg1dSP).localtiny) {
-            double dtaux;
-            dtaux = -celulaG[celInter].razInterIni * celulaG[celInter].dx0 / velInter;
-            if (dtaux > (*vg1dSP).localtiny) {
-                dtInter = dtaux;
-                celulaG[celInter].razInter = fabs(0.);
-            } else
-                celulaG[celInter].razInter = fabs(0.);
-        } else if ((celulaG[celInter].razInter >= (1. - (*vg1dSP).localtiny) && celulaG[celInter].razInter <= (1. + (*vg1dSP).localtiny))) {
-            celulaG[celInter].razInter = 1.;
-        } else if (celulaG[celInter].razInter > (1. + (*vg1dSP).localtiny)) {
-            double dtaux;
-            dtaux = (1. - celulaG[celInter].razInterIni) * celulaG[celInter].dx0 / velInter;
-            if (dtaux > (*vg1dSP).localtiny) {
-                dtInter = dtaux;
-                celulaG[celInter].razInter = 1.;
-            } else
-                celulaG[celInter].razInter = 1.;
-        }
-
-        if (fabs(celulaG[celInter].razInter) < (*vg1dSP).localtiny && velInter < -fabs((*vg1dSP).localtiny)) {
-            celulaG[celInter].razInter = 0.;
-            if (celInter > 0) {
-                celInter--;
-                celulaG[celInter].razInter = 1.;
-            }
-        } else if (fabs(celulaG[celInter].razInter - 1.) < (*vg1dSP).localtiny && velInter > (*vg1dSP).localtiny) {
-            celulaG[celInter].razInter = 1.;
-            if (celInter < ncelGas) {
-                celInter++;
-                celulaG[celInter].razInter = 0.;
-            }
-        }
-    }
+    sisprod::gaslift::advanceInterface(gasLiftStateOf(*this));
 }
 
 double SProd::TempDescGL(int igl) {
@@ -2985,6 +2803,11 @@ void SProd::conectaColuna() {
     }
 }
 
+void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
+    int cellIndex) const {
+    system.tempDescarga(cellIndex);
+}
+
 void sisprod::thermal::ThermalSourceUpdater::operator()(int cellIndex) const {
     system.renovaFonte(cellIndex);
 }
@@ -3057,6 +2880,7 @@ sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system) {
         .unloadingTimeSteps = system.dtDesc,
         .continuousMeanUnloadingTemperature = system.tempMedContDesc,
         .maximumContinuousUnloadingCount = system.maxVecContDesc,
+        .temperatureUpdater = {system},
     };
 }
 

@@ -11,10 +11,22 @@ class CelG;
 class ChokeGas;
 class Ler;
 struct varGlob1D;
+class SProd;
 template <class T> class Vcr;
 template <class T> class BandMtx;
 
 namespace sisprod::gaslift {
+
+/// Direct adapter for the discharge-temperature step owned by SProd.
+///
+/// SProd::tempDescarga already forwards to the thermal module, but reaching it
+/// needs a ThermalState the gas line does not carry. Same shape the thermal
+/// module uses for the closures it does not own.
+struct GasLiftTemperatureUpdater {
+    SProd &system;
+
+    void dischargeTemperature(int cellIndex) const;
+};
 
 /// The state the gas line and gas-lift routines read, and the only state they
 /// may read.
@@ -107,6 +119,9 @@ struct GasLiftState {
     const std::vector<double> &unloadingTimeSteps;
     const double &continuousMeanUnloadingTemperature;
     const double &maximumContinuousUnloadingCount;
+
+    /// Discharge temperature, computed by the thermal module.
+    GasLiftTemperatureUpdater temperatureUpdater;
 };
 
 /// Hydrostatics of the gas column during unloading.
