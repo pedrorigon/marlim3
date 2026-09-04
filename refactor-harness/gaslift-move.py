@@ -33,8 +33,11 @@ FUNCTIONS = {
                      "arguments": "PCal, TCal, PVO, PT, dextern, areagarg, Rvalv, Temp"},
     "prescordesc": {"new_name": "unloadingPressureCorrection",
                     "arguments": "vazmax, ivalv, fator, sinal"},
+    # The first parameter is vazGarg, a flow rate compared against
+    # arq.vazDescControl -- not a pressure. The table said "pres" and the
+    # delegation did not compile, which is how that was found.
     "CalcPresValvDesc": {"new_name": "computeUnloadingValvePressure",
-                         "arguments": "pres, ivalv"},
+                         "arguments": "vazGarg, ivalv"},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,

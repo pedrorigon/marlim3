@@ -54,8 +54,10 @@ PY
 }
 
 probe 'areaValvCali: calibration blend'   'PB80 = (PB80 + 14.6959488) * (80 + 460.67)' \
-                                          'PB80 = (PB80 + 14.6959488) * (80 + 460.68)'
-probe 'areaValvCali: opening cap'         'if (APE > areagarg)' 'if (APE > 2. * areagarg)'
+                                          'PB80 = (PB80 + 14.6959488) * (80 + 460.68)' \
+                                          "$target_gaslift"
+probe 'areaValvCali: opening cap'         'if (APE > areagarg)' 'if (APE > 2. * areagarg)' \
+                                          "$target_gaslift"
 # The same assignment appears in renovaGas and renovaGasBuf; the preceding line
 # differs and pins this one to renovaGas.
 probe 'updateGasLine: neighbour source'   'state.gasCells[i].presL = state.gasFreeTerms[3 * i - 3];
@@ -63,9 +65,11 @@ probe 'updateGasLine: neighbour source'   'state.gasCells[i].presL = state.gasFr
                                           'state.gasCells[i].presL = state.gasFreeTerms[3 * i - 2];
             state.gasCells[i].presR = state.gasFreeTerms[3 * i + 3];' \
                                           "$target_gaslift"
-probe 'prescordesc: sign'                 'return sinal * precorr;' 'return -sinal * precorr;'
-probe 'prescordesc: throat area'          'pow(massica / chokeVGL[ivalv].areagarg, 2.)' \
-                                          'pow(massica / chokeVGL[ivalv].areagarg, 3.)'
+probe 'prescordesc: sign'                 'return sinal * precorr;' 'return -sinal * precorr;' \
+                                          "$target_gaslift"
+probe 'prescordesc: throat area'          'pow(massica / state.gasLiftChokes[ivalv].areagarg, 2.)' \
+                                          'pow(massica / state.gasLiftChokes[ivalv].areagarg, 3.)' \
+                                          "$target_gaslift"
 probe 'delpGasPerm: hydrostatic constant' 'double gradhidro = celulaG[i].dPdLHidro * (9.82 * sin(celulaG[i].duto.teta) * rhog * dx);' \
                                           'double gradhidro = celulaG[i].dPdLHidro * (9.81 * sin(celulaG[i].duto.teta) * rhog * dx);'
 # delpGasPerm and delpInjPerm both convert with 98066.5; the gas one is preceded
