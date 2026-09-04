@@ -8,6 +8,11 @@
 #
 # Gate 7 (time-step series) is specific to stage 8 and is not run here.
 #
+# MARLIM_DEFERRED_GATES names gates the owner has decided not to run. A deferred
+# gate reports DEFERRED, never PASS: a gate that is skipped and counted as passed
+# is worse than no gate at all, because the summary then claims coverage the run
+# does not have. The summary says how many ran and which did not.
+#
 # Usage:
 #   run-gates.sh <evidence-directory> [model ...]
 #
@@ -34,7 +39,11 @@ cd "$project_root" || exit 2
 red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; bold=$'\033[1m'; reset=$'\033[0m'
 failures=0
 
+deferred_gates="${MARLIM_DEFERRED_GATES:-}"
+deferred_count=0
+
 announce() { printf '\n%s=== %s ===%s\n' "$bold" "$1" "$reset"; }
+is_deferred() { [[ " $deferred_gates " == *" $1 "* ]]; }
 verdict() {
     if (( $2 == 0 )); then
         printf '%sGATE %s: PASS%s\n' "$green" "$1" "$reset"
@@ -42,6 +51,10 @@ verdict() {
         printf '%sGATE %s: FAIL%s\n' "$red" "$1" "$reset"
         failures=$((failures + 1))
     fi
+}
+defer() {
+    printf '%sGATE %s: DEFERRED -- %s%s\n' "$yellow" "$1" "$2" "$reset"
+    deferred_count=$((deferred_count + 1))
 }
 
 # ------------------------------------------------------------ pre-flight ----
@@ -177,8 +190,17 @@ tail -1 "$evidence_dir/l3.log"
 
 # ---------------------------------------------------------------- gate 4 ----
 announce "Gate 4 - performance within threshold"
-bash "$script_dir/performance-gate.sh" "${models[@]}" 2>&1 | tee "$evidence_dir/performance.log"
-verdict 4 "${PIPESTATUS[0]}"
+if is_deferred 4; then
+    # NOT piped into tee: a pipeline runs its first stage in a subshell, so the
+    # counter defer increments would be lost and the summary would then claim
+    # "all 6 gates passed" for a run where one did not happen. That is the exact
+    # failure this mechanism exists to prevent, and it is how it first shipped.
+    defer 4 "not run by owner decision"
+    printf 'GATE 4: DEFERRED -- not run by owner decision\n' > "$evidence_dir/performance.log"
+else
+    bash "$script_dir/performance-gate.sh" "${models[@]}" 2>&1 | tee "$evidence_dir/performance.log"
+    verdict 4 "${PIPESTATUS[0]}"
+fi
 
 # ------------------------------------------------------ supplementary L0 ----
 # Not a constitutional gate, but reported alongside them because for most of
@@ -281,6 +303,12 @@ fi
 if (( failures > 0 )); then
     printf '%s%s of 6 gates FAILED -- the stage is not complete%s\n' "$red" "$failures" "$reset" >&2
     exit 1
+fi
+
+if (( deferred_count > 0 )); then
+    printf '%s%s of 6 gates passed; %s DEFERRED (%s) and NOT verified%s\n' \
+           "$yellow" "$((6 - deferred_count))" "$deferred_count" "$deferred_gates" "$reset"
+    exit 0
 fi
 
 printf '%sall 6 gates passed%s\n' "$green" "$reset"
