@@ -30,6 +30,7 @@ struct GasLiftTemperatureUpdater {
     /// moved bodies omit it.
     void gasTemperature(int cellIndex, double previousTemperature,
                         int steadyMode = 0) const;
+    double gasLiftDischargeTemperature(int valveIndex) const;
 };
 
 /// The state the gas line and gas-lift routines read, and the only state they
@@ -180,6 +181,15 @@ void updateTransientGasValves(const GasLiftState &state);
 
 /// Solves the gas line.
 void solveGasLine(const GasLiftState &state);
+
+/// Connects the gas line to the tubing at the valve cells.
+void connectColumn(const GasLiftState &state);
+
+/// Same, for the steady march.
+void connectColumnSteady(const GasLiftState &state);
+
+/// Initialises the steady-march connection.
+void initialiseConnectColumnSteady(const GasLiftState &state);
 
 /// Connects the gas line to the tubing.
 void connectTubing(const GasLiftState &state);
