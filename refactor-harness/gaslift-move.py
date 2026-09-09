@@ -41,6 +41,9 @@ FUNCTIONS = {
     "resolveDescarga": {"new_name": "solveUnloading", "arguments": ""},
     "avancInter": {"new_name": "advanceInterface", "arguments": ""},
     "ValvGasTrans": {"new_name": "updateTransientGasValves", "arguments": ""},
+    "BuscaPresInjDesc": {"new_name": "searchUnloadingInjectionPressure", "arguments": ""},
+    "subtempoGas": {"new_name": "advanceGasSubStep", "arguments": ""},
+    "subtempoGasBuf": {"new_name": "advanceBufferedGasSubStep", "arguments": ""},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -56,6 +59,9 @@ CALLS = {
     "resolveDescarga": ("solveUnloading", True),
     "avancInter": ("advanceInterface", True),
     "ValvGasTrans": ("updateTransientGasValves", True),
+    "BuscaPresInjDesc": ("searchUnloadingInjectionPressure", True),
+    "subtempoGas": ("advanceGasSubStep", True),
+    "subtempoGasBuf": ("advanceBufferedGasSubStep", True),
 }
 
 # SProd member -> GasLiftState field. Longest first when the pattern is built, so
@@ -65,6 +71,7 @@ CALLS = {
 # thermal module through it rather than growing a ThermalState of its own.
 CALLBACKS = {
     "tempDescarga": "state.temperatureUpdater.dischargeTemperature",
+    "calctempGas": "state.temperatureUpdater.gasTemperature",
 }
 
 MEMBERS = {
@@ -77,6 +84,15 @@ MEMBERS = {
     "termolivreG": "state.gasFreeTerms",
     # SProd::dt. Longest-first ordering matters: dtInter and dtDesc must claim
     # their names before the bare dt can.
+    "celInterIni": "state.initialInterfaceCell",
+    "velInterIni": "state.initialInterfaceVelocity",
+    "dtInterIni": "state.initialInterfaceTimeStep",
+    "vazmaxMedDesc": "state.maximumMeanUnloadingFlowRates",
+    "tempMedContDesc": "state.continuousMeanUnloadingTemperature",
+    "maxVecContDesc": "state.maximumContinuousUnloadingCount",
+    "vazmedDesc": "state.meanUnloadingFlowRate",
+    "tempmedDEsc": "state.meanUnloadingTemperature",
+    "dtDesc": "state.unloadingTimeSteps",
     "dt": "state.timeStep",
     "celInter": "state.interfaceCell",
     "presiniG": "state.initialGasPressure",
@@ -206,6 +222,12 @@ def forward(old_name: str, body: str) -> str:
     for called, (renamed, needs_state) in CALLS.items():
         if called == old_name:
             continue
+        # A zero-argument call must become f(state), not f(state, ). The
+        # empty-argument form is matched first so the general one cannot leave
+        # a trailing comma behind.
+        if needs_state:
+            body = substitute_outside_comments(
+                re.compile(rf"(?<![\w.>]){called}\(\s*\)"), f"{renamed}(state)", body)
         prefix = "state, " if needs_state else ""
         body = substitute_outside_comments(
             re.compile(rf"(?<![\w.>]){called}\("), f"{renamed}({prefix}", body)
@@ -222,6 +244,9 @@ def inverse(old_name: str, body: str) -> str:
     for called, (renamed, needs_state) in reversed(list(CALLS.items())):
         if called == old_name:
             continue
+        if needs_state:
+            body = re.sub(rf"(?<![\w.>]){re.escape(renamed)}\(state\)",
+                          f"{called}()", body)
         prefix = "state, " if needs_state else ""
         body = re.sub(rf"(?<![\w.>]){re.escape(renamed)}\({re.escape(prefix)}",
                       f"{called}(", body)

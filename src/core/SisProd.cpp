@@ -2439,248 +2439,15 @@ double SProd::CalcPresValvDesc(double vazGarg, int ivalv) {
 }
 
 double SProd::BuscaPresInjDesc() {
-    double vazmax = 0;
-    double vazmaxinst = 0;
-
-    if ((*vg1dSP).lixo5 > 1000) {
-        int para;
-        para = 0;
-    }
-    double pGSupAux = pGSup;
-    double laz1 = 0.1;
-    double laz2 = 0.4;
-    if (arq.descarga == 1) {
-        double presDescini = celula[ncel].pres;
-        if ((*vg1dSP).lixo5 > arq.tempoLatenciaDesc) {
-            int nvalv = arq.nvalvgas;
-            int ivalv = 0;
-            for (int j = 0; j < nvalv; j++) {
-                int iG = posicVGLG[j];
-                int iP = posicVGLP[j];
-                double pmed = celula[iP].pres;
-                if (iG > celInter) {
-                    double rho1 = celulaG[iG].MasEspFlu(celulaG[iG].pres, celulaG[iG].temp);
-                    chokeVGL[j].presEstag = celulaG[iG].pres;
-                    chokeVGL[j].presGarg = (pmed - chokeVGL[j].presEstag * chokeVGL[j].frec) /
-                                           (1. - chokeVGL[j].frec);
-                    chokeVGL[j].tempEstag = celulaG[iG].temp;
-                    double massica;
-                    if (pmed < celulaG[iG].pres)
-                        massica = chokeVGL[j].massica(1, arq.salinDescarga);
-                    else
-                        massica = 0.;
-                    if (chokeVGL[j].tipo == 1) {
-
-                        double abre = areaValvCali(chokeVGL[j].pcalib * 14.223595, chokeVGL[j].tcalib, (chokeVGL[j].presEstag - 1.033211) * 14.223595,
-                                                   (chokeVGL[j].presGarg - 1.033211) * 14.223595, chokeVGL[j].dextern, chokeVGL[j].areagarg, chokeVGL[j].areagarg / chokeVGL[j].areafole,
-                                                   1.8 * chokeVGL[j].tempEstag + 32);
-                        massica *= abre;
-                    }
-                    double vazmaxAux = massica / (rho1);
-                    if (vazmaxAux > vazmax) {
-                        vazmax = vazmaxAux;
-                        ivalv = j;
-                    }
-                }
-            }
-            if (dtDesc.size() > maxVecContDesc || tempmedDEsc > tempMedContDesc) {
-                tempmedDEsc -= dtDesc[0];
-                dtDesc.erase(dtDesc.begin());
-                vazmedDesc -= vazmaxMedDesc[0];
-                vazmaxMedDesc.erase(vazmaxMedDesc.begin());
-            }
-
-            vazmaxMedDesc.push_back(vazmax * dt);
-            vazmedDesc += vazmax * dt;
-            dtDesc.push_back(dt);
-            tempmedDEsc += dt;
-
-            double pondera = 0.5;
-            vazmaxinst = vazmax;
-            vazmax = pondera * vazmax + (1. - pondera) * vazmedDesc / tempmedDEsc;
-            CalcPresValvDesc(vazmax, ivalv);
-            if (posicVGLG[ivalv] >= celInter) {
-                if (celula[ncel - 1].MC > 0.0) {
-                    if (vazmax > (1. - laz1) * arq.vazDescControl) {
-
-                        double precorr = 0.;
-                        precorr = prescordesc(vazmax, ivalv, 1. - laz1, -1);
-                        if (fabs(precorr) > 0.01 * pGSup * celula[0].dt)
-                            precorr = (fabs(precorr) / precorr) * 0.01 * pGSup * celula[0].dt;
-                        pGSup -= precorr;
-                        if (pGSup > arq.presMaxDesc)
-                            pGSup = arq.presMaxDesc;
-                    } else if (vazmax <= (1 - laz2) * arq.vazDescControl) {
-
-                        double precorr = 0.;
-                        precorr = prescordesc(vazmax, ivalv, 1. - laz2, 1);
-                        if (fabs(precorr) > 0.01 * pGSup * celula[0].dt)
-                            precorr = (fabs(precorr) / precorr) * 0.01 * pGSup * celula[0].dt;
-                        pGSup -= precorr;
-                        if (pGSup < arq.presMinDesc)
-                            pGSup = arq.presMinDesc;
-                    }
-                } else {
-                    pGSup *= (1 - 0.01 * dt);
-                    if (pGSup < arq.presMinDesc)
-                        pGSup = arq.presMinDesc;
-                }
-            }
-        } else {
-            if ((*vg1dSP).lixo5 < 0.5 * arq.tempoLatenciaDesc)
-                pGSup = presDescini - (presDescini - arq.presMinDesc) * celula[0].dt / (0.5 * arq.tempoLatenciaDesc - (*vg1dSP).lixo5);
-            else
-                pGSup = arq.presMinDesc;
-            presiniG = arq.presIniDescG;
-        }
-    } else {
-        pGSup *= 0.95;
-        if (pGSup < arq.presMinDesc)
-            pGSup = arq.presMinDesc;
-        if (presiniG > arq.presIniDesc) {
-            presiniG *= 0.95;
-            if (presiniG < arq.presIniDesc)
-                presiniG = arq.presIniDesc;
-        } else if (presiniG < arq.presIniDesc) {
-            presiniG *= 1.05;
-            if (presiniG > arq.presIniDesc)
-                presiniG = arq.presIniDesc;
-        }
-    }
-    return vazmaxinst;
+    return sisprod::gaslift::searchUnloadingInjectionPressure(gasLiftStateOf(*this));
 }
 
 void SProd::subtempoGas() {
-
-    for (int i = 0; i <= ncelGas; i++)
-        celulaG[i].DeVoltaParaoFuturo();
-    dtInter = dt;
-    if (arq.descarga == 1) {
-        celInterIni = celInter;
-        dtInterIni = dtInter;
-        velInterIni = velInter;
-        avancInter();
-    }
-    if (dtInter < dt) {
-        dt = dtInter;
-        for (int i = 0; i <= ncel; i++) {
-            celula[i].dt = dt;
-            celula[i].dt2 = dt;
-            celula[i].dtPig = dt;
-        }
-    }
-
-    for (int i = 0; i <= ncelGas; i++) {
-        celulaG[i].dt = dt;
-    }
-
-    int celLimi;
-    if (celInter <= ncelGas)
-        celLimi = celInter - 1;
-    else
-        celLimi = ncelGas + 1;
-    for (int i = 0; i < ncelGas + 1; i++)
-        celulaG[i].dTdt = 0;
-
-    int ciclomax = arq.cicloAcopTerm;
-    for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
-        double abertoChk = 1.;
-        if (celulaG[0].tipoCC == 0) {
-            abertoChk = chokeInj.areagarg / celulaG[0].duto.area;
-            if (abertoChk < 0.2) {
-                chokeInj.presEstag = presiniG;
-                chokeInj.tempEstag = tempiniG;
-                chokeInj.presGarg = celulaG[0].pres;
-                celulaG[0].massfonteCH = chokeInj.massica();
-            }
-        }
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-        for (int i = 0; i <= ncelGas; i++) {
-
-            celulaG[i].GeraLocal(ncelGas, presiniG, tempiniG, abertoChk);
-            for (int j = 0; j < 9; j++) {
-                matglobG[3 * i][j - 3] = celulaG[i].local[0][j];
-                matglobG[3 * i + 1][j - 4] = celulaG[i].local[1][j];
-                matglobG[3 * i + 2][j - 5] = celulaG[i].local[2][j];
-            }
-            termolivreG[3 * i] = celulaG[i].TL[0];
-            termolivreG[3 * i + 1] = celulaG[i].TL[1];
-            termolivreG[3 * i + 2] = celulaG[i].TL[2];
-        }
-        matglobG.GaussElimPP(termolivreG);
-        renovaGas();
-
-        double verifica = celulaG[0].pres;
-        celulaG[0].temp = tempiniG;
-        celulaG[0].dTdt = (celulaG[0].temp - celulaG[0].tempini) / dt;
-        if (celulaG[ncelGas].VGasR < 0.)
-            celulaG[ncelGas].temp = 20.;
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-        for (int i = 1; i < celLimi; i++) {
-            calctempGas(i, celulaG[i - 1].tempini);
-            celulaG[i].dTdt = (celulaG[i].temp - celulaG[i].tempini) / dt;
-        }
-        if (ciclo < ciclomax)
-            for (int k = 0; k <= ncelGas; k++)
-                celulaG[k].FeiticoDoTempo();
-    }
-
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 0; i < celLimi; i++)
-        celulaG[i].rg = celulaG[i].flui.MasEspGas(celulaG[i].pres, celulaG[i].temp);
-
-    for (int i = 0; i < celLimi; i++) {
-        if (i > 0)
-            celulaG[i - 1].rgR = celulaG[i].rg;
-        celulaG[i].u1L = celulaG[i].rg * celulaG[i].duto.area;
-        if (i == 0)
-            celulaG[i].u1LL = celulaG[i].u1L;
-        else
-            celulaG[i].u1LL = celulaG[i - 1].u1L;
-        if (i > 0)
-            celulaG[i - 1].u1R = celulaG[i].u1L;
-        if (i == ncelGas) {
-            celulaG[i].u1R = celulaG[i].u1L;
-            celulaG[ncelGas].rgR = celulaG[ncelGas].rg;
-        }
-    }
-
-    for (int i = 0; i <= ncelGas; i++)
-        celulaG[i].presini = celulaG[i].pres;
-
-    if (arq.descarga == 1)
-        resolveDescarga();
+    sisprod::gaslift::advanceGasSubStep(gasLiftStateOf(*this));
 }
 
 void SProd::subtempoGasBuf() {
-
-    for (int i = 0; i < ncelGas + 1; i++)
-        celulaG[i].dTdt = 0;
-    double abertoChk = 1.;
-    if (celulaG[0].tipoCC == 0) {
-        abertoChk = chokeInj.areagarg / celulaG[0].duto.area;
-        if (abertoChk < 0.2) {
-            chokeInj.presEstag = presiniG;
-            chokeInj.tempEstag = tempiniG;
-            chokeInj.presGarg = celulaG[0].pres;
-            celulaG[0].massfonteCH = chokeInj.massica();
-        }
-    }
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 0; i <= ncelGas; i++) {
-
-        celulaG[i].GeraLocal(ncelGas, presiniG, tempiniG, abertoChk);
-        for (int j = 0; j < 9; j++) {
-            matglobG[3 * i][j - 3] = celulaG[i].local[0][j];
-            matglobG[3 * i + 1][j - 4] = celulaG[i].local[1][j];
-            matglobG[3 * i + 2][j - 5] = celulaG[i].local[2][j];
-        }
-        termolivreG[3 * i] = celulaG[i].TL[0];
-        termolivreG[3 * i + 1] = celulaG[i].TL[1];
-        termolivreG[3 * i + 2] = celulaG[i].TL[2];
-    }
-    matglobG.GaussElimPP(termolivreG);
-    renovaGasBuf();
+    sisprod::gaslift::advanceBufferedGasSubStep(gasLiftStateOf(*this));
 }
 
 void SProd::conectaColuna() {
@@ -2717,6 +2484,11 @@ void SProd::conectaColuna() {
 void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
     int cellIndex) const {
     system.tempDescarga(cellIndex);
+}
+
+void sisprod::gaslift::GasLiftTemperatureUpdater::gasTemperature(
+    int cellIndex, double previousTemperature, int steadyMode) const {
+    system.calctempGas(cellIndex, previousTemperature, steadyMode);
 }
 
 void sisprod::thermal::ThermalSourceUpdater::operator()(int cellIndex) const {
