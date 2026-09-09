@@ -44,6 +44,10 @@ FUNCTIONS = {
     "BuscaPresInjDesc": {"new_name": "searchUnloadingInjectionPressure", "arguments": ""},
     "subtempoGas": {"new_name": "advanceGasSubStep", "arguments": ""},
     "subtempoGasBuf": {"new_name": "advanceBufferedGasSubStep", "arguments": ""},
+    "conectaColuna": {"new_name": "connectColumn", "arguments": ""},
+    "solveLinGas": {"new_name": "solveGasLine", "arguments": ""},
+    "conectaColunaPerm": {"new_name": "connectColumnSteady", "arguments": ""},
+    "IniciaconectaColunaPerm": {"new_name": "initialiseConnectColumnSteady", "arguments": ""},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -62,6 +66,10 @@ CALLS = {
     "BuscaPresInjDesc": ("searchUnloadingInjectionPressure", True),
     "subtempoGas": ("advanceGasSubStep", True),
     "subtempoGasBuf": ("advanceBufferedGasSubStep", True),
+    "conectaColuna": ("connectColumn", True),
+    "solveLinGas": ("solveGasLine", True),
+    "conectaColunaPerm": ("connectColumnSteady", True),
+    "IniciaconectaColunaPerm": ("initialiseConnectColumnSteady", True),
 }
 
 # SProd member -> GasLiftState field. Longest first when the pattern is built, so
@@ -72,6 +80,7 @@ CALLS = {
 CALLBACKS = {
     "tempDescarga": "state.temperatureUpdater.dischargeTemperature",
     "calctempGas": "state.temperatureUpdater.gasTemperature",
+    "TempDescGL": "state.temperatureUpdater.gasLiftDischargeTemperature",
 }
 
 MEMBERS = {

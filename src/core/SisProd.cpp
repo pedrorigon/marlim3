@@ -2451,34 +2451,7 @@ void SProd::subtempoGasBuf() {
 }
 
 void SProd::conectaColuna() {
-    for (int i = ColunaAnulaIni; i >= ColunaAnulaFim; i--) {
-        int j = ColunaAnulaIni + AnulaColunaIni - i;
-        celula[i].calor.Textern2 = celulaG[j].calor.Tcamada[0][0];
-        celula[i].calor.betext = celulaG[j].calor.betint;
-        int icam = celula[i].calor.geom.ncamadas - 1;
-        int idisc = celula[i].calor.ncamada[icam] - 1;
-        celulaG[j].calor.Tint2 = celula[i].calor.Tcamada[icam][idisc];
-        celula[i].calor.colunaDia = celulaG[j].duto.dia;
-        celula[i].calor.geom.b = celulaG[j].calor.geom.a;
-
-        celula[i].calor.Textern1 = celulaG[j].temp;
-        celula[i].calor.Vextern1 = celulaG[j].VGasR / celulaG[j].u1L;
-        if (j < celInter) {
-            double cpg = celulaG[j].flui.CalorGas(celulaG[j].pres, celulaG[j].temp);
-            double rhog = celulaG[j].flui.MasEspGas(celulaG[j].pres, celulaG[j].temp);
-            celula[i].calor.kextern1 = celulaG[j].flui.CondGas(celulaG[j].pres, celulaG[j].temp);
-            celula[i].calor.cpextern1 = cpg;
-            celula[i].calor.rhoextern1 = rhog;
-            celula[i].calor.viscextern1 = celulaG[j].flui.ViscGas(celulaG[j].pres, celulaG[j].temp) * 1.e-3;
-        } else {
-            double cpg = celulaG[j].CalorLiq(celulaG[j].pres, celulaG[j].temp);
-            double rhog = celulaG[j].MasEspFlu(celulaG[j].pres, celulaG[j].temp);
-            celula[i].calor.kextern1 = celulaG[j].CondLiq(celulaG[j].pres, celulaG[j].temp);
-            celula[i].calor.cpextern1 = cpg;
-            celula[i].calor.rhoextern1 = rhog;
-            celula[i].calor.viscextern1 = celulaG[j].VisFlu(celulaG[j].pres, celulaG[j].temp) * 1.e-3;
-        }
-    }
+    sisprod::gaslift::connectColumn(gasLiftStateOf(*this));
 }
 
 void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
@@ -2489,6 +2462,11 @@ void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
 void sisprod::gaslift::GasLiftTemperatureUpdater::gasTemperature(
     int cellIndex, double previousTemperature, int steadyMode) const {
     system.calctempGas(cellIndex, previousTemperature, steadyMode);
+}
+
+double sisprod::gaslift::GasLiftTemperatureUpdater::gasLiftDischargeTemperature(
+    int valveIndex) const {
+    return system.TempDescGL(valveIndex);
 }
 
 void sisprod::thermal::ThermalSourceUpdater::operator()(int cellIndex) const {
@@ -7300,39 +7278,7 @@ void SProd::restringeDTporValv() {
 }
 
 void SProd::solveLinGas() {
-    if (arq.lingas > 0) {
-        double tg;
-        // dt,celula,ColunaAnulaIni,ColunaAnulaFim,
-        ValvGasTrans();
-        for (int i = 0; i < arq.nvalvgas; i++) {
-            int posGLP = posicVGLP[i];
-            int posGLG = posicVGLG[i];
-            if (posGLG < celInter || (posGLG == celInter && celulaG[posGLG].razInter > 0.5)) {
-                celula[posGLP].acsr.injg.QGas = celulaG[posGLG].massfonteCH * 86400. / celulaG[posGLG].flui.MasEspGas(1., 15.);
-                celula[posGLP].acsr.injg.tipoflu = 0;
-            } else {
-                celula[posGLP].acsr.injg.QGas = celulaG[posGLG].massfonteCH;
-                celula[posGLP].acsr.injg.tipoflu = 1;
-            }
-            if (posGLG < celInter || (posGLG == celInter && celulaG[posGLG].razInter > 0.5)) {
-                if (chokeVGL[i].presEstag > chokeVGL[i].presGarg) {
-                    tg = TempDescGL(i);
-                } else
-                    tg = celula[posGLP].temp;
-                celula[posGLP].acsr.injg.temp = tg;
-                if (celula[posGLP].acsr.injg.temp < -50)
-                    celula[posGLP].acsr.injg.temp = -50;
-            } else
-                celula[posGLP].acsr.injg.temp = chokeVGL[i].tempEstag;
-            celulaG[posGLG].pEstag = chokeVGL[i].presEstag;
-            celulaG[posGLG].tEstag = chokeVGL[i].tempEstag;
-            celulaG[posGLG].pGarg = chokeVGL[i].presGarg;
-            celulaG[posGLG].tGarg = chokeVGL[i].tempGarg;
-            celulaG[posGLG].qGarg = chokeVGL[i].qGarg;
-            celulaG[posGLG].areaGarg = chokeVGL[i].areagarg;
-        }
-        subtempoGas();
-    }
+    sisprod::gaslift::solveGasLine(gasLiftStateOf(*this));
 }
 
 void SProd::EvoluiFrac(double alfrev, double betrev, int ciclo) {
@@ -17885,38 +17831,11 @@ void SProd::RenovaTempGasPerm(int i) {
 }
 
 void SProd::conectaColunaPerm() {
-    for (int i = ColunaAnulaIni; i >= ColunaAnulaFim; i--) {
-        int j = ColunaAnulaIni + AnulaColunaIni - i;
-
-        celula[i].calor.Textern2 = celulaG[j].calor.Textern1;
-        celula[i].calor.colunaDia = celulaG[j].duto.dia;
-
-        double cpg = celulaG[j].flui.CalorGas(celulaG[j].pres, celulaG[j].temp);
-        double rhog = celulaG[j].flui.MasEspGas(celulaG[j].pres, celulaG[j].temp);
-        celula[i].calor.Textern1 = celulaG[j].calor.Textern1;
-        celula[i].calor.Vextern1 = celulaG[j].VGasR / celulaG[j].u1L;
-        celula[i].calor.kextern1 = celulaG[j].flui.CondGas(celulaG[j].pres, celulaG[j].temp);
-        celula[i].calor.cpextern1 = cpg;
-        celula[i].calor.rhoextern1 = rhog;
-        celula[i].calor.viscextern1 = celulaG[j].flui.ViscGas(celulaG[j].pres, celulaG[j].temp) * 1.e-3;
-    }
+    sisprod::gaslift::connectColumnSteady(gasLiftStateOf(*this));
 }
 
 void SProd::IniciaconectaColunaPerm() {
-    for (int i = ColunaAnulaIni; i >= ColunaAnulaFim; i--) {
-        int j = ColunaAnulaIni + AnulaColunaIni - i;
-        celula[i].calor.Textern2 = celulaG[j].calor.Textern2;
-        celula[i].calor.colunaDia = celulaG[j].duto.dia;
-
-        double cpg = celulaG[j].flui.CalorGas(celula[i].pres, arq.celg[j].textern);
-        double rhog = celulaG[j].flui.MasEspGas(celula[i].pres, arq.celg[j].textern);
-        celula[i].calor.Textern1 = celulaG[j].calor.Textern1;
-        celula[i].calor.Vextern1 = 1.;
-        celula[i].calor.kextern1 = celulaG[j].flui.CondGas(celula[i].pres, arq.celg[j].textern);
-        celula[i].calor.cpextern1 = cpg;
-        celula[i].calor.rhoextern1 = rhog;
-        celula[i].calor.viscextern1 = 0.16 * 1.e-3;
-    }
+    sisprod::gaslift::initialiseConnectColumnSteady(gasLiftStateOf(*this));
 }
 
 void SProd::atualizaProp() {

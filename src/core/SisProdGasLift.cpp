@@ -770,4 +770,106 @@ void advanceBufferedGasSubStep(const GasLiftState &state) {
     updateBufferedGasLine(state);
 }
 
+void connectColumn(const GasLiftState &state) {
+    for (int i = state.annulusTubingStart; i >= state.annulusTubingEnd; i--) {
+        int j = state.annulusTubingStart + state.tubingAnnulusStart - i;
+        state.cells[i].calor.Textern2 = state.gasCells[j].calor.Tcamada[0][0];
+        state.cells[i].calor.betext = state.gasCells[j].calor.betint;
+        int icam = state.cells[i].calor.geom.ncamadas - 1;
+        int idisc = state.cells[i].calor.ncamada[icam] - 1;
+        state.gasCells[j].calor.Tint2 = state.cells[i].calor.Tcamada[icam][idisc];
+        state.cells[i].calor.colunaDia = state.gasCells[j].duto.dia;
+        state.cells[i].calor.geom.b = state.gasCells[j].calor.geom.a;
+
+        state.cells[i].calor.Textern1 = state.gasCells[j].temp;
+        state.cells[i].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
+        if (j < state.interfaceCell) {
+            double cpg = state.gasCells[j].flui.CalorGas(state.gasCells[j].pres, state.gasCells[j].temp);
+            double rhog = state.gasCells[j].flui.MasEspGas(state.gasCells[j].pres, state.gasCells[j].temp);
+            state.cells[i].calor.kextern1 = state.gasCells[j].flui.CondGas(state.gasCells[j].pres, state.gasCells[j].temp);
+            state.cells[i].calor.cpextern1 = cpg;
+            state.cells[i].calor.rhoextern1 = rhog;
+            state.cells[i].calor.viscextern1 = state.gasCells[j].flui.ViscGas(state.gasCells[j].pres, state.gasCells[j].temp) * 1.e-3;
+        } else {
+            double cpg = state.gasCells[j].CalorLiq(state.gasCells[j].pres, state.gasCells[j].temp);
+            double rhog = state.gasCells[j].MasEspFlu(state.gasCells[j].pres, state.gasCells[j].temp);
+            state.cells[i].calor.kextern1 = state.gasCells[j].CondLiq(state.gasCells[j].pres, state.gasCells[j].temp);
+            state.cells[i].calor.cpextern1 = cpg;
+            state.cells[i].calor.rhoextern1 = rhog;
+            state.cells[i].calor.viscextern1 = state.gasCells[j].VisFlu(state.gasCells[j].pres, state.gasCells[j].temp) * 1.e-3;
+        }
+    }
+}
+
+void solveGasLine(const GasLiftState &state) {
+    if (state.input.lingas > 0) {
+        double tg;
+        // dt,celula,ColunaAnulaIni,ColunaAnulaFim,
+        updateTransientGasValves(state);
+        for (int i = 0; i < state.input.nvalvgas; i++) {
+            int posGLP = state.productionValveCellIndices[i];
+            int posGLG = state.gasValveCellIndices[i];
+            if (posGLG < state.interfaceCell || (posGLG == state.interfaceCell && state.gasCells[posGLG].razInter > 0.5)) {
+                state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH * 86400. / state.gasCells[posGLG].flui.MasEspGas(1., 15.);
+                state.cells[posGLP].acsr.injg.tipoflu = 0;
+            } else {
+                state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH;
+                state.cells[posGLP].acsr.injg.tipoflu = 1;
+            }
+            if (posGLG < state.interfaceCell || (posGLG == state.interfaceCell && state.gasCells[posGLG].razInter > 0.5)) {
+                if (state.gasLiftChokes[i].presEstag > state.gasLiftChokes[i].presGarg) {
+                    tg = state.temperatureUpdater.gasLiftDischargeTemperature(i);
+                } else
+                    tg = state.cells[posGLP].temp;
+                state.cells[posGLP].acsr.injg.temp = tg;
+                if (state.cells[posGLP].acsr.injg.temp < -50)
+                    state.cells[posGLP].acsr.injg.temp = -50;
+            } else
+                state.cells[posGLP].acsr.injg.temp = state.gasLiftChokes[i].tempEstag;
+            state.gasCells[posGLG].pEstag = state.gasLiftChokes[i].presEstag;
+            state.gasCells[posGLG].tEstag = state.gasLiftChokes[i].tempEstag;
+            state.gasCells[posGLG].pGarg = state.gasLiftChokes[i].presGarg;
+            state.gasCells[posGLG].tGarg = state.gasLiftChokes[i].tempGarg;
+            state.gasCells[posGLG].qGarg = state.gasLiftChokes[i].qGarg;
+            state.gasCells[posGLG].areaGarg = state.gasLiftChokes[i].areagarg;
+        }
+        advanceGasSubStep(state);
+    }
+}
+
+void connectColumnSteady(const GasLiftState &state) {
+    for (int i = state.annulusTubingStart; i >= state.annulusTubingEnd; i--) {
+        int j = state.annulusTubingStart + state.tubingAnnulusStart - i;
+
+        state.cells[i].calor.Textern2 = state.gasCells[j].calor.Textern1;
+        state.cells[i].calor.colunaDia = state.gasCells[j].duto.dia;
+
+        double cpg = state.gasCells[j].flui.CalorGas(state.gasCells[j].pres, state.gasCells[j].temp);
+        double rhog = state.gasCells[j].flui.MasEspGas(state.gasCells[j].pres, state.gasCells[j].temp);
+        state.cells[i].calor.Textern1 = state.gasCells[j].calor.Textern1;
+        state.cells[i].calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
+        state.cells[i].calor.kextern1 = state.gasCells[j].flui.CondGas(state.gasCells[j].pres, state.gasCells[j].temp);
+        state.cells[i].calor.cpextern1 = cpg;
+        state.cells[i].calor.rhoextern1 = rhog;
+        state.cells[i].calor.viscextern1 = state.gasCells[j].flui.ViscGas(state.gasCells[j].pres, state.gasCells[j].temp) * 1.e-3;
+    }
+}
+
+void initialiseConnectColumnSteady(const GasLiftState &state) {
+    for (int i = state.annulusTubingStart; i >= state.annulusTubingEnd; i--) {
+        int j = state.annulusTubingStart + state.tubingAnnulusStart - i;
+        state.cells[i].calor.Textern2 = state.gasCells[j].calor.Textern2;
+        state.cells[i].calor.colunaDia = state.gasCells[j].duto.dia;
+
+        double cpg = state.gasCells[j].flui.CalorGas(state.cells[i].pres, state.input.celg[j].textern);
+        double rhog = state.gasCells[j].flui.MasEspGas(state.cells[i].pres, state.input.celg[j].textern);
+        state.cells[i].calor.Textern1 = state.gasCells[j].calor.Textern1;
+        state.cells[i].calor.Vextern1 = 1.;
+        state.cells[i].calor.kextern1 = state.gasCells[j].flui.CondGas(state.cells[i].pres, state.input.celg[j].textern);
+        state.cells[i].calor.cpextern1 = cpg;
+        state.cells[i].calor.rhoextern1 = rhog;
+        state.cells[i].calor.viscextern1 = 0.16 * 1.e-3;
+    }
+}
+
 }  // namespace sisprod::gaslift
