@@ -432,4 +432,97 @@ void advanceInterface(const GasLiftState &state) {
     }
 }
 
+void updateTransientGasValves(const GasLiftState &state) {
+    int nvalv = state.input.nvalvgas;
+    int posicM2 = state.input.master2.posic;
+    for (int i = 0; i < nvalv; i++) {
+        if (state.gasValveCellIndices[i] < state.interfaceCell) {
+            state.gasLiftChokes[i].presEstag = state.gasCells[state.gasValveCellIndices[i]].pres;
+            state.gasLiftChokes[i].presGarg = (state.cells[state.productionValveCellIndices[i]].pres - state.gasLiftChokes[i].presEstag * state.gasLiftChokes[i].frec) / (1. - state.gasLiftChokes[i].frec);
+            state.gasLiftChokes[i].tempEstag = state.gasCells[state.gasValveCellIndices[i]].temp;
+            if (state.cells[state.productionValveCellIndices[i]].pres < state.gasCells[state.gasValveCellIndices[i]].pres)
+                state.gasCells[state.gasValveCellIndices[i]].massfonteCH =
+                    state.gasLiftChokes[i].massica();
+            else
+                state.gasCells[state.gasValveCellIndices[i]].massfonteCH = 0.;
+            if (state.gasLiftChokes[i].tipo == 1) {
+                double abre = calibratedValveArea(state.gasLiftChokes[i].pcalib * 14.223595, state.gasLiftChokes[i].tcalib, (state.gasLiftChokes[i].presEstag - 1.033211) * 14.223595,
+                                           (state.gasLiftChokes[i].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[i].dextern, state.gasLiftChokes[i].areagarg, state.gasLiftChokes[i].areagarg / state.gasLiftChokes[i].areafole,
+                                           1.8 * state.gasLiftChokes[i].tempEstag + 32);
+                state.gasCells[state.gasValveCellIndices[i]].massfonteCH *= abre;
+            }
+        }
+    }
+    for (int i = state.interfaceCell; i <= state.gasCellCount; i++) {
+
+        state.gasCells[i].massfonteCH = 0.;
+        if (state.gasCells[i].razInter < 0.5) {
+            for (int j = 0; j < nvalv; j++) {
+                if (i == state.gasValveCellIndices[j]) {
+                    state.gasLiftChokes[j].presEstag = state.gasCells[state.gasValveCellIndices[j]].pres;
+                    state.gasLiftChokes[j].presGarg = (state.cells[state.productionValveCellIndices[j]].pres - state.gasLiftChokes[j].presEstag * state.gasLiftChokes[j].frecliq) / (1. - state.gasLiftChokes[j].frecliq);
+                    state.gasLiftChokes[j].tempEstag = state.gasCells[state.gasValveCellIndices[j]].temp;
+                    if (state.cells[state.productionValveCellIndices[j]].pres < state.gasCells[state.gasValveCellIndices[j]].pres)
+                        state.gasCells[state.gasValveCellIndices[j]].massfonteCH =
+                            state.gasLiftChokes[j].massica(1, state.input.salinDescarga);
+                    else
+                        state.gasCells[state.gasValveCellIndices[j]].massfonteCH = 0.;
+                    if (state.gasLiftChokes[j].tipo == 1) {
+                        double abre = calibratedValveArea(state.gasLiftChokes[j].pcalib * 14.223595, state.gasLiftChokes[j].tcalib,
+                                                   (state.gasLiftChokes[j].presEstag - 1.033211) * 14.223595, (state.gasLiftChokes[j].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[j].dextern,
+                                                   state.gasLiftChokes[j].areagarg, state.gasLiftChokes[j].areagarg / state.gasLiftChokes[j].areafole, 1.8 * state.gasLiftChokes[j].tempEstag + 32);
+                        state.gasCells[state.gasValveCellIndices[j]].massfonteCH *= abre;
+                    }
+                }
+            }
+        } else {
+            for (int j = 0; j < nvalv; j++) {
+                if (i == state.gasValveCellIndices[j]) {
+                    state.gasLiftChokes[j].presEstag = state.gasCells[state.gasValveCellIndices[j]].pres;
+                    state.gasLiftChokes[j].presGarg = (state.cells[state.productionValveCellIndices[j]].pres - state.gasLiftChokes[j].presEstag * state.gasLiftChokes[j].frec) / (1. - state.gasLiftChokes[j].frec);
+                    state.gasLiftChokes[j].tempEstag = state.gasCells[state.gasValveCellIndices[j]].temp;
+                    if (state.cells[state.productionValveCellIndices[j]].pres < state.gasCells[state.gasValveCellIndices[j]].pres)
+                        state.gasCells[state.gasValveCellIndices[j]].massfonteCH =
+                            state.gasLiftChokes[j].massica();
+                    else
+                        state.gasCells[state.gasValveCellIndices[j]].massfonteCH = 0.;
+                    if (state.gasLiftChokes[j].tipo == 1) {
+                        double abre = calibratedValveArea(state.gasLiftChokes[j].pcalib * 14.223595, state.gasLiftChokes[j].tcalib,
+                                                   (state.gasLiftChokes[j].presEstag - 1.033211) * 14.223595, (state.gasLiftChokes[j].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[j].dextern,
+                                                   state.gasLiftChokes[j].areagarg, state.gasLiftChokes[j].areagarg / state.gasLiftChokes[j].areafole, 1.8 * state.gasLiftChokes[j].tempEstag + 32);
+                        state.gasCells[state.gasValveCellIndices[j]].massfonteCH *= abre;
+                    }
+                }
+            }
+        }
+    }
+
+    double areamenor = state.gasCells[posicM2].duto.area;
+    if (areamenor > state.gasCells[posicM2].dutoR.area)
+        areamenor = state.gasCells[posicM2].dutoR.area;
+    if (state.gasCells[posicM2].chkcell.areagarg <= 0.01 * areamenor &&
+        state.gasCells[posicM2].chkcell.areagarg >= 1e-5 * areamenor) {
+        state.gasCells[posicM2].chkcell.tempEstag = state.gasCells[posicM2].temp;
+        double rhoM = state.gasCells[posicM2].flui.MasEspGas(state.gasCells[posicM2].pres, state.gasCells[posicM2].temp);
+        double rhoJ = state.gasCells[posicM2 + 1].flui.MasEspGas(state.gasCells[posicM2 + 1].pres, state.gasCells[posicM2 + 1].temp);
+        double hidroM = -0.5 * rhoM * state.gasCells[posicM2].dx0 * sin(state.gasCells[posicM2].duto.teta) / 98066.52;
+        double hidroJ = 0.5 * rhoJ * state.gasCells[posicM2 + 1].dx0 * sin(state.gasCells[posicM2 + 1].duto.teta) / 98066.52;
+        state.gasCells[posicM2].chkcell.presEstag = state.gasCells[posicM2].pres + hidroM;
+        state.gasCells[posicM2].chkcell.presGarg = state.gasCells[posicM2 + 1].pres + hidroJ;
+        if (state.gasCells[posicM2 + 1].pres < state.gasCells[posicM2].pres)
+            state.gasCells[posicM2].fonteM2 = -state.gasCells[posicM2].chkcell.massica();
+        else {
+            state.gasCells[posicM2].chkcell.presEstag = state.gasCells[posicM2 + 1].pres;
+            state.gasCells[posicM2].chkcell.presGarg = state.gasCells[posicM2].pres;
+            state.gasCells[posicM2].chkcell.tempEstag = state.gasCells[posicM2 + 1].temp;
+            state.gasCells[posicM2].fonteM2 = state.gasCells[posicM2].chkcell.massica();
+        }
+        state.gasCells[posicM2 + 1].fonteM2 = -state.gasCells[posicM2].fonteM2;
+    } else {
+        state.gasCells[posicM2].fonteM2 = 0.;
+
+        state.gasCells[posicM2 + 1].fonteM2 = 0.;
+    }
+}
+
 }  // namespace sisprod::gaslift

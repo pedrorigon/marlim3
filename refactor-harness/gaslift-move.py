@@ -40,6 +40,7 @@ FUNCTIONS = {
                          "arguments": "vazGarg, ivalv"},
     "resolveDescarga": {"new_name": "solveUnloading", "arguments": ""},
     "avancInter": {"new_name": "advanceInterface", "arguments": ""},
+    "ValvGasTrans": {"new_name": "updateTransientGasValves", "arguments": ""},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -54,6 +55,7 @@ CALLS = {
     "renovaGasBuf": ("updateBufferedGasLine", True),
     "resolveDescarga": ("solveUnloading", True),
     "avancInter": ("advanceInterface", True),
+    "ValvGasTrans": ("updateTransientGasValves", True),
 }
 
 # SProd member -> GasLiftState field. Longest first when the pattern is built, so
