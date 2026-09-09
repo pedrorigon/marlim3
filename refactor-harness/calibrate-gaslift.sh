@@ -70,18 +70,21 @@ probe 'prescordesc: sign'                 'return sinal * precorr;' 'return -sin
 probe 'prescordesc: throat area'          'pow(massica / state.gasLiftChokes[ivalv].areagarg, 2.)' \
                                           'pow(massica / state.gasLiftChokes[ivalv].areagarg, 3.)' \
                                           "$target_gaslift"
-probe 'delpGasPerm: hydrostatic constant' 'double gradhidro = celulaG[i].dPdLHidro * (9.82 * sin(celulaG[i].duto.teta) * rhog * dx);' \
-                                          'double gradhidro = celulaG[i].dPdLHidro * (9.81 * sin(celulaG[i].duto.teta) * rhog * dx);'
+probe 'delpGasPerm: hydrostatic constant' 'double gradhidro = state.gasCells[i].dPdLHidro * (9.82 * sin(state.gasCells[i].duto.teta) * rhog * dx);' \
+                                          'double gradhidro = state.gasCells[i].dPdLHidro * (9.81 * sin(state.gasCells[i].duto.teta) * rhog * dx);' \
+                                          "$target_gaslift"
 # delpGasPerm and delpInjPerm both convert with 98066.5; the gas one is preceded
-# by its own hydrostatic term written on celulaG.
-probe 'delpGasPerm: pressure unit'        'double gradhidro = celulaG[i].dPdLHidro * (9.82 * sin(celulaG[i].duto.teta) * rhog * dx);
+# by its own hydrostatic line, which pins this to delpGasPerm.
+probe 'delpGasPerm: pressure unit'        'double gradhidro = state.gasCells[i].dPdLHidro * (9.82 * sin(state.gasCells[i].duto.teta) * rhog * dx);
 
     double difpres = (gradfric + gradhidro) / 98066.5;' \
-                                          'double gradhidro = celulaG[i].dPdLHidro * (9.82 * sin(celulaG[i].duto.teta) * rhog * dx);
+                                          'double gradhidro = state.gasCells[i].dPdLHidro * (9.82 * sin(state.gasCells[i].duto.teta) * rhog * dx);
 
-    double difpres = (gradfric + gradhidro) / 98600.;'
-probe 'delpInjPerm: interpolation weight' 'tmed = (celula[i].dx * celula[i].temp + celula[i].dxL * celula[i - 1].temp) / (celula[i].dx + celula[i].dxL);' \
-                                          'tmed = (celula[i].dxL * celula[i].temp + celula[i].dx * celula[i - 1].temp) / (celula[i].dx + celula[i].dxL);'
+    double difpres = (gradfric + gradhidro) / 98066.52;' \
+                                          "$target_gaslift"
+probe 'delpInjPerm: interpolation weight' 'tmed = (state.cells[i].dx * state.cells[i].temp + state.cells[i].dxL * state.cells[i - 1].temp) / (state.cells[i].dx + state.cells[i].dxL);' \
+                                          'tmed = (state.cells[i].dxL * state.cells[i].temp + state.cells[i].dx * state.cells[i - 1].temp) / (state.cells[i].dx + state.cells[i].dxL);' \
+                                          "$target_gaslift"
 
 cp "$scratch/pristine.cpp" "$target"
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
