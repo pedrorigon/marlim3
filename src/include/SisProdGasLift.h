@@ -26,6 +26,10 @@ struct GasLiftTemperatureUpdater {
     SProd &system;
 
     void dischargeTemperature(int cellIndex) const;
+    /// steadyMode defaults to 0, matching SProd::calctempGas: callers in the
+    /// moved bodies omit it.
+    void gasTemperature(int cellIndex, double previousTemperature,
+                        int steadyMode = 0) const;
 };
 
 /// The state the gas line and gas-lift routines read, and the only state they
@@ -113,10 +117,15 @@ struct GasLiftState {
 
     /// Unloading averages -- SProd::vazmedDesc, tempmedDEsc (spelling as in
     /// SProd), and the bounds they are compared against.
+    ///
+    /// The two vectors are NOT const: they are sliding windows. advanceGasSubStep
+    /// push_backs the current step at the tail and erases the front once the
+    /// window passes maximumContinuousUnloadingCount. Declaring them const was a
+    /// claim this module does not honour.
     double &meanUnloadingFlowRate;
     double &meanUnloadingTemperature;
-    const std::vector<double> &maximumMeanUnloadingFlowRates;
-    const std::vector<double> &unloadingTimeSteps;
+    std::vector<double> &maximumMeanUnloadingFlowRates;
+    std::vector<double> &unloadingTimeSteps;
     const double &continuousMeanUnloadingTemperature;
     const double &maximumContinuousUnloadingCount;
 
@@ -154,8 +163,11 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
 double computeUnloadingValvePressure(const GasLiftState &state,
                                      double throatFlowRate, int valveIndex);
 
-/// Searches the injection pressure that satisfies the unloading schedule.
-void searchUnloadingInjectionPressure(const GasLiftState &state);
+/// Searches the injection pressure that satisfies the unloading schedule,
+/// writing it into the gas surface and initial pressures and into each valve's
+/// stage and throat pressures. Returns the maximum unloading flow rate the
+/// search reached -- the caller keeps it as velmaxdesc.
+double searchUnloadingInjectionPressure(const GasLiftState &state);
 
 /// Solves one unloading step.
 void solveUnloading(const GasLiftState &state);
