@@ -771,6 +771,13 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetGasLine(system, scenario);
     system.renovaGasBuf();
     printGas("renovaGasBuf", scenario.name, system.celulaG[2]);
+    // VGasRBuf is the ONLY field updateBufferedGasLine writes, and printGas does
+    // not carry it, so until this row existed the routine could have been
+    // rewritten freely. Here the free terms come straight from resetGasLine
+    // rather than from a solve, so the values are finite and discriminating.
+    printf("%-28s %-15s VGasRBuf0=%a VGasRBuf2=%a VGasRBuf4=%a\n",
+           "renovaGasBuf-buffer", scenario.name, system.celulaG[0].VGasRBuf,
+           system.celulaG[2].VGasRBuf, system.celulaG[4].VGasRBuf);
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);

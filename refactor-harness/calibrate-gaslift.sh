@@ -79,13 +79,13 @@ probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = 
 # a near-duplicate of advanceGasSubStep and every single line it contains also
 # appears there.
 probe 'HidroDescargaG: hydrostatic head' \
-    'pmed -= rho1 * 9.81 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
-    'pmed -= rho1 * 9.82 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
+    'meanPressure -= rho1 * 9.81 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
+    'meanPressure -= rho1 * 9.82 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
     "$target_gaslift"
 
 probe 'CalcPresValvDesc: wall shear' \
-    'double tens1 = frictionFactor * rhomix * vel1 * fabs(vel1) / 2.;' \
-    'double tens1 = frictionFactor * rhomix * vel1 * fabs(vel1) / 2.5;' \
+    'double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.;' \
+    'double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.5;' \
     "$target_gaslift"
 
 probe 'BuscaPresInjDesc: pressure decay' \
@@ -101,8 +101,8 @@ probe 'avancInter: handover ratio' \
     "$target_gaslift"
 
 probe 'resolveDescarga: liquid hydrostatic' \
-    'double hidro1L = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * LLiqL;' \
-    'double hidro1L = 1 * (9.81 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * LLiqL;' \
+    'double hidro1L = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
+    'double hidro1L = 1 * (9.81 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
     "$target_gaslift"
 
 # Splits the gas/liquid share of every control volume. Moving the threshold
@@ -113,30 +113,39 @@ probe 'resolveDescarga: interface split' \
     "$target_gaslift"
 
 probe 'subtempoGasBuf: choke opening bound' \
-    '        abertoChk = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (abertoChk < 0.2) {' \
-    '        abertoChk = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (abertoChk < 0.3) {' \
+    '        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+        if (chokeOpeningFraction < 0.2) {' \
+    '        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+        if (chokeOpeningFraction < 0.3) {' \
     "$target_gaslift"
 
-probe 'prescordesc: sign'                 'return sign * precorr;' 'return -sign * precorr;' \
+# updateBufferedGasLine writes one field, in three byte-identical branches.
+# Without a probe on the offset itself the whole routine was unguarded.
+probe 'renovaGasBuf: buffer offset' \
+    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
+}' \
+    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 2];
+}' \
+    "$target_gaslift"
+
+probe 'prescordesc: sign'                 'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
                                           "$target_gaslift"
-probe 'prescordesc: throat area'          'precorr = pow(massica / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);' \
-                                          'precorr = pow(massica / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * rho0 * 98066.52);' \
+probe 'prescordesc: throat area'          'pressureCorrection = pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);' \
+                                          'pressureCorrection = pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * rho0 * 98066.52);' \
                                           "$target_gaslift"
-probe 'delpGasPerm: hydrostatic constant' 'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);' \
-                                          'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.81 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);' \
+probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
+                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.81 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
                                           "$target_gaslift"
 # Both steady drops divide by 98066.5; the hydrostatic line above pins this one
 # to delpGasPerm.
-probe 'delpGasPerm: pressure unit'        'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);
+probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
-    double difpres = (gradfric + gradhidro) / 98066.5;' \
-                                          'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.5;' \
+                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
-    double difpres = (gradfric + gradhidro) / 98066.52;' \
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
                                           "$target_gaslift"
-probe 'delpInjPerm: interpolation weight' 'tmed = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
+probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
                                           'tmed = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp + state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
                                           "$target_gaslift"
 
