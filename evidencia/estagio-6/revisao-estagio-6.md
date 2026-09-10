@@ -115,7 +115,24 @@ marquei a tarefa como feita pelos critérios, e registro aqui a diferença.
 `VGasRBuf = gasFreeTerms[3*i + 1]`. É código morto herdado; simplificar é
 seguro mas sem ganho, e mudaria tokens sob controle. Deixado como está.
 
-## 6. Veredito
+## 6. Estado após os ajustes (resolvido)
+
+Todos os cinco itens foram tratados. Números medidos, não estimados:
+
+| item | antes | depois |
+|---|---|---|
+| (a) funções sem execução | 6 (355 linhas) | **0** — união corpus+varredura = 22/22 |
+| (b) avisos de variável não usada | 14 | **0** (módulo 1.320 → 1.299 linhas) |
+| (c) locais em português/opacos | 33 de 176 | **0** (96 renames) |
+| (d) `rhog` vs `rhoG` | dois nomes, um conceito | unificado; e um nome com **dois** conceitos corrigido |
+| (e) `updateBufferedGasLine` | 3 ramos idênticos | colapsado, após torná-lo observável |
+
+A tabela da varredura foi de 36 para 116 linhas, e a referência é regerada da
+árvore **anterior** ao Estágio 6 — as seis funções que os moves não podiam
+verificar por execução estão verificadas retroativamente. Calibração do gaslift:
+17/17. L2: 14/14 após cada passo.
+
+## 7. Veredito
 
 O Estágio 6 **está correto no que foi verificado**, e o que foi verificado está
 medido, não presumido. Não há divergência numérica: 14/14 bit-a-bit com o
