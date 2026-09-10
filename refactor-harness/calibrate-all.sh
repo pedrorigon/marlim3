@@ -67,13 +67,13 @@ run() {
     # Case-SENSITIVE on the uppercase status words: a summary line reading
     # "0 missed, 0 skipped" is a pass, and matching it case-insensitively turns
     # a clean run into a false failure.
-    dead=$(grep -cE 'NOT INJECTED|pattern absent|not found|control failed|MISSED|INVISIBLE TO BOTH' "$log")
+    dead=$(grep -cE 'NOT INJECTED|pattern absent|not found|control failed|MISSED|INVISIBLE TO BOTH|corruption did not apply|SKIP' "$log")
     if (( status == 0 && dead == 0 )); then
         printf '%sPASS%s  %s\n' "$green" "$reset" \
             "$(grep -oiE '(CALIBRAT|PASSED)[^\x1b]*' "$log" | tail -1 | cut -c1-58)"
     else
         printf '%sFAIL%s  exit=%s dead=%s\n' "$red" "$reset" "$status" "$dead"
-        grep -E 'NOT INJECTED|pattern absent|not found|control failed|MISSED|INVISIBLE TO BOTH|FAILED' \
+        grep -E 'NOT INJECTED|pattern absent|not found|control failed|MISSED|INVISIBLE TO BOTH|corruption did not apply|SKIP|FAILED' \
             "$log" | head -4 | sed 's/^/      /'
         failures=$((failures + 1))
     fi

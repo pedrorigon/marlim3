@@ -148,6 +148,17 @@ SIGNATURE_RE = re.compile(
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.S)
 
 
+def compare_tokens(expected: list[str], actual: list[str]) -> str:
+    """Delegates to thermal-move.py, which owns the calibrated implementation."""
+    import importlib.util
+    import pathlib
+    spec = importlib.util.spec_from_file_location(
+        "thermal_move", pathlib.Path(__file__).with_name("thermal-move.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.compare_tokens(expected, actual)
+
+
 def tokenize(text: str) -> list[str]:
     """Whitespace- and comment-insensitive; everything else is a token.
 
@@ -377,6 +388,16 @@ def main() -> int:
         actual = tokenize(inverse(name, "\n".join(lines[start:end + 1])))
         if expected == actual:
             print(f"OK       {new_name} <- {name} ({len(expected)} tokens)")
+            return 0
+        # T081r renames locals, so an exact match stops being possible the
+        # moment it runs. Alpha-equivalence is the same test thermal-move.py
+        # already uses and calibrates: it accepts a CONSISTENT renaming and
+        # still rejects a changed literal, a reordering, or one variable
+        # substituted for another. Reused rather than reimplemented, so there
+        # is one implementation to trust and one to calibrate.
+        if compare_tokens(expected, actual) == "alpha":
+            print(f"OK       {new_name} <- {name} "
+                  f"({len(expected)} tokens modulo renames)")
             return 0
         position = next((i for i, pair in enumerate(zip(expected, actual))
                          if pair[0] != pair[1]), min(len(expected), len(actual)))

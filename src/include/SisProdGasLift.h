@@ -154,7 +154,8 @@ void updateBufferedGasLine(const GasLiftState &state);
 double calibratedValveArea(double calibrationPressure, double calibrationTemperature,
                            double valveOpeningPressure, double tubingPressure,
                            double externalDiameter, double throatArea,
-                           double valveRatio, double temperature);
+                           double valveRatio,
+                           double bottomHoleTemperatureFahrenheit);
 
 /// Pressure correction applied to the unloading flow of one valve.
 double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate,
