@@ -53,40 +53,75 @@ PY
     fi
 }
 
-probe 'areaValvCali: calibration blend'   'PB80 = (PB80 + 14.6959488) * (80 + 460.67)' \
-                                          'PB80 = (PB80 + 14.6959488) * (80 + 460.68)' \
+probe 'areaValvCali: calibration blend'   'bellowsPressureAt80F = (bellowsPressureAt80F + 14.6959488) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - 14.6959488;' \
+                                          'bellowsPressureAt80F = (bellowsPressureAt80F + 14.6959488) * (80 + 460.68) / (calibrationTemperature * 1.8 + 491.67) - 14.6959488;' \
                                           "$target_gaslift"
-probe 'areaValvCali: opening cap'         'if (APE > areagarg)' 'if (APE > 2. * areagarg)' \
+probe 'areaValvCali: opening cap'         'if (openingArea > throatArea)' \
+                                          'if (openingArea > 2. * throatArea)' \
                                           "$target_gaslift"
-# The same assignment appears in renovaGas and renovaGasBuf; the preceding line
-# differs and pins this one to renovaGas.
-probe 'updateGasLine: neighbour source'   'state.gasCells[i].presL = state.gasFreeTerms[3 * i - 3];
-            state.gasCells[i].presR = state.gasFreeTerms[3 * i + 3];' \
-                                          'state.gasCells[i].presL = state.gasFreeTerms[3 * i - 2];
-            state.gasCells[i].presR = state.gasFreeTerms[3 * i + 3];' \
+# updateGasLine writes this assignment twice -- once per branch of its interior
+# if/else. Only the interior branch follows presL with presR, so carrying the
+# next line pins the corruption to that one.
+probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 3];
+            state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];' \
+                                          'state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 2];
+            state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];' \
                                           "$target_gaslift"
-probe 'prescordesc: sign'                 'return sinal * precorr;' 'return -sinal * precorr;' \
+probe 'prescordesc: sign'                 'return sign * precorr;' 'return -sign * precorr;' \
                                           "$target_gaslift"
-probe 'prescordesc: throat area'          'pow(massica / state.gasLiftChokes[ivalv].areagarg, 2.)' \
-                                          'pow(massica / state.gasLiftChokes[ivalv].areagarg, 3.)' \
+probe 'prescordesc: throat area'          'precorr = pow(massica / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);' \
+                                          'precorr = pow(massica / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * rho0 * 98066.52);' \
                                           "$target_gaslift"
-probe 'delpGasPerm: hydrostatic constant' 'double gradhidro = state.gasCells[i].dPdLHidro * (9.82 * sin(state.gasCells[i].duto.teta) * rhog * dx);' \
-                                          'double gradhidro = state.gasCells[i].dPdLHidro * (9.81 * sin(state.gasCells[i].duto.teta) * rhog * dx);' \
+probe 'delpGasPerm: hydrostatic constant' 'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);' \
+                                          'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.81 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);' \
                                           "$target_gaslift"
-# delpGasPerm and delpInjPerm both convert with 98066.5; the gas one is preceded
-# by its own hydrostatic line, which pins this to delpGasPerm.
-probe 'delpGasPerm: pressure unit'        'double gradhidro = state.gasCells[i].dPdLHidro * (9.82 * sin(state.gasCells[i].duto.teta) * rhog * dx);
+# Both steady drops divide by 98066.5; the hydrostatic line above pins this one
+# to delpGasPerm.
+probe 'delpGasPerm: pressure unit'        'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);
 
     double difpres = (gradfric + gradhidro) / 98066.5;' \
-                                          'double gradhidro = state.gasCells[i].dPdLHidro * (9.82 * sin(state.gasCells[i].duto.teta) * rhog * dx);
+                                          'double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);
 
     double difpres = (gradfric + gradhidro) / 98066.52;' \
                                           "$target_gaslift"
-probe 'delpInjPerm: interpolation weight' 'tmed = (state.cells[i].dx * state.cells[i].temp + state.cells[i].dxL * state.cells[i - 1].temp) / (state.cells[i].dx + state.cells[i].dxL);' \
-                                          'tmed = (state.cells[i].dxL * state.cells[i].temp + state.cells[i].dx * state.cells[i - 1].temp) / (state.cells[i].dx + state.cells[i].dxL);' \
+probe 'delpInjPerm: interpolation weight' 'tmed = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
+                                          'tmed = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp + state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
                                           "$target_gaslift"
 
 cp "$scratch/pristine.cpp" "$target"
+cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"
+
+# ---------------------------------------------------- token-check control ----
+# T081r renamed the module's locals, so gaslift-move.py check now accepts a
+# consistent renaming instead of demanding an exact match. A tolerance is a
+# blind spot until something proves otherwise, so this control corrupts a
+# LITERAL -- which no renaming can excuse -- and requires the check to reject
+# it. It also confirms the check still passes on the pristine module, so a
+# check that had broken outright could not masquerade as a detection.
+token_baseline="$scratch/token-baseline.cpp"
+if git -C "$project_root" show "${MARLIM_T079_BASELINE:-66ed35c~1}:src/core/SisProd.cpp" \
+       > "$token_baseline" 2>/dev/null; then
+    if python3 "$script_dir/gaslift-move.py" check delpGasPerm \
+           "$token_baseline" "$target_gaslift" > /dev/null 2>&1; then
+        sed -i 's/9\.82 \* sin/9.81 * sin/' "$target_gaslift"
+        if python3 "$script_dir/gaslift-move.py" check delpGasPerm \
+               "$token_baseline" "$target_gaslift" > /dev/null 2>&1; then
+            printf '%s  MISSED    token check: literal changed under rename tolerance%s\n' \
+                   "$red" "$reset"; missed=$((missed + 1))
+        else
+            printf '%s  detected  token check: literal changed under rename tolerance%s\n' \
+                   "$green" "$reset"; detected=$((detected + 1))
+        fi
+        cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"
+    else
+        printf '%s  SKIP      token check control (pristine module does not pass)%s\n' \
+               "$yellow" "$reset"; skipped=$((skipped + 1))
+    fi
+else
+    printf '%s  SKIP      token check control (baseline commit unreadable)%s\n' \
+           "$yellow" "$reset"; skipped=$((skipped + 1))
+fi
+
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"
 if (( missed > 0 || skipped > 0 )); then
