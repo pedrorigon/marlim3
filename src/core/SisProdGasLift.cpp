@@ -44,9 +44,7 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     state.gasCells[1].VGasL = 0;
     state.gasCells[0].massfonteCH = 0.;
     for (int gasCellIndex = 1; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        double upstreamFlowArea = state.gasCells[gasCellIndex - 1].duto.area;
         double halfUpstreamLength = 0.5 * state.gasCells[gasCellIndex].dxL;
-        double flowArea = state.gasCells[gasCellIndex].duto.area;
         double halfLocalLength = 0.5 * state.gasCells[gasCellIndex].dx0;
         pmed -= rho0 * 9.81 * halfUpstreamLength * sin(state.gasCells[gasCellIndex - 1].duto.teta) / 98066.52;
         tmed = state.gasCells[gasCellIndex].calor.Textern1;
@@ -92,7 +90,6 @@ void updateGasLine(const GasLiftState &state) {
             state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];
             state.gasCells[gasCellIndex].VGasR = state.gasFreeTerms[3 * gasCellIndex + 1];
             state.gasCells[gasCellIndex].VGasRR = state.gasFreeTerms[3 * gasCellIndex + 4];
-            double auxpres = state.gasCells[gasCellIndex].presR;
         } else {
             state.gasCells[gasCellIndex].pres = state.gasFreeTerms[3 * gasCellIndex];
             state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 3];
@@ -154,8 +151,6 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
 
 double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate, int valveIndex, double factor, int sign) {
     int gasValveCell = state.gasValveCellIndices[valveIndex];
-    int productionValveCell = state.productionValveCellIndices[valveIndex];
-    double pmed = state.cells[productionValveCell].pres;
     state.gasLiftChokes[valveIndex].presEstag = state.gasCells[gasValveCell].pres;
     state.gasLiftChokes[valveIndex].tempEstag = state.gasCells[gasValveCell].temp;
     double rho0 = state.gasCells[gasValveCell].MasEspFlu(state.gasLiftChokes[valveIndex].presEstag, state.gasLiftChokes[valveIndex].tempEstag);
@@ -172,8 +167,6 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
     double laz2 = 0.4;
 
     double pmed;
-    double tmed;
-    double massica;
     pmed = state.gasSurfacePressure;
     state.input.presMaxDesc = 100000.;
     for (int cellIndex = state.lastCell; cellIndex >= 0; cellIndex--) {
@@ -240,7 +233,6 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
 }
 
 void solveUnloading(const GasLiftState &state) {
-    int nvalv = state.input.nvalvgas;
     for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         double halfUpstreamLength = 0.5 * state.gasCells[gasCellIndex].dxL;
         double halfLocalLength = 0.5 * state.gasCells[gasCellIndex].dx0;
@@ -326,7 +318,6 @@ void solveUnloading(const GasLiftState &state) {
     }
     double temp = state.gasCells[state.interfaceCell].temp;
     double pres = state.gasCells[state.interfaceCell].pres;
-    double rhoL = state.gasCells[state.interfaceCell].MasEspFlu(pres, temp);
     double rhoG = state.gasCells[state.interfaceCell].flui.MasEspGas(pres, temp);
     state.gasCells[state.interfaceCell].VGasL = Qtotal * rhoG;
     state.gasCells[state.interfaceCell - 1].VGasR = state.gasCells[state.interfaceCell].VGasL;
@@ -526,11 +517,6 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
     double vazmax = 0;
     double vazmaxinst = 0;
 
-    if ((*state.globals).lixo5 > 1000) {
-        int para;
-        para = 0;
-    }
-    double pGSupAux = state.gasSurfacePressure;
     double laz1 = 0.1;
     double laz2 = 0.4;
     if (state.input.descarga == 1) {
@@ -693,8 +679,6 @@ void advanceGasSubStep(const GasLiftState &state) {
         }
         state.gasSystemMatrix.GaussElimPP(state.gasFreeTerms);
         updateGasLine(state);
-
-        double verifica = state.gasCells[0].pres;
         state.gasCells[0].temp = state.initialGasTemperature;
         state.gasCells[0].dTdt = (state.gasCells[0].temp - state.gasCells[0].tempini) / state.timeStep;
         if (state.gasCells[state.gasCellCount].VGasR < 0.)
@@ -1042,7 +1026,6 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     diameter = state.gasCells[cellIndex].duto.a;
     area = 0.25 * M_PI * diameter * diameter;
     perimeter = state.gasCells[cellIndex].duto.peri;
-    double razdx = state.gasCells[cellIndex].dx0 / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex].dxL);
     rhog = state.gasCells[cellIndex].flui.MasEspGas(pmed, tmed);
     double VarArea = 1 / pow(state.gasCells[cellIndex].dutoL.area, 2.) - 1 / pow(state.gasCells[cellIndex].duto.area, 2.);
     double dpDina = 0.5 * VGasmedL * VGasmedL * VarArea / rhog;
@@ -1180,7 +1163,6 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             double rhog = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             ugsmed = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
             double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-            double gasSpecificHeatConstantVolume = state.gasCells[cellIndex - 1].flui.CalorGasVolMod(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             double gasJouleThomson = state.gasCells[cellIndex - 1].flui.JTG(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             double hidro = (rhog * ugsmed) * area * 9.82 * sin(state.gasCells[cellIndex].duto.teta);
 
@@ -1218,9 +1200,6 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             double fontemassG = 0.;
             double fontemassL = 0.;
 
-            double fator = 0.;
-            if ((*state.globals).lixo5 < 1000.)
-                fator = 0.;
 
             if (ugsmed > 1e-3 && (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > 0.5 &&
                                   state.gasCells[cellIndex - 1].duto.a / state.gasCells[cellIndex].duto.a > 0.5)) {
