@@ -383,6 +383,208 @@ void resetValves(SProd &system) {
     }
 }
 
+// ------------------------------------------------------------- unloading ---
+// The six routines driven by runUnloadingScenario are the ones NEITHER the demo
+// corpus NOR the rest of this file executed. Measured with gcov, not estimated:
+// the corpus runs 12 of the 22 functions, this sweep ran 8, and the union left
+// six untouched -- 355 executable lines resting on token identity alone.
+//
+// They are all on the unloading path, which the product reaches only when
+// arq.descarga == 1, and that comes from configuracaoInicial/condicaoInicial
+// == 3. No model in the corpus sets it, so no model will ever reach them: the
+// gap is a property of the corpus, not of how many models happen to be run.
+//
+// Seeding the unloading path is not seeding the steady one. The schedule is a
+// state machine around the interface cell, and a run that leaves celInter at
+// zero exercises the guards rather than the arithmetic -- a deterministic row
+// that proves nothing, which is the trap resetCells already documents for
+// fluicol. Two constraints follow:
+//
+//   - celInter must be at least 1. celulaG is allocated WITHOUT the guard-cell
+//     offset that celula gets, so advanceInterface reading celulaG[celInter - 1]
+//     at celInter == 0 walks off the front of the array.
+//   - lixo5 must exceed tempoLatenciaDesc. Despite the name, lixo5 is not
+//     scratch here: searchUnloadingInjectionPressure gates its entire body on
+//     `lixo5 > tempoLatenciaDesc`, using it as the simulation clock.
+constexpr int kInterfaceCell = 2;
+
+// The gas line must stand ABOVE the tubing it feeds, or nothing is injected.
+// resetGasLine and resetCells happen to give the valve cell and its production
+// cell the same pressure, and searchUnloadingInjectionPressure gates its mass
+// flow on `pmed < gasCells[valve].pres` -- so at parity every valve contributes
+// exactly zero and the routine returns 0 in all four scenarios. That is a row
+// that cannot fail. The factor restores the physical ordering; its value is
+// arbitrary, its being greater than one is not.
+constexpr double kInjectionOverPressure = 1.35;
+
+void resetUnloading(SProd &system, const Scenario &scenario) {
+    system.arq.descarga = 1;
+    system.arq.controDesc = 1;
+    system.arq.nvalvgas = kValves;
+    system.arq.presIniDescG = scenario.pressure * 1.2;
+    system.arq.presMaxDesc = 100000.;
+    system.arq.tempoLatenciaDesc = 100.;
+    // Grams per litre, NOT ppm. ChokeGas::MasEspFlu forms the mass fraction as
+    // salin/1000, so a seawater figure in ppm (35000) makes the fraction 35,
+    // the brine density negative, and massica the square root of a negative
+    // number. The routine then returns NaN, `NaN > vazmax` is false, and
+    // searchUnloadingInjectionPressure returns a clean 0 in every scenario --
+    // a row that looks stable and tests nothing. Scenario-varying, so the four
+    // rows differ; the range is ordinary completion brine.
+    system.arq.salinDescarga = 35. + 40. * scenario.voidFraction;
+    system.arq.gasinj.tipoCC = 0;
+    system.arq.gasinj.presinj[0] = scenario.pressure * 1.1;
+    (*system.vg1dSP).lixo5 = 5000.;
+
+    system.celInter = kInterfaceCell;
+    system.celInterIni = kInterfaceCell;
+    system.velInter = 0.35 + scenario.gasFlow;
+    system.velInterIni = 0.30 + scenario.gasFlow;
+    system.dtInter = 0.4;
+    system.dtInterIni = 0.45;
+
+    system.pGSup = scenario.pressure * 1.15;
+    // ABOVE the gas line, not below it. The injection choke sits upstream, and
+    // ChokeGas::massica zeroes its own output when the stagnation pressure is
+    // below the throat pressure. Seeded under the line, the choke delivered
+    // exactly nothing, so the whole source term advanceBufferedGasSubStep
+    // assembles was zero and moving the opening bound changed no digit.
+    system.presiniG = scenario.pressure * kInjectionOverPressure * 1.15;
+    system.tempiniG = scenario.temperature + 4.;
+    system.dt = 0.5;
+
+    // Sliding windows. advanceGasSubStep push_backs at the tail and erases the
+    // front once the window passes maxVecContDesc, so both must start non-empty
+    // and the bound must be small enough that the erase branch is reachable.
+    system.vazmedDesc = 0.22 + scenario.gasFlow;
+    system.tempmedDEsc = scenario.temperature + 3.;
+    system.tempMedContDesc = scenario.temperature + 2.;
+    system.maxVecContDesc = 3.;
+    system.vazmaxMedDesc = {0.18, 0.20, 0.24};
+    system.dtDesc = {0.5, 0.5, 0.5};
+
+    // resetValves puts the valves at gas cells 1 and 2, which is right for the
+    // steady half but leaves both at or below the interface here -- and
+    // searchUnloadingInjectionPressure only looks at valves ABOVE it, so its
+    // entire valve loop was skipping its body. Re-placed for this half only;
+    // resetValves runs again before every measurement, so the steady rows are
+    // untouched.
+    for (int valve = 0; valve < kValves; ++valve) {
+        system.posicVGLG[valve] = kInterfaceCell + 1 + valve;
+        ChokeGas &choke = system.chokeVGL[valve];
+        // frec must not be 1: it divides (1 - frec).
+        choke.frec = 0.1 + 0.05 * valve;
+        // areafole must not be 0: it divides areagarg.
+        choke.areafole = 9.5e-4 * (1. + 0.2 * valve);
+        choke.pcalib = scenario.pressure * 1.25;
+        choke.tcalib = scenario.temperature;
+        choke.dextern = 0.0381;
+        // One calibrated valve and one orifice, so the calibratedValveArea
+        // branch and the branch that skips it are both driven.
+        choke.tipo = valve == 0 ? 1 : 0;
+    }
+
+    // ProFluCol::VisFlu branches on its own `descarga` flag: set, it uses the
+    // completion-fluid correlation; clear, it falls into an ASTM dead-oil fit
+    // whose LVisL/LVisH/TempL/TempH this harness never seeds, so it takes
+    // log10 of a negative number and returns NaN. The NaN then propagates to
+    // the mixture viscosity, Reynolds is NaN, the friction factor comes back 0,
+    // and the wall-shear term of computeUnloadingValvePressure vanishes -- a
+    // whole term of the pressure march silently absent from the table. The
+    // product wires this the same way, at Leitura.cpp:12648.
+    for (int index = -1; index < kCells; ++index) {
+        Cel &cell = system.celula[index];
+        cell.fluicol.descarga = 1;
+        // duto.dia and termRug are the other half of the same hole. Cel::fric
+        // reads the PRECOMPUTED termRug rather than deriving it, and the
+        // harness never built one, so it held whatever new Cel[] left there --
+        // NaN in practice. Computed exactly as celula3.cpp:333 does, from
+        // duto.dia, which also has to exist: resetCells seeds duto.a and
+        // derives the area from it, but nothing sets dia.
+        cell.duto.dia = cell.duto.a;
+        cell.termRug = pow(cell.duto.rug / cell.duto.dia / 3.7, 1.11);
+        // And the wetted perimeter. resetGasLine seeds peri on the GAS cells but
+        // resetCells never did on the production ones, so it was zero -- and the
+        // wall-shear term of the pressure march reads
+        // `tens1 * perimeter / flowArea`. At perimeter == 0 the entire shear
+        // contribution is multiplied out of existence: setting tens1 to 12345.678
+        // moved not one digit of the published table. The friction was not merely
+        // mis-seeded, it was absent, and no row could ever have noticed.
+        cell.duto.peri = M_PI * cell.duto.a;
+    }
+
+    // The control band computeUnloadingValvePressure corrects against. Both of
+    // its branches compare the surface pressure against these, so leaving them
+    // at zero pins the routine to its do-nothing path.
+    system.arq.vazDescControl = 0.5;
+    // BELOW the surface pressure. Above it, every branch that nudges pGSup is
+    // immediately clamped back up to this floor, and the nudge -- including the
+    // 1% decay -- never reaches the table.
+    system.arq.presMinDesc = scenario.pressure * 0.90;
+    system.arq.presMinDescG = scenario.pressure * 0.80;
+    system.arq.presMaxDescG = scenario.pressure * 2.00;
+
+    // presMaxDesc starts at 100000 inside the routine and only comes down
+    // through an IPR accessory, so without one the first branch can never fire:
+    // the surface pressure is never >= 100000. One reservoir accessory puts the
+    // ceiling within reach.
+    for (int index = 0; index < kCells; ++index)
+        system.celula[index].acsr.tipo = 0;
+    system.celula[1].acsr.tipo = 3;
+    system.celula[1].acsr.ipr.Pres = scenario.pressure * 1.10;
+
+    system.chokeInj.presEstag = scenario.pressure * 1.3;
+    system.chokeInj.tempEstag = scenario.temperature + 8.;
+    system.chokeInj.presGarg = scenario.pressure * 1.1;
+    // Sized as a FRACTION of the pipe, so abertoChk lands around the 0.2 bound
+    // advanceBufferedGasSubStep switches on rather than far below it, where
+    // moving the bound changes nothing.
+    system.chokeInj.areagarg =
+        (0.15 + 0.3 * scenario.voidFraction) * system.celulaG[0].duto.area;
+    system.chokeInj.flui = fallbackFluid(system.vg1dSP);
+
+    for (int index = 0; index <= kGasCells + 1; ++index) {
+        CelG &cell = system.celulaG[index];
+        // celInter is a POINTER on the cell, aimed at SProd::celInter, and
+        // CelG::GeraLocal dereferences it unconditionally. Unseeded it is null
+        // and advanceBufferedGasSubStep segfaults -- which is how this line came
+        // to be written. Same wiring the product does at SisProd.cpp:1483.
+        cell.celInter = &system.celInter;
+        cell.celInterini = &system.celInterIni;
+        cell.posic = index;
+
+        // The product's convention: fully gas ahead of the interface, fully
+        // liquid behind it, and the interface cell itself partial. Seeding a
+        // uniform ratio everywhere would be physically impossible AND would
+        // leave solveUnloading's `razInter <= 0.5` and `>= 0.5` branches on one
+        // side each, so half its arithmetic would never run.
+        cell.razInter = index < kInterfaceCell ? 1. : 0.;
+        cell.razInterIni = index < kInterfaceCell ? 1. : 0.;
+        if (index == kInterfaceCell) {
+            // Scenario-dependent, so the four rows differ. A fixed fraction
+            // here made every scenario print the same interface arithmetic.
+            // Chosen so the four scenarios STRADDLE the 0.5 threshold that
+            // solveUnloading splits gas from liquid on, and so at least one
+            // lands just above it: a set of ratios all on one side makes the
+            // threshold itself untestable.
+            cell.razInter = 0.30 + 0.45 * scenario.voidFraction;
+            cell.razInterIni = 0.25 + 0.45 * scenario.voidFraction;
+        }
+
+        cell.pres *= kInjectionOverPressure;
+        cell.presini *= kInjectionOverPressure;
+        cell.presL *= kInjectionOverPressure;
+        cell.presR *= kInjectionOverPressure;
+
+        cell.u1R = (1.9 + scenario.liquidFlow) * (1. + 0.04 * index);
+        cell.u1LL = (2.1 + scenario.liquidFlow) * (1. + 0.04 * index);
+        cell.tipoCC = 0;
+        cell.massfonteCH = 0.;
+        cell.fonteM2 = 0.;
+        cell.dTdt = 0.;
+    }
+}
+
 void printGas(const char *method, const char *scenario, const CelG &cell) {
     printf("%-28s %-15s pres=%a presL=%a presR=%a VGasL=%a VGasR=%a "
            "temp=%a tempini=%a rg=%a\n",
@@ -392,6 +594,152 @@ void printGas(const char *method, const char *scenario, const CelG &cell) {
 
 void printValue(const char *method, const char *scenario, double value) {
     printf("%-28s %-15s value=%a\n", method, scenario, value);
+}
+
+void printInterface(const char *method, const char *scenario, const SProd &system) {
+    printf("%-28s %-15s celInter=%d velInter=%a dtInter=%a pGSup=%a presiniG=%a "
+           "vazmedDesc=%a tempmedDEsc=%a\n",
+           method, scenario, system.celInter, system.velInter, system.dtInter,
+           system.pGSup, system.presiniG, system.vazmedDesc, system.tempmedDEsc);
+}
+
+void printUnloadingControl(const char *method, const char *scenario,
+                           const SProd &system) {
+    printf("%-28s %-15s presiniG=%a presMaxDesc=%a pGSup=%a\n",
+           method, scenario, system.presiniG, system.arq.presMaxDesc,
+           system.pGSup);
+}
+
+// printGas publishes pressures, velocities and temperatures -- none of which
+// advanceInterface's hand-over touches. It moves the gas/liquid RATIO, so a row
+// built from printGas alone watched the wrong fields and the hand-over could
+// have been corrupted freely.
+void printRatios(const char *method, const char *scenario, const CelG &cell) {
+    printf("%-28s %-15s razInter=%a razInterIni=%a u1L=%a u1LL=%a\n",
+           method, scenario, cell.razInter, cell.razInterIni, cell.u1L,
+           cell.u1LL);
+}
+
+// Same problem, worse: everything advanceBufferedGasSubStep computes ends up in
+// the choke source term and the local system it assembles, and printGas shows
+// neither.
+//
+// What is published is the ASSEMBLY, not the solution. VGasRBuf -- the field the
+// buffered update writes -- comes back NaN here, because the band system built
+// from synthetic cells is singular and the elimination divides by a zero pivot.
+// A NaN is deterministic and discriminates nothing, so publishing it would be a
+// field that cannot fail. TL and local survive the solve as cell members, they
+// are finite, and they are where GeraLocal's arithmetic and the choke source
+// term actually land.
+void printBuffered(const char *method, const char *scenario, const CelG &cell,
+                   const CelG &inlet) {
+    printf("%-28s %-15s TL0=%a TL1=%a TL2=%a inletTL0=%a massfonteCH=%a\n",
+           method, scenario, cell.TL[0], cell.TL[1], cell.TL[2], inlet.TL[0],
+           inlet.massfonteCH);
+}
+
+void printValve(const char *method, const char *scenario, const ChokeGas &choke) {
+    printf("%-28s %-15s presEstag=%a tempEstag=%a presGarg=%a areagarg=%a\n",
+           method, scenario, choke.presEstag, choke.tempEstag, choke.presGarg,
+           choke.areagarg);
+}
+
+// Every call below re-seeds first. These six write through each other's state
+// -- searchUnloadingInjectionPressure rewrites pGSup and every valve pressure,
+// solveUnloading moves the interface -- so chaining them would make each row
+// depend on the ones before it, and a single corruption would move the whole
+// table at once. Independent rows localise a failure to one routine.
+void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
+    auto seed = [&] {
+        resetCells(system, cells, scenario);
+        resetGasLine(system, scenario);
+        resetValves(system);
+        resetUnloading(system, scenario);
+    };
+
+    seed();
+    system.HidroDescargaG();
+    printGas("HidroDescargaG", scenario.name, system.celulaG[0]);
+    printGas("HidroDescargaG-mid", scenario.name, system.celulaG[kInterfaceCell]);
+
+    // computeUnloadingValvePressure returns velmax, which it sets to 0 and never
+    // assigns again -- the return is a constant, in the product as much as here,
+    // so a row carrying only that value can never fail. What the routine
+    // actually does is move presiniG and lower arq.presMaxDesc, so those are
+    // what get published.
+    //
+    // Two calls with throat rates on either side of vazDescControl, to drive the
+    // raise branch and the lower branch rather than one of them twice.
+    seed();
+    system.CalcPresValvDesc(4.0 * system.arq.vazDescControl, 0);
+    printUnloadingControl("CalcPresValvDesc-high", scenario.name, system);
+
+    seed();
+    system.pGSup = system.arq.presMinDesc * 0.99;
+    system.CalcPresValvDesc(0.1 * system.arq.vazDescControl, 1);
+    printUnloadingControl("CalcPresValvDesc-low", scenario.name, system);
+
+    // Two rows again. The search corrects the surface pressure through the
+    // valve when the tubing still carries completion fluid, and lets it decay
+    // on a fixed 1% ramp when it does not -- selected by the mass content of
+    // the cell above the last. Only the correcting branch was reachable with
+    // resetCells' seeding, so the decay ramp was never executed at all.
+    seed();
+    system.celula[system.ncel - 1].MC = -1.;
+    printValue("BuscaPresInjDesc-decay", scenario.name, system.BuscaPresInjDesc());
+    printInterface("BuscaPresInjDesc-decay-state", scenario.name, system);
+
+    seed();
+    printValue("BuscaPresInjDesc", scenario.name, system.BuscaPresInjDesc());
+    printInterface("BuscaPresInjDesc-state", scenario.name, system);
+    printValve("BuscaPresInjDesc-valve", scenario.name, system.chokeVGL[0]);
+
+    // Two rows, because advanceInterface is two routines behind one name: the
+    // ordinary advance, and the hand-over that fires only when the interface is
+    // in the last cell AND has filled it. Driving one leaves the other blind.
+    seed();
+    system.avancInter();
+    printGas("avancInter", scenario.name, system.celulaG[kInterfaceCell]);
+
+    seed();
+    system.celInter = system.ncelGas - 1;
+    system.celulaG[system.celInter].razInterIni = 0.995;
+    system.celulaG[system.celInter].razInter = 0.995;
+    system.avancInter();
+    printGas("avancInter-handover", scenario.name, system.celulaG[system.ncelGas - 1]);
+    printRatios("avancInter-ratios", scenario.name, system.celulaG[system.ncelGas - 1]);
+    // The hand-over writes the cell AHEAD of the interface as well.
+    printRatios("avancInter-ahead", scenario.name, system.celulaG[system.ncelGas]);
+
+    seed();
+    system.resolveDescarga();
+    printGas("resolveDescarga", scenario.name, system.celulaG[kInterfaceCell]);
+    printGas("resolveDescarga-last", scenario.name, system.celulaG[kGasCells]);
+
+    // subtempoGasBuf is the only routine here that solves the band system, and
+    // BandMtx::GaussElimPP rejects a right-hand side whose size differs from its
+    // own -- through the Logger, which has no open file in this harness, so the
+    // rejection arrives as a segfault rather than a message.
+    //
+    // The assembly loop runs 0..gasCellCount inclusive at three rows per cell,
+    // so both sides must be 3 * (kGasCells + 1). termolivreG is deliberately
+    // wider than that for the rest of the sweep -- resetGasLine seeds
+    // 3 * (kGasCells + 2) entries and updateGasLine reads past 3 * gasCellCount
+    // -- and narrowing it globally would change rows this file already
+    // publishes. So it is narrowed for this call only and restored after.
+    // Nothing is lost: the assembly overwrites every entry it then solves.
+    seed();
+    Vcr<double> wideFreeTerms = system.termolivreG;
+    system.termolivreG = Vcr<double>(3 * (kGasCells + 1), 0.);
+    system.subtempoGasBuf();
+    printGas("subtempoGasBuf", scenario.name, system.celulaG[kInterfaceCell]);
+    printBuffered("subtempoGasBuf-buffer", scenario.name,
+                  system.celulaG[kInterfaceCell], system.celulaG[0]);
+    // The opening bound also rewrites the injection choke itself, and that
+    // write appears in no other row.
+    printValve("subtempoGasBuf-choke", scenario.name, system.chokeInj);
+    printInterface("subtempoGasBuf-state", scenario.name, system);
+    system.termolivreG = wideFreeTerms;
 }
 
 void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
@@ -470,7 +818,22 @@ int main() {
     system.posicVGLG = new int[kValves];
     system.posicVGLP = new int[kValves];
 
+    // advanceBufferedGasSubStep assembles into the band matrix, which nothing
+    // else in this sweep touches, so main never sized it.
+    //
+    // The size is 3 * (kGasCells + 1), not 3 * (kGasCells + 3) as termolivreG
+    // above: the assembly loop runs 0..gasCellCount INCLUSIVE and writes three
+    // rows per cell, so it fills exactly 3 * (kGasCells + 1) of them. Sized any
+    // larger, the surplus rows stay zero, the matrix is singular, and
+    // GaussElimPP reports it through the Logger -- which in this harness has no
+    // open file and segfaults instead. Cost of getting this wrong: a crash that
+    // looks like a bug in the routine under test.
+    system.matglobG = BandMtx<double>(3 * (kGasCells + 1), 5, 5);
+    system.arq.gasinj.presinj = new double[2];
+
     for (const Scenario &scenario : kScenarios)
         runGasScenario(system, cells, scenario);
+    for (const Scenario &scenario : kScenarios)
+        runUnloadingScenario(system, cells, scenario);
     return 0;
 }

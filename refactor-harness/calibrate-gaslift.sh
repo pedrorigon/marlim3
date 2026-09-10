@@ -67,6 +67,58 @@ probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = 
                                           'state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 2];
             state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];' \
                                           "$target_gaslift"
+# ------------------------------------------------------- unloading probes ---
+# The six routines below were, until the sweep was extended, executed by no
+# verification layer at all: the corpus never sets condicaoInicial == 3 and the
+# sweep did not drive them. Rows without probes would only move the blind spot
+# from "never executed" to "executed, never checked", so each gets one.
+#
+# Every corruption here is a LITERAL or a comparison bound. Renaming cannot
+# excuse any of them, and each pattern is pinned to text that occurs exactly
+# once -- advanceBufferedGasSubStep needs a two-line window, because its body is
+# a near-duplicate of advanceGasSubStep and every single line it contains also
+# appears there.
+probe 'HidroDescargaG: hydrostatic head' \
+    'pmed -= rho1 * 9.81 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
+    'pmed -= rho1 * 9.82 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
+    "$target_gaslift"
+
+probe 'CalcPresValvDesc: wall shear' \
+    'double tens1 = frictionFactor * rhomix * vel1 * fabs(vel1) / 2.;' \
+    'double tens1 = frictionFactor * rhomix * vel1 * fabs(vel1) / 2.5;' \
+    "$target_gaslift"
+
+probe 'BuscaPresInjDesc: pressure decay' \
+    'state.gasSurfacePressure *= (1 - 0.01 * state.timeStep);' \
+    'state.gasSurfacePressure *= (1 - 0.02 * state.timeStep);' \
+    "$target_gaslift"
+
+# The hand-over branch, which only the second advancInter row reaches. If that
+# row were ever dropped this probe would start missing, which is the point.
+probe 'avancInter: handover ratio' \
+    'state.gasCells[state.interfaceCell + 1].razInter = 1.0;' \
+    'state.gasCells[state.interfaceCell + 1].razInter = 0.999;' \
+    "$target_gaslift"
+
+probe 'resolveDescarga: liquid hydrostatic' \
+    'double hidro1L = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * LLiqL;' \
+    'double hidro1L = 1 * (9.81 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * LLiqL;' \
+    "$target_gaslift"
+
+# Splits the gas/liquid share of every control volume. Moving the threshold
+# changes which side of the interface each cell is counted on.
+probe 'resolveDescarga: interface split' \
+    'if (state.gasCells[gasCellIndex].razInter <= 0.5)' \
+    'if (state.gasCells[gasCellIndex].razInter <= 0.6)' \
+    "$target_gaslift"
+
+probe 'subtempoGasBuf: choke opening bound' \
+    '        abertoChk = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+        if (abertoChk < 0.2) {' \
+    '        abertoChk = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+        if (abertoChk < 0.3) {' \
+    "$target_gaslift"
+
 probe 'prescordesc: sign'                 'return sign * precorr;' 'return -sign * precorr;' \
                                           "$target_gaslift"
 probe 'prescordesc: throat area'          'precorr = pow(massica / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);' \
