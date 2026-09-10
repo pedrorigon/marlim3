@@ -1,0 +1,11 @@
+[-Wdangling-else] 2
+[-Wmaybe-uninitialized] 10
+[-Wparentheses] 1
+[-Wreorder] 36
+[-Wsign-compare] 57
+[-Wtrigraphs] 1
+[-Wunused-but-set-variable] 170
+[-Wunused-result] 3
+[-Wunused-value] 3
+[-Wunused-variable] 201
+[no-flag] 1

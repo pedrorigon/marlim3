@@ -193,3 +193,49 @@ tempDescarga
 TempDescGL
 atualizaPeriTempProd
 calcTempFim
+
+# ---------------------------------------------------------------- estagio 6
+# The gas-line and gas-lift domain. Each of these 22 kept its public signature
+# -- FR-032 requires it and Num4Main.cpp calls them by name -- and its body was
+# replaced by a single delegation to sisprod::gaslift. So L0 compares a body
+# against a one-line call and reports DIFFERS for every one of them.
+#
+# Declaring them is not a way of silencing the check. Each body was proven
+# token for token against the baseline by gaslift-move.py at the moment it was
+# moved (T073-T079), which is a stronger statement than the L0 sweep makes: the
+# sweep compares what is at the old address, and there is nothing there any
+# more. L2 then confirms 14 of 14 models bit for bit.
+#
+# The suppression is narrower than a name on a list suggests, and this was
+# checked in verify-structural.py rather than assumed:
+#   - MISSING increments the failure count unconditionally, declared or not, so
+#     a function that vanishes from every file still fails here;
+#   - STALE fires when a declared function turns out to be identical again,
+#     so an entry that outlives its reason reports itself instead of
+#     accumulating silently;
+#   - a body that changed during the move fails the token proof in its own
+#     task, and any behavioural change fails L2 and gate 6.
+# All this declaration suppresses is "the body at this address differs from the
+# baseline body" -- which is the point of having moved it.
+HidroDescargaG
+renovaGas
+renovaGasBuf
+areaValvCali
+resolveDescarga
+avancInter
+ValvGasTrans
+prescordesc
+CalcPresValvDesc
+BuscaPresInjDesc
+subtempoGas
+subtempoGasBuf
+conectaColuna
+solveLinGas
+delpGasPerm
+delpInjPerm
+RenovaPresGasPerm
+calcVazGasPerm
+IniciaVazValvGasPerm
+RenovaTempGasPerm
+conectaColunaPerm
+IniciaconectaColunaPerm
