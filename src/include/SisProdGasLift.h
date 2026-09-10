@@ -39,10 +39,28 @@ struct GasLiftTemperatureUpdater {
 /// Same role as ThermalState in the thermal module: it names in one place what
 /// this domain is allowed to touch, and it makes the routines callable WITHOUT
 /// an SProd. That second property is not tidiness -- it is what lets a dedicated
-/// harness drive them over synthetic cells, which for this stage is the only
-/// verification that reaches twelve of the twenty-two functions. The demo corpus
-/// never executes those, so the artifact and regression layers stay green for
-/// them whatever an extraction does.
+/// harness drive them over synthetic cells, which for several of these routines
+/// is the only verification that executes them at all.
+///
+/// The numbers, measured with gcov over the three distinct gas-lift scenarios in
+/// the demo corpus rather than estimated:
+///
+///   12 of the 22 functions are executed by the corpus;
+///   10 are never executed by any model, because the unloading path needs
+///      configuracaoInicial/condicaoInicial == 3 (arq.descarga == 1) and no
+///      model in the corpus sets it;
+///    3 of those 10 are covered by verify-gaslift.sh, whose 36-row table is
+///      compared against a golden captured before any body moved;
+///    7 are therefore executed by NO verification layer -- 363 executable
+///      lines resting on token-level identity alone. Two of the seven
+///      (advanceBufferedGasSubStep, updateBufferedGasLine) are dead in the
+///      product and were already dead in the baseline; the other five are live
+///      unloading code that simply has no model.
+///
+/// So for those seven the artifact and regression layers stay green whatever an
+/// extraction does, and saying so precisely matters more than saying it
+/// reassuringly. An earlier version of this comment claimed the harness reached
+/// twelve of them; it reaches three.
 ///
 /// Scalars are held BY REFERENCE, not by value. Copying them into the struct
 /// would read every one at construction, before the branch that decides whether

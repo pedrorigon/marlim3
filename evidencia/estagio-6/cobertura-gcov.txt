@@ -1,0 +1,302 @@
+Function 'std::enable_if<std::__is_bitwise_relocatable<double, void>::value, double*>::type std::__relocate_a_1<double, double>(double*, double*, double*, std::allocator<double>&)'
+Lines executed:0.00% of 5
+
+Function 'double* std::__niter_base<double*>(double*)'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::new_allocator<double>::allocate(unsigned long, void const*)'
+Lines executed:0.00% of 6
+
+Function '__gnu_cxx::new_allocator<double>::_M_max_size() const'
+Lines executed:0.00% of 2
+
+Function 'double* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<double>(double const*, double const*, double*)'
+Lines executed:0.00% of 5
+
+Function 'double* std::__copy_move<true, false, std::random_access_iterator_tag>::__copy_m<double*, double*>(double*, double*, double*)'
+Lines executed:0.00% of 6
+
+Function '__gnu_cxx::new_allocator<double>::deallocate(double*, unsigned long)'
+Lines executed:0.00% of 2
+
+Function 'double* std::__relocate_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&)'
+Lines executed:0.00% of 3
+
+Function 'std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() const'
+Lines executed:0.00% of 2
+
+Function 'std::vector<double, std::allocator<double> >::_S_max_size(std::allocator<double> const&)'
+Lines executed:0.00% of 4
+
+Function 'std::allocator_traits<std::allocator<double> >::max_size(std::allocator<double> const&)'
+Lines executed:0.00% of 2
+
+Function 'double* std::__copy_move_a2<true, double*, double*>(double*, double*, double*)'
+Lines executed:0.00% of 4
+
+Function 'std::vector<double, std::allocator<double> >::_S_do_relocate(double*, double*, double*, std::allocator<double>&, std::integral_constant<bool, true>)'
+Lines executed:0.00% of 2
+
+Function 'std::allocator_traits<std::allocator<double> >::allocate(std::allocator<double>&, unsigned long)'
+Lines executed:0.00% of 5
+
+Function 'std::vector<double, std::allocator<double> >::max_size() const'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator*() const'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator-(long) const'
+Lines executed:0.00% of 2
+
+Function 'void std::destroy_at<double>(double*)'
+Lines executed:0.00% of 3
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__niter_wrap<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double*>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double*)'
+Lines executed:0.00% of 2
+
+Function 'double* std::__copy_move_a1<true, double*, double*>(double*, double*, double*)'
+Lines executed:0.00% of 2
+
+Function 'double* std::__niter_base<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >)'
+Lines executed:0.00% of 2
+
+Function 'std::allocator_traits<std::allocator<double> >::deallocate(std::allocator<double>&, double*, unsigned long)'
+Lines executed:0.00% of 6
+
+Function 'std::vector<double, std::allocator<double> >::_S_relocate(double*, double*, double*, std::allocator<double>&)'
+Lines executed:0.00% of 2
+
+Function 'std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long)'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&)'
+No executable lines
+
+Function 'std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const'
+Lines executed:0.00% of 5
+
+Function 'double const& std::forward<double const&>(std::remove_reference<double const&>::type&)'
+No executable lines
+
+Function 'std::vector<double, std::allocator<double> >::back()'
+Lines executed:0.00% of 2
+
+Function 'void std::vector<double, std::allocator<double> >::_M_realloc_insert<double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double&&)'
+No executable lines
+
+Function 'void std::allocator_traits<std::allocator<double> >::construct<double, double>(std::allocator<double>&, double*, double&&)'
+No executable lines
+
+Function 'decltype (::new ((void*)(0)) double((declval<double>)())) std::construct_at<double, double>(double*, double&&)'
+No executable lines
+
+Function 'double&& std::forward<double>(std::remove_reference<double>::type&)'
+No executable lines
+
+Function 'void std::allocator_traits<std::allocator<double> >::destroy<double>(std::allocator<double>&, double*)'
+Lines executed:0.00% of 3
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__copy_move_a<true, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >)'
+Lines executed:0.00% of 3
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__miter_base<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >)'
+Lines executed:0.00% of 2
+
+Function 'bool __gnu_cxx::operator==<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&)'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::base() const'
+No executable lines
+
+Function '__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::__normal_iterator(double const* const&)'
+No executable lines
+
+Function 'std::_Vector_base<double, std::allocator<double> >::_M_deallocate(double*, unsigned long)'
+Lines executed:0.00% of 4
+
+Function 'void std::vector<double, std::allocator<double> >::_M_realloc_insert<double const&>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&)'
+No executable lines
+
+Function 'std::vector<double, std::allocator<double> >::end()'
+Lines executed:0.00% of 2
+
+Function 'void std::allocator_traits<std::allocator<double> >::construct<double, double const&>(std::allocator<double>&, double*, double const&)'
+No executable lines
+
+Function 'decltype (::new ((void*)(0)) double((declval<double const&>)())) std::construct_at<double, double const&>(double*, double const&)'
+No executable lines
+
+Function 'double& std::vector<double, std::allocator<double> >::emplace_back<double>(double&&)'
+Lines executed:0.00% of 6
+
+Function 'std::remove_reference<double&>::type&& std::move<double&>(double&)'
+Lines executed:0.00% of 2
+
+Function 'std::vector<double, std::allocator<double> >::_M_erase(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >)'
+Lines executed:0.00% of 6
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::move<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >)'
+Lines executed:0.00% of 3
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator+(long) const'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&)'
+No executable lines
+
+Function 'std::vector<double, std::allocator<double> >::cbegin() const'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::__normal_iterator(double* const&)'
+No executable lines
+
+Function 'std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator()'
+Lines executed:0.00% of 2
+
+Function 'FullMtx<double>::operator[](int) const'
+Lines executed:0.00% of 1
+
+Function 'BandMtx<double>::operator[](int) const'
+Lines executed:0.00% of 1
+
+Function 'std::vector<double, std::allocator<double> >::push_back(double const&)'
+Lines executed:0.00% of 6
+
+Function 'std::vector<double, std::allocator<double> >::push_back(double&&)'
+Lines executed:0.00% of 2
+
+Function 'std::vector<double, std::allocator<double> >::erase(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >)'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::__normal_iterator<double*>(__gnu_cxx::__normal_iterator<double*, __gnu_cxx::__enable_if<std::__are_same<double*, double*>::__value, std::vector<double, std::allocator<double> > >::__type> const&)'
+Lines executed:0.00% of 2
+
+Function '__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::base() const'
+No executable lines
+
+Function 'std::vector<double, std::allocator<double> >::begin()'
+Lines executed:0.00% of 2
+
+Function 'std::vector<double, std::allocator<double> >::operator[](unsigned long)'
+Lines executed:0.00% of 2
+
+Function 'std::vector<double, std::allocator<double> >::size() const'
+Lines executed:0.00% of 2
+
+Function 'Vcr<double>::operator[](int) const'
+Lines executed:0.00% of 1
+
+Function 'unsigned long const& std::max<unsigned long>(unsigned long const&, unsigned long const&)'
+Lines executed:0.00% of 4
+
+Function 'sisprod::gaslift::updateSteadyGasTemperature(sisprod::gaslift::GasLiftState const&, int)'
+Lines executed:73.64% of 110
+
+Function 'sisprod::gaslift::initializeSteadyValveGasFlowRate(sisprod::gaslift::GasLiftState const&, int)'
+Lines executed:59.26% of 27
+
+Function 'sisprod::gaslift::computeSteadyGasFlowRate(sisprod::gaslift::GasLiftState const&, int)'
+Lines executed:83.67% of 49
+
+Function 'sisprod::gaslift::updateSteadyGasPressure(sisprod::gaslift::GasLiftState const&, int)'
+Lines executed:100.00% of 48
+
+Function 'sisprod::gaslift::steadyInjectionPressureDrop(sisprod::gaslift::GasLiftState const&, int)'
+Lines executed:0.00% of 40
+
+Function 'sisprod::gaslift::steadyGasPressureDrop(sisprod::gaslift::GasLiftState const&, int)'
+Lines executed:87.50% of 48
+
+Function 'sisprod::gaslift::initializeTubingConnectionSteady(sisprod::gaslift::GasLiftState const&)'
+Lines executed:100.00% of 14
+
+Function 'sisprod::gaslift::connectTubingSteady(sisprod::gaslift::GasLiftState const&)'
+Lines executed:100.00% of 14
+
+Function 'sisprod::gaslift::solveGasLine(sisprod::gaslift::GasLiftState const&)'
+Lines executed:85.19% of 27
+
+Function 'sisprod::gaslift::connectTubing(sisprod::gaslift::GasLiftState const&)'
+Lines executed:76.92% of 26
+
+Function 'sisprod::gaslift::advanceBufferedGasSubStep(sisprod::gaslift::GasLiftState const&)'
+Lines executed:0.00% of 15
+
+Function 'sisprod::gaslift::advanceGasSubStep(sisprod::gaslift::GasLiftState const&)'
+Lines executed:70.97% of 62
+
+Function 'sisprod::gaslift::searchUnloadingInjectionPressure(sisprod::gaslift::GasLiftState const&)'
+Lines executed:0.00% of 85
+
+Function 'sisprod::gaslift::updateTransientGasValves(sisprod::gaslift::GasLiftState const&)'
+Lines executed:50.70% of 71
+
+Function 'sisprod::gaslift::advanceInterface(sisprod::gaslift::GasLiftState const&)'
+Lines executed:0.00% of 58
+
+Function 'sisprod::gaslift::solveUnloading(sisprod::gaslift::GasLiftState const&)'
+Lines executed:0.00% of 91
+
+Function 'sisprod::gaslift::computeUnloadingValvePressure(sisprod::gaslift::GasLiftState const&, double, int)'
+Lines executed:0.00% of 53
+
+Function 'sisprod::gaslift::unloadingPressureCorrection(sisprod::gaslift::GasLiftState const&, double, int, double, int)'
+Lines executed:0.00% of 11
+
+Function 'sisprod::gaslift::calibratedValveArea(double, double, double, double, double, double, double, double)'
+Lines executed:0.00% of 24
+
+Function 'sisprod::gaslift::updateBufferedGasLine(sisprod::gaslift::GasLiftState const&)'
+Lines executed:0.00% of 8
+
+Function 'sisprod::gaslift::updateGasLine(sisprod::gaslift::GasLiftState const&)'
+Lines executed:100.00% of 22
+
+Function 'sisprod::gaslift::computeGasUnloadingHydrostatics(sisprod::gaslift::GasLiftState const&)'
+Lines executed:0.00% of 53
+
+Function 'unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)'
+Lines executed:0.00% of 4
+
+Function 'operator new(unsigned long, void*)'
+Lines executed:0.00% of 2
+
+Function 'std::is_constant_evaluated()'
+Lines executed:0.00% of 2
+
+File '/home/pedrorigon/Desktop/marlim-public/marlim3/src/core/SisProdGasLift.cpp'
+Lines executed:41.95% of 956
+File '/usr/include/c++/11/iostream'
+No executable lines
+File '/usr/include/c++/11/bits/stl_uninitialized.h'
+Lines executed:0.00% of 8
+File '/usr/include/c++/11/bits/stl_algobase.h'
+Lines executed:0.00% of 35
+File '/usr/include/c++/11/ext/new_allocator.h'
+Lines executed:0.00% of 10
+File '/usr/include/c++/11/bits/stl_vector.h'
+Lines executed:0.00% of 47
+File '/usr/include/c++/11/bits/alloc_traits.h'
+Lines executed:0.00% of 12
+File '/usr/include/c++/11/bits/allocator.h'
+Lines executed:0.00% of 7
+File '/usr/include/c++/11/bits/stl_iterator.h'
+Lines executed:0.00% of 18
+File '/usr/include/c++/11/bits/stl_construct.h'
+Lines executed:0.00% of 5
+File '/usr/include/c++/11/bits/move.h'
+Lines executed:0.00% of 4
+File '/usr/include/c++/11/bits/vector.tcc'
+Lines executed:0.00% of 33
+File '/usr/include/c++/11/bits/cpp_type_traits.h'
+Lines executed:0.00% of 2
+File '/home/pedrorigon/Desktop/marlim-public/marlim3/src/include/Matriz.h'
+Lines executed:0.00% of 2
+File '/home/pedrorigon/Desktop/marlim-public/marlim3/src/include/Vetor.h'
+Lines executed:0.00% of 1
+File '/usr/include/c++/11/new'
+Lines executed:0.00% of 2
+File '/usr/include/c++/11/type_traits'
+Lines executed:0.00% of 2
+Lines executed:35.05% of 1144
