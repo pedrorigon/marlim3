@@ -13,28 +13,28 @@ namespace sisprod::gaslift {
 
 void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     state.gasCells[0].massfonteCH = 0;
-    double pmed;
-    double tmed;
+    double meanPressure;
+    double meanTemperature;
 
     if (state.input.gasinj.tipoCC == 0 && state.input.controDesc == 0)
-        pmed = state.input.gasinj.presinj[0];
+        meanPressure = state.input.gasinj.presinj[0];
     else {
-        pmed = 10.;
+        meanPressure = 10.;
         if (state.input.controDesc == 1) {
-            pmed = state.input.presIniDescG;
+            meanPressure = state.input.presIniDescG;
             state.initialGasPressure = state.input.presIniDescG;
         }
     }
 
-    state.gasCells[0].presL = pmed;
-    state.gasCells[0].pres = pmed;
-    state.gasCells[0].presini = pmed;
-    state.gasCells[1].presL = pmed;
-    tmed = state.gasCells[0].calor.Textern1;
-    state.gasCells[0].tempL = tmed;
-    state.gasCells[0].temp = tmed;
-    state.gasCells[1].tempL = tmed;
-    double rho0 = state.gasCells[0].flui.MasEspGas(pmed, tmed);
+    state.gasCells[0].presL = meanPressure;
+    state.gasCells[0].pres = meanPressure;
+    state.gasCells[0].presini = meanPressure;
+    state.gasCells[1].presL = meanPressure;
+    meanTemperature = state.gasCells[0].calor.Textern1;
+    state.gasCells[0].tempL = meanTemperature;
+    state.gasCells[0].temp = meanTemperature;
+    state.gasCells[1].tempL = meanTemperature;
+    double rho0 = state.gasCells[0].flui.MasEspGas(meanPressure, meanTemperature);
     double rho1;
     state.gasCells[0].u1L = state.gasCells[0].duto.area * rho0;
     state.gasCells[0].u1LL = state.gasCells[0].u1L;
@@ -46,20 +46,20 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     for (int gasCellIndex = 1; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         double halfUpstreamLength = 0.5 * state.gasCells[gasCellIndex].dxL;
         double halfLocalLength = 0.5 * state.gasCells[gasCellIndex].dx0;
-        pmed -= rho0 * 9.81 * halfUpstreamLength * sin(state.gasCells[gasCellIndex - 1].duto.teta) / 98066.52;
-        tmed = state.gasCells[gasCellIndex].calor.Textern1;
+        meanPressure -= rho0 * 9.81 * halfUpstreamLength * sin(state.gasCells[gasCellIndex - 1].duto.teta) / 98066.52;
+        meanTemperature = state.gasCells[gasCellIndex].calor.Textern1;
         if (gasCellIndex < state.interfaceCell)
-            rho1 = state.gasCells[gasCellIndex].flui.MasEspGas(pmed, tmed);
+            rho1 = state.gasCells[gasCellIndex].flui.MasEspGas(meanPressure, meanTemperature);
         else
-            rho1 = state.gasCells[gasCellIndex].MasEspFlu(pmed, tmed);
-        pmed -= rho1 * 9.81 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;
+            rho1 = state.gasCells[gasCellIndex].MasEspFlu(meanPressure, meanTemperature);
+        meanPressure -= rho1 * 9.81 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;
         rho0 = rho1;
 
-        state.gasCells[gasCellIndex].pres = pmed;
-        state.gasCells[gasCellIndex].presini = pmed;
-        state.gasCells[gasCellIndex - 1].presR = pmed;
-        state.gasCells[gasCellIndex].temp = tmed;
-        state.gasCells[gasCellIndex - 1].tempR = tmed;
+        state.gasCells[gasCellIndex].pres = meanPressure;
+        state.gasCells[gasCellIndex].presini = meanPressure;
+        state.gasCells[gasCellIndex - 1].presR = meanPressure;
+        state.gasCells[gasCellIndex].temp = meanTemperature;
+        state.gasCells[gasCellIndex - 1].tempR = meanTemperature;
         state.gasCells[gasCellIndex].u1L = state.gasCells[gasCellIndex].duto.area * rho0;
         state.gasCells[gasCellIndex - 1].u1R = state.gasCells[gasCellIndex].u1L;
         state.gasCells[gasCellIndex].VGasR = 0;
@@ -67,8 +67,8 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
         state.gasCells[gasCellIndex].massfonteCH = 0.;
         state.gasCells[gasCellIndex - 1].u1R = state.gasCells[gasCellIndex].u1L;
         if (gasCellIndex < state.gasCellCount) {
-            state.gasCells[gasCellIndex + 1].presL = pmed;
-            state.gasCells[gasCellIndex + 1].tempL = tmed;
+            state.gasCells[gasCellIndex + 1].presL = meanPressure;
+            state.gasCells[gasCellIndex + 1].tempL = meanTemperature;
             state.gasCells[gasCellIndex + 1].u1LL = state.gasCells[gasCellIndex].u1L;
             state.gasCells[gasCellIndex + 1].VGasL = 0;
         }
@@ -101,15 +101,12 @@ void updateGasLine(const GasLiftState &state) {
 }
 
 void updateBufferedGasLine(const GasLiftState &state) {
-    for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        if (gasCellIndex != 0 && gasCellIndex != state.gasCellCount) {
-            state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
-        } else if (gasCellIndex == 0) {
-            state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
-        } else {
-            state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
-        }
-    }
+    // This had three branches -- interior cell, inlet, outlet -- carrying the
+    // same assignment byte for byte. The conditions are comparisons on an int
+    // and a const int&, so they had no effect beyond choosing which copy of one
+    // statement to run.
+    for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++)
+        state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
 }
 
 double calibratedValveArea(double calibrationPressure, double calibrationTemperature, double valveOpeningPressure, double tubingPressure,
@@ -154,47 +151,47 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
     state.gasLiftChokes[valveIndex].presEstag = state.gasCells[gasValveCell].pres;
     state.gasLiftChokes[valveIndex].tempEstag = state.gasCells[gasValveCell].temp;
     double rho0 = state.gasCells[gasValveCell].MasEspFlu(state.gasLiftChokes[valveIndex].presEstag, state.gasLiftChokes[valveIndex].tempEstag);
-    double massica = (factor * state.input.vazDescControl - maximumFlowRate) * rho0;
-    double precorr = 0.;
-    precorr = pow(massica / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);
-    return sign * precorr;
+    double massFlowRate = (factor * state.input.vazDescControl - maximumFlowRate) * rho0;
+    double pressureCorrection = 0.;
+    pressureCorrection = pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);
+    return sign * pressureCorrection;
 }
 
 double computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex) {
 
-    double velmax = 0;
-    double laz1 = 0.1;
-    double laz2 = 0.4;
+    double maximumVelocity = 0;
+    double upperBandMargin = 0.1;
+    double lowerBandMargin = 0.4;
 
-    double pmed;
-    pmed = state.gasSurfacePressure;
+    double meanPressure;
+    meanPressure = state.gasSurfacePressure;
     state.input.presMaxDesc = 100000.;
     for (int cellIndex = state.lastCell; cellIndex >= 0; cellIndex--) {
 
-        double tmed = state.cells[cellIndex].temp;
+        double meanTemperature = state.cells[cellIndex].temp;
         double flowArea = state.cells[cellIndex].duto.area;
         double perimeter = state.cells[cellIndex].duto.peri;
         double cellLength = state.cells[cellIndex].dx;
-        double rhoG = state.cells[cellIndex].flui.MasEspGas(pmed, tmed);
-        double rhoP = state.cells[cellIndex].flui.MasEspLiq(pmed, tmed);
-        double rhoC = state.cells[cellIndex].fluicol.MasEspFlu(pmed, tmed);
-        double viscG = state.cells[cellIndex].flui.ViscGas(pmed, tmed);
-        double viscP = state.cells[cellIndex].flui.ViscOleo(pmed, tmed);
-        double viscC = state.cells[cellIndex].fluicol.VisFlu(pmed, tmed);
+        double gasDensity = state.cells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
+        double rhoP = state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature);
+        double rhoC = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
+        double viscG = state.cells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
+        double viscP = state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature);
+        double viscC = state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
         double voidFraction = state.cells[cellIndex].alf;
         double composition = state.cells[cellIndex].bet;
-        double rholiq = composition * rhoC + (1. - composition) * rhoP;
-        double viscliq = composition * viscC + (1. - composition) * viscP;
-        double rhomix = voidFraction * rhoG + (1. - voidFraction) * rholiq;
-        double viscmix = voidFraction * viscG + (1. - voidFraction) * viscliq;
-        double vel1 = state.cells[cellIndex].QL / (flowArea * rholiq) + state.cells[cellIndex].QG / (flowArea * rhoG);
+        double liquidDensity = composition * rhoC + (1. - composition) * rhoP;
+        double liquidViscosity = composition * viscC + (1. - composition) * viscP;
+        double mixtureDensity = voidFraction * gasDensity + (1. - voidFraction) * liquidDensity;
+        double mixtureViscosity = voidFraction * viscG + (1. - voidFraction) * liquidViscosity;
+        double vel1 = state.cells[cellIndex].QL / (flowArea * liquidDensity) + state.cells[cellIndex].QG / (flowArea * gasDensity);
         double reynolds;
         if (fabs(vel1) > 1e-15) {
             if (state.cells[cellIndex].duto.revest == 0)
-                reynolds = state.cells[cellIndex].Rey(state.cells[cellIndex].duto.a, vel1, rhomix, viscmix);
+                reynolds = state.cells[cellIndex].Rey(state.cells[cellIndex].duto.a, vel1, mixtureDensity, mixtureViscosity);
             else {
                 double dhid = 4 * flowArea / perimeter;
-                reynolds = state.cells[cellIndex].Rey(dhid, vel1, rhomix, viscmix);
+                reynolds = state.cells[cellIndex].Rey(dhid, vel1, mixtureDensity, mixtureViscosity);
             }
         }
         double frictionFactor;
@@ -202,34 +199,34 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
             frictionFactor = state.cells[cellIndex].fric(reynolds, state.cells[cellIndex].duto.rug / state.cells[cellIndex].duto.a);
         else
             frictionFactor = 0.;
-        double tens1 = frictionFactor * rhomix * vel1 * fabs(vel1) / 2.;
-        pmed -= (-9.82 * rhomix * sin(state.cells[cellIndex].duto.teta) - tens1 * perimeter / flowArea) * cellLength / 98066.5;
+        double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.;
+        meanPressure -= (-9.82 * mixtureDensity * sin(state.cells[cellIndex].duto.teta) - tens1 * perimeter / flowArea) * cellLength / 98066.5;
         if (state.cells[cellIndex].acsr.tipo == 3) {
-            double auxpresmax = state.cells[cellIndex].acsr.ipr.Pres - (pmed - state.gasSurfacePressure);
-            if (auxpresmax < state.input.presMaxDesc)
-                state.input.presMaxDesc = auxpresmax;
+            double candidateMaximumPressure = state.cells[cellIndex].acsr.ipr.Pres - (meanPressure - state.gasSurfacePressure);
+            if (candidateMaximumPressure < state.input.presMaxDesc)
+                state.input.presMaxDesc = candidateMaximumPressure;
         }
     }
-    if (state.gasSurfacePressure >= state.input.presMaxDesc * 0.9999999 && throatFlowRate > (1 - laz1) * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
-        double precorr = unloadingPressureCorrection(state, throatFlowRate, valveIndex, (1 - laz1), -1);
-        if (fabs(precorr) > 0.01 * state.initialGasPressure * state.cells[0].dt)
-            precorr = (fabs(precorr) / precorr) * 0.01 * state.initialGasPressure * state.cells[0].dt;
-        state.initialGasPressure += precorr;
+    if (state.gasSurfacePressure >= state.input.presMaxDesc * 0.9999999 && throatFlowRate > (1 - upperBandMargin) * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
+        double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, (1 - upperBandMargin), -1);
+        if (fabs(pressureCorrection) > 0.01 * state.initialGasPressure * state.cells[0].dt)
+            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.initialGasPressure * state.cells[0].dt;
+        state.initialGasPressure += pressureCorrection;
         if (state.initialGasPressure < state.input.presMinDescG) {
             state.initialGasPressure = state.input.presMinDescG;
         }
 
-    } else if (throatFlowRate <= (1 - laz2) * state.input.vazDescControl && state.gasSurfacePressure <= state.input.presMinDesc * 1.0000001) {
-        double precorr = unloadingPressureCorrection(state, throatFlowRate, valveIndex, 1 - laz2, 1);
-        if (fabs(precorr) > 0.01 * state.initialGasPressure * state.cells[0].dt)
-            precorr = (fabs(precorr) / precorr) * 0.01 * state.initialGasPressure * state.cells[0].dt;
-        state.initialGasPressure += precorr;
+    } else if (throatFlowRate <= (1 - lowerBandMargin) * state.input.vazDescControl && state.gasSurfacePressure <= state.input.presMinDesc * 1.0000001) {
+        double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, 1 - lowerBandMargin, 1);
+        if (fabs(pressureCorrection) > 0.01 * state.initialGasPressure * state.cells[0].dt)
+            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.initialGasPressure * state.cells[0].dt;
+        state.initialGasPressure += pressureCorrection;
         if (state.initialGasPressure > state.input.presMaxDescG) {
             state.initialGasPressure = state.input.presMaxDescG;
         }
     }
 
-    return velmax;
+    return maximumVelocity;
 }
 
 void solveUnloading(const GasLiftState &state) {
@@ -242,22 +239,22 @@ void solveUnloading(const GasLiftState &state) {
         double RgasL = 0.;
         if (state.gasCells[gasCellIndex - 1].razInter >= 0.5)
             RgasL = 2 * (state.gasCells[gasCellIndex - 1].razInter - 0.5);
-        double LGasL = halfUpstreamLength * RgasL;
-        double LGasR = halfLocalLength * RgasR;
-        double LLiqL = halfUpstreamLength - LGasL;
-        double LLiqR = halfLocalLength - LGasR;
+        double upstreamGasLength = halfUpstreamLength * RgasL;
+        double localGasLength = halfLocalLength * RgasR;
+        double upstreamLiquidLength = halfUpstreamLength - upstreamGasLength;
+        double localLiquidLength = halfLocalLength - localGasLength;
         double temp = state.gasCells[gasCellIndex - 1].temp;
-        double pres = state.gasCells[gasCellIndex - 1].pres;
-        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(pres, temp);
-        double viscL = state.gasCells[gasCellIndex].VisFlu(pres, temp);
-        double rhoG = state.gasCells[gasCellIndex].flui.MasEspGas(pres, temp);
-        double viscG = state.gasCells[gasCellIndex].flui.ViscGas(pres, temp);
+        double upstreamPressure = state.gasCells[gasCellIndex - 1].pres;
+        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(upstreamPressure, temp);
+        double viscL = state.gasCells[gasCellIndex].VisFlu(upstreamPressure, temp);
+        double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(upstreamPressure, temp);
+        double viscG = state.gasCells[gasCellIndex].flui.ViscGas(upstreamPressure, temp);
         double vel1 = state.gasCells[gasCellIndex].VGasL / (rhoL * state.gasCells[gasCellIndex - 1].duto.area);
         if (state.gasCells[gasCellIndex].razInter > (*state.globals).localtiny)
-            vel1 = state.gasCells[gasCellIndex].VGasL / (rhoG * state.gasCells[gasCellIndex - 1].duto.area);
+            vel1 = state.gasCells[gasCellIndex].VGasL / (gasDensity * state.gasCells[gasCellIndex - 1].duto.area);
         double vel2 = state.gasCells[gasCellIndex].VGasL / (rhoL * state.gasCells[gasCellIndex].duto.area);
         if (state.gasCells[gasCellIndex].razInter > (*state.globals).localtiny)
-            vel2 = state.gasCells[gasCellIndex].VGasL / (rhoG * state.gasCells[gasCellIndex].duto.area);
+            vel2 = state.gasCells[gasCellIndex].VGasL / (gasDensity * state.gasCells[gasCellIndex].duto.area);
         double re1G;
         double re1L;
         double re2G;
@@ -275,32 +272,32 @@ void solveUnloading(const GasLiftState &state) {
             re2L = state.gasCells[gasCellIndex].Rey(dhid, vel2, rhoL, viscL);
         }
         if (state.gasCells[gasCellIndex - 1].duto.revest == 0)
-            re1G = state.gasCells[gasCellIndex - 1].Rey(state.gasCells[gasCellIndex - 1].duto.a, vel1, rhoG, viscG);
+            re1G = state.gasCells[gasCellIndex - 1].Rey(state.gasCells[gasCellIndex - 1].duto.a, vel1, gasDensity, viscG);
         else {
             double dhid = 4 * state.gasCells[gasCellIndex - 1].duto.area / state.gasCells[gasCellIndex - 1].duto.peri;
-            re1G = state.gasCells[gasCellIndex - 1].Rey(dhid, vel1, rhoG, viscG);
+            re1G = state.gasCells[gasCellIndex - 1].Rey(dhid, vel1, gasDensity, viscG);
         }
         if (state.gasCells[gasCellIndex].duto.revest == 0)
-            re2G = state.gasCells[gasCellIndex].Rey(state.gasCells[gasCellIndex].duto.a, vel2, rhoG, viscG);
+            re2G = state.gasCells[gasCellIndex].Rey(state.gasCells[gasCellIndex].duto.a, vel2, gasDensity, viscG);
         else {
             double dhid = 4 * state.gasCells[gasCellIndex].duto.area / state.gasCells[gasCellIndex].duto.peri;
-            re2G = state.gasCells[gasCellIndex].Rey(dhid, vel2, rhoG, viscG);
+            re2G = state.gasCells[gasCellIndex].Rey(dhid, vel2, gasDensity, viscG);
         }
-        double upstreamLiquidFriction = state.gasCells[gasCellIndex - 1].fric(re1L, state.gasCells[gasCellIndex - 1].duto.rug / state.gasCells[gasCellIndex - 1].duto.a) * LLiqL;
-        double localLiquidFriction = state.gasCells[gasCellIndex].fric(re2L, state.gasCells[gasCellIndex].duto.rug / state.gasCells[gasCellIndex].duto.a) * LLiqR;
-        double hidro1L = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * LLiqL;
-        double hidro2L = 1 * (9.82 * sin(state.gasCells[gasCellIndex].duto.teta) * rhoL) * LLiqR;
-        double upstreamGasFriction = state.gasCells[gasCellIndex - 1].fric(re1G, state.gasCells[gasCellIndex - 1].duto.rug / state.gasCells[gasCellIndex - 1].duto.a) * LGasL;
-        double localGasFriction = state.gasCells[gasCellIndex].fric(re2G, state.gasCells[gasCellIndex].duto.rug / state.gasCells[gasCellIndex].duto.a) * LGasR;
-        double hidro1G = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoG) * LGasL;
-        double hidro2G = 1 * (9.82 * sin(state.gasCells[gasCellIndex].duto.teta) * rhoG) * LGasR;
-        state.gasCells[gasCellIndex].pres = state.gasCells[gasCellIndex - 1].pres + (-0.5 * (upstreamLiquidFriction * rhoL + upstreamGasFriction * rhoG) * vel1 * fabs(vel1) * state.gasCells[gasCellIndex - 1].duto.peri / state.gasCells[gasCellIndex - 1].duto.area - 0.5 * (localLiquidFriction * rhoL + localGasFriction * rhoG) * vel2 * fabs(vel2) * state.gasCells[gasCellIndex].duto.peri / state.gasCells[gasCellIndex].duto.area - hidro1L - hidro2L - hidro1G - hidro2G) / 98066.52;
+        double upstreamLiquidFriction = state.gasCells[gasCellIndex - 1].fric(re1L, state.gasCells[gasCellIndex - 1].duto.rug / state.gasCells[gasCellIndex - 1].duto.a) * upstreamLiquidLength;
+        double localLiquidFriction = state.gasCells[gasCellIndex].fric(re2L, state.gasCells[gasCellIndex].duto.rug / state.gasCells[gasCellIndex].duto.a) * localLiquidLength;
+        double hidro1L = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;
+        double hidro2L = 1 * (9.82 * sin(state.gasCells[gasCellIndex].duto.teta) * rhoL) * localLiquidLength;
+        double upstreamGasFriction = state.gasCells[gasCellIndex - 1].fric(re1G, state.gasCells[gasCellIndex - 1].duto.rug / state.gasCells[gasCellIndex - 1].duto.a) * upstreamGasLength;
+        double localGasFriction = state.gasCells[gasCellIndex].fric(re2G, state.gasCells[gasCellIndex].duto.rug / state.gasCells[gasCellIndex].duto.a) * localGasLength;
+        double hidro1G = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * gasDensity) * upstreamGasLength;
+        double hidro2G = 1 * (9.82 * sin(state.gasCells[gasCellIndex].duto.teta) * gasDensity) * localGasLength;
+        state.gasCells[gasCellIndex].pres = state.gasCells[gasCellIndex - 1].pres + (-0.5 * (upstreamLiquidFriction * rhoL + upstreamGasFriction * gasDensity) * vel1 * fabs(vel1) * state.gasCells[gasCellIndex - 1].duto.peri / state.gasCells[gasCellIndex - 1].duto.area - 0.5 * (localLiquidFriction * rhoL + localGasFriction * gasDensity) * vel2 * fabs(vel2) * state.gasCells[gasCellIndex].duto.peri / state.gasCells[gasCellIndex].duto.area - hidro1L - hidro2L - hidro1G - hidro2G) / 98066.52;
         state.gasCells[gasCellIndex].presL = state.gasCells[gasCellIndex - 1].pres;
         state.gasCells[gasCellIndex - 1].presR = state.gasCells[gasCellIndex].pres;
 
         state.temperatureUpdater.dischargeTemperature(gasCellIndex);
 
-        state.gasCells[gasCellIndex].u1L = ((1. - state.gasCells[gasCellIndex].razInter) * state.gasCells[gasCellIndex].MasEspFlu(state.gasCells[gasCellIndex].pres, state.gasCells[gasCellIndex].temp) + state.gasCells[gasCellIndex].razInter * state.gasCells[gasCellIndex].flui.MasEspGas(pres, temp)) * state.gasCells[gasCellIndex].duto.area;
+        state.gasCells[gasCellIndex].u1L = ((1. - state.gasCells[gasCellIndex].razInter) * state.gasCells[gasCellIndex].MasEspFlu(state.gasCells[gasCellIndex].pres, state.gasCells[gasCellIndex].temp) + state.gasCells[gasCellIndex].razInter * state.gasCells[gasCellIndex].flui.MasEspGas(upstreamPressure, temp)) * state.gasCells[gasCellIndex].duto.area;
         state.gasCells[gasCellIndex - 1].u1R = state.gasCells[gasCellIndex].u1L;
         state.gasCells[gasCellIndex].u1LL = state.gasCells[gasCellIndex - 1].u1L;
     }
@@ -308,29 +305,29 @@ void solveUnloading(const GasLiftState &state) {
     double Qtotal = 0.;
     for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         double temp = state.gasCells[gasCellIndex].temp;
-        double pres = state.gasCells[gasCellIndex].pres;
-        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(pres, temp);
-        double rhoG = state.gasCells[gasCellIndex].flui.MasEspGas(pres, temp);
-        double qfonte = state.gasCells[gasCellIndex].massfonteCH / rhoL;
+        double upstreamPressure = state.gasCells[gasCellIndex].pres;
+        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(upstreamPressure, temp);
+        double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(upstreamPressure, temp);
+        double sourceVolumeFlow = state.gasCells[gasCellIndex].massfonteCH / rhoL;
         if (state.gasCells[gasCellIndex].razInter > 0.5)
-            qfonte = state.gasCells[gasCellIndex].massfonteCH / rhoG;
-        Qtotal += qfonte;
+            sourceVolumeFlow = state.gasCells[gasCellIndex].massfonteCH / gasDensity;
+        Qtotal += sourceVolumeFlow;
     }
     double temp = state.gasCells[state.interfaceCell].temp;
-    double pres = state.gasCells[state.interfaceCell].pres;
-    double rhoG = state.gasCells[state.interfaceCell].flui.MasEspGas(pres, temp);
-    state.gasCells[state.interfaceCell].VGasL = Qtotal * rhoG;
+    double upstreamPressure = state.gasCells[state.interfaceCell].pres;
+    double gasDensity = state.gasCells[state.interfaceCell].flui.MasEspGas(upstreamPressure, temp);
+    state.gasCells[state.interfaceCell].VGasL = Qtotal * gasDensity;
     state.gasCells[state.interfaceCell - 1].VGasR = state.gasCells[state.interfaceCell].VGasL;
     state.gasCells[state.interfaceCell - 2].VGasRR = state.gasCells[state.interfaceCell].VGasL;
     for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         double temp = state.gasCells[gasCellIndex].temp;
-        double pres = state.gasCells[gasCellIndex].pres;
-        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(pres, temp);
-        double rhoG = state.gasCells[gasCellIndex].flui.MasEspGas(pres, temp);
-        double qfonte = state.gasCells[gasCellIndex].massfonteCH / rhoL;
+        double upstreamPressure = state.gasCells[gasCellIndex].pres;
+        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(upstreamPressure, temp);
+        double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(upstreamPressure, temp);
+        double sourceVolumeFlow = state.gasCells[gasCellIndex].massfonteCH / rhoL;
         if (state.gasCells[gasCellIndex].razInter > 0.5)
-            qfonte = state.gasCells[gasCellIndex].massfonteCH / rhoG;
-        Qtotal -= qfonte;
+            sourceVolumeFlow = state.gasCells[gasCellIndex].massfonteCH / gasDensity;
+        Qtotal -= sourceVolumeFlow;
         if (gasCellIndex < state.gasCellCount) {
             state.gasCells[gasCellIndex + 1].VGasL = (Qtotal)*rhoL;
             state.gasCells[gasCellIndex].VGasR = state.gasCells[gasCellIndex + 1].VGasL;
@@ -347,11 +344,11 @@ void advanceInterface(const GasLiftState &state) {
     state.gasCells[state.interfaceCell].razInter = (state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 + state.interfaceVelocity * state.timeStep) / state.gasCells[state.interfaceCell].dx0;
     if (state.interfaceCell == (state.gasCellCount - 1) && state.gasCells[state.interfaceCell].razInter >= 0.99) {
 
-        double pmed = state.gasCells[state.interfaceCell].pres;
-        double tmed = state.gasCells[state.interfaceCell].temp;
+        double meanPressure = state.gasCells[state.interfaceCell].pres;
+        double meanTemperature = state.gasCells[state.interfaceCell].temp;
         double interfaceFlowArea = state.gasCells[state.interfaceCell].duto.area;
-        double rho1 = state.gasCells[state.interfaceCell].flui.MasEspGas(pmed, tmed);
-        double rhoL = state.gasCells[state.interfaceCell].MasEspFlu(pmed, tmed);
+        double rho1 = state.gasCells[state.interfaceCell].flui.MasEspGas(meanPressure, meanTemperature);
+        double rhoL = state.gasCells[state.interfaceCell].MasEspFlu(meanPressure, meanTemperature);
         state.gasCells[state.interfaceCell].VGasR = state.gasCells[state.interfaceCell].VGasR * rho1 / rhoL;
         state.gasCells[state.interfaceCell].u1L = interfaceFlowArea * rho1;
         state.gasCells[state.interfaceCell - 1].u1R = state.gasCells[state.interfaceCell].u1L;
@@ -365,11 +362,11 @@ void advanceInterface(const GasLiftState &state) {
         state.interfaceCell++;
 
         state.gasCells[state.interfaceCell].presini = state.gasCells[state.interfaceCell].pres;
-        pmed = state.gasCells[state.interfaceCell].pres;
-        tmed = state.gasCells[state.interfaceCell].temp;
+        meanPressure = state.gasCells[state.interfaceCell].pres;
+        meanTemperature = state.gasCells[state.interfaceCell].temp;
         interfaceFlowArea = state.gasCells[state.interfaceCell].duto.area;
-        rho1 = state.gasCells[state.interfaceCell].flui.MasEspGas(pmed, tmed);
-        rhoL = state.gasCells[state.interfaceCell].MasEspFlu(pmed, tmed);
+        rho1 = state.gasCells[state.interfaceCell].flui.MasEspGas(meanPressure, meanTemperature);
+        rhoL = state.gasCells[state.interfaceCell].MasEspFlu(meanPressure, meanTemperature);
         state.gasCells[state.interfaceCell].VGasR = 0 * state.gasCells[state.interfaceCell].VGasR * rho1 / rhoL;
         state.gasCells[state.interfaceCell].u1L = interfaceFlowArea * rho1;
         state.gasCells[state.interfaceCell].u1R = interfaceFlowArea * rho1;
@@ -385,20 +382,20 @@ void advanceInterface(const GasLiftState &state) {
             state.gasCells[state.interfaceCell].razInter =
                 0;
         else if (state.gasCells[state.interfaceCell].razInter < -(*state.globals).localtiny) {
-            double dtaux;
-            dtaux = -state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
-            if (dtaux > (*state.globals).localtiny) {
-                state.interfaceTimeStep = dtaux;
+            double interfaceCrossingTimeStep;
+            interfaceCrossingTimeStep = -state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
+            if (interfaceCrossingTimeStep > (*state.globals).localtiny) {
+                state.interfaceTimeStep = interfaceCrossingTimeStep;
                 state.gasCells[state.interfaceCell].razInter = fabs(0.);
             } else
                 state.gasCells[state.interfaceCell].razInter = fabs(0.);
         } else if ((state.gasCells[state.interfaceCell].razInter >= (1. - (*state.globals).localtiny) && state.gasCells[state.interfaceCell].razInter <= (1. + (*state.globals).localtiny))) {
             state.gasCells[state.interfaceCell].razInter = 1.;
         } else if (state.gasCells[state.interfaceCell].razInter > (1. + (*state.globals).localtiny)) {
-            double dtaux;
-            dtaux = (1. - state.gasCells[state.interfaceCell].razInterIni) * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
-            if (dtaux > (*state.globals).localtiny) {
-                state.interfaceTimeStep = dtaux;
+            double interfaceCrossingTimeStep;
+            interfaceCrossingTimeStep = (1. - state.gasCells[state.interfaceCell].razInterIni) * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
+            if (interfaceCrossingTimeStep > (*state.globals).localtiny) {
+                state.interfaceTimeStep = interfaceCrossingTimeStep;
                 state.gasCells[state.interfaceCell].razInter = 1.;
             } else
                 state.gasCells[state.interfaceCell].razInter = 1.;
@@ -421,9 +418,9 @@ void advanceInterface(const GasLiftState &state) {
 }
 
 void updateTransientGasValves(const GasLiftState &state) {
-    int nvalv = state.input.nvalvgas;
-    int posicM2 = state.input.master2.posic;
-    for (int valveIndex = 0; valveIndex < nvalv; valveIndex++) {
+    int valveCount = state.input.nvalvgas;
+    int master2CellIndex = state.input.master2.posic;
+    for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
         if (state.gasValveCellIndices[valveIndex] < state.interfaceCell) {
             state.gasLiftChokes[valveIndex].presEstag = state.gasCells[state.gasValveCellIndices[valveIndex]].pres;
             state.gasLiftChokes[valveIndex].presGarg = (state.cells[state.productionValveCellIndices[valveIndex]].pres - state.gasLiftChokes[valveIndex].presEstag * state.gasLiftChokes[valveIndex].frec) / (1. - state.gasLiftChokes[valveIndex].frec);
@@ -434,10 +431,10 @@ void updateTransientGasValves(const GasLiftState &state) {
             else
                 state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = 0.;
             if (state.gasLiftChokes[valveIndex].tipo == 1) {
-                double abre = calibratedValveArea(state.gasLiftChokes[valveIndex].pcalib * 14.223595, state.gasLiftChokes[valveIndex].tcalib, (state.gasLiftChokes[valveIndex].presEstag - 1.033211) * 14.223595,
+                double openingFactor = calibratedValveArea(state.gasLiftChokes[valveIndex].pcalib * 14.223595, state.gasLiftChokes[valveIndex].tcalib, (state.gasLiftChokes[valveIndex].presEstag - 1.033211) * 14.223595,
                                            (state.gasLiftChokes[valveIndex].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[valveIndex].dextern, state.gasLiftChokes[valveIndex].areagarg, state.gasLiftChokes[valveIndex].areagarg / state.gasLiftChokes[valveIndex].areafole,
                                            1.8 * state.gasLiftChokes[valveIndex].tempEstag + 32);
-                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH *= abre;
+                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH *= openingFactor;
             }
         }
     }
@@ -445,7 +442,7 @@ void updateTransientGasValves(const GasLiftState &state) {
 
         state.gasCells[gasCellIndex].massfonteCH = 0.;
         if (state.gasCells[gasCellIndex].razInter < 0.5) {
-            for (int candidateValveIndex = 0; candidateValveIndex < nvalv; candidateValveIndex++) {
+            for (int candidateValveIndex = 0; candidateValveIndex < valveCount; candidateValveIndex++) {
                 if (gasCellIndex == state.gasValveCellIndices[candidateValveIndex]) {
                     state.gasLiftChokes[candidateValveIndex].presEstag = state.gasCells[state.gasValveCellIndices[candidateValveIndex]].pres;
                     state.gasLiftChokes[candidateValveIndex].presGarg = (state.cells[state.productionValveCellIndices[candidateValveIndex]].pres - state.gasLiftChokes[candidateValveIndex].presEstag * state.gasLiftChokes[candidateValveIndex].frecliq) / (1. - state.gasLiftChokes[candidateValveIndex].frecliq);
@@ -456,15 +453,15 @@ void updateTransientGasValves(const GasLiftState &state) {
                     else
                         state.gasCells[state.gasValveCellIndices[candidateValveIndex]].massfonteCH = 0.;
                     if (state.gasLiftChokes[candidateValveIndex].tipo == 1) {
-                        double abre = calibratedValveArea(state.gasLiftChokes[candidateValveIndex].pcalib * 14.223595, state.gasLiftChokes[candidateValveIndex].tcalib,
+                        double openingFactor = calibratedValveArea(state.gasLiftChokes[candidateValveIndex].pcalib * 14.223595, state.gasLiftChokes[candidateValveIndex].tcalib,
                                                    (state.gasLiftChokes[candidateValveIndex].presEstag - 1.033211) * 14.223595, (state.gasLiftChokes[candidateValveIndex].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[candidateValveIndex].dextern,
                                                    state.gasLiftChokes[candidateValveIndex].areagarg, state.gasLiftChokes[candidateValveIndex].areagarg / state.gasLiftChokes[candidateValveIndex].areafole, 1.8 * state.gasLiftChokes[candidateValveIndex].tempEstag + 32);
-                        state.gasCells[state.gasValveCellIndices[candidateValveIndex]].massfonteCH *= abre;
+                        state.gasCells[state.gasValveCellIndices[candidateValveIndex]].massfonteCH *= openingFactor;
                     }
                 }
             }
         } else {
-            for (int candidateValveIndex = 0; candidateValveIndex < nvalv; candidateValveIndex++) {
+            for (int candidateValveIndex = 0; candidateValveIndex < valveCount; candidateValveIndex++) {
                 if (gasCellIndex == state.gasValveCellIndices[candidateValveIndex]) {
                     state.gasLiftChokes[candidateValveIndex].presEstag = state.gasCells[state.gasValveCellIndices[candidateValveIndex]].pres;
                     state.gasLiftChokes[candidateValveIndex].presGarg = (state.cells[state.productionValveCellIndices[candidateValveIndex]].pres - state.gasLiftChokes[candidateValveIndex].presEstag * state.gasLiftChokes[candidateValveIndex].frec) / (1. - state.gasLiftChokes[candidateValveIndex].frec);
@@ -475,81 +472,81 @@ void updateTransientGasValves(const GasLiftState &state) {
                     else
                         state.gasCells[state.gasValveCellIndices[candidateValveIndex]].massfonteCH = 0.;
                     if (state.gasLiftChokes[candidateValveIndex].tipo == 1) {
-                        double abre = calibratedValveArea(state.gasLiftChokes[candidateValveIndex].pcalib * 14.223595, state.gasLiftChokes[candidateValveIndex].tcalib,
+                        double openingFactor = calibratedValveArea(state.gasLiftChokes[candidateValveIndex].pcalib * 14.223595, state.gasLiftChokes[candidateValveIndex].tcalib,
                                                    (state.gasLiftChokes[candidateValveIndex].presEstag - 1.033211) * 14.223595, (state.gasLiftChokes[candidateValveIndex].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[candidateValveIndex].dextern,
                                                    state.gasLiftChokes[candidateValveIndex].areagarg, state.gasLiftChokes[candidateValveIndex].areagarg / state.gasLiftChokes[candidateValveIndex].areafole, 1.8 * state.gasLiftChokes[candidateValveIndex].tempEstag + 32);
-                        state.gasCells[state.gasValveCellIndices[candidateValveIndex]].massfonteCH *= abre;
+                        state.gasCells[state.gasValveCellIndices[candidateValveIndex]].massfonteCH *= openingFactor;
                     }
                 }
             }
         }
     }
 
-    double areamenor = state.gasCells[posicM2].duto.area;
-    if (areamenor > state.gasCells[posicM2].dutoR.area)
-        areamenor = state.gasCells[posicM2].dutoR.area;
-    if (state.gasCells[posicM2].chkcell.areagarg <= 0.01 * areamenor &&
-        state.gasCells[posicM2].chkcell.areagarg >= 1e-5 * areamenor) {
-        state.gasCells[posicM2].chkcell.tempEstag = state.gasCells[posicM2].temp;
-        double rhoM = state.gasCells[posicM2].flui.MasEspGas(state.gasCells[posicM2].pres, state.gasCells[posicM2].temp);
-        double rhoJ = state.gasCells[posicM2 + 1].flui.MasEspGas(state.gasCells[posicM2 + 1].pres, state.gasCells[posicM2 + 1].temp);
-        double hidroM = -0.5 * rhoM * state.gasCells[posicM2].dx0 * sin(state.gasCells[posicM2].duto.teta) / 98066.52;
-        double hidroJ = 0.5 * rhoJ * state.gasCells[posicM2 + 1].dx0 * sin(state.gasCells[posicM2 + 1].duto.teta) / 98066.52;
-        state.gasCells[posicM2].chkcell.presEstag = state.gasCells[posicM2].pres + hidroM;
-        state.gasCells[posicM2].chkcell.presGarg = state.gasCells[posicM2 + 1].pres + hidroJ;
-        if (state.gasCells[posicM2 + 1].pres < state.gasCells[posicM2].pres)
-            state.gasCells[posicM2].fonteM2 = -state.gasCells[posicM2].chkcell.massica();
+    double master2FlowArea = state.gasCells[master2CellIndex].duto.area;
+    if (master2FlowArea > state.gasCells[master2CellIndex].dutoR.area)
+        master2FlowArea = state.gasCells[master2CellIndex].dutoR.area;
+    if (state.gasCells[master2CellIndex].chkcell.areagarg <= 0.01 * master2FlowArea &&
+        state.gasCells[master2CellIndex].chkcell.areagarg >= 1e-5 * master2FlowArea) {
+        state.gasCells[master2CellIndex].chkcell.tempEstag = state.gasCells[master2CellIndex].temp;
+        double rhoM = state.gasCells[master2CellIndex].flui.MasEspGas(state.gasCells[master2CellIndex].pres, state.gasCells[master2CellIndex].temp);
+        double rhoJ = state.gasCells[master2CellIndex + 1].flui.MasEspGas(state.gasCells[master2CellIndex + 1].pres, state.gasCells[master2CellIndex + 1].temp);
+        double hidroM = -0.5 * rhoM * state.gasCells[master2CellIndex].dx0 * sin(state.gasCells[master2CellIndex].duto.teta) / 98066.52;
+        double hidroJ = 0.5 * rhoJ * state.gasCells[master2CellIndex + 1].dx0 * sin(state.gasCells[master2CellIndex + 1].duto.teta) / 98066.52;
+        state.gasCells[master2CellIndex].chkcell.presEstag = state.gasCells[master2CellIndex].pres + hidroM;
+        state.gasCells[master2CellIndex].chkcell.presGarg = state.gasCells[master2CellIndex + 1].pres + hidroJ;
+        if (state.gasCells[master2CellIndex + 1].pres < state.gasCells[master2CellIndex].pres)
+            state.gasCells[master2CellIndex].fonteM2 = -state.gasCells[master2CellIndex].chkcell.massica();
         else {
-            state.gasCells[posicM2].chkcell.presEstag = state.gasCells[posicM2 + 1].pres;
-            state.gasCells[posicM2].chkcell.presGarg = state.gasCells[posicM2].pres;
-            state.gasCells[posicM2].chkcell.tempEstag = state.gasCells[posicM2 + 1].temp;
-            state.gasCells[posicM2].fonteM2 = state.gasCells[posicM2].chkcell.massica();
+            state.gasCells[master2CellIndex].chkcell.presEstag = state.gasCells[master2CellIndex + 1].pres;
+            state.gasCells[master2CellIndex].chkcell.presGarg = state.gasCells[master2CellIndex].pres;
+            state.gasCells[master2CellIndex].chkcell.tempEstag = state.gasCells[master2CellIndex + 1].temp;
+            state.gasCells[master2CellIndex].fonteM2 = state.gasCells[master2CellIndex].chkcell.massica();
         }
-        state.gasCells[posicM2 + 1].fonteM2 = -state.gasCells[posicM2].fonteM2;
+        state.gasCells[master2CellIndex + 1].fonteM2 = -state.gasCells[master2CellIndex].fonteM2;
     } else {
-        state.gasCells[posicM2].fonteM2 = 0.;
+        state.gasCells[master2CellIndex].fonteM2 = 0.;
 
-        state.gasCells[posicM2 + 1].fonteM2 = 0.;
+        state.gasCells[master2CellIndex + 1].fonteM2 = 0.;
     }
 }
 
 double searchUnloadingInjectionPressure(const GasLiftState &state) {
-    double vazmax = 0;
-    double vazmaxinst = 0;
+    double maximumUnloadingFlowRate = 0;
+    double instantaneousMaximumFlowRate = 0;
 
-    double laz1 = 0.1;
-    double laz2 = 0.4;
+    double upperBandMargin = 0.1;
+    double lowerBandMargin = 0.4;
     if (state.input.descarga == 1) {
-        double presDescini = state.cells[state.lastCell].pres;
+        double initialUnloadingPressure = state.cells[state.lastCell].pres;
         if ((*state.globals).lixo5 > state.input.tempoLatenciaDesc) {
-            int nvalv = state.input.nvalvgas;
-            int ivalv = 0;
-            for (int valveIndex = 0; valveIndex < nvalv; valveIndex++) {
+            int valveCount = state.input.nvalvgas;
+            int selectedValveIndex = 0;
+            for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
                 int gasValveCell = state.gasValveCellIndices[valveIndex];
                 int productionValveCell = state.productionValveCellIndices[valveIndex];
-                double pmed = state.cells[productionValveCell].pres;
+                double meanPressure = state.cells[productionValveCell].pres;
                 if (gasValveCell > state.interfaceCell) {
                     double rho1 = state.gasCells[gasValveCell].MasEspFlu(state.gasCells[gasValveCell].pres, state.gasCells[gasValveCell].temp);
                     state.gasLiftChokes[valveIndex].presEstag = state.gasCells[gasValveCell].pres;
-                    state.gasLiftChokes[valveIndex].presGarg = (pmed - state.gasLiftChokes[valveIndex].presEstag * state.gasLiftChokes[valveIndex].frec) /
+                    state.gasLiftChokes[valveIndex].presGarg = (meanPressure - state.gasLiftChokes[valveIndex].presEstag * state.gasLiftChokes[valveIndex].frec) /
                                            (1. - state.gasLiftChokes[valveIndex].frec);
                     state.gasLiftChokes[valveIndex].tempEstag = state.gasCells[gasValveCell].temp;
-                    double massica;
-                    if (pmed < state.gasCells[gasValveCell].pres)
-                        massica = state.gasLiftChokes[valveIndex].massica(1, state.input.salinDescarga);
+                    double massFlowRate;
+                    if (meanPressure < state.gasCells[gasValveCell].pres)
+                        massFlowRate = state.gasLiftChokes[valveIndex].massica(1, state.input.salinDescarga);
                     else
-                        massica = 0.;
+                        massFlowRate = 0.;
                     if (state.gasLiftChokes[valveIndex].tipo == 1) {
 
-                        double abre = calibratedValveArea(state.gasLiftChokes[valveIndex].pcalib * 14.223595, state.gasLiftChokes[valveIndex].tcalib, (state.gasLiftChokes[valveIndex].presEstag - 1.033211) * 14.223595,
+                        double openingFactor = calibratedValveArea(state.gasLiftChokes[valveIndex].pcalib * 14.223595, state.gasLiftChokes[valveIndex].tcalib, (state.gasLiftChokes[valveIndex].presEstag - 1.033211) * 14.223595,
                                                    (state.gasLiftChokes[valveIndex].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[valveIndex].dextern, state.gasLiftChokes[valveIndex].areagarg, state.gasLiftChokes[valveIndex].areagarg / state.gasLiftChokes[valveIndex].areafole,
                                                    1.8 * state.gasLiftChokes[valveIndex].tempEstag + 32);
-                        massica *= abre;
+                        massFlowRate *= openingFactor;
                     }
-                    double vazmaxAux = massica / (rho1);
-                    if (vazmaxAux > vazmax) {
-                        vazmax = vazmaxAux;
-                        ivalv = valveIndex;
+                    double candidateFlowRate = massFlowRate / (rho1);
+                    if (candidateFlowRate > maximumUnloadingFlowRate) {
+                        maximumUnloadingFlowRate = candidateFlowRate;
+                        selectedValveIndex = valveIndex;
                     }
                 }
             }
@@ -560,33 +557,33 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                 state.maximumMeanUnloadingFlowRates.erase(state.maximumMeanUnloadingFlowRates.begin());
             }
 
-            state.maximumMeanUnloadingFlowRates.push_back(vazmax * state.timeStep);
-            state.meanUnloadingFlowRate += vazmax * state.timeStep;
+            state.maximumMeanUnloadingFlowRates.push_back(maximumUnloadingFlowRate * state.timeStep);
+            state.meanUnloadingFlowRate += maximumUnloadingFlowRate * state.timeStep;
             state.unloadingTimeSteps.push_back(state.timeStep);
             state.meanUnloadingTemperature += state.timeStep;
 
-            double pondera = 0.5;
-            vazmaxinst = vazmax;
-            vazmax = pondera * vazmax + (1. - pondera) * state.meanUnloadingFlowRate / state.meanUnloadingTemperature;
-            computeUnloadingValvePressure(state, vazmax, ivalv);
-            if (state.gasValveCellIndices[ivalv] >= state.interfaceCell) {
+            double weight = 0.5;
+            instantaneousMaximumFlowRate = maximumUnloadingFlowRate;
+            maximumUnloadingFlowRate = weight * maximumUnloadingFlowRate + (1. - weight) * state.meanUnloadingFlowRate / state.meanUnloadingTemperature;
+            computeUnloadingValvePressure(state, maximumUnloadingFlowRate, selectedValveIndex);
+            if (state.gasValveCellIndices[selectedValveIndex] >= state.interfaceCell) {
                 if (state.cells[state.lastCell - 1].MC > 0.0) {
-                    if (vazmax > (1. - laz1) * state.input.vazDescControl) {
+                    if (maximumUnloadingFlowRate > (1. - upperBandMargin) * state.input.vazDescControl) {
 
-                        double precorr = 0.;
-                        precorr = unloadingPressureCorrection(state, vazmax, ivalv, 1. - laz1, -1);
-                        if (fabs(precorr) > 0.01 * state.gasSurfacePressure * state.cells[0].dt)
-                            precorr = (fabs(precorr) / precorr) * 0.01 * state.gasSurfacePressure * state.cells[0].dt;
-                        state.gasSurfacePressure -= precorr;
+                        double pressureCorrection = 0.;
+                        pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - upperBandMargin, -1);
+                        if (fabs(pressureCorrection) > 0.01 * state.gasSurfacePressure * state.cells[0].dt)
+                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.gasSurfacePressure * state.cells[0].dt;
+                        state.gasSurfacePressure -= pressureCorrection;
                         if (state.gasSurfacePressure > state.input.presMaxDesc)
                             state.gasSurfacePressure = state.input.presMaxDesc;
-                    } else if (vazmax <= (1 - laz2) * state.input.vazDescControl) {
+                    } else if (maximumUnloadingFlowRate <= (1 - lowerBandMargin) * state.input.vazDescControl) {
 
-                        double precorr = 0.;
-                        precorr = unloadingPressureCorrection(state, vazmax, ivalv, 1. - laz2, 1);
-                        if (fabs(precorr) > 0.01 * state.gasSurfacePressure * state.cells[0].dt)
-                            precorr = (fabs(precorr) / precorr) * 0.01 * state.gasSurfacePressure * state.cells[0].dt;
-                        state.gasSurfacePressure -= precorr;
+                        double pressureCorrection = 0.;
+                        pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - lowerBandMargin, 1);
+                        if (fabs(pressureCorrection) > 0.01 * state.gasSurfacePressure * state.cells[0].dt)
+                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.gasSurfacePressure * state.cells[0].dt;
+                        state.gasSurfacePressure -= pressureCorrection;
                         if (state.gasSurfacePressure < state.input.presMinDesc)
                             state.gasSurfacePressure = state.input.presMinDesc;
                     }
@@ -598,7 +595,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             }
         } else {
             if ((*state.globals).lixo5 < 0.5 * state.input.tempoLatenciaDesc)
-                state.gasSurfacePressure = presDescini - (presDescini - state.input.presMinDesc) * state.cells[0].dt / (0.5 * state.input.tempoLatenciaDesc - (*state.globals).lixo5);
+                state.gasSurfacePressure = initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt / (0.5 * state.input.tempoLatenciaDesc - (*state.globals).lixo5);
             else
                 state.gasSurfacePressure = state.input.presMinDesc;
             state.initialGasPressure = state.input.presIniDescG;
@@ -617,7 +614,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                 state.initialGasPressure = state.input.presIniDesc;
         }
     }
-    return vazmaxinst;
+    return instantaneousMaximumFlowRate;
 }
 
 void advanceGasSubStep(const GasLiftState &state) {
@@ -652,12 +649,12 @@ void advanceGasSubStep(const GasLiftState &state) {
     for (int gasCellIndex = 0; gasCellIndex < state.gasCellCount + 1; gasCellIndex++)
         state.gasCells[gasCellIndex].dTdt = 0;
 
-    int ciclomax = state.input.cicloAcopTerm;
-    for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
-        double abertoChk = 1.;
+    int maximumThermalCouplingCycles = state.input.cicloAcopTerm;
+    for (int thermalCouplingCycle = 0; thermalCouplingCycle <= maximumThermalCouplingCycles; thermalCouplingCycle++) {
+        double chokeOpeningFraction = 1.;
         if (state.gasCells[0].tipoCC == 0) {
-            abertoChk = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-            if (abertoChk < 0.2) {
+            chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+            if (chokeOpeningFraction < 0.2) {
                 state.injectionChoke.presEstag = state.initialGasPressure;
                 state.injectionChoke.tempEstag = state.initialGasTemperature;
                 state.injectionChoke.presGarg = state.gasCells[0].pres;
@@ -667,7 +664,7 @@ void advanceGasSubStep(const GasLiftState &state) {
 #pragma omp parallel for num_threads((*state.globals).ntrd)
         for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
 
-            state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.initialGasPressure, state.initialGasTemperature, abertoChk);
+            state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.initialGasPressure, state.initialGasTemperature, chokeOpeningFraction);
             for (int bandIndex = 0; bandIndex < 9; bandIndex++) {
                 state.gasSystemMatrix[3 * gasCellIndex][bandIndex - 3] = state.gasCells[gasCellIndex].local[0][bandIndex];
                 state.gasSystemMatrix[3 * gasCellIndex + 1][bandIndex - 4] = state.gasCells[gasCellIndex].local[1][bandIndex];
@@ -688,7 +685,7 @@ void advanceGasSubStep(const GasLiftState &state) {
             state.temperatureUpdater.gasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
             state.gasCells[gasCellIndex].dTdt = (state.gasCells[gasCellIndex].temp - state.gasCells[gasCellIndex].tempini) / state.timeStep;
         }
-        if (ciclo < ciclomax)
+        if (thermalCouplingCycle < maximumThermalCouplingCycles)
             for (int renewedCellIndex = 0; renewedCellIndex <= state.gasCellCount; renewedCellIndex++)
                 state.gasCells[renewedCellIndex].FeiticoDoTempo();
     }
@@ -724,10 +721,10 @@ void advanceBufferedGasSubStep(const GasLiftState &state) {
 
     for (int gasCellIndex = 0; gasCellIndex < state.gasCellCount + 1; gasCellIndex++)
         state.gasCells[gasCellIndex].dTdt = 0;
-    double abertoChk = 1.;
+    double chokeOpeningFraction = 1.;
     if (state.gasCells[0].tipoCC == 0) {
-        abertoChk = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (abertoChk < 0.2) {
+        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+        if (chokeOpeningFraction < 0.2) {
             state.injectionChoke.presEstag = state.initialGasPressure;
             state.injectionChoke.tempEstag = state.initialGasTemperature;
             state.injectionChoke.presGarg = state.gasCells[0].pres;
@@ -737,7 +734,7 @@ void advanceBufferedGasSubStep(const GasLiftState &state) {
 #pragma omp parallel for num_threads((*state.globals).ntrd)
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
 
-        state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.initialGasPressure, state.initialGasTemperature, abertoChk);
+        state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.initialGasPressure, state.initialGasTemperature, chokeOpeningFraction);
         for (int bandIndex = 0; bandIndex < 9; bandIndex++) {
             state.gasSystemMatrix[3 * gasCellIndex][bandIndex - 3] = state.gasCells[gasCellIndex].local[0][bandIndex];
             state.gasSystemMatrix[3 * gasCellIndex + 1][bandIndex - 4] = state.gasCells[gasCellIndex].local[1][bandIndex];
@@ -756,9 +753,9 @@ void connectTubing(const GasLiftState &state) {
         int tubingCellIndex = state.annulusTubingStart + state.tubingAnnulusStart - annulusCellIndex;
         state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Tcamada[0][0];
         state.cells[annulusCellIndex].calor.betext = state.gasCells[tubingCellIndex].calor.betint;
-        int icam = state.cells[annulusCellIndex].calor.geom.ncamadas - 1;
-        int idisc = state.cells[annulusCellIndex].calor.ncamada[icam] - 1;
-        state.gasCells[tubingCellIndex].calor.Tint2 = state.cells[annulusCellIndex].calor.Tcamada[icam][idisc];
+        int layerIndex = state.cells[annulusCellIndex].calor.geom.ncamadas - 1;
+        int discretizationIndex = state.cells[annulusCellIndex].calor.ncamada[layerIndex] - 1;
+        state.gasCells[tubingCellIndex].calor.Tint2 = state.cells[annulusCellIndex].calor.Tcamada[layerIndex][discretizationIndex];
         state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
         state.cells[annulusCellIndex].calor.geom.b = state.gasCells[tubingCellIndex].calor.geom.a;
 
@@ -766,17 +763,20 @@ void connectTubing(const GasLiftState &state) {
         state.cells[annulusCellIndex].calor.Vextern1 = state.gasCells[tubingCellIndex].VGasR / state.gasCells[tubingCellIndex].u1L;
         if (tubingCellIndex < state.interfaceCell) {
             double gasSpecificHeat = state.gasCells[tubingCellIndex].flui.CalorGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
-            double rhog = state.gasCells[tubingCellIndex].flui.MasEspGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
+            double gasDensity = state.gasCells[tubingCellIndex].flui.MasEspGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
             state.cells[annulusCellIndex].calor.kextern1 = state.gasCells[tubingCellIndex].flui.CondGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
             state.cells[annulusCellIndex].calor.cpextern1 = gasSpecificHeat;
-            state.cells[annulusCellIndex].calor.rhoextern1 = rhog;
+            state.cells[annulusCellIndex].calor.rhoextern1 = gasDensity;
             state.cells[annulusCellIndex].calor.viscextern1 = state.gasCells[tubingCellIndex].flui.ViscGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp) * 1.e-3;
         } else {
-            double gasSpecificHeat = state.gasCells[tubingCellIndex].CalorLiq(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
-            double rhog = state.gasCells[tubingCellIndex].MasEspFlu(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
+            // Below the interface the annulus is filled with completion fluid,
+            // not gas: CalorLiq, MasEspFlu, CondLiq and VisFlu throughout. The
+            // names say so.
+            double completionFluidSpecificHeat = state.gasCells[tubingCellIndex].CalorLiq(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
+            double completionFluidDensity = state.gasCells[tubingCellIndex].MasEspFlu(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
             state.cells[annulusCellIndex].calor.kextern1 = state.gasCells[tubingCellIndex].CondLiq(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
-            state.cells[annulusCellIndex].calor.cpextern1 = gasSpecificHeat;
-            state.cells[annulusCellIndex].calor.rhoextern1 = rhog;
+            state.cells[annulusCellIndex].calor.cpextern1 = completionFluidSpecificHeat;
+            state.cells[annulusCellIndex].calor.rhoextern1 = completionFluidDensity;
             state.cells[annulusCellIndex].calor.viscextern1 = state.gasCells[tubingCellIndex].VisFlu(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp) * 1.e-3;
         }
     }
@@ -788,31 +788,31 @@ void solveGasLine(const GasLiftState &state) {
         // dt,celula,ColunaAnulaIni,ColunaAnulaFim,
         updateTransientGasValves(state);
         for (int valveIndex = 0; valveIndex < state.input.nvalvgas; valveIndex++) {
-            int posGLP = state.productionValveCellIndices[valveIndex];
-            int posGLG = state.gasValveCellIndices[valveIndex];
-            if (posGLG < state.interfaceCell || (posGLG == state.interfaceCell && state.gasCells[posGLG].razInter > 0.5)) {
-                state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH * 86400. / state.gasCells[posGLG].flui.MasEspGas(1., 15.);
-                state.cells[posGLP].acsr.injg.tipoflu = 0;
+            int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
+            int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
+            if (gasLiftGasCell < state.interfaceCell || (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > 0.5)) {
+                state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * 86400. / state.gasCells[gasLiftGasCell].flui.MasEspGas(1., 15.);
+                state.cells[gasLiftProductionCell].acsr.injg.tipoflu = 0;
             } else {
-                state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH;
-                state.cells[posGLP].acsr.injg.tipoflu = 1;
+                state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH;
+                state.cells[gasLiftProductionCell].acsr.injg.tipoflu = 1;
             }
-            if (posGLG < state.interfaceCell || (posGLG == state.interfaceCell && state.gasCells[posGLG].razInter > 0.5)) {
+            if (gasLiftGasCell < state.interfaceCell || (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > 0.5)) {
                 if (state.gasLiftChokes[valveIndex].presEstag > state.gasLiftChokes[valveIndex].presGarg) {
                     gasTemperature = state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex);
                 } else
-                    gasTemperature = state.cells[posGLP].temp;
-                state.cells[posGLP].acsr.injg.temp = gasTemperature;
-                if (state.cells[posGLP].acsr.injg.temp < -50)
-                    state.cells[posGLP].acsr.injg.temp = -50;
+                    gasTemperature = state.cells[gasLiftProductionCell].temp;
+                state.cells[gasLiftProductionCell].acsr.injg.temp = gasTemperature;
+                if (state.cells[gasLiftProductionCell].acsr.injg.temp < -50)
+                    state.cells[gasLiftProductionCell].acsr.injg.temp = -50;
             } else
-                state.cells[posGLP].acsr.injg.temp = state.gasLiftChokes[valveIndex].tempEstag;
-            state.gasCells[posGLG].pEstag = state.gasLiftChokes[valveIndex].presEstag;
-            state.gasCells[posGLG].tEstag = state.gasLiftChokes[valveIndex].tempEstag;
-            state.gasCells[posGLG].pGarg = state.gasLiftChokes[valveIndex].presGarg;
-            state.gasCells[posGLG].tGarg = state.gasLiftChokes[valveIndex].tempGarg;
-            state.gasCells[posGLG].qGarg = state.gasLiftChokes[valveIndex].qGarg;
-            state.gasCells[posGLG].areaGarg = state.gasLiftChokes[valveIndex].areagarg;
+                state.cells[gasLiftProductionCell].acsr.injg.temp = state.gasLiftChokes[valveIndex].tempEstag;
+            state.gasCells[gasLiftGasCell].pEstag = state.gasLiftChokes[valveIndex].presEstag;
+            state.gasCells[gasLiftGasCell].tEstag = state.gasLiftChokes[valveIndex].tempEstag;
+            state.gasCells[gasLiftGasCell].pGarg = state.gasLiftChokes[valveIndex].presGarg;
+            state.gasCells[gasLiftGasCell].tGarg = state.gasLiftChokes[valveIndex].tempGarg;
+            state.gasCells[gasLiftGasCell].qGarg = state.gasLiftChokes[valveIndex].qGarg;
+            state.gasCells[gasLiftGasCell].areaGarg = state.gasLiftChokes[valveIndex].areagarg;
         }
         advanceGasSubStep(state);
     }
@@ -826,12 +826,12 @@ void connectTubingSteady(const GasLiftState &state) {
         state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
 
         double gasSpecificHeat = state.gasCells[tubingCellIndex].flui.CalorGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
-        double rhog = state.gasCells[tubingCellIndex].flui.MasEspGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
+        double gasDensity = state.gasCells[tubingCellIndex].flui.MasEspGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
         state.cells[annulusCellIndex].calor.Textern1 = state.gasCells[tubingCellIndex].calor.Textern1;
         state.cells[annulusCellIndex].calor.Vextern1 = state.gasCells[tubingCellIndex].VGasR / state.gasCells[tubingCellIndex].u1L;
         state.cells[annulusCellIndex].calor.kextern1 = state.gasCells[tubingCellIndex].flui.CondGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp);
         state.cells[annulusCellIndex].calor.cpextern1 = gasSpecificHeat;
-        state.cells[annulusCellIndex].calor.rhoextern1 = rhog;
+        state.cells[annulusCellIndex].calor.rhoextern1 = gasDensity;
         state.cells[annulusCellIndex].calor.viscextern1 = state.gasCells[tubingCellIndex].flui.ViscGas(state.gasCells[tubingCellIndex].pres, state.gasCells[tubingCellIndex].temp) * 1.e-3;
     }
 }
@@ -843,12 +843,12 @@ void initializeTubingConnectionSteady(const GasLiftState &state) {
         state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
 
         double gasSpecificHeat = state.gasCells[tubingCellIndex].flui.CalorGas(state.cells[annulusCellIndex].pres, state.input.celg[tubingCellIndex].textern);
-        double rhog = state.gasCells[tubingCellIndex].flui.MasEspGas(state.cells[annulusCellIndex].pres, state.input.celg[tubingCellIndex].textern);
+        double gasDensity = state.gasCells[tubingCellIndex].flui.MasEspGas(state.cells[annulusCellIndex].pres, state.input.celg[tubingCellIndex].textern);
         state.cells[annulusCellIndex].calor.Textern1 = state.gasCells[tubingCellIndex].calor.Textern1;
         state.cells[annulusCellIndex].calor.Vextern1 = 1.;
         state.cells[annulusCellIndex].calor.kextern1 = state.gasCells[tubingCellIndex].flui.CondGas(state.cells[annulusCellIndex].pres, state.input.celg[tubingCellIndex].textern);
         state.cells[annulusCellIndex].calor.cpextern1 = gasSpecificHeat;
-        state.cells[annulusCellIndex].calor.rhoextern1 = rhog;
+        state.cells[annulusCellIndex].calor.rhoextern1 = gasDensity;
         state.cells[annulusCellIndex].calor.viscextern1 = 0.16 * 1.e-3;
     }
 }
@@ -858,57 +858,57 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     double diameter = state.gasCells[cellIndex].duto.a;
     double area = 0.25 * M_PI * diameter * diameter;
     double perimeter = state.gasCells[cellIndex].duto.peri;
-    double rhog = state.gasCells[cellIndex].flui.MasEspGas(state.gasCells[cellIndex].pres, state.gasCells[cellIndex].temp);
+    double gasDensity = state.gasCells[cellIndex].flui.MasEspGas(state.gasCells[cellIndex].pres, state.gasCells[cellIndex].temp);
 
-    double VGasmedR;
-    VGasmedR = state.gasCells[cellIndex - 1].VGasR;
+    double meanLocalGasFlow;
+    meanLocalGasFlow = state.gasCells[cellIndex - 1].VGasR;
 
-    double vel1 = VGasmedR / state.gasCells[cellIndex].u1L;
+    double vel1 = meanLocalGasFlow / state.gasCells[cellIndex].u1L;
 
     double visc = state.gasCells[cellIndex].flui.ViscGas(state.gasCells[cellIndex].pres, state.gasCells[cellIndex].temp);
 
     double reynolds;
     if (state.gasCells[cellIndex].duto.revest == 0)
-        reynolds = state.gasCells[cellIndex].Rey(state.gasCells[cellIndex].duto.a, vel1, rhog, visc);
+        reynolds = state.gasCells[cellIndex].Rey(state.gasCells[cellIndex].duto.a, vel1, gasDensity, visc);
     else {
         double dhid = 4 * area / perimeter;
-        reynolds = state.gasCells[cellIndex].Rey(dhid, vel1, rhog, visc);
+        reynolds = state.gasCells[cellIndex].Rey(dhid, vel1, gasDensity, visc);
     }
     double frictionFactor = state.gasCells[cellIndex].fric(reynolds, state.gasCells[cellIndex].duto.rug / diameter);
-    double gradfric = state.gasCells[cellIndex].dPdLFric * (0.5 * frictionFactor * rhog * (fabs(vel1) * vel1) * perimeter * dx / area);
-    double gradhidro = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx);
+    double frictionGradient = state.gasCells[cellIndex].dPdLFric * (0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area);
+    double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
-    double difpres = (gradfric + gradhidro) / 98066.5;
-    double pmed = state.gasCells[cellIndex].pres + difpres;
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.5;
+    double meanPressure = state.gasCells[cellIndex].pres + pressureDrop;
 
-    double tmed;
-    tmed = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].temp + state.gasCells[cellIndex].dxL * state.gasCells[cellIndex].tempL) / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex].dxL);
+    double meanTemperature;
+    meanTemperature = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].temp + state.gasCells[cellIndex].dxL * state.gasCells[cellIndex].tempL) / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex].dxL);
 
     dx = 0.5 * state.gasCells[cellIndex].dxL;
     diameter = state.gasCells[cellIndex].dutoL.a;
     area = 0.25 * M_PI * diameter * diameter;
     perimeter = state.gasCells[cellIndex].dutoL.peri;
-    rhog = state.gasCells[cellIndex].flui.MasEspGas(pmed, tmed);
+    gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
 
-    VGasmedR = state.gasCells[cellIndex - 1].VGasR;
-    vel1 = VGasmedR / (rhog * area);
+    meanLocalGasFlow = state.gasCells[cellIndex - 1].VGasR;
+    vel1 = meanLocalGasFlow / (gasDensity * area);
 
     if (cellIndex > 0)
-        visc = state.gasCells[cellIndex - 1].flui.ViscGas(pmed, tmed);
+        visc = state.gasCells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
     else
-        visc = state.gasCells[cellIndex].flui.ViscGas(pmed, tmed);
+        visc = state.gasCells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
 
     if (state.gasCells[cellIndex].dutoL.revest == 0) {
         if (cellIndex > 0)
-            reynolds = state.gasCells[cellIndex].Rey(state.gasCells[cellIndex].dutoL.a, vel1, rhog, visc);
+            reynolds = state.gasCells[cellIndex].Rey(state.gasCells[cellIndex].dutoL.a, vel1, gasDensity, visc);
         else
-            reynolds = state.gasCells[cellIndex - 1].Rey(state.gasCells[cellIndex].dutoL.a, vel1, rhog, visc);
+            reynolds = state.gasCells[cellIndex - 1].Rey(state.gasCells[cellIndex].dutoL.a, vel1, gasDensity, visc);
     } else {
         double dhid = 4 * area / perimeter;
         if (cellIndex > 0)
-            reynolds = state.gasCells[cellIndex - 1].Rey(dhid, vel1, rhog, visc);
+            reynolds = state.gasCells[cellIndex - 1].Rey(dhid, vel1, gasDensity, visc);
         else
-            reynolds = state.gasCells[cellIndex].Rey(dhid, vel1, rhog, visc);
+            reynolds = state.gasCells[cellIndex].Rey(dhid, vel1, gasDensity, visc);
     }
     double dpFLoc;
     double dpHLoc;
@@ -921,10 +921,10 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
         dpFLoc = state.gasCells[cellIndex].dPdLFric;
         dpHLoc = state.gasCells[cellIndex].dPdLHidro;
     }
-    gradfric = dpFLoc * (0.5 * frictionFactor * rhog * (fabs(vel1) * vel1) * perimeter * dx / area);
-    gradhidro = dpHLoc * (9.82 * sin(state.gasCells[cellIndex].dutoL.teta) * rhog * dx);
-    difpres += (gradfric + gradhidro) / 98066.5;
-    return difpres;
+    frictionGradient = dpFLoc * (0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area);
+    hydrostaticGradient = dpHLoc * (9.82 * sin(state.gasCells[cellIndex].dutoL.teta) * gasDensity * dx);
+    pressureDrop += (frictionGradient + hydrostaticGradient) / 98066.5;
+    return pressureDrop;
 }
 
 double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
@@ -932,13 +932,13 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     double diameter = state.cells[cellIndex].duto.a;
     double area = 0.25 * M_PI * diameter * diameter;
     double perimeter = state.cells[cellIndex].duto.peri;
-    double tmed;
-    tmed = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
-    double completionFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].presaux, tmed);
+    double meanTemperature;
+    meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
+    double completionFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].presaux, meanTemperature);
 
     double vel1 = state.cells[cellIndex - 1].QL / (area);
 
-    double visc = state.cells[cellIndex].fluicol.VisFlu(state.cells[cellIndex].presaux, tmed);
+    double visc = state.cells[cellIndex].fluicol.VisFlu(state.cells[cellIndex].presaux, meanTemperature);
 
     double reynolds;
     if (state.cells[cellIndex].duto.revest == 0)
@@ -948,23 +948,23 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
         reynolds = state.cells[cellIndex].Rey(dhid, vel1, completionFluidDensity, visc);
     }
     double frictionFactor = state.cells[cellIndex].fric(reynolds, state.cells[cellIndex].duto.rug / diameter);
-    double gradfric = state.cells[cellIndex].dPdLFric * 0.5 * frictionFactor * completionFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
-    double gradhidro = state.cells[cellIndex].dPdLHidro * 9.82 * sin(state.cells[cellIndex].duto.teta) * completionFluidDensity * dx;
+    double frictionGradient = state.cells[cellIndex].dPdLFric * 0.5 * frictionFactor * completionFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
+    double hydrostaticGradient = state.cells[cellIndex].dPdLHidro * 9.82 * sin(state.cells[cellIndex].duto.teta) * completionFluidDensity * dx;
 
-    double difpres = (gradfric + gradhidro) / 98066.5;
-    double pmed = state.cells[cellIndex - 1].pres;
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.5;
+    double meanPressure = state.cells[cellIndex - 1].pres;
 
     dx = 0.5 * state.cells[cellIndex].dxL;
     diameter = state.cells[cellIndex].dutoL.a;
     area = 0.25 * M_PI * diameter * diameter;
     perimeter = state.cells[cellIndex].dutoL.peri;
-    tmed = state.cells[cellIndex - 1].temp;
-    completionFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(pmed, tmed);
+    meanTemperature = state.cells[cellIndex - 1].temp;
+    completionFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
 
     if (cellIndex > 1)
         vel1 = state.cells[cellIndex - 2].QL / (area);
 
-    visc = state.cells[cellIndex].fluicol.VisFlu(pmed, tmed);
+    visc = state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
 
     if (state.cells[cellIndex].dutoL.revest == 0) {
         if (cellIndex > 0)
@@ -979,10 +979,10 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
             reynolds = state.cells[cellIndex].Rey(dhid, vel1, completionFluidDensity, visc);
     }
     frictionFactor = state.cells[cellIndex - 1].fric(reynolds, state.cells[cellIndex].dutoL.rug / diameter);
-    gradfric = state.cells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * completionFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
-    gradhidro = state.cells[cellIndex - 1].dPdLHidro * 9.82 * sin(state.cells[cellIndex].dutoL.teta) * completionFluidDensity * dx;
-    difpres += (gradfric + gradhidro) / 98066.5;
-    return difpres;
+    frictionGradient = state.cells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * completionFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
+    hydrostaticGradient = state.cells[cellIndex - 1].dPdLHidro * 9.82 * sin(state.cells[cellIndex].dutoL.teta) * completionFluidDensity * dx;
+    pressureDrop += (frictionGradient + hydrostaticGradient) / 98066.5;
+    return pressureDrop;
 }
 
 void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
@@ -991,61 +991,61 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     double diameter = state.gasCells[cellIndex].dutoL.a;
     double area = 0.25 * M_PI * diameter * diameter;
     double perimeter = state.gasCells[cellIndex].dutoL.peri;
-    double rhog = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
+    double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
 
-    double VGasmedL;
-    VGasmedL = state.gasCells[cellIndex - 1].VGasR;
-    double vel1 = VGasmedL / state.gasCells[cellIndex - 1].u1L;
+    double meanUpstreamGasFlow;
+    meanUpstreamGasFlow = state.gasCells[cellIndex - 1].VGasR;
+    double vel1 = meanUpstreamGasFlow / state.gasCells[cellIndex - 1].u1L;
 
     double visc = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
 
     double reynolds;
     if (state.gasCells[cellIndex].dutoL.revest == 0)
-        reynolds = state.gasCells[cellIndex - 1].Rey(state.gasCells[cellIndex].dutoL.a, vel1, rhog, visc);
+        reynolds = state.gasCells[cellIndex - 1].Rey(state.gasCells[cellIndex].dutoL.a, vel1, gasDensity, visc);
     else {
         double dhid = 4 * area / perimeter;
-        reynolds = state.gasCells[cellIndex - 1].Rey(dhid, vel1, rhog, visc);
+        reynolds = state.gasCells[cellIndex - 1].Rey(dhid, vel1, gasDensity, visc);
     }
     double frictionFactor = state.gasCells[cellIndex - 1].fric(reynolds, state.gasCells[cellIndex].dutoL.rug / diameter);
-    double gradfric = state.gasCells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * rhog * (fabs(vel1) * vel1) * perimeter * dx / area;
-    double gradhidro = state.gasCells[cellIndex - 1].dPdLHidro * 9.82 * sin(state.gasCells[cellIndex].dutoL.teta) * rhog * dx;
-    state.gasCells[cellIndex - 1].termoFric = gradfric / dx;
-    state.gasCells[cellIndex - 1].termoHidro = gradhidro / dx;
+    double frictionGradient = state.gasCells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
+    double hydrostaticGradient = state.gasCells[cellIndex - 1].dPdLHidro * 9.82 * sin(state.gasCells[cellIndex].dutoL.teta) * gasDensity * dx;
+    state.gasCells[cellIndex - 1].termoFric = frictionGradient / dx;
+    state.gasCells[cellIndex - 1].termoHidro = hydrostaticGradient / dx;
 
-    double pmed = state.gasCells[cellIndex - 1].pres - (gradfric + gradhidro) / 98066.5;
+    double meanPressure = state.gasCells[cellIndex - 1].pres - (frictionGradient + hydrostaticGradient) / 98066.5;
 
-    double tmed;
+    double meanTemperature;
     if (state.steadyIteration != 0)
-        tmed = (state.gasCells[cellIndex].dxL * state.gasCells[cellIndex - 1].temp + state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].temp) /
+        meanTemperature = (state.gasCells[cellIndex].dxL * state.gasCells[cellIndex - 1].temp + state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].temp) /
                (state.gasCells[cellIndex].dxL + state.gasCells[cellIndex].dx0);
     else
-        tmed = state.gasCells[cellIndex - 1].temp;
-    tmed = state.gasCells[cellIndex - 1].temp;
+        meanTemperature = state.gasCells[cellIndex - 1].temp;
+    meanTemperature = state.gasCells[cellIndex - 1].temp;
 
     dx = 0.5 * state.gasCells[cellIndex].dx0;
     diameter = state.gasCells[cellIndex].duto.a;
     area = 0.25 * M_PI * diameter * diameter;
     perimeter = state.gasCells[cellIndex].duto.peri;
-    rhog = state.gasCells[cellIndex].flui.MasEspGas(pmed, tmed);
-    double VarArea = 1 / pow(state.gasCells[cellIndex].dutoL.area, 2.) - 1 / pow(state.gasCells[cellIndex].duto.area, 2.);
-    double dpDina = 0.5 * VGasmedL * VGasmedL * VarArea / rhog;
+    gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
+    double areaVariation = 1 / pow(state.gasCells[cellIndex].dutoL.area, 2.) - 1 / pow(state.gasCells[cellIndex].duto.area, 2.);
+    double dynamicPressureTerm = 0.5 * meanUpstreamGasFlow * meanUpstreamGasFlow * areaVariation / gasDensity;
 
-    VGasmedL = state.gasCells[cellIndex - 1].VGasR;
-    vel1 = VGasmedL / (rhog * area);
+    meanUpstreamGasFlow = state.gasCells[cellIndex - 1].VGasR;
+    vel1 = meanUpstreamGasFlow / (gasDensity * area);
 
-    visc = state.gasCells[cellIndex].flui.ViscGas(pmed, tmed);
+    visc = state.gasCells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
 
     if (state.gasCells[cellIndex].duto.revest == 0)
-        reynolds = state.gasCells[cellIndex].Rey(state.gasCells[cellIndex].duto.a, vel1, rhog, visc);
+        reynolds = state.gasCells[cellIndex].Rey(state.gasCells[cellIndex].duto.a, vel1, gasDensity, visc);
     else {
         double dhid = 4 * area / perimeter;
-        reynolds = state.gasCells[cellIndex].Rey(dhid, vel1, rhog, visc);
+        reynolds = state.gasCells[cellIndex].Rey(dhid, vel1, gasDensity, visc);
     }
     frictionFactor = state.gasCells[cellIndex].fric(reynolds, state.gasCells[cellIndex].duto.rug / diameter);
-    gradfric = state.gasCells[cellIndex].dPdLFric * 0.5 * frictionFactor * rhog * (fabs(vel1) * vel1) * perimeter * dx / area;
-    gradhidro = state.gasCells[cellIndex].dPdLHidro * 9.82 * sin(state.gasCells[cellIndex].duto.teta) * rhog * dx;
+    frictionGradient = state.gasCells[cellIndex].dPdLFric * 0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
+    hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * 9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx;
 
-    state.gasCells[cellIndex].pres = pmed - (gradfric + gradhidro - dpDina) / 98066.5;
+    state.gasCells[cellIndex].pres = meanPressure - (frictionGradient + hydrostaticGradient - dynamicPressureTerm) / 98066.5;
     state.gasCells[cellIndex - 1].presR = state.gasCells[cellIndex].pres;
     if (cellIndex < state.gasCellCount)
         state.gasCells[cellIndex + 1].presL = state.gasCells[cellIndex].pres;
@@ -1054,9 +1054,9 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 
 void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
 
-    int nvalv = state.input.nvalvgas;
+    int valveCount = state.input.nvalvgas;
     int match = 0;
-    for (int valveIndex = 0; valveIndex < nvalv; valveIndex++) {
+    for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
         if (state.gasValveCellIndices[valveIndex] == cellIndex) {
             match = 1;
             state.gasLiftChokes[valveIndex].presEstag = state.gasCells[state.gasValveCellIndices[valveIndex]].pres;
@@ -1068,11 +1068,11 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
             else
                 state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = 0.;
             if (state.gasLiftChokes[valveIndex].tipo == 1) {
-                double abre = calibratedValveArea(state.gasLiftChokes[valveIndex].pcalib * 14.223595, state.gasLiftChokes[valveIndex].tcalib, (state.gasLiftChokes[valveIndex].presEstag - 1.033211) * 14.223595,
+                double openingFactor = calibratedValveArea(state.gasLiftChokes[valveIndex].pcalib * 14.223595, state.gasLiftChokes[valveIndex].tcalib, (state.gasLiftChokes[valveIndex].presEstag - 1.033211) * 14.223595,
                                            (state.gasLiftChokes[valveIndex].presGarg - 1.033211) * 14.223595, state.gasLiftChokes[valveIndex].dextern, state.gasLiftChokes[valveIndex].areagarg,
                                            state.gasLiftChokes[valveIndex].areagarg / state.gasLiftChokes[valveIndex].areafole,
                                            1.8 * state.gasLiftChokes[valveIndex].tempEstag + 32);
-                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH *= abre;
+                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH *= openingFactor;
             }
 
             if (cellIndex > 0)
@@ -1080,23 +1080,23 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
             else
                 state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex].massfonteCH;
 
-            int posGLP = state.productionValveCellIndices[valveIndex];
-            int posGLG = state.gasValveCellIndices[valveIndex];
+            int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
+            int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
             double gasTemperature;
-            state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH * 86400. /
-                                            (1.225 * state.gasCells[posGLG].flui.Deng); // celulaG[posGLG].flui.MasEspGas(1.,15.);
+            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * 86400. /
+                                            (1.225 * state.gasCells[gasLiftGasCell].flui.Deng); // celulaG[gasLiftGasCell].flui.MasEspGas(1.,15.);
             if (state.gasLiftChokes[valveIndex].presEstag > state.gasLiftChokes[valveIndex].presGarg) {
                 gasTemperature = state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex);
             } else
-                gasTemperature = state.cells[posGLP].temp;
-            state.cells[posGLP].acsr.injg.temp = gasTemperature;
-            if (state.cells[posGLP].acsr.injg.temp < -50)
-                state.cells[posGLP].acsr.injg.temp = -50;
-            state.cells[posGLP].fontemassGR = state.gasCells[posGLG].massfonteCH;
+                gasTemperature = state.cells[gasLiftProductionCell].temp;
+            state.cells[gasLiftProductionCell].acsr.injg.temp = gasTemperature;
+            if (state.cells[gasLiftProductionCell].acsr.injg.temp < -50)
+                state.cells[gasLiftProductionCell].acsr.injg.temp = -50;
+            state.cells[gasLiftProductionCell].fontemassGR = state.gasCells[gasLiftGasCell].massfonteCH;
 
             if (state.gasCells[cellIndex].VGasR <= 0. && cellIndex < state.gasCellCount) {
                 state.gasCells[cellIndex].VGasR = 0.;
-                for (int laterValveIndex = valveIndex + 1; laterValveIndex < nvalv; laterValveIndex++) {
+                for (int laterValveIndex = valveIndex + 1; laterValveIndex < valveCount; laterValveIndex++) {
                     state.gasCells[state.gasValveCellIndices[laterValveIndex]].massfonteCH = 0;
                     state.cells[state.productionValveCellIndices[laterValveIndex]].fontemassGR = 0.;
                 }
@@ -1119,34 +1119,34 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
 }
 
 void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) {
-    int nvalv = state.input.nvalvgas;
-    double vazvalv;
-    double presRev = state.initialGasPressure;
-    double tempRev = state.gasCells[0].calor.Textern1;
-    for (int valveIndex = 0; valveIndex < nvalv; valveIndex++) {
-        int posGLP = state.productionValveCellIndices[valveIndex];
-        int posGLG = state.gasValveCellIndices[valveIndex];
-        if (cellIndex == posGLP) {
+    int valveCount = state.input.nvalvgas;
+    double valveFlowRate;
+    double casingPressure = state.initialGasPressure;
+    double casingTemperature = state.gasCells[0].calor.Textern1;
+    for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
+        int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
+        int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
+        if (cellIndex == gasLiftProductionCell) {
             if (state.gasCells[0].tipoCC == 1) {
-                vazvalv = (state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(1., 15.) / 86400.) / nvalv;
-                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = vazvalv;
-                state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH * 86400. /
-                                                state.gasCells[posGLG].flui.MasEspGas(1., 15.);
-                state.cells[posGLP].acsr.injg.temp = tempRev;
-                state.cells[posGLP].fontemassGR = state.gasCells[posGLG].massfonteCH;
+                valveFlowRate = (state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(1., 15.) / 86400.) / valveCount;
+                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
+                state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * 86400. /
+                                                state.gasCells[gasLiftGasCell].flui.MasEspGas(1., 15.);
+                state.cells[gasLiftProductionCell].acsr.injg.temp = casingTemperature;
+                state.cells[gasLiftProductionCell].fontemassGR = state.gasCells[gasLiftGasCell].massfonteCH;
             } else {
-                presRev = state.gasCells[posGLG].pres;
-                state.gasLiftChokes[valveIndex].presEstag = presRev;
+                casingPressure = state.gasCells[gasLiftGasCell].pres;
+                state.gasLiftChokes[valveIndex].presEstag = casingPressure;
                 state.gasLiftChokes[valveIndex].presGarg = state.cells[state.productionValveCellIndices[valveIndex]].pres;
-                state.gasLiftChokes[valveIndex].tempEstag = tempRev;
-                if (state.cells[state.productionValveCellIndices[valveIndex]].pres < presRev)
+                state.gasLiftChokes[valveIndex].tempEstag = casingTemperature;
+                if (state.cells[state.productionValveCellIndices[valveIndex]].pres < casingPressure)
                     state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = state.gasLiftChokes[valveIndex].massica();
                 else
                     state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = 0.;
-                state.cells[posGLP].acsr.injg.QGas = state.gasCells[posGLG].massfonteCH * 86400. /
-                                                state.gasCells[posGLG].flui.MasEspGas(1., 15.);
-                state.cells[posGLP].acsr.injg.temp = tempRev;
-                state.cells[posGLP].fontemassGR = state.gasCells[posGLG].massfonteCH;
+                state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * 86400. /
+                                                state.gasCells[gasLiftGasCell].flui.MasEspGas(1., 15.);
+                state.cells[gasLiftProductionCell].acsr.injg.temp = casingTemperature;
+                state.cells[gasLiftProductionCell].fontemassGR = state.gasCells[gasLiftGasCell].massfonteCH;
             }
         }
     }
@@ -1156,81 +1156,81 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     if (state.thermalSourceDisabled == 0) {
         if (((cellIndex) < state.tubingAnnulusStart || (cellIndex) > state.tubingAnnulusEnd)) {
             double dx = state.gasCells[cellIndex].dx0;
-            double dxmed = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
-            double dTdLMed = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].dTdLCor + state.gasCells[cellIndex - 1].dx0 * state.gasCells[cellIndex - 1].dTdLCor) / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
+            double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
+            double meanTemperatureGradient = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].dTdLCor + state.gasCells[cellIndex - 1].dx0 * state.gasCells[cellIndex - 1].dTdLCor) / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
             double area = state.gasCells[cellIndex].duto.area;
-            double ugsmed;
-            double rhog = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-            ugsmed = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
+            double meanSuperficialGasVelocity;
+            double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
+            meanSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
             double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             double gasJouleThomson = state.gasCells[cellIndex - 1].flui.JTG(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-            double hidro = (rhog * ugsmed) * area * 9.82 * sin(state.gasCells[cellIndex].duto.teta);
+            double hidro = (gasDensity * meanSuperficialGasVelocity) * area * 9.82 * sin(state.gasCells[cellIndex].duto.teta);
 
             state.gasCells[cellIndex - 1].calor.Tint = state.gasCells[cellIndex - 1].temp;
-            state.gasCells[cellIndex - 1].calor.Vint = ugsmed;
+            state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
             state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
-            state.gasCells[cellIndex - 1].calor.rhoint = rhog;
+            state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
             state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp) * 1.e-3;
             state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
-            double flucal = state.gasCells[cellIndex - 1].fluxcal;
-            double flucalCol = 0.;
+            double upstreamHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
+            double tubingHeatFlux = 0.;
 
-            double razdx;
+            double lengthRatio;
             if (cellIndex > 0)
-                razdx = dx / (dx + state.gasCells[cellIndex - 1].dx0);
+                lengthRatio = dx / (dx + state.gasCells[cellIndex - 1].dx0);
             else
-                razdx = 0.5;
-            double coefdxT = rhog * ugsmed * gasSpecificHeat * area;
-            double coefdxP = rhog * ugsmed * gasJouleThomson * area;
+                lengthRatio = 0.5;
+            double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
+            double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
             double dpdx;
-            dpdx = 2. * (state.gasCells[cellIndex].pres - ((1 - razdx) * state.gasCells[cellIndex - 1].pres + razdx * state.gasCells[cellIndex].pres)) * 98600. / dx;
+            dpdx = 2. * (state.gasCells[cellIndex].pres - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) * 98600. / dx;
 
-            double cinetico;
-            double deljmix = 0.;
-            double rhomix = rhog;
-            double ugsmed0 = state.gasCells[cellIndex - 1].VGasL / state.gasCells[cellIndex - 1].u1L;
-            deljmix = (ugsmed - ugsmed0) / dx;
+            double kineticTerm;
+            double superficialVelocityGradient = 0.;
+            double mixtureDensity = gasDensity;
+            double upstreamSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasL / state.gasCells[cellIndex - 1].u1L;
+            superficialVelocityGradient = (meanSuperficialGasVelocity - upstreamSuperficialGasVelocity) / dx;
 
             if (state.input.nCompTotalUnidadesG / dx < 1e6)
-                cinetico = rhomix * area * ugsmed * ugsmed * deljmix;
+                kineticTerm = mixtureDensity * area * meanSuperficialGasVelocity * meanSuperficialGasVelocity * superficialVelocityGradient;
             else
-                cinetico = 0.;
+                kineticTerm = 0.;
 
-            double fontemassG = 0.;
-            double fontemassL = 0.;
+            double gasMassSource = 0.;
+            double liquidMassSource = 0.;
 
 
-            if (ugsmed > 1e-3 && (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > 0.5 &&
+            if (meanSuperficialGasVelocity > 1e-3 && (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > 0.5 &&
                                   state.gasCells[cellIndex - 1].duto.a / state.gasCells[cellIndex].duto.a > 0.5)) {
-                double parcenerg1 = dTdLMed * (coefdxP * dpdx - cinetico - hidro + fontemassL + fontemassG) / coefdxT;
-                double parcenerg2 = dTdLMed * (flucal + flucalCol) / coefdxT;
-                int npasso;
-                double dxpasso;
-                if (dxmed / state.gasCells[cellIndex - 1].calor.resGlob < 1000.) {
-                    npasso = 0.;
-                    dxpasso = dxmed;
+                double energyTerm1 = meanTemperatureGradient * (pressureMarchCoefficient * dpdx - kineticTerm - hidro + liquidMassSource + gasMassSource) / temperatureMarchCoefficient;
+                double energyTerm2 = meanTemperatureGradient * (upstreamHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
+                int stepCount;
+                double stepLength;
+                if (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob < 1000.) {
+                    stepCount = 0.;
+                    stepLength = meanCellLength;
                 } else {
-                    npasso = 2 * (dxmed / state.gasCells[cellIndex - 1].calor.resGlob) / 1000 + 1;
-                    dxpasso = dxmed / npasso;
+                    stepCount = 2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / 1000 + 1;
+                    stepLength = meanCellLength / stepCount;
                 }
-                double temppasso = state.gasCells[cellIndex - 1].temp;
+                double stepTemperature = state.gasCells[cellIndex - 1].temp;
 
-                temppasso = dxpasso * (-(-state.gasCells[cellIndex - 1].temp) / dxpasso + parcenerg1 + parcenerg2);
-                for (int stepIndex = 1; stepIndex < npasso; stepIndex++) {
-                    state.gasCells[cellIndex - 1].calor.Tint = temppasso;
-                    state.gasCells[cellIndex - 1].calor.Vint = ugsmed;
-                    state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, temppasso);
+                stepTemperature = stepLength * (-(-state.gasCells[cellIndex - 1].temp) / stepLength + energyTerm1 + energyTerm2);
+                for (int stepIndex = 1; stepIndex < stepCount; stepIndex++) {
+                    state.gasCells[cellIndex - 1].calor.Tint = stepTemperature;
+                    state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
+                    state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, stepTemperature);
                     state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
-                    state.gasCells[cellIndex - 1].calor.rhoint = rhog;
-                    state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, temppasso) * 1.e-3;
+                    state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
+                    state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, stepTemperature) * 1.e-3;
                     state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
-                    flucal = state.gasCells[cellIndex - 1].fluxcal;
-                    parcenerg2 = dTdLMed * (flucal + flucalCol) / coefdxT;
-                    temppasso = dxpasso * (-(-temppasso) / dxpasso + parcenerg1 + parcenerg2);
+                    upstreamHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
+                    energyTerm2 = meanTemperatureGradient * (upstreamHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
+                    stepTemperature = stepLength * (-(-stepTemperature) / stepLength + energyTerm1 + energyTerm2);
                 }
 
-                state.gasCells[cellIndex].temp = temppasso;
+                state.gasCells[cellIndex].temp = stepTemperature;
             } else {
                 state.gasCells[cellIndex].temp = state.gasCells[cellIndex].calor.Textern1;
             }
@@ -1246,25 +1246,25 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                 state.gasCells[cellIndex + 1].tempL = state.gasCells[cellIndex].temp;
         } else {
             if (state.networkCoupled == 1) {
-                int kconecte = (cellIndex)-state.tubingAnnulusStart;
-                int iconecte = state.annulusTubingStart - kconecte;
-                int iconecte2 = iconecte;
-                if (iconecte2 == state.lastCell)
-                    iconecte2 -= 1;
+                int connectionCellIndex = (cellIndex)-state.tubingAnnulusStart;
+                int connectionIndex = state.annulusTubingStart - connectionCellIndex;
+                int secondConnectionIndex = connectionIndex;
+                if (secondConnectionIndex == state.lastCell)
+                    secondConnectionIndex -= 1;
 
-                state.gasCells[cellIndex].temp = state.cells[iconecte2].calor.resGlob * state.cells[iconecte].calor.fluxFim + state.cells[iconecte].temp;
+                state.gasCells[cellIndex].temp = state.cells[secondConnectionIndex].calor.resGlob * state.cells[connectionIndex].calor.fluxFim + state.cells[connectionIndex].temp;
 
                 if (state.input.correcaoContracorPerm == 1) {
 
-                    double dxmed = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
+                    double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
                     double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-                    double invCap = 1. / (state.cells[iconecte].calor.cpint * state.cells[iconecte].MC) + 1. / (gasSpecificHeat * state.gasCells[cellIndex - 1].VGasR);
-                    double templog = -exp(-(1. / state.cells[iconecte2].calor.resGlob) * (1 + 0 * state.cells[iconecte].duto.peri) * dxmed * invCap) *
-                                         (state.cells[iconecte2 + 1].temp - state.gasCells[cellIndex - 1].temp) +
-                                     state.cells[iconecte2].temp;
+                    double inverseHeatCapacity = 1. / (state.cells[connectionIndex].calor.cpint * state.cells[connectionIndex].MC) + 1. / (gasSpecificHeat * state.gasCells[cellIndex - 1].VGasR);
+                    double logTemperature = -exp(-(1. / state.cells[secondConnectionIndex].calor.resGlob) * (1 + 0 * state.cells[connectionIndex].duto.peri) * meanCellLength * inverseHeatCapacity) *
+                                         (state.cells[secondConnectionIndex + 1].temp - state.gasCells[cellIndex - 1].temp) +
+                                     state.cells[secondConnectionIndex].temp;
 
-                    if (templog < state.gasCells[cellIndex].temp)
-                        state.gasCells[cellIndex].temp = templog;
+                    if (logTemperature < state.gasCells[cellIndex].temp)
+                        state.gasCells[cellIndex].temp = logTemperature;
                 }
             }
 
@@ -1278,16 +1278,16 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             if (cellIndex < state.gasCellCount)
                 state.gasCells[cellIndex + 1].tempL = state.gasCells[cellIndex].temp;
 
-            double ugsmed;
-            ugsmed = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
-            double rhog = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
+            double meanSuperficialGasVelocity;
+            meanSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
+            double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
 
             state.gasCells[cellIndex].calor.Tint = state.gasCells[cellIndex].temp;
-            state.gasCells[cellIndex].calor.Vint = ugsmed;
+            state.gasCells[cellIndex].calor.Vint = meanSuperficialGasVelocity;
             state.gasCells[cellIndex].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             state.gasCells[cellIndex].calor.cpint = gasSpecificHeat;
-            state.gasCells[cellIndex].calor.rhoint = rhog;
+            state.gasCells[cellIndex].calor.rhoint = gasDensity;
             state.gasCells[cellIndex].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp) * 1.e-3;
             state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
         }

@@ -78,12 +78,12 @@ g++ -fopenmp -o "$scratch/gaslift-sweep" "${compiled[@]}" "${objects[@]}" -lgfor
 # against is a row that stops being emitted -- a routine that returns early on
 # seeding that drifted, printing nothing. A table that shrank would still match
 # on every row it kept, and "compare" would report success.
-#   36 rows: the eight routines the steady half drives, four scenarios.
+#   40 rows: the eight routines the steady half drives, four scenarios.
 #   76 rows: the six unloading routines, four scenarios, several of which
 #            publish more than one row (advanceInterface prints both its
 #            ordinary advance and its hand-over; the searches print the state
 #            they leave behind as well as their return value).
-expected_rows=112
+expected_rows=116
 rows=$(wc -l < "$scratch/current.txt")
 (( rows == expected_rows )) || {
     printf '%sexpected %s rows, got %s%s\n' "$red" "$expected_rows" "$rows" "$reset" >&2
