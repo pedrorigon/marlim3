@@ -43,24 +43,22 @@ struct GasLiftTemperatureUpdater {
 /// is the only verification that executes them at all.
 ///
 /// The numbers, measured with gcov over the three distinct gas-lift scenarios in
-/// the demo corpus rather than estimated:
+/// the demo corpus and over this harness, rather than estimated:
 ///
-///   12 of the 22 functions are executed by the corpus;
-///   10 are never executed by any model, because the unloading path needs
-///      configuracaoInicial/condicaoInicial == 3 (arq.descarga == 1) and no
-///      model in the corpus sets it;
-///    3 of those 10 are covered by verify-gaslift.sh, whose 36-row table is
-///      compared against a golden captured before any body moved;
-///    7 are therefore executed by NO verification layer -- 363 executable
-///      lines resting on token-level identity alone. Two of the seven
-///      (advanceBufferedGasSubStep, updateBufferedGasLine) are dead in the
-///      product and were already dead in the baseline; the other five are live
-///      unloading code that simply has no model.
+///   12 of the 22 functions are executed by the corpus. The other 10 are not,
+///      because the unloading path needs configuracaoInicial/condicaoInicial
+///      == 3 (arq.descarga == 1) and no model in the corpus sets it -- a
+///      property of the corpus, not of how many models happen to be run;
+///   14 are executed by verify-gaslift.sh, whose 116-row table is compared
+///      against a reference captured from the tree as it stood BEFORE this
+///      stage moved anything;
+///   22 of 22 by the two together. No function of this module is now without
+///      an execution-level check.
 ///
-/// So for those seven the artifact and regression layers stay green whatever an
-/// extraction does, and saying so precisely matters more than saying it
-/// reassuringly. An earlier version of this comment claimed the harness reached
-/// twelve of them; it reaches three.
+/// An earlier version of this comment claimed the harness reached twelve of
+/// them when it reached eight, and that the twelve were unexecuted when ten
+/// were. Both numbers were wrong in the reassuring direction, which is the
+/// direction that matters.
 ///
 /// Scalars are held BY REFERENCE, not by value. Copying them into the struct
 /// would read every one at construction, before the branch that decides whether
@@ -165,7 +163,10 @@ void advanceBufferedGasSubStep(const GasLiftState &state);
 void updateGasLine(const GasLiftState &state);
 
 /// Same, buffered. Reachable only from advanceBufferedGasSubStep, which nothing
-/// calls, so this is dead code moved for completeness.
+/// calls, so this is dead code moved for completeness -- and it was already dead
+/// in the baseline: subtempoGasBuf has a single occurrence in 0f3b64f, its own
+/// definition. It is still driven and probed by verify-gaslift.sh, because dead
+/// code that nothing checks is dead code nobody can safely delete later.
 void updateBufferedGasLine(const GasLiftState &state);
 
 /// Throat area of a calibrated gas-lift valve.
