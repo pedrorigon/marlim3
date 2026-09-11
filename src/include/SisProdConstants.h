@@ -29,6 +29,38 @@ inline constexpr double kAirDensityAtStandardConditions = 1.225;
 /// "correcting" it would change every hydrostatic term.
 inline constexpr double kGravity = 9.82;
 
+/// The gas-lift unloading hydrostatics spell gravity differently. The value is
+/// preserved rather than harmonised, for the same reason as the pressure
+/// variant above: the two are not interchangeable without changing results.
+/// That they disagree is a finding about the source, not a licence to fix it.
+inline constexpr double kGravityUnloadingVariant = 9.81;
+
+/// Psi per kgf/cm^2. Gas-lift valve correlations are imperial throughout.
+inline constexpr double kPsiPerKgfPerCm2 = 14.223595;
+
+/// One standard atmosphere in kgf/cm^2, subtracted to turn absolute pressure
+/// into gauge before the imperial conversion.
+inline constexpr double kAtmosphereInKgfPerCm2 = 1.033211;
+
+/// Seconds per day. Flow rates are carried in kg/s and reported in m3/day.
+inline constexpr double kSecondsPerDay = 86400.;
+
+/// Pascal-seconds per centipoise. Viscosity correlations return cP; the
+/// heat-transfer objects want SI.
+inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
+
+/// Standard conditions as this program spells them, for gas density at
+/// surface: one kgf/cm^2 and fifteen degrees Celsius.
+inline constexpr double kStandardPressureKgfPerCm2 = 1.;
+inline constexpr double kStandardTemperatureCelsius = 15.;
+
+/// Celsius to Fahrenheit, written exactly as the sites it replaces spell it.
+/// A function rather than two constants: the two factors are never used apart,
+/// and naming the conversion is the point.
+inline constexpr double celsiusToFahrenheit(double celsius) {
+    return 1.8 * celsius + 32;
+}
+
 // ------------------------------------------------------------- numerics ----
 
 /// Backward perturbation for numerical derivatives.
@@ -81,6 +113,15 @@ static_assert(kBarrelPerCubicMetre == 6.29);
 static_assert(kCubicFootPerCubicMetre == 35.31467);
 static_assert(kAirDensityAtStandardConditions == 1.225);
 static_assert(kGravity == 9.82);
+static_assert(kGravityUnloadingVariant == 9.81);
+static_assert(kPsiPerKgfPerCm2 == 14.223595);
+static_assert(kAtmosphereInKgfPerCm2 == 1.033211);
+static_assert(kSecondsPerDay == 86400.);
+static_assert(kPascalSecondPerCentipoise == 1.e-3);
+static_assert(kStandardPressureKgfPerCm2 == 1.);
+static_assert(kStandardTemperatureCelsius == 15.);
+static_assert(celsiusToFahrenheit(0.) == 32.);
+static_assert(celsiusToFahrenheit(100.) == 212.);
 static_assert(kDerivativePerturbationFactor == 0.999);
 static_assert(kPhaseChangeFloor == 1e-25);
 static_assert(kMinimumTemperatureCelsius == -50.);

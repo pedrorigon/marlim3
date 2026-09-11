@@ -79,8 +79,8 @@ probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = 
 # a near-duplicate of advanceGasSubStep and every single line it contains also
 # appears there.
 probe 'HidroDescargaG: hydrostatic head' \
-    'meanPressure -= rho1 * 9.81 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
-    'meanPressure -= rho1 * 9.82 * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / 98066.52;' \
+    'meanPressure -= rho1 * kGravityUnloadingVariant * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / kPascalPerKgfPerCm2Variant;' \
+    'meanPressure -= rho1 * kGravity * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / kPascalPerKgfPerCm2Variant;' \
     "$target_gaslift"
 
 probe 'CalcPresValvDesc: wall shear' \
@@ -101,8 +101,8 @@ probe 'avancInter: handover ratio' \
     "$target_gaslift"
 
 probe 'resolveDescarga: liquid hydrostatic' \
-    'double hidro1L = 1 * (9.82 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
-    'double hidro1L = 1 * (9.81 * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
+    'double hidro1L = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
+    'double hidro1L = (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
     "$target_gaslift"
 
 # Splits the gas/liquid share of every control volume. Moving the threshold
@@ -114,9 +114,9 @@ probe 'resolveDescarga: interface split' \
 
 probe 'subtempoGasBuf: choke opening bound' \
     '        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (chokeOpeningFraction < 0.2) {' \
+        if (chokeOpeningFraction < kThrottlingChokeOpening) {' \
     '        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (chokeOpeningFraction < 0.3) {' \
+        if (chokeOpeningFraction < 0.3 * kThrottlingChokeOpening / 0.2) {' \
     "$target_gaslift"
 
 # updateBufferedGasLine writes one field, in three byte-identical branches.
@@ -130,20 +130,20 @@ probe 'renovaGasBuf: buffer offset' \
 
 probe 'prescordesc: sign'                 'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
                                           "$target_gaslift"
-probe 'prescordesc: throat area'          'pressureCorrection = pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * 98066.52);' \
-                                          'pressureCorrection = pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * rho0 * 98066.52);' \
+probe 'prescordesc: throat area'          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * kPascalPerKgfPerCm2Variant);' \
+                                          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * rho0 * kPascalPerKgfPerCm2Variant);' \
                                           "$target_gaslift"
-probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
-                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.81 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
+probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
+                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravityUnloadingVariant * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
                                           "$target_gaslift"
 # Both steady drops divide by 98066.5; the hydrostatic line above pins this one
 # to delpGasPerm.
-probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
+probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.5;' \
-                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (9.82 * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;' \
+                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2Variant;' \
                                           "$target_gaslift"
 probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
                                           'tmed = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp + state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
@@ -151,37 +151,21 @@ probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIn
 
 cp "$scratch/pristine.cpp" "$target"
 cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"
-
-# ---------------------------------------------------- token-check control ----
-# T081r renamed the module's locals, so gaslift-move.py check now accepts a
-# consistent renaming instead of demanding an exact match. A tolerance is a
-# blind spot until something proves otherwise, so this control corrupts a
-# LITERAL -- which no renaming can excuse -- and requires the check to reject
-# it. It also confirms the check still passes on the pristine module, so a
-# check that had broken outright could not masquerade as a detection.
-token_baseline="$scratch/token-baseline.cpp"
-if git -C "$project_root" show "${MARLIM_T079_BASELINE:-66ed35c~1}:src/core/SisProd.cpp" \
-       > "$token_baseline" 2>/dev/null; then
-    if python3 "$script_dir/gaslift-move.py" check delpGasPerm \
-           "$token_baseline" "$target_gaslift" > /dev/null 2>&1; then
-        sed -i 's/9\.82 \* sin/9.81 * sin/' "$target_gaslift"
-        if python3 "$script_dir/gaslift-move.py" check delpGasPerm \
-               "$token_baseline" "$target_gaslift" > /dev/null 2>&1; then
-            printf '%s  MISSED    token check: literal changed under rename tolerance%s\n' \
-                   "$red" "$reset"; missed=$((missed + 1))
-        else
-            printf '%s  detected  token check: literal changed under rename tolerance%s\n' \
-                   "$green" "$reset"; detected=$((detected + 1))
-        fi
-        cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"
-    else
-        printf '%s  SKIP      token check control (pristine module does not pass)%s\n' \
-               "$yellow" "$reset"; skipped=$((skipped + 1))
-    fi
-else
-    printf '%s  SKIP      token check control (baseline commit unreadable)%s\n' \
-           "$yellow" "$reset"; skipped=$((skipped + 1))
-fi
+# The token-level control that used to close this file has been RETIRED, and is
+# recorded here rather than deleted silently.
+#
+# It compared a moved body against SisProd.cpp as it stood before stage 6,
+# tolerating consistent renames, and corrupted a literal to prove the tolerance
+# was not a blind spot. That worked while this module was a token-for-token copy
+# of its origin. It is not one any more: constants were named, provably no-op
+# branches collapsed, and shared bodies pulled into helpers -- every one of which
+# changes the token stream deliberately. gaslift-move.py cannot bridge the two
+# any more either; it maps old names to new, and both sides now carry new ones.
+#
+# Kept dead it would report SKIP for ever, which reads like a caveat and is
+# really a dead instrument. What it guarded is covered without it: every probe
+# above corrupts a LITERAL and requires the 116-row table to reject it, which is
+# the same guarantee without the retired premise.
 
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \
     "$((detected + missed + skipped))" "$detected" "$missed" "$skipped"
