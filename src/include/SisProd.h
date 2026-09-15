@@ -1379,10 +1379,6 @@ class SProd {
     /// Runs a direct march when inlet pressure and flow rate are known.
     double buscaProdPfundoPerm3(double pentrada);
     /// Marches the steady production solution using a bottomhole mass-flow guess.
-    /// Seeds the first cell from a flow-rate guess; shared by marchaProdPresPres1, 1Rev and 3.
-    void seedFirstCellFromFlowRateGuess(double mchute, double &alfini, double &betini);
-    /// Walks the column cell by cell for marchaProdPresPres2; not shared, the four loops all differ.
-    void advanceProductionColumnPressureToPressureSecondary(int &i);
     double marchaProdPresPres1(double mchute);
     /// Marches the steady production solution using a bottomhole mass-flow guess.
     double marchaProdPresPres1Rev(double mchute);
