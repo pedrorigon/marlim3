@@ -8344,12 +8344,27 @@ void SProd::ImprimeTrendTransG(int i) {
     trendoutput::writeServiceCrossSectionTrendRows(trendStateOf(*this), i);
 }
 
-double SProd::marchaProdPerm1(double pchute) {
-
-    int corrigechute = 1;
-    double alfini = 0.;
-    double betini = 0.;
-
+/// Seeds the void fraction and the slip parameter of the first cell from the
+/// accessory that sits at the head of the column.
+///
+/// The three steady production marches opened with 143 lines that were the same
+/// text in all three, except for two points measured in
+/// evidencia/marchaprod-diff.md:
+///
+///   * the dry-gas compositional flash (H4), which is kept as a policy below
+///     rather than unified, and
+///   * the ORDER of the arms -- marchaProdPerm1Rev tested tipo 10 before 15 and
+///     16. Reordering is free because all seven arms compare
+///     celula[0].acsr.tipo against distinct literals, so at most one can match.
+///     Same argument, same wording, as T084 used for the accessory dispatch of
+///     RenovaMassPerm; if an arm ever tests a range instead of a literal, this
+///     stops being free and the merge has to be undone.
+///
+/// marchaProdPerm1 clamps alfini and betini to zero below 1e-6 right after this
+/// returns and the other two do not, so that clamp stays at the call site where
+/// it can be seen.
+void SProd::seedFirstCellVoidFraction(double pchute, double &alfini, double &betini,
+                                      DryGasFlashTarget dryGasFlashTarget) {
     // estimativa da fracao de vazio na primeira celula do sistema
     if (celula[0].acsr.tipo == 0) { // sem nenhuma fonte
         celula[0].temp = arq.celp[0].textern;
@@ -8362,9 +8377,21 @@ double SProd::marchaProdPerm1(double pchute) {
     } else if (celula[0].acsr.tipo == 1) { // fonte de gas
         celula[0].temp = celula[0].acsr.injg.temp;
         if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
+            // The only place the three marches disagree. See H4 in
+            // evidencia/marchaprod-diff.md: marchaProdPerm1 and
+            // marchaProdPerm1Rev hand the dry-gas flag to the SOURCE fluid,
+            // marchaProdPerm2 to the CELL fluid. Both forms are kept, on
+            // purpose, because at most one of them can be right and this
+            // refactoring is not the place to decide which.
+            if (dryGasFlashTarget == DryGasFlashTarget::sourceFluid) {
+                if (arq.tabelaDinamica == 0)
+                    celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
+                celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
+            } else {
+                if (arq.tabelaDinamica == 0)
+                    celula[0].flui.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
+                celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
+            }
         }
         if (celula[0].acsr.injg.seco == 1) {
             alfini = 1.;
@@ -8492,6 +8519,15 @@ double SProd::marchaProdPerm1(double pchute) {
     } else if (celula[0].acsr.tipo == 16) {
         celula[0].flui.BSW = celula[0].acsr.poroso2D.dados.transfer.BSW;
     }
+}
+
+double SProd::marchaProdPerm1(double pchute) {
+
+    int corrigechute = 1;
+    double alfini = 0.;
+    double betini = 0.;
+
+    seedFirstCellVoidFraction(pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
     if (fabs(alfini) < 1e-6)
         alfini = 0.;
     if (fabs(betini) < 1e-6)
@@ -8799,149 +8835,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
     double betini = 0.;
     trocaTermicaLenta = 0.1;
 
-    // estimativa da fracao de vazio na primeira celula do sistema
-    if (celula[0].acsr.tipo == 0) { // sem nenhuma fonte
-        celula[0].temp = arq.celp[0].textern;
-        alfini = 1.;
-        betini = 0.;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-        }
-    } else if (celula[0].acsr.tipo == 1) { // fonte de gas
-        celula[0].temp = celula[0].acsr.injg.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
-        }
-        if (celula[0].acsr.injg.seco == 1) {
-            alfini = 1.;
-            betini = 0.;
-        } else {
-            double masgas = celula[0].acsr.injg.VMas(pchute, celula[0].temp);
-            double tit;
-            if (arq.flashCompleto != 2)
-                tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-            else
-                tit = celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-            double masT = masgas / tit;
-            tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(pchute, celula[0].temp);
-            double qgas = masT * tit /
-                          celula[0].acsr.injg.FluidoPro.MasEspGas(pchute, celula[0].temp);
-            double qliq = masT * (1. - tit) /
-                          celula[0].acsr.injg.FluidoPro.MasEspLiq(pchute, celula[0].temp);
-            double qcomp = celula[0].acsr.injg.razCompGas *
-                           celula[0].acsr.injg.QGas * celula[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
-                           celula[0].acsr.injg.fluidocol.MasEspFlu(pchute, celula[0].temp);
-            qcomp /= 86400.;
-            alfini = qgas / (qliq + qcomp + qgas);
-            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
-                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
-            else
-                betini = 0.;
-        }
-    } else if (celula[0].acsr.tipo == 2) { // fonte de liquido, faz-se uma estimativa a partir
-        // da vazÃƒÂ£o volumÃƒÂ©trica das fases, fracao de vazio = fracao de vazio sem escorregamento
-        celula[0].temp = celula[0].acsr.injl.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.injl.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        double qgas = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                      (1. - celula[0].acsr.injl.FluidoPro.BSW) *
-                      (celula[0].acsr.injl.FluidoPro.RGO -
-                       celula[0].acsr.injl.FluidoPro.rDgD * celula[0].acsr.injl.FluidoPro.RS(pchute, celula[0].temp) * 6.29 / 35.31467) *
-                      celula[0].acsr.injl.FluidoPro.Deng * 1.225 / celula[0].acsr.injl.FluidoPro.MasEspGas(pchute, celula[0].temp);
-        double qliq = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          (1. - celula[0].acsr.injl.FluidoPro.BSW) * celula[0].acsr.injl.FluidoPro.BOFunc(pchute, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          celula[0].acsr.injl.FluidoPro.BSW * celula[0].acsr.injl.FluidoPro.BAFunc(pchute, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet;
-        alfini = qgas / (qliq + qgas);
-        betini = celula[0].acsr.injl.bet;
-    } else if (celula[0].acsr.tipo == 3) { // IPR no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.ipr.Tres;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.ipr.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        double qgas = celula[0].acsr.ipr.MasG(pchute, celula[0].temp) /
-                      celula[0].acsr.ipr.FluidoPro.MasEspGas(pchute, celula[0].temp);
-        double qliq = celula[0].acsr.ipr.MasL(pchute, celula[0].temp) /
-                      celula[0].acsr.ipr.FluidoPro.MasEspLiq(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 10) { // fonte de massa no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.injm.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.injm.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        if (celula[0].acsr.injm.condTermo == 0) {
-            celula[0].pres = pchute;
-            renovaFonte(0);
-        }
-        double qgas = celula[0].acsr.injm.MassG /
-                      celula[0].acsr.injm.FluidoPro.MasEspGas(pchute, celula[0].temp);
-        double qliq = celula[0].acsr.injm.MassP /
-                          celula[0].acsr.injm.FluidoPro.MasEspLiq(pchute, celula[0].temp) +
-                      celula[0].acsr.injm.MassC /
-                          celula[0].acsr.injm.fluidocol.MasEspFlu(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 15) { // IPR no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.radialPoro.tRes;
-        celula[0].pres = pchute;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.radialPoro.flup.atualizaPropComp(pchute, celula[0].temp);
-        }
-        renovaFonte(0);
-        double qgas = celula[0].acsr.radialPoro.fluxIniG /
-                      celula[0].acsr.radialPoro.flup.MasEspGas(pchute, celula[0].temp);
-        double qliq = (celula[0].acsr.radialPoro.fluxIni + celula[0].acsr.radialPoro.fluxIniA) /
-                      celula[0].acsr.radialPoro.flup.MasEspLiq(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 16) { // IPR no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.poroso2D.dados.tRes;
-        celula[0].pres = pchute;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.poroso2D.dados.flup.atualizaPropComp(pchute, celula[0].temp);
-        }
-        renovaFonte(0);
-        double qgas = celula[0].acsr.poroso2D.dados.transfer.fluxIniG /
-                      celula[0].acsr.poroso2D.dados.flup.MasEspGas(pchute, celula[0].temp);
-        double qliq = (celula[0].acsr.poroso2D.dados.transfer.fluxIni + celula[0].acsr.poroso2D.dados.transfer.fluxIniA) /
-                      celula[0].acsr.poroso2D.dados.flup.MasEspLiq(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else { // se nenhuma das opcoes, fracao de vazio=1
-        celula[0].temp = arq.celp[0].textern;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-        }
-        alfini = 1.;
-        betini = 0.;
-    }
-
-    if (celula[0].acsr.tipo == 15) {
-        celula[0].flui.BSW = celula[0].acsr.radialPoro.BSW;
-    } else if (celula[0].acsr.tipo == 16) {
-        celula[0].flui.BSW = celula[0].acsr.poroso2D.dados.transfer.BSW;
-    }
+    seedFirstCellVoidFraction(pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
     // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
     // portanto, admite-se que o duto esta fechado e coloca-se uma fonte no centro da
     // primeira celula. As vazoes na fronteira esquerda da celula sÃ£o portanto = 0
@@ -9205,149 +9099,7 @@ double SProd::marchaProdPerm2(double pchute) {
     double alfini = 0.;
     double betini = 0.;
 
-    // estimativa da fracao de vazio na primeira celula do sistema
-    if (celula[0].acsr.tipo == 0) { // sem nenhuma fonte
-        celula[0].temp = arq.celp[0].textern;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-        }
-        alfini = 1.;
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 1) { // fonte de gas
-        celula[0].temp = celula[0].acsr.injg.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        if (celula[0].acsr.injg.seco == 1) {
-            alfini = 1.;
-            betini = 0.;
-        } else {
-            double masgas = celula[0].acsr.injg.VMas(pchute, celula[0].temp);
-            double tit;
-            if (arq.flashCompleto != 2)
-                tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-            else
-                tit = celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-            double masT = masgas / tit;
-            tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(pchute, celula[0].temp);
-            double qgas = masT * tit /
-                          celula[0].acsr.injg.FluidoPro.MasEspGas(pchute, celula[0].temp);
-            double qliq = masT * (1. - tit) /
-                          celula[0].acsr.injg.FluidoPro.MasEspLiq(pchute, celula[0].temp);
-            double qcomp = celula[0].acsr.injg.razCompGas *
-                           celula[0].acsr.injg.QGas * celula[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
-                           celula[0].acsr.injg.fluidocol.MasEspFlu(pchute, celula[0].temp);
-            qcomp /= 86400.;
-            alfini = qgas / (qliq + qcomp + qgas);
-            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
-                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
-            else
-                betini = 0.;
-        }
-    } else if (celula[0].acsr.tipo == 2) { // fonte de liquido, faz-se uma estimativa a partir
-        // da Vazao volumÃ©trica das fases, fracao de vazio = fracao de vazio sem escorregamento
-        celula[0].temp = celula[0].acsr.injl.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.injl.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        double qgas = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                      (1. - celula[0].acsr.injl.FluidoPro.BSW) *
-                      (celula[0].acsr.injl.FluidoPro.RGO -
-                       celula[0].acsr.injl.FluidoPro.rDgD * celula[0].acsr.injl.FluidoPro.RS(pchute, celula[0].temp) * 6.29 / 35.31467) *
-                      celula[0].acsr.injl.FluidoPro.Deng * 1.225 / celula[0].acsr.injl.FluidoPro.MasEspGas(pchute, celula[0].temp);
-        double qliq = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          (1. - celula[0].acsr.injl.FluidoPro.BSW) * celula[0].acsr.injl.FluidoPro.BOFunc(pchute, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          celula[0].acsr.injl.FluidoPro.BSW * celula[0].acsr.injl.FluidoPro.BAFunc(pchute, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet;
-        alfini = qgas / (qliq + qgas);
-        betini = celula[0].acsr.injl.bet;
-    } else if (celula[0].acsr.tipo == 3) { // IPR no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.ipr.Tres;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.ipr.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        double qgas = celula[0].acsr.ipr.MasG(pchute, celula[0].temp) /
-                      celula[0].acsr.ipr.FluidoPro.MasEspGas(pchute, celula[0].temp);
-        double qliq = celula[0].acsr.ipr.MasL(pchute, celula[0].temp) /
-                      celula[0].acsr.ipr.FluidoPro.MasEspLiq(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 15) { // IPR no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.radialPoro.tRes;
-        celula[0].pres = pchute;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.radialPoro.flup.atualizaPropComp(pchute, celula[0].temp);
-        }
-        renovaFonte(0);
-        double qgas = celula[0].acsr.radialPoro.fluxIniG /
-                      celula[0].acsr.radialPoro.flup.MasEspGas(pchute, celula[0].temp);
-        double qliq = (celula[0].acsr.radialPoro.fluxIni + celula[0].acsr.radialPoro.fluxIniA) /
-                      celula[0].acsr.radialPoro.flup.MasEspLiq(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 16) { // IPR no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.poroso2D.dados.tRes;
-        celula[0].pres = pchute;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.poroso2D.dados.flup.atualizaPropComp(pchute, celula[0].temp);
-        }
-        renovaFonte(0);
-        double qgas = celula[0].acsr.poroso2D.dados.transfer.fluxIniG /
-                      celula[0].acsr.poroso2D.dados.flup.MasEspGas(pchute, celula[0].temp);
-        double qliq = (celula[0].acsr.poroso2D.dados.transfer.fluxIni + celula[0].acsr.poroso2D.dados.transfer.fluxIniA) /
-                      celula[0].acsr.poroso2D.dados.flup.MasEspLiq(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (celula[0].acsr.tipo == 10) { // fonte de massa no inicio da tubulacao
-        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
-        celula[0].temp = celula[0].acsr.injm.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-            celula[0].acsr.injm.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
-        }
-        if (celula[0].acsr.injm.condTermo == 0) {
-            celula[0].pres = pchute;
-            renovaFonte(0);
-        }
-        double qgas = celula[0].acsr.injm.MassG /
-                      celula[0].acsr.injm.FluidoPro.MasEspGas(pchute, celula[0].temp);
-        double qliq = celula[0].acsr.injm.MassP /
-                          celula[0].acsr.injm.FluidoPro.MasEspLiq(pchute, celula[0].temp) +
-                      celula[0].acsr.injm.MassC /
-                          celula[0].acsr.injm.fluidocol.MasEspFlu(pchute, celula[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else { // se nenhuma das opcoes, fracao de vazio=1
-        celula[0].temp = arq.celp[0].textern;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
-        }
-        alfini = 1.;
-        betini = 0.;
-    }
-
-    if (celula[0].acsr.tipo == 15) {
-        celula[0].flui.BSW = celula[0].acsr.radialPoro.BSW;
-    } else if (celula[0].acsr.tipo == 16) {
-        celula[0].flui.BSW = celula[0].acsr.poroso2D.dados.transfer.BSW;
-    }
+    seedFirstCellVoidFraction(pchute, alfini, betini, DryGasFlashTarget::cellFluid);
 
     // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
     // portanto, admite-se que o duto esta fechado e coloca-se uma fonte no centro da
