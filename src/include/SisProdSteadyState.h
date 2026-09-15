@@ -27,17 +27,24 @@ namespace sisprod::steady {
 /// module's state.
 ///
 /// The remaining two are still SProd's own: CalcC0UdPerm and renovaFonte.
+///
+/// Four of these signatures were WRONG when this header was first written, and
+/// the compiler said so on the first attempt to define them. CalcC0UdPerm
+/// returns its two coefficients through reference parameters, the two
+/// temperature marches take a Runge-Kutta stage, and calctemp takes the
+/// previous temperature and a steady-mode flag. They are transcribed from
+/// SisProd.h now rather than assumed from the call sites.
 struct SteadyStateUpdaters {
     SProd &system;
 
     // --- drift closure and sources -----------------------------------------
-    void steadyDriftClosure(int cellIndex) const;
+    void steadyDriftClosure(int cellIndex, double &c0, double &ud) const;
     void updateSource(int cellIndex) const;
 
     // --- thermal ------------------------------------------------------------
-    void advanceSteadyTemperature(int cellIndex) const;
-    void advanceReverseSteadyTemperature(int cellIndex) const;
-    void computeTemperature(int cellIndex) const;
+    void advanceSteadyTemperature(int cellIndex, int rungeKuttaStage) const;
+    void advanceReverseSteadyTemperature(int cellIndex, int rungeKuttaStage) const;
+    void computeTemperature(int cellIndex, double previousTemperature, int steadyMode) const;
     void computeGasTemperature(int cellIndex, double previousTemperature, int steadyMode) const;
     void updateProductionTemperaturePeriphery(int cellIndex) const;
 
