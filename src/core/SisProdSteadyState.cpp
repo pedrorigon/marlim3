@@ -109,6 +109,209 @@ void correctGasSpecificGravity(const SteadyStateState &state, int i) {
     }
 }
 
+namespace {
+
+/// Resolves the phase fractions of cell i for the two reverse mass marches.
+///
+/// Four regimes -- no flow, liquid only, gas only, two-phase -- and the drift
+/// closure the two-phase arm needs. advanceReverseSteadyMass and
+/// advanceReverseCompositionalSteadyMass carried these 182 lines twice, with no
+/// difference at all between the copies.
+///
+/// T084 section 5.1 recommended sharing this and T086 moved both variants
+/// without doing it, so it is done here rather than left as a duplicate the
+/// stage itself created.
+///
+/// What comes AFTER this block is not shared and must not be: that is H15 of
+/// evidencia/renovamass-diff.md, where Rev zeroes the completion-fluid
+/// residence time and CompRev propagates it from the cell upstream.
+void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, double rhol, double rhog) {
+    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
+        if (state.input.tipoFluido == 1) {
+            state.cells[i].alf = 0.;
+        } else {
+            state.cells[i].alf = 1.;
+        }
+        state.cells[i].alfini = state.cells[i].alf;
+        state.cells[i - 1].alfR = state.cells[i].alf;
+        state.cells[i - 1].alfRini = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfL = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfLini = state.cells[i].alf;
+        state.cells[i].alfPigD = state.cells[i].alf;
+        state.cells[i].alfPigDini = state.cells[i].alf;
+        state.cells[i].alfPigE = state.cells[i].alf;
+        state.cells[i].alfPigEini = state.cells[i].alf;
+        if (i < state.lastCell) {
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betLI = state.cells[i].bet;
+        }
+        state.cells[i].betini = state.cells[i].bet;
+        state.cells[i - 1].betR = state.cells[i].bet;
+        state.cells[i - 1].betRini = state.cells[i].bet;
+        state.cells[i].betPigD = state.cells[i].bet;
+        state.cells[i].betPigDini = state.cells[i].bet;
+        state.cells[i].betPigE = state.cells[i].bet;
+        state.cells[i].betPigEini = state.cells[i].bet;
+        state.cells[i].betI = state.cells[i].bet;
+        state.cells[i - 1].betRI = state.cells[i].bet;
+    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny) { // caso so exista liquido:
+        state.cells[i].alf = 0.;
+        state.cells[i].alfini = state.cells[i].alf;
+        state.cells[i - 1].alfR = state.cells[i].alf;
+        state.cells[i - 1].alfRini = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfL = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfLini = state.cells[i].alf;
+        state.cells[i].alfPigD = state.cells[i].alf;
+        state.cells[i].alfPigDini = state.cells[i].alf;
+        state.cells[i].alfPigE = state.cells[i].alf;
+        state.cells[i].alfPigEini = state.cells[i].alf;
+        if (i < state.lastCell) {
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betLI = state.cells[i].bet;
+        }
+        state.cells[i].betini = state.cells[i].bet;
+        state.cells[i - 1].betR = state.cells[i].bet;
+        state.cells[i - 1].betRini = state.cells[i].bet;
+        state.cells[i].betPigD = state.cells[i].bet;
+        state.cells[i].betPigDini = state.cells[i].bet;
+        state.cells[i].betPigE = state.cells[i].bet;
+        state.cells[i].betPigEini = state.cells[i].bet;
+        state.cells[i].betI = state.cells[i].bet;
+        state.cells[i - 1].betRI = state.cells[i].bet;
+    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // caso so exista gas:
+        state.cells[i].alf = 1.;
+        state.cells[i].alfini = state.cells[i].alf;
+        state.cells[i - 1].alfR = state.cells[i].alf;
+        state.cells[i - 1].alfRini = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfL = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfLini = state.cells[i].alf;
+        state.cells[i].alfPigD = state.cells[i].alf;
+        state.cells[i].alfPigDini = state.cells[i].alf;
+        state.cells[i].alfPigE = state.cells[i].alf;
+        state.cells[i].alfPigEini = state.cells[i].alf;
+        state.cells[i].c0 = 1.;
+        state.cells[i].ud = 0.;
+        if (i < state.lastCell) {
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betLI = state.cells[i].bet;
+        }
+        state.cells[i].betini = state.cells[i].bet;
+        state.cells[i - 1].betR = state.cells[i].bet;
+        state.cells[i - 1].betRini = state.cells[i].bet;
+        state.cells[i].betPigD = state.cells[i].bet;
+        state.cells[i].betPigDini = state.cells[i].bet;
+        state.cells[i].betPigE = state.cells[i].bet;
+        state.cells[i].betPigEini = state.cells[i].bet;
+        state.cells[i].betI = state.cells[i].bet;
+        state.cells[i - 1].betRI = state.cells[i].bet;
+    } else { // caso bifasico
+        double c0 = 1.;
+        double ud = 0.;
+        if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6) {
+            if (state.steadyIteration == 0) { // primeira estimativa, primeira iteracao
+                // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
+                // fracao de vazio depende do valor da fracao de vazio
+                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
+                    state.cells[i].alf = fabs(state.cells[i].QG) /
+                                    (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
+                    state.updaters.steadyDriftClosure(i, c0, ud);
+                } else
+                    state.cells[i].alf = 0.;
+                state.cells[i].alfini = state.cells[i].alf;
+                state.cells[i - 1].alfR = state.cells[i].alf;
+                state.cells[i - 1].alfRini = state.cells[i].alf;
+                if (i < state.lastCell)
+                    state.cells[i + 1].alfL = state.cells[i].alf;
+                if (i < state.lastCell)
+                    state.cells[i + 1].alfLini = state.cells[i].alf;
+                state.cells[i].alfPigD = state.cells[i].alf;
+                state.cells[i].alfPigDini = state.cells[i].alf;
+                state.cells[i].alfPigE = state.cells[i].alf;
+                state.cells[i].alfPigEini = state.cells[i].alf;
+            }
+            if (fabs(rhog) / rhol > 0.9) {
+                c0 = 1.;
+                ud = 0.;
+            }
+
+            // para o caso permanente, a fracao de vazio Ã© obtida a partir das relacoes de escorregamento
+            // portanto, e neste ponto que se obtem Co e Ud:
+            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
+                state.updaters.steadyDriftClosure(i, c0, ud);
+            state.cells[i].c0 = c0;
+            state.cells[i].ud = ud;
+            double area = state.cells[i].duto.area;
+            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny) {
+                // alfa com escorregamento:
+                state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
+                double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
+                if (state.cells[i].alf > 1. - 1e-15 || state.cells[i].alf < 1e-15)
+                    state.cells[i].alf = alfHomo;
+
+            } else
+                state.cells[i].alf = 0.;
+            if (state.cells[i].alf > (1 - (*state.globals).localtiny))
+                state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
+        } else {
+            c0 = 1.;
+            ud = 0.;
+            state.cells[i].alf = 1.;
+        }
+        if (state.cells[i].alf < 0.)
+            state.cells[i].alf = 0.;
+        else if (state.cells[i].alf > 1.)
+            state.cells[i].alf = 1.;
+        // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
+        // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
+        // sao relevantes para o problema permanente mas importantes se o resultado permanente
+        // der partida na solucao transiente:
+        state.cells[i].alfini = state.cells[i].alf;
+        state.cells[i - 1].alfR = state.cells[i].alf;
+        state.cells[i - 1].alfRini = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfL = state.cells[i].alf;
+        if (i < state.lastCell)
+            state.cells[i + 1].alfLini = state.cells[i].alf;
+        state.cells[i].alfPigD = state.cells[i].alf;
+        state.cells[i].alfPigDini = state.cells[i].alf;
+        state.cells[i].alfPigE = state.cells[i].alf;
+        state.cells[i].alfPigEini = state.cells[i].alf;
+        if (i < state.lastCell) {
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+            state.cells[i + 1].betLI = state.cells[i].bet;
+        }
+        state.cells[i].betini = state.cells[i].bet;
+        state.cells[i - 1].betR = state.cells[i].bet;
+        state.cells[i - 1].betRini = state.cells[i].bet;
+        state.cells[i].betPigD = state.cells[i].bet;
+        state.cells[i].betPigDini = state.cells[i].bet;
+        state.cells[i].betPigE = state.cells[i].bet;
+        state.cells[i].betPigEini = state.cells[i].bet;
+        state.cells[i].betI = state.cells[i].bet;
+        state.cells[i - 1].betRI = state.cells[i].bet;
+    }
+}
+
+}  // namespace
+
 void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
     int mudaRGO = 1;
     if (state.input.flashCompleto == 1)
@@ -275,188 +478,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
     state.cells[i - 1].FW = state.cells[i - 1].flui.BSW * ba / (bo + ba * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * bo);
     state.cells[i - 1].FWini = state.cells[i - 1].FW;
     // Definicao das fracoes volumetricas:
-    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
-        if (state.input.tipoFluido == 1) {
-            state.cells[i].alf = 0.;
-        } else {
-            state.cells[i].alf = 1.;
-        }
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny) { // caso so exista liquido:
-        state.cells[i].alf = 0.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // caso so exista gas:
-        state.cells[i].alf = 1.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        state.cells[i].c0 = 1.;
-        state.cells[i].ud = 0.;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    } else { // caso bifasico
-        double c0 = 1.;
-        double ud = 0.;
-        if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6) {
-            if (state.steadyIteration == 0) { // primeira estimativa, primeira iteracao
-                // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
-                // fracao de vazio depende do valor da fracao de vazio
-                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
-                    state.cells[i].alf = fabs(state.cells[i].QG) /
-                                    (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
-                    state.updaters.steadyDriftClosure(i, c0, ud);
-                } else
-                    state.cells[i].alf = 0.;
-                state.cells[i].alfini = state.cells[i].alf;
-                state.cells[i - 1].alfR = state.cells[i].alf;
-                state.cells[i - 1].alfRini = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfL = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfLini = state.cells[i].alf;
-                state.cells[i].alfPigD = state.cells[i].alf;
-                state.cells[i].alfPigDini = state.cells[i].alf;
-                state.cells[i].alfPigE = state.cells[i].alf;
-                state.cells[i].alfPigEini = state.cells[i].alf;
-            }
-            if (fabs(rhog) / rhol > 0.9) {
-                c0 = 1.;
-                ud = 0.;
-            }
-
-            // para o caso permanente, a fracao de vazio Ã© obtida a partir das relacoes de escorregamento
-            // portanto, e neste ponto que se obtem Co e Ud:
-            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
-                state.updaters.steadyDriftClosure(i, c0, ud);
-            state.cells[i].c0 = c0;
-            state.cells[i].ud = ud;
-            double area = state.cells[i].duto.area;
-            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny) {
-                // alfa com escorregamento:
-                state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
-                double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-                if (state.cells[i].alf > 1. - 1e-15 || state.cells[i].alf < 1e-15)
-                    state.cells[i].alf = alfHomo;
-
-            } else
-                state.cells[i].alf = 0.;
-            if (state.cells[i].alf > (1 - (*state.globals).localtiny))
-                state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-        } else {
-            c0 = 1.;
-            ud = 0.;
-            state.cells[i].alf = 1.;
-        }
-        if (state.cells[i].alf < 0.)
-            state.cells[i].alf = 0.;
-        else if (state.cells[i].alf > 1.)
-            state.cells[i].alf = 1.;
-        // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
-        // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
-        // sao relevantes para o problema permanente mas importantes se o resultado permanente
-        // der partida na solucao transiente:
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    }
+    applyReverseSteadyPhaseFractions(state, i, rhol, rhog);
 
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
         double hol0 = 1. - state.cells[i - 1].alf;
@@ -468,6 +490,64 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
     } else
         state.cells[i].fluicol.TR = 0.;
 }
+
+namespace {
+
+/// Refreshes the compositional flash of cell i, seeded from the nearest cell
+/// upstream or downstream that has a usable calculated beta.
+///
+/// Carried by advanceReverseCompositionalSteadyMass and
+/// advanceCompositionalSteadyMass. The two copies differed by four lines, and
+/// those four were a debug anchor -- an empty `int para; para = 0;` behind a
+/// test on flui.iIER -- of the same class stage 6 removed from the gas-lift
+/// module. It has no effect and is not carried in here.
+void refreshCompositionalFlashFromNeighbour(const SteadyStateState &state, int i, double pmed, double tmed) {
+    if (((state.steadyIteration == 0 && i <= 1 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) && state.input.tabelaDinamica == 0) {
+        state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
+    } else if (state.input.tabelaDinamica == 0) {
+        if ((state.steadyIteration == 0 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) {
+            int veriI = i - 1;
+            while ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)) && (veriI > 0))
+                veriI--;
+            if ((veriI == 0) && (state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
+                state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
+            else
+                state.cells[i].flui.atualizaPropComp(pmed, tmed, state.cells[veriI].flui.dCalculatedBeta, state.cells[veriI].flui.oCalculatedLiqComposition,
+                                                state.cells[veriI].flui.oCalculatedVapComposition, state.input.pocinjec);
+        } else {
+            int veriI;
+            int veriIinf = i;
+            while ((state.cells[veriIinf].flui.dCalculatedBeta > 1 - 1e-15 ||
+                    state.cells[veriIinf].flui.dCalculatedBeta < 1e-15) &&
+                   veriIinf > 0)
+                veriIinf--;
+            int veriIsup = i;
+            while ((state.cells[veriIsup].flui.dCalculatedBeta > 1 - 1e-15 ||
+                    state.cells[veriIsup].flui.dCalculatedBeta < 1e-15) &&
+                   veriIsup < state.lastCell)
+                veriIsup++;
+            if ((state.cells[veriIinf].flui.dCalculatedBeta > 1 - 1e-15 ||
+                 state.cells[veriIinf].flui.dCalculatedBeta < 1e-15) &&
+                (state.cells[veriIsup].flui.dCalculatedBeta < 1. &&
+                 state.cells[veriIsup].flui.dCalculatedBeta > 0.))
+                veriI = veriIsup;
+            else if ((state.cells[veriIsup].flui.dCalculatedBeta > 1 - 1e-15 || state.cells[veriIsup].flui.dCalculatedBeta < 1e-15) &&
+                     (state.cells[veriIinf].flui.dCalculatedBeta < 1. && state.cells[veriIinf].flui.dCalculatedBeta > 0.))
+                veriI = veriIinf;
+            else if (fabs(i - veriIsup) < fabs(i - veriIinf))
+                veriI = veriIsup;
+            else
+                veriI = veriIinf;
+            if ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
+                state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
+            else
+                state.cells[i].flui.atualizaPropComp(pmed, tmed, state.cells[veriI].flui.dCalculatedBeta, state.cells[veriI].flui.oCalculatedLiqComposition,
+                                                state.cells[veriI].flui.oCalculatedVapComposition, state.input.pocinjec);
+        }
+    }
+}
+
+}  // namespace
 
 void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i) {
     int mudaRGO = 1;
@@ -565,49 +645,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
 
     double pmed = state.cells[i].presaux;
 
-    if (((state.steadyIteration == 0 && i <= 1 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) && state.input.tabelaDinamica == 0) {
-        state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
-    } else if (state.input.tabelaDinamica == 0) {
-        if ((state.steadyIteration == 0 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) {
-            int veriI = i - 1;
-            while ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)) && (veriI > 0))
-                veriI--;
-            if ((veriI == 0) && (state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
-            else
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, state.cells[veriI].flui.dCalculatedBeta, state.cells[veriI].flui.oCalculatedLiqComposition,
-                                                state.cells[veriI].flui.oCalculatedVapComposition, state.input.pocinjec);
-        } else {
-            int veriI;
-            int veriIinf = i;
-            while ((state.cells[veriIinf].flui.dCalculatedBeta > 1 - 1e-15 ||
-                    state.cells[veriIinf].flui.dCalculatedBeta < 1e-15) &&
-                   veriIinf > 0)
-                veriIinf--;
-            int veriIsup = i;
-            while ((state.cells[veriIsup].flui.dCalculatedBeta > 1 - 1e-15 ||
-                    state.cells[veriIsup].flui.dCalculatedBeta < 1e-15) &&
-                   veriIsup < state.lastCell)
-                veriIsup++;
-            if ((state.cells[veriIinf].flui.dCalculatedBeta > 1 - 1e-15 ||
-                 state.cells[veriIinf].flui.dCalculatedBeta < 1e-15) &&
-                (state.cells[veriIsup].flui.dCalculatedBeta < 1. &&
-                 state.cells[veriIsup].flui.dCalculatedBeta > 0.))
-                veriI = veriIsup;
-            else if ((state.cells[veriIsup].flui.dCalculatedBeta > 1 - 1e-15 || state.cells[veriIsup].flui.dCalculatedBeta < 1e-15) &&
-                     (state.cells[veriIinf].flui.dCalculatedBeta < 1. && state.cells[veriIinf].flui.dCalculatedBeta > 0.))
-                veriI = veriIinf;
-            else if (fabs(i - veriIsup) < fabs(i - veriIinf))
-                veriI = veriIsup;
-            else
-                veriI = veriIinf;
-            if ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
-            else
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, state.cells[veriI].flui.dCalculatedBeta, state.cells[veriI].flui.oCalculatedLiqComposition,
-                                                state.cells[veriI].flui.oCalculatedVapComposition, state.input.pocinjec);
-        }
-    }
+    refreshCompositionalFlashFromNeighbour(state, i, pmed, tmed);
 
     double titulo = state.cells[i].flui.dVaporMassFraction;
 
@@ -686,7 +724,150 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
     state.cells[i - 1].FW = state.cells[i - 1].flui.BSW * ba / (bo + ba * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * bo);
     state.cells[i - 1].FWini = state.cells[i - 1].FW;
     // Definicao das fracoes volumetricas:
-    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
+    applyReverseSteadyPhaseFractions(state, i, rhol, rhog);
+    if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
+        double dxmed = 0.5 * (state.cells[i - 1].dx + state.cells[i].dx);
+        double hol0 = 1. - state.cells[i - 1].alf;
+        double hol1 = 1. - state.cells[i].alf;
+        state.cells[i].fluicol.TR = (state.cells[i - 1].fluicol.TR * state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR * trF) / state.cells[i].MComp;
+        state.cells[i].fluicol.TR = state.cells[i].fluicol.TR + (0.5 * state.cells[i - 1].duto.area * state.cells[i - 1].dx * hol0 +
+                                                       0.5 * state.cells[i].duto.area * state.cells[i].dx * hol1) /
+                                                          state.cells[i].QL;
+    } else
+        state.cells[i].fluicol.TR = state.cells[i - 1].fluicol.TR;
+}
+
+namespace {
+
+/// Two-phase branch of the compositional phase-regime chain.
+///
+/// Split out of applyCompositionalPhaseRegime only so that neither is over 200
+/// lines. It is one arm of a four-way chain and has no other caller.
+void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
+    double c0 = 1.;
+    double ud = 0.;
+    if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
+        if (state.steadyIteration == 0) { // primeira estimativa, primeira iteracao
+            // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
+            // fracao de vazio depende do valor da fracao de vazio
+            if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
+                if (state.convergenceMonitor > 0.01)
+                    state.cells[i].alf = fabs(state.cells[i].QG) /
+                                    (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
+                state.updaters.steadyDriftClosure(i, c0, ud);
+            } else
+                state.cells[i].alf = 0.;
+            state.cells[i].alfini = state.cells[i].alf;
+            state.cells[i - 1].alfR = state.cells[i].alf;
+            state.cells[i - 1].alfRini = state.cells[i].alf;
+            if (i < state.lastCell)
+                state.cells[i + 1].alfL = state.cells[i].alf;
+            if (i < state.lastCell)
+                state.cells[i + 1].alfLini = state.cells[i].alf;
+            state.cells[i].alfPigD = state.cells[i].alf;
+            state.cells[i].alfPigDini = state.cells[i].alf;
+            state.cells[i].alfPigE = state.cells[i].alf;
+            state.cells[i].alfPigEini = state.cells[i].alf;
+        }
+        if (state.input.tipoModeloDrift == 1) {
+            if (fabs(rhog) / rhol > 0.9) {
+                c0 = 1.;
+                ud = 0.;
+            }
+            // para o caso permanente, a fracao de vazio Ã© obtida a partir das relacoes de escorregamento
+            // portanto, e neste ponto que se obtem Co e Ud:
+            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny * 1e-5 && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
+                state.updaters.steadyDriftClosure(i, c0, ud);
+            state.cells[i].c0 = c0;
+            state.cells[i].ud = ud;
+            double area = state.cells[i].duto.area;
+            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
+                // alfa com escorregamento:
+                state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
+                double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
+                if (state.cells[i].alf > 1. - 1e-15 || state.cells[i].alf < 1e-15)
+                    state.cells[i].alf = alfHomo;
+            } else
+                state.cells[i].alf = 0.;
+            if (state.cells[i].alf > (1 - (*state.globals).localtiny) && fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
+                state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
+            else if (state.cells[i].alf > (1 - (*state.globals).localtiny))
+                state.cells[i].alf = 1.;
+        } else {
+            c0 = 1.;
+            ud = 0.;
+            state.cells[i].alf = 1.;
+        }
+    } else {
+        double holdup;
+        double frictionGrad;
+        double gravityGrad;
+        double totalGrad;
+        double reynolds;
+        unsigned char flowType;
+        char *errorMsg;
+        unsigned char errorFlag;
+        executarCorrelacao(state.cells, i, 0, state.input.AceleraConvergPerm,
+                           state.cells[i - 1].correlacaoMR2,
+                           holdup, frictionGrad, gravityGrad, totalGrad,
+                           reynolds, flowType);
+        if(flowType==1 || flowType==2)state.cells[i].arranjo=0;
+        if(flowType==3)state.cells[i].arranjo=1;
+        if(flowType==4)state.cells[i].arranjo=2;
+        if(flowType==6)state.cells[i].arranjo=-1;
+        if(flowType==5)state.cells[i].arranjo=-2;
+        state.cells[i].alf = 1. - holdup;
+    }
+    if (state.cells[i].alf < 0.)
+        state.cells[i].alf = 0.;
+    else if (state.cells[i].alf > 1.)
+        state.cells[i].alf = 1.;
+    // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
+    // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
+    // sao relevantes para o problema permanente mas importantes se o resultado permanente
+    // der partida na solucao transiente:
+    state.cells[i].alfini = state.cells[i].alf;
+    state.cells[i - 1].alfR = state.cells[i].alf;
+    state.cells[i - 1].alfRini = state.cells[i].alf;
+    if (i < state.lastCell)
+        state.cells[i + 1].alfL = state.cells[i].alf;
+    if (i < state.lastCell)
+        state.cells[i + 1].alfLini = state.cells[i].alf;
+    state.cells[i].alfPigD = state.cells[i].alf;
+    state.cells[i].alfPigDini = state.cells[i].alf;
+    state.cells[i].alfPigE = state.cells[i].alf;
+    state.cells[i].alfPigEini = state.cells[i].alf;
+    if (i < state.lastCell) {
+        state.cells[i + 1].betL = state.cells[i].bet;
+        state.cells[i + 1].betLini = state.cells[i].bet;
+        state.cells[i + 1].betL = state.cells[i].bet;
+        state.cells[i + 1].betLini = state.cells[i].bet;
+        state.cells[i + 1].betLI = state.cells[i].bet;
+    }
+    state.cells[i].betini = state.cells[i].bet;
+    state.cells[i - 1].betR = state.cells[i].bet;
+    state.cells[i - 1].betRini = state.cells[i].bet;
+    state.cells[i].betPigD = state.cells[i].bet;
+    state.cells[i].betPigDini = state.cells[i].bet;
+    state.cells[i].betPigE = state.cells[i].bet;
+    state.cells[i].betPigEini = state.cells[i].bet;
+    state.cells[i].betI = state.cells[i].bet;
+    state.cells[i - 1].betRI = state.cells[i].bet;
+
+}
+}  // namespace
+
+namespace {
+
+/// Resolves the phase fractions of cell i for the compositional mass march.
+///
+/// Same four regimes as applyReverseSteadyPhaseFractions and NOT the same
+/// function: this one compares against localtiny * 1e-5 where the reverse
+/// variants compare against localtiny. Five orders of magnitude, with nothing
+/// in the code saying why. Sharing the two would mean choosing one of the
+/// thresholds, and that is a decision, not a move.
+void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
+    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny * 1e-5) {
         if (state.input.tipoFluido == 1) {
             state.cells[i].alf = 0.;
         } else {
@@ -719,7 +900,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         state.cells[i].betPigEini = state.cells[i].bet;
         state.cells[i].betI = state.cells[i].bet;
         state.cells[i - 1].betRI = state.cells[i].bet;
-    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny) { // caso so exista liquido:
+    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny * 1e-5) { // caso so exista liquido:
         state.cells[i].alf = 0.;
         state.cells[i].alfini = state.cells[i].alf;
         state.cells[i - 1].alfR = state.cells[i].alf;
@@ -748,7 +929,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         state.cells[i].betPigEini = state.cells[i].bet;
         state.cells[i].betI = state.cells[i].bet;
         state.cells[i - 1].betRI = state.cells[i].bet;
-    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // caso so exista gas:
+    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-5) { // caso so exista gas:
         state.cells[i].alf = 1.;
         state.cells[i].alfini = state.cells[i].alf;
         state.cells[i - 1].alfR = state.cells[i].alf;
@@ -780,121 +961,22 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         state.cells[i].betI = state.cells[i].bet;
         state.cells[i - 1].betRI = state.cells[i].bet;
     } else { // caso bifasico
-        double c0 = 1.;
-        double ud = 0.;
-        if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6) {
-            if (state.steadyIteration == 0) { // primeira estimativa, primeira iteracao
-                // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
-                // fracao de vazio depende do valor da fracao de vazio
-                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
-                    state.cells[i].alf = fabs(state.cells[i].QG) /
-                                    (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
-                    state.updaters.steadyDriftClosure(i, c0, ud);
-                } else
-                    state.cells[i].alf = 0.;
-                state.cells[i].alfini = state.cells[i].alf;
-                state.cells[i - 1].alfR = state.cells[i].alf;
-                state.cells[i - 1].alfRini = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfL = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfLini = state.cells[i].alf;
-                state.cells[i].alfPigD = state.cells[i].alf;
-                state.cells[i].alfPigDini = state.cells[i].alf;
-                state.cells[i].alfPigE = state.cells[i].alf;
-                state.cells[i].alfPigEini = state.cells[i].alf;
-            }
-            if (fabs(rhog) / rhol > 0.9) {
-                c0 = 1.;
-                ud = 0.;
-            }
-
-            // para o caso permanente, a fracao de vazio Ã© obtida a partir das relacoes de escorregamento
-            // portanto, e neste ponto que se obtem Co e Ud:
-            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
-                state.updaters.steadyDriftClosure(i, c0, ud);
-            state.cells[i].c0 = c0;
-            state.cells[i].ud = ud;
-            double area = state.cells[i].duto.area;
-            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny) {
-                // alfa com escorregamento:
-                state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
-                double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-                if (state.cells[i].alf > 1. - 1e-15 || state.cells[i].alf < 1e-15)
-                    state.cells[i].alf = alfHomo;
-
-            } else
-                state.cells[i].alf = 0.;
-            if (state.cells[i].alf > (1 - (*state.globals).localtiny))
-                state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-        } else {
-            c0 = 1.;
-            ud = 0.;
-            state.cells[i].alf = 1.;
-        }
-        if (state.cells[i].alf < 0.)
-            state.cells[i].alf = 0.;
-        else if (state.cells[i].alf > 1.)
-            state.cells[i].alf = 1.;
-        // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
-        // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
-        // sao relevantes para o problema permanente mas importantes se o resultado permanente
-        // der partida na solucao transiente:
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        applyCompositionalTwoPhaseRegime(state, i, rhol, rhog);
     }
-    if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
-        double dxmed = 0.5 * (state.cells[i - 1].dx + state.cells[i].dx);
-        double hol0 = 1. - state.cells[i - 1].alf;
-        double hol1 = 1. - state.cells[i].alf;
-        state.cells[i].fluicol.TR = (state.cells[i - 1].fluicol.TR * state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR * trF) / state.cells[i].MComp;
-        state.cells[i].fluicol.TR = state.cells[i].fluicol.TR + (0.5 * state.cells[i - 1].duto.area * state.cells[i - 1].dx * hol0 +
-                                                       0.5 * state.cells[i].duto.area * state.cells[i].dx * hol1) /
-                                                          state.cells[i].QL;
-    } else
-        state.cells[i].fluicol.TR = state.cells[i - 1].fluicol.TR;
 }
+}  // namespace
 
-void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
-    int mudaRGO = 1;
-    double titF = 0.;
-    ProFlu fluF;
+namespace {
 
-    double boF = 1.;
-    double baF = 1.;
-    double fwF = 1.;
-    double rhoOF = 900.;
-    double rhoWF = 1000.;
-
-    double mHidro = 0.;
-    double mComp;
-    double trF = 0.;
-
+/// Reads the black-oil reference properties of the accessory feeding cell i - 1.
+///
+/// Seven arms on acsr.tipo, each writing the same seven outputs from a
+/// different source object. The wide out-parameter list is the shape T085 gave
+/// the helpers it carved out of the base variant; it is kept rather than
+/// improved so the two families still read alike.
+void readCompositionalSourceProperties(const SteadyStateState &state, int i, double &titF, ProFlu &fluF,
+                                       double &boF, double &baF, double &fwF, double &rhoOF, double &rhoWF,
+                                       double &trF) {
     if (state.cells[i - 1].acsr.tipo == 1) {
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i - 1].pres, state.cells[i - 1].temp, state.cells[i - 1].flui.dCalculatedBeta,
@@ -1003,6 +1085,25 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         titF = (1 - fwF) * rhoOF / ((1 - fwF) * rhoOF + fwF * rhoWF);
         trF = 0.;
     }
+}
+}  // namespace
+
+void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
+    int mudaRGO = 1;
+    double titF = 0.;
+    ProFlu fluF;
+
+    double boF = 1.;
+    double baF = 1.;
+    double fwF = 1.;
+    double rhoOF = 900.;
+    double rhoWF = 1000.;
+
+    double mHidro = 0.;
+    double mComp;
+    double trF = 0.;
+
+    readCompositionalSourceProperties(state, i, titF, fluF, boF, baF, fwF, rhoOF, rhoWF, trF);
 
     state.updaters.updateSource(i - 1); // metodo que verifica se existe uma fonte na celula e calcula o valor das
     // vazoes massicas de liquido produzido (oleo+agua), gas e liquido complementar
@@ -1291,53 +1392,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     double rhol;
     // calculo da vazao massica de liquido e das vazoes volumetricas:
 
-    if (((state.steadyIteration == 0 && i <= 1 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) && state.input.tabelaDinamica == 0) {
-        state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
-    } else if (state.input.tabelaDinamica == 0) {
-        if ((state.steadyIteration == 0 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) {
-            int veriI = i - 1;
-            while ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)) && (veriI > 0))
-                veriI--;
-            if ((veriI == 0) && (state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
-            else
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, state.cells[veriI].flui.dCalculatedBeta, state.cells[veriI].flui.oCalculatedLiqComposition,
-                                                state.cells[veriI].flui.oCalculatedVapComposition, state.input.pocinjec);
-        } else {
-            int veriI;
-            int veriIinf = i;
-            while ((state.cells[veriIinf].flui.dCalculatedBeta > 1 - 1e-15 ||
-                    state.cells[veriIinf].flui.dCalculatedBeta < 1e-15) &&
-                   veriIinf > 0)
-                veriIinf--;
-            int veriIsup = i;
-            while ((state.cells[veriIsup].flui.dCalculatedBeta > 1 - 1e-15 ||
-                    state.cells[veriIsup].flui.dCalculatedBeta < 1e-15) &&
-                   veriIsup < state.lastCell)
-                veriIsup++;
-            if ((state.cells[veriIinf].flui.dCalculatedBeta > 1 - 1e-15 ||
-                 state.cells[veriIinf].flui.dCalculatedBeta < 1e-15) &&
-                (state.cells[veriIsup].flui.dCalculatedBeta < 1. &&
-                 state.cells[veriIsup].flui.dCalculatedBeta > 0.))
-                veriI = veriIsup;
-            else if ((state.cells[veriIsup].flui.dCalculatedBeta > 1 - 1e-15 || state.cells[veriIsup].flui.dCalculatedBeta < 1e-15) &&
-                     (state.cells[veriIinf].flui.dCalculatedBeta < 1. && state.cells[veriIinf].flui.dCalculatedBeta > 0.))
-                veriI = veriIinf;
-            else if (fabs(i - veriIsup) < fabs(i - veriIinf))
-                veriI = veriIsup;
-            else
-                veriI = veriIinf;
-            if ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)))
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
-            else
-                state.cells[i].flui.atualizaPropComp(pmed, tmed, state.cells[veriI].flui.dCalculatedBeta, state.cells[veriI].flui.oCalculatedLiqComposition,
-                                                state.cells[veriI].flui.oCalculatedVapComposition, state.input.pocinjec);
-        }
-        if (state.cells[i].flui.iIER != 0) {
-            int para;
-            para = 0;
-        }
-    }
+    refreshCompositionalFlashFromNeighbour(state, i, pmed, tmed);
     double titulo = state.cells[i].flui.dVaporMassFraction;
 
     double betI;
@@ -1425,210 +1480,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     state.cells[i - 1].QLR = state.cells[i].QL;
     state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / rhog;
     // Definicao das fracoes volumetricas:
-    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny * 1e-5) {
-        if (state.input.tipoFluido == 1) {
-            state.cells[i].alf = 0.;
-        } else {
-            state.cells[i].alf = 1.;
-        }
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny * 1e-5) { // caso so exista liquido:
-        state.cells[i].alf = 0.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-5) { // caso so exista gas:
-        state.cells[i].alf = 1.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        state.cells[i].c0 = 1.;
-        state.cells[i].ud = 0.;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    } else { // caso bifasico
-        double c0 = 1.;
-        double ud = 0.;
-        if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
-            if (state.steadyIteration == 0) { // primeira estimativa, primeira iteracao
-                // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
-                // fracao de vazio depende do valor da fracao de vazio
-                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
-                    if (state.convergenceMonitor > 0.01)
-                        state.cells[i].alf = fabs(state.cells[i].QG) /
-                                        (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
-                    state.updaters.steadyDriftClosure(i, c0, ud);
-                } else
-                    state.cells[i].alf = 0.;
-                state.cells[i].alfini = state.cells[i].alf;
-                state.cells[i - 1].alfR = state.cells[i].alf;
-                state.cells[i - 1].alfRini = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfL = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfLini = state.cells[i].alf;
-                state.cells[i].alfPigD = state.cells[i].alf;
-                state.cells[i].alfPigDini = state.cells[i].alf;
-                state.cells[i].alfPigE = state.cells[i].alf;
-                state.cells[i].alfPigEini = state.cells[i].alf;
-            }
-            if (state.input.tipoModeloDrift == 1) {
-                if (fabs(rhog) / rhol > 0.9) {
-                    c0 = 1.;
-                    ud = 0.;
-                }
-                // para o caso permanente, a fracao de vazio Ã© obtida a partir das relacoes de escorregamento
-                // portanto, e neste ponto que se obtem Co e Ud:
-                else if (fabs(state.cells[i].QG) > (*state.globals).localtiny * 1e-5 && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
-                    state.updaters.steadyDriftClosure(i, c0, ud);
-                state.cells[i].c0 = c0;
-                state.cells[i].ud = ud;
-                double area = state.cells[i].duto.area;
-                if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
-                    // alfa com escorregamento:
-                    state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
-                    double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-                    if (state.cells[i].alf > 1. - 1e-15 || state.cells[i].alf < 1e-15)
-                        state.cells[i].alf = alfHomo;
-                } else
-                    state.cells[i].alf = 0.;
-                if (state.cells[i].alf > (1 - (*state.globals).localtiny) && fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
-                    state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-                else if (state.cells[i].alf > (1 - (*state.globals).localtiny))
-                    state.cells[i].alf = 1.;
-            } else {
-                c0 = 1.;
-                ud = 0.;
-                state.cells[i].alf = 1.;
-            }
-        } else {
-            double holdup;
-            double frictionGrad;
-            double gravityGrad;
-            double totalGrad;
-            double reynolds;
-            unsigned char flowType;
-            char *errorMsg;
-            unsigned char errorFlag;
-            executarCorrelacao(state.cells, i, 0, state.input.AceleraConvergPerm,
-                               state.cells[i - 1].correlacaoMR2,
-                               holdup, frictionGrad, gravityGrad, totalGrad,
-                               reynolds, flowType);
-            if(flowType==1 || flowType==2)state.cells[i].arranjo=0;
-            if(flowType==3)state.cells[i].arranjo=1;
-            if(flowType==4)state.cells[i].arranjo=2;
-            if(flowType==6)state.cells[i].arranjo=-1;
-            if(flowType==5)state.cells[i].arranjo=-2;
-            state.cells[i].alf = 1. - holdup;
-        }
-        if (state.cells[i].alf < 0.)
-            state.cells[i].alf = 0.;
-        else if (state.cells[i].alf > 1.)
-            state.cells[i].alf = 1.;
-        // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
-        // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
-        // sao relevantes para o problema permanente mas importantes se o resultado permanente
-        // der partida na solucao transiente:
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
-    }
+    applyCompositionalPhaseRegime(state, i, rhol, rhog);
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
         double dxmed = 0.5 * (state.cells[i - 1].dx + state.cells[i].dx);
         double hol0 = 1. - state.cells[i - 1].alf;
