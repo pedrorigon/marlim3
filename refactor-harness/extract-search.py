@@ -91,21 +91,25 @@ def main():
                          "That is an out-parameter the tool will not invent."
                          % ", ".join(n for _, n in crossing_out))
 
-    # A local that the range WRITES and nothing reads afterwards belongs to the
-    # helper, not to its signature. Moving the declaration in keeps the caller's
-    # scope honest instead of passing a scratch variable both ways.
+    # Every local that crosses the boundary is passed. It is tempting to move a
+    # scratch variable's declaration INTO the helper when the range writes it
+    # and nothing reads it afterwards -- it shortens the signature and reads
+    # better. That rule is wrong, and the compiler proved it: the range
+    # `while (corrigechute == 1) { ... }` writes corrigechute and nothing reads
+    # it after, but it also READS it on entry, and a moved declaration would
+    # have re-initialised it. Deciding this properly needs to know whether the
+    # first use is a write, which is flow analysis. A wider signature is the
+    # cheaper mistake.
     params, moved = [], []
     for ty, name, written, after in crossing_in:
-        if written and not after:
-            moved.append((ty, name))
-        else:
-            params.append(f"{ty} {'&' if written else ''}{name}")
+        if name in ("state", "abortValue"):
+            # state is passed first by construction; abortValue is the abort
+            # protocol's own out-parameter and is appended below. Cutting a
+            # helper that already has one would otherwise declare it twice.
+            continue
+        params.append(f"{ty} {'&' if written else ''}{name}")
 
     body = dedent(block)
-    if moved:
-        decls = "\n".join(f"    {ty} {name} = 0.;" if ty == "double" else f"    {ty} {name} = 0;"
-                           for ty, name in moved)
-        body = decls + "\n" + body
 
     if args.tail:
         signature = (f"{args.returns} {args.helper}(const SteadyStateSearchState &state, "
