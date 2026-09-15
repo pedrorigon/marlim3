@@ -4,12 +4,24 @@
 #include "RootFindingSolvers.h"
 #include "SisProdSteadyState.h"
 
-// SisProdSteadyState.h deliberately does NOT include this header. The
-// dependency runs one way -- a search builds an objective, hands it to a
-// generic solver, and the solver calls a march; no march calls a search -- and
-// that one-way edge is the whole reason stage 7 cuts into two pairs instead of
-// one 10,919-line module. If this include ever needs to be reversed, the cut is
-// wrong, not the include.
+// SisProdSteadyState.h deliberately does NOT include this header, and that
+// stays true. The reason first written here did not.
+//
+// It claimed the dependency runs one way, that no march calls a search. T090
+// measured otherwise: marchaProdPerm1 and marchaProdPerm2 march the gas line
+// after the column converges, and that block calls buscaGasPresPerm2 and
+// buscaGasPresPerm3, both of which live on this side. The call graph between
+// the two halves has a cycle.
+//
+// What holds the cut together is therefore weaker than an absent edge, and
+// worth stating as what it is: the march reaches those two through
+// SteadyStateUpdaters, back via SProd, the same way it reaches calctemp. The
+// cycle is an edge in the data, not an edge in the build. So the include stays
+// one-way and T098b's grep still means something -- but it means "no
+// compile-time cycle", not "no dependency".
+//
+// If this include ever needs to be reversed, the cut is wrong, not the include.
+// See section 8 of evidencia/marchaprod-diff.md.
 
 namespace sisprod::steady {
 

@@ -3737,4 +3737,1449 @@ void advanceSteadyGasMassTransfer(const SteadyStateState &state, int i) {
     }
 }
 
+void refreshProperties(const SteadyStateState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].rpC = state.cells[i].rpCi =
+            state.cells[i].flui.MasEspLiq(state.cells[i].pres, state.cells[i].temp);
+        state.cells[i].rgC = state.cells[i].rgCi =
+            state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
+        state.cells[i].rcC = state.cells[i].rcCi =
+            state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
+        state.cells[i].rpL = state.cells[i].rpLi =
+            state.cells[i].flui.MasEspLiq(state.cells[i].presL, state.cells[i].tempL);
+        state.cells[i].rgL = state.cells[i].rgLi =
+            state.cells[i].flui.MasEspGas(state.cells[i].presL, state.cells[i].tempL);
+        state.cells[i].rcL = state.cells[i].rcLi =
+            state.cells[i].fluicol.MasEspFlu(state.cells[i].presL, state.cells[i].tempL);
+
+        state.cells[i].mipC = state.cells[i].flui.ViscOleo(state.cells[i].pres, state.cells[i].temp);
+        state.cells[i].migC = state.cells[i].flui.ViscGas(state.cells[i].pres, state.cells[i].temp);
+        state.cells[i].micC = state.cells[i].fluicol.VisFlu(state.cells[i].pres, state.cells[i].temp);
+
+        if (i > 0) {
+            state.cells[i - 1].rpR = state.cells[i - 1].rpRi = state.cells[i].rpC;
+            state.cells[i - 1].rgR = state.cells[i - 1].rgRi = state.cells[i].rgC;
+            state.cells[i - 1].rcR = state.cells[i - 1].rcRi = state.cells[i].rcC;
+
+            state.cells[i - 1].mipR = state.cells[i].mipC;
+            state.cells[i - 1].migR = state.cells[i].migC;
+            state.cells[i - 1].micR = state.cells[i].micC;
+        }
+        if (i == state.lastCell) {
+            state.cells[i].rpR = state.cells[i].rpRi = state.cells[i].rpC;
+            state.cells[i].rgR = state.cells[i].rgRi = state.cells[i].rgC;
+            state.cells[i].rcR = state.cells[i].rcRi = state.cells[i].rcC;
+
+            state.cells[i].mipR = state.cells[i].mipC;
+            state.cells[i].migR = state.cells[i].migC;
+            state.cells[i].micR = state.cells[i].micC;
+        }
+    }
+}
+
+void refreshSteadyThermalVelocities(const SteadyStateState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        double dia = state.cells[i].duto.a;
+        double area = 0.25 * M_PI * dia * dia;
+        double alfmed = state.cells[i].alf;
+        double betmed = state.cells[i].bet;
+        double rhol = (1. - betmed) * state.cells[i].rpC + betmed * state.cells[i].rcC;
+        double rhog = state.cells[i].rgC;
+        double cpl = (1. - betmed) * state.cells[i].flui.CalorLiq(state.cells[i].presini, state.cells[i].temp) + betmed * state.cells[i].fluicol.CalorLiq(state.cells[i].presini, state.cells[i].temp);
+        double cvl = cpl;
+        double cpg = state.cells[i].flui.CalorGas(state.cells[i].presini, state.cells[i].temp);
+        double cvg = state.cells[i].flui.CalorGasVolMod(state.cells[i].presini, state.cells[i].temp, state.cells[i].rgC);
+        double coefTempo = (rhol * (1 - alfmed) * cvl + rhog * alfmed * cvg) * area;
+        double ugsmed = state.cells[i].QG / area;
+        double ulsmed = state.cells[i].QL / area;
+        double coefdxT = (rhol * ulsmed * cpl + rhog * ugsmed * cpg) * area;
+        state.cells[i].VTemper = coefdxT / coefTempo;
+    }
+}
+
+void computePseudoTransientTimeStep(const SteadyStateState &state) {
+    state.timeStep = 100.;
+    for (int i = 0; i <= state.lastCell; i++) {
+        double jmix = 0.;
+        double dtaux;
+        if (fabs(state.cells[i].VTemper) > jmix)
+            jmix = fabs(state.cells[i].VTemper);
+        if (fabs(jmix) > 1e-5)
+            dtaux = 1.0 * state.cells[i].dx / jmix;
+        else
+            dtaux = state.timeStep;
+        if (dtaux < state.timeStep)
+            state.timeStep = dtaux;
+    }
+    if (state.input.lingas == 1) {
+        for (int i = 0; i <= state.gasCellCount; i++) {
+            double dtaux;
+            double jmix = fabs(state.gasCells[i].VGasR / state.gasCells[i].u1L);
+            if (fabs(jmix) > 1e-5)
+                dtaux = state.gasCells[i].dx0 / jmix;
+            else
+                dtaux = state.timeStep;
+            if (dtaux < state.timeStep)
+                state.timeStep = dtaux;
+        }
+    }
+    state.timeStep = 0.8 * state.timeStep;
+    for (int i = 0; i <= state.lastCell; i++)
+        state.cells[i].dt = state.timeStep;
+    if (state.input.lingas == 1) {
+        for (int i = 0; i <= state.gasCellCount; i++)
+            state.gasCells[i].dt = state.timeStep;
+    }
+}
+
+void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
+    if (state.cells[i].presaux < 0.5)
+        state.cells[i].presaux = 0.5;
+    state.cells[i - 1].presauxR = state.cells[i].presaux;
+    if (i < state.lastCell)
+        state.cells[i + 1].presauxL = state.cells[i].presaux;
+
+    state.cells[i - 1].dpB = 0.;
+    state.cells[i - 1].potB = 0.;
+    state.cells[i - 1].potBT = 0.;
+    double tmed;
+    if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0)
+        tmed = (state.cells[i].dx * state.cells[i].temp + state.cells[i].dxL * state.cells[i].tempL) / (state.cells[i].dx + state.cells[i].dxL);
+    else
+        tmed = state.cells[i - 1].temp;
+    double sinalQ = 1.;
+    if (fabs(state.cells[i - 1].QL + state.cells[i - 1].QG) > 1e-15)
+        sinalQ = fabs(state.cells[i - 1].QL + state.cells[i - 1].QG) / (state.cells[i - 1].QL + state.cells[i - 1].QG);
+    if (state.cells[i - 1].acsr.tipo == 4 && state.cells[i - 1].acsr.bcs.freqnova > 1.) {
+        double vazmix = fabs(state.cells[i - 1].QL + state.cells[i - 1].QG);
+        double alf0 = state.cells[i - 1].alf;
+        double bet0 = state.cells[i - 1].bet;
+        double rhomis = (alf0 * state.cells[i - 1].flui.MasEspGas(state.cells[i].presaux, tmed) + (1 - alf0) * ((1 - bet0) * state.cells[i - 1].flui.MasEspLiq(state.cells[i].presaux, tmed) + bet0 * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i].presaux, tmed)));
+        double vismis = alf0 * state.cells[i - 1].flui.ViscGas(state.cells[i].presaux, tmed) + (1 - alf0) * ((1. - bet0) * state.cells[i - 1].flui.ViscOleo(state.cells[i].presaux, tmed) + bet0 * state.cells[i].fluicol.VisFlu(state.cells[i].presaux, tmed));
+        vazmix *= (86400 / 0.1589876);
+        state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
+        state.cells[i - 1].dpB = sinalQ * 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
+        state.cells[i - 1].potB = state.cells[i - 1].acsr.bcs.Pvis * 745.7;
+        state.cells[i - 1].potTermo = (1. - state.cells[i - 1].acsr.bcs.Evis / 100.) * state.cells[i - 1].potB;
+        if (state.cells[i - 1].acsr.bcs.eficM > 0.)
+            state.cells[i - 1].potBT = (1. + 100. * (1. - state.cells[i - 1].acsr.bcs.eficM / 100.) / state.cells[i - 1].acsr.bcs.eficM) * state.cells[i - 1].potB;
+        else
+            state.cells[i - 1].potBT = 0.;
+        state.cells[i - 1].potTermo += state.cells[i - 1].potBT * (1. - state.cells[i - 1].acsr.bcs.eficM / 100.) * state.cells[i - 1].acsr.bcs.fracTermMotorEfic;
+
+    } else if (state.cells[i - 1].acsr.tipo == 7) {
+        state.cells[i - 1].dpB = sinalQ * state.cells[i - 1].acsr.delp * 98066.5;
+        double bet0 = state.cells[i - 1].bet;
+        double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i].presaux, tmed);
+        double rhol = ((1 - bet0) * state.cells[i - 1].flui.MasEspLiq(state.cells[i].presaux, tmed) + bet0 * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i].presaux, tmed));
+        double qgMon = (state.cells[i - 1].MC - state.cells[i - 1].Mliqini) / rhog;
+        double qlmon = state.cells[i - 1].Mliqini / rhol;
+        double npoli = 1.;
+        if (state.cells[i - 1].acsr.tipoCompGas == 0) {
+            npoli = state.cells[i - 1].flui.ConstAdG(state.cells[i - 1].pres, state.cells[i - 1].temp);
+            if ((npoli - 1.05) < 1e-2)
+                npoli = 1.05;
+        } else if (state.cells[i - 1].acsr.tipoCompGas == 1)
+            npoli = state.cells[i - 1].acsr.fatPoli;
+        double Wcomp;
+        double Wbomb;
+        Wbomb = (100. / state.cells[i - 1].acsr.eficLiq) * state.cells[i - 1].dpB * qlmon;
+        double wcompiso = -state.cells[i].presaux * 98066.5 * qgMon * log(state.cells[i].presaux / (state.cells[i].presaux + state.cells[i - 1].acsr.delp));
+        if (state.cells[i - 1].acsr.tipoCompGas != 2)
+            Wcomp = -(state.cells[i].presaux * 98066.5 * qgMon / (1. - npoli)) *
+                    (pow(1 + sinalQ * state.cells[i - 1].acsr.delp / state.cells[i].presaux, (npoli - 1.) / npoli) - 1.);
+        else
+            Wcomp = wcompiso;
+        Wcomp *= (100. / state.cells[i - 1].acsr.eficGas);
+        state.cells[i - 1].potB = sinalQ * (Wcomp + Wbomb);
+        state.cells[i - 1].potTermo = sinalQ * ((1. - state.cells[i - 1].acsr.eficLiq / 100.) * Wbomb + (1. - state.cells[i - 1].acsr.eficGas / 100.) * Wcomp);
+        state.cells[i - 1].potBT = state.cells[i - 1].potB;
+    } else if (state.cells[i - 1].acsr.tipo == 17 && state.cells[i - 1].acsr.multibcs.freqnova > 1.) {
+        double alf0 = state.cells[i - 1].alf;
+        double bet0 = state.cells[i - 1].bet;
+        state.cells[i - 1].acsr.multibcs.flui = state.cells[i - 1].flui;
+        state.cells[i - 1].acsr.multibcs.fluicol = state.cells[i - 1].fluicol;
+        state.cells[i - 1].acsr.multibcs.marchaMultiBcs(state.cells[i - 1].QG, state.cells[i - 1].QL, state.cells[i].presaux, tmed, alf0, bet0);
+        state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * 98066.52;
+        state.cells[i - 1].potB = state.cells[i - 1].acsr.multibcs.potBT;
+        state.cells[i - 1].potBT = state.cells[i - 1].acsr.multibcs.potBT;
+        state.cells[i - 1].potTermo = state.cells[i - 1].acsr.multibcs.potTermo;
+        state.cells[i - 1].potTermo += state.cells[i - 1].potBT * (1. - state.cells[i - 1].acsr.multibcs.eficM / 100.) * state.cells[i - 1].acsr.multibcs.fracTermMotorEfic;
+    }
+}
+
+void refreshDownstreamProductionPeriphery(const SteadyStateState &state, int i) {
+    if (state.cells[i].pres < 0.1)
+        state.cells[i].pres = 0.1;
+    state.cells[i - 1].presR = state.cells[i].pres;
+    if (i < state.lastCell) {
+        state.cells[i + 1].presL = state.cells[i].pres;
+        state.cells[i + 1].presLini = state.cells[i + 1].presL;
+    }
+    state.cells[i].presini = state.cells[i].pres;
+}
+
+void serviceLineHydrostatic(const SteadyStateState &state) {
+    double pchute = state.input.gasinj.presinj[0];
+    state.gasCells[0].pres = pchute;
+    double taux;
+    taux = state.input.celg[0].textern;
+    state.cells[0].temp = taux;
+    double rhog = state.gasCells[0].flui.MasEspGas(state.gasCells[0].pres, taux);
+    for (int i = 0; i < state.gasCellCount; i++) {
+        taux = state.input.celg[i].textern;
+        rhog = state.gasCells[i].flui.MasEspGas(pchute, taux);
+        double dxmed = 0.5 * (state.gasCells[i].dx0 + state.gasCells[i + 1].dx0);
+        pchute -= ((rhog * 9.81 * sinl(state.gasCells[i].duto.teta) * dxmed) / 98066.5);
+        state.gasCells[i + 1].pres = pchute;
+        state.gasCells[i + 1].temp = taux;
+    }
+}
+
+double marchGasSteady(const SteadyStateState &state, double chutemass) {
+    int nvalv = state.input.nvalvgas;
+    double massGas = 0.;
+    double erro = 10.;
+    double erro1 = 10.;
+    if (chutemass < 0) {
+        for (int j = 0; j < nvalv; j++)
+            massGas += state.gasCells[state.gasValveCellIndices[j]].massfonteCH; // caso nÃƒÂ£o se tenha um chute da vazao massica
+        // na entrada da linha de injecao, faz-se o somatÃƒÂ³rio dos valores de vazao em cada VGL
+    } else
+        massGas = chutemass;
+    int itera = 0;
+    double relaxa = 0.5; // relaxacao para a iteracao da vazao total de injecao estimada a cada iteracao
+    double presteste = -10;
+    double presteste0 = -10;
+    int vazBaix = 0;
+    while (((erro > 0.00001 && vazBaix == 0) || erro1 > 0.00001) && itera < 600) { // iteracao de convergencia
+        presteste0 = presteste;
+        if (itera > 20)
+            relaxa = 0.1;
+        else if (itera > 50)
+            relaxa = 0.05;
+        else if (itera > 100)
+            relaxa = 0.01;
+
+        state.gasCells[0].presL = state.initialGasPressure;
+        state.gasCells[0].pres = state.initialGasPressure;
+        state.gasCells[0].presini = state.initialGasPressure;
+        state.gasCells[1].presL = state.initialGasPressure;
+        state.gasCells[0].tempL = state.initialGasTemperature;
+        state.gasCells[0].temp = state.initialGasTemperature;
+        state.gasCells[1].tempL = state.initialGasTemperature;
+        state.gasCells[0].rg = state.gasCells[0].flui.MasEspGas(state.initialGasPressure, state.initialGasTemperature);
+        state.gasCells[0].u1L = state.gasCells[0].duto.area * state.gasCells[0].rg;
+        state.gasCells[0].u1LL = state.gasCells[0].u1L;
+        state.gasCells[1].u1LL = state.gasCells[0].u1L;
+        state.gasCells[0].VGasL = 0;
+        state.gasCells[0].massfonteCH = massGas;
+        state.gasCells[0].VGasR = massGas;
+        state.gasCells[1].VGasL = massGas;
+        for (int i = 1; i <= state.gasCellCount; i++) { // marcha
+            state.updaters.updateSteadyGasPressure(i);            // avanco do valor de pressao de uma celula para outra, no centro da celula
+            state.updaters.updateSteadyGasTemperature(i);            // avanco do valor de temperatura de uma celula para outra, centro da celula
+            if (isnan(state.gasCells[i].temp))
+                NumError("Temperatrura na linha de servico com valor NaN");
+            state.updaters.computeSteadyGasFlowRate(i); // verifica se no centro desta celula tem uma VGL, calcula a vazao da VGL
+            // retira este valor da vazÃƒÂ£o total na linha
+            state.gasCells[i].rg = state.gasCells[i].flui.MasEspGas(state.gasCells[i].pres, state.gasCells[i].temp);
+            state.gasCells[i - 1].rgR = state.gasCells[i].rg;
+            state.gasCells[i].u1L = state.gasCells[i].duto.area * state.gasCells[i].rg;
+            state.gasCells[i - 1].u1R = state.gasCells[i].u1L;
+            if (i < state.gasCellCount)
+                state.gasCells[i + 1].u1LL = state.gasCells[i].u1L;
+        }
+        state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
+        double massGas2 = massGas; // guarda o valor antigo de injecao de gas
+        massGas = 0;
+        for (int j = 0; j < nvalv; j++)
+            massGas += state.gasCells[state.gasValveCellIndices[j]].massfonteCH; // atualiza a vazao de injecao a partir
+        // das vazoes calculadas nas VGLs
+        itera++;
+        massGas = (relaxa * massGas + (1. - relaxa) * massGas2); // relaxacao da estimativa de vazao de injecao
+        if (0.05 * state.gasCells[0].duto.area * state.gasCells[0].rg > massGas)
+            vazBaix = 1;
+        else
+            vazBaix = 0;
+        if (fabs(massGas) > 1e-15)
+            erro = fabs(massGas - massGas2) / fabs(massGas); // erro na estimativa de vazao
+        // de uma iteracao para a outra
+        else if (fabs(massGas2) > 1e-15)
+            erro = fabs(massGas - massGas2) / fabs(massGas2); // erro = erro/2.;
+        else
+            erro = 0.;
+        presteste = state.gasCells[state.gasCellCount].pres;
+        erro1 = fabs(presteste - presteste0) / presteste0; // erro no valor da pressao na ultima celula
+    }
+    if (itera >= 600) {
+        if ((*state.globals).chaverede == 0 && state.input.AP == 0) {
+            NumError("Busca de valores iniciais para calculo de zero de funcao em marchaGasPerm1 atingiu maximo de iteracoes");
+            return 0.0;
+        } else {
+            if ((*state.globals).iterRede > 0)
+                return -1.1e10;
+            else
+                return 1.1e10;
+        }
+    } else
+        return erro1;
+}
+
+namespace {
+
+/// Which fluid receives the dry-gas aware (six-argument) compositional flash in
+/// the gas-source arm of the steady production marches.
+///
+/// It exists because marchProductionSteady and marchProductionSteadySecondary
+/// disagreed about it and nothing in the code said why. Naming the disagreement
+/// is not the same as resolving it: see H4 in evidencia/marchaprod-diff.md.
+enum class DryGasFlashTarget {
+    /// marchProductionSteady, marchReverseProductionSteady: the flag goes to
+    /// the injected gas.
+    sourceFluid,
+    /// marchProductionSteadySecondary: the flag goes to the cell fluid.
+    cellFluid,
+};
+
+void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, double &alfini, double &betini,
+                                      DryGasFlashTarget dryGasFlashTarget) {
+    // estimativa da fracao de vazio na primeira celula do sistema
+    if (state.cells[0].acsr.tipo == 0) { // sem nenhuma fonte
+        state.cells[0].temp = state.input.celp[0].textern;
+        alfini = 1.;
+        betini = 0.;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+    } else if (state.cells[0].acsr.tipo == 1) { // fonte de gas
+        state.cells[0].temp = state.cells[0].acsr.injg.temp;
+        if (state.input.flashCompleto == 2) {
+            // The only place the three marches disagree. See H4 in
+            // evidencia/marchaprod-diff.md: marchaProdPerm1 and
+            // marchaProdPerm1Rev hand the dry-gas flag to the SOURCE fluid,
+            // marchaProdPerm2 to the CELL fluid. Both forms are kept, on
+            // purpose, because at most one of them can be right and this
+            // refactoring is not the place to decide which.
+            if (dryGasFlashTarget == DryGasFlashTarget::sourceFluid) {
+                if (state.input.tabelaDinamica == 0)
+                    state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+                state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
+            } else {
+                if (state.input.tabelaDinamica == 0)
+                    state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
+                state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
+            }
+        }
+        if (state.cells[0].acsr.injg.seco == 1) {
+            alfini = 1.;
+            betini = 0.;
+        } else {
+            double masgas = state.cells[0].acsr.injg.VMas(pchute, state.cells[0].temp);
+            double tit;
+            if (state.input.flashCompleto != 2)
+                tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
+            else
+                tit = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
+            double masT = masgas / tit;
+            tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(pchute, state.cells[0].temp);
+            double qgas = masT * tit /
+                          state.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
+            double qliq = masT * (1. - tit) /
+                          state.cells[0].acsr.injg.FluidoPro.MasEspLiq(pchute, state.cells[0].temp);
+            double qcomp = state.cells[0].acsr.injg.razCompGas *
+                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
+                           state.cells[0].acsr.injg.fluidocol.MasEspFlu(pchute, state.cells[0].temp);
+            qcomp /= 86400.;
+            alfini = qgas / (qliq + qcomp + qgas);
+            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
+                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
+            else
+                betini = 0.;
+        }
+    } else if (state.cells[0].acsr.tipo == 2) { // fonte de liquido, faz-se uma estimativa a partir
+        // da vazÃƒÂ£o volumÃƒÂ©trica das fases, fracao de vazio = fracao de vazio sem escorregamento
+        state.cells[0].temp = state.cells[0].acsr.injl.temp;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+            state.cells[0].acsr.injl.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+        double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                      (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
+                      (state.cells[0].acsr.injl.FluidoPro.RGO -
+                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(pchute, state.cells[0].temp) * 6.29 / 35.31467) *
+                      state.cells[0].acsr.injl.FluidoPro.Deng * 1.225 / state.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
+        double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                          (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(pchute, state.cells[0].temp) +
+                      state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                          state.cells[0].acsr.injl.FluidoPro.BSW * state.cells[0].acsr.injl.FluidoPro.BAFunc(pchute, state.cells[0].temp) +
+                      state.cells[0].acsr.injl.QLiq * state.cells[0].acsr.injl.bet;
+        alfini = qgas / (qliq + qgas);
+        betini = state.cells[0].acsr.injl.bet;
+    } else if (state.cells[0].acsr.tipo == 3) { // IPR no inicio da tubulacao
+        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
+        state.cells[0].temp = state.cells[0].acsr.ipr.Tres;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+            state.cells[0].acsr.ipr.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+        double qgas = state.cells[0].acsr.ipr.MasG(pchute, state.cells[0].temp) /
+                      state.cells[0].acsr.ipr.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
+        double qliq = state.cells[0].acsr.ipr.MasL(pchute, state.cells[0].temp) /
+                      state.cells[0].acsr.ipr.FluidoPro.MasEspLiq(pchute, state.cells[0].temp);
+        alfini = qgas / (qliq + qgas);
+        betini = 0.;
+    } else if (state.cells[0].acsr.tipo == 15) { // IPR no inicio da tubulacao
+        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
+        state.cells[0].temp = state.cells[0].acsr.radialPoro.tRes;
+        state.cells[0].pres = pchute;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+            state.cells[0].acsr.radialPoro.flup.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+        state.updaters.updateSource(0);
+        double qgas = state.cells[0].acsr.radialPoro.fluxIniG /
+                      state.cells[0].acsr.radialPoro.flup.MasEspGas(pchute, state.cells[0].temp);
+        double qliq = (state.cells[0].acsr.radialPoro.fluxIni + state.cells[0].acsr.radialPoro.fluxIniA) /
+                      state.cells[0].acsr.radialPoro.flup.MasEspLiq(pchute, state.cells[0].temp);
+        alfini = qgas / (qliq + qgas);
+        betini = 0.;
+    } else if (state.cells[0].acsr.tipo == 16) { // IPR no inicio da tubulacao
+        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
+        state.cells[0].temp = state.cells[0].acsr.poroso2D.dados.tRes;
+        state.cells[0].pres = pchute;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+            state.cells[0].acsr.poroso2D.dados.flup.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+        state.updaters.updateSource(0);
+        double qgas = state.cells[0].acsr.poroso2D.dados.transfer.fluxIniG /
+                      state.cells[0].acsr.poroso2D.dados.flup.MasEspGas(pchute, state.cells[0].temp);
+        double qliq = (state.cells[0].acsr.poroso2D.dados.transfer.fluxIni + state.cells[0].acsr.poroso2D.dados.transfer.fluxIniA) /
+                      state.cells[0].acsr.poroso2D.dados.flup.MasEspLiq(pchute, state.cells[0].temp);
+        alfini = qgas / (qliq + qgas);
+        betini = 0.;
+    } else if (state.cells[0].acsr.tipo == 10) { // fonte de massa no inicio da tubulacao
+        // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
+        state.cells[0].temp = state.cells[0].acsr.injm.temp;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+            state.cells[0].acsr.injm.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+        if (state.cells[0].acsr.injm.condTermo == 0) {
+            state.cells[0].pres = pchute;
+            state.updaters.updateSource(0);
+        }
+        double qgas = state.cells[0].acsr.injm.MassG /
+                      state.cells[0].acsr.injm.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
+        double qliq = state.cells[0].acsr.injm.MassP /
+                          state.cells[0].acsr.injm.FluidoPro.MasEspLiq(pchute, state.cells[0].temp) +
+                      state.cells[0].acsr.injm.MassC /
+                          state.cells[0].acsr.injm.fluidocol.MasEspFlu(pchute, state.cells[0].temp);
+        alfini = qgas / (qliq + qgas);
+        betini = 0.;
+    } else { // se nenhuma das opcoes, fracao de vazio=1
+        state.cells[0].temp = state.input.celp[0].textern;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+        }
+        alfini = 1.;
+        betini = 0.;
+    }
+    if (state.cells[0].acsr.tipo == 15) {
+        state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
+    } else if (state.cells[0].acsr.tipo == 16) {
+        state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
+    }
+}
+
+void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) {
+    if (pchute > 0 && state.input.lingas > 0 && state.input.nvalvgas > 0) {
+        if (state.gasCells[0].tipoCC == 0) {            // marcha para o caso, pressao de injecao
+            if (state.input.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
+                for (int iter = 0; iter < 1; iter++) {
+                    marchGasSteady(state);
+                }
+            } else
+                state.updaters.searchGasPressureSteadyTertiary(); // choke de injecao ativo
+        } else
+            state.updaters.searchGasPressureSteadySecondary(); // marcha na linha de gas para o caso de vazao de injecao
+    }
+
+    if (state.input.acopColAnulPermForte > 0 && state.input.lingas > 0 && state.thermalSourceDisabled == 0) {
+        refreshProperties(state);
+        refreshSteadyThermalVelocities(state);
+        computePseudoTransientTimeStep(state);
+        state.updaters.connectTubing();
+        for (int kontaPseudo = 0; kontaPseudo < state.input.acopColAnulPermForte; kontaPseudo++) {
+            for (int iterm = 0; iterm <= state.gasCellCount; iterm++)
+                state.gasCells[iterm].tempini = state.gasCells[iterm].temp;
+            for (int iterm = 1; iterm <= state.gasCellCount; iterm++) {
+                state.updaters.computeGasTemperature(iterm, state.gasCells[iterm - 1].tempini, 1);
+            }
+            state.cells[0].tempini = state.cells[0].temp;
+            state.cells[1].tempLini = state.cells[1].tempL;
+            state.cells[1].tempL = state.cells[0].temp;
+            for (int iterm = 1; iterm <= state.lastCell; iterm++) {
+                state.cells[iterm].tempini = state.cells[iterm].temp;
+            }
+            for (int iterm = 1; iterm <= state.lastCell; iterm++) {
+                state.updaters.computeTemperature(iterm, state.cells[iterm].tempini, 1);
+            }
+            refreshProperties(state);
+            computePseudoTransientTimeStep(state);
+            state.updaters.connectTubing();
+        }
+    }
+}
+
+bool advanceProductionColumn(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+
+        advanceUpstreamSteadyPressure(state, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
+        // da celula i
+        // teste para ver se ocorreu algum problema:
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        if (state.cells[i].presaux <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        refreshUpstreamProductionPeriphery(state, i); // atualizacao da pressao da fronteira esquerda,
+        // caso exista alguma BCS ou incremento de pressao
+        if (i == 312) {
+            int para;
+            para = 0;
+        }
+        if (state.input.flashCompleto != 2)
+            advanceSteadyMass(state, i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
+        // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
+        // densidade do gas, RGO, API, BSW, beta
+        else
+            advanceCompositionalSteadyMass(state, i);
+
+        if (state.input.acopColAnulPermForte == 0 || state.input.lingas == 0 || state.convergenceMonitor > 0.3)
+            state.updaters.advanceSteadyTemperature(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
+        // verifica se teve algum problema nos limites de temperatura
+        // caso se esteja trabalhando com tabela PVTSim
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            state.cells[i].temp = state.input.tabent.tmin;
+        state.updaters.updateProductionTemperaturePeriphery(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
+        advanceDownstreamSteadyPressure(state, i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
+        // seu centro de celula
+        // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
+        // celula
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).localtiny) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+        if (state.cells[i].pres <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        refreshDownstreamProductionPeriphery(state, i); // mera atualizacao de atributos que guardam valores de pressao
+        // das celulas a esquerda e a direita
+        for (int j = 0; j < state.input.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
+            // a celula tem uma.
+            // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
+            // densecessario, em vavliacao
+            if (state.productionValveCellIndices[j] == i) {
+                int k = state.gasValveCellIndices[j];
+                state.updaters.computeSteadyGasFlowRate(k);
+            }
+        }
+        if (state.input.tipoFluido == 0)
+            advanceSteadyMassTransfer(state, i - 1);
+        else
+            advanceSteadyGasMassTransfer(state, i - 1); // caso seja uma tabela PVTSim, calcula-se a
+        // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
+        // calor latente da equacao de energia
+        if (state.input.ordperm > 1) { // correcao de segunda ordem
+            double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+            double D0pres = state.cells[i].pres - state.cells[i].presaux;
+            double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+            advanceUpstreamSteadyPressure(state, i, 1);
+            refreshUpstreamProductionPeriphery(state, i);
+            advanceSteadyMass(state, i);
+            state.updaters.advanceSteadyTemperature(i, 1);
+            if (isnan(state.cells[i].temp)) {
+                if (state.input.transiente == 0 && state.input.AP == 0)
+                    // neste caso, se finaliza a simulacao, nao tem um transiente
+                    // a ser feito a seguir e nem se estÃ¡ em uma rede
+                    NumError(
+                        "Temperatrura na linha de producao com valor NaN em marchaProdPerm1");
+                else {
+                    // apresenta apenas um aviso
+                    cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
+                    // se for em uma iteracao de rede, apos a primeira iteracao
+                    if ((*state.globals).iterRede > 0)
+                        {
+                            abortValue = -1.1e10;
+                            return true;
+                        }
+                    // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                    else
+                        {
+                            abortValue = 1.1e10;
+                            return true;
+                        }
+                }
+            }
+            advanceDownstreamSteadyPressure(state, i, 1);
+            state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+            state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+            state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+            refreshDownstreamProductionPeriphery(state, i);
+            refreshUpstreamProductionPeriphery(state, i);
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceSteadyMass(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+        }
+
+        // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
+        // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
+        // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
+        if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1)
+            state.updaters.initializeSteadyValveGasFlowRate(i);
+        i++;
+
+        if (isnan(state.cells[i - 1].pres) || isnan(state.cells[i - 1].temp) || isnan(state.cells[i - 1].alf)) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+
+        // teste para verificar se a pressao do centro de celula ficou acima
+        // da pressao estatica de uma eventual IPR
+        if (state.cells[i - 1].pres <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        } else if ((state.cells[i - 1].acsr.tipo == 3 &&
+                    ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).localtiny) && i == 1)) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool advanceReverseProductionColumn(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+
+        advanceUpstreamSteadyPressure(state, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
+        // da celula i
+        // teste para ver se ocorreu algum problema:
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        if (state.cells[i].presaux <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        refreshUpstreamProductionPeriphery(state, i); // atualizacao da pressao da fronteira esquerda,
+        // caso exista alguma BCS ou incremento de pressao
+        if (state.input.flashCompleto != 2)
+            advanceSteadyMass(state, i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
+        // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
+        // densidade do gas, RGO, API, BSW, beta
+        else
+            advanceCompositionalSteadyMass(state, i);
+        // RenovaTempPerm(i, 0);//faz o avanco da temperatura, da celula i-1 para a celula i
+        // verifica se teve algum problema nos limites de temperatura
+        // caso se esteja trabalhando com tabela PVTSim
+        if (isnan(state.cells[i].temp))
+            NumError("Temperatrura na linha de producao com valor NaN");
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            state.cells[i].temp = state.input.tabent.tmin;
+        state.updaters.updateProductionTemperaturePeriphery(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
+        advanceDownstreamSteadyPressure(state, i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
+        // seu centro de celula
+        // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
+        // celula
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).localtiny) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+        if (state.cells[i].pres <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        refreshDownstreamProductionPeriphery(state, i); // mera atualizacao de atributos que guardam valores de pressao
+        // das celulas a esquerda e a direita
+        if (state.input.tipoFluido == 0)
+            advanceSteadyMassTransfer(state, i - 1);
+        else
+            advanceSteadyGasMassTransfer(state, i - 1); // caso seja uma tabela PVTSim, calcula-se a
+        // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
+        // calor latente da equacao de energia
+        if (state.input.ordperm > 1) { // correcao de segunda ordem
+            double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+            double D0pres = state.cells[i].pres - state.cells[i].presaux;
+            double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+            advanceUpstreamSteadyPressure(state, i, 1);
+            refreshUpstreamProductionPeriphery(state, i);
+            advanceSteadyMass(state, i);
+            advanceDownstreamSteadyPressure(state, i, 1);
+            state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+            state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+            state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+            refreshDownstreamProductionPeriphery(state, i);
+            refreshUpstreamProductionPeriphery(state, i);
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceSteadyMass(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+        }
+
+        i++;
+
+        if (state.cells[i - 1].pres <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool advanceProductionColumnSecondary(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+
+        if ((i) > state.lastCell - 2) {
+            int val;
+            val = 0;
+        }
+        advanceUpstreamSteadyPressure(state, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
+        // da celula i
+        // teste para ver se ocorreu algum problema:
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        refreshUpstreamProductionPeriphery(state, i); // atualizacao da pressao da fronteira esquerda,
+        // caso exista alguma BCS ou incremento de pressao
+        if (state.input.flashCompleto != 2)
+            advanceSteadyMass(state, i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
+        // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
+        // densidade do gas, RGO, API, BSW, beta
+        else
+            advanceCompositionalSteadyMass(state, i);
+
+        if (state.input.acopColAnulPermForte == 0 || state.input.lingas == 0 || state.convergenceMonitor > 0.3)
+            state.updaters.advanceSteadyTemperature(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
+        // verifica se teve algum problema nos limites de temperatura
+        // caso se esteja trabalhando com tabela PVTSim
+        if (isnan(state.cells[i].temp)) {
+            if (state.input.transiente == 0 && state.input.AP == 0)
+                // neste caso, se finaliza a simulacao, nao tem um transiente
+                // a ser feito a seguir e nem se estÃ¡ em uma rede
+                NumError(
+                    "Temperatrura na linha de producao com valor NaN em marchaProdPerm2");
+            else {
+                // apresenta apenas um aviso
+                cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
+                // se for em uma iteracao de rede, apos a primeira iteracao
+                if ((*state.globals).iterRede > 0)
+                    {
+                        abortValue = -1.1e10;
+                        return true;
+                    }
+                // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                else
+                    {
+                        abortValue = 1.1e10;
+                        return true;
+                    }
+            }
+        }
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            state.cells[i].temp = state.input.tabent.tmin;
+        state.updaters.updateProductionTemperaturePeriphery(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
+        advanceDownstreamSteadyPressure(state, i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
+        // seu centro de celula
+        // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
+        // celula
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        refreshDownstreamProductionPeriphery(state, i); // mera atualizacao de atributos que guardam valores de pressao
+        // das celulas a esquerda e a direita
+        for (int j = 0; j < state.input.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
+            // a celula tem uma.
+            // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
+            // densecessario, em vavliacao
+            if (state.productionValveCellIndices[j] == i) {
+                int k = state.gasValveCellIndices[j];
+                state.updaters.computeSteadyGasFlowRate(k);
+            }
+        }
+        if (state.input.tipoFluido == 0)
+            advanceSteadyMassTransfer(state, i - 1);
+        else
+            advanceSteadyGasMassTransfer(state, i - 1); // caso seja uma tabela PVTSim, calcula-se a
+        // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
+        // calor latente da equacao de energia
+        if (state.input.ordperm > 1) { // correcao de segunda ordem
+            double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+            double D0pres = state.cells[i].pres - state.cells[i].presaux;
+            double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+            advanceUpstreamSteadyPressure(state, i, 1);
+            refreshUpstreamProductionPeriphery(state, i);
+            advanceSteadyMass(state, i);
+            state.updaters.advanceSteadyTemperature(i, 1);
+            advanceDownstreamSteadyPressure(state, i, 1);
+            state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+            state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+            state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+            refreshDownstreamProductionPeriphery(state, i);
+            refreshUpstreamProductionPeriphery(state, i);
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceSteadyMass(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+        }
+        // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
+        // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
+        // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
+        if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1)
+            state.updaters.initializeSteadyValveGasFlowRate(i);
+        i++;
+        // teste para verificar se a pressao do centro de celula ficou acima
+        // da pressao estatica de uma eventual IPR ou ficou baixa demais
+        if (state.cells[i - 1].pres <= 0.1 ||
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny))
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        else if (state.cells[i - 1].acsr.tipo == 3 && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < 1e-15 && i == 1))
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        else if (state.cells[i - 1].acsr.tipo == 15 && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < 1e-15 && i == 1))
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        else if (state.cells[i - 1].acsr.tipo == 16 && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < 1e-15 && i == 1))
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        else if (state.input.usaTabela == 1) {
+            if ((state.input.tabent.pmax - state.cells[i - 1].pres) < (*state.globals).localtiny)
+                {
+                    abortValue = 1e10;
+                    return true;
+                }
+        }
+    }
+    return false;
+}
+
+double surfaceChokeMassFlow(const SteadyStateState &state) {
+    double maxSup = 0.;
+    if (state.annulusDrift != 0 && state.cells[state.lastCell].pres > state.gasSurfacePressure) { // se for o anel de GL, a vazao no final deve ser zero
+        double tESup = state.cells[state.lastCell].temp;
+        double alfSup = state.cells[state.lastCell].alf;
+        double betSup = state.cells[state.lastCell].bet;
+
+        double masentrada = state.cells[state.lastCell - 1].MR;
+        double massgas = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
+
+        double tit;
+        state.finalPressure = state.cells[state.lastCell].pres;
+        double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
+        double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
+        tit = fabs(massgas / masentrada);
+
+        double masChk;
+
+        double ypres = state.gasSurfacePressure / state.finalPressure;
+        masChk = state.surfaceChoke.vazmassSachd(ypres, state.finalPressure, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                       state.cells[state.lastCell - 1].fluicol);
+        maxSup = state.surfaceChoke.vazmaxSachd(state.finalPressure, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
+        if (fabs(ypres) > fabs(state.surfaceChoke.razpres))
+            maxSup = masChk;
+        // maxSup Ã© a vazao total passando pelo choke
+
+        if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
+            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.finalPressure, tESup) -
+                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.finalPressure, tESup);
+            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.finalPressure, tESup) - betSup / rholc;
+            double cpg = state.cells[state.lastCell].flui.CalorGas(state.finalPressure, tESup);
+            double jtgM = state.cells[state.lastCell].flui.JTG(state.finalPressure, tESup);
+            state.input.valTempChokeJus = tESup + ((1. - tit) * jtlM / cplM + tit * jtgM / cpg) * (state.gasSurfacePressure - state.finalPressure) * 98066.52;
+        }
+
+    } else {
+        maxSup = 0.;
+        state.input.valTempChokeJus = state.cells[state.lastCell].temp;
+    }
+
+    return maxSup;
+}
+}  // namespace
+
+
+double marchProductionSteady(const SteadyStateState &state, double pchute) {
+
+    int corrigechute = 1;
+    double alfini = 0.;
+    double betini = 0.;
+
+    seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
+    if (fabs(alfini) < 1e-6)
+        alfini = 0.;
+    if (fabs(betini) < 1e-6)
+        betini = 0.;
+
+    // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
+    // portanto, admite-se que o duto esta fechado e coloca-se uma fonte no centro da
+    // primeira celula. As vazoes na fronteira esquerda da celula sÃ£o portanto = 0
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+    double masfim = 1.;
+    double masfim0 = -10;
+    double presteste = 1.;
+    double presteste0 = -10;
+    state.steadyIteration = 0;
+
+    int limIter = 2; // limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
+    // desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
+    // quando o tramo faz perte de um sistema de redes
+    if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
+        limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
+        if (state.input.lingas == 1 && state.gasCells[0].tipoCC == 0)
+            limIter = 1; // no caso de se ter
+        // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
+        // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
+        // melhor acoplado, deve-se fazer uma marcha iterativa a mais
+    }
+    // arq.CriterioConvergPerm Ã© um criterio de convergencia da marcha, so faz sentido
+    // quando a aceleracao de convergencia esta desligada. Observe que esta convergencia nÃ£o
+    // e de fato a conevregencia do problema, e apenas um repeticao de marcha para um determinado
+    // chute de pressao ou de vazao no inicio da tubulacao. O que a convergencia busca de fato e
+    // determinar qual a pressao ou vazao de fundo que satisfaz as condicoes de contorno no fim
+    // da tubulacao, esta busca e feita nos metodos de busca.
+    while ((fabs(masfim - masfim0) / fabs(masfim) > state.input.CriterioConvergPerm ||
+            fabs(presteste - presteste0) / fabs(presteste) > state.input.CriterioConvergPerm) &&
+           state.steadyIteration < limIter) {
+
+        masfim0 = masfim;
+        presteste0 = presteste;
+        if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
+            state.updaters.initializeTubingConnectionSteady(); // antes de iniciar a primeira iteracao de marcha,
+        // faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
+        // caso se tenha linha de gas
+        else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
+            state.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
+        // obtidas na primeira iteracao de marcha
+        int i;
+        corrigechute = 1;
+        while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
+            // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
+            // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
+            // sai do metodo retornando ou 1e10 ou -1e10
+
+            // inicializando as pressoes e fracoes volumetricas das celulas iniciais, centro de celula
+            // e fronteira de celula
+            state.cells[0].presauxL = pchute;
+            state.cells[0].presLini = pchute;
+            state.cells[0].presL = pchute;
+            state.cells[0].pres = pchute;
+            state.cells[1].presL = pchute;
+            state.cells[0].presini = pchute;
+            state.cells[1].presLini = pchute;
+            state.cells[0].presaux = pchute;
+            state.cells[1].presauxL = pchute;
+
+            state.cells[0].alf = alfini;
+            state.cells[0].alfini = alfini;
+            state.cells[0].bet = betini;
+            state.cells[0].betini = betini;
+            state.cells[1].alfL = state.cells[0].alf;
+            state.cells[1].alfLini = state.cells[0].alf;
+            state.cells[0].alfPigD = state.cells[0].alf;
+            state.cells[0].alfPigDini = state.cells[0].alf;
+            state.cells[0].alfPigE = state.cells[0].alf;
+            state.cells[0].alfPigEini = state.cells[0].alf;
+            state.cells[1].betL = state.cells[0].bet;
+            state.cells[1].betLini = state.cells[0].bet;
+            state.cells[0].betPigD = state.cells[0].bet;
+            state.cells[0].betPigDini = state.cells[0].bet;
+            state.cells[0].betPigE = state.cells[0].bet;
+            state.cells[0].betPigEini = state.cells[0].bet;
+            state.cells[0].betI = state.cells[0].bet;
+            state.cells[1].betLI = state.cells[0].bet;
+            // verifica se ja existe algum problema no inicio da marcha
+            if (state.cells[0].pres <= 0.1 ||
+                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
+                return -1e10;
+            else if ((state.cells[0].acsr.tipo == 3 &&
+                      (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).localtiny))
+                return 1e10;
+            // IniciaVazValvGasPerm e um metodo que faz uma estimativa da vazao na valvula de GL
+            // quando ainda nao foi feita a marcha na linha de gas. Neste caso, ele recebe o
+            // indice da celula de producao e verifica se nesta celula existe uma VGL, se existir,
+            // caso a condicao na linha de gas seja vazao injetada, divide a vazao injetada pelo numero de
+            // valvulas e indica este valor para a VGL relacionada a celula de producao
+            // caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
+            // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
+            if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
+                if (state.gasCells[0].tipoCC == 0)
+                    serviceLineHydrostatic(state);
+                state.updaters.initializeSteadyValveGasFlowRate(0);
+            }
+            i = 1;
+            // inicio da marcha propriamente dita
+            double abortValue;
+            if (advanceProductionColumn(state, pchute, i, abortValue))
+                return abortValue;
+            if (i == state.lastCell + 1)
+                corrigechute = 0; // fim da marcha
+        }
+        // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
+        // caso exista
+        marchGasLineAndCoupleAnnulus(state, pchute);
+
+        masfim = state.cells[state.lastCell - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
+        // opcao de acelerador de convergencia esta desligado
+        presteste = state.cells[state.lastCell].pres; // guarda valor de pressao para se calcular o erro, quando a
+        // opcao de acelerador de convergencia esta desligado
+        state.steadyIteration++; // atualiza a ieteracao da marcha
+        if (state.steadyIteration > 200 && state.input.AP == 0)
+            NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
+        else if (state.steadyIteration > 200)
+            return 1.1e10;
+    }
+
+    double corrigePresF = 0.;
+    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.corrigeContSep == 1)
+        corrigePresF = steadyPressureAtLastCell(state);
+
+    state.baseConvergenceMonitor = state.gasSurfacePressure;
+    return state.gasSurfacePressure - (state.cells[state.lastCell].pres + corrigePresF); // caso a marcha tenha conseguido ir atÃ© a Ãºltima celula,
+    // retorna a diferenca entre a pressao a montante do choke e a pressao da ultima celula
+    // calculada pela marcha
+}
+
+double marchReverseProductionSteady(const SteadyStateState &state, double pchute) {
+
+    int corrigechute = 1;
+    double alfini = 0.;
+    double betini = 0.;
+    state.slowHeatTransfer = 0.1;
+
+    seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
+    // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
+    // portanto, admite-se que o duto esta fechado e coloca-se uma fonte no centro da
+    // primeira celula. As vazoes na fronteira esquerda da celula sÃ£o portanto = 0
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+    double masfim = 1.;
+    double masfim0 = -10;
+    double presteste = 1.;
+    double presteste0 = -10;
+    double tempteste = state.cells[0].temp;
+    double tempteste0 = -1000;
+    state.steadyIteration = 0;
+
+    double pchute0 = pchute;
+    int limIter = 2; // limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
+    // desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
+    // quando o tramo faz perte de um sistema de redes
+    if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
+        limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
+        if (state.input.lingas == 1 && state.input.gasinj.tipoCC == 0)
+            limIter = 1; // no caso de se ter
+        // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
+        // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
+        // melhor acoplado, deve-se fazer uma marcha iterativa a mais
+    }
+    // arq.CriterioConvergPerm Ã© um criterio de convergencia da marcha, so faz sentido
+    // quando a aceleracao de convergencia esta desligada. Observe que esta convergencia nÃ£o
+    // e de fato a conevregencia do problema, e apenas um repeticao de marcha para um determinado
+    // chute de pressao ou de vazao no inicio da tubulacao. O que a convergencia busca de fato e
+    // determinar qual a pressao ou vazao de fundo que satisfaz as condicoes de contorno no fim
+    // da tubulacao, esta busca e feita nos metodos de busca.
+    while ((fabs(masfim - masfim0) / fabs(masfim) > state.input.CriterioConvergPerm ||
+            fabs(presteste - presteste0) / fabs(presteste) > state.input.CriterioConvergPerm) &&
+           (state.steadyIteration < limIter || fabs(tempteste - tempteste0) / ((tempteste) + 273) > 0.001)) {
+
+        masfim0 = masfim;
+        presteste0 = presteste;
+        tempteste0 = tempteste;
+        if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
+            state.updaters.initializeTubingConnectionSteady(); // antes de iniciar a primeira iteracao de marcha,
+        // faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
+        // caso se tenha linha de gas
+        else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
+            state.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
+        // obtidas na primeira iteracao de marcha
+        int i;
+        corrigechute = 1;
+        while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
+            // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
+            // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
+            // sai do metodo retornando ou 1e10 ou -1e10
+
+            // inicializando as pressoes e fracoes volumetricas das celulas iniciais, centro de celula
+            // e fronteira de celula
+            state.cells[0].presauxL = pchute;
+            state.cells[0].presLini = pchute;
+            state.cells[0].presL = pchute;
+            state.cells[0].pres = pchute;
+            state.cells[1].presL = pchute;
+            state.cells[0].presini = pchute;
+            state.cells[1].presLini = pchute;
+            state.cells[0].presaux = pchute;
+            state.cells[1].presauxL = pchute;
+
+            state.cells[0].alf = alfini;
+            state.cells[0].alfini = alfini;
+            state.cells[0].bet = betini;
+            state.cells[0].betini = betini;
+            state.cells[1].alfL = state.cells[0].alf;
+            state.cells[1].alfLini = state.cells[0].alf;
+            state.cells[0].alfPigD = state.cells[0].alf;
+            state.cells[0].alfPigDini = state.cells[0].alf;
+            state.cells[0].alfPigE = state.cells[0].alf;
+            state.cells[0].alfPigEini = state.cells[0].alf;
+            state.cells[1].betL = state.cells[0].bet;
+            state.cells[1].betLini = state.cells[0].bet;
+            state.cells[0].betPigD = state.cells[0].bet;
+            state.cells[0].betPigDini = state.cells[0].bet;
+            state.cells[0].betPigE = state.cells[0].bet;
+            state.cells[0].betPigEini = state.cells[0].bet;
+            state.cells[0].betI = state.cells[0].bet;
+            state.cells[1].betLI = state.cells[0].bet;
+            // verifica se ja existe algum problema no inicio da marcha
+            if (state.cells[0].pres <= 0.1 ||
+                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
+                return -1e10;
+
+            if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0)
+                state.updaters.initializeSteadyValveGasFlowRate(0);
+            i = 1;
+            // inicio da marcha propriamente dita
+            double abortValue;
+            if (advanceReverseProductionColumn(state, pchute, i, abortValue))
+                return abortValue;
+            if (i == state.lastCell + 1)
+                corrigechute = 0; // fim da marcha
+        }
+
+        masfim = state.cells[state.lastCell - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
+        // opcao de acelerador de convergencia esta desligado
+        presteste = state.cells[state.lastCell].pres; // guarda valor de pressao para se calcular o erro, quando a
+        // opcao de acelerador de convergencia esta desligado
+        state.steadyIteration++; // atualiza a ieteracao da marcha
+        if (state.steadyIteration > 200 && state.input.AP == 0)
+            NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
+        else if (state.steadyIteration > 200)
+            return 1.1e10;
+        if (state.input.tipoFluido != 10000) {
+            state.cells[state.lastCell].temp = state.casingTemperature;
+            if (state.steadyIteration < 100) {
+                int lento = 0;
+                double media = 0.;
+                double desvio = 0;
+                for (int ktemp = state.lastCell - 1; ktemp >= 1; ktemp--) {
+
+                    double area = state.cells[ktemp].duto.area;
+                    double ugsmed;
+                    ugsmed = fabs(state.cells[ktemp].QG) / area; // velocidade superficial de gas
+                    double ulsmed;
+                    ulsmed = fabs(state.cells[ktemp].QL) / area; // velocidade superficial de liquido
+                    if (fabs(ugsmed + ulsmed) <= state.slowHeatTransfer)
+                        lento += 1;
+                    media += fabs(ugsmed + ulsmed);
+                }
+                media /= (state.lastCell - 1);
+                desvio = (media - 0.1);
+                if (lento > 0 && lento < state.lastCell) {
+                    int para;
+                    para = 0;
+                    state.slowHeatTransfer = 100.;
+                }
+                for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
+                    state.updaters.advanceReverseSteadyTemperature(ktemp, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
+                    // verifica se teve algum problema nos limites de temperatura
+                    // caso se esteja trabalhando com tabela PVTSim
+                    if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                        state.cells[ktemp].temp = state.input.tabent.tmin;
+                    state.updaters.updateProductionTemperaturePeriphery(ktemp); // mera atualizacao de atributos de temperatura a esquerda e a direita
+                }
+            }
+            tempteste = state.cells[0].temp; // 0.5*(celula[0].temp+tempteste);
+        } else {
+            refreshProperties(state);
+            refreshSteadyThermalVelocities(state);
+            computePseudoTransientTimeStep(state);
+            for (int kontaPseudo = 0; kontaPseudo < 20; kontaPseudo++) {
+                state.cells[0].tempini = state.cells[0].temp;
+                state.cells[1].tempLini = state.cells[1].tempL;
+                state.cells[1].tempL = state.cells[0].temp;
+                state.cells[state.lastCell].temp = state.casingTemperature;
+                for (int i = 0; i < state.lastCell; i++) {
+                    state.cells[i].tempini = state.cells[i].temp;
+                }
+                for (int itemp = 1; itemp <= state.lastCell; itemp++) {
+                    state.updaters.computeTemperature(itemp, state.cells[itemp].tempini, 1);
+                }
+                refreshProperties(state);
+                computePseudoTransientTimeStep(state);
+            }
+        }
+    }
+
+    double corrigePresF = 0.;
+    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.corrigeContSep == 1)
+        corrigePresF = steadyPressureAtLastCell(state);
+
+    state.baseConvergenceMonitor = state.gasSurfacePressure;
+    return state.gasSurfacePressure - (state.cells[state.lastCell].pres + corrigePresF); // caso a marcha tenha conseguido ir atÃ© a Ãºltima celula,
+    // retorna a diferenca entre a pressao a montante do choke e a pressao da ultima celula
+    // calculada pela marcha
+}
+
+double marchProductionSteadySecondary(const SteadyStateState &state, double pchute) {
+
+    int corrigechute = 1;
+
+    double alfini = 0.;
+    double betini = 0.;
+
+    seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::cellFluid);
+
+    // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
+    // portanto, admite-se que o duto esta fechado e coloca-se uma fonte no centro da
+    // primeira celula. As vazoes na fronteira esquerda da celula sÃ£o portanto = 0
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+    double masfim = 1.;
+    double masfim0 = -10;
+    double presteste = 1.;
+    double presteste0 = -10;
+    state.steadyIteration = 0;
+
+    int limIter = 2; // limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
+    // desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
+    // quando o tramo faz perte de um sistema de redes
+    if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
+        limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
+        if (state.input.lingas == 1 && state.gasCells[0].tipoCC == 0)
+            limIter = 1; // no caso de se ter
+        // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
+        // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
+        // melhor acoplado, deve-se fazer uma marcha iterativa a mais
+    }
+    // arq.CriterioConvergPerm Ã© um criterio de convergencia da marcha, so faz sentido
+    // quando a aceleracao de convergencia esta desligada. Observe que esta convergencia nÃ£o
+    // e de fato a conevregencia do problema, e apenas um repeticao de marcha para um determinado
+    // chute de pressao ou de vazao no inicio da tubulacao. O que a convergencia busca de fato e
+    // determinar qual a pressao ou vazao de fundo que satisfaz as condicoes de contorno no fim
+    // da tubulacao, esta busca e feita nos metodos de busca.
+    while ((fabs(masfim - masfim0) / masfim > state.input.CriterioConvergPerm ||
+            fabs(presteste - presteste0) / fabs(presteste) > state.input.CriterioConvergPerm) &&
+           (state.steadyIteration < limIter)) {
+        masfim0 = masfim;
+        presteste0 = presteste;
+        if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
+            state.updaters.initializeTubingConnectionSteady(); // antes de iniciar a primeira iteracao de marcha,
+        // faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
+        // caso se tenha linha de gas
+        else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
+            state.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
+        // obtidas na primeira iteracao de marcha
+        int i;
+        corrigechute = 1;
+        while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
+            // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
+            // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
+            // sai do metodo retornando ou 1e10 ou -1e10
+
+            // inicializando as pressoes e fracoes volumetricas das celulas iniciais, centro de celula
+            // e fronteira de celula
+            state.cells[0].presauxL = pchute;
+            state.cells[0].presLini = pchute;
+            state.cells[0].presL = pchute;
+            state.cells[0].pres = pchute;
+            state.cells[1].presL = pchute;
+            state.cells[0].presini = pchute;
+            state.cells[1].presLini = pchute;
+            state.cells[0].presaux = pchute;
+            state.cells[1].presauxL = pchute;
+
+            state.cells[0].alf = alfini;
+            state.cells[0].alfini = alfini;
+            state.cells[0].bet = betini;
+            state.cells[0].betini = betini;
+            state.cells[1].alfL = state.cells[0].alf;
+            state.cells[1].alfLini = state.cells[0].alf;
+            state.cells[0].alfPigD = state.cells[0].alf;
+            state.cells[0].alfPigDini = state.cells[0].alf;
+            state.cells[0].alfPigE = state.cells[0].alf;
+            state.cells[0].alfPigEini = state.cells[0].alf;
+            state.cells[1].betL = state.cells[0].bet;
+            state.cells[1].betLini = state.cells[0].bet;
+            state.cells[0].betPigD = state.cells[0].bet;
+            state.cells[0].betPigDini = state.cells[0].bet;
+            state.cells[0].betPigE = state.cells[0].bet;
+            state.cells[0].betPigEini = state.cells[0].bet;
+            state.cells[0].betI = state.cells[0].bet;
+            state.cells[1].betLI = state.cells[0].bet;
+
+            // verifica se ja existe algum problema no inicio da marcha
+            if (state.cells[0].pres <= 0.1 ||
+                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].presaux) > (*state.globals).localtiny))
+                return -1e10;
+            else if ((state.cells[0].acsr.tipo == 3 && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < 1e-15)) {
+                return 1e10;
+            } else if ((state.cells[0].acsr.tipo == 15 && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < 1e-15)) {
+                return 1e10;
+            } else if ((state.cells[0].acsr.tipo == 16 && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < 1e-15)) {
+                return 1e10;
+            }
+            // IniciaVazValvGasPerm e um metodo que faz uma estimativa da vazao na valvula de GL
+            // quando ainda nao foi feita a marcha na linha de gas. Neste caso, ele recebe o
+            // indice da celula de producao e verifica se nesta celula existe uma VGL, se existir,
+            // caso a condicao na linha de gas seja vazao injetada, divide a vazao injetada pelo numero de
+            // valvulas e indica este valor para a VGL relacionada a celula de producao
+            // caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
+            // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
+            if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
+                if (state.gasCells[0].tipoCC == 0)
+                    serviceLineHydrostatic(state);
+                state.updaters.initializeSteadyValveGasFlowRate(0);
+            }
+            i = 1;
+            // inicio da marcha propriamente dita
+            double abortValue;
+            if (advanceProductionColumnSecondary(state, pchute, i, abortValue))
+                return abortValue;
+            if (i == state.lastCell + 1)
+                corrigechute = 0; // fim da marcha
+        }
+        // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
+        // caso exista
+        marchGasLineAndCoupleAnnulus(state, pchute);
+
+        masfim = state.cells[state.lastCell - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
+        // opcao de acelerador de convergencia esta desligado
+        presteste = state.cells[state.lastCell].pres; // guarda valor de pressao para se calcular o erro, quando a
+        // opcao de acelerador de convergencia esta desligado
+        state.steadyIteration++; // atualiza a ieteracao da marcha
+        if (state.steadyIteration > 200 && state.input.AP == 0)
+            NumError("Convergencia em marchaProdPerm2 atingiu maximo de iteracoes");
+        else if (state.steadyIteration > 200)
+            return 1e10;
+    }
+
+    // nesta marcha, a condicao no fim da tubulacao nÃ£o e a pressao a montante do choke,
+    // mas a pressao a jusante do choke. Neste caso, a condicao que se deseja convergir
+    // e a vazao que passa pelo choke, definida a aprtir da diferenca entre a pressao
+    // na ultima celula e a pressao a jusante do choke. Primeiro, portanto, deve-se
+    // calcular a vazao que passa pelo choke e compara-la com a vazao massica total
+    // na ultima celula
+    double maxSup = surfaceChokeMassFlow(state);
+    if (fabs(masfim) > 1e-15)
+        state.baseConvergenceMonitor = fabs(masfim);
+    else if (fabs(maxSup) > 1e-15)
+        state.baseConvergenceMonitor = fabs(maxSup);
+    else
+        state.baseConvergenceMonitor = 1.;
+    return (masfim - maxSup); // diferenca entre a vazao total na fronteira a esquerda da
+    // penultima celula e a vazao que passa pelo choke. Se o chute de pressao for alto
+    // maxSup>masfim, retorna valor negativo,
+    // se for uma estimativa baixa de pressao de fundo, maxSup<masfim retirna valor positivo
+}
+
 }  // namespace sisprod::steady

@@ -61,6 +61,50 @@ FUNCTIONS = {
     "RenovaMassPermRev": {"new_name": "advanceReverseSteadyMass", "arguments": "i"},
     "RenovaMassPermComp": {"new_name": "advanceCompositionalSteadyMass", "arguments": "i"},
     "RenovaMassPermCompRev": {"new_name": "advanceReverseCompositionalSteadyMass", "arguments": "i"},
+
+    # T097, and the leaves of T094 and T096, moved BEFORE the production marches
+    # of T090 rather than after. The marches call all seven, and all seven land
+    # in this same module; giving them callbacks first would have meant adding
+    # nine entries to SteadyStateUpdaters and deleting them again inside one
+    # stage. Same reasoning, and the same decision, as corrDeng above.
+    "atualizaProp": {"new_name": "refreshProperties", "arguments": ""},
+    "atualizaVelTermPerm": {"new_name": "refreshSteadyThermalVelocities", "arguments": ""},
+    "calcDTPseudoTrans": {"new_name": "computePseudoTransientTimeStep", "arguments": ""},
+    "atualizaPeriPmonProd": {"new_name": "refreshUpstreamProductionPeriphery", "arguments": "i"},
+    "atualizaPeriPjusProd": {"new_name": "refreshDownstreamProductionPeriphery", "arguments": "i"},
+    "hidroLinServ": {"new_name": "serviceLineHydrostatic", "arguments": ""},
+    "marchaGasPerm1": {"new_name": "marchGasSteady", "arguments": "chutemass"},
+
+    # T090 -- the three production marches and the six pieces they were cut
+    # into. seedFirstCellVoidFraction and marchGasLineAndCoupleAnnulus are
+    # shared; the other four belong to one march each.
+    "seedFirstCellVoidFraction": {"new_name": "seedFirstCellVoidFraction",
+                                  "arguments": "pchute, alfini, betini, dryGasFlashTarget"},
+    "marchGasLineAndCoupleAnnulus": {"new_name": "marchGasLineAndCoupleAnnulus", "arguments": "pchute"},
+    "advanceProductionColumn": {"new_name": "advanceProductionColumn", "arguments": "pchute, i, abortValue"},
+    "advanceReverseProductionColumn": {"new_name": "advanceReverseProductionColumn", "arguments": "pchute, i, abortValue"},
+    "advanceProductionColumnSecondary": {"new_name": "advanceProductionColumnSecondary", "arguments": "pchute, i, abortValue"},
+    "surfaceChokeMassFlow": {"new_name": "surfaceChokeMassFlow", "arguments": ""},
+    "marchaProdPerm1": {"new_name": "marchProductionSteady", "arguments": "pchute"},
+    "marchaProdPerm1Rev": {"new_name": "marchReverseProductionSteady", "arguments": "pchute"},
+    "marchaProdPerm2": {"new_name": "marchProductionSteadySecondary", "arguments": "pchute"},
+
+    # T092, T094, T095 and T096 -- the ten marches that remain. They are moved
+    # as one batch, and BEFORE any search, for a reason the task order does not
+    # state: every search reaches a march through SProd::zriddr, which calls
+    # multMarcha, which dispatches to eight of them. Moving a search first would
+    # mean eight callbacks that T097b then deletes. Checked, not assumed: none
+    # of these ten calls a search or a solver.
+    "marchaProdPresPres1": {"new_name": "marchProductionPressureToPressure", "arguments": "mchute"},
+    "marchaProdPresPres1Rev": {"new_name": "marchReverseProductionPressureToPressure", "arguments": "mchute"},
+    "marchaProdPresPres2": {"new_name": "marchProductionPressureToPressureSecondary", "arguments": "mchute"},
+    "marchaProdPresPres3": {"new_name": "marchProductionPressureToPressureTertiary", "arguments": "mchute"},
+    "marchaGasPerm2": {"new_name": "marchGasSteadySecondary", "arguments": "pchute, chutemass"},
+    "marchaGasPerm3": {"new_name": "marchGasSteadyTertiary", "arguments": "pchute"},
+    "marchaInjPerm1": {"new_name": "marchInjectionSteady", "arguments": "chute"},
+    "hidroreverso": {"new_name": "reverseHydrostatic", "arguments": "hol, vaz, vazG"},
+    "hidroreversoInj": {"new_name": "reverseInjectionHydrostatic", "arguments": "hol, vaz"},
+    "hidroTramoSecundario": {"new_name": "secondaryBranchHydrostatic", "arguments": "titulo"},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -101,6 +145,32 @@ CALLS = {
     "RenovaMassPermRev": ("advanceReverseSteadyMass", True),
     "RenovaMassPermComp": ("advanceCompositionalSteadyMass", True),
     "RenovaMassPermCompRev": ("advanceReverseCompositionalSteadyMass", True),
+
+    "atualizaProp": ("refreshProperties", True),
+    "atualizaVelTermPerm": ("refreshSteadyThermalVelocities", True),
+    "calcDTPseudoTrans": ("computePseudoTransientTimeStep", True),
+    "atualizaPeriPmonProd": ("refreshUpstreamProductionPeriphery", True),
+    "atualizaPeriPjusProd": ("refreshDownstreamProductionPeriphery", True),
+    "hidroLinServ": ("serviceLineHydrostatic", True),
+    "marchaGasPerm1": ("marchGasSteady", True),
+
+    "seedFirstCellVoidFraction": ("seedFirstCellVoidFraction", True),
+    "marchGasLineAndCoupleAnnulus": ("marchGasLineAndCoupleAnnulus", True),
+    "advanceProductionColumn": ("advanceProductionColumn", True),
+    "advanceReverseProductionColumn": ("advanceReverseProductionColumn", True),
+    "advanceProductionColumnSecondary": ("advanceProductionColumnSecondary", True),
+    "surfaceChokeMassFlow": ("surfaceChokeMassFlow", True),
+
+    "marchaProdPresPres1": ("marchProductionPressureToPressure", True),
+    "marchaProdPresPres1Rev": ("marchReverseProductionPressureToPressure", True),
+    "marchaProdPresPres2": ("marchProductionPressureToPressureSecondary", True),
+    "marchaProdPresPres3": ("marchProductionPressureToPressureTertiary", True),
+    "marchaGasPerm2": ("marchGasSteadySecondary", True),
+    "marchaGasPerm3": ("marchGasSteadyTertiary", True),
+    "marchaInjPerm1": ("marchInjectionSteady", True),
+    "hidroreverso": ("reverseHydrostatic", True),
+    "hidroreversoInj": ("reverseInjectionHydrostatic", True),
+    "hidroTramoSecundario": ("secondaryBranchHydrostatic", True),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so
@@ -125,6 +195,12 @@ CALLBACKS = {
     "conectaColuna": "state.updaters.connectTubing",
     "delpGasPerm": "state.updaters.steadyGasPressureDrop",
     "delpInjPerm": "state.updaters.steadyInjectionPressureDrop",
+    # These two ARE searches, and a march calls them. See section 8 of
+    # evidencia/marchaprod-diff.md: the call graph between the two halves of
+    # stage 7 has a cycle, and it is the SProd indirection -- not an absent
+    # edge -- that keeps the INCLUDE one-way.
+    "buscaGasPresPerm2": "state.updaters.searchGasPressureSteadySecondary",
+    "buscaGasPresPerm3": "state.updaters.searchGasPressureSteadyTertiary",
 }
 
 MEMBERS = {
@@ -280,15 +356,26 @@ def forward(old_name: str, body: str) -> str:
     for called, (renamed, needs_state) in CALLS.items():
         if called == old_name:
             continue
-        # A zero-argument call must become f(state), not f(state, ). The
-        # empty-argument form is matched first so the general one cannot leave
-        # a trailing comma behind.
+        # A zero-argument call must become f(state), not f(state, ).
+        #
+        # This used to be two passes, the empty form first. That worked only
+        # while every moved function was RENAMED: with called != renamed, the
+        # first pass produced text the second could not match again. T090 moves
+        # six helpers that keep their names, and on those the first pass emitted
+        # f(state) and the second immediately rewrote it to f(state, state).
+        # The compiler would have caught it, but the token proof caught it
+        # first, which is the point of having one.
+        #
+        # One pass now decides between the two forms, so no output of this
+        # substitution is input to it.
         if needs_state:
+            def add_state(match, renamed=renamed):
+                return f"{renamed}(state)" if match.group(1) else f"{renamed}(state, "
             body = substitute_outside_comments(
-                re.compile(rf"(?<![\w.>]){called}\(\s*\)"), f"{renamed}(state)", body)
-        prefix = "state, " if needs_state else ""
-        body = substitute_outside_comments(
-            re.compile(rf"(?<![\w.>]){called}\("), f"{renamed}({prefix}", body)
+                re.compile(rf"(?<![\w.>]){called}\((\s*\))?"), add_state, body)
+        else:
+            body = substitute_outside_comments(
+                re.compile(rf"(?<![\w.>]){called}\("), f"{renamed}(", body)
     for member, adapter in CALLBACKS.items():
         body = substitute_outside_comments(
             re.compile(rf"(?<![\w.>]){member}\("), f"{adapter}(", body)

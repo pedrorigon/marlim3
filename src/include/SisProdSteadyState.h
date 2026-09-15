@@ -58,6 +58,19 @@ struct SteadyStateUpdaters {
     void connectTubingSteady() const;
     [[nodiscard]] double steadyGasPressureDrop(int cellIndex) const;
     [[nodiscard]] double steadyInjectionPressureDrop(int cellIndex) const;
+
+    // --- searches, called BY a march ----------------------------------------
+    // These two break the shape the rest of this struct has. Everything above
+    // is something the march needs from another domain; these are searches,
+    // in the module that is supposed to sit on the other side of the cut.
+    // marchaProdPerm1 and marchaProdPerm2 call them after the column converges,
+    // to march the gas line. Section 8 of evidencia/marchaprod-diff.md has the
+    // measurement and what it costs the stage-7 story.
+    //
+    // Their return value is discarded at the call site, as it was in the
+    // original, so these are declared void.
+    void searchGasPressureSteadySecondary() const;
+    void searchGasPressureSteadyTertiary() const;
 };
 
 /// The state the steady march reads, and the only state it may read.
@@ -98,8 +111,19 @@ struct SteadyStateState {
 
     /// Injection choke -- SProd::chokeInj. Written.
     ChokeGas &injectionChoke;
-    /// Surface choke -- SProd::chokeSup. Read only.
-    const choke &surfaceChoke;
+    /// Surface choke -- SProd::chokeSup. NOT const.
+    ///
+    /// This said "read only" until T090 moved marchaProdPerm2, which calls
+    /// vazmassSachd and vazmaxSachd on it; neither is const-qualified. The
+    /// third time in this refactoring that a header promised const for
+    /// something the module reaches through non-const, and the third time the
+    /// compiler is what said so -- after `const Ler &input` in stage 6 and
+    /// before whatever the next one turns out to be.
+    ///
+    /// Marking the two choke methods const would be the smaller lie to fix, but
+    /// FR-038 puts choke's declarations out of bounds and a type change is not
+    /// a move. So the promise is corrected here rather than on the class.
+    choke &surfaceChoke;
     /// Gas-line and production cell index of each gas-lift valve --
     /// SProd::posicVGLG and posicVGLP.
     const int *gasValveCellIndices;
