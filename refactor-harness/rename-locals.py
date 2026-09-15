@@ -79,8 +79,19 @@ def rename(text: str, scope: str, old: str, new: str) -> tuple[str, int]:
 
     # Occurrences that are neither a field access nor inside a string literal.
     pattern = re.compile(rf"(?<![\w.]){re.escape(old)}\b")
+    # String spans are found on a COMMENT-MASKED copy, and that is not tidiness.
+    # An apostrophe in prose -- "the reverse march's residual" -- opens a
+    # character literal that the scanner then closes at the next apostrophe,
+    # tens of thousands of characters later. Every identifier in between counts
+    # as "inside a string" and is silently skipped, INCLUDING by the collision
+    # check, which is the one thing this tool exists to perform. It happened:
+    # 15% of SisProdSteadyStateSearch.cpp went unrenamed while the tool reported
+    # success. Renames still apply inside comments -- a comment that names the
+    # old variable should follow it -- so only the span detection is masked.
+    masked = re.sub(r'/\*.*?\*/', lambda m: " " * len(m.group(0)), body, flags=re.S)
+    masked = re.sub(r'//[^\n]*', lambda m: " " * len(m.group(0)), masked)
     strings = [(m.start(), m.end()) for m in
-               re.finditer(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'', body)]
+               re.finditer(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'', masked)]
 
     def in_string(position: int) -> bool:
         return any(a <= position < b for a, b in strings)
