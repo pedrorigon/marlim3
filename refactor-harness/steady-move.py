@@ -32,6 +32,15 @@ FUNCTIONS = {
     # because the mass march calls it: the alternative was a callback that would
     # be added and removed within the same stage.
     "corrDeng": {"new_name": "correctGasSpecificGravity", "arguments": "i"},
+    # T087 -- pressure march. RenovaPresPermNcel takes no arguments; the tool
+    # emits f(state) rather than f(state, ) for that case.
+    "RenovaPresPermMon": {"new_name": "advanceUpstreamSteadyPressure", "arguments": "i, RK"},
+    "RenovaPresPermJus": {"new_name": "advanceDownstreamSteadyPressure", "arguments": "i, RK"},
+    "RenovaPresPermNcel": {"new_name": "steadyPressureAtLastCell", "arguments": ""},
+    "calcDpArea": {"new_name": "areaChangePressureDrop", "arguments": "i, rhomix, rey, jmix"},
+    # T088 -- phase mass transfer along the march.
+    "RenovaTransMassPerm": {"new_name": "advanceSteadyMassTransfer", "arguments": "i"},
+    "RenovaTransMassPermGas": {"new_name": "advanceSteadyGasMassTransfer", "arguments": "i"},
     "RenovaMassPerm": {"new_name": "advanceSteadyMass", "arguments": "i"},
     # The fourteen helpers T085 carved out of RenovaMassPerm. They keep their
     # names: they were already named in English when they were created.
@@ -67,6 +76,13 @@ FUNCTIONS = {
 # enough: CALLS is a second table over the same set.
 CALLS = {
     "corrDeng": ("correctGasSpecificGravity", True),
+    "RenovaPresPermMon": ("advanceUpstreamSteadyPressure", True),
+    "RenovaPresPermJus": ("advanceDownstreamSteadyPressure", True),
+    "RenovaPresPermNcel": ("steadyPressureAtLastCell", True),
+    "calcDpArea": ("areaChangePressureDrop", True),
+    "RenovaTransMassPerm": ("advanceSteadyMassTransfer", True),
+    "RenovaTransMassPermGas": ("advanceSteadyGasMassTransfer", True),
+
     "applySteadyMassWithoutSource": ("applySteadyMassWithoutSource", True),
     "applySteadyMassDryGasInjection": ("applySteadyMassDryGasInjection", True),
     "applySteadyMassWetGasInjection": ("applySteadyMassWetGasInjection", True),
