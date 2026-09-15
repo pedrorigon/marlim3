@@ -71,6 +71,19 @@ extern time_t nowGlobFim;
 /// Broken-down local time corresponding to nowGlobFim.
 extern tm *ltmGlobFim;
 
+/// Which fluid receives the dry-gas aware (six-argument) compositional flash in
+/// the gas-source arm of the steady production marches.
+///
+/// This exists because marchaProdPerm1 and marchaProdPerm2 disagreed about it
+/// and nothing in the code said why. Naming the disagreement is not the same as
+/// resolving it: see H4 in evidencia/marchaprod-diff.md.
+enum class DryGasFlashTarget {
+    /// marchaProdPerm1, marchaProdPerm1Rev: the flag goes to the injected gas.
+    sourceFluid,
+    /// marchaProdPerm2: the flag goes to the cell fluid.
+    cellFluid,
+};
+
 /**
  * @brief Models and solves a one-dimensional production system.
  *
@@ -1364,6 +1377,8 @@ class SProd {
     /// Appends one gas-line wall-temperature trend sample.
     void ImprimeTrendTransGCab(int i);
 
+    /// Seeds the first-cell void fraction from the head accessory, shared by the three steady production marches.
+    void seedFirstCellVoidFraction(double pchute, double &alfini, double &betini, DryGasFlashTarget dryGasFlashTarget);
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
     double marchaProdPerm1(double pchute);
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
