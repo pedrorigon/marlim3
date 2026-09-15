@@ -1274,6 +1274,12 @@ class SProd {
     void geraMiniTabFlu();
 
     /// Loads pressure-velocity results into cell and face state variables.
+    /// Updates one interior cell after a transient solve; one arm of renova's split by cell position.
+    void renovaCelulaInterior(int i, int expli);
+    /// Updates the first cell after a transient solve; second arm of renova's split.
+    void renovaPrimeiraCelula(int i, int expli);
+    /// Updates the last cell after a transient solve; third arm of renova's split.
+    void renovaUltimaCelula(int i, int expli);
     void renova(int expli = 0);
     /// Updates phase and mixture flow rates.
     void renovaVaz();
