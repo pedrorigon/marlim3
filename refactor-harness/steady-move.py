@@ -105,6 +105,10 @@ FUNCTIONS = {
     "hidroreverso": {"new_name": "reverseHydrostatic", "arguments": "hol, vaz, vazG"},
     "hidroreversoInj": {"new_name": "reverseInjectionHydrostatic", "arguments": "hol, vaz"},
     "hidroTramoSecundario": {"new_name": "secondaryBranchHydrostatic", "arguments": "titulo"},
+    "seedFirstCellFromFlowRateGuess": {"new_name": "seedFirstCellFromFlowRateGuess",
+                                       "arguments": "mchute, alfini, betini"},
+    "advanceProductionColumnPressureToPressureSecondary": {
+        "new_name": "advanceProductionColumnPressureToPressureSecondary", "arguments": "i"},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -171,6 +175,9 @@ CALLS = {
     "hidroreverso": ("reverseHydrostatic", True),
     "hidroreversoInj": ("reverseInjectionHydrostatic", True),
     "hidroTramoSecundario": ("secondaryBranchHydrostatic", True),
+    "seedFirstCellFromFlowRateGuess": ("seedFirstCellFromFlowRateGuess", True),
+    "advanceProductionColumnPressureToPressureSecondary": (
+        "advanceProductionColumnPressureToPressureSecondary", True),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so

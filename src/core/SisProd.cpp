@@ -10531,12 +10531,20 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
     // retorna a pressao da ultima celula calculada pela marcha
 }
 
-double SProd::marchaProdPresPres1(double mchute) {
-
-    int corrigechute = 1;
-    double alfini = 0.;
-    double betini = 0.;
-
+/// Writes the flow-rate guess into the head accessory and seeds the first cell's
+/// void fraction and slip from it.
+///
+/// marchaProdPresPres1, marchaProdPresPres1Rev and marchaProdPresPres3 carried
+/// these 59 lines as the same characters -- not merely the same tokens, the
+/// same text, verified by direct comparison before the merge.
+///
+/// marchaProdPresPres2 is NOT a caller and keeps its own copy. It diverges in
+/// three places, and all three are logic rather than spelling: an
+/// arq.ConContEntrada branch that reads the inlet quality instead of computing
+/// a title, and two guards that fall back to titE when qliq + qgas vanishes.
+/// Folding those into a policy would be inventing a relationship between four
+/// functions that the code does not have.
+void SProd::seedFirstCellFromFlowRateGuess(double mchute, double &alfini, double &betini) {
     if (celula[0].acsr.tipo == 1) {
         celula[0].temp = celula[0].acsr.injg.temp;
         if (arq.flashCompleto == 2) {
@@ -10596,6 +10604,15 @@ double SProd::marchaProdPresPres1(double mchute) {
         alfini = qgas / (qliq + qgas);
         betini = celula[0].acsr.injl.bet;
     }
+}
+
+double SProd::marchaProdPresPres1(double mchute) {
+
+    int corrigechute = 1;
+    double alfini = 0.;
+    double betini = 0.;
+
+    seedFirstCellFromFlowRateGuess(mchute, alfini, betini);
 
     celula[0].tempL = celula[0].temp;
     celula[1].tempL = celula[0].temp;
@@ -10713,65 +10730,7 @@ double SProd::marchaProdPresPres1Rev(double mchute) {
     double betini = 0.;
     trocaTermicaLenta = 0.05;
 
-    if (celula[0].acsr.tipo == 1) {
-        celula[0].temp = celula[0].acsr.injg.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(celula[0].pres, celula[0].temp);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(celula[0].pres, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
-        }
-        celula[0].acsr.injg.QGas = mchute;
-    } else if (celula[0].acsr.tipo == 2) {
-        celula[0].temp = celula[0].acsr.injl.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(celula[0].pres, celula[0].temp);
-            celula[0].acsr.injl.FluidoPro.atualizaPropComp(celula[0].pres, celula[0].temp);
-        }
-        celula[0].acsr.injl.QLiq = mchute;
-    }
-
-    if (celula[0].acsr.tipo == 1) {
-        if (celula[0].acsr.injg.seco == 1) {
-            alfini = 1.;
-            betini = 0.;
-        } else {
-            double masgas = celula[0].acsr.injg.VMas(celula[0].pres, celula[0].temp);
-            double tit;
-            if (arq.flashCompleto != 2)
-                tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-            else
-                tit = celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-            double masT = masgas / tit;
-            tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(celula[0].pres, celula[0].temp);
-            double qgas = masT * tit /
-                          celula[0].acsr.injg.FluidoPro.MasEspGas(celula[0].pres, celula[0].temp);
-            double qliq = masT * (1. - tit) /
-                          celula[0].acsr.injg.FluidoPro.MasEspLiq(celula[0].pres, celula[0].temp);
-            double qcomp = celula[0].acsr.injg.razCompGas *
-                           celula[0].acsr.injg.QGas * celula[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
-                           celula[0].acsr.injg.fluidocol.MasEspFlu(celula[0].pres, celula[0].temp);
-            qcomp /= 86400.;
-            alfini = qgas / (qliq + qcomp + qgas);
-            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
-                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
-            else
-                betini = 0.;
-        }
-    } else if (celula[0].acsr.tipo == 2) {
-        double qgas = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                      (1. - celula[0].acsr.injl.FluidoPro.BSW) *
-                      (celula[0].acsr.injl.FluidoPro.RGO -
-                       celula[0].acsr.injl.FluidoPro.rDgD * celula[0].acsr.injl.FluidoPro.RS(celula[0].pres, celula[0].temp) * 6.29 / 35.31467) *
-                      celula[0].acsr.injl.FluidoPro.Deng * 1.225 / celula[0].acsr.injl.FluidoPro.MasEspGas(celula[0].pres, celula[0].temp);
-        double qliq = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          (1. - celula[0].acsr.injl.FluidoPro.BSW) * celula[0].acsr.injl.FluidoPro.BOFunc(celula[0].pres, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          celula[0].acsr.injl.FluidoPro.BSW * celula[0].acsr.injl.FluidoPro.BAFunc(celula[0].pres, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet;
-        alfini = qgas / (qliq + qgas);
-        betini = celula[0].acsr.injl.bet;
-    }
+    seedFirstCellFromFlowRateGuess(mchute, alfini, betini);
 
     celula[0].tempL = celula[0].temp;
     celula[1].tempL = celula[0].temp;
@@ -11258,6 +11217,59 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz, int kontaite
     }
 }
 
+/// Walks the column cell by cell for marchaProdPresPres2.
+///
+/// Not shared. All four pressure-to-pressure marches have a loop that opens
+/// with the same condition, and all four bodies differ from one another --
+/// compared directly, six pairs, no two equal. i is the cell the march reached
+/// and the caller reads it afterwards.
+void SProd::advanceProductionColumnPressureToPressureSecondary(int &i) {
+    while (i <= ncel && celula[i - 1].pres >= 1.) {
+
+        RenovaPresPermMon(i, 0);
+        atualizaPeriPmonProd(i);
+        if (arq.flashCompleto != 2)
+            RenovaMassPerm(i);
+        else
+            RenovaMassPermComp(i);
+        RenovaTempPerm(i, 0);
+        if (isnan(celula[i].temp))
+            NumError("Temperatrura na linha de producao com valor NaN");
+        if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
+            celula[i].temp = arq.tabent.tmin;
+        atualizaPeriTempProd(i);
+        RenovaPresPermJus(i, 0);
+        atualizaPeriPjusProd(i);
+        if (arq.tipoFluido == 0)
+            RenovaTransMassPerm(i - 1);
+        else
+            RenovaTransMassPermGas(i - 1);
+        if (arq.ordperm > 1) {
+            double D0presaux = celula[i].presaux - celula[i - 1].pres;
+            double D0pres = celula[i].pres - celula[i].presaux;
+            double D0temp = celula[i].temp - celula[i - 1].temp;
+            RenovaPresPermMon(i, 1);
+            atualizaPeriPmonProd(i);
+            RenovaMassPerm(i);
+            RenovaTempPerm(i, 1);
+            RenovaPresPermJus(i, 1);
+            celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
+            celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
+            celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
+            atualizaPeriPjusProd(i);
+            atualizaPeriPmonProd(i);
+            atualizaPeriTempProd(i);
+            RenovaMassPerm(i);
+            if (arq.tipoFluido == 0)
+                RenovaTransMassPerm(i - 1);
+            else
+                RenovaTransMassPermGas(i - 1);
+        }
+
+        i++;
+    }
+}
+
 double SProd::marchaProdPresPres2(double mchute) {
 
     int corrigechute = 1;
@@ -11385,50 +11397,7 @@ double SProd::marchaProdPresPres2(double mchute) {
     iterperm = 0;
     while (iterperm < 3) {
         i = 1;
-        while (i <= ncel && celula[i - 1].pres >= 1.) {
-
-            RenovaPresPermMon(i, 0);
-            atualizaPeriPmonProd(i);
-            if (arq.flashCompleto != 2)
-                RenovaMassPerm(i);
-            else
-                RenovaMassPermComp(i);
-            RenovaTempPerm(i, 0);
-            if (isnan(celula[i].temp))
-                NumError("Temperatrura na linha de producao com valor NaN");
-            if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
-                celula[i].temp = arq.tabent.tmin;
-            atualizaPeriTempProd(i);
-            RenovaPresPermJus(i, 0);
-            atualizaPeriPjusProd(i);
-            if (arq.tipoFluido == 0)
-                RenovaTransMassPerm(i - 1);
-            else
-                RenovaTransMassPermGas(i - 1);
-            if (arq.ordperm > 1) {
-                double D0presaux = celula[i].presaux - celula[i - 1].pres;
-                double D0pres = celula[i].pres - celula[i].presaux;
-                double D0temp = celula[i].temp - celula[i - 1].temp;
-                RenovaPresPermMon(i, 1);
-                atualizaPeriPmonProd(i);
-                RenovaMassPerm(i);
-                RenovaTempPerm(i, 1);
-                RenovaPresPermJus(i, 1);
-                celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
-                celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
-                celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
-                atualizaPeriPjusProd(i);
-                atualizaPeriPmonProd(i);
-                atualizaPeriTempProd(i);
-                RenovaMassPerm(i);
-                if (arq.tipoFluido == 0)
-                    RenovaTransMassPerm(i - 1);
-                else
-                    RenovaTransMassPermGas(i - 1);
-            }
-
-            i++;
-        }
+        advanceProductionColumnPressureToPressureSecondary(i);
         iterperm++;
     }
 
@@ -11645,65 +11614,7 @@ double SProd::marchaProdPresPres3(double mchute) {
     double alfini = 0.;
     double betini = 0.;
 
-    if (celula[0].acsr.tipo == 1) {
-        celula[0].temp = celula[0].acsr.injg.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(celula[0].pres, celula[0].temp);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(celula[0].pres, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
-        }
-        celula[0].acsr.injg.QGas = mchute;
-    } else if (celula[0].acsr.tipo == 2) {
-        celula[0].temp = celula[0].acsr.injl.temp;
-        if (arq.flashCompleto == 2) {
-            if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(celula[0].pres, celula[0].temp);
-            celula[0].acsr.injl.FluidoPro.atualizaPropComp(celula[0].pres, celula[0].temp);
-        }
-        celula[0].acsr.injl.QLiq = mchute;
-    }
-
-    if (celula[0].acsr.tipo == 1) {
-        if (celula[0].acsr.injg.seco == 1) {
-            alfini = 1.;
-            betini = 0.;
-        } else {
-            double masgas = celula[0].acsr.injg.VMas(celula[0].pres, celula[0].temp);
-            double tit;
-            if (arq.flashCompleto != 2)
-                tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-            else
-                tit = celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-            double masT = masgas / tit;
-            tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(celula[0].pres, celula[0].temp);
-            double qgas = masT * tit /
-                          celula[0].acsr.injg.FluidoPro.MasEspGas(celula[0].pres, celula[0].temp);
-            double qliq = masT * (1. - tit) /
-                          celula[0].acsr.injg.FluidoPro.MasEspLiq(celula[0].pres, celula[0].temp);
-            double qcomp = celula[0].acsr.injg.razCompGas *
-                           celula[0].acsr.injg.QGas * celula[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
-                           celula[0].acsr.injg.fluidocol.MasEspFlu(celula[0].pres, celula[0].temp);
-            qcomp /= 86400.;
-            alfini = qgas / (qliq + qcomp + qgas);
-            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
-                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
-            else
-                betini = 0.;
-        }
-    } else if (celula[0].acsr.tipo == 2) {
-        double qgas = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                      (1. - celula[0].acsr.injl.FluidoPro.BSW) *
-                      (celula[0].acsr.injl.FluidoPro.RGO -
-                       celula[0].acsr.injl.FluidoPro.rDgD * celula[0].acsr.injl.FluidoPro.RS(celula[0].pres, celula[0].temp) * 6.29 / 35.31467) *
-                      celula[0].acsr.injl.FluidoPro.Deng * 1.225 / celula[0].acsr.injl.FluidoPro.MasEspGas(celula[0].pres, celula[0].temp);
-        double qliq = celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          (1. - celula[0].acsr.injl.FluidoPro.BSW) * celula[0].acsr.injl.FluidoPro.BOFunc(celula[0].pres, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * (1 - celula[0].acsr.injl.bet) *
-                          celula[0].acsr.injl.FluidoPro.BSW * celula[0].acsr.injl.FluidoPro.BAFunc(celula[0].pres, celula[0].temp) +
-                      celula[0].acsr.injl.QLiq * celula[0].acsr.injl.bet;
-        alfini = qgas / (qliq + qgas);
-        betini = celula[0].acsr.injl.bet;
-    }
+    seedFirstCellFromFlowRateGuess(mchute, alfini, betini);
 
     celula[0].tempL = celula[0].temp;
     celula[1].tempL = celula[0].temp;
