@@ -14017,6 +14017,1528 @@ void SProd::corrDeng(int i) {
     }
 }
 
+void SProd::applySteadyMassWithoutSource(int i, int mudaRGO, double bo, double rs, double tmed, double &boI, double &baI, double &fwI) {
+    // neste caso, variaveis como RGO de separador, BSW, API, densidade de gas e outras nÃƒÂ£o muda, sao iguais
+    // aos valores da celula i-1
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // o valor de volume de leve ÃƒÂ© atualizado neste ponto,
+    // seguindo o equacionamento mostrado em relatorio, nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas
+    // deve ser calculado, pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny))
+            celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+        if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1 && celula[i].flui.RGO < 1e7)
+            celula[i].flui.RGO = (*vg1dSP).RGOMax;
+    } else if (mudaRGO == 1)
+        celula[i].flui.RGO = celula[i - 1].flui.RGO;
+
+    celula[i].flui.BSW = celula[i - 1].flui.BSW;
+
+    if (arq.flashCompleto == 0) { // nesta chave se faz o carregamento na celula i
+        // de variaveis importantes para o modelo black oil
+        celula[i].flui.Deng = celula[i - 1].flui.Deng;
+        celula[i].flui.yco2 = celula[i - 1].flui.yco2;
+        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+            celula[i].flui.API = celula[i - 1].flui.API;
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6) { // reavaliacao da fracao volumetrica do liquido complementar
+        // mesmo que nÃƒÂ£o tenha fonte, ela pode mudar, devido ao encolhimento do liquido produzido
+        if (celula[i].flui.RGO < 1e6)
+            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        else
+            boI = 1.;
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qo = celula[i - 1].QL * (1 - celula[i - 1].FW) * (1 - celula[i - 1].bet) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet);
+        double qc;
+        if (celula[i].flui.RGO < 1e7)
+            qc = celula[i - 1].QL * (celula[i - 1].bet) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        else
+            qc = 0.;
+        ////////////////////////esperar//////////////////////////////////////
+        if ((fabs(qo) + fabs(qw) + fabs(qc)) > 0)
+            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+        else
+            celula[i].bet = 0.;
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassDryGasInjection(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    fwI = 0.;
+    // vazao de oleo standard
+    double qostd;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    else
+        qostd = 0.;
+    // calculo da nova vazao de gas standard com a soma da fonte de gas:
+    double qgstd = qostd * celula[i - 1].flui.RGO + celula[i - 1].acsr.injg.QGas / 86400;
+    double deng;
+    double yco2;
+    // balanco que define a densidade de gas e a fracao de CO2 devido  aa fonte de gas
+    if (fabs(qgstd) > (*vg1dSP).localtiny && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
+        deng = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.Deng / 86400) / qgstd;
+        yco2 = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.yco2 / 86400) / qgstd;
+    } else {
+        deng = celula[i - 1].flui.Deng;
+        yco2 = celula[i - 1].flui.yco2;
+    }
+
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
+            celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+        if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1 && celula[i].flui.RGO < 1e7)
+            celula[i].flui.RGO = (*vg1dSP).RGOMax;
+    }
+    double rgo;
+    // calculo de novo RGO de separador - sem escorregamento - a partir das vazÃƒÂµes satndard de gas e oleo
+    if (qostd > (*vg1dSP).localtiny && mudaRGO == 1)
+        rgo = qgstd / qostd;
+    else
+        rgo = celula[i - 1].flui.RGO;
+    celula[i].flui.RGO = rgo;
+
+    celula[i].flui.BSW = celula[i - 1].flui.BSW; // bsw nÃƒÂ£o muda devido a uma fonte de gas
+
+    if (arq.flashCompleto == 0) { // nesta chave se faz o carregamento na celula i
+        // de variaveis importantes para o modelo black oil
+        celula[i].flui.Deng = deng;
+        celula[i].flui.yco2 = yco2;
+        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+            celula[i].flui.API = celula[i - 1].flui.API;
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+
+    if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && celula[i - 1].alf < 1. - (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // mesmo que nÃƒÂ£o tenha fonte de liquido, ela pode mudar,
+        // devido ao encolhimento do liquido produzido
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qo = celula[i - 1].QL * (1 - celula[i - 1].FW) * (1 - celula[i - 1].bet) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet);
+        double qc = celula[i - 1].QL * (celula[i - 1].bet) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassWetGasInjection(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF;
+    double boinjl;
+    double bainjl;
+    double fwinjl;
+    trF = celula[i - 1].acsr.injg.fluidocol.TR;
+    if (fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
+        rholisF = celula[i - 1].acsr.injg.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        boinjl = celula[i - 1].acsr.injg.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        bainjl = celula[i - 1].acsr.injg.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        fwinjl = celula[i - 1].acsr.injg.FluidoPro.BSW * bainjl / (boinjl + bainjl * celula[i - 1].acsr.injg.FluidoPro.BSW - celula[i - 1].acsr.injg.FluidoPro.BSW * boinjl);
+    } else {
+        rholisF = rholis;
+        boinjl = bo;
+        bainjl = ba;
+        fwinjl = celula[i - 1].FW;
+    }
+    // vazao de oleo standard
+    double qostd = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) *
+                (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (celula[i - 1].acsr.injg.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
+    // calculo da nova vazao de gas standard com a soma da fonte de gas:
+    double qgstd = qostd * celula[i - 1].flui.RGO + celula[i - 1].acsr.injg.QGas / 86400;
+    double deng;
+    double yco2;
+    // balanco que define a densidade de gas e a fracao de CO2 devido  aa fonte de gas
+    if (fabs(qgstd) > (*vg1dSP).localtiny * 1e-10 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
+        deng = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.Deng / 86400) / qgstd;
+        yco2 = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.yco2 / 86400) / qgstd;
+    } else {
+        deng = celula[i - 1].flui.Deng;
+        yco2 = celula[i - 1].flui.yco2;
+    }
+
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
+            celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+        if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1 && celula[i].flui.RGO < 1e7)
+            celula[i].flui.RGO = (*vg1dSP).RGOMax;
+    }
+
+    // calculo do novo RGO do separador modeificado pela fonte de liquido
+    if (fabs(qostd + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15)
+        celula[i].flui.RGO = qgstd / (qostd + qostd2);
+    else if (mudaRGO == 1 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15)
+        celula[i].flui.RGO = (*vg1dSP).RGOMax;
+    else
+        celula[i].flui.RGO = celula[i - 1].flui.RGO;
+
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd + qostd2) > 1e-15 && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd + (141.5 / (131.5 + celula[i].flui.API)) * qostd2;
+            denmixSTD /= (qostd + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - celula[i - 1].acsr.injg.FluidoPro.BSW) > 0)
+            qw2 = qostd2 * celula[i - 1].acsr.injg.FluidoPro.BSW / (1. - celula[i - 1].acsr.injg.FluidoPro.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * celula[i - 1].acsr.injg.FluidoPro.Denag);
+
+        if (fabs(qw1 + qw2 + qostd + qostd2) > 1e-15 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15)
+            celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        if (fabs(qw1 + qw2) > 1e-15)
+            celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
+                                    qw2 * celula[i - 1].acsr.injg.FluidoPro.Denag) /
+                                   (qw1 + qw2);
+        else
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+        // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+        // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+        // e minima para a construcao dos pares
+        if (fabs(qostd + qostd2) > 1e-15 && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) { // vazao de liquido >0
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.injg.FluidoPro.VisOM(tL)) / (qostd + qostd2);
+            celula[i].flui.LVisH = (qostd * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.injg.FluidoPro.VisOM(tH)) / (qostd + qostd2);
+        } else if (arq.flashCompleto == 0 || celula[i - 1].acsr.injg.QGas <= 0.) { // se,m vazao de liquido
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+
+    if (arq.flashCompleto == 0) { // nesta chave se faz o carregamento na celula i
+        // de variaveis importantes para o modelo black oil
+        celula[i].flui.Deng = deng;
+        celula[i].flui.yco2 = yco2;
+        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+            celula[i].flui.API = celula[i - 1].flui.API;
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+
+    if (celula[i - 1].bet > (*vg1dSP).localtiny && celula[i - 1].alf < 1. - (*vg1dSP).localtiny * 1e-10 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.injg.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.injg.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
+
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        //* celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
+
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassLiquidInjection(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.injl.FluidoPro.API);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF;
+    double boinjl;
+    double bainjl;
+    double fwinjl;
+    trF = celula[i - 1].acsr.injl.fluidocol.TR;
+    if (fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
+        rholisF = celula[i - 1].acsr.injl.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        boinjl = celula[i - 1].acsr.injl.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        bainjl = celula[i - 1].acsr.injl.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        fwinjl = celula[i - 1].acsr.injl.FluidoPro.BSW * bainjl / (boinjl + bainjl * celula[i - 1].acsr.injl.FluidoPro.BSW - celula[i - 1].acsr.injl.FluidoPro.BSW * boinjl);
+    } else {
+        rholisF = rholis;
+        boinjl = bo;
+        bainjl = ba;
+        fwinjl = celula[i - 1].FW;
+    }
+    // vazao de oleo sytandard antes da fonte:
+    double qostd1 = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (celula[i - 1].acsr.injl.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
+    // vazao total de gas nas condicoes standard fruto da soma do gas transportado
+    // da fronteira a esquerda
+    // da celula e do gas associado da fonte de liquido
+    double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO;
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+
+    if (fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
+        if (arq.trackRGO == -1) {
+            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
+                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else {
+            // calculo do novo RGO do separador modeificado pela fonte de liquido
+            if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1)
+                celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+            else if (mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        }
+    } else
+        celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    // calculo da nova densidade de gas nas condicoes standard modificada pela fonte de liquido
+    if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15 &&
+        fabs(qgstd) > 1e-15)
+        celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO * celula[i - 1].acsr.injl.FluidoPro.Deng) / qgstd;
+    else if (fabs(celula[i - 1].acsr.injl.QLiq) <= 1e-15)
+        celula[i].flui.Deng = celula[i - 1].flui.Deng;
+    // calculo da nova fracao de co2 modificad pela fonte de liquido
+    if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15 &&
+        fabs(qgstd) > 1e-15)
+        celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO * celula[i - 1].acsr.injl.FluidoPro.yco2) / qgstd;
+    else if (fabs(celula[i - 1].acsr.injl.QLiq) <= 1e-15)
+        celula[i].flui.yco2 = celula[i - 1].flui.yco2;
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
+                               (141.5 / (131.5 + celula[i - 1].acsr.injl.FluidoPro.API)) * qostd2;
+            denmixSTD /= (qostd1 + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0 ||
+                   fabs(celula[i - 1].acsr.injl.QLiq) <= 1e-15)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - celula[i - 1].acsr.injl.FluidoPro.BSW) > 0)
+            qw2 = qostd2 * celula[i - 1].acsr.injl.FluidoPro.BSW / (1. - celula[i - 1].acsr.injl.FluidoPro.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * celula[i - 1].acsr.injl.FluidoPro.Denag);
+
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
+            fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15)
+            celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        if (fabs(qw1 + qw2) > 1e-15)
+            celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
+                                    qw2 * celula[i - 1].acsr.injl.FluidoPro.Denag) /
+                                   (qw1 + qw2);
+        else
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+        // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+        // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+        // e minima para a construcao dos pares
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) { // vazao de liquido >0
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.injl.FluidoPro.VisOM(tL)) / (qostd1 + qostd2);
+            celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.injl.FluidoPro.VisOM(tH)) / (qostd1 + qostd2);
+        } else if (arq.flashCompleto == 0) { // se,m vazao de liquido
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+    if (arq.flashCompleto == 0) {
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if ((celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny * 1e-6) &&
+        fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // observar que a fonte de liquido pode ter uma fracao de liquido complementar
+        // distinta da onservada a esquerda da celula i-1
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.injl.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.injl.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassInflowPerformance(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.ipr.FluidoPro.API);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF;
+    double boipr;
+    double baipr;
+    double fwipr;
+    trF = 0.;
+    if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
+        rholisF = celula[i - 1].acsr.ipr.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        boipr = celula[i - 1].acsr.ipr.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        baipr = celula[i - 1].acsr.ipr.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        fwipr = celula[i - 1].acsr.ipr.FluidoPro.BSW * baipr / (boipr + baipr * celula[i - 1].acsr.ipr.FluidoPro.BSW - celula[i - 1].acsr.ipr.FluidoPro.BSW * boipr);
+    } else {
+        rholisF = rholis;
+        boipr = bo;
+        baipr = ba;
+        fwipr = celula[i - 1].FW;
+    }
+    // vazao de oleo standard antes da fonte:
+    double qostd1 = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (celula[i - 1].acsr.ipr.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwipr) / (boipr * rholisF);
+    // vazao total de gas nas condicoes standard fruto da soma do gas transportado
+    // da fronteira a esquerda
+    // da celula e do gas associado da IPR
+    double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO;
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
+            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
+                mudaRGO == 1 && fabs(celula[i - 1].fontemassLR) > 1e-15)
+                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+
+    } else { // calculo do novo RGO do separador modificado pela IPR
+        if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
+            if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-10 && mudaRGO == 1)
+                celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+            else if (mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    }
+    // calculo da nova densidade de gas nas condicoes standard modificada pela IPR
+    if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 &&
+        fabs(qgstd) > 1e-15)
+        celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO * celula[i - 1].acsr.ipr.FluidoPro.Deng) / qgstd;
+    else
+        celula[i].flui.Deng = celula[i - 1].flui.Deng;
+    // calculo da nova fracao de co2 modificada pela fonte de liquido
+    if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 && fabs(qgstd) > 1e-15)
+        celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO * celula[i - 1].acsr.ipr.FluidoPro.yco2) / qgstd;
+    else
+        celula[i].flui.yco2 = celula[i - 1].flui.yco2;
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            (celula[i - 1].fontemassLR) > 1e-15) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
+                               (141.5 / (131.5 + celula[i - 1].acsr.ipr.FluidoPro.API)) * qostd2;
+            denmixSTD /= (qostd1 + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0 || (celula[i - 1].fontemassLR) <= 1e-15)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - celula[i - 1].acsr.ipr.FluidoPro.BSW) > 0)
+            qw2 = qostd2 * celula[i - 1].acsr.ipr.FluidoPro.BSW / (1. - celula[i - 1].acsr.ipr.FluidoPro.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwipr / (1000. * celula[i - 1].acsr.ipr.FluidoPro.Denag);
+
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
+            (celula[i - 1].fontemassLR) > 1e-15)
+            celula[i].flui.BSW = ((qw1 + qostd1) * celula[i - 1].flui.BSW + (qw2 + qostd2) * celula[i - 1].acsr.ipr.FluidoPro.BSW) / (qw1 + qw2 + qostd1 + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        if ((qw1 + qw2) > 1e-15)
+            celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
+                                    qw2 * celula[i - 1].acsr.ipr.FluidoPro.Denag) /
+                                   (qw1 + qw2);
+        else
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+        if ((qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15) {
+            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+            // e minima para a construcao dos pares
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.VisOM(tL)) / (qostd1 + qostd2);
+            celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.VisOM(tH)) / (qostd1 + qostd2);
+        } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15) { // sem vazao de liquido
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+    if (arq.flashCompleto == 0) {
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].fontemassLR) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // observar que a IPR pode ter uma fracao de liquido complementar
+        // distinta da onservada a esquerda da celula i-1
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.ipr.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = 0.;
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassMultipleSource(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.injm.FluidoPro.API);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF;
+    double boinjl;
+    double bainjl;
+    double fwinjl;
+    trF = celula[i - 1].acsr.injm.fluidocol.TR;
+    if (fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
+        rholisF = celula[i - 1].acsr.injm.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        boinjl = celula[i - 1].acsr.injm.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        bainjl = celula[i - 1].acsr.injm.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        fwinjl = celula[i - 1].acsr.injm.FluidoPro.BSW * bainjl / (boinjl + bainjl * celula[i - 1].acsr.injm.FluidoPro.BSW - celula[i - 1].acsr.injm.FluidoPro.BSW * boinjl);
+    } else {
+        rholisF = rholis;
+        boinjl = bo;
+        bainjl = ba;
+        fwinjl = celula[i - 1].FW;
+    }
+    // vazao de oleo sytandard antes da fonte:
+    double qostd1 = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (celula[i - 1].acsr.injm.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
+    // vazao total de gas nas condicoes standard fruto da soma do gas transportado
+    // da fronteira a esquerda
+    // da celula e do gas associado da fonte de liquido
+    double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO;
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if ((celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
+            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
+                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    } else {
+        // calculo do novo RGO do separador modeificado pela fonte de liquido
+        if ((celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
+            if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1)
+                celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+            else if (mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    }
+    // calculo da nova densidade de gas nas condicoes standard modificada pela fonte de liquido
+    if (fabs(qgstd) > (*vg1dSP).localtiny * 1e-10 && arq.flashCompleto == 0 &&
+        (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
+        celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO * celula[i - 1].acsr.injm.FluidoPro.Deng) / qgstd;
+    else
+        celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    // calculo da nova fracao de co2 modificad pela fonte de liquido
+    if (fabs(qgstd) > (*vg1dSP).localtiny * 1e-10 && arq.flashCompleto == 0 &&
+        (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
+        celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO * celula[i - 1].acsr.injm.FluidoPro.yco2) / qgstd;
+    else
+        celula[i].flui.yco2 = celula[i - 1].flui.yco2;
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
+                               (141.5 / (131.5 + celula[i - 1].acsr.injm.FluidoPro.API)) * qostd2;
+            denmixSTD /= (qostd1 + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0 ||
+                   fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) <= 1e-15)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - celula[i - 1].acsr.injm.FluidoPro.BSW) > 0)
+            qw2 = qostd2 * celula[i - 1].acsr.injm.FluidoPro.BSW / (1. - celula[i - 1].acsr.injm.FluidoPro.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * celula[i - 1].acsr.injm.FluidoPro.Denag);
+
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
+            (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
+            celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        if (fabs(qw1 + qw2) > 1e-15 &&
+            (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
+            celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
+                                    qw2 * celula[i - 1].acsr.injm.FluidoPro.Denag) /
+                                   (qw1 + qw2);
+        else
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+        // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+        // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+        // e minima para a construcao dos pares
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) { // vazao de liquido >0
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.injm.FluidoPro.VisOM(tL)) / (qostd1 + qostd2);
+            celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.injm.FluidoPro.VisOM(tH)) / (qostd1 + qostd2);
+        } else if (arq.flashCompleto == 0 ||
+                   fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) <= 1e-15) { // se,m vazao de liquido
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+    if (arq.flashCompleto == 0) {
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if ((celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny) &&
+        fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP + celula[i - 1].acsr.injm.MassC) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // observar que a fonte de liquido pode ter uma fracao de liquido complementar
+        // distinta da onservada a esquerda da celula i-1
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.injm.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.injm.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassLeakSource(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    ProFlu fluF;
+    // define qual o fluido envolvido na fonte, se a pressÃƒÂ£o ambiente for menor do que a
+    // pressao da tubulacao, fluido da tubulacao, senao, fluido definido como
+    // fluido ambiente
+    if (celula[i - 1].acsr.fontechk.presT > celula[i - 1].acsr.fontechk.pamb) {
+        fluF = celula[i - 1].acsr.fontechk.fluidoP;
+    } else {
+        fluF = celula[i - 1].acsr.fontechk.fluidoPamb;
+    }
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rhololeoF = 1000. * 141.5 / (131.5 + fluF.API);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF = fluF.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double boinjl = fluF.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+    double bainjl = fluF.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+    double fwinjl = fluF.BSW * bainjl / (boinjl + bainjl * fluF.BSW - fluF.BSW * boinjl);
+    // vazao de oleo standard antes da fonte:
+    double qostd1 = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (fluF.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
+    // vazao total de gas nas condicoes standard fruto da soma do gas transportado
+    // da fronteira a esquerda
+    // da celula e do gas associado ao vazamento
+    double qgstd;
+    if (fabs(qostd2) > 0.)
+        qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * fluF.RGO;
+    else {
+        qgstd = qostd1 * celula[i - 1].flui.RGO + celula[i - 1].fontemassGR / (fluF.Deng * 1.225);
+    }
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny * 1e-6) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
+            celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+        if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
+            celula[i].flui.RGO = (*vg1dSP).RGOMax;
+    } else { // calculo do novo RGO do separador modificado pela IPR
+        if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-6 && mudaRGO == 1)
+            celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+        else if (mudaRGO == 1)
+            celula[i].flui.RGO = (*vg1dSP).RGOMax;
+    }
+    // calculo da nova densidade de gas nas condicoes standard modificada pelo vazamento
+    if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0) {
+        if (fabs(qostd2) > 0)
+            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * fluF.RGO * fluF.Deng) / qgstd;
+        else
+            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + celula[i - 1].fontemassGR / (fluF.Deng * 1.225)) / qgstd;
+    }
+    // calculo da nova fracao de co2 modificada pelo vazamento
+    if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0) {
+        if (fabs(qostd2) > 0)
+            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * fluF.RGO * fluF.yco2) / qgstd;
+        else
+            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + fluF.yco2 * celula[i - 1].fontemassGR / (fluF.Deng * 1.225)) / qgstd;
+    }
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
+                               (141.5 / (131.5 + fluF.API)) * qostd2;
+            denmixSTD /= (qostd1 + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - fluF.BSW) > 0)
+            qw2 = qostd2 * fluF.BSW / (1. - fluF.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * fluF.Denag);
+
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15)
+            celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0) {
+            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+            // e minima para a construcao dos pares
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * fluF.VisOM(tL)) / (qostd1 + qostd2);
+            celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * fluF.VisOM(tH)) / (qostd1 + qostd2);
+        } else if (arq.flashCompleto == 0) {
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+    if (arq.flashCompleto == 0) {
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny * 1e-6) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // observar a fonte de vazamento pode ter uma fracao de liquido complementar
+        // distinta da observada a esquerda da celula i-1
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / fluF.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.fontechk.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassRadialPorous(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.radialPoro.flup.API);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF;
+    double boipr;
+    double baipr;
+    double fwipr;
+    trF = 0.;
+    if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
+        rholisF = celula[i - 1].acsr.radialPoro.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        boipr = celula[i - 1].acsr.radialPoro.flup.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        baipr = celula[i - 1].acsr.radialPoro.flup.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        fwipr = celula[i - 1].acsr.radialPoro.BSW * baipr / (boipr + baipr * celula[i - 1].acsr.radialPoro.BSW - celula[i - 1].acsr.radialPoro.BSW * boipr);
+    } else {
+        rholisF = rholis;
+        boipr = bo;
+        baipr = ba;
+        fwipr = celula[i - 1].FW;
+    }
+    // vazao de oleo standard antes da fonte:
+    double qostd1 = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (celula[i - 1].acsr.radialPoro.flup.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwipr) / (boipr * rholisF);
+    // vazao total de gas nas condicoes standard fruto da soma do gas transportado
+    // da fronteira a esquerda
+    // da celula e do gas associado da IPR
+    double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO;
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
+            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
+                mudaRGO == 1 && fabs(celula[i - 1].fontemassLR) > 1e-15)
+                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+
+    } else { // calculo do novo RGO do separador modificado pela IPR
+        if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
+            if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-10 && mudaRGO == 1)
+                celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+            else if (mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    }
+    // calculo da nova densidade de gas nas condicoes standard modificada pela IPR
+    if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 &&
+        fabs(qgstd) > 1e-15)
+        celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO * celula[i - 1].acsr.radialPoro.flup.Deng) / qgstd;
+    else
+        celula[i].flui.Deng = celula[i - 1].flui.Deng;
+    // calculo da nova fracao de co2 modificada pela fonte de liquido
+    if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 && fabs(qgstd) > 1e-15)
+        celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO * celula[i - 1].acsr.radialPoro.flup.yco2) / qgstd;
+    else
+        celula[i].flui.yco2 = celula[i - 1].flui.yco2;
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            (celula[i - 1].fontemassLR) > 1e-15) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
+                               (141.5 / (131.5 + celula[i - 1].acsr.radialPoro.flup.API)) * qostd2;
+            denmixSTD /= (qostd1 + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - celula[i - 1].acsr.radialPoro.BSW) > 0)
+            qw2 = qostd2 * celula[i - 1].acsr.radialPoro.BSW / (1. - celula[i - 1].acsr.radialPoro.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwipr / (1000. * celula[i - 1].acsr.radialPoro.flup.Denag);
+
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
+            fabs(celula[i - 1].fontemassLR) > 1e-15)
+            celula[i].flui.BSW = ((qw1 + qostd1) * celula[i - 1].flui.BSW + (qw2 + qostd2) * celula[i - 1].acsr.radialPoro.BSW) / (qw1 + qw2 + qostd1 + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        if ((qw1 + qw2) > 1e-15 && (celula[i - 1].fontemassLR) > 1e-15)
+            celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
+                                    qw2 * celula[i - 1].acsr.radialPoro.flup.Denag) /
+                                   (qw1 + qw2);
+        else
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15) {
+            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+            // e minima para a construcao dos pares
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.radialPoro.flup.VisOM(tL)) / (qostd1 + qostd2);
+            celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.radialPoro.flup.VisOM(tH)) / (qostd1 + qostd2);
+        } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15) { // sem vazao de liquido
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+    if (arq.flashCompleto == 0) {
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].fontemassLR) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // observar que a IPR pode ter uma fracao de liquido complementar
+        // distinta da onservada a esquerda da celula i-1
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.radialPoro.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = 0.;
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::applySteadyMassPorous2D(int i, int mudaRGO, double tL, double tH, double bo, double ba, double rs, double tmed, double &trF, double &boI, double &baI, double &fwI) {
+    double api = celula[i - 1].flui.API;
+    double rhololeo = 1000. * 141.5 / (131.5 + api);
+    double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.poroso2D.dados.flup.API);
+    double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+    double rholisF;
+    double boipr;
+    double baipr;
+    double fwipr;
+    trF = 0.;
+    if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
+        rholisF = celula[i - 1].acsr.poroso2D.dados.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        boipr = celula[i - 1].acsr.poroso2D.dados.flup.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        baipr = celula[i - 1].acsr.poroso2D.dados.flup.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        fwipr = celula[i - 1].acsr.poroso2D.dados.transfer.BSW * baipr / (boipr + baipr * celula[i - 1].acsr.poroso2D.dados.transfer.BSW - celula[i - 1].acsr.poroso2D.dados.transfer.BSW * boipr);
+    } else {
+        rholisF = rholis;
+        boipr = bo;
+        baipr = ba;
+        fwipr = celula[i - 1].FW;
+    }
+    // vazao de oleo standard antes da fonte:
+    double qostd1 = 0.;
+    if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
+    // vazao de oleo standard da fonte:
+    double qostd2 = 0.;
+    if (celula[i - 1].acsr.poroso2D.dados.flup.dStockTankVaporMassFraction < 1. - 1e-15)
+        qostd2 = celula[i - 1].fontemassLR * (1. - fwipr) / (boipr * rholisF);
+    // vazao total de gas nas condicoes standard fruto da soma do gas transportado
+    // da fronteira a esquerda
+    // da celula e do gas associado da IPR
+    double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO;
+    double hol = 1 - celula[i - 1].alf;
+    double bet = celula[i - 1].bet;
+    double bsw = celula[i - 1].FW;
+    double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
+    double rhogST = celula[i - 1].flui.Deng * 1.225;
+    // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
+    // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
+    // pois ÃƒÂ© utilizado como entrada no transiente
+    celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
+    if (celula[i - 1].VolLeveST < 1e-15)
+        celula[i - 1].VolLeveST = 0.;
+    if (arq.trackRGO == -1) {
+        // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
+        // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
+        if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
+            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
+                mudaRGO == 1 && fabs(celula[i - 1].fontemassLR) > 1e-15)
+                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
+            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+
+    } else { // calculo do novo RGO do separador modificado pela IPR
+        if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
+            if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-10 && mudaRGO == 1)
+                celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+            else if (mudaRGO == 1)
+                celula[i].flui.RGO = (*vg1dSP).RGOMax;
+        } else
+            celula[i].flui.RGO = celula[i - 1].flui.RGO;
+    }
+    // calculo da nova densidade de gas nas condicoes standard modificada pela IPR
+    if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 &&
+        fabs(qgstd) > 1e-15)
+        celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO * celula[i - 1].acsr.poroso2D.dados.flup.Deng) / qgstd;
+    else
+        celula[i].flui.Deng = celula[i - 1].flui.Deng;
+    // calculo da nova fracao de co2 modificada pela fonte de liquido
+    if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 && fabs(qgstd) > 1e-15)
+        celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO * celula[i - 1].acsr.poroso2D.dados.flup.yco2) / qgstd;
+    else
+        celula[i].flui.yco2 = celula[i - 1].flui.yco2;
+    if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
+        // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
+        // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
+        // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
+        // entre cada tramo
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
+            (celula[i - 1].fontemassLR) > 1e-15) {
+            double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
+                               (141.5 / (131.5 + celula[i - 1].acsr.poroso2D.dados.flup.API)) * qostd2;
+            denmixSTD /= (qostd1 + qostd2);
+            celula[i].flui.API = 141.5 / denmixSTD - 131.5;
+        } else if (arq.flashCompleto == 0 || (celula[i - 1].fontemassLR) <= 1e-15)
+            celula[i].flui.API = celula[i - 1].flui.API;
+        double qw1;
+        if ((1. - celula[i - 1].flui.BSW) > 0)
+            qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
+        else
+            qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
+        double qw2;
+        if ((1. - celula[i - 1].acsr.poroso2D.dados.transfer.BSW) > 0)
+            qw2 = qostd2 * celula[i - 1].acsr.poroso2D.dados.transfer.BSW / (1. - celula[i - 1].acsr.poroso2D.dados.transfer.BSW);
+        else
+            qw2 = celula[i - 1].fontemassLR * fwipr / (1000. * celula[i - 1].acsr.poroso2D.dados.flup.Denag);
+
+        if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
+            (celula[i - 1].fontemassLR) > 1e-15)
+            celula[i].flui.BSW = ((qw1 + qostd1) * celula[i - 1].flui.BSW + (qw2 + qostd2) * celula[i - 1].acsr.poroso2D.dados.transfer.BSW) / (qw1 + qw2 + qostd1 + qostd2);
+        else
+            celula[i].flui.BSW = celula[i - 1].flui.BSW;
+        if (fabs(qw1 + qw2) > 1e-15 &&
+            (celula[i - 1].fontemassLR) > 1e-15)
+            celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
+                                    qw2 * celula[i - 1].acsr.poroso2D.dados.flup.Denag) /
+                                   (qw1 + qw2);
+        else
+            celula[i].flui.Denag = celula[i - 1].flui.Denag;
+        if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15) {
+            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
+            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
+            // e minima para a construcao dos pares
+            celula[i].flui.TempL = tL;
+            celula[i].flui.TempH = tH;
+            celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.VisOM(tL)) / (qostd1 + qostd2);
+            celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.VisOM(tH)) / (qostd1 + qostd2);
+        } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15) { // sem vazao de liquido
+            celula[i].flui.TempL = celula[i - 1].flui.TempL;
+            celula[i].flui.TempH = celula[i - 1].flui.TempH;
+            celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
+            celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
+        }
+    }
+    if (arq.flashCompleto == 0) {
+        celula[i].flui.RenovaFluido();
+        corrDeng(i);
+    }
+    if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].fontemassLR) > 1e-15) {
+        // reavaliacao da fracao volumetrica do liquido complementar
+        // observar que a IPR pode ter uma fracao de liquido complementar
+        // distinta da onservada a esquerda da celula i-1
+        double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
+        double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
+        boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
+        baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
+        fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
+        double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.poroso2D.dados.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
+        double qlcF = 0.;
+        double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
+        double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
+        double qw;
+        if (fwI < (1 - (*vg1dSP).localtiny))
+            qw = fwI * qo / (1 - fwI);
+        else
+            qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
+        double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
+        celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
+    } else
+        celula[i].bet = celula[i - 1].bet;
+}
+
+void SProd::finalizeSteadyMassWithLiquid(int i, double fwI, double tmed, double &bo, double &rs, double &pmed,
+                                            double &rhog, double &rhol, double &qo, double &masoleo) {
+    if (arq.tipoFluido == 0) {
+        rs = celula[i].flui.RS(pmed, tmed);
+        bo = celula[i].flui.BOFunc(pmed, tmed, rs);
+        rs = rs * 6.29 / 35.31467;
+        double rhogstd = celula[i].flui.Deng * 1.225;
+        double rhololeostd = 1000. * 141.5 / (131.5 + celula[i].flui.API);
+        double rhoa = celula[i].flui.Denag * 1000.;
+
+        double denom = celula[i].flui.RGO * rhogstd + rhololeostd;
+        if (fabs(1 - celula[i].flui.BSW) > (*vg1dSP).localtiny) {
+            denom += rhoa * celula[i].flui.BSW / (1 - celula[i].flui.BSW);
+            if (fabs(1 - celula[i].bet) > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i].bet) > (*vg1dSP).localtiny * 1e-10) {
+                denom += (celula[i].fluicol.MasEspFlu(pmed, tmed) * celula[i].bet / (1 - celula[i].bet)) * bo * (1. + fwI / (1 - fwI));
+            }
+        }
+        if (fabs(1 - celula[i].bet) > (*vg1dSP).localtiny * 1e-6 && fabs(1 - celula[i].flui.BSW) > (*vg1dSP).localtiny)
+            qo = celula[i].MC / denom;
+
+        if (fabs(1 - celula[i].bet) > (*vg1dSP).localtiny * 1e-6 && fabs(1 - celula[i].flui.BSW) > (*vg1dSP).localtiny) {
+            if ((*vg1dSP).tipoFluidoRedeGlob == 0)
+                celula[i].Mliqini = celula[i].MC - (celula[i].flui.RGO - rs) * rhogstd * qo;
+            else {
+                masoleo = qo * bo * celula[i].flui.MasEspoleo(pmed, tmed, rs) + qo * rhoa * celula[i].flui.BSW / (1 - celula[i].flui.BSW);
+                celula[i].Mliqini = masoleo + celula[i].MComp;
+            }
+        } else
+            celula[i].Mliqini = celula[i].MC - (celula[i - 1].MC - celula[i - 1].Mliqini) - celula[i - 1].fontemassGR;
+    } else {
+        double tit = celula[i].flui.FracMass(pmed, tmed);
+        celula[i].Mliqini = celula[i].MC * (1. - tit);
+    }
+    celula[i - 1].MliqiniR = celula[i].Mliqini;
+    if (i < ncel)
+        celula[i + 1].MliqiniL = celula[i].Mliqini;
+    pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
+    rhog = celula[i].rgCi = celula[i].flui.MasEspGas(pmed, tmed);
+
+    // calculo das massas especificas na interface a esquerda da celula
+    celula[i].rpCi = celula[i].flui.MasEspLiq(pmed, tmed);
+    celula[i].rcCi = celula[i].fluicol.MasEspFlu(pmed, tmed);
+    rhol = (1 - celula[i].bet) * celula[i].rpCi + celula[i].bet * celula[i].rcCi;
+    // rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(pmed, tmed)
+    // vazoes volumetricas:
+    celula[i].QL = celula[i].Mliqini / rhol;
+    if (i < ncel)
+        celula[i + 1].QLL = celula[i].QL;
+    celula[i - 1].QLR = celula[i].QL;
+    celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rhog;
+}
+
+void SProd::finalizeSteadyMassNoFlow(int i) {
+    if (arq.tipoFluido == 1) {
+        celula[i].alf = 0.;
+    } else {
+        celula[i].alf = 1.;
+    }
+    celula[i].alfini = celula[i].alf;
+    celula[i - 1].alfR = celula[i].alf;
+    celula[i - 1].alfRini = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfL = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfLini = celula[i].alf;
+    celula[i].alfPigD = celula[i].alf;
+    celula[i].alfPigDini = celula[i].alf;
+    celula[i].alfPigE = celula[i].alf;
+    celula[i].alfPigEini = celula[i].alf;
+    if (i < ncel) {
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betLI = celula[i].bet;
+    }
+    celula[i].betini = celula[i].bet;
+    celula[i - 1].betR = celula[i].bet;
+    celula[i - 1].betRini = celula[i].bet;
+    celula[i].betPigD = celula[i].bet;
+    celula[i].betPigDini = celula[i].bet;
+    celula[i].betPigE = celula[i].bet;
+    celula[i].betPigEini = celula[i].bet;
+    celula[i].betI = celula[i].bet;
+    celula[i - 1].betRI = celula[i].bet;
+}
+
+void SProd::finalizeSteadyMassLiquidOnly(int i) {
+    celula[i].alf = 0.;
+    celula[i].alfini = celula[i].alf;
+    celula[i - 1].alfR = celula[i].alf;
+    celula[i - 1].alfRini = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfL = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfLini = celula[i].alf;
+    celula[i].alfPigD = celula[i].alf;
+    celula[i].alfPigDini = celula[i].alf;
+    celula[i].alfPigE = celula[i].alf;
+    celula[i].alfPigEini = celula[i].alf;
+    if (i < ncel) {
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betLI = celula[i].bet;
+    }
+    celula[i].betini = celula[i].bet;
+    celula[i - 1].betR = celula[i].bet;
+    celula[i - 1].betRini = celula[i].bet;
+    celula[i].betPigD = celula[i].bet;
+    celula[i].betPigDini = celula[i].bet;
+    celula[i].betPigE = celula[i].bet;
+    celula[i].betPigEini = celula[i].bet;
+    celula[i].betI = celula[i].bet;
+    celula[i - 1].betRI = celula[i].bet;
+}
+
+void SProd::finalizeSteadyMassGasOnly(int i) {
+    celula[i].alf = 1.;
+    celula[i].alfini = celula[i].alf;
+    celula[i - 1].alfR = celula[i].alf;
+    celula[i - 1].alfRini = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfL = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfLini = celula[i].alf;
+    celula[i].alfPigD = celula[i].alf;
+    celula[i].alfPigDini = celula[i].alf;
+    celula[i].alfPigE = celula[i].alf;
+    celula[i].alfPigEini = celula[i].alf;
+    celula[i].c0 = 1.;
+    celula[i].ud = 0.;
+    if (i < ncel) {
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betLI = celula[i].bet;
+    }
+    celula[i].betini = celula[i].bet;
+    celula[i - 1].betR = celula[i].bet;
+    celula[i - 1].betRini = celula[i].bet;
+    celula[i].betPigD = celula[i].bet;
+    celula[i].betPigDini = celula[i].bet;
+    celula[i].betPigE = celula[i].bet;
+    celula[i].betPigEini = celula[i].bet;
+    celula[i].betI = celula[i].bet;
+    celula[i - 1].betRI = celula[i].bet;
+}
+
+void SProd::finalizeSteadyMassTwoPhase(int i, double rhog, double rhol) {
+    double c0 = 1.;
+    double ud = 0.;
+    if (fabs(celula[i].QL) > (*vg1dSP).localtiny * 1e-6) {
+        if (arq.tipoModeloDrift == 1) {
+            if (iterperm == 0) { // primeira estimativa, primeira iteracao
+                // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
+                // fracao de vazio depende do valor da fracao de vazio
+                if ((fabs(celula[i].QG) + fabs(celula[i].QL)) > (*vg1dSP).localtiny) {
+                    if (monitConvPerm > 0.01)
+                        celula[i].alf = fabs(celula[i].QG) /
+                                        (fabs(celula[i].QG) + fabs(celula[i].QL));
+                    CalcC0UdPerm(i, c0, ud);
+                } else
+                    celula[i].alf = 0.;
+                celula[i].alfini = celula[i].alf;
+                celula[i - 1].alfR = celula[i].alf;
+                celula[i - 1].alfRini = celula[i].alf;
+                if (i < ncel)
+                    celula[i + 1].alfL = celula[i].alf;
+                if (i < ncel)
+                    celula[i + 1].alfLini = celula[i].alf;
+                celula[i].alfPigD = celula[i].alf;
+                celula[i].alfPigDini = celula[i].alf;
+                celula[i].alfPigE = celula[i].alf;
+                celula[i].alfPigEini = celula[i].alf;
+            }
+            if (fabs(rhog) / rhol > 0.9) {
+                c0 = 1.;
+                ud = 0.;
+            }
+
+            // para o caso permanente, a fracao de vazio e obtida a partir das relacoes de escorregamento
+            // portanto, e neste ponto que se obtem Co e Ud:
+            else if (fabs(celula[i].QG) > (*vg1dSP).localtiny && fabs(celula[i].QL) > (*vg1dSP).localtiny * 1e-6)
+                CalcC0UdPerm(i, c0, ud);
+            celula[i].c0 = c0;
+            celula[i].ud = ud;
+            double area = celula[i].duto.area;
+            if (fabs(celula[i].QG + celula[i].QL) > (*vg1dSP).localtiny) {
+                // alfa com escorregamento:
+                celula[i].alf = celula[i].QG / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
+                double alfHomo = celula[i].QG / (celula[i].QG + celula[i].QL);
+                if (celula[i].alf > 1. - 1e-15 || celula[i].alf < 1e-15)
+                    celula[i].alf = alfHomo;
+
+            } else
+                celula[i].alf = 0.;
+            if (celula[i].alf > (1 - (*vg1dSP).localtiny) && fabs(celula[i].QG + celula[i].QL) > (*vg1dSP).localtiny)
+                celula[i].alf = fabs(celula[i].QG) / fabs(celula[i].QG + celula[i].QL);
+            else if (celula[i].alf > (1 - (*vg1dSP).localtiny))
+                celula[i].alf = 1.;
+        } else {
+            double holdup;
+            double frictionGrad;
+            double gravityGrad;
+            double totalGrad;
+            double reynolds;
+            unsigned char flowType;
+            char *errorMsg;
+            unsigned char errorFlag;
+            executarCorrelacao(celula, i, 0, arq.AceleraConvergPerm,
+                               celula[i - 1].correlacaoMR2,
+                               holdup, frictionGrad, gravityGrad, totalGrad,
+                               reynolds, flowType);
+           if(celula[i - 1].correlacaoMR2==16){
+            if(flowType=='1' || flowType=='2')celula[i].arranjo=0;
+            if(flowType=='3')celula[i].arranjo=1;
+            if(flowType=='4')celula[i].arranjo=2;
+            if(flowType=='6')celula[i].arranjo=-1;
+            if(flowType=='5')celula[i].arranjo=-2;
+           }
+           else{
+        	   if(flowType=='1')celula[i].arranjo=1;
+        	   if(flowType=='2')celula[i].arranjo=2;
+               if(flowType=='3')celula[i].arranjo=3;
+               if(flowType=='4')celula[i].arranjo=4;
+               if(flowType=='6')celula[i].arranjo=5;
+               if(flowType=='5')celula[i].arranjo=6;
+           }
+            celula[i].alf = 1. - holdup;
+        }
+    } else {
+        c0 = 1.;
+        ud = 0.;
+        celula[i].alf = 1.;
+    }
+    if (celula[i].alf < 0.)
+        celula[i].alf = 0.;
+    else if (celula[i].alf > 1.)
+        celula[i].alf = 1.;
+    // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
+    // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
+    // sao relevantes para o problema permanente mas importantes se o resultado permanente
+    // der partida na solucao transiente:
+    celula[i].alfini = celula[i].alf;
+    celula[i - 1].alfR = celula[i].alf;
+    celula[i - 1].alfRini = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfL = celula[i].alf;
+    if (i < ncel)
+        celula[i + 1].alfLini = celula[i].alf;
+    celula[i].alfPigD = celula[i].alf;
+    celula[i].alfPigDini = celula[i].alf;
+    celula[i].alfPigE = celula[i].alf;
+    celula[i].alfPigEini = celula[i].alf;
+    if (i < ncel) {
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betL = celula[i].bet;
+        celula[i + 1].betLini = celula[i].bet;
+        celula[i + 1].betLI = celula[i].bet;
+    }
+    celula[i].betini = celula[i].bet;
+    celula[i - 1].betR = celula[i].bet;
+    celula[i - 1].betRini = celula[i].bet;
+    celula[i].betPigD = celula[i].bet;
+    celula[i].betPigDini = celula[i].bet;
+    celula[i].betPigE = celula[i].bet;
+    celula[i].betPigEini = celula[i].bet;
+    celula[i].betI = celula[i].bet;
+    celula[i - 1].betRI = celula[i].bet;
+}
+
 void SProd::RenovaMassPerm(int i) {
     int mudaRGO = 1;
     if (arq.flashCompleto == 1)
@@ -14092,1244 +15614,33 @@ void SProd::RenovaMassPerm(int i) {
         tmed = celula[i - 1].temp;
     // primeiro teste: nÃƒÂ£o ha fontes na celula i-1:
     if (celula[i - 1].acsr.tipo != 1 && celula[i - 1].acsr.tipo != 2 && celula[i - 1].acsr.tipo != 3 && celula[i - 1].acsr.tipo != 10 && (celula[i - 1].acsr.tipo != 9 || (celula[i - 1].acsr.tipo == 9 && celula[i - 1].acsr.fontechk.abertura <= 1e-6)) && celula[i - 1].acsr.tipo != 15 && celula[i - 1].acsr.tipo != 16) {
-        // neste caso, variaveis como RGO de separador, BSW, API, densidade de gas e outras nÃƒÂ£o muda, sao iguais
-        // aos valores da celula i-1
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // o valor de volume de leve ÃƒÂ© atualizado neste ponto,
-        // seguindo o equacionamento mostrado em relatorio, nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas
-        // deve ser calculado, pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny))
-                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1 && celula[i].flui.RGO < 1e7)
-                celula[i].flui.RGO = (*vg1dSP).RGOMax;
-        } else if (mudaRGO == 1)
-            celula[i].flui.RGO = celula[i - 1].flui.RGO;
-
-        celula[i].flui.BSW = celula[i - 1].flui.BSW;
-
-        if (arq.flashCompleto == 0) { // nesta chave se faz o carregamento na celula i
-            // de variaveis importantes para o modelo black oil
-            celula[i].flui.Deng = celula[i - 1].flui.Deng;
-            celula[i].flui.yco2 = celula[i - 1].flui.yco2;
-            if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-                celula[i].flui.API = celula[i - 1].flui.API;
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6) { // reavaliacao da fracao volumetrica do liquido complementar
-            // mesmo que nÃƒÂ£o tenha fonte, ela pode mudar, devido ao encolhimento do liquido produzido
-            if (celula[i].flui.RGO < 1e6)
-                boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            else
-                boI = 1.;
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qo = celula[i - 1].QL * (1 - celula[i - 1].FW) * (1 - celula[i - 1].bet) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet);
-            double qc;
-            if (celula[i].flui.RGO < 1e7)
-                qc = celula[i - 1].QL * (celula[i - 1].bet) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            else
-                qc = 0.;
-            ////////////////////////esperar//////////////////////////////////////
-            if ((fabs(qo) + fabs(qw) + fabs(qc)) > 0)
-                celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-            else
-                celula[i].bet = 0.;
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassWithoutSource(i, mudaRGO, bo, rs, tmed, boI, baI, fwI);
     }
     // caso em que se tem uma fonte de gas na celula i-1, o que mudara a RGO e a densidade de gas em i
     else if (celula[i - 1].acsr.tipo == 1 && celula[i - 1].acsr.injg.seco == 1) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        fwI = 0.;
-        // vazao de oleo standard
-        double qostd;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        else
-            qostd = 0.;
-        // calculo da nova vazao de gas standard com a soma da fonte de gas:
-        double qgstd = qostd * celula[i - 1].flui.RGO + celula[i - 1].acsr.injg.QGas / 86400;
-        double deng;
-        double yco2;
-        // balanco que define a densidade de gas e a fracao de CO2 devido  aa fonte de gas
-        if (fabs(qgstd) > (*vg1dSP).localtiny && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
-            deng = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.Deng / 86400) / qgstd;
-            yco2 = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.yco2 / 86400) / qgstd;
-        } else {
-            deng = celula[i - 1].flui.Deng;
-            yco2 = celula[i - 1].flui.yco2;
-        }
-
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
-                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1 && celula[i].flui.RGO < 1e7)
-                celula[i].flui.RGO = (*vg1dSP).RGOMax;
-        }
-        double rgo;
-        // calculo de novo RGO de separador - sem escorregamento - a partir das vazÃƒÂµes satndard de gas e oleo
-        if (qostd > (*vg1dSP).localtiny && mudaRGO == 1)
-            rgo = qgstd / qostd;
-        else
-            rgo = celula[i - 1].flui.RGO;
-        celula[i].flui.RGO = rgo;
-
-        celula[i].flui.BSW = celula[i - 1].flui.BSW; // bsw nÃƒÂ£o muda devido a uma fonte de gas
-
-        if (arq.flashCompleto == 0) { // nesta chave se faz o carregamento na celula i
-            // de variaveis importantes para o modelo black oil
-            celula[i].flui.Deng = deng;
-            celula[i].flui.yco2 = yco2;
-            if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-                celula[i].flui.API = celula[i - 1].flui.API;
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-
-        if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && celula[i - 1].alf < 1. - (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // mesmo que nÃƒÂ£o tenha fonte de liquido, ela pode mudar,
-            // devido ao encolhimento do liquido produzido
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qo = celula[i - 1].QL * (1 - celula[i - 1].FW) * (1 - celula[i - 1].bet) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet);
-            double qc = celula[i - 1].QL * (celula[i - 1].bet) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassDryGasInjection(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     } else if (celula[i - 1].acsr.tipo == 1 && celula[i - 1].acsr.injg.seco == 0) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF;
-        double boinjl;
-        double bainjl;
-        double fwinjl;
-        trF = celula[i - 1].acsr.injg.fluidocol.TR;
-        if (fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
-            rholisF = celula[i - 1].acsr.injg.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            boinjl = celula[i - 1].acsr.injg.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            bainjl = celula[i - 1].acsr.injg.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            fwinjl = celula[i - 1].acsr.injg.FluidoPro.BSW * bainjl / (boinjl + bainjl * celula[i - 1].acsr.injg.FluidoPro.BSW - celula[i - 1].acsr.injg.FluidoPro.BSW * boinjl);
-        } else {
-            rholisF = rholis;
-            boinjl = bo;
-            bainjl = ba;
-            fwinjl = celula[i - 1].FW;
-        }
-        // vazao de oleo standard
-        double qostd = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) *
-                    (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (celula[i - 1].acsr.injg.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
-        // calculo da nova vazao de gas standard com a soma da fonte de gas:
-        double qgstd = qostd * celula[i - 1].flui.RGO + celula[i - 1].acsr.injg.QGas / 86400;
-        double deng;
-        double yco2;
-        // balanco que define a densidade de gas e a fracao de CO2 devido  aa fonte de gas
-        if (fabs(qgstd) > (*vg1dSP).localtiny * 1e-10 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
-            deng = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.Deng / 86400) / qgstd;
-            yco2 = (qostd * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + celula[i - 1].acsr.injg.QGas * celula[i - 1].acsr.injg.FluidoPro.yco2 / 86400) / qgstd;
-        } else {
-            deng = celula[i - 1].flui.Deng;
-            yco2 = celula[i - 1].flui.yco2;
-        }
-
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
-                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1 && celula[i].flui.RGO < 1e7)
-                celula[i].flui.RGO = (*vg1dSP).RGOMax;
-        }
-
-        // calculo do novo RGO do separador modeificado pela fonte de liquido
-        if (fabs(qostd + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15)
-            celula[i].flui.RGO = qgstd / (qostd + qostd2);
-        else if (mudaRGO == 1 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15)
-            celula[i].flui.RGO = (*vg1dSP).RGOMax;
-        else
-            celula[i].flui.RGO = celula[i - 1].flui.RGO;
-
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd + qostd2) > 1e-15 && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd + (141.5 / (131.5 + celula[i].flui.API)) * qostd2;
-                denmixSTD /= (qostd + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - celula[i - 1].acsr.injg.FluidoPro.BSW) > 0)
-                qw2 = qostd2 * celula[i - 1].acsr.injg.FluidoPro.BSW / (1. - celula[i - 1].acsr.injg.FluidoPro.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * celula[i - 1].acsr.injg.FluidoPro.Denag);
-
-            if (fabs(qw1 + qw2 + qostd + qostd2) > 1e-15 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15)
-                celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-            if (fabs(qw1 + qw2) > 1e-15)
-                celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
-                                        qw2 * celula[i - 1].acsr.injg.FluidoPro.Denag) /
-                                       (qw1 + qw2);
-            else
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-            // e minima para a construcao dos pares
-            if (fabs(qostd + qostd2) > 1e-15 && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) { // vazao de liquido >0
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.injg.FluidoPro.VisOM(tL)) / (qostd + qostd2);
-                celula[i].flui.LVisH = (qostd * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.injg.FluidoPro.VisOM(tH)) / (qostd + qostd2);
-            } else if (arq.flashCompleto == 0 || celula[i - 1].acsr.injg.QGas <= 0.) { // se,m vazao de liquido
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-
-        if (arq.flashCompleto == 0) { // nesta chave se faz o carregamento na celula i
-            // de variaveis importantes para o modelo black oil
-            celula[i].flui.Deng = deng;
-            celula[i].flui.yco2 = yco2;
-            if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-                celula[i].flui.API = celula[i - 1].flui.API;
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-
-        if (celula[i - 1].bet > (*vg1dSP).localtiny && celula[i - 1].alf < 1. - (*vg1dSP).localtiny * 1e-10 && fabs(celula[i - 1].acsr.injg.QGas) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.injg.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.injg.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            //* celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
-
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassWetGasInjection(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     }
     // caso de fonte de liquido na celula i-1:
     else if (celula[i - 1].acsr.tipo == 2) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.injl.FluidoPro.API);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF;
-        double boinjl;
-        double bainjl;
-        double fwinjl;
-        trF = celula[i - 1].acsr.injl.fluidocol.TR;
-        if (fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
-            rholisF = celula[i - 1].acsr.injl.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            boinjl = celula[i - 1].acsr.injl.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            bainjl = celula[i - 1].acsr.injl.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            fwinjl = celula[i - 1].acsr.injl.FluidoPro.BSW * bainjl / (boinjl + bainjl * celula[i - 1].acsr.injl.FluidoPro.BSW - celula[i - 1].acsr.injl.FluidoPro.BSW * boinjl);
-        } else {
-            rholisF = rholis;
-            boinjl = bo;
-            bainjl = ba;
-            fwinjl = celula[i - 1].FW;
-        }
-        // vazao de oleo sytandard antes da fonte:
-        double qostd1 = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (celula[i - 1].acsr.injl.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
-        // vazao total de gas nas condicoes standard fruto da soma do gas transportado
-        // da fronteira a esquerda
-        // da celula e do gas associado da fonte de liquido
-        double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO;
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-
-        if (fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
-            if (arq.trackRGO == -1) {
-                // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-                // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-                if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
-                    celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-                if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else {
-                // calculo do novo RGO do separador modeificado pela fonte de liquido
-                if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1)
-                    celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
-                else if (mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            }
-        } else
-            celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        // calculo da nova densidade de gas nas condicoes standard modificada pela fonte de liquido
-        if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15 &&
-            fabs(qgstd) > 1e-15)
-            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO * celula[i - 1].acsr.injl.FluidoPro.Deng) / qgstd;
-        else if (fabs(celula[i - 1].acsr.injl.QLiq) <= 1e-15)
-            celula[i].flui.Deng = celula[i - 1].flui.Deng;
-        // calculo da nova fracao de co2 modificad pela fonte de liquido
-        if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0 && fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15 &&
-            fabs(qgstd) > 1e-15)
-            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.injl.FluidoPro.RGO * celula[i - 1].acsr.injl.FluidoPro.yco2) / qgstd;
-        else if (fabs(celula[i - 1].acsr.injl.QLiq) <= 1e-15)
-            celula[i].flui.yco2 = celula[i - 1].flui.yco2;
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
-                                   (141.5 / (131.5 + celula[i - 1].acsr.injl.FluidoPro.API)) * qostd2;
-                denmixSTD /= (qostd1 + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0 ||
-                       fabs(celula[i - 1].acsr.injl.QLiq) <= 1e-15)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - celula[i - 1].acsr.injl.FluidoPro.BSW) > 0)
-                qw2 = qostd2 * celula[i - 1].acsr.injl.FluidoPro.BSW / (1. - celula[i - 1].acsr.injl.FluidoPro.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * celula[i - 1].acsr.injl.FluidoPro.Denag);
-
-            if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-                fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15)
-                celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-            if (fabs(qw1 + qw2) > 1e-15)
-                celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
-                                        qw2 * celula[i - 1].acsr.injl.FluidoPro.Denag) /
-                                       (qw1 + qw2);
-            else
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-            // e minima para a construcao dos pares
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) { // vazao de liquido >0
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.injl.FluidoPro.VisOM(tL)) / (qostd1 + qostd2);
-                celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.injl.FluidoPro.VisOM(tH)) / (qostd1 + qostd2);
-            } else if (arq.flashCompleto == 0) { // se,m vazao de liquido
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-        if (arq.flashCompleto == 0) {
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if ((celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny * 1e-6) &&
-            fabs(celula[i - 1].acsr.injl.QLiq) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // observar que a fonte de liquido pode ter uma fracao de liquido complementar
-            // distinta da onservada a esquerda da celula i-1
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.injl.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.injl.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassLiquidInjection(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     }
     // caso de IPR na celula i-1:
     else if (celula[i - 1].acsr.tipo == 3) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.ipr.FluidoPro.API);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF;
-        double boipr;
-        double baipr;
-        double fwipr;
-        trF = 0.;
-        if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
-            rholisF = celula[i - 1].acsr.ipr.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            boipr = celula[i - 1].acsr.ipr.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            baipr = celula[i - 1].acsr.ipr.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            fwipr = celula[i - 1].acsr.ipr.FluidoPro.BSW * baipr / (boipr + baipr * celula[i - 1].acsr.ipr.FluidoPro.BSW - celula[i - 1].acsr.ipr.FluidoPro.BSW * boipr);
-        } else {
-            rholisF = rholis;
-            boipr = bo;
-            baipr = ba;
-            fwipr = celula[i - 1].FW;
-        }
-        // vazao de oleo standard antes da fonte:
-        double qostd1 = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (celula[i - 1].acsr.ipr.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwipr) / (boipr * rholisF);
-        // vazao total de gas nas condicoes standard fruto da soma do gas transportado
-        // da fronteira a esquerda
-        // da celula e do gas associado da IPR
-        double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO;
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
-                if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
-                    mudaRGO == 1 && fabs(celula[i - 1].fontemassLR) > 1e-15)
-                    celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-                if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-
-        } else { // calculo do novo RGO do separador modificado pela IPR
-            if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
-                if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-10 && mudaRGO == 1)
-                    celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
-                else if (mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        }
-        // calculo da nova densidade de gas nas condicoes standard modificada pela IPR
-        if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 &&
-            fabs(qgstd) > 1e-15)
-            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO * celula[i - 1].acsr.ipr.FluidoPro.Deng) / qgstd;
-        else
-            celula[i].flui.Deng = celula[i - 1].flui.Deng;
-        // calculo da nova fracao de co2 modificada pela fonte de liquido
-        if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 && fabs(qgstd) > 1e-15)
-            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.RGO * celula[i - 1].acsr.ipr.FluidoPro.yco2) / qgstd;
-        else
-            celula[i].flui.yco2 = celula[i - 1].flui.yco2;
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                (celula[i - 1].fontemassLR) > 1e-15) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
-                                   (141.5 / (131.5 + celula[i - 1].acsr.ipr.FluidoPro.API)) * qostd2;
-                denmixSTD /= (qostd1 + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0 || (celula[i - 1].fontemassLR) <= 1e-15)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - celula[i - 1].acsr.ipr.FluidoPro.BSW) > 0)
-                qw2 = qostd2 * celula[i - 1].acsr.ipr.FluidoPro.BSW / (1. - celula[i - 1].acsr.ipr.FluidoPro.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwipr / (1000. * celula[i - 1].acsr.ipr.FluidoPro.Denag);
-
-            if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-                (celula[i - 1].fontemassLR) > 1e-15)
-                celula[i].flui.BSW = ((qw1 + qostd1) * celula[i - 1].flui.BSW + (qw2 + qostd2) * celula[i - 1].acsr.ipr.FluidoPro.BSW) / (qw1 + qw2 + qostd1 + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-            if ((qw1 + qw2) > 1e-15)
-                celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
-                                        qw2 * celula[i - 1].acsr.ipr.FluidoPro.Denag) /
-                                       (qw1 + qw2);
-            else
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-            if ((qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15) {
-                // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-                // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-                // e minima para a construcao dos pares
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.VisOM(tL)) / (qostd1 + qostd2);
-                celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.ipr.FluidoPro.VisOM(tH)) / (qostd1 + qostd2);
-            } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15) { // sem vazao de liquido
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-        if (arq.flashCompleto == 0) {
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].fontemassLR) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // observar que a IPR pode ter uma fracao de liquido complementar
-            // distinta da onservada a esquerda da celula i-1
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.ipr.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = 0.;
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassInflowPerformance(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     }
     // caso de fonte de massa na celula i-1:
     else if (celula[i - 1].acsr.tipo == 10) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.injm.FluidoPro.API);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF;
-        double boinjl;
-        double bainjl;
-        double fwinjl;
-        trF = celula[i - 1].acsr.injm.fluidocol.TR;
-        if (fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
-            rholisF = celula[i - 1].acsr.injm.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            boinjl = celula[i - 1].acsr.injm.FluidoPro.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            bainjl = celula[i - 1].acsr.injm.FluidoPro.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            fwinjl = celula[i - 1].acsr.injm.FluidoPro.BSW * bainjl / (boinjl + bainjl * celula[i - 1].acsr.injm.FluidoPro.BSW - celula[i - 1].acsr.injm.FluidoPro.BSW * boinjl);
-        } else {
-            rholisF = rholis;
-            boinjl = bo;
-            bainjl = ba;
-            fwinjl = celula[i - 1].FW;
-        }
-        // vazao de oleo sytandard antes da fonte:
-        double qostd1 = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (celula[i - 1].acsr.injm.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
-        // vazao total de gas nas condicoes standard fruto da soma do gas transportado
-        // da fronteira a esquerda
-        // da celula e do gas associado da fonte de liquido
-        double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO;
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if ((celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
-                if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
-                    celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-                if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        } else {
-            // calculo do novo RGO do separador modeificado pela fonte de liquido
-            if ((celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
-                if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1)
-                    celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
-                else if (mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        }
-        // calculo da nova densidade de gas nas condicoes standard modificada pela fonte de liquido
-        if (fabs(qgstd) > (*vg1dSP).localtiny * 1e-10 && arq.flashCompleto == 0 &&
-            (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
-            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO * celula[i - 1].acsr.injm.FluidoPro.Deng) / qgstd;
-        else
-            celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        // calculo da nova fracao de co2 modificad pela fonte de liquido
-        if (fabs(qgstd) > (*vg1dSP).localtiny * 1e-10 && arq.flashCompleto == 0 &&
-            (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
-            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.injm.FluidoPro.RGO * celula[i - 1].acsr.injm.FluidoPro.yco2) / qgstd;
-        else
-            celula[i].flui.yco2 = celula[i - 1].flui.yco2;
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
-                                   (141.5 / (131.5 + celula[i - 1].acsr.injm.FluidoPro.API)) * qostd2;
-                denmixSTD /= (qostd1 + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0 ||
-                       fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) <= 1e-15)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - celula[i - 1].acsr.injm.FluidoPro.BSW) > 0)
-                qw2 = qostd2 * celula[i - 1].acsr.injm.FluidoPro.BSW / (1. - celula[i - 1].acsr.injm.FluidoPro.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * celula[i - 1].acsr.injm.FluidoPro.Denag);
-
-            if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-                (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
-                celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-            if (fabs(qw1 + qw2) > 1e-15 &&
-                (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15)
-                celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
-                                        qw2 * celula[i - 1].acsr.injm.FluidoPro.Denag) /
-                                       (qw1 + qw2);
-            else
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-            // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-            // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-            // e minima para a construcao dos pares
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                (celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) > 1e-15) { // vazao de liquido >0
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.injm.FluidoPro.VisOM(tL)) / (qostd1 + qostd2);
-                celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.injm.FluidoPro.VisOM(tH)) / (qostd1 + qostd2);
-            } else if (arq.flashCompleto == 0 ||
-                       fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP) <= 1e-15) { // se,m vazao de liquido
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-        if (arq.flashCompleto == 0) {
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if ((celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny) &&
-            fabs(celula[i - 1].acsr.injm.MassG + celula[i - 1].acsr.injm.MassP + celula[i - 1].acsr.injm.MassC) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // observar que a fonte de liquido pode ter uma fracao de liquido complementar
-            // distinta da onservada a esquerda da celula i-1
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.injm.FluidoPro.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.injm.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassMultipleSource(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     }
     // caso especial, fonte de vazamento:
     else if (celula[i - 1].acsr.tipo == 9 && celula[i - 1].acsr.fontechk.abertura > 1e-6) {
-        ProFlu fluF;
-        // define qual o fluido envolvido na fonte, se a pressÃƒÂ£o ambiente for menor do que a
-        // pressao da tubulacao, fluido da tubulacao, senao, fluido definido como
-        // fluido ambiente
-        if (celula[i - 1].acsr.fontechk.presT > celula[i - 1].acsr.fontechk.pamb) {
-            fluF = celula[i - 1].acsr.fontechk.fluidoP;
-        } else {
-            fluF = celula[i - 1].acsr.fontechk.fluidoPamb;
-        }
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rhololeoF = 1000. * 141.5 / (131.5 + fluF.API);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF = fluF.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double boinjl = fluF.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-        double bainjl = fluF.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-        double fwinjl = fluF.BSW * bainjl / (boinjl + bainjl * fluF.BSW - fluF.BSW * boinjl);
-        // vazao de oleo standard antes da fonte:
-        double qostd1 = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (fluF.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
-        // vazao total de gas nas condicoes standard fruto da soma do gas transportado
-        // da fronteira a esquerda
-        // da celula e do gas associado ao vazamento
-        double qgstd;
-        if (fabs(qostd2) > 0.)
-            qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * fluF.RGO;
-        else {
-            qgstd = qostd1 * celula[i - 1].flui.RGO + celula[i - 1].fontemassGR / (fluF.Deng * 1.225);
-        }
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny * 1e-6) && bsw < (1. - (*vg1dSP).localtiny) && mudaRGO == 1)
-                celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-            if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
-                celula[i].flui.RGO = (*vg1dSP).RGOMax;
-        } else { // calculo do novo RGO do separador modificado pela IPR
-            if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-6 && mudaRGO == 1)
-                celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
-            else if (mudaRGO == 1)
-                celula[i].flui.RGO = (*vg1dSP).RGOMax;
-        }
-        // calculo da nova densidade de gas nas condicoes standard modificada pelo vazamento
-        if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0) {
-            if (fabs(qostd2) > 0)
-                celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * fluF.RGO * fluF.Deng) / qgstd;
-            else
-                celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + celula[i - 1].fontemassGR / (fluF.Deng * 1.225)) / qgstd;
-        }
-        // calculo da nova fracao de co2 modificada pelo vazamento
-        if (fabs(qgstd) > (*vg1dSP).localtiny && arq.flashCompleto == 0) {
-            if (fabs(qostd2) > 0)
-                celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * fluF.RGO * fluF.yco2) / qgstd;
-            else
-                celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + fluF.yco2 * celula[i - 1].fontemassGR / (fluF.Deng * 1.225)) / qgstd;
-        }
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
-                                   (141.5 / (131.5 + fluF.API)) * qostd2;
-                denmixSTD /= (qostd1 + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - fluF.BSW) > 0)
-                qw2 = qostd2 * fluF.BSW / (1. - fluF.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwinjl / (1000. * fluF.Denag);
-
-            if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15)
-                celula[i].flui.BSW = (qw1 + qw2) / (qw1 + qw2 + qostd1 + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0) {
-                // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-                // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-                // e minima para a construcao dos pares
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * fluF.VisOM(tL)) / (qostd1 + qostd2);
-                celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * fluF.VisOM(tH)) / (qostd1 + qostd2);
-            } else if (arq.flashCompleto == 0) {
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-        if (arq.flashCompleto == 0) {
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 || fabs(celula[i - 1].fontemassCR) > (*vg1dSP).localtiny * 1e-6) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // observar a fonte de vazamento pode ter uma fracao de liquido complementar
-            // distinta da observada a esquerda da celula i-1
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / fluF.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = celula[i - 1].fontemassCR / celula[i - 1].acsr.fontechk.fluidocol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassLeakSource(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     } else if (celula[i - 1].acsr.tipo == 15) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.radialPoro.flup.API);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF;
-        double boipr;
-        double baipr;
-        double fwipr;
-        trF = 0.;
-        if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
-            rholisF = celula[i - 1].acsr.radialPoro.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            boipr = celula[i - 1].acsr.radialPoro.flup.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            baipr = celula[i - 1].acsr.radialPoro.flup.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            fwipr = celula[i - 1].acsr.radialPoro.BSW * baipr / (boipr + baipr * celula[i - 1].acsr.radialPoro.BSW - celula[i - 1].acsr.radialPoro.BSW * boipr);
-        } else {
-            rholisF = rholis;
-            boipr = bo;
-            baipr = ba;
-            fwipr = celula[i - 1].FW;
-        }
-        // vazao de oleo standard antes da fonte:
-        double qostd1 = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (celula[i - 1].acsr.radialPoro.flup.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwipr) / (boipr * rholisF);
-        // vazao total de gas nas condicoes standard fruto da soma do gas transportado
-        // da fronteira a esquerda
-        // da celula e do gas associado da IPR
-        double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO;
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
-                if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
-                    mudaRGO == 1 && fabs(celula[i - 1].fontemassLR) > 1e-15)
-                    celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-                if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-
-        } else { // calculo do novo RGO do separador modificado pela IPR
-            if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
-                if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-10 && mudaRGO == 1)
-                    celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
-                else if (mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        }
-        // calculo da nova densidade de gas nas condicoes standard modificada pela IPR
-        if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 &&
-            fabs(qgstd) > 1e-15)
-            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO * celula[i - 1].acsr.radialPoro.flup.Deng) / qgstd;
-        else
-            celula[i].flui.Deng = celula[i - 1].flui.Deng;
-        // calculo da nova fracao de co2 modificada pela fonte de liquido
-        if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 && fabs(qgstd) > 1e-15)
-            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.radialPoro.flup.RGO * celula[i - 1].acsr.radialPoro.flup.yco2) / qgstd;
-        else
-            celula[i].flui.yco2 = celula[i - 1].flui.yco2;
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                (celula[i - 1].fontemassLR) > 1e-15) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
-                                   (141.5 / (131.5 + celula[i - 1].acsr.radialPoro.flup.API)) * qostd2;
-                denmixSTD /= (qostd1 + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - celula[i - 1].acsr.radialPoro.BSW) > 0)
-                qw2 = qostd2 * celula[i - 1].acsr.radialPoro.BSW / (1. - celula[i - 1].acsr.radialPoro.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwipr / (1000. * celula[i - 1].acsr.radialPoro.flup.Denag);
-
-            if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-                fabs(celula[i - 1].fontemassLR) > 1e-15)
-                celula[i].flui.BSW = ((qw1 + qostd1) * celula[i - 1].flui.BSW + (qw2 + qostd2) * celula[i - 1].acsr.radialPoro.BSW) / (qw1 + qw2 + qostd1 + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-            if ((qw1 + qw2) > 1e-15 && (celula[i - 1].fontemassLR) > 1e-15)
-                celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
-                                        qw2 * celula[i - 1].acsr.radialPoro.flup.Denag) /
-                                       (qw1 + qw2);
-            else
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15) {
-                // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-                // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-                // e minima para a construcao dos pares
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.radialPoro.flup.VisOM(tL)) / (qostd1 + qostd2);
-                celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.radialPoro.flup.VisOM(tH)) / (qostd1 + qostd2);
-            } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15) { // sem vazao de liquido
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-        if (arq.flashCompleto == 0) {
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].fontemassLR) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // observar que a IPR pode ter uma fracao de liquido complementar
-            // distinta da onservada a esquerda da celula i-1
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.radialPoro.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = 0.;
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassRadialPorous(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     } else if (celula[i - 1].acsr.tipo == 16) {
-        double api = celula[i - 1].flui.API;
-        double rhololeo = 1000. * 141.5 / (131.5 + api);
-        double rhololeoF = 1000. * 141.5 / (131.5 + celula[i - 1].acsr.poroso2D.dados.flup.API);
-        double rholis = celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-        double rholisF;
-        double boipr;
-        double baipr;
-        double fwipr;
-        trF = 0.;
-        if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
-            rholisF = celula[i - 1].acsr.poroso2D.dados.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            boipr = celula[i - 1].acsr.poroso2D.dados.flup.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            baipr = celula[i - 1].acsr.poroso2D.dados.flup.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            fwipr = celula[i - 1].acsr.poroso2D.dados.transfer.BSW * baipr / (boipr + baipr * celula[i - 1].acsr.poroso2D.dados.transfer.BSW - celula[i - 1].acsr.poroso2D.dados.transfer.BSW * boipr);
-        } else {
-            rholisF = rholis;
-            boipr = bo;
-            baipr = ba;
-            fwipr = celula[i - 1].FW;
-        }
-        // vazao de oleo standard antes da fonte:
-        double qostd1 = 0.;
-        if (celula[i - 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd1 = celula[i - 1].Mliqini * (1. - celula[i - 1].FW) * (1. - celula[i - 1].bet) / (bo * rholis);
-        // vazao de oleo standard da fonte:
-        double qostd2 = 0.;
-        if (celula[i - 1].acsr.poroso2D.dados.flup.dStockTankVaporMassFraction < 1. - 1e-15)
-            qostd2 = celula[i - 1].fontemassLR * (1. - fwipr) / (boipr * rholisF);
-        // vazao total de gas nas condicoes standard fruto da soma do gas transportado
-        // da fronteira a esquerda
-        // da celula e do gas associado da IPR
-        double qgstd = qostd1 * celula[i - 1].flui.RGO + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO;
-        double hol = 1 - celula[i - 1].alf;
-        double bet = celula[i - 1].bet;
-        double bsw = celula[i - 1].FW;
-        double rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-        double rhogST = celula[i - 1].flui.Deng * 1.225;
-        // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
-        // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
-        // pois ÃƒÂ© utilizado como entrada no transiente
-        celula[i - 1].VolLeveST = (((1 - hol) * rhog / rhogST) + hol * (1 - bet) * (1. - bsw) * rs / bo);
-        if (celula[i - 1].VolLeveST < 1e-15)
-            celula[i - 1].VolLeveST = 0.;
-        if (arq.trackRGO == -1) {
-            // esta chave nÃƒÂ£o ÃƒÂ© utilizada, ÃƒÂ© mantida aqui como reserva, atualmente este
-            // calculo nÃƒÂ£o esta funcionando, lembrando que arq.trackRGO assume apenas 2 valores, 0 ou 1
-            if (fabs(celula[i - 1].fontemassLR) > 1e-15) {
-                if (hol > (*vg1dSP).localtiny && bet < (1. - (*vg1dSP).localtiny) && bsw < (1. - (*vg1dSP).localtiny) &&
-                    mudaRGO == 1 && fabs(celula[i - 1].fontemassLR) > 1e-15)
-                    celula[i].flui.RGO = celula[i - 1].VolLeveST * bo / (hol * (1 - bet) * (1 - bsw));
-                if (celula[i].flui.RGO > (*vg1dSP).RGOMax && mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-
-        } else { // calculo do novo RGO do separador modificado pela IPR
-            if ((celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15) {
-                if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny * 1e-10 && mudaRGO == 1)
-                    celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
-                else if (mudaRGO == 1)
-                    celula[i].flui.RGO = (*vg1dSP).RGOMax;
-            } else
-                celula[i].flui.RGO = celula[i - 1].flui.RGO;
-        }
-        // calculo da nova densidade de gas nas condicoes standard modificada pela IPR
-        if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 &&
-            fabs(qgstd) > 1e-15)
-            celula[i].flui.Deng = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.Deng + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO * celula[i - 1].acsr.poroso2D.dados.flup.Deng) / qgstd;
-        else
-            celula[i].flui.Deng = celula[i - 1].flui.Deng;
-        // calculo da nova fracao de co2 modificada pela fonte de liquido
-        if (arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15 && (celula[i - 1].fontemassGR) > 1e-15 && fabs(qgstd) > 1e-15)
-            celula[i].flui.yco2 = (qostd1 * celula[i - 1].flui.RGO * celula[i - 1].flui.yco2 + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.RGO * celula[i - 1].acsr.poroso2D.dados.flup.yco2) / qgstd;
-        else
-            celula[i].flui.yco2 = celula[i - 1].flui.yco2;
-        if (nfluP > 1 || (*vg1dSP).chaverede == 1) {
-            // o modelo seja ASTM. Observar que isto sÃƒÂ³ faz sentido se se tiver mais de um fluido
-            // de producao cadastrado no JSON, ou a simulacao se insere em um sistema de redes
-            // com varios tramos alimentando outros tramos com fluidos com propriedades diferentes
-            // entre cada tramo
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 &&
-                (celula[i - 1].fontemassLR) > 1e-15) {
-                double denmixSTD = (141.5 / (131.5 + celula[i - 1].flui.API)) * qostd1 +
-                                   (141.5 / (131.5 + celula[i - 1].acsr.poroso2D.dados.flup.API)) * qostd2;
-                denmixSTD /= (qostd1 + qostd2);
-                celula[i].flui.API = 141.5 / denmixSTD - 131.5;
-            } else if (arq.flashCompleto == 0 || (celula[i - 1].fontemassLR) <= 1e-15)
-                celula[i].flui.API = celula[i - 1].flui.API;
-            double qw1;
-            if ((1. - celula[i - 1].flui.BSW) > 0)
-                qw1 = qostd1 * celula[i - 1].flui.BSW / (1. - celula[i - 1].flui.BSW);
-            else
-                qw1 = celula[i - 1].Mliqini * celula[i - 1].FW * (1. - celula[i - 1].bet) / (1000. * celula[i - 1].flui.Denag);
-            double qw2;
-            if ((1. - celula[i - 1].acsr.poroso2D.dados.transfer.BSW) > 0)
-                qw2 = qostd2 * celula[i - 1].acsr.poroso2D.dados.transfer.BSW / (1. - celula[i - 1].acsr.poroso2D.dados.transfer.BSW);
-            else
-                qw2 = celula[i - 1].fontemassLR * fwipr / (1000. * celula[i - 1].acsr.poroso2D.dados.flup.Denag);
-
-            if (fabs(qw1 + qw2 + qostd1 + qostd2) > 1e-15 &&
-                (celula[i - 1].fontemassLR) > 1e-15)
-                celula[i].flui.BSW = ((qw1 + qostd1) * celula[i - 1].flui.BSW + (qw2 + qostd2) * celula[i - 1].acsr.poroso2D.dados.transfer.BSW) / (qw1 + qw2 + qostd1 + qostd2);
-            else
-                celula[i].flui.BSW = celula[i - 1].flui.BSW;
-            if (fabs(qw1 + qw2) > 1e-15 &&
-                (celula[i - 1].fontemassLR) > 1e-15)
-                celula[i].flui.Denag = (qw1 * celula[i - 1].flui.Denag +
-                                        qw2 * celula[i - 1].acsr.poroso2D.dados.flup.Denag) /
-                                       (qw1 + qw2);
-            else
-                celula[i].flui.Denag = celula[i - 1].flui.Denag;
-            if (fabs(qostd1 + qostd2) > 1e-15 && arq.flashCompleto == 0 && (celula[i - 1].fontemassLR) > 1e-15) {
-                // reavaliacao dos pares necessarios para o modelo de viscosidade de oleo morto
-                // ASTM. Isto ÃƒÂ© feito tendo sempre os mesmos valores de temperatura maxima e
-                // e minima para a construcao dos pares
-                celula[i].flui.TempL = tL;
-                celula[i].flui.TempH = tH;
-                celula[i].flui.LVisL = (qostd1 * celula[i - 1].flui.VisOM(tL) + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.VisOM(tL)) / (qostd1 + qostd2);
-                celula[i].flui.LVisH = (qostd1 * celula[i - 1].flui.VisOM(tH) + qostd2 * celula[i - 1].acsr.poroso2D.dados.flup.VisOM(tH)) / (qostd1 + qostd2);
-            } else if (arq.flashCompleto == 0 || fabs(celula[i - 1].fontemassLR) <= 1e-15) { // sem vazao de liquido
-                celula[i].flui.TempL = celula[i - 1].flui.TempL;
-                celula[i].flui.TempH = celula[i - 1].flui.TempH;
-                celula[i].flui.LVisL = celula[i - 1].flui.LVisL;
-                celula[i].flui.LVisH = celula[i - 1].flui.LVisH;
-            }
-        }
-        if (arq.flashCompleto == 0) {
-            celula[i].flui.RenovaFluido();
-            corrDeng(i);
-        }
-        if (celula[i - 1].bet > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i - 1].fontemassLR) > 1e-15) {
-            // reavaliacao da fracao volumetrica do liquido complementar
-            // observar que a IPR pode ter uma fracao de liquido complementar
-            // distinta da onservada a esquerda da celula i-1
-            double boN = celula[i].flui.BOFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double baN = celula[i].flui.BAFunc(celula[i - 1].pres, celula[i - 1].temp);
-            double fwN = celula[i].flui.BSW * baN / (boN + baN * celula[i].flui.BSW - celula[i].flui.BSW * boN);
-            boI = celula[i].flui.BOFunc(celula[i].presaux, tmed);
-            baI = celula[i].flui.BAFunc(celula[i].presaux, tmed);
-            fwI = celula[i].flui.BSW * baI / (boI + baI * celula[i].flui.BSW - celula[i].flui.BSW * boI);
-            double qlpF = celula[i - 1].fontemassLR / celula[i - 1].acsr.poroso2D.dados.flup.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp);
-            double qlcF = 0.;
-            double betN = (celula[i - 1].QL * celula[i - 1].bet + qlcF) / (celula[i - 1].QL + qlpF + qlcF);
-            double qo = (celula[i - 1].QL + qlpF + qlcF) * (1 - fwN) * (1 - betN) * boI / bo;
-            double qw;
-            if (fwI < (1 - (*vg1dSP).localtiny))
-                qw = fwI * qo / (1 - fwI);
-            else
-                qw = celula[i - 1].QL * (1 - celula[i - 1].bet) + qlpF;
-            double qc = (celula[i - 1].QL * (celula[i - 1].bet) + qlcF) * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp) / celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-            celula[i].bet = fabs(qc) / (fabs(qo) + fabs(qw) + fabs(qc));
-        } else
-            celula[i].bet = celula[i - 1].bet;
+        applySteadyMassPorous2D(i, mudaRGO, tL, tH, bo, ba, rs, tmed, trF, boI, baI, fwI);
     }
 
     // atualizaÃ§Ã£o da vazao massica da mistura:
@@ -15345,54 +15656,7 @@ void SProd::RenovaMassPerm(int i) {
     double qo = 0.;
     double masoleo;
     if (celula[i].flui.RGO < 1e7) { // Caso exista liquido
-        if (arq.tipoFluido == 0) {
-            rs = celula[i].flui.RS(pmed, tmed);
-            bo = celula[i].flui.BOFunc(pmed, tmed, rs);
-            rs = rs * 6.29 / 35.31467;
-            double rhogstd = celula[i].flui.Deng * 1.225;
-            double rhololeostd = 1000. * 141.5 / (131.5 + celula[i].flui.API);
-            double rhoa = celula[i].flui.Denag * 1000.;
-
-            double denom = celula[i].flui.RGO * rhogstd + rhololeostd;
-            if (fabs(1 - celula[i].flui.BSW) > (*vg1dSP).localtiny) {
-                denom += rhoa * celula[i].flui.BSW / (1 - celula[i].flui.BSW);
-                if (fabs(1 - celula[i].bet) > (*vg1dSP).localtiny * 1e-6 && fabs(celula[i].bet) > (*vg1dSP).localtiny * 1e-10) {
-                    denom += (celula[i].fluicol.MasEspFlu(pmed, tmed) * celula[i].bet / (1 - celula[i].bet)) * bo * (1. + fwI / (1 - fwI));
-                }
-            }
-            if (fabs(1 - celula[i].bet) > (*vg1dSP).localtiny * 1e-6 && fabs(1 - celula[i].flui.BSW) > (*vg1dSP).localtiny)
-                qo = celula[i].MC / denom;
-
-            if (fabs(1 - celula[i].bet) > (*vg1dSP).localtiny * 1e-6 && fabs(1 - celula[i].flui.BSW) > (*vg1dSP).localtiny) {
-                if ((*vg1dSP).tipoFluidoRedeGlob == 0)
-                    celula[i].Mliqini = celula[i].MC - (celula[i].flui.RGO - rs) * rhogstd * qo;
-                else {
-                    masoleo = qo * bo * celula[i].flui.MasEspoleo(pmed, tmed, rs) + qo * rhoa * celula[i].flui.BSW / (1 - celula[i].flui.BSW);
-                    celula[i].Mliqini = masoleo + celula[i].MComp;
-                }
-            } else
-                celula[i].Mliqini = celula[i].MC - (celula[i - 1].MC - celula[i - 1].Mliqini) - celula[i - 1].fontemassGR;
-        } else {
-            double tit = celula[i].flui.FracMass(pmed, tmed);
-            celula[i].Mliqini = celula[i].MC * (1. - tit);
-        }
-        celula[i - 1].MliqiniR = celula[i].Mliqini;
-        if (i < ncel)
-            celula[i + 1].MliqiniL = celula[i].Mliqini;
-        pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
-        rhog = celula[i].rgCi = celula[i].flui.MasEspGas(pmed, tmed);
-
-        // calculo das massas especificas na interface a esquerda da celula
-        celula[i].rpCi = celula[i].flui.MasEspLiq(pmed, tmed);
-        celula[i].rcCi = celula[i].fluicol.MasEspFlu(pmed, tmed);
-        rhol = (1 - celula[i].bet) * celula[i].rpCi + celula[i].bet * celula[i].rcCi;
-        // rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(pmed, tmed)
-        // vazoes volumetricas:
-        celula[i].QL = celula[i].Mliqini / rhol;
-        if (i < ncel)
-            celula[i + 1].QLL = celula[i].QL;
-        celula[i - 1].QLR = celula[i].QL;
-        celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rhog;
+        finalizeSteadyMassWithLiquid(i, fwI, tmed, bo, rs, pmed, rhog, rhol, qo, masoleo);
     } else {
         celula[i].Mliqini = 0.;
         celula[i - 1].MliqiniR = celula[i].Mliqini;
@@ -15410,220 +15674,13 @@ void SProd::RenovaMassPerm(int i) {
     }
     // Definicao das fracoes volumetricas:
     if (fabs(celula[i].QG + celula[i].QL) < (*vg1dSP).localtiny) {
-        if (arq.tipoFluido == 1) {
-            celula[i].alf = 0.;
-        } else {
-            celula[i].alf = 1.;
-        }
-        celula[i].alfini = celula[i].alf;
-        celula[i - 1].alfR = celula[i].alf;
-        celula[i - 1].alfRini = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfL = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfLini = celula[i].alf;
-        celula[i].alfPigD = celula[i].alf;
-        celula[i].alfPigDini = celula[i].alf;
-        celula[i].alfPigE = celula[i].alf;
-        celula[i].alfPigEini = celula[i].alf;
-        if (i < ncel) {
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betLI = celula[i].bet;
-        }
-        celula[i].betini = celula[i].bet;
-        celula[i - 1].betR = celula[i].bet;
-        celula[i - 1].betRini = celula[i].bet;
-        celula[i].betPigD = celula[i].bet;
-        celula[i].betPigDini = celula[i].bet;
-        celula[i].betPigE = celula[i].bet;
-        celula[i].betPigEini = celula[i].bet;
-        celula[i].betI = celula[i].bet;
-        celula[i - 1].betRI = celula[i].bet;
+        finalizeSteadyMassNoFlow(i);
     } else if (fabs(celula[i].QG) < (*vg1dSP).localtiny) { // caso so exista liquido:
-        celula[i].alf = 0.;
-        celula[i].alfini = celula[i].alf;
-        celula[i - 1].alfR = celula[i].alf;
-        celula[i - 1].alfRini = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfL = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfLini = celula[i].alf;
-        celula[i].alfPigD = celula[i].alf;
-        celula[i].alfPigDini = celula[i].alf;
-        celula[i].alfPigE = celula[i].alf;
-        celula[i].alfPigEini = celula[i].alf;
-        if (i < ncel) {
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betLI = celula[i].bet;
-        }
-        celula[i].betini = celula[i].bet;
-        celula[i - 1].betR = celula[i].bet;
-        celula[i - 1].betRini = celula[i].bet;
-        celula[i].betPigD = celula[i].bet;
-        celula[i].betPigDini = celula[i].bet;
-        celula[i].betPigE = celula[i].bet;
-        celula[i].betPigEini = celula[i].bet;
-        celula[i].betI = celula[i].bet;
-        celula[i - 1].betRI = celula[i].bet;
+        finalizeSteadyMassLiquidOnly(i);
     } else if (fabs(celula[i].QL) < (*vg1dSP).localtiny * 1e-6) { // caso so exista gas:
-        celula[i].alf = 1.;
-        celula[i].alfini = celula[i].alf;
-        celula[i - 1].alfR = celula[i].alf;
-        celula[i - 1].alfRini = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfL = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfLini = celula[i].alf;
-        celula[i].alfPigD = celula[i].alf;
-        celula[i].alfPigDini = celula[i].alf;
-        celula[i].alfPigE = celula[i].alf;
-        celula[i].alfPigEini = celula[i].alf;
-        celula[i].c0 = 1.;
-        celula[i].ud = 0.;
-        if (i < ncel) {
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betLI = celula[i].bet;
-        }
-        celula[i].betini = celula[i].bet;
-        celula[i - 1].betR = celula[i].bet;
-        celula[i - 1].betRini = celula[i].bet;
-        celula[i].betPigD = celula[i].bet;
-        celula[i].betPigDini = celula[i].bet;
-        celula[i].betPigE = celula[i].bet;
-        celula[i].betPigEini = celula[i].bet;
-        celula[i].betI = celula[i].bet;
-        celula[i - 1].betRI = celula[i].bet;
+        finalizeSteadyMassGasOnly(i);
     } else { // caso bifasico
-        double c0 = 1.;
-        double ud = 0.;
-        if (fabs(celula[i].QL) > (*vg1dSP).localtiny * 1e-6) {
-            if (arq.tipoModeloDrift == 1) {
-                if (iterperm == 0) { // primeira estimativa, primeira iteracao
-                    // utiliza-se a fracao de vazio sem escorregamento, pois a propria correlacao para se obter a
-                    // fracao de vazio depende do valor da fracao de vazio
-                    if ((fabs(celula[i].QG) + fabs(celula[i].QL)) > (*vg1dSP).localtiny) {
-                        if (monitConvPerm > 0.01)
-                            celula[i].alf = fabs(celula[i].QG) /
-                                            (fabs(celula[i].QG) + fabs(celula[i].QL));
-                        CalcC0UdPerm(i, c0, ud);
-                    } else
-                        celula[i].alf = 0.;
-                    celula[i].alfini = celula[i].alf;
-                    celula[i - 1].alfR = celula[i].alf;
-                    celula[i - 1].alfRini = celula[i].alf;
-                    if (i < ncel)
-                        celula[i + 1].alfL = celula[i].alf;
-                    if (i < ncel)
-                        celula[i + 1].alfLini = celula[i].alf;
-                    celula[i].alfPigD = celula[i].alf;
-                    celula[i].alfPigDini = celula[i].alf;
-                    celula[i].alfPigE = celula[i].alf;
-                    celula[i].alfPigEini = celula[i].alf;
-                }
-                if (fabs(rhog) / rhol > 0.9) {
-                    c0 = 1.;
-                    ud = 0.;
-                }
-
-                // para o caso permanente, a fracao de vazio e obtida a partir das relacoes de escorregamento
-                // portanto, e neste ponto que se obtem Co e Ud:
-                else if (fabs(celula[i].QG) > (*vg1dSP).localtiny && fabs(celula[i].QL) > (*vg1dSP).localtiny * 1e-6)
-                    CalcC0UdPerm(i, c0, ud);
-                celula[i].c0 = c0;
-                celula[i].ud = ud;
-                double area = celula[i].duto.area;
-                if (fabs(celula[i].QG + celula[i].QL) > (*vg1dSP).localtiny) {
-                    // alfa com escorregamento:
-                    celula[i].alf = celula[i].QG / (c0 * (celula[i].QG + celula[i].QL) + ud * area);
-                    double alfHomo = celula[i].QG / (celula[i].QG + celula[i].QL);
-                    if (celula[i].alf > 1. - 1e-15 || celula[i].alf < 1e-15)
-                        celula[i].alf = alfHomo;
-
-                } else
-                    celula[i].alf = 0.;
-                if (celula[i].alf > (1 - (*vg1dSP).localtiny) && fabs(celula[i].QG + celula[i].QL) > (*vg1dSP).localtiny)
-                    celula[i].alf = fabs(celula[i].QG) / fabs(celula[i].QG + celula[i].QL);
-                else if (celula[i].alf > (1 - (*vg1dSP).localtiny))
-                    celula[i].alf = 1.;
-            } else {
-                double holdup;
-                double frictionGrad;
-                double gravityGrad;
-                double totalGrad;
-                double reynolds;
-                unsigned char flowType;
-                char *errorMsg;
-                unsigned char errorFlag;
-                executarCorrelacao(celula, i, 0, arq.AceleraConvergPerm,
-                                   celula[i - 1].correlacaoMR2,
-                                   holdup, frictionGrad, gravityGrad, totalGrad,
-                                   reynolds, flowType);
-               if(celula[i - 1].correlacaoMR2==16){
-                if(flowType=='1' || flowType=='2')celula[i].arranjo=0;
-                if(flowType=='3')celula[i].arranjo=1;
-                if(flowType=='4')celula[i].arranjo=2;
-                if(flowType=='6')celula[i].arranjo=-1;
-                if(flowType=='5')celula[i].arranjo=-2;
-               }
-               else{
-            	   if(flowType=='1')celula[i].arranjo=1;
-            	   if(flowType=='2')celula[i].arranjo=2;
-                   if(flowType=='3')celula[i].arranjo=3;
-                   if(flowType=='4')celula[i].arranjo=4;
-                   if(flowType=='6')celula[i].arranjo=5;
-                   if(flowType=='5')celula[i].arranjo=6;
-               }
-                celula[i].alf = 1. - holdup;
-            }
-        } else {
-            c0 = 1.;
-            ud = 0.;
-            celula[i].alf = 1.;
-        }
-        if (celula[i].alf < 0.)
-            celula[i].alf = 0.;
-        else if (celula[i].alf > 1.)
-            celula[i].alf = 1.;
-        // atualizacoes dos valores das fracoes volumetricas da celula i armazendadas em
-        // outras celulas, e inclusiove armazendo os valores para "tempo anterior", que nao
-        // sao relevantes para o problema permanente mas importantes se o resultado permanente
-        // der partida na solucao transiente:
-        celula[i].alfini = celula[i].alf;
-        celula[i - 1].alfR = celula[i].alf;
-        celula[i - 1].alfRini = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfL = celula[i].alf;
-        if (i < ncel)
-            celula[i + 1].alfLini = celula[i].alf;
-        celula[i].alfPigD = celula[i].alf;
-        celula[i].alfPigDini = celula[i].alf;
-        celula[i].alfPigE = celula[i].alf;
-        celula[i].alfPigEini = celula[i].alf;
-        if (i < ncel) {
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLini = celula[i].bet;
-            celula[i + 1].betLI = celula[i].bet;
-        }
-        celula[i].betini = celula[i].bet;
-        celula[i - 1].betR = celula[i].bet;
-        celula[i - 1].betRini = celula[i].bet;
-        celula[i].betPigD = celula[i].bet;
-        celula[i].betPigDini = celula[i].bet;
-        celula[i].betPigE = celula[i].bet;
-        celula[i].betPigEini = celula[i].bet;
-        celula[i].betI = celula[i].bet;
-        celula[i - 1].betRI = celula[i].bet;
+        finalizeSteadyMassTwoPhase(i, rhog, rhol);
     }
 
     if (fabs(celula[i].QL) > 1e-15 && fabs(celula[i].MComp) > 1e-15) {
