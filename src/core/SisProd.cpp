@@ -8363,6 +8363,54 @@ void SProd::ImprimeTrendTransG(int i) {
 /// marchaProdPerm1 clamps alfini and betini to zero below 1e-6 right after this
 /// returns and the other two do not, so that clamp stays at the call site where
 /// it can be seen.
+/// Marches the gas line after the production column has converged, then runs the
+/// pseudo-transient column/annulus coupling when strong coupling is switched on.
+///
+/// marchaProdPerm1 and marchaProdPerm2 carried this block twice, token for token
+/// -- 305 tokens, verified by comparison, differing only by a comment and by one
+/// pair of braces around a single-statement for. marchaProdPerm1Rev does NOT
+/// have it and is not a caller.
+void SProd::marchGasLineAndCoupleAnnulus(double pchute) {
+    if (pchute > 0 && arq.lingas > 0 && arq.nvalvgas > 0) {
+        if (celulaG[0].tipoCC == 0) {            // marcha para o caso, pressao de injecao
+            if (arq.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
+                for (int iter = 0; iter < 1; iter++) {
+                    marchaGasPerm1();
+                }
+            } else
+                buscaGasPresPerm3(); // choke de injecao ativo
+        } else
+            buscaGasPresPerm2(); // marcha na linha de gas para o caso de vazao de injecao
+    }
+
+    if (arq.acopColAnulPermForte > 0 && arq.lingas > 0 && semTermo == 0) {
+        atualizaProp();
+        atualizaVelTermPerm();
+        calcDTPseudoTrans();
+        conectaColuna();
+        for (int kontaPseudo = 0; kontaPseudo < arq.acopColAnulPermForte; kontaPseudo++) {
+            for (int iterm = 0; iterm <= ncelGas; iterm++)
+                celulaG[iterm].tempini = celulaG[iterm].temp;
+            for (int iterm = 1; iterm <= ncelGas; iterm++) {
+                calctempGas(iterm, celulaG[iterm - 1].tempini, 1);
+            }
+            celula[0].tempini = celula[0].temp;
+            celula[1].tempLini = celula[1].tempL;
+            celula[1].tempL = celula[0].temp;
+            for (int iterm = 1; iterm <= ncel; iterm++) {
+                celula[iterm].tempini = celula[iterm].temp;
+            }
+            for (int iterm = 1; iterm <= ncel; iterm++) {
+                calctemp(iterm, celula[iterm].tempini, 1);
+            }
+            atualizaProp();
+            calcDTPseudoTrans();
+            conectaColuna();
+        }
+    }
+}
+
+
 void SProd::seedFirstCellVoidFraction(double pchute, double &alfini, double &betini,
                                       DryGasFlashTarget dryGasFlashTarget) {
     // estimativa da fracao de vazio na primeira celula do sistema
@@ -8521,6 +8569,161 @@ void SProd::seedFirstCellVoidFraction(double pchute, double &alfini, double &bet
     }
 }
 
+/// Walks the column cell by cell for marchaProdPerm1.
+///
+/// Returns true when the march has to stop early; abortValue then carries the
+/// sentinel the original returned from inside the loop. i is the cell the march
+/// reached and the caller still reads it.
+bool SProd::advanceProductionColumn(double pchute, int &i, double &abortValue) {
+    while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
+
+        RenovaPresPermMon(i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
+        // da celula i
+        // teste para ver se ocorreu algum problema:
+        if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        if (celula[i].presaux <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        atualizaPeriPmonProd(i); // atualizacao da pressao da fronteira esquerda,
+        // caso exista alguma BCS ou incremento de pressao
+        if (i == 312) {
+            int para;
+            para = 0;
+        }
+        if (arq.flashCompleto != 2)
+            RenovaMassPerm(i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
+        // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
+        // densidade do gas, RGO, API, BSW, beta
+        else
+            RenovaMassPermComp(i);
+
+        if (arq.acopColAnulPermForte == 0 || arq.lingas == 0 || monitConvPerm > 0.3)
+            RenovaTempPerm(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
+        // verifica se teve algum problema nos limites de temperatura
+        // caso se esteja trabalhando com tabela PVTSim
+        if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
+            celula[i].temp = arq.tabent.tmin;
+        atualizaPeriTempProd(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
+        RenovaPresPermJus(i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
+        // seu centro de celula
+        // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
+        // celula
+        if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+        if (celula[i].pres <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        atualizaPeriPjusProd(i); // mera atualizacao de atributos que guardam valores de pressao
+        // das celulas a esquerda e a direita
+        for (int j = 0; j < arq.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
+            // a celula tem uma.
+            // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
+            // densecessario, em vavliacao
+            if (posicVGLP[j] == i) {
+                int k = posicVGLG[j];
+                calcVazGasPerm(k);
+            }
+        }
+        if (arq.tipoFluido == 0)
+            RenovaTransMassPerm(i - 1);
+        else
+            RenovaTransMassPermGas(i - 1); // caso seja uma tabela PVTSim, calcula-se a
+        // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
+        // calor latente da equacao de energia
+        if (arq.ordperm > 1) { // correcao de segunda ordem
+            double D0presaux = celula[i].presaux - celula[i - 1].pres;
+            double D0pres = celula[i].pres - celula[i].presaux;
+            double D0temp = celula[i].temp - celula[i - 1].temp;
+            RenovaPresPermMon(i, 1);
+            atualizaPeriPmonProd(i);
+            RenovaMassPerm(i);
+            RenovaTempPerm(i, 1);
+            if (isnan(celula[i].temp)) {
+                if (arq.transiente == 0 && arq.AP == 0)
+                    // neste caso, se finaliza a simulacao, nao tem um transiente
+                    // a ser feito a seguir e nem se estÃ¡ em uma rede
+                    NumError(
+                        "Temperatrura na linha de producao com valor NaN em marchaProdPerm1");
+                else {
+                    // apresenta apenas um aviso
+                    cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
+                    // se for em uma iteracao de rede, apos a primeira iteracao
+                    if ((*vg1dSP).iterRede > 0)
+                        {
+                            abortValue = -1.1e10;
+                            return true;
+                        }
+                    // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                    else
+                        {
+                            abortValue = 1.1e10;
+                            return true;
+                        }
+                }
+            }
+            RenovaPresPermJus(i, 1);
+            celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
+            celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
+            celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
+            atualizaPeriPjusProd(i);
+            atualizaPeriPmonProd(i);
+            atualizaPeriTempProd(i);
+            RenovaMassPerm(i);
+            if (arq.tipoFluido == 0)
+                RenovaTransMassPerm(i - 1);
+            else
+                RenovaTransMassPermGas(i - 1);
+        }
+
+        // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
+        // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
+        // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
+        if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm > 0.1)
+            IniciaVazValvGasPerm(i);
+        i++;
+
+        if (isnan(celula[i - 1].pres) || isnan(celula[i - 1].temp) || isnan(celula[i - 1].alf)) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+
+        // teste para verificar se a pressao do centro de celula ficou acima
+        // da pressao estatica de uma eventual IPR
+        if (celula[i - 1].pres <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        } else if ((celula[i - 1].acsr.tipo == 3 &&
+                    ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < (*vg1dSP).localtiny) && i == 1)) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 double SProd::marchaProdPerm1(double pchute) {
 
     int corrigechute = 1;
@@ -8645,167 +8848,15 @@ double SProd::marchaProdPerm1(double pchute) {
             }
             i = 1;
             // inicio da marcha propriamente dita
-            while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
-
-                RenovaPresPermMon(i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
-                // da celula i
-                // teste para ver se ocorreu algum problema:
-                if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
-                    return 1e10;
-                if (celula[i].presaux <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
-                    return -1e10;
-                }
-                atualizaPeriPmonProd(i); // atualizacao da pressao da fronteira esquerda,
-                // caso exista alguma BCS ou incremento de pressao
-                if (i == 312) {
-                    int para;
-                    para = 0;
-                }
-                if (arq.flashCompleto != 2)
-                    RenovaMassPerm(i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
-                // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
-                // densidade do gas, RGO, API, BSW, beta
-                else
-                    RenovaMassPermComp(i);
-
-                if (arq.acopColAnulPermForte == 0 || arq.lingas == 0 || monitConvPerm > 0.3)
-                    RenovaTempPerm(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
-                // verifica se teve algum problema nos limites de temperatura
-                // caso se esteja trabalhando com tabela PVTSim
-                if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
-                    celula[i].temp = arq.tabent.tmin;
-                atualizaPeriTempProd(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
-                RenovaPresPermJus(i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
-                // seu centro de celula
-                // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
-                // celula
-                if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
-                    return 1e10;
-                }
-                if (celula[i].pres <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
-                    return -1e10;
-                }
-                atualizaPeriPjusProd(i); // mera atualizacao de atributos que guardam valores de pressao
-                // das celulas a esquerda e a direita
-                for (int j = 0; j < arq.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
-                    // a celula tem uma.
-                    // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
-                    // densecessario, em vavliacao
-                    if (posicVGLP[j] == i) {
-                        int k = posicVGLG[j];
-                        calcVazGasPerm(k);
-                    }
-                }
-                if (arq.tipoFluido == 0)
-                    RenovaTransMassPerm(i - 1);
-                else
-                    RenovaTransMassPermGas(i - 1); // caso seja uma tabela PVTSim, calcula-se a
-                // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
-                // calor latente da equacao de energia
-                if (arq.ordperm > 1) { // correcao de segunda ordem
-                    double D0presaux = celula[i].presaux - celula[i - 1].pres;
-                    double D0pres = celula[i].pres - celula[i].presaux;
-                    double D0temp = celula[i].temp - celula[i - 1].temp;
-                    RenovaPresPermMon(i, 1);
-                    atualizaPeriPmonProd(i);
-                    RenovaMassPerm(i);
-                    RenovaTempPerm(i, 1);
-                    if (isnan(celula[i].temp)) {
-                        if (arq.transiente == 0 && arq.AP == 0)
-                            // neste caso, se finaliza a simulacao, nao tem um transiente
-                            // a ser feito a seguir e nem se estÃ¡ em uma rede
-                            NumError(
-                                "Temperatrura na linha de producao com valor NaN em marchaProdPerm1");
-                        else {
-                            // apresenta apenas um aviso
-                            cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                            // se for em uma iteracao de rede, apos a primeira iteracao
-                            if ((*vg1dSP).iterRede > 0)
-                                return -1.1e10;
-                            // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
-                            else
-                                return 1.1e10;
-                        }
-                    }
-                    RenovaPresPermJus(i, 1);
-                    celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
-                    celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
-                    celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
-                    atualizaPeriPjusProd(i);
-                    atualizaPeriPmonProd(i);
-                    atualizaPeriTempProd(i);
-                    RenovaMassPerm(i);
-                    if (arq.tipoFluido == 0)
-                        RenovaTransMassPerm(i - 1);
-                    else
-                        RenovaTransMassPermGas(i - 1);
-                }
-
-                // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
-                // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
-                // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
-                if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm > 0.1)
-                    IniciaVazValvGasPerm(i);
-                i++;
-
-                if (isnan(celula[i - 1].pres) || isnan(celula[i - 1].temp) || isnan(celula[i - 1].alf)) {
-                    return 1e10;
-                }
-
-                // teste para verificar se a pressao do centro de celula ficou acima
-                // da pressao estatica de uma eventual IPR
-                if (celula[i - 1].pres <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
-                    return -1e10;
-                } else if ((celula[i - 1].acsr.tipo == 3 &&
-                            ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < (*vg1dSP).localtiny) && i == 1)) {
-                    return 1e10;
-                }
-            }
+            double abortValue;
+            if (advanceProductionColumn(pchute, i, abortValue))
+                return abortValue;
             if (i == ncel + 1)
                 corrigechute = 0; // fim da marcha
         }
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista
-        if (pchute > 0 && arq.lingas > 0 && arq.nvalvgas > 0) {
-            if (celulaG[0].tipoCC == 0) {            // marcha para o caso, pressao de injecao
-                if (arq.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
-                    for (int iter = 0; iter < 1; iter++) {
-                        marchaGasPerm1();
-                    }
-                } else
-                    buscaGasPresPerm3(); // choke de injecao ativo
-            } else
-                buscaGasPresPerm2(); // marcha na linha de gas para o caso de vazao de injecao
-        }
-
-        if (arq.acopColAnulPermForte > 0 && arq.lingas > 0 && semTermo == 0) {
-            atualizaProp();
-            atualizaVelTermPerm();
-            calcDTPseudoTrans();
-            conectaColuna();
-            for (int kontaPseudo = 0; kontaPseudo < arq.acopColAnulPermForte; kontaPseudo++) {
-                for (int iterm = 0; iterm <= ncelGas; iterm++)
-                    celulaG[iterm].tempini = celulaG[iterm].temp;
-                for (int iterm = 1; iterm <= ncelGas; iterm++) {
-                    calctempGas(iterm, celulaG[iterm - 1].tempini, 1);
-                }
-                celula[0].tempini = celula[0].temp;
-                celula[1].tempLini = celula[1].tempL;
-                celula[1].tempL = celula[0].temp;
-                for (int iterm = 1; iterm <= ncel; iterm++) {
-                    celula[iterm].tempini = celula[iterm].temp;
-                }
-                for (int iterm = 1; iterm <= ncel; iterm++) {
-                    calctemp(iterm, celula[iterm].tempini, 1);
-                }
-                atualizaProp();
-                calcDTPseudoTrans();
-                conectaColuna();
-            }
-        }
+        marchGasLineAndCoupleAnnulus(pchute);
 
         masfim = celula[ncel - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
         // opcao de acelerador de convergencia esta desligado
@@ -8826,6 +8877,104 @@ double SProd::marchaProdPerm1(double pchute) {
     return pGSup - (celula[ncel].pres + corrigePresF); // caso a marcha tenha conseguido ir atÃ© a Ãºltima celula,
     // retorna a diferenca entre a pressao a montante do choke e a pressao da ultima celula
     // calculada pela marcha
+}
+
+/// Walks the column cell by cell for marchaProdPerm1Rev, from the far end back.
+///
+/// Returns true when the march has to stop early; abortValue then carries the
+/// sentinel the original returned from inside the loop. i is the cell the march
+/// reached and the caller still reads it.
+bool SProd::advanceReverseProductionColumn(double pchute, int &i, double &abortValue) {
+    while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
+
+        RenovaPresPermMon(i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
+        // da celula i
+        // teste para ver se ocorreu algum problema:
+        if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        if (celula[i].presaux <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        atualizaPeriPmonProd(i); // atualizacao da pressao da fronteira esquerda,
+        // caso exista alguma BCS ou incremento de pressao
+        if (arq.flashCompleto != 2)
+            RenovaMassPerm(i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
+        // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
+        // densidade do gas, RGO, API, BSW, beta
+        else
+            RenovaMassPermComp(i);
+        // RenovaTempPerm(i, 0);//faz o avanco da temperatura, da celula i-1 para a celula i
+        // verifica se teve algum problema nos limites de temperatura
+        // caso se esteja trabalhando com tabela PVTSim
+        if (isnan(celula[i].temp))
+            NumError("Temperatrura na linha de producao com valor NaN");
+        if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
+            celula[i].temp = arq.tabent.tmin;
+        atualizaPeriTempProd(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
+        RenovaPresPermJus(i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
+        // seu centro de celula
+        // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
+        // celula
+        if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        }
+        if (celula[i].pres <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+        atualizaPeriPjusProd(i); // mera atualizacao de atributos que guardam valores de pressao
+        // das celulas a esquerda e a direita
+        if (arq.tipoFluido == 0)
+            RenovaTransMassPerm(i - 1);
+        else
+            RenovaTransMassPermGas(i - 1); // caso seja uma tabela PVTSim, calcula-se a
+        // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
+        // calor latente da equacao de energia
+        if (arq.ordperm > 1) { // correcao de segunda ordem
+            double D0presaux = celula[i].presaux - celula[i - 1].pres;
+            double D0pres = celula[i].pres - celula[i].presaux;
+            double D0temp = celula[i].temp - celula[i - 1].temp;
+            RenovaPresPermMon(i, 1);
+            atualizaPeriPmonProd(i);
+            RenovaMassPerm(i);
+            RenovaPresPermJus(i, 1);
+            celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
+            celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
+            celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
+            atualizaPeriPjusProd(i);
+            atualizaPeriPmonProd(i);
+            atualizaPeriTempProd(i);
+            RenovaMassPerm(i);
+            if (arq.tipoFluido == 0)
+                RenovaTransMassPerm(i - 1);
+            else
+                RenovaTransMassPermGas(i - 1);
+        }
+
+        i++;
+
+        if (celula[i - 1].pres <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 double SProd::marchaProdPerm1Rev(double pchute) {
@@ -8940,80 +9089,9 @@ double SProd::marchaProdPerm1Rev(double pchute) {
                 IniciaVazValvGasPerm(0);
             i = 1;
             // inicio da marcha propriamente dita
-            while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
-
-                RenovaPresPermMon(i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
-                // da celula i
-                // teste para ver se ocorreu algum problema:
-                if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
-                    return 1e10;
-                if (celula[i].presaux <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
-                    return -1e10;
-                }
-                atualizaPeriPmonProd(i); // atualizacao da pressao da fronteira esquerda,
-                // caso exista alguma BCS ou incremento de pressao
-                if (arq.flashCompleto != 2)
-                    RenovaMassPerm(i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
-                // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
-                // densidade do gas, RGO, API, BSW, beta
-                else
-                    RenovaMassPermComp(i);
-                // RenovaTempPerm(i, 0);//faz o avanco da temperatura, da celula i-1 para a celula i
-                // verifica se teve algum problema nos limites de temperatura
-                // caso se esteja trabalhando com tabela PVTSim
-                if (isnan(celula[i].temp))
-                    NumError("Temperatrura na linha de producao com valor NaN");
-                if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
-                    celula[i].temp = arq.tabent.tmin;
-                atualizaPeriTempProd(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
-                RenovaPresPermJus(i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
-                // seu centro de celula
-                // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
-                // celula
-                if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
-                    return 1e10;
-                }
-                if (celula[i].pres <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
-                    return -1e10;
-                }
-                atualizaPeriPjusProd(i); // mera atualizacao de atributos que guardam valores de pressao
-                // das celulas a esquerda e a direita
-                if (arq.tipoFluido == 0)
-                    RenovaTransMassPerm(i - 1);
-                else
-                    RenovaTransMassPermGas(i - 1); // caso seja uma tabela PVTSim, calcula-se a
-                // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
-                // calor latente da equacao de energia
-                if (arq.ordperm > 1) { // correcao de segunda ordem
-                    double D0presaux = celula[i].presaux - celula[i - 1].pres;
-                    double D0pres = celula[i].pres - celula[i].presaux;
-                    double D0temp = celula[i].temp - celula[i - 1].temp;
-                    RenovaPresPermMon(i, 1);
-                    atualizaPeriPmonProd(i);
-                    RenovaMassPerm(i);
-                    RenovaPresPermJus(i, 1);
-                    celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
-                    celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
-                    celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
-                    atualizaPeriPjusProd(i);
-                    atualizaPeriPmonProd(i);
-                    atualizaPeriTempProd(i);
-                    RenovaMassPerm(i);
-                    if (arq.tipoFluido == 0)
-                        RenovaTransMassPerm(i - 1);
-                    else
-                        RenovaTransMassPermGas(i - 1);
-                }
-
-                i++;
-
-                if (celula[i - 1].pres <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
-                    return -1e10;
-                }
-            }
+            double abortValue;
+            if (advanceReverseProductionColumn(pchute, i, abortValue))
+                return abortValue;
             if (i == ncel + 1)
                 corrigechute = 0; // fim da marcha
         }
@@ -9090,6 +9168,200 @@ double SProd::marchaProdPerm1Rev(double pchute) {
     return pGSup - (celula[ncel].pres + corrigePresF); // caso a marcha tenha conseguido ir atÃ© a Ãºltima celula,
     // retorna a diferenca entre a pressao a montante do choke e a pressao da ultima celula
     // calculada pela marcha
+}
+
+/// Walks the column cell by cell for marchaProdPerm2, the variant with a surface choke.
+///
+/// Returns true when the march has to stop early; abortValue then carries the
+/// sentinel the original returned from inside the loop. i is the cell the march
+/// reached and the caller still reads it.
+bool SProd::advanceProductionColumnSecondary(double pchute, int &i, double &abortValue) {
+    while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
+
+        if ((i) > ncel - 2) {
+            int val;
+            val = 0;
+        }
+        RenovaPresPermMon(i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
+        // da celula i
+        // teste para ver se ocorreu algum problema:
+        if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        atualizaPeriPmonProd(i); // atualizacao da pressao da fronteira esquerda,
+        // caso exista alguma BCS ou incremento de pressao
+        if (arq.flashCompleto != 2)
+            RenovaMassPerm(i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
+        // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
+        // densidade do gas, RGO, API, BSW, beta
+        else
+            RenovaMassPermComp(i);
+
+        if (arq.acopColAnulPermForte == 0 || arq.lingas == 0 || monitConvPerm > 0.3)
+            RenovaTempPerm(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
+        // verifica se teve algum problema nos limites de temperatura
+        // caso se esteja trabalhando com tabela PVTSim
+        if (isnan(celula[i].temp)) {
+            if (arq.transiente == 0 && arq.AP == 0)
+                // neste caso, se finaliza a simulacao, nao tem um transiente
+                // a ser feito a seguir e nem se estÃ¡ em uma rede
+                NumError(
+                    "Temperatrura na linha de producao com valor NaN em marchaProdPerm2");
+            else {
+                // apresenta apenas um aviso
+                cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
+                // se for em uma iteracao de rede, apos a primeira iteracao
+                if ((*vg1dSP).iterRede > 0)
+                    {
+                        abortValue = -1.1e10;
+                        return true;
+                    }
+                // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                else
+                    {
+                        abortValue = 1.1e10;
+                        return true;
+                    }
+            }
+        }
+        if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
+            celula[i].temp = arq.tabent.tmin;
+        atualizaPeriTempProd(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
+        RenovaPresPermJus(i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
+        // seu centro de celula
+        // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
+        // celula
+        if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny)
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        atualizaPeriPjusProd(i); // mera atualizacao de atributos que guardam valores de pressao
+        // das celulas a esquerda e a direita
+        for (int j = 0; j < arq.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
+            // a celula tem uma.
+            // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
+            // densecessario, em vavliacao
+            if (posicVGLP[j] == i) {
+                int k = posicVGLG[j];
+                calcVazGasPerm(k);
+            }
+        }
+        if (arq.tipoFluido == 0)
+            RenovaTransMassPerm(i - 1);
+        else
+            RenovaTransMassPermGas(i - 1); // caso seja uma tabela PVTSim, calcula-se a
+        // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
+        // calor latente da equacao de energia
+        if (arq.ordperm > 1) { // correcao de segunda ordem
+            double D0presaux = celula[i].presaux - celula[i - 1].pres;
+            double D0pres = celula[i].pres - celula[i].presaux;
+            double D0temp = celula[i].temp - celula[i - 1].temp;
+            RenovaPresPermMon(i, 1);
+            atualizaPeriPmonProd(i);
+            RenovaMassPerm(i);
+            RenovaTempPerm(i, 1);
+            RenovaPresPermJus(i, 1);
+            celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
+            celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
+            celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
+            atualizaPeriPjusProd(i);
+            atualizaPeriPmonProd(i);
+            atualizaPeriTempProd(i);
+            RenovaMassPerm(i);
+            if (arq.tipoFluido == 0)
+                RenovaTransMassPerm(i - 1);
+            else
+                RenovaTransMassPermGas(i - 1);
+        }
+        // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
+        // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
+        // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
+        if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm > 0.1)
+            IniciaVazValvGasPerm(i);
+        i++;
+        // teste para verificar se a pressao do centro de celula ficou acima
+        // da pressao estatica de uma eventual IPR ou ficou baixa demais
+        if (celula[i - 1].pres <= 0.1 ||
+            (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny))
+            {
+                abortValue = -1e10;
+                return true;
+            }
+        else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < 1e-15 && i == 1))
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        else if (celula[i - 1].acsr.tipo == 15 && ((celula[i - 1].acsr.radialPoro.pRes[0] - celula[i - 1].pres) < 1e-15 && i == 1))
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        else if (celula[i - 1].acsr.tipo == 16 && ((celula[i - 1].acsr.poroso2D.dados.pRes - celula[i - 1].pres) < 1e-15 && i == 1))
+            {
+                abortValue = 1e10;
+                return true;
+            }
+        else if (arq.usaTabela == 1) {
+            if ((arq.tabent.pmax - celula[i - 1].pres) < (*vg1dSP).localtiny)
+                {
+                    abortValue = 1e10;
+                    return true;
+                }
+        }
+    }
+    return false;
+}
+
+/// Total mass flow through the surface choke at the end of marchaProdPerm2.
+///
+/// Also writes presfim and arq.valTempChokeJus. Those are not incidental -- the
+/// Joule-Thomson temperature downstream of the choke is computed here and
+/// nowhere else -- so they are named rather than left to be discovered.
+double SProd::surfaceChokeMassFlow() {
+    double maxSup = 0.;
+    if (derivaAnel != 0 && celula[ncel].pres > pGSup) { // se for o anel de GL, a vazao no final deve ser zero
+        double tESup = celula[ncel].temp;
+        double alfSup = celula[ncel].alf;
+        double betSup = celula[ncel].bet;
+
+        double masentrada = celula[ncel - 1].MR;
+        double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
+
+        double tit;
+        presfim = celula[ncel].pres;
+        double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
+        double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
+        tit = fabs(massgas / masentrada);
+
+        double masChk;
+
+        double ypres = pGSup / presfim;
+        masChk = chokeSup.vazmassSachd(ypres, presfim, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
+                                       celula[ncel - 1].fluicol);
+        maxSup = chokeSup.vazmaxSachd(presfim, tESup, alfSup, betSup, tit, celula[ncel - 1].flui, celula[ncel - 1].fluicol);
+        if (fabs(ypres) > fabs(chokeSup.razpres))
+            maxSup = masChk;
+        // maxSup Ã© a vazao total passando pelo choke
+
+        if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area && ypres < 1.) {
+            double cplM = (1. - betSup) * celula[ncel].flui.CalorLiq(presfim, tESup) -
+                          betSup * celula[ncel].fluicol.CalorLiq(presfim, tESup);
+            double jtlM = (1. - betSup) * celula[ncel].flui.JTL(presfim, tESup) - betSup / rholc;
+            double cpg = celula[ncel].flui.CalorGas(presfim, tESup);
+            double jtgM = celula[ncel].flui.JTG(presfim, tESup);
+            arq.valTempChokeJus = tESup + ((1. - tit) * jtlM / cplM + tit * jtgM / cpg) * (pGSup - presfim) * 98066.52;
+        }
+
+    } else {
+        maxSup = 0.;
+        arq.valTempChokeJus = celula[ncel].temp;
+    }
+
+    return maxSup;
 }
 
 double SProd::marchaProdPerm2(double pchute) {
@@ -9217,157 +9489,15 @@ double SProd::marchaProdPerm2(double pchute) {
             }
             i = 1;
             // inicio da marcha propriamente dita
-            while (i <= ncel && celula[i - 1].pres >= 0.1 && fabs(pchute - celula[0].pres) < (*vg1dSP).localtiny) {
-
-                if ((i) > ncel - 2) {
-                    int val;
-                    val = 0;
-                }
-                RenovaPresPermMon(i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
-                // da celula i
-                // teste para ver se ocorreu algum problema:
-                if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
-                    return 1e10;
-                atualizaPeriPmonProd(i); // atualizacao da pressao da fronteira esquerda,
-                // caso exista alguma BCS ou incremento de pressao
-                if (arq.flashCompleto != 2)
-                    RenovaMassPerm(i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
-                // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
-                // densidade do gas, RGO, API, BSW, beta
-                else
-                    RenovaMassPermComp(i);
-
-                if (arq.acopColAnulPermForte == 0 || arq.lingas == 0 || monitConvPerm > 0.3)
-                    RenovaTempPerm(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
-                // verifica se teve algum problema nos limites de temperatura
-                // caso se esteja trabalhando com tabela PVTSim
-                if (isnan(celula[i].temp)) {
-                    if (arq.transiente == 0 && arq.AP == 0)
-                        // neste caso, se finaliza a simulacao, nao tem um transiente
-                        // a ser feito a seguir e nem se estÃ¡ em uma rede
-                        NumError(
-                            "Temperatrura na linha de producao com valor NaN em marchaProdPerm2");
-                    else {
-                        // apresenta apenas um aviso
-                        cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                        // se for em uma iteracao de rede, apos a primeira iteracao
-                        if ((*vg1dSP).iterRede > 0)
-                            return -1.1e10;
-                        // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
-                        else
-                            return 1.1e10;
-                    }
-                }
-                if (arq.usaTabela == 1 && (celula[i].temp - arq.tabent.tmin) < (*vg1dSP).localtiny)
-                    celula[i].temp = arq.tabent.tmin;
-                atualizaPeriTempProd(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
-                RenovaPresPermJus(i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
-                // seu centro de celula
-                // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
-                // celula
-                if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny)
-                    return 1e10;
-                atualizaPeriPjusProd(i); // mera atualizacao de atributos que guardam valores de pressao
-                // das celulas a esquerda e a direita
-                for (int j = 0; j < arq.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
-                    // a celula tem uma.
-                    // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
-                    // densecessario, em vavliacao
-                    if (posicVGLP[j] == i) {
-                        int k = posicVGLG[j];
-                        calcVazGasPerm(k);
-                    }
-                }
-                if (arq.tipoFluido == 0)
-                    RenovaTransMassPerm(i - 1);
-                else
-                    RenovaTransMassPermGas(i - 1); // caso seja uma tabela PVTSim, calcula-se a
-                // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
-                // calor latente da equacao de energia
-                if (arq.ordperm > 1) { // correcao de segunda ordem
-                    double D0presaux = celula[i].presaux - celula[i - 1].pres;
-                    double D0pres = celula[i].pres - celula[i].presaux;
-                    double D0temp = celula[i].temp - celula[i - 1].temp;
-                    RenovaPresPermMon(i, 1);
-                    atualizaPeriPmonProd(i);
-                    RenovaMassPerm(i);
-                    RenovaTempPerm(i, 1);
-                    RenovaPresPermJus(i, 1);
-                    celula[i].pres = 0.5 * (celula[i].presaux + D0pres + celula[i].pres);
-                    celula[i].presaux = 0.5 * (celula[i - 1].pres + D0presaux + celula[i].presaux);
-                    celula[i].temp = 0.5 * (celula[i - 1].temp + D0temp + celula[i].temp);
-                    atualizaPeriPjusProd(i);
-                    atualizaPeriPmonProd(i);
-                    atualizaPeriTempProd(i);
-                    RenovaMassPerm(i);
-                    if (arq.tipoFluido == 0)
-                        RenovaTransMassPerm(i - 1);
-                    else
-                        RenovaTransMassPermGas(i - 1);
-                }
-                // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
-                // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
-                // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
-                if (arq.lingas > 0 && arq.nvalvgas > 0 && iterperm == 0 && monitConvPerm > 0.1)
-                    IniciaVazValvGasPerm(i);
-                i++;
-                // teste para verificar se a pressao do centro de celula ficou acima
-                // da pressao estatica de uma eventual IPR ou ficou baixa demais
-                if (celula[i - 1].pres <= 0.1 ||
-                    (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny))
-                    return -1e10;
-                else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < 1e-15 && i == 1))
-                    return 1e10;
-                else if (celula[i - 1].acsr.tipo == 15 && ((celula[i - 1].acsr.radialPoro.pRes[0] - celula[i - 1].pres) < 1e-15 && i == 1))
-                    return 1e10;
-                else if (celula[i - 1].acsr.tipo == 16 && ((celula[i - 1].acsr.poroso2D.dados.pRes - celula[i - 1].pres) < 1e-15 && i == 1))
-                    return 1e10;
-                else if (arq.usaTabela == 1) {
-                    if ((arq.tabent.pmax - celula[i - 1].pres) < (*vg1dSP).localtiny)
-                        return 1e10;
-                }
-            }
+            double abortValue;
+            if (advanceProductionColumnSecondary(pchute, i, abortValue))
+                return abortValue;
             if (i == ncel + 1)
                 corrigechute = 0; // fim da marcha
         }
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista
-        if (pchute > 0 && arq.lingas > 0 && arq.nvalvgas > 0) {
-            if (celulaG[0].tipoCC == 0) {            // marcha para o caso, pressao de injecao
-                if (arq.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
-                    for (int iter = 0; iter < 1; iter++)
-                        marchaGasPerm1();
-                } else
-                    buscaGasPresPerm3(); // choke de injecao ativo
-            } else
-                buscaGasPresPerm2(); // marcha na linha de gas para o caso de vazao de injecao
-        }
-
-        if (arq.acopColAnulPermForte > 0 && arq.lingas > 0 && semTermo == 0) {
-            atualizaProp();
-            atualizaVelTermPerm();
-            calcDTPseudoTrans();
-            conectaColuna();
-            for (int kontaPseudo = 0; kontaPseudo < arq.acopColAnulPermForte; kontaPseudo++) {
-                for (int iterm = 0; iterm <= ncelGas; iterm++)
-                    celulaG[iterm].tempini = celulaG[iterm].temp;
-                for (int iterm = 1; iterm <= ncelGas; iterm++) {
-                    calctempGas(iterm, celulaG[iterm - 1].tempini, 1);
-                }
-                celula[0].tempini = celula[0].temp;
-                celula[1].tempLini = celula[1].tempL;
-                celula[1].tempL = celula[0].temp;
-                for (int iterm = 1; iterm <= ncel; iterm++) {
-                    celula[iterm].tempini = celula[iterm].temp;
-                }
-                for (int iterm = 1; iterm <= ncel; iterm++) {
-                    calctemp(iterm, celula[iterm].tempini, 1);
-                }
-                atualizaProp();
-                calcDTPseudoTrans();
-                conectaColuna();
-            }
-        }
+        marchGasLineAndCoupleAnnulus(pchute);
 
         masfim = celula[ncel - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
         // opcao de acelerador de convergencia esta desligado
@@ -9386,45 +9516,7 @@ double SProd::marchaProdPerm2(double pchute) {
     // na ultima celula e a pressao a jusante do choke. Primeiro, portanto, deve-se
     // calcular a vazao que passa pelo choke e compara-la com a vazao massica total
     // na ultima celula
-    double maxSup = 0.;
-    if (derivaAnel != 0 && celula[ncel].pres > pGSup) { // se for o anel de GL, a vazao no final deve ser zero
-        double tESup = celula[ncel].temp;
-        double alfSup = celula[ncel].alf;
-        double betSup = celula[ncel].bet;
-
-        double masentrada = celula[ncel - 1].MR;
-        double massgas = celula[ncel - 1].MR - celula[ncel - 1].MliqiniR;
-
-        double tit;
-        presfim = celula[ncel].pres;
-        double rholp = celula[ncel].flui.MasEspLiq(celula[ncel].pres, celula[ncel].temp);
-        double rholc = celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp);
-        tit = fabs(massgas / masentrada);
-
-        double masChk;
-
-        double ypres = pGSup / presfim;
-        masChk = chokeSup.vazmassSachd(ypres, presfim, tESup, alfSup, betSup, tit, celula[ncel - 1].flui,
-                                       celula[ncel - 1].fluicol);
-        maxSup = chokeSup.vazmaxSachd(presfim, tESup, alfSup, betSup, tit, celula[ncel - 1].flui, celula[ncel - 1].fluicol);
-        if (fabs(ypres) > fabs(chokeSup.razpres))
-            maxSup = masChk;
-        // maxSup Ã© a vazao total passando pelo choke
-
-        if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * celula[ncel].flui.CalorLiq(presfim, tESup) -
-                          betSup * celula[ncel].fluicol.CalorLiq(presfim, tESup);
-            double jtlM = (1. - betSup) * celula[ncel].flui.JTL(presfim, tESup) - betSup / rholc;
-            double cpg = celula[ncel].flui.CalorGas(presfim, tESup);
-            double jtgM = celula[ncel].flui.JTG(presfim, tESup);
-            arq.valTempChokeJus = tESup + ((1. - tit) * jtlM / cplM + tit * jtgM / cpg) * (pGSup - presfim) * 98066.52;
-        }
-
-    } else {
-        maxSup = 0.;
-        arq.valTempChokeJus = celula[ncel].temp;
-    }
-
+    double maxSup = surfaceChokeMassFlow();
     if (fabs(masfim) > 1e-15)
         monitConvPermBase = fabs(masfim);
     else if (fabs(maxSup) > 1e-15)

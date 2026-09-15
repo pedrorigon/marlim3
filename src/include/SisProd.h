@@ -1379,6 +1379,16 @@ class SProd {
 
     /// Seeds the first-cell void fraction from the head accessory, shared by the three steady production marches.
     void seedFirstCellVoidFraction(double pchute, double &alfini, double &betini, DryGasFlashTarget dryGasFlashTarget);
+    /// Walks the column cell by cell for marchaProdPerm1; true means the march aborted with abortValue.
+    bool advanceProductionColumn(double pchute, int &i, double &abortValue);
+    /// Walks the column cell by cell for marchaProdPerm1Rev; true means the march aborted with abortValue.
+    bool advanceReverseProductionColumn(double pchute, int &i, double &abortValue);
+    /// Walks the column cell by cell for marchaProdPerm2; true means the march aborted with abortValue.
+    bool advanceProductionColumnSecondary(double pchute, int &i, double &abortValue);
+    /// Marches the gas line and runs the column/annulus coupling; shared by marchaProdPerm1 and marchaProdPerm2.
+    void marchGasLineAndCoupleAnnulus(double pchute);
+    /// Total mass flow through the surface choke that closes marchaProdPerm2.
+    double surfaceChokeMassFlow();
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
     double marchaProdPerm1(double pchute);
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
