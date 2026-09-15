@@ -5182,4 +5182,1138 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // se for uma estimativa baixa de pressao de fundo, maxSup<masfim retirna valor positivo
 }
 
+namespace {
+
+void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute, double &alfini, double &betini) {
+    if (state.cells[0].acsr.tipo == 1) {
+        state.cells[0].temp = state.cells[0].acsr.injg.temp;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(state.cells[0].pres, state.cells[0].temp);
+            state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.cells[0].pres, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
+        }
+        state.cells[0].acsr.injg.QGas = mchute;
+    } else if (state.cells[0].acsr.tipo == 2) {
+        state.cells[0].temp = state.cells[0].acsr.injl.temp;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(state.cells[0].pres, state.cells[0].temp);
+            state.cells[0].acsr.injl.FluidoPro.atualizaPropComp(state.cells[0].pres, state.cells[0].temp);
+        }
+        state.cells[0].acsr.injl.QLiq = mchute;
+    }
+
+    if (state.cells[0].acsr.tipo == 1) {
+        if (state.cells[0].acsr.injg.seco == 1) {
+            alfini = 1.;
+            betini = 0.;
+        } else {
+            double masgas = state.cells[0].acsr.injg.VMas(state.cells[0].pres, state.cells[0].temp);
+            double tit;
+            if (state.input.flashCompleto != 2)
+                tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
+            else
+                tit = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
+            double masT = masgas / tit;
+            tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(state.cells[0].pres, state.cells[0].temp);
+            double qgas = masT * tit /
+                          state.cells[0].acsr.injg.FluidoPro.MasEspGas(state.cells[0].pres, state.cells[0].temp);
+            double qliq = masT * (1. - tit) /
+                          state.cells[0].acsr.injg.FluidoPro.MasEspLiq(state.cells[0].pres, state.cells[0].temp);
+            double qcomp = state.cells[0].acsr.injg.razCompGas *
+                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
+                           state.cells[0].acsr.injg.fluidocol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
+            qcomp /= 86400.;
+            alfini = qgas / (qliq + qcomp + qgas);
+            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
+                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
+            else
+                betini = 0.;
+        }
+    } else if (state.cells[0].acsr.tipo == 2) {
+        double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                      (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
+                      (state.cells[0].acsr.injl.FluidoPro.RGO -
+                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(state.cells[0].pres, state.cells[0].temp) * 6.29 / 35.31467) *
+                      state.cells[0].acsr.injl.FluidoPro.Deng * 1.225 / state.cells[0].acsr.injl.FluidoPro.MasEspGas(state.cells[0].pres, state.cells[0].temp);
+        double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                          (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(state.cells[0].pres, state.cells[0].temp) +
+                      state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                          state.cells[0].acsr.injl.FluidoPro.BSW * state.cells[0].acsr.injl.FluidoPro.BAFunc(state.cells[0].pres, state.cells[0].temp) +
+                      state.cells[0].acsr.injl.QLiq * state.cells[0].acsr.injl.bet;
+        alfini = qgas / (qliq + qgas);
+        betini = state.cells[0].acsr.injl.bet;
+    }
+}
+
+void advanceProductionColumnPressureToPressureSecondary(const SteadyStateState &state, int &i) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {
+
+        advanceUpstreamSteadyPressure(state, i, 0);
+        refreshUpstreamProductionPeriphery(state, i);
+        if (state.input.flashCompleto != 2)
+            advanceSteadyMass(state, i);
+        else
+            advanceCompositionalSteadyMass(state, i);
+        state.updaters.advanceSteadyTemperature(i, 0);
+        if (isnan(state.cells[i].temp))
+            NumError("Temperatrura na linha de producao com valor NaN");
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            state.cells[i].temp = state.input.tabent.tmin;
+        state.updaters.updateProductionTemperaturePeriphery(i);
+        advanceDownstreamSteadyPressure(state, i, 0);
+        refreshDownstreamProductionPeriphery(state, i);
+        if (state.input.tipoFluido == 0)
+            advanceSteadyMassTransfer(state, i - 1);
+        else
+            advanceSteadyGasMassTransfer(state, i - 1);
+        if (state.input.ordperm > 1) {
+            double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+            double D0pres = state.cells[i].pres - state.cells[i].presaux;
+            double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+            advanceUpstreamSteadyPressure(state, i, 1);
+            refreshUpstreamProductionPeriphery(state, i);
+            advanceSteadyMass(state, i);
+            state.updaters.advanceSteadyTemperature(i, 1);
+            advanceDownstreamSteadyPressure(state, i, 1);
+            state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+            state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+            state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+            refreshDownstreamProductionPeriphery(state, i);
+            refreshUpstreamProductionPeriphery(state, i);
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceSteadyMass(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+        }
+
+        i++;
+    }
+}
+}  // namespace
+
+
+double marchProductionPressureToPressure(const SteadyStateState &state, double mchute) {
+
+    int corrigechute = 1;
+    double alfini = 0.;
+    double betini = 0.;
+
+    seedFirstCellFromFlowRateGuess(state, mchute, alfini, betini);
+
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+
+    int i;
+
+    state.cells[0].presauxL = state.cells[0].pres;
+    state.cells[0].presLini = state.cells[0].pres;
+    state.cells[0].presL = state.cells[0].pres;
+    state.cells[1].presL = state.cells[0].pres;
+    state.cells[0].presini = state.cells[0].pres;
+    state.cells[1].presLini = state.cells[0].pres;
+    state.cells[0].presaux = state.cells[0].pres;
+    state.cells[1].presauxL = state.cells[0].pres;
+
+    state.cells[0].alf = alfini;
+    state.cells[0].alfini = alfini;
+    state.cells[0].bet = betini;
+    state.cells[0].betini = betini;
+    state.cells[1].alfL = state.cells[0].alf;
+    state.cells[1].alfLini = state.cells[0].alf;
+    state.cells[0].alfPigD = state.cells[0].alf;
+    state.cells[0].alfPigDini = state.cells[0].alf;
+    state.cells[0].alfPigE = state.cells[0].alf;
+    state.cells[0].alfPigEini = state.cells[0].alf;
+    state.cells[1].betL = state.cells[0].bet;
+    state.cells[1].betLini = state.cells[0].bet;
+    state.cells[0].betPigD = state.cells[0].bet;
+    state.cells[0].betPigDini = state.cells[0].bet;
+    state.cells[0].betPigE = state.cells[0].bet;
+    state.cells[0].betPigEini = state.cells[0].bet;
+    state.cells[0].betI = state.cells[0].bet;
+    state.cells[1].betLI = state.cells[0].bet;
+
+    state.steadyIteration = 0;
+    while (state.steadyIteration < 3) {
+        i = 1;
+        while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {
+
+            advanceUpstreamSteadyPressure(state, i, 0);
+            refreshUpstreamProductionPeriphery(state, i);
+            if (state.input.flashCompleto != 2)
+                advanceSteadyMass(state, i);
+            else
+                advanceCompositionalSteadyMass(state, i);
+            state.updaters.advanceSteadyTemperature(i, 0);
+            if (i > 1160) {
+                int para;
+                para = 0;
+            }
+            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                state.cells[i].temp = state.input.tabent.tmin;
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceDownstreamSteadyPressure(state, i, 0);
+            refreshDownstreamProductionPeriphery(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+            if (state.input.ordperm > 1) {
+                double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+                double D0pres = state.cells[i].pres - state.cells[i].presaux;
+                double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+                advanceUpstreamSteadyPressure(state, i, 1);
+                refreshUpstreamProductionPeriphery(state, i);
+                advanceSteadyMass(state, i);
+                state.updaters.advanceSteadyTemperature(i, 1);
+                if (isnan(state.cells[i].temp))
+                    NumError("Temperatrura na linha de producao com valor NaN");
+                advanceDownstreamSteadyPressure(state, i, 1);
+                state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+                state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+                state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+                refreshDownstreamProductionPeriphery(state, i);
+                refreshUpstreamProductionPeriphery(state, i);
+                state.updaters.updateProductionTemperaturePeriphery(i);
+                advanceSteadyMass(state, i);
+                if (state.input.tipoFluido == 0)
+                    advanceSteadyMassTransfer(state, i - 1);
+                else
+                    advanceSteadyGasMassTransfer(state, i - 1);
+            }
+            i++;
+            if (state.cells[i - 1].pres <= 1)
+                return -1e10;
+        }
+
+        state.steadyIteration++;
+    }
+
+    double corrigePresF = 0.;
+    if ((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)
+        corrigePresF = steadyPressureAtLastCell(state);
+
+    state.baseConvergenceMonitor = state.gasSurfacePressure;
+    return state.cells[state.lastCell].pres + corrigePresF - state.gasSurfacePressure;
+}
+
+double marchReverseProductionPressureToPressure(const SteadyStateState &state, double mchute) {
+
+    double alfini = 0.;
+    double betini = 0.;
+    state.slowHeatTransfer = 0.05;
+
+    seedFirstCellFromFlowRateGuess(state, mchute, alfini, betini);
+
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+
+    int i;
+
+    state.cells[0].presauxL = state.cells[0].pres;
+    state.cells[0].presLini = state.cells[0].pres;
+    state.cells[0].presL = state.cells[0].pres;
+    state.cells[1].presL = state.cells[0].pres;
+    state.cells[0].presini = state.cells[0].pres;
+    state.cells[1].presLini = state.cells[0].pres;
+    state.cells[0].presaux = state.cells[0].pres;
+    state.cells[1].presauxL = state.cells[0].pres;
+
+    state.cells[0].alf = alfini;
+    state.cells[0].alfini = alfini;
+    state.cells[0].bet = betini;
+    state.cells[0].betini = betini;
+    state.cells[1].alfL = state.cells[0].alf;
+    state.cells[1].alfLini = state.cells[0].alf;
+    state.cells[0].alfPigD = state.cells[0].alf;
+    state.cells[0].alfPigDini = state.cells[0].alf;
+    state.cells[0].alfPigE = state.cells[0].alf;
+    state.cells[0].alfPigEini = state.cells[0].alf;
+    state.cells[1].betL = state.cells[0].bet;
+    state.cells[1].betLini = state.cells[0].bet;
+    state.cells[0].betPigD = state.cells[0].bet;
+    state.cells[0].betPigDini = state.cells[0].bet;
+    state.cells[0].betPigE = state.cells[0].bet;
+    state.cells[0].betPigEini = state.cells[0].bet;
+    state.cells[0].betI = state.cells[0].bet;
+    state.cells[1].betLI = state.cells[0].bet;
+
+    state.steadyIteration = 0;
+    double tempteste = state.cells[0].temp;
+    double tempteste0 = -1000;
+    while (state.steadyIteration < 3 || fabs(tempteste - tempteste0) / ((tempteste) + 273) > 0.001) {
+        i = 1;
+        tempteste0 = tempteste;
+        while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {
+
+            advanceUpstreamSteadyPressure(state, i, 0);
+            refreshUpstreamProductionPeriphery(state, i);
+            if (state.input.flashCompleto != 2)
+                advanceSteadyMass(state, i);
+            else
+                advanceCompositionalSteadyMass(state, i);
+            if (isnan(state.cells[i].temp))
+                NumError("Temperatrura na linha de producao com valor NaN");
+            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                state.cells[i].temp = state.input.tabent.tmin;
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceDownstreamSteadyPressure(state, i, 0);
+            refreshDownstreamProductionPeriphery(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+            if (state.input.ordperm > 1) {
+                double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+                double D0pres = state.cells[i].pres - state.cells[i].presaux;
+                double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+                advanceUpstreamSteadyPressure(state, i, 1);
+                refreshUpstreamProductionPeriphery(state, i);
+                advanceSteadyMass(state, i);
+                advanceDownstreamSteadyPressure(state, i, 1);
+                state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+                state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+                state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+                refreshDownstreamProductionPeriphery(state, i);
+                refreshUpstreamProductionPeriphery(state, i);
+                state.updaters.updateProductionTemperaturePeriphery(i);
+                advanceSteadyMass(state, i);
+                if (state.input.tipoFluido == 0)
+                    advanceSteadyMassTransfer(state, i - 1);
+                else
+                    advanceSteadyGasMassTransfer(state, i - 1);
+            }
+            i++;
+            if (state.cells[i - 1].pres <= 1)
+                return -1e10;
+        }
+
+        state.steadyIteration++;
+        if (state.steadyIteration > 200 && state.input.AP == 0)
+            NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
+        else if (state.steadyIteration > 200)
+            return 1.1e10;
+        if (state.input.tipoFluido != 10000) {
+            state.cells[state.lastCell].temp = state.casingTemperature;
+            if (state.steadyIteration < 100) {
+                int lento = 0;
+                state.slowHeatTransfer = 0;
+                for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
+
+                    double area = state.cells[ktemp].duto.area;
+                    double ugsmed;
+                    ugsmed = fabs(state.cells[ktemp].QG) / area; // velocidade superficial de gas
+                    double ulsmed;
+                    ulsmed = fabs(state.cells[ktemp].QL) / area; // velocidade superficial de liquido
+                    if (fabs(ugsmed + ulsmed) <= 0.1)
+                        lento += 1;
+                }
+                if (state.steadyIteration > 10 && state.slowHeatTransfer < 0.01) {
+                    state.slowHeatTransfer -= 0.01;
+                    state.steadyIteration = 0;
+                }
+                for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
+                    state.updaters.advanceReverseSteadyTemperature(ktemp, 0);
+                    if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                        state.cells[ktemp].temp = state.input.tabent.tmin;
+                    state.updaters.updateProductionTemperaturePeriphery(ktemp); // mera atualizacao de atributos de temperatura a esquerda e a direita
+                }
+            }
+            tempteste = state.cells[0].temp;
+        } else {
+            refreshProperties(state);
+            refreshSteadyThermalVelocities(state);
+            computePseudoTransientTimeStep(state);
+            for (int kontaPseudo = 0; kontaPseudo < 20; kontaPseudo++) {
+                state.cells[0].tempini = state.cells[0].temp;
+                state.cells[1].tempLini = state.cells[1].tempL;
+                state.cells[1].tempL = state.cells[0].temp;
+                state.cells[state.lastCell].temp = state.casingTemperature;
+                for (int i = 0; i < state.lastCell; i++) {
+                    state.cells[i].tempini = state.cells[i].temp;
+                }
+                for (int itemp = 1; itemp <= state.lastCell; itemp++) {
+                    state.updaters.computeTemperature(itemp, state.cells[itemp].tempini, 1);
+                }
+                refreshProperties(state);
+                computePseudoTransientTimeStep(state);
+            }
+        }
+    }
+    double corrigePresF = 0.;
+    if ((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)
+        corrigePresF = steadyPressureAtLastCell(state);
+    state.baseConvergenceMonitor = state.gasSurfacePressure;
+    return state.cells[state.lastCell].pres + corrigePresF - state.gasSurfacePressure;
+}
+
+double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double mchute) {
+
+    int corrigechute = 1;
+    double alfini = 0.;
+    double betini = 0.;
+
+    if (state.cells[0].acsr.tipo == 1) {
+        state.cells[0].temp = state.cells[0].acsr.injg.temp;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(state.cells[0].pres, state.cells[0].temp);
+            state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.cells[0].pres, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
+        }
+        state.cells[0].acsr.injg.QGas = mchute;
+    } else if (state.cells[0].acsr.tipo == 2) {
+        state.cells[0].temp = state.cells[0].acsr.injl.temp;
+        if (state.input.flashCompleto == 2) {
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(state.cells[0].pres, state.cells[0].temp);
+            state.cells[0].acsr.injl.FluidoPro.atualizaPropComp(state.cells[0].pres, state.cells[0].temp);
+        }
+        state.cells[0].acsr.injl.QLiq = mchute;
+    }
+
+    if (state.cells[0].acsr.tipo == 1) {
+        if (state.cells[0].acsr.injg.seco == 1) {
+            alfini = 1.;
+            betini = 0.;
+        } else {
+            double masgas = state.cells[0].acsr.injg.VMas(state.cells[0].pres, state.cells[0].temp);
+            double tit;
+            double masT;
+            if (state.input.ConContEntrada != 1) {
+                if (state.input.flashCompleto != 2)
+                    tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
+                else
+                    tit = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
+                masT = masgas / tit;
+                tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(state.cells[0].pres, state.cells[0].temp);
+            } else {
+                tit = state.inletQuality;
+                masT = masgas / tit;
+            }
+            double qgas = masT * tit /
+                          state.cells[0].acsr.injg.FluidoPro.MasEspGas(state.cells[0].pres, state.cells[0].temp);
+            double qliq = masT * (1. - tit) /
+                          state.cells[0].acsr.injg.FluidoPro.MasEspLiq(state.cells[0].pres, state.cells[0].temp);
+            double qcomp = state.cells[0].acsr.injg.razCompGas *
+                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
+                           state.cells[0].acsr.injg.fluidocol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
+            qcomp /= 86400.;
+            if (fabs(qliq + qgas) > 1e-15)
+                alfini = qgas / (qliq + qcomp + qgas);
+            else
+                alfini = state.inletQuality;
+            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
+                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
+            else
+                betini = 0.;
+        }
+    } else if (state.cells[0].acsr.tipo == 2) {
+        double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                      (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
+                      (state.cells[0].acsr.injl.FluidoPro.RGO -
+                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(state.cells[0].pres, state.cells[0].temp) * 6.29 / 35.31467) *
+                      state.cells[0].acsr.injl.FluidoPro.Deng * 1.225 / state.cells[0].acsr.injl.FluidoPro.MasEspGas(state.cells[0].pres, state.cells[0].temp);
+        double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                          (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(state.cells[0].pres, state.cells[0].temp) +
+                      state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
+                          state.cells[0].acsr.injl.FluidoPro.BSW * state.cells[0].acsr.injl.FluidoPro.BAFunc(state.cells[0].pres, state.cells[0].temp) +
+                      state.cells[0].acsr.injl.QLiq * state.cells[0].acsr.injl.bet;
+        if (fabs(qliq + qgas) > 1e-15)
+            alfini = fabs(qgas / (qliq + qgas));
+        else
+            alfini = state.inletQuality;
+        betini = state.cells[0].acsr.injl.bet;
+    }
+
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+
+    int i;
+
+    state.cells[0].presauxL = state.cells[0].pres;
+    state.cells[0].presLini = state.cells[0].pres;
+    state.cells[0].presL = state.cells[0].pres;
+    state.cells[1].presL = state.cells[0].pres;
+    state.cells[0].presini = state.cells[0].pres;
+    state.cells[1].presLini = state.cells[0].pres;
+    state.cells[0].presaux = state.cells[0].pres;
+    state.cells[1].presauxL = state.cells[0].pres;
+
+    state.cells[0].alf = alfini;
+    state.cells[0].alfini = alfini;
+    state.cells[0].bet = betini;
+    state.cells[0].betini = betini;
+    state.cells[1].alfL = state.cells[0].alf;
+    state.cells[1].alfLini = state.cells[0].alf;
+    state.cells[0].alfPigD = state.cells[0].alf;
+    state.cells[0].alfPigDini = state.cells[0].alf;
+    state.cells[0].alfPigE = state.cells[0].alf;
+    state.cells[0].alfPigEini = state.cells[0].alf;
+    state.cells[1].betL = state.cells[0].bet;
+    state.cells[1].betLini = state.cells[0].bet;
+    state.cells[0].betPigD = state.cells[0].bet;
+    state.cells[0].betPigDini = state.cells[0].bet;
+    state.cells[0].betPigE = state.cells[0].bet;
+    state.cells[0].betPigEini = state.cells[0].bet;
+    state.cells[0].betI = state.cells[0].bet;
+    state.cells[1].betLI = state.cells[0].bet;
+
+    state.steadyIteration = 0;
+    while (state.steadyIteration < 3) {
+        i = 1;
+        advanceProductionColumnPressureToPressureSecondary(state, i);
+        state.steadyIteration++;
+    }
+
+    double maxSup;
+    if (state.cells[state.lastCell].pres >= state.gasSurfacePressure) {
+        double tESup = state.cells[state.lastCell].temp;
+        double alfSup = state.cells[state.lastCell].alf;
+        double betSup = state.cells[state.lastCell].bet;
+
+        double masentrada = state.cells[state.lastCell - 1].MR;
+        double massgas = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
+        maxSup = 0.;
+
+        double tit;
+        state.finalPressure = state.cells[state.lastCell].pres;
+        double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
+        double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
+        tit = fabs(massgas / masentrada);
+
+        double masChk;
+
+        double ypres = state.gasSurfacePressure / state.finalPressure;
+        masChk = state.surfaceChoke.vazmassSachd(ypres, state.finalPressure, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                       state.cells[state.lastCell - 1].fluicol);
+        maxSup = state.surfaceChoke.vazmaxSachd(state.finalPressure, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
+        if (fabs(ypres) > fabs(state.surfaceChoke.razpres))
+            maxSup = masChk;
+
+        if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
+            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.finalPressure, tESup) -
+                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.finalPressure, tESup);
+            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.finalPressure, tESup) - betSup / rholc;
+            double cpg = state.cells[state.lastCell].flui.CalorGas(state.finalPressure, tESup);
+            double jtgM = state.cells[state.lastCell].flui.JTG(state.finalPressure, tESup);
+            state.input.valTempChokeJus = tESup + ((1. - tit) * jtlM / cplM + tit * jtgM / cpg) * (state.gasSurfacePressure - state.finalPressure) * 98066.52;
+        }
+    } else {
+        maxSup = 0.;
+        state.input.valTempChokeJus = state.cells[state.lastCell].temp;
+    }
+
+    if (fabs(maxSup) > 1e-15)
+        state.baseConvergenceMonitor = fabs(maxSup);
+    else
+        state.baseConvergenceMonitor = 1.;
+    return maxSup - state.cells[state.lastCell - 1].MR;
+}
+
+double marchProductionPressureToPressureTertiary(const SteadyStateState &state, double mchute) {
+
+    double alfini = 0.;
+    double betini = 0.;
+
+    seedFirstCellFromFlowRateGuess(state, mchute, alfini, betini);
+
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+
+    int i;
+
+    state.cells[0].presauxL = state.cells[0].pres;
+    state.cells[0].presLini = state.cells[0].pres;
+    state.cells[0].presL = state.cells[0].pres;
+    state.cells[1].presL = state.cells[0].pres;
+    state.cells[0].presini = state.cells[0].pres;
+    state.cells[1].presLini = state.cells[0].pres;
+    state.cells[0].presaux = state.cells[0].pres;
+    state.cells[1].presauxL = state.cells[0].pres;
+
+    state.cells[0].alf = alfini;
+    state.cells[0].alfini = alfini;
+    state.cells[0].bet = betini;
+    state.cells[0].betini = betini;
+    state.cells[1].alfL = state.cells[0].alf;
+    state.cells[1].alfLini = state.cells[0].alf;
+    state.cells[0].alfPigD = state.cells[0].alf;
+    state.cells[0].alfPigDini = state.cells[0].alf;
+    state.cells[0].alfPigE = state.cells[0].alf;
+    state.cells[0].alfPigEini = state.cells[0].alf;
+    state.cells[1].betL = state.cells[0].bet;
+    state.cells[1].betLini = state.cells[0].bet;
+    state.cells[0].betPigD = state.cells[0].bet;
+    state.cells[0].betPigDini = state.cells[0].bet;
+    state.cells[0].betPigE = state.cells[0].bet;
+    state.cells[0].betPigEini = state.cells[0].bet;
+    state.cells[0].betI = state.cells[0].bet;
+    state.cells[1].betLI = state.cells[0].bet;
+
+    state.steadyIteration = 0;
+    while (state.steadyIteration < 3) {
+        i = 1;
+        while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {
+
+            advanceUpstreamSteadyPressure(state, i, 0);
+            refreshUpstreamProductionPeriphery(state, i);
+            if (state.input.flashCompleto != 2)
+                advanceSteadyMass(state, i);
+            else
+                advanceCompositionalSteadyMass(state, i);
+            state.updaters.advanceSteadyTemperature(i, 0);
+            if (isnan(state.cells[i].temp))
+                NumError("Temperatrura na linha de producao com valor NaN");
+            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                state.cells[i].temp = state.input.tabent.tmin;
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceDownstreamSteadyPressure(state, i, 0);
+            refreshDownstreamProductionPeriphery(state, i);
+            if (state.input.tipoFluido == 0)
+                advanceSteadyMassTransfer(state, i - 1);
+            else
+                advanceSteadyGasMassTransfer(state, i - 1);
+            if (state.input.ordperm > 1) {
+                double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+                double D0pres = state.cells[i].pres - state.cells[i].presaux;
+                double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+                advanceUpstreamSteadyPressure(state, i, 1);
+                refreshUpstreamProductionPeriphery(state, i);
+                advanceSteadyMass(state, i);
+                state.updaters.advanceSteadyTemperature(i, 1);
+                advanceDownstreamSteadyPressure(state, i, 1);
+                state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+                state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+                state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+                refreshDownstreamProductionPeriphery(state, i);
+                refreshUpstreamProductionPeriphery(state, i);
+                state.updaters.updateProductionTemperaturePeriphery(i);
+                advanceSteadyMass(state, i);
+                if (state.input.tipoFluido == 0)
+                    advanceSteadyMassTransfer(state, i - 1);
+                else
+                    advanceSteadyGasMassTransfer(state, i - 1);
+            }
+
+            i++;
+            if (state.cells[i - 1].pres <= state.gasSurfacePressure)
+                return -1e10;
+        }
+        state.steadyIteration++;
+    }
+
+    state.baseConvergenceMonitor = 1.;
+    return 0. - state.cells[state.lastCell - 1].MR;
+}
+
+double marchGasSteadySecondary(const SteadyStateState &state, double pchute, double chutemass) {
+    state.gasCells[0].presL = pchute;
+    state.gasCells[0].pres = pchute;
+    state.gasCells[0].presini = pchute;
+    state.gasCells[1].presL = pchute;
+    state.gasCells[0].tempL = state.initialGasTemperature;
+    state.gasCells[0].temp = state.initialGasTemperature;
+    state.gasCells[1].tempL = state.initialGasTemperature;
+    state.gasCells[0].rg = state.gasCells[0].flui.MasEspGas(pchute, state.initialGasTemperature);
+    state.gasCells[0].u1L = state.gasCells[0].duto.area * state.gasCells[0].rg;
+    state.gasCells[0].u1LL = state.gasCells[0].u1L;
+    state.gasCells[1].u1LL = state.gasCells[0].u1L;
+    state.gasCells[0].VGasL = 0.;
+    if (chutemass < 0) // se nenhum valor de chutemass for colocado na lista de parÃ£metro,
+                       // usa o valor dado no json para a injecao de gas
+        state.gasCells[0].massfonteCH = state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(1., 15.6) / 86400.;
+    else
+        state.gasCells[0].massfonteCH = chutemass * state.gasCells[0].flui.MasEspGas(1., 15.6) / 86400.;
+    state.gasCells[0].VGasR = state.gasCells[0].massfonteCH;
+    state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
+
+    for (int i = 1; i <= state.gasCellCount; i++) { // marcha na linha de servico
+        state.updaters.updateSteadyGasPressure(i);            // avanco do valor de pressao de uma celula para outra, no centro da celula
+        state.updaters.updateSteadyGasTemperature(i);            // avanco do valor de temperatura de uma celula para outra, centro da celula
+        if (isnan(state.gasCells[i].temp))
+            NumError("Temperatrura na linha de servico com valor NaN");
+        state.updaters.computeSteadyGasFlowRate(i); // verifica se no centro desta celula tem uma VGL, calcula a vazao da VGL
+        // retira este valor da vazÃƒÂ£o total na linha
+        state.gasCells[i].rg = state.gasCells[i].flui.MasEspGas(state.gasCells[i].pres, state.gasCells[i].temp);
+        state.gasCells[i - 1].rgR = state.gasCells[i].rg;
+        state.gasCells[i].u1L = state.gasCells[i].duto.area * state.gasCells[i].rg;
+        state.gasCells[i - 1].u1R = state.gasCells[i].u1L;
+        if (i < state.gasCellCount)
+            state.gasCells[i + 1].u1LL = state.gasCells[i].u1L;
+    }
+    state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
+
+    int nvalv = state.input.nvalvgas;
+    double mastot = 0.;
+    for (int j = 0; j < nvalv; j++)
+        mastot += state.gasCells[state.gasValveCellIndices[j]].massfonteCH;
+    return mastot - state.gasCells[0].massfonteCH; // diferenca entre a soma das vazoes nas VGL
+    // e a vazao de injecao na linha
+}
+
+double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
+    state.gasCells[0].presL = pchute; // pressao a jusante do choque de injecao
+    state.gasCells[0].pres = pchute;
+    state.gasCells[0].presini = pchute;
+    state.gasCells[1].presL = pchute;
+    state.gasCells[0].tempL = state.initialGasTemperature;
+    state.gasCells[0].temp = state.initialGasTemperature;
+    state.gasCells[1].tempL = state.initialGasTemperature;
+    state.gasCells[0].rg = state.gasCells[0].flui.MasEspGas(pchute, state.initialGasTemperature);
+    state.gasCells[0].u1L = state.gasCells[0].duto.area * state.gasCells[0].rg;
+    state.gasCells[0].u1LL = state.gasCells[0].u1L;
+    state.gasCells[1].u1LL = state.gasCells[0].u1L;
+    state.gasCells[0].VGasL = 0.;
+    state.injectionChoke.presGarg = pchute;
+    double chutemass = state.injectionChoke.massica(); // vazao de injecao na linha obtido a partir da vazao
+    // massica do choke de injecao
+    state.gasCells[0].massfonteCH = chutemass;
+    state.gasCells[0].VGasR = state.gasCells[0].massfonteCH;
+    state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
+
+    for (int i = 1; i <= state.gasCellCount; i++) { // marcha na linha de gas
+        state.updaters.updateSteadyGasPressure(i);            // avanco do valor de pressao de uma celula para outra, no centro da celula
+        state.updaters.updateSteadyGasTemperature(i);            // avanco do valor de temperatura de uma celula para outra, centro da celula
+        if (isnan(state.gasCells[i].temp))
+            NumError("Temperatura na linha de servico com valor NaN");
+        state.updaters.computeSteadyGasFlowRate(i); // verifica se no centro desta celula tem uma VGL, calcula a vazao da VGL
+        // retira este valor da vazÃƒÂ£o total na linha
+        state.gasCells[i].rg = state.gasCells[i].flui.MasEspGas(state.gasCells[i].pres, state.gasCells[i].temp);
+        state.gasCells[i - 1].rgR = state.gasCells[i].rg;
+        state.gasCells[i].u1L = state.gasCells[i].duto.area * state.gasCells[i].rg;
+        state.gasCells[i - 1].u1R = state.gasCells[i].u1L;
+        if (i < state.gasCellCount)
+            state.gasCells[i + 1].u1LL = state.gasCells[i].u1L;
+    }
+    state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
+
+    int nvalv = state.input.nvalvgas;
+    double mastot = 0.;
+    for (int j = 0; j < nvalv; j++)
+        mastot += state.gasCells[state.gasValveCellIndices[j]].massfonteCH;
+    return mastot - chutemass; // diferenca entre a soma das vazoes nas VGL
+    // e a vazao de injecao na linha
+}
+
+double marchInjectionSteady(const SteadyStateState &state, double chute) {
+
+    int corrigechute = 1;
+
+    if (state.input.flashCompleto < 1)
+        state.cells[0].temp = state.cells[0].acsr.injl.temp;
+    else
+        state.cells[0].temp = state.cells[0].acsr.injg.temp;
+    double alfini = 0.;
+    double betini = 1.;
+    double delp = 0.;
+    if (state.input.condpocinj.CC == 1 || state.input.condpocinj.CC == 2 || state.input.condpocinj.CC == 3) {
+        if ((state.surfaceChoke.AreaGarg / state.surfaceChoke.AreaTub) >= 0.6) {
+            if (state.input.flashCompleto < 1) {
+                state.cells[0].acsr.injl.QLiq = chute;
+            } else {
+                state.cells[0].acsr.injg.QGas = chute;
+                if (state.cells[0].acsr.injg.seco == 1) {
+                    alfini = 1.;
+                    betini = 0.;
+                } else {
+                    if (state.input.flashCompleto == 2) {
+                        if (state.input.tabelaDinamica == 0)
+                            state.cells[0].flui.atualizaPropComp(state.gasSurfacePressure, state.cells[0].acsr.injg.temp, -1, NULL, NULL, state.input.pocinjec);
+                        state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.gasSurfacePressure, state.cells[0].acsr.injg.temp, -1, NULL, NULL, state.input.pocinjec);
+                    }
+                    double masgas = state.cells[0].acsr.injg.VMas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    double tit;
+                    if (state.input.flashCompleto != 2)
+                        tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
+                    else
+                        tit = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
+                    double masT = masgas / tit;
+                    tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    double qgas = masT * tit /
+                                  state.cells[0].acsr.injg.FluidoPro.MasEspGas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    double qliq = masT * (1. - tit) /
+                                  state.cells[0].acsr.injg.FluidoPro.MasEspLiq(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    alfini = qgas / (qliq + qgas);
+                    betini = 0.;
+                }
+            }
+        } else {
+            if (state.input.flashCompleto < 1) {
+                state.cells[0].acsr.injl.QLiq = chute;
+                delp = (1 / (state.cells[0].fluicol.MasEspFlu(state.gasSurfacePressure, state.cells[0].acsr.injl.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * state.cells[0].fluicol.MasEspFlu(1.01, 15.) / 86400) / (state.surfaceChoke.AreaGarg), 2.) / 98066.5;
+            } else {
+                state.cells[0].acsr.injg.QGas = chute;
+                if (state.input.flashCompleto == 2) {
+                    if (state.input.tabelaDinamica == 0)
+                        state.cells[0].flui.atualizaPropComp(state.gasSurfacePressure, state.cells[0].acsr.injg.temp, -1, NULL, NULL, state.input.pocinjec);
+                    state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.gasSurfacePressure, state.cells[0].acsr.injg.temp, -1, NULL, NULL, state.input.pocinjec);
+                }
+                double rhogstd = state.cells[0].flui.Deng * 1.225;
+                delp = (1 / (state.cells[0].flui.MasEspGas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * rhogstd / 86400) / (state.surfaceChoke.AreaGarg), 2.) / 98066.5;
+                if (state.cells[0].acsr.injg.seco == 1) {
+                    alfini = 1.;
+                    betini = 0.;
+                } else {
+                    double masgas = state.cells[0].acsr.injg.VMas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    double tit;
+                    if (state.input.flashCompleto < 2)
+                        tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
+                    else
+                        tit = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
+                    double masT = masgas / tit;
+                    tit = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    double qgas = masT * tit /
+                                  state.cells[0].acsr.injg.FluidoPro.MasEspGas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    double qliq = masT * (1. - tit) /
+                                  state.cells[0].acsr.injg.FluidoPro.MasEspLiq(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
+                    alfini = qgas / (qliq + qgas);
+                    betini = 0.;
+                }
+            }
+        }
+    }
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+    if (state.input.condpocinj.CC == 0 || state.input.condpocinj.CC == 5) {
+        state.gasSurfacePressure = chute;
+    }
+    state.steadyIteration = 0;
+
+    double masfim = 0.;
+
+    int i;
+    corrigechute = 1;
+    while (corrigechute == 1) {
+        state.cells[0].presauxL = state.gasSurfacePressure - delp;
+        state.cells[0].presLini = state.gasSurfacePressure - delp;
+        state.cells[0].presL = state.gasSurfacePressure - delp;
+        state.cells[0].pres = state.gasSurfacePressure - delp;
+        state.cells[1].presL = state.gasSurfacePressure - delp;
+        state.cells[0].presini = state.gasSurfacePressure - delp;
+        state.cells[1].presLini = state.gasSurfacePressure - delp;
+        state.cells[0].presaux = state.gasSurfacePressure - delp;
+        state.cells[1].presauxL = state.gasSurfacePressure - delp;
+        state.cells[0].alf = alfini;
+        state.cells[0].alfini = alfini;
+        state.cells[0].bet = betini;
+        state.cells[0].betini = betini;
+        state.cells[1].alfL = state.cells[0].alf;
+        state.cells[1].alfLini = state.cells[0].alf;
+        state.cells[0].alfPigD = state.cells[0].alf;
+        state.cells[0].alfPigDini = state.cells[0].alf;
+        state.cells[0].alfPigE = state.cells[0].alf;
+        state.cells[0].alfPigEini = state.cells[0].alf;
+        state.cells[1].betL = state.cells[0].bet;
+        state.cells[1].betLini = state.cells[0].bet;
+        state.cells[0].betPigD = state.cells[0].bet;
+        state.cells[0].betPigDini = state.cells[0].bet;
+        state.cells[0].betPigE = state.cells[0].bet;
+        state.cells[0].betPigEini = state.cells[0].bet;
+        state.cells[0].betI = state.cells[0].bet;
+        state.cells[1].betLI = state.cells[0].bet;
+        i = 1;
+        while (i <= state.lastCell && state.cells[i - 1].pres >= 1. && masfim >= -(*state.globals).localtiny) {
+
+            advanceUpstreamSteadyPressure(state, i, 0);
+            refreshUpstreamProductionPeriphery(state, i);
+            if (state.input.flashCompleto != 2)
+                advanceSteadyMass(state, i);
+            else
+                advanceCompositionalSteadyMass(state, i);
+            state.updaters.advanceSteadyTemperature(i, 0);
+            state.updaters.updateProductionTemperaturePeriphery(i);
+            advanceDownstreamSteadyPressure(state, i, 0);
+            refreshDownstreamProductionPeriphery(state, i);
+            advanceSteadyMassTransfer(state, i - 1);
+            if (state.input.ordperm > 1) { // correcao de segunda ordem
+                double D0presaux = state.cells[i].presaux - state.cells[i - 1].pres;
+                double D0pres = state.cells[i].pres - state.cells[i].presaux;
+                double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
+                advanceUpstreamSteadyPressure(state, i, 1);
+                refreshUpstreamProductionPeriphery(state, i);
+                advanceSteadyMass(state, i);
+                state.updaters.advanceSteadyTemperature(i, 1);
+                advanceDownstreamSteadyPressure(state, i, 1);
+                state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
+                state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
+                state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
+                refreshDownstreamProductionPeriphery(state, i);
+                refreshUpstreamProductionPeriphery(state, i);
+                state.updaters.updateProductionTemperaturePeriphery(i);
+                advanceSteadyMass(state, i);
+                advanceSteadyMassTransfer(state, i - 1);
+            }
+            masfim += (state.cells[i - 1].fontemassCR + state.cells[i - 1].fontemassLR + state.cells[i - 1].fontemassGR);
+            i++;
+            if (state.cells[i - 1].pres <= 1 || (state.cells[i - 1].acsr.tipo == 3 && (state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) > -(*state.globals).localtiny))
+                return -1e10;
+            else if (i < (state.lastCell + 1) && masfim < -(*state.globals).localtiny)
+                return 1e10;
+        }
+        if (i == state.lastCell + 1)
+            corrigechute = 0;
+    }
+    state.updaters.updateSource(state.lastCell);
+    masfim += (state.cells[state.lastCell].fontemassCR + state.cells[state.lastCell].fontemassLR + state.cells[state.lastCell].fontemassGR);
+
+    if (state.input.condpocinj.CC != 3 && state.input.condpocinj.CC != 5)
+        return masfim;
+    else
+        return state.input.condpocinj.presfundo - state.cells[state.lastCell].pres;
+}
+
+double reverseHydrostatic(const SteadyStateState &state, double hol, double vaz, double vazG) {
+    double pchute = state.gasSurfacePressure;
+    double taux;
+    state.cells[state.lastCell].pres = pchute;
+    double j = 0.;
+    double rmis = 0.;
+    double f1 = 0.;
+    for (int i = state.lastCell; i > 0; i--) {
+        if (vaz > 0. || vazG > 0.) {
+            taux = state.input.celp[0].textern;
+            double bet = 0.;
+            double visC = state.cells[i].fluicol.VisFlu(pchute, taux);
+            double visP = state.cells[i].flui.ViscOleo(pchute, taux);
+            double visG = state.cells[i].flui.ViscGas(pchute, taux);
+            double visMis = (1 - bet) * visP + bet * visC;
+            double rC = state.cells[i].fluicol.MasEspFlu(pchute, taux);
+            double rP = state.cells[i].flui.MasEspLiq(pchute, taux);
+            double rG = state.cells[i].flui.MasEspGas(pchute, taux);
+            rmis = (1 - bet) * rP + bet * rC;
+            double rlpA = state.cells[i].flui.MasEspLiq(1., 15.);
+            double rlcA = state.cells[i].fluicol.MasEspFlu(1.001, 15.);
+            double massicC = rlcA * vaz * bet;
+            double massic = rlpA * vaz * (1. - bet);
+            double Rhogs = state.cells[i].flui.Deng * 1.225;
+            double Rhols = (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) * (1 - state.cells[i].flui.BSW) + 1000. * state.cells[i].flui.Denag * state.cells[i].flui.BSW;
+            double multiplicador = (Rhols + state.cells[i].flui.RGO * Rhogs * (1 - state.cells[i].flui.BSW));
+            massic = 1 * vaz * (1. - bet) * multiplicador;
+            double fracmasshidra = state.cells[i].flui.FracMassHidra(pchute, taux);
+            double massicP = (1. - fracmasshidra) * massic;
+            double massicG = fracmasshidra * massic + vazG * Rhogs;
+            j = (massicP / rP + massicC / rC + massicG / rG) / state.cells[i].duto.area;
+            double alfmis = (massicG / rG) / (massicP / rP + massicC / rC + massicG / rG);
+            rmis = (1 - alfmis) * rmis + alfmis * rG;
+            visMis = (1 - alfmis) * visMis + alfmis * visG;
+            double re;
+            if (state.cells[i].duto.revest == 0)
+                re = state.cells[0].Rey(state.cells[i].duto.a, j, rmis, visMis);
+            else {
+                double dhid = 4 * state.cells[i].duto.area / state.cells[0].duto.peri;
+                re = state.cells[i].Rey(dhid, j, rmis, visMis);
+            }
+            f1 = state.cells[i].fric(re, state.cells[0].duto.rug / state.cells[0].duto.a);
+        }
+        double perdafric = (f1 * rmis * j * fabs(j) / 2.) * state.cells[i].duto.peri / state.cells[i].duto.area;
+        taux = state.input.celp[i].textern;
+        if (i == 500) {
+            int para;
+            para = 0;
+        }
+        double rhol = state.cells[i].flui.MasEspLiq(pchute, taux);
+        double rhog = state.cells[i].flui.MasEspGas(pchute, taux);
+        double alfa = 1. - hol;
+        double rhomix = (1. - alfa) * rhol + alfa * rhog;
+        double dxmed = 0.5 * (state.cells[i].dx + state.cells[i - 1].dx);
+        pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
+        if (state.cells[i - 1].acsr.tipo == 7)
+            pchute -= state.cells[i - 1].acsr.delp;
+        if (state.cells[i - 1].acsr.tipo == 3 && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
+            pchute = 0.99 * state.cells[i - 1].acsr.ipr.Pres;
+        if (state.cells[i - 1].acsr.tipo == 15 && (state.cells[i - 1].acsr.radialPoro.pRes[0] - pchute) < (*state.globals).localtiny)
+            pchute = 0.99 * state.cells[i - 1].acsr.radialPoro.pRes[0];
+        if (state.cells[i - 1].acsr.tipo == 16 && (state.cells[i - 1].acsr.poroso2D.dados.pRes - pchute) < (*state.globals).localtiny)
+            pchute = 0.99 * state.cells[i - 1].acsr.poroso2D.dados.pRes;
+
+        state.cells[i - 1].dpB = 0.;
+        if (state.cells[i - 1].acsr.tipo == 4 && state.cells[i - 1].acsr.bcs.freqnova > 1. && vaz >= 0.) {
+            double vazmix = j * state.cells[i - 1].dutoL.area;
+            double rhomis = state.cells[i - 1].flui.MasEspLiq(pchute, taux);
+            double vismis = state.cells[i - 1].flui.ViscOleo(pchute, taux);
+            vazmix *= (86400 / 0.1589876);
+            state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
+            state.cells[i - 1].dpB = 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
+        }
+        if (state.cells[i - 1].acsr.tipo == 17 && state.cells[i - 1].acsr.multibcs.freqnova > 1. && vaz >= 0.) {
+            double alf0 = state.cells[i - 1].alf;
+            double bet0 = state.cells[i - 1].bet;
+            state.cells[i - 1].acsr.multibcs.flui = state.cells[i - 1].flui;
+            state.cells[i - 1].acsr.multibcs.fluicol = state.cells[i - 1].fluicol;
+            state.cells[i - 1].acsr.multibcs.marchaMultiBcs(state.cells[i - 1].QG, state.cells[i - 1].QL,
+                                                       pchute, taux, alf0, bet0);
+            state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * 98066.52;
+        }
+        pchute -= state.cells[i - 1].dpB / 98066.5;
+        state.cells[i - 1].pres = pchute;
+    }
+    return pchute;
+}
+
+double reverseInjectionHydrostatic(const SteadyStateState &state, double hol, double vaz) {
+    double pchute = 0.;
+    if (state.input.condpocinj.presfundo > 1e-5)
+        pchute = state.input.condpocinj.presfundo;
+    else if (state.cells[state.lastCell].acsr.tipo == 3)
+        pchute = state.cells[state.lastCell].acsr.ipr.Pres;
+    else
+        NumError("Sem pressao no fim do tramo e sem IPR-metodo hidroreversoInj");
+    double taux;
+    double rmis = 0.;
+    double j = 0.;
+    double f1 = 0.;
+
+    if (vaz > 0.) {
+        taux = state.input.celp[0].textern;
+        state.cells[state.lastCell].pres = pchute;
+        double visC = state.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
+        double visMis = visC;
+        double rC = state.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+        rmis = rC;
+        double rlcA = state.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+        double massicC = rlcA * vaz;
+        j = (massicC / rC) / state.cells[0].duto.area;
+        double re;
+        if (state.cells[0].duto.revest == 0)
+            re = state.cells[0].Rey(state.cells[0].duto.a, j, rmis, visMis);
+        else {
+            double dhid = 4 * state.cells[0].duto.area / state.cells[0].duto.peri;
+            re = state.cells[0].Rey(dhid, j, rmis, visMis);
+        }
+        f1 = state.cells[0].fric(re, state.cells[0].duto.rug / state.cells[0].duto.a);
+    }
+    double perdafric = (f1 * rmis * j * fabs(j) / 2.) * state.cells[0].duto.peri / state.cells[0].duto.area;
+    for (int i = state.lastCell; i > 0; i--) {
+        taux = state.input.celp[i].textern;
+        double rhol = state.cells[i].fluicol.MasEspFlu(pchute, taux);
+        double rhog = 0.;
+        double alfa = 1. - hol;
+        double rhomix = (1. - alfa) * rhol + alfa * rhog;
+        double dxmed = 0.5 * (state.cells[i].dx + state.cells[i - 1].dx);
+        pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
+        if (state.cells[i - 1].acsr.tipo == 7)
+            pchute -= state.cells[i - 1].acsr.delp;
+        if (state.cells[i - 1].acsr.tipo == 3 && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
+            pchute = 0.99 * state.cells[i - 1].acsr.ipr.Pres;
+        state.cells[i - 1].pres = pchute;
+    }
+    return pchute;
+}
+
+double secondaryBranchHydrostatic(const SteadyStateState &state, double titulo) {
+    double pchute;
+    if (state.input.ConContEntrada == 1)
+        pchute = state.input.CCPres.pres[0];
+    else
+        pchute = state.cells[0].pres;
+    double taux;
+    double hol;
+    double bet;
+    if (state.input.ConContEntrada == 1)
+        bet = state.input.CCPres.bet[0];
+    else
+        bet = state.cells[0].bet;
+    state.cells[0].bet = bet;
+    taux = state.input.celp[0].textern;
+    double titRef = state.cells[0].flui.FracMassHidra(pchute, taux);
+    if (state.input.ConContEntrada == 1)
+        state.cells[0].pres = state.input.CCPres.pres[0];
+    state.cells[0].temp = taux;
+    double rhol = state.cells[0].flui.MasEspLiq(state.cells[0].pres, taux);
+    double rhoc = state.cells[0].fluicol.MasEspFlu(state.cells[0].pres, taux);
+    double rhog = state.cells[0].flui.MasEspGas(state.cells[0].pres, taux);
+    double titEntra;
+    if (state.input.ConContEntrada == 1)
+        titEntra = state.input.CCPres.tit[0];
+    else
+        titEntra = titulo;
+    state.cells[0].alf = titEntra * (rhol * (1. - bet) + rhoc * bet) / (rhog * (1. - titEntra) + titEntra * (rhol * (1. - bet) + rhoc * bet));
+    for (int i = 0; i < state.lastCell; i++) {
+        taux = state.input.celp[i].textern;
+        rhol = state.cells[i].flui.MasEspLiq(pchute, taux);
+        rhoc = state.cells[i].fluicol.MasEspFlu(pchute, taux);
+        rhog = state.cells[i].flui.MasEspGas(pchute, taux);
+        double tit0 = state.cells[i].flui.FracMassHidra(pchute, taux);
+        double delTit = tit0 - titRef;
+        double novoTit = titulo + delTit * (titulo / titRef);
+        double alfa = novoTit * (rhol * (1. - bet) + rhoc * bet) / (rhog * (1. - novoTit) + novoTit * (rhol * (1. - bet) + rhoc * bet));
+        state.cells[i + 1].alf = alfa;
+        state.cells[i + 1].bet = bet;
+
+        double rhomix = (1. - alfa) * ((1. - bet) * rhol + bet * rhoc) + alfa * rhog;
+        double dxmed = 0.5 * (state.cells[i].dx + state.cells[i + 1].dx);
+        pchute -= ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed) / 98066.5);
+        state.cells[i + 1].pres = pchute;
+        state.cells[i + 1].temp = taux;
+    }
+    return pchute;
+}
+
 }  // namespace sisprod::steady
