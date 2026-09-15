@@ -40,8 +40,8 @@ failures=0
 #   $1 label   $2 expectation: caught|passes   $3 sed script   $4 proof pattern
 attempt() {
     local label="$1" expect="$2" script="$3" proof="$4"
-    local file="$work/SisProd.cpp"
-    cp "$project_root/src/core/SisProd.cpp" "$file"
+    local file="$work/SisProdSteadyStateSearch.cpp"
+    cp "$project_root/src/core/SisProdSteadyStateSearch.cpp" "$file"
 
     if [[ -n "$script" ]]; then
         sed -i "$script" "$file"
@@ -100,9 +100,13 @@ attempt "reverse march inverted in ProdPresPres1" caught \
         's/    return reverseMarch == 0 ? SteadyMarch::marchaProdPresPres1$/    return reverseMarch != 0 ? SteadyMarch::marchaProdPresPres1/' \
         'reverseMarch != 0 ? SteadyMarch::marchaProdPresPres1'
 
+# T097b moved the call site into dispatchMarch, where the selector reads the
+# array through the search state. The sed below follows the text; when it stops
+# matching, the case reports CORRUPTION NOT INJECTED rather than passing, which
+# is the only reason this was noticed at all.
 attempt "call site subscripts the choke array eagerly" caught \
-        's/revPerm, arq\.chokep\.abertura))/revPerm, arq.chokep.abertura[0]))/' \
-        'arq.chokep.abertura[0]))'
+        's/state\.march\.input\.chokep\.abertura)/state.march.input.chokep.abertura[0])/' \
+        'state.march.input.chokep.abertura[0])'
 
 attempt "selector subscripts the choke array eagerly" caught \
         's|^    if (injectorWell != 0)$|    const double eager = productionChokeOpening[0]; (void)eager;\n    if (injectorWell != 0)|' \

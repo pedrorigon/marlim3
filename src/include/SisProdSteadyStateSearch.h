@@ -59,6 +59,16 @@ struct SteadyStateSearchState {
 [[nodiscard]] double dispatchMarch(const SteadyStateSearchState &state, double guess,
                                    int isProduction, int boundaryConditionKind);
 
+/// Drives dispatchMarch to a root between two bracketing guesses.
+///
+/// The generic half of this lives in rootfinding::zriddr and knew nothing about
+/// production when stage 2 put it there. What stays here is the domain half:
+/// reading acopColAnulPermForte to decide the minimum iteration count, and
+/// normalising the residual against the convergence monitor. Both were hoisted
+/// out of the solver on purpose and are not pushed back in.
+[[nodiscard]] double solveSteadyRoot(const SteadyStateSearchState &state, double x1, double x2,
+                                     int isProduction, int boundaryConditionKind);
+
 // -------------------------------------------- production bottom-hole search --
 
 /// Searches the bottom-hole pressure that closes the production balance.

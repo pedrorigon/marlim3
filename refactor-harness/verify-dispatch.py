@@ -23,7 +23,8 @@ So both sides are carved out of source and compiled together:
     three member reads turned into parameters -- a substitution table, printed
     with --show so it can be read rather than trusted;
 
-  * the current side, selectSteadyMarch, taken verbatim from SisProd.cpp.
+  * the current side, selectSteadyMarch, taken verbatim from
+    SisProdSteadyStateSearch.cpp, where T097b moved it.
 
 Then every combination of the selectors is swept and compared. The choke opening
 is passed as the ARRAY, not the value, and the sweep includes a null one: the
@@ -168,20 +169,21 @@ def carve(source: str, pattern: str) -> str:
 # actually made: it turns the original's conditional dereference into an
 # unconditional one, and Ler::copia_chokeSup leaves that pointer null when
 # parserie is not positive.
-CALL_SITE = "selectSteadyMarch(arq.pocinjec, prod, tipoCC, revPerm, arq.chokep.abertura)"
+CALL_SITE = ("selectSteadyMarch(state.march.input.pocinjec, prod, tipoCC, state.reverseSteady,\n"
+             "                              state.march.input.chokep.abertura)")
 
 
 def check_call_site(source: str) -> str | None:
-    """None when multMarcha hands the selector the array; a message otherwise."""
-    body = carve(source, r"double SProd::multMarcha\(")
+    """None when dispatchMarch hands the selector the array; a message otherwise."""
+    body = carve(source, r"double dispatchMarch\(")
     if CALL_SITE in body:
         return None
-    if "arq.chokep.abertura[0]" in body:
-        return ("multMarcha subscripts the choke array before the call:\n"
+    if "input.chokep.abertura[0]" in body:
+        return ("dispatchMarch subscripts the choke array before the call:\n"
                 "      it passes arq.chokep.abertura[0], so the dereference happens on\n"
                 "      EVERY dispatch. The original only subscripted it inside one\n"
                 "      branch, and the pointer can be null. Pass the array.")
-    return ("multMarcha does not call the selector as expected.\n"
+    return ("dispatchMarch does not call the selector as expected.\n"
             f"      expected: {CALL_SITE}")
 
 
@@ -229,7 +231,7 @@ def main() -> int:
     parser.add_argument("--baseline-commit", default="0f3b64f")
     parser.add_argument("--current",
                         help="file to take selectSteadyMarch from; defaults to the "
-                             "working tree's SisProd.cpp. Used to calibrate this "
+                             "working tree's SisProdSteadyStateSearch.cpp. Used to calibrate this "
                              "checker against deliberately corrupted copies.")
     parser.add_argument("--show", action="store_true",
                         help="print the rewritten baseline selector and exit")
@@ -239,7 +241,12 @@ def main() -> int:
     pristine = subprocess.run(
         ["git", "-C", str(root), "show", f"{args.baseline_commit}:src/core/SisProd.cpp"],
         capture_output=True, text=True, check=True).stdout
-    current_path = Path(args.current) if args.current else root / "src/core/SisProd.cpp"
+    # T097b moved the table to the search module. The default follows it: a
+    # checker left pointing at the file the code used to be in reports
+    # "no definition matching ..." and keeps its exit code, which is how an
+    # instrument stops testing without anyone noticing.
+    current_path = (Path(args.current) if args.current
+                    else root / "src/core/SisProdSteadyStateSearch.cpp")
     current = current_path.read_text(encoding="utf-8", errors="replace")
 
     baseline = to_selector(carve(pristine, r"double SProd::multMarcha\("))
