@@ -202,6 +202,36 @@ struct TransientStepState {
     /// SProd::vg1dSP -- so lido.
     varGlob1D* globals;};
 
+// ------------------------------------------------------------ cell update ----
+
+/// Updates every cell after a transient solve, in index order.
+///
+/// The iteration order over cells is load-bearing and is why the three arms
+/// below are separate functions rather than one parameterised by position: the
+/// split is the loop body's own structure, so the order is untouched.
+void updateCells(const TransientStepState &state, int expli);
+void updateInteriorCell(const TransientStepState &state, int i, int expli);
+void updateFirstCell(const TransientStepState &state, int i, int expli);
+void updateLastCell(const TransientStepState &state, int i, int expli);
+
+/// Updates the flow rates. Writes a strict subset of what updateCells writes --
+/// measured in evidencia/renova-diff.md, where it is also recorded that the
+/// textual similarity metric reports 37% for a pair that shares every field.
+void updateFlowRates(const TransientStepState &state);
+
+// ---------------------------------------------------------- buffer update ----
+
+/// Fills the buffered state from the solver's free-term vector, and from the
+/// cells' own current values.
+///
+/// TWO functions, and they stay two. Num4Main.cpp picks between them in
+/// alternative branches of one if, and they differ by more than their source:
+/// updateBufferFromSolution propagates state to the last cell's right face and
+/// does not touch the mass sources, updateBufferFromCells does exactly the
+/// opposite. Nothing in the code says whether that asymmetry is intended.
+void updateBufferFromSolution(const TransientStepState &state);
+void updateBufferFromCells(const TransientStepState &state);
+
 }  // namespace sisprod::transient
 
 #endif  // SISPRODTRANSIENT_H_

@@ -14,6 +14,7 @@
 #include "SisProdGasLift.h"
 #include "SisProdSteadyState.h"
 #include "SisProdSteadyStateSearch.h"
+#include "SisProdTransient.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 #include <chrono>
@@ -2662,6 +2663,91 @@ sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system) {
     };
 }
 
+/// The state one transient step reads.
+///
+/// Seventy-two fields, generated from the same measurement that generated the
+/// header -- what the 22 routines of this stage actually touch -- rather than
+/// written twice. The ORDER is the header's declaration order, because C++20
+/// designated initialisers must follow it; the first attempt sorted them by
+/// name and the compiler rejected every field after the first.
+sisprod::transient::TransientStepState transientStateOf(SProd &system) {
+    return sisprod::transient::TransientStepState{
+        .meanMaximumTimeStep = system.DTMaxMed,
+        .meanMaximumPressureChange = system.DpMaxMed,
+        .masterState = system.EstadoMaster1,
+        .open = system.aberto,
+        .initiallyOpen = system.abertoini,
+        .timeChanged = system.alteraTempo,
+        .inletCompletionFraction = system.betaE,
+        .interfaceCell = system.celInter,
+        .masterCounter = system.contaMaster1,
+        .gasSpecificHeatTable = system.cpg,
+        .timeStep = system.dt,
+        .meanCflTimeStep = system.dtCFLMed,
+        .totalCflTimeStep = system.dtCFLTotal,
+        .interfaceTimeStep = system.dtInter,
+        .meanSimulationTimeStep = system.dtSimMed,
+        .totalSimulationTimeStep = system.dtSimTotal,
+        .bufferedCompletionMassSource = system.fontemassCRBuf,
+        .bufferedGasMassSource = system.fontemassGRBuf,
+        .bufferedLiquidMassSource = system.fontemassPRBuf,
+        .eventIndex = system.indevento,
+        .slugCount = system.kontaGolfada,
+        .timeStepRestrictionCount = system.kontarestriDt,
+        .surfaceChokeMassFlag = system.masChkSup,
+        .fullModel = system.modeloCompleto,
+        .desperationMoment = system.momentoDesesp,
+        .chokeModeChanged = system.mudaModoChk,
+        .multiplier = system.mult,
+        .finalPressure = system.presfim,
+        .restart = system.reinicia,
+        .timeStepRestricted = system.restriDt,
+        .openTime = system.tempoaberto,
+        .productionSolution = system.termolivreP,
+        .inletQuality = system.titE,
+        .masterRatio0 = system.vRazMast0,
+        .masterRatio1 = system.vRazMast1,
+        .masterCriticalRatio = system.vRazMastCrit,
+        .interfaceVelocity = system.velInter,
+        .masterOpenSchedule = system.abreM1,
+        .input = system.arq,
+        .initialInterfaceCell = system.celInterIni,
+        .cells = system.celula,
+        .gasCells = system.celulaG,
+        .surfaceChoke = system.chokeSup,
+        .cflTimeSteps = system.dtCFL,
+        .initialInterfaceTimeStep = system.dtInterIni,
+        .simulationTimeSteps = system.dtSim,
+        .auxiliaryCflTimeStep = system.dtauxCFL,
+        .finalAuxiliaryTimeStep = system.dtauxFinal,
+        .masterCloseSchedule = system.fechaM1,
+        .productionFreeTerms = system.flut,
+        .gasFreeTerms = system.flutG,
+        .branchIndex = system.indTramo,
+        .movingMeanFlux = system.jMedMov,
+        .stepIndex = system.kSP,
+        .productionMatrix = system.matglobP,
+        .smallestCellLength = system.menorDx,
+        .masterOpenCount = system.nabreM1,
+        .lastCell = system.ncel,
+        .gasCellCount = system.ncelGas,
+        .productionCrossSectionCount = system.ncelperftransp,
+        .masterCloseCount = system.nfechaM1,
+        .endNode = system.noextremo,
+        .gasSurfacePressure = system.pGSup,
+        .inletPressure = system.presE,
+        .movingMeanPressure = system.presMedMov,
+        .movingMeanTemperature = system.tMedMov,
+        .maximumTimeStepRates = system.taxaDTMax,
+        .maximumPressureRates = system.taxaDpMax,
+        .inletTemperature = system.tempE,
+        .reverseQuality = system.titRev,
+        .initialInterfaceVelocity = system.velInterIni,
+        .globals = system.vg1dSP,
+    };
+}
+
+
 
 sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
     return sisprod::thermal::ThermalState{
@@ -3756,119 +3842,7 @@ void SProd::geraMiniTabFlu() {
 /// Third arm of renova's split by cell position. It is longer than the first
 /// cell's arm because the outlet carries the surface-choke coupling.
 void SProd::renovaUltimaCelula(int i, int expli) {
-    celula[i].presini = celula[i].pres;
-    if (expli == 0)
-        celula[ncel].pres = termolivreP[2 * ncel + 1];
-    celula[i].d2pdt2 = celula[i].dpdt;
-    celula[i].dpdt = 0 * (celula[i].pres - celula[i].presini) / celula[i].dt;
-    celula[i].d2pdt2 = (celula[i].dpdt - celula[i].d2pdt2) / celula[i].dt;
-    celula[ncel].MCini = celula[ncel].MC;
-    if (expli == 0)
-        celula[ncel].MC = termolivreP[2 * ncel];
-    // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    celula[ncel - 1].presRini = celula[ncel - 1].presR;
-    celula[ncel - 1].presR = celula[ncel].pres;
-    celula[ncel - 1].MRini = celula[ncel - 1].MR;
-    celula[ncel - 1].MR = celula[ncel].MC;
-    celula[ncel].MRini = celula[ncel].MR;
-    celula[ncel].MR = celula[ncel].MC;
-
-    celula[ncel].Mliqini0 = celula[ncel].Mliqini;
-    celula[ncel].Mliqini = celula[ncel].term1 * celula[ncel].MC + celula[ncel].term2;
-    celula[i - 1].MliqiniR0 = celula[i - 1].MliqiniR;
-    celula[ncel - 1].MliqiniR = celula[ncel].Mliqini;
-    celula[ncel].MliqiniR0 = celula[ncel].MliqiniR;
-    celula[ncel].MliqiniR = celula[ncel].Mliqini;
-
-    double dx = 0.5 * celula[i].dx;
-    double dia = celula[i].duto.a;
-    double area = 0.25 * M_PI * dia * dia;
-    double si = celula[i].duto.peri;
-    double alfmed = celula[i].alf;
-    double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
-    double rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp) + celula[i].bet * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    double ugsmed = (celula[i].QG) / (area);
-    double ulsmed = celula[i].QL / (area);
-    double j = ugsmed + ulsmed;
-    double ABSjL = (fabs(celula[i - 1].QG) + fabs(celula[i - 1].QL)) / celula[i - 1].duto.area;
-
-    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    double viscmix = alfmed * celula[i].flui.ViscGas(celula[i].pres, celula[i].temp) + (1 - alfmed) * ((1 - celula[i].bet) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp) + celula[i].bet * celula[i].fluicol.VisFlu(celula[i].pres, celula[i].temp));
-
-    double re1;
-    if (celula[i].duto.revest == 0)
-        re1 = celula[i].Rey(celula[i].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / si;
-        re1 = celula[i].Rey(dhid, j, rhomix, viscmix);
-    }
-    double f1 = celula[i].fric(re1, celula[i].duto.rug / dia);
-    double medpres = 0;
-    double gradfric = (1 - medpres) * 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-    double gradhidro = (1 - medpres) * 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
-
-    celula[i].presauxini = celula[i].presaux;
-    celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-    celula[i].dpresaux = 0.5 * (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-    dx = 0.5 * celula[i].dxL;
-    dia = celula[i - 1].duto.a;
-    area = 0.25 * M_PI * dia * dia;
-    si = celula[i - 1].duto.peri;
-    alfmed = celula[i - 1].alf;
-    rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-    rhol = (1 - celula[i - 1].bet) * celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp) + celula[i - 1].bet * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-    ugsmed = (celula[i - 1].MC - celula[i - 1].Mliqini) / (area * rhog);
-    ulsmed = celula[i - 1].Mliqini / (area * rhol);
-    j = ugsmed + ulsmed;
-
-    rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    viscmix = alfmed * celula[i - 1].flui.ViscGas(celula[i - 1].pres, celula[i - 1].temp) + (1 - alfmed) * ((1 - celula[i - 1].bet) * celula[i - 1].flui.ViscOleo(celula[i - 1].pres, celula[i - 1].temp) + celula[i - 1].bet * celula[i - 1].fluicol.VisFlu(celula[i - 1].pres, celula[i - 1].temp));
-
-    if (celula[i - 1].duto.revest == 0)
-        re1 = celula[i - 1].Rey(celula[i - 1].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / si;
-        re1 = celula[i - 1].Rey(dhid, j, rhomix, viscmix);
-    }
-    f1 = celula[i - 1].fric(re1, celula[i - 1].duto.rug / dia);
-    gradfric = (1 - medpres) * 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-    gradhidro = (1 - medpres) * 9.82 * sin(celula[i - 1].duto.teta) * rhomix * dx;
-
-    celula[i].presaux = 0.5 * (celula[i].presaux) +
-                        0.5 * (celula[i - 1].pres - (gradfric + gradhidro) / 98066.5);
-    celula[i].dpresaux -= 0.5 * (gradfric + gradhidro) / 98066.5;
-    celula[i - 1].presauxRini = celula[i - 1].presauxR;
-    celula[i - 1].presauxR = celula[i].presaux;
-    if (i < ncel) {
-        celula[i + 1].presauxLini = celula[i + 1].presauxL;
-        celula[i + 1].presauxL = celula[i].presaux;
-    }
-
-    double tmed = celula[i - 1].temp;
-    if (celula[i].VTemper < 0.)
-        tmed = celula[i].temp;
-
-    ProFlu flud;
-    if (celula[i].Mliqini < 0.)
-        flud = celula[i].flui;
-    else
-        flud = celula[i - 1].flui;
-
-    double betI;
-    if (((celula[i].MC - celula[i].Mliqini) * 0.99 + 0.01 * celula[i].Mliqini) < 0)
-        betI = celula[i].bet; // duvidabeta
-    else
-        betI = celula[i].betL;
-
-    double rl = flud.MasEspLiq(celula[i].presaux, tmed);
-    rhol = (1 - betI) * rl + betI * celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-
-    double rg = flud.MasEspGas(celula[i].presaux, tmed);
-
-    celula[i].QL = celula[i].Mliqini / rhol;
-    celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rg;
-    celula[i - 1].QLR = celula[i].QL;
+    sisprod::transient::updateLastCell(transientStateOf(*this), i, expli);
 }
 
 /// Updates the first cell after a transient solve.
@@ -3876,42 +3850,7 @@ void SProd::renovaUltimaCelula(int i, int expli) {
 /// Second arm of renova's split by cell position. Shorter than the interior arm
 /// because the first cell has no upstream neighbour to read from.
 void SProd::renovaPrimeiraCelula(int i, int expli) {
-    celula[0].presini = celula[0].pres;
-    if (expli == 0)
-        celula[0].pres = termolivreP[1];
-    celula[i].d2pdt2 = celula[i].dpdt;
-    celula[i].dpdt = 0 * (celula[i].pres - celula[i].presini) / celula[i].dt;
-    celula[0].presauxini = celula[0].presaux;
-    celula[0].presaux = celula[0].pres;
-    celula[0].dpresaux = 0.;
-    celula[0].MCini = celula[0].MC;
-    if (expli == 0)
-        celula[0].MC = termolivreP[0];
-    celula[1].presLini = celula[1].presL;
-    celula[1].presL = celula[0].pres;
-    celula[1].MLini = celula[1].ML;
-    celula[1].ML = celula[0].MC;
-    celula[0].Mliqini0 = celula[0].Mliqini;
-    celula[0].Mliqini = celula[i].term1 * celula[i].MC + celula[i].term2;
-    celula[1].MliqiniL0 = celula[1].MliqiniL;
-    celula[1].MliqiniL = celula[0].Mliqini;
-
-    celula[0].QLini = celula[0].QL;
-    celula[0].QL = 0.;
-    celula[1].QLLini = celula[1].QLL;
-    celula[1].QLL = celula[0].QL;
-    celula[0].QGini = celula[0].QG;
-    celula[0].QG = 0.;
-
-    if (arq.ConContEntrada > 0) {
-        double rhogC = celula[i].flui.MasEspGas(presE, tempE);
-        double rhopC = celula[i].flui.MasEspLiq(presE, tempE);
-        double rhocC = celula[i].fluicol.MasEspFlu(presE, tempE);
-        double rholC = rhopC * (1 - betaE) + rhocC * betaE;
-        celula[0].QL = celula[0].Mliqini / rholC;
-        celula[1].QLL = celula[0].QL;
-        celula[0].QG = (celula[0].MC - celula[0].Mliqini) / rhogC;
-    }
+    sisprod::transient::updateFirstCell(transientStateOf(*this), i, expli);
 }
 
 /// Updates one interior cell after a transient solve.
@@ -3925,313 +3864,23 @@ void SProd::renovaPrimeiraCelula(int i, int expli) {
 /// added by hand because the interface tool blanks control headers and so never
 /// sees a for-init.
 void SProd::renovaCelulaInterior(int i, int expli) {
-    celula[i].presini = celula[i].pres;
-    if (expli == 0)
-        celula[i].pres = termolivreP[2 * i + 1];
-    if (isnan(celula[i].pres))
-        NumError("Pressao na linha com valor NaN");
-    celula[i].d2pdt2 = celula[i].dpdt;
-    celula[i].dpdt = 0. * (celula[i].pres - celula[i].presini) / celula[i].dt;
-    celula[i].MCini = celula[i].MC;
-    if (expli == 0)
-        celula[i].MC = termolivreP[2 * i];
-    if (isnan(celula[i].MC))
-        NumError("Vazao massica da mistura na linha com valor NaN");
-    celula[i + 1].presLini = celula[i + 1].presL;
-    celula[i - 1].presRini = celula[i - 1].presR;
-    celula[i + 1].presL = celula[i - 1].presR = celula[i].pres;
-    celula[i + 1].MLini = celula[i + 1].ML;
-    celula[i - 1].MRini = celula[i - 1].MR;
-    celula[i + 1].ML = celula[i - 1].MR = celula[i].MC;
-
-    celula[i].Mliqini0 = celula[i].Mliqini;
-    celula[i].Mliqini = celula[i].term1 * celula[i].MC + celula[i].term2;
-    celula[i + 1].MliqiniL0 = celula[i + 1].MliqiniL;
-    celula[i - 1].MliqiniR0 = celula[i - 1].MliqiniR;
-    celula[i + 1].MliqiniL = celula[i - 1].MliqiniR = celula[i].Mliqini;
-
-    double dx = 0.5 * celula[i].dx;
-    double dia = celula[i].duto.a;
-    double area = 0.25 * M_PI * dia * dia;
-    double si = celula[i].duto.peri;
-    double alfmed = celula[i].alf;
-    double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
-    double rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp) + celula[i].bet * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    double ugsmed = (celula[i].MC - celula[i].Mliqini) / (area * rhog);
-    double ulsmed = celula[i].Mliqini / (area * rhol);
-    double j = ugsmed + ulsmed;
-
-    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    double viscmix = alfmed * celula[i].flui.ViscGas(celula[i].pres, celula[i].temp) + (1 - alfmed) * ((1 - celula[i].bet) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp) + celula[i].bet * celula[i].fluicol.VisFlu(celula[i].pres, celula[i].temp));
-
-    double re1;
-    if (celula[i].duto.revest == 0)
-        re1 = celula[i].Rey(celula[i].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / si;
-        re1 = celula[i].Rey(dhid, j, rhomix, viscmix);
-    }
-    double f1 = celula[i].fric(re1, celula[i].duto.rug / dia);
-    double medpres = 0;
-    if (arq.MedSimpPresFront == 0) {
-        if (celula[i].presaux <= 10)
-            medpres = 1;
-        else
-            medpres = 0.;
-    } else
-        medpres = 1;
-    double gradfric = (1 - medpres) * 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-    double gradhidro = (1 - medpres) * 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
-    celula[i].presauxini = celula[i].presaux;
-    celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-    celula[i].dpresaux = 0.5 * (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
-    dx = 0.5 * celula[i].dxL;
-    dia = celula[i - 1].duto.a;
-    area = 0.25 * M_PI * dia * dia;
-    si = celula[i - 1].duto.peri;
-    alfmed = celula[i - 1].alf;
-    rhog = celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp);
-    rhol = (1 - celula[i - 1].bet) * celula[i - 1].flui.MasEspLiq(celula[i - 1].pres, celula[i - 1].temp) + celula[i - 1].bet * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp);
-    ugsmed = (celula[i - 1].MC - celula[i - 1].Mliqini) / (area * rhog);
-    ulsmed = celula[i - 1].Mliqini / (area * rhol);
-    j = ugsmed + ulsmed;
-
-    rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    viscmix = alfmed * celula[i - 1].flui.ViscGas(celula[i - 1].pres, celula[i - 1].temp) + (1 - alfmed) * ((1 - celula[i - 1].bet) * celula[i - 1].flui.ViscOleo(celula[i - 1].pres, celula[i - 1].temp) + celula[i - 1].bet * celula[i - 1].fluicol.VisFlu(celula[i - 1].pres, celula[i - 1].temp));
-
-    if (celula[i - 1].duto.revest == 0)
-        re1 = celula[i - 1].Rey(celula[i - 1].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / si;
-        re1 = celula[i - 1].Rey(dhid, j, rhomix, viscmix);
-    }
-    f1 = celula[i - 1].fric(re1, celula[i - 1].duto.rug / dia);
-
-    gradfric = (1 - medpres) * 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-    gradhidro = (1 - medpres) * 9.82 * sin(celula[i - 1].duto.teta) * rhomix * dx;
-
-    if (celula[i - 1].acsr.tipo != 5 || celula[i - 1].acsr.chk.AreaGarg > celula[i - 1].acsr.chk.AreaTub * 0.5)
-        celula[i].presaux = 0.5 * (celula[i].presaux) +
-                            0.5 * (celula[i - 1].pres - (gradfric + gradhidro) / 98066.5);
-    celula[i].dpresaux -= 0.5 * (gradfric + gradhidro) / 98066.5;
-    celula[i - 1].presauxRini = celula[i - 1].presauxR;
-    celula[i - 1].presauxR = celula[i].presaux;
-    if (i < ncel) {
-        celula[i + 1].presauxLini = celula[i + 1].presauxL;
-        celula[i + 1].presauxL = celula[i].presaux;
-    }
-
-    double tmed = celula[i - 1].temp;
-    if (celula[i].VTemper < 0.)
-        tmed = celula[i].temp;
-
-    ProFlu flud;
-    if (celula[i].Mliqini < 0.)
-        flud = celula[i].flui;
-    else
-        flud = celula[i - 1].flui;
-
-    double betI;
-    if (((celula[i].MC - celula[i].Mliqini) * 0 + 1 * celula[i].Mliqini) < 0)
-        betI = celula[i].bet; // duvidabeta
-    else
-        betI = celula[i].betL;
-
-    double rl = flud.MasEspLiq(celula[i].presaux, tmed);
-    rhol = (1 - betI) * rl + betI * celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-
-    double rg = flud.MasEspGas(celula[i].presaux, tmed);
-    double vLiqTest = 1 + 0 * fabs(celula[i].Mliqini / (rhol * area));
-    double vGasTest = 1 + 0 * fabs((celula[i].MC - celula[i].Mliqini) / (rg * area));
-
-    celula[i].QLini = celula[i].QL;
-    if (vLiqTest > 1e-3)
-        celula[i].QL = celula[i].Mliqini / rhol;
-    else {
-        celula[i].QL = 0.;
-        celula[i].MC = (celula[i].MC - celula[i].Mliqini);
-        celula[i].Mliqini = 0;
-        celula[i + 1].ML = celula[i - 1].MR = celula[i].MC;
-        celula[i + 1].MliqiniL = celula[i - 1].MliqiniR = celula[i].Mliqini;
-    }
-    celula[i].QGini = celula[i].QG;
-    if (vGasTest > 1e-3)
-        celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rg;
-    else {
-        celula[i].QG = 0;
-        celula[i].MC = celula[i].Mliqini;
-        celula[i + 1].ML = celula[i - 1].MR = celula[i].MC;
-    }
-    celula[i - 1].QLRini = celula[i - 1].QLR;
-    celula[i - 1].QLR = celula[i].QL;
-    if (i < ncel) {
-        celula[i + 1].QLLini = celula[i + 1].QLL;
-        celula[i + 1].QLL = celula[i].QL;
-    }
-
+    sisprod::transient::updateInteriorCell(transientStateOf(*this), i, expli);
 }
 
 void SProd::renova(int expli) {
-    for (int i = 0; i <= ncel; i++) {
-        if (i != 0 && i != ncel) {
-            renovaCelulaInterior(i, expli);
-        } else if (i == 0) {
-            renovaPrimeiraCelula(i, expli);
-        } else {
-            renovaUltimaCelula(i, expli);
-        }
-    }
+    sisprod::transient::updateCells(transientStateOf(*this), expli);
 }
 
 void SProd::renovaVaz() {
-    for (int i = 0; i <= ncel; i++) {
-        if (i != 0 && i != ncel) {
-            celula[i].Mliqini = celula[i].term1 * celula[i].MC + celula[i].term2;
-            celula[i + 1].MliqiniL = celula[i - 1].MliqiniR = celula[i].Mliqini;
-
-            double tmed = celula[i - 1].temp;
-            if (celula[i].VTemper < 0.)
-                tmed = celula[i].temp;
-            ProFlu flud;
-            if (celula[i].Mliqini < 0.)
-                flud = celula[i].flui;
-            else
-                flud = celula[i - 1].flui;
-
-            double betI;
-            if (((celula[i].MC - celula[i].Mliqini) * 0 + 1 * celula[i].Mliqini) < 0)
-                betI = celula[i].bet; // duvidabeta
-            else
-                betI = celula[i].betL;
-
-            double rl = flud.MasEspLiq(celula[i].presaux, tmed);
-            double rhol = (1 - betI) * rl + betI * celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-
-            double rg = flud.MasEspGas(celula[i].presaux, tmed);
-            celula[i].QL = celula[i].Mliqini / rhol;
-            celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rg;
-            celula[i - 1].QLR = celula[i].QL;
-            if (i < ncel) {
-                celula[i + 1].QLL = celula[i].QL;
-            }
-
-        } else if (i == 0) {
-
-            celula[0].Mliqini = celula[i].term1 * celula[i].MC + celula[i].term2;
-            celula[1].MliqiniL = celula[0].Mliqini;
-
-            if (arq.ConContEntrada > 0) {
-                double rhogC = celula[i].flui.MasEspGas(presE, tempE);
-                double rhopC = celula[i].flui.MasEspLiq(presE, tempE);
-                double rhocC = celula[i].fluicol.MasEspFlu(presE, tempE);
-                double rholC = rhopC * (1 - betaE) + rhocC * betaE;
-                celula[0].QL = celula[0].Mliqini / rholC;
-                celula[1].QLL = celula[0].QL;
-                celula[0].QG = (celula[0].MC - celula[0].Mliqini) / rhogC;
-            }
-        } else {
-
-            celula[ncel].Mliqini = celula[ncel].term1 * celula[ncel].MC + celula[ncel].term2;
-            celula[ncel - 1].MliqiniR = celula[ncel].Mliqini;
-            celula[ncel].MliqiniR = celula[ncel].Mliqini;
-
-            double tmed = celula[i - 1].temp;
-            if (celula[i].VTemper < 0.)
-                tmed = celula[i].temp;
-
-            ProFlu flud;
-            if (celula[i].Mliqini < 0.)
-                flud = celula[i].flui;
-            else
-                flud = celula[i - 1].flui;
-
-            double betI;
-            if (((celula[i].MC - celula[i].Mliqini) * 0.99 + 0.01 * celula[i].Mliqini) < 0)
-                betI = celula[i].bet; // duvidabeta
-            else
-                betI = celula[i].betL;
-
-            double rl = flud.MasEspLiq(celula[i].presaux, tmed);
-            double rhol = (1 - betI) * rl + betI * celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-
-            double rg = flud.MasEspGas(celula[i].presaux, tmed);
-
-            celula[i].QL = celula[i].Mliqini / rhol;
-            celula[i].QG = (celula[i].MC - celula[i].Mliqini) / rg;
-            celula[i - 1].QLR = celula[i].QL;
-        }
-    }
+    sisprod::transient::updateFlowRates(transientStateOf(*this));
 }
 
 void SProd::renovaBuffer() {
-
-    celula[0].presBuf = termolivreP[1];
-    celula[0].presauxBuf = celula[0].presBuf;
-    celula[0].MCBuf = termolivreP[0];
-    celula[1].presLiniBuf = celula[1].presLBuf;
-    celula[1].presLBuf = celula[0].presBuf;
-    celula[1].MLBuf = celula[0].MCBuf;
-    celula[0].MliqiniBuf = celula[0].term1 * celula[0].MCBuf + celula[0].term2;
-    celula[1].MliqiniLBuf = celula[0].MliqiniBuf;
-
-    int i = 1;
-    celula[i].presBuf = termolivreP[2 * i + 1];
-    celula[i].MCBuf = termolivreP[2 * i];
-    celula[i + 1].presLiniBuf = celula[i + 1].presLBuf;
-    celula[i + 1].presLBuf = celula[i - 1].presRBuf = celula[i].presBuf;
-    celula[i - 1].MRiniBuf = celula[i - 1].MRBuf;
-    celula[i + 1].MLBuf = celula[i - 1].MRBuf = celula[i].MCBuf;
-
-    celula[i].MliqiniBuf = celula[i].term1 * celula[i].MCBuf + celula[i].term2;
-    celula[i + 1].MliqiniLBuf = celula[i - 1].MliqiniRBuf = celula[i].MliqiniBuf;
-
-    celula[ncel].presBuf = termolivreP[2 * ncel + 1];
-    celula[ncel].MCBuf = termolivreP[2 * ncel];
-    celula[ncel - 1].presRBuf = celula[ncel].presBuf;
-    celula[ncel - 1].MRBuf = celula[ncel].MCBuf;
-    celula[ncel].MRBuf = celula[ncel].MCBuf;
-
-    celula[ncel].MliqiniBuf = celula[ncel].term1 * celula[ncel].MCBuf + celula[ncel].term2;
-    celula[ncel - 1].MliqiniRBuf = celula[ncel].MliqiniBuf;
-    celula[ncel].MliqiniRBuf = celula[ncel].MliqiniBuf;
+    sisprod::transient::updateBufferFromSolution(transientStateOf(*this));
 }
 
 void SProd::renovaBufferCego() {
-
-    celula[0].presBuf = celula[0].pres;
-    celula[0].presauxBuf = celula[0].presaux;
-    celula[0].MCBuf = celula[0].MC;
-    celula[1].presLiniBuf = celula[1].presLini;
-    celula[1].presLBuf = celula[1].presL;
-    celula[1].MLBuf = celula[1].ML;
-    celula[0].MliqiniBuf = celula[0].Mliqini;
-    celula[1].MliqiniLBuf = celula[1].MliqiniL;
-
-    int i = 1;
-    celula[i].presBuf = celula[i].pres;
-    celula[i].MCBuf = celula[i].MC;
-    celula[i + 1].presLiniBuf = celula[i + 1].presLini;
-    celula[i + 1].presLBuf = celula[i - 1].presRBuf = celula[i].pres;
-    celula[i - 1].MRiniBuf = celula[i - 1].MR;
-    celula[i + 1].MLBuf = celula[i - 1].MRBuf = celula[i].MC;
-
-    celula[i].MliqiniBuf = celula[i].Mliqini;
-    celula[i + 1].MliqiniLBuf = celula[i - 1].MliqiniRBuf = celula[i].Mliqini;
-
-    celula[ncel].presBuf = celula[ncel].pres;
-    celula[ncel].MCBuf = celula[ncel].MC;
-    celula[ncel - 1].presRBuf = celula[ncel].pres;
-    celula[ncel - 1].MRBuf = celula[ncel].MC;
-
-    celula[ncel].MliqiniBuf = celula[ncel].Mliqini;
-    celula[ncel - 1].MliqiniRBuf = celula[ncel].Mliqini;
-
-    int fim = ncel - 1;
-    fontemassCRBuf = celula[fim + 1].fontemassCR;
-
-    fontemassPRBuf = celula[fim + 1].fontemassLR;
-
-    fontemassGRBuf = celula[fim + 1].fontemassGR;
+    sisprod::transient::updateBufferFromCells(transientStateOf(*this));
 }
 
 void SProd::renovaTemp() {
