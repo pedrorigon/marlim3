@@ -28,6 +28,10 @@ FUNCTIONS = {
     # divergences are logic. So they move as four functions, not as one
     # parameterised core, and the Template Method is applied ONLY to the
     # accessory chain those two share.
+    # corrDeng belongs to T087 and lands in this same file. It is moved FIRST
+    # because the mass march calls it: the alternative was a callback that would
+    # be added and removed within the same stage.
+    "corrDeng": {"new_name": "correctGasSpecificGravity", "arguments": "i"},
     "RenovaMassPerm": {"new_name": "advanceSteadyMass", "arguments": "i"},
     "RenovaMassPermRev": {"new_name": "advanceReverseSteadyMass", "arguments": "i"},
     "RenovaMassPermComp": {"new_name": "advanceCompositionalSteadyMass", "arguments": "i"},
@@ -37,29 +41,20 @@ FUNCTIONS = {
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
 # and a stateful callee needs `state` threaded through; a stateless one must not
 # receive it.
+# Calls the moved bodies make to OTHER bodies that also live in this module.
+# The rewrite inserts the state argument; the inverse removes it again, which is
+# what keeps the token proof honest.
+#
+# This table was inherited from gaslift-move.py still carrying the gas-lift
+# entries. corrDeng then survived the rewrite untouched, the module called a
+# name that is not in it, and the compiler said so. Swapping FUNCTIONS is not
+# enough: CALLS is a second table over the same set.
 CALLS = {
-    "prescordesc": ("unloadingPressureCorrection", True),
-    "CalcPresValvDesc": ("computeUnloadingValvePressure", True),
-    "areaValvCali": ("calibratedValveArea", False),
-    "HidroDescargaG": ("computeGasUnloadingHydrostatics", True),
-    "renovaGas": ("updateGasLine", True),
-    "renovaGasBuf": ("updateBufferedGasLine", True),
-    "resolveDescarga": ("solveUnloading", True),
-    "avancInter": ("advanceInterface", True),
-    "ValvGasTrans": ("updateTransientGasValves", True),
-    "BuscaPresInjDesc": ("searchUnloadingInjectionPressure", True),
-    "subtempoGas": ("advanceGasSubStep", True),
-    "subtempoGasBuf": ("advanceBufferedGasSubStep", True),
-    "conectaColuna": ("connectTubing", True),
-    "solveLinGas": ("solveGasLine", True),
-    "conectaColunaPerm": ("connectTubingSteady", True),
-    "IniciaconectaColunaPerm": ("initializeTubingConnectionSteady", True),
-    "delpGasPerm": ("steadyGasPressureDrop", True),
-    "delpInjPerm": ("steadyInjectionPressureDrop", True),
-    "RenovaPresGasPerm": ("updateSteadyGasPressure", True),
-    "calcVazGasPerm": ("computeSteadyGasFlowRate", True),
-    "IniciaVazValvGasPerm": ("initializeSteadyValveGasFlowRate", True),
-    "RenovaTempGasPerm": ("updateSteadyGasTemperature", True),
+    "corrDeng": ("correctGasSpecificGravity", True),
+    "RenovaMassPerm": ("advanceSteadyMass", True),
+    "RenovaMassPermRev": ("advanceReverseSteadyMass", True),
+    "RenovaMassPermComp": ("advanceCompositionalSteadyMass", True),
+    "RenovaMassPermCompRev": ("advanceReverseCompositionalSteadyMass", True),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so
@@ -335,7 +330,7 @@ def main() -> int:
         else:
             separator = ", " if arguments else ""
             call = (f"sisprod::steady::{spec['new_name']}"
-                    f"(gasLiftStateOf(*this){separator}{arguments})")
+                    f"(steadyStateOf(*this){separator}{arguments})")
         wrapper = [
             f"{return_type}SProd::{name}({signature}) {{",
             f"    {lead}{call};",
