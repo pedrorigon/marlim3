@@ -37,10 +37,10 @@ FUNCTIONS = {
     "buscaProdPfundoPerm3": {"new_name": "searchProductionBottomHolePressureTertiary", "arguments": "pentrada"},
 
     # T093 -- pressure-to-pressure searches.
-    "buscaProdPresPresPerm": {"new_name": "searchProductionPressureToPressure", "arguments": "mchute, vazmax, kontaiter"},
-    "buscaProdPresPresPermRev": {"new_name": "searchReverseProductionPressureToPressure", "arguments": "mchute, vazmax, kontaiter"},
-    "buscaProdPresPresPerm2": {"new_name": "searchProductionPressureToPressureSecondary", "arguments": "mchute, vazmax"},
-    "buscaProdPresPresPerm3": {"new_name": "searchProductionPressureToPressureTertiary", "arguments": "mchute, vazmax"},
+    "buscaProdPresPresPerm": {"new_name": "searchProductionPressureToPressure", "arguments": "chute, maxvaz, kontaiter"},
+    "buscaProdPresPresPermRev": {"new_name": "searchReverseProductionPressureToPressure", "arguments": "chute, maxvaz, kontaiter"},
+    "buscaProdPresPresPerm2": {"new_name": "searchProductionPressureToPressureSecondary", "arguments": "chute, maxvaz"},
+    "buscaProdPresPresPerm3": {"new_name": "searchProductionPressureToPressureTertiary", "arguments": "chute, maxvaz"},
 
     # T094 -- gas-line searches. A march calls these two; see section 8 of
     # evidencia/marchaprod-diff.md for what that costs the stage-7 story.
@@ -56,7 +56,7 @@ FUNCTIONS = {
     "buscaInjPfundoPerm5": {"new_name": "searchInjectionBottomHolePressure5", "arguments": "chute"},
 
     # T096 -- the secondary-branch search.
-    "buscaTramoSecVazPerm": {"new_name": "searchSecondaryBranchFlowRate", "arguments": "chute"},
+    "buscaTramoSecVazPerm": {"new_name": "searchSecondaryBranchFlowRate", "arguments": "pPartida, indPartida"},
 }
 
 # Calls a search makes. A march lives in the OTHER module and takes the march
@@ -108,6 +108,15 @@ CALLS = {
     "buscaInjPfundoPerm3": ("searchInjectionBottomHolePressure3", "state"),
     "buscaInjPfundoPerm4": ("searchInjectionBottomHolePressure4", "state"),
     "buscaInjPfundoPerm5": ("searchInjectionBottomHolePressure5", "state"),
+
+    # The forward and reverse pressure-to-pressure searches call EACH OTHER,
+    # with both arguments negated. Not recursion, which forward() skips on
+    # purpose; a genuine cross-call, and the compiler is what pointed it out.
+    "buscaProdPresPresPerm": ("searchProductionPressureToPressure", "state"),
+    "buscaProdPresPresPermRev": ("searchReverseProductionPressureToPressure", "state"),
+    "buscaProdPresPresPerm2": ("searchProductionPressureToPressureSecondary", "state"),
+    "buscaProdPresPresPerm3": ("searchProductionPressureToPressureTertiary", "state"),
+    "buscaTramoSecVazPerm": ("searchSecondaryBranchFlowRate", "state"),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so

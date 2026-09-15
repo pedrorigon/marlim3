@@ -114,6 +114,16 @@ struct SteadyStateSearchState {
 [[nodiscard]] double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state);
 [[nodiscard]] double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, double guess = -1.);
 
+// --------------------------------------------------- secondary-branch search --
+
+/// Searches the flow rate through the secondary branch.
+///
+/// Missing from this header until T091 moved it and the compiler said so. The
+/// header was written from the task list, and the task list names this function
+/// under T096 with the hydrostatics rather than with the searches.
+[[nodiscard]] double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double startPressure,
+                                                  int startIndex);
+
 }  // namespace sisprod::steady
 
 #endif  // SISPRODSTEADYSTATESEARCH_H_
