@@ -12,6 +12,7 @@
 #include "OutputI18n.h"
 #include "RootFindingSolvers.h"
 #include "SisProdGasLift.h"
+#include "SisProdSteadyState.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 #include <chrono>
@@ -2469,6 +2470,63 @@ double sisprod::gaslift::GasLiftTemperatureUpdater::gasLiftDischargeTemperature(
     return system.TempDescGL(valveIndex);
 }
 
+// ------------------------------------ steady-state callbacks (T086) ----
+//
+// Sixteen forwards, fourteen of which reach code that already lives in an
+// extracted module. They come back through SProd anyway, because reaching
+// sisprod::gaslift or sisprod::thermal needs one of THEIR state structs, and
+// the only place that knows how to build those is this file.
+void sisprod::steady::SteadyStateUpdaters::steadyDriftClosure(int cellIndex, double &c0, double &ud) const {
+    system.CalcC0UdPerm(cellIndex, c0, ud);
+}
+void sisprod::steady::SteadyStateUpdaters::updateSource(int cellIndex) const {
+    system.renovaFonte(cellIndex);
+}
+void sisprod::steady::SteadyStateUpdaters::advanceSteadyTemperature(int cellIndex, int rungeKuttaStage) const {
+    system.RenovaTempPerm(cellIndex, rungeKuttaStage);
+}
+void sisprod::steady::SteadyStateUpdaters::advanceReverseSteadyTemperature(int cellIndex, int rungeKuttaStage) const {
+    system.RenovaTempPermRev(cellIndex, rungeKuttaStage);
+}
+void sisprod::steady::SteadyStateUpdaters::computeTemperature(int cellIndex, double previousTemperature,
+                                                              int steadyMode) const {
+    system.calctemp(cellIndex, previousTemperature, steadyMode);
+}
+void sisprod::steady::SteadyStateUpdaters::computeGasTemperature(int cellIndex, double previousTemperature,
+                                                                 int steadyMode) const {
+    system.calctempGas(cellIndex, previousTemperature, steadyMode);
+}
+void sisprod::steady::SteadyStateUpdaters::updateProductionTemperaturePeriphery(int cellIndex) const {
+    system.atualizaPeriTempProd(cellIndex);
+}
+void sisprod::steady::SteadyStateUpdaters::initializeSteadyValveGasFlowRate(int cellIndex) const {
+    system.IniciaVazValvGasPerm(cellIndex);
+}
+void sisprod::steady::SteadyStateUpdaters::initializeTubingConnectionSteady() const {
+    system.IniciaconectaColunaPerm();
+}
+void sisprod::steady::SteadyStateUpdaters::updateSteadyGasPressure(int cellIndex) const {
+    system.RenovaPresGasPerm(cellIndex);
+}
+void sisprod::steady::SteadyStateUpdaters::updateSteadyGasTemperature(int cellIndex) const {
+    system.RenovaTempGasPerm(cellIndex);
+}
+void sisprod::steady::SteadyStateUpdaters::computeSteadyGasFlowRate(int cellIndex) const {
+    system.calcVazGasPerm(cellIndex);
+}
+void sisprod::steady::SteadyStateUpdaters::connectTubing() const {
+    system.conectaColuna();
+}
+void sisprod::steady::SteadyStateUpdaters::connectTubingSteady() const {
+    system.conectaColunaPerm();
+}
+double sisprod::steady::SteadyStateUpdaters::steadyGasPressureDrop(int cellIndex) const {
+    return system.delpGasPerm(cellIndex);
+}
+double sisprod::steady::SteadyStateUpdaters::steadyInjectionPressureDrop(int cellIndex) const {
+    return system.delpInjPerm(cellIndex);
+}
+
 void sisprod::thermal::ThermalSourceUpdater::operator()(int cellIndex) const {
     system.renovaFonte(cellIndex);
 }
@@ -2542,6 +2600,40 @@ sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system) {
         .continuousMeanUnloadingTemperature = system.tempMedContDesc,
         .maximumContinuousUnloadingCount = system.maxVecContDesc,
         .temperatureUpdater = {system},
+    };
+}
+
+sisprod::steady::SteadyStateState steadyStateOf(SProd &system) {
+    return sisprod::steady::SteadyStateState{
+        .cells = system.celula,
+        .gasCells = system.celulaG,
+        .input = system.arq,
+        .globals = system.vg1dSP,
+        .lastCell = system.ncel,
+        .gasCellCount = system.ncelGas,
+        .injectionChoke = system.chokeInj,
+        .surfaceChoke = system.chokeSup,
+        .gasValveCellIndices = system.posicVGLG,
+        .productionValveCellIndices = system.posicVGLP,
+        .steadyIteration = system.iterperm,
+        .searchOrigin = system.buscaIni,
+        .convergenceMonitor = system.monitConvPerm,
+        .baseConvergenceMonitor = system.monitConvPermBase,
+        .annulusDrift = system.derivaAnel,
+        .networkCoupled = system.verificaAcop,
+        .endNode = system.noextremo,
+        .thermalSourceDisabled = system.semTermo,
+        .slowHeatTransfer = system.trocaTermicaLenta,
+        .gasSurfacePressure = system.pGSup,
+        .initialGasPressure = system.presiniG,
+        .initialGasTemperature = system.tempiniG,
+        .finalPressure = system.presfim,
+        .timeStep = system.dt,
+        .ambientTemperature = system.temperatura,
+        .casingTemperature = system.tempRev,
+        .inletQuality = system.titE,
+        .productionFluidCount = system.nfluP,
+        .updaters = {system},
     };
 }
 
