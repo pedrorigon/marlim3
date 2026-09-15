@@ -239,3 +239,49 @@ IniciaVazValvGasPerm
 RenovaTempGasPerm
 conectaColunaPerm
 IniciaconectaColunaPerm
+
+# --- stage 7: steady march -------------------------------------------------
+# Every name here is a body that moved to SisProdSteadyState.cpp and left a
+# one-line delegation behind. L0 compares by name, finds the delegation, and
+# reports a difference; that difference IS the move.
+#
+# What verified them instead, per body: steady-move.py applied the INVERSE
+# substitution to the installed body and compared tokens with the pre-move
+# commit -- 31 bodies, all OK -- and L2 was green 14/14 on the corpus after
+# every step. Two of those token proofs caught real defects before the compiler
+# did, so this is not a formality.
+#
+# The nine T090 and T092 helpers are NOT listed. They have no baseline
+# counterpart, so L0 never compares them, and listing them would be a stale
+# declaration the check rejects.
+RenovaMassPerm
+RenovaMassPermRev
+RenovaMassPermComp
+RenovaMassPermCompRev
+RenovaPresPermMon
+RenovaPresPermJus
+RenovaPresPermNcel
+calcDpArea
+corrDeng
+RenovaTransMassPerm
+RenovaTransMassPermGas
+marchaProdPerm1
+marchaProdPerm1Rev
+marchaProdPerm2
+marchaProdPresPres1
+marchaProdPresPres1Rev
+marchaProdPresPres2
+marchaProdPresPres3
+marchaGasPerm1
+marchaGasPerm2
+marchaGasPerm3
+marchaInjPerm1
+hidroreverso
+hidroreversoInj
+hidroTramoSecundario
+hidroLinServ
+atualizaProp
+atualizaVelTermPerm
+calcDTPseudoTrans
+atualizaPeriPmonProd
+atualizaPeriPjusProd
