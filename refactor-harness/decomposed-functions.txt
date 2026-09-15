@@ -285,3 +285,32 @@ atualizaVelTermPerm
 calcDTPseudoTrans
 atualizaPeriPmonProd
 atualizaPeriPjusProd
+
+# --- stage 7, second half: the searches ------------------------------------
+# Same situation as the marches above: each moved to
+# SisProdSteadyStateSearch.cpp and left a one-line delegation, which is what L0
+# compares against and reports as a difference.
+#
+# Verified instead by search-move.py applying the inverse substitution to each
+# installed body and comparing tokens with the pre-move commit -- 16 bodies, all
+# OK -- plus L2 green after the move, after the 24 decomposition cuts, and again
+# after the renames.
+#
+# multMarcha and zriddr are already declared above, from the gas-lift and
+# solver stages; T097b moved them again, to this module.
+buscaProdPfundoPerm
+buscaProdPfundoPermRev
+buscaProdPfundoPerm2
+buscaProdPfundoPerm3
+buscaProdPresPresPerm
+buscaProdPresPresPermRev
+buscaProdPresPresPerm2
+buscaProdPresPresPerm3
+buscaGasPresPerm2
+buscaGasPresPerm3
+buscaInjPfundoPerm1
+buscaInjPfundoPerm2
+buscaInjPfundoPerm3
+buscaInjPfundoPerm4
+buscaInjPfundoPerm5
+buscaTramoSecVazPerm
