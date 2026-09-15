@@ -1524,6 +1524,35 @@ class SProd {
     void calcTempFim();
 
   private:
+    // ---- T085: RenovaMassPerm decomposta, um auxiliar por tipo de acessorio ----
+    // A cadeia que os seleciona continua em RenovaMassPerm. Esse e o ponto da
+    // decomposicao: o despacho deve ler-se como despacho, e nao como mil e
+    // duzentas linhas de corpos.
+    void applySteadyMassWithoutSource(int i, int mudaRGO, double bo, double rs, double tmed,
+                                      double &boI, double &baI, double &fwI);
+    void applySteadyMassDryGasInjection(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassWetGasInjection(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassLiquidInjection(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassInflowPerformance(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassMultipleSource(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassLeakSource(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassRadialPorous(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void applySteadyMassPorous2D(int i, int mudaRGO, double tL, double tH, double bo, double ba,
+                                        double rs, double tmed, double &trF, double &boI, double &baI, double &fwI);
+    void finalizeSteadyMassTwoPhase(int i, double rhog, double rhol);
+    void finalizeSteadyMassGasOnly(int i);
+    void finalizeSteadyMassLiquidOnly(int i);
+    void finalizeSteadyMassNoFlow(int i);
+    void finalizeSteadyMassWithLiquid(int i, double fwI, double tmed, double &bo, double &rs, double &pmed,
+                                      double &rhog, double &rhol, double &qo, double &masoleo);
+
     /**
      * @brief Caches the drift-flux correlation of each regime from arq.
      *
