@@ -3973,36 +3973,6 @@ void SProd::geraMiniTabFlu() {
     (*vg1dSP).modoTransiente = 1;
 }
 
-/// Updates the last cell after a transient solve.
-///
-/// Third arm of renova's split by cell position. It is longer than the first
-/// cell's arm because the outlet carries the surface-choke coupling.
-void SProd::renovaUltimaCelula(int i, int expli) {
-    sisprod::transient::updateLastCell(transientStateOf(*this), i, expli);
-}
-
-/// Updates the first cell after a transient solve.
-///
-/// Second arm of renova's split by cell position. Shorter than the interior arm
-/// because the first cell has no upstream neighbour to read from.
-void SProd::renovaPrimeiraCelula(int i, int expli) {
-    sisprod::transient::updateFirstCell(transientStateOf(*this), i, expli);
-}
-
-/// Updates one interior cell after a transient solve.
-///
-/// One arm of the three-way split in renova, by cell position: interior, first,
-/// last. The split is the loop body's own structure, so the iteration order over
-/// celula[] is untouched -- which is what T118 asks for and what a transient
-/// step cannot survive losing.
-///
-/// i and expli are the only things that cross; measured, and the loop variable
-/// added by hand because the interface tool blanks control headers and so never
-/// sees a for-init.
-void SProd::renovaCelulaInterior(int i, int expli) {
-    sisprod::transient::updateInteriorCell(transientStateOf(*this), i, expli);
-}
-
 void SProd::renova(int expli) {
     sisprod::transient::updateCells(transientStateOf(*this), expli);
 }
@@ -6435,31 +6405,6 @@ void SProd::renovatermColIni() {
     sisprod::thermal::updateInletFlowPartitionTerms(thermalStateOf(*this));
 }
 
-/// The surface choke is open: its throat area exceeds a thousandth of the pipe's.
-///
-/// Written out nine times across calcCCpres and calcCCBuffer, which is what
-/// T121 was reaching for when it asked for the boundary-condition selection to
-/// be made readable. What it asked for literally -- a dispatch table resolved
-/// OUTSIDE the per-cell loop -- is not available: these predicates read state
-/// that changes inside the loop, so moving them out changes WHEN they are
-/// evaluated. See evidencia/calccc-diff.md.
-///
-/// Naming them moves nothing: same expression, same place, same number of
-/// evaluations.
-bool SProd::surfaceChokeIsOpen() {
-    return sisprod::transient::surfaceChokeIsOpen(transientStateOf(*this));
-}
-
-/// The surface choke is shut: throat area BELOW a thousandth of the pipe's.
-///
-/// Not the negation of surfaceChokeIsOpen, and the two must never be written as
-/// if they were. `!(a > b)` is `a <= b`; this is `a < b`. They differ at exact
-/// equality, and a refactoring that collapses them would be wrong on precisely
-/// the input nobody tests.
-bool SProd::surfaceChokeIsShut() {
-    return sisprod::transient::surfaceChokeIsShut(transientStateOf(*this));
-}
-
 void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
     sisprod::transient::applyOutletPressureCondition(transientStateOf(*this), titRev, alfRev, betRev);
 }
@@ -6470,20 +6415,6 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
 
 void SProd::determinaDTExpli() {
     sisprod::transient::computeExplicitTimeStep(transientStateOf(*this));
-}
-
-/// Computes the implicit time step.
-///
-/// The else arm of determinaDT's explicit/implicit split, and the only arm with
-/// a body: the explicit one delegates to determinaDTExpli in a single line.
-///
-/// Nothing crosses the boundary -- measured, zero variables in and zero out --
-/// which is as clean as an extraction gets, and it had better be. This function
-/// decides the time step, and a last-bit drift here does not make a small
-/// difference, it makes a different temporal discretisation. Verified against
-/// the 210,206-call series T122 captured, not by L2 alone.
-void SProd::computeImplicitTimeStep() {
-    sisprod::transient::computeImplicitTimeStep(transientStateOf(*this));
 }
 
 void SProd::determinaDT(int vexpli) {

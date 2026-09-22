@@ -1274,12 +1274,6 @@ class SProd {
     void geraMiniTabFlu();
 
     /// Loads pressure-velocity results into cell and face state variables.
-    /// Updates one interior cell after a transient solve; one arm of renova's split by cell position.
-    void renovaCelulaInterior(int i, int expli);
-    /// Updates the first cell after a transient solve; second arm of renova's split.
-    void renovaPrimeiraCelula(int i, int expli);
-    /// Updates the last cell after a transient solve; third arm of renova's split.
-    void renovaUltimaCelula(int i, int expli);
     void renova(int expli = 0);
     /// Updates phase and mixture flow rates.
     void renovaVaz();
@@ -1306,17 +1300,11 @@ class SProd {
     void renovatermColIni();
 
     /// Calculates outlet-choke flow from the last-cell and separator pressures.
-    /// The surface choke is open: throat area above a thousandth of the pipe's.
-    bool surfaceChokeIsOpen();
-    /// The surface choke is shut: throat area BELOW that. NOT the negation of surfaceChokeIsOpen.
-    bool surfaceChokeIsShut();
     void calcCCpres(double titRev = 1., double alfRev = 1., double betRev = 0.);
     /// Calculates outlet-choke flow for the intermediate network state.
     void calcCCBuffer(double titRev = 1., double alfRev = 1., double betRev = 0.);
 
     /// Selects a stable time step from CFL and additional model restrictions.
-    /// Computes the implicit time step; the else arm of determinaDT's split.
-    void computeImplicitTimeStep();
     void determinaDT(int vexpli = 0);
     /// Selects a stable time step from CFL and additional model restrictions.
     void determinaDTExpli();
