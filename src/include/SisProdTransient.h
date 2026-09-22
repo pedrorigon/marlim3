@@ -309,6 +309,45 @@ void computeTimeStep(const TransientStepState &state, int vexpli);
 void computeExplicitTimeStep(const TransientStepState &state);
 void computeImplicitTimeStep(const TransientStepState &state);
 
+// ------------------------------------------------------ time-step policy ----
+
+/// The restrictions applied to the time step after computeTimeStep proposes it.
+///
+/// Measured against the same dt series as computeTimeStep, because they write
+/// the same dt. valveOpeningLow and valveOpeningHigh are the two ends of the
+/// valve ramp; separate in the original and separate here.
+void dampMaximumTimeStep(const TransientStepState &state);
+void evaluatePressureRateOfChange(const TransientStepState &state, double razMast, double razMast0, int vexpli);
+void restrictTimeStepByValve(const TransientStepState &state);
+void valveOpeningLow(const TransientStepState &state);
+void valveOpeningHigh(const TransientStepState &state);
+
+// ---------------------------------------------------- fraction evolution ----
+
+/// Advances the phase fractions in time, and the three ways of restarting that
+/// evolution.
+///
+/// restartFractionEvolutionInitial and restartFractionEvolution stay TWO
+/// functions. Num4Main.cpp selects between them at 2778 and 2804, and T125's
+/// acceptance requires the distinction preserved rather than collapsed.
+void evolveFractions(const TransientStepState &state, double alfrev, double betrev, int ciclo);
+void restartFractionEvolutionInitial(const TransientStepState &state);
+void restartFractionEvolutionSub(const TransientStepState &state);
+void restartFractionEvolution(const TransientStepState &state);
+
+// ------------------------------------------------------ step bookkeeping ----
+
+/// Pig position, the pressure-volume coupling, the fluid mini-table and the
+/// inlet condition.
+///
+/// refreshFluidMiniTable still invokes geraMiniTabFlu, which REMAINS in
+/// SisProd.cpp: PorosoRad-Simples.cpp and solverPoroso.cpp consume it too, so
+/// it is surface under FR-038. It is reached through the updaters.
+void updatePig(const TransientStepState &state);
+void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo);
+void refreshFluidMiniTable(const TransientStepState &state);
+void refreshInletCondition(const TransientStepState &state);
+
 }  // namespace sisprod::transient
 
 #endif  // SISPRODTRANSIENT_H_

@@ -6364,163 +6364,21 @@ void SProd::determinaDT(int vexpli) {
 }
 
 void SProd::atenuaDtMax() {
-
-    dtCFL.push_back(dtauxCFL);
-    dtSim.push_back(dtauxFinal);
-    dtCFLTotal += dtauxCFL;
-    dtSimTotal += dtauxFinal;
-    kontarestriDt++;
-    if (kSP > 10) {
-        dtCFLTotal -= dtCFL.front();
-        dtCFL.erase(dtCFL.begin());
-        dtSimTotal -= dtSim.front();
-        dtSim.erase(dtSim.begin());
-        if (kontarestriDt > 10 && restriDt == 1) {
-            restriDt = 0;
-            kontarestriDt = 0;
-        }
-    }
-    dtCFLMed = dtCFLTotal / 10;
-    dtSimMed = dtSimTotal / 10.;
-    if ((dtSimMed < dtCFLMed / 2 && kontarestriDt > 10)) {
-        restriDt = 1;
-        kontarestriDt = 0;
-    }
+    sisprod::transient::dampMaximumTimeStep(transientStateOf(*this));
 }
 
 void SProd::avaliaVariaDpDt(double razMast, double razMast0, int vexpli) {
-    double dpdtRef = 2 * arq.taxaDespre;
-    double modDpDt = 0.;
-    double modDTDt = 0.;
-    double dpdtMax = 0.;
-    double dTdtMax = 0.;
-    if (modeloCompleto == 1) {
-        modeloCompleto = 0;
-        int i = 0;
-        while (i < ncel) {
-            int nBloco = 10;
-            if (ncel - i < nBloco)
-                nBloco = ncel - i;
-            for (int j = 0; j < nBloco; j++) {
-                modDpDt += fabs(celula[i + j].pres - celula[i + j].presini) / (dt);
-                modDTDt += fabs(celula[i + j].temp - celula[i + j].tempini) / (dt);
-            }
-            i += nBloco;
-            modDpDt /= nBloco;
-            modDTDt /= nBloco;
-            if (modDpDt > dpdtMax)
-                dpdtMax = modDpDt;
-            if (modDTDt > dTdtMax)
-                dTdtMax = modDTDt;
-            if (modDpDt > dpdtRef)
-                modeloCompleto = 1;
-            modDpDt = 0.;
-            modDTDt = 0.;
-        }
-        taxaDpMax.push_back(dpdtMax);
-        taxaDTMax.push_back(dTdtMax);
-        if (taxaDpMax.size() > 10)
-            taxaDpMax.erase(taxaDpMax.begin());
-        if (taxaDTMax.size() > 10)
-            taxaDTMax.erase(taxaDTMax.begin());
-        int nvec = taxaDpMax.size();
-        int nvecT = taxaDTMax.size();
-        DpMaxMed = 0.;
-        DTMaxMed = 0.;
-        for (int i = 0; i < nvec; i++)
-            DpMaxMed += taxaDpMax[i];
-        for (int i = 0; i < nvecT; i++)
-            DTMaxMed += taxaDTMax[i];
-        DpMaxMed /= nvec;
-        DTMaxMed /= nvecT;
-        if (DpMaxMed > dpdtRef)
-            modeloCompleto = 1;
-        if (chokeSup.AreaGarg / celula[ncel - 1].duto.area < 1e-3 &&
-            (DpMaxMed > arq.taxaDespre / 10. || DTMaxMed > 0.001))
-            modeloCompleto = 1;
-        int linAberta = 1; // caso varias valvulas
-        for (int i = 0; i <= arq.nvalv; i++)
-            if (vRazMast1[i] <= 1e-3)
-                linAberta = 0; // caso varias valvulas
-        if ((linAberta == 1 && chokeSup.AreaGarg / celula[ncel - 1].duto.area > 1e-3))
-            modeloCompleto = 1; // caso varias valvulas
-    }
-    for (int i = 0; i <= arq.nvalv; i++)
-        if (vRazMast1[i] != vRazMast0[i])
-            modeloCompleto = 0; // caso varias valvulas
-    if ((DpMaxMed > 10 || DTMaxMed > 1) && modeloCompleto == 1 && vexpli == 0) {
-        modeloCompleto = 0;
-    }
+    sisprod::transient::evaluatePressureRateOfChange(transientStateOf(*this), razMast, razMast0, vexpli);
 }
 
 void SProd::aberturaVal0() {
-    int celpos = arq.master1.posic;
-    vRazMast0[0] = celula[celpos].acsr.chk.AreaGarg / celula[celpos].duto.area;
-    for (int i = 1; i <= arq.nvalv; i++) {
-        celpos = arq.valv[i - 1].posicP;
-        vRazMast0[i] = celula[celpos].acsr.chk.AreaGarg / celula[celpos].duto.area;
-    }
+    sisprod::transient::valveOpeningLow(transientStateOf(*this));
 }
 void SProd::aberturaVal1() {
-    int celpos = arq.master1.posic;
-    vRazMast1[0] = celula[celpos].acsr.chk.AreaGarg / celula[celpos].duto.area;
-    for (int i = 1; i <= arq.nvalv; i++) {
-        celpos = arq.valv[i - 1].posicP;
-        vRazMast1[i] = celula[celpos].acsr.chk.AreaGarg / celula[celpos].duto.area;
-    }
+    sisprod::transient::valveOpeningHigh(transientStateOf(*this));
 }
 void SProd::restringeDTporValv() {
-
-    if (arq.ConContEntrada == 0 && (*vg1dSP).chaveRedeParalela == 0) {
-        int celpos;
-        double dtaux = celula[0].dt;
-        if (reinicia == -1) {
-            for (int i = 1; i <= ncel; i++)
-                if (dtaux > celula[i].dt)
-                    dtaux = celula[i].dt;
-        }
-        double dtvec[arq.nvalv + 1];
-        for (int i = 0; i <= arq.nvalv; i++)
-            dtvec[i] = celula[0].dt;
-        for (int i = 0; i <= arq.nvalv; i++) {
-            if (i == 0)
-                celpos = arq.master1.posic;
-            else
-                celpos = arq.valv[i - 1].posicP;
-            if (vRazMast1[i] < vRazMast0[i] && (vRazMast1[i] <= 1.1 * arq.master1.razareaativ && vRazMast1[i] >= 1e-3 * arq.master1.razareaativ)) {
-                if (celula[celpos].alf < 0.05) {
-                    if (celula[celpos].alf < 0.01)
-                        momentoDesesp += 1.5;
-                    else
-                        momentoDesesp = 1;
-                    if (momentoDesesp < 1.)
-                        momentoDesesp = 1.;
-                    celula[celpos].fontemassGL += momentoDesesp * 10000 * celula[celpos].flui.Deng * 1.225 / 86400;
-                    celula[celpos - 1].fontemassGR = celula[celpos].fontemassGL;
-                }
-                if (celula[celpos].alf < 0.5)
-                    vRazMastCrit[i] = 0.01;
-            } else
-                momentoDesesp = 0.;
-            if (vRazMast1[i] < vRazMast0[i] && (vRazMast1[i] <= 1.1 * arq.master1.razareaativ && vRazMast1[i] >= vRazMastCrit[i] * arq.master1.razareaativ)) {
-                double raz = 20.;
-                if (celula[celpos].alf < 0.5)
-                    raz = 40.;
-                dtvec[i] = dtaux;
-                if (dtvec[i] > 1)
-                    dtvec[i] = 1.;
-                if (celula[celpos].alf < 0.5)
-                    dtvec[i] = 0.1 + 0.9 * (celula[celpos].alf) / 0.5;
-                dtvec[i] /= raz;
-                reinicia = -1;
-            }
-        }
-        dtaux = dtvec[0];
-        for (int i = 1; i <= arq.nvalv; i++)
-            if (dtvec[i] < dtaux)
-                dtaux = dtvec[i];
-        celula[0].dt = dtaux;
-    }
+    sisprod::transient::restrictTimeStepByValve(transientStateOf(*this));
 }
 
 void SProd::solveLinGas() {
@@ -6528,194 +6386,27 @@ void SProd::solveLinGas() {
 }
 
 void SProd::EvoluiFrac(double alfrev, double betrev, int ciclo) {
-
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 0; i <= ncel; i++) {
-
-        if (i < ncel) {
-            celula[i].avancalf(reinicia, ncel);
-        }
-        if (i == ncel) {
-
-            if (((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1)) {
-                if (masChkSup == 0 || celula[ncel].Mliqini > 0)
-                    celula[i].alf = celula[i - 1].alf;
-                else
-                    celula[i].avancalf(reinicia, ncel);
-            } else {
-                if (celula[ncel].Mliqini > 0)
-                    celula[i].alf = celula[i - 1].alf;
-                else if (masChkSup == 0 && arq.chkv == 0)
-                    celula[i].alf = alfrev;
-                else
-                    celula[i].avancalf(reinicia, ncel);
-            }
-        }
-    }
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 0; i <= ncel; i++) {
-        if (i < ncel) {
-            celula[i].avancbet(reinicia, ncel);
-        }
-        if (i == ncel) {
-            if (((*vg1dSP).chaverede == 0 || noextremo == 1 || (*vg1dSP).chaveRedeParalela == 1)) {
-                if (masChkSup == 0 || celula[ncel].Mliqini > 0)
-                    celula[i].bet = celula[i - 1].bet;
-                else
-                    celula[i].avancbet(reinicia, ncel);
-            } else {
-                if (masChkSup == 1)
-                    celula[i].avancbet(reinicia, ncel);
-                else if (arq.chkv == 1)
-                    celula[i].bet = celula[i - 1].bet;
-            }
-        }
-    }
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 0; i <= ncel; i++) {
-        if (i < ncel && celula[i].estadoPig == 1) {
-            celula[i].avancPig(reinicia);
-            celula[i].avancalfPig();
-            celula[i].avancbetPig();
-        } else {
-            celula[i].alfPigE = celula[i].alf;
-            celula[i].betPigE = celula[i].bet;
-            celula[i].alfPigD = celula[i].alf;
-            celula[i].betPigD = celula[i].bet;
-        }
-    }
-    for (int i = 0; i <= ncel; i++) {
-        if (celula[i].correrGlobHol == 1) {
-            if (celula[i].reiniciaAlf < 0 || celula[i].reiniciaBet < 0 || celula[i].reiniciaPig < 0)
-                reinicia = -1;
-            celula[i].reiniciaAlf = 0;
-            celula[i].reiniciaBet = 0;
-            celula[i].reiniciaPig = 0;
-        }
-    }
+    sisprod::transient::evolveFractions(transientStateOf(*this), alfrev, betrev, ciclo);
 }
 
 void SProd::ReiniEvolFrac0() {
-    for (int i = 0; i <= ncel; i++) {
-        if (celula[i].dt < dt)
-            dt = celula[i].dt;
-        if (celula[i].dt1 < dt)
-            dt = celula[i].dt1;
-        if (celula[i].dt2 < dt)
-            dt = celula[i].dt2;
-        if (celula[i].dtPig < dt)
-            dt = celula[i].dtPig;
-    }
+    sisprod::transient::restartFractionEvolutionInitial(transientStateOf(*this));
 }
 
 void SProd::SubReiniEvolFrac() {
-    for (int i = 0; i <= ncel; i++) {
-        if (celula[i].pres > -10.) {
-            celula[i].alf = celula[i].alfini;
-            celula[i].alfPigE = celula[i].alfPigEini;
-            celula[i].alfPigD = celula[i].alfPigDini;
-        }
-    }
+    sisprod::transient::restartFractionEvolutionSub(transientStateOf(*this));
 }
 
 void SProd::ReiniEvolFrac() {
-    for (int i = 0; i <= ncel; i++) {
-        celula[i].dt = dt;
-        celula[i].dt1 = dt;
-        celula[i].dt2 = dt;
-        celula[i].dtPig = dt;
-    }
-    if (arq.lingas > 0) {
-        for (int i = 0; i <= ncelGas; i++)
-            celulaG[i].FeiticoDoTempo();
-        if (arq.descarga == 1) {
-            celInter = celInterIni;
-            dtInter = dtInterIni;
-            velInter = velInterIni;
-        }
-        subtempoGas();
-    }
-    SubReiniEvolFrac();
-    for (int i = 0; i <= ncel; i++) {
-        celula[i].bet = celula[i].betini;
-        celula[i].razPig = celula[i].razPigini;
-        celula[i].betPigE = celula[i].betPigEini;
-        celula[i].betPigD = celula[i].betPigDini;
-    }
+    sisprod::transient::restartFractionEvolution(transientStateOf(*this));
 }
 
 void SProd::AtualizaPig() {
-    for (int i = 1; i <= ncel; i++) {
-        celula[i].velPigini = celula[i].velPig;
-        celula[i].estadoPigini = celula[i].estadoPig;
-        celula[i].indpigini = celula[i].indpig;
-    }
-    for (int i = 1; i <= ncel; i++) {
-        if (i < ncel && celula[i].estadoPig == 1) {
-            if (celula[i].velPig >= 0) {
-                if (celula[i].razPig >= 1. - (*vg1dSP).localtiny) {
-                    celula[i].estadoPig = 0;
-                    celula[i + 1].estadoPig = 1;
-
-                    celula[i].razPig = 0.;
-                    celula[i + 1].razPig = 0.;
-                    celula[i + 1].indpig = celula[i].indpig;
-                    celula[i].indpig = -1;
-                    celula[i + 1].velPig = celula[i].velPig;
-                    celula[i + 1].alfPigE = celula[i].alf;
-                    celula[i + 1].betPigE = celula[i].bet;
-                }
-            } else {
-                if (celula[i].razPig <= (*vg1dSP).localtiny) {
-                    celula[i].estadoPig = 0;
-                    celula[i - 1].estadoPig = 1;
-                    celula[i].razPig = 0.;
-                    celula[i - 1].razPig = 1.;
-                    celula[i - 1].indpig = celula[i].indpig;
-                    celula[i].indpig = -1;
-                    celula[i - 1].velPig = celula[i].velPig;
-                    celula[i - 1].alfPigD = celula[i].alf;
-                    celula[i - 1].betPigD = celula[i].bet;
-                }
-            }
-        }
-    }
-    if (arq.ConContEntrada == 0) {
-        celula[0].betI = celula[0].bet;
-        celula[0].betLI = celula[0].bet;
-    } else {
-        celula[0].betI = betaE;
-        if ((celula[0].MC - celula[0].Mliqini) * 0 + celula[0].Mliqini < 0.)
-            celula[0].betI = celula[0].betPigE; // testeBeta
-        celula[0].betLI = celula[0].betI;
-    }
-    for (int i = 1; i <= ncel; i++) {
-        double betLI;
-        double betI;
-        double betRI;
-        celula[i].betI = celula[i].betPigE;
-        if (celula[i].QL > 0.)
-            celula[i].betI = celula[i - 1].betPigD; // testeBeta
-        celula[i - 1].betRI = celula[i].betI;
-        if (i < ncel)
-            celula[i + 1].betLI = celula[i].betI;
-    }
+    sisprod::transient::updatePig(transientStateOf(*this));
 }
 
 void SProd::SolveAcopPV(int vexpli, int ciclo) {
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 0; i <= ncel; i++) {
-        celula[i].GeraLocal(presfim, masChkSup, ncel, arq.master1.razareaativ, presE, tempE, titE, betaE, ciclo,
-                            modeloCompleto, noextremo, arq.corrigeContSep, chokeSup.AreaGarg, vexpli);
-        for (int j = 0; j < 6; j++) {
-            matglobP[2 * i][j - 3] = celula[i].local[0][j];
-            matglobP[2 * i + 1][j - 3] = celula[i].local[1][j];
-            termolivreP[2 * i] = celula[i].TL[0];
-            termolivreP[2 * i + 1] = celula[i].TL[1];
-        }
-    }
-
-    matglobP.GaussElimPP(termolivreP);
+    sisprod::transient::solvePressureVolumeCoupling(transientStateOf(*this), vexpli, ciclo);
 }
 
 void SProd::prepDifusCalorND(int i) {
@@ -6727,73 +6418,11 @@ void SProd::marchaEnergTrans(int ciclo, int ciclomax) {
 }
 
 void SProd::atualizaMiniTab() {
-    //if(arq.miniTabAtraso>0)
-    	geraMiniTabFlu();
-    double betIV;
-    double rsV;
-    double boV;
-    double baV;
-    double bswV;
-    double rhoOVol;
-    double rhoWVol;
-    double titVol;
-    double rhoGVol;
-    double ZGVol;
-    double DZDPGVol;
-    double DZDTGVol;
-    for (int i = 0; i < ncel; i++) {
-
-        double pres = celula[i].pres;
-        double temp = celula[i].temp;
-
-        betIV = celula[i].bet;
-        rsV = celula[i].flui.RS(celula[i].pres, celula[i].temp);
-        boV = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp, rsV);
-        baV = celula[i].flui.BAFunc(celula[i].pres, celula[i].temp);
-        bswV = celula[i].flui.BSW * baV / (boV + baV * celula[i].flui.BSW - celula[i].flui.BSW * boV);
-        rhoOVol = celula[i].flui.MasEspoleo(celula[i].pres, celula[i].temp);
-        rhoWVol = celula[i].flui.MasEspAgua(celula[i].pres, celula[i].temp);
-        titVol = (1 - bswV) * rhoOVol / ((1 - bswV) * rhoOVol + bswV * rhoWVol);
-
-        rhoGVol = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
-        ZGVol = celula[i].flui.Zdran(celula[i].pres, celula[i].temp);
-        DZDPGVol = celula[i].flui.FracMassHidra(celula[i].pres, celula[i].temp);
-        DZDTGVol = celula[i].flui.PB(celula[i].pres, celula[i].temp);
-        celula[i].nMol = (celula[i].flui.MasEspLiq(pres, temp) * (1. - celula[i].alf) * (1. - betIV) * titVol +
-                          celula[i].rgC * celula[i].alf) *
-                         celula[i].duto.area * celula[i].dx / celula[i].flui.Pmol;
-        celula[i].nMolIni = celula[i].nMol;
-    }
+    sisprod::transient::refreshFluidMiniTable(transientStateOf(*this));
 }
 
 void SProd::atualizaCC1() {
-    if (arq.ConContEntrada == 1) {
-        if (arq.tipoFluido == 0 && arq.flashCompleto == 2) {
-            double rgST = celula[0].flui.Deng * 1.225;
-            double roST = 141.5 * 1000. / (131.5 + celula[0].flui.API);
-            double rg = celula[0].flui.MasEspGas(presE, tempE);
-            double rl = celula[0].flui.MasEspLiq(presE, tempE);
-            double titH = celula[0].flui.FracMassHidra(presE, tempE);
-            double rcST = celula[0].fluicol.MasEspFlu(1.01, 20.);
-            double rc = celula[0].fluicol.MasEspFlu(presE, tempE);
-            double rlMix = betaE * rc + (1. - betaE) * rl;
-            double val1 = ((1. - betaE) * rl * titH / (1. - titH));
-            titE = val1 / (rlMix + val1);
-        } else if (arq.tipoFluido == 1) {
-            double rgST = celula[0].flui.Deng * 1.225;
-            double roST = 141.5 * 1000. / (131.5 + celula[0].flui.API);
-            double rg = celula[0].flui.MasEspGas(presE, tempE);
-            double rl = celula[0].flui.MasEspoleo(presE, tempE);
-            double tit = celula[0].flui.FracMass(presE, tempE);
-            double rcST = celula[0].fluicol.MasEspFlu(1.01, 20.);
-            double rc = celula[0].fluicol.MasEspFlu(presE, tempE);
-            double val1 = (rcST / rc) * (rg / rgST) * arq.CCPres.bet[0] / tit;
-            double val2 = (rg / rl) * (1 - tit) / tit;
-            double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
-            titE = titT;
-            betaE = val1 / (val2 + val1);
-        }
-    }
+    sisprod::transient::refreshInletCondition(transientStateOf(*this));
 }
 
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {

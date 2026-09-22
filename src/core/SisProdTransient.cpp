@@ -1104,4 +1104,427 @@ void computeTimeStep(const TransientStepState &state, int vexpli) {
     }
 }
 
+void valveOpeningLow(const TransientStepState &state) {
+    int celpos = state.input.master1.posic;
+    state.masterRatio0[0] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
+    for (int i = 1; i <= state.input.nvalv; i++) {
+        celpos = state.input.valv[i - 1].posicP;
+        state.masterRatio0[i] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
+    }
+}
+
+void valveOpeningHigh(const TransientStepState &state) {
+    int celpos = state.input.master1.posic;
+    state.masterRatio1[0] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
+    for (int i = 1; i <= state.input.nvalv; i++) {
+        celpos = state.input.valv[i - 1].posicP;
+        state.masterRatio1[i] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
+    }
+}
+
+void dampMaximumTimeStep(const TransientStepState &state) {
+
+    state.cflTimeSteps.push_back(state.auxiliaryCflTimeStep);
+    state.simulationTimeSteps.push_back(state.finalAuxiliaryTimeStep);
+    state.totalCflTimeStep += state.auxiliaryCflTimeStep;
+    state.totalSimulationTimeStep += state.finalAuxiliaryTimeStep;
+    state.timeStepRestrictionCount++;
+    if (state.stepIndex > 10) {
+        state.totalCflTimeStep -= state.cflTimeSteps.front();
+        state.cflTimeSteps.erase(state.cflTimeSteps.begin());
+        state.totalSimulationTimeStep -= state.simulationTimeSteps.front();
+        state.simulationTimeSteps.erase(state.simulationTimeSteps.begin());
+        if (state.timeStepRestrictionCount > 10 && state.timeStepRestricted == 1) {
+            state.timeStepRestricted = 0;
+            state.timeStepRestrictionCount = 0;
+        }
+    }
+    state.meanCflTimeStep = state.totalCflTimeStep / 10;
+    state.meanSimulationTimeStep = state.totalSimulationTimeStep / 10.;
+    if ((state.meanSimulationTimeStep < state.meanCflTimeStep / 2 && state.timeStepRestrictionCount > 10)) {
+        state.timeStepRestricted = 1;
+        state.timeStepRestrictionCount = 0;
+    }
+}
+
+void evaluatePressureRateOfChange(const TransientStepState &state, double razMast, double razMast0, int vexpli) {
+    double dpdtRef = 2 * state.input.taxaDespre;
+    double modDpDt = 0.;
+    double modDTDt = 0.;
+    double dpdtMax = 0.;
+    double dTdtMax = 0.;
+    if (state.fullModel == 1) {
+        state.fullModel = 0;
+        int i = 0;
+        while (i < state.lastCell) {
+            int nBloco = 10;
+            if (state.lastCell - i < nBloco)
+                nBloco = state.lastCell - i;
+            for (int j = 0; j < nBloco; j++) {
+                modDpDt += fabs(state.cells[i + j].pres - state.cells[i + j].presini) / (state.timeStep);
+                modDTDt += fabs(state.cells[i + j].temp - state.cells[i + j].tempini) / (state.timeStep);
+            }
+            i += nBloco;
+            modDpDt /= nBloco;
+            modDTDt /= nBloco;
+            if (modDpDt > dpdtMax)
+                dpdtMax = modDpDt;
+            if (modDTDt > dTdtMax)
+                dTdtMax = modDTDt;
+            if (modDpDt > dpdtRef)
+                state.fullModel = 1;
+            modDpDt = 0.;
+            modDTDt = 0.;
+        }
+        state.maximumPressureRates.push_back(dpdtMax);
+        state.maximumTimeStepRates.push_back(dTdtMax);
+        if (state.maximumPressureRates.size() > 10)
+            state.maximumPressureRates.erase(state.maximumPressureRates.begin());
+        if (state.maximumTimeStepRates.size() > 10)
+            state.maximumTimeStepRates.erase(state.maximumTimeStepRates.begin());
+        int nvec = state.maximumPressureRates.size();
+        int nvecT = state.maximumTimeStepRates.size();
+        state.meanMaximumPressureChange = 0.;
+        state.meanMaximumTimeStep = 0.;
+        for (int i = 0; i < nvec; i++)
+            state.meanMaximumPressureChange += state.maximumPressureRates[i];
+        for (int i = 0; i < nvecT; i++)
+            state.meanMaximumTimeStep += state.maximumTimeStepRates[i];
+        state.meanMaximumPressureChange /= nvec;
+        state.meanMaximumTimeStep /= nvecT;
+        if (state.meanMaximumPressureChange > dpdtRef)
+            state.fullModel = 1;
+        if (state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area < 1e-3 &&
+            (state.meanMaximumPressureChange > state.input.taxaDespre / 10. || state.meanMaximumTimeStep > 0.001))
+            state.fullModel = 1;
+        int linAberta = 1; // caso varias valvulas
+        for (int i = 0; i <= state.input.nvalv; i++)
+            if (state.masterRatio1[i] <= 1e-3)
+                linAberta = 0; // caso varias valvulas
+        if ((linAberta == 1 && state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area > 1e-3))
+            state.fullModel = 1; // caso varias valvulas
+    }
+    for (int i = 0; i <= state.input.nvalv; i++)
+        if (state.masterRatio1[i] != state.masterRatio0[i])
+            state.fullModel = 0; // caso varias valvulas
+    if ((state.meanMaximumPressureChange > 10 || state.meanMaximumTimeStep > 1) && state.fullModel == 1 && vexpli == 0) {
+        state.fullModel = 0;
+    }
+}
+
+void restrictTimeStepByValve(const TransientStepState &state) {
+
+    if (state.input.ConContEntrada == 0 && (*state.globals).chaveRedeParalela == 0) {
+        int celpos;
+        double dtaux = state.cells[0].dt;
+        if (state.restart == -1) {
+            for (int i = 1; i <= state.lastCell; i++)
+                if (dtaux > state.cells[i].dt)
+                    dtaux = state.cells[i].dt;
+        }
+        double dtvec[state.input.nvalv + 1];
+        for (int i = 0; i <= state.input.nvalv; i++)
+            dtvec[i] = state.cells[0].dt;
+        for (int i = 0; i <= state.input.nvalv; i++) {
+            if (i == 0)
+                celpos = state.input.master1.posic;
+            else
+                celpos = state.input.valv[i - 1].posicP;
+            if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= 1e-3 * state.input.master1.razareaativ)) {
+                if (state.cells[celpos].alf < 0.05) {
+                    if (state.cells[celpos].alf < 0.01)
+                        state.desperationMoment += 1.5;
+                    else
+                        state.desperationMoment = 1;
+                    if (state.desperationMoment < 1.)
+                        state.desperationMoment = 1.;
+                    state.cells[celpos].fontemassGL += state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * 1.225 / 86400;
+                    state.cells[celpos - 1].fontemassGR = state.cells[celpos].fontemassGL;
+                }
+                if (state.cells[celpos].alf < 0.5)
+                    state.masterCriticalRatio[i] = 0.01;
+            } else
+                state.desperationMoment = 0.;
+            if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= state.masterCriticalRatio[i] * state.input.master1.razareaativ)) {
+                double raz = 20.;
+                if (state.cells[celpos].alf < 0.5)
+                    raz = 40.;
+                dtvec[i] = dtaux;
+                if (dtvec[i] > 1)
+                    dtvec[i] = 1.;
+                if (state.cells[celpos].alf < 0.5)
+                    dtvec[i] = 0.1 + 0.9 * (state.cells[celpos].alf) / 0.5;
+                dtvec[i] /= raz;
+                state.restart = -1;
+            }
+        }
+        dtaux = dtvec[0];
+        for (int i = 1; i <= state.input.nvalv; i++)
+            if (dtvec[i] < dtaux)
+                dtaux = dtvec[i];
+        state.cells[0].dt = dtaux;
+    }
+}
+
+void restartFractionEvolutionInitial(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (state.cells[i].dt < state.timeStep)
+            state.timeStep = state.cells[i].dt;
+        if (state.cells[i].dt1 < state.timeStep)
+            state.timeStep = state.cells[i].dt1;
+        if (state.cells[i].dt2 < state.timeStep)
+            state.timeStep = state.cells[i].dt2;
+        if (state.cells[i].dtPig < state.timeStep)
+            state.timeStep = state.cells[i].dtPig;
+    }
+}
+
+void restartFractionEvolutionSub(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (state.cells[i].pres > -10.) {
+            state.cells[i].alf = state.cells[i].alfini;
+            state.cells[i].alfPigE = state.cells[i].alfPigEini;
+            state.cells[i].alfPigD = state.cells[i].alfPigDini;
+        }
+    }
+}
+
+void restartFractionEvolution(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].dt = state.timeStep;
+        state.cells[i].dt1 = state.timeStep;
+        state.cells[i].dt2 = state.timeStep;
+        state.cells[i].dtPig = state.timeStep;
+    }
+    if (state.input.lingas > 0) {
+        for (int i = 0; i <= state.gasCellCount; i++)
+            state.gasCells[i].FeiticoDoTempo();
+        if (state.input.descarga == 1) {
+            state.interfaceCell = state.initialInterfaceCell;
+            state.interfaceTimeStep = state.initialInterfaceTimeStep;
+            state.interfaceVelocity = state.initialInterfaceVelocity;
+        }
+        state.updaters.advanceGasSubStep();
+    }
+    restartFractionEvolutionSub(state);
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].bet = state.cells[i].betini;
+        state.cells[i].razPig = state.cells[i].razPigini;
+        state.cells[i].betPigE = state.cells[i].betPigEini;
+        state.cells[i].betPigD = state.cells[i].betPigDini;
+    }
+}
+
+void evolveFractions(const TransientStepState &state, double alfrev, double betrev, int ciclo) {
+
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+    for (int i = 0; i <= state.lastCell; i++) {
+
+        if (i < state.lastCell) {
+            state.cells[i].avancalf(state.restart, state.lastCell);
+        }
+        if (i == state.lastCell) {
+
+            if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
+                if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
+                    state.cells[i].alf = state.cells[i - 1].alf;
+                else
+                    state.cells[i].avancalf(state.restart, state.lastCell);
+            } else {
+                if (state.cells[state.lastCell].Mliqini > 0)
+                    state.cells[i].alf = state.cells[i - 1].alf;
+                else if (state.surfaceChokeMassFlag == 0 && state.input.chkv == 0)
+                    state.cells[i].alf = alfrev;
+                else
+                    state.cells[i].avancalf(state.restart, state.lastCell);
+            }
+        }
+    }
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (i < state.lastCell) {
+            state.cells[i].avancbet(state.restart, state.lastCell);
+        }
+        if (i == state.lastCell) {
+            if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
+                if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
+                    state.cells[i].bet = state.cells[i - 1].bet;
+                else
+                    state.cells[i].avancbet(state.restart, state.lastCell);
+            } else {
+                if (state.surfaceChokeMassFlag == 1)
+                    state.cells[i].avancbet(state.restart, state.lastCell);
+                else if (state.input.chkv == 1)
+                    state.cells[i].bet = state.cells[i - 1].bet;
+            }
+        }
+    }
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (i < state.lastCell && state.cells[i].estadoPig == 1) {
+            state.cells[i].avancPig(state.restart);
+            state.cells[i].avancalfPig();
+            state.cells[i].avancbetPig();
+        } else {
+            state.cells[i].alfPigE = state.cells[i].alf;
+            state.cells[i].betPigE = state.cells[i].bet;
+            state.cells[i].alfPigD = state.cells[i].alf;
+            state.cells[i].betPigD = state.cells[i].bet;
+        }
+    }
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (state.cells[i].correrGlobHol == 1) {
+            if (state.cells[i].reiniciaAlf < 0 || state.cells[i].reiniciaBet < 0 || state.cells[i].reiniciaPig < 0)
+                state.restart = -1;
+            state.cells[i].reiniciaAlf = 0;
+            state.cells[i].reiniciaBet = 0;
+            state.cells[i].reiniciaPig = 0;
+        }
+    }
+}
+
+void updatePig(const TransientStepState &state) {
+    for (int i = 1; i <= state.lastCell; i++) {
+        state.cells[i].velPigini = state.cells[i].velPig;
+        state.cells[i].estadoPigini = state.cells[i].estadoPig;
+        state.cells[i].indpigini = state.cells[i].indpig;
+    }
+    for (int i = 1; i <= state.lastCell; i++) {
+        if (i < state.lastCell && state.cells[i].estadoPig == 1) {
+            if (state.cells[i].velPig >= 0) {
+                if (state.cells[i].razPig >= 1. - (*state.globals).localtiny) {
+                    state.cells[i].estadoPig = 0;
+                    state.cells[i + 1].estadoPig = 1;
+
+                    state.cells[i].razPig = 0.;
+                    state.cells[i + 1].razPig = 0.;
+                    state.cells[i + 1].indpig = state.cells[i].indpig;
+                    state.cells[i].indpig = -1;
+                    state.cells[i + 1].velPig = state.cells[i].velPig;
+                    state.cells[i + 1].alfPigE = state.cells[i].alf;
+                    state.cells[i + 1].betPigE = state.cells[i].bet;
+                }
+            } else {
+                if (state.cells[i].razPig <= (*state.globals).localtiny) {
+                    state.cells[i].estadoPig = 0;
+                    state.cells[i - 1].estadoPig = 1;
+                    state.cells[i].razPig = 0.;
+                    state.cells[i - 1].razPig = 1.;
+                    state.cells[i - 1].indpig = state.cells[i].indpig;
+                    state.cells[i].indpig = -1;
+                    state.cells[i - 1].velPig = state.cells[i].velPig;
+                    state.cells[i - 1].alfPigD = state.cells[i].alf;
+                    state.cells[i - 1].betPigD = state.cells[i].bet;
+                }
+            }
+        }
+    }
+    if (state.input.ConContEntrada == 0) {
+        state.cells[0].betI = state.cells[0].bet;
+        state.cells[0].betLI = state.cells[0].bet;
+    } else {
+        state.cells[0].betI = state.inletCompletionFraction;
+        if ((state.cells[0].MC - state.cells[0].Mliqini) * 0 + state.cells[0].Mliqini < 0.)
+            state.cells[0].betI = state.cells[0].betPigE; // testeBeta
+        state.cells[0].betLI = state.cells[0].betI;
+    }
+    for (int i = 1; i <= state.lastCell; i++) {
+        double betLI;
+        double betI;
+        double betRI;
+        state.cells[i].betI = state.cells[i].betPigE;
+        if (state.cells[i].QL > 0.)
+            state.cells[i].betI = state.cells[i - 1].betPigD; // testeBeta
+        state.cells[i - 1].betRI = state.cells[i].betI;
+        if (i < state.lastCell)
+            state.cells[i + 1].betLI = state.cells[i].betI;
+    }
+}
+
+void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo) {
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].GeraLocal(state.finalPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletCompletionFraction, ciclo,
+                            state.fullModel, state.endNode, state.input.corrigeContSep, state.surfaceChoke.AreaGarg, vexpli);
+        for (int j = 0; j < 6; j++) {
+            state.productionMatrix[2 * i][j - 3] = state.cells[i].local[0][j];
+            state.productionMatrix[2 * i + 1][j - 3] = state.cells[i].local[1][j];
+            state.productionSolution[2 * i] = state.cells[i].TL[0];
+            state.productionSolution[2 * i + 1] = state.cells[i].TL[1];
+        }
+    }
+
+    state.productionMatrix.GaussElimPP(state.productionSolution);
+}
+
+void refreshFluidMiniTable(const TransientStepState &state) {
+    //if(arq.miniTabAtraso>0)
+    	state.updaters.generateFluidMiniTable();
+    double betIV;
+    double rsV;
+    double boV;
+    double baV;
+    double bswV;
+    double rhoOVol;
+    double rhoWVol;
+    double titVol;
+    double rhoGVol;
+    double ZGVol;
+    double DZDPGVol;
+    double DZDTGVol;
+    for (int i = 0; i < state.lastCell; i++) {
+
+        double pres = state.cells[i].pres;
+        double temp = state.cells[i].temp;
+
+        betIV = state.cells[i].bet;
+        rsV = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
+        boV = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, rsV);
+        baV = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        bswV = state.cells[i].flui.BSW * baV / (boV + baV * state.cells[i].flui.BSW - state.cells[i].flui.BSW * boV);
+        rhoOVol = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWVol = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titVol = (1 - bswV) * rhoOVol / ((1 - bswV) * rhoOVol + bswV * rhoWVol);
+
+        rhoGVol = state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
+        ZGVol = state.cells[i].flui.Zdran(state.cells[i].pres, state.cells[i].temp);
+        DZDPGVol = state.cells[i].flui.FracMassHidra(state.cells[i].pres, state.cells[i].temp);
+        DZDTGVol = state.cells[i].flui.PB(state.cells[i].pres, state.cells[i].temp);
+        state.cells[i].nMol = (state.cells[i].flui.MasEspLiq(pres, temp) * (1. - state.cells[i].alf) * (1. - betIV) * titVol +
+                          state.cells[i].rgC * state.cells[i].alf) *
+                         state.cells[i].duto.area * state.cells[i].dx / state.cells[i].flui.Pmol;
+        state.cells[i].nMolIni = state.cells[i].nMol;
+    }
+}
+
+void refreshInletCondition(const TransientStepState &state) {
+    if (state.input.ConContEntrada == 1) {
+        if (state.input.tipoFluido == 0 && state.input.flashCompleto == 2) {
+            double rgST = state.cells[0].flui.Deng * 1.225;
+            double roST = 141.5 * 1000. / (131.5 + state.cells[0].flui.API);
+            double rg = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
+            double rl = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
+            double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
+            double rcST = state.cells[0].fluicol.MasEspFlu(1.01, 20.);
+            double rc = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+            double rlMix = state.inletCompletionFraction * rc + (1. - state.inletCompletionFraction) * rl;
+            double val1 = ((1. - state.inletCompletionFraction) * rl * titH / (1. - titH));
+            state.inletQuality = val1 / (rlMix + val1);
+        } else if (state.input.tipoFluido == 1) {
+            double rgST = state.cells[0].flui.Deng * 1.225;
+            double roST = 141.5 * 1000. / (131.5 + state.cells[0].flui.API);
+            double rg = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
+            double rl = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
+            double tit = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
+            double rcST = state.cells[0].fluicol.MasEspFlu(1.01, 20.);
+            double rc = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+            double val1 = (rcST / rc) * (rg / rgST) * state.input.CCPres.bet[0] / tit;
+            double val2 = (rg / rl) * (1 - tit) / tit;
+            double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
+            state.inletQuality = titT;
+            state.inletCompletionFraction = val1 / (val2 + val1);
+        }
+    }
+}
+
 }  // namespace sisprod::transient

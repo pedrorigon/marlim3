@@ -50,6 +50,30 @@ FUNCTIONS = {
     "computeImplicitTimeStep": {"new_name": "computeImplicitTimeStep", "arguments": ""},
     "determinaDTExpli": {"new_name": "computeExplicitTimeStep", "arguments": ""},
     "determinaDT": {"new_name": "computeTimeStep", "arguments": "vexpli"},
+
+    # T124 -- the time-step policy. Measured against the same dt series as
+    # determinaDT, because they write the same dt.
+    "atenuaDtMax": {"new_name": "dampMaximumTimeStep", "arguments": ""},
+    "avaliaVariaDpDt": {"new_name": "evaluatePressureRateOfChange", "arguments": "razMast, razMast0, vexpli"},
+    "restringeDTporValv": {"new_name": "restrictTimeStepByValve", "arguments": ""},
+    "aberturaVal0": {"new_name": "valveOpeningLow", "arguments": ""},
+    "aberturaVal1": {"new_name": "valveOpeningHigh", "arguments": ""},
+
+    # T125. ReiniEvolFrac0 and ReiniEvolFrac stay TWO functions: Num4Main.cpp
+    # selects between them at 2778 and 2804, and the acceptance requires the
+    # distinction preserved.
+    "EvoluiFrac": {"new_name": "evolveFractions", "arguments": "alfrev, betrev, ciclo"},
+    "ReiniEvolFrac0": {"new_name": "restartFractionEvolutionInitial", "arguments": ""},
+    "SubReiniEvolFrac": {"new_name": "restartFractionEvolutionSub", "arguments": ""},
+    "ReiniEvolFrac": {"new_name": "restartFractionEvolution", "arguments": ""},
+
+    # T126. atualizaMiniTab keeps calling geraMiniTabFlu, which stays in
+    # SisProd.cpp -- it is consumed by PorosoRad-Simples.cpp and solverPoroso.cpp
+    # as well, so it is surface.
+    "AtualizaPig": {"new_name": "updatePig", "arguments": ""},
+    "SolveAcopPV": {"new_name": "solvePressureVolumeCoupling", "arguments": "vexpli, ciclo"},
+    "atualizaMiniTab": {"new_name": "refreshFluidMiniTable", "arguments": ""},
+    "atualizaCC1": {"new_name": "refreshInletCondition", "arguments": ""},
 }
 
 # Calls between moved routines. The renova group calls no SProd method at all
@@ -68,6 +92,19 @@ CALLS = {
     "computeImplicitTimeStep": ("computeImplicitTimeStep", "state"),
     "determinaDTExpli": ("computeExplicitTimeStep", "state"),
     "determinaDT": ("computeTimeStep", "state"),
+    "atenuaDtMax": ("dampMaximumTimeStep", "state"),
+    "avaliaVariaDpDt": ("evaluatePressureRateOfChange", "state"),
+    "restringeDTporValv": ("restrictTimeStepByValve", "state"),
+    "aberturaVal0": ("valveOpeningLow", "state"),
+    "aberturaVal1": ("valveOpeningHigh", "state"),
+    "EvoluiFrac": ("evolveFractions", "state"),
+    "ReiniEvolFrac0": ("restartFractionEvolutionInitial", "state"),
+    "SubReiniEvolFrac": ("restartFractionEvolutionSub", "state"),
+    "ReiniEvolFrac": ("restartFractionEvolution", "state"),
+    "AtualizaPig": ("updatePig", "state"),
+    "SolveAcopPV": ("solvePressureVolumeCoupling", "state"),
+    "atualizaMiniTab": ("refreshFluidMiniTable", "state"),
+    "atualizaCC1": ("refreshInletCondition", "state"),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so
@@ -78,6 +115,8 @@ CALLS = {
 # Nothing yet: the renova group reaches no SProd method. SolveTrans will add
 # entries here when T127 moves it.
 CALLBACKS = {
+    "geraMiniTabFlu": "state.updaters.generateFluidMiniTable",
+    "subtempoGas": "state.updaters.advanceGasSubStep",
 }
 
 MEMBERS = {
@@ -186,9 +225,16 @@ COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.S)
 # Anchored on `;`, `{` or `}` and NOT on line start: a wrapped expression's
 # continuation line begins a line without beginning a statement, and
 # `betSup * celula[ncel]...` on such a line read as a declaration of celula.
+# The "type" is captured so keywords can be rejected. Without that,
+# `; else momentoDesesp = 1;` parses as a declaration of momentoDesesp, which
+# then excluded a real member from substitution -- the same class of
+# over-exclusion as the `<` and `*` cases above, in a third disguise.
 DECLARED = re.compile(
-    r"[;{}]\s*(?:const\s+)?[A-Za-z_][\w:]*(?:<[^<>;]*>)?(?:\s*\*)?\s+"
+    r"[;{}]\s*(?:const\s+)?([A-Za-z_][\w:]*)(?:<[^<>;]*>)?(?:\s*\*)?\s+"
     r"[&*]?([A-Za-z_]\w*)\s*(?:=[^=]|;|,|\[)")
+
+NOT_A_TYPE = {"return", "else", "do", "case", "break", "continue", "goto",
+              "new", "delete", "throw", "sizeof", "static", "typedef"}
 
 PARAM = re.compile(r"[&*]?([A-Za-z_]\w*)\s*(?:=[^=][^,)]*)?$")
 
@@ -209,7 +255,10 @@ def _declared_in_body(body: str) -> set:
             match = PARAM.search(part.strip())
             if match:
                 names.add(match.group(1))
-    names.update(DECLARED.findall(clean))
+    for match in DECLARED.finditer(clean):
+        if match.group(1) in NOT_A_TYPE:
+            continue
+        names.add(match.group(2))
     return names
 
 
