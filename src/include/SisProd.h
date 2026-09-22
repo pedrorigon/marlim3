@@ -1306,6 +1306,10 @@ class SProd {
     void renovatermColIni();
 
     /// Calculates outlet-choke flow from the last-cell and separator pressures.
+    /// The surface choke is open: throat area above a thousandth of the pipe's.
+    bool surfaceChokeIsOpen();
+    /// The surface choke is shut: throat area BELOW that. NOT the negation of surfaceChokeIsOpen.
+    bool surfaceChokeIsShut();
     void calcCCpres(double titRev = 1., double alfRev = 1., double betRev = 0.);
     /// Calculates outlet-choke flow for the intermediate network state.
     void calcCCBuffer(double titRev = 1., double alfRev = 1., double betRev = 0.);

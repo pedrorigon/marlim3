@@ -37,6 +37,13 @@ FUNCTIONS = {
     "renovaVaz": {"new_name": "updateFlowRates", "arguments": ""},
     "renovaBuffer": {"new_name": "updateBufferFromSolution", "arguments": ""},
     "renovaBufferCego": {"new_name": "updateBufferFromCells", "arguments": ""},
+
+    # T121 -- the outlet boundary condition, and the two predicates it repeats.
+    # The predicates move with it: nothing else calls them.
+    "surfaceChokeIsOpen": {"new_name": "surfaceChokeIsOpen", "arguments": ""},
+    "surfaceChokeIsShut": {"new_name": "surfaceChokeIsShut", "arguments": ""},
+    "calcCCpres": {"new_name": "applyOutletPressureCondition", "arguments": "titRev, alfRev, betRev"},
+    "calcCCBuffer": {"new_name": "applyOutletBufferCondition", "arguments": "titRev, alfRev, betRev"},
 }
 
 # Calls between moved routines. The renova group calls no SProd method at all
@@ -48,6 +55,10 @@ CALLS = {
     "renovaVaz": ("updateFlowRates", "state"),
     "renovaBuffer": ("updateBufferFromSolution", "state"),
     "renovaBufferCego": ("updateBufferFromCells", "state"),
+    "surfaceChokeIsOpen": ("surfaceChokeIsOpen", "state"),
+    "surfaceChokeIsShut": ("surfaceChokeIsShut", "state"),
+    "calcCCpres": ("applyOutletPressureCondition", "state"),
+    "calcCCBuffer": ("applyOutletBufferCondition", "state"),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so

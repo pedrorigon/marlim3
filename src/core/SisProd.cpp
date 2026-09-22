@@ -6299,6 +6299,31 @@ void SProd::renovatermColIni() {
     sisprod::thermal::updateInletFlowPartitionTerms(thermalStateOf(*this));
 }
 
+/// The surface choke is open: its throat area exceeds a thousandth of the pipe's.
+///
+/// Written out nine times across calcCCpres and calcCCBuffer, which is what
+/// T121 was reaching for when it asked for the boundary-condition selection to
+/// be made readable. What it asked for literally -- a dispatch table resolved
+/// OUTSIDE the per-cell loop -- is not available: these predicates read state
+/// that changes inside the loop, so moving them out changes WHEN they are
+/// evaluated. See evidencia/calccc-diff.md.
+///
+/// Naming them moves nothing: same expression, same place, same number of
+/// evaluations.
+bool SProd::surfaceChokeIsOpen() {
+    return chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area;
+}
+
+/// The surface choke is shut: throat area BELOW a thousandth of the pipe's.
+///
+/// Not the negation of surfaceChokeIsOpen, and the two must never be written as
+/// if they were. `!(a > b)` is `a <= b`; this is `a < b`. They differ at exact
+/// equality, and a refactoring that collapses them would be wrong on precisely
+/// the input nobody tests.
+bool SProd::surfaceChokeIsShut() {
+    return chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area;
+}
+
 void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
 
     double tESup = celula[ncel].temp;
@@ -6344,7 +6369,7 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
     double pmon = presfim;
 
     double ypres = pGSup / presfim;
-    if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area && ypres < 1.) {
+    if (surfaceChokeIsOpen() && ypres < 1.) {
         double cplM = (1. - betSup) * celula[ncel].flui.CalorLiq(presfim, tESup) -
                       betSup * celula[ncel].fluicol.CalorLiq(presfim, tESup);
         double jtlM = (1. - betSup) * celula[ncel].flui.JTL(presfim, tESup) - betSup / rholc;
@@ -6371,7 +6396,7 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
         fluxcri = 0;
         maxSup = masChk;
     }
-    if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
+    if (surfaceChokeIsShut())
         maxSup = 0.;
 
     double sinal2 = 1.;
@@ -6398,7 +6423,7 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
         fluxcri = 0;
         maxSup2 = masChk2;
     }
-    if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
+    if (surfaceChokeIsShut())
         maxSup2 = 0.;
     double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (presfim * 0.0001);
 
@@ -6406,7 +6431,7 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
     double masgas;
     int abertoini = aberto;
     double delp;
-    if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area)
+    if (surfaceChokeIsOpen())
         delp = (0.5 / 98066.5) * (1 / romix) * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg * chokeSup.cdchk * chokeSup.cdchk)) * masentrada * masentrada;
     else
         delp = 0;
@@ -6415,8 +6440,8 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
     mudaModoChk = 0;
 
     double difdelp = presfim - pGSup;
-    if (((tit < 1e-7 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area) ||
-         (tit < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
+    if (((tit < 1e-7 && surfaceChokeIsOpen()) ||
+         (tit < 0.01 && surfaceChokeIsOpen() &&
           fabs(difdelp) / delp < 1.2 && fabs(difdelp) / delp > 0.8 &&
           ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
            (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
@@ -6430,7 +6455,7 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
             mudaModoChk = 1;
 
     } else {
-        if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
+        if (surfaceChokeIsOpen() &&
             ((((*vg1dSP).lixo5 - 2 * arq.dtmax > tMedMov || arq.perm == 2) &&
               fabs(presMedMov - pGSup) / presMedMov < 0.05 && fabs(jMedMov) < 0.5) ||
              (((*vg1dSP).lixo5 - 2 * arq.dtmax > tMedMov || arq.perm == 2) &&
@@ -6444,7 +6469,7 @@ void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
             if (tempoaberto > 60)
                 tempoaberto = 0;
         }
-        if ((((tit > -0.01 && celula[ncel].alf > -0.01) || chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area) && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area && (aberto == 0 && (tempoaberto == 0 || tempoaberto > 60)))) {
+        if ((((tit > -0.01 && celula[ncel].alf > -0.01) || surfaceChokeIsShut()) && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area && (aberto == 0 && (tempoaberto == 0 || tempoaberto > 60)))) {
 
             aberto = 0;
             tempoaberto = 0;
@@ -6582,7 +6607,7 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
         fluxcri = 0;
         maxSup = masChk;
     }
-    if (chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area)
+    if (surfaceChokeIsShut())
         maxSup = 0.;
 
     double masliq;
@@ -6590,15 +6615,15 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
     int abertoini = aberto;
 
     double delp;
-    if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area)
+    if (surfaceChokeIsOpen())
         delp = (0.5 / 98066.5) * (1 / romix) *
                (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg * chokeSup.cdchk * chokeSup.cdchk)) * masentrada * masentrada;
     else
         delp = 0.;
 
     double difdelp = fabs(fabs(celula[ncel].presBuf - pGSup) - delp);
-    if (((tit < 1e-7 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area) ||
-         (tit < 0.01 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
+    if (((tit < 1e-7 && surfaceChokeIsOpen()) ||
+         (tit < 0.01 && surfaceChokeIsOpen() &&
           difdelp / delp < 0.2 &&
           ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
            (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
@@ -6621,12 +6646,12 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
         fontemassPRBuf = -sinal * (celula[ncel - 1].MliqiniRBuf + fontemassCRBuf);
         fontemassGRBuf = -sinal * (celula[ncel - 1].MRBuf - celula[ncel - 1].MliqiniRBuf);
     } else {
-        if (chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area &&
+        if (surfaceChokeIsOpen() &&
             ((((*vg1dSP).lixo5 - 2 * arq.dtmax > tMedMov || arq.perm == 2) && fabs(presMedMov - pGSup) / presMedMov < 0.05 && fabs(jMedMov) < 0.5) || (((*vg1dSP).lixo5 - 2 * arq.dtmax > tMedMov || arq.perm == 2) && fabs(presMedMov - pGSup) < (0.05 * pGSup) && fabs(jMedMov) < 5. && delp < 0.01 * pGSup) || (((*vg1dSP).lixo5 - 2 * arq.dtmax > tMedMov || arq.perm == 2) && (pGSup - presMedMov) > 0.01 && arq.chkv == 0) || (fabs(delp) < 0.1 && (celula[ncel].presBuf - pGSup) / celula[ncel].presBuf < 0.05 && arq.chkv == 0))) {
         } else {
             abertoini = aberto;
         }
-        if (((tit > -0.01 && celula[ncel].alf > -0.01) || chokeSup.AreaGarg < (1e-3) * celula[ncel - 1].duto.area) &&
+        if (((tit > -0.01 && celula[ncel].alf > -0.01) || surfaceChokeIsShut()) &&
             chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area && (aberto == 0 && (tempoaberto == 0 || tempoaberto > 60))) {
 
             masliq = sinal * maxSup * (1. - tit);
