@@ -6578,6 +6578,55 @@ void SProd::writeEventLog(int maxEvento) {
     }
 }
 
+/// Writes the step's progress to the terminal when screen output is on.
+///
+/// Takes the solve's start and end times by const reference: it only reads them,
+/// to report elapsed wall time. end is set just before this is called.
+void SProd::writeScreenOutput(const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end) {
+    if (arq.saidaTela == 1) {
+        cout << kSP << "  " << (*vg1dSP).lixo5 << " " << dt;
+        for (int i = 0; i < arq.ntela; i++) {
+            int posic = arq.tela[i].posic;
+            if (arq.tela[i].col == 1) {
+                switch (arq.tela[i].var) {
+                case 1:
+                    cout << " " << modeloCompleto;
+                    break;
+                case 2:
+                    cout << " " << celula[posic].temp;
+                    break;
+                case 3:
+                    cout << " " << celula[posic].alf;
+                    break;
+                case 4:
+                    cout << " " << celula[posic].bet;
+                    break;
+                case 5:
+                    cout << " " << (celula[posic].QG / celula[posic].duto.area);
+                    break;
+                case 6:
+                    cout << " " << (celula[posic].QL / celula[posic].duto.area);
+                    break;
+                }
+            } else {
+                switch (arq.tela[i].var) {
+                case 1:
+                    cout << " " << celulaG[posic].pres;
+                    break;
+                case 2:
+                    cout << " " << celulaG[posic].temp;
+                    break;
+                case 3:
+                    cout << " " << (celulaG[posic].VGasR / celulaG[posic].duto.area);
+                    break;
+                }
+            }
+        }
+        cout << " " << chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        cout << endl;
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -7036,48 +7085,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
     //(*vg1dSP).lixo5 += dt;//alteracao7
     end = chrono::steady_clock::now();
     (*vg1dSP).contador = kSP;
-    if (arq.saidaTela == 1) {
-        cout << kSP << "  " << (*vg1dSP).lixo5 << " " << dt;
-        for (int i = 0; i < arq.ntela; i++) {
-            int posic = arq.tela[i].posic;
-            if (arq.tela[i].col == 1) {
-                switch (arq.tela[i].var) {
-                case 1:
-                    cout << " " << modeloCompleto;
-                    break;
-                case 2:
-                    cout << " " << celula[posic].temp;
-                    break;
-                case 3:
-                    cout << " " << celula[posic].alf;
-                    break;
-                case 4:
-                    cout << " " << celula[posic].bet;
-                    break;
-                case 5:
-                    cout << " " << (celula[posic].QG / celula[posic].duto.area);
-                    break;
-                case 6:
-                    cout << " " << (celula[posic].QL / celula[posic].duto.area);
-                    break;
-                }
-            } else {
-                switch (arq.tela[i].var) {
-                case 1:
-                    cout << " " << celulaG[posic].pres;
-                    break;
-                case 2:
-                    cout << " " << celulaG[posic].temp;
-                    break;
-                case 3:
-                    cout << " " << (celulaG[posic].VGasR / celulaG[posic].duto.area);
-                    break;
-                }
-            }
-        }
-        cout << " " << chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        cout << endl;
-    }
+    writeScreenOutput(begin, end);
 
     int maxEvento = arq.logevento.size();
     writeEventLog(maxEvento);

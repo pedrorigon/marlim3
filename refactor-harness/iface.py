@@ -20,6 +20,15 @@ the mistake is the useful part:
      name -- which only surfaced when a generated helper became the thing being
      cut further.
 
+A sixth version fixed multi-declarations. `time_point begin, end;` declares
+two names and the pattern only saw the first, so `end` was invisible to every
+range that read it. The compiler caught it -- but not for the reason one would
+hope: with `using namespace std` in scope, the undeclared `end` resolved to
+std::end, and the error was a type mismatch rather than an unknown name. A name
+the analyser cannot see can bind to a DIFFERENT entity, and it only failed here
+because std::end is a function. So every name in a declarator list is collected
+now.
+
 One known limitation, deliberate: strip_control_headers also hides a for-init
 from ranges INSIDE that loop, where `i` genuinely is visible. That direction
 fails safe -- the compiler names the missing parameter immediately -- while the
@@ -50,6 +59,58 @@ def strip_comments(s):
 def strip_control_headers(line):
     """Blank out `for (int i = ...; ...)` and friends."""
     return CONTROL_HEADER.sub(lambda m: " " * len(m.group(0)), line)
+
+
+
+def _declarations(line):
+    """(type, name) for every name a line declares, including `T a, b, c;`.
+
+    DECL finds `T a`. When the declarator list continues with a comma, the rest
+    of the statement up to its `;` is split on TOP-LEVEL commas -- an
+    initialiser like `f(x, y)` has commas of its own -- and each piece yields
+    its declarator name.
+    """
+    out = []
+    for m in DECL.finditer(line):
+        ty, first = m.group(1), m.group(2)
+        if ty in KEYWORDS or first in KEYWORDS:
+            continue
+        out.append((ty, first))
+        rest = line[m.end(2):]
+        depth, cut = 0, None
+        for i, ch in enumerate(rest):
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+                if depth < 0:
+                    cut = i
+                    break
+            elif ch == ";" and depth == 0:
+                cut = i
+                break
+        tail = rest[:cut] if cut is not None else rest
+        pieces, depth, start = [], 0, 0
+        for i, ch in enumerate(tail):
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                pieces.append(tail[start:i])
+                start = i + 1
+        pieces.append(tail[start:])
+        for piece in pieces[1:]:
+            # A declarator-list continuation is ONE name -- `, end` or `, y = 2.`.
+            # A parameter list is `T1 a, T2 b`, where each piece carries its
+            # own type: there the first identifier is the TYPE, and taking it
+            # as the name turned `double alfRev, int nrede` into parameters
+            # called `double` and `int`. Those pieces are separate
+            # declarations that DECL already found on its own, so skip them.
+            name = re.match(r'\s*[&*]?([A-Za-z_]\w*)\s*(?:=|\[|$)', piece)
+            if name and name.group(1) not in KEYWORDS:
+                out.append((ty, name.group(1)))
+    return out
 
 
 def _stacks(lines):
@@ -85,10 +146,8 @@ def visible_decls(lines, at):
     for k in range(at - 2, -1, -1):
         if stacks[k] != target[:len(stacks[k])]:
             continue
-        for m in DECL.finditer(strip_control_headers(strip_comments(lines[k]))):
-            if m.group(1) in KEYWORDS or m.group(2) in KEYWORDS:
-                continue
-            out.setdefault(m.group(2), (m.group(1), k + 1))
+        for ty, name in _declarations(strip_control_headers(strip_comments(lines[k]))):
+            out.setdefault(name, (ty, k + 1))
     return out
 
 
@@ -100,10 +159,8 @@ def declared_in(lines, a, b):
     for k in range(a - 1, b):
         if stacks[k] != base:
             continue
-        for m in DECL.finditer(strip_control_headers(strip_comments(lines[k]))):
-            if m.group(1) in KEYWORDS or m.group(2) in KEYWORDS:
-                continue
-            out.setdefault(m.group(2), (m.group(1), k + 1))
+        for ty, name in _declarations(strip_control_headers(strip_comments(lines[k]))):
+            out.setdefault(name, (ty, k + 1))
     return out
 
 
@@ -191,6 +248,21 @@ def _calibrate():
     h(b);
 }
 ''', 3, 4, {"a"}, {"b"}),
+        ("multi-declaration: second name is seen", '''void f() {
+    clock_t begin, end;
+    end = now();
+    g(end - begin);
+}
+''', 4, 4, {"begin", "end"}, set()),
+        ("initialiser commas are not declarators", '''void f() {
+    double x = h(a, b), y = 2.;
+    g(x + y);
+}
+''', 3, 3, {"x", "y"}, set()),
+        ("parameter list is not a declarator list", '''void f(double a, int n, S s) {
+    g(a, n);
+}
+''', 2, 2, {"a", "n"}, set()),
         ("reference parameter is seen", '''bool h(const S &state, double amp, double &lim, double &val) {
     lim = 1.;
     val = 2.;

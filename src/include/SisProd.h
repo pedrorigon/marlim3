@@ -1360,6 +1360,8 @@ class SProd {
     void writeProgressReport(int MaxKontaImpres);
     /// Appends the step to the event log when an event falls due.
     void writeEventLog(int maxEvento);
+    /// Writes the step's progress to the terminal when screen output is on.
+    void writeScreenOutput(const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end);
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 
