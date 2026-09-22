@@ -56,6 +56,14 @@ namespace sisprod::transient {
 /// looking for an assignment, not assumed -- stage 6 shipped a header promising
 /// const for a deck the module writes through, stage 7 did the same for a choke,
 /// and in both cases the compiler is what said so.
+/// const marks what the step does not write, and it marks SCALARS ONLY.
+///
+/// A class or pointer field can be mutated two ways that do not look like an
+/// assignment to the field itself: `input.valTempChokeJus = ...` writes through
+/// it, and a non-const method call on `surfaceChoke` mutates it. The generator
+/// looked for assignments to the NAME and so promised const for both. The
+/// compiler said so -- the fourth and fifth time in this refactoring that a
+/// header made that promise, after stage 6's deck and stage 7's choke.
 struct TransientStepState {
     /// SProd::DTMaxMed -- escrito.
     double &meanMaximumTimeStep;
@@ -134,7 +142,7 @@ struct TransientStepState {
     /// SProd::abreM1 -- so lido.
     double* masterOpenSchedule;
     /// SProd::arq -- so lido.
-    const Ler &input;
+    Ler &input;
     /// SProd::celInterIni -- so lido.
     const int &initialInterfaceCell;
     /// SProd::celula -- so lido.
@@ -142,13 +150,13 @@ struct TransientStepState {
     /// SProd::celulaG -- so lido.
     CelG* gasCells;
     /// SProd::chokeSup -- so lido.
-    const choke &surfaceChoke;
+    choke &surfaceChoke;
     /// SProd::dtCFL -- so lido.
-    const std::vector<double> &cflTimeSteps;
+    std::vector<double> &cflTimeSteps;
     /// SProd::dtInterIni -- so lido.
     const double &initialInterfaceTimeStep;
     /// SProd::dtSim -- so lido.
-    const std::vector<double> &simulationTimeSteps;
+    std::vector<double> &simulationTimeSteps;
     /// SProd::dtauxCFL -- so lido.
     const double &auxiliaryCflTimeStep;
     /// SProd::dtauxFinal -- so lido.
@@ -156,9 +164,9 @@ struct TransientStepState {
     /// SProd::fechaM1 -- so lido.
     double* masterCloseSchedule;
     /// SProd::flut -- so lido.
-    const FullMtx<double> &productionFreeTerms;
+    FullMtx<double> &productionFreeTerms;
     /// SProd::flutG -- so lido.
-    const FullMtx<double> &gasFreeTerms;
+    FullMtx<double> &gasFreeTerms;
     /// SProd::indTramo -- so lido.
     const int &branchIndex;
     /// SProd::jMedMov -- so lido.
@@ -166,7 +174,7 @@ struct TransientStepState {
     /// SProd::kSP -- so lido.
     const int &stepIndex;
     /// SProd::matglobP -- so lido.
-    const BandMtx<double> &productionMatrix;
+    BandMtx<double> &productionMatrix;
     /// SProd::menorDx -- so lido.
     const double &smallestCellLength;
     /// SProd::nabreM1 -- so lido.
@@ -190,9 +198,9 @@ struct TransientStepState {
     /// SProd::tMedMov -- so lido.
     const double &movingMeanTemperature;
     /// SProd::taxaDTMax -- so lido.
-    const std::vector<double> &maximumTimeStepRates;
+    std::vector<double> &maximumTimeStepRates;
     /// SProd::taxaDpMax -- so lido.
-    const std::vector<double> &maximumPressureRates;
+    std::vector<double> &maximumPressureRates;
     /// SProd::tempE -- so lido.
     const double &inletTemperature;
     /// SProd::titRev -- so lido.
@@ -231,6 +239,33 @@ void updateFlowRates(const TransientStepState &state);
 /// opposite. Nothing in the code says whether that asymmetry is intended.
 void updateBufferFromSolution(const TransientStepState &state);
 void updateBufferFromCells(const TransientStepState &state);
+
+// ------------------------------------------------- outlet boundary condition ----
+
+/// The surface choke is open: throat area above a thousandth of the pipe's.
+/// And shut: throat area BELOW that.
+///
+/// NOT each other's negation, and nothing should write them as if they were.
+/// `!(a > b)` is `a <= b`; the second of these is `a < b`. They differ at exact
+/// equality.
+[[nodiscard]] bool surfaceChokeIsOpen(const TransientStepState &state);
+[[nodiscard]] bool surfaceChokeIsShut(const TransientStepState &state);
+
+/// Applies the outlet boundary condition, against the real state and against
+/// the buffered state.
+///
+/// Two functions, 52% alike by structure and 37% by text; the gap is measured
+/// in evidencia/calccc-diff.md. They differ by more than their source: the
+/// pressure form computes the Joule-Thomson temperature downstream of the choke
+/// and the buffer form does not; the buffer form propagates the mass sources
+/// and the pressure form does not.
+///
+/// SProdVap has its OWN calcCCpres and calcCCBuffer, two arguments instead of
+/// three -- parallel implementations in a different class, not overloads, and
+/// out of scope under FR-038. Anyone reading this module for "the" boundary
+/// condition is reading half of it.
+void applyOutletPressureCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
+void applyOutletBufferCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
 
 }  // namespace sisprod::transient
 

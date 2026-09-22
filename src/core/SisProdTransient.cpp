@@ -477,4 +477,378 @@ void updateBufferFromCells(const TransientStepState &state) {
     state.bufferedGasMassSource = state.cells[fim + 1].fontemassGR;
 }
 
+bool surfaceChokeIsOpen(const TransientStepState &state) {
+    return state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area;
+}
+
+bool surfaceChokeIsShut(const TransientStepState &state) {
+    return state.surfaceChoke.AreaGarg < (1e-3) * state.cells[state.lastCell - 1].duto.area;
+}
+
+void applyOutletPressureCondition(const TransientStepState &state, double titRev, double alfRev, double betRev) {
+
+    double tESup = state.cells[state.lastCell].temp;
+    double alfSup = state.cells[state.lastCell].alf;
+    double betSup = state.cells[state.lastCell].bet;
+
+    double masentrada = state.cells[state.lastCell - 1].MR;
+    double massgas = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
+    double maxSup = 0.;
+    double chokemas = 0;
+
+    double rholp = state.cells[state.lastCell].rpC;
+    double rholc = state.cells[state.lastCell].rcC;
+    double rholmix = (1 - betSup) * rholp + betSup * rholc;
+    double romix = alfSup * state.cells[state.lastCell].rgC + (1 - alfSup) * rholmix;
+
+    double tit;
+    if ((massgas >= 0 && state.cells[state.lastCell - 1].MliqiniR <= 0) || (massgas < 0 && state.cells[state.lastCell - 1].MliqiniR == 0))
+        tit = 1.;
+    else if (massgas <= 0 && state.cells[state.lastCell - 1].MliqiniR > 0)
+        tit = 0.;
+    else if (masentrada < 0) {
+        tit = 1.;
+    } else if (fabs(masentrada) < 1e-15)
+        tit = alfSup * state.cells[state.lastCell].flui.MasEspGas(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) / romix;
+    else
+        tit = fabs(massgas / masentrada);
+    if (tit > 1)
+        tit = 1;
+    if (state.finalPressure < state.gasSurfacePressure) {
+        tit = 1.;
+    }
+
+    if (tit == 0 && alfSup > 0.05)
+        tit = alfSup * state.cells[state.lastCell].flui.MasEspGas(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) / romix;
+
+    romix = tit * (1. / state.cells[state.lastCell].rgC) + (1 - tit) * (1. / rholmix);
+    romix = 1 / romix;
+
+    double masChk;
+
+    double sinal = 1.;
+    double pmon = state.finalPressure;
+
+    double ypres = state.gasSurfacePressure / state.finalPressure;
+    if (surfaceChokeIsOpen(state) && ypres < 1.) {
+        double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.finalPressure, tESup) -
+                      betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.finalPressure, tESup);
+        double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.finalPressure, tESup) - betSup / rholc;
+        double cpg = state.cells[state.lastCell].flui.CalorGas(state.finalPressure, tESup);
+        double jtgM = state.cells[state.lastCell].flui.JTG(state.finalPressure, tESup);
+        state.input.valTempChokeJus = tESup + ((1. - tit) * jtlM / cplM + tit * jtgM / cpg) * (state.gasSurfacePressure - state.finalPressure) * 98066.52;
+    }
+    if (ypres > 1.) {
+        if (state.input.chkv == 0)
+            sinal = -1.;
+        else
+            sinal = 0.;
+        tit = 1.;
+        pmon = state.gasSurfacePressure;
+        ypres = 1. / ypres;
+    }
+
+    masChk = state.surfaceChoke.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                   state.cells[state.lastCell - 1].fluicol);
+    maxSup = state.surfaceChoke.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
+
+    int fluxcri = 1;
+    if (tit <= 0.01 || fabs(ypres) > fabs(state.surfaceChoke.razpres)) {
+        fluxcri = 0;
+        maxSup = masChk;
+    }
+    if (surfaceChokeIsShut(state))
+        maxSup = 0.;
+
+    double sinal2 = 1.;
+    pmon = state.finalPressure * 1.0001;
+    ypres = state.gasSurfacePressure / pmon;
+    if (ypres > 1.) {
+        sinal2 = -1.;
+        tit = 1;
+        pmon = state.gasSurfacePressure;
+        ypres = 1. / ypres;
+        if (state.input.chkv == 0)
+            sinal2 = -1.;
+        else
+            sinal2 = 0.;
+    }
+
+    double masChk2 = state.surfaceChoke.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                           state.cells[state.lastCell - 1].fluicol);
+    double maxSup2 = state.surfaceChoke.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                          state.cells[state.lastCell - 1].fluicol);
+
+    fluxcri = 1;
+    if (tit <= 0.01 || fabs(ypres) > fabs(state.surfaceChoke.razpres)) {
+        fluxcri = 0;
+        maxSup2 = masChk2;
+    }
+    if (surfaceChokeIsShut(state))
+        maxSup2 = 0.;
+    double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (state.finalPressure * 0.0001);
+
+    double masliq;
+    double masgas;
+    int abertoini = state.open;
+    double delp;
+    if (surfaceChokeIsOpen(state))
+        delp = (0.5 / 98066.5) * (1 / romix) * (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
+    else
+        delp = 0;
+
+    int masChkSup0 = state.surfaceChokeMassFlag;
+    state.chokeModeChanged = 0;
+
+    double difdelp = state.finalPressure - state.gasSurfacePressure;
+    if (((tit < 1e-7 && surfaceChokeIsOpen(state)) ||
+         (tit < 0.01 && surfaceChokeIsOpen(state) &&
+          fabs(difdelp) / delp < 1.2 && fabs(difdelp) / delp > 0.8 &&
+          ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
+           (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
+        state.open = 1;
+        double sens = 1.;
+        if (masentrada < 0. && state.cells[state.lastCell - 1].MliqiniR <= 0)
+            sens = 0.;
+        state.finalPressure = state.gasSurfacePressure + sens * delp;
+        state.surfaceChokeMassFlag = 0;
+        if (state.surfaceChokeMassFlag != masChkSup0)
+            state.chokeModeChanged = 1;
+
+    } else {
+        if (surfaceChokeIsOpen(state) &&
+            ((((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) &&
+              fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) ||
+             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) &&
+              fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) ||
+             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.finalPressure - state.gasSurfacePressure) / state.finalPressure < 0.05 && state.input.chkv == 0))) {
+            state.open = 1;
+            if (abertoini != state.open)
+                state.openTime = 1;
+        } else {
+            state.open = 0;
+            if (state.openTime > 60)
+                state.openTime = 0;
+        }
+        if ((((tit > -0.01 && state.cells[state.lastCell].alf > -0.01) || surfaceChokeIsShut(state)) && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.open == 0 && (state.openTime == 0 || state.openTime > 60)))) {
+
+            state.open = 0;
+            state.openTime = 0;
+            masliq = sinal * maxSup * (1. - tit);
+            masgas = sinal * maxSup * tit;
+
+            state.cells[state.lastCell].DmasschokeG = -1 * (1. - tit) * dmaxsup;
+            state.cells[state.lastCell].DmasschokeL = -1 * tit * ((1 - betSup) * rholp / rholmix) * dmaxsup;
+            state.cells[state.lastCell].DmasschokeC = -1 * tit * (betSup * rholc / rholmix) * dmaxsup;
+
+            state.surfaceChokeMassFlag = 1;
+            if (state.surfaceChokeMassFlag != masChkSup0)
+                state.chokeModeChanged = 1;
+            state.cells[state.lastCell].fontemassLR = -masliq * (1 - betSup) * rholp / rholmix;
+            state.cells[state.lastCell].fontemassCR = -masliq * betSup * rholc / rholmix;
+            state.cells[state.lastCell].fontemassGR = -masgas;
+
+        } else {
+            if (state.openTime != 0)
+                state.openTime++;
+            if (state.surfaceChoke.AreaGarg >= 0.601 * state.cells[state.lastCell - 1].duto.area)
+                state.finalPressure = state.gasSurfacePressure;
+            else {
+
+                state.open = 1;
+                state.surfaceChokeMassFlag = 0;
+                if (state.surfaceChokeMassFlag != masChkSup0)
+                    state.chokeModeChanged = 1;
+                state.finalPressure = state.gasSurfacePressure;
+            }
+            state.open = 1;
+            state.surfaceChokeMassFlag = 0;
+            if (state.surfaceChokeMassFlag != masChkSup0)
+                state.chokeModeChanged = 1;
+        }
+    }
+
+    if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
+        double betloc;
+        if ((state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniR > 0.)
+            betloc = state.cells[state.lastCell - 1].bet; // testeBeta//duvidabeta
+        else
+            betloc = betRev;
+
+        if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MR > 0.)
+            sinal = 1.;
+        else
+            sinal = 0.;
+
+        state.cells[state.lastCell].fontemassCR = -sinal * state.cells[state.lastCell - 1].QLR * (betloc)*state.cells[state.lastCell - 1].rcC;
+        state.cells[state.lastCell].fontemassLR = -sinal * (state.cells[state.lastCell - 1].MliqiniR + state.cells[state.lastCell].fontemassCR);
+        state.cells[state.lastCell].fontemassGR = -sinal * (state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR);
+    }
+}
+
+void applyOutletBufferCondition(const TransientStepState &state, double titRev, double alfRev, double betRev) {
+
+    double tESup = state.cells[state.lastCell].temp;
+    double alfSup = state.cells[state.lastCell].alf;
+    double betSup = state.cells[state.lastCell].bet;
+
+    double masentrada = state.cells[state.lastCell - 1].MRBuf;
+    double massgas = state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf;
+    double maxSup = 0.;
+
+    double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
+    double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
+    double rholmix = (1 - betSup) * rholp + betSup * rholc;
+    double romix = alfSup * state.cells[state.lastCell].flui.MasEspGas(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) + (1 - alfSup) * rholmix;
+
+    double tit;
+    if (massgas > 0 && state.cells[state.lastCell - 1].MliqiniRBuf < 0)
+        tit = 1.;
+    else if (massgas <= 0 && state.cells[state.lastCell - 1].MliqiniRBuf >= 0)
+        tit = 0.;
+    else if (masentrada < 0) {
+        if ((*state.globals).chaverede == 0 || state.endNode == 1)
+            tit = 1.;
+        else {
+            tit = titRev;
+            alfSup = alfRev;
+            betSup = betRev;
+        }
+    } else if (fabs(masentrada) < 1e-15)
+        tit = alfSup * state.cells[state.lastCell].flui.MasEspGas(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) / romix;
+    else
+        tit = fabs(massgas / masentrada);
+    if (tit > 1)
+        tit = 1;
+    if (state.cells[state.lastCell].presBuf < state.gasSurfacePressure) {
+        if ((*state.globals).chaverede == 0 || state.endNode == 1)
+            tit = 1.;
+        else {
+            tit = titRev;
+            alfSup = alfRev;
+            betSup = betRev;
+        }
+    }
+
+    if (tit == 0 && alfSup > 0.05)
+        tit = alfSup * state.cells[state.lastCell].flui.MasEspGas(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) / romix;
+
+    romix = tit * (1. / state.cells[state.lastCell].rgC) + (1 - tit) * (1. / rholmix);
+    romix = 1 / romix;
+
+    double masChk;
+
+    double sinal = 1.;
+    double pmon = state.cells[state.lastCell].presBuf;
+
+    double ypres = state.gasSurfacePressure / state.cells[state.lastCell].presBuf;
+    if (ypres > 1.) {
+        if (state.input.chkv == 0)
+            sinal = -1.;
+        else
+            sinal = 0.;
+        if ((*state.globals).chaverede == 0 || state.endNode == 1)
+            tit = 1.;
+        else {
+            tit = titRev;
+            alfSup = alfRev;
+            betSup = betRev;
+        }
+        pmon = state.gasSurfacePressure;
+        ypres = 1. / ypres;
+    }
+
+    masChk = state.surfaceChoke.vazmassSachd(ypres, pmon, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                   state.cells[state.lastCell - 1].fluicol);
+    maxSup = state.surfaceChoke.vazmaxSachd(pmon, tESup, alfSup, betSup, tit, state.cells[state.lastCell - 1].flui,
+                                  state.cells[state.lastCell - 1].fluicol);
+
+    int fluxcri = 1;
+    if (tit <= 0.01 || fabs(ypres) > fabs(state.surfaceChoke.razpres)) {
+        fluxcri = 0;
+        maxSup = masChk;
+    }
+    if (surfaceChokeIsShut(state))
+        maxSup = 0.;
+
+    double masliq;
+    double masgas;
+    int abertoini = state.open;
+
+    double delp;
+    if (surfaceChokeIsOpen(state))
+        delp = (0.5 / 98066.5) * (1 / romix) *
+               (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
+    else
+        delp = 0.;
+
+    double difdelp = fabs(fabs(state.cells[state.lastCell].presBuf - state.gasSurfacePressure) - delp);
+    if (((tit < 1e-7 && surfaceChokeIsOpen(state)) ||
+         (tit < 0.01 && surfaceChokeIsOpen(state) &&
+          difdelp / delp < 0.2 &&
+          ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
+           (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
+        state.open = 1;
+        if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MRBuf > 0.)
+            sinal = 1.;
+        else
+            sinal = 0.;
+        double betloc;
+        if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
+            betloc = state.cells[state.lastCell - 1].bet; // testeBeta//duvidabeta
+        else
+            betloc = betRev;
+        double rhomistBuf = betloc *
+                                state.cells[state.lastCell - 1].fluicol.MasEspFlu(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) +
+                            (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
+        double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
+
+        state.bufferedCompletionMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
+        state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedCompletionMassSource);
+        state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
+    } else {
+        if (surfaceChokeIsOpen(state) &&
+            ((((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) || (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) || (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) > 0.01 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.cells[state.lastCell].presBuf - state.gasSurfacePressure) / state.cells[state.lastCell].presBuf < 0.05 && state.input.chkv == 0))) {
+        } else {
+            abertoini = state.open;
+        }
+        if (((tit > -0.01 && state.cells[state.lastCell].alf > -0.01) || surfaceChokeIsShut(state)) &&
+            state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.open == 0 && (state.openTime == 0 || state.openTime > 60))) {
+
+            masliq = sinal * maxSup * (1. - tit);
+            masgas = sinal * maxSup * tit;
+            state.bufferedLiquidMassSource = -masliq * (1 - betSup) * rholp / rholmix;
+            state.bufferedCompletionMassSource = -masliq * betSup * rholc / rholmix;
+            state.bufferedGasMassSource = -masgas;
+        }
+        if (state.surfaceChokeMassFlag == 1 && (*state.globals).chaverede == 1) {
+            state.cells[state.lastCell].fontemassCR = state.bufferedCompletionMassSource;
+            state.cells[state.lastCell].fontemassLR = state.bufferedLiquidMassSource;
+            state.cells[state.lastCell].fontemassGR = state.bufferedGasMassSource;
+
+            state.cells[state.lastCell].DmasschokeG = 0.;
+            state.cells[state.lastCell].DmasschokeL = 0.;
+            state.cells[state.lastCell].DmasschokeC = 0.;
+        } else if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
+            if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MRBuf > 0.)
+                sinal = 1.;
+            else
+                sinal = 0.;
+            double betloc;
+            if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0.0 + 1.0 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
+                betloc = state.cells[state.lastCell - 1].bet; // testeBeta//duvidabeta
+            else
+                betloc = betRev;
+            double rhomistBuf = betloc *
+                                    state.cells[state.lastCell - 1].fluicol.MasEspFlu(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) +
+                                (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
+            double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
+
+            state.bufferedCompletionMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
+            state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedCompletionMassSource);
+            state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
+        }
+    }
+}
+
 }  // namespace sisprod::transient

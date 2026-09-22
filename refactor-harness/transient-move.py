@@ -165,6 +165,45 @@ SIGNATURE_RE = re.compile(
 COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.S)
 
 
+
+# `a * b` is either a multiplication or a pointer declaration and no lexical
+# rule tells them apart -- `tit = alfSup * celula[ncel]...` parsed as a
+# declaration of `celula`, which excluded a real member from substitution and
+# broke the build in the opposite direction from the bug the guard exists for.
+#
+# So a declaration must START a statement: preceded by line start, `;`, `{` or
+# `}`. Parameters are read from the signature separately, where commas are
+# unambiguous.
+# Anchored on `;`, `{` or `}` and NOT on line start: a wrapped expression's
+# continuation line begins a line without beginning a statement, and
+# `betSup * celula[ncel]...` on such a line read as a declaration of celula.
+DECLARED = re.compile(
+    r"[;{}]\s*(?:const\s+)?[A-Za-z_][\w:]*(?:<[^<>;]*>)?(?:\s*\*)?\s+"
+    r"[&*]?([A-Za-z_]\w*)\s*(?:=[^=]|;|,|\[)")
+
+PARAM = re.compile(r"[&*]?([A-Za-z_]\w*)\s*(?:=[^=][^,)]*)?$")
+
+
+def _declared_in_body(body: str) -> set:
+    """Names the body declares itself: parameters and locals.
+
+    Anything here shadows the SProd member of the same name, so the member
+    substitution must leave it alone. calcCCpres takes a parameter `titRev` and
+    declares locals `cpg` and `abertoini`, and SProd has members of all three.
+    """
+    clean = COMMENT.sub(" ", body)
+    names = set()
+    open_paren = clean.find("(")
+    close_paren = clean.find(")", open_paren)
+    if open_paren >= 0 and close_paren > open_paren:
+        for part in clean[open_paren + 1:close_paren].split(","):
+            match = PARAM.search(part.strip())
+            if match:
+                names.add(match.group(1))
+    names.update(DECLARED.findall(clean))
+    return names
+
+
 def compare_tokens(expected: list[str], actual: list[str]) -> str:
     """Delegates to thermal-move.py, which owns the calibrated implementation."""
     import importlib.util
@@ -266,8 +305,22 @@ def forward(old_name: str, body: str) -> str:
         head = (f"{return_type}{new_name}(const TransientStepState &state"
                 f"{separator}{signature}) {{")
     body = SIGNATURE_RE.sub(lambda _: head, body, count=1)
-    body = substitute_outside_comments(MEMBER_RE,
-                                       lambda m: MEMBERS[m.group(1)], body)
+    # A local or parameter whose name equals an SProd member must NOT be
+    # rewritten as that member. calcCCpres takes a parameter `titRev` and
+    # declares a local `cpg`, and SProd has members of both names; without this
+    # guard the tool produced `double state.reverseQuality` in the signature.
+    #
+    # That particular breakage is loud -- a declaration with a dotted name is a
+    # syntax error, so every shadowing name is caught at its declaration, which
+    # is why this was never silently wrong. It is still wrong, and the fix is to
+    # not rewrite what the body owns.
+    shadowed = _declared_in_body(body)
+    local_members = {k: v for k, v in MEMBERS.items() if k not in shadowed}
+    if local_members:
+        pattern = re.compile(r"(?<![\w.])(" + "|".join(
+            sorted(local_members, key=len, reverse=True)) + r")\b")
+        body = substitute_outside_comments(pattern,
+                                           lambda m: local_members[m.group(1)], body)
     for called, (renamed, state_expr) in CALLS.items():
         if called == old_name:
             continue
