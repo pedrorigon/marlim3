@@ -6770,6 +6770,176 @@ void SProd::writeProfiles(int nrede) {
     }
 }
 
+/// One pass of the column/annulus coupling loop in SolveTrans.
+///
+/// Carries the fraction evolution, the pig update and the pressure-volume coupling,
+/// in that order, which is the order T127 requires preserved. The loop itself stays
+/// in SolveTrans, calling this at the same point with the same bounds, so the
+/// number of coupling passes and where they happen are untouched.
+///
+/// kontaAcop is passed by hand: it is the loop variable, declared in the for-init,
+/// and iface.py hides for-init declarations on purpose.
+void SProd::advanceCouplingIteration(int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
+    if (modeloCompleto == 0) {
+        for (int i = 0; i <= ncel; i++)
+            celula[i].m2d = 0.;
+    } else {
+        for (int i = 0; i <= ncel; i++) {
+            double area = celula[i].duto.area;
+            double vLiqTest = fabs(celula[i].QL / (area));
+            double vGasTest = fabs(celula[i].QG / (area));
+            double razDp = 0.1;
+            double razDT = 1;
+            if (i < celpos && celula[celpos].acsr.chk.AreaGarg < 1e-15 * celula[celpos].acsr.chk.AreaTub) {
+                razDT = 1;
+            } else if (i == celpos + 1 && celula[celpos].acsr.chk.AreaGarg < 1e-15 * celula[celpos].acsr.chk.AreaTub) {
+                razDT = 1;
+            }
+            if ((fabs(celula[i].dpdtIni) / celula[i].pres < razDp) && fabs(celula[i].dTdtIni) < razDT) {
+                if (TransMassModel == 0)
+                    celula[i].m2d = 1.;
+                else
+                    celula[i].m2d = 0.;
+                celula[i].mudaDT = 1.;
+            } else {
+                celula[i].m2d = 0.;
+                celula[i].mudaDT = 0.;
+            }
+        }
+    }
+    if (arq.estabCol == 1) {
+        for (int i = 0; i <= celpos; i++) {
+            celula[i].m2d = 0.;
+            celula[i].mudaDT = 0.;
+            celula[i].estabCol = 1;
+        }
+    }
+    EvoluiFrac(alfRev, betRev, kontaAcop);
+    for (int i = 0; i <= ncel; i++) {
+        if (celula[i].acsr.tipo == 15) {
+            celula[i].acsr.radialPoro.avancoSW(dt);
+            if (celula[i].acsr.radialPoro.reinicia == -1) {
+                if (reinicia > -1)
+                    reinicia = -1;
+                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
+            }
+        } else if (celula[i].acsr.tipo == 16) {
+            celula[i].acsr.poroso2D.avancoSW(dt);
+            if (celula[i].acsr.poroso2D.reinicia == -1) {
+                if (reinicia > -1)
+                    reinicia = -1;
+                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
+            }
+        }
+    }
+
+    if (arq.correcaoMassaEspLiq == 1) {
+        for (int i = 0; i < ncel; i++)
+            celula[i + 1].mudaDTL = celula[i].mudaDT;
+    }
+
+    // caso so Master
+    // caso so Master
+    if (kontaAcop == 0 && arq.controleDTvalv == 1)
+        restringeDTporValv(); // caso varias valvulas
+    if (reinicia == -1) {
+        ReiniEvolFrac0();
+        for (int i = 0; i <= ncel; i++) {
+            if (celula[i].acsr.tipo == 15) {
+                celula[i].acsr.radialPoro.reavaliaDT(dt);
+            } else if (celula[i].acsr.tipo == 16) {
+                celula[i].acsr.poroso2D.reavaliaDT(dt);
+            }
+        }
+        for (int i = 0; i <= ncel; i++) {
+            if (celula[i].acsr.tipo == 15) {
+                celula[i].acsr.radialPoro.reiniciaEvoluiSW(dt);
+            }
+            if (celula[i].acsr.tipo == 16) {
+                celula[i].acsr.poroso2D.reiniciaEvoluiSW(dt);
+            }
+        }
+        dtauxFinal = dt;
+        ReiniEvolFrac();
+        EvoluiFrac(alfRev, betRev, kontaAcop);
+        reinicia = 0;
+        for (int i = 0; i <= ncel; i++) {
+            if (celula[i].acsr.tipo == 15) {
+                celula[i].acsr.radialPoro.avancoSWcorrec();
+            } else if (celula[i].acsr.tipo == 16) {
+                celula[i].acsr.poroso2D.avancoSWcorrec();
+            }
+        }
+    }
+    AtualizaPig();
+
+    if (kontaAcop == 0)
+        dtCicMin = dt;
+
+    if (kontaAcop == 1 * modeloCompleto)
+        atenuaDtMax();
+
+    double fonteG = 0.;
+    double fonteP = 0.;
+    double fonteC = 0.;
+    if (modeloCompleto == 1) {
+        fonteC = celula[ncel].fontemassCR;
+        fonteP = celula[ncel].fontemassLR;
+        fonteG = celula[ncel].fontemassGR;
+    }
+
+    calcCCpres(titRev, alfRev, betRev);
+    renovaterm();
+
+    if (celula[ncel].alf < 0.05 && masChkSup == 1)
+        celula[ncel].alf = 0.05;
+    // caso varias valvulas
+    for (int j = 0; j <= arq.nvalv; j++) {
+        int celposAux;
+        if (j > 0)
+            celposAux = arq.valv[j - 1].posicP;
+        else
+            celposAux = celpos;
+        if (celula[celposAux].alf < 0.05 && vRazMast1[j] <= arq.master1.razareaativ)
+            celula[celposAux].alf = 0.05;
+    }
+    // caso varias valvulas
+    SolveAcopPV(vExpli);
+
+    if (kontaAcop < 1 * modeloCompleto) {
+        for (int i = 0; i <= ncel; i++) {
+            celula[i].dpdt = 1 * (termolivreP[2 * i + 1] - celula[i].pres) / celula[i].dt;
+            celula[i].dpdtIni = celula[i].dpdt;
+        }
+    }
+    if (kontaAcop == 1 * modeloCompleto || arq.cicloAcopTerm == 1) {
+        renova();
+    }
+    if (arq.cicloAcopTerm == 1 && modeloCompleto == 1) {
+        if (kontaAcop < 1 * modeloCompleto)
+            for (int i = 0; i <= ncel; i++)
+                celula[i].dpdt = celula[i].d2pdt2;
+        marchaEnergTrans(kontaAcop, ciclomax);
+    }
+    if (kontaAcop != 1 * modeloCompleto) {
+        for (int i = 0; i <= ncel; i++) {
+            celula[i].FeiticoDoTempo2();
+            if (celula[i].acsr.tipo == 15) {
+                celula[i].acsr.radialPoro.FeiticoDoTempoSW();
+            } else if (celula[i].acsr.tipo == 16) {
+                celula[i].acsr.poroso2D.FeiticoDoTempoSW();
+            }
+        }
+
+        celula[ncel].fontemassCR = fonteC;
+        celula[ncel].fontemassLR = fonteP;
+        celula[ncel].fontemassGR = fonteG;
+
+        aberto = abertoini;
+        tempoaberto = tempoabertoini;
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -6844,164 +7014,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
         abertoini = aberto;
         tempoabertoini = tempoaberto;
         for (int kontaAcop = 0; kontaAcop <= 1 * modeloCompleto; kontaAcop++) {
-            if (modeloCompleto == 0) {
-                for (int i = 0; i <= ncel; i++)
-                    celula[i].m2d = 0.;
-            } else {
-                for (int i = 0; i <= ncel; i++) {
-                    double area = celula[i].duto.area;
-                    double vLiqTest = fabs(celula[i].QL / (area));
-                    double vGasTest = fabs(celula[i].QG / (area));
-                    double razDp = 0.1;
-                    double razDT = 1;
-                    if (i < celpos && celula[celpos].acsr.chk.AreaGarg < 1e-15 * celula[celpos].acsr.chk.AreaTub) {
-                        razDT = 1;
-                    } else if (i == celpos + 1 && celula[celpos].acsr.chk.AreaGarg < 1e-15 * celula[celpos].acsr.chk.AreaTub) {
-                        razDT = 1;
-                    }
-                    if ((fabs(celula[i].dpdtIni) / celula[i].pres < razDp) && fabs(celula[i].dTdtIni) < razDT) {
-                        if (TransMassModel == 0)
-                            celula[i].m2d = 1.;
-                        else
-                            celula[i].m2d = 0.;
-                        celula[i].mudaDT = 1.;
-                    } else {
-                        celula[i].m2d = 0.;
-                        celula[i].mudaDT = 0.;
-                    }
-                }
-            }
-            if (arq.estabCol == 1) {
-                for (int i = 0; i <= celpos; i++) {
-                    celula[i].m2d = 0.;
-                    celula[i].mudaDT = 0.;
-                    celula[i].estabCol = 1;
-                }
-            }
-            EvoluiFrac(alfRev, betRev, kontaAcop);
-            for (int i = 0; i <= ncel; i++) {
-                if (celula[i].acsr.tipo == 15) {
-                    celula[i].acsr.radialPoro.avancoSW(dt);
-                    if (celula[i].acsr.radialPoro.reinicia == -1) {
-                        if (reinicia > -1)
-                            reinicia = -1;
-                        // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
-                    }
-                } else if (celula[i].acsr.tipo == 16) {
-                    celula[i].acsr.poroso2D.avancoSW(dt);
-                    if (celula[i].acsr.poroso2D.reinicia == -1) {
-                        if (reinicia > -1)
-                            reinicia = -1;
-                        // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
-                    }
-                }
-            }
-
-            if (arq.correcaoMassaEspLiq == 1) {
-                for (int i = 0; i < ncel; i++)
-                    celula[i + 1].mudaDTL = celula[i].mudaDT;
-            }
-
-            // caso so Master
-            // caso so Master
-            if (kontaAcop == 0 && arq.controleDTvalv == 1)
-                restringeDTporValv(); // caso varias valvulas
-            if (reinicia == -1) {
-                ReiniEvolFrac0();
-                for (int i = 0; i <= ncel; i++) {
-                    if (celula[i].acsr.tipo == 15) {
-                        celula[i].acsr.radialPoro.reavaliaDT(dt);
-                    } else if (celula[i].acsr.tipo == 16) {
-                        celula[i].acsr.poroso2D.reavaliaDT(dt);
-                    }
-                }
-                for (int i = 0; i <= ncel; i++) {
-                    if (celula[i].acsr.tipo == 15) {
-                        celula[i].acsr.radialPoro.reiniciaEvoluiSW(dt);
-                    }
-                    if (celula[i].acsr.tipo == 16) {
-                        celula[i].acsr.poroso2D.reiniciaEvoluiSW(dt);
-                    }
-                }
-                dtauxFinal = dt;
-                ReiniEvolFrac();
-                EvoluiFrac(alfRev, betRev, kontaAcop);
-                reinicia = 0;
-                for (int i = 0; i <= ncel; i++) {
-                    if (celula[i].acsr.tipo == 15) {
-                        celula[i].acsr.radialPoro.avancoSWcorrec();
-                    } else if (celula[i].acsr.tipo == 16) {
-                        celula[i].acsr.poroso2D.avancoSWcorrec();
-                    }
-                }
-            }
-            AtualizaPig();
-
-            if (kontaAcop == 0)
-                dtCicMin = dt;
-
-            if (kontaAcop == 1 * modeloCompleto)
-                atenuaDtMax();
-
-            double fonteG = 0.;
-            double fonteP = 0.;
-            double fonteC = 0.;
-            if (modeloCompleto == 1) {
-                fonteC = celula[ncel].fontemassCR;
-                fonteP = celula[ncel].fontemassLR;
-                fonteG = celula[ncel].fontemassGR;
-            }
-
-            calcCCpres(titRev, alfRev, betRev);
-            renovaterm();
-
-            if (celula[ncel].alf < 0.05 && masChkSup == 1)
-                celula[ncel].alf = 0.05;
-            // caso varias valvulas
-            for (int j = 0; j <= arq.nvalv; j++) {
-                int celposAux;
-                if (j > 0)
-                    celposAux = arq.valv[j - 1].posicP;
-                else
-                    celposAux = celpos;
-                if (celula[celposAux].alf < 0.05 && vRazMast1[j] <= arq.master1.razareaativ)
-                    celula[celposAux].alf = 0.05;
-            }
-            // caso varias valvulas
-            SolveAcopPV(vExpli);
-
-            if (kontaAcop < 1 * modeloCompleto) {
-                for (int i = 0; i <= ncel; i++) {
-                    celula[i].dpdt = 1 * (termolivreP[2 * i + 1] - celula[i].pres) / celula[i].dt;
-                    celula[i].dpdtIni = celula[i].dpdt;
-                }
-            }
-            if (kontaAcop == 1 * modeloCompleto || arq.cicloAcopTerm == 1) {
-                renova();
-            }
-            if (arq.cicloAcopTerm == 1 && modeloCompleto == 1) {
-                if (kontaAcop < 1 * modeloCompleto)
-                    for (int i = 0; i <= ncel; i++)
-                        celula[i].dpdt = celula[i].d2pdt2;
-                marchaEnergTrans(kontaAcop, ciclomax);
-            }
-            if (kontaAcop != 1 * modeloCompleto) {
-                for (int i = 0; i <= ncel; i++) {
-                    celula[i].FeiticoDoTempo2();
-                    if (celula[i].acsr.tipo == 15) {
-                        celula[i].acsr.radialPoro.FeiticoDoTempoSW();
-                    } else if (celula[i].acsr.tipo == 16) {
-                        celula[i].acsr.poroso2D.FeiticoDoTempoSW();
-                    }
-                }
-
-                celula[ncel].fontemassCR = fonteC;
-                celula[ncel].fontemassLR = fonteP;
-                celula[ncel].fontemassGR = fonteG;
-
-                aberto = abertoini;
-                tempoaberto = tempoabertoini;
-            }
+            advanceCouplingIteration(kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
         }
 
         if (modeloCompleto == 0 || arq.cicloAcopTerm == 0) {
