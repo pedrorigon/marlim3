@@ -6537,6 +6537,47 @@ void SProd::writeProgressReport(int MaxKontaImpres) {
     }
 }
 
+/// Appends the step to the event log when an event falls due.
+///
+/// One of SolveTrans's output phases. It reads the step's state and writes the
+/// log; nothing the next step reads is changed.
+void SProd::writeEventLog(int maxEvento) {
+    if (contaLog < maxEvento) {
+        while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt) {
+            // current date/time based on current system
+            time_t now = time(0);
+            tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+            ostringstream saidaT;
+            if (indTramo < 0) {
+                saidaT << tmpLog;
+            } else {
+                saidaT << "Tramo" << indTramo << "-" << tmpLog;
+            }
+            string tmp = saidaT.str();
+            ofstream escreveIni(tmp.c_str(), ios_base::app);
+            escreveIni << "************************************************************************************************"
+                       << endl;
+            escreveIni << "Evento Externo = ";
+            escreveIni << arq.logevento[contaLog].instante << " ; ";
+            escreveIni << arq.logevento[contaLog].duracao << " ; ";
+            escreveIni << arq.logevento[contaLog].estIni << " ; ";
+            escreveIni << arq.logevento[contaLog].estFim << " ; ";
+            escreveIni << arq.logevento[contaLog].descricao << " ; ";
+            escreveIni << "datahora = ";
+            escreveIni << ltm->tm_mday << "/";
+            escreveIni << 1 + ltm->tm_mon << "/";
+            escreveIni << 1900 + ltm->tm_year << " ";
+            escreveIni << 0 + ltm->tm_hour << ":";
+            escreveIni << 0 + ltm->tm_min << ":";
+            escreveIni << 0 + ltm->tm_sec;
+            escreveIni << endl;
+            contaLog++;
+
+            escreveIni.close();
+        }
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -7039,40 +7080,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
     }
 
     int maxEvento = arq.logevento.size();
-    if (contaLog < maxEvento) {
-        while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt) {
-            // current date/time based on current system
-            time_t now = time(0);
-            tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
-            ostringstream saidaT;
-            if (indTramo < 0) {
-                saidaT << tmpLog;
-            } else {
-                saidaT << "Tramo" << indTramo << "-" << tmpLog;
-            }
-            string tmp = saidaT.str();
-            ofstream escreveIni(tmp.c_str(), ios_base::app);
-            escreveIni << "************************************************************************************************"
-                       << endl;
-            escreveIni << "Evento Externo = ";
-            escreveIni << arq.logevento[contaLog].instante << " ; ";
-            escreveIni << arq.logevento[contaLog].duracao << " ; ";
-            escreveIni << arq.logevento[contaLog].estIni << " ; ";
-            escreveIni << arq.logevento[contaLog].estFim << " ; ";
-            escreveIni << arq.logevento[contaLog].descricao << " ; ";
-            escreveIni << "datahora = ";
-            escreveIni << ltm->tm_mday << "/";
-            escreveIni << 1 + ltm->tm_mon << "/";
-            escreveIni << 1900 + ltm->tm_year << " ";
-            escreveIni << 0 + ltm->tm_hour << ":";
-            escreveIni << 0 + ltm->tm_min << ":";
-            escreveIni << 0 + ltm->tm_sec;
-            escreveIni << endl;
-            contaLog++;
-
-            escreveIni.close();
-        }
-    }
+    writeEventLog(maxEvento);
     writeProgressReport(MaxKontaImpres);
 
     kSP++;

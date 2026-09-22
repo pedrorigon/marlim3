@@ -50,6 +50,11 @@ def main():
     ap.add_argument("--body", action="store_true")
     ap.add_argument("--doc", default="")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--extra", action="append", default=[],
+                    help="a parameter the analyser cannot see, as 'type name'. "
+                         "iface.py hides for-init declarations on purpose -- right for "
+                         "ranges AFTER the loop, wrong for ranges INSIDE it -- so a "
+                         "loop body needs its loop variable passed by hand")
     args = ap.parse_args()
 
     text = io.open(SRC, encoding="utf-8", errors="surrogateescape").read()
@@ -78,12 +83,17 @@ def main():
                          % ", ".join(n for _, n in crossing_out))
 
     params = []
+    extra_names = []
+    for spec in args.extra:
+        ty, name = spec.rsplit(" ", 1)
+        params.append(f"{ty} {name}")
+        extra_names.append(name)
     for ty, name, written, _after in crossing_in:
         params.append(f"{ty} {'&' if written else ''}{name}" if written or ty in
                       ("int", "double", "bool", "float", "long", "char")
                       else f"const {ty} &{name}")
     signature = ", ".join(params)
-    call_args = ", ".join(n for _, n, _, _ in crossing_in)
+    call_args = ", ".join(extra_names + [n for _, n, _, _ in crossing_in])
 
     print(f"{args.helper}: linhas {first}..{last} da funcao ({len(block)}), "
           f"parametros: {signature or '(nenhum)'}")

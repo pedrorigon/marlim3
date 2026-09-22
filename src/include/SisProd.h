@@ -1358,6 +1358,8 @@ class SProd {
     /// Advances the complete transient production-system solution and handles output and logging.
     /// Writes the periodic progress report and the profile snapshots.
     void writeProgressReport(int MaxKontaImpres);
+    /// Appends the step to the event log when an event falls due.
+    void writeEventLog(int maxEvento);
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 
