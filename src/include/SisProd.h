@@ -1368,6 +1368,8 @@ class SProd {
     void writeProfiles(int nrede);
     /// One pass of the column/annulus coupling loop in SolveTrans.
     void advanceCouplingIteration(int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev);
+    /// Runs the hydrate-envelope solvers for the production and gas lines.
+    void solveHydrateEnvelopes();
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 

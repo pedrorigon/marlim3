@@ -6940,6 +6940,24 @@ void SProd::advanceCouplingIteration(int kontaAcop, int celpos, int vExpli, int 
     }
 }
 
+/// Runs the hydrate-envelope solvers for the production and gas lines.
+///
+/// Kept a member of SProd, and it must stay one: both solvers are constructed from
+/// the whole SProd object (*this), which a free function taking a state struct
+/// does not have. SolveTrans reaches it through a callback once it moves, so the
+/// hydrate phase still runs first, where T127 requires it.
+void SProd::solveHydrateEnvelopes() {
+    if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+        FA_Hidrato solverHidrato(*this);
+        solverHidrato.solverHidrato();
+    }
+
+    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+        FA_Hidrato_Servico solverHidratoG(*this);
+        solverHidratoG.solverHidratoG();
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -6947,15 +6965,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
 
     if ((*vg1dSP).chaverede == 0) {
 
-        if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
-            FA_Hidrato solverHidrato(*this);
-            solverHidrato.solverHidrato();
-        }
-
-        if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
-            FA_Hidrato_Servico solverHidratoG(*this);
-            solverHidratoG.solverHidratoG();
-        }
+        solveHydrateEnvelopes();
 
         if (arq.flashCompleto == 2 && (*vg1dSP).lixo5 < 1e-15 && arq.miniTabAtraso>0) {
             atualizaMiniTab();
