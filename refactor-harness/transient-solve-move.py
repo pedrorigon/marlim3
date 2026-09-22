@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
-"""Move Stage 8 transient bodies out of SisProd.cpp and prove the move literal.
+"""Move SolveTrans and the six helpers it was cut into, and prove the move.
 
-Same method as steady-move.py and search-move.py: rewrite the signature and the
-SProd member accesses through an INVERTIBLE substitution table, then prove the
-move by applying the inverse to the installed body and comparing tokens with the
-pre-move commit.
+A fourth move tool, for the reason the second and third record: the tables ARE
+the tool. SolveTrans reads TransientSolveState, which COMPOSES the step state --
+so a step field is spelled state.step.X here, the 52 solve-only fields are
+state.X, and every step function it calls is handed state.step. One table cannot
+say both, which is exactly why search-move.py is not a mode of steady-move.py.
 
-A third tool rather than a third mode on the others, for the reason the second
-one records: the tables ARE the tool. This one reads TransientStepState, whose
-72 fields were derived from the header that was itself generated from a
-measurement of what the 22 routines touch -- so the map below is not a
-transcription of the header, it is extracted FROM the header, and the two cannot
-drift apart.
+The step half of every table below is DERIVED from transient-move.py rather than
+copied from it, so the two cannot drift.
 
-Usage:
-    transient-move.py extract  <function> <sisprod.cpp> <fragment.cpp>
-    transient-move.py install  <function> <sisprod.cpp> <in.cpp> <out.cpp>
-    transient-move.py delegate <function> <sisprod.cpp> <rewritten.cpp>
-    transient-move.py check    <function> <baseline.cpp> <installed.cpp>
+Usage: as transient-move.py.
 """
 from __future__ import annotations
 
@@ -25,90 +18,50 @@ import re
 import sys
 
 FUNCTIONS = {
-    # T118 -- renova and the three arms it was cut into, by cell position.
-    "renova": {"new_name": "updateCells", "arguments": "expli"},
-    "renovaCelulaInterior": {"new_name": "updateInteriorCell", "arguments": "i, expli"},
-    "renovaPrimeiraCelula": {"new_name": "updateFirstCell", "arguments": "i, expli"},
-    "renovaUltimaCelula": {"new_name": "updateLastCell", "arguments": "i, expli"},
-
-    # T119. renovaBuffer and renovaBufferCego stay TWO functions: Num4Main.cpp
-    # picks between them in alternative branches of one if, and they differ by
-    # more than their data source -- see evidencia/renova-diff.md.
-    "renovaVaz": {"new_name": "updateFlowRates", "arguments": ""},
-    "renovaBuffer": {"new_name": "updateBufferFromSolution", "arguments": ""},
-    "renovaBufferCego": {"new_name": "updateBufferFromCells", "arguments": ""},
-
-    # T121 -- the outlet boundary condition, and the two predicates it repeats.
-    # The predicates move with it: nothing else calls them.
-    "surfaceChokeIsOpen": {"new_name": "surfaceChokeIsOpen", "arguments": ""},
-    "surfaceChokeIsShut": {"new_name": "surfaceChokeIsShut", "arguments": ""},
-    "calcCCpres": {"new_name": "applyOutletPressureCondition", "arguments": "titRev, alfRev, betRev"},
-    "calcCCBuffer": {"new_name": "applyOutletBufferCondition", "arguments": "titRev, alfRev, betRev"},
-
-    # T123 -- the time step. The whole stage is measured against the series this
-    # function produces, not against L2 alone.
-    "computeImplicitTimeStep": {"new_name": "computeImplicitTimeStep", "arguments": ""},
-    "determinaDTExpli": {"new_name": "computeExplicitTimeStep", "arguments": ""},
-    "determinaDT": {"new_name": "computeTimeStep", "arguments": "vexpli"},
-
-    # T124 -- the time-step policy. Measured against the same dt series as
-    # determinaDT, because they write the same dt.
-    "atenuaDtMax": {"new_name": "dampMaximumTimeStep", "arguments": ""},
-    "avaliaVariaDpDt": {"new_name": "evaluatePressureRateOfChange", "arguments": "razMast, razMast0, vexpli"},
-    "restringeDTporValv": {"new_name": "restrictTimeStepByValve", "arguments": ""},
-    "aberturaVal0": {"new_name": "valveOpeningLow", "arguments": ""},
-    "aberturaVal1": {"new_name": "valveOpeningHigh", "arguments": ""},
-
-    # T125. ReiniEvolFrac0 and ReiniEvolFrac stay TWO functions: Num4Main.cpp
-    # selects between them at 2778 and 2804, and the acceptance requires the
-    # distinction preserved.
-    "EvoluiFrac": {"new_name": "evolveFractions", "arguments": "alfrev, betrev, ciclo"},
-    "ReiniEvolFrac0": {"new_name": "restartFractionEvolutionInitial", "arguments": ""},
-    "SubReiniEvolFrac": {"new_name": "restartFractionEvolutionSub", "arguments": ""},
-    "ReiniEvolFrac": {"new_name": "restartFractionEvolution", "arguments": ""},
-
-    # T126. atualizaMiniTab keeps calling geraMiniTabFlu, which stays in
-    # SisProd.cpp -- it is consumed by PorosoRad-Simples.cpp and solverPoroso.cpp
-    # as well, so it is surface.
-    "AtualizaPig": {"new_name": "updatePig", "arguments": ""},
-    "SolveAcopPV": {"new_name": "solvePressureVolumeCoupling", "arguments": "vexpli, ciclo"},
-    "atualizaMiniTab": {"new_name": "refreshFluidMiniTable", "arguments": ""},
-    "atualizaCC1": {"new_name": "refreshInletCondition", "arguments": ""},
+    "SolveTrans": {"new_name": "solveTransientStep", "arguments": "titRev, alfRev, betRev, nrede, fluiRev"},
+    "advanceCouplingIteration": {"new_name": "advanceCouplingIteration",
+                                 "arguments": "kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev"},
+    "writeProgressReport": {"new_name": "writeProgressReport", "arguments": "MaxKontaImpres"},
+    "writeEventLog": {"new_name": "writeEventLog", "arguments": "maxEvento"},
+    "writeScreenOutput": {"new_name": "writeScreenOutput", "arguments": "begin, end"},
+    "writeTrends": {"new_name": "writeTrends", "arguments": "ordemImpT, velmaxdesc, nrede"},
+    "writeProfiles": {"new_name": "writeProfiles", "arguments": "nrede"},
 }
 
-# Calls between moved routines. The renova group calls no SProd method at all
-# -- measured, not assumed -- so this table has only the group's own names.
 CALLS = {
-    # renova was MOVED at T118 but had no entry here, because nothing inside the
-    # renova group calls renova itself. SolveTrans does, and the omission only
-    # surfaced when a tool DERIVED from this table moved it.
-    "renova": ("updateCells", "state"),
-    "renovaCelulaInterior": ("updateInteriorCell", "state"),
-    "renovaPrimeiraCelula": ("updateFirstCell", "state"),
-    "renovaUltimaCelula": ("updateLastCell", "state"),
-    "renovaVaz": ("updateFlowRates", "state"),
-    "renovaBuffer": ("updateBufferFromSolution", "state"),
-    "renovaBufferCego": ("updateBufferFromCells", "state"),
-    "surfaceChokeIsOpen": ("surfaceChokeIsOpen", "state"),
-    "surfaceChokeIsShut": ("surfaceChokeIsShut", "state"),
-    "calcCCpres": ("applyOutletPressureCondition", "state"),
-    "calcCCBuffer": ("applyOutletBufferCondition", "state"),
-    "computeImplicitTimeStep": ("computeImplicitTimeStep", "state"),
-    "determinaDTExpli": ("computeExplicitTimeStep", "state"),
-    "determinaDT": ("computeTimeStep", "state"),
-    "atenuaDtMax": ("dampMaximumTimeStep", "state"),
-    "avaliaVariaDpDt": ("evaluatePressureRateOfChange", "state"),
-    "restringeDTporValv": ("restrictTimeStepByValve", "state"),
-    "aberturaVal0": ("valveOpeningLow", "state"),
-    "aberturaVal1": ("valveOpeningHigh", "state"),
-    "EvoluiFrac": ("evolveFractions", "state"),
-    "ReiniEvolFrac0": ("restartFractionEvolutionInitial", "state"),
-    "SubReiniEvolFrac": ("restartFractionEvolutionSub", "state"),
-    "ReiniEvolFrac": ("restartFractionEvolution", "state"),
-    "AtualizaPig": ("updatePig", "state"),
-    "SolveAcopPV": ("solvePressureVolumeCoupling", "state"),
-    "atualizaMiniTab": ("refreshFluidMiniTable", "state"),
-    "atualizaCC1": ("refreshInletCondition", "state"),
+    "renova": ("updateCells", "state.step"),
+    "renovaCelulaInterior": ("updateInteriorCell", "state.step"),
+    "renovaPrimeiraCelula": ("updateFirstCell", "state.step"),
+    "renovaUltimaCelula": ("updateLastCell", "state.step"),
+    "renovaVaz": ("updateFlowRates", "state.step"),
+    "renovaBuffer": ("updateBufferFromSolution", "state.step"),
+    "renovaBufferCego": ("updateBufferFromCells", "state.step"),
+    "surfaceChokeIsOpen": ("surfaceChokeIsOpen", "state.step"),
+    "surfaceChokeIsShut": ("surfaceChokeIsShut", "state.step"),
+    "calcCCpres": ("applyOutletPressureCondition", "state.step"),
+    "calcCCBuffer": ("applyOutletBufferCondition", "state.step"),
+    "computeImplicitTimeStep": ("computeImplicitTimeStep", "state.step"),
+    "determinaDTExpli": ("computeExplicitTimeStep", "state.step"),
+    "determinaDT": ("computeTimeStep", "state.step"),
+    "atenuaDtMax": ("dampMaximumTimeStep", "state.step"),
+    "avaliaVariaDpDt": ("evaluatePressureRateOfChange", "state.step"),
+    "restringeDTporValv": ("restrictTimeStepByValve", "state.step"),
+    "aberturaVal0": ("valveOpeningLow", "state.step"),
+    "aberturaVal1": ("valveOpeningHigh", "state.step"),
+    "EvoluiFrac": ("evolveFractions", "state.step"),
+    "ReiniEvolFrac0": ("restartFractionEvolutionInitial", "state.step"),
+    "SubReiniEvolFrac": ("restartFractionEvolutionSub", "state.step"),
+    "ReiniEvolFrac": ("restartFractionEvolution", "state.step"),
+    "AtualizaPig": ("updatePig", "state.step"),
+    "SolveAcopPV": ("solvePressureVolumeCoupling", "state.step"),
+    "atualizaMiniTab": ("refreshFluidMiniTable", "state.step"),
+    "atualizaCC1": ("refreshInletCondition", "state.step"),
+    "advanceCouplingIteration": ("advanceCouplingIteration", "state"),
+    "writeProgressReport": ("writeProgressReport", "state"),
+    "writeEventLog": ("writeEventLog", "state"),
+    "writeScreenOutput": ("writeScreenOutput", "state"),
+    "writeTrends": ("writeTrends", "state"),
+    "writeProfiles": ("writeProfiles", "state"),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so
@@ -119,83 +72,156 @@ CALLS = {
 # Nothing yet: the renova group reaches no SProd method. SolveTrans will add
 # entries here when T127 moves it.
 CALLBACKS = {
-    "geraMiniTabFlu": "state.updaters.generateFluidMiniTable",
-    "subtempoGas": "state.updaters.advanceGasSubStep",
+    "geraMiniTabFlu": "state.step.updaters.generateFluidMiniTable",
+    "subtempoGas": "state.step.updaters.advanceGasSubStep",
+    "solveHydrateEnvelopes": "state.updaters.solveHydrateEnvelopes",
+    "BuscaPresInjDesc": "state.updaters.findInjectionPressureDownstream",
+    "ImprimeTrendPCab": "state.updaters.writeProductionTrendHeader",
+    "ImprimeTrendP": "state.updaters.writeProductionTrendRows",
+    "ImprimeTrendGCab": "state.updaters.writeGasTrendHeader",
+    "ImprimeTrendG": "state.updaters.writeGasTrendRows",
+    "ImprimeTrendTransPCab": "state.updaters.writeProductionCrossSectionTrendHeader",
+    "ImprimeTrendTransP": "state.updaters.writeProductionCrossSectionTrendRows",
+    "ImprimeTrendTransGCab": "state.updaters.writeGasCrossSectionTrendHeader",
+    "ImprimeTrendTransG": "state.updaters.writeGasCrossSectionTrendRows",
+    "avaliaParafina": "state.updaters.evaluateParaffin",
+    "conectaColuna": "state.updaters.connectTubing",
+    "marchaEnergTrans": "state.updaters.marchTransientEnergy",
+    "renovaFracMol2": "state.updaters.updateMolarFractions",
+    "renovaMasEsp": "state.updaters.updateDensities",
+    "renovaRGOdgYco2": "state.updaters.updateGasOilRatioAndCo2",
+    "renovaTemp": "state.updaters.updateTemperatures",
+    "renovaalbetini": "state.updaters.updateInitialFractions",
+    "renovaterm": "state.updaters.updateThermal",
+    "salvaFonte": "state.updaters.saveSources",
+    "solveLinGas": "state.updaters.solveGasLine",
 }
 
 MEMBERS = {
-    "fontemassCRBuf": "state.bufferedCompletionMassSource",
-    "fontemassGRBuf": "state.bufferedGasMassSource",
-    "fontemassPRBuf": "state.bufferedLiquidMassSource",
-    "modeloCompleto": "state.fullModel",
-    "ncelperftransp": "state.productionCrossSectionCount",
-    "EstadoMaster1": "state.masterState",
-    "kontarestriDt": "state.timeStepRestrictionCount",
-    "momentoDesesp": "state.desperationMoment",
-    "contaMaster1": "state.masterCounter",
-    "kontaGolfada": "state.slugCount",
-    "vRazMastCrit": "state.masterCriticalRatio",
-    "alteraTempo": "state.timeChanged",
-    "mudaModoChk": "state.chokeModeChanged",
-    "tempoaberto": "state.openTime",
-    "termolivreP": "state.productionSolution",
-    "celInterIni": "state.initialInterfaceCell",
-    "velInterIni": "state.initialInterfaceVelocity",
-    "dtCFLTotal": "state.totalCflTimeStep",
-    "dtSimTotal": "state.totalSimulationTimeStep",
-    "dtInterIni": "state.initialInterfaceTimeStep",
-    "dtauxFinal": "state.finalAuxiliaryTimeStep",
-    "presMedMov": "state.movingMeanPressure",
-    "abertoini": "state.initiallyOpen",
-    "indevento": "state.eventIndex",
-    "masChkSup": "state.surfaceChokeMassFlag",
-    "vRazMast0": "state.masterRatio0",
-    "vRazMast1": "state.masterRatio1",
-    "noextremo": "state.endNode",
-    "taxaDTMax": "state.maximumTimeStepRates",
-    "taxaDpMax": "state.maximumPressureRates",
-    "DTMaxMed": "state.meanMaximumTimeStep",
-    "DpMaxMed": "state.meanMaximumPressureChange",
-    "celInter": "state.interfaceCell",
-    "dtCFLMed": "state.meanCflTimeStep",
-    "dtSimMed": "state.meanSimulationTimeStep",
-    "reinicia": "state.restart",
-    "restriDt": "state.timeStepRestricted",
-    "velInter": "state.interfaceVelocity",
-    "chokeSup": "state.surfaceChoke",
-    "dtauxCFL": "state.auxiliaryCflTimeStep",
-    "indTramo": "state.branchIndex",
-    "matglobP": "state.productionMatrix",
-    "nfechaM1": "state.masterCloseCount",
-    "dtInter": "state.interfaceTimeStep",
-    "presfim": "state.finalPressure",
-    "celulaG": "state.gasCells",
-    "fechaM1": "state.masterCloseSchedule",
-    "jMedMov": "state.movingMeanFlux",
-    "menorDx": "state.smallestCellLength",
-    "nabreM1": "state.masterOpenCount",
-    "ncelGas": "state.gasCellCount",
-    "tMedMov": "state.movingMeanTemperature",
-    "aberto": "state.open",
-    "abreM1": "state.masterOpenSchedule",
-    "celula": "state.cells",
-    "titRev": "state.reverseQuality",
-    "vg1dSP": "state.globals",
-    "betaE": "state.inletCompletionFraction",
-    "dtCFL": "state.cflTimeSteps",
-    "dtSim": "state.simulationTimeSteps",
-    "flutG": "state.gasFreeTerms",
-    "pGSup": "state.gasSurfacePressure",
-    "presE": "state.inletPressure",
-    "tempE": "state.inletTemperature",
-    "mult": "state.multiplier",
-    "titE": "state.inletQuality",
-    "flut": "state.productionFreeTerms",
-    "ncel": "state.lastCell",
-    "cpg": "state.gasSpecificHeatTable",
-    "arq": "state.input",
-    "kSP": "state.stepIndex",
-    "dt": "state.timeStep",
+    "kontaTempoTransProfG": "state.gasCrossSectionProfileTimeCounter",
+    "kontaTempoTransProf": "state.productionCrossSectionProfileTimeCounter",
+    "kontaTempoCelUni": "state.unitCellTimeCounters",
+    "resettrendtransg": "state.gasCrossSectionTrendResetTimers",
+    "saidaSubTextoSis": "state.closingSubtitles",
+    "kontaRenovaComp": "state.compositionalRefreshCounter",
+    "kontaTempoProfG": "state.gasProfileTimeCounter",
+    "resettrendtrans": "state.productionCrossSectionTrendResetTimers",
+    "fontemassCRBuf": "state.step.bufferedCompletionMassSource",
+    "fontemassGRBuf": "state.step.bufferedGasMassSource",
+    "fontemassPRBuf": "state.step.bufferedLiquidMassSource",
+    "modeloCompleto": "state.step.fullModel",
+    "ncelperftransp": "state.step.productionCrossSectionCount",
+    "MatTrendTransG": "state.gasCrossSectionTrendMatrix",
+    "MatTrendTransP": "state.productionCrossSectionTrendMatrix",
+    "TransMassModel": "state.massTransferModel",
+    "kontaTempoProf": "state.productionProfileTimeCounter",
+    "ncelperftransg": "state.gasCrossSectionCellCounts",
+    "tempoabertoini": "state.initialOpenTime",
+    "EstadoMaster1": "state.step.masterState",
+    "kontarestriDt": "state.step.timeStepRestrictionCount",
+    "momentoDesesp": "state.step.desperationMoment",
+    "ntrendtransgB": "state.gasCrossSectionTrendBufferedCounts",
+    "saidaTextoSis": "state.closingTitles",
+    "contaMaster1": "state.step.masterCounter",
+    "kontaGolfada": "state.step.slugCount",
+    "vRazMastCrit": "state.step.masterCriticalRatio",
+    "KontaImprime": "state.printCounter",
+    "ntrendtransB": "state.productionCrossSectionTrendBufferedCounts",
+    "ntrendtransg": "state.gasCrossSectionTrendCounts",
+    "verificaAcop": "state.networkCoupled",
+    "alteraTempo": "state.step.timeChanged",
+    "mudaModoChk": "state.step.chokeModeChanged",
+    "tempoaberto": "state.step.openTime",
+    "termolivreP": "state.step.productionSolution",
+    "celInterIni": "state.step.initialInterfaceCell",
+    "velInterIni": "state.step.initialInterfaceVelocity",
+    "ntrendtrans": "state.productionCrossSectionTrendCounts",
+    "resettrendg": "state.gasTrendResetTimers",
+    "temperatura": "state.ambientTemperature",
+    "dtCFLTotal": "state.step.totalCflTimeStep",
+    "dtSimTotal": "state.step.totalSimulationTimeStep",
+    "dtInterIni": "state.step.initialInterfaceTimeStep",
+    "dtauxFinal": "state.step.finalAuxiliaryTimeStep",
+    "presMedMov": "state.step.movingMeanPressure",
+    "derivaAnel": "state.annulusDrift",
+    "resettrend": "state.productionTrendResetTimers",
+    "abertoini": "state.step.initiallyOpen",
+    "indevento": "state.step.eventIndex",
+    "masChkSup": "state.step.surfaceChokeMassFlag",
+    "vRazMast0": "state.step.masterRatio0",
+    "vRazMast1": "state.step.masterRatio1",
+    "noextremo": "state.step.endNode",
+    "taxaDTMax": "state.step.maximumTimeStepRates",
+    "taxaDpMax": "state.step.maximumPressureRates",
+    "MatTrendG": "state.gasTrendMatrix",
+    "MatTrendP": "state.productionTrendMatrix",
+    "alfMedMov": "state.movingMeanVoidFraction",
+    "noinicial": "state.startNode",
+    "poisson3D": "state.poissonSolver3D",
+    "trackDeng": "state.trackGasGravity",
+    "DTMaxMed": "state.step.meanMaximumTimeStep",
+    "DpMaxMed": "state.step.meanMaximumPressureChange",
+    "celInter": "state.step.interfaceCell",
+    "dtCFLMed": "state.step.meanCflTimeStep",
+    "dtSimMed": "state.step.meanSimulationTimeStep",
+    "reinicia": "state.step.restart",
+    "restriDt": "state.step.timeStepRestricted",
+    "velInter": "state.step.interfaceVelocity",
+    "chokeSup": "state.step.surfaceChoke",
+    "dtauxCFL": "state.step.auxiliaryCflTimeStep",
+    "indTramo": "state.step.branchIndex",
+    "matglobP": "state.step.productionMatrix",
+    "nfechaM1": "state.step.masterCloseCount",
+    "alfTotal": "state.totalVoidFraction",
+    "chokeInj": "state.injectionChoke",
+    "contaLog": "state.logCounter",
+    "dtCicMin": "state.minimumCycleTimeStep",
+    "ktMedMov": "state.movingMeanCounter",
+    "ntrendgB": "state.gasTrendBufferedCounts",
+    "pGSupIni": "state.initialGasSurfacePressure",
+    "presiniG": "state.initialGasPressure",
+    "tempiniG": "state.initialGasTemperature",
+    "trackRGO": "state.trackGasOilRatio",
+    "dtInter": "state.step.interfaceTimeStep",
+    "presfim": "state.step.finalPressure",
+    "celulaG": "state.step.gasCells",
+    "fechaM1": "state.step.masterCloseSchedule",
+    "jMedMov": "state.step.movingMeanFlux",
+    "menorDx": "state.step.smallestCellLength",
+    "nabreM1": "state.step.masterOpenCount",
+    "ncelGas": "state.step.gasCellCount",
+    "tMedMov": "state.step.movingMeanTemperature",
+    "ntrendB": "state.productionTrendBufferedCounts",
+    "ntrendg": "state.gasTrendCounts",
+    "presVet": "state.pressureHistory",
+    "aberto": "state.step.open",
+    "abreM1": "state.step.masterOpenSchedule",
+    "celula": "state.step.cells",
+    "titRev": "state.step.reverseQuality",
+    "vg1dSP": "state.step.globals",
+    "alfVet": "state.voidFractionHistory",
+    "jTotal": "state.totalFlux",
+    "ntrend": "state.productionTrendCounts",
+    "pTotal": "state.totalPressure",
+    "tmpLog": "state.logBuffer",
+    "betaE": "state.step.inletCompletionFraction",
+    "dtCFL": "state.step.cflTimeSteps",
+    "dtSim": "state.step.simulationTimeSteps",
+    "flutG": "state.step.gasFreeTerms",
+    "pGSup": "state.step.gasSurfacePressure",
+    "presE": "state.step.inletPressure",
+    "tempE": "state.step.inletTemperature",
+    "kimpT": "state.printTimeCounter",
+    "mult": "state.step.multiplier",
+    "titE": "state.step.inletQuality",
+    "flut": "state.step.productionFreeTerms",
+    "ncel": "state.step.lastCell",
+    "jVet": "state.fluxHistory",
+    "tVet": "state.temperatureHistory",
+    "cpg": "state.step.gasSpecificHeatTable",
+    "arq": "state.step.input",
+    "kSP": "state.step.stepIndex",
+    "dt": "state.step.timeStep",
 }
 # steady-move.py splits the field on its FIRST dot, which is right when every
 # field is state.<name>. Here most are state.march.<name>, and that split would
@@ -364,7 +390,7 @@ def forward(old_name: str, body: str) -> str:
         head = f"{return_type}{new_name}({signature}) {{"
     else:
         separator = ", " if signature.strip() else ""
-        head = (f"{return_type}{new_name}(const TransientStepState &state"
+        head = (f"{return_type}{new_name}(const TransientSolveState &state"
                 f"{separator}{signature}) {{")
     body = SIGNATURE_RE.sub(lambda _: head, body, count=1)
     # A local or parameter whose name equals an SProd member must NOT be
@@ -432,7 +458,7 @@ def inverse(old_name: str, body: str) -> str:
     else:
         pattern = re.compile(
             rf"^([\w:<>*&]+(?:\s+[\w:<>*&]+)*\s+){new_name}"
-            rf"\(const TransientStepState &state(?:, (.*?))?\)\s*\{{", re.S)
+            rf"\(const TransientSolveState &state(?:, (.*?))?\)\s*\{{", re.S)
         match = pattern.match(body)
         if match is None:
             raise ValueError(f"could not parse the moved signature of {new_name}")
@@ -487,7 +513,7 @@ def main() -> int:
         else:
             separator = ", " if arguments else ""
             call = (f"sisprod::transient::{spec['new_name']}"
-                    f"(transientStateOf(*this){separator}{arguments})")
+                    f"(transientSolveStateOf(*this){separator}{arguments})")
         wrapper = [
             f"{return_type}SProd::{name}({signature}) {{",
             f"    {lead}{call};",
@@ -505,7 +531,7 @@ def main() -> int:
         current_source = open(sys.argv[4], encoding="utf-8").read()
         lines = current_source.split("\n")
         opening = ("" if FUNCTIONS[name].get("stateless", False)
-                   else r"\(const TransientStepState &state")
+                   else r"\(const TransientSolveState &state")
         start = next((i for i, line in enumerate(lines)
                       if re.match(rf"^[\w:<>*&]+[\w:<>*&\s]*\b{new_name}"
                                   rf"{opening or r'\('}", line)), None)

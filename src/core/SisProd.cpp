@@ -2578,6 +2578,71 @@ void sisprod::transient::TransientStepUpdaters::advanceGasSubStep() const {
     system.subtempoGas();
 }
 
+void sisprod::transient::TransientSolveUpdaters::solveHydrateEnvelopes() const {
+    system.solveHydrateEnvelopes();
+}
+double sisprod::transient::TransientSolveUpdaters::findInjectionPressureDownstream() const {
+    return system.BuscaPresInjDesc();
+}
+void sisprod::transient::TransientSolveUpdaters::writeProductionTrendHeader(int i, int nrede) const {
+    system.ImprimeTrendPCab(i, nrede);
+}
+void sisprod::transient::TransientSolveUpdaters::writeProductionTrendRows(int i, int nrede) const {
+    system.ImprimeTrendP(i, nrede);
+}
+void sisprod::transient::TransientSolveUpdaters::writeGasTrendHeader(int i, int nrede) const {
+    system.ImprimeTrendGCab(i, nrede);
+}
+void sisprod::transient::TransientSolveUpdaters::writeGasTrendRows(int i, int nrede) const {
+    system.ImprimeTrendG(i, nrede);
+}
+void sisprod::transient::TransientSolveUpdaters::writeProductionCrossSectionTrendHeader(int i) const {
+    system.ImprimeTrendTransPCab(i);
+}
+void sisprod::transient::TransientSolveUpdaters::writeProductionCrossSectionTrendRows(int i) const {
+    system.ImprimeTrendTransP(i);
+}
+void sisprod::transient::TransientSolveUpdaters::writeGasCrossSectionTrendHeader(int i) const {
+    system.ImprimeTrendTransGCab(i);
+}
+void sisprod::transient::TransientSolveUpdaters::writeGasCrossSectionTrendRows(int i) const {
+    system.ImprimeTrendTransG(i);
+}
+void sisprod::transient::TransientSolveUpdaters::evaluateParaffin() const {
+    system.avaliaParafina();
+}
+void sisprod::transient::TransientSolveUpdaters::connectTubing() const {
+    system.conectaColuna();
+}
+void sisprod::transient::TransientSolveUpdaters::marchTransientEnergy(int ciclo, int ciclomax) const {
+    system.marchaEnergTrans(ciclo, ciclomax);
+}
+void sisprod::transient::TransientSolveUpdaters::updateMolarFractions(const ProFlu &fluiRev) const {
+    system.renovaFracMol2(fluiRev);
+}
+void sisprod::transient::TransientSolveUpdaters::updateDensities() const {
+    system.renovaMasEsp();
+}
+void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const ProFlu &fluiRev) const {
+    system.renovaRGOdgYco2(fluiRev);
+}
+void sisprod::transient::TransientSolveUpdaters::updateTemperatures() const {
+    system.renovaTemp();
+}
+void sisprod::transient::TransientSolveUpdaters::updateInitialFractions() const {
+    system.renovaalbetini();
+}
+void sisprod::transient::TransientSolveUpdaters::updateThermal(int aflu) const {
+    system.renovaterm(aflu);
+}
+void sisprod::transient::TransientSolveUpdaters::saveSources() const {
+    system.salvaFonte();
+}
+void sisprod::transient::TransientSolveUpdaters::solveGasLine() const {
+    system.solveLinGas();
+}
+
+
 
 namespace {
 
@@ -2752,6 +2817,68 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .reverseQuality = system.titRev,
         .initialInterfaceVelocity = system.velInterIni,
         .globals = system.vg1dSP,
+        .updaters = {system},
+    };
+}
+
+/// The state SolveTrans reads: the step state, composed rather than rebuilt,
+/// plus the 52 members only the solve touches. Initialiser order is the
+/// header's declaration order, which C++20 requires.
+sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system) {
+    return sisprod::transient::TransientSolveState{
+        .step = transientStateOf(system),
+        .ambientTemperature = system.temperatura,
+        .annulusDrift = system.derivaAnel,
+        .closingSubtitles = system.saidaSubTextoSis,
+        .closingTitles = system.saidaTextoSis,
+        .compositionalRefreshCounter = system.kontaRenovaComp,
+        .fluxHistory = system.jVet,
+        .gasCrossSectionCellCounts = system.ncelperftransg,
+        .gasCrossSectionProfileTimeCounter = system.kontaTempoTransProfG,
+        .gasCrossSectionTrendBufferedCounts = system.ntrendtransgB,
+        .gasCrossSectionTrendCounts = system.ntrendtransg,
+        .gasCrossSectionTrendMatrix = system.MatTrendTransG,
+        .gasCrossSectionTrendResetTimers = system.resettrendtransg,
+        .gasProfileTimeCounter = system.kontaTempoProfG,
+        .gasTrendBufferedCounts = system.ntrendgB,
+        .gasTrendCounts = system.ntrendg,
+        .gasTrendMatrix = system.MatTrendG,
+        .gasTrendResetTimers = system.resettrendg,
+        .initialGasPressure = system.presiniG,
+        .initialGasSurfacePressure = system.pGSupIni,
+        .initialGasTemperature = system.tempiniG,
+        .initialOpenTime = system.tempoabertoini,
+        .injectionChoke = system.chokeInj,
+        .logBuffer = system.tmpLog,
+        .logCounter = system.contaLog,
+        .massTransferModel = system.TransMassModel,
+        .minimumCycleTimeStep = system.dtCicMin,
+        .movingMeanCounter = system.ktMedMov,
+        .movingMeanVoidFraction = system.alfMedMov,
+        .networkCoupled = system.verificaAcop,
+        .poissonSolver3D = system.poisson3D,
+        .pressureHistory = system.presVet,
+        .printCounter = system.KontaImprime,
+        .printTimeCounter = system.kimpT,
+        .productionCrossSectionProfileTimeCounter = system.kontaTempoTransProf,
+        .productionCrossSectionTrendBufferedCounts = system.ntrendtransB,
+        .productionCrossSectionTrendCounts = system.ntrendtrans,
+        .productionCrossSectionTrendMatrix = system.MatTrendTransP,
+        .productionCrossSectionTrendResetTimers = system.resettrendtrans,
+        .productionProfileTimeCounter = system.kontaTempoProf,
+        .productionTrendBufferedCounts = system.ntrendB,
+        .productionTrendCounts = system.ntrend,
+        .productionTrendMatrix = system.MatTrendP,
+        .productionTrendResetTimers = system.resettrend,
+        .startNode = system.noinicial,
+        .temperatureHistory = system.tVet,
+        .totalFlux = system.jTotal,
+        .totalPressure = system.pTotal,
+        .totalVoidFraction = system.alfTotal,
+        .trackGasGravity = system.trackDeng,
+        .trackGasOilRatio = system.trackRGO,
+        .unitCellTimeCounters = system.kontaTempoCelUni,
+        .voidFractionHistory = system.alfVet,
         .updaters = {system},
     };
 }
@@ -6425,521 +6552,6 @@ void SProd::atualizaCC1() {
     sisprod::transient::refreshInletCondition(transientStateOf(*this));
 }
 
-/// Writes the periodic progress report and the profile snapshots.
-///
-/// The last of SolveTrans's output phases, lifted whole. It reads the simulation
-/// state and writes files; it changes nothing the next step reads.
-void SProd::writeProgressReport(int MaxKontaImpres) {
-    if ((fabs((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal - round((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal)) < 0.5 * dt * (100 / 5.) / arq.tfinal) || KontaImprime > MaxKontaImpres || ((*vg1dSP).lixo5 + dt >= arq.tfinal)) {
-        if (arq.saidaTela == 0)
-            cout << (*vg1dSP).lixo5 * (100.) / arq.tfinal << " % da simulacao alcancado" << endl;
-        KontaImprime = 0;
-        ostringstream saidaT;
-        if (indTramo < 0) {
-            saidaT << tmpLog;
-        } else {
-            saidaT << "Tramo" << indTramo << "-" << tmpLog;
-        }
-        string tmp = saidaT.str();
-        ofstream escreveIni(tmp.c_str(), ios_base::app);
-        escreveIni << "************************************************************************************************"
-                   << endl;
-        escreveIni << "Percentual alcancado = " << (*vg1dSP).lixo5 * (100.) / arq.tfinal << " % da simulacao alcancado" << endl;
-        escreveIni << "| Passo de Tempo = " << kSP << "| Tempo (s) = " << (*vg1dSP).lixo5 << "| Incremento de Tempo (s) = " << dt
-                   << " |" << " Incremento de Tempo Medio CFL (s) = "
-                   << dtCFLMed << "| Incremento de Tempo Medio Simulado (s) = " << dtSimMed
-                   << " |" << endl;
-        for (int i = 0; i < arq.ntela; i++) {
-            int posic = arq.tela[i].posic;
-            if (arq.tela[i].col == 1) {
-                switch (arq.tela[i].var) {
-                case 1:
-                    escreveIni << " Pressao na Linha de Producao (kgf/cm2), Celula " << posic << " = " << celula[posic].pres
-                               << endl;
-                    break;
-                case 2:
-                    escreveIni << " Temperatura na Linha de Producao (C), Celula " << posic << " = " << celula[posic].temp
-                               << endl;
-                    break;
-                case 3:
-                    escreveIni << " Fracao de Vazio na Linha de Producao (-), Celula " << posic << " = " << celula[posic].alf
-                               << endl;
-                    break;
-                case 4:
-                    escreveIni << " Fracao Beta na Linha de Producao (-), Celula " << posic << " = " << celula[posic].bet
-                               << endl;
-                    break;
-                case 5:
-                    escreveIni << " Velocidade Superficial de Gas na Linha de Producao (m/s), Celula " << posic << " = "
-                               << (celula[posic].QG / celula[posic].duto.area) << endl;
-                    break;
-                case 6:
-                    escreveIni << " Velocidade Superficial de Liquido na Linha de Producao (m/s), Celula " << posic << " = "
-                               << (celula[posic].QL / celula[posic].duto.area) << endl;
-                    break;
-                }
-            } else {
-                switch (arq.tela[i].var) {
-                case 1:
-                    escreveIni << " Pressao na Linha de Servico (kgf/cm2), Celula " << posic << " = " << celulaG[posic].pres
-                               << endl;
-                    break;
-                case 2:
-                    escreveIni << " Temperatura na Linha de Servico (C), Ceula " << posic << " = " << celulaG[posic].temp
-                               << endl;
-                    break;
-                case 3:
-                    escreveIni << " Velocidade de Gas na Linha de Servico (m/s), Celula " << posic << " = "
-                               << (celulaG[posic].VGasR / celulaG[posic].duto.area) << endl;
-                    break;
-                }
-            }
-        }
-        if (fabs((*vg1dSP).lixo5 - arq.tfinal) <= dt) {
-            time_t now = time(0);
-            tm *ltm = localtime(&now);
-            int diaFim = (ltm->tm_mday);
-            int horaFim;
-            if (diaFim == diaIni)
-                horaFim = ltm->tm_hour;
-            else
-                horaFim = ltm->tm_hour + 24;
-            horaFim *= 3600;
-            int minutoFim = 60 * ltm->tm_min;
-            int segundoFim = ltm->tm_sec;
-            int totalFim = horaFim + minutoFim + segundoFim;
-            int totalIni = horaIni * 3600 + minutoIni * 60 + segundoIni;
-            escreveIni << "     DURACAO    " << totalFim - totalIni << " segundos " << endl;
-            escreveIni << "     Versao    " << versao << endl;
-            if (arq.saidaClassica == 1) {
-                srand(time(NULL));
-                int frase = rand() % 16;
-                escreveIni << "*******************************************************************************" << endl;
-                escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
-                escreveIni << saidaTextoSis[frase] << endl;
-                escreveIni << saidaSubTextoSis[frase] << endl;
-                escreveIni << "*******************************************************************************" << endl;
-            } else
-                escreveIni << "                                 FIM                                  " << endl;
-        }
-        time_t now = time(0);
-        tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
-        escreveIni << "datahora = ";
-        escreveIni << ltm->tm_mday << "/";
-        escreveIni << 1 + ltm->tm_mon << "/";
-        escreveIni << 1900 + ltm->tm_year << " ";
-        escreveIni << 0 + ltm->tm_hour << ":";
-        escreveIni << 0 + ltm->tm_min << ":";
-        escreveIni << 0 + ltm->tm_sec;
-        escreveIni << endl;
-
-        escreveIni.close();
-    }
-}
-
-/// Appends the step to the event log when an event falls due.
-///
-/// One of SolveTrans's output phases. It reads the step's state and writes the
-/// log; nothing the next step reads is changed.
-void SProd::writeEventLog(int maxEvento) {
-    if (contaLog < maxEvento) {
-        while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt) {
-            // current date/time based on current system
-            time_t now = time(0);
-            tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
-            ostringstream saidaT;
-            if (indTramo < 0) {
-                saidaT << tmpLog;
-            } else {
-                saidaT << "Tramo" << indTramo << "-" << tmpLog;
-            }
-            string tmp = saidaT.str();
-            ofstream escreveIni(tmp.c_str(), ios_base::app);
-            escreveIni << "************************************************************************************************"
-                       << endl;
-            escreveIni << "Evento Externo = ";
-            escreveIni << arq.logevento[contaLog].instante << " ; ";
-            escreveIni << arq.logevento[contaLog].duracao << " ; ";
-            escreveIni << arq.logevento[contaLog].estIni << " ; ";
-            escreveIni << arq.logevento[contaLog].estFim << " ; ";
-            escreveIni << arq.logevento[contaLog].descricao << " ; ";
-            escreveIni << "datahora = ";
-            escreveIni << ltm->tm_mday << "/";
-            escreveIni << 1 + ltm->tm_mon << "/";
-            escreveIni << 1900 + ltm->tm_year << " ";
-            escreveIni << 0 + ltm->tm_hour << ":";
-            escreveIni << 0 + ltm->tm_min << ":";
-            escreveIni << 0 + ltm->tm_sec;
-            escreveIni << endl;
-            contaLog++;
-
-            escreveIni.close();
-        }
-    }
-}
-
-/// Writes the step's progress to the terminal when screen output is on.
-///
-/// Takes the solve's start and end times by const reference: it only reads them,
-/// to report elapsed wall time. end is set just before this is called.
-void SProd::writeScreenOutput(const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end) {
-    if (arq.saidaTela == 1) {
-        cout << kSP << "  " << (*vg1dSP).lixo5 << " " << dt;
-        for (int i = 0; i < arq.ntela; i++) {
-            int posic = arq.tela[i].posic;
-            if (arq.tela[i].col == 1) {
-                switch (arq.tela[i].var) {
-                case 1:
-                    cout << " " << modeloCompleto;
-                    break;
-                case 2:
-                    cout << " " << celula[posic].temp;
-                    break;
-                case 3:
-                    cout << " " << celula[posic].alf;
-                    break;
-                case 4:
-                    cout << " " << celula[posic].bet;
-                    break;
-                case 5:
-                    cout << " " << (celula[posic].QG / celula[posic].duto.area);
-                    break;
-                case 6:
-                    cout << " " << (celula[posic].QL / celula[posic].duto.area);
-                    break;
-                }
-            } else {
-                switch (arq.tela[i].var) {
-                case 1:
-                    cout << " " << celulaG[posic].pres;
-                    break;
-                case 2:
-                    cout << " " << celulaG[posic].temp;
-                    break;
-                case 3:
-                    cout << " " << (celulaG[posic].VGasR / celulaG[posic].duto.area);
-                    break;
-                }
-            }
-        }
-        cout << " " << chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        cout << endl;
-    }
-}
-
-/// Writes the four families of trend files for this step.
-///
-/// Production, gas-line, and the two cross-section families, each only when the
-/// deck asks for it. The trend written at t = 0 is NOT here: it happens earlier in
-/// SolveTrans, before computeTimeStep, and T127 requires that order preserved.
-void SProd::writeTrends(int ordemImpT, double velmaxdesc, int nrede) {
-    if (arq.ntendp > 0) {
-        for (int i = 0; i < arq.ntendp; i++) {
-            if (resettrend[i] == 0) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendPCab(i, nrede);
-                if ((*vg1dSP).lixo5 > 1e-15)
-                    arq.imprimeTrend(celula, MatTrendP[i], (*vg1dSP).lixo5, i, ntrend[i]);
-                ntrend[i]++;
-            }
-            if (ordemImpT == 1) {
-                if ((*vg1dSP).lixo5 >= 800.8000000000000445) {
-                    int para;
-                    para == 1;
-                }
-                ImprimeTrendP(i, nrede);
-                ntrendB[i] = ntrend[i];
-            }
-            resettrend[i] += dt;
-            if (resettrend[i] > arq.trendp[i].dt)
-                resettrend[i] = 0;
-        }
-    }
-    if (arq.ntendg > 0 && arq.lingas > 0) {
-        for (int i = 0; i < arq.ntendg; i++) {
-            if (resettrendg[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendGCab(i, nrede);
-                arq.imprimeTrendG(celulaG, MatTrendG[i], (*vg1dSP).lixo5, i, ntrendg[i], velmaxdesc);
-                ntrendg[i]++;
-            }
-            if (ordemImpT == 1) {
-                ImprimeTrendG(i, nrede);
-                ntrendgB[i] = ntrendg[i];
-            }
-            resettrendg[i] += dt;
-            if (resettrendg[i] > arq.trendg[i].dt)
-                resettrendg[i] = 0;
-        }
-    }
-    if (arq.ntendtransp > 0) {
-        for (int i = 0; i < arq.ntendtransp; i++) {
-            if (resettrendtrans[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendTransPCab(i);
-                MatTrendTransP[i][ntrendtrans[i]][0] = (*vg1dSP).lixo5;
-                int poscel = arq.trendtransp[i].posic;
-                int poscam = arq.trendtransp[i].camada - 1;
-                int posdiscre = arq.trendtransp[i].discre - 1;
-                MatTrendTransP[i][ntrendtrans[i]][1] = celula[poscel].calor.Tcamada[poscam][posdiscre];
-                ntrendtrans[i]++;
-            }
-            if (ordemImpT == 1) {
-                ImprimeTrendTransP(i);
-                ntrendtransB[i] = ntrendtrans[i];
-            }
-            resettrendtrans[i] += dt;
-            if (resettrendtrans[i] > arq.trendtransp[i].dt)
-                resettrendtrans[i] = 0;
-        }
-    }
-    if (arq.ntendtransg > 0 && arq.lingas > 0) {
-        for (int i = 0; i < arq.ntendtransg; i++) {
-            if (resettrendtransg[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendTransGCab(i);
-                MatTrendTransG[i][ntrendtransg[i]][0] = (*vg1dSP).lixo5;
-                int poscel = arq.trendtransg[i].posic;
-                int poscam = arq.trendtransg[i].camada - 1;
-                int posdiscre = arq.trendtransg[i].discre - 1;
-                MatTrendTransG[i][ntrendtransg[i]][1] = celulaG[poscel].calor.Tcamada[poscam][posdiscre];
-                ntrendtransg[i]++;
-            }
-            if (ordemImpT == 1) {
-                ImprimeTrendTransG(i);
-                ntrendtransgB[i] = ntrendtransg[i];
-            }
-            resettrendtransg[i] += dt;
-            if (resettrendtransg[i] > arq.trendtransg[i].dt)
-                resettrendtransg[i] = 0;
-        }
-    }
-}
-
-/// Writes the four families of profile files for this step, and the unit-cell output.
-///
-/// Each family only when the deck asks for it.
-void SProd::writeProfiles(int nrede) {
-    if (arq.nperfisp > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profp.tempo[kontaTempoProf] && (*vg1dSP).lixo5 + dt >= arq.profp.tempo[kontaTempoProf])) {
-            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.profp.tempo[kontaTempoProf] = (*vg1dSP).lixo5;
-            kontaTempoProf++;
-            if (kontaTempoProf >= arq.profp.n)
-                kontaTempoProf--;
-        }
-    }
-    if (arq.nperfisg > 0 && arq.lingas > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profg.tempo[kontaTempoProfG] && (*vg1dSP).lixo5 + dt >= arq.profg.tempo[kontaTempoProfG])) {
-            arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.profg.tempo[kontaTempoProfG] = (*vg1dSP).lixo5;
-            kontaTempoProfG++;
-            if (kontaTempoProfG >= arq.profg.n)
-                kontaTempoProfG--;
-        }
-    }
-    if (arq.nperfistransp > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.proftransp.tempo[kontaTempoTransProf] && (*vg1dSP).lixo5 + dt >= arq.proftransp.tempo[kontaTempoTransProf])) {
-            arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.proftransp.tempo[kontaTempoTransProf] = (*vg1dSP).lixo5;
-            kontaTempoTransProf++;
-            if (kontaTempoTransProf >= arq.proftransp.n)
-                kontaTempoTransProf--;
-        }
-    }
-    if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.proftransg.tempo[kontaTempoTransProfG] && (*vg1dSP).lixo5 + dt >= arq.proftransg.tempo[kontaTempoTransProfG])) {
-            arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.proftransg.tempo[kontaTempoTransProfG] = (*vg1dSP).lixo5;
-            kontaTempoTransProfG++;
-            if (kontaTempoTransProfG >= arq.proftransg.n)
-                kontaTempoTransProfG--;
-        }
-    }
-    if (arq.nCelUnit>0) {
-    	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
-    		if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] &&
-    				(*vg1dSP).lixo5 + dt >= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]])) {
-    			arq.relatorioCelulaUnitaria(celula,arq.celUnit[iCelU].posicP, indTramo,nrede);
-    			arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] = (*vg1dSP).lixo5;
-    			kontaTempoCelUni[iCelU]++;
-    			if (kontaTempoCelUni[iCelU] >= arq.celUnit[iCelU].parserie)
-    				kontaTempoCelUni[iCelU]--;
-    		}
-    	}
-    }
-}
-
-/// One pass of the column/annulus coupling loop in SolveTrans.
-///
-/// Carries the fraction evolution, the pig update and the pressure-volume coupling,
-/// in that order, which is the order T127 requires preserved. The loop itself stays
-/// in SolveTrans, calling this at the same point with the same bounds, so the
-/// number of coupling passes and where they happen are untouched.
-///
-/// kontaAcop is passed by hand: it is the loop variable, declared in the for-init,
-/// and iface.py hides for-init declarations on purpose.
-void SProd::advanceCouplingIteration(int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
-    if (modeloCompleto == 0) {
-        for (int i = 0; i <= ncel; i++)
-            celula[i].m2d = 0.;
-    } else {
-        for (int i = 0; i <= ncel; i++) {
-            double area = celula[i].duto.area;
-            double vLiqTest = fabs(celula[i].QL / (area));
-            double vGasTest = fabs(celula[i].QG / (area));
-            double razDp = 0.1;
-            double razDT = 1;
-            if (i < celpos && celula[celpos].acsr.chk.AreaGarg < 1e-15 * celula[celpos].acsr.chk.AreaTub) {
-                razDT = 1;
-            } else if (i == celpos + 1 && celula[celpos].acsr.chk.AreaGarg < 1e-15 * celula[celpos].acsr.chk.AreaTub) {
-                razDT = 1;
-            }
-            if ((fabs(celula[i].dpdtIni) / celula[i].pres < razDp) && fabs(celula[i].dTdtIni) < razDT) {
-                if (TransMassModel == 0)
-                    celula[i].m2d = 1.;
-                else
-                    celula[i].m2d = 0.;
-                celula[i].mudaDT = 1.;
-            } else {
-                celula[i].m2d = 0.;
-                celula[i].mudaDT = 0.;
-            }
-        }
-    }
-    if (arq.estabCol == 1) {
-        for (int i = 0; i <= celpos; i++) {
-            celula[i].m2d = 0.;
-            celula[i].mudaDT = 0.;
-            celula[i].estabCol = 1;
-        }
-    }
-    EvoluiFrac(alfRev, betRev, kontaAcop);
-    for (int i = 0; i <= ncel; i++) {
-        if (celula[i].acsr.tipo == 15) {
-            celula[i].acsr.radialPoro.avancoSW(dt);
-            if (celula[i].acsr.radialPoro.reinicia == -1) {
-                if (reinicia > -1)
-                    reinicia = -1;
-                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
-            }
-        } else if (celula[i].acsr.tipo == 16) {
-            celula[i].acsr.poroso2D.avancoSW(dt);
-            if (celula[i].acsr.poroso2D.reinicia == -1) {
-                if (reinicia > -1)
-                    reinicia = -1;
-                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
-            }
-        }
-    }
-
-    if (arq.correcaoMassaEspLiq == 1) {
-        for (int i = 0; i < ncel; i++)
-            celula[i + 1].mudaDTL = celula[i].mudaDT;
-    }
-
-    // caso so Master
-    // caso so Master
-    if (kontaAcop == 0 && arq.controleDTvalv == 1)
-        restringeDTporValv(); // caso varias valvulas
-    if (reinicia == -1) {
-        ReiniEvolFrac0();
-        for (int i = 0; i <= ncel; i++) {
-            if (celula[i].acsr.tipo == 15) {
-                celula[i].acsr.radialPoro.reavaliaDT(dt);
-            } else if (celula[i].acsr.tipo == 16) {
-                celula[i].acsr.poroso2D.reavaliaDT(dt);
-            }
-        }
-        for (int i = 0; i <= ncel; i++) {
-            if (celula[i].acsr.tipo == 15) {
-                celula[i].acsr.radialPoro.reiniciaEvoluiSW(dt);
-            }
-            if (celula[i].acsr.tipo == 16) {
-                celula[i].acsr.poroso2D.reiniciaEvoluiSW(dt);
-            }
-        }
-        dtauxFinal = dt;
-        ReiniEvolFrac();
-        EvoluiFrac(alfRev, betRev, kontaAcop);
-        reinicia = 0;
-        for (int i = 0; i <= ncel; i++) {
-            if (celula[i].acsr.tipo == 15) {
-                celula[i].acsr.radialPoro.avancoSWcorrec();
-            } else if (celula[i].acsr.tipo == 16) {
-                celula[i].acsr.poroso2D.avancoSWcorrec();
-            }
-        }
-    }
-    AtualizaPig();
-
-    if (kontaAcop == 0)
-        dtCicMin = dt;
-
-    if (kontaAcop == 1 * modeloCompleto)
-        atenuaDtMax();
-
-    double fonteG = 0.;
-    double fonteP = 0.;
-    double fonteC = 0.;
-    if (modeloCompleto == 1) {
-        fonteC = celula[ncel].fontemassCR;
-        fonteP = celula[ncel].fontemassLR;
-        fonteG = celula[ncel].fontemassGR;
-    }
-
-    calcCCpres(titRev, alfRev, betRev);
-    renovaterm();
-
-    if (celula[ncel].alf < 0.05 && masChkSup == 1)
-        celula[ncel].alf = 0.05;
-    // caso varias valvulas
-    for (int j = 0; j <= arq.nvalv; j++) {
-        int celposAux;
-        if (j > 0)
-            celposAux = arq.valv[j - 1].posicP;
-        else
-            celposAux = celpos;
-        if (celula[celposAux].alf < 0.05 && vRazMast1[j] <= arq.master1.razareaativ)
-            celula[celposAux].alf = 0.05;
-    }
-    // caso varias valvulas
-    SolveAcopPV(vExpli);
-
-    if (kontaAcop < 1 * modeloCompleto) {
-        for (int i = 0; i <= ncel; i++) {
-            celula[i].dpdt = 1 * (termolivreP[2 * i + 1] - celula[i].pres) / celula[i].dt;
-            celula[i].dpdtIni = celula[i].dpdt;
-        }
-    }
-    if (kontaAcop == 1 * modeloCompleto || arq.cicloAcopTerm == 1) {
-        renova();
-    }
-    if (arq.cicloAcopTerm == 1 && modeloCompleto == 1) {
-        if (kontaAcop < 1 * modeloCompleto)
-            for (int i = 0; i <= ncel; i++)
-                celula[i].dpdt = celula[i].d2pdt2;
-        marchaEnergTrans(kontaAcop, ciclomax);
-    }
-    if (kontaAcop != 1 * modeloCompleto) {
-        for (int i = 0; i <= ncel; i++) {
-            celula[i].FeiticoDoTempo2();
-            if (celula[i].acsr.tipo == 15) {
-                celula[i].acsr.radialPoro.FeiticoDoTempoSW();
-            } else if (celula[i].acsr.tipo == 16) {
-                celula[i].acsr.poroso2D.FeiticoDoTempoSW();
-            }
-        }
-
-        celula[ncel].fontemassCR = fonteC;
-        celula[ncel].fontemassLR = fonteP;
-        celula[ncel].fontemassGR = fonteG;
-
-        aberto = abertoini;
-        tempoaberto = tempoabertoini;
-    }
-}
-
 /// Runs the hydrate-envelope solvers for the production and gas lines.
 ///
 /// Kept a member of SProd, and it must stay one: both solvers are constructed from
@@ -6959,181 +6571,7 @@ void SProd::solveHydrateEnvelopes() {
 }
 
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
-    chrono::steady_clock::time_point begin, end;
-    begin = chrono::steady_clock::now();
-    double velmaxdesc = 0;
-
-    if ((*vg1dSP).chaverede == 0) {
-
-        solveHydrateEnvelopes();
-
-        if (arq.flashCompleto == 2 && (*vg1dSP).lixo5 < 1e-15 && arq.miniTabAtraso>0) {
-            atualizaMiniTab();
-        }
-        if ((*vg1dSP).lixo5 >= 0) {
-            int para;
-            para = 0;
-           // arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo, nrede);
-        }
-
-        if ((*vg1dSP).lixo5 < 1e-15) {
-        	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++)kontaTempoCelUni[iCelU]=1;
-            for (int i = 0; i < arq.ntendp; i++) {
-                arq.imprimeTrend(celula, MatTrendP[i], (*vg1dSP).lixo5, i, ntrend[i]);
-            }
-            renovaTemp();
-        }
-        int ciclomax = arq.cicloAcopTerm;
-
-        int vExpli = 0;
-        modeloCompleto = arq.correcaoMassaEspLiq;
-        arq.atualizaSonico((*vg1dSP).lixo5, vExpli);
-        determinaDT(vExpli);
-        dtauxCFL = dt;
-        dtauxFinal = dt;
-
-        reinicia = 0;
-        int celpos = arq.master1.posic;
-        // razMast0=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
-        aberturaVal0(); // caso varias valvulas
-
-        if (arq.controDesc == 1)
-            velmaxdesc = BuscaPresInjDesc();
-        solveLinGas();
-        pGSupIni = pGSup;
-        arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, chokeInj, celula, celulaG, pGSup,
-                     temperatura, presiniG, tempiniG,
-                     presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
-        atualizaCC1();
-
-        for (int i = 0; i <= arq.nvalv; i++)
-            vRazMastCrit[i] = 0.5; // caso varias valvulas
-        aberturaVal1();            // caso varias valvulas
-        // razMast=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
-        for (int i = 0; i <= arq.nvalv; i++)
-            if (vRazMast1[i] != vRazMast0[i])
-                modeloCompleto = 0; // caso varias valvulas
-        if (modeloCompleto == 1)
-            avaliaVariaDpDt(0, 0, vExpli); // caso varias valvulas
-        if (modeloCompleto == 0)
-            arq.cicloAcopTerm = 0;
-        else
-            arq.cicloAcopTerm = 1;
-        ciclomax = arq.cicloAcopTerm;
-
-        abertoini = aberto;
-        tempoabertoini = tempoaberto;
-        for (int kontaAcop = 0; kontaAcop <= 1 * modeloCompleto; kontaAcop++) {
-            advanceCouplingIteration(kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
-        }
-
-        if (modeloCompleto == 0 || arq.cicloAcopTerm == 0) {
-            for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
-                marchaEnergTrans(ciclo, ciclomax);
-            }
-        }
-    }
-    if (poisson3D.itera > 7) {
-        poisson3D.penalizaDt = 20;
-    }
-
-    for (int i = 1; i <= ncel; i++) {
-        celula[i].dTdt = 0.;
-        celula[i].dTdtL = 0.;
-        if (modeloCompleto == 0 || celula[i].estabCol == 1) {
-            celula[i].dTdtIni = 0.;
-            celula[i].d2pdt2 = 0.;
-        }
-    }
-
-    if (arq.modoParafina == 1)
-        avaliaParafina();
-
-    salvaFonte();
-    renovaTemp();
-
-    presfim = celula[ncel].pres;
-    if (arq.lingas > 0 && verificaAcop == 1)
-        conectaColuna();
-
-    if (arq.flashCompleto == 2) {
-        for (int i = 0; i < ncel; i++) {
-            celula[i].nMolIni = celula[i].nMol;
-        }
-    }
-    double totbet = 0.;
-    for (int i = 0; i < ncel; i++)
-        totbet += fabs(celula[i].bet);
-    totbet /= ncel;
-    renovaalbetini();
-    if ((trackRGO > 0 || trackDeng > 0) && arq.flashCompleto != 2)
-        renovaRGOdgYco2(fluiRev);
-    if (arq.flashCompleto == 2) {
-        renovaFracMol2(fluiRev);
-        kontaRenovaComp++;
-        if (kontaRenovaComp == arq.miniTabAtraso + 1 && arq.miniTabAtraso > 0) {
-            geraMiniTabFlu();
-            kontaRenovaComp = 0;
-        }
-    } // casoComp
-    renovaMasEsp();
-
-    tVet.push_back(dt);
-    presVet.push_back(presfim * dt);
-    double jtemporario = celula[ncel - 1].Mliqini / (celula[ncel - 1].duto.area * ((1. - celula[ncel - 1].bet) * celula[ncel - 1].rpC + celula[ncel - 1].bet * celula[ncel - 1].rcC));
-    jtemporario += (celula[ncel - 1].MC - celula[ncel - 1].Mliqini) / (celula[ncel - 1].duto.area * celula[ncel - 1].flui.MasEspGas(celula[ncel - 1].pres, celula[ncel - 1].temp));
-    jVet.push_back(jtemporario * dt);
-    alfVet.push_back(celula[ncel - 1].alf * dt);
-    ktMedMov += dt;
-    pTotal += presfim * dt;
-    jTotal += jtemporario * dt;
-    alfTotal += celula[ncel - 1].alf * dt;
-    if ((*vg1dSP).lixo5 > tMedMov) {
-        pTotal -= presVet.front();
-        presVet.erase(presVet.begin());
-        jTotal -= jVet.front();
-        jVet.erase(jVet.begin());
-        alfTotal -= alfVet.front();
-        alfVet.erase(alfVet.begin());
-        ktMedMov -= tVet.front();
-        tVet.erase(tVet.begin());
-        presMedMov = pTotal / ktMedMov;
-        jMedMov = jTotal / ktMedMov;
-        alfMedMov = alfTotal / ktMedMov;
-    }
-    // enterramento
-    for (int j = 0; j <= ncel; j++) {
-        if (celula[j].calor.difus2D == 1) {
-            celula[j].calor.poisson2D.finalizaPassoTransiente(dt, indTramo);
-        }
-    }
-
-    int MaxKontaImpres = 1000;
-    int ordemImpT = 0;
-    if ((fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt) ||
-        (fabs((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal - round((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal)) < 0.5 * dt * (100 / 5.) / arq.tfinal) || KontaImprime > MaxKontaImpres || ((*vg1dSP).lixo5 + dt >= arq.tfinal) ||
-        (*vg1dSP).lixo5 < 1e-15) {
-        kimpT++;
-        ordemImpT = 1;
-    }
-
-    if ((*vg1dSP).chaverede != 0)
-        (*vg1dSP).lixo5 = (*vg1dSP).lixo5R;
-    writeProfiles(nrede);
-    writeTrends(ordemImpT, velmaxdesc, nrede);
-    //(*vg1dSP).lixo5 += dt;//alteracao7
-    end = chrono::steady_clock::now();
-    (*vg1dSP).contador = kSP;
-    writeScreenOutput(begin, end);
-
-    int maxEvento = arq.logevento.size();
-    writeEventLog(maxEvento);
-    writeProgressReport(MaxKontaImpres);
-
-    kSP++;
-    KontaImprime++;
-    if ((*vg1dSP).chaverede == 0)
-        (*vg1dSP).lixo5 += dt;
+    sisprod::transient::solveTransientStep(transientSolveStateOf(*this), titRev, alfRev, betRev, nrede, fluiRev);
 }
 
 

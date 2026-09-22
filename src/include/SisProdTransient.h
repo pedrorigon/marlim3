@@ -14,12 +14,17 @@ class Cel;
 class CelG;
 class Ler;
 class choke;
+class ChokeGas;
+class ProFlu;
+class solverP3D;
 struct varGlob1D;
 class SProd;
 template <class T> class Vcr;
 template <class T> class FullMtx;
 template <class T> class BandMtx;
 
+#include <chrono>
+#include <string>
 #include <vector>
 
 namespace sisprod::transient {
@@ -73,6 +78,13 @@ struct TransientStepUpdaters {
     void advanceGasSubStep() const;
 };
 
+/// const marks what the step does not write, and it marks SCALARS ONLY -- and
+/// even that proved too generous. Eight fields lost it when SolveTrans moved:
+/// five it assigns directly, and three it writes BY REFERENCE through
+/// Ler::atualiza, which takes pGSup, presE and tempE as double& (titE and betaE
+/// are taken the same way, but were never marked const). The step's own
+/// routines only read them; the solve that composes this struct does not.
+///
 /// const marks what the step does not write, and it marks SCALARS ONLY.
 ///
 /// A class or pointer field can be mutated two ways that do not look like an
@@ -175,9 +187,9 @@ struct TransientStepState {
     /// SProd::dtSim -- so lido.
     std::vector<double> &simulationTimeSteps;
     /// SProd::dtauxCFL -- so lido.
-    const double &auxiliaryCflTimeStep;
+    double &auxiliaryCflTimeStep;
     /// SProd::dtauxFinal -- so lido.
-    const double &finalAuxiliaryTimeStep;
+    double &finalAuxiliaryTimeStep;
     /// SProd::fechaM1 -- so lido.
     double* masterCloseSchedule;
     /// SProd::flut -- so lido.
@@ -187,9 +199,9 @@ struct TransientStepState {
     /// SProd::indTramo -- so lido.
     const int &branchIndex;
     /// SProd::jMedMov -- so lido.
-    const double &movingMeanFlux;
+    double &movingMeanFlux;
     /// SProd::kSP -- so lido.
-    const int &stepIndex;
+    int &stepIndex;
     /// SProd::matglobP -- so lido.
     BandMtx<double> &productionMatrix;
     /// SProd::menorDx -- so lido.
@@ -207,11 +219,11 @@ struct TransientStepState {
     /// SProd::noextremo -- so lido.
     const int &endNode;
     /// SProd::pGSup -- so lido.
-    const double &gasSurfacePressure;
+    double &gasSurfacePressure;
     /// SProd::presE -- so lido.
-    const double &inletPressure;
+    double &inletPressure;
     /// SProd::presMedMov -- so lido.
-    const double &movingMeanPressure;
+    double &movingMeanPressure;
     /// SProd::tMedMov -- so lido.
     const double &movingMeanTemperature;
     /// SProd::taxaDTMax -- so lido.
@@ -219,7 +231,7 @@ struct TransientStepState {
     /// SProd::taxaDpMax -- so lido.
     std::vector<double> &maximumPressureRates;
     /// SProd::tempE -- so lido.
-    const double &inletTemperature;
+    double &inletTemperature;
     /// SProd::titRev -- so lido.
     const double &reverseQuality;
     /// SProd::velInterIni -- so lido.
@@ -237,7 +249,7 @@ struct TransientStepState {
 /// The iteration order over cells is load-bearing and is why the three arms
 /// below are separate functions rather than one parameterised by position: the
 /// split is the loop body's own structure, so the order is untouched.
-void updateCells(const TransientStepState &state, int expli);
+void updateCells(const TransientStepState &state, int expli = 0);
 void updateInteriorCell(const TransientStepState &state, int i, int expli);
 void updateFirstCell(const TransientStepState &state, int i, int expli);
 void updateLastCell(const TransientStepState &state, int i, int expli);
@@ -305,7 +317,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
 /// Coverage, stated because it limits what any of this proves: EIGHT of the
 /// fourteen corpus models reach this function at all. A defect here is
 /// invisible to the other six, with their L2 still green.
-void computeTimeStep(const TransientStepState &state, int vexpli);
+void computeTimeStep(const TransientStepState &state, int vexpli = 0);
 void computeExplicitTimeStep(const TransientStepState &state);
 void computeImplicitTimeStep(const TransientStepState &state);
 
@@ -330,7 +342,7 @@ void valveOpeningHigh(const TransientStepState &state);
 /// restartFractionEvolutionInitial and restartFractionEvolution stay TWO
 /// functions. Num4Main.cpp selects between them at 2778 and 2804, and T125's
 /// acceptance requires the distinction preserved rather than collapsed.
-void evolveFractions(const TransientStepState &state, double alfrev, double betrev, int ciclo);
+void evolveFractions(const TransientStepState &state, double alfrev = 1., double betrev = 0., int ciclo = 0);
 void restartFractionEvolutionInitial(const TransientStepState &state);
 void restartFractionEvolutionSub(const TransientStepState &state);
 void restartFractionEvolution(const TransientStepState &state);
@@ -344,9 +356,182 @@ void restartFractionEvolution(const TransientStepState &state);
 /// SisProd.cpp: PorosoRad-Simples.cpp and solverPoroso.cpp consume it too, so
 /// it is surface under FR-038. It is reached through the updaters.
 void updatePig(const TransientStepState &state);
-void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo);
+void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0, int ciclo = 0);
 void refreshFluidMiniTable(const TransientStepState &state);
 void refreshInletCondition(const TransientStepState &state);
+
+// =============================================================== the solve ====
+
+/// What SolveTrans needs from outside itself: the twenty-one SProd methods it
+/// calls that do not move with it.
+///
+/// Twenty-one is the measurement behind the warning at the top of this header.
+/// The step's own routines needed two callbacks; the routine that orchestrates
+/// the step needs ten times that, because it is the place where every other
+/// part of the engine meets. solveHydrateEnvelopes is here for a harder reason
+/// than convenience: it constructs the hydrate solvers from the whole SProd
+/// (*this), which no state struct can supply.
+///
+/// Default arguments are carried only where a call inside the moved code relies
+/// on them: updateThermal is called with none, as renovaterm() was.
+struct TransientSolveUpdaters {
+    SProd &system;
+
+    void solveHydrateEnvelopes() const;
+    [[nodiscard]] double findInjectionPressureDownstream() const;
+    void writeProductionTrendHeader(int i, int nrede) const;
+    void writeProductionTrendRows(int i, int nrede) const;
+    void writeGasTrendHeader(int i, int nrede) const;
+    void writeGasTrendRows(int i, int nrede) const;
+    void writeProductionCrossSectionTrendHeader(int i) const;
+    void writeProductionCrossSectionTrendRows(int i) const;
+    void writeGasCrossSectionTrendHeader(int i) const;
+    void writeGasCrossSectionTrendRows(int i) const;
+    void evaluateParaffin() const;
+    void connectTubing() const;
+    void marchTransientEnergy(int ciclo, int ciclomax) const;
+    void updateMolarFractions(const ProFlu &fluiRev) const;
+    void updateDensities() const;
+    void updateGasOilRatioAndCo2(const ProFlu &fluiRev) const;
+    void updateTemperatures() const;
+    void updateInitialFractions() const;
+    void updateThermal(int aflu = 0) const;
+    void saveSources() const;
+    void solveGasLine() const;
+};
+
+/// The state SolveTrans reads.
+///
+/// It COMPOSES the step state rather than restating it -- the same shape as
+/// SteadyStateSearchState in stage 7, and the split this header announced when
+/// it was written. The 52 fields below are the members SolveTrans touches that
+/// none of the step's routines do.
+///
+/// None of them is promised const. The generator that marked const in
+/// TransientStepState looked for assignment TO a field and missed writes
+/// THROUGH one and writes by reference; this stage paid for that twice. Here the
+/// promise is simply not made. Pointers are held by reference (`T *&`), so the
+/// state stays exact even if the solve reseats one.
+struct TransientSolveState {
+    /// Everything the step reads. SolveTrans hands this to every step routine.
+    TransientStepState step;
+
+    /// SProd::temperatura -- written or read by the solve; not promised const.
+    double &ambientTemperature;
+    /// SProd::derivaAnel -- written or read by the solve; not promised const.
+    int &annulusDrift;
+    /// SProd::saidaSubTextoSis -- written or read by the solve; not promised const.
+    const char* *closingSubtitles;
+    /// SProd::saidaTextoSis -- written or read by the solve; not promised const.
+    const char* *closingTitles;
+    /// SProd::kontaRenovaComp -- written or read by the solve; not promised const.
+    int &compositionalRefreshCounter;
+    /// SProd::jVet -- written or read by the solve; not promised const.
+    std::vector<double> &fluxHistory;
+    /// SProd::ncelperftransg -- written or read by the solve; not promised const.
+    int* &gasCrossSectionCellCounts;
+    /// SProd::kontaTempoTransProfG -- written or read by the solve; not promised const.
+    int &gasCrossSectionProfileTimeCounter;
+    /// SProd::ntrendtransgB -- written or read by the solve; not promised const.
+    int* &gasCrossSectionTrendBufferedCounts;
+    /// SProd::ntrendtransg -- written or read by the solve; not promised const.
+    int* &gasCrossSectionTrendCounts;
+    /// SProd::MatTrendTransG -- written or read by the solve; not promised const.
+    double*** &gasCrossSectionTrendMatrix;
+    /// SProd::resettrendtransg -- written or read by the solve; not promised const.
+    double* &gasCrossSectionTrendResetTimers;
+    /// SProd::kontaTempoProfG -- written or read by the solve; not promised const.
+    int &gasProfileTimeCounter;
+    /// SProd::ntrendgB -- written or read by the solve; not promised const.
+    int* &gasTrendBufferedCounts;
+    /// SProd::ntrendg -- written or read by the solve; not promised const.
+    int* &gasTrendCounts;
+    /// SProd::MatTrendG -- written or read by the solve; not promised const.
+    double*** &gasTrendMatrix;
+    /// SProd::resettrendg -- written or read by the solve; not promised const.
+    double* &gasTrendResetTimers;
+    /// SProd::presiniG -- written or read by the solve; not promised const.
+    double &initialGasPressure;
+    /// SProd::pGSupIni -- written or read by the solve; not promised const.
+    double &initialGasSurfacePressure;
+    /// SProd::tempiniG -- written or read by the solve; not promised const.
+    double &initialGasTemperature;
+    /// SProd::tempoabertoini -- written or read by the solve; not promised const.
+    int &initialOpenTime;
+    /// SProd::chokeInj -- written or read by the solve; not promised const.
+    ChokeGas &injectionChoke;
+    /// SProd::tmpLog -- written or read by the solve; not promised const.
+    std::string &logBuffer;
+    /// SProd::contaLog -- written or read by the solve; not promised const.
+    int &logCounter;
+    /// SProd::TransMassModel -- written or read by the solve; not promised const.
+    int &massTransferModel;
+    /// SProd::dtCicMin -- written or read by the solve; not promised const.
+    double &minimumCycleTimeStep;
+    /// SProd::ktMedMov -- written or read by the solve; not promised const.
+    double &movingMeanCounter;
+    /// SProd::alfMedMov -- written or read by the solve; not promised const.
+    double &movingMeanVoidFraction;
+    /// SProd::verificaAcop -- written or read by the solve; not promised const.
+    int &networkCoupled;
+    /// SProd::poisson3D -- written or read by the solve; not promised const.
+    solverP3D &poissonSolver3D;
+    /// SProd::presVet -- written or read by the solve; not promised const.
+    std::vector<double> &pressureHistory;
+    /// SProd::KontaImprime -- written or read by the solve; not promised const.
+    int &printCounter;
+    /// SProd::kimpT -- written or read by the solve; not promised const.
+    double &printTimeCounter;
+    /// SProd::kontaTempoTransProf -- written or read by the solve; not promised const.
+    int &productionCrossSectionProfileTimeCounter;
+    /// SProd::ntrendtransB -- written or read by the solve; not promised const.
+    int* &productionCrossSectionTrendBufferedCounts;
+    /// SProd::ntrendtrans -- written or read by the solve; not promised const.
+    int* &productionCrossSectionTrendCounts;
+    /// SProd::MatTrendTransP -- written or read by the solve; not promised const.
+    double*** &productionCrossSectionTrendMatrix;
+    /// SProd::resettrendtrans -- written or read by the solve; not promised const.
+    double* &productionCrossSectionTrendResetTimers;
+    /// SProd::kontaTempoProf -- written or read by the solve; not promised const.
+    int &productionProfileTimeCounter;
+    /// SProd::ntrendB -- written or read by the solve; not promised const.
+    int* &productionTrendBufferedCounts;
+    /// SProd::ntrend -- written or read by the solve; not promised const.
+    int* &productionTrendCounts;
+    /// SProd::MatTrendP -- written or read by the solve; not promised const.
+    double*** &productionTrendMatrix;
+    /// SProd::resettrend -- written or read by the solve; not promised const.
+    double* &productionTrendResetTimers;
+    /// SProd::noinicial -- written or read by the solve; not promised const.
+    int &startNode;
+    /// SProd::tVet -- written or read by the solve; not promised const.
+    std::vector<double> &temperatureHistory;
+    /// SProd::jTotal -- written or read by the solve; not promised const.
+    double &totalFlux;
+    /// SProd::pTotal -- written or read by the solve; not promised const.
+    double &totalPressure;
+    /// SProd::alfTotal -- written or read by the solve; not promised const.
+    double &totalVoidFraction;
+    /// SProd::trackDeng -- written or read by the solve; not promised const.
+    int &trackGasGravity;
+    /// SProd::trackRGO -- written or read by the solve; not promised const.
+    int &trackGasOilRatio;
+    /// SProd::kontaTempoCelUni -- written or read by the solve; not promised const.
+    std::vector<int> &unitCellTimeCounters;
+    /// SProd::alfVet -- written or read by the solve; not promised const.
+    std::vector<double> &voidFractionHistory;
+
+    /// Everything the solve needs that is not its own.
+    TransientSolveUpdaters updaters;
+};
+
+/// One transient step, and the six parts it was cut into.
+///
+/// The phase order is T127's acceptance and is preserved: hydrates, mini-table,
+/// the t = 0 trend, computeTimeStep, the coupling loop (fraction evolution, pig,
+/// pressure-volume coupling), then the output phases.
+void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev,
+                        int nrede, ProFlu fluiRev);
 
 }  // namespace sisprod::transient
 

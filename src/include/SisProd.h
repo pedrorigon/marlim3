@@ -1356,18 +1356,6 @@ class SProd {
     void atualizaCC1();
 
     /// Advances the complete transient production-system solution and handles output and logging.
-    /// Writes the periodic progress report and the profile snapshots.
-    void writeProgressReport(int MaxKontaImpres);
-    /// Appends the step to the event log when an event falls due.
-    void writeEventLog(int maxEvento);
-    /// Writes the step's progress to the terminal when screen output is on.
-    void writeScreenOutput(const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end);
-    /// Writes the four families of trend files for this step.
-    void writeTrends(int ordemImpT, double velmaxdesc, int nrede);
-    /// Writes the four families of profile files for this step, and the unit-cell output.
-    void writeProfiles(int nrede);
-    /// One pass of the column/annulus coupling loop in SolveTrans.
-    void advanceCouplingIteration(int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev);
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,

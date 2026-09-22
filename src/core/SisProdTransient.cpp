@@ -4,11 +4,21 @@
 #include "Leitura.h"
 #include "Matriz.h"
 #include "Vetor.h"
+#include "solver3DPoisson.h"
 #include "celula3.h"
 #include "celulaGas.h"
 #include "variaveisGlobais1D.h"
 
 #include <math.h>
+
+// The run's start date, which the progress report prints. Globals defined
+// elsewhere and declared extern in SisProd.h -- a header this module does not
+// include on purpose, so the four declarations it needs are repeated here, and
+// only those four.
+extern int diaIni;
+extern int horaIni;
+extern int minutoIni;
+extern int segundoIni;
 
 namespace sisprod::transient {
 
@@ -1525,6 +1535,674 @@ void refreshInletCondition(const TransientStepState &state) {
             state.inletCompletionFraction = val1 / (val2 + val1);
         }
     }
+}
+
+namespace {
+
+void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
+    if (state.step.fullModel == 0) {
+        for (int i = 0; i <= state.step.lastCell; i++)
+            state.step.cells[i].m2d = 0.;
+    } else {
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            double area = state.step.cells[i].duto.area;
+            double vLiqTest = fabs(state.step.cells[i].QL / (area));
+            double vGasTest = fabs(state.step.cells[i].QG / (area));
+            double razDp = 0.1;
+            double razDT = 1;
+            if (i < celpos && state.step.cells[celpos].acsr.chk.AreaGarg < 1e-15 * state.step.cells[celpos].acsr.chk.AreaTub) {
+                razDT = 1;
+            } else if (i == celpos + 1 && state.step.cells[celpos].acsr.chk.AreaGarg < 1e-15 * state.step.cells[celpos].acsr.chk.AreaTub) {
+                razDT = 1;
+            }
+            if ((fabs(state.step.cells[i].dpdtIni) / state.step.cells[i].pres < razDp) && fabs(state.step.cells[i].dTdtIni) < razDT) {
+                if (state.massTransferModel == 0)
+                    state.step.cells[i].m2d = 1.;
+                else
+                    state.step.cells[i].m2d = 0.;
+                state.step.cells[i].mudaDT = 1.;
+            } else {
+                state.step.cells[i].m2d = 0.;
+                state.step.cells[i].mudaDT = 0.;
+            }
+        }
+    }
+    if (state.step.input.estabCol == 1) {
+        for (int i = 0; i <= celpos; i++) {
+            state.step.cells[i].m2d = 0.;
+            state.step.cells[i].mudaDT = 0.;
+            state.step.cells[i].estabCol = 1;
+        }
+    }
+    evolveFractions(state.step, alfRev, betRev, kontaAcop);
+    for (int i = 0; i <= state.step.lastCell; i++) {
+        if (state.step.cells[i].acsr.tipo == 15) {
+            state.step.cells[i].acsr.radialPoro.avancoSW(state.step.timeStep);
+            if (state.step.cells[i].acsr.radialPoro.reinicia == -1) {
+                if (state.step.restart > -1)
+                    state.step.restart = -1;
+                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
+            }
+        } else if (state.step.cells[i].acsr.tipo == 16) {
+            state.step.cells[i].acsr.poroso2D.avancoSW(state.step.timeStep);
+            if (state.step.cells[i].acsr.poroso2D.reinicia == -1) {
+                if (state.step.restart > -1)
+                    state.step.restart = -1;
+                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
+            }
+        }
+    }
+
+    if (state.step.input.correcaoMassaEspLiq == 1) {
+        for (int i = 0; i < state.step.lastCell; i++)
+            state.step.cells[i + 1].mudaDTL = state.step.cells[i].mudaDT;
+    }
+
+    // caso so Master
+    // caso so Master
+    if (kontaAcop == 0 && state.step.input.controleDTvalv == 1)
+        restrictTimeStepByValve(state.step); // caso varias valvulas
+    if (state.step.restart == -1) {
+        restartFractionEvolutionInitial(state.step);
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            if (state.step.cells[i].acsr.tipo == 15) {
+                state.step.cells[i].acsr.radialPoro.reavaliaDT(state.step.timeStep);
+            } else if (state.step.cells[i].acsr.tipo == 16) {
+                state.step.cells[i].acsr.poroso2D.reavaliaDT(state.step.timeStep);
+            }
+        }
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            if (state.step.cells[i].acsr.tipo == 15) {
+                state.step.cells[i].acsr.radialPoro.reiniciaEvoluiSW(state.step.timeStep);
+            }
+            if (state.step.cells[i].acsr.tipo == 16) {
+                state.step.cells[i].acsr.poroso2D.reiniciaEvoluiSW(state.step.timeStep);
+            }
+        }
+        state.step.finalAuxiliaryTimeStep = state.step.timeStep;
+        restartFractionEvolution(state.step);
+        evolveFractions(state.step, alfRev, betRev, kontaAcop);
+        state.step.restart = 0;
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            if (state.step.cells[i].acsr.tipo == 15) {
+                state.step.cells[i].acsr.radialPoro.avancoSWcorrec();
+            } else if (state.step.cells[i].acsr.tipo == 16) {
+                state.step.cells[i].acsr.poroso2D.avancoSWcorrec();
+            }
+        }
+    }
+    updatePig(state.step);
+
+    if (kontaAcop == 0)
+        state.minimumCycleTimeStep = state.step.timeStep;
+
+    if (kontaAcop == 1 * state.step.fullModel)
+        dampMaximumTimeStep(state.step);
+
+    double fonteG = 0.;
+    double fonteP = 0.;
+    double fonteC = 0.;
+    if (state.step.fullModel == 1) {
+        fonteC = state.step.cells[state.step.lastCell].fontemassCR;
+        fonteP = state.step.cells[state.step.lastCell].fontemassLR;
+        fonteG = state.step.cells[state.step.lastCell].fontemassGR;
+    }
+
+    applyOutletPressureCondition(state.step, titRev, alfRev, betRev);
+    state.updaters.updateThermal();
+
+    if (state.step.cells[state.step.lastCell].alf < 0.05 && state.step.surfaceChokeMassFlag == 1)
+        state.step.cells[state.step.lastCell].alf = 0.05;
+    // caso varias valvulas
+    for (int j = 0; j <= state.step.input.nvalv; j++) {
+        int celposAux;
+        if (j > 0)
+            celposAux = state.step.input.valv[j - 1].posicP;
+        else
+            celposAux = celpos;
+        if (state.step.cells[celposAux].alf < 0.05 && state.step.masterRatio1[j] <= state.step.input.master1.razareaativ)
+            state.step.cells[celposAux].alf = 0.05;
+    }
+    // caso varias valvulas
+    solvePressureVolumeCoupling(state.step, vExpli);
+
+    if (kontaAcop < 1 * state.step.fullModel) {
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            state.step.cells[i].dpdt = 1 * (state.step.productionSolution[2 * i + 1] - state.step.cells[i].pres) / state.step.cells[i].dt;
+            state.step.cells[i].dpdtIni = state.step.cells[i].dpdt;
+        }
+    }
+    if (kontaAcop == 1 * state.step.fullModel || state.step.input.cicloAcopTerm == 1) {
+        updateCells(state.step);
+    }
+    if (state.step.input.cicloAcopTerm == 1 && state.step.fullModel == 1) {
+        if (kontaAcop < 1 * state.step.fullModel)
+            for (int i = 0; i <= state.step.lastCell; i++)
+                state.step.cells[i].dpdt = state.step.cells[i].d2pdt2;
+        state.updaters.marchTransientEnergy(kontaAcop, ciclomax);
+    }
+    if (kontaAcop != 1 * state.step.fullModel) {
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            state.step.cells[i].FeiticoDoTempo2();
+            if (state.step.cells[i].acsr.tipo == 15) {
+                state.step.cells[i].acsr.radialPoro.FeiticoDoTempoSW();
+            } else if (state.step.cells[i].acsr.tipo == 16) {
+                state.step.cells[i].acsr.poroso2D.FeiticoDoTempoSW();
+            }
+        }
+
+        state.step.cells[state.step.lastCell].fontemassCR = fonteC;
+        state.step.cells[state.step.lastCell].fontemassLR = fonteP;
+        state.step.cells[state.step.lastCell].fontemassGR = fonteG;
+
+        state.step.open = state.step.initiallyOpen;
+        state.step.openTime = state.initialOpenTime;
+    }
+}
+
+void writeProfiles(const TransientSolveState &state, int nrede) {
+    if (state.step.input.nperfisp > 0) {
+        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.profp.tempo[state.productionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.profp.tempo[state.productionProfileTimeCounter])) {
+            state.step.input.imprimeProfile(state.step.cells, state.step.productionFreeTerms, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
+            state.step.input.profp.tempo[state.productionProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.productionProfileTimeCounter++;
+            if (state.productionProfileTimeCounter >= state.step.input.profp.n)
+                state.productionProfileTimeCounter--;
+        }
+    }
+    if (state.step.input.nperfisg > 0 && state.step.input.lingas > 0) {
+        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.profg.tempo[state.gasProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.profg.tempo[state.gasProfileTimeCounter])) {
+            state.step.input.imprimeProfileG(state.step.gasCells, state.step.gasFreeTerms, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
+            state.step.input.profg.tempo[state.gasProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.gasProfileTimeCounter++;
+            if (state.gasProfileTimeCounter >= state.step.input.profg.n)
+                state.gasProfileTimeCounter--;
+        }
+    }
+    if (state.step.input.nperfistransp > 0) {
+        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter])) {
+            state.step.input.imprimeProfileTrans(state.step.cells, state.step.productionCrossSectionCount, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
+            state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.productionCrossSectionProfileTimeCounter++;
+            if (state.productionCrossSectionProfileTimeCounter >= state.step.input.proftransp.n)
+                state.productionCrossSectionProfileTimeCounter--;
+        }
+    }
+    if (state.step.input.nperfistransg > 0 && state.step.input.lingas > 0) {
+        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter])) {
+            state.step.input.imprimeProfileTransG(state.step.gasCells, state.gasCrossSectionCellCounts, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
+            state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.gasCrossSectionProfileTimeCounter++;
+            if (state.gasCrossSectionProfileTimeCounter >= state.step.input.proftransg.n)
+                state.gasCrossSectionProfileTimeCounter--;
+        }
+    }
+    if (state.step.input.nCelUnit>0) {
+    	for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++){
+    		if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] &&
+    				(*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]])) {
+    			state.step.input.relatorioCelulaUnitaria(state.step.cells,state.step.input.celUnit[iCelU].posicP, state.step.branchIndex,nrede);
+    			state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] = (*state.step.globals).lixo5;
+    			state.unitCellTimeCounters[iCelU]++;
+    			if (state.unitCellTimeCounters[iCelU] >= state.step.input.celUnit[iCelU].parserie)
+    				state.unitCellTimeCounters[iCelU]--;
+    		}
+    	}
+    }
+}
+
+void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxdesc, int nrede) {
+    if (state.step.input.ntendp > 0) {
+        for (int i = 0; i < state.step.input.ntendp; i++) {
+            if (state.productionTrendResetTimers[i] == 0) {
+                if ((*state.step.globals).lixo5 < 1e-15)
+                    state.updaters.writeProductionTrendHeader(i, nrede);
+                if ((*state.step.globals).lixo5 > 1e-15)
+                    state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
+                state.productionTrendCounts[i]++;
+            }
+            if (ordemImpT == 1) {
+                if ((*state.step.globals).lixo5 >= 800.8000000000000445) {
+                    int para;
+                    para == 1;
+                }
+                state.updaters.writeProductionTrendRows(i, nrede);
+                state.productionTrendBufferedCounts[i] = state.productionTrendCounts[i];
+            }
+            state.productionTrendResetTimers[i] += state.step.timeStep;
+            if (state.productionTrendResetTimers[i] > state.step.input.trendp[i].dt)
+                state.productionTrendResetTimers[i] = 0;
+        }
+    }
+    if (state.step.input.ntendg > 0 && state.step.input.lingas > 0) {
+        for (int i = 0; i < state.step.input.ntendg; i++) {
+            if (state.gasTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
+                if ((*state.step.globals).lixo5 < 1e-15)
+                    state.updaters.writeGasTrendHeader(i, nrede);
+                state.step.input.imprimeTrendG(state.step.gasCells, state.gasTrendMatrix[i], (*state.step.globals).lixo5, i, state.gasTrendCounts[i], velmaxdesc);
+                state.gasTrendCounts[i]++;
+            }
+            if (ordemImpT == 1) {
+                state.updaters.writeGasTrendRows(i, nrede);
+                state.gasTrendBufferedCounts[i] = state.gasTrendCounts[i];
+            }
+            state.gasTrendResetTimers[i] += state.step.timeStep;
+            if (state.gasTrendResetTimers[i] > state.step.input.trendg[i].dt)
+                state.gasTrendResetTimers[i] = 0;
+        }
+    }
+    if (state.step.input.ntendtransp > 0) {
+        for (int i = 0; i < state.step.input.ntendtransp; i++) {
+            if (state.productionCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
+                if ((*state.step.globals).lixo5 < 1e-15)
+                    state.updaters.writeProductionCrossSectionTrendHeader(i);
+                state.productionCrossSectionTrendMatrix[i][state.productionCrossSectionTrendCounts[i]][0] = (*state.step.globals).lixo5;
+                int poscel = state.step.input.trendtransp[i].posic;
+                int poscam = state.step.input.trendtransp[i].camada - 1;
+                int posdiscre = state.step.input.trendtransp[i].discre - 1;
+                state.productionCrossSectionTrendMatrix[i][state.productionCrossSectionTrendCounts[i]][1] = state.step.cells[poscel].calor.Tcamada[poscam][posdiscre];
+                state.productionCrossSectionTrendCounts[i]++;
+            }
+            if (ordemImpT == 1) {
+                state.updaters.writeProductionCrossSectionTrendRows(i);
+                state.productionCrossSectionTrendBufferedCounts[i] = state.productionCrossSectionTrendCounts[i];
+            }
+            state.productionCrossSectionTrendResetTimers[i] += state.step.timeStep;
+            if (state.productionCrossSectionTrendResetTimers[i] > state.step.input.trendtransp[i].dt)
+                state.productionCrossSectionTrendResetTimers[i] = 0;
+        }
+    }
+    if (state.step.input.ntendtransg > 0 && state.step.input.lingas > 0) {
+        for (int i = 0; i < state.step.input.ntendtransg; i++) {
+            if (state.gasCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
+                if ((*state.step.globals).lixo5 < 1e-15)
+                    state.updaters.writeGasCrossSectionTrendHeader(i);
+                state.gasCrossSectionTrendMatrix[i][state.gasCrossSectionTrendCounts[i]][0] = (*state.step.globals).lixo5;
+                int poscel = state.step.input.trendtransg[i].posic;
+                int poscam = state.step.input.trendtransg[i].camada - 1;
+                int posdiscre = state.step.input.trendtransg[i].discre - 1;
+                state.gasCrossSectionTrendMatrix[i][state.gasCrossSectionTrendCounts[i]][1] = state.step.gasCells[poscel].calor.Tcamada[poscam][posdiscre];
+                state.gasCrossSectionTrendCounts[i]++;
+            }
+            if (ordemImpT == 1) {
+                state.updaters.writeGasCrossSectionTrendRows(i);
+                state.gasCrossSectionTrendBufferedCounts[i] = state.gasCrossSectionTrendCounts[i];
+            }
+            state.gasCrossSectionTrendResetTimers[i] += state.step.timeStep;
+            if (state.gasCrossSectionTrendResetTimers[i] > state.step.input.trendtransg[i].dt)
+                state.gasCrossSectionTrendResetTimers[i] = 0;
+        }
+    }
+}
+
+void writeScreenOutput(const TransientSolveState &state, const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end) {
+    if (state.step.input.saidaTela == 1) {
+        cout << state.step.stepIndex << "  " << (*state.step.globals).lixo5 << " " << state.step.timeStep;
+        for (int i = 0; i < state.step.input.ntela; i++) {
+            int posic = state.step.input.tela[i].posic;
+            if (state.step.input.tela[i].col == 1) {
+                switch (state.step.input.tela[i].var) {
+                case 1:
+                    cout << " " << state.step.fullModel;
+                    break;
+                case 2:
+                    cout << " " << state.step.cells[posic].temp;
+                    break;
+                case 3:
+                    cout << " " << state.step.cells[posic].alf;
+                    break;
+                case 4:
+                    cout << " " << state.step.cells[posic].bet;
+                    break;
+                case 5:
+                    cout << " " << (state.step.cells[posic].QG / state.step.cells[posic].duto.area);
+                    break;
+                case 6:
+                    cout << " " << (state.step.cells[posic].QL / state.step.cells[posic].duto.area);
+                    break;
+                }
+            } else {
+                switch (state.step.input.tela[i].var) {
+                case 1:
+                    cout << " " << state.step.gasCells[posic].pres;
+                    break;
+                case 2:
+                    cout << " " << state.step.gasCells[posic].temp;
+                    break;
+                case 3:
+                    cout << " " << (state.step.gasCells[posic].VGasR / state.step.gasCells[posic].duto.area);
+                    break;
+                }
+            }
+        }
+        cout << " " << chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        cout << endl;
+    }
+}
+
+void writeEventLog(const TransientSolveState &state, int maxEvento) {
+    if (state.logCounter < maxEvento) {
+        while (fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) {
+            // current date/time based on current system
+            time_t now = time(0);
+            tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+            ostringstream saidaT;
+            if (state.step.branchIndex < 0) {
+                saidaT << state.logBuffer;
+            } else {
+                saidaT << "Tramo" << state.step.branchIndex << "-" << state.logBuffer;
+            }
+            string tmp = saidaT.str();
+            ofstream escreveIni(tmp.c_str(), ios_base::app);
+            escreveIni << "************************************************************************************************"
+                       << endl;
+            escreveIni << "Evento Externo = ";
+            escreveIni << state.step.input.logevento[state.logCounter].instante << " ; ";
+            escreveIni << state.step.input.logevento[state.logCounter].duracao << " ; ";
+            escreveIni << state.step.input.logevento[state.logCounter].estIni << " ; ";
+            escreveIni << state.step.input.logevento[state.logCounter].estFim << " ; ";
+            escreveIni << state.step.input.logevento[state.logCounter].descricao << " ; ";
+            escreveIni << "datahora = ";
+            escreveIni << ltm->tm_mday << "/";
+            escreveIni << 1 + ltm->tm_mon << "/";
+            escreveIni << 1900 + ltm->tm_year << " ";
+            escreveIni << 0 + ltm->tm_hour << ":";
+            escreveIni << 0 + ltm->tm_min << ":";
+            escreveIni << 0 + ltm->tm_sec;
+            escreveIni << endl;
+            state.logCounter++;
+
+            escreveIni.close();
+        }
+    }
+}
+
+void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
+    if ((fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal)) {
+        if (state.step.input.saidaTela == 0)
+            cout << (*state.step.globals).lixo5 * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
+        state.printCounter = 0;
+        ostringstream saidaT;
+        if (state.step.branchIndex < 0) {
+            saidaT << state.logBuffer;
+        } else {
+            saidaT << "Tramo" << state.step.branchIndex << "-" << state.logBuffer;
+        }
+        string tmp = saidaT.str();
+        ofstream escreveIni(tmp.c_str(), ios_base::app);
+        escreveIni << "************************************************************************************************"
+                   << endl;
+        escreveIni << "Percentual alcancado = " << (*state.step.globals).lixo5 * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
+        escreveIni << "| Passo de Tempo = " << state.step.stepIndex << "| Tempo (s) = " << (*state.step.globals).lixo5 << "| Incremento de Tempo (s) = " << state.step.timeStep
+                   << " |" << " Incremento de Tempo Medio CFL (s) = "
+                   << state.step.meanCflTimeStep << "| Incremento de Tempo Medio Simulado (s) = " << state.step.meanSimulationTimeStep
+                   << " |" << endl;
+        for (int i = 0; i < state.step.input.ntela; i++) {
+            int posic = state.step.input.tela[i].posic;
+            if (state.step.input.tela[i].col == 1) {
+                switch (state.step.input.tela[i].var) {
+                case 1:
+                    escreveIni << " Pressao na Linha de Producao (kgf/cm2), Celula " << posic << " = " << state.step.cells[posic].pres
+                               << endl;
+                    break;
+                case 2:
+                    escreveIni << " Temperatura na Linha de Producao (C), Celula " << posic << " = " << state.step.cells[posic].temp
+                               << endl;
+                    break;
+                case 3:
+                    escreveIni << " Fracao de Vazio na Linha de Producao (-), Celula " << posic << " = " << state.step.cells[posic].alf
+                               << endl;
+                    break;
+                case 4:
+                    escreveIni << " Fracao Beta na Linha de Producao (-), Celula " << posic << " = " << state.step.cells[posic].bet
+                               << endl;
+                    break;
+                case 5:
+                    escreveIni << " Velocidade Superficial de Gas na Linha de Producao (m/s), Celula " << posic << " = "
+                               << (state.step.cells[posic].QG / state.step.cells[posic].duto.area) << endl;
+                    break;
+                case 6:
+                    escreveIni << " Velocidade Superficial de Liquido na Linha de Producao (m/s), Celula " << posic << " = "
+                               << (state.step.cells[posic].QL / state.step.cells[posic].duto.area) << endl;
+                    break;
+                }
+            } else {
+                switch (state.step.input.tela[i].var) {
+                case 1:
+                    escreveIni << " Pressao na Linha de Servico (kgf/cm2), Celula " << posic << " = " << state.step.gasCells[posic].pres
+                               << endl;
+                    break;
+                case 2:
+                    escreveIni << " Temperatura na Linha de Servico (C), Ceula " << posic << " = " << state.step.gasCells[posic].temp
+                               << endl;
+                    break;
+                case 3:
+                    escreveIni << " Velocidade de Gas na Linha de Servico (m/s), Celula " << posic << " = "
+                               << (state.step.gasCells[posic].VGasR / state.step.gasCells[posic].duto.area) << endl;
+                    break;
+                }
+            }
+        }
+        if (fabs((*state.step.globals).lixo5 - state.step.input.tfinal) <= state.step.timeStep) {
+            time_t now = time(0);
+            tm *ltm = localtime(&now);
+            int diaFim = (ltm->tm_mday);
+            int horaFim;
+            if (diaFim == diaIni)
+                horaFim = ltm->tm_hour;
+            else
+                horaFim = ltm->tm_hour + 24;
+            horaFim *= 3600;
+            int minutoFim = 60 * ltm->tm_min;
+            int segundoFim = ltm->tm_sec;
+            int totalFim = horaFim + minutoFim + segundoFim;
+            int totalIni = horaIni * 3600 + minutoIni * 60 + segundoIni;
+            escreveIni << "     DURACAO    " << totalFim - totalIni << " segundos " << endl;
+            escreveIni << "     Versao    " << versao << endl;
+            if (state.step.input.saidaClassica == 1) {
+                srand(time(NULL));
+                int frase = rand() % 16;
+                escreveIni << "*******************************************************************************" << endl;
+                escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
+                escreveIni << state.closingTitles[frase] << endl;
+                escreveIni << state.closingSubtitles[frase] << endl;
+                escreveIni << "*******************************************************************************" << endl;
+            } else
+                escreveIni << "                                 FIM                                  " << endl;
+        }
+        time_t now = time(0);
+        tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+        escreveIni << "datahora = ";
+        escreveIni << ltm->tm_mday << "/";
+        escreveIni << 1 + ltm->tm_mon << "/";
+        escreveIni << 1900 + ltm->tm_year << " ";
+        escreveIni << 0 + ltm->tm_hour << ":";
+        escreveIni << 0 + ltm->tm_min << ":";
+        escreveIni << 0 + ltm->tm_sec;
+        escreveIni << endl;
+
+        escreveIni.close();
+    }
+}
+}  // namespace
+
+
+void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
+    chrono::steady_clock::time_point begin, end;
+    begin = chrono::steady_clock::now();
+    double velmaxdesc = 0;
+
+    if ((*state.step.globals).chaverede == 0) {
+
+        state.updaters.solveHydrateEnvelopes();
+
+        if (state.step.input.flashCompleto == 2 && (*state.step.globals).lixo5 < 1e-15 && state.step.input.miniTabAtraso>0) {
+            refreshFluidMiniTable(state.step);
+        }
+        if ((*state.step.globals).lixo5 >= 0) {
+            int para;
+            para = 0;
+           // arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo, nrede);
+        }
+
+        if ((*state.step.globals).lixo5 < 1e-15) {
+        	for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++)state.unitCellTimeCounters[iCelU]=1;
+            for (int i = 0; i < state.step.input.ntendp; i++) {
+                state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
+            }
+            state.updaters.updateTemperatures();
+        }
+        int ciclomax = state.step.input.cicloAcopTerm;
+
+        int vExpli = 0;
+        state.step.fullModel = state.step.input.correcaoMassaEspLiq;
+        state.step.input.atualizaSonico((*state.step.globals).lixo5, vExpli);
+        computeTimeStep(state.step, vExpli);
+        state.step.auxiliaryCflTimeStep = state.step.timeStep;
+        state.step.finalAuxiliaryTimeStep = state.step.timeStep;
+
+        state.step.restart = 0;
+        int celpos = state.step.input.master1.posic;
+        // razMast0=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
+        valveOpeningLow(state.step); // caso varias valvulas
+
+        if (state.step.input.controDesc == 1)
+            velmaxdesc = state.updaters.findInjectionPressureDownstream();
+        state.updaters.solveGasLine();
+        state.initialGasSurfacePressure = state.step.gasSurfacePressure;
+        state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
+                     state.ambientTemperature, state.initialGasPressure, state.initialGasTemperature,
+                     state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletCompletionFraction, (*state.step.globals).lixo5, state.step.timeStep);
+        refreshInletCondition(state.step);
+
+        for (int i = 0; i <= state.step.input.nvalv; i++)
+            state.step.masterCriticalRatio[i] = 0.5; // caso varias valvulas
+        valveOpeningHigh(state.step);            // caso varias valvulas
+        // razMast=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
+        for (int i = 0; i <= state.step.input.nvalv; i++)
+            if (state.step.masterRatio1[i] != state.step.masterRatio0[i])
+                state.step.fullModel = 0; // caso varias valvulas
+        if (state.step.fullModel == 1)
+            evaluatePressureRateOfChange(state.step, 0, 0, vExpli); // caso varias valvulas
+        if (state.step.fullModel == 0)
+            state.step.input.cicloAcopTerm = 0;
+        else
+            state.step.input.cicloAcopTerm = 1;
+        ciclomax = state.step.input.cicloAcopTerm;
+
+        state.step.initiallyOpen = state.step.open;
+        state.initialOpenTime = state.step.openTime;
+        for (int kontaAcop = 0; kontaAcop <= 1 * state.step.fullModel; kontaAcop++) {
+            advanceCouplingIteration(state, kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
+        }
+
+        if (state.step.fullModel == 0 || state.step.input.cicloAcopTerm == 0) {
+            for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
+                state.updaters.marchTransientEnergy(ciclo, ciclomax);
+            }
+        }
+    }
+    if (state.poissonSolver3D.itera > 7) {
+        state.poissonSolver3D.penalizaDt = 20;
+    }
+
+    for (int i = 1; i <= state.step.lastCell; i++) {
+        state.step.cells[i].dTdt = 0.;
+        state.step.cells[i].dTdtL = 0.;
+        if (state.step.fullModel == 0 || state.step.cells[i].estabCol == 1) {
+            state.step.cells[i].dTdtIni = 0.;
+            state.step.cells[i].d2pdt2 = 0.;
+        }
+    }
+
+    if (state.step.input.modoParafina == 1)
+        state.updaters.evaluateParaffin();
+
+    state.updaters.saveSources();
+    state.updaters.updateTemperatures();
+
+    state.step.finalPressure = state.step.cells[state.step.lastCell].pres;
+    if (state.step.input.lingas > 0 && state.networkCoupled == 1)
+        state.updaters.connectTubing();
+
+    if (state.step.input.flashCompleto == 2) {
+        for (int i = 0; i < state.step.lastCell; i++) {
+            state.step.cells[i].nMolIni = state.step.cells[i].nMol;
+        }
+    }
+    double totbet = 0.;
+    for (int i = 0; i < state.step.lastCell; i++)
+        totbet += fabs(state.step.cells[i].bet);
+    totbet /= state.step.lastCell;
+    state.updaters.updateInitialFractions();
+    if ((state.trackGasOilRatio > 0 || state.trackGasGravity > 0) && state.step.input.flashCompleto != 2)
+        state.updaters.updateGasOilRatioAndCo2(fluiRev);
+    if (state.step.input.flashCompleto == 2) {
+        state.updaters.updateMolarFractions(fluiRev);
+        state.compositionalRefreshCounter++;
+        if (state.compositionalRefreshCounter == state.step.input.miniTabAtraso + 1 && state.step.input.miniTabAtraso > 0) {
+            state.step.updaters.generateFluidMiniTable();
+            state.compositionalRefreshCounter = 0;
+        }
+    } // casoComp
+    state.updaters.updateDensities();
+
+    state.temperatureHistory.push_back(state.step.timeStep);
+    state.pressureHistory.push_back(state.step.finalPressure * state.step.timeStep);
+    double jtemporario = state.step.cells[state.step.lastCell - 1].Mliqini / (state.step.cells[state.step.lastCell - 1].duto.area * ((1. - state.step.cells[state.step.lastCell - 1].bet) * state.step.cells[state.step.lastCell - 1].rpC + state.step.cells[state.step.lastCell - 1].bet * state.step.cells[state.step.lastCell - 1].rcC));
+    jtemporario += (state.step.cells[state.step.lastCell - 1].MC - state.step.cells[state.step.lastCell - 1].Mliqini) / (state.step.cells[state.step.lastCell - 1].duto.area * state.step.cells[state.step.lastCell - 1].flui.MasEspGas(state.step.cells[state.step.lastCell - 1].pres, state.step.cells[state.step.lastCell - 1].temp));
+    state.fluxHistory.push_back(jtemporario * state.step.timeStep);
+    state.voidFractionHistory.push_back(state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep);
+    state.movingMeanCounter += state.step.timeStep;
+    state.totalPressure += state.step.finalPressure * state.step.timeStep;
+    state.totalFlux += jtemporario * state.step.timeStep;
+    state.totalVoidFraction += state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep;
+    if ((*state.step.globals).lixo5 > state.step.movingMeanTemperature) {
+        state.totalPressure -= state.pressureHistory.front();
+        state.pressureHistory.erase(state.pressureHistory.begin());
+        state.totalFlux -= state.fluxHistory.front();
+        state.fluxHistory.erase(state.fluxHistory.begin());
+        state.totalVoidFraction -= state.voidFractionHistory.front();
+        state.voidFractionHistory.erase(state.voidFractionHistory.begin());
+        state.movingMeanCounter -= state.temperatureHistory.front();
+        state.temperatureHistory.erase(state.temperatureHistory.begin());
+        state.step.movingMeanPressure = state.totalPressure / state.movingMeanCounter;
+        state.step.movingMeanFlux = state.totalFlux / state.movingMeanCounter;
+        state.movingMeanVoidFraction = state.totalVoidFraction / state.movingMeanCounter;
+    }
+    // enterramento
+    for (int j = 0; j <= state.step.lastCell; j++) {
+        if (state.step.cells[j].calor.difus2D == 1) {
+            state.step.cells[j].calor.poisson2D.finalizaPassoTransiente(state.step.timeStep, state.step.branchIndex);
+        }
+    }
+
+    int MaxKontaImpres = 1000;
+    int ordemImpT = 0;
+    if ((fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) ||
+        (fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal) ||
+        (*state.step.globals).lixo5 < 1e-15) {
+        state.printTimeCounter++;
+        ordemImpT = 1;
+    }
+
+    if ((*state.step.globals).chaverede != 0)
+        (*state.step.globals).lixo5 = (*state.step.globals).lixo5R;
+    writeProfiles(state, nrede);
+    writeTrends(state, ordemImpT, velmaxdesc, nrede);
+    //(*vg1dSP).lixo5 += dt;//alteracao7
+    end = chrono::steady_clock::now();
+    (*state.step.globals).contador = state.step.stepIndex;
+    writeScreenOutput(state, begin, end);
+
+    int maxEvento = state.step.input.logevento.size();
+    writeEventLog(state, maxEvento);
+    writeProgressReport(state, MaxKontaImpres);
+
+    state.step.stepIndex++;
+    state.printCounter++;
+    if ((*state.step.globals).chaverede == 0)
+        (*state.step.globals).lixo5 += state.step.timeStep;
 }
 
 }  // namespace sisprod::transient
