@@ -314,3 +314,38 @@ buscaInjPfundoPerm3
 buscaInjPfundoPerm4
 buscaInjPfundoPerm5
 buscaTramoSecVazPerm
+
+# --- stage 8: the transient step --------------------------------------------
+# Every name here moved to SisProdTransient.cpp and left a one-line delegation,
+# which is what L0 compares against and reports as a difference.
+#
+# Verified instead by transient-move.py and transient-solve-move.py applying the
+# inverse substitution to each installed body and comparing tokens with the
+# pre-move commit, by L2 after every individual extraction, and -- for every
+# step that could touch the time step -- by the complete dt series T122
+# captured: 210,206 calls, compared call by call in %a.
+#
+# The helpers this stage's decomposition created are NOT listed: they have no
+# baseline counterpart, so L0 never compares them.
+renova
+renovaVaz
+renovaBuffer
+renovaBufferCego
+calcCCpres
+calcCCBuffer
+determinaDT
+determinaDTExpli
+atenuaDtMax
+avaliaVariaDpDt
+restringeDTporValv
+aberturaVal0
+aberturaVal1
+EvoluiFrac
+ReiniEvolFrac0
+SubReiniEvolFrac
+ReiniEvolFrac
+AtualizaPig
+SolveAcopPV
+atualizaMiniTab
+atualizaCC1
+SolveTrans
