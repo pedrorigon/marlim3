@@ -6425,6 +6425,118 @@ void SProd::atualizaCC1() {
     sisprod::transient::refreshInletCondition(transientStateOf(*this));
 }
 
+/// Writes the periodic progress report and the profile snapshots.
+///
+/// The last of SolveTrans's output phases, lifted whole. It reads the simulation
+/// state and writes files; it changes nothing the next step reads.
+void SProd::writeProgressReport(int MaxKontaImpres) {
+    if ((fabs((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal - round((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal)) < 0.5 * dt * (100 / 5.) / arq.tfinal) || KontaImprime > MaxKontaImpres || ((*vg1dSP).lixo5 + dt >= arq.tfinal)) {
+        if (arq.saidaTela == 0)
+            cout << (*vg1dSP).lixo5 * (100.) / arq.tfinal << " % da simulacao alcancado" << endl;
+        KontaImprime = 0;
+        ostringstream saidaT;
+        if (indTramo < 0) {
+            saidaT << tmpLog;
+        } else {
+            saidaT << "Tramo" << indTramo << "-" << tmpLog;
+        }
+        string tmp = saidaT.str();
+        ofstream escreveIni(tmp.c_str(), ios_base::app);
+        escreveIni << "************************************************************************************************"
+                   << endl;
+        escreveIni << "Percentual alcancado = " << (*vg1dSP).lixo5 * (100.) / arq.tfinal << " % da simulacao alcancado" << endl;
+        escreveIni << "| Passo de Tempo = " << kSP << "| Tempo (s) = " << (*vg1dSP).lixo5 << "| Incremento de Tempo (s) = " << dt
+                   << " |" << " Incremento de Tempo Medio CFL (s) = "
+                   << dtCFLMed << "| Incremento de Tempo Medio Simulado (s) = " << dtSimMed
+                   << " |" << endl;
+        for (int i = 0; i < arq.ntela; i++) {
+            int posic = arq.tela[i].posic;
+            if (arq.tela[i].col == 1) {
+                switch (arq.tela[i].var) {
+                case 1:
+                    escreveIni << " Pressao na Linha de Producao (kgf/cm2), Celula " << posic << " = " << celula[posic].pres
+                               << endl;
+                    break;
+                case 2:
+                    escreveIni << " Temperatura na Linha de Producao (C), Celula " << posic << " = " << celula[posic].temp
+                               << endl;
+                    break;
+                case 3:
+                    escreveIni << " Fracao de Vazio na Linha de Producao (-), Celula " << posic << " = " << celula[posic].alf
+                               << endl;
+                    break;
+                case 4:
+                    escreveIni << " Fracao Beta na Linha de Producao (-), Celula " << posic << " = " << celula[posic].bet
+                               << endl;
+                    break;
+                case 5:
+                    escreveIni << " Velocidade Superficial de Gas na Linha de Producao (m/s), Celula " << posic << " = "
+                               << (celula[posic].QG / celula[posic].duto.area) << endl;
+                    break;
+                case 6:
+                    escreveIni << " Velocidade Superficial de Liquido na Linha de Producao (m/s), Celula " << posic << " = "
+                               << (celula[posic].QL / celula[posic].duto.area) << endl;
+                    break;
+                }
+            } else {
+                switch (arq.tela[i].var) {
+                case 1:
+                    escreveIni << " Pressao na Linha de Servico (kgf/cm2), Celula " << posic << " = " << celulaG[posic].pres
+                               << endl;
+                    break;
+                case 2:
+                    escreveIni << " Temperatura na Linha de Servico (C), Ceula " << posic << " = " << celulaG[posic].temp
+                               << endl;
+                    break;
+                case 3:
+                    escreveIni << " Velocidade de Gas na Linha de Servico (m/s), Celula " << posic << " = "
+                               << (celulaG[posic].VGasR / celulaG[posic].duto.area) << endl;
+                    break;
+                }
+            }
+        }
+        if (fabs((*vg1dSP).lixo5 - arq.tfinal) <= dt) {
+            time_t now = time(0);
+            tm *ltm = localtime(&now);
+            int diaFim = (ltm->tm_mday);
+            int horaFim;
+            if (diaFim == diaIni)
+                horaFim = ltm->tm_hour;
+            else
+                horaFim = ltm->tm_hour + 24;
+            horaFim *= 3600;
+            int minutoFim = 60 * ltm->tm_min;
+            int segundoFim = ltm->tm_sec;
+            int totalFim = horaFim + minutoFim + segundoFim;
+            int totalIni = horaIni * 3600 + minutoIni * 60 + segundoIni;
+            escreveIni << "     DURACAO    " << totalFim - totalIni << " segundos " << endl;
+            escreveIni << "     Versao    " << versao << endl;
+            if (arq.saidaClassica == 1) {
+                srand(time(NULL));
+                int frase = rand() % 16;
+                escreveIni << "*******************************************************************************" << endl;
+                escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
+                escreveIni << saidaTextoSis[frase] << endl;
+                escreveIni << saidaSubTextoSis[frase] << endl;
+                escreveIni << "*******************************************************************************" << endl;
+            } else
+                escreveIni << "                                 FIM                                  " << endl;
+        }
+        time_t now = time(0);
+        tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+        escreveIni << "datahora = ";
+        escreveIni << ltm->tm_mday << "/";
+        escreveIni << 1 + ltm->tm_mon << "/";
+        escreveIni << 1900 + ltm->tm_year << " ";
+        escreveIni << 0 + ltm->tm_hour << ":";
+        escreveIni << 0 + ltm->tm_min << ":";
+        escreveIni << 0 + ltm->tm_sec;
+        escreveIni << endl;
+
+        escreveIni.close();
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -6961,111 +7073,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
             escreveIni.close();
         }
     }
-    if ((fabs((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal - round((*vg1dSP).lixo5 * (100. / 5.) / arq.tfinal)) < 0.5 * dt * (100 / 5.) / arq.tfinal) || KontaImprime > MaxKontaImpres || ((*vg1dSP).lixo5 + dt >= arq.tfinal)) {
-        if (arq.saidaTela == 0)
-            cout << (*vg1dSP).lixo5 * (100.) / arq.tfinal << " % da simulacao alcancado" << endl;
-        KontaImprime = 0;
-        ostringstream saidaT;
-        if (indTramo < 0) {
-            saidaT << tmpLog;
-        } else {
-            saidaT << "Tramo" << indTramo << "-" << tmpLog;
-        }
-        string tmp = saidaT.str();
-        ofstream escreveIni(tmp.c_str(), ios_base::app);
-        escreveIni << "************************************************************************************************"
-                   << endl;
-        escreveIni << "Percentual alcancado = " << (*vg1dSP).lixo5 * (100.) / arq.tfinal << " % da simulacao alcancado" << endl;
-        escreveIni << "| Passo de Tempo = " << kSP << "| Tempo (s) = " << (*vg1dSP).lixo5 << "| Incremento de Tempo (s) = " << dt
-                   << " |" << " Incremento de Tempo Medio CFL (s) = "
-                   << dtCFLMed << "| Incremento de Tempo Medio Simulado (s) = " << dtSimMed
-                   << " |" << endl;
-        for (int i = 0; i < arq.ntela; i++) {
-            int posic = arq.tela[i].posic;
-            if (arq.tela[i].col == 1) {
-                switch (arq.tela[i].var) {
-                case 1:
-                    escreveIni << " Pressao na Linha de Producao (kgf/cm2), Celula " << posic << " = " << celula[posic].pres
-                               << endl;
-                    break;
-                case 2:
-                    escreveIni << " Temperatura na Linha de Producao (C), Celula " << posic << " = " << celula[posic].temp
-                               << endl;
-                    break;
-                case 3:
-                    escreveIni << " Fracao de Vazio na Linha de Producao (-), Celula " << posic << " = " << celula[posic].alf
-                               << endl;
-                    break;
-                case 4:
-                    escreveIni << " Fracao Beta na Linha de Producao (-), Celula " << posic << " = " << celula[posic].bet
-                               << endl;
-                    break;
-                case 5:
-                    escreveIni << " Velocidade Superficial de Gas na Linha de Producao (m/s), Celula " << posic << " = "
-                               << (celula[posic].QG / celula[posic].duto.area) << endl;
-                    break;
-                case 6:
-                    escreveIni << " Velocidade Superficial de Liquido na Linha de Producao (m/s), Celula " << posic << " = "
-                               << (celula[posic].QL / celula[posic].duto.area) << endl;
-                    break;
-                }
-            } else {
-                switch (arq.tela[i].var) {
-                case 1:
-                    escreveIni << " Pressao na Linha de Servico (kgf/cm2), Celula " << posic << " = " << celulaG[posic].pres
-                               << endl;
-                    break;
-                case 2:
-                    escreveIni << " Temperatura na Linha de Servico (C), Ceula " << posic << " = " << celulaG[posic].temp
-                               << endl;
-                    break;
-                case 3:
-                    escreveIni << " Velocidade de Gas na Linha de Servico (m/s), Celula " << posic << " = "
-                               << (celulaG[posic].VGasR / celulaG[posic].duto.area) << endl;
-                    break;
-                }
-            }
-        }
-        if (fabs((*vg1dSP).lixo5 - arq.tfinal) <= dt) {
-            time_t now = time(0);
-            tm *ltm = localtime(&now);
-            int diaFim = (ltm->tm_mday);
-            int horaFim;
-            if (diaFim == diaIni)
-                horaFim = ltm->tm_hour;
-            else
-                horaFim = ltm->tm_hour + 24;
-            horaFim *= 3600;
-            int minutoFim = 60 * ltm->tm_min;
-            int segundoFim = ltm->tm_sec;
-            int totalFim = horaFim + minutoFim + segundoFim;
-            int totalIni = horaIni * 3600 + minutoIni * 60 + segundoIni;
-            escreveIni << "     DURACAO    " << totalFim - totalIni << " segundos " << endl;
-            escreveIni << "     Versao    " << versao << endl;
-            if (arq.saidaClassica == 1) {
-                srand(time(NULL));
-                int frase = rand() % 16;
-                escreveIni << "*******************************************************************************" << endl;
-                escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
-                escreveIni << saidaTextoSis[frase] << endl;
-                escreveIni << saidaSubTextoSis[frase] << endl;
-                escreveIni << "*******************************************************************************" << endl;
-            } else
-                escreveIni << "                                 FIM                                  " << endl;
-        }
-        time_t now = time(0);
-        tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
-        escreveIni << "datahora = ";
-        escreveIni << ltm->tm_mday << "/";
-        escreveIni << 1 + ltm->tm_mon << "/";
-        escreveIni << 1900 + ltm->tm_year << " ";
-        escreveIni << 0 + ltm->tm_hour << ":";
-        escreveIni << 0 + ltm->tm_min << ":";
-        escreveIni << 0 + ltm->tm_sec;
-        escreveIni << endl;
-
-        escreveIni.close();
-    }
+    writeProgressReport(MaxKontaImpres);
 
     kSP++;
     KontaImprime++;

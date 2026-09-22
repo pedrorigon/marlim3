@@ -1356,6 +1356,8 @@ class SProd {
     void atualizaCC1();
 
     /// Advances the complete transient production-system solution and handles output and logging.
+    /// Writes the periodic progress report and the profile snapshots.
+    void writeProgressReport(int MaxKontaImpres);
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 
