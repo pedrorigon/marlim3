@@ -23,9 +23,14 @@ call site becomes `return helper(...)`. Without it, each return becomes
 import argparse
 import io
 import re
+import pathlib
+import tempfile
 import sys
 
-sys.path.insert(0, "/tmp/claude-1000/-home-pedrorigon-Desktop-marlim-public-marlim3/6bb08355-c2ca-4c65-bcab-00ebb9119233/scratchpad")
+# The harness directory, not a scratch directory. The first version of these
+# two modules lived in one and was deleted between sessions, taking its
+# calibration with it.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import braces
 import iface
 
@@ -82,8 +87,7 @@ def main():
     a, b = line_bounds(text, fa, first, last)
     block = text[a:b]
 
-    scratch = ("/tmp/claude-1000/-home-pedrorigon-Desktop-marlim-public-marlim3/"
-               "6bb08355-c2ca-4c65-bcab-00ebb9119233/scratchpad/_x.cpp")
+    scratch = str(pathlib.Path(tempfile.gettempdir()) / "_extract_search_scope.cpp")
     io.open(scratch, "w", encoding="utf-8", errors="surrogateescape").write(text[fa:fb + 1])
     crossing_in, crossing_out = iface.interface(scratch, first, last)
     if crossing_out:
