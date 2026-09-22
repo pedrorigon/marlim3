@@ -1315,6 +1315,8 @@ class SProd {
     void calcCCBuffer(double titRev = 1., double alfRev = 1., double betRev = 0.);
 
     /// Selects a stable time step from CFL and additional model restrictions.
+    /// Computes the implicit time step; the else arm of determinaDT's split.
+    void computeImplicitTimeStep();
     void determinaDT(int vexpli = 0);
     /// Selects a stable time step from CFL and additional model restrictions.
     void determinaDTExpli();
