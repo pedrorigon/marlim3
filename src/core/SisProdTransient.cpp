@@ -851,4 +851,257 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
     }
 }
 
+void computeImplicitTimeStep(const TransientStepState &state) {
+    int multChoke = 1.;
+    if (state.cells[state.lastCell - 1].alf < 0.9)
+        multChoke = 1;
+    double mgas = state.cells[state.lastCell].MC - state.cells[state.lastCell].Mliqini;
+    double mgas0 = state.cells[state.lastCell].MCini - state.cells[state.lastCell].Mliqini0;
+    if (state.input.RelaxaDTChoke == 0 &&
+        (((*state.globals).lixo5 > 1e-15 && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
+          state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area &&
+          ((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) || (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0))) ||
+         state.slugCount < multChoke * 200)) {
+
+        if (state.slugCount > multChoke * 200) {
+            state.slugCount = 0;
+        }
+        if (((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) ||
+             (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0)) &&
+            state.slugCount > multChoke * 100)
+            state.slugCount = multChoke * 100;
+        double progres = 1.;
+        if (state.slugCount > multChoke * 100) {
+            progres = state.slugCount - multChoke * 100;
+        }
+        state.timeStep *= (progres / (multChoke * 100.));
+        state.slugCount++;
+    }
+    if (state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area)
+        state.open = 1;
+    if (fabs(state.finalPressure - state.gasSurfacePressure) / state.finalPressure < 0.05 && state.open == 0 && state.timeStep > 1. && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
+        state.surfaceChoke.AreaGarg > 1e-15 * state.cells[state.lastCell - 1].duto.area)
+        state.timeStep =
+            1.;
+    for (int i = 0; i < state.input.eventoabre; i++) {
+        if ((*state.globals).lixo5 > state.input.Tevento[i] - state.input.dtmax && (*state.globals).lixo5 < state.input.Tevento[i] + 30) {
+            if (state.timeStep > state.smallestCellLength / 100.) {
+                state.timeStep = state.smallestCellLength / 100.;
+            }
+        }
+    }
+    state.multiplier = 0.8;
+    if ((((*state.globals).lixo5 - 2 * state.input.dtmax) > state.movingMeanTemperature && (fabs(state.movingMeanPressure - state.finalPressure) / state.finalPressure > 0.4)) || (state.finalPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.open == 0)) {
+        double denominador = 10.;
+        double progres = 0.95;
+
+        if ((state.finalPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1)) {
+            denominador = 100.;
+            progres = 0.5;
+            state.multiplier = pow(progres, 10. * fabs(state.gasSurfacePressure - state.finalPressure) / state.finalPressure) * state.multiplier;
+        } else if ((state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area)) {
+            denominador = 1000.;
+            progres = 0.5;
+            state.multiplier = (state.cells[state.lastCell].alf + 1e-5) * state.multiplier;
+        } else {
+            state.multiplier = pow(progres, 10 * fabs(state.movingMeanPressure - state.finalPressure) / state.finalPressure) * state.multiplier;
+        }
+        if (state.input.dtmax * state.multiplier < state.smallestCellLength / denominador)
+            state.multiplier = (state.smallestCellLength / denominador) / state.input.dtmax;
+        if (state.multiplier > 0.8)
+            state.multiplier = 0.8;
+    } else {
+        if (state.cells[state.lastCell].alf >= 0.11 || state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area ||
+            state.surfaceChoke.AreaGarg <= 1e-3 * state.cells[state.lastCell - 1].duto.area || state.open == 1) {
+            state.multiplier = state.multiplier / 0.95;
+            if (state.multiplier > 0.8)
+                state.multiplier = 0.8;
+        }
+    }
+
+    for (int i = 0; i <= state.lastCell; i++) {
+        double jmix = 0.;
+        double A1 = state.cells[i].duto.area;
+        double dtaux;
+        // celula[i].Mliqini
+        double alfteste = state.cells[i].alf;
+        if (i > 0 && (state.cells[i].MC - state.cells[i].Mliqini) > 0)
+            alfteste = state.cells[i - 1].alf;
+        if (alfteste > 1e-9)
+            jmix += fabs(
+                (state.cells[i].MC - state.cells[i].Mliqini) / (A1 * state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp) * (0 + 1 * alfteste)));
+        if (fabs(state.cells[i].VTemper) > jmix)
+            jmix = fabs(state.cells[i].VTemper);
+
+        double jmixL = 0.;
+        if (alfteste < 1 - 1e-5)
+            jmixL = fabs(
+                state.cells[i].Mliqini / (A1 * ((1. - state.cells[i].bet) * state.cells[i].rpC + state.cells[i].bet * state.cells[i].rcC) * (1. - 0 * alfteste)));
+        if (fabs(jmixL) > jmix)
+            jmix = fabs(jmixL);
+        if (fabs(jmix) > 1e-5)
+            dtaux = 1.0 * state.cells[i].dx / jmix;
+        else
+            dtaux = state.timeStep;
+        if (dtaux < state.timeStep)
+            state.timeStep = dtaux;
+    }
+    if (state.input.lingas == 1) {
+        for (int i = 0; i <= state.gasCellCount; i++) {
+            double dtaux;
+            double jmix = fabs(state.gasCells[i].VGasR / state.gasCells[i].u1L);
+            if (fabs(jmix) > 1e-5)
+                dtaux = state.gasCells[i].dx0 / jmix;
+            else
+                dtaux = state.timeStep;
+            if (dtaux < state.timeStep)
+                state.timeStep = dtaux;
+        }
+    }
+
+    if (state.timeStepRestricted == 1 && state.input.desligaPenalizaDT == 0) {
+        if (state.timeChanged < 2)
+            state.timeStep /= 10.;
+        state.timeChanged++;
+        if (state.timeChanged > 10)
+            state.timeChanged = 0;
+    }
+
+    state.timeStep = state.multiplier * state.timeStep;
+    if (state.timeStep > state.input.dtmax)
+        state.timeStep = state.input.dtmax;
+
+    if (state.input.evento.size() > state.eventIndex) {
+        if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) > (state.input.evento[state.eventIndex] + 0.1)) {
+            state.timeStep = state.input.evento[state.eventIndex] - (*state.globals).lixo5;
+            state.eventIndex++;
+        } else if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) >= (state.input.evento[state.eventIndex]))
+            state.eventIndex++;
+    }
+
+    state.masterState = 1;
+    for (int i = 0; i < state.masterCloseCount; i++) {
+        if ((*state.globals).lixo5 > state.masterCloseSchedule[i]) {
+            for (int j = 0; j < state.masterOpenCount; j++) {
+                if ((*state.globals).lixo5 < state.masterOpenSchedule[j]) {
+                    state.masterState = 0;
+                    state.masterCounter++;
+                    if (state.masterCounter > 19)
+                        state.masterCounter = 20;
+                    if ((*state.globals).lixo5 >= state.masterOpenSchedule[j] - state.timeStep)
+                        state.masterCounter = 0;
+                    break;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].dt = state.timeStep;
+        state.cells[i].dt1 = state.timeStep;
+        state.cells[i].dt2 = state.timeStep;
+        state.cells[i].dtPig = state.timeStep;
+    }
+
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (state.cells[i].acsr.tipo == 15) {
+            state.cells[i].acsr.radialPoro.dt = state.timeStep;
+        } else if (state.cells[i].acsr.tipo == 16) {
+            state.cells[i].acsr.poroso2D.dt = state.timeStep;
+        }
+    }
+    // dtInter=dt;//alteracao2
+}
+
+void computeExplicitTimeStep(const TransientStepState &state) {
+
+    for (int i = 0; i <= state.lastCell; i++) {
+        double velAux = state.cells[i].termAdSomVel();
+        double som = state.cells[i].somVel();
+        double velpropag1 = velAux + som;
+        double velpropag2 = fabs(velAux - som);
+        double velMax = velpropag1;
+        if (velpropag2 > velpropag1)
+            velMax = velpropag2;
+        double dtaux;
+        double alfteste = state.cells[i].alf;
+        dtaux = state.cells[i].dx / velMax;
+        if (dtaux < state.timeStep)
+            state.timeStep = dtaux;
+    }
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].dt = state.timeStep;
+        state.cells[i].dt1 = state.timeStep;
+        state.cells[i].dt2 = state.timeStep;
+        state.cells[i].dtPig = state.timeStep;
+    }
+}
+
+void computeTimeStep(const TransientStepState &state, int vexpli) {
+
+    if ((*state.globals).lixo5 < (*state.globals).localtiny && (*state.globals).chaverede == 0) {
+        state.input.imprimeProfile(state.cells, state.productionFreeTerms, (*state.globals).lixo5, state.branchIndex);
+        if (state.input.lingas > 0 && state.input.nvalvgas > 0)
+            state.input.imprimeProfileG(state.gasCells, state.gasFreeTerms, (*state.globals).lixo5, state.branchIndex);
+        state.input.imprimeProfileTrans(state.cells, state.productionCrossSectionCount, (*state.globals).lixo5, state.branchIndex);
+    }
+    state.timeStep = state.input.dtmax;
+
+    int parada = 0;
+    for (int i = 1; i < state.lastCell; i++) {
+        if (state.cells[i].acsr.tipo == 5 && state.cells[i].acsr.chk.AreaGarg <= 1e-15 * state.cells[i].acsr.chk.AreaTub)
+            parada = 1;
+        else if (state.surfaceChoke.AreaGarg <= 1.e-15 * state.surfaceChoke.AreaTub)
+            parada = 1;
+    }
+    if (parada == 1) {
+        Vcr<int> oscila(state.lastCell, 0);
+        for (int i = 0; i <= state.lastCell; i++) {
+            if (i > 0 && i < state.lastCell) {
+                if (fabs(state.cells[i - 1].alf - state.cells[i + 1].alf) < fabs(state.cells[i].alf - state.cells[i - 1].alf)) {
+                    double area = state.cells[i].duto.area;
+                    double vLiqTest = fabs(state.cells[i].QL / (area));
+                    double vGasTest = fabs(state.cells[i].QG / (area));
+                    if ((vLiqTest + vGasTest) > 0.1)
+                        oscila[i] = 1;
+                }
+            }
+        }
+        int alarmOscila = 0;
+        for (int i = 1; i <= state.lastCell - 4; i++) {
+            int kontaOsc = 0;
+            int multOsc = 0;
+            while (kontaOsc < 3) {
+                multOsc += oscila[i + kontaOsc];
+                kontaOsc++;
+            }
+            if (multOsc == 3)
+                alarmOscila = 1;
+        }
+
+        if (alarmOscila == 1 && state.input.desligaPenalizaDT == 0)
+            state.timeStep /= 10.;
+    }
+
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (state.cells[i].acsr.tipo == 15) {
+            state.cells[i].acsr.radialPoro.defineDT(0);
+            if (state.cells[i].acsr.radialPoro.dt < state.timeStep)
+                state.timeStep = state.cells[i].acsr.radialPoro.dt;
+        }
+        if (state.cells[i].acsr.tipo == 16) {
+            state.cells[i].acsr.poroso2D.defineDT(0);
+            if (state.cells[i].acsr.poroso2D.dt < state.timeStep)
+                state.timeStep = state.cells[i].acsr.poroso2D.dt;
+        }
+    }
+
+    if (vexpli == 1) {
+        computeExplicitTimeStep(state);
+    } else {
+
+        computeImplicitTimeStep(state);
+    }
+}
+
 }  // namespace sisprod::transient

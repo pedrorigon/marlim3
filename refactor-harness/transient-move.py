@@ -44,6 +44,12 @@ FUNCTIONS = {
     "surfaceChokeIsShut": {"new_name": "surfaceChokeIsShut", "arguments": ""},
     "calcCCpres": {"new_name": "applyOutletPressureCondition", "arguments": "titRev, alfRev, betRev"},
     "calcCCBuffer": {"new_name": "applyOutletBufferCondition", "arguments": "titRev, alfRev, betRev"},
+
+    # T123 -- the time step. The whole stage is measured against the series this
+    # function produces, not against L2 alone.
+    "computeImplicitTimeStep": {"new_name": "computeImplicitTimeStep", "arguments": ""},
+    "determinaDTExpli": {"new_name": "computeExplicitTimeStep", "arguments": ""},
+    "determinaDT": {"new_name": "computeTimeStep", "arguments": "vexpli"},
 }
 
 # Calls between moved routines. The renova group calls no SProd method at all
@@ -59,6 +65,9 @@ CALLS = {
     "surfaceChokeIsShut": ("surfaceChokeIsShut", "state"),
     "calcCCpres": ("applyOutletPressureCondition", "state"),
     "calcCCBuffer": ("applyOutletBufferCondition", "state"),
+    "computeImplicitTimeStep": ("computeImplicitTimeStep", "state"),
+    "determinaDTExpli": ("computeExplicitTimeStep", "state"),
+    "determinaDT": ("computeTimeStep", "state"),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so

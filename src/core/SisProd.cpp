@@ -2571,6 +2571,14 @@ void sisprod::thermal::ThermalEvolutionUpdater::renew() const {
     system.renova();
 }
 
+void sisprod::transient::TransientStepUpdaters::generateFluidMiniTable() const {
+    system.geraMiniTabFlu();
+}
+void sisprod::transient::TransientStepUpdaters::advanceGasSubStep() const {
+    system.subtempoGas();
+}
+
+
 namespace {
 
 sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system) {
@@ -2744,6 +2752,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .reverseQuality = system.titRev,
         .initialInterfaceVelocity = system.velInterIni,
         .globals = system.vg1dSP,
+        .updaters = {system},
     };
 }
 
@@ -6333,27 +6342,7 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
 }
 
 void SProd::determinaDTExpli() {
-
-    for (int i = 0; i <= ncel; i++) {
-        double velAux = celula[i].termAdSomVel();
-        double som = celula[i].somVel();
-        double velpropag1 = velAux + som;
-        double velpropag2 = fabs(velAux - som);
-        double velMax = velpropag1;
-        if (velpropag2 > velpropag1)
-            velMax = velpropag2;
-        double dtaux;
-        double alfteste = celula[i].alf;
-        dtaux = celula[i].dx / velMax;
-        if (dtaux < dt)
-            dt = dtaux;
-    }
-    for (int i = 0; i <= ncel; i++) {
-        celula[i].dt = dt;
-        celula[i].dt1 = dt;
-        celula[i].dt2 = dt;
-        celula[i].dtPig = dt;
-    }
+    sisprod::transient::computeExplicitTimeStep(transientStateOf(*this));
 }
 
 /// Computes the implicit time step.
@@ -6367,232 +6356,11 @@ void SProd::determinaDTExpli() {
 /// difference, it makes a different temporal discretisation. Verified against
 /// the 210,206-call series T122 captured, not by L2 alone.
 void SProd::computeImplicitTimeStep() {
-    int multChoke = 1.;
-    if (celula[ncel - 1].alf < 0.9)
-        multChoke = 1;
-    double mgas = celula[ncel].MC - celula[ncel].Mliqini;
-    double mgas0 = celula[ncel].MCini - celula[ncel].Mliqini0;
-    if (arq.RelaxaDTChoke == 0 &&
-        (((*vg1dSP).lixo5 > 1e-15 && masChkSup == 1 && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area &&
-          chokeSup.AreaGarg > 1e-3 * celula[ncel - 1].duto.area &&
-          ((celula[ncel].Mliqini >= 0 && celula[ncel].Mliqini0 < 0 && mgas > 0) || (celula[ncel].Mliqini >= 0 && mgas < 0 && mgas0 > 0))) ||
-         kontaGolfada < multChoke * 200)) {
-
-        if (kontaGolfada > multChoke * 200) {
-            kontaGolfada = 0;
-        }
-        if (((celula[ncel].Mliqini >= 0 && celula[ncel].Mliqini0 < 0 && mgas > 0) ||
-             (celula[ncel].Mliqini >= 0 && mgas < 0 && mgas0 > 0)) &&
-            kontaGolfada > multChoke * 100)
-            kontaGolfada = multChoke * 100;
-        double progres = 1.;
-        if (kontaGolfada > multChoke * 100) {
-            progres = kontaGolfada - multChoke * 100;
-        }
-        dt *= (progres / (multChoke * 100.));
-        kontaGolfada++;
-    }
-    if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area)
-        aberto = 1;
-    if (fabs(presfim - pGSup) / presfim < 0.05 && aberto == 0 && dt > 1. && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area &&
-        chokeSup.AreaGarg > 1e-15 * celula[ncel - 1].duto.area)
-        dt =
-            1.;
-    for (int i = 0; i < arq.eventoabre; i++) {
-        if ((*vg1dSP).lixo5 > arq.Tevento[i] - arq.dtmax && (*vg1dSP).lixo5 < arq.Tevento[i] + 30) {
-            if (dt > menorDx / 100.) {
-                dt = menorDx / 100.;
-            }
-        }
-    }
-    mult = 0.8;
-    if ((((*vg1dSP).lixo5 - 2 * arq.dtmax) > tMedMov && (fabs(presMedMov - presfim) / presfim > 0.4)) || (presfim < pGSup && masChkSup == 1 && chokeSup.AreaGarg > (1e-3) * celula[ncel - 1].duto.area) || (celula[ncel].alf <= 0.1 && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area && chokeSup.AreaGarg > 1e-3 * celula[ncel - 1].duto.area && aberto == 0)) {
-        double denominador = 10.;
-        double progres = 0.95;
-
-        if ((presfim < pGSup && masChkSup == 1)) {
-            denominador = 100.;
-            progres = 0.5;
-            mult = pow(progres, 10. * fabs(pGSup - presfim) / presfim) * mult;
-        } else if ((celula[ncel].alf <= 0.1 && chokeSup.AreaGarg < 0.6 * celula[ncel - 1].duto.area)) {
-            denominador = 1000.;
-            progres = 0.5;
-            mult = (celula[ncel].alf + 1e-5) * mult;
-        } else {
-            mult = pow(progres, 10 * fabs(presMedMov - presfim) / presfim) * mult;
-        }
-        if (arq.dtmax * mult < menorDx / denominador)
-            mult = (menorDx / denominador) / arq.dtmax;
-        if (mult > 0.8)
-            mult = 0.8;
-    } else {
-        if (celula[ncel].alf >= 0.11 || chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area ||
-            chokeSup.AreaGarg <= 1e-3 * celula[ncel - 1].duto.area || aberto == 1) {
-            mult = mult / 0.95;
-            if (mult > 0.8)
-                mult = 0.8;
-        }
-    }
-
-    for (int i = 0; i <= ncel; i++) {
-        double jmix = 0.;
-        double A1 = celula[i].duto.area;
-        double dtaux;
-        // celula[i].Mliqini
-        double alfteste = celula[i].alf;
-        if (i > 0 && (celula[i].MC - celula[i].Mliqini) > 0)
-            alfteste = celula[i - 1].alf;
-        if (alfteste > 1e-9)
-            jmix += fabs(
-                (celula[i].MC - celula[i].Mliqini) / (A1 * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp) * (0 + 1 * alfteste)));
-        if (fabs(celula[i].VTemper) > jmix)
-            jmix = fabs(celula[i].VTemper);
-
-        double jmixL = 0.;
-        if (alfteste < 1 - 1e-5)
-            jmixL = fabs(
-                celula[i].Mliqini / (A1 * ((1. - celula[i].bet) * celula[i].rpC + celula[i].bet * celula[i].rcC) * (1. - 0 * alfteste)));
-        if (fabs(jmixL) > jmix)
-            jmix = fabs(jmixL);
-        if (fabs(jmix) > 1e-5)
-            dtaux = 1.0 * celula[i].dx / jmix;
-        else
-            dtaux = dt;
-        if (dtaux < dt)
-            dt = dtaux;
-    }
-    if (arq.lingas == 1) {
-        for (int i = 0; i <= ncelGas; i++) {
-            double dtaux;
-            double jmix = fabs(celulaG[i].VGasR / celulaG[i].u1L);
-            if (fabs(jmix) > 1e-5)
-                dtaux = celulaG[i].dx0 / jmix;
-            else
-                dtaux = dt;
-            if (dtaux < dt)
-                dt = dtaux;
-        }
-    }
-
-    if (restriDt == 1 && arq.desligaPenalizaDT == 0) {
-        if (alteraTempo < 2)
-            dt /= 10.;
-        alteraTempo++;
-        if (alteraTempo > 10)
-            alteraTempo = 0;
-    }
-
-    dt = mult * dt;
-    if (dt > arq.dtmax)
-        dt = arq.dtmax;
-
-    if (arq.evento.size() > indevento) {
-        if ((*vg1dSP).lixo5 < arq.evento[indevento] && ((*vg1dSP).lixo5 + dt) > (arq.evento[indevento] + 0.1)) {
-            dt = arq.evento[indevento] - (*vg1dSP).lixo5;
-            indevento++;
-        } else if ((*vg1dSP).lixo5 < arq.evento[indevento] && ((*vg1dSP).lixo5 + dt) >= (arq.evento[indevento]))
-            indevento++;
-    }
-
-    EstadoMaster1 = 1;
-    for (int i = 0; i < nfechaM1; i++) {
-        if ((*vg1dSP).lixo5 > fechaM1[i]) {
-            for (int j = 0; j < nabreM1; j++) {
-                if ((*vg1dSP).lixo5 < abreM1[j]) {
-                    EstadoMaster1 = 0;
-                    contaMaster1++;
-                    if (contaMaster1 > 19)
-                        contaMaster1 = 20;
-                    if ((*vg1dSP).lixo5 >= abreM1[j] - dt)
-                        contaMaster1 = 0;
-                    break;
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i <= ncel; i++) {
-        celula[i].dt = dt;
-        celula[i].dt1 = dt;
-        celula[i].dt2 = dt;
-        celula[i].dtPig = dt;
-    }
-
-    for (int i = 0; i <= ncel; i++) {
-        if (celula[i].acsr.tipo == 15) {
-            celula[i].acsr.radialPoro.dt = dt;
-        } else if (celula[i].acsr.tipo == 16) {
-            celula[i].acsr.poroso2D.dt = dt;
-        }
-    }
-    // dtInter=dt;//alteracao2
+    sisprod::transient::computeImplicitTimeStep(transientStateOf(*this));
 }
 
 void SProd::determinaDT(int vexpli) {
-
-    if ((*vg1dSP).lixo5 < (*vg1dSP).localtiny && (*vg1dSP).chaverede == 0) {
-        arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
-        if (arq.lingas > 0 && arq.nvalvgas > 0)
-            arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
-        arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
-    }
-    dt = arq.dtmax;
-
-    int parada = 0;
-    for (int i = 1; i < ncel; i++) {
-        if (celula[i].acsr.tipo == 5 && celula[i].acsr.chk.AreaGarg <= 1e-15 * celula[i].acsr.chk.AreaTub)
-            parada = 1;
-        else if (chokeSup.AreaGarg <= 1.e-15 * chokeSup.AreaTub)
-            parada = 1;
-    }
-    if (parada == 1) {
-        Vcr<int> oscila(ncel, 0);
-        for (int i = 0; i <= ncel; i++) {
-            if (i > 0 && i < ncel) {
-                if (fabs(celula[i - 1].alf - celula[i + 1].alf) < fabs(celula[i].alf - celula[i - 1].alf)) {
-                    double area = celula[i].duto.area;
-                    double vLiqTest = fabs(celula[i].QL / (area));
-                    double vGasTest = fabs(celula[i].QG / (area));
-                    if ((vLiqTest + vGasTest) > 0.1)
-                        oscila[i] = 1;
-                }
-            }
-        }
-        int alarmOscila = 0;
-        for (int i = 1; i <= ncel - 4; i++) {
-            int kontaOsc = 0;
-            int multOsc = 0;
-            while (kontaOsc < 3) {
-                multOsc += oscila[i + kontaOsc];
-                kontaOsc++;
-            }
-            if (multOsc == 3)
-                alarmOscila = 1;
-        }
-
-        if (alarmOscila == 1 && arq.desligaPenalizaDT == 0)
-            dt /= 10.;
-    }
-
-    for (int i = 0; i <= ncel; i++) {
-        if (celula[i].acsr.tipo == 15) {
-            celula[i].acsr.radialPoro.defineDT(0);
-            if (celula[i].acsr.radialPoro.dt < dt)
-                dt = celula[i].acsr.radialPoro.dt;
-        }
-        if (celula[i].acsr.tipo == 16) {
-            celula[i].acsr.poroso2D.defineDT(0);
-            if (celula[i].acsr.poroso2D.dt < dt)
-                dt = celula[i].acsr.poroso2D.dt;
-        }
-    }
-
-    if (vexpli == 1) {
-        determinaDTExpli();
-    } else {
-
-        computeImplicitTimeStep();
-    }
+    sisprod::transient::computeTimeStep(transientStateOf(*this), vexpli);
 }
 
 void SProd::atenuaDtMax() {

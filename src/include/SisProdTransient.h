@@ -56,6 +56,23 @@ namespace sisprod::transient {
 /// looking for an assignment, not assumed -- stage 6 shipped a header promising
 /// const for a deck the module writes through, stage 7 did the same for a choke,
 /// and in both cases the compiler is what said so.
+/// The two things the transient step needs from outside itself.
+///
+/// Only two, and both for stated reasons rather than convenience:
+///
+///   * geraMiniTabFlu STAYS in SisProd.cpp. PorosoRad-Simples.cpp and
+///     solverPoroso.cpp consume it too, so it is surface under FR-038, and
+///     T126's acceptance requires atualizaMiniTab to keep invoking it there.
+///   * subtempoGas moved to the gas-lift module in stage 6, and reaching it
+///     needs a GasLiftState that only SisProd.cpp knows how to assemble -- the
+///     same routing SteadyStateUpdaters uses, for the same reason.
+struct TransientStepUpdaters {
+    SProd &system;
+
+    void generateFluidMiniTable() const;
+    void advanceGasSubStep() const;
+};
+
 /// const marks what the step does not write, and it marks SCALARS ONLY.
 ///
 /// A class or pointer field can be mutated two ways that do not look like an
@@ -208,7 +225,10 @@ struct TransientStepState {
     /// SProd::velInterIni -- so lido.
     const double &initialInterfaceVelocity;
     /// SProd::vg1dSP -- so lido.
-    varGlob1D* globals;};
+    varGlob1D* globals;
+    /// Everything the step needs that is not its own.
+    TransientStepUpdaters updaters;
+};
 
 // ------------------------------------------------------------ cell update ----
 
@@ -266,6 +286,28 @@ void updateBufferFromCells(const TransientStepState &state);
 /// condition is reading half of it.
 void applyOutletPressureCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
 void applyOutletBufferCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
+
+// ------------------------------------------------------------- time step ----
+
+/// Decides the time step, explicitly or implicitly.
+///
+/// This is the numerically load-bearing function of the whole refactoring. A
+/// last-bit drift here does not make a small difference in the answer: it makes
+/// a DIFFERENT TEMPORAL DISCRETISATION, and from that step onward the run is a
+/// different simulation.
+///
+/// So it is not verified by L2 alone. T122 captured the complete series of
+/// 210,206 calls in %a, and refactor-harness/verify-determinadt.sh compares the
+/// current tree against it call by call. L2 would say "the outputs differ"; the
+/// series says where the mesh first diverged, which is the only actionable
+/// answer once the step feeds back into everything.
+///
+/// Coverage, stated because it limits what any of this proves: EIGHT of the
+/// fourteen corpus models reach this function at all. A defect here is
+/// invisible to the other six, with their L2 still green.
+void computeTimeStep(const TransientStepState &state, int vexpli);
+void computeExplicitTimeStep(const TransientStepState &state);
+void computeImplicitTimeStep(const TransientStepState &state);
 
 }  // namespace sisprod::transient
 
