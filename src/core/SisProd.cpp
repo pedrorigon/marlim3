@@ -6716,6 +6716,60 @@ void SProd::writeTrends(int ordemImpT, double velmaxdesc, int nrede) {
     }
 }
 
+/// Writes the four families of profile files for this step, and the unit-cell output.
+///
+/// Each family only when the deck asks for it.
+void SProd::writeProfiles(int nrede) {
+    if (arq.nperfisp > 0) {
+        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profp.tempo[kontaTempoProf] && (*vg1dSP).lixo5 + dt >= arq.profp.tempo[kontaTempoProf])) {
+            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo, nrede);
+            arq.profp.tempo[kontaTempoProf] = (*vg1dSP).lixo5;
+            kontaTempoProf++;
+            if (kontaTempoProf >= arq.profp.n)
+                kontaTempoProf--;
+        }
+    }
+    if (arq.nperfisg > 0 && arq.lingas > 0) {
+        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profg.tempo[kontaTempoProfG] && (*vg1dSP).lixo5 + dt >= arq.profg.tempo[kontaTempoProfG])) {
+            arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo, nrede);
+            arq.profg.tempo[kontaTempoProfG] = (*vg1dSP).lixo5;
+            kontaTempoProfG++;
+            if (kontaTempoProfG >= arq.profg.n)
+                kontaTempoProfG--;
+        }
+    }
+    if (arq.nperfistransp > 0) {
+        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.proftransp.tempo[kontaTempoTransProf] && (*vg1dSP).lixo5 + dt >= arq.proftransp.tempo[kontaTempoTransProf])) {
+            arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo, nrede);
+            arq.proftransp.tempo[kontaTempoTransProf] = (*vg1dSP).lixo5;
+            kontaTempoTransProf++;
+            if (kontaTempoTransProf >= arq.proftransp.n)
+                kontaTempoTransProf--;
+        }
+    }
+    if (arq.nperfistransg > 0 && arq.lingas > 0) {
+        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.proftransg.tempo[kontaTempoTransProfG] && (*vg1dSP).lixo5 + dt >= arq.proftransg.tempo[kontaTempoTransProfG])) {
+            arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo, nrede);
+            arq.proftransg.tempo[kontaTempoTransProfG] = (*vg1dSP).lixo5;
+            kontaTempoTransProfG++;
+            if (kontaTempoTransProfG >= arq.proftransg.n)
+                kontaTempoTransProfG--;
+        }
+    }
+    if (arq.nCelUnit>0) {
+    	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
+    		if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] &&
+    				(*vg1dSP).lixo5 + dt >= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]])) {
+    			arq.relatorioCelulaUnitaria(celula,arq.celUnit[iCelU].posicP, indTramo,nrede);
+    			arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] = (*vg1dSP).lixo5;
+    			kontaTempoCelUni[iCelU]++;
+    			if (kontaTempoCelUni[iCelU] >= arq.celUnit[iCelU].parserie)
+    				kontaTempoCelUni[iCelU]--;
+    		}
+    	}
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -7042,54 +7096,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
 
     if ((*vg1dSP).chaverede != 0)
         (*vg1dSP).lixo5 = (*vg1dSP).lixo5R;
-    if (arq.nperfisp > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profp.tempo[kontaTempoProf] && (*vg1dSP).lixo5 + dt >= arq.profp.tempo[kontaTempoProf])) {
-            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.profp.tempo[kontaTempoProf] = (*vg1dSP).lixo5;
-            kontaTempoProf++;
-            if (kontaTempoProf >= arq.profp.n)
-                kontaTempoProf--;
-        }
-    }
-    if (arq.nperfisg > 0 && arq.lingas > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.profg.tempo[kontaTempoProfG] && (*vg1dSP).lixo5 + dt >= arq.profg.tempo[kontaTempoProfG])) {
-            arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.profg.tempo[kontaTempoProfG] = (*vg1dSP).lixo5;
-            kontaTempoProfG++;
-            if (kontaTempoProfG >= arq.profg.n)
-                kontaTempoProfG--;
-        }
-    }
-    if (arq.nperfistransp > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.proftransp.tempo[kontaTempoTransProf] && (*vg1dSP).lixo5 + dt >= arq.proftransp.tempo[kontaTempoTransProf])) {
-            arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.proftransp.tempo[kontaTempoTransProf] = (*vg1dSP).lixo5;
-            kontaTempoTransProf++;
-            if (kontaTempoTransProf >= arq.proftransp.n)
-                kontaTempoTransProf--;
-        }
-    }
-    if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.proftransg.tempo[kontaTempoTransProfG] && (*vg1dSP).lixo5 + dt >= arq.proftransg.tempo[kontaTempoTransProfG])) {
-            arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo, nrede);
-            arq.proftransg.tempo[kontaTempoTransProfG] = (*vg1dSP).lixo5;
-            kontaTempoTransProfG++;
-            if (kontaTempoTransProfG >= arq.proftransg.n)
-                kontaTempoTransProfG--;
-        }
-    }
-    if (arq.nCelUnit>0) {
-    	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
-    		if (((*vg1dSP).lixo5 > (*vg1dSP).localtiny && (*vg1dSP).lixo5 <= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] &&
-    				(*vg1dSP).lixo5 + dt >= arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]])) {
-    			arq.relatorioCelulaUnitaria(celula,arq.celUnit[iCelU].posicP, indTramo,nrede);
-    			arq.celUnit[iCelU].tempo[kontaTempoCelUni[iCelU]] = (*vg1dSP).lixo5;
-    			kontaTempoCelUni[iCelU]++;
-    			if (kontaTempoCelUni[iCelU] >= arq.celUnit[iCelU].parserie)
-    				kontaTempoCelUni[iCelU]--;
-    		}
-    	}
-    }
+    writeProfiles(nrede);
     writeTrends(ordemImpT, velmaxdesc, nrede);
     //(*vg1dSP).lixo5 += dt;//alteracao7
     end = chrono::steady_clock::now();

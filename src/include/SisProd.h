@@ -1364,6 +1364,8 @@ class SProd {
     void writeScreenOutput(const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end);
     /// Writes the four families of trend files for this step.
     void writeTrends(int ordemImpT, double velmaxdesc, int nrede);
+    /// Writes the four families of profile files for this step, and the unit-cell output.
+    void writeProfiles(int nrede);
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 
