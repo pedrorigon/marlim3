@@ -6627,6 +6627,95 @@ void SProd::writeScreenOutput(const chrono::steady_clock::time_point &begin, con
     }
 }
 
+/// Writes the four families of trend files for this step.
+///
+/// Production, gas-line, and the two cross-section families, each only when the
+/// deck asks for it. The trend written at t = 0 is NOT here: it happens earlier in
+/// SolveTrans, before computeTimeStep, and T127 requires that order preserved.
+void SProd::writeTrends(int ordemImpT, double velmaxdesc, int nrede) {
+    if (arq.ntendp > 0) {
+        for (int i = 0; i < arq.ntendp; i++) {
+            if (resettrend[i] == 0) {
+                if ((*vg1dSP).lixo5 < 1e-15)
+                    ImprimeTrendPCab(i, nrede);
+                if ((*vg1dSP).lixo5 > 1e-15)
+                    arq.imprimeTrend(celula, MatTrendP[i], (*vg1dSP).lixo5, i, ntrend[i]);
+                ntrend[i]++;
+            }
+            if (ordemImpT == 1) {
+                if ((*vg1dSP).lixo5 >= 800.8000000000000445) {
+                    int para;
+                    para == 1;
+                }
+                ImprimeTrendP(i, nrede);
+                ntrendB[i] = ntrend[i];
+            }
+            resettrend[i] += dt;
+            if (resettrend[i] > arq.trendp[i].dt)
+                resettrend[i] = 0;
+        }
+    }
+    if (arq.ntendg > 0 && arq.lingas > 0) {
+        for (int i = 0; i < arq.ntendg; i++) {
+            if (resettrendg[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
+                if ((*vg1dSP).lixo5 < 1e-15)
+                    ImprimeTrendGCab(i, nrede);
+                arq.imprimeTrendG(celulaG, MatTrendG[i], (*vg1dSP).lixo5, i, ntrendg[i], velmaxdesc);
+                ntrendg[i]++;
+            }
+            if (ordemImpT == 1) {
+                ImprimeTrendG(i, nrede);
+                ntrendgB[i] = ntrendg[i];
+            }
+            resettrendg[i] += dt;
+            if (resettrendg[i] > arq.trendg[i].dt)
+                resettrendg[i] = 0;
+        }
+    }
+    if (arq.ntendtransp > 0) {
+        for (int i = 0; i < arq.ntendtransp; i++) {
+            if (resettrendtrans[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
+                if ((*vg1dSP).lixo5 < 1e-15)
+                    ImprimeTrendTransPCab(i);
+                MatTrendTransP[i][ntrendtrans[i]][0] = (*vg1dSP).lixo5;
+                int poscel = arq.trendtransp[i].posic;
+                int poscam = arq.trendtransp[i].camada - 1;
+                int posdiscre = arq.trendtransp[i].discre - 1;
+                MatTrendTransP[i][ntrendtrans[i]][1] = celula[poscel].calor.Tcamada[poscam][posdiscre];
+                ntrendtrans[i]++;
+            }
+            if (ordemImpT == 1) {
+                ImprimeTrendTransP(i);
+                ntrendtransB[i] = ntrendtrans[i];
+            }
+            resettrendtrans[i] += dt;
+            if (resettrendtrans[i] > arq.trendtransp[i].dt)
+                resettrendtrans[i] = 0;
+        }
+    }
+    if (arq.ntendtransg > 0 && arq.lingas > 0) {
+        for (int i = 0; i < arq.ntendtransg; i++) {
+            if (resettrendtransg[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
+                if ((*vg1dSP).lixo5 < 1e-15)
+                    ImprimeTrendTransGCab(i);
+                MatTrendTransG[i][ntrendtransg[i]][0] = (*vg1dSP).lixo5;
+                int poscel = arq.trendtransg[i].posic;
+                int poscam = arq.trendtransg[i].camada - 1;
+                int posdiscre = arq.trendtransg[i].discre - 1;
+                MatTrendTransG[i][ntrendtransg[i]][1] = celulaG[poscel].calor.Tcamada[poscam][posdiscre];
+                ntrendtransg[i]++;
+            }
+            if (ordemImpT == 1) {
+                ImprimeTrendTransG(i);
+                ntrendtransgB[i] = ntrendtransg[i];
+            }
+            resettrendtransg[i] += dt;
+            if (resettrendtransg[i] > arq.trendtransg[i].dt)
+                resettrendtransg[i] = 0;
+        }
+    }
+}
+
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -7001,87 +7090,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
     		}
     	}
     }
-    if (arq.ntendp > 0) {
-        for (int i = 0; i < arq.ntendp; i++) {
-            if (resettrend[i] == 0) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendPCab(i, nrede);
-                if ((*vg1dSP).lixo5 > 1e-15)
-                    arq.imprimeTrend(celula, MatTrendP[i], (*vg1dSP).lixo5, i, ntrend[i]);
-                ntrend[i]++;
-            }
-            if (ordemImpT == 1) {
-                if ((*vg1dSP).lixo5 >= 800.8000000000000445) {
-                    int para;
-                    para == 1;
-                }
-                ImprimeTrendP(i, nrede);
-                ntrendB[i] = ntrend[i];
-            }
-            resettrend[i] += dt;
-            if (resettrend[i] > arq.trendp[i].dt)
-                resettrend[i] = 0;
-        }
-    }
-    if (arq.ntendg > 0 && arq.lingas > 0) {
-        for (int i = 0; i < arq.ntendg; i++) {
-            if (resettrendg[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendGCab(i, nrede);
-                arq.imprimeTrendG(celulaG, MatTrendG[i], (*vg1dSP).lixo5, i, ntrendg[i], velmaxdesc);
-                ntrendg[i]++;
-            }
-            if (ordemImpT == 1) {
-                ImprimeTrendG(i, nrede);
-                ntrendgB[i] = ntrendg[i];
-            }
-            resettrendg[i] += dt;
-            if (resettrendg[i] > arq.trendg[i].dt)
-                resettrendg[i] = 0;
-        }
-    }
-    if (arq.ntendtransp > 0) {
-        for (int i = 0; i < arq.ntendtransp; i++) {
-            if (resettrendtrans[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendTransPCab(i);
-                MatTrendTransP[i][ntrendtrans[i]][0] = (*vg1dSP).lixo5;
-                int poscel = arq.trendtransp[i].posic;
-                int poscam = arq.trendtransp[i].camada - 1;
-                int posdiscre = arq.trendtransp[i].discre - 1;
-                MatTrendTransP[i][ntrendtrans[i]][1] = celula[poscel].calor.Tcamada[poscam][posdiscre];
-                ntrendtrans[i]++;
-            }
-            if (ordemImpT == 1) {
-                ImprimeTrendTransP(i);
-                ntrendtransB[i] = ntrendtrans[i];
-            }
-            resettrendtrans[i] += dt;
-            if (resettrendtrans[i] > arq.trendtransp[i].dt)
-                resettrendtrans[i] = 0;
-        }
-    }
-    if (arq.ntendtransg > 0 && arq.lingas > 0) {
-        for (int i = 0; i < arq.ntendtransg; i++) {
-            if (resettrendtransg[i] == 0 || (*vg1dSP).lixo5 < 1e-15) {
-                if ((*vg1dSP).lixo5 < 1e-15)
-                    ImprimeTrendTransGCab(i);
-                MatTrendTransG[i][ntrendtransg[i]][0] = (*vg1dSP).lixo5;
-                int poscel = arq.trendtransg[i].posic;
-                int poscam = arq.trendtransg[i].camada - 1;
-                int posdiscre = arq.trendtransg[i].discre - 1;
-                MatTrendTransG[i][ntrendtransg[i]][1] = celulaG[poscel].calor.Tcamada[poscam][posdiscre];
-                ntrendtransg[i]++;
-            }
-            if (ordemImpT == 1) {
-                ImprimeTrendTransG(i);
-                ntrendtransgB[i] = ntrendtransg[i];
-            }
-            resettrendtransg[i] += dt;
-            if (resettrendtransg[i] > arq.trendtransg[i].dt)
-                resettrendtransg[i] = 0;
-        }
-    }
+    writeTrends(ordemImpT, velmaxdesc, nrede);
     //(*vg1dSP).lixo5 += dt;//alteracao7
     end = chrono::steady_clock::now();
     (*vg1dSP).contador = kSP;

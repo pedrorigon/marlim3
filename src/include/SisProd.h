@@ -1362,6 +1362,8 @@ class SProd {
     void writeEventLog(int maxEvento);
     /// Writes the step's progress to the terminal when screen output is on.
     void writeScreenOutput(const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end);
+    /// Writes the four families of trend files for this step.
+    void writeTrends(int ordemImpT, double velmaxdesc, int nrede);
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 
