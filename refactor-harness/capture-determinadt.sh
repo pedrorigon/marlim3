@@ -22,8 +22,13 @@ out="${1:-$project_root/specs/001-refatoracao-sisprod/golden/determinadt.txt}"
 work="$(mktemp -d -t marlim3-dt-XXXXXX)"
 trap 'rm -rf "$work"' EXIT
 
-cp -r "$project_root/src" "$project_root/demos" "$project_root/CMakeLists.txt" \
-      "$project_root/CMakePresets.json" "$work/" 2>/dev/null || true
+# Copy the whole tree, minus what is regenerated or huge. Listing the inputs by
+# hand does not work and two attempts proved it: the build reads _version.py,
+# then marlim3/translations.json, and there is no reason to believe that list is
+# finished. An exclusion list fails safe; an inclusion list fails silently, one
+# file at a time.
+rsync -a --exclude build/ --exclude .git/ --exclude '.venv*' --exclude 'docs-sisprod/' \
+      --exclude '*.o' "$project_root/" "$work/"
 cd "$work"
 
 python3 - <<'PY'
