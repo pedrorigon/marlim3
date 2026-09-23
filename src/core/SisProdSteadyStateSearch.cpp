@@ -922,18 +922,12 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, doubl
         if ((*state.march.globals).iterRede > 0)
             {
                 abortValue = -1.1e10;
-                {
-                    abortValue = true;
-                    return true;
-                }
+                return true;
             }
         else
             {
                 abortValue = 1.1e10;
-                {
-                    abortValue = true;
-                    return true;
-                }
+                return true;
             }
     }
     if (marchResidual > 0 && marchResidual < 0.9e10)
@@ -956,36 +950,24 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, doubl
                 if ((*state.march.globals).iterRede > 0)
                     {
                         abortValue = -1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 else
                     {
                         abortValue = 1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
             }
         } else {
             if ((*state.march.globals).iterRede > 0)
                 {
                     abortValue = -1.1e10;
-                    {
-                        abortValue = true;
-                        return true;
-                    }
+                    return true;
                 }
             else
                 {
                     abortValue = 1.1e10;
-                    {
-                        abortValue = true;
-                        return true;
-                    }
+                    return true;
                 }
         }
     }
@@ -1129,9 +1111,8 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
             }
         }
         while (marchResidual > 0.9e10) { // o incremento de pressao foi demais e a marcha nao foi capaz
-    double abortValue;
     if (raisePressureUntilMarchCompletes(state, chutelim, chutePos, kontaiter, marchResidual, pchuteAux, pchute2, chute, kontaTenta, abortValue))
-        return abortValue;
+        return true;
         }
     }
     chuteNeg = pchute2;
@@ -2588,19 +2569,13 @@ bool advanceTertiaryColumn(const SteadyStateSearchState &state, int &i, double &
                 if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].presaux) < (*state.march.globals).localtiny)
                     {
                         abortValue = 1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 if (state.march.cells[i].presaux <= 0.1 ||
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].presaux) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 }
                 refreshUpstreamProductionPeriphery(state.march, i); // atualizacao da pressao da fronteira esquerda,
@@ -2626,20 +2601,14 @@ bool advanceTertiaryColumn(const SteadyStateSearchState &state, int &i, double &
                 if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].pres) < (*state.march.globals).localtiny) {
                     {
                         abortValue = 1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 }
                 if (state.march.cells[i].pres <= 0.1 ||
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].pres) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 }
                 refreshDownstreamProductionPeriphery(state.march, i); // mera atualizacao de atributos que guardam valores de pressao
@@ -2694,37 +2663,25 @@ bool advanceTertiaryColumn(const SteadyStateSearchState &state, int &i, double &
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i - 1].pres) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 } else if ((state.march.cells[i - 1].acsr.tipo == 3 &&
                             ((state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
                     {
                         abortValue = 1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 } else if ((state.march.cells[i - 1].acsr.tipo == 15 &&
                             ((state.march.cells[i - 1].acsr.radialPoro.pRes[0] - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
                     {
                         abortValue = 1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 } else if ((state.march.cells[i - 1].acsr.tipo == 16 &&
                             ((state.march.cells[i - 1].acsr.poroso2D.dados.pRes - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
                     {
                         abortValue = 1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 }
     return false;
@@ -2810,9 +2767,8 @@ bool marchTertiaryColumnUntilConverged(const SteadyStateSearchState &state, int 
         i = 1;
         // inicio da marcha propriamente dita
         while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 0.1 && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
-    double abortValue;
     if (advanceTertiaryColumn(state, i, abortValue))
-        return abortValue;
+        return true;
         }
         if (i == state.march.lastCell + 1)
             corrigechute = 0; // fim da marcha
@@ -4759,18 +4715,12 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
             if ((*state.march.globals).iterRede > 0)
                 {
                     abortValue = -1.1e10;
-                    {
-                        abortValue = true;
-                        return true;
-                    }
+                    return true;
                 }
             else
                 {
                     abortValue = 1.1e10;
-                    {
-                        abortValue = true;
-                        return true;
-                    }
+                    return true;
                 }
         }
         if (marchResidual > 0. && limpres == 1) {
@@ -4783,18 +4733,12 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
                     if ((*state.march.globals).iterRede > 0)
                         {
                             abortValue = -1.1e10;
-                            {
-                                abortValue = true;
-                                return true;
-                            }
+                            return true;
                         }
                     else
                         {
                             abortValue = 1.1e10;
-                            {
-                                abortValue = true;
-                                return true;
-                            }
+                            return true;
                         }
                 }
                 iterpres++;
@@ -4804,18 +4748,12 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
                 if ((*state.march.globals).iterRede > 0)
                     {
                         abortValue = -1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 else
                     {
                         abortValue = 1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
             }
         }
@@ -4829,18 +4767,12 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
             if ((*state.march.globals).iterRede > 0)
                 {
                     abortValue = -1.1e10;
-                    {
-                        abortValue = true;
-                        return true;
-                    }
+                    return true;
                 }
             else
                 {
                     abortValue = 1.1e10;
-                    {
-                        abortValue = true;
-                        return true;
-                    }
+                    return true;
                 }
         }
         while (marchResidual > 0.9e10) {
@@ -4856,18 +4788,12 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
                 if ((*state.march.globals).iterRede > 0)
                     {
                         abortValue = -1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 else
                     {
                         abortValue = 1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
             }
             if (marchResidual > 0 && marchResidual < 0.9e10)
@@ -4879,18 +4805,12 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
                 if ((*state.march.globals).iterRede > 0)
                     {
                         abortValue = -1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
                 else
                     {
                         abortValue = 1.1e10;
-                        {
-                            abortValue = true;
-                            return true;
-                        }
+                        return true;
                     }
             }
         }
@@ -5001,9 +4921,8 @@ bool bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double ampl
         }
         chutePos = pchute2;
     } else if (marchResidual > 0.) {
-    double abortValue;
     if (bracketSecondaryBranchFromLowGuess(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, abortValue))
-        return abortValue;
+        return true;
     }
     {
         abortValue = solveSteadyRoot(state, chuteNeg, chutePos, 1, 1);

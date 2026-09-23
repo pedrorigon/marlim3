@@ -136,8 +136,18 @@ def main():
         signature = (f"bool {args.helper}(const SteadyStateSearchState &state, "
                      + ", ".join(params) + ") {")
         count = [0]
+        signature_of_host = text[fa:braces.first_brace_after(text, fa)]
+        second_hop = bool(re.search(r'double\s*&\s*abortValue\b', signature_of_host))
 
         def sub(m):
+            # On a second hop the range's `return true;` already means "stop,
+            # abortValue is written". Rewriting it like any other return gave
+            # `abortValue = V; { abortValue = true; return true; }` -- the
+            # value overwritten with 1.0 on the way out. 26 sites, same three
+            # helpers as the shadowing below, same commit, same blindness in
+            # L2 (T130).
+            if second_hop and m.group(2).strip() == "true":
+                return m.group(0)
             count[0] += 1
             pad = m.group(1)
             return "%s{%s    abortValue = %s;%s    return true;%s}" % (
@@ -148,10 +158,31 @@ def main():
         left = [m for m in re.finditer(r'(?<![.\w])return\b(?!\s+true;)', code)]
         assert not left, "a return survived: %r" % [code[m.start() - 40:m.end() + 20] for m in left]
         body += "\n    return false;"
-        call = ("    double abortValue;\n"
-                "    if (%s(state%s%s, abortValue))\n        return abortValue;" % (
-                    args.helper, ", " if len(params) > 1 else "",
-                    ", ".join(p.split()[-1].lstrip("&") for p in params[:-1])))
+        # Cutting from a helper that already speaks the protocol is a second
+        # hop, not a first one. Its caller reads the value from ITS abortValue,
+        # so the inner helper must write that very parameter and the hop must
+        # answer `true`. The first version of this tool emitted the first-hop
+        # form everywhere: a fresh `double abortValue;` that shadows the
+        # parameter, then `return abortValue;` from a bool -- the value turned
+        # into "must it stop?", the caller's copy never written. L2 could not
+        # see it: three sites, none reached by the corpus. -Wshadow could, and
+        # found exactly those three (T130).
+        if second_hop:
+            call = ("    if (%s(state%s%s, abortValue))\n        return true;" % (
+                        args.helper, ", " if len(params) > 1 else "",
+                        ", ".join(p.split()[-1].lstrip("&") for p in params[:-1])))
+        else:
+            call = ("    double abortValue;\n"
+                    "    if (%s(state%s%s, abortValue))\n        return abortValue;" % (
+                        args.helper, ", " if len(params) > 1 else "",
+                        ", ".join(p.split()[-1].lstrip("&") for p in params[:-1])))
+
+    # The call site sits at the range's own depth. It used to be written at a
+    # fixed four spaces, which is right only at the top of a function; inside a
+    # loop it read as outside it, and GCC flagged one site with
+    # -Wmisleading-indentation (T130, re-indented by reindent-calls.py).
+    pad = re.match(r'[ ]*', block).group(0)
+    call = "\n".join(pad + row[4:] if row.startswith("    ") else row for row in call.split("\n"))
 
     doc = args.doc or ("Part of %s." % args.function)
     helper = "".join("/// %s\n" % line if line else "///\n" for line in doc.split("\n"))
