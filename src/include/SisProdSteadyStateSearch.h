@@ -98,9 +98,11 @@ struct SteadyStateSearchState {
 
 // --------------------------------------------------------- gas-line search --
 
-/// Searches the gas-line pressure that closes the injection balance.
-[[nodiscard]] double searchGasPressureSteadySecondary(const SteadyStateSearchState &state);
-[[nodiscard]] double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state);
+/// Searches the gas-line pressure that closes the injection balance. Not
+/// [[nodiscard]]: the march runs them for their effect on the gas line and
+/// drops the value, as the original did.
+double searchGasPressureSteadySecondary(const SteadyStateSearchState &state);
+double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state);
 
 // -------------------------------------------- injection bottom-hole search --
 

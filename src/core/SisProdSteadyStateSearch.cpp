@@ -842,7 +842,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     if (fabs(marchResidual) < 1e-3)
         return pchute;
     else {
-    return bracketReverseRoot(state, aumenta, reduz, chutelim, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute);
+        return bracketReverseRoot(state, aumenta, reduz, chutelim, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute);
     }
 }
 
@@ -1057,8 +1057,8 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
             }
         }
         while (marchResidual > 0.9e10) { // o incremento de pressao foi demais e a marcha nao foi capaz
-    if (raisePressureUntilMarchCompletes(state, chutelim, chutePos, kontaiter, marchResidual, pchuteAux, pchute2, chute, kontaTenta, abortValue))
-        return true;
+            if (raisePressureUntilMarchCompletes(state, chutelim, chutePos, kontaiter, marchResidual, pchuteAux, pchute2, chute, kontaTenta, abortValue))
+                return true;
         }
     }
     chuteNeg = pchute2;
@@ -1732,14 +1732,14 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
         return pchute;
     else {
         if (marchResidual < 0.) { // caso em que pressao a montante do choke < pressao da ultima celula, calculada pela
-    double abortValue;
-    if (bracketFromHighGuess(state, amplifica, reduz, reversao, val0, chutelim, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
-        return abortValue;
+            double abortValue;
+            if (bracketFromHighGuess(state, amplifica, reduz, reversao, val0, chutelim, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
+                return abortValue;
             chutePos = pchute2;
         } else if (marchResidual > 0.) { // caso em que pressao a montante do choke > pressao da ultima celula,
-    double abortValue;
-    if (bracketFromLowGuess(state, amplifica, reduz, reversao, val0, chutelim, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
-        return abortValue;
+            double abortValue;
+            if (bracketFromLowGuess(state, amplifica, reduz, reversao, val0, chutelim, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
+                return abortValue;
         }
 
         if (reversao == 0)
@@ -2487,14 +2487,14 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
         return pchute;
     else {
         if (marchResidual < 0.) { // caso em que o chute de pressao foi alto
-    double abortValue;
-    if (bracketFromHighGuessSecondary(state, reduz, chuteNeg, chutelim, kontaiter, mult1, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
-        return abortValue;
+            double abortValue;
+            if (bracketFromHighGuessSecondary(state, reduz, chuteNeg, chutelim, kontaiter, mult1, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
+                return abortValue;
             chutePos = pchute2;
         } else if (marchResidual > 0.) { // caso em que Vazao no choke<Vazao da mistura na tubulaÃ§Ã£o,
-    double abortValue;
-    if (bracketFromLowGuessSecondary(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
-        return abortValue;
+            double abortValue;
+            if (bracketFromLowGuessSecondary(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
+                return abortValue;
         }
         return solveSteadyRoot(state, chuteNeg, chutePos, 1, 1); // com as duas estimativas de pressao
         // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
@@ -2713,8 +2713,8 @@ bool marchTertiaryColumnUntilConverged(const SteadyStateSearchState &state, int 
         i = 1;
         // inicio da marcha propriamente dita
         while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 0.1 && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
-    if (advanceTertiaryColumn(state, i, abortValue))
-        return true;
+            if (advanceTertiaryColumn(state, i, abortValue))
+                return true;
         }
         if (i == state.march.lastCell + 1)
             corrigechute = 0; // fim da marcha
@@ -2811,9 +2811,9 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
         // obtidas na primeira iteracao de marcha
         int i;
         int corrigechute = 1;
-    double abortValue;
-    if (marchTertiaryColumnUntilConverged(state, corrigechute, i, betini, alfini, pentrada, abortValue))
-        return abortValue;
+        double abortValue;
+        if (marchTertiaryColumnUntilConverged(state, corrigechute, i, betini, alfini, pentrada, abortValue))
+            return abortValue;
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista
         if (pentrada > 0 && state.march.input.lingas > 0 && state.march.input.nvalvgas > 0) {
@@ -3587,7 +3587,7 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
     if (fabs(marchResidual) < 1e-3)
         return mchute;
     else {
-    return bracketTertiaryPressureToPressureRoot(state, testaEscoa, chutePos, chuteNeg, chutelim, mchute2, mchuteAux, kontaiter, marchResidual, mchute, maxvaz);
+        return bracketTertiaryPressureToPressureRoot(state, testaEscoa, chutePos, chuteNeg, chutelim, mchute2, mchuteAux, kontaiter, marchResidual, mchute, maxvaz);
     }
 }
 
@@ -3993,7 +3993,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
     if (fabs(marchResidual) < 1e-15)
         return pchute;
     else {
-    return bracketInjectionRoot2(state, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketInjectionRoot2(state, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
     }
 }
 
@@ -4537,7 +4537,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
     if (fabs(marchResidual) < 1e-15)
         return pchute;
     else {
-    return bracketInjectionRoot5(state, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketInjectionRoot5(state, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
     }
 }
 
@@ -4747,9 +4747,9 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
         }
         chutePos = pchute2;
     } else if (marchResidual > 0.) {
-    double abortValue;
-    if (bracketSecondaryBranchFromLowGuess(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, abortValue))
-        return abortValue;
+        double abortValue;
+        if (bracketSecondaryBranchFromLowGuess(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, abortValue))
+            return abortValue;
     }
     return solveSteadyRoot(state, chuteNeg, chutePos, 1, 1); // Find the root using pressure bounds with opposite signs.
 }
@@ -4998,7 +4998,7 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
     if (fabs(marchResidual) < 1e-3)
         return pchute;
     else {
-    return bracketSecondaryBranchRoot(state, amplifica, reduz, chutePos, chuteNeg, chutelim, kontaiter, mult2, mult1, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketSecondaryBranchRoot(state, amplifica, reduz, chutePos, chuteNeg, chutelim, kontaiter, mult2, mult1, marchResidual, pchuteAux, pchute2, pchute);
     }
 }
 

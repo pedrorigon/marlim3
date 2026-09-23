@@ -218,7 +218,9 @@ void correctGasSpecificGravity(const SteadyStateState &state, int cellIndex);
 // -------------------------------------------------------------- gas march ----
 
 /// Marches the gas line. The mass guess defaults to -1, meaning "derive it".
-[[nodiscard]] double marchGasSteady(const SteadyStateState &state, double massGuess = -1);
+/// Not [[nodiscard]]: the production marches call it for its effect on the gas
+/// cells and drop the value, as the original did.
+double marchGasSteady(const SteadyStateState &state, double massGuess = -1);
 [[nodiscard]] double marchGasSteadySecondary(const SteadyStateState &state, double pressureGuess,
                                              double massGuess = -1);
 [[nodiscard]] double marchGasSteadyTertiary(const SteadyStateState &state, double pressureGuess);
