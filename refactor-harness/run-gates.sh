@@ -77,7 +77,9 @@ fi
 
 # ---------------------------------------------------------------- gate 1 ----
 announce "Gate 1 - clean build, no new warnings"
-cmake --build --preset gcc-release > "$evidence_dir/build.log" 2>&1
+# --clean-first: the gate compares warning counts against a full baseline
+# build, so it needs a full build to compare. See the vacuity check below.
+cmake --build --preset gcc-release --clean-first > "$evidence_dir/build.log" 2>&1
 build_status=$?
 errors=$(grep -c "error:" "$evidence_dir/build.log")
 compiled=$(grep -c "Building CXX object" "$evidence_dir/build.log")
@@ -162,14 +164,20 @@ if (( introduced > 0 )); then
 fi
 
 # An incremental build with nothing to do emits zero warnings and would pass the
-# comparison without having verified anything. Say so, rather than reporting a
-# pass that carries no information.
+# comparison without having verified anything. This used to print a warning and
+# then report PASS anyway -- and the stage 7 gate (T099) was archived that way:
+# "no translation unit was recompiled -- this gate is vacuous", then "GATE 1:
+# PASS". Five -Wreturn-type, one -Wmisleading-indentation and four
+# -Wunused-result from stage 7 went through; the T130 gate found them, and a
+# -Wshadow pass run while fixing them found a real defect in the same cuts.
+# A gate that verified nothing FAILS.
+vacuous=0
 if (( compiled == 0 )); then
-    printf '%sno translation unit was recompiled -- this gate is vacuous.%s\n' "$yellow" "$reset"
-    printf '%sRun a clean build before the stage boundary.%s\n' "$yellow" "$reset"
+    printf '%sno translation unit was recompiled -- this gate is vacuous and FAILS.%s\n' "$red" "$reset"
+    vacuous=1
 fi
 
-(( build_status == 0 && errors == 0 && introduced == 0 ))
+(( build_status == 0 && errors == 0 && introduced == 0 && vacuous == 0 ))
 verdict 1 $?
 
 # ---------------------------------------------------------------- gate 2 ----

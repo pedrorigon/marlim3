@@ -96,6 +96,26 @@ REQUIRED_SOLVERS = ("zriddr",)
 # wrapper, so the recorded column means the same thing on both sides.
 COUNTED = ("multMarcha", "double", "double chute, int prod, int tipoCC", "chute, prod, tipoCC")
 
+# From T097b on, the steady-state searches no longer reach SProd::zriddr or
+# SProd::multMarcha: solveSteadyRoot in the search module calls
+# rootfinding::zriddr itself, and its objective is dispatchMarch, the moved
+# multMarcha. Wrapping the SProd members then captures nothing, and
+# verify-l1-zriddr.sh said so -- "the run captured no zriddr calls" -- the
+# first time anyone ran it after stage 7 (T130). Stage 7's gate did not run it.
+#
+# When the module exists, the capture moves to where the solve now happens.
+# Same channel, same columns, same meaning: the brackets, prod, tipoCC, the
+# root, and the objective evaluations made during the call.
+SEARCH_SOURCE = "src/core/SisProdSteadyStateSearch.cpp"
+MODULE_SOLVE = ("zriddr", "solveSteadyRoot", "double",
+                "const SteadyStateSearchState &state, double lowerBracket, double upperBracket, int prod, int tipoCC",
+                "state, lowerBracket, upperBracket, prod, tipoCC",
+                [("lowerBracket", "%a"), ("upperBracket", "%a"), ("prod", "%d"), ("tipoCC", "%d")])
+MODULE_COUNTED = ("dispatchMarch", "double",
+                  "const SteadyStateSearchState &state, double chute, int prod, int tipoCC",
+                  "state, chute, prod, tipoCC")
+MODULE_NAMESPACE = "sisprod::steady"
+
 LOGGER = '''
 // ---- L1 golden capture (temporary instrumentation, never committed) ----
 //
@@ -255,6 +275,38 @@ def instrument_solvers(source: str) -> tuple[str, set[str]]:
 '''
         source += wrapper
     return source, wrapped
+
+
+def instrument_search_module(source: str) -> str:
+    """Wrap the module's root solve and its objective (see MODULE_SOLVE)."""
+    channel, name, ret, params, args, logged = MODULE_SOLVE
+    cname, cret, cparams, cargs = MODULE_COUNTED
+    for n, r, p in ((name, ret, params), (cname, cret, cparams)):
+        definition = f"{r} {n}({p}) {{"
+        if source.count(definition) != 1:
+            raise SystemExit(f"`{definition}` not found exactly once in {SEARCH_SOURCE} -- "
+                             "the signature moved and the capture would record nothing")
+        source = source.replace(definition, f"{r} {n}__golden_impl({p}) {{", 1)
+    fields = " ".join(fmt for _, fmt in logged) + " %a %lld"
+    values = ", ".join(arg for arg, _ in logged)
+    source += f'''
+namespace {MODULE_NAMESPACE} {{
+{cret} {cname}({cparams}) {{
+    ++golden_capture::evaluations();
+    return {cname}__golden_impl({cargs});
+}}
+
+{ret} {name}({params}) {{
+    long long before = golden_capture::evaluations();
+    {ret} result = {name}__golden_impl({args});
+    {{ std::FILE *gf = golden_capture::sink("{channel}");
+      if (gf) std::fprintf(gf, "{fields}\\n", {values}, result,
+                           golden_capture::evaluations() - before); }}
+    return result;
+}}
+}}  // namespace {MODULE_NAMESPACE}
+'''
+    return add_logger(source)
 
 
 def instrument_header(header: str, wrapped: set[str]) -> str:
@@ -436,6 +488,17 @@ def main() -> int:
         print("goldenSweep was never declared -- refusing to write", file=sys.stderr)
         return 1
 
+    search = tree / SEARCH_SOURCE
+    in_module = False
+    if search.exists() and "rootfinding::zriddr(" in search.read_text(encoding="utf-8", errors="replace"):
+        search_text = search.read_text(encoding="utf-8", errors="surrogateescape")
+        if "golden_capture" in search_text:
+            print("search module already instrumented; aborting", file=sys.stderr)
+            return 1
+        search.write_text(instrument_search_module(search_text), encoding="utf-8",
+                          errors="surrogateescape")
+        in_module = True
+
     cpp.write_text(add_logger(source), encoding="utf-8")
     hpp.write_text(header_text, encoding="utf-8")
 
@@ -446,6 +509,10 @@ def main() -> int:
           f"{' (extracted)' if in_closure else ''}")
     print(f"  solvers     : {', '.join(sorted(wrapped))}")
     print(f"  counter     : {COUNTED[0]}")
+    if in_module:
+        print(f"instrumented {search}")
+        print(f"  root solve  : {MODULE_SOLVE[1]} -> channel {MODULE_SOLVE[0]}")
+        print(f"  counter     : {MODULE_COUNTED[0]}")
     return 0
 
 
