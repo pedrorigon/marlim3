@@ -1191,6 +1191,8 @@ class SProd {
     /// Builds the production section after input parsing.
     /// Points every cell fluid, and every source fluid it carries, at the bubble-point
     void assignPvtSimBubbleTablesToCells();
+    /// Reads the bubble-point curve from the PVTSim file, points the cell fluids at it
+    void loadPvtSimSaturationTables();
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);
