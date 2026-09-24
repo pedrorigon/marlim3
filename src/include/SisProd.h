@@ -1349,6 +1349,10 @@ class SProd {
     /// and writes every tabulated property of flui's mini-table there, plus the
     /// bubble-point pressure at each temperature.
     void fillMiniTableCornersAtMinPressure(ProFlu &fluC, ProFlu &flui);
+    /// Evaluates the fluid at the two maximum-pressure corners of the mini-table,
+    /// (pmax, tmin) and (pmax, tmax): refreshes fluC's composition at each corner
+    /// and writes every tabulated property of flui's mini-table there.
+    void fillMiniTableCornersAtMaxPressure(ProFlu &fluC, ProFlu &flui);
     /// Prepares auxiliary data for a local fluid-property table.
     void auxMiniTab(ProFlu &flu);
     /// Generates the local fluid-property table.

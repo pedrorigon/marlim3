@@ -3846,11 +3846,10 @@ void SProd::fillMiniTableCornersAtMinPressure(ProFlu &fluC, ProFlu &flui) {
         fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
 }
 
-void SProd::auxMiniTab(ProFlu &flui) {
-    ProFlu fluC;
-    fluC = flui;
-    fluC.atualizaPropCompStandard();
-    fillMiniTableCornersAtMinPressure(fluC, flui);
+/// Evaluates the fluid at the two maximum-pressure corners of the mini-table,
+/// (pmax, tmin) and (pmax, tmax): refreshes fluC's composition at each corner and
+/// writes every tabulated property of flui's mini-table there.
+void SProd::fillMiniTableCornersAtMaxPressure(ProFlu &fluC, ProFlu &flui) {
     if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
         fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin,
                               fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
@@ -3923,6 +3922,14 @@ void SProd::auxMiniTab(ProFlu &flui) {
         fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
     flui.miniTabDin.HgF[1][1] =
         fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+}
+
+void SProd::auxMiniTab(ProFlu &flui) {
+    ProFlu fluC;
+    fluC = flui;
+    fluC.atualizaPropCompStandard();
+    fillMiniTableCornersAtMinPressure(fluC, flui);
+    fillMiniTableCornersAtMaxPressure(fluC, flui);
 
 
     std::pair<double, int> titVec[4];

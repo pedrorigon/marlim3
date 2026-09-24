@@ -358,3 +358,13 @@ SolveTrans
 # now the calls. Verified by L2 (14/14 bit for bit) after each of the twelve
 # cuts, and by check-byvalue-writes.py on every helper that takes a parameter.
 montasistema
+
+# --- stage 9: construction functions above 200 lines (T101) ---------------
+# Decomposed in place, each cut a contiguous run of the original statements,
+# called where the run stood. operator= and copiaSemJson were cut too (their
+# storage-release phases) and are declared above since stage 1. Every cut is
+# proved literal by prove-cut.py -- the helper put back reproduces the host's
+# tokens before the cut -- which matters here because no corpus model enables
+# the hydrate calculation renovaFonte's first cut lifted. L2 14/14 after each.
+renovaFonte
+auxMiniTab
