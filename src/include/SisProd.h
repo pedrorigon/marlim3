@@ -1235,6 +1235,13 @@ class SProd {
     /// off, or evaluates them at local pressure and temperature when it is on; then
     /// makes the first cell's fluid the fluid of its source.
     void applyDensityCorrectionsAndInletFluid();
+    /// Lists the cells with two-dimensional heat diffusion, copies the master-valve
+    /// opening and closing times, maps the transient profile positions to global
+    /// thermal-node indices, and -- unless the network is only provisional --
+    /// allocates the trend matrices of the production line, the gas line and the
+    /// transient trends, sized to the longest simulated time and filled with the
+    /// -10000 sentinel.
+    void allocateEventProfileAndTrendArrays();
     /// Builds the production section after input parsing.
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,

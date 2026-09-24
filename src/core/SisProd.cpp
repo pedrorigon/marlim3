@@ -2202,6 +2202,145 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
     }
 }
 
+/// Lists the cells with two-dimensional heat diffusion, copies the master-valve
+/// opening and closing times, maps the transient profile positions to global
+/// thermal-node indices, and -- unless the network is only provisional --
+/// allocates the trend matrices of the production line, the gas line and the
+/// transient trends, sized to the longest simulated time and filled with the
+/// -10000 sentinel.
+void SProd::allocateEventProfileAndTrendArrays() {
+    for (int i = 0; i < ncel; i++) {
+        if (celula[i].calor.difus2D == 1) {
+            indCelPoisson2D.push_back(i);
+            nCelulaPoisson2D++;
+        }
+    }
+
+    nabreM1 = arq.eventoabre;
+    nfechaM1 = arq.eventofecha;
+    abreM1 = new double[nabreM1];
+    fechaM1 = new double[nfechaM1];
+    for (int i = 0; i < nabreM1; i++)
+        abreM1[i] = arq.Tevento[i];
+    for (int i = 0; i < nfechaM1; i++)
+        fechaM1[i] = arq.Teventof[i];
+
+    int ntempGas = 0;
+    if (arq.lingas > 0)
+        ntempGas = ncelGas;
+
+    if (arq.nperfistransp > 0) {
+        ncelperftransp = new int[arq.nperfistransp];
+        for (int i = 0; i < arq.nperfistransp; i++) {
+            int posiccel = arq.proftransp.posic[i];
+            ncelperftransp[i] = celula[posiccel].calor.nglobal;
+        }
+    }
+    if (arq.nperfistransg > 0 && arq.lingas > 0) {
+        ncelperftransg = new int[arq.nperfistransg];
+        for (int i = 0; i < arq.nperfistransg; i++) {
+            int posiccel = arq.proftransg.posic[i];
+            ncelperftransg[i] = celulaG[posiccel].calor.nglobal;
+        }
+    }
+
+    if ((*vg1dSP).chaverede == 0)
+        (*vg1dSP).TmaxR = arq.tfinal;
+    if (redeTemporario == 0) {
+        if (arq.ntendp > 0) {
+            TrendLengthP = new int[arq.ntendp];
+            for (int i = 0; i < arq.ntendp; i++)
+                TrendLengthP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); // round(arq.tfinal / arq.trendp[i].dt);
+        }
+        if (arq.ntendp > 0) {
+            resettrend = new double[arq.ntendp];
+            ntrend = new int[arq.ntendp];
+            ntrendB = new int[arq.ntendp];
+            MatTrendP = new double **[arq.ntendp];
+            for (int i = 0; i < arq.ntendp; i++) {
+                MatTrendP[i] = new double *[TrendLengthP[i]];
+                for (int j = 0; j < TrendLengthP[i]; j++) {
+                    MatTrendP[i][j] = new double[arq.nvartrendp[i] + 2];
+                    for (int k = 0; k <= arq.nvartrendp[i]; k++)
+                        MatTrendP[i][j][k] = -10000.;
+                }
+                resettrend[i] = 0;
+                ntrend[i] = 0;
+                ntrendB[i] = 0;
+            }
+        }
+
+        if (arq.ntendg > 0) {
+            TrendLengthG = new int[arq.ntendg];
+            for (int i = 0; i < arq.ntendg; i++)
+                TrendLengthG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt);
+        }
+        if (arq.ntendg > 0) {
+            resettrendg = new double[arq.ntendg];
+            ntrendg = new int[arq.ntendg];
+            ntrendgB = new int[arq.ntendg];
+            MatTrendG = new double **[arq.ntendg];
+            for (int i = 0; i < arq.ntendg; i++) {
+                MatTrendG[i] = new double *[TrendLengthG[i]];
+                for (int j = 0; j < TrendLengthG[i]; j++) {
+                    MatTrendG[i][j] = new double[arq.nvartrendg[i] + 2];
+                    for (int k = 0; k <= arq.nvartrendg[i]; k++)
+                        MatTrendG[i][j][k] = -10000.;
+                }
+                resettrendg[i] = 0;
+                ntrendg[i] = 0;
+                ntrendgB[i] = 0;
+            }
+        }
+        if (arq.ntendtransp > 0) {
+            TrendLengthTransP = new int[arq.ntendtransp];
+            for (int i = 0; i < arq.ntendtransp; i++)
+                TrendLengthTransP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt);
+        }
+        if (arq.ntendtransp > 0) {
+            resettrendtrans = new double[arq.ntendtransp];
+            ntrendtrans = new int[arq.ntendtransp];
+            ntrendtransB = new int[arq.ntendtransp];
+            MatTrendTransP = new double **[arq.ntendtransp];
+            for (int i = 0; i < arq.ntendtransp; i++) {
+                MatTrendTransP[i] = new double *[TrendLengthTransP[i]];
+                for (int j = 0; j < TrendLengthTransP[i]; j++)
+                    MatTrendTransP[i][j] = new double[2];
+                for (int j = 0; j < TrendLengthTransP[i]; j++)
+                    for (int k = 0; k < 2; k++)
+                        MatTrendTransP[i][j][k] = -10000.;
+
+                resettrendtrans[i] = 0;
+                ntrendtrans[i] = 0;
+                ntrendtransB[i] = 0;
+            }
+        }
+        if (arq.ntendtransg > 0 && arq.lingas > 0) {
+            TrendLengthTransG = new int[arq.ntendtransg];
+            for (int i = 0; i < arq.ntendtransg; i++)
+                TrendLengthTransG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt);
+        }
+        if (arq.ntendtransg > 0) {
+            resettrendtransg = new double[arq.ntendtransg];
+            ntrendtransg = new int[arq.ntendtransg];
+            ntrendtransgB = new int[arq.ntendtransg];
+            MatTrendTransG = new double **[arq.ntendtransg];
+            for (int i = 0; i < arq.ntendtransg; i++) {
+                MatTrendTransG[i] = new double *[TrendLengthTransG[i]];
+                for (int j = 0; j < TrendLengthTransG[i]; j++)
+                    MatTrendTransG[i][j] = new double[2];
+                for (int j = 0; j < TrendLengthTransG[i]; j++)
+                    for (int k = 0; k < 2; k++)
+                        MatTrendTransG[i][j][k] = -10000.;
+
+                resettrendtransg[i] = 0;
+                ntrendtransg[i] = 0;
+                ntrendtransgB[i] = 0;
+            }
+        }
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -2222,136 +2361,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         }
         applyDensityCorrectionsAndInletFluid();
 
-        for (int i = 0; i < ncel; i++) {
-            if (celula[i].calor.difus2D == 1) {
-                indCelPoisson2D.push_back(i);
-                nCelulaPoisson2D++;
-            }
-        }
-
-        nabreM1 = arq.eventoabre;
-        nfechaM1 = arq.eventofecha;
-        abreM1 = new double[nabreM1];
-        fechaM1 = new double[nfechaM1];
-        for (int i = 0; i < nabreM1; i++)
-            abreM1[i] = arq.Tevento[i];
-        for (int i = 0; i < nfechaM1; i++)
-            fechaM1[i] = arq.Teventof[i];
-
-        int ntempGas = 0;
-        if (arq.lingas > 0)
-            ntempGas = ncelGas;
-
-        if (arq.nperfistransp > 0) {
-            ncelperftransp = new int[arq.nperfistransp];
-            for (int i = 0; i < arq.nperfistransp; i++) {
-                int posiccel = arq.proftransp.posic[i];
-                ncelperftransp[i] = celula[posiccel].calor.nglobal;
-            }
-        }
-        if (arq.nperfistransg > 0 && arq.lingas > 0) {
-            ncelperftransg = new int[arq.nperfistransg];
-            for (int i = 0; i < arq.nperfistransg; i++) {
-                int posiccel = arq.proftransg.posic[i];
-                ncelperftransg[i] = celulaG[posiccel].calor.nglobal;
-            }
-        }
-
-        if ((*vg1dSP).chaverede == 0)
-            (*vg1dSP).TmaxR = arq.tfinal;
-        if (redeTemporario == 0) {
-            if (arq.ntendp > 0) {
-                TrendLengthP = new int[arq.ntendp];
-                for (int i = 0; i < arq.ntendp; i++)
-                    TrendLengthP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); // round(arq.tfinal / arq.trendp[i].dt);
-            }
-            if (arq.ntendp > 0) {
-                resettrend = new double[arq.ntendp];
-                ntrend = new int[arq.ntendp];
-                ntrendB = new int[arq.ntendp];
-                MatTrendP = new double **[arq.ntendp];
-                for (int i = 0; i < arq.ntendp; i++) {
-                    MatTrendP[i] = new double *[TrendLengthP[i]];
-                    for (int j = 0; j < TrendLengthP[i]; j++) {
-                        MatTrendP[i][j] = new double[arq.nvartrendp[i] + 2];
-                        for (int k = 0; k <= arq.nvartrendp[i]; k++)
-                            MatTrendP[i][j][k] = -10000.;
-                    }
-                    resettrend[i] = 0;
-                    ntrend[i] = 0;
-                    ntrendB[i] = 0;
-                }
-            }
-
-            if (arq.ntendg > 0) {
-                TrendLengthG = new int[arq.ntendg];
-                for (int i = 0; i < arq.ntendg; i++)
-                    TrendLengthG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt);
-            }
-            if (arq.ntendg > 0) {
-                resettrendg = new double[arq.ntendg];
-                ntrendg = new int[arq.ntendg];
-                ntrendgB = new int[arq.ntendg];
-                MatTrendG = new double **[arq.ntendg];
-                for (int i = 0; i < arq.ntendg; i++) {
-                    MatTrendG[i] = new double *[TrendLengthG[i]];
-                    for (int j = 0; j < TrendLengthG[i]; j++) {
-                        MatTrendG[i][j] = new double[arq.nvartrendg[i] + 2];
-                        for (int k = 0; k <= arq.nvartrendg[i]; k++)
-                            MatTrendG[i][j][k] = -10000.;
-                    }
-                    resettrendg[i] = 0;
-                    ntrendg[i] = 0;
-                    ntrendgB[i] = 0;
-                }
-            }
-            if (arq.ntendtransp > 0) {
-                TrendLengthTransP = new int[arq.ntendtransp];
-                for (int i = 0; i < arq.ntendtransp; i++)
-                    TrendLengthTransP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt);
-            }
-            if (arq.ntendtransp > 0) {
-                resettrendtrans = new double[arq.ntendtransp];
-                ntrendtrans = new int[arq.ntendtransp];
-                ntrendtransB = new int[arq.ntendtransp];
-                MatTrendTransP = new double **[arq.ntendtransp];
-                for (int i = 0; i < arq.ntendtransp; i++) {
-                    MatTrendTransP[i] = new double *[TrendLengthTransP[i]];
-                    for (int j = 0; j < TrendLengthTransP[i]; j++)
-                        MatTrendTransP[i][j] = new double[2];
-                    for (int j = 0; j < TrendLengthTransP[i]; j++)
-                        for (int k = 0; k < 2; k++)
-                            MatTrendTransP[i][j][k] = -10000.;
-
-                    resettrendtrans[i] = 0;
-                    ntrendtrans[i] = 0;
-                    ntrendtransB[i] = 0;
-                }
-            }
-            if (arq.ntendtransg > 0 && arq.lingas > 0) {
-                TrendLengthTransG = new int[arq.ntendtransg];
-                for (int i = 0; i < arq.ntendtransg; i++)
-                    TrendLengthTransG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt);
-            }
-            if (arq.ntendtransg > 0) {
-                resettrendtransg = new double[arq.ntendtransg];
-                ntrendtransg = new int[arq.ntendtransg];
-                ntrendtransgB = new int[arq.ntendtransg];
-                MatTrendTransG = new double **[arq.ntendtransg];
-                for (int i = 0; i < arq.ntendtransg; i++) {
-                    MatTrendTransG[i] = new double *[TrendLengthTransG[i]];
-                    for (int j = 0; j < TrendLengthTransG[i]; j++)
-                        MatTrendTransG[i][j] = new double[2];
-                    for (int j = 0; j < TrendLengthTransG[i]; j++)
-                        for (int k = 0; k < 2; k++)
-                            MatTrendTransG[i][j][k] = -10000.;
-
-                    resettrendtransg[i] = 0;
-                    ntrendtransg[i] = 0;
-                    ntrendtransgB[i] = 0;
-                }
-            }
-        }
+        allocateEventProfileAndTrendArrays();
 
         verificaAcop = 0;
 
