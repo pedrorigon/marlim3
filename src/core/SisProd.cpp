@@ -3177,6 +3177,79 @@ void SProd::salvaFonte() {
     }
 }
 
+/// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s, takes
+/// the water and gas that hydrate formation consumed in cell ind during the step,
+/// hands them back through the two out-parameters, and lowers the cell's BSW for
+/// the free water that is gone.
+void SProd::consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_consumida_Mw, int ind) {
+    if (arq.calculaEnvelope == 1 && arq.tipoHmodel == 2 && (*vg1dSP).lixo5 > 0.01) {
+
+        agua_consumida_Mw = celula[ind].agua_consumida_massa_step;
+
+        gas_consumido_Mg = celula[ind].gas_consumido_massa_step;
+
+    //Atualizar BSW
+    double A_cross = celula[ind].duto.area;
+    double Lcel    = celula[ind].dx;
+    double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h, 1e-12);
+
+    double frac_agua = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*celula[ind].FW, 1e-12);
+    double frac_oleo = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*(1-celula[ind].FW), 1e-12);
+
+    double Vagua = frac_agua * Vlivre;
+    double Voil  = frac_oleo * Vlivre;
+
+    double rho_w = std::max(celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp), 1e-12);
+    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
+    if (Vagua_new < 0.0) Vagua_new = 0.0;
+
+    double BSW_old = celula[ind].flui.BSW;
+    double den = Voil + Vagua_new;
+    if (den > 1e-12) {
+    celula[ind].flui.BSW = Vagua_new / den;
+    } else {
+    celula[ind].flui.BSW = BSW_old;
+    }
+    //celula[ind].FW=celula[ind].flui.BSW;
+    if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
+    //if (ind==3) system("pause");
+
+    } //Alteracao Hidratos
+
+    if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+
+    agua_consumida_Mw  = celula[ind].agua_consumida_massa_step;
+
+    gas_consumido_Mg   = celula[ind].gas_consumido_massa_step;
+
+    //Atualizar BSW
+    double A_cross = celula[ind].duto.area;
+    double Lcel    = celula[ind].dx;
+    double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h_total, 1e-12);
+
+    double frac_agua = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*celula[ind].FW, 1e-12);
+    double frac_oleo = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*(1-celula[ind].FW), 1e-12);
+
+    double Vagua = frac_agua * Vlivre;
+    double Voil  = frac_oleo * Vlivre;
+
+    double rho_w = std::max(celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp), 1e-12);
+    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
+    if (Vagua_new < 0.0) Vagua_new = 0.0;
+
+    double BSW_old = celula[ind].flui.BSW;
+    double den = Voil + Vagua_new;
+    if (den > 1e-12) {
+    celula[ind].flui.BSW = Vagua_new / den;
+    } else {
+    celula[ind].flui.BSW = BSW_old;
+    }
+
+    //if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
+
+    } //Alteracao Hidratos
+}
+
 void SProd::renovaFonte(int ind) {
 
     double pr = celula[ind].pres;
@@ -3196,72 +3269,7 @@ void SProd::renovaFonte(int ind) {
     double agua_consumida_Mw = 0.;
     double gas_consumido_Mg = 0.;
 
-    if (arq.calculaEnvelope == 1 && arq.tipoHmodel == 2 && (*vg1dSP).lixo5 > 0.01) {
-
-        agua_consumida_Mw = celula[ind].agua_consumida_massa_step;
-
-        gas_consumido_Mg = celula[ind].gas_consumido_massa_step;
-
-	  //Atualizar BSW
-	    double A_cross = celula[ind].duto.area;
-	    double Lcel    = celula[ind].dx;
-	    double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h, 1e-12);
-
-	    double frac_agua = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*celula[ind].FW, 1e-12);
-	    double frac_oleo = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*(1-celula[ind].FW), 1e-12);
-
-	    double Vagua = frac_agua * Vlivre;
-	    double Voil  = frac_oleo * Vlivre;
-
-	    double rho_w = std::max(celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp), 1e-12);
-	    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
-	    if (Vagua_new < 0.0) Vagua_new = 0.0;
-
-	    double BSW_old = celula[ind].flui.BSW;
-	    double den = Voil + Vagua_new;
-	    if (den > 1e-12) {
-	        celula[ind].flui.BSW = Vagua_new / den;
-	    } else {
-	        celula[ind].flui.BSW = BSW_old;
-	    }
-	  //celula[ind].FW=celula[ind].flui.BSW;
-	  if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
-	  //if (ind==3) system("pause");
-
-  } //Alteracao Hidratos
-  
-  if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
-
-	    agua_consumida_Mw  = celula[ind].agua_consumida_massa_step;
-
-	    gas_consumido_Mg   = celula[ind].gas_consumido_massa_step;
-
-	  //Atualizar BSW
-	    double A_cross = celula[ind].duto.area;
-	    double Lcel    = celula[ind].dx;
-	    double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h_total, 1e-12);
-
-	    double frac_agua = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*celula[ind].FW, 1e-12);
-	    double frac_oleo = std::max((1-celula[ind].alfR)*(1-celula[ind].betR)*(1-celula[ind].FW), 1e-12);
-
-	    double Vagua = frac_agua * Vlivre;
-	    double Voil  = frac_oleo * Vlivre;
-
-	    double rho_w = std::max(celula[ind].flui.MasEspAgua(celula[ind].pres, celula[ind].temp), 1e-12);
-	    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
-	    if (Vagua_new < 0.0) Vagua_new = 0.0;
-
-	    double BSW_old = celula[ind].flui.BSW;
-	    double den = Voil + Vagua_new;
-	    if (den > 1e-12) {
-	        celula[ind].flui.BSW = Vagua_new / den;
-	    } else {
-	        celula[ind].flui.BSW = BSW_old;
-	    }
-	  
-	  //if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
-
-  } //Alteracao Hidratos
+    consumeHydrateFormationMass(gas_consumido_Mg, agua_consumida_Mw, ind);
     if (celula[ind].acsr.tipo == 1) {
         if (celula[ind].acsr.injg.tipoflu == 0) {
             double masgas = celula[ind].acsr.injg.VMas(pr, tr);

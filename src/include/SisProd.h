@@ -1316,6 +1316,11 @@ class SProd {
     void FonteValv(int ind);
     /// Stores source terms from the previous time level for possible rollback.
     void salvaFonte();
+    /// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s,
+    /// takes the water and gas that hydrate formation consumed in cell ind during
+    /// the step, hands them back through the two out-parameters, and lowers the
+    /// cell's BSW for the free water that is gone.
+    void consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_consumida_Mw, int ind);
     /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
     void renovaFonte(int ind);
     /// Stores previous void fractions and updates pig motion and reception.
