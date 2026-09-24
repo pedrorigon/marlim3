@@ -1197,6 +1197,8 @@ class SProd {
     void generateSaturationTablesFromCorrelations();
     /// Copies the run configuration into the members, checks that an injection well
     void buildProductionCells(double *compfonte, int *posicfonte, int nfontes);
+    /// Gives the inlet the sources its boundary condition needs (and the second cell,
+    void configureInletSourcesAndAccessories(int nfontes);
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);

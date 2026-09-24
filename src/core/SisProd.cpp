@@ -1712,107 +1712,116 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
         arq.gerafPoro2DFonte(celula);
 }
 
+/// Gives the inlet the sources its boundary condition needs (and the second cell,
+/// under a blockage), then places the accessories -- pumps, volumetric pumps,
+/// pressure-drop requirements, heat sources, the master valve and the other
+/// valves -- and sets up the outlet pressure, the surface and injection chokes and
+/// the pigs.
+void SProd::configureInletSourcesAndAccessories(int nfontes) {
+    if (celula[0].acsr.tipo != 0 && arq.ConContEntrada == 1) {
+        // RN-302: The inlet has both a pressure boundary condition and a mass source. Report a warning.
+        logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                   "Foi escolhida uma condicao de contorno de pressao no inicio da tubulacao e foi colocada uma fonte de massa neste inicio, isto pode causar inconsistencias",
+                   "", "");
+    }
+    if ((arq.perm == 1 || (*vg1dSP).chaverede > 0) && celula[0].acsr.tipo == 0) {
+        if ((arq.ConContEntrada == 0 && nfontes == 0 && (*vg1dSP).chaverede == 0)) {
+            NumError("O simulador pede calculo de permanente com condicao de vazao na entrada, mas sem nenhuma fonte na entrada");
+        }
+        if ((arq.ConContEntrada == 0 && nfontes == 0 && (*vg1dSP).chaverede > 0) || arq.CCPres.tit[0] < (1 - (*vg1dSP).localtiny)) {
+            if (arq.tipoFluido == 1)
+                celula[0].acsr.tipo = 1;
+            else if (arq.tipoFluido == 0)
+                celula[0].acsr.tipo = 2;
+            else
+                celula[0].acsr.tipo = 10;
+            InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
+            celula[0].acsr.injm.condTermo = 1;
+            celula[0].acsr.injm = injmassMRT;
+            InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
+            celula[0].acsr.injl = injliqMRT;
+            InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
+            celula[0].acsr.injg = injgasMRT;
+        } else if (nfontes == 0 || arq.ConContEntrada == 1) {
+            InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
+            injgasMRT.seco = 0;
+            celula[0].acsr.injg = injgasMRT;
+            InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
+            celula[0].acsr.injm.condTermo = 1;
+            celula[0].acsr.injm = injmassMRT;
+            InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
+            celula[0].acsr.injl = injliqMRT;
+            if (arq.tipoFluido == 1)
+                celula[0].acsr.tipo = 1;
+            else if (arq.tipoFluido == 0)
+                celula[0].acsr.tipo = 2;
+            else
+                celula[0].acsr.tipo = 10;
+        }
+    }
+    if (bloq == 1 && celula[1].acsr.tipo == 0) {
+        if ((*vg1dSP).fluidoRede == 1)
+            celula[1].acsr.tipo = 2;
+        else if ((*vg1dSP).fluidoRede == 0)
+            celula[1].acsr.tipo = 1;
+        else
+            celula[1].acsr.tipo = 10;
+        InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
+        celula[1].acsr.injm.condTermo = 1;
+        celula[1].acsr.injm = injmassMRT;
+        InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
+        celula[1].acsr.injl = injliqMRT;
+        InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
+        celula[1].acsr.injg = injgasMRT;
+    } else if (bloq == 1) {
+        logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                   "Foi escolhida uma condicao de bloqueio que afeta este tramo, para que a selecao de fontes seja"
+                   "feita corretamente, e necessario que a segunda celula do tramo nao tenha fontes catalogadas",
+                   "", "");
+    }
+    if (arq.nbcs > 0)
+        arq.gerafBCS(celula);
+    if (arq.nmultibcs > 0)
+        arq.gerafmultiBCS(celula);
+    if (arq.nbvol > 0)
+        arq.gerafBVOL(celula);
+    if (arq.ndpreq > 0)
+        arq.geraDPReq(celula);
+    if (arq.ncalor > 0)
+        arq.geraFonteCalor(celula);
+    if (arq.master1.posic > 0.)
+        arq.geraMaster1(celula);
+    else {
+        int verifica = 0;
+        double Lverifica = 0.5 * celula[verifica].dx;
+        while (celula[verifica].acsr.tipo != 0) {
+            verifica++;
+            Lverifica += 0.5 * (celula[verifica].dx + celula[verifica - 1].dx);
+        }
+        arq.master1.posic = verifica;
+        arq.master1.comp = Lverifica;
+        arq.geraMaster1(celula);
+    }
+    if (arq.nvalv > 0)
+        arq.geraValv(celula);
+    arq.gerapresfim(presfim, pGSup);
+    pGSupIni = pGSup;
+    chokeSup = choke(1., 1.);
+    chokeInj = ChokeGas();
+    arq.gerachokesup(chokeSup);
+    npig = arq.npig;
+    if (npig > 0) {
+        receb = new int[npig];
+        for (int i = 0; i < npig; i++)
+            receb[i] = arq.pig[i].receb;
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
         buildProductionCells(compfonte, posicfonte, nfontes);
-        if (celula[0].acsr.tipo != 0 && arq.ConContEntrada == 1) {
-            // RN-302: The inlet has both a pressure boundary condition and a mass source. Report a warning.
-            logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
-                       "Foi escolhida uma condicao de contorno de pressao no inicio da tubulacao e foi colocada uma fonte de massa neste inicio, isto pode causar inconsistencias",
-                       "", "");
-        }
-        if ((arq.perm == 1 || (*vg1dSP).chaverede > 0) && celula[0].acsr.tipo == 0) {
-            if ((arq.ConContEntrada == 0 && nfontes == 0 && (*vg1dSP).chaverede == 0)) {
-                NumError("O simulador pede calculo de permanente com condicao de vazao na entrada, mas sem nenhuma fonte na entrada");
-            }
-            if ((arq.ConContEntrada == 0 && nfontes == 0 && (*vg1dSP).chaverede > 0) || arq.CCPres.tit[0] < (1 - (*vg1dSP).localtiny)) {
-                if (arq.tipoFluido == 1)
-                    celula[0].acsr.tipo = 1;
-                else if (arq.tipoFluido == 0)
-                    celula[0].acsr.tipo = 2;
-                else
-                    celula[0].acsr.tipo = 10;
-                InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-                celula[0].acsr.injm.condTermo = 1;
-                celula[0].acsr.injm = injmassMRT;
-                InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-                celula[0].acsr.injl = injliqMRT;
-                InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
-                celula[0].acsr.injg = injgasMRT;
-            } else if (nfontes == 0 || arq.ConContEntrada == 1) {
-                InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
-                injgasMRT.seco = 0;
-                celula[0].acsr.injg = injgasMRT;
-                InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-                celula[0].acsr.injm.condTermo = 1;
-                celula[0].acsr.injm = injmassMRT;
-                InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-                celula[0].acsr.injl = injliqMRT;
-                if (arq.tipoFluido == 1)
-                    celula[0].acsr.tipo = 1;
-                else if (arq.tipoFluido == 0)
-                    celula[0].acsr.tipo = 2;
-                else
-                    celula[0].acsr.tipo = 10;
-            }
-        }
-        if (bloq == 1 && celula[1].acsr.tipo == 0) {
-            if ((*vg1dSP).fluidoRede == 1)
-                celula[1].acsr.tipo = 2;
-            else if ((*vg1dSP).fluidoRede == 0)
-                celula[1].acsr.tipo = 1;
-            else
-                celula[1].acsr.tipo = 10;
-            InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-            celula[1].acsr.injm.condTermo = 1;
-            celula[1].acsr.injm = injmassMRT;
-            InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-            celula[1].acsr.injl = injliqMRT;
-            InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
-            celula[1].acsr.injg = injgasMRT;
-        } else if (bloq == 1) {
-            logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
-                       "Foi escolhida uma condicao de bloqueio que afeta este tramo, para que a selecao de fontes seja"
-                       "feita corretamente, e necessario que a segunda celula do tramo nao tenha fontes catalogadas",
-                       "", "");
-        }
-        if (arq.nbcs > 0)
-            arq.gerafBCS(celula);
-        if (arq.nmultibcs > 0)
-            arq.gerafmultiBCS(celula);
-        if (arq.nbvol > 0)
-            arq.gerafBVOL(celula);
-        if (arq.ndpreq > 0)
-            arq.geraDPReq(celula);
-        if (arq.ncalor > 0)
-            arq.geraFonteCalor(celula);
-        if (arq.master1.posic > 0.)
-            arq.geraMaster1(celula);
-        else {
-            int verifica = 0;
-            double Lverifica = 0.5 * celula[verifica].dx;
-            while (celula[verifica].acsr.tipo != 0) {
-                verifica++;
-                Lverifica += 0.5 * (celula[verifica].dx + celula[verifica - 1].dx);
-            }
-            arq.master1.posic = verifica;
-            arq.master1.comp = Lverifica;
-            arq.geraMaster1(celula);
-        }
-        if (arq.nvalv > 0)
-            arq.geraValv(celula);
-        arq.gerapresfim(presfim, pGSup);
-        pGSupIni = pGSup;
-        chokeSup = choke(1., 1.);
-        chokeInj = ChokeGas();
-        arq.gerachokesup(chokeSup);
-        npig = arq.npig;
-        if (npig > 0) {
-            receb = new int[npig];
-            for (int i = 0; i < npig; i++)
-                receb[i] = arq.pig[i].receb;
-        }
+        configureInletSourcesAndAccessories(nfontes);
         if (arq.lingas == 0)
             ncelGas = 0;
         else if (arq.lingas > 0) {
