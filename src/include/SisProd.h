@@ -1321,6 +1321,11 @@ class SProd {
     /// the step, hands them back through the two out-parameters, and lowers the
     /// cell's BSW for the free water that is gone.
     void consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_consumida_Mw, int ind);
+    /// Adds to cell ind the mass its source delivers this step when the source is a
+    /// choke source (type 9 -- on the first iteration of a parallel network, on its
+    /// primary side, the flow recorded for that connection instead), a multiple
+    /// source (10) or a radial or 2D porous medium (15, 16).
+    void refreshChokeMultipleAndPorousSources(int ind);
     /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
     void renovaFonte(int ind);
     /// Stores previous void fractions and updates pig motion and reception.

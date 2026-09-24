@@ -3250,114 +3250,11 @@ void SProd::consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_c
     } //Alteracao Hidratos
 }
 
-void SProd::renovaFonte(int ind) {
-
-    double pr = celula[ind].pres;
-    double tr = celula[ind].temp;
-    if (ind == 0) {
-        celula[ind].fontemassLR = 0.;
-        celula[ind].fontemassCR = 0.;
-        celula[ind].fontemassGR = 0.;
-    } else {
-        if (celula[ind - 1].acsr.tipo != 5 && celula[ind - 1].acsr.tipo != 8 && (ind < ncel || celula[ncel].acsr.tipo == 3)) {
-            celula[ind].fontemassLR = 0.;
-            celula[ind].fontemassCR = 0.;
-            celula[ind].fontemassGR = 0.;
-        }
-    }
-
-    double agua_consumida_Mw = 0.;
-    double gas_consumido_Mg = 0.;
-
-    consumeHydrateFormationMass(gas_consumido_Mg, agua_consumida_Mw, ind);
-    if (celula[ind].acsr.tipo == 1) {
-        if (celula[ind].acsr.injg.tipoflu == 0) {
-            double masgas = celula[ind].acsr.injg.VMas(pr, tr);
-            if (fabs(masgas) < (*vg1dSP).localtiny)
-                masgas = 0.;
-            if (celula[ind].acsr.injg.seco == 1) {
-                celula[ind].fontemassGR += masgas;
-                celula[ind].fontemassLR = 0.;
-                celula[ind].fontemassCR = 0.;
-            } else {
-                double tit;
-                if (arq.flashCompleto != 2)
-                    tit = celula[ind].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-                else
-                    tit = celula[ind].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-                double masT = masgas / tit;
-                tit = celula[ind].acsr.injg.FluidoPro.FracMassHidra(pr, tr);
-                celula[ind].fontemassGR += masT * tit;
-                celula[ind].fontemassLR += masT * (1. - tit);
-                double rcomp = celula[ind].acsr.injg.fluidocol.MasEspFlu(1., 20.);
-                celula[ind].fontemassCR += rcomp * celula[ind].acsr.injg.razCompGas * celula[ind].acsr.injg.QGas / 86400.;
-            }
-        } else {
-            celula[ind].fontemassGR += 0.;
-            celula[ind].fontemassLR = 0.;
-            celula[ind].fontemassCR = celula[ind].acsr.injg.QGas;
-        }
-    }
-    if (celula[ind].acsr.tipo == 2) {
-        double rlcA = celula[ind].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-        celula[ind].fontemassCR += rlcA * celula[ind].acsr.injl.QLiq * celula[ind].acsr.injl.bet / 86400;
-        double massic = celula[ind].acsr.injl.QLiq * (1. - celula[ind].acsr.injl.bet) / 86400;
-        double Rhogs = celula[ind].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
-        double Rhols = (1000 * 141.5 / (131.5 + celula[ind].acsr.injl.FluidoPro.API)) * (1 - celula[ind].acsr.injl.FluidoPro.BSW) + 1000. * celula[ind].acsr.injl.FluidoPro.Denag * celula[ind].acsr.injl.FluidoPro.BSW;
-        double multiplicador = (Rhols + celula[ind].acsr.injl.FluidoPro.RGO * Rhogs * (1 - celula[ind].acsr.injl.FluidoPro.BSW));
-        massic *= multiplicador;
-        double fracmasshidra = celula[ind].acsr.injl.FluidoPro.FracMassHidra(pr, tr);
-        celula[ind].fontemassLR += (1. - fracmasshidra) * massic;
-        celula[ind].fontemassGR += fracmasshidra * massic;
-    }
-    if (celula[ind].acsr.tipo == 3) {
-        if (pr < celula[ind].acsr.ipr.Pres) {
-            celula[ind].fontemassLR += celula[ind].acsr.ipr.MasL(pr, tr);
-            celula[ind].fontemassCR = 0.;
-            celula[ind].fontemassGR += celula[ind].acsr.ipr.MasG(pr, tr);
-        } else {
-            double tit;
-            tit = celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr) /
-                  (celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr) +
-                   (1. - celula[ind].alf) * (1. - celula[ind].bet) * celula[ind].flui.MasEspLiq(pr, tr) +
-                   (1. - celula[ind].alf) * celula[ind].bet * celula[ind].fluicol.MasEspFlu(pr, tr));
-            celula[ind].fontemassLR += (1. - celula[ind].alf) * (1. - celula[ind].bet) * celula[ind].acsr.ipr.VMas(pr, tr) * celula[ind].flui.MasEspLiq(pr, tr);
-            celula[ind].fontemassCR += (1. - celula[ind].alf) * celula[ind].bet * celula[ind].acsr.ipr.VMas(pr, tr) * celula[ind].fluicol.MasEspFlu(pr, tr);
-            celula[ind].fontemassGR += 1 * celula[ind].alf * celula[ind].acsr.ipr.VMas(pr, tr) * celula[ind].flui.MasEspGas(pr, tr);
-            celula[ind].acsr.ipr.deriP *= (1. - celula[ind].alf) * (1. - celula[ind].bet) * celula[ind].flui.MasEspLiq(pr, tr);
-            celula[ind].acsr.ipr.deriC *= (1. - celula[ind].alf) * celula[ind].bet * celula[ind].fluicol.MasEspFlu(pr, tr);
-            celula[ind].acsr.ipr.deriG *= 1 * celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr);
-        }
-    }
-    if (celula[ind].acsr.tipo == 5) {
-        celula[ind + 1].fontemassLR = 0.;
-        celula[ind + 1].fontemassCR = 0.;
-        celula[ind + 1].fontemassGR = 0.;
-        if (modoPerm == 0)
-            FonteValv(ind);
-    }
-    if (celula[ind].acsr.tipo == 8) {
-        celula[ind + 1].fontemassLR = 0.;
-        celula[ind + 1].fontemassCR = 0.;
-        celula[ind + 1].fontemassGR = 0.;
-        celula[ind].acsr.bvol.fluido = celula[ind].flui;
-        celula[ind].acsr.bvol.fluicol = celula[ind].fluicol;
-        if (fabs(celula[ind].acsr.bvol.freq) > 1) {
-            double alfM = celula[ind].alf;
-            double betM = celula[ind].bet;
-            double presM = celula[ind].pres;
-            double tempM = celula[ind].temp;
-            double presM1 = celula[ind].presR;
-            double tempM1 = celula[ind].tempR;
-            celula[ind].acsr.bvol.vazmass(presM, tempM, presM1, tempM1, betM, alfM);
-            celula[ind].fontemassLR -= celula[ind].acsr.bvol.MLiqP;
-            celula[ind].fontemassCR -= celula[ind].acsr.bvol.MLiqC;
-            celula[ind].fontemassGR -= celula[ind].acsr.bvol.MGas;
-            celula[ind + 1].fontemassLR += celula[ind].acsr.bvol.MLiqP;
-            celula[ind + 1].fontemassCR += celula[ind].acsr.bvol.MLiqC;
-            celula[ind + 1].fontemassGR += celula[ind].acsr.bvol.MGas;
-        }
-    }
+/// Adds to cell ind the mass its source delivers this step when the source is a
+/// choke source (type 9 -- on the first iteration of a parallel network, on its
+/// primary side, the flow recorded for that connection instead), a multiple
+/// source (10) or a radial or 2D porous medium (15, 16).
+void SProd::refreshChokeMultipleAndPorousSources(int ind) {
     if (celula[ind].acsr.tipo == 9) {
         celula[ind].acsr.fontechk.fluidoP = celula[ind].flui;
         celula[ind].acsr.fontechk.presT = celula[ind].pres;
@@ -3476,6 +3373,117 @@ void SProd::renovaFonte(int ind) {
             celula[ind].fontemassGR = celula[ind].acsr.poroso2D.dados.transfer.fluxIniG;
         }
     }
+}
+
+void SProd::renovaFonte(int ind) {
+
+    double pr = celula[ind].pres;
+    double tr = celula[ind].temp;
+    if (ind == 0) {
+        celula[ind].fontemassLR = 0.;
+        celula[ind].fontemassCR = 0.;
+        celula[ind].fontemassGR = 0.;
+    } else {
+        if (celula[ind - 1].acsr.tipo != 5 && celula[ind - 1].acsr.tipo != 8 && (ind < ncel || celula[ncel].acsr.tipo == 3)) {
+            celula[ind].fontemassLR = 0.;
+            celula[ind].fontemassCR = 0.;
+            celula[ind].fontemassGR = 0.;
+        }
+    }
+
+    double agua_consumida_Mw = 0.;
+    double gas_consumido_Mg = 0.;
+
+    consumeHydrateFormationMass(gas_consumido_Mg, agua_consumida_Mw, ind);
+    if (celula[ind].acsr.tipo == 1) {
+        if (celula[ind].acsr.injg.tipoflu == 0) {
+            double masgas = celula[ind].acsr.injg.VMas(pr, tr);
+            if (fabs(masgas) < (*vg1dSP).localtiny)
+                masgas = 0.;
+            if (celula[ind].acsr.injg.seco == 1) {
+                celula[ind].fontemassGR += masgas;
+                celula[ind].fontemassLR = 0.;
+                celula[ind].fontemassCR = 0.;
+            } else {
+                double tit;
+                if (arq.flashCompleto != 2)
+                    tit = celula[ind].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
+                else
+                    tit = celula[ind].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
+                double masT = masgas / tit;
+                tit = celula[ind].acsr.injg.FluidoPro.FracMassHidra(pr, tr);
+                celula[ind].fontemassGR += masT * tit;
+                celula[ind].fontemassLR += masT * (1. - tit);
+                double rcomp = celula[ind].acsr.injg.fluidocol.MasEspFlu(1., 20.);
+                celula[ind].fontemassCR += rcomp * celula[ind].acsr.injg.razCompGas * celula[ind].acsr.injg.QGas / 86400.;
+            }
+        } else {
+            celula[ind].fontemassGR += 0.;
+            celula[ind].fontemassLR = 0.;
+            celula[ind].fontemassCR = celula[ind].acsr.injg.QGas;
+        }
+    }
+    if (celula[ind].acsr.tipo == 2) {
+        double rlcA = celula[ind].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+        celula[ind].fontemassCR += rlcA * celula[ind].acsr.injl.QLiq * celula[ind].acsr.injl.bet / 86400;
+        double massic = celula[ind].acsr.injl.QLiq * (1. - celula[ind].acsr.injl.bet) / 86400;
+        double Rhogs = celula[ind].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+        double Rhols = (1000 * 141.5 / (131.5 + celula[ind].acsr.injl.FluidoPro.API)) * (1 - celula[ind].acsr.injl.FluidoPro.BSW) + 1000. * celula[ind].acsr.injl.FluidoPro.Denag * celula[ind].acsr.injl.FluidoPro.BSW;
+        double multiplicador = (Rhols + celula[ind].acsr.injl.FluidoPro.RGO * Rhogs * (1 - celula[ind].acsr.injl.FluidoPro.BSW));
+        massic *= multiplicador;
+        double fracmasshidra = celula[ind].acsr.injl.FluidoPro.FracMassHidra(pr, tr);
+        celula[ind].fontemassLR += (1. - fracmasshidra) * massic;
+        celula[ind].fontemassGR += fracmasshidra * massic;
+    }
+    if (celula[ind].acsr.tipo == 3) {
+        if (pr < celula[ind].acsr.ipr.Pres) {
+            celula[ind].fontemassLR += celula[ind].acsr.ipr.MasL(pr, tr);
+            celula[ind].fontemassCR = 0.;
+            celula[ind].fontemassGR += celula[ind].acsr.ipr.MasG(pr, tr);
+        } else {
+            double tit;
+            tit = celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr) /
+                  (celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr) +
+                   (1. - celula[ind].alf) * (1. - celula[ind].bet) * celula[ind].flui.MasEspLiq(pr, tr) +
+                   (1. - celula[ind].alf) * celula[ind].bet * celula[ind].fluicol.MasEspFlu(pr, tr));
+            celula[ind].fontemassLR += (1. - celula[ind].alf) * (1. - celula[ind].bet) * celula[ind].acsr.ipr.VMas(pr, tr) * celula[ind].flui.MasEspLiq(pr, tr);
+            celula[ind].fontemassCR += (1. - celula[ind].alf) * celula[ind].bet * celula[ind].acsr.ipr.VMas(pr, tr) * celula[ind].fluicol.MasEspFlu(pr, tr);
+            celula[ind].fontemassGR += 1 * celula[ind].alf * celula[ind].acsr.ipr.VMas(pr, tr) * celula[ind].flui.MasEspGas(pr, tr);
+            celula[ind].acsr.ipr.deriP *= (1. - celula[ind].alf) * (1. - celula[ind].bet) * celula[ind].flui.MasEspLiq(pr, tr);
+            celula[ind].acsr.ipr.deriC *= (1. - celula[ind].alf) * celula[ind].bet * celula[ind].fluicol.MasEspFlu(pr, tr);
+            celula[ind].acsr.ipr.deriG *= 1 * celula[ind].alf * celula[ind].flui.MasEspGas(pr, tr);
+        }
+    }
+    if (celula[ind].acsr.tipo == 5) {
+        celula[ind + 1].fontemassLR = 0.;
+        celula[ind + 1].fontemassCR = 0.;
+        celula[ind + 1].fontemassGR = 0.;
+        if (modoPerm == 0)
+            FonteValv(ind);
+    }
+    if (celula[ind].acsr.tipo == 8) {
+        celula[ind + 1].fontemassLR = 0.;
+        celula[ind + 1].fontemassCR = 0.;
+        celula[ind + 1].fontemassGR = 0.;
+        celula[ind].acsr.bvol.fluido = celula[ind].flui;
+        celula[ind].acsr.bvol.fluicol = celula[ind].fluicol;
+        if (fabs(celula[ind].acsr.bvol.freq) > 1) {
+            double alfM = celula[ind].alf;
+            double betM = celula[ind].bet;
+            double presM = celula[ind].pres;
+            double tempM = celula[ind].temp;
+            double presM1 = celula[ind].presR;
+            double tempM1 = celula[ind].tempR;
+            celula[ind].acsr.bvol.vazmass(presM, tempM, presM1, tempM1, betM, alfM);
+            celula[ind].fontemassLR -= celula[ind].acsr.bvol.MLiqP;
+            celula[ind].fontemassCR -= celula[ind].acsr.bvol.MLiqC;
+            celula[ind].fontemassGR -= celula[ind].acsr.bvol.MGas;
+            celula[ind + 1].fontemassLR += celula[ind].acsr.bvol.MLiqP;
+            celula[ind + 1].fontemassCR += celula[ind].acsr.bvol.MLiqC;
+            celula[ind + 1].fontemassGR += celula[ind].acsr.bvol.MGas;
+        }
+    }
+    refreshChokeMultipleAndPorousSources(ind);
 
     if (arq.calculaEnvelope == 1 && arq.tipoHmodel == 2 && celula[ind].flui.BSW > 1e-12 && (*vg1dSP).lixo5 > 0.01) {
         celula[ind].fontemassLR -= (agua_consumida_Mw / (*vg1dSP).lixo5);
