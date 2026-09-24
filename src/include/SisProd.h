@@ -1188,23 +1188,49 @@ class SProd {
                       double vbetaRev, double vbetaRevini, double vtitRev, double vtitRevini,
                       double vdtCicMin);
 
-    /// Builds the production section after input parsing.
-    /// Points every cell fluid, and every source fluid it carries, at the bubble-point
+    /// Points every cell fluid, and every source fluid it carries, at the
+    /// bubble-point tables read from the PVTSim file, and switches them to
+    /// saturation model 4.
     void assignPvtSimBubbleTablesToCells();
-    /// Reads the bubble-point curve from the PVTSim file, points the cell fluids at it
+    /// Reads the bubble-point curve from the PVTSim file, points the cell fluids at
+    /// it and writes perfilBolha; with tabRSPB on, also reads the solution gas-oil
+    /// ratio table and writes perfilRSLivia.
     void loadPvtSimSaturationTables();
     /// Builds the bubble-point curve and the solution gas-oil ratio table from the
+    /// fluid correlations over the input table's pressure-temperature grid, writes
+    /// perfilBolha and perfilRSLivia, and points the cell fluids at both.
     void generateSaturationTablesFromCorrelations();
     /// Copies the run configuration into the members, checks that an injection well
+    /// has the IPR its boundary condition needs, builds the Cp and JTL tables,
+    /// hands the fluid constants to every fluid, generates the pipe and the
+    /// production cells, and places every source -- including the extra gas sources
+    /// at compfonte, whose cell indices it records in posicfonte.
     void buildProductionCells(double *compfonte, int *posicfonte, int nfontes);
-    /// Gives the inlet the sources its boundary condition needs (and the second cell,
+    /// Gives the inlet the sources its boundary condition needs (and the second
+    /// cell, under a blockage), then places the accessories -- pumps, volumetric
+    /// pumps, pressure-drop requirements, heat sources, the master valve and the
+    /// other valves -- and sets up the outlet pressure, the surface and injection
+    /// chokes and the pigs.
     void configureInletSourcesAndAccessories(int nfontes);
-    /// Builds the gas-lift line when there is one: its cells, the second master valve,
+    /// Builds the gas-lift line when there is one: its cells, the second master
+    /// valve, the injection choke, one gas-lift valve choke per valve with its
+    /// position on both lines, and each gas cell's share of the annulus above the
+    /// discharge cell.
     void buildGasLiftLine();
     /// Rejects or warns about source and boundary-condition combinations the run
+    /// cannot honour (RN-300, RN-301, gas-lift discharge without an IPR, no outlet
+    /// pressure, accessories in the last two cells), builds the gas-lift discharge
+    /// hydrostatics and the event log, applies the initial state of a production
+    /// well, and records the surface temperature and mass flow it starts from.
     void validateSetupAndApplyInitialState();
     /// With the dynamic property table on, splits the pipe into table segments that
+    /// end at every source cell.
     void buildDynamicTablesAndInclinations();
+    /// Sets the latent-heat switch from the input and, when it is on and
+    /// flashCompleto is 0, reads the latent-heat table from the PVTSim file into
+    /// HLat and writes perfilLatente.
+    void configureLatentHeat();
+    /// Builds the production section after input parsing.
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);
@@ -1359,9 +1385,9 @@ class SProd {
     /// Updates the first boundary condition.
     void atualizaCC1();
 
-    /// Advances the complete transient production-system solution and handles output and logging.
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
+    /// Advances the complete transient production-system solution and handles output and logging.
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 

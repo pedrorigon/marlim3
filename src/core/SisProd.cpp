@@ -2008,6 +2008,102 @@ void SProd::buildDynamicTablesAndInclinations() {
     }
 }
 
+/// Sets the latent-heat switch from the input and, when it is on and flashCompleto
+/// is 0, reads the latent-heat table from the PVTSim file into HLat and writes
+/// perfilLatente.
+void SProd::configureLatentHeat() {
+    CalcLat = arq.latente;
+    if (arq.latente > 0) {
+        if (arq.flashCompleto == 0) {
+            string impfile;
+            impfile = arq.pvtsimarq;
+            string dadosMR = impfile;
+            ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
+            string chave;
+            char *tenta;
+            tenta = new char[400];
+            double testatok;
+            int ndiv = arq.tabent.npont - 1;
+            Vcr<double> presPVTSim(ndiv + 1, 0.);
+            Vcr<double> tempPVTSim(ndiv + 1, 0.);
+
+            FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
+            char line[4000];
+            lendoPVTSim.get(line, 4000);
+            tenta = strtok(line, " ,()=");
+            while (strcmp(tenta, "PHASE") != 0) {
+                tenta = strtok(NULL, " ,()=");
+            }
+            tenta = strtok(NULL, " ,()=");
+            int lacoleitura = 12;
+            if (strcmp(tenta, "THREE") == 0)
+                lacoleitura = 18;
+
+            while (chave != "PRESSURE")
+                lendoPVTSim >> chave;
+            lendoPVTSim.get(line, 4000);
+            tenta = strtok(line, " ,()=");
+            presPVTSim[0] = atof(tenta) * 1.01971621e-5;
+            for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
+                tenta = strtok(NULL, " ,");
+                presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
+            }
+            while (chave != "TEMPERATURE")
+                lendoPVTSim >> chave;
+            lendoPVTSim.get(line, 4000);
+            tenta = strtok(line, " ,()=");
+            tempPVTSim[0] = atof(tenta);
+            for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
+                tenta = strtok(NULL, " ,");
+                tempPVTSim[kontaPVT] = atof(tenta);
+            }
+
+            for (int i = 1; i <= ndiv + 1; i++) {
+                HLatTemp[i][0] = presPVTSim[i - 1];
+                for (int j = 1; j <= ndiv + 1; j++) {
+                    HLatTemp[0][j] = tempPVTSim[j - 1];
+                    while (chave != "POINT")
+                        lendoPVTSim >> chave;
+                    lendoPVTSim.get(line, 4000);
+                    tenta = strtok(line, " ,()=");
+                    for (int kontaPVT = 0; kontaPVT < lacoleitura; kontaPVT++) {
+                        tenta = strtok(NULL, " ,");
+                        testatok = atof(tenta);
+                    }
+                    tenta = strtok(NULL, " ,");
+                    testatok = atof(tenta);
+                    HLatTemp[i][j] = testatok;
+                    tenta = strtok(NULL, " ,");
+                    testatok = atof(tenta);
+                    HLatTemp[i][j] -= testatok;
+                    if (i == ndiv + 1 && j == ndiv + 1)
+                        break;
+                    while (chave != "PVTTABLE")
+                        lendoPVTSim >> chave;
+                }
+            }
+            lendoPVTSim.close();
+            HLat = new double *[ndiv + 2];
+            for (int i = 0; i < ndiv + 2; i++) {
+                HLat[i] = new double[ndiv + 2];
+                for (int j = 0; j < ndiv + 2; j++)
+                    HLat[i][j] = HLatTemp[i][j];
+            }
+            ostringstream saidaLatente;
+            saidaLatente << pathPrefixoArqSaida << "perfilLatente.dat";
+            string tmp = saidaLatente.str();
+            ofstream escreveMass(tmp.c_str(), ios_base::out);
+            escreveMass << HLatTemp;
+            escreveMass.close();
+            // caso nao seja simulacao POCO_INJETOR
+            if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
+                arqRelatorioPerfis << tmp.c_str() << endl;
+                arqRelatorioPerfis.flush();
+            }
+        }
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -2017,96 +2113,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         validateSetupAndApplyInitialState();
         buildDynamicTablesAndInclinations();
 
-        CalcLat = arq.latente;
-        if (arq.latente > 0) {
-            if (arq.flashCompleto == 0) {
-                string impfile;
-                impfile = arq.pvtsimarq;
-                string dadosMR = impfile;
-                ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
-                string chave;
-                char *tenta;
-                tenta = new char[400];
-                double testatok;
-                int ndiv = arq.tabent.npont - 1;
-                Vcr<double> presPVTSim(ndiv + 1, 0.);
-                Vcr<double> tempPVTSim(ndiv + 1, 0.);
-
-                FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
-                char line[4000];
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                while (strcmp(tenta, "PHASE") != 0) {
-                    tenta = strtok(NULL, " ,()=");
-                }
-                tenta = strtok(NULL, " ,()=");
-                int lacoleitura = 12;
-                if (strcmp(tenta, "THREE") == 0)
-                    lacoleitura = 18;
-
-                while (chave != "PRESSURE")
-                    lendoPVTSim >> chave;
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                presPVTSim[0] = atof(tenta) * 1.01971621e-5;
-                for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                    tenta = strtok(NULL, " ,");
-                    presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
-                }
-                while (chave != "TEMPERATURE")
-                    lendoPVTSim >> chave;
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                tempPVTSim[0] = atof(tenta);
-                for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                    tenta = strtok(NULL, " ,");
-                    tempPVTSim[kontaPVT] = atof(tenta);
-                }
-
-                for (int i = 1; i <= ndiv + 1; i++) {
-                    HLatTemp[i][0] = presPVTSim[i - 1];
-                    for (int j = 1; j <= ndiv + 1; j++) {
-                        HLatTemp[0][j] = tempPVTSim[j - 1];
-                        while (chave != "POINT")
-                            lendoPVTSim >> chave;
-                        lendoPVTSim.get(line, 4000);
-                        tenta = strtok(line, " ,()=");
-                        for (int kontaPVT = 0; kontaPVT < lacoleitura; kontaPVT++) {
-                            tenta = strtok(NULL, " ,");
-                            testatok = atof(tenta);
-                        }
-                        tenta = strtok(NULL, " ,");
-                        testatok = atof(tenta);
-                        HLatTemp[i][j] = testatok;
-                        tenta = strtok(NULL, " ,");
-                        testatok = atof(tenta);
-                        HLatTemp[i][j] -= testatok;
-                        if (i == ndiv + 1 && j == ndiv + 1)
-                            break;
-                        while (chave != "PVTTABLE")
-                            lendoPVTSim >> chave;
-                    }
-                }
-                lendoPVTSim.close();
-                HLat = new double *[ndiv + 2];
-                for (int i = 0; i < ndiv + 2; i++) {
-                    HLat[i] = new double[ndiv + 2];
-                    for (int j = 0; j < ndiv + 2; j++)
-                        HLat[i][j] = HLatTemp[i][j];
-                }
-                ostringstream saidaLatente;
-                saidaLatente << pathPrefixoArqSaida << "perfilLatente.dat";
-                string tmp = saidaLatente.str();
-                ofstream escreveMass(tmp.c_str(), ios_base::out);
-                escreveMass << HLatTemp;
-                escreveMass.close();
-                // caso nao seja simulacao POCO_INJETOR
-                if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
-                    arqRelatorioPerfis << tmp.c_str() << endl;
-                    arqRelatorioPerfis.flush();
-                }
-            }
-        }
+        configureLatentHeat();
 
         if (celula[0].flui.corrSat == -4) {
             loadPvtSimSaturationTables();
