@@ -1203,6 +1203,8 @@ class SProd {
     void buildGasLiftLine();
     /// Rejects or warns about source and boundary-condition combinations the run
     void validateSetupAndApplyInitialState();
+    /// With the dynamic property table on, splits the pipe into table segments that
+    void buildDynamicTablesAndInclinations();
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);

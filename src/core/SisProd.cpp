@@ -1942,6 +1942,72 @@ void SProd::validateSetupAndApplyInitialState() {
     tGSup = celula[ncel].calor.Textern1;
 }
 
+/// With the dynamic property table on, splits the pipe into table segments that
+/// end at every source cell. Then gives each cell its left and right inclination:
+/// its own, or, where its pipe is horizontal, the nearest inclined neighbour's on
+/// that side.
+void SProd::buildDynamicTablesAndInclinations() {
+    if (arq.tabelaDinamica == 1) {
+        int minNPontos = 0;
+        ntabDin = 1;
+        tabelaDinamica temp;
+        temp.npontosP = minNPontos;
+        temp.npontosT = minNPontos;
+        temp.celIni = 0;
+        temp.rhogF = 0;
+        temp.rholF = 0;
+        temp.DrhogDpF = 0;
+        temp.DrhogDtF = 0;
+        temp.DrholDpF = 0;
+        temp.DrholDtF = 0;
+        temp.valBO = 0;
+        temp.HgF = 0;
+        temp.HlF = 0;
+        temp.cpgF = 0;
+        temp.cplF = 0;
+        temp.valZ = 0;
+        temp.valdZdT = 0;
+        temp.valdZdP = 0;
+        temp.tit = 0;
+        temp.rs = 0;
+        temp.viscG = 0;
+        temp.viscO = 0;
+        temp.TBF = 0;
+        temp.PBF = 0;
+        tabDin.push_back(temp);
+        for (int i = 1; i < ncel; i++) {
+            if ((celula[i].acsr.tipo == 1) ||
+                (celula[i].acsr.tipo == 2) ||
+                celula[i].acsr.tipo == 3 ||
+                (celula[i].acsr.tipo == 10) || celula[i].acsr.tipo == 9 || celula[i].acsr.tipo == 15 || celula[i].acsr.tipo == 16) {
+                tabelaDinamica temp;
+                temp.npontosP = minNPontos;
+                temp.npontosT = minNPontos;
+                temp.celIni = i + 1;
+                tabDin[ntabDin - 1].celFim = i;
+                tabDin.push_back(temp);
+                ntabDin++;
+            }
+        }
+        tabDin[ntabDin - 1].celFim = ncel;
+    }
+
+    celula[0].angEsq = celula[0].duto.teta;
+    for (int i = 1; i <= ncel; i++) {
+        if (fabs(celula[i].duto.teta) < 1e-10)
+            celula[i].angEsq = celula[i - 1].angEsq;
+        else
+            celula[i].angEsq = celula[i].duto.teta;
+    }
+    celula[ncel].angEsq = celula[ncel].duto.teta;
+    for (int i = ncel - 1; i >= 0; i--) {
+        if (fabs(celula[i].duto.teta) < 1e-10)
+            celula[i].angDir = celula[i + 1].angDir;
+        else
+            celula[i].angDir = celula[i].duto.teta;
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -1949,65 +2015,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         configureInletSourcesAndAccessories(nfontes);
         buildGasLiftLine();
         validateSetupAndApplyInitialState();
-        if (arq.tabelaDinamica == 1) {
-            int minNPontos = 0;
-            ntabDin = 1;
-            tabelaDinamica temp;
-            temp.npontosP = minNPontos;
-            temp.npontosT = minNPontos;
-            temp.celIni = 0;
-            temp.rhogF = 0;
-            temp.rholF = 0;
-            temp.DrhogDpF = 0;
-            temp.DrhogDtF = 0;
-            temp.DrholDpF = 0;
-            temp.DrholDtF = 0;
-            temp.valBO = 0;
-            temp.HgF = 0;
-            temp.HlF = 0;
-            temp.cpgF = 0;
-            temp.cplF = 0;
-            temp.valZ = 0;
-            temp.valdZdT = 0;
-            temp.valdZdP = 0;
-            temp.tit = 0;
-            temp.rs = 0;
-            temp.viscG = 0;
-            temp.viscO = 0;
-            temp.TBF = 0;
-            temp.PBF = 0;
-            tabDin.push_back(temp);
-            for (int i = 1; i < ncel; i++) {
-                if ((celula[i].acsr.tipo == 1) ||
-                    (celula[i].acsr.tipo == 2) ||
-                    celula[i].acsr.tipo == 3 ||
-                    (celula[i].acsr.tipo == 10) || celula[i].acsr.tipo == 9 || celula[i].acsr.tipo == 15 || celula[i].acsr.tipo == 16) {
-                    tabelaDinamica temp;
-                    temp.npontosP = minNPontos;
-                    temp.npontosT = minNPontos;
-                    temp.celIni = i + 1;
-                    tabDin[ntabDin - 1].celFim = i;
-                    tabDin.push_back(temp);
-                    ntabDin++;
-                }
-            }
-            tabDin[ntabDin - 1].celFim = ncel;
-        }
-
-        celula[0].angEsq = celula[0].duto.teta;
-        for (int i = 1; i <= ncel; i++) {
-            if (fabs(celula[i].duto.teta) < 1e-10)
-                celula[i].angEsq = celula[i - 1].angEsq;
-            else
-                celula[i].angEsq = celula[i].duto.teta;
-        }
-        celula[ncel].angEsq = celula[ncel].duto.teta;
-        for (int i = ncel - 1; i >= 0; i--) {
-            if (fabs(celula[i].duto.teta) < 1e-10)
-                celula[i].angDir = celula[i + 1].angDir;
-            else
-                celula[i].angDir = celula[i].duto.teta;
-        }
+        buildDynamicTablesAndInclinations();
 
         CalcLat = arq.latente;
         if (arq.latente > 0) {
