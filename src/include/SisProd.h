@@ -1189,6 +1189,8 @@ class SProd {
                       double vdtCicMin);
 
     /// Builds the production section after input parsing.
+    /// Points every cell fluid, and every source fluid it carries, at the bubble-point
+    void assignPvtSimBubbleTablesToCells();
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);

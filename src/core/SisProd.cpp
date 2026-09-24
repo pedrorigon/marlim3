@@ -1224,6 +1224,56 @@ void SProd::HidroDescargaP() {
     }
 }
 
+/// Points every cell fluid, and every source fluid it carries, at the bubble-point
+/// tables read from the PVTSim file, and switches them to saturation model 4.
+void SProd::assignPvtSimBubbleTablesToCells() {
+    for (int i = 0; i <= ncel; i++) {
+        celula[i].flui.PBPVTSim = PBPVTSim;
+        celula[i].flui.TBPVTSim = TBPVTSim;
+        celula[i].flui.corrSat = 4;
+        if (celula[i].acsr.tipo == 2) {
+            celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
+            celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
+            celula[i].acsr.injl.FluidoPro.corrSat = 4;
+        }
+        if (celula[i].acsr.tipo == 3) {
+            celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
+            celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
+            celula[i].acsr.ipr.FluidoPro.corrSat = 4;
+        }
+        if (celula[i].acsr.tipo == 10) {
+            celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
+            celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
+            celula[i].acsr.injm.FluidoPro.corrSat = 4;
+        }
+        if (celula[i].acsr.tipo == 15) {
+            celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
+            celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
+            celula[i].acsr.radialPoro.flup.corrSat = 4;
+            for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
+                celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
+                celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
+                celula[i].acsr.radialPoro.celula[iRP].flup.corrSat = 4;
+            }
+        }
+        if (celula[i].acsr.tipo == 16) {
+            celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
+            celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
+            celula[i].acsr.poroso2D.dados.flup.corrSat = 4;
+            for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
+                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
+                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
+                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.corrSat = 4;
+            }
+            for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
+                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
+                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
+                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.corrSat = 4;
+            }
+        }
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -1759,51 +1809,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 testatok = atof(tenta);
                 TBPVTSim[kontaPVT] = testatok;
             }
-            for (int i = 0; i <= ncel; i++) {
-                celula[i].flui.PBPVTSim = PBPVTSim;
-                celula[i].flui.TBPVTSim = TBPVTSim;
-                celula[i].flui.corrSat = 4;
-                if (celula[i].acsr.tipo == 2) {
-                    celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
-                    celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
-                    celula[i].acsr.injl.FluidoPro.corrSat = 4;
-                }
-                if (celula[i].acsr.tipo == 3) {
-                    celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
-                    celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
-                    celula[i].acsr.ipr.FluidoPro.corrSat = 4;
-                }
-                if (celula[i].acsr.tipo == 10) {
-                    celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
-                    celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
-                    celula[i].acsr.injm.FluidoPro.corrSat = 4;
-                }
-                if (celula[i].acsr.tipo == 15) {
-                    celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
-                    celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
-                    celula[i].acsr.radialPoro.flup.corrSat = 4;
-                    for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                        celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
-                        celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
-                        celula[i].acsr.radialPoro.celula[iRP].flup.corrSat = 4;
-                    }
-                }
-                if (celula[i].acsr.tipo == 16) {
-                    celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
-                    celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
-                    celula[i].acsr.poroso2D.dados.flup.corrSat = 4;
-                    for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.corrSat = 4;
-                    }
-                    for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.corrSat = 4;
-                    }
-                }
-            }
+            assignPvtSimBubbleTablesToCells();
 
             FullMtx<double> BolhaTemp(ndiv + 2, 2);
             for (int i = 0; i <= ndiv; i++) {
