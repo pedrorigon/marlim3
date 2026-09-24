@@ -349,3 +349,12 @@ SolveAcopPV
 atualizaMiniTab
 atualizaCC1
 SolveTrans
+
+# --- stage 9: montasistema (T100) ------------------------------------------
+# Decomposed in place into twelve SProd members, each a contiguous run of its
+# statements, called in the original order: 1,171 lines down to 26, largest
+# helper 193. Nothing moved out of SisProd.cpp and nothing was rewritten, so the
+# helpers' own token streams are the original's, but montasistema's stream is
+# now the calls. Verified by L2 (14/14 bit for bit) after each of the twelve
+# cuts, and by check-byvalue-writes.py on every helper that takes a parameter.
+montasistema

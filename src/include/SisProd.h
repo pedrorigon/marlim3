@@ -1242,6 +1242,12 @@ class SProd {
     /// transient trends, sized to the longest simulated time and filled with the
     /// -10000 sentinel.
     void allocateEventProfileAndTrendArrays();
+    /// Resets the column-annulus and network coupling flags, locates the
+    /// column-annulus coupling range on the gas line, sets the steady and transient
+    /// profile counters and their first output times, opens the event log with the
+    /// events known at start, finds the smallest cell length, and zeroes the
+    /// moving-average and running-total state the transient loop starts from.
+    void resetCouplingAndOutputState();
     /// Builds the production section after input parsing.
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,

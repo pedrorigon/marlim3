@@ -2341,138 +2341,140 @@ void SProd::allocateEventProfileAndTrendArrays() {
     }
 }
 
-void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
+/// Resets the column-annulus and network coupling flags, locates the
+/// column-annulus coupling range on the gas line, sets the steady and transient
+/// profile counters and their first output times, opens the event log with the
+/// events known at start, finds the smallest cell length, and zeroes the
+/// moving-average and running-total state the transient loop starts from.
+void SProd::resetCouplingAndOutputState() {
+    verificaAcop = 0;
 
+    if (arq.lingas > 0) {
+        AnulaColunaIni = arq.anulcoluini();
+        AnulaColunaFim = arq.anulcolufim();
+        ColunaAnulaIni = arq.coluanulini();
+        ColunaAnulaFim = arq.coluanulfim();
+        if (ColunaAnulaFim == -1) {
+            ColunaAnulaFim = 0;
+            AnulaColunaFim--;
+        }
+        if (AnulaColunaIni >= 0 && AnulaColunaFim >= 0 && ColunaAnulaIni >= 0 && ColunaAnulaFim >= 0)
+            verificaAcop = 1;
+    }
+
+    verificaAcopRedeP = 0;
+    verificaAcopRedeS = 0;
+    SecPrimIniRedeP = 0;
+    SecPrimFimRedeP = 0;
+    PrimSecIniRedeP = 0;
+    PrimSecFimRedeP = 0;
+
+    if(arq.AP==0){
+    	if (arq.nperfisp > 0) {
+    		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
+    	}
+    	if (arq.nperfisg > 0 && arq.lingas > 0) {
+    		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
+    	}
+    	if (arq.nperfistransp > 0) {
+    		arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
+    	}
+    	if (arq.nperfistransg > 0 && arq.lingas > 0) {
+    		arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
+    	}
+    }
+    kontaTempoProf = 0;
+    kontaTempoProfG = 0;
+    if (arq.nperfisp > 0) {
+        if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
+            kontaTempoProf++;
+    }
+    if (arq.nperfisg > 0 && arq.lingas > 0) {
+        if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
+            kontaTempoProfG++;
+    }
+    kontaTempoTransProf = 0;
+    kontaTempoTransProfG = 0;
+    if (arq.nperfistransp > 0) {
+        if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
+            kontaTempoTransProf++;
+    }
+    if (arq.nperfistransg > 0 && arq.lingas > 0) {
+        if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
+            kontaTempoTransProfG++;
+    }
+
+    saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
+    tmpLog = saidaLog.str();
+    // if it's not a simulation POCO_INJETOR
+    if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
+        contaLog = 0;
+        int nevent = arq.logevento.size();
+        while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt && contaLog < nevent) {
+            time_t now = time(0);
+            tm *ltm = localtime(&now); // Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+            ofstream escreveIni(tmpLog.c_str(), ios_base::app);
+            escreveIni << "Evento Externo = ";
+            escreveIni << arq.logevento[contaLog].instante << " ; ";
+            escreveIni << arq.logevento[contaLog].duracao << " ; ";
+            escreveIni << arq.logevento[contaLog].descricao << " ; ";
+            escreveIni << "datahora = ";
+            escreveIni << ltm->tm_mday << "/";
+            escreveIni << 1 + ltm->tm_mon << "/";
+            escreveIni << 1900 + ltm->tm_year << " ";
+            escreveIni << 0 + ltm->tm_hour << ":";
+            escreveIni << 0 + ltm->tm_min << ":";
+            escreveIni << 0 + ltm->tm_sec;
+            escreveIni << endl;
+            contaLog++;
+            escreveIni.close();
+        }
+    }
+
+    menorDx = 1e10;
+    for (int i = 0; i <= ncel; i++) {
+        if (celula[i].dx < menorDx)
+            menorDx = celula[i].dx;
+        if (i > 0)
+            celula[i].razdxTM = celula[i - 1].dx / (celula[i - 1].dx + celula[i].dx);
+        if (i > 1)
+            celula[i].razdxTM0 = celula[i - 2].dx / (celula[i - 1].dx + celula[i - 2].dx);
+    }
+
+    if (arq.nCelUnit>0) {
+    	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
+    		kontaTempoCelUni.push_back(0);
+    	}
+    }
+
+    kSP = 0;
+    indevento = 1;
+    mult = 0.8;
+    presMedMov = 0.;
+    jMedMov = 0.;
+    tMedMov = 60.;
+    ktMedMov = 0.;
+    pTotal = 0.;
+    jTotal = 0.;
+    alfTotal = 0.;
+}
+
+void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
     try {
         buildProductionCells(compfonte, posicfonte, nfontes);
         configureInletSourcesAndAccessories(nfontes);
         buildGasLiftLine();
         validateSetupAndApplyInitialState();
         buildDynamicTablesAndInclinations();
-
         configureLatentHeat();
-
         if (celula[0].flui.corrSat == -4) {
             loadPvtSimSaturationTables();
-
         } else if (arq.tabRSPB == 1) {
-
             generateSaturationTablesFromCorrelations();
         }
         applyDensityCorrectionsAndInletFluid();
-
         allocateEventProfileAndTrendArrays();
-
-        verificaAcop = 0;
-
-        if (arq.lingas > 0) {
-            AnulaColunaIni = arq.anulcoluini();
-            AnulaColunaFim = arq.anulcolufim();
-            ColunaAnulaIni = arq.coluanulini();
-            ColunaAnulaFim = arq.coluanulfim();
-            if (ColunaAnulaFim == -1) {
-                ColunaAnulaFim = 0;
-                AnulaColunaFim--;
-            }
-            if (AnulaColunaIni >= 0 && AnulaColunaFim >= 0 && ColunaAnulaIni >= 0 && ColunaAnulaFim >= 0)
-                verificaAcop = 1;
-        }
-
-        verificaAcopRedeP = 0;
-        verificaAcopRedeS = 0;
-        SecPrimIniRedeP = 0;
-        SecPrimFimRedeP = 0;
-        PrimSecIniRedeP = 0;
-        PrimSecFimRedeP = 0;
-
-        if(arq.AP==0){
-        	if (arq.nperfisp > 0) {
-        		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
-        	}
-        	if (arq.nperfisg > 0 && arq.lingas > 0) {
-        		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
-        	}
-        	if (arq.nperfistransp > 0) {
-        		arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
-        	}
-        	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        		arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
-        	}
-        }
-        kontaTempoProf = 0;
-        kontaTempoProfG = 0;
-        if (arq.nperfisp > 0) {
-            if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
-                kontaTempoProf++;
-        }
-        if (arq.nperfisg > 0 && arq.lingas > 0) {
-            if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
-                kontaTempoProfG++;
-        }
-        kontaTempoTransProf = 0;
-        kontaTempoTransProfG = 0;
-        if (arq.nperfistransp > 0) {
-            if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
-                kontaTempoTransProf++;
-        }
-        if (arq.nperfistransg > 0 && arq.lingas > 0) {
-            if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
-                kontaTempoTransProfG++;
-        }
-
-        saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
-        tmpLog = saidaLog.str();
-        // if it's not a simulation POCO_INJETOR
-        if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
-            contaLog = 0;
-            int nevent = arq.logevento.size();
-            while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt && contaLog < nevent) {
-                time_t now = time(0);
-                tm *ltm = localtime(&now); // Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
-                ofstream escreveIni(tmpLog.c_str(), ios_base::app);
-                escreveIni << "Evento Externo = ";
-                escreveIni << arq.logevento[contaLog].instante << " ; ";
-                escreveIni << arq.logevento[contaLog].duracao << " ; ";
-                escreveIni << arq.logevento[contaLog].descricao << " ; ";
-                escreveIni << "datahora = ";
-                escreveIni << ltm->tm_mday << "/";
-                escreveIni << 1 + ltm->tm_mon << "/";
-                escreveIni << 1900 + ltm->tm_year << " ";
-                escreveIni << 0 + ltm->tm_hour << ":";
-                escreveIni << 0 + ltm->tm_min << ":";
-                escreveIni << 0 + ltm->tm_sec;
-                escreveIni << endl;
-                contaLog++;
-                escreveIni.close();
-            }
-        }
-
-        menorDx = 1e10;
-        for (int i = 0; i <= ncel; i++) {
-            if (celula[i].dx < menorDx)
-                menorDx = celula[i].dx;
-            if (i > 0)
-                celula[i].razdxTM = celula[i - 1].dx / (celula[i - 1].dx + celula[i].dx);
-            if (i > 1)
-                celula[i].razdxTM0 = celula[i - 2].dx / (celula[i - 1].dx + celula[i - 2].dx);
-        }
-
-        if (arq.nCelUnit>0) {
-        	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
-        		kontaTempoCelUni.push_back(0);
-        	}
-        }
-
-        kSP = 0;
-        indevento = 1;
-        mult = 0.8;
-        presMedMov = 0.;
-        jMedMov = 0.;
-        tMedMov = 60.;
-        ktMedMov = 0.;
-        pTotal = 0.;
-        jTotal = 0.;
-        alfTotal = 0.;
+        resetCouplingAndOutputState();
     } catch (exception &excInt) {
         cout << "EXCECAO INESPERADA: " << excInt.what() << endl;
         // incluir falha
