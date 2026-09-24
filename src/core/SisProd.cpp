@@ -2104,6 +2104,104 @@ void SProd::configureLatentHeat() {
     }
 }
 
+/// Sets the gas-density correction factors of every fluid in every cell -- the
+/// cell's, its source's and its reservoir cells' -- to 1 when the correction is
+/// off, or evaluates them at local pressure and temperature when it is on; then
+/// makes the first cell's fluid the fluid of its source.
+void SProd::applyDensityCorrectionsAndInletFluid() {
+    for (int i = 0; i <= ncel; i++) {
+        if (arq.corrDeng == 0) {
+            celula[i].flui.rDgD = 1.;
+            celula[i].flui.rDgL = 1.;
+            celula[i].flui.PCis = celula[i].flui.PC;
+            celula[i].flui.TCis = celula[i].flui.TC;
+            if (celula[i].acsr.tipo == 2) {
+                celula[i].acsr.injl.FluidoPro.rDgD = 1.;
+                celula[i].acsr.injl.FluidoPro.rDgL = 1.;
+            } else if (celula[i].acsr.tipo == 3) {
+                celula[i].acsr.ipr.FluidoPro.rDgD = 1.;
+                celula[i].acsr.ipr.FluidoPro.rDgL = 1.;
+            } else if (celula[i].acsr.tipo == 10) {
+                celula[i].acsr.injm.FluidoPro.rDgD = 1.;
+                celula[i].acsr.injm.FluidoPro.rDgL = 1.;
+            }
+            if (celula[i].acsr.tipo == 15) {
+                celula[i].acsr.radialPoro.flup.rDgD = 1.;
+                celula[i].acsr.radialPoro.flup.rDgD = 1.;
+                for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
+                    celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
+                    celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
+                }
+            }
+            if (celula[i].acsr.tipo == 16) {
+                celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
+                celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
+                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
+                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgD = 1.;
+                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgL = 1.;
+                }
+                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
+                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rDgD = 1.;
+                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rDgL = 1.;
+                }
+            }
+        } else {
+            celula[i].flui.razDegD(celula[i].pres, celula[i].temp);
+            celula[i].flui.rzDegL(celula[i].pres, celula[i].temp);
+            celula[i].flui.PcTcIS();
+            if (celula[i].acsr.tipo == 2) {
+                celula[i].acsr.injl.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
+                celula[i].acsr.injl.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
+            } else if (celula[i].acsr.tipo == 3) {
+                celula[i].acsr.ipr.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
+                celula[i].acsr.ipr.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
+            } else if (celula[i].acsr.tipo == 10) {
+                celula[i].acsr.injm.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
+                celula[i].acsr.injm.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
+            } else if (celula[i].acsr.tipo == 15) {
+                celula[i].acsr.radialPoro.flup.razDegD(celula[i].pres, celula[i].temp);
+                celula[i].acsr.radialPoro.flup.rzDegL(celula[i].pres, celula[i].temp);
+                for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
+                    double pres = celula[i].acsr.radialPoro.celula[iRP].Pcamada;
+                    double temp = celula[i].acsr.radialPoro.tRes;
+                    celula[i].acsr.radialPoro.celula[iRP].flup.razDegD(pres, temp);
+                    celula[i].acsr.radialPoro.celula[iRP].flup.rzDegL(pres, temp);
+                }
+            } else if (celula[i].acsr.tipo == 16) {
+                celula[i].acsr.poroso2D.dados.flup.razDegD(celula[i].pres, celula[i].temp);
+                celula[i].acsr.poroso2D.dados.flup.rzDegL(celula[i].pres, celula[i].temp);
+                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
+                    double pres = celula[i].acsr.poroso2D.dados.transfer.celula[iRP].Pcamada;
+                    double temp = celula[i].acsr.poroso2D.dados.transfer.tRes;
+                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.razDegD(pres, temp);
+                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rzDegL(pres, temp);
+                }
+                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
+                    double pres = celula[i].acsr.poroso2D.malha.mlh2d[iRP].cel2D.presC;
+                    double temp = celula[i].acsr.poroso2D.malha.mlh2d[iRP].tRes;
+                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.razDegD(pres, temp);
+                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rzDegL(pres, temp);
+                }
+            }
+        }
+    }
+
+    if (celula[0].acsr.tipo == 1) {
+        celula[0].flui = celula[0].acsr.injg.FluidoPro;
+    } else if (celula[0].acsr.tipo == 2) {
+        celula[0].flui = celula[0].acsr.injl.FluidoPro;
+    } else if (celula[0].acsr.tipo == 3) {
+        celula[0].flui = celula[0].acsr.ipr.FluidoPro;
+    } else if (celula[0].acsr.tipo == 10) {
+        celula[0].flui = celula[0].acsr.injm.FluidoPro;
+        ;
+    } else if (celula[0].acsr.tipo == 15) {
+        celula[0].flui = celula[0].acsr.radialPoro.flup;
+    } else if (celula[0].acsr.tipo == 16) {
+        celula[0].flui = celula[0].acsr.poroso2D.dados.flup;
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -2122,97 +2220,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
             generateSaturationTablesFromCorrelations();
         }
-        for (int i = 0; i <= ncel; i++) {
-            if (arq.corrDeng == 0) {
-                celula[i].flui.rDgD = 1.;
-                celula[i].flui.rDgL = 1.;
-                celula[i].flui.PCis = celula[i].flui.PC;
-                celula[i].flui.TCis = celula[i].flui.TC;
-                if (celula[i].acsr.tipo == 2) {
-                    celula[i].acsr.injl.FluidoPro.rDgD = 1.;
-                    celula[i].acsr.injl.FluidoPro.rDgL = 1.;
-                } else if (celula[i].acsr.tipo == 3) {
-                    celula[i].acsr.ipr.FluidoPro.rDgD = 1.;
-                    celula[i].acsr.ipr.FluidoPro.rDgL = 1.;
-                } else if (celula[i].acsr.tipo == 10) {
-                    celula[i].acsr.injm.FluidoPro.rDgD = 1.;
-                    celula[i].acsr.injm.FluidoPro.rDgL = 1.;
-                }
-                if (celula[i].acsr.tipo == 15) {
-                    celula[i].acsr.radialPoro.flup.rDgD = 1.;
-                    celula[i].acsr.radialPoro.flup.rDgD = 1.;
-                    for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                        celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
-                        celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
-                    }
-                }
-                if (celula[i].acsr.tipo == 16) {
-                    celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
-                    celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
-                    for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgD = 1.;
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgL = 1.;
-                    }
-                    for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rDgD = 1.;
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rDgL = 1.;
-                    }
-                }
-            } else {
-                celula[i].flui.razDegD(celula[i].pres, celula[i].temp);
-                celula[i].flui.rzDegL(celula[i].pres, celula[i].temp);
-                celula[i].flui.PcTcIS();
-                if (celula[i].acsr.tipo == 2) {
-                    celula[i].acsr.injl.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
-                    celula[i].acsr.injl.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
-                } else if (celula[i].acsr.tipo == 3) {
-                    celula[i].acsr.ipr.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
-                    celula[i].acsr.ipr.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
-                } else if (celula[i].acsr.tipo == 10) {
-                    celula[i].acsr.injm.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
-                    celula[i].acsr.injm.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
-                } else if (celula[i].acsr.tipo == 15) {
-                    celula[i].acsr.radialPoro.flup.razDegD(celula[i].pres, celula[i].temp);
-                    celula[i].acsr.radialPoro.flup.rzDegL(celula[i].pres, celula[i].temp);
-                    for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                        double pres = celula[i].acsr.radialPoro.celula[iRP].Pcamada;
-                        double temp = celula[i].acsr.radialPoro.tRes;
-                        celula[i].acsr.radialPoro.celula[iRP].flup.razDegD(pres, temp);
-                        celula[i].acsr.radialPoro.celula[iRP].flup.rzDegL(pres, temp);
-                    }
-                } else if (celula[i].acsr.tipo == 16) {
-                    celula[i].acsr.poroso2D.dados.flup.razDegD(celula[i].pres, celula[i].temp);
-                    celula[i].acsr.poroso2D.dados.flup.rzDegL(celula[i].pres, celula[i].temp);
-                    for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                        double pres = celula[i].acsr.poroso2D.dados.transfer.celula[iRP].Pcamada;
-                        double temp = celula[i].acsr.poroso2D.dados.transfer.tRes;
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.razDegD(pres, temp);
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rzDegL(pres, temp);
-                    }
-                    for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                        double pres = celula[i].acsr.poroso2D.malha.mlh2d[iRP].cel2D.presC;
-                        double temp = celula[i].acsr.poroso2D.malha.mlh2d[iRP].tRes;
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.razDegD(pres, temp);
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rzDegL(pres, temp);
-                    }
-                }
-            }
-        }
-
-        if (celula[0].acsr.tipo == 1) {
-            celula[0].flui = celula[0].acsr.injg.FluidoPro;
-        } else if (celula[0].acsr.tipo == 2) {
-            celula[0].flui = celula[0].acsr.injl.FluidoPro;
-        } else if (celula[0].acsr.tipo == 3) {
-            celula[0].flui = celula[0].acsr.ipr.FluidoPro;
-        } else if (celula[0].acsr.tipo == 10) {
-            celula[0].flui = celula[0].acsr.injm.FluidoPro;
-            ;
-        } else if (celula[0].acsr.tipo == 15) {
-            celula[0].flui = celula[0].acsr.radialPoro.flup;
-        } else if (celula[0].acsr.tipo == 16) {
-            celula[0].flui = celula[0].acsr.poroso2D.dados.flup;
-        }
+        applyDensityCorrectionsAndInletFluid();
 
         for (int i = 0; i < ncel; i++) {
             if (celula[i].calor.difus2D == 1) {

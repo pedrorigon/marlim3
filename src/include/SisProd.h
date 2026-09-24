@@ -1230,6 +1230,11 @@ class SProd {
     /// flashCompleto is 0, reads the latent-heat table from the PVTSim file into
     /// HLat and writes perfilLatente.
     void configureLatentHeat();
+    /// Sets the gas-density correction factors of every fluid in every cell -- the
+    /// cell's, its source's and its reservoir cells' -- to 1 when the correction is
+    /// off, or evaluates them at local pressure and temperature when it is on; then
+    /// makes the first cell's fluid the fluid of its source.
+    void applyDensityCorrectionsAndInletFluid();
     /// Builds the production section after input parsing.
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
