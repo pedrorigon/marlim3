@@ -3763,10 +3763,11 @@ void SProd::correcHidroFric(int i, double &hidro, double &fric) {
     hidro = (1 - arq.MedSimpPresFront) * 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
 }
 
-void SProd::auxMiniTab(ProFlu &flui) {
-    ProFlu fluC;
-    fluC = flui;
-    fluC.atualizaPropCompStandard();
+/// Evaluates the fluid at the two minimum-pressure corners of the mini-table,
+/// (pmin, tmin) and (pmin, tmax): refreshes fluC's composition at each corner and
+/// writes every tabulated property of flui's mini-table there, plus the
+/// bubble-point pressure at each temperature.
+void SProd::fillMiniTableCornersAtMinPressure(ProFlu &fluC, ProFlu &flui) {
     if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
         fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmin,
                               fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
@@ -3843,6 +3844,13 @@ void SProd::auxMiniTab(ProFlu &flui) {
         fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
     flui.miniTabDin.PBF[1] =
         fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+}
+
+void SProd::auxMiniTab(ProFlu &flui) {
+    ProFlu fluC;
+    fluC = flui;
+    fluC.atualizaPropCompStandard();
+    fillMiniTableCornersAtMinPressure(fluC, flui);
     if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
         fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin,
                               fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
