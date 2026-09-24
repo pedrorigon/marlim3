@@ -44,11 +44,20 @@ import braces
 
 KEYWORDS = {"return", "else", "if", "while", "for", "case", "new", "delete",
             "do", "switch", "break", "continue", "const", "static", "sizeof"}
-# The `[&*]?` is not decoration: without it the pattern misses every reference
+# The `&` is not decoration: without it the pattern misses every reference
 # parameter -- `double &chutelim` -- which was fine while only by-value
 # signatures were read, and stopped being fine the moment a generated helper
 # became the thing being cut.
-DECL = re.compile(r'(?<![.\w])([A-Za-z_][A-Za-z_0-9:<>]*)\s+[&*]?([A-Za-z_][A-Za-z_0-9]*)\s*(?:=[^=]|;|,|\))')
+#
+# The `*` is KEPT in the type. It used to be matched and dropped, the same as
+# `&`, which is right for a reference -- the cut decides by-reference from the
+# writes -- and wrong for a pointer: montasistema's `double *compfonte` came out
+# as a parameter `double compfonte` (T100, caught in a dry run).
+DECL = re.compile(r'(?<![.\w])([A-Za-z_][A-Za-z_0-9:<>]*)\s+(&|\*{1,3})?([A-Za-z_][A-Za-z_0-9]*)\s*(?:=[^=]|;|,|\))')
+
+
+def _typed(base, mark):
+    return base + " " + mark if mark and mark.startswith("*") else base
 CONTROL_HEADER = re.compile(r'(?<![.\w])(?:for|if|while|switch|catch)\s*\((?:[^()]|\([^()]*\))*\)')
 
 
@@ -72,11 +81,11 @@ def _declarations(line):
     """
     out = []
     for m in DECL.finditer(line):
-        ty, first = m.group(1), m.group(2)
-        if ty in KEYWORDS or first in KEYWORDS:
+        base, first = m.group(1), m.group(3)
+        if base in KEYWORDS or first in KEYWORDS:
             continue
-        out.append((ty, first))
-        rest = line[m.end(2):]
+        out.append((_typed(base, m.group(2)), first))
+        rest = line[m.end(3):]
         depth, cut = 0, None
         for i, ch in enumerate(rest):
             if ch in "([{":
@@ -107,9 +116,10 @@ def _declarations(line):
             # as the name turned `double alfRev, int nrede` into parameters
             # called `double` and `int`. Those pieces are separate
             # declarations that DECL already found on its own, so skip them.
-            name = re.match(r'\s*[&*]?([A-Za-z_]\w*)\s*(?:=|\[|$)', piece)
-            if name and name.group(1) not in KEYWORDS:
-                out.append((ty, name.group(1)))
+            name = re.match(r'\s*(&|\*{1,3})?([A-Za-z_]\w*)\s*(?:=|\[|$)', piece)
+            if name and name.group(2) not in KEYWORDS:
+                # `double *p, *q` and `double *p, q`: each declarator has its own star.
+                out.append((_typed(base, name.group(1)), name.group(2)))
     return out
 
 
@@ -268,15 +278,26 @@ def _calibrate():
     val = 2.;
 }
 ''', 2, 3, {"lim", "val"}, set()),
+        ("pointer keeps its star", '''void f(double *comp, int *posic, int n) {
+    double *a, b, **c;
+    posic[0] = n;
+    g(comp[0], a, b, c);
+}
+''', 3, 4, {"comp", "posic", "n", "a", "b", "c"}, set(),
+         {"comp": "double *", "posic": "int *", "n": "int", "a": "double *", "b": "double", "c": "double **"}),
     ]
     bad = 0
     tmp = Path("/tmp/_iface_calibrate.cpp")
-    for name, text, a, b, want_in, want_out in cases:
+    for name, text, a, b, want_in, want_out, *types in cases:
         tmp.write_text(text, encoding="utf-8")
         ins, outs = interface(str(tmp), a, b)
         got_in = {n for _, n, _, _ in ins}
         got_out = {n for _, n in outs}
-        if got_in != want_in or got_out != want_out:
+        got_types = {n: ty for ty, n, _, _ in ins}
+        if types and any(got_types.get(n) != ty for n, ty in types[0].items()):
+            print(f"  FAILED {name}: types {got_types}, expected {types[0]}")
+            bad += 1
+        elif got_in != want_in or got_out != want_out:
             print(f"  FAILED {name}: in={sorted(got_in)} out={sorted(got_out)}, "
                   f"expected in={sorted(want_in)} out={sorted(want_out)}")
             bad += 1

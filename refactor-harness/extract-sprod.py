@@ -89,6 +89,12 @@ def main():
         params.append(f"{ty} {name}")
         extra_names.append(name)
     for ty, name, written, _after in crossing_in:
+        if ty.endswith("*"):
+            # A pointer goes by value -- the pointee is shared either way -- or
+            # by reference when the range reseats it. `const T * &` would not
+            # even bind to the caller's `T *`.
+            params.append(f"{ty}{'&' if written else ''}{name}")
+            continue
         params.append(f"{ty} {'&' if written else ''}{name}" if written or ty in
                       ("int", "double", "bool", "float", "long", "char")
                       else f"const {ty} &{name}")
