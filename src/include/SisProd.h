@@ -1193,6 +1193,8 @@ class SProd {
     void assignPvtSimBubbleTablesToCells();
     /// Reads the bubble-point curve from the PVTSim file, points the cell fluids at it
     void loadPvtSimSaturationTables();
+    /// Builds the bubble-point curve and the solution gas-oil ratio table from the
+    void generateSaturationTablesFromCorrelations();
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);
