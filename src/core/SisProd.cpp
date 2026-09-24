@@ -1585,128 +1585,137 @@ void SProd::generateSaturationTablesFromCorrelations() {
     lerRS = 1;
 }
 
+/// Copies the run configuration into the members, checks that an injection well
+/// has the IPR its boundary condition needs, builds the Cp and JTL tables, hands
+/// the fluid constants to every fluid, generates the pipe and the production
+/// cells, and places every source -- including the extra gas sources at
+/// compfonte, whose cell indices it records in posicfonte.
+void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes) {
+    indTramo = -1;
+    KontaImprime = 0;
+    tempoaberto = 0.;
+    tempoabertoini = 0.;
+    modoPerm = 0;
+    iterperm = 0;
+    masChkSup = 0;
+    dt = arq.dtmax;
+    dtini = arq.dtmax;
+    dtInter = arq.dtmax;
+    tfinal = arq.tfinal;
+    TransMassModel = 0;
+    indpigP = 0;
+    indpigPini = indpigP;
+    reinicia = 0;
+    masChkSupini = 0;
+    betaRev = 0.;
+    trackRGO = arq.trackRGO;
+    trackDeng = arq.trackDeng;
+    ninjgas = arq.ninjgas;
+    lingas = arq.lingas;
+    nfluP = arq.nfluP;
+    ModelCp = arq.modelcp;
+    Modeljtl = arq.modelJTL;
+    CalcLat = arq.latente;
+    if (arq.flashCompleto == 1)
+        arq.trackRGO = 1;
+    trackRGO = arq.trackRGO;
+    trackDeng = arq.trackDeng;
+    ninjgas = arq.ninjgas;
+    lingas = arq.lingas;
+    injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
+    arq.fluc.injPoc = injPoc;
+    if (arq.flashCompleto == 1)
+        arq.fluc.injPoc = 0;
+    (*vg1dSP).localtiny = arq.mono;
+    (*vg1dSP).CritCond = arq.critcond;
+    titRev = -1;
+    if (injPoc >= 1 && arq.nipr == 0 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5)
+        NumError(
+            "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e nao foi incluido nenhuma IPR no sistema");
+    else if (injPoc >= 1 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5) {
+        int testaIPR = 0;
+        for (int i = 0; i < arq.nipr; i++)
+            if (arq.IPRS[i].indcel == arq.ncelp - 1)
+                testaIPR = 1;
+        if (testaIPR == 0)
+            NumError(
+                "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e a ultima celula nao contem uma IPR, e necessario neste modo se ter uma IPR na ultima celula");
+    }
+
+    npontos = arq.tabent.npont;
+    ModelCp = arq.modelcp;
+    if (arq.modelcp > 0)
+        arq.geraTabCp();
+    Modeljtl = arq.modelJTL;
+    if (arq.modelJTL == 1)
+        arq.geraTabDrholDt();
+    cpg = arq.cpg;
+    cpl = arq.cpl;
+    drholdT = arq.drholdT;
+
+    zdranP = arq.zdranP;
+    dzdpP = arq.dzdpP;
+    dzdtP = arq.dzdtP;
+    fluiRevRede = arq.flup[0];
+    if (arq.flashCompleto == 2)
+        fluiRevRede.atualizaPropCompStandard();
+    for (int i = 0; i < arq.nfluP; i++) {
+        arq.flup[i].npontos = arq.tabent.npont;
+        arq.flup[i].cpg = cpg;
+        arq.flup[i].cpl = cpl;
+        arq.flup[i].drholdT = drholdT;
+        arq.flup[i].nfluP = nfluP;
+    }
+    arq.flug.npontos = arq.tabent.npont;
+    arq.flug.cpg = cpg;
+    arq.flug.cpl = cpl;
+    arq.flug.drholdT = drholdT;
+    arq.flug.nfluP = nfluP;
+
+    arq.fluc.npontos = arq.tabent.npont;
+    arq.fluc.RhoInj = arq.RhoInj;
+    arq.fluc.ViscInj = arq.ViscInj;
+    arq.fluc.CondInj = arq.CondInj;
+    arq.fluc.CpInj = arq.CpInj;
+    arq.fluc.DrhoDtInj = arq.DrhoDtInj;
+
+    if (arq.modelcp > 0 || arq.modelJTL == 1 || arq.latente > 0 || (arq.pocinjec == 1 && (arq.condpocinj.tipoFlui == 2 || arq.condpocinj.tipoFlui == 3)))
+        TransMassModel = arq.transmass;
+    arq.geraduto();
+    ncel = arq.ncelp - 1;
+    temperatura = arq.celp[0].textern;
+    tempRev = arq.tempReves;
+    celula = new Cel[ncel + 1];
+    arq.geracelp(celula);
+    if (arq.nipr > 0)
+        arq.geraipr(celula);
+    if (arq.nvalvgas > 0 && arq.lingas > 0)
+        arq.gerafgasVGL(celula);
+    if (arq.ninjgas > 0)
+        arq.gerafgasFonte(celula);
+    for (int i = arq.ninjgas; i < arq.ninjgas + nfontes; i++) {
+        int iposp = arq.buscaIndiceMeioP(compfonte[i - arq.ninjgas]);
+        posicfonte[i - arq.ninjgas] = iposp;
+        InjGas injgasMRT(0, 0, arq.flug);
+        celula[iposp].acsr.tipo = 1;
+        celula[iposp].acsr.injg = injgasMRT;
+    }
+    if (arq.ninjliq > 0)
+        arq.gerafliqFonte(celula);
+    if (arq.ninjmass > 0)
+        arq.gerafmassFonte(celula);
+    if (arq.nfuro > 0)
+        arq.geraFuro(celula);
+    if (arq.nPoroRad > 0)
+        arq.gerafPoroRadFonte(celula);
+    if (arq.nPoro2D > 0)
+        arq.gerafPoro2DFonte(celula);
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
-        indTramo = -1;
-        KontaImprime = 0;
-        tempoaberto = 0.;
-        tempoabertoini = 0.;
-        modoPerm = 0;
-        iterperm = 0;
-        masChkSup = 0;
-        dt = arq.dtmax;
-        dtini = arq.dtmax;
-        dtInter = arq.dtmax;
-        tfinal = arq.tfinal;
-        TransMassModel = 0;
-        indpigP = 0;
-        indpigPini = indpigP;
-        reinicia = 0;
-        masChkSupini = 0;
-        betaRev = 0.;
-        trackRGO = arq.trackRGO;
-        trackDeng = arq.trackDeng;
-        ninjgas = arq.ninjgas;
-        lingas = arq.lingas;
-        nfluP = arq.nfluP;
-        ModelCp = arq.modelcp;
-        Modeljtl = arq.modelJTL;
-        CalcLat = arq.latente;
-        if (arq.flashCompleto == 1)
-            arq.trackRGO = 1;
-        trackRGO = arq.trackRGO;
-        trackDeng = arq.trackDeng;
-        ninjgas = arq.ninjgas;
-        lingas = arq.lingas;
-        injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
-        arq.fluc.injPoc = injPoc;
-        if (arq.flashCompleto == 1)
-            arq.fluc.injPoc = 0;
-        (*vg1dSP).localtiny = arq.mono;
-        (*vg1dSP).CritCond = arq.critcond;
-        titRev = -1;
-        if (injPoc >= 1 && arq.nipr == 0 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5)
-            NumError(
-                "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e nao foi incluido nenhuma IPR no sistema");
-        else if (injPoc >= 1 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5) {
-            int testaIPR = 0;
-            for (int i = 0; i < arq.nipr; i++)
-                if (arq.IPRS[i].indcel == arq.ncelp - 1)
-                    testaIPR = 1;
-            if (testaIPR == 0)
-                NumError(
-                    "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e a ultima celula nao contem uma IPR, e necessario neste modo se ter uma IPR na ultima celula");
-        }
-
-        npontos = arq.tabent.npont;
-        ModelCp = arq.modelcp;
-        if (arq.modelcp > 0)
-            arq.geraTabCp();
-        Modeljtl = arq.modelJTL;
-        if (arq.modelJTL == 1)
-            arq.geraTabDrholDt();
-        cpg = arq.cpg;
-        cpl = arq.cpl;
-        drholdT = arq.drholdT;
-
-        zdranP = arq.zdranP;
-        dzdpP = arq.dzdpP;
-        dzdtP = arq.dzdtP;
-        fluiRevRede = arq.flup[0];
-        if (arq.flashCompleto == 2)
-            fluiRevRede.atualizaPropCompStandard();
-        for (int i = 0; i < arq.nfluP; i++) {
-            arq.flup[i].npontos = arq.tabent.npont;
-            arq.flup[i].cpg = cpg;
-            arq.flup[i].cpl = cpl;
-            arq.flup[i].drholdT = drholdT;
-            arq.flup[i].nfluP = nfluP;
-        }
-        arq.flug.npontos = arq.tabent.npont;
-        arq.flug.cpg = cpg;
-        arq.flug.cpl = cpl;
-        arq.flug.drholdT = drholdT;
-        arq.flug.nfluP = nfluP;
-
-        arq.fluc.npontos = arq.tabent.npont;
-        arq.fluc.RhoInj = arq.RhoInj;
-        arq.fluc.ViscInj = arq.ViscInj;
-        arq.fluc.CondInj = arq.CondInj;
-        arq.fluc.CpInj = arq.CpInj;
-        arq.fluc.DrhoDtInj = arq.DrhoDtInj;
-
-        if (arq.modelcp > 0 || arq.modelJTL == 1 || arq.latente > 0 || (arq.pocinjec == 1 && (arq.condpocinj.tipoFlui == 2 || arq.condpocinj.tipoFlui == 3)))
-            TransMassModel = arq.transmass;
-        arq.geraduto();
-        ncel = arq.ncelp - 1;
-        temperatura = arq.celp[0].textern;
-        tempRev = arq.tempReves;
-        celula = new Cel[ncel + 1];
-        arq.geracelp(celula);
-        if (arq.nipr > 0)
-            arq.geraipr(celula);
-        if (arq.nvalvgas > 0 && arq.lingas > 0)
-            arq.gerafgasVGL(celula);
-        if (arq.ninjgas > 0)
-            arq.gerafgasFonte(celula);
-        for (int i = arq.ninjgas; i < arq.ninjgas + nfontes; i++) {
-            int iposp = arq.buscaIndiceMeioP(compfonte[i - arq.ninjgas]);
-            posicfonte[i - arq.ninjgas] = iposp;
-            InjGas injgasMRT(0, 0, arq.flug);
-            celula[iposp].acsr.tipo = 1;
-            celula[iposp].acsr.injg = injgasMRT;
-        }
-        if (arq.ninjliq > 0)
-            arq.gerafliqFonte(celula);
-        if (arq.ninjmass > 0)
-            arq.gerafmassFonte(celula);
-        if (arq.nfuro > 0)
-            arq.geraFuro(celula);
-        if (arq.nPoroRad > 0)
-            arq.gerafPoroRadFonte(celula);
-        if (arq.nPoro2D > 0)
-            arq.gerafPoro2DFonte(celula);
+        buildProductionCells(compfonte, posicfonte, nfontes);
         if (celula[0].acsr.tipo != 0 && arq.ConContEntrada == 1) {
             // RN-302: The inlet has both a pressure boundary condition and a mass source. Report a warning.
             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,

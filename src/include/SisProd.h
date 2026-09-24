@@ -1195,6 +1195,8 @@ class SProd {
     void loadPvtSimSaturationTables();
     /// Builds the bubble-point curve and the solution gas-oil ratio table from the
     void generateSaturationTablesFromCorrelations();
+    /// Copies the run configuration into the members, checks that an injection well
+    void buildProductionCells(double *compfonte, int *posicfonte, int nfontes);
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);
