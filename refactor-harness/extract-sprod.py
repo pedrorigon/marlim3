@@ -104,9 +104,18 @@ def main():
             # even bind to the caller's `T *`.
             params.append(f"{ty}{'&' if written else ''}{name}")
             continue
-        params.append(f"{ty} {'&' if written else ''}{name}" if written or ty in
-                      ("int", "double", "bool", "float", "long", "char")
-                      else f"const {ty} &{name}")
+        if ty in ("int", "double", "bool", "float", "long", "char"):
+            # A scalar goes by reference when the range writes it, by value
+            # otherwise -- and check-byvalue-writes.py proves the "otherwise".
+            params.append(f"{ty} {'&' if written else ''}{name}")
+        else:
+            # An object goes by plain reference: the helper then works on the
+            # very object the original code did, whatever it does to it.
+            # `const T &` for "not written" relied on the analyser seeing every
+            # write, and it does not see method calls or member assignments --
+            # auxMiniTab's `fluC.atualizaPropComp(...)` and
+            # `flui.miniTabDin.x[i][j] = ...` came out const (T101, dry run).
+            params.append(f"{ty} &{name}")
     signature = ", ".join(params)
     call_args = ", ".join(extra_names + [n for _, n, _, _ in crossing_in])
 
