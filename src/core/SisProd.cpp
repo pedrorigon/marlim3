@@ -1817,60 +1817,68 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
     }
 }
 
+/// Builds the gas-lift line when there is one: its cells, the second master valve,
+/// the injection choke, one gas-lift valve choke per valve with its position on
+/// both lines, and each gas cell's share of the annulus above the discharge cell.
+/// Without a gas line, only zeroes the gas cell count.
+void SProd::buildGasLiftLine() {
+    if (arq.lingas == 0)
+        ncelGas = 0;
+    else if (arq.lingas > 0) {
+        ncelGas = arq.ncelg;
+        ncelGas--;
+        celInter = arq.celdescarga;
+        celulaG = new CelG[ncelGas + 1];
+        arq.geracelg(celulaG);
+        arq.geraMaster2(celulaG);
+        arq.gerachokeinj(chokeInj);
+        if (arq.nvalvgas > 0) {
+            chokeVGL = new ChokeGas[arq.nvalvgas];
+            posicVGLP = new int[arq.nvalvgas];
+            posicVGLG = new int[arq.nvalvgas];
+        }
+        for (int i = 0; i < arq.nvalvgas; i++) {
+            double diaG = arq.valvgl[i].diagarg;
+            double presEstag = celulaG[arq.valvgl[i].posicG].pres;
+            double tempEstag = celulaG[arq.valvgl[i].posicG].temp;
+            double presGarg = celula[arq.valvgl[i].posicP].pres;
+            posicVGLP[i] = arq.valvgl[i].posicP;
+            posicVGLG[i] = arq.valvgl[i].posicG;
+            celulaG[posicVGLG[i]].vgl = 1;
+            if (arq.valvgl[i].tipo == 2) {
+                arq.valvgl[i].frec = 0.;
+                arq.valvgl[i].cd = 1.;
+            }
+            chokeVGL[i] = ChokeGas(arq.flug, M_PI * diaG * diaG / 4.,
+                                   arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
+                                   tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
+                                   (M_PI * diaG * diaG / 4.) / arq.valvgl[i].razarea,
+                                   arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
+            celulaG[posicVGLG[i]].pEstag = chokeVGL[i].presEstag;
+            celulaG[posicVGLG[i]].tEstag = chokeVGL[i].tempEstag;
+            celulaG[posicVGLG[i]].pGarg = chokeVGL[i].presGarg;
+            celulaG[posicVGLG[i]].tGarg = chokeVGL[i].tempGarg;
+            celulaG[posicVGLG[i]].qGarg = chokeVGL[i].qGarg;
+            celulaG[posicVGLG[i]].areaGarg = chokeVGL[i].areagarg;
+        }
+        for (int i = 0; i <= ncelGas; i++) {
+            celulaG[i].celInter = &celInter;
+            celulaG[i].razInter = 1.;
+            celulaG[i].razInterIni = 1.;
+            if (i >= celInter) {
+                celulaG[i].razInter = 0.;
+                celulaG[i].razInterIni = 0.;
+            }
+        }
+    }
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
         buildProductionCells(compfonte, posicfonte, nfontes);
         configureInletSourcesAndAccessories(nfontes);
-        if (arq.lingas == 0)
-            ncelGas = 0;
-        else if (arq.lingas > 0) {
-            ncelGas = arq.ncelg;
-            ncelGas--;
-            celInter = arq.celdescarga;
-            celulaG = new CelG[ncelGas + 1];
-            arq.geracelg(celulaG);
-            arq.geraMaster2(celulaG);
-            arq.gerachokeinj(chokeInj);
-            if (arq.nvalvgas > 0) {
-                chokeVGL = new ChokeGas[arq.nvalvgas];
-                posicVGLP = new int[arq.nvalvgas];
-                posicVGLG = new int[arq.nvalvgas];
-            }
-            for (int i = 0; i < arq.nvalvgas; i++) {
-                double diaG = arq.valvgl[i].diagarg;
-                double presEstag = celulaG[arq.valvgl[i].posicG].pres;
-                double tempEstag = celulaG[arq.valvgl[i].posicG].temp;
-                double presGarg = celula[arq.valvgl[i].posicP].pres;
-                posicVGLP[i] = arq.valvgl[i].posicP;
-                posicVGLG[i] = arq.valvgl[i].posicG;
-                celulaG[posicVGLG[i]].vgl = 1;
-                if (arq.valvgl[i].tipo == 2) {
-                    arq.valvgl[i].frec = 0.;
-                    arq.valvgl[i].cd = 1.;
-                }
-                chokeVGL[i] = ChokeGas(arq.flug, M_PI * diaG * diaG / 4.,
-                                       arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
-                                       tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
-                                       (M_PI * diaG * diaG / 4.) / arq.valvgl[i].razarea,
-                                       arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
-                celulaG[posicVGLG[i]].pEstag = chokeVGL[i].presEstag;
-                celulaG[posicVGLG[i]].tEstag = chokeVGL[i].tempEstag;
-                celulaG[posicVGLG[i]].pGarg = chokeVGL[i].presGarg;
-                celulaG[posicVGLG[i]].tGarg = chokeVGL[i].tempGarg;
-                celulaG[posicVGLG[i]].qGarg = chokeVGL[i].qGarg;
-                celulaG[posicVGLG[i]].areaGarg = chokeVGL[i].areagarg;
-            }
-            for (int i = 0; i <= ncelGas; i++) {
-                celulaG[i].celInter = &celInter;
-                celulaG[i].razInter = 1.;
-                celulaG[i].razInterIni = 1.;
-                if (i >= celInter) {
-                    celulaG[i].razInter = 0.;
-                    celulaG[i].razInterIni = 0.;
-                }
-            }
-        }
+        buildGasLiftLine();
         if (celula[0].acsr.tipo != 1 && celula[0].acsr.tipo != 2 && celula[0].acsr.tipo != 3 && celula[0].acsr.tipo != 10 && celula[0].acsr.tipo != 15 && celula[0].acsr.tipo != 16) {
             if (arq.perm == 0 && arq.ConContEntrada == 0) {
                 // RN-300: No source is defined in the first production system cell. Report a warning.
