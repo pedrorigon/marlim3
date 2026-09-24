@@ -135,4 +135,13 @@ if (( diverged_models > 0 )); then
 fi
 
 pass "L2 PASSED -- bit-for-bit equivalence against the baseline on every model"
+
+# A passing run's outputs are identical to the baseline's by definition, so
+# keeping them buys nothing, and each run leaves ~280 MB in /tmp -- on a disk
+# that has been full once already. A failing run keeps its directory for
+# diagnosis (above), and so does a directory the caller named.
+if [[ -z "${MARLIM_L2_DIR:-}" && "${MARLIM_L2_KEEP:-0}" != 1 ]]; then
+    rm -rf "$WORK_DIR"
+    printf 'work directory removed (set MARLIM_L2_KEEP=1 to keep it)\n'
+fi
 exit 0
