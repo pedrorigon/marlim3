@@ -1873,73 +1873,82 @@ void SProd::buildGasLiftLine() {
     }
 }
 
+/// Rejects or warns about source and boundary-condition combinations the run
+/// cannot honour (RN-300, RN-301, gas-lift discharge without an IPR, no outlet
+/// pressure, accessories in the last two cells), builds the gas-lift discharge
+/// hydrostatics and the event log, applies the initial state of a production
+/// well, and records the surface temperature and mass flow it starts from.
+void SProd::validateSetupAndApplyInitialState() {
+    if (celula[0].acsr.tipo != 1 && celula[0].acsr.tipo != 2 && celula[0].acsr.tipo != 3 && celula[0].acsr.tipo != 10 && celula[0].acsr.tipo != 15 && celula[0].acsr.tipo != 16) {
+        if (arq.perm == 0 && arq.ConContEntrada == 0) {
+            // RN-300: No source is defined in the first production system cell. Report a warning.
+            logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                       "Nao existe nenhuma fonte na primeira celula do sistema de producao, esta nao e a condicao mais adequada para a simulacao transiente, problemas podem ocorrer nesta situacao, embora nao seja impeditivo para o modo",
+                       "", "");
+        } else {
+            // RN-301: No source is defined in the first production system cell
+            // under steady-state conditions. Report a failure.
+            NumError("Nao existe nenhuma fonte na primeira celula do sistema de producao, no modo permanente esta e uma condicao necessaria");
+        }
+    }
+
+    if (arq.descarga == 1 && celula[0].acsr.tipo != 3) {
+        NumError(
+            "Nao existe nenhuma IPR na primeira celula do sistema de producao, no modo descarga de gas lift esta e uma condicao necessaria");
+    }
+    if (arq.descarga == 1) {
+        HidroDescargaG();
+        HidroDescargaP();
+    }
+
+    arq.geraevento(noinicial, noextremo);
+    if (arq.saidaClassica == 1 && (arq.transiente == 1 || (*vg1dSP).chaveredeT == 1)) {
+        cout << "------------------------------------------   Eventos no Tramo -------------------------------------------" << endl;
+        int contaImp = 0;
+        for (int i = 0; i < arq.logevento.size(); i++)
+            if (arq.logevento[i].descricao != "Gravando Perfil Linha de Producao" && arq.logevento[i].descricao != "Gravando Perfil Linha de Gas") {
+                cout << contaImp << "  momento = " << arq.logevento[i].instante << " segundos " << " tipo de evento = " << arq.logevento[i].descricao << endl;
+                contaImp++;
+            }
+    }
+
+    if (arq.pocinjec == 0 && arq.perm == 1 && ((*vg1dSP).chaverede == 0 || noextremo == 1) && arq.ConContEntrada != 2 && arq.psep.pres[0] < -1e6) {
+        NumError("sem pressao a jusante como condição de contorno para um tramo onde esta condicao é necessaria ");
+    }
+
+    if ((celula[ncel].acsr.tipo != 0 || celula[ncel - 1].acsr.tipo != 0) && arq.transiente == 1) {
+        NumError("As duas celulas finais não devem ter acessorios, estas duas celulas devem ser preservadas, principalmente para simulacoes transientes ");
+    }
+
+    (*vg1dSP).lixo5 = 0.;
+    (*vg1dSP).contador = 0;
+    if (arq.pocinjec == 0) {
+        arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, chokeInj, celula, celulaG, pGSup, temperatura, presiniG,
+                     tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
+        pGSupIni = pGSup;
+        // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//alteracao7
+        if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
+            aberto = 1;
+            abertoini = 1;
+        } else {
+            aberto = 0;
+            abertoini = 1;
+        }
+    }
+
+    tempSup = celula[ncel].temp;
+    masSup = celula[ncel - 1].MC;
+
+    tGSup = celula[ncel].calor.Textern1;
+}
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
         buildProductionCells(compfonte, posicfonte, nfontes);
         configureInletSourcesAndAccessories(nfontes);
         buildGasLiftLine();
-        if (celula[0].acsr.tipo != 1 && celula[0].acsr.tipo != 2 && celula[0].acsr.tipo != 3 && celula[0].acsr.tipo != 10 && celula[0].acsr.tipo != 15 && celula[0].acsr.tipo != 16) {
-            if (arq.perm == 0 && arq.ConContEntrada == 0) {
-                // RN-300: No source is defined in the first production system cell. Report a warning.
-                logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
-                           "Nao existe nenhuma fonte na primeira celula do sistema de producao, esta nao e a condicao mais adequada para a simulacao transiente, problemas podem ocorrer nesta situacao, embora nao seja impeditivo para o modo",
-                           "", "");
-            } else {
-                // RN-301: No source is defined in the first production system cell
-                // under steady-state conditions. Report a failure.
-                NumError("Nao existe nenhuma fonte na primeira celula do sistema de producao, no modo permanente esta e uma condicao necessaria");
-            }
-        }
-
-        if (arq.descarga == 1 && celula[0].acsr.tipo != 3) {
-            NumError(
-                "Nao existe nenhuma IPR na primeira celula do sistema de producao, no modo descarga de gas lift esta e uma condicao necessaria");
-        }
-        if (arq.descarga == 1) {
-            HidroDescargaG();
-            HidroDescargaP();
-        }
-
-        arq.geraevento(noinicial, noextremo);
-        if (arq.saidaClassica == 1 && (arq.transiente == 1 || (*vg1dSP).chaveredeT == 1)) {
-            cout << "------------------------------------------   Eventos no Tramo -------------------------------------------" << endl;
-            int contaImp = 0;
-            for (int i = 0; i < arq.logevento.size(); i++)
-                if (arq.logevento[i].descricao != "Gravando Perfil Linha de Producao" && arq.logevento[i].descricao != "Gravando Perfil Linha de Gas") {
-                    cout << contaImp << "  momento = " << arq.logevento[i].instante << " segundos " << " tipo de evento = " << arq.logevento[i].descricao << endl;
-                    contaImp++;
-                }
-        }
-
-        if (arq.pocinjec == 0 && arq.perm == 1 && ((*vg1dSP).chaverede == 0 || noextremo == 1) && arq.ConContEntrada != 2 && arq.psep.pres[0] < -1e6) {
-            NumError("sem pressao a jusante como condição de contorno para um tramo onde esta condicao é necessaria ");
-        }
-
-        if ((celula[ncel].acsr.tipo != 0 || celula[ncel - 1].acsr.tipo != 0) && arq.transiente == 1) {
-            NumError("As duas celulas finais não devem ter acessorios, estas duas celulas devem ser preservadas, principalmente para simulacoes transientes ");
-        }
-
-        (*vg1dSP).lixo5 = 0.;
-        (*vg1dSP).contador = 0;
-        if (arq.pocinjec == 0) {
-            arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, chokeInj, celula, celulaG, pGSup, temperatura, presiniG,
-                         tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
-            pGSupIni = pGSup;
-            // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//alteracao7
-            if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
-                aberto = 1;
-                abertoini = 1;
-            } else {
-                aberto = 0;
-                abertoini = 1;
-            }
-        }
-
-        tempSup = celula[ncel].temp;
-        masSup = celula[ncel - 1].MC;
-
-        tGSup = celula[ncel].calor.Textern1;
+        validateSetupAndApplyInitialState();
         if (arq.tabelaDinamica == 1) {
             int minNPontos = 0;
             ntabDin = 1;

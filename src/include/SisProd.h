@@ -1201,6 +1201,8 @@ class SProd {
     void configureInletSourcesAndAccessories(int nfontes);
     /// Builds the gas-lift line when there is one: its cells, the second master valve,
     void buildGasLiftLine();
+    /// Rejects or warns about source and boundary-condition combinations the run
+    void validateSetupAndApplyInitialState();
     void montasistema(double *compfonte = 0,
                       int *posicfonte = 0,
                       int nfontes = 0);
