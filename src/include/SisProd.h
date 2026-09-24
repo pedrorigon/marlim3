@@ -1180,6 +1180,9 @@ class SProd {
             tabDin.clear();
     }
 
+    /// Frees every array this object owns, reading its CURRENT sizes and switches,
+    /// so operator= must call it before copying anything in.
+    void releaseStorageBeforeAssignment();
     /// Performs a deep copy of the production-system state.
     SProd &operator=(const SProd &);
 

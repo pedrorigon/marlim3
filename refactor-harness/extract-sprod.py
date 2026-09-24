@@ -42,7 +42,9 @@ def first_sentence(doc):
 
 
 def function_span(text, name):
-    m = re.search(rf'^(?:void|double|int|bool) SProd::{name}\(', text, re.M)
+    # `SProd &` and an escaped name admit operator= (T101); the rest were the
+    # only hosts before.
+    m = re.search(rf'^(?:void|double|int|bool|SProd &)\s*SProd::{re.escape(name)}\(', text, re.M)
     if m is None:
         raise SystemExit("function not found: " + name)
     return m.start(), braces.match(text, braces.first_brace_after(text, m.start()))
@@ -134,7 +136,7 @@ def main():
     io.open(SRC, "w", encoding="utf-8", errors="surrogateescape").write("\n".join(all_lines))
 
     hdr = io.open(HDR, encoding="utf-8", errors="surrogateescape").read()
-    m = re.search(rf'^(\s*)void {args.function}\(', hdr, re.M)
+    m = re.search(rf'^(\s*)(?:void|double|int|bool|SProd &)\s*{re.escape(args.function)}\(', hdr, re.M)
     if m is None:
         raise SystemExit(f"declaration of {args.function} not found in {HDR}")
     # The header gets the doc's first SENTENCE, rewrapped. It used to get the

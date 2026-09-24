@@ -431,7 +431,12 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
     redeParalelaS = -1;
 }
 
-SProd &SProd::operator=(const SProd &sp) {
+/// Frees every array this object owns, reading its CURRENT sizes and switches, so
+/// operator= must call it before copying anything in. Twin of
+/// releaseStorageBeforeCopy, which does the same for copiaSemJson: the two differ
+/// only in six null tests written as `p != 0` here and `p` there, and must change
+/// together with the constructors (data-model.md, lifecycle constraints).
+void SProd::releaseStorageBeforeAssignment() {
     if (arq.lingas > 0)
         delete[] celulaG;
     if (chokeVGL!=0 && arq.lingas > 0)
@@ -555,6 +560,10 @@ SProd &SProd::operator=(const SProd &sp) {
     if (arq.tabelaDinamica == 1) {
         tabDin.clear();
     }
+}
+
+SProd &SProd::operator=(const SProd &sp) {
+    releaseStorageBeforeAssignment();
 
     arq = sp.arq;
     resolveDriftSelectors();
