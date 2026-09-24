@@ -744,8 +744,12 @@ SProd &SProd::operator=(const SProd &sp) {
     return *this;
 }
 
-void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq, double vbetaRev,
-                         double vbetaRevini, double vtitRev, double vtitRevini, double vdtCicMin) {
+/// Frees every array this object owns, reading its CURRENT sizes and switches, so
+/// copiaSemJson must call it before copying anything in. Twin of
+/// releaseStorageBeforeAssignment, which does the same for operator=: the two
+/// differ only in six null tests written as `p` here and `p != 0` there, and must
+/// change together with the constructors (data-model.md, lifecycle constraints).
+void SProd::releaseStorageBeforeCopy() {
     if (arq.lingas > 0)
         delete[] celulaG;
     if (chokeVGL!=0 && arq.lingas > 0)
@@ -868,6 +872,11 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
     if (arq.tabelaDinamica == 1) {
         tabDin.clear();
     }
+}
+
+void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq, double vbetaRev,
+                         double vbetaRevini, double vtitRev, double vtitRevini, double vdtCicMin) {
+    releaseStorageBeforeCopy();
 
     arq.copiaSemJson(sp);
     resolveDriftSelectors();
