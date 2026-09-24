@@ -23,6 +23,7 @@ import argparse
 import io
 import pathlib
 import re
+import textwrap
 import sys
 import tempfile
 
@@ -32,6 +33,12 @@ import iface
 
 SRC = "src/core/SisProd.cpp"
 HDR = "src/include/SisProd.h"
+
+
+def first_sentence(doc):
+    flat = " ".join(doc.split())
+    m = re.search(r'^(.*?\.)(?:\s|$)', flat)
+    return m.group(1) if m else flat
 
 
 def function_span(text, name):
@@ -130,8 +137,23 @@ def main():
     m = re.search(rf'^(\s*)void {args.function}\(', hdr, re.M)
     if m is None:
         raise SystemExit(f"declaration of {args.function} not found in {HDR}")
-    decl = f"    /// {doc.split(chr(10))[0]}\n    void {args.helper}({signature});\n"
-    hdr = hdr[:m.start()] + decl + hdr[m.start():]
+    # The header gets the doc's first SENTENCE, rewrapped. It used to get the
+    # first LINE, which for a wrapped doc is half a sentence: nine T100
+    # helpers were declared under comments that stopped mid-clause.
+    decl = "".join(f"    /// {row}\n"
+                   for row in textwrap.wrap(first_sentence(doc), 76, break_on_hyphens=False))
+    decl += f"    void {args.helper}({signature});\n"
+    # Above the host's own doc comment, not between it and the host: inserting
+    # at the declaration left montasistema's and SolveTrans's comments sitting
+    # over the first helper instead (T100, both repaired).
+    at = hdr.rfind("\n", 0, m.start()) + 1
+    while True:
+        prev = hdr.rfind("\n", 0, at - 1) + 1
+        if at > 0 and hdr[prev:at].lstrip().startswith("//"):
+            at = prev
+        else:
+            break
+    hdr = hdr[:at] + decl + hdr[at:]
     io.open(HDR, "w", encoding="utf-8", errors="surrogateescape").write(hdr)
     print("  extraido e declarado")
 
