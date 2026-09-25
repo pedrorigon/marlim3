@@ -462,16 +462,16 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         temperatureHigh = 70.;
     double oilVolumeFactor;
     double waterVolumeFactor;
-    double solutionRatio;
+    double solutionGasRatio;
     // calcula os valores de RS, Bo e Ba na celula anterior a i-esima celula
     if (state.cells[i - 1].flui.RGO < 1e7) {
-        solutionRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionRatio);
+        solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
+        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionRatio = solutionRatio * 6.29 / 35.31467;
+        solutionGasRatio = solutionGasRatio * 6.29 / 35.31467;
     } else {
         oilVolumeFactor = 1;
-        solutionRatio = 0;
+        solutionGasRatio = 0;
         waterVolumeFactor = 0.;
     }
     // BSW in-situ da celula anterior, na marcha, a i-esima celula
@@ -708,16 +708,16 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         temperatureHigh = 70.;
     double oilVolumeFactor;
     double waterVolumeFactor;
-    double solutionRatio;
+    double solutionGasRatio;
     // calcula os valores de RS, Bo e Ba na celula anterior a i-esima celula
     if (titulo < 1 - 1e-15) {
-        solutionRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionRatio);
+        solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
+        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionRatio = solutionRatio * 6.29 / 35.31467;
+        solutionGasRatio = solutionGasRatio * 6.29 / 35.31467;
     } else {
         oilVolumeFactor = 1;
-        solutionRatio = 0;
+        solutionGasRatio = 0;
         waterVolumeFactor = 0.;
     }
     // BSW in-situ da celula anterior, na marcha, a i-esima celula
@@ -1133,17 +1133,17 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
 
     double oilVolumeFactor;
     double waterVolumeFactor;
-    double solutionRatio;
+    double solutionGasRatio;
     double titV = 0.;
     // calcula os valores de RS, Bo e Ba na celula anterior a i-esima celula
     if (state.cells[i - 1].flui.RGO < 1e7) {
-        solutionRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionRatio);
+        solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
+        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionRatio = solutionRatio * 6.29 / 35.31467;
+        solutionGasRatio = solutionGasRatio * 6.29 / 35.31467;
     } else {
         oilVolumeFactor = 1;
-        solutionRatio = 0;
+        solutionGasRatio = 0;
         waterVolumeFactor = 0.;
     }
     // BSW in-situ da celula anterior, na marcha, a i-esima celula
@@ -1171,7 +1171,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         // o valor de volume de leve Ã© atualizado neste ponto,
         // seguindo o equacionamento mostrado em relatorio, nÃ£o Ã© relevante para o permanente, mas
         // deve ser calculado, pois Ã© utilizado como entrada no transiente
-        state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+        state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
         if (state.cells[i - 1].VolLeveST < 1e-15)
             state.cells[i - 1].VolLeveST = 0.;
 
@@ -1302,7 +1302,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
         // nÃ£o Ã© relevante para o permanente, mas deve ser calculado,
         // pois Ã© utilizado como entrada no transiente
-        state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+        state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
         if (state.cells[i - 1].VolLeveST < 1e-15)
             state.cells[i - 1].VolLeveST = 0.;
         if (state.input.trackRGO == -1) {
@@ -1409,9 +1409,9 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         fluCI = state.cells[i].fluicol;
     }
     if (state.input.tipoFluido == 0) {
-        solutionRatio = state.cells[i].flui.RS(pmed, tmed);
-        oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, tmed, solutionRatio);
-        solutionRatio = solutionRatio * 6.29 / 35.31467;
+        solutionGasRatio = state.cells[i].flui.RS(pmed, tmed);
+        oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, tmed, solutionGasRatio);
+        solutionGasRatio = solutionGasRatio * 6.29 / 35.31467;
         waterVolumeFactor = state.cells[i].flui.BAFunc(pmed, tmed);
         double rhogstd = state.cells[i].flui.Deng * 1.225;
         double rhololeostd = 1000. * 141.5 / (131.5 + state.cells[i].flui.API);
@@ -1504,7 +1504,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
 // which phases are actually flowing.
 namespace {
 
-void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int mudaRGO, double oilVolumeFactor, double solutionRatio, double tmed, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int mudaRGO, double oilVolumeFactor, double solutionGasRatio, double tmed, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     // neste caso, variaveis como RGO de separador, BSW, API, densidade de gas e outras nÃƒÂ£o muda, sao iguais
     // aos valores da celula i-1
     double liquidHoldup = 1 - state.cells[i - 1].alf;
@@ -1515,7 +1515,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
     // o valor de volume de leve ÃƒÂ© atualizado neste ponto,
     // seguindo o equacionamento mostrado em relatorio, nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas
     // deve ser calculado, pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -1574,7 +1574,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -1606,7 +1606,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
@@ -1661,7 +1661,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -1711,7 +1711,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
@@ -1822,7 +1822,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.injl.FluidoPro.API);
@@ -1863,7 +1863,7 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -1978,7 +1978,7 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.ipr.FluidoPro.API);
@@ -2019,7 +2019,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
@@ -2133,7 +2133,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.injm.FluidoPro.API);
@@ -2174,7 +2174,7 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -2294,7 +2294,7 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     ProFlu fluF;
     // define qual o fluido envolvido na fonte, se a pressÃƒÂ£o ambiente for menor do que a
     // pressao da tubulacao, fluido da tubulacao, senao, fluido definido como
@@ -2337,7 +2337,7 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -2440,7 +2440,7 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.radialPoro.flup.API);
@@ -2481,7 +2481,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
@@ -2595,7 +2595,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
+void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
     double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.poroso2D.dados.flup.API);
@@ -2636,7 +2636,7 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, 
     // calculo do volume de leve na celula i, seguindo o equacionamento mostrado em relatorio,
     // nÃƒÂ£o ÃƒÂ© relevante para o permanente, mas deve ser calculado,
     // pois ÃƒÂ© utilizado como entrada no transiente
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
@@ -2751,12 +2751,12 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, 
         state.cells[i].bet = state.cells[i - 1].bet;
 }
 
-void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double waterCutInSitu, double tmed, double &oilVolumeFactor, double &solutionRatio, double &pmed,
+void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double waterCutInSitu, double tmed, double &oilVolumeFactor, double &solutionGasRatio, double &pmed,
                                             double &rhog, double &rhol, double &oilFlowRate, double &masoleo) {
     if (state.input.tipoFluido == 0) {
-        solutionRatio = state.cells[i].flui.RS(pmed, tmed);
-        oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, tmed, solutionRatio);
-        solutionRatio = solutionRatio * 6.29 / 35.31467;
+        solutionGasRatio = state.cells[i].flui.RS(pmed, tmed);
+        oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, tmed, solutionGasRatio);
+        solutionGasRatio = solutionGasRatio * 6.29 / 35.31467;
         double rhogstd = state.cells[i].flui.Deng * 1.225;
         double rhololeostd = 1000. * 141.5 / (131.5 + state.cells[i].flui.API);
         double rhoa = state.cells[i].flui.Denag * 1000.;
@@ -2773,9 +2773,9 @@ void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double w
 
         if (fabs(1 - state.cells[i].bet) > (*state.globals).localtiny * 1e-6 && fabs(1 - state.cells[i].flui.BSW) > (*state.globals).localtiny) {
             if ((*state.globals).tipoFluidoRedeGlob == 0)
-                state.cells[i].Mliqini = state.cells[i].MC - (state.cells[i].flui.RGO - solutionRatio) * rhogstd * oilFlowRate;
+                state.cells[i].Mliqini = state.cells[i].MC - (state.cells[i].flui.RGO - solutionGasRatio) * rhogstd * oilFlowRate;
             else {
-                masoleo = oilFlowRate * oilVolumeFactor * state.cells[i].flui.MasEspoleo(pmed, tmed, solutionRatio) + oilFlowRate * rhoa * state.cells[i].flui.BSW / (1 - state.cells[i].flui.BSW);
+                masoleo = oilFlowRate * oilVolumeFactor * state.cells[i].flui.MasEspoleo(pmed, tmed, solutionGasRatio) + oilFlowRate * rhoa * state.cells[i].flui.BSW / (1 - state.cells[i].flui.BSW);
                 state.cells[i].Mliqini = masoleo + state.cells[i].MComp;
             }
         } else
@@ -3077,16 +3077,16 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
         temperatureHigh = 70.;
     double oilVolumeFactor;
     double waterVolumeFactor;
-    double solutionRatio;
+    double solutionGasRatio;
     // calcula os valores de RS, Bo e Ba na celula anterior a i-esima celula
     if (state.cells[i - 1].flui.RGO < 1e7) {
-        solutionRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionRatio);
+        solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
+        oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionRatio = solutionRatio * 6.29 / 35.31467;
+        solutionGasRatio = solutionGasRatio * 6.29 / 35.31467;
     } else {
         oilVolumeFactor = 1;
-        solutionRatio = 0;
+        solutionGasRatio = 0;
         waterVolumeFactor = 0.;
     }
     // BSW in-situ da celula anterior, na marcha, a i-esima celula
@@ -3103,33 +3103,33 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
         tmed = state.cells[i - 1].temp;
     // primeiro teste: nÃƒÂ£o ha fontes na celula i-1:
     if (state.cells[i - 1].acsr.tipo != 1 && state.cells[i - 1].acsr.tipo != 2 && state.cells[i - 1].acsr.tipo != 3 && state.cells[i - 1].acsr.tipo != 10 && (state.cells[i - 1].acsr.tipo != 9 || (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura <= 1e-6)) && state.cells[i - 1].acsr.tipo != 15 && state.cells[i - 1].acsr.tipo != 16) {
-        applySteadyMassWithoutSource(state, i, mudaRGO, oilVolumeFactor, solutionRatio, tmed, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassWithoutSource(state, i, mudaRGO, oilVolumeFactor, solutionGasRatio, tmed, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso em que se tem uma fonte de gas na celula i-1, o que mudara a RGO e a densidade de gas em i
     else if (state.cells[i - 1].acsr.tipo == 1 && state.cells[i - 1].acsr.injg.seco == 1) {
-        applySteadyMassDryGasInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassDryGasInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     } else if (state.cells[i - 1].acsr.tipo == 1 && state.cells[i - 1].acsr.injg.seco == 0) {
-        applySteadyMassWetGasInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassWetGasInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso de fonte de liquido na celula i-1:
     else if (state.cells[i - 1].acsr.tipo == 2) {
-        applySteadyMassLiquidInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassLiquidInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso de IPR na celula i-1:
     else if (state.cells[i - 1].acsr.tipo == 3) {
-        applySteadyMassInflowPerformance(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassInflowPerformance(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso de fonte de massa na celula i-1:
     else if (state.cells[i - 1].acsr.tipo == 10) {
-        applySteadyMassMultipleSource(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassMultipleSource(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso especial, fonte de vazamento:
     else if (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
-        applySteadyMassLeakSource(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassLeakSource(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     } else if (state.cells[i - 1].acsr.tipo == 15) {
-        applySteadyMassRadialPorous(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassRadialPorous(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     } else if (state.cells[i - 1].acsr.tipo == 16) {
-        applySteadyMassPorous2D(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
+        applySteadyMassPorous2D(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
 
     // atualizaÃ§Ã£o da vazao massica da mistura:
@@ -3145,7 +3145,7 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
     double oilFlowRate = 0.;
     double masoleo;
     if (state.cells[i].flui.RGO < 1e7) { // Caso exista liquido
-        finalizeSteadyMassWithLiquid(state, i, waterCutInSitu, tmed, oilVolumeFactor, solutionRatio, pmed, rhog, rhol, oilFlowRate, masoleo);
+        finalizeSteadyMassWithLiquid(state, i, waterCutInSitu, tmed, oilVolumeFactor, solutionGasRatio, pmed, rhog, rhol, oilFlowRate, masoleo);
     } else {
         state.cells[i].Mliqini = 0.;
         state.cells[i - 1].MliqiniR = state.cells[i].Mliqini;
@@ -3512,11 +3512,11 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
     double oilVolumeFactorLocal = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp);
     double waterVolumeFactorLocal = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
     waterCutLocal = state.cells[i].flui.BSW * waterVolumeFactorLocal / (oilVolumeFactorLocal + waterVolumeFactorLocal * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLocal);
-    double solutionRatioRightFace = state.cells[i].flui.RS(state.cells[i + 1].presaux, tmed);
+    double solutionGasRatioRightFace = state.cells[i].flui.RS(state.cells[i + 1].presaux, tmed);
     double oilVolumeFactorRightFace = state.cells[i].flui.BOFunc(state.cells[i + 1].presaux, tmed);
     double oilVolumeFactorLeftCell;
     double waterVolumeFactorLeftCell;
-    double solutionRatioLeftFace;
+    double solutionGasRatioLeftFace;
     double oilVolumeFactorLeftFace;
     double waterVolumeFactorLeftFace;
     double dengD = state.cells[i].flui.Deng;
@@ -3527,7 +3527,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         oilVolumeFactorLeftCell = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         waterVolumeFactorLeftCell = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         waterCutLeftCell = state.cells[i - 1].flui.BSW * waterVolumeFactorLeftCell / (oilVolumeFactorLeftCell + waterVolumeFactorLeftCell * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * oilVolumeFactorLeftCell);
-        solutionRatioLeftFace = state.cells[i - 1].flui.RS(state.cells[i].presaux, tmed0);
+        solutionGasRatioLeftFace = state.cells[i - 1].flui.RS(state.cells[i].presaux, tmed0);
         oilVolumeFactorLeftFace = state.cells[i - 1].flui.BOFunc(state.cells[i].presaux, tmed0);
         waterVolumeFactorLeftFace = state.cells[i - 1].flui.BAFunc(state.cells[i].presaux, tmed0);
         dengE = state.cells[i - 1].flui.Deng;
@@ -3537,7 +3537,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         waterVolumeFactorLeftCell = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
 
         waterCutLeftCell = state.cells[i].flui.BSW * waterVolumeFactorLeftCell / (oilVolumeFactorLeftCell + waterVolumeFactorLeftCell * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLeftCell);
-        solutionRatioLeftFace = state.cells[i].flui.RS(state.cells[i].presaux, tmed0);
+        solutionGasRatioLeftFace = state.cells[i].flui.RS(state.cells[i].presaux, tmed0);
         oilVolumeFactorLeftFace = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed0);
         waterVolumeFactorLeftFace = state.cells[i].flui.BAFunc(state.cells[i].presaux, tmed0);
         dengE = state.cells[i].flui.Deng;
@@ -3559,7 +3559,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         betL = state.cells[i].betPigE;
 
     if (state.cells[i].acsr.tipo == 0)
-        state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * 1.225 * (1. - waterCutLocal) * solutionRatioRightFace * (6.29 / 35.31467) / oilVolumeFactorRightFace) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * 1.225 * (1. - waterCutLeftCell) * solutionRatioLeftFace * (6.29 / 35.31467) / oilVolumeFactorLeftFace));
+        state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * 1.225 * (1. - waterCutLocal) * solutionGasRatioRightFace * (6.29 / 35.31467) / oilVolumeFactorRightFace) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * 1.225 * (1. - waterCutLeftCell) * solutionGasRatioLeftFace * (6.29 / 35.31467) / oilVolumeFactorLeftFace));
     else
         state.cells[i].transmassR = 0.;
 

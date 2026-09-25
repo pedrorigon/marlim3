@@ -1471,7 +1471,7 @@ void refreshFluidMiniTable(const TransientStepState &state) {
     //if(arq.miniTabAtraso>0)
     	state.updaters.generateFluidMiniTable();
     double betIV;
-    double solutionRatioInSitu;
+    double solutionGasRatioInSitu;
     double oilVolumeFactorInSitu;
     double waterVolumeFactorInSitu;
     double bswV;
@@ -1488,8 +1488,8 @@ void refreshFluidMiniTable(const TransientStepState &state) {
         double temp = state.cells[i].temp;
 
         betIV = state.cells[i].bet;
-        solutionRatioInSitu = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
-        oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionRatioInSitu);
+        solutionGasRatioInSitu = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
+        oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioInSitu);
         waterVolumeFactorInSitu = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
         bswV = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
         rhoOVol = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);

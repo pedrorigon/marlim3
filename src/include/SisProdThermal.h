@@ -223,9 +223,9 @@ struct TemperatureSourceTerms {
 };
 
 struct DistributedMassTransferProperties {
-    double leftFaceWaterFraction;
-    double leftCellLeftFaceWaterFraction;
-    double leftCellWaterFraction;
+    double leftFaceWaterCut;
+    double leftCellLeftFaceWaterCut;
+    double leftCellWaterCut;
     double liquidDensity;
     double gasDensity;
     double leftFaceComposition;

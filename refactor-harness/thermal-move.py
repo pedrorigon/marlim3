@@ -1596,7 +1596,7 @@ def check_renova_temp(baseline_path: str, current_path: str) -> int:
 # locator keeps working against a pre-rename baseline and a renamed module
 # alike.
 MARKER_ALIASES = {
-    "    double fwd;": "    double leftFaceWaterFraction;",
+    "    double fwd;": "    double leftFaceWaterCut;",
     "    double ativa = 1.;": "    double activeDerivative = 1.;",
 }
 
@@ -2189,7 +2189,7 @@ def check_renova_temp_decomposition(
     property_plumbing = """            DistributedMassTransferProperties properties =
                 prepareDistributedMassTransferProperties(
                     state, i, tmed, flue, flud);
-            double fwC = properties.leftCellWaterFraction;
+            double fwC = properties.leftCellWaterCut;
             double rl = properties.liquidDensity;
             double rg = properties.gasDensity;
             double betI = properties.leftFaceComposition;

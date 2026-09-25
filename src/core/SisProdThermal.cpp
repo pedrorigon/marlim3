@@ -1034,48 +1034,48 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     }
 
     double kineticTerm = 0;
-    double upstreamMeanGasVelocity = 0;
-    double upstreamMeanLiquidVelocity = 0;
-    double meanGasVelocity = 0;
-    double meanLiquidVelocity = 0.;
+    double leftCellLeftFaceMeanGasVelocity = 0;
+    double leftCellLeftFaceMeanLiquidVelocity = 0;
+    double leftFaceMeanGasVelocity = 0;
+    double leftFaceMeanLiquidVelocity = 0.;
     if (cell.acsr.tipo == kAccessoryNone && leftCell.acsr.tipo == kAccessoryNone && cellIndex > 1) {
 
         double kineticCellLength = leftCell.dx;
-        double upstreamDiameter = leftCell.duto.a;
-        double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+        double leftCellDiameter = leftCell.duto.a;
+        double leftCellFlowArea = 0.25 * M_PI * leftCellDiameter * leftCellDiameter;
 
-        double faceVoidFraction;
+        double leftFaceVoidFraction;
         if (cell.QL > 0)
-            faceVoidFraction = leftCell.alf;
+            leftFaceVoidFraction = leftCell.alf;
         else
-            faceVoidFraction = cell.alf;
-        double upstreamFaceVoidFraction;
+            leftFaceVoidFraction = cell.alf;
+        double leftCellLeftFaceVoidFraction;
         if (leftCell.QL > 0)
-            upstreamFaceVoidFraction = state.cells[cellIndex - 2].alf;
+            leftCellLeftFaceVoidFraction = state.cells[cellIndex - 2].alf;
         else
-            upstreamFaceVoidFraction = leftCell.alf;
+            leftCellLeftFaceVoidFraction = leftCell.alf;
 
-        if (upstreamFaceVoidFraction > 1e-3) {
-            upstreamMeanGasVelocity = leftCell.QG / (upstreamFlowArea);
-            upstreamMeanGasVelocity /= upstreamFaceVoidFraction;
+        if (leftCellLeftFaceVoidFraction > 1e-3) {
+            leftCellLeftFaceMeanGasVelocity = leftCell.QG / (leftCellFlowArea);
+            leftCellLeftFaceMeanGasVelocity /= leftCellLeftFaceVoidFraction;
         }
 
-        if (upstreamFaceVoidFraction < 1. - 1e-3) {
-            upstreamMeanLiquidVelocity = leftCell.QL / (upstreamFlowArea);
-            upstreamMeanLiquidVelocity /= (1. - upstreamFaceVoidFraction);
+        if (leftCellLeftFaceVoidFraction < 1. - 1e-3) {
+            leftCellLeftFaceMeanLiquidVelocity = leftCell.QL / (leftCellFlowArea);
+            leftCellLeftFaceMeanLiquidVelocity /= (1. - leftCellLeftFaceVoidFraction);
         }
 
-        if (faceVoidFraction > 1e-3) {
-            meanGasVelocity = meanSuperficialGasVelocity;
-            meanGasVelocity /= faceVoidFraction;
+        if (leftFaceVoidFraction > 1e-3) {
+            leftFaceMeanGasVelocity = meanSuperficialGasVelocity;
+            leftFaceMeanGasVelocity /= leftFaceVoidFraction;
         }
 
-        if (faceVoidFraction < 1. - 1e-3) {
-            meanLiquidVelocity = meanSuperficialLiquidVelocity;
-            meanLiquidVelocity /= (1. - faceVoidFraction);
+        if (leftFaceVoidFraction < 1. - 1e-3) {
+            leftFaceMeanLiquidVelocity = meanSuperficialLiquidVelocity;
+            leftFaceMeanLiquidVelocity /= (1. - leftFaceVoidFraction);
         }
 
-        kineticTerm = (cell.MC - leftCell.Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength + leftCell.Mliqini * meanLiquidVelocity * (meanSuperficialLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength;
+        kineticTerm = (cell.MC - leftCell.Mliqini) * leftFaceMeanGasVelocity * (leftFaceMeanGasVelocity - leftCellLeftFaceMeanGasVelocity) / kineticCellLength + leftCell.Mliqini * leftFaceMeanLiquidVelocity * (meanSuperficialLiquidVelocity - leftCellLeftFaceMeanLiquidVelocity) / kineticCellLength;
     }
 
     TemperatureSourceTerms sourceTerms =
@@ -1189,53 +1189,53 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
         state.input.flashCompleto != 2 || state.input.miniTabAtraso > 0;
     const bool cellHasNegativeLiquidMassFlowRate = cell.Mliqini < 0;
     const bool leftCellHasNegativeLiquidMassFlowRate = leftCell.Mliqini < 0;
-    double leftFaceWaterFraction;
-    double leftCellLeftFaceWaterFraction;
-    double leftCellOilFormationVolumeFactor = leftCell.flui.BOFunc(
+    double leftFaceWaterCut;
+    double leftCellLeftFaceWaterCut;
+    double leftCellOilVolumeFactorForWaterCut = leftCell.flui.BOFunc(
         leftCell.pres, leftCell.temp);
-    double leftCellWaterFormationVolumeFactor = leftCell.flui.BAFunc(
+    double leftCellWaterVolumeFactorForWaterCut = leftCell.flui.BAFunc(
         leftCell.pres, leftCell.temp);
-    double leftCellWaterFraction = leftCell.flui.BSW * leftCellWaterFormationVolumeFactor /
-                 (leftCellOilFormationVolumeFactor + leftCellWaterFormationVolumeFactor * leftCell.flui.BSW -
-                  leftCell.flui.BSW * leftCellOilFormationVolumeFactor);
+    double leftCellWaterCut = leftCell.flui.BSW * leftCellWaterVolumeFactorForWaterCut /
+                 (leftCellOilVolumeFactorForWaterCut + leftCellWaterVolumeFactorForWaterCut * leftCell.flui.BSW -
+                  leftCell.flui.BSW * leftCellOilVolumeFactorForWaterCut);
     if (cell.Mliqini < 0.) {
         leftFaceFluid = cell.flui;
-        double leftFaceDonorOilFormationVolumeFactor = leftFaceFluid.BOFunc(cell.pres, cell.temp);
-        double leftFaceDonorWaterFormationVolumeFactor = leftFaceFluid.BAFunc(cell.pres, cell.temp);
-        leftFaceWaterFraction = leftFaceFluid.BSW * leftFaceDonorWaterFormationVolumeFactor / (leftFaceDonorOilFormationVolumeFactor + leftFaceDonorWaterFormationVolumeFactor * leftFaceFluid.BSW - leftFaceFluid.BSW * leftFaceDonorOilFormationVolumeFactor);
+        double leftFaceDonorOilVolumeFactor = leftFaceFluid.BOFunc(cell.pres, cell.temp);
+        double leftFaceDonorWaterVolumeFactor = leftFaceFluid.BAFunc(cell.pres, cell.temp);
+        leftFaceWaterCut = leftFaceFluid.BSW * leftFaceDonorWaterVolumeFactor / (leftFaceDonorOilVolumeFactor + leftFaceDonorWaterVolumeFactor * leftFaceFluid.BSW - leftFaceFluid.BSW * leftFaceDonorOilVolumeFactor);
     } else {
         leftFaceFluid = leftCell.flui;
-        double leftFaceDonorOilFormationVolumeFactor = leftFaceFluid.BOFunc(
+        double leftFaceDonorOilVolumeFactor = leftFaceFluid.BOFunc(
             leftCell.pres, leftCell.temp);
-        double leftFaceDonorWaterFormationVolumeFactor = leftFaceFluid.BAFunc(
+        double leftFaceDonorWaterVolumeFactor = leftFaceFluid.BAFunc(
             leftCell.pres, leftCell.temp);
-        leftFaceWaterFraction = leftFaceFluid.BSW * leftFaceDonorWaterFormationVolumeFactor / (leftFaceDonorOilFormationVolumeFactor + leftFaceDonorWaterFormationVolumeFactor * leftFaceFluid.BSW - leftFaceFluid.BSW * leftFaceDonorOilFormationVolumeFactor);
+        leftFaceWaterCut = leftFaceFluid.BSW * leftFaceDonorWaterVolumeFactor / (leftFaceDonorOilVolumeFactor + leftFaceDonorWaterVolumeFactor * leftFaceFluid.BSW - leftFaceFluid.BSW * leftFaceDonorOilVolumeFactor);
     }
     if (leftCellHasNegativeLiquidMassFlowRate) {
         leftCellLeftFaceFluid = leftCell.flui;
-        double leftCellLeftFaceDonorOilFormationVolumeFactor = leftCellLeftFaceFluid.BOFunc(
+        double leftCellLeftFaceDonorOilVolumeFactor = leftCellLeftFaceFluid.BOFunc(
             leftCell.pres, leftCell.temp);
-        double leftCellLeftFaceDonorWaterFormationVolumeFactor = leftCellLeftFaceFluid.BAFunc(
+        double leftCellLeftFaceDonorWaterVolumeFactor = leftCellLeftFaceFluid.BAFunc(
             leftCell.pres, leftCell.temp);
-        leftCellLeftFaceWaterFraction = leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorWaterFormationVolumeFactor / (leftCellLeftFaceDonorOilFormationVolumeFactor + leftCellLeftFaceDonorWaterFormationVolumeFactor * leftCellLeftFaceFluid.BSW - leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorOilFormationVolumeFactor);
+        leftCellLeftFaceWaterCut = leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorWaterVolumeFactor / (leftCellLeftFaceDonorOilVolumeFactor + leftCellLeftFaceDonorWaterVolumeFactor * leftCellLeftFaceFluid.BSW - leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorOilVolumeFactor);
 
     } else {
         if (cellIndex > 1) {
             leftCellLeftFaceFluid = state.cells[cellIndex - 2].flui;
-            double leftCellLeftFaceDonorOilFormationVolumeFactor = leftCellLeftFaceFluid.BOFunc(
+            double leftCellLeftFaceDonorOilVolumeFactor = leftCellLeftFaceFluid.BOFunc(
                 state.cells[cellIndex - 2].pres, state.cells[cellIndex - 2].temp);
-            double leftCellLeftFaceDonorWaterFormationVolumeFactor = leftCellLeftFaceFluid.BAFunc(
+            double leftCellLeftFaceDonorWaterVolumeFactor = leftCellLeftFaceFluid.BAFunc(
                 state.cells[cellIndex - 2].pres, state.cells[cellIndex - 2].temp);
-            leftCellLeftFaceWaterFraction = leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorWaterFormationVolumeFactor /
-                  (leftCellLeftFaceDonorOilFormationVolumeFactor + leftCellLeftFaceDonorWaterFormationVolumeFactor * leftCellLeftFaceFluid.BSW - leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorOilFormationVolumeFactor);
+            leftCellLeftFaceWaterCut = leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorWaterVolumeFactor /
+                  (leftCellLeftFaceDonorOilVolumeFactor + leftCellLeftFaceDonorWaterVolumeFactor * leftCellLeftFaceFluid.BSW - leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorOilVolumeFactor);
         } else {
             leftCellLeftFaceFluid = leftCell.flui;
-            double leftCellLeftFaceDonorOilFormationVolumeFactor = leftCellLeftFaceFluid.BOFunc(
+            double leftCellLeftFaceDonorOilVolumeFactor = leftCellLeftFaceFluid.BOFunc(
                 leftCell.pres, leftCell.temp);
-            double leftCellLeftFaceDonorWaterFormationVolumeFactor = leftCellLeftFaceFluid.BAFunc(
+            double leftCellLeftFaceDonorWaterVolumeFactor = leftCellLeftFaceFluid.BAFunc(
                 leftCell.pres, leftCell.temp);
-            leftCellLeftFaceWaterFraction = leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorWaterFormationVolumeFactor /
-                  (leftCellLeftFaceDonorOilFormationVolumeFactor + leftCellLeftFaceDonorWaterFormationVolumeFactor * leftCellLeftFaceFluid.BSW - leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorOilFormationVolumeFactor);
+            leftCellLeftFaceWaterCut = leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorWaterVolumeFactor /
+                  (leftCellLeftFaceDonorOilVolumeFactor + leftCellLeftFaceDonorWaterVolumeFactor * leftCellLeftFaceFluid.BSW - leftCellLeftFaceFluid.BSW * leftCellLeftFaceDonorOilVolumeFactor);
         }
     }
 
@@ -1352,9 +1352,9 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     }
 
     return DistributedMassTransferProperties{
-        .leftFaceWaterFraction = leftFaceWaterFraction,
-        .leftCellLeftFaceWaterFraction = leftCellLeftFaceWaterFraction,
-        .leftCellWaterFraction = leftCellWaterFraction,
+        .leftFaceWaterCut = leftFaceWaterCut,
+        .leftCellLeftFaceWaterCut = leftCellLeftFaceWaterCut,
+        .leftCellWaterCut = leftCellWaterCut,
         .liquidDensity = liquidDensity,
         .gasDensity = gasDensity,
         .leftFaceComposition = betI,
@@ -1414,7 +1414,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
 }
 
 DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
-    const ThermalState &state, int cellIndex, double leftCellWaterFraction, const ProFlu &leftFaceFluid,
+    const ThermalState &state, int cellIndex, double leftCellWaterCut, const ProFlu &leftFaceFluid,
     double leftCellSolutionGasPressureDerivative, double leftCellSolutionGasTemperatureDerivative) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
@@ -1434,7 +1434,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
     leftCell.ativaDeri = activeDerivative;
     leftCell.DTransDtp =
         activeDerivative * coefficientFlowArea * (1. - leftCell.alf) *
-        (1. - leftCell.bet) * (1. - leftCellWaterFraction) * leftFaceFluid.Deng *
+        (1. - leftCell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
         kAirDensityAtStandardConditions * leftCellSolutionGasPressureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
     cell.DTransDtpL = leftCell.DTransDtp;
     if (isLastCell) {
@@ -1442,13 +1442,13 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
             lastCellSolutionGasPressureDerivative(state, cellIndex);
         cell.DTransDtp =
             activeDerivative * coefficientFlowArea * (1. - cell.alf) *
-            (1. - cell.bet) * (1. - leftCellWaterFraction) * leftFaceFluid.Deng *
+            (1. - cell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
             kAirDensityAtStandardConditions * leftCellSolutionGasPressureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
     }
     if (state.input.cicloAcopTerm == 1) {
         leftCell.DTransDtT =
             activeDerivative * coefficientFlowArea * (1. - leftCell.alf) *
-            (1. - leftCell.bet) * (1. - leftCellWaterFraction) * leftFaceFluid.Deng *
+            (1. - leftCell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
             kAirDensityAtStandardConditions * leftCellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
         cell.DTransDtTL = leftCell.DTransDtT;
         if (isLastCell) {
@@ -1457,7 +1457,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
                 lastCellSolutionGasPressureDerivative(state, cellIndex);
             cell.DTransDtT =
                 activeDerivative * coefficientFlowArea * (1. - cell.alf) *
-                (1. - cell.bet) * (1. - leftCellWaterFraction) * leftFaceFluid.Deng *
+                (1. - cell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
                 kAirDensityAtStandardConditions * leftCellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
         }
     }
@@ -1550,9 +1550,9 @@ void applyDistributedMassTransferModel(
     const DistributedMassTransferProperties &properties,
     double activeDerivative, double spatialCoupling, double coefficientFlowArea, double leftCellLeftFaceMixtureLiquidDensity, double leftCellLeftFaceOilVolumeFactor,
     double leftCellLeftFaceSolutionGasRatio, double leftCellLeftFaceSolutionGasPressureDerivative) {
-    const double leftFaceWaterFraction = properties.leftFaceWaterFraction;
-    const double leftCellLeftFaceWaterFraction = properties.leftCellLeftFaceWaterFraction;
-    const double leftCellWaterFraction = properties.leftCellWaterFraction;
+    const double leftFaceWaterCut = properties.leftFaceWaterCut;
+    const double leftCellLeftFaceWaterCut = properties.leftCellLeftFaceWaterCut;
+    const double leftCellWaterCut = properties.leftCellWaterCut;
     const double betI = properties.leftFaceComposition;
     const double betL = properties.leftCellLeftFaceComposition;
     const double liquidDensity = properties.mixtureLiquidDensity;
@@ -1577,9 +1577,9 @@ void applyDistributedMassTransferModel(
 
         leftCell.transmassR =
             -(cell.QL * (1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng *
-              kAirDensityAtStandardConditions * (1. - leftFaceWaterFraction) * leftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) +
+              kAirDensityAtStandardConditions * (1. - leftFaceWaterCut) * leftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) +
             (leftCell.QL * (1 - betL) * (leftCellLeftFaceFluid.rDgD) *
-             leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions * (1. - leftCellLeftFaceWaterFraction) * leftCellLeftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) /
+             leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions * (1. - leftCellLeftFaceWaterCut) * leftCellLeftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) /
              leftCellLeftFaceOilVolumeFactor);
 
         leftCell.transmassR /= leftCell.dx;
@@ -1592,14 +1592,14 @@ void applyDistributedMassTransferModel(
         if (leftCell.TMModel == 1) {
             leftCell.transmassR -=
                 activeDerivative * ((1. - leftCell.bet) *
-                         (1. - leftCell.alf) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                         (1. - leftCell.alf) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
             leftCell.transmassR +=
                 activeDerivative * ((1. - leftCell.betini) *
-                         (1. - leftCell.alfini) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                         (1. - leftCell.alfini) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
@@ -1612,14 +1612,14 @@ void applyDistributedMassTransferModel(
         if (leftCell.TMModel == 0) {
             leftCell.FonteMudaFase -=
                 activeDerivative * ((1. - leftCell.bet) *
-                         (1. - leftCell.alf) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                         (1. - leftCell.alf) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
             leftCell.FonteMudaFase +=
                 activeDerivative * ((1. - leftCell.betini) *
-                         (1. - leftCell.alfini) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                         (1. - leftCell.alfini) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
@@ -1629,73 +1629,73 @@ void applyDistributedMassTransferModel(
         if (leftCell.TMModel == 0) {
             cell.DTransDxR =
                 -((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                  (1. - leftFaceWaterFraction) * leftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) /
+                  (1. - leftFaceWaterCut) * leftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) /
                 (liquidDensity * leftCell.dx);
             cell.DtransDxLinear =
                 -spatialCoupling * cell.QL *
                     ((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftFaceWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (leftFaceSolutionGasPressureDerivative * cell.dpresaux)) /
                     (leftCell.dx) +
                 spatialCoupling * cell.QL *
                     ((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftFaceWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (leftFaceSolutionGasPressureDerivative * cell.presaux)) /
                     (leftCell.dx);
             cell.DTransDxRp =
                 -spatialCoupling * cell.QL *
                 ((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                 (1. - leftFaceWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * leftFaceSolutionGasPressureDerivative) /
+                 (1. - leftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * leftFaceSolutionGasPressureDerivative) /
                 (leftCell.dx);
             cell.DTransDxL =
                 ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                 (1. - leftCellLeftFaceWaterFraction) * leftCellLeftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellLeftFaceOilVolumeFactor) /
+                 (1. - leftCellLeftFaceWaterCut) * leftCellLeftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellLeftFaceOilVolumeFactor) /
                 (leftCellLeftFaceMixtureLiquidDensity * leftCell.dx);
             cell.DtransDxLinear =
                 cell.DtransDxLinear +
                 spatialCoupling * leftCell.QL *
                     ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftCellLeftFaceWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftCellLeftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (leftCellLeftFaceSolutionGasPressureDerivative * leftCell.dpresaux)) /
                     (leftCell.dx) -
                 spatialCoupling * leftCell.QL *
                     ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftCellLeftFaceWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftCellLeftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
                      (leftCellLeftFaceSolutionGasPressureDerivative * leftCell.presaux)) /
                     (leftCell.dx);
             cell.DTransDxLp =
                 spatialCoupling * leftCell.QL *
                 ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                 (1. - leftCellLeftFaceWaterFraction) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * leftCellLeftFaceSolutionGasPressureDerivative) /
+                 (1. - leftCellLeftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * leftCellLeftFaceSolutionGasPressureDerivative) /
                 (leftCell.dx);
             cell.DTransDt1 =
-                -activeDerivative * ((1. - leftCellWaterFraction) * coefficientFlowArea *
+                -activeDerivative * ((1. - leftCellWaterCut) * coefficientFlowArea *
                           (leftCell.flui.rDgD) *
                           leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                           (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
             cell.DTransDt0 = -cell.DTransDt1;
 
             leftCell.CoefDTR =
-                -((1. - leftCell.bet) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                -((1. - leftCell.bet) * (1. - leftCellWaterCut) * coefficientFlowArea *
                   (leftCell.flui.rDgD) *
                   leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                   (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
             leftCell.CoefDTL = -leftCell.CoefDTR;
             leftCell.coefTransBet =
-                ((1. - leftCellWaterFraction) * coefficientFlowArea * (leftCell.flui.rDgD) *
+                ((1. - leftCellWaterCut) * coefficientFlowArea * (leftCell.flui.rDgD) *
                  leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                  (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
 
             cell.transmassL -=
                 activeDerivative * ((1. - leftCell.bet) *
-                         (1. - leftCell.alf) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                         (1. - leftCell.alf) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
             cell.transmassL +=
                 activeDerivative * ((1. - leftCell.betini) *
-                         (1. - leftCell.alfini) * (1. - leftCellWaterFraction) * coefficientFlowArea *
+                         (1. - leftCell.alfini) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
@@ -1786,7 +1786,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
             DistributedMassTransferProperties properties =
                 prepareDistributedMassTransferProperties(
                     state, cellIndex, meanTemperature, leftCellLeftFaceFluid, leftFaceFluid);
-            double leftCellWaterFraction = properties.leftCellWaterFraction;
+            double leftCellWaterCut = properties.leftCellWaterCut;
             double liquidDensity = properties.liquidDensity;
             double gasDensity = properties.gasDensity;
             double betI = properties.leftFaceComposition;
@@ -1801,7 +1801,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
                 properties.leftCellSolutionGasTemperatureDerivative;
             DistributedMassTransferCoefficients coefficients =
                 updateDistributedMassTransferDerivatives(
-                    state, cellIndex, leftCellWaterFraction, leftFaceFluid, leftCellSolutionGasPressureDerivative, leftCellSolutionGasTemperatureDerivative);
+                    state, cellIndex, leftCellWaterCut, leftFaceFluid, leftCellSolutionGasPressureDerivative, leftCellSolutionGasTemperatureDerivative);
             double activeDerivative = coefficients.activeDerivative;
             double spatialCoupling = coefficients.spatialCoupling;
             double coefficientFlowArea = coefficients.flowArea;
@@ -2071,8 +2071,8 @@ void updateInteriorFlowPartitionCell(
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
-    const bool hasDownstreamCell = cellIndex < state.lastCell;
-    if (hasDownstreamCell) {
+    const bool hasRightCell = cellIndex < state.lastCell;
+    if (hasRightCell) {
         leftCell.alfR = rightCell.alfL = cell.alf;
         leftCell.betR = rightCell.betL = cell.bet;
     } else {
