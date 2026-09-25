@@ -368,3 +368,13 @@ montasistema
 # the hydrate calculation renovaFonte's first cut lifted. L2 14/14 after each.
 renovaFonte
 auxMiniTab
+
+# --- stage 9: composition moves (T102d) -----------------------------------
+# Moved to SisProdComposition.cpp as free functions over CompositionState; the
+# SProd members read through `state.` fields, corrDeng through an updater. Each
+# proved token for token by composition-move.py `check`, which applies the
+# inverse substitution and compares with the pre-move commit -- calibrated
+# against a changed literal and a field swapped for another.
+renovaalbetini
+renovaMasEsp
+avaliaParafina

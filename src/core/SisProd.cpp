@@ -15,6 +15,7 @@
 #include "SisProdSteadyState.h"
 #include "SisProdSteadyStateSearch.h"
 #include "SisProdTransient.h"
+#include "SisProdComposition.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 #include <chrono>
@@ -2686,6 +2687,10 @@ void sisprod::transient::TransientStepUpdaters::advanceGasSubStep() const {
     system.subtempoGas();
 }
 
+void sisprod::composition::CompositionUpdaters::correctGasSpecificGravity(int i) const {
+    system.corrDeng(i);
+}
+
 void sisprod::transient::TransientSolveUpdaters::solveHydrateEnvelopes() const {
     system.solveHydrateEnvelopes();
 }
@@ -2928,6 +2933,33 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .updaters = {system},
     };
 }
+
+/// The composition module's view of SProd: seventeen members by reference,
+/// generated from SisProdComposition.h by composition-move.py so the field
+/// order is the header's, as designated initialisers require.
+sisprod::composition::CompositionState compositionStateOf(SProd &system) {
+    return sisprod::composition::CompositionState{
+        .cells = system.celula,
+        .lastCell = system.ncel,
+        .input = system.arq,
+        .globals = system.vg1dSP,
+        .endNode = system.noextremo,
+        .inletPressure = system.presE,
+        .inletTemperature = system.tempE,
+        .inletQuality = system.titE,
+        .inletCompletionFraction = system.betaE,
+        .trackGasOilRatio = system.trackRGO,
+        .trackGasGravity = system.trackDeng,
+        .compositionalRefreshCounter = system.kontaRenovaComp,
+        .surfaceChokeMassFlag = system.masChkSup,
+        .movingPigCount = system.indpigP,
+        .previousMovingPigCount = system.indpigPini,
+        .scheduledPigCount = system.npig,
+        .pigReceiverCells = system.receb,
+        .updaters = {system},
+    };
+}
+
 
 /// The state SolveTrans reads: the step state, composed rather than rebuilt,
 /// plus the 52 members only the solve touches. Initialiser order is the
@@ -3497,174 +3529,11 @@ void SProd::renovaFonte(int ind) {
 }
 
 void SProd::renovaalbetini() {
-
-    celula[0].alfini = celula[0].alf;
-    celula[0].betini = celula[0].bet;
-    celula[0].alfPigDini = celula[0].alfPigD;
-    celula[0].betPigDini = celula[0].betPigD;
-    celula[0].alfPigEini = celula[0].alfPigE;
-    celula[0].betPigEini = celula[0].betPigE;
-    celula[1].alfLini = celula[0].alfini;
-    celula[1].betLini = celula[0].betini;
-
-    if (arq.ConContEntrada == 0) {
-        celula[0].alfLini = celula[0].alfini;
-        celula[0].betLini = celula[0].betini;
-    } else {
-        celula[0].alfLini = titE;
-        celula[0].betLini = betaE;
-    }
-
-    indpigPini = indpigP;
-    indpigP = 0;
-
-    for (int i = 0; i <= ncel; i++) {
-        celula[i].estadoPigini = celula[i].estadoPig;
-        celula[i].alfini = celula[i].alf;
-        if (i > 0)
-            celula[i - 1].alfRini = celula[i].alfini;
-        if (i < ncel)
-            celula[i + 1].alfLini = celula[i].alfini;
-        celula[i].betini = celula[i].bet;
-        if (i > 0)
-            celula[i - 1].betRini = celula[i].betini;
-        if (i < ncel)
-            celula[i + 1].betLini = celula[i].betini;
-
-        celula[i].alfPigDini = celula[i].alfPigD;
-        celula[i].betPigDini = celula[i].betPigD;
-        celula[i].alfPigEini = celula[i].alfPigE;
-        celula[i].betPigEini = celula[i].betPigE;
-
-        celula[i].alfPigERini = celula[i].alfPigER;
-        celula[i].betIini = celula[i].betI;
-        celula[i].betRIini = celula[i].betRI;
-        celula[i].betLIini = celula[i].betLI;
-
-        if (i > 0)
-            celula[i - 1].alfPigER = celula[i].alfPigE;
-        if (i == ncel)
-            celula[i].alfPigER = celula[i].alf;
-        celula[i].DelPig = 0.;
-        celula[i].RazAreaPig = 0.;
-        celula[i].cdpig = 1.;
-        if (celula[i].estadoPig == 1) {
-            indpigP++;
-            int ipig = celula[i].indpig;
-            celula[i].DelPig = arq.pig[ipig].delpres;
-            celula[i].RazAreaPig = arq.pig[ipig].razarea;
-            celula[i].cdpig = arq.pig[ipig].cdPig;
-            double AC = celula[i].duto.area;
-            double jL = (celula[i].QL + celula[i].QG) / AC;
-            double jR;
-            if (i < ncel)
-                jR = (celula[i + 1].QL + celula[i + 1].QG) / AC;
-            else
-                jR = (celula[i].QL + celula[i].QG) / AC;
-            celula[i].velPigini = celula[i].velPig;
-            celula[i].velPig = jL * celula[i].razPig + jR * (1. - celula[i].razPig) - celula[i].VazaPig / AC;
-            for (int j = 0; j < npig; j++) {
-                if (receb[j] == i) {
-                    celula[i].velPig = 0.;
-                    celula[i].estadoPig = 0;
-                    celula[i].razPig = 0.;
-                    celula[i].razPigini = 0.;
-                    celula[i].alfPigDini = celula[i].alf;
-                    celula[i].betPigDini = celula[i].bet;
-                    celula[i].alfPigEini = celula[i].alf;
-                    celula[i].betPigEini = celula[i].bet;
-                    celula[i].alfPigD = celula[i].alf;
-                    celula[i].betPigD = celula[i].bet;
-                    celula[i].alfPigE = celula[i].alf;
-                    celula[i].betPigE = celula[i].bet;
-                    if (i > 0)
-                        celula[i - 1].alfPigER = celula[i].alfPigE;
-                    if (i == ncel)
-                        celula[i].alfPigER = celula[i].alf;
-
-                    indpigP--;
-                }
-            }
-        }
-        celula[i].razPigini = celula[i].razPig;
-    }
-    celula[ncel].alfRini = celula[ncel].alfini;
-    celula[ncel].betRini = celula[ncel].betini;
+    sisprod::composition::storePreviousFractionsAndMovePigs(compositionStateOf(*this));
 }
 
 void SProd::renovaMasEsp() {
-
-    celula[0].rpC = celula[0].flui.MasEspLiq(celula[0].pres, celula[0].temp);
-    celula[0].rgC = celula[0].flui.MasEspGas(celula[0].pres, celula[0].temp /*,1*/);
-    celula[0].rcC = celula[0].fluicol.MasEspFlu(celula[0].pres, celula[0].temp);
-    celula[0].rpL = celula[0].rpC;
-    celula[0].rgL = celula[0].rgC;
-    celula[0].rcL = celula[0].rcC;
-
-    celula[0].rpCi = celula[0].rpC;
-    celula[0].rgCi = celula[0].rgC;
-    celula[0].rcCi = celula[0].rcC;
-    celula[0].rpLi = celula[0].rpCi;
-    celula[0].rgLi = celula[0].rgCi;
-    celula[0].rcLi = celula[0].rcCi;
-
-    celula[0].mipC = celula[0].flui.ViscOleo(celula[0].pres, celula[0].temp);
-    celula[0].migC = celula[0].flui.ViscGas(celula[0].pres, celula[0].temp /*,1*/);
-    celula[0].micC = celula[0].fluicol.VisFlu(celula[0].pres, celula[0].temp);
-
-#pragma omp parallel for num_threads((*vg1dSP).ntrd)
-    for (int i = 1; i <= ncel; i++) {
-        double p;
-        double t;
-        p = celula[i].pres;
-        t = celula[i].temp;
-        celula[i].rpC = celula[i].flui.MasEspLiq(p, t);
-        celula[i].rgC = celula[i].flui.MasEspGas(p, t);
-        celula[i].rcC = celula[i].fluicol.MasEspFlu(p, t);
-
-        celula[i].mipC = celula[i].flui.ViscOleo(p, t);
-        celula[i].migC = celula[i].flui.ViscGas(p, t);
-        celula[i].micC = celula[i].fluicol.VisFlu(p, t);
-
-        double tmed = celula[i - 1].temp;
-        if (celula[i].VTemper < 0.)
-            tmed = celula[i].temp;
-        ProFlu flu;
-        if (celula[i].QL < 0.)
-            flu = celula[i].flui;
-        else
-            flu = celula[i - 1].flui;
-        celula[i].rpCi = flu.MasEspLiq(celula[i].presaux, tmed);
-        celula[i].rgCi = flu.MasEspGas(celula[i].presaux, tmed);
-        celula[i].rcCi = celula[i].fluicol.MasEspFlu(celula[i].presaux, tmed);
-    }
-    for (int i = 1; i <= ncel; i++) {
-
-        celula[i - 1].rpR = celula[i].rpC;
-        celula[i - 1].rgR = celula[i].rgC;
-        celula[i - 1].rcR = celula[i].rcC;
-        celula[i].rpL = celula[i - 1].rpC;
-        celula[i].rgL = celula[i - 1].rgC;
-        celula[i].rcL = celula[i - 1].rcC;
-
-        celula[i - 1].mipR = celula[i].mipC;
-        celula[i - 1].migR = celula[i].migC;
-        celula[i - 1].micR = celula[i].micC;
-
-        celula[i - 1].rpRi = celula[i].rpCi;
-        celula[i - 1].rgRi = celula[i].rgCi;
-        celula[i - 1].rcRi = celula[i].rcCi;
-        celula[i].rpLi = celula[i - 1].rpCi;
-        celula[i].rgLi = celula[i - 1].rgCi;
-        celula[i].rcLi = celula[i - 1].rcCi;
-    }
-    celula[ncel].rpR = celula[ncel].rpC;
-    celula[ncel].rgR = celula[ncel].rgC;
-    celula[ncel].rcR = celula[ncel].rcC;
-
-    celula[ncel].mipR = celula[ncel].mipC;
-    celula[ncel].migR = celula[ncel].migC;
-    celula[ncel].micR = celula[ncel].micC;
+    sisprod::composition::cacheCellAndFaceDensities(compositionStateOf(*this));
 }
 
 void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
@@ -4134,27 +4003,7 @@ void SProd::renovaTemp() {
 }
 
 void SProd::avaliaParafina() {
-    for (int i = 0; i <= ncel; i++) {
-        if (i < ncel)
-            celula[i].WaxDeposition(arq.detalParafina, ncel);
-        else {
-            if (masChkSup == 0 || celula[ncel].Mliqini > 0) {
-                double cpDep = celula[i - 1].duto.cp[0];
-                double kDep = celula[i - 1].duto.cond[0];
-                double rhoDep = celula[i - 1].duto.rhoC[0];
-                celula[i].deltaPar = celula[i - 1].deltaPar;
-                if (celula[i].parafinado == 0 && celula[i].deltaPar > 0.) {
-                    celula[i].duto.atualizaCamada(celula[i].deltaPar, arq.detalParafina.rug, cpDep, kDep, rhoDep);
-                    celula[i].calor.atualiza(celula[i].duto, 1);
-                    celula[i].parafinado = 1;
-                } else if (celula[i].deltaPar > 0.) {
-                    celula[i].duto.atualizaCamada2(celula[i].deltaPar, cpDep, kDep, rhoDep);
-                    celula[i].calor.atualiza2(celula[i].duto);
-                }
-            } else
-                celula[i].WaxDeposition(arq.detalParafina, ncel);
-        }
-    }
+    sisprod::composition::evaluateWaxDeposition(compositionStateOf(*this));
 }
 
 void SProd::renovaRGOdgYco2(ProFlu fluiRev) {
