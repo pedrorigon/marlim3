@@ -159,19 +159,19 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
     // e a vazao de injecao definida, se negativa->pchute baixo, se positiva-> pchute alto
     double pchute2 = pchute;
     int kontaiter = 0;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     if (fabs(delmas) < 1e-3)
         return pchute;
     else {
         if (delmas < 0) { // pchute baixo, nova estimativa aumentando pchute, para encontrar um outro valor
             // de delmas positivo, para iniciar a falsa corda
-            chuteNeg = pchute2;
+            negativeResidualGuess = pchute2;
             while (delmas < 0 && kontaiter < 800) {
                 pchute2 *= 1.1;
                 delmas = marchGasSteadySecondary(state.march, pchute2);
                 if (delmas < 0 && delmas > -0.9e10)
-                    chuteNeg = pchute2;
+                    negativeResidualGuess = pchute2;
                 kontaiter++;
             }
             if (kontaiter >= 800) {
@@ -184,15 +184,15 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
                         return 1.1e10;
                 }
             }
-            chutePos = pchute2;
+            positiveResidualGuess = pchute2;
         } else if (delmas > 0) { // pchute alto, nova estimativa diminuindo pchute, para encontrar um outro valor
             // de delmas negativo, para iniciar a falsa corda
-            chutePos = pchute2;
+            positiveResidualGuess = pchute2;
             while (delmas > 0 && kontaiter < 800) {
                 pchute2 *= 0.9;
                 delmas = marchGasSteadySecondary(state.march, pchute2);
                 if (delmas > 0 && delmas < 0.9e10)
-                    chutePos = pchute2;
+                    positiveResidualGuess = pchute2;
                 kontaiter++;
             }
             if (kontaiter >= 800) {
@@ -205,9 +205,9 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
                         return 1.1e10;
                 }
             }
-            chuteNeg = pchute2;
+            negativeResidualGuess = pchute2;
         }
-        return solveSteadyRoot(state, chuteNeg, chutePos, 0, 0); // calculo de zero de funcao
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 0, 0); // calculo de zero de funcao
     }
 }
 
@@ -227,44 +227,44 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
     delmas2 = marchGasSteadyTertiary(state.march, pchute2);
 
     int kontaiter = 0;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     if (fabs(delmas) < 1e-3)
         return pchute;
     else {
         if (delmas < 0) { // chute de pressao pequeno, deve ser aumentado
-            chuteNeg = pchute;
+            negativeResidualGuess = pchute;
             while (delmas < 0 && kontaiter < 800) {
                 pchute *= 1.01;
                 if (pchute > state.march.injectionChoke.presEstag)
                     pchute = state.march.injectionChoke.presEstag;
                 delmas = marchGasSteadyTertiary(state.march, pchute);
                 if (delmas < 0 && delmas > -0.9e10)
-                    chuteNeg = pchute;
+                    negativeResidualGuess = pchute;
                 kontaiter++;
             }
-            chutePos = pchute;
+            positiveResidualGuess = pchute;
         } else if (delmas >= 0) { // chute de pressao grande, deve ser diminuido
             kontaiter = 0;
-            chutePos = pchute;
+            positiveResidualGuess = pchute;
             while (delmas > 0 && kontaiter < 800) {
                 pchute *= 0.9;
                 delmas = marchGasSteadyTertiary(state.march, pchute);
                 if (delmas > 0 && delmas < 0.9e10)
-                    chutePos = pchute;
+                    positiveResidualGuess = pchute;
                 kontaiter++;
             }
-            chuteNeg = pchute;
+            negativeResidualGuess = pchute;
         }
         // caso nÃ£o funcione com o primeiro chute
         if (delmas2 >= 0 && kontaiter >= 800) { // chute de pressao pequeno, deve ser aumentado
             kontaiter = 0;
-            chutePos = pchute2;
+            positiveResidualGuess = pchute2;
             while (delmas2 > 0 && kontaiter < 800) {
                 pchute2 *= 0.9;
                 delmas2 = marchGasSteadyTertiary(state.march, pchute2);
                 if (delmas2 > 0 && delmas2 < 0.9e10)
-                    chutePos = pchute2;
+                    positiveResidualGuess = pchute2;
                 kontaiter++;
             }
             if (kontaiter >= 800) { // falha na busca de estimativa para a falsa corda
@@ -277,17 +277,17 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
                         return 1.1e10;
                 }
             }
-            chuteNeg = pchute2;
+            negativeResidualGuess = pchute2;
         } else if (delmas2 <= 0 && kontaiter >= 800) { // chute de pressao grande, deve ser diminuido
             kontaiter = 0;
-            chuteNeg = pchute2;
+            negativeResidualGuess = pchute2;
             while (delmas2 < 0 && kontaiter < 800) {
                 pchute2 *= 1.01;
                 if (pchute2 > state.march.injectionChoke.presEstag)
                     pchute2 = state.march.injectionChoke.presEstag;
                 delmas2 = marchGasSteadyTertiary(state.march, pchute2);
                 if (delmas2 < 0 && delmas2 > -0.9e10)
-                    chuteNeg = pchute2;
+                    negativeResidualGuess = pchute2;
                 kontaiter++;
             }
             if (kontaiter >= 800) { // falha na busca de estimativa para a falsa corda
@@ -300,9 +300,9 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
                         return 1.1e10;
                 }
             }
-            chutePos = pchute2;
+            positiveResidualGuess = pchute2;
         }
-        return solveSteadyRoot(state, chuteNeg, chutePos, 0, 1); // calculo de zero de funcao
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 0, 1); // calculo de zero de funcao
     }
 }
 
@@ -310,28 +310,28 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
 ///
 /// Unlike the forward search this is one block rather than two arms: the reverse
 /// march's residual does not split on sign the same way.
-double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, double reduz, double &chutelim, double &chutePos, double &chuteNeg, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute) {
+double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, double reduz, double &guessLowerBound, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute) {
     if (marchResidual < 0.) { // caso em que pressao a montante do choke < pressao da ultima celula, calculada pela
         // marcha, isto implica em pressao de chute alta , deve-se agora buscar
         // uma pressao de chute baixa para que marchResidual seja positivo e assim iniciar o processo
         // de calculo de zero de funcao
-        chuteNeg = pchute; // armazenando o valor de chute de pressao que da o valor negativo
+        negativeResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor negativo
         // a cada nova busca em que marchResidual se aproxima de zero, mas ainda negativo
-        // chuteNeg Ã© atualizado com a Ãºltima pressao de chute
+        // negativeResidualGuess Ã© atualizado com a Ãºltima pressao de chute
         while (marchResidual < 0) {
             if (fabs(pchute2 - pchute) / pchute < (1. - reduz) / 10. && kontaiter > 100) {
                 pchute2 *= 0.5;
             }
             pchuteAux = pchute2;
             pchute2 *= reduz; // Diminuindo a pressao na busca de marchResidual>0
-            if (pchute2 <= chutelim)
-                pchute2 = 0.5 * (pchuteAux + chutelim); // chutelim inicialmente
+            if (pchute2 <= guessLowerBound)
+                pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound inicialmente
             // e zero, mas pode acontecer de baixar demais pchute2 ao ponto de marchResidual=-1e10
-            //(pressao abaixo de 0.5 no meio da marcha), neste caso, chutelim se torna este valor de
-            // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de chutelim
+            //(pressao abaixo de 0.5 no meio da marcha), neste caso, guessLowerBound se torna este valor de
+            // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
             marchResidual = marchReverseProductionSteady(state.march, pchute2);
             if (marchResidual < 0 && marchResidual > -0.9e10)
-                chuteNeg = pchute2; // atualizando o chuteNeg
+                negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
             kontaiter++;
             if (kontaiter > 100) { // limite de iteracoes, falha na busca do segundo chute
                 // fim da simulacao ou aviso de falha
@@ -355,12 +355,12 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
             while (marchResidual < -0.9e10) { // a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
                 // de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
                 // deve-se aumentar a estimativa de pressao baixa
-                chutelim = pchute2;
+                guessLowerBound = pchute2;
                 pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a menor pressao
                 // que leva a marchResidual<0 e a pressao baixa demais
                 marchResidual = marchReverseProductionSteady(state.march, pchute2);
                 if (marchResidual < 0 && marchResidual > -0.9e10)
-                    chuteNeg = pchute2;
+                    negativeResidualGuess = pchute2;
                 kontaiter++;
                 if (kontaiter > 100) {
                     if ((*state.march.globals).chaverede == 0) {
@@ -382,22 +382,22 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
                 }
             }
         }
-        chutePos = pchute2;
+        positiveResidualGuess = pchute2;
     } else if (marchResidual > 0.) { // caso em que pressao a montante do choke > pressao da ultima celula,
         // calculada pela
         // marcha, isto implica em pressao de chute baixa , deve-se agora buscar
         // uma pressao de chute alta para que marchResidual seja negativo e assim iniciar o processo
         // de calculo de zero de funcao
-        chutePos = pchute; // armazenando o valor de chute de pressao que da o valor positivo
+        positiveResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor positivo
         // a cada nova busca em que marchResidual se aproxima de zero, mas ainda positivo
-        // chutePos e atualizado com a Ãºltima pressao de chute
+        // positiveResidualGuess e atualizado com a Ãºltima pressao de chute
         while (marchResidual > 0) {
             pchuteAux = pchute2;
             pchute2 *= aumenta; // Aumentando a pressao na busca de marchResidual>0
             int limpres = 0;
             marchResidual = marchReverseProductionSteady(state.march, pchute2);
             if (marchResidual > 0 && marchResidual < 0.9e10)
-                chutePos = pchute2; // atualizando o chutePos
+                positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
             kontaiter++;
             if (kontaiter > 100) { // limite de iteracoes, falha na busca do segundo chute
                 // fim da simulacao ou aviso de falha
@@ -423,12 +423,12 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
                 // em um eventual IPR no meio da marcha ou maior que o limitre maximo de pressao
                 // da tabela PVTSim, quando for este o caso
                 // deve-se diminuir a estimativa de pressao baixa
-                chutelim = pchute2;
+                guessLowerBound = pchute2;
                 pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a maior pressao
                 // que leva a marchResidual>0 e a pressao alta demais
                 marchResidual = marchReverseProductionSteady(state.march, pchute2);
                 if (marchResidual > 0 && marchResidual < 0.9e10)
-                    chutePos = pchute2;
+                    positiveResidualGuess = pchute2;
                 kontaiter++;
                 if (kontaiter > 100) {
                     if ((*state.march.globals).chaverede == 0) {
@@ -451,10 +451,10 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
                 }
             }
         }
-        chuteNeg = pchute2;
+        negativeResidualGuess = pchute2;
     }
 
-    return solveSteadyRoot(state, chuteNeg, chutePos, 1, 0); // com as duas estimativas de pressao
+    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0); // com as duas estimativas de pressao
     // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
     // de funcao
 }
@@ -832,9 +832,9 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     // caso tenha sido possivel obter um chute de pressao em que foi possivel finalizar a marcha
     kontaiter = 0;
     pchute2 = pchute;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
-    double chutelim = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
+    double guessLowerBound = 0.;
     state.march.input.buscaFC = fabs(state.march.input.buscaFC);
     double reduz = 1. - state.march.input.buscaFC;
     double amplifica = 1. + state.march.input.buscaFC;
@@ -842,7 +842,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     if (fabs(marchResidual) < 1e-3)
         return pchute;
     else {
-        return bracketReverseRoot(state, aumenta, reduz, chutelim, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute);
+        return bracketReverseRoot(state, aumenta, reduz, guessLowerBound, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute);
     }
 }
 
@@ -850,12 +850,12 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
 ///
 /// Inner loop of bracketFromLowGuess: the outer loop moves the guess, this one
 /// backs off when the move overshot and the march returned a sentinel.
-bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, double &chutelim, double &chutePos, int &kontaiter, double &marchResidual, double pchuteAux, double &pchute2, double chute, int kontaTenta, double &abortValue) {
+bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, double &guessLowerBound, double &positiveResidualGuess, int &kontaiter, double &marchResidual, double pchuteAux, double &pchute2, double chute, int kontaTenta, double &abortValue) {
     // de ir ate o final sem que a pressao ficasse maior do que a pressao estatica
     // em um eventual IPR no meio da marcha ou maior que o limitre maximo de pressao
     // da tabela PVTSim, quando for este o caso
     // deve-se diminuir a estimativa de pressao baixa
-    chutelim = pchute2;
+    guessLowerBound = pchute2;
     pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a maior pressao
     // que leva a marchResidual>0 e a pressao alta demais
     marchResidual = marchProductionSteady(state.march, pchute2);
@@ -877,7 +877,7 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, doubl
             }
     }
     if (marchResidual > 0 && marchResidual < 0.9e10)
-        chutePos = pchute2;
+        positiveResidualGuess = pchute2;
     kontaiter++;
     if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
         if ((*state.march.globals).chaverede == 0) {
@@ -925,14 +925,14 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, doubl
 /// One arm of the sign split that ends searchProductionBottomHolePressure. Its
 /// twin is bracketFromHighGuess; the two are not each other's mirror, which is
 /// why they are two functions and not one with a sign parameter.
-bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &chutelim, double &chutePos, double &chuteNeg, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
+bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &guessLowerBound, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
     // calculada pela
     // marcha, isto implica em pressao de chute baixa , deve-se agora buscar
     // uma pressao de chute alta para que marchResidual seja negativo e assim iniciar o processo
     // de calculo de zero de funcao
-    chutePos = pchute; // armazenando o valor de chute de pressao que da o valor positivo
+    positiveResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor positivo
     // a cada nova busca em que marchResidual se aproxima de zero, mas ainda positivo
-    // chutePos e atualizado com a Ãºltima pressao de chute
+    // positiveResidualGuess e atualizado com a Ãºltima pressao de chute
     int kontaReverso = 0;
     while (marchResidual > 0) {
         pchuteAux = pchute2;
@@ -1001,7 +1001,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
                 }
         }
         if (marchResidual > 0 && marchResidual < 0.9e10) {
-            chutePos = pchute2; // atualizando o chutePos
+            positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
             if (marchResidual > val0 && state.march.cells[0].acsr.tipo == 3 && state.march.input.lingas == 0) {
 
                 kontaReverso++;
@@ -1057,24 +1057,24 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
             }
         }
         while (marchResidual > 0.9e10) { // o incremento de pressao foi demais e a marcha nao foi capaz
-            if (raisePressureUntilMarchCompletes(state, chutelim, chutePos, kontaiter, marchResidual, pchuteAux, pchute2, chute, kontaTenta, abortValue))
+            if (raisePressureUntilMarchCompletes(state, guessLowerBound, positiveResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, chute, kontaTenta, abortValue))
                 return true;
         }
     }
-    chuteNeg = pchute2;
+    negativeResidualGuess = pchute2;
     return false;
 }
 
 /// Brackets the root downward when the first march came back negative.
 ///
 /// One arm of the sign split that ends searchProductionBottomHolePressure.
-bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &chutelim, double &chuteNeg, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
+bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &guessLowerBound, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
     // marcha, isto implica em pressao de chute alta , deve-se agora buscar
     // uma pressao de chute baixa para que marchResidual seja positivo e assim iniciar o processo
     // de calculo de zero de funcao
-    chuteNeg = pchute; // armazenando o valor de chute de pressao que da o valor negativo
+    negativeResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor negativo
     // a cada nova busca em que marchResidual se aproxima de zero, mas ainda negativo
-    // chuteNeg Ã© atualizado com a Ãºltima pressao de chute
+    // negativeResidualGuess Ã© atualizado com a Ãºltima pressao de chute
     int kontaReverso = 0;
     while (marchResidual < 0) {
         if (fabs(pchute2 - pchute) / pchute < (1. - reduz) / 10. && kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
@@ -1082,11 +1082,11 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
         }
         pchuteAux = pchute2;
         pchute2 *= reduz; // Diminuindo a pressao na busca de marchResidual>0
-        if (pchute2 <= chutelim)
-            pchute2 = 0.5 * (pchuteAux + chutelim); // chutelim inicialmente
+        if (pchute2 <= guessLowerBound)
+            pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound inicialmente
         // e zero, mas pode acontecer de baixar demais pchute2 ao ponto de marchResidual=-1e10
-        //(pressao abaixo de 0.5 no meio da marcha), neste caso, chutelim se torna este valor de
-        // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de chutelim
+        //(pressao abaixo de 0.5 no meio da marcha), neste caso, guessLowerBound se torna este valor de
+        // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
         marchResidual = marchProductionSteady(state.march, pchute2);
         if (fabs(marchResidual) > 1.01e10) {
             if (kontaTenta < 0)
@@ -1106,7 +1106,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
                 }
         }
         if (marchResidual < 0 && marchResidual > -0.9e10) {
-            chuteNeg = pchute2; // atualizando o chuteNeg
+            negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
             if (marchResidual < val0 && state.march.cells[0].acsr.tipo == 3 && state.march.input.lingas == 0) {
 
                 kontaReverso++;
@@ -1163,7 +1163,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
         while (marchResidual < -0.9e10) { // a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
             // de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
             // deve-se aumentar a estimativa de pressao baixa
-            chutelim = pchute2;
+            guessLowerBound = pchute2;
             pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a menor pressao
             // que leva a marchResidual<0 e a pressao baixa demais
             marchResidual = marchProductionSteady(state.march, pchute2);
@@ -1185,7 +1185,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
                     }
             }
             if (marchResidual < 0 && marchResidual > -0.9e10) {
-                chuteNeg = pchute2;
+                negativeResidualGuess = pchute2;
             }
             kontaiter++;
             if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
@@ -1720,9 +1720,9 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     // caso tenha sido possivel obter um chute de pressao em que foi possivel finalizar a marcha
     kontaiter = 0;
     pchute2 = pchute;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
-    double chutelim = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
+    double guessLowerBound = 0.;
     double val0 = marchResidual;
     int reversao = 0;
     double atenua = 1.;
@@ -1733,17 +1733,17 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     else {
         if (marchResidual < 0.) { // caso em que pressao a montante do choke < pressao da ultima celula, calculada pela
             double abortValue;
-            if (bracketFromHighGuess(state, amplifica, reduz, reversao, val0, chutelim, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
+            if (bracketFromHighGuess(state, amplifica, reduz, reversao, val0, guessLowerBound, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
                 return abortValue;
-            chutePos = pchute2;
+            positiveResidualGuess = pchute2;
         } else if (marchResidual > 0.) { // caso em que pressao a montante do choke > pressao da ultima celula,
             double abortValue;
-            if (bracketFromLowGuess(state, amplifica, reduz, reversao, val0, chutelim, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
+            if (bracketFromLowGuess(state, amplifica, reduz, reversao, val0, guessLowerBound, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
                 return abortValue;
         }
 
         if (reversao == 0)
-            return solveSteadyRoot(state, chuteNeg, chutePos, 1, 0); // com as duas estimativas de pressao
+            return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0); // com as duas estimativas de pressao
         // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
         // de funcao
         else
@@ -1752,13 +1752,13 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
 }
 
 /// Brackets the root when the choke passes less than the column delivers.
-bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double amplifica, double &chutePos, double &chuteNeg, double &chutelim, int &kontaiter, double mult2, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
+bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double amplifica, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult2, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
     // isto implica em pressao de chute baixa , deve-se agora buscar
     // uma pressao de chute alta para que marchResidual seja negativo e assim iniciar o processo
     // de calculo de zero de funcao
-    chutePos = pchute; // armazenando o valor de chute de pressao que da o valor positivo
+    positiveResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor positivo
     // a cada nova busca em que marchResidual se aproxima de zero, mas ainda positivo
-    // chutePos e atualizado com a Ãºltima pressao de chute
+    // positiveResidualGuess e atualizado com a Ãºltima pressao de chute
     while (marchResidual > 0) {
         pchuteAux = pchute2;
         if ((*state.march.globals).chaverede == 0)
@@ -1838,7 +1838,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
             }
         }
         if (marchResidual > 0 && marchResidual < 0.9e10)
-            chutePos = pchute2; // atualizando o chutePos
+            positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
         kontaiter++;
         if (kontaiter > 50) { // limite de iteracoes, falha na busca do segundo chute
             // fim da simulacao ou aviso de falha
@@ -1877,7 +1877,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
             // em um eventual IPR no meio da marcha ou maior que o limitre maximo de pressao
             // da tabela PVTSim, quando for este o caso
             // deve-se diminuir a estimativa de pressao baixa
-            chutelim = pchute2;
+            guessLowerBound = pchute2;
             pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a maior pressao
             // que leva a marchResidual>0 e a pressao alta demais
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
@@ -1903,7 +1903,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
                     }
             }
             if (marchResidual > 0 && marchResidual < 0.9e10)
-                chutePos = pchute2;
+                positiveResidualGuess = pchute2;
             kontaiter++;
 
             if (kontaiter > 50) {
@@ -1939,19 +1939,19 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
             }
         }
     }
-    chuteNeg = pchute2;
+    negativeResidualGuess = pchute2;
     return false;
 }
 
 /// Brackets the root when the pressure guess was too high.
-bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double reduz, double &chuteNeg, double &chutelim, int &kontaiter, double mult1, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
+bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double reduz, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult1, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
     // Vazao no choke>Vazao da mistura na tubulaÃ§Ã£o
     // calculada pela marcha, isto implica em pressao de chute alta , deve-se agora buscar
     // uma pressao de chute baixa para que marchResidual seja positivo e assim iniciar o processo
     // de calculo de zero de funcao
-    chuteNeg = pchute; // armazenando o valor de chute de pressao que da o valor negativo
+    negativeResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor negativo
     // a cada nova busca em que marchResidual se aproxima de zero, mas ainda negativo
-    // chuteNeg Ã© atualizado com a Ãºltima pressao de chute
+    // negativeResidualGuess Ã© atualizado com a Ãºltima pressao de chute
     while (marchResidual < 0) {
         if (fabs(pchute2 - pchute) / pchute < (1. - reduz) / 10. && kontaiter > 50) {
             pchute2 *= 0.5;
@@ -1961,11 +1961,11 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
             pchute2 *= reduz; // Diminuindo a pressao na busca de marchResidual>0
         else
             pchute2 *= mult1; // Diminuindo a pressao na busca de marchResidual>0
-        if (pchute2 <= chutelim)
-            pchute2 = 0.5 * (pchuteAux + chutelim); // chutelim inicialmente
+        if (pchute2 <= guessLowerBound)
+            pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound inicialmente
         // e zero, mas pode acontecer de baixar demais pchute2 ao ponto de marchResidual=-1e10
-        //(pressao abaixo de 0.5 no meio da marcha), neste caso, chutelim se torna este valor de
-        // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de chutelim
+        //(pressao abaixo de 0.5 no meio da marcha), neste caso, guessLowerBound se torna este valor de
+        // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
         if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
         if (state.march.cells[0].acsr.tipo == 3 &&
@@ -1989,7 +1989,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
                 }
         }
         if (marchResidual < 0 && marchResidual > -0.9e10)
-            chuteNeg = pchute2; // atualizando o chuteNeg
+            negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
         kontaiter++;
         if (kontaiter > 50) { // limite de iteracoes, falha na busca do segundo chute
             // fim da simulacao ou aviso de falha
@@ -2025,7 +2025,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
         while (marchResidual < -0.9e10) { // a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
             // de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
             // deve-se aumentar a estimativa de pressao baixa
-            chutelim = pchute2;
+            guessLowerBound = pchute2;
             pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a menor pressao
             // que leva a marchResidual<0 e a pressao baixa demais
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
@@ -2051,7 +2051,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
                     }
             }
             if (marchResidual < 0 && marchResidual > -0.9e10)
-                chuteNeg = pchute2;
+                negativeResidualGuess = pchute2;
             kontaiter++;
             if (kontaiter > 50) {
                 if ((*state.march.globals).chaverede == 0) {
@@ -2477,9 +2477,9 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     // caso tenha sido possivel obter um chute de pressao em que foi possivel finalizar a marcha
     kontaiter = 0;
     pchute2 = pchute;
-    double chutelim = 0.;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double guessLowerBound = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     double atenua = 1.;
     double reduz = 1. - state.march.input.buscaFC;
     double amplifica = 1. + state.march.input.buscaFC;
@@ -2488,15 +2488,15 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     else {
         if (marchResidual < 0.) { // caso em que o chute de pressao foi alto
             double abortValue;
-            if (bracketFromHighGuessSecondary(state, reduz, chuteNeg, chutelim, kontaiter, mult1, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
+            if (bracketFromHighGuessSecondary(state, reduz, negativeResidualGuess, guessLowerBound, kontaiter, mult1, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
                 return abortValue;
-            chutePos = pchute2;
+            positiveResidualGuess = pchute2;
         } else if (marchResidual > 0.) { // caso em que Vazao no choke<Vazao da mistura na tubulaÃ§Ã£o,
             double abortValue;
-            if (bracketFromLowGuessSecondary(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
+            if (bracketFromLowGuessSecondary(state, amplifica, positiveResidualGuess, negativeResidualGuess, guessLowerBound, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
                 return abortValue;
         }
-        return solveSteadyRoot(state, chuteNeg, chutePos, 1, 1); // com as duas estimativas de pressao
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 1); // com as duas estimativas de pressao
         // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
         // de funcao
     }
@@ -2902,11 +2902,11 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double chutelim = 0.;
+    double guessLowerBound = 0.;
     state.march.input.buscaFC = fabs(state.march.input.buscaFC);
 
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     int testaEscoa = 1;
     double val0 = marchResidual;
     int reversao = 0;
@@ -2914,7 +2914,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
         return mchute;
     else {
         if (marchResidual < 0.) {
-            chuteNeg = mchute;
+            negativeResidualGuess = mchute;
             while (marchResidual < 0) {
                 mchuteAux = mchute2;
                 mchute2 *= (1. + state.march.input.buscaFC);
@@ -2927,7 +2927,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                         val0 = marchResidual;
                 }
                 if (marchResidual < 0 && marchResidual > -0.9e10)
-                    chuteNeg = mchute2;
+                    negativeResidualGuess = mchute2;
                 kontaiter++;
                 double velocityGuess = mchute2;
                 double completionFraction = state.march.cells[1].bet;
@@ -2965,9 +2965,9 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                     marchResidual = 1.;
                 }
             }
-            chutePos = mchute2;
+            positiveResidualGuess = mchute2;
         } else if (marchResidual > 0.) {
-            chutePos = mchute;
+            positiveResidualGuess = mchute;
             while (marchResidual > 0) {
                 mchuteAux = mchute2;
                 mchute2 *= (1. - state.march.input.buscaFC);
@@ -2980,7 +2980,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                         val0 = marchResidual;
                 }
                 if (marchResidual > 0 && marchResidual > -0.9e10)
-                    chutePos = mchute2;
+                    positiveResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -2994,10 +2994,10 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                     }
                 }
             }
-            chuteNeg = mchute2;
+            negativeResidualGuess = mchute2;
         }
         if (testaEscoa == 1 && reversao == 0)
-            return solveSteadyRoot(state, chuteNeg, chutePos, 2, 0);
+            return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 0);
         else if (reversao == 0) {
             if (state.march.cells[0].acsr.tipo == 1) {
                 state.march.cells[0].acsr.injg.QGas = 0.;
@@ -3038,10 +3038,10 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double chutelim = 0.;
+    double guessLowerBound = 0.;
 
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     int testaEscoa = 1;
     double sentido = 1.;
     double val0 = marchResidual;
@@ -3051,7 +3051,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
         return mchute;
     else {
         if (marchResidual * sentido < 0.) {
-            chuteNeg = mchute;
+            negativeResidualGuess = mchute;
             kontaReverso = 0;
             while (marchResidual * sentido < 0) {
                 mchuteAux = mchute2;
@@ -3071,7 +3071,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                         val0 = marchResidual;
                 }
                 if (marchResidual * sentido < 0 && marchResidual > -0.9e10)
-                    chuteNeg = mchute2;
+                    negativeResidualGuess = mchute2;
                 kontaiter++;
                 double velocityGuess = mchute2;
                 double completionFraction = state.march.cells[1].bet;
@@ -3109,11 +3109,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     marchResidual = 1.;
                 }
                 while (marchResidual < -0.9e10) {
-                    chutelim = mchute2;
+                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressure(state.march, mchute2);
                     if (marchResidual * sentido < 0 && marchResidual > -0.9e10)
-                        chuteNeg = mchute2;
+                        negativeResidualGuess = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
                         if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -3128,9 +3128,9 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     }
                 }
             }
-            chutePos = mchute2;
+            positiveResidualGuess = mchute2;
         } else if (marchResidual * sentido > 0.) {
-            chutePos = mchute;
+            positiveResidualGuess = mchute;
             kontaReverso = 0;
             while (marchResidual * sentido > 0) {
                 mchuteAux = mchute2;
@@ -3154,7 +3154,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     marchResidual = -1.;
                 }
                 if (marchResidual * sentido > 0 && marchResidual > -0.9e10)
-                    chutePos = mchute2;
+                    positiveResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -3168,11 +3168,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     }
                 }
                 while (marchResidual < -0.9e10) {
-                    chutelim = mchute2;
+                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressure(state.march, mchute2);
                     if (marchResidual * sentido > 0 && marchResidual > -0.9e10)
-                        chutePos = mchute2;
+                        positiveResidualGuess = mchute2;
                     kontaiter++;
 
                     if (kontaiter > 200) {
@@ -3188,10 +3188,10 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     }
                 }
             }
-            chuteNeg = mchute2;
+            negativeResidualGuess = mchute2;
         }
         if (testaEscoa == 1 && reversao == 0)
-            return solveSteadyRoot(state, chuteNeg, chutePos, 2, 0);
+            return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 0);
         else if (reversao == 0) {
             if (state.march.cells[0].acsr.tipo == 1) {
                 state.march.cells[0].acsr.injg.QGas = -2121212121;
@@ -3233,24 +3233,24 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double chutelim = 0.;
+    double guessLowerBound = 0.;
     kontaiter = 0;
 
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
 
     int testaEscoa = 1;
     if (fabs(marchResidual) < 1e-3)
         return mchute;
     else {
         if (marchResidual < 0.) {
-            chuteNeg = mchute;
+            negativeResidualGuess = mchute;
             while (marchResidual < 0) {
                 mchuteAux = mchute2;
                 mchute2 *= (1. - state.march.input.buscaFC);
                 marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                 if (marchResidual < 0 && marchResidual > -0.9e10)
-                    chuteNeg = mchute2;
+                    negativeResidualGuess = mchute2;
                 kontaiter++;
                 double velocityGuess = mchute2;
                 double completionFraction = state.march.cells[1].bet;
@@ -3288,11 +3288,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     marchResidual = 1.;
                 }
                 while (marchResidual < -0.9e10) {
-                    chutelim = mchute2;
+                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                     if (marchResidual < 0 && marchResidual > -0.9e10)
-                        chuteNeg = mchute2;
+                        negativeResidualGuess = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
                         if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -3307,9 +3307,9 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     }
                 }
             }
-            chutePos = mchute2;
+            positiveResidualGuess = mchute2;
         } else if (marchResidual > 0.) {
-            chutePos = mchute;
+            positiveResidualGuess = mchute;
             while (marchResidual > 0) {
                 mchuteAux = mchute2;
                 mchute2 *= (1. + state.march.input.buscaFC);
@@ -3319,7 +3319,7 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     marchResidual = -1.;
                 }
                 if (marchResidual > 0 && marchResidual < 0.9e10)
-                    chutePos = mchute2;
+                    positiveResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -3333,11 +3333,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     }
                 }
                 while (marchResidual < -0.9e10) {
-                    chutelim = mchute2;
+                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                     if (marchResidual > 0 && marchResidual > -0.9e10)
-                        chutePos = mchute2;
+                        positiveResidualGuess = mchute2;
                     kontaiter++;
 
                     if (kontaiter > 200) {
@@ -3353,10 +3353,10 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     }
                 }
             }
-            chuteNeg = mchute2;
+            negativeResidualGuess = mchute2;
         }
         if (testaEscoa == 1)
-            return solveSteadyRoot(state, chuteNeg, chutePos, 2, 1);
+            return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 1);
         else {
             if (state.march.cells[0].acsr.tipo == 1) {
                 state.march.cells[0].acsr.injg.QGas = 0.;
@@ -3369,15 +3369,15 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
 }
 
 /// Brackets and solves the mass-flow root for the tertiary pressure-to-pressure search.
-double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state, int &testaEscoa, double &chutePos, double &chuteNeg, double &chutelim, double &mchute2, double &mchuteAux, int &kontaiter, double &marchResidual, double mchute, double maxvaz) {
+double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state, int &testaEscoa, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, double &mchute2, double &mchuteAux, int &kontaiter, double &marchResidual, double mchute, double maxvaz) {
     if (marchResidual < 0.) {
-        chuteNeg = mchute;
+        negativeResidualGuess = mchute;
         while (marchResidual < 0) {
             mchuteAux = mchute2;
             mchute2 *= (1. - state.march.input.buscaFC);
             marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
             if (marchResidual < 0 && marchResidual > -0.9e10)
-                chuteNeg = mchute2;
+                negativeResidualGuess = mchute2;
             kontaiter++;
             double velocityGuess = mchute2;
             double completionFraction = state.march.cells[1].bet;
@@ -3415,11 +3415,11 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 marchResidual = 1.;
             }
             while (marchResidual < -0.9e10) {
-                chutelim = mchute2;
+                guessLowerBound = mchute2;
                 mchute2 = 0.5 * (mchute2 + mchuteAux);
                 marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                 if (marchResidual < 0 && marchResidual > -0.9e10)
-                    chuteNeg = mchute2;
+                    negativeResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -3434,9 +3434,9 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 }
             }
         }
-        chutePos = mchute2;
+        positiveResidualGuess = mchute2;
     } else if (marchResidual > 0.) {
-        chutePos = mchute;
+        positiveResidualGuess = mchute;
         while (marchResidual > 0) {
             mchuteAux = mchute2;
             mchute2 *= (1. + state.march.input.buscaFC);
@@ -3446,7 +3446,7 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 marchResidual = -1.;
             }
             if (marchResidual > 0 && marchResidual < 0.9e10)
-                chutePos = mchute2;
+                positiveResidualGuess = mchute2;
             kontaiter++;
             if (kontaiter > 200) {
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
@@ -3460,11 +3460,11 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 }
             }
             while (marchResidual > 0.9e10) {
-                chutelim = mchute2;
+                guessLowerBound = mchute2;
                 mchute2 = 0.5 * (mchute2 + mchuteAux);
                 marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                 if (marchResidual > 0 && marchResidual < 0.9e10)
-                    chutePos = mchute2;
+                    positiveResidualGuess = mchute2;
                 kontaiter++;
 
                 if (kontaiter > 200) {
@@ -3480,10 +3480,10 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 }
             }
         }
-        chuteNeg = mchute2;
+        negativeResidualGuess = mchute2;
     }
     if (testaEscoa == 1)
-        return solveSteadyRoot(state, chuteNeg, chutePos, 2, 1);
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 1);
     else {
         if (state.march.cells[0].acsr.tipo == 1) {
             state.march.cells[0].acsr.injg.QGas = 0.;
@@ -3577,17 +3577,17 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double chutelim = 0.;
+    double guessLowerBound = 0.;
     kontaiter = 0;
 
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
 
     int testaEscoa = 1;
     if (fabs(marchResidual) < 1e-3)
         return mchute;
     else {
-        return bracketTertiaryPressureToPressureRoot(state, testaEscoa, chutePos, chuteNeg, chutelim, mchute2, mchuteAux, kontaiter, marchResidual, mchute, maxvaz);
+        return bracketTertiaryPressureToPressureRoot(state, testaEscoa, positiveResidualGuess, negativeResidualGuess, guessLowerBound, mchute2, mchuteAux, kontaiter, marchResidual, mchute, maxvaz);
     }
 }
 
@@ -3703,13 +3703,13 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
     }
     kontaiter = 0;
     mchute2 = mchute;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     if (fabs(marchResidual) < 1e-15)
         return mchute;
     else {
         if (marchResidual < 0.) {
-            chuteNeg = mchute;
+            negativeResidualGuess = mchute;
             while (marchResidual < 0) {
                 mchuteAux = mchute2;
                 mchute2 *= 1.1;
@@ -3743,9 +3743,9 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                     }
                 }
             }
-            chutePos = mchute2;
+            positiveResidualGuess = mchute2;
         } else if (marchResidual > 0.) {
-            chutePos = mchute;
+            positiveResidualGuess = mchute;
             while (marchResidual > 0) {
                 mchuteAux = mchute2;
                 mchute2 *= 0.9;
@@ -3779,16 +3779,16 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                     }
                 }
             }
-            chuteNeg = mchute2;
+            negativeResidualGuess = mchute2;
         }
-        return solveSteadyRoot(state, chuteNeg, chutePos, 1, 0);
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0);
     }
 }
 
 /// Brackets and solves the root for the second injection search.
-double bracketInjectionRoot2(const SteadyStateSearchState &state, double &chutePos, double &chuteNeg, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
+double bracketInjectionRoot2(const SteadyStateSearchState &state, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
     if (marchResidual < 0.) {
-        chuteNeg = pchute;
+        negativeResidualGuess = pchute;
         while (marchResidual < 0) {
             pchuteAux = pchute2;
             pchute2 *= 0.9;
@@ -3830,9 +3830,9 @@ double bracketInjectionRoot2(const SteadyStateSearchState &state, double &chuteP
                 }
             }
         }
-        chutePos = pchute2;
+        positiveResidualGuess = pchute2;
     } else if (marchResidual > 0.) {
-        chutePos = pchute;
+        positiveResidualGuess = pchute;
         while (marchResidual > 0) {
             pchuteAux = pchute2;
             pchute2 *= 1.1;
@@ -3866,9 +3866,9 @@ double bracketInjectionRoot2(const SteadyStateSearchState &state, double &chuteP
                 }
             }
         }
-        chuteNeg = pchute2;
+        negativeResidualGuess = pchute2;
     }
-    return solveSteadyRoot(state, chuteNeg, chutePos, 1, 0);
+    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0);
 }
 
 double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, double chute) {
@@ -3988,12 +3988,12 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
     }
     kontaiter = 0;
     pchute2 = pchute;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     if (fabs(marchResidual) < 1e-15)
         return pchute;
     else {
-        return bracketInjectionRoot2(state, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketInjectionRoot2(state, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
     }
 }
 
@@ -4331,9 +4331,9 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state) {
 }
 
 /// Brackets and solves the root for the fifth injection search.
-double bracketInjectionRoot5(const SteadyStateSearchState &state, double &chutePos, double &chuteNeg, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
+double bracketInjectionRoot5(const SteadyStateSearchState &state, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
     if (marchResidual < 0.) {
-        chuteNeg = pchute;
+        negativeResidualGuess = pchute;
         while (marchResidual < 0) {
             pchuteAux = pchute2;
             pchute2 *= 0.9;
@@ -4367,9 +4367,9 @@ double bracketInjectionRoot5(const SteadyStateSearchState &state, double &chuteP
                 }
             }
         }
-        chutePos = pchute2;
+        positiveResidualGuess = pchute2;
     } else if (marchResidual > 0.) {
-        chutePos = pchute;
+        positiveResidualGuess = pchute;
         while (marchResidual > 0) {
             pchuteAux = pchute2;
             pchute2 *= 1.1;
@@ -4403,9 +4403,9 @@ double bracketInjectionRoot5(const SteadyStateSearchState &state, double &chuteP
                 }
             }
         }
-        chuteNeg = pchute2;
+        negativeResidualGuess = pchute2;
     }
-    return solveSteadyRoot(state, chuteNeg, chutePos, 1, 0);
+    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0);
 }
 
 double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, double chute) {
@@ -4532,22 +4532,22 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
     }
     kontaiter = 0;
     pchute2 = pchute;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     if (fabs(marchResidual) < 1e-15)
         return pchute;
     else {
-        return bracketInjectionRoot5(state, chutePos, chuteNeg, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketInjectionRoot5(state, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
     }
 }
 
 /// Brackets the branch root upward when the first march came back positive.
 ///
 /// One arm of the sign split in bracketSecondaryBranchRoot.
-bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, double amplifica, double &chutePos, double &chuteNeg, double &chutelim, int &kontaiter, double mult2, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double &abortValue) {
+bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, double amplifica, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult2, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double &abortValue) {
     // Choke flow is below tubing flow, indicating a low pressure guess.
     // Increase the pressure until marchResidual becomes negative and brackets the root.
-    chutePos = pchute; // Store the pressure guess yielding marchResidual > 0.
+    positiveResidualGuess = pchute; // Store the pressure guess yielding marchResidual > 0.
 
     // Update the positive bound as marchResidual approaches zero.
     while (marchResidual > 0) {
@@ -4608,7 +4608,7 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
             }
         }
         if (marchResidual > 0 && marchResidual < 0.9e10)
-            chutePos = pchute2; // updating chutePos
+            positiveResidualGuess = pchute2; // updating positiveResidualGuess
         kontaiter++;
         if (kontaiter > 50) {
             // Iteration limit reached while searching for the second guess.
@@ -4628,7 +4628,7 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
         while (marchResidual > 0.9e10) {
             // The pressure step was too large, causing the marching process to exceed
             // the static or PVTSim pressure limit. Reduce the lower pressure estimate.
-            chutelim = pchute2;
+            guessLowerBound = pchute2;
             pchute2 = 0.5 * (pchute2 + pchuteAux); // Midpoint between the highest pressure yielding marchResidual > 0 and the upper pressure bound.
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
@@ -4647,7 +4647,7 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
                     }
             }
             if (marchResidual > 0 && marchResidual < 0.9e10)
-                chutePos = pchute2;
+                positiveResidualGuess = pchute2;
             kontaiter++;
 
             if (kontaiter > 50) {
@@ -4665,16 +4665,16 @@ bool bracketSecondaryBranchFromLowGuess(const SteadyStateSearchState &state, dou
             }
         }
     }
-    chuteNeg = pchute2;
+    negativeResidualGuess = pchute2;
     return false;
 }
 
 /// Brackets and solves the flow-rate root for the secondary branch.
-double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double amplifica, double reduz, double &chutePos, double &chuteNeg, double &chutelim, int &kontaiter, double mult2, double mult1, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
+double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double amplifica, double reduz, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult2, double mult1, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
     if (marchResidual < 0.) {
         // Choke flow exceeds tubing flow, indicating a high pressure guess.
         // Decrease the pressure until marchResidual becomes positive and brackets the root.
-        chuteNeg = pchute; // Store the pressure guess yielding marchResidual < 0.
+        negativeResidualGuess = pchute; // Store the pressure guess yielding marchResidual < 0.
 
         // Update the negative bound as marchResidual approaches zero.
         while (marchResidual < 0) {
@@ -4686,10 +4686,10 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
                 pchute2 *= reduz; // Decreasing the pressure in the search for marchResidual>0
             else
                 pchute2 *= mult1; // Decreasing the pressure in the search for marchResidual>0
-            if (pchute2 <= chutelim)
-                pchute2 = 0.5 * (pchuteAux + chutelim);
-            // chutelim starts at zero. If pchute2 drops too far and marchResidual reaches -1e10,
-            // set chutelim to pchute2, establishing the minimum allowed pressure.
+            if (pchute2 <= guessLowerBound)
+                pchute2 = 0.5 * (pchuteAux + guessLowerBound);
+            // guessLowerBound starts at zero. If pchute2 drops too far and marchResidual reaches -1e10,
+            // set guessLowerBound to pchute2, establishing the minimum allowed pressure.
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
             marchResidual = marchProductionSteadySecondary(state.march, pchute2);
@@ -4701,7 +4701,7 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
                     return 1.1e10;
             }
             if (marchResidual < 0 && marchResidual > -0.9e10)
-                chuteNeg = pchute2; // updating chuteNeg
+                negativeResidualGuess = pchute2; // updating negativeResidualGuess
             kontaiter++;
             if (kontaiter > 50) {
                 // Iteration limit reached while searching for the second guess.
@@ -4715,7 +4715,7 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
             while (marchResidual < -0.9e10) {
                 // The pressure reduction was too large, causing the marching process
                 // to fall below 0.5 kgf/cm². Increase the lower pressure estimate.
-                chutelim = pchute2;
+                guessLowerBound = pchute2;
                 pchute2 = 0.5 * (pchute2 + pchuteAux); // Midpoint between the lowest pressure yielding marchResidual < 0 and the lower pressure bound.
                 if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                     pchute2 = 0.9 * state.march.input.tabent.pmax;
@@ -4734,7 +4734,7 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
                         return 1.1e10;
                 }
                 if (marchResidual < 0 && marchResidual > -0.9e10)
-                    chuteNeg = pchute2;
+                    negativeResidualGuess = pchute2;
                 kontaiter++;
                 if (kontaiter > 50) {
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
@@ -4745,13 +4745,13 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
                 }
             }
         }
-        chutePos = pchute2;
+        positiveResidualGuess = pchute2;
     } else if (marchResidual > 0.) {
         double abortValue;
-        if (bracketSecondaryBranchFromLowGuess(state, amplifica, chutePos, chuteNeg, chutelim, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, abortValue))
+        if (bracketSecondaryBranchFromLowGuess(state, amplifica, positiveResidualGuess, negativeResidualGuess, guessLowerBound, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, abortValue))
             return abortValue;
     }
-    return solveSteadyRoot(state, chuteNeg, chutePos, 1, 1); // Find the root using pressure bounds with opposite signs.
+    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 1); // Find the root using pressure bounds with opposite signs.
 }
 
 /// Walks the guess until the branch march stops returning a sentinel.
@@ -4989,16 +4989,16 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
     // A pressure guess was found that allowed the marching process to complete.
     kontaiter = 0;
     pchute2 = pchute;
-    double chutelim = 0.;
-    double chuteNeg = 0.;
-    double chutePos = 0.;
+    double guessLowerBound = 0.;
+    double negativeResidualGuess = 0.;
+    double positiveResidualGuess = 0.;
     double atenua = 1.;
     double reduz = 1. - state.march.input.buscaFC;
     double amplifica = 1. + state.march.input.buscaFC;
     if (fabs(marchResidual) < 1e-3)
         return pchute;
     else {
-        return bracketSecondaryBranchRoot(state, amplifica, reduz, chutePos, chuteNeg, chutelim, kontaiter, mult2, mult1, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketSecondaryBranchRoot(state, amplifica, reduz, positiveResidualGuess, negativeResidualGuess, guessLowerBound, kontaiter, mult2, mult1, marchResidual, pchuteAux, pchute2, pchute);
     }
 }
 

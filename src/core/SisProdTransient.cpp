@@ -1639,13 +1639,13 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     if (kontaAcop == 1 * state.step.fullModel)
         dampMaximumTimeStep(state.step);
 
-    double fonteG = 0.;
-    double fonteP = 0.;
-    double fonteC = 0.;
+    double gasMassSource = 0.;
+    double liquidMassSource = 0.;
+    double completionMassSource = 0.;
     if (state.step.fullModel == 1) {
-        fonteC = state.step.cells[state.step.lastCell].fontemassCR;
-        fonteP = state.step.cells[state.step.lastCell].fontemassLR;
-        fonteG = state.step.cells[state.step.lastCell].fontemassGR;
+        completionMassSource = state.step.cells[state.step.lastCell].fontemassCR;
+        liquidMassSource = state.step.cells[state.step.lastCell].fontemassLR;
+        gasMassSource = state.step.cells[state.step.lastCell].fontemassGR;
     }
 
     applyOutletPressureCondition(state.step, titRev, alfRev, betRev);
@@ -1691,9 +1691,9 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
             }
         }
 
-        state.step.cells[state.step.lastCell].fontemassCR = fonteC;
-        state.step.cells[state.step.lastCell].fontemassLR = fonteP;
-        state.step.cells[state.step.lastCell].fontemassGR = fonteG;
+        state.step.cells[state.step.lastCell].fontemassCR = completionMassSource;
+        state.step.cells[state.step.lastCell].fontemassLR = liquidMassSource;
+        state.step.cells[state.step.lastCell].fontemassGR = gasMassSource;
 
         state.step.open = state.step.initiallyOpen;
         state.step.openTime = state.initialOpenTime;
