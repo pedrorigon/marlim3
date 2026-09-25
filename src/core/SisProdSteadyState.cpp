@@ -3184,9 +3184,9 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
         state.cells[i].fluicol.TR = state.cells[i - 1].fluicol.TR;
 }
 
-double areaChangePressureDrop(const SteadyStateState &state, int i, double rhomix, double reynoldsNumber, double jmix) {
+double areaChangePressureDrop(const SteadyStateState &state, int i, double rhomix, double reynolds, double jmix) {
     double dpArea = 0.;
-    if ((state.cells[i].duto.area != state.cells[i].dutoR.area && reynoldsNumber > 2400) && (state.cells[i].mudaArea == 1 && (fabs(jmix) >= 0.1))) {
+    if ((state.cells[i].duto.area != state.cells[i].dutoR.area && reynolds > 2400) && (state.cells[i].mudaArea == 1 && (fabs(jmix) >= 0.1))) {
         double areaMenor;
         double areaMaior;
         double bernou;
