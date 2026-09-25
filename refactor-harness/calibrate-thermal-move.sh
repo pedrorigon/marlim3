@@ -423,8 +423,8 @@ run_t066_case diffusion-qualified-dt prepDifusCalorND \
     'state.cells[i].calor.state.timeStep = state.cells[i].state.timeStep;'
 
 run_t066_case energy-poisson-renew marchaEnergTrans \
-    'state.poissonSolver.renova();' \
-    'state.poissonSolver.state.evolutionUpdater.renew();'
+    'state.poissonSolver3D.renova();' \
+    'state.poissonSolver3D.state.evolutionUpdater.renew();'
 
 run_t066_case energy-cycle-step marchaEnergTrans \
     'state.minimumCycleTimeStep != state.timeStep' \
