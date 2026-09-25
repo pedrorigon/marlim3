@@ -81,6 +81,16 @@ struct CompositionState {
 /// const& separately, at T110a).
 void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev);
 
+/// Transports the OVERALL compositional molar fractions. No caller anywhere, in
+/// this tree or in main; kept as public surface until its owner decides, and
+/// compared line by line with the one that runs in evidencia/fracmol-diff.md --
+/// 71 of their 73 differences are logic, so they stay two functions.
+void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRev);
+
+/// Transports the molar fractions of the oil and the gas phases separately, and
+/// the water density with them. The one the transient step calls.
+void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev);
+
 /// Stores the void and completion fractions of the time level just finished,
 /// then moves the pigs and receives those that reach their receiver cell.
 void storePreviousFractionsAndMovePigs(const CompositionState &state);

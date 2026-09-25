@@ -378,3 +378,9 @@ auxMiniTab
 renovaalbetini
 renovaMasEsp
 avaliaParafina
+# T102b, T102c -- moved the same way, without decomposition by the owner's
+# decision (each loop body declares ~80 locals used to its end; literal cuts
+# needed 18 to 70 parameters). Proved by composition-move.py `check`.
+renovaRGOdgYco2
+renovaFracMol
+renovaFracMol2

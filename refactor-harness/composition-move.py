@@ -44,6 +44,15 @@ FUNCTIONS = {
     "renovaalbetini": {"new_name": "storePreviousFractionsAndMovePigs", "arguments": ""},
     "renovaMasEsp": {"new_name": "cacheCellAndFaceDensities", "arguments": ""},
     "avaliaParafina": {"new_name": "evaluateWaxDeposition", "arguments": ""},
+
+    # T102b, T102c -- moved WITHOUT decomposition, by the owner's decision: a
+    # literal cut of their loop bodies needs 18 to 70 parameters, since each
+    # declares ~80 locals used to its end. Named after evidencia/fracmol-diff.md:
+    # renovaFracMol transports the overall composition and has no caller;
+    # renovaFracMol2 transports the oil and gas compositions separately.
+    "renovaRGOdgYco2": {"new_name": "transportBlackOilProperties", "arguments": "fluiRev"},
+    "renovaFracMol": {"new_name": "transportOverallMolarFractions", "arguments": "fluiRev"},
+    "renovaFracMol2": {"new_name": "transportPhaseMolarFractions", "arguments": "fluiRev"},
 }
 
 # The composition routines do not call one another -- measured with
