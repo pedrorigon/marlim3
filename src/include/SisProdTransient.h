@@ -65,9 +65,11 @@ namespace sisprod::transient {
 ///
 /// Only two, and both for stated reasons rather than convenience:
 ///
-///   * geraMiniTabFlu STAYS in SisProd.cpp. PorosoRad-Simples.cpp and
-///     solverPoroso.cpp consume it too, so it is surface under FR-038, and
-///     T126's acceptance requires atualizaMiniTab to keep invoking it there.
+///   * geraMiniTabFlu STAYS in SisProd.cpp, because T126's acceptance requires
+///     atualizaMiniTab to keep invoking it there. (This note used to add that
+///     PorosoRad-Simples.cpp and solverPoroso.cpp consume it too. They do not:
+///     PorosRadSimp and solverPoro define geraMiniTabFlu methods of their own,
+///     which SProd::geraMiniTabFlu calls. Corrected in T104c.)
 ///   * subtempoGas moved to the gas-lift module in stage 6, and reaching it
 ///     needs a GasLiftState that only SisProd.cpp knows how to assemble -- the
 ///     same routing SteadyStateUpdaters uses, for the same reason.
@@ -353,8 +355,8 @@ void restartFractionEvolution(const TransientStepState &state);
 /// inlet condition.
 ///
 /// refreshFluidMiniTable still invokes geraMiniTabFlu, which REMAINS in
-/// SisProd.cpp: PorosoRad-Simples.cpp and solverPoroso.cpp consume it too, so
-/// it is surface under FR-038. It is reached through the updaters.
+/// SisProd.cpp as T126 requires, reached through the updaters. Its only
+/// caller is that updater; see the note on TransientStepUpdaters.
 void updatePig(const TransientStepState &state);
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0, int ciclo = 0);
 void refreshFluidMiniTable(const TransientStepState &state);
