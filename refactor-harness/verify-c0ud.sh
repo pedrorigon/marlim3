@@ -82,7 +82,11 @@ flags=(-std=c++20 -O2 -ffp-contract=off -funroll-loops -fopenmp
        -I"$project_root/src/include" -I"$project_root/src/thirdparty")
 
 compiled=()
-g++ "${flags[@]}" -c "$script_dir/c0ud-sweep.cpp" -o "$scratch/c0ud-sweep.o" \
+# -fno-access-control on the SWEEP only: it is a white-box characterization
+# that drives SProd internals on purpose, and T106 made some of them private.
+# Production objects keep their access control; access does not enter mangled
+# names, so they link unchanged.
+g++ "${flags[@]}" -fno-access-control -c "$script_dir/c0ud-sweep.cpp" -o "$scratch/c0ud-sweep.o" \
     2> "$scratch/build.log" || { printf '%sthe sweep did not compile%s\n' "$red" "$reset" >&2
                                  cat "$scratch/build.log" >&2; exit 2; }
 compiled+=("$scratch/c0ud-sweep.o")

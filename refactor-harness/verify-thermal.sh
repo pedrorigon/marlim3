@@ -43,7 +43,11 @@ trap 'rm -rf "$scratch"' EXIT
 flags=(-std=c++20 -O2 -Wall -ffp-contract=off -funroll-loops -fopenmp
        -I"$project_root/src/include" -I"$project_root/src/thirdparty")
 
-g++ "${flags[@]}" -c "$script_dir/thermal-sweep.cpp" -o "$scratch/sweep.o" \
+# -fno-access-control on the SWEEP only: it is a white-box characterization
+# that drives SProd internals on purpose, and T106 made some of them private.
+# Production objects keep their access control; access does not enter mangled
+# names, so they link unchanged.
+g++ "${flags[@]}" -fno-access-control -c "$script_dir/thermal-sweep.cpp" -o "$scratch/sweep.o" \
     2> "$scratch/build.log" || {
         printf '%sthe thermal sweep did not compile%s\n' "$red" "$reset" >&2
         cat "$scratch/build.log" >&2

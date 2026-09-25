@@ -336,26 +336,26 @@ int main(int argc, char **argv) {
         const double printPassCount = pass;
 
         const trendoutput::TrendState state{
-            .inputData = input,
+            .input = input,
             .globals = &globals,
             .branchIndex = branchIndex,
             .printPassCount = printPassCount,
             .production = {productionBuffer, productionCount, productionBase},
-            .service = {serviceBuffer, serviceCount, serviceBase},
+            .gasLine = {serviceBuffer, serviceCount, serviceBase},
             .productionCrossSection = {productionCross, crossCount, crossBase},
-            .serviceCrossSection = {serviceCross, serviceCrossCount, serviceCrossBase}};
+            .gasLineCrossSection = {serviceCross, serviceCrossCount, serviceCrossBase}};
 
         arqRelatorioPerfis.open((directory + "_reported.txt").c_str(), ios_base::out);
         for (int s = 0; s < kSeries; s++) {
             const int network = 2 + s;
             trendoutput::writeProductionTrendHeader(state, s, network);
             trendoutput::writeProductionTrendRows(state, s, network);
-            trendoutput::writeServiceTrendHeader(state, s, network);
-            trendoutput::writeServiceTrendRows(state, s, network);
+            trendoutput::writeGasLineTrendHeader(state, s, network);
+            trendoutput::writeGasLineTrendRows(state, s, network);
             trendoutput::writeProductionCrossSectionTrendHeader(state, s);
             trendoutput::writeProductionCrossSectionTrendRows(state, s);
-            trendoutput::writeServiceCrossSectionTrendHeader(state, s);
-            trendoutput::writeServiceCrossSectionTrendRows(state, s);
+            trendoutput::writeGasLineCrossSectionTrendHeader(state, s);
+            trendoutput::writeGasLineCrossSectionTrendRows(state, s);
         }
         arqRelatorioPerfis.close();
 
