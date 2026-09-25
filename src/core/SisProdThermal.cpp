@@ -411,15 +411,15 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
     const double meanSuperficialGasVelocity = basis.gasSuperficialVelocity;
     const double meanSuperficialLiquidVelocity = basis.liquidSuperficialVelocity;
     double referenceMixtureVelocity = fabs(meanSuperficialGasVelocity) + fabs(meanSuperficialLiquidVelocity);
-    double rp = cell.rpC;
-    double rc = cell.rcC;
-    double liquidDensity = (1. - betmed) * rp + betmed * rc;
+    double producedLiquidDensity = cell.rpC;
+    double completionFluidDensity = cell.rcC;
+    double liquidDensity = (1. - betmed) * producedLiquidDensity + betmed * completionFluidDensity;
     double gasDensity = cell.rgC;
     double liquidSpecificHeat = (1. - betmed) * cell.flui.CalorLiq(cell.presini, cell.temp) + betmed * cell.fluicol.CalorLiq(cell.presini, cell.temp);
     double liquidSpecificHeatConstantVolume = liquidSpecificHeat;
     double gasSpecificHeat = cell.flui.CalorGas(cell.presini, cell.temp);
     double gasSpecificHeatConstantVolume = cell.flui.CalorGasVolMod(cell.presini, cell.temp, cell.rgC);
-    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.presini, cell.temp) - betmed / rc;
+    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.presini, cell.temp) - betmed / completionFluidDensity;
     double gasJouleThomson = cell.flui.JTG(cell.presini, cell.temp, cell.rgC);
     double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(cell.duto.teta);
 
@@ -487,8 +487,8 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
         .gasSuperficialVelocity = meanSuperficialGasVelocity,
         .liquidSuperficialVelocity = meanSuperficialLiquidVelocity,
         .referenceMixtureVelocity = referenceMixtureVelocity,
-        .rp = rp,
-        .rc = rc,
+        .rp = producedLiquidDensity,
+        .rc = completionFluidDensity,
         .liquidDensity = liquidDensity,
         .gasDensity = gasDensity,
         .liquidHeatCapacity = liquidSpecificHeat,
@@ -690,9 +690,9 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
             sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.presini, leftCell.tempini);
             sourceLiquidSpecificHeat = (1. - betM) * leftCell.flui.CalorLiq(leftCell.presini, leftCell.tempini) + betM * leftCell.fluicol.CalorLiq(leftCell.presini, leftCell.tempini);
             sourceSpecificHeatRatio = leftCell.flui.ConstAdG(leftCell.presini, leftCell.tempini);
-            double n = (*cell.acsrL).bvol.npoli;
+            double polytropicExponent = (*cell.acsrL).bvol.npoli;
             double pumpPressureRatio = (cell.pres) / (leftCell.pres);
-            sourceTemperature = leftCell.tempini * pow(pumpPressureRatio, (n - 1) / n);
+            sourceTemperature = leftCell.tempini * pow(pumpPressureRatio, (polytropicExponent - 1) / polytropicExponent);
         } else {
             clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
                                      sourceLiquidSpecificHeat);
@@ -800,9 +800,9 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
             double betM = leftCell.bet;
             sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.pres, leftCell.temp);
             sourceLiquidSpecificHeat = (1. - betM) * leftCell.flui.CalorLiq(leftCell.pres, leftCell.temp) + betM * leftCell.fluicol.CalorLiq(leftCell.pres, leftCell.temp);
-            double n = (*cell.acsrL).bvol.npoli;
+            double polytropicExponent = (*cell.acsrL).bvol.npoli;
             double pumpPressureRatio = (cell.pres) / (leftCell.pres);
-            sourceTemperature = leftCell.temp * pow(pumpPressureRatio, (n - 1) / n);
+            sourceTemperature = leftCell.temp * pow(pumpPressureRatio, (polytropicExponent - 1) / polytropicExponent);
         } else {
             clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
                                      sourceLiquidSpecificHeat);
@@ -977,15 +977,15 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     else {
         meanSuperficialLiquidVelocity = 0.;
     }
-    double rp = cell.flui.MasEspLiq(cell.pres, cell.temp);
-    double rc = cell.fluicol.MasEspFlu(cell.pres, cell.temp);
-    double liquidDensity = (1. - betmed) * rp + betmed * rc;
+    double producedLiquidDensity = cell.flui.MasEspLiq(cell.pres, cell.temp);
+    double completionFluidDensity = cell.fluicol.MasEspFlu(cell.pres, cell.temp);
+    double liquidDensity = (1. - betmed) * producedLiquidDensity + betmed * completionFluidDensity;
     double gasDensity = cell.flui.MasEspGas(cell.pres, cell.temp);
     double liquidSpecificHeat = (1. - betmed) * cell.flui.CalorLiq(cell.pres, cell.temp) + betmed * cell.fluicol.CalorLiq(cell.pres, cell.temp);
     double liquidSpecificHeatConstantVolume = liquidSpecificHeat;
     double gasSpecificHeat = cell.flui.CalorGas(cell.pres, cell.temp);
     double gasSpecificHeatConstantVolume = cell.flui.CalorGasVolMod(cell.pres, cell.temp);
-    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.pres, cell.temp) - betmed / rc;
+    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.pres, cell.temp) - betmed / completionFluidDensity;
     double gasJouleThomson = cell.flui.JTG(cell.pres, cell.temp);
     double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(cell.duto.teta);
 
@@ -1109,7 +1109,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     double interfacialWorkTerm = flowArea * cell.pres * kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
 
 
-    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (rc - rp) * (1 - meanVoidFraction) * cell.pres * kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt)); // / (timeCoefficient / cell.dt);
+    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (completionFluidDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt)); // / (timeCoefficient / cell.dt);
 
     cell.FonteMudaFase /= latentHeatTerm;
 }
@@ -2594,80 +2594,80 @@ void selectAndApplyBufferedOutletFlowRegime(
         cell.fontemassGL <= globals.localtiny * 1e-5 && cell.fontemassGR <= globals.localtiny * 1e-5;
     const bool noLiquidSourceOnEitherFace =
         (cell.fontemassLL + cell.fontemassCL) <= globals.localtiny * 1e-5 && (cell.fontemassLR + cell.fontemassCR) <= globals.localtiny * 1e-5;
-    int bif = 1;
+    int branchFlag = 1;
 
 
     if (leftCell.alfPigD <= globals.localtiny && cell.alfPigE <= globals.localtiny && noGasSourceOnEitherFace) {
-        applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
                            driftVelocity);
     } else if (leftCell.alfPigD >= (1. - globals.localtiny) && cell.alfPigE >= (1. - globals.localtiny) && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
     } else if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
     }
 
     else if (superficialGasVelocity >= 0 && leftCell.alfPigD <= globals.localtiny && (noGasSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.localtiny) && superficialLiquidVelocity < 0 && leftSuperficialLiquidVelocity < 0 && cell.duto.teta > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif, 0);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - 10 * globals.localtiny) && cell.duto.teta < 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif, 1);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 1);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= rightCell.alf && rightSuperficialGasVelocity < 0) {
-            bif = 1;
+            branchFlag = 1;
         }
     } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.localtiny && (noGasSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 1., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialGasVelocity) <= 1e-15 && leftCell.alfPigD > (1. - globals.localtiny) && superficialLiquidVelocity > 0 && rightSuperficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif, 0);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfL >= leftCell.alfL && leftSuperficialGasVelocity > 0) {
-            bif = 1;
+            branchFlag = 1;
         }
     } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
         } else if (fabs(rightSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.fontemassGR >= globals.localtiny * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
+                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
             }
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.localtiny + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.localtiny) || cell.alfPigE <= 0.7))
-            bif = 1;
+            branchFlag = 1;
 
     } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.localtiny && (noLiquidSourceOnEitherFace)) {
-        applyNoSlipClosure(state, cellIndex, 0., bif, distributionCoefficient,
+        applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
                            driftVelocity);
         if (fabs(superficialLiquidVelocity) <= globals.localtiny * 1e-5 && leftCell.alfPigD < globals.localtiny && leftSuperficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
         }
 
         if (fabs(leftSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftCell.alfPigD < globals.localtiny && leftCell.fontemassGR >= globals.localtiny * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif, 0);
+                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
             }
         } else if (cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
-            bif = 1;
+            branchFlag = 1;
         else if (cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
-            bif = 1;
+            branchFlag = 1;
         else {
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
-                bif = 1;
+                branchFlag = 1;
             else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
-                bif = 1;
+                branchFlag = 1;
         }
     }
 
     if (superficialGasVelocity < 0 && cell.alf > globals.localtiny && cell.alf < 1. - globals.localtiny)
-        bif = 1;
+        branchFlag = 1;
 
-    if (bif == 1) {
+    if (branchFlag == 1) {
 
         double c0;
         double ud;
@@ -2699,9 +2699,9 @@ void selectAndApplyBufferedInletFlowRegime(
     const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity, double rightLiquidDensity,
     double gasDensity, double liquidDensity, double flowArea) {
-    int bif = 1;
+    int branchFlag = 1;
     selectAndApplyInletRegime<BufferedInletRegime>(
-        state, cellIndex, bif, distributionCoefficient, driftVelocity,
+        state, cellIndex, branchFlag, distributionCoefficient, driftVelocity,
         superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
         rightGasDensity, rightLiquidDensity, gasDensity, liquidDensity, flowArea);
 }
