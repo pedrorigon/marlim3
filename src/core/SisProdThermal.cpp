@@ -3168,7 +3168,7 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasMassSourceTerm = 0.;
     double liquidMassSourceTerm = 0.;
-    [[maybe_unused]] double fontemassC = 0.;
+    [[maybe_unused]] double completionMassSourceTerm = 0.;
     double sourceTemperature = leftCell.temp;
     double sourceGasSpecificHeat;
     double sourceSpecificHeatRatio = 0.;

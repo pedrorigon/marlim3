@@ -3789,12 +3789,12 @@ void gasLineHydrostatic(const SteadyStateState &state) {
 }
 
 double marchGasSteady(const SteadyStateState &state, double chutemass) {
-    int nvalv = state.input.nvalvgas;
+    int valveCount = state.input.nvalvgas;
     double massGas = 0.;
     double erro = 10.;
     double erro1 = 10.;
     if (chutemass < 0) {
-        for (int j = 0; j < nvalv; j++)
+        for (int j = 0; j < valveCount; j++)
             massGas += state.gasCells[state.gasValveCellIndices[j]].massfonteCH; // caso nÃƒÂ£o se tenha um chute da vazao massica
         // na entrada da linha de injecao, faz-se o somatÃƒÂ³rio dos valores de vazao em cada VGL
     } else
@@ -3845,7 +3845,7 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
         state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
         double massGas2 = massGas; // guarda o valor antigo de injecao de gas
         massGas = 0;
-        for (int j = 0; j < nvalv; j++)
+        for (int j = 0; j < valveCount; j++)
             massGas += state.gasCells[state.gasValveCellIndices[j]].massfonteCH; // atualiza a vazao de injecao a partir
         // das vazoes calculadas nas VGLs
         itera++;
@@ -5746,9 +5746,9 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
     }
     state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
 
-    int nvalv = state.input.nvalvgas;
+    int valveCount = state.input.nvalvgas;
     double mastot = 0.;
-    for (int j = 0; j < nvalv; j++)
+    for (int j = 0; j < valveCount; j++)
         mastot += state.gasCells[state.gasValveCellIndices[j]].massfonteCH;
     return mastot - state.gasCells[0].massfonteCH; // diferenca entre a soma das vazoes nas VGL
     // e a vazao de injecao na linha
@@ -5790,9 +5790,9 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
     }
     state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
 
-    int nvalv = state.input.nvalvgas;
+    int valveCount = state.input.nvalvgas;
     double mastot = 0.;
-    for (int j = 0; j < nvalv; j++)
+    for (int j = 0; j < valveCount; j++)
         mastot += state.gasCells[state.gasValveCellIndices[j]].massfonteCH;
     return mastot - chutemass; // diferenca entre a soma das vazoes nas VGL
     // e a vazao de injecao na linha

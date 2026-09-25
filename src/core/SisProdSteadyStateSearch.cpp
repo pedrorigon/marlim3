@@ -129,10 +129,10 @@ double solveSteadyRoot(const SteadyStateSearchState &state, double lowerBracket,
 }
 
 double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
-    int nvalv = state.march.input.nvalvgas;
+    int valveCount = state.march.input.nvalvgas;
     double pchute;
     int maisprof = 0;
-    for (int i = 1; i < nvalv; i++)
+    for (int i = 1; i < valveCount; i++)
         if (state.march.productionValveCellIndices[i] < state.march.productionValveCellIndices[maisprof])
             maisprof = i;                      // busca a vÃ¡lvula mais profunda
     pchute = state.march.cells[state.march.productionValveCellIndices[maisprof]].pres; // estima uma pressao para a valvula mais profunda da linha,
@@ -212,7 +212,7 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
 }
 
 double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
-    int nvalv = state.march.input.nvalvgas;
+    int valveCount = state.march.input.nvalvgas;
     // dois chutes de pressao a montante do choke de injecao, a convergencia para este caso,
     // choke de injecao e mais dificil, portanto, se testa mais possibiliodades de hutes:
     double pchute = state.march.injectionChoke.presEstag * 0.8; // pressao a montante do choke 20% menor que a pressao a jusante
