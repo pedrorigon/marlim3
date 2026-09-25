@@ -43,8 +43,12 @@ def scope_span(lines: list[str], scope: str) -> tuple[int, int]:
         # this the search happily returns the first CALL of the function and
         # renames inside the caller instead -- silently, because the caller
         # usually has none of the names being renamed.
-        if not re.match(rf"[\w:<>*&]+[\w:<>*&\s]*\b{re.escape(scope)}\s*\(", line) \
-                and not re.match(rf"{re.escape(scope)}\s*\(", line):
+        # An attribute may come first -- `[[nodiscard]] double f(` is still a
+        # definition at column zero, and without this every [[nodiscard]]
+        # function was out of reach.
+        attributes = r"(?:\[\[[^\]]*\]\]\s*)*"
+        if not re.match(rf"{attributes}[\w:<>*&]+[\w:<>*&\s]*\b{re.escape(scope)}\s*\(", line) \
+                and not re.match(rf"{attributes}{re.escape(scope)}\s*\(", line):
             continue
         if re.search(rf"\b{re.escape(scope)}\s*\(", line) and "{" in "".join(
                 lines[start:start + 12]):
