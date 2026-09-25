@@ -160,10 +160,10 @@ run_case "ini/fix-A3-05-else" "DriftFluxClosure.cpp" \
                     state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;" "caught"
 run_case "ini/add-arranjoR" "DriftFluxClosure.cpp" \
     "                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
-                    RegimePair pair;" \
+                    FlowPatternPair pair;" \
     "                    state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
                     state.cells[cellIndex - 1].arranjoR = stratifiedMap.arr;
-                    RegimePair pair;" "caught"
+                    FlowPatternPair pair;" "caught"
 run_case "ini/mapaTD-dispatch" "DriftFluxClosure.cpp" \
     "                stratifiedMap.mapaTD();
                 flowPattern = stratifiedMap.arr;" \

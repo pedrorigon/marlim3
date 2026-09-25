@@ -600,7 +600,7 @@ struct PhaseProperties {
 
 /// The scalars the closure helpers below read, named instead of counted.
 ///
-/// evaluateRegimePair and evaluateDispersedOrAnnular took eleven and twelve
+/// evaluateFlowPatternPair and evaluateDispersedOrAnnular took eleven and twelve
 /// doubles positionally, in the order the correlation signatures use. That order
 /// is a real convention and worth keeping, but eleven adjacent doubles is also
 /// eleven chances to transpose a pair silently -- every one of them is the same
@@ -735,7 +735,7 @@ PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cell
 /// values of one type in a row and no way for anything to notice a swap. Kept
 /// together they are named at every use, and the two helpers now agree on one
 /// shape: one fills it, the other reads it.
-struct RegimePair {
+struct FlowPatternPair {
     double dispersedC0;   ///< c0D
     double dispersedUd;   ///< udD
     double stratifiedC0;  ///< c0E
@@ -795,8 +795,8 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
 /// every variant. They are kept because they are part of the block that was
 /// proven identical, and because deleting them would erase the only evidence
 /// that a weighting was once intended here (A3-06).
-void evaluateRegimePair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
-                        double upstreamLiquidFlowRate, RegimePair &pair) {
+void evaluateFlowPatternPair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
+                        double upstreamLiquidFlowRate, FlowPatternPair &pair) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
                                           state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.dispersedC0, pair.dispersedUd, mix.horizontalCorrection,
                                           state.cells[cellIndex].estabCol, state.selectors.dispersed);
@@ -818,7 +818,7 @@ void evaluateRegimePair(const ClosureState &state, int cellIndex, const MixtureP
 ///
 /// The ramp is written (1. - raz) * c0E + raz * c0D and MUST stay that way: the
 /// algebraically equal c0D + (1. - raz) * (c0E - c0D) rounds differently.
-void blendBySuperficialVelocity(const MixtureProperties &mix, const RegimePair &pair,
+void blendBySuperficialVelocity(const MixtureProperties &mix, const FlowPatternPair &pair,
                                 double &c0, double &ud) {
     double maxSuperficialVelocity = 0.05;
     double minSuperficialVelocity = 0.005;
@@ -1016,8 +1016,8 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                     state.cells[cellIndex - 1].arranjoR = stratifiedMap.arr;
                     state.cells[cellIndex - 1].perdaEstratL = stratifiedMap.fatorperdaLiq;
                     state.cells[cellIndex - 1].perdaEstratG = stratifiedMap.fatorperdaGas;
-                    RegimePair pair;
-                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    FlowPatternPair pair;
+                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.cells[cellIndex - 1].alf;
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
@@ -1201,8 +1201,8 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
                 flowPattern = state.cells[cellIndex].arranjo;
                 if (flowPattern == -1) {
 
-                    RegimePair pair;
-                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    FlowPatternPair pair;
+                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.cells[cellIndex - 1].alf;
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
@@ -1374,8 +1374,8 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                     } else
                         state.cells[cellIndex].transic = 0;
                     state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
-                    RegimePair pair;
-                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    FlowPatternPair pair;
+                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                     double alf0E = state.inletVoidFraction;
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
@@ -1544,8 +1544,8 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
                 flowPattern = state.cells[cellIndex].arranjo;
                 if (flowPattern == -1) {
 
-                    RegimePair pair;
-                    evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    FlowPatternPair pair;
+                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1719,8 +1719,8 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                             state.cells[cellIndex - 1].perdaEstratG = stratifiedMap.fatorperdaGas;
                         }
 
-                        RegimePair pair;
-                        evaluateRegimePair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                        FlowPatternPair pair;
+                        evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
                         double alf0E = state.cells[cellIndex].alf;
                         if (cellIndex > 0)
                             alf0E = state.cells[cellIndex - 1].alf;

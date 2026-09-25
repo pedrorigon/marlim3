@@ -164,7 +164,7 @@ constexpr OptionalColumn<detTRENDG> kGasLineColumns[] = {
 };
 
 /// Written as one group when dadosParafina is set.
-constexpr FixedColumn kParaffinColumns[] = {
+constexpr FixedColumn kWaxColumns[] = {
     {" TIAC (C) C;", " TIAC (C) C;"},
     {" Cp Parafina (J/[kg C]) C;", " Paraffin Cp (J/[kg C]) C;"},
     {" Condutividade Termica Parafina (W / [m K]) C;", " Paraffin thermal conductivity (W / [m K]) C;"},
@@ -446,7 +446,7 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
                                        "# Length from Bottomhole (m) = ");
                 writeOptionalColumns(trendFile, translate, trend, kProductionColumns);
                 if (trend.dadosParafina == 1)
-                    writeFixedColumns(trendFile, translate, kParaffinColumns);
+                    writeFixedColumns(trendFile, translate, kWaxColumns);
                 if (trend.autoVal == 1)
                     writeWaveCelerityColumns(trendFile, translate);
                 if (trend.autoVel == 1)
