@@ -86,15 +86,15 @@ struct SteadyStateSearchState {
 // ----------------------------------------- production pressure-to-pressure --
 
 /// Searches the mass flow that connects two fixed pressures.
-[[nodiscard]] double searchProductionPressureToPressure(const SteadyStateSearchState &state, double massFlowGuess,
+[[nodiscard]] double searchProductionPressureToPressure(const SteadyStateSearchState &state, double massFlowRateGuess,
                                                         double maximumFlowRate = 0., int iterationCount = 0);
 [[nodiscard]] double searchReverseProductionPressureToPressure(const SteadyStateSearchState &state,
-                                                               double massFlowGuess, double maximumFlowRate = 0.,
+                                                               double massFlowRateGuess, double maximumFlowRate = 0.,
                                                                int iterationCount = 0);
 [[nodiscard]] double searchProductionPressureToPressureSecondary(const SteadyStateSearchState &state,
-                                                                 double massFlowGuess, double maximumFlowRate = 0.);
+                                                                 double massFlowRateGuess, double maximumFlowRate = 0.);
 [[nodiscard]] double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &state,
-                                                                double massFlowGuess, double maximumFlowRate = 0.);
+                                                                double massFlowRateGuess, double maximumFlowRate = 0.);
 
 // --------------------------------------------------------- gas-line search --
 

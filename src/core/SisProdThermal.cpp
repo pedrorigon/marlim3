@@ -516,8 +516,8 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     double upstreamMeanLiquidVelocity = 0;
     double meanGasVelocity = 0;
     double meanLiquidVelocity = 0;
-    double initialMeanGasVelocity = 0;
-    double initialMeanLiquidVelocity = 0;
+    double previousMeanGasVelocity = 0;
+    double previousMeanLiquidVelocity = 0;
     if (cellIndex <= state.lastCell - 1 && cell.acsr.tipo == kAccessoryNone && rightCell.acsr.tipo == kAccessoryNone) {
 
         double kineticCellLength = cell.dx;
@@ -530,7 +530,7 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
         double kineticGasDensity = rightCell.rgCi;
 
         double faceVoidFraction;
-        double initialVoidFraction;
+        double previousFaceVoidFraction;
 
         balance.gasSuperficialVelocity = rightCell.QG / balance.flowArea;
         balance.liquidSuperficialVelocity = rightCell.QL / balance.flowArea;
@@ -541,9 +541,9 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
             faceVoidFraction = rightCell.alf;
 
         if (rightCell.QGini > 0)
-            initialVoidFraction = cell.alfini;
+            previousFaceVoidFraction = cell.alfini;
         else
-            initialVoidFraction = rightCell.alfini;
+            previousFaceVoidFraction = rightCell.alfini;
 
         double upstreamFaceVoidFraction;
         if (cell.QG > 0)
@@ -571,20 +571,20 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
             meanLiquidVelocity /= (1. - faceVoidFraction);
         }
 
-        if (initialVoidFraction > 1e-3) {
+        if (previousFaceVoidFraction > 1e-3) {
 
-            initialMeanGasVelocity = rightCell.QGini / (upstreamFlowArea);
-            initialMeanGasVelocity /= initialVoidFraction;
+            previousMeanGasVelocity = rightCell.QGini / (upstreamFlowArea);
+            previousMeanGasVelocity /= previousFaceVoidFraction;
         }
 
-        if (initialVoidFraction < 1. - 1e-3) {
+        if (previousFaceVoidFraction < 1. - 1e-3) {
 
-            initialMeanLiquidVelocity = rightCell.QLini / (upstreamFlowArea);
-            initialMeanLiquidVelocity /= (1. - initialVoidFraction);
+            previousMeanLiquidVelocity = rightCell.QLini / (upstreamFlowArea);
+            previousMeanLiquidVelocity /= (1. - previousFaceVoidFraction);
         }
 
-        kineticTerm = kineticLiquidDensity * (1 - faceVoidFraction) * upstreamFlowArea * (0.5 * (meanLiquidVelocity * meanLiquidVelocity - initialMeanLiquidVelocity * initialMeanLiquidVelocity)) / cell.dt +
-                   kineticGasDensity * faceVoidFraction * upstreamFlowArea * (0.5 * (meanGasVelocity * meanGasVelocity - initialMeanGasVelocity * initialMeanGasVelocity)) / cell.dt +
+        kineticTerm = kineticLiquidDensity * (1 - faceVoidFraction) * upstreamFlowArea * (0.5 * (meanLiquidVelocity * meanLiquidVelocity - previousMeanLiquidVelocity * previousMeanLiquidVelocity)) / cell.dt +
+                   kineticGasDensity * faceVoidFraction * upstreamFlowArea * (0.5 * (meanGasVelocity * meanGasVelocity - previousMeanGasVelocity * previousMeanGasVelocity)) / cell.dt +
                    ((rightCell.MC - rightCell.Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength +
                     rightCell.Mliqini * meanLiquidVelocity * (meanLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength);
     }
@@ -4172,11 +4172,11 @@ void updateProductionTemperaturePeriphery(const ThermalState &state, int cellInd
 void computeOutletTemperature(const ThermalState &state) {
 
     if (state.input.chokep.abertura[0] <= 0.6 && state.input.chokep.abertura[0] > (*state.globals).localtiny && state.outletPressure < state.gasSurfacePressure) {
-        double inletMassFlow = state.cells[state.lastCell - 1].MR;
-        double gasMassFlow = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
+        double inletMassFlowRate = state.cells[state.lastCell - 1].MR;
+        double gasMassFlowRate = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
         double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double betEF = state.cells[state.lastCell].bet;
-        double quality = fabs(gasMassFlow / inletMassFlow);
+        double quality = fabs(gasMassFlowRate / inletMassFlowRate);
 
         double liquidJouleThomson = (1. - betEF) * state.cells[state.lastCell].flui.JTL(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) - betEF / rholc; // alteraacao2
         double gasJouleThomson = state.cells[state.lastCell].flui.JTG(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);

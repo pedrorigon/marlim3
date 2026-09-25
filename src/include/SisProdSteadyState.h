@@ -210,10 +210,10 @@ void correctGasSpecificGravity(const SteadyStateState &state, int cellIndex);
 [[nodiscard]] double marchProductionSteadySecondary(const SteadyStateState &state, double pressureGuess);
 
 /// Same column, driven from a mass-flow guess between two fixed pressures.
-[[nodiscard]] double marchProductionPressureToPressure(const SteadyStateState &state, double massFlowGuess);
-[[nodiscard]] double marchReverseProductionPressureToPressure(const SteadyStateState &state, double massFlowGuess);
-[[nodiscard]] double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double massFlowGuess);
-[[nodiscard]] double marchProductionPressureToPressureTertiary(const SteadyStateState &state, double massFlowGuess);
+[[nodiscard]] double marchProductionPressureToPressure(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchReverseProductionPressureToPressure(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchProductionPressureToPressureTertiary(const SteadyStateState &state, double massFlowRateGuess);
 
 // -------------------------------------------------------------- gas march ----
 
@@ -234,10 +234,10 @@ double marchGasSteady(const SteadyStateState &state, double massGuess = -1);
 
 /// Hydrostatic head walked back up a column, for production, for injection,
 /// for a secondary branch and for the service line.
-[[nodiscard]] double reverseHydrostatic(const SteadyStateState &state, double holdup,
-                                        double liquidFlow = 0, double gasFlow = 0);
-[[nodiscard]] double reverseInjectionHydrostatic(const SteadyStateState &state, double holdup,
-                                                 double liquidFlow = 0);
+[[nodiscard]] double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup,
+                                        double liquidFlowRate = 0, double gasFlowRate = 0);
+[[nodiscard]] double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidHoldup,
+                                                 double liquidFlowRate = 0);
 [[nodiscard]] double secondaryBranchHydrostatic(const SteadyStateState &state, double quality);
 void gasLineHydrostatic(const SteadyStateState &state);
 

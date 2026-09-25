@@ -223,7 +223,7 @@ run_case "helper/blend-reassociate" "DriftFluxClosure.cpp" \
     "        c0 = (pair.dispersedC0 + (1. - blendRatio) * (pair.stratifiedC0 - pair.dispersedC0));" "caught"
 run_case "helper/diameter-unconditional" "DriftFluxClosure.cpp" \
     "    double diameter = state.cells[cellIndex].duto.a;
-    if (cellIndex > 0 && gasRate >= 0)
+    if (cellIndex > 0 && gasVolumetricFlowRate >= 0)
         diameter = state.cells[cellIndex - 1].duto.a;" \
     "    double diameter = state.cells[cellIndex].duto.a;
     if (cellIndex > 0)

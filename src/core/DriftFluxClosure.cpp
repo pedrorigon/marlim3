@@ -750,8 +750,8 @@ struct RegimePair {
 /// which had the same hazard five times over and no reason for anyone to check
 /// it -- `const double diameter = scales.area;` would have compiled.
 struct FlowScales {
-    double gasRate;      ///< ug1
-    double liquidRate;   ///< ul1
+    double gasVolumetricFlowRate;      ///< ug1
+    double liquidVolumetricFlowRate;   ///< ul1
     double diameter;     ///< dia1
     double area;         ///< A1
     double mixture;      ///< nrey
@@ -774,18 +774,18 @@ struct FlowScales {
 /// Nothing here can catch that; only the order being unsurprising can.
 template <typename Source>
 FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhaseProperties &phases) {
-    double gasRate = Source::gasFlowRate(state.cells, cellIndex) / phases.gasDensity;
-    double liquidRate = Source::liquidFlowRate(state.cells, cellIndex) / phases.liquidDensity;
+    double gasVolumetricFlowRate = Source::gasFlowRate(state.cells, cellIndex) / phases.gasDensity;
+    double liquidVolumetricFlowRate = Source::liquidFlowRate(state.cells, cellIndex) / phases.liquidDensity;
     double diameter = state.cells[cellIndex].duto.a;
-    if (cellIndex > 0 && gasRate >= 0)
+    if (cellIndex > 0 && gasVolumetricFlowRate >= 0)
         diameter = state.cells[cellIndex - 1].duto.a;
     double flowArea = M_PI * diameter * diameter / 4.;
 
     double mixtureDensity = phases.noSlipLiquidHoldup * phases.liquidDensity + (1 - phases.noSlipLiquidHoldup) * phases.gasDensity;
     double mixtureViscosity = (phases.noSlipLiquidHoldup * phases.liquidViscosity + (1 - phases.noSlipLiquidHoldup) * phases.gasViscosity) / pow(10., 3.);
-    double mixtureReynolds = diameter * mixtureDensity * (fabs(gasRate) / flowArea + fabs(liquidRate) / flowArea) / mixtureViscosity;
-    double liquidReynolds = diameter * phases.liquidDensity * (fabs(gasRate) / flowArea + fabs(liquidRate) / flowArea) / (phases.liquidViscosity / 1000.);
-    return FlowScales{gasRate, liquidRate, diameter, flowArea, mixtureReynolds, liquidReynolds};
+    double mixtureReynolds = diameter * mixtureDensity * (fabs(gasVolumetricFlowRate) / flowArea + fabs(liquidVolumetricFlowRate) / flowArea) / mixtureViscosity;
+    double liquidReynolds = diameter * phases.liquidDensity * (fabs(gasVolumetricFlowRate) / flowArea + fabs(liquidVolumetricFlowRate) / flowArea) / (phases.liquidViscosity / 1000.);
+    return FlowScales{gasVolumetricFlowRate, liquidVolumetricFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds};
 }
 
 /// Dispersed and stratified closure, evaluated as a pair. 167 tokens, identical

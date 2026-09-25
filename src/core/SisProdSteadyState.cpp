@@ -4472,7 +4472,7 @@ bool advanceProductionColumnSecondary(const SteadyStateState &state, double pchu
     return false;
 }
 
-double surfaceChokeMassFlow(const SteadyStateState &state) {
+double surfaceChokeMassFlowRate(const SteadyStateState &state) {
     double maxSup = 0.;
     if (state.annulusDrift != 0 && state.cells[state.lastCell].pres > state.gasSurfacePressure) { // se for o anel de GL, a vazao no final deve ser zero
         double tESup = state.cells[state.lastCell].temp;
@@ -5017,7 +5017,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // na ultima celula e a pressao a jusante do choke. Primeiro, portanto, deve-se
     // calcular a vazao que passa pelo choke e compara-la com a vazao massica total
     // na ultima celula
-    double maxSup = surfaceChokeMassFlow(state);
+    double maxSup = surfaceChokeMassFlowRate(state);
     if (fabs(masfim) > 1e-15)
         state.baseConvergenceMonitor = fabs(masfim);
     else if (fabs(maxSup) > 1e-15)
@@ -5977,7 +5977,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
         return state.input.condpocinj.presfundo - state.cells[state.lastCell].pres;
 }
 
-double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, double liquidFlow, double vazG) {
+double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, double liquidFlowRate, double vazG) {
     double pchute = state.gasSurfacePressure;
     double taux;
     state.cells[state.lastCell].pres = pchute;
@@ -5985,7 +5985,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
     double rmis = 0.;
     double frictionFactor = 0.;
     for (int i = state.lastCell; i > 0; i--) {
-        if (liquidFlow > 0. || vazG > 0.) {
+        if (liquidFlowRate > 0. || vazG > 0.) {
             taux = state.input.celp[0].textern;
             double completionFraction = 0.;
             double visC = state.cells[i].fluicol.VisFlu(pchute, taux);
@@ -5998,12 +5998,12 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
             double rlpA = state.cells[i].flui.MasEspLiq(1., 15.);
             double rlcA = state.cells[i].fluicol.MasEspFlu(1.001, 15.);
-            double massicC = rlcA * liquidFlow * completionFraction;
-            double massic = rlpA * liquidFlow * (1. - completionFraction);
+            double massicC = rlcA * liquidFlowRate * completionFraction;
+            double massic = rlpA * liquidFlowRate * (1. - completionFraction);
             double Rhogs = state.cells[i].flui.Deng * 1.225;
             double Rhols = (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) * (1 - state.cells[i].flui.BSW) + 1000. * state.cells[i].flui.Denag * state.cells[i].flui.BSW;
             double multiplicador = (Rhols + state.cells[i].flui.RGO * Rhogs * (1 - state.cells[i].flui.BSW));
-            massic = 1 * liquidFlow * (1. - completionFraction) * multiplicador;
+            massic = 1 * liquidFlowRate * (1. - completionFraction) * multiplicador;
             double fracmasshidra = state.cells[i].flui.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic;
             double massicG = fracmasshidra * massic + vazG * Rhogs;
@@ -6042,7 +6042,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             pchute = 0.99 * state.cells[i - 1].acsr.poroso2D.dados.pRes;
 
         state.cells[i - 1].dpB = 0.;
-        if (state.cells[i - 1].acsr.tipo == 4 && state.cells[i - 1].acsr.bcs.freqnova > 1. && liquidFlow >= 0.) {
+        if (state.cells[i - 1].acsr.tipo == 4 && state.cells[i - 1].acsr.bcs.freqnova > 1. && liquidFlowRate >= 0.) {
             double vazmix = j * state.cells[i - 1].dutoL.area;
             double rhomis = state.cells[i - 1].flui.MasEspLiq(pchute, taux);
             double vismis = state.cells[i - 1].flui.ViscOleo(pchute, taux);
@@ -6050,7 +6050,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
             state.cells[i - 1].dpB = 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
         }
-        if (state.cells[i - 1].acsr.tipo == 17 && state.cells[i - 1].acsr.multibcs.freqnova > 1. && liquidFlow >= 0.) {
+        if (state.cells[i - 1].acsr.tipo == 17 && state.cells[i - 1].acsr.multibcs.freqnova > 1. && liquidFlowRate >= 0.) {
             double alf0 = state.cells[i - 1].alf;
             double bet0 = state.cells[i - 1].bet;
             state.cells[i - 1].acsr.multibcs.flui = state.cells[i - 1].flui;
@@ -6065,7 +6065,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
     return pchute;
 }
 
-double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidHoldup, double liquidFlow) {
+double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidHoldup, double liquidFlowRate) {
     double pchute = 0.;
     if (state.input.condpocinj.presfundo > 1e-5)
         pchute = state.input.condpocinj.presfundo;
@@ -6078,7 +6078,7 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
     double j = 0.;
     double frictionFactor = 0.;
 
-    if (liquidFlow > 0.) {
+    if (liquidFlowRate > 0.) {
         taux = state.input.celp[0].textern;
         state.cells[state.lastCell].pres = pchute;
         double visC = state.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
@@ -6086,7 +6086,7 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
         double completionDensityAtGuess = state.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
         rmis = completionDensityAtGuess;
         double rlcA = state.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-        double massicC = rlcA * liquidFlow;
+        double massicC = rlcA * liquidFlowRate;
         j = (massicC / completionDensityAtGuess) / state.cells[0].duto.area;
         double reynoldsAtFace;
         if (state.cells[0].duto.revest == 0)

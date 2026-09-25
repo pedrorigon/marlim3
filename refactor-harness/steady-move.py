@@ -84,7 +84,7 @@ FUNCTIONS = {
     "advanceProductionColumn": {"new_name": "advanceProductionColumn", "arguments": "pchute, i, abortValue"},
     "advanceReverseProductionColumn": {"new_name": "advanceReverseProductionColumn", "arguments": "pchute, i, abortValue"},
     "advanceProductionColumnSecondary": {"new_name": "advanceProductionColumnSecondary", "arguments": "pchute, i, abortValue"},
-    "surfaceChokeMassFlow": {"new_name": "surfaceChokeMassFlow", "arguments": ""},
+    "surfaceChokeMassFlow": {"new_name": "surfaceChokeMassFlowRate", "arguments": ""},
     "marchaProdPerm1": {"new_name": "marchProductionSteady", "arguments": "pchute"},
     "marchaProdPerm1Rev": {"new_name": "marchReverseProductionSteady", "arguments": "pchute"},
     "marchaProdPerm2": {"new_name": "marchProductionSteadySecondary", "arguments": "pchute"},
@@ -163,7 +163,7 @@ CALLS = {
     "advanceProductionColumn": ("advanceProductionColumn", True),
     "advanceReverseProductionColumn": ("advanceReverseProductionColumn", True),
     "advanceProductionColumnSecondary": ("advanceProductionColumnSecondary", True),
-    "surfaceChokeMassFlow": ("surfaceChokeMassFlow", True),
+    "surfaceChokeMassFlow": ("surfaceChokeMassFlowRate", True),
 
     "marchaProdPresPres1": ("marchProductionPressureToPressure", True),
     "marchaProdPresPres1Rev": ("marchReverseProductionPressureToPressure", True),
