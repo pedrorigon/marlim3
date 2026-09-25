@@ -28,12 +28,18 @@ struct CompositionUpdaters {
 
 /// What the composition transport reads and writes.
 ///
-/// Eighteen fields, derived from measure-members.py over the six routines this
+/// Seventeen fields, derived from measure-members.py over the six routines this
 /// module takes: renovaRGOdgYco2, renovaFracMol, renovaFracMol2, renovaalbetini,
 /// renovaMasEsp and avaliaParafina. Against 72 for TransientStepState and 28
 /// for SteadyStateState, this is the narrowest state any stage has needed --
 /// composition transport is a separable domain that happened to live in the
 /// class, as the thermal and gas-lift ones were.
+///
+/// There is no time step here although the three transports use one: each
+/// declares `double dt = celula[1].dt;` at its outermost level, which hides
+/// SProd::dt for the whole body. The first measurement counted those as uses of
+/// the member and put a timeStep field in; the compiler's -Wshadow and the
+/// corrected measurement agree it was never read.
 ///
 /// Scalars are held BY REFERENCE, not by value, for the reason every state in
 /// this refactoring records: copying them in would read each one at
@@ -52,7 +58,6 @@ struct CompositionState {
     int &lastCell;                        // ncel
     Ler &input;                           // arq
     varGlob1D *&globals;                  // vg1dSP
-    double &timeStep;                     // dt
     int &endNode;                         // noextremo
     double &inletPressure;                // presE
     double &inletTemperature;             // tempE

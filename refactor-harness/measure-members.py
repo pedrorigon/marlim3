@@ -16,9 +16,16 @@ their type (`double *`, `int [10]`, `vector<int>`).
 
 In each function body, an identifier counts as a member use when it names a
 member and is not reached through `.`, `->` or `::` -- `celula[i].pres` uses
-`celula`, `arq.ncelp` uses `arq`, `(*vg1dSP).x` uses `vg1dSP`. A name the body
-declares itself shadows the member and does not count; run -Wshadow on the
-host first, because this tool trusts that there is no such shadow and says so.
+`celula`, `arq.ncelp` uses `arq`, `(*vg1dSP).x` uses `vg1dSP`.
+
+A local with a member's name hides the member. The first version of this tool
+trusted there was none, on the word of a -Wshadow filter that was itself
+broken, and counted the three composition transports' `double dt =
+celula[1].dt;` as uses of SProd::dt -- a field the state did not need (T102).
+Now each such local is reported. Declared at the function's outermost level,
+it hides the member from there on, so only uses BEFORE it count; declared in a
+nested block, the tool cannot tell which uses it covers and counts the member
+as used, the conservative answer, flagged for a look.
 
 Usage:
     measure-members.py <function> [<function> ...]
@@ -118,7 +125,31 @@ def function_body(src, name):
     return strip_comments(src[m.start():braces.match(src, o) + 1])
 
 
-def uses(body, data, methods):
+# A declaration starts a statement -- after `;`, `{`, `}` -- or a for-init.
+# Letting `(` start one read `(razdgdF * celula[i]...` as a pointer declaration
+# of celula, and a keyword in the type slot read `else celula[i]...` as one:
+# the same two traps transient-move.py records.
+LOCAL = re.compile(r'(?:[;{}]|\bfor\s*\()\s*(?:const\s+)?([A-Za-z_][\w:]*)(?:<[^<>;]*>)?\s*[*&]?\s*'
+                   r'([A-Za-z_]\w*)\s*(?:=[^=]|;|,|\[)')
+NOT_A_TYPE = {"return", "else", "do", "case", "break", "continue", "goto", "new",
+              "delete", "throw", "sizeof", "static", "typedef", "if", "while"}
+
+
+def local_shadows(body, data):
+    """Member names the body declares as locals: {name: (position, depth)}."""
+    found = {}
+    for m in LOCAL.finditer(body):
+        if m.group(1) in NOT_A_TYPE:
+            continue
+        name = m.group(2)
+        if name in data and name not in found:
+            depth = body[:m.start(2)].count("{") - body[:m.start(2)].count("}")
+            found[name] = (m.start(2), depth)
+    return found
+
+
+def uses(body, data, methods, shadows=None):
+    shadows = shadows or {}
     used_data, used_methods = set(), set()
     for m in re.finditer(r'[A-Za-z_]\w*', body):
         name = m.group(0)
@@ -129,6 +160,12 @@ def uses(body, data, methods):
         if name in methods and after.startswith("("):
             used_methods.add(name)
         elif name in data:
+            if name in shadows:
+                at, depth = shadows[name]
+                # Outermost-level local (depth 1 inside the body's own brace):
+                # it hides the member from its declaration on.
+                if depth <= 1 and m.start() >= at:
+                    continue
             used_data.add(name)
     return used_data, used_methods
 
@@ -143,7 +180,13 @@ def main():
     data, methods = members_and_methods(hdr)
     by_member, by_method = {}, {}
     for n in names:
-        d, meth = uses(function_body(src, n), data, methods)
+        body = function_body(src, n)
+        body = body[body.index("{"):]           # the signature's parameters are not locals
+        shadows = local_shadows(body, data)
+        for x, (at, depth) in sorted(shadows.items()):
+            print("# %s: local `%s` hides the member%s" % (
+                n, x, "" if depth <= 1 else " -- NESTED, counted as used; check by hand"))
+        d, meth = uses(body, data, methods, shadows)
         for x in d:
             by_member.setdefault(x, []).append(n)
         for x in meth:
