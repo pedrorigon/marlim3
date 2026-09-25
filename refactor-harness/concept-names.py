@@ -87,6 +87,28 @@ CONCEPTS = [
     ("unloading",        ["unloading", "discharge", "descarga"]),
     ("branch",           ["branch", "tramo"]),
     ("count",            ["count", "number", "num", "n"]),
+    ("flowPattern",      ["flowpattern", "pattern", "regime", "arranjo"]),
+    ("patternTransition", ["transition", "transic"]),
+    ("transient",        ["transient", "trans"]),
+    ("reverse",          ["reverse", "rev", "reversed", "backward"]),
+    ("compositional",    ["compositional", "comp"]),
+    ("buffered",         ["buffered", "buffer", "buf"]),
+    ("crossSection",     ["crosssection", "transversal"]),
+    ("pressureDrop",     ["pressuredrop", "drop", "loss", "delp"]),
+    ("drift",            ["drift", "deriva"]),
+    ("slip",             ["slip", "slippage", "escorregamento"]),
+    ("latentHeat",       ["latentheat", "latent"]),
+    ("wettedPerimeter",  ["perimeter", "peri"]),
+    ("horizontalCorrection", ["horizontal", "correction", "correc"]),
+    ("mesh",             ["mesh", "grid", "malha"]),
+    ("well",             ["well", "poco"]),
+    ("pump",             ["pump", "bomb", "esp", "bcs"]),
+    ("choke",            ["choke", "chk", "orifice"]),
+    ("trend",            ["trend", "tendencia"]),
+    ("wax",              ["wax", "paraffin", "parafina"]),
+    ("hydrate",          ["hydrate", "hidrato"]),
+    ("production",       ["production", "producer", "prod"]),
+    ("liquidHoldup",     ["holdup", "hol"]),
 ]
 
 DECL_TYPES = (r'(?:const\s+)?(?:unsigned\s+|long\s+|short\s+)*'
@@ -102,9 +124,26 @@ def strip(text):
     return re.sub(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])\'', ' ', text, flags=re.S)
 
 
+# Two-word glossary terms are one unit: without this, every ...FlowRate name
+# counts as both a "flow" and a "rate" spelling, and the flow-rate row can never
+# tell gasFlowRate from gasFlow -- the one distinction it exists to make.
+COMPOUNDS = {"flowrate", "flowarea", "flowpattern", "timestep", "gasline", "crosssection",
+             "steadystate", "voidfraction", "surfacetension", "pressuredrop", "latentheat",
+             "driftflux", "massflux", "heatflux"}
+
+
 def words(name):
-    parts = re.findall(r'[A-Z]+(?=[A-Z][a-z]|\d|\b)|[A-Z]?[a-z]+|[A-Z]+|\d+', name)
-    return [p.lower() for p in parts if not p.isdigit()]
+    parts = [p.lower() for p in re.findall(r'[A-Z]+(?=[A-Z][a-z]|\d|\b)|[A-Z]?[a-z]+|[A-Z]+|\d+', name)
+             if not p.isdigit()]
+    units, i = [], 0
+    while i < len(parts):
+        if i + 1 < len(parts) and parts[i] + parts[i + 1] in COMPOUNDS:
+            units.append(parts[i] + parts[i + 1])
+            i += 2
+        else:
+            units.append(parts[i])
+            i += 1
+    return units
 
 
 def declared():
