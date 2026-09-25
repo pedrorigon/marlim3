@@ -28,7 +28,7 @@ struct GasLiftTemperatureUpdater {
     void dischargeTemperature(int cellIndex) const;
     /// steadyMode defaults to 0, matching SProd::calctempGas: callers in the
     /// moved bodies omit it.
-    void gasTemperature(int cellIndex, double previousTemperature,
+    void computeGasTemperature(int cellIndex, double previousTemperature,
                         int steadyMode = 0) const;
     double gasLiftDischargeTemperature(int valveIndex) const;
 };

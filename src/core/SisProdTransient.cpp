@@ -524,7 +524,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
         quality = fabs(massgas / masentrada);
     if (quality > 1)
         quality = 1;
-    if (state.finalPressure < state.gasSurfacePressure) {
+    if (state.outletPressure < state.gasSurfacePressure) {
         quality = 1.;
     }
 
@@ -537,16 +537,16 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     double masChk;
 
     double sinal = 1.;
-    double pmon = state.finalPressure;
+    double pmon = state.outletPressure;
 
-    double ypres = state.gasSurfacePressure / state.finalPressure;
+    double ypres = state.gasSurfacePressure / state.outletPressure;
     if (surfaceChokeIsOpen(state) && ypres < 1.) {
-        double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.finalPressure, tESup) -
-                      betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.finalPressure, tESup);
-        double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.finalPressure, tESup) - betSup / rholc;
-        double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.finalPressure, tESup);
-        double jtgM = state.cells[state.lastCell].flui.JTG(state.finalPressure, tESup);
-        state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.finalPressure) * 98066.52;
+        double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) -
+                      betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
+        double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
+        double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
+        double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
+        state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * 98066.52;
     }
     if (ypres > 1.) {
         if (state.input.chkv == 0)
@@ -571,7 +571,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
         maxSup = 0.;
 
     double sinal2 = 1.;
-    pmon = state.finalPressure * 1.0001;
+    pmon = state.outletPressure * 1.0001;
     ypres = state.gasSurfacePressure / pmon;
     if (ypres > 1.) {
         sinal2 = -1.;
@@ -596,11 +596,11 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     }
     if (surfaceChokeIsShut(state))
         maxSup2 = 0.;
-    double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (state.finalPressure * 0.0001);
+    double dmaxsup = (sinal2 * maxSup2 - sinal * maxSup) / (state.outletPressure * 0.0001);
 
     double masliq;
     double masgas;
-    int abertoini = state.open;
+    int abertoini = state.surfaceChokeOpen;
     double delp;
     if (surfaceChokeIsOpen(state))
         delp = (0.5 / 98066.5) * (1 / romix) * (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
@@ -610,17 +610,17 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     int masChkSup0 = state.surfaceChokeMassFlag;
     state.chokeModeChanged = 0;
 
-    double difdelp = state.finalPressure - state.gasSurfacePressure;
+    double difdelp = state.outletPressure - state.gasSurfacePressure;
     if (((quality < 1e-7 && surfaceChokeIsOpen(state)) ||
          (quality < 0.01 && surfaceChokeIsOpen(state) &&
           fabs(difdelp) / delp < 1.2 && fabs(difdelp) / delp > 0.8 &&
           ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
            (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
-        state.open = 1;
+        state.surfaceChokeOpen = 1;
         double sens = 1.;
         if (masentrada < 0. && state.cells[state.lastCell - 1].MliqiniR <= 0)
             sens = 0.;
-        state.finalPressure = state.gasSurfacePressure + sens * delp;
+        state.outletPressure = state.gasSurfacePressure + sens * delp;
         state.surfaceChokeMassFlag = 0;
         if (state.surfaceChokeMassFlag != masChkSup0)
             state.chokeModeChanged = 1;
@@ -631,18 +631,18 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
               fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) ||
              (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) &&
               fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) ||
-             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.finalPressure - state.gasSurfacePressure) / state.finalPressure < 0.05 && state.input.chkv == 0))) {
-            state.open = 1;
-            if (abertoini != state.open)
+             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.input.chkv == 0))) {
+            state.surfaceChokeOpen = 1;
+            if (abertoini != state.surfaceChokeOpen)
                 state.openTime = 1;
         } else {
-            state.open = 0;
+            state.surfaceChokeOpen = 0;
             if (state.openTime > 60)
                 state.openTime = 0;
         }
-        if ((((quality > -0.01 && state.cells[state.lastCell].alf > -0.01) || surfaceChokeIsShut(state)) && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.open == 0 && (state.openTime == 0 || state.openTime > 60)))) {
+        if ((((quality > -0.01 && state.cells[state.lastCell].alf > -0.01) || surfaceChokeIsShut(state)) && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.surfaceChokeOpen == 0 && (state.openTime == 0 || state.openTime > 60)))) {
 
-            state.open = 0;
+            state.surfaceChokeOpen = 0;
             state.openTime = 0;
             masliq = sinal * maxSup * (1. - quality);
             masgas = sinal * maxSup * quality;
@@ -662,16 +662,16 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
             if (state.openTime != 0)
                 state.openTime++;
             if (state.surfaceChoke.AreaGarg >= 0.601 * state.cells[state.lastCell - 1].duto.area)
-                state.finalPressure = state.gasSurfacePressure;
+                state.outletPressure = state.gasSurfacePressure;
             else {
 
-                state.open = 1;
+                state.surfaceChokeOpen = 1;
                 state.surfaceChokeMassFlag = 0;
                 if (state.surfaceChokeMassFlag != masChkSup0)
                     state.chokeModeChanged = 1;
-                state.finalPressure = state.gasSurfacePressure;
+                state.outletPressure = state.gasSurfacePressure;
             }
-            state.open = 1;
+            state.surfaceChokeOpen = 1;
             state.surfaceChokeMassFlag = 0;
             if (state.surfaceChokeMassFlag != masChkSup0)
                 state.chokeModeChanged = 1;
@@ -783,7 +783,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
 
     double masliq;
     double masgas;
-    int abertoini = state.open;
+    int abertoini = state.surfaceChokeOpen;
 
     double delp;
     if (surfaceChokeIsOpen(state))
@@ -798,7 +798,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
           difdelp / delp < 0.2 &&
           ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
            (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
-        state.open = 1;
+        state.surfaceChokeOpen = 1;
         if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MRBuf > 0.)
             sinal = 1.;
         else
@@ -820,10 +820,10 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
         if (surfaceChokeIsOpen(state) &&
             ((((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) || (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) || (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanTemperature || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) > 0.01 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.cells[state.lastCell].presBuf - state.gasSurfacePressure) / state.cells[state.lastCell].presBuf < 0.05 && state.input.chkv == 0))) {
         } else {
-            abertoini = state.open;
+            abertoini = state.surfaceChokeOpen;
         }
         if (((quality > -0.01 && state.cells[state.lastCell].alf > -0.01) || surfaceChokeIsShut(state)) &&
-            state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.open == 0 && (state.openTime == 0 || state.openTime > 60))) {
+            state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.surfaceChokeOpen == 0 && (state.openTime == 0 || state.openTime > 60))) {
 
             masliq = sinal * maxSup * (1. - quality);
             masgas = sinal * maxSup * quality;
@@ -888,8 +888,8 @@ void computeImplicitTimeStep(const TransientStepState &state) {
         state.slugCount++;
     }
     if (state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area)
-        state.open = 1;
-    if (fabs(state.finalPressure - state.gasSurfacePressure) / state.finalPressure < 0.05 && state.open == 0 && state.timeStep > 1. && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
+        state.surfaceChokeOpen = 1;
+    if (fabs(state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.surfaceChokeOpen == 0 && state.timeStep > 1. && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
         state.surfaceChoke.AreaGarg > 1e-15 * state.cells[state.lastCell - 1].duto.area)
         state.timeStep =
             1.;
@@ -901,20 +901,20 @@ void computeImplicitTimeStep(const TransientStepState &state) {
         }
     }
     state.multiplier = 0.8;
-    if ((((*state.globals).lixo5 - 2 * state.input.dtmax) > state.movingMeanTemperature && (fabs(state.movingMeanPressure - state.finalPressure) / state.finalPressure > 0.4)) || (state.finalPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.open == 0)) {
+    if ((((*state.globals).lixo5 - 2 * state.input.dtmax) > state.movingMeanTemperature && (fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure > 0.4)) || (state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.surfaceChokeOpen == 0)) {
         double denominador = 10.;
         double progres = 0.95;
 
-        if ((state.finalPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1)) {
+        if ((state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1)) {
             denominador = 100.;
             progres = 0.5;
-            state.multiplier = pow(progres, 10. * fabs(state.gasSurfacePressure - state.finalPressure) / state.finalPressure) * state.multiplier;
+            state.multiplier = pow(progres, 10. * fabs(state.gasSurfacePressure - state.outletPressure) / state.outletPressure) * state.multiplier;
         } else if ((state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area)) {
             denominador = 1000.;
             progres = 0.5;
             state.multiplier = (state.cells[state.lastCell].alf + 1e-5) * state.multiplier;
         } else {
-            state.multiplier = pow(progres, 10 * fabs(state.movingMeanPressure - state.finalPressure) / state.finalPressure) * state.multiplier;
+            state.multiplier = pow(progres, 10 * fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure) * state.multiplier;
         }
         if (state.input.dtmax * state.multiplier < state.smallestCellLength / denominador)
             state.multiplier = (state.smallestCellLength / denominador) / state.input.dtmax;
@@ -922,7 +922,7 @@ void computeImplicitTimeStep(const TransientStepState &state) {
             state.multiplier = 0.8;
     } else {
         if (state.cells[state.lastCell].alf >= 0.11 || state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area ||
-            state.surfaceChoke.AreaGarg <= 1e-3 * state.cells[state.lastCell - 1].duto.area || state.open == 1) {
+            state.surfaceChoke.AreaGarg <= 1e-3 * state.cells[state.lastCell - 1].duto.area || state.surfaceChokeOpen == 1) {
             state.multiplier = state.multiplier / 0.95;
             if (state.multiplier > 0.8)
                 state.multiplier = 0.8;
@@ -1454,7 +1454,7 @@ void updatePig(const TransientStepState &state) {
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo) {
 #pragma omp parallel for num_threads((*state.globals).ntrd)
     for (int i = 0; i <= state.lastCell; i++) {
-        state.cells[i].GeraLocal(state.finalPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletCompletionFraction, ciclo,
+        state.cells[i].GeraLocal(state.outletPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletCompletionFraction, ciclo,
                             state.fullModel, state.endNode, state.input.corrigeContSep, state.surfaceChoke.AreaGarg, vexpli);
         for (int j = 0; j < 6; j++) {
             state.productionMatrix[2 * i][j - 3] = state.cells[i].local[0][j];
@@ -1695,7 +1695,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
         state.step.cells[state.step.lastCell].fontemassLR = liquidMassSource;
         state.step.cells[state.step.lastCell].fontemassGR = gasMassSource;
 
-        state.step.open = state.step.initiallyOpen;
+        state.step.surfaceChokeOpen = state.step.initiallyOpen;
         state.step.openTime = state.initialOpenTime;
     }
 }
@@ -2071,7 +2071,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         state.updaters.solveGasLine();
         state.initialGasSurfacePressure = state.step.gasSurfacePressure;
         state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
-                     state.ambientTemperature, state.initialGasPressure, state.initialGasTemperature,
+                     state.defaultInletTemperature, state.initialGasPressure, state.initialGasTemperature,
                      state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletCompletionFraction, (*state.step.globals).lixo5, state.step.timeStep);
         refreshInletCondition(state.step);
 
@@ -2090,7 +2090,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
             state.step.input.cicloAcopTerm = 1;
         ciclomax = state.step.input.cicloAcopTerm;
 
-        state.step.initiallyOpen = state.step.open;
+        state.step.initiallyOpen = state.step.surfaceChokeOpen;
         state.initialOpenTime = state.step.openTime;
         for (int kontaAcop = 0; kontaAcop <= 1 * state.step.fullModel; kontaAcop++) {
             advanceCouplingIteration(state, kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
@@ -2121,7 +2121,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     state.updaters.saveSources();
     state.updaters.updateTemperatures();
 
-    state.step.finalPressure = state.step.cells[state.step.lastCell].pres;
+    state.step.outletPressure = state.step.cells[state.step.lastCell].pres;
     if (state.step.input.lingas > 0 && state.networkCoupled == 1)
         state.updaters.connectTubing();
 
@@ -2148,13 +2148,13 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     state.updaters.updateDensities();
 
     state.temperatureHistory.push_back(state.step.timeStep);
-    state.pressureHistory.push_back(state.step.finalPressure * state.step.timeStep);
+    state.pressureHistory.push_back(state.step.outletPressure * state.step.timeStep);
     double jtemporario = state.step.cells[state.step.lastCell - 1].Mliqini / (state.step.cells[state.step.lastCell - 1].duto.area * ((1. - state.step.cells[state.step.lastCell - 1].bet) * state.step.cells[state.step.lastCell - 1].rpC + state.step.cells[state.step.lastCell - 1].bet * state.step.cells[state.step.lastCell - 1].rcC));
     jtemporario += (state.step.cells[state.step.lastCell - 1].MC - state.step.cells[state.step.lastCell - 1].Mliqini) / (state.step.cells[state.step.lastCell - 1].duto.area * state.step.cells[state.step.lastCell - 1].flui.MasEspGas(state.step.cells[state.step.lastCell - 1].pres, state.step.cells[state.step.lastCell - 1].temp));
     state.fluxHistory.push_back(jtemporario * state.step.timeStep);
     state.voidFractionHistory.push_back(state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep);
     state.movingMeanCounter += state.step.timeStep;
-    state.totalPressure += state.step.finalPressure * state.step.timeStep;
+    state.totalPressure += state.step.outletPressure * state.step.timeStep;
     state.totalFlux += jtemporario * state.step.timeStep;
     state.totalVoidFraction += state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep;
     if ((*state.step.globals).lixo5 > state.step.movingMeanTemperature) {
@@ -2182,7 +2182,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     if ((fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) ||
         (fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal) ||
         (*state.step.globals).lixo5 < 1e-15) {
-        state.printTimeCounter++;
+        state.printPassCount++;
         ordemImpT = 1;
     }
 

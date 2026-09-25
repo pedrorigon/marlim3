@@ -72,7 +72,7 @@ FUNCTIONS = {
     "calcDTPseudoTrans": {"new_name": "computePseudoTransientTimeStep", "arguments": ""},
     "atualizaPeriPmonProd": {"new_name": "refreshUpstreamProductionPeriphery", "arguments": "i"},
     "atualizaPeriPjusProd": {"new_name": "refreshDownstreamProductionPeriphery", "arguments": "i"},
-    "hidroLinServ": {"new_name": "serviceLineHydrostatic", "arguments": ""},
+    "hidroLinServ": {"new_name": "gasLineHydrostatic", "arguments": ""},
     "marchaGasPerm1": {"new_name": "marchGasSteady", "arguments": "chutemass"},
 
     # T090 -- the three production marches and the six pieces they were cut
@@ -155,7 +155,7 @@ CALLS = {
     "calcDTPseudoTrans": ("computePseudoTransientTimeStep", True),
     "atualizaPeriPmonProd": ("refreshUpstreamProductionPeriphery", True),
     "atualizaPeriPjusProd": ("refreshDownstreamProductionPeriphery", True),
-    "hidroLinServ": ("serviceLineHydrostatic", True),
+    "hidroLinServ": ("gasLineHydrostatic", True),
     "marchaGasPerm1": ("marchGasSteady", True),
 
     "seedFirstCellVoidFraction": ("seedFirstCellVoidFraction", True),
@@ -216,7 +216,7 @@ MEMBERS = {
     # monitConvPerm, tempiniG before tempRev.
     "monitConvPermBase": "state.baseConvergenceMonitor",
     "monitConvPerm": "state.convergenceMonitor",
-    "trocaTermicaLenta": "state.slowHeatTransfer",
+    "trocaTermicaLenta": "state.slowHeatTransferThreshold",
     "verificaAcop": "state.networkCoupled",
     "celulaG": "state.gasCells",
     "celula": "state.cells",
@@ -233,9 +233,9 @@ MEMBERS = {
     "semTermo": "state.thermalSourceDisabled",
     "presiniG": "state.initialGasPressure",
     "tempiniG": "state.initialGasTemperature",
-    "presfim": "state.finalPressure",
+    "presfim": "state.outletPressure",
     "pGSup": "state.gasSurfacePressure",
-    "temperatura": "state.ambientTemperature",
+    "temperatura": "state.defaultInletTemperature",
     "tempRev": "state.casingTemperature",
     "nfluP": "state.productionFluidCount",
     "titE": "state.inletQuality",

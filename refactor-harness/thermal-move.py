@@ -75,11 +75,11 @@ CALCTEMP_MEMBERS = {
     "SecPrimIniRedeP": "state.primarySectionStart",
     "SecPrimFimRedeP": "state.primarySectionEnd",
     "acertaIndAcop": "state.coupledCellIndices",
-    "poisson3D": "state.poissonSolver",
+    "poisson3D": "state.poissonSolver3D",
     "ncel": "state.lastCell",
     "chokeSup": "state.surfaceChoke",
-    "masChkSup": "state.surfaceChokeMassCondition",
-    "noextremo": "state.networkEndpoint",
+    "masChkSup": "state.surfaceChokeMassFlag",
+    "noextremo": "state.endNode",
     "tGSup": "state.gasSurfaceTemperature",
     "CalcLat": "state.latentHeatEnabled",
 }
@@ -114,7 +114,7 @@ T063_FUNCTIONS = {
 
 RENOVA_TEMP_MEMBERS = {
     **CALCTEMP_MEMBERS,
-    "modeloCompleto": "state.completeModel",
+    "modeloCompleto": "state.fullModel",
     "TransMassModel": "state.massTransferModel",
 }
 RENOVA_TEMP_FIELD_TO_MEMBER = {
@@ -146,9 +146,9 @@ T065_MEMBERS = {
     **RENOVA_TEMP_MEMBERS,
     "presE": "state.inletPressure",
     "tempE": "state.inletTemperature",
-    "titE": "state.inletMassFraction",
+    "titE": "state.inletQuality",
     "alfE": "state.inletVoidFraction",
-    "betaE": "state.inletComposition",
+    "betaE": "state.inletCompletionFraction",
 }
 T065_FIELD_TO_MEMBER = {
     field.split(".", 1)[1]: member

@@ -3771,7 +3771,7 @@ void refreshDownstreamProductionPeriphery(const SteadyStateState &state, int i) 
     state.cells[i].presini = state.cells[i].pres;
 }
 
-void serviceLineHydrostatic(const SteadyStateState &state) {
+void gasLineHydrostatic(const SteadyStateState &state) {
     double pchute = state.input.gasinj.presinj[0];
     state.gasCells[0].pres = pchute;
     double taux;
@@ -4483,28 +4483,28 @@ double surfaceChokeMassFlow(const SteadyStateState &state) {
         double massgas = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
 
         double quality;
-        state.finalPressure = state.cells[state.lastCell].pres;
+        state.outletPressure = state.cells[state.lastCell].pres;
         double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         quality = fabs(massgas / masentrada);
 
         double masChk;
 
-        double ypres = state.gasSurfacePressure / state.finalPressure;
-        masChk = state.surfaceChoke.vazmassSachd(ypres, state.finalPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui,
+        double ypres = state.gasSurfacePressure / state.outletPressure;
+        masChk = state.surfaceChoke.vazmassSachd(ypres, state.outletPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui,
                                        state.cells[state.lastCell - 1].fluicol);
-        maxSup = state.surfaceChoke.vazmaxSachd(state.finalPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
+        maxSup = state.surfaceChoke.vazmaxSachd(state.outletPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
         if (fabs(ypres) > fabs(state.surfaceChoke.razpres))
             maxSup = masChk;
         // maxSup Ã© a vazao total passando pelo choke
 
         if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.finalPressure, tESup) -
-                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.finalPressure, tESup);
-            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.finalPressure, tESup) - betSup / rholc;
-            double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.finalPressure, tESup);
-            double jtgM = state.cells[state.lastCell].flui.JTG(state.finalPressure, tESup);
-            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.finalPressure) * 98066.52;
+            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) -
+                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
+            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
+            double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
+            double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
+            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * 98066.52;
         }
 
     } else {
@@ -4636,7 +4636,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
                 if (state.gasCells[0].tipoCC == 0)
-                    serviceLineHydrostatic(state);
+                    gasLineHydrostatic(state);
                 state.updaters.initializeSteadyValveGasFlowRate(0);
             }
             i = 1;
@@ -4677,7 +4677,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     int corrigechute = 1;
     double alfini = 0.;
     double betini = 0.;
-    state.slowHeatTransfer = 0.1;
+    state.slowHeatTransferThreshold = 0.1;
 
     seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
     // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
@@ -4813,7 +4813,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                     ugsmed = fabs(state.cells[ktemp].QG) / area; // velocidade superficial de gas
                     double ulsmed;
                     ulsmed = fabs(state.cells[ktemp].QL) / area; // velocidade superficial de liquido
-                    if (fabs(ugsmed + ulsmed) <= state.slowHeatTransfer)
+                    if (fabs(ugsmed + ulsmed) <= state.slowHeatTransferThreshold)
                         lento += 1;
                     media += fabs(ugsmed + ulsmed);
                 }
@@ -4822,7 +4822,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                 if (lento > 0 && lento < state.lastCell) {
                     int para;
                     para = 0;
-                    state.slowHeatTransfer = 100.;
+                    state.slowHeatTransferThreshold = 100.;
                 }
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
                     state.updaters.advanceReverseSteadyTemperature(ktemp, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
@@ -4985,7 +4985,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
                 if (state.gasCells[0].tipoCC == 0)
-                    serviceLineHydrostatic(state);
+                    gasLineHydrostatic(state);
                 state.updaters.initializeSteadyValveGasFlowRate(0);
             }
             i = 1;
@@ -5265,7 +5265,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
 
     double alfini = 0.;
     double betini = 0.;
-    state.slowHeatTransfer = 0.05;
+    state.slowHeatTransferThreshold = 0.05;
 
     seedFirstCellFromFlowRateGuess(state, mchute, alfini, betini);
 
@@ -5374,7 +5374,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
             state.cells[state.lastCell].temp = state.casingTemperature;
             if (state.steadyIteration < 100) {
                 int lento = 0;
-                state.slowHeatTransfer = 0;
+                state.slowHeatTransferThreshold = 0;
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
 
                     double area = state.cells[ktemp].duto.area;
@@ -5385,8 +5385,8 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
                     if (fabs(ugsmed + ulsmed) <= 0.1)
                         lento += 1;
                 }
-                if (state.steadyIteration > 10 && state.slowHeatTransfer < 0.01) {
-                    state.slowHeatTransfer -= 0.01;
+                if (state.steadyIteration > 10 && state.slowHeatTransferThreshold < 0.01) {
+                    state.slowHeatTransferThreshold -= 0.01;
                     state.steadyIteration = 0;
                 }
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
@@ -5566,27 +5566,27 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
         maxSup = 0.;
 
         double quality;
-        state.finalPressure = state.cells[state.lastCell].pres;
+        state.outletPressure = state.cells[state.lastCell].pres;
         double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         quality = fabs(massgas / masentrada);
 
         double masChk;
 
-        double ypres = state.gasSurfacePressure / state.finalPressure;
-        masChk = state.surfaceChoke.vazmassSachd(ypres, state.finalPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui,
+        double ypres = state.gasSurfacePressure / state.outletPressure;
+        masChk = state.surfaceChoke.vazmassSachd(ypres, state.outletPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui,
                                        state.cells[state.lastCell - 1].fluicol);
-        maxSup = state.surfaceChoke.vazmaxSachd(state.finalPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
+        maxSup = state.surfaceChoke.vazmaxSachd(state.outletPressure, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
         if (fabs(ypres) > fabs(state.surfaceChoke.razpres))
             maxSup = masChk;
 
         if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.finalPressure, tESup) -
-                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.finalPressure, tESup);
-            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.finalPressure, tESup) - betSup / rholc;
-            double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.finalPressure, tESup);
-            double jtgM = state.cells[state.lastCell].flui.JTG(state.finalPressure, tESup);
-            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.finalPressure) * 98066.52;
+            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) -
+                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
+            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
+            double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
+            double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
+            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * 98066.52;
         }
     } else {
         maxSup = 0.;

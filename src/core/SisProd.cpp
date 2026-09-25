@@ -2579,7 +2579,7 @@ void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
     system.tempDescarga(cellIndex);
 }
 
-void sisprod::gaslift::GasLiftTemperatureUpdater::gasTemperature(
+void sisprod::gaslift::GasLiftTemperatureUpdater::computeGasTemperature(
     int cellIndex, double previousTemperature, int steadyMode) const {
     system.calctempGas(cellIndex, previousTemperature, steadyMode);
 }
@@ -2828,13 +2828,13 @@ sisprod::steady::SteadyStateState steadyStateOf(SProd &system) {
         .networkCoupled = system.verificaAcop,
         .endNode = system.noextremo,
         .thermalSourceDisabled = system.semTermo,
-        .slowHeatTransfer = system.trocaTermicaLenta,
+        .slowHeatTransferThreshold = system.trocaTermicaLenta,
         .gasSurfacePressure = system.pGSup,
         .initialGasPressure = system.presiniG,
         .initialGasTemperature = system.tempiniG,
-        .finalPressure = system.presfim,
+        .outletPressure = system.presfim,
         .timeStep = system.dt,
-        .ambientTemperature = system.temperatura,
+        .defaultInletTemperature = system.temperatura,
         .casingTemperature = system.tempRev,
         .inletQuality = system.titE,
         .productionFluidCount = system.nfluP,
@@ -2869,7 +2869,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .meanMaximumTimeStep = system.DTMaxMed,
         .meanMaximumPressureChange = system.DpMaxMed,
         .masterState = system.EstadoMaster1,
-        .open = system.aberto,
+        .surfaceChokeOpen = system.aberto,
         .initiallyOpen = system.abertoini,
         .timeChanged = system.alteraTempo,
         .inletCompletionFraction = system.betaE,
@@ -2893,7 +2893,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .desperationMoment = system.momentoDesesp,
         .chokeModeChanged = system.mudaModoChk,
         .multiplier = system.mult,
-        .finalPressure = system.presfim,
+        .outletPressure = system.presfim,
         .restart = system.reinicia,
         .timeStepRestricted = system.restriDt,
         .openTime = system.tempoaberto,
@@ -2975,7 +2975,7 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system) {
 sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system) {
     return sisprod::transient::TransientSolveState{
         .step = transientStateOf(system),
-        .ambientTemperature = system.temperatura,
+        .defaultInletTemperature = system.temperatura,
         .annulusDrift = system.derivaAnel,
         .closingSubtitles = system.saidaSubTextoSis,
         .closingTitles = system.saidaTextoSis,
@@ -3007,7 +3007,7 @@ sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system) {
         .poissonSolver3D = system.poisson3D,
         .pressureHistory = system.presVet,
         .printCounter = system.KontaImprime,
-        .printTimeCounter = system.kimpT,
+        .printPassCount = system.kimpT,
         .productionCrossSectionProfileTimeCounter = system.kontaTempoTransProf,
         .productionCrossSectionTrendBufferedCounts = system.ntrendtransB,
         .productionCrossSectionTrendCounts = system.ntrendtrans,
@@ -3045,22 +3045,22 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
         .primarySectionStart = system.SecPrimIniRedeP,
         .primarySectionEnd = system.SecPrimFimRedeP,
         .coupledCellIndices = system.acertaIndAcop,
-        .poissonSolver = system.poisson3D,
+        .poissonSolver3D = system.poisson3D,
         .lastCell = system.ncel,
         .surfaceChoke = system.chokeSup,
-        .surfaceChokeMassCondition = system.masChkSup,
-        .networkEndpoint = system.noextremo,
+        .surfaceChokeMassFlag = system.masChkSup,
+        .endNode = system.noextremo,
         .gasSurfaceTemperature = system.tGSup,
         .latentHeatEnabled = system.CalcLat,
         .sourceUpdater = {.system = system},
-        .completeModel = system.modeloCompleto,
+        .fullModel = system.modeloCompleto,
         .massTransferModel = system.TransMassModel,
         .closureUpdater = {.system = system},
         .inletPressure = system.presE,
         .inletTemperature = system.tempE,
-        .inletMassFraction = system.titE,
+        .inletQuality = system.titE,
         .inletVoidFraction = system.alfE,
-        .inletComposition = system.betaE,
+        .inletCompletionFraction = system.betaE,
         .evolutionUpdater = {.system = system},
         .surfaceChokeOpen = system.aberto,
         .defaultInletTemperature = system.temperatura,
@@ -3553,7 +3553,7 @@ void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
         .selectors = driftSelectors,
         .gasSurfaceTemperature = tGSup,
         .inletVoidFraction = alfE,
-        .inletColumnFraction = betaE,
+        .inletCompletionFraction = betaE,
         .inletPressure = presE,
         .inletTemperature = tempE,
         .steadyIteration = iterperm,
@@ -3570,7 +3570,7 @@ void SProd::CalcC0UdBuf(int ind, double &c0, double &ud) {
         .selectors = driftSelectors,
         .gasSurfaceTemperature = tGSup,
         .inletVoidFraction = alfE,
-        .inletColumnFraction = betaE,
+        .inletCompletionFraction = betaE,
         .inletPressure = presE,
         .inletTemperature = tempE,
         .steadyIteration = iterperm,
@@ -3587,7 +3587,7 @@ void SProd::CalcC0UdIni(int ind, double &c0, double &ud) {
         .selectors = driftSelectors,
         .gasSurfaceTemperature = tGSup,
         .inletVoidFraction = alfE,
-        .inletColumnFraction = betaE,
+        .inletCompletionFraction = betaE,
         .inletPressure = presE,
         .inletTemperature = tempE,
         .steadyIteration = iterperm,
@@ -3604,7 +3604,7 @@ void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
         .selectors = driftSelectors,
         .gasSurfaceTemperature = tGSup,
         .inletVoidFraction = alfE,
-        .inletColumnFraction = betaE,
+        .inletCompletionFraction = betaE,
         .inletPressure = presE,
         .inletTemperature = tempE,
         .steadyIteration = iterperm,
@@ -4154,14 +4154,14 @@ namespace {
 /// read at the wrong moment.
 trendoutput::TrendState trendStateOf(const SProd &system) {
     return trendoutput::TrendState{
-        .inputData = system.arq,
+        .input = system.arq,
         .globals = system.vg1dSP,
         .branchIndex = system.indTramo,
         .printPassCount = system.kimpT,
         .production = {system.MatTrendP, system.ntrend, system.ntrendB},
-        .service = {system.MatTrendG, system.ntrendg, system.ntrendgB},
+        .gasLine = {system.MatTrendG, system.ntrendg, system.ntrendgB},
         .productionCrossSection = {system.MatTrendTransP, system.ntrendtrans, system.ntrendtransB},
-        .serviceCrossSection = {system.MatTrendTransG, system.ntrendtransg, system.ntrendtransgB}};
+        .gasLineCrossSection = {system.MatTrendTransG, system.ntrendtransg, system.ntrendtransgB}};
 }
 
 } // namespace
@@ -4176,10 +4176,10 @@ void SProd::ImprimeTrendP(int i, int nrede) {
     trendoutput::writeProductionTrendRows(trendStateOf(*this), i, nrede);
 }
 void SProd::ImprimeTrendGCab(int i, int nrede) {
-    trendoutput::writeServiceTrendHeader(trendStateOf(*this), i, nrede);
+    trendoutput::writeGasLineTrendHeader(trendStateOf(*this), i, nrede);
 }
 void SProd::ImprimeTrendG(int i, int nrede) {
-    trendoutput::writeServiceTrendRows(trendStateOf(*this), i, nrede);
+    trendoutput::writeGasLineTrendRows(trendStateOf(*this), i, nrede);
 }
 void SProd::ImprimeTrendTransPCab(int i) {
     trendoutput::writeProductionCrossSectionTrendHeader(trendStateOf(*this), i);
@@ -4188,10 +4188,10 @@ void SProd::ImprimeTrendTransP(int i) {
     trendoutput::writeProductionCrossSectionTrendRows(trendStateOf(*this), i);
 }
 void SProd::ImprimeTrendTransGCab(int i) {
-    trendoutput::writeServiceCrossSectionTrendHeader(trendStateOf(*this), i);
+    trendoutput::writeGasLineCrossSectionTrendHeader(trendStateOf(*this), i);
 }
 void SProd::ImprimeTrendTransG(int i) {
-    trendoutput::writeServiceCrossSectionTrendRows(trendStateOf(*this), i);
+    trendoutput::writeGasLineCrossSectionTrendRows(trendStateOf(*this), i);
 }
 
 double SProd::marchaProdPerm1(double pchute) {
@@ -4332,7 +4332,7 @@ void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
         .selectors = driftSelectors,
         .gasSurfaceTemperature = tGSup,
         .inletVoidFraction = alfE,
-        .inletColumnFraction = betaE,
+        .inletCompletionFraction = betaE,
         .inletPressure = presE,
         .inletTemperature = tempE,
         .steadyIteration = iterperm,
@@ -4457,7 +4457,7 @@ double SProd::hidroTramoSecundario(double titulo) {
 }
 
 void SProd::hidroLinServ() {
-    sisprod::steady::serviceLineHydrostatic(steadyStateOf(*this));
+    sisprod::steady::gasLineHydrostatic(steadyStateOf(*this));
 }
 
 double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {

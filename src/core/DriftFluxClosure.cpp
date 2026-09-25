@@ -1267,13 +1267,13 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
 
         double betI = state.cells[cellIndex].betL;
         if (cellIndex > 0)
-            betI = state.inletColumnFraction;
+            betI = state.inletCompletionFraction;
         if (state.cells[cellIndex].QL < 0.)
             betI = state.cells[cellIndex].betPigE; // testeBeta
         betI = state.cells[cellIndex].betPigE;     // duvidabeta
         double betneg;
         if (cellIndex > 0) {
-            betneg = state.inletColumnFraction;
+            betneg = state.inletCompletionFraction;
 
         } else
             betneg = state.cells[cellIndex].bet;
@@ -1453,13 +1453,13 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
 
         double betI = state.cells[cellIndex].betL;
         if (cellIndex > 0)
-            betI = state.inletColumnFraction;
+            betI = state.inletCompletionFraction;
         if (state.cells[cellIndex].QL < 0.)
             betI = state.cells[cellIndex].betPigE; // testeBeta
         betI = state.cells[cellIndex].betPigE;     // duvidabeta
         double betneg;
         if (cellIndex > 0) {
-            betneg = state.inletColumnFraction;
+            betneg = state.inletCompletionFraction;
 
         } else
             betneg = state.cells[cellIndex].bet;

@@ -164,7 +164,7 @@ struct ClosureState {
     /// Inlet void fraction -- SProd::alfE. Read by the initialisation variants.
     const double &inletVoidFraction;
     /// Inlet column fraction -- SProd::betaE.
-    const double &inletColumnFraction;
+    const double &inletCompletionFraction;
     /// Inlet pressure -- SProd::presE.
     const double &inletPressure;
     /// Inlet temperature -- SProd::tempE.

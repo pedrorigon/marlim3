@@ -745,7 +745,7 @@ void advanceGasSubStep(const GasLiftState &state) {
             state.gasCells[state.gasCellCount].temp = 20.;
 #pragma omp parallel for num_threads((*state.globals).ntrd)
         for (int gasCellIndex = 1; gasCellIndex < cellLimit; gasCellIndex++) {
-            state.temperatureUpdater.gasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
+            state.temperatureUpdater.computeGasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
             state.gasCells[gasCellIndex].dTdt = (state.gasCells[gasCellIndex].temp - state.gasCells[gasCellIndex].tempini) / state.timeStep;
         }
         if (thermalCouplingCycle < maximumThermalCouplingCycles)

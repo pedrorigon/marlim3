@@ -147,7 +147,7 @@ struct SteadyStateState {
     /// Thermal source switch -- SProd::semTermo. Read only.
     const int &thermalSourceDisabled;
     /// Slow-heat-transfer switch -- SProd::trocaTermicaLenta. Written.
-    double &slowHeatTransfer;
+    double &slowHeatTransferThreshold;
 
     /// Surface gas pressure -- SProd::pGSup. Written.
     double &gasSurfacePressure;
@@ -156,12 +156,12 @@ struct SteadyStateState {
     const double &initialGasPressure;
     const double &initialGasTemperature;
     /// Pressure the march ends on -- SProd::presfim. Written.
-    double &finalPressure;
+    double &outletPressure;
     /// Time step -- SProd::dt. Written: the pseudo-transient step shortens it.
     double &timeStep;
 
     /// Ambient temperature -- SProd::temperatura. Read only.
-    const double &ambientTemperature;
+    const double &defaultInletTemperature;
     /// Casing temperature -- SProd::tempRev. Read only.
     const double &casingTemperature;
     /// Inlet quality -- SProd::titE. Read only.
@@ -239,7 +239,7 @@ double marchGasSteady(const SteadyStateState &state, double massGuess = -1);
 [[nodiscard]] double reverseInjectionHydrostatic(const SteadyStateState &state, double holdup,
                                                  double liquidFlow = 0);
 [[nodiscard]] double secondaryBranchHydrostatic(const SteadyStateState &state, double quality);
-void serviceLineHydrostatic(const SteadyStateState &state);
+void gasLineHydrostatic(const SteadyStateState &state);
 
 // ------------------------------------------------------ property refresh ----
 

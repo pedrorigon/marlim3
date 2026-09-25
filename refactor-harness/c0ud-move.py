@@ -49,7 +49,7 @@ MEMBERS = {
     "driftSelectors": "state.selectors",
     "tGSup": "state.gasSurfaceTemperature",
     "alfE": "state.inletVoidFraction",
-    "betaE": "state.inletColumnFraction",
+    "betaE": "state.inletCompletionFraction",
     "presE": "state.inletPressure",
     "tempE": "state.inletTemperature",
     "iterperm": "state.steadyIteration",

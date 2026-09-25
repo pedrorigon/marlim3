@@ -91,7 +91,7 @@ CALLS = {
 # thermal module through it rather than growing a ThermalState of its own.
 CALLBACKS = {
     "tempDescarga": "state.temperatureUpdater.dischargeTemperature",
-    "calctempGas": "state.temperatureUpdater.gasTemperature",
+    "calctempGas": "state.temperatureUpdater.computeGasTemperature",
     "TempDescGL": "state.temperatureUpdater.gasLiftDischargeTemperature",
 }
 

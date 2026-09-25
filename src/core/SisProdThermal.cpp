@@ -466,7 +466,7 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
             heatFlux = cell.calor.transtrans();
         else {
             int iacop1 = state.coupledCellIndices[coupled];
-            heatFlux = -state.input.celAcop[coupled].FE * state.poissonSolver.dados.qTotal[iacop1] / cell.dx;
+            heatFlux = -state.input.celAcop[coupled].FE * state.poissonSolver3D.dados.qTotal[iacop1] / cell.dx;
         }
     }
 
@@ -698,7 +698,7 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                                      sourceLiquidSpecificHeat);
         }
     } else if (cellIndex == state.lastCell && (cell.fontemassLR + cell.fontemassCR + cell.fontemassGR) > 0.) {
-        if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
+        if ((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)
             sourceTemperature = cell.calor.Textern1;
         else
             sourceTemperature = state.gasSurfaceTemperature;
@@ -858,7 +858,7 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
 
         cell.VTemper = balance.temperatureSpatialCoefficient / balance.timeCoefficient;
         if ((cellIndex == 0 && cell.VTemper < 0.) || (((cellIndex < state.lastCell || cell.VTemper >= 0.) && cellIndex > 0) ||
-                                                   (cellIndex == state.lastCell && state.surfaceChokeMassCondition == 1) || (cellIndex == state.lastCell && state.input.chkv == 1))) {
+                                                   (cellIndex == state.lastCell && state.surfaceChokeMassFlag == 1) || (cellIndex == state.lastCell && state.input.chkv == 1))) {
             double temperatureGradient = 0.;
             if (cellIndex > 0)
                 temperatureGradient = (cell.temp - leftCell.tempini) / balance.meanCellLength;
@@ -941,7 +941,7 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
             if (cell.temp > kMaximumTemperatureCelsius)
                 cell.temp = kMaximumTemperatureCelsius;
         } else if (cellIndex == state.lastCell) {
-            if (globals.chaverede == 0 || state.networkEndpoint == 1 || globals.chaveRedeParalela == 1)
+            if (globals.chaverede == 0 || state.endNode == 1 || globals.chaveRedeParalela == 1)
                 cell.temp = cell.calor.Textern1;
             else
                 cell.temp = state.gasSurfaceTemperature;
@@ -1421,7 +1421,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
     const bool isLastCell = cellIndex == state.lastCell;
     double activeDerivative = 1.;
     double pressureLimit = 10;
-    if (state.completeModel == 1)
+    if (state.fullModel == 1)
         pressureLimit = 0;
     if (leftCell.pres < pressureLimit ||
         state.massTransferModel != 0)
@@ -2747,8 +2747,8 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
                 double rcis = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
 
-                double liquidMixtureDensity = state.inletComposition * rcis + (1 - state.inletComposition) * liquidDensity;
-                state.inletVoidFraction = (-state.inletMassFraction * liquidMixtureDensity / (state.inletMassFraction * gasDensity - gasDensity - state.inletMassFraction * liquidMixtureDensity)) / (state.cells[0].c0);
+                double liquidMixtureDensity = state.inletCompletionFraction * rcis + (1 - state.inletCompletionFraction) * liquidDensity;
+                state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
 
                 double betI;
                 double surfaceTension;
@@ -2757,7 +2757,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                     liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
                 } else {
-                    betI = state.inletComposition;
+                    betI = state.inletCompletionFraction;
                     liquidDensity = (1 - betI) * (*cell.fluiL).MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * (*cell.fluiL).TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
                 }
@@ -2801,7 +2801,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 state.cells[1].alfL = state.cells[0].alf;
                 state.cells[0].alfL = state.inletVoidFraction;
                 state.cells[1].betL = state.cells[0].bet;
-                state.cells[0].betL = state.inletComposition;
+                state.cells[0].betL = state.inletCompletionFraction;
             }
 
         } else if (aflu == 0) {
@@ -2929,15 +2929,15 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
     double rcis = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
 
-    double liquidMixtureDensity = state.inletComposition * rcis + (1 - state.inletComposition) * liquidDensity;
-    state.inletVoidFraction = (-state.inletMassFraction * liquidMixtureDensity / (state.inletMassFraction * gasDensity - gasDensity - state.inletMassFraction * liquidMixtureDensity)) / (state.cells[0].c0);
+    double liquidMixtureDensity = state.inletCompletionFraction * rcis + (1 - state.inletCompletionFraction) * liquidDensity;
+    state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
 
     if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // duvidabeta
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     } else {
-        betI = state.inletComposition;
+        betI = state.inletCompletionFraction;
         liquidDensity = (1 - betI) * (*cell.fluiL).MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * (*cell.fluiL).TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     }
@@ -3020,7 +3020,7 @@ void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex) {
     if (cellIndex <= state.lastCell) {
         computeTemperature(state, cellIndex, cell.tempini);
     } else {
-        if ((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1)
+        if ((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)
             cell.temp = cell.calor.Textern1;
         else
             cell.temp = state.gasSurfaceTemperature;
@@ -3048,7 +3048,7 @@ for (int cellIndex = 0; cellIndex <= state.lastCell; cellIndex++) {
 }
 
 void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCycle) {
-    if (((*state.globals).chaverede == 0 || state.networkEndpoint == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.chkv == 0) {
+    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.chkv == 0) {
         if (state.cells[state.lastCell - 1].MliqiniR < 0) {
             state.cells[state.lastCell - 1].MR = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
             state.cells[state.lastCell - 1].MliqiniR = 0;
@@ -3059,11 +3059,11 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
             state.cells[state.lastCell].term1 = 0;
             state.cells[state.lastCell].term2 = 0;
         }
-        if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassCondition == 0 || state.surfaceChokeOpen == 1)) {
+        if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassFlag == 0 || state.surfaceChokeOpen == 1)) {
             state.cells[state.lastCell - 1].QLR = 0;
             state.cells[state.lastCell].QL = 0;
         }
-    } else if ((state.input.chkv == 1 && state.surfaceChokeMassCondition == 0) || (state.input.chkv == 1 && state.surfaceChokeMassCondition == 1)) {
+    } else if ((state.input.chkv == 1 && state.surfaceChokeMassFlag == 0) || (state.input.chkv == 1 && state.surfaceChokeMassFlag == 1)) {
         if (state.cells[state.lastCell - 1].MliqiniR < 0) {
             state.cells[state.lastCell - 1].MR = 0.;
             state.cells[state.lastCell - 1].MliqiniR = 0;
@@ -3074,7 +3074,7 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
             state.cells[state.lastCell].term1 = 0;
             state.cells[state.lastCell].term2 = 0;
         }
-        if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassCondition == 0 || state.surfaceChokeOpen == 1)) {
+        if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassFlag == 0 || state.surfaceChokeOpen == 1)) {
             state.cells[state.lastCell - 1].QLR = 0;
             state.cells[state.lastCell].QL = 0;
         }
@@ -3117,15 +3117,15 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
             if (coupled != -1) {
                 prepareNonDimensionalHeatDiffusion(state, cellIndex);
                 int nextCouplingIndex = state.coupledCellIndices[coupled];
-                state.poissonSolver.dados.tInt[nextCouplingIndex] = state.cells[coupledCellIndex].temp;
+                state.poissonSolver3D.dados.tInt[nextCouplingIndex] = state.cells[coupledCellIndex].temp;
                 double cellInterfaceCoefficient = state.cells[coupledCellIndex].calor.hInt();
-                state.poissonSolver.dados.hI[nextCouplingIndex] = cellInterfaceCoefficient;
+                state.poissonSolver3D.dados.hI[nextCouplingIndex] = cellInterfaceCoefficient;
             }
         }
         if (cycle < maximumCycle || maximumCycle == 0 || state.minimumCycleTimeStep != state.timeStep) {
             if (cycle == maximumCycle && maximumCycle > 0)
-                state.poissonSolver.FeiticoDoTempo();
-            state.poissonSolver.transientePoisson(state.timeStep);
+                state.poissonSolver3D.FeiticoDoTempo();
+            state.poissonSolver3D.transientePoisson(state.timeStep);
         }
         refreshTemperatureField(state);
     }
@@ -3146,8 +3146,8 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
             state.cells[k].FeiticoDoTempo();
         }
     } else if (state.input.modoDifus3D == 1)
-        state.poissonSolver.renova();
-    if (state.completeModel == 0) {
+        state.poissonSolver3D.renova();
+    if (state.fullModel == 0) {
         if (cycle < maximumCycle) {
             state.evolutionUpdater.solvePressureVelocityCoupling(cycle);
             state.evolutionUpdater.renew();

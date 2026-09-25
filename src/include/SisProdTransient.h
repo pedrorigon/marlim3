@@ -103,7 +103,7 @@ struct TransientStepState {
     /// SProd::EstadoMaster1 -- escrito.
     int &masterState;
     /// SProd::aberto -- escrito.
-    int &open;
+    int &surfaceChokeOpen;
     /// SProd::abertoini -- escrito.
     int &initiallyOpen;
     /// SProd::alteraTempo -- escrito.
@@ -151,7 +151,7 @@ struct TransientStepState {
     /// SProd::mult -- escrito.
     double &multiplier;
     /// SProd::presfim -- escrito.
-    double &finalPressure;
+    double &outletPressure;
     /// SProd::reinicia -- escrito.
     int &restart;
     /// SProd::restriDt -- escrito.
@@ -419,7 +419,7 @@ struct TransientSolveState {
     TransientStepState step;
 
     /// SProd::temperatura -- written or read by the solve; not promised const.
-    double &ambientTemperature;
+    double &defaultInletTemperature;
     /// SProd::derivaAnel -- written or read by the solve; not promised const.
     int &annulusDrift;
     /// SProd::saidaSubTextoSis -- written or read by the solve; not promised const.
@@ -483,7 +483,7 @@ struct TransientSolveState {
     /// SProd::KontaImprime -- written or read by the solve; not promised const.
     int &printCounter;
     /// SProd::kimpT -- written or read by the solve; not promised const.
-    double &printTimeCounter;
+    double &printPassCount;
     /// SProd::kontaTempoTransProf -- written or read by the solve; not promised const.
     int &productionCrossSectionProfileTimeCounter;
     /// SProd::ntrendtransB -- written or read by the solve; not promised const.

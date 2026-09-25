@@ -29,12 +29,12 @@ import sys
 FUNCTIONS = {
     "ImprimeTrendPCab": "writeProductionTrendHeader",
     "ImprimeTrendP": "writeProductionTrendRows",
-    "ImprimeTrendGCab": "writeServiceTrendHeader",
-    "ImprimeTrendG": "writeServiceTrendRows",
+    "ImprimeTrendGCab": "writeGasLineTrendHeader",
+    "ImprimeTrendG": "writeGasLineTrendRows",
     "ImprimeTrendTransPCab": "writeProductionCrossSectionTrendHeader",
     "ImprimeTrendTransP": "writeProductionCrossSectionTrendRows",
-    "ImprimeTrendTransGCab": "writeServiceCrossSectionTrendHeader",
-    "ImprimeTrendTransG": "writeServiceCrossSectionTrendRows",
+    "ImprimeTrendTransGCab": "writeGasLineCrossSectionTrendHeader",
+    "ImprimeTrendTransG": "writeGasLineCrossSectionTrendRows",
 }
 
 # SProd member -> TrendState field. Whole-identifier matches only, so ntrend
@@ -42,13 +42,18 @@ FUNCTIONS = {
 # pathPrefixoArqSaida and arqRelatorioPerfis are file-scope globals declared in
 # Leitura.h, not members, and are deliberately absent from this table.
 MEMBERS = {
-    "arq": "state.inputData",
+    "arq": "state.input",
     "indTramo": "state.branchIndex",
     "kimpT": "state.printPassCount",
     "vg1dSP": "state.globals",
     "MatTrendP": "state.productionBuffer",
     "ntrend": "state.productionCount",
     "ntrendB": "state.productionCountBase",
+    # Historical (T104e): the buffer and count names below are the stage 4
+    # INTERMEDIATE names. The bodies were then folded onto two skeletons over
+    # TrendSeries {samples, count, countBase}, grouped as production, gasLine
+    # and their cross sections; none of these names exists in the code now,
+    # so they are not synonyms for SC-017, and this tool cannot be rerun.
     "MatTrendG": "state.serviceBuffer",
     "ntrendg": "state.serviceCount",
     "ntrendgB": "state.serviceCountBase",

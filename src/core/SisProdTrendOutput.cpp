@@ -128,7 +128,7 @@ constexpr OptionalColumn<detTRENDP> kProductionColumns[] = {
     {&detTRENDP::subResfria, " Subresfriamento, C ;", " Subcooling, C ;"},
 };
 
-constexpr OptionalColumn<detTRENDG> kServiceColumns[] = {
+constexpr OptionalColumn<detTRENDG> kGasLineColumns[] = {
     {&detTRENDG::pres, " Pressao (kgf/cm2) ;", " Pressure (kgf/cm2) ;"},
     {&detTRENDG::temp, " Temperatura (C) ;", " Temperature (C) ;"},
     {&detTRENDG::ugs, " Velocidade superficial do gas (m/s) ;", " Gas superficial velocity (m/s) ;"},
@@ -245,7 +245,7 @@ void writeLineTrendMetadata(ostream &trendFile, const CaptionTranslator &transla
     trendFile << translate(originPtBrText, originEnText) << length << endl;
     trendFile << translate("# Rotulo = ", "# Label = ") << trend.rotulo << endl;
     trendFile << translate("# Indice da Celula = ", "# Cell index = ") << trend.posic << endl;
-    if (state.branchIndex < 0 && state.inputData.AP == 1)
+    if (state.branchIndex < 0 && state.input.AP == 1)
         trendFile << translate(" Sequencia AP ;", " SA sequence ;");
     trendFile << translate(" Tempo (s) ;", " Time (s) ;");
 }
@@ -273,7 +273,7 @@ string lineTrendFileName(const TrendState &state, const char *prefix,
     ostringstream fileNameStream;
     fileNameStream << pathPrefixoArqSaida;
     if (state.branchIndex < 0)
-        fileNameStream << prefix << (state.inputData.AP == 1 ? "-AP-" : "-") << position;
+        fileNameStream << prefix << (state.input.AP == 1 ? "-AP-" : "-") << position;
     else
         fileNameStream << "Tramo" << state.branchIndex << "-R-" << networkIndex
                        << "-" << prefix << "-" << position;
@@ -314,7 +314,7 @@ string crossSectionTrendFileName(const TrendState &state, const char *prefix,
 /// Records a produced file in the profile report.
 void reportProducedFile(const TrendState &state, const string &fileName) {
     // caso nao seja simulacao POCO_INJETOR
-    if (state.inputData.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
+    if (state.input.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
         arqRelatorioPerfis << fileName.c_str() << endl;
         arqRelatorioPerfis.flush();
     }
@@ -409,7 +409,7 @@ void writeTrendRowsFile(const TrendState &state, const string &fileName,
         state, fileName, ios_base::app, blankLineBeforeClose,
         [&](ofstream &trendFile) {
             const bool apSequenceColumn =
-                supportsApSequence && state.branchIndex < 0 && state.inputData.AP == 1;
+                supportsApSequence && state.branchIndex < 0 && state.input.AP == 1;
 
             trendFile.precision(kValuePrecision);
             for (int rowIndex = 0; rowIndex < window.rowCount; rowIndex++) {
@@ -434,14 +434,14 @@ void writeTrendRowsFile(const TrendState &state, const string &fileName,
 // ------------------------------------------------------------ entry points --
 
 void writeProductionTrendHeader(const TrendState &state, int trendIndex, int networkIndex) {
-    if (state.inputData.ntendp > 0) {
-        const CaptionTranslator translate{state.inputData.idiomaSaida};
-        const detTRENDP &trend = state.inputData.trendp[trendIndex];
+    if (state.input.ntendp > 0) {
+        const CaptionTranslator translate{state.input.idiomaSaida};
+        const detTRENDP &trend = state.input.trendp[trendIndex];
         writeTrendHeaderFile(
             state, lineTrendFileName(state, "TENDP", trend.comp, networkIndex),
             [&](ofstream &trendFile) {
                 writeLineTrendMetadata(trendFile, translate, state, trend,
-                                       state.inputData.celp,
+                                       state.input.celp,
                                        "# Comprimento a partir do Fundo de Poco (m) = ",
                                        "# Length from Bottomhole (m) = ");
                 writeOptionalColumns(trendFile, translate, trend, kProductionColumns);
@@ -459,46 +459,46 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
 }
 
 void writeProductionTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
-    if (state.inputData.ntendp > 0) {
-        const detTRENDP &trend = state.inputData.trendp[trendIndex];
+    if (state.input.ntendp > 0) {
+        const detTRENDP &trend = state.input.trendp[trendIndex];
         writeTrendRowsFile(
             state, lineTrendFileName(state, "TENDP", trend.comp, networkIndex),
-            windowOf(state.production, trendIndex, state.inputData.nvartrendp[trendIndex] + 1),
+            windowOf(state.production, trendIndex, state.input.nvartrendp[trendIndex] + 1),
             /*supportsApSequence=*/true, /*blankLineBeforeClose=*/false);
     }
 }
 
-void writeServiceTrendHeader(const TrendState &state, int trendIndex, int networkIndex) {
-    if (state.inputData.ntendg > 0 && state.inputData.lingas > 0) {
-        const CaptionTranslator translate{state.inputData.idiomaSaida};
-        const detTRENDG &trend = state.inputData.trendg[trendIndex];
+void writeGasLineTrendHeader(const TrendState &state, int trendIndex, int networkIndex) {
+    if (state.input.ntendg > 0 && state.input.lingas > 0) {
+        const CaptionTranslator translate{state.input.idiomaSaida};
+        const detTRENDG &trend = state.input.trendg[trendIndex];
         writeTrendHeaderFile(
             state, lineTrendFileName(state, "TENDG", trend.comp, networkIndex),
             [&](ofstream &trendFile) {
                 writeLineTrendMetadata(trendFile, translate, state, trend,
-                                       state.inputData.celg,
+                                       state.input.celg,
                                        "# Comprimento a partir da Plataforma (m) = ",
                                        "# Length from Platform (m) = ");
-                writeOptionalColumns(trendFile, translate, trend, kServiceColumns);
+                writeOptionalColumns(trendFile, translate, trend, kGasLineColumns);
             },
             /*blankLineBeforeClose=*/true);
     }
 }
 
-void writeServiceTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
-    if (state.inputData.ntendg > 0 && state.inputData.lingas > 0) {
-        const detTRENDG &trend = state.inputData.trendg[trendIndex];
+void writeGasLineTrendRows(const TrendState &state, int trendIndex, int networkIndex) {
+    if (state.input.ntendg > 0 && state.input.lingas > 0) {
+        const detTRENDG &trend = state.input.trendg[trendIndex];
         writeTrendRowsFile(
             state, lineTrendFileName(state, "TENDG", trend.comp, networkIndex),
-            windowOf(state.service, trendIndex, state.inputData.nvartrendg[trendIndex] + 1),
+            windowOf(state.gasLine, trendIndex, state.input.nvartrendg[trendIndex] + 1),
             /*supportsApSequence=*/true, /*blankLineBeforeClose=*/false);
     }
 }
 
 void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIndex) {
-    if (state.inputData.ntendtransp > 0) {
-        const CaptionTranslator translate{state.inputData.idiomaSaida};
-        const detTRENDTrans &trend = state.inputData.trendtransp[trendIndex];
+    if (state.input.ntendtransp > 0) {
+        const CaptionTranslator translate{state.input.idiomaSaida};
+        const detTRENDTrans &trend = state.input.trendtransp[trendIndex];
         writeTrendHeaderFile(
             state,
             crossSectionTrendFileName(state, "TENDTRANSP", crossSectionPositionOf(trend)),
@@ -508,8 +508,8 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIn
 }
 
 void writeProductionCrossSectionTrendRows(const TrendState &state, int trendIndex) {
-    if (state.inputData.ntendtransp > 0) {
-        const detTRENDTrans &trend = state.inputData.trendtransp[trendIndex];
+    if (state.input.ntendtransp > 0) {
+        const detTRENDTrans &trend = state.input.trendtransp[trendIndex];
         writeTrendRowsFile(
             state,
             crossSectionTrendFileName(state, "TENDTRANSP", crossSectionPositionOf(trend)),
@@ -518,10 +518,10 @@ void writeProductionCrossSectionTrendRows(const TrendState &state, int trendInde
     }
 }
 
-void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex) {
-    if (state.inputData.ntendtransg > 0 && state.inputData.lingas > 0) {
-        const CaptionTranslator translate{state.inputData.idiomaSaida};
-        const detTRENDTrans &trend = state.inputData.trendtransg[trendIndex];
+void writeGasLineCrossSectionTrendHeader(const TrendState &state, int trendIndex) {
+    if (state.input.ntendtransg > 0 && state.input.lingas > 0) {
+        const CaptionTranslator translate{state.input.idiomaSaida};
+        const detTRENDTrans &trend = state.input.trendtransg[trendIndex];
         writeTrendHeaderFile(
             state,
             crossSectionTrendFileName(state, "TENDTRANSG", crossSectionPositionOf(trend)),
@@ -530,13 +530,13 @@ void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex
     }
 }
 
-void writeServiceCrossSectionTrendRows(const TrendState &state, int trendIndex) {
-    if (state.inputData.ntendtransg > 0 && state.inputData.lingas > 0) {
-        const detTRENDTrans &trend = state.inputData.trendtransg[trendIndex];
+void writeGasLineCrossSectionTrendRows(const TrendState &state, int trendIndex) {
+    if (state.input.ntendtransg > 0 && state.input.lingas > 0) {
+        const detTRENDTrans &trend = state.input.trendtransg[trendIndex];
         writeTrendRowsFile(
             state,
             crossSectionTrendFileName(state, "TENDTRANSG", crossSectionPositionOf(trend)),
-            windowOf(state.serviceCrossSection, trendIndex, kCrossSectionColumnCount),
+            windowOf(state.gasLineCrossSection, trendIndex, kCrossSectionColumnCount),
             /*supportsApSequence=*/false, /*blankLineBeforeClose=*/true);
     }
 }

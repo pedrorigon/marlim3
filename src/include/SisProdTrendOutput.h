@@ -46,7 +46,7 @@ struct TrendSeries {
 /// row call, so a copy would be read at the wrong moment.
 struct TrendState {
     /// Input deck and configuration -- SProd::arq.
-    const Ler &inputData;
+    const Ler &input;
     /// Shared 1D globals; only sequenciaAP is read -- SProd::vg1dSP.
     const varGlob1D *globals;
     /// Branch index; negative outside a network -- SProd::indTramo.
@@ -58,11 +58,11 @@ struct TrendState {
     /// MatTrendP, ntrend, ntrendB.
     TrendSeries production;
     /// MatTrendG, ntrendg, ntrendgB.
-    TrendSeries service;
+    TrendSeries gasLine;
     /// MatTrendTransP, ntrendtrans, ntrendtransB.
     TrendSeries productionCrossSection;
     /// MatTrendTransG, ntrendtransg, ntrendtransgB.
-    TrendSeries serviceCrossSection;
+    TrendSeries gasLineCrossSection;
 };
 
 /// Writes the column captions of a production-line trend file, truncating it.
@@ -72,10 +72,10 @@ void writeProductionTrendHeader(const TrendState &state, int trendIndex, int net
 void writeProductionTrendRows(const TrendState &state, int trendIndex, int networkIndex);
 
 /// Writes the column captions of a service-line trend file, truncating it.
-void writeServiceTrendHeader(const TrendState &state, int trendIndex, int networkIndex);
+void writeGasLineTrendHeader(const TrendState &state, int trendIndex, int networkIndex);
 
 /// Appends the buffered rows of a service-line trend file.
-void writeServiceTrendRows(const TrendState &state, int trendIndex, int networkIndex);
+void writeGasLineTrendRows(const TrendState &state, int trendIndex, int networkIndex);
 
 /// Writes the captions of a production cross-section temperature trend file.
 void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIndex);
@@ -84,10 +84,10 @@ void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIn
 void writeProductionCrossSectionTrendRows(const TrendState &state, int trendIndex);
 
 /// Writes the captions of a service cross-section temperature trend file.
-void writeServiceCrossSectionTrendHeader(const TrendState &state, int trendIndex);
+void writeGasLineCrossSectionTrendHeader(const TrendState &state, int trendIndex);
 
 /// Appends the buffered rows of a service cross-section temperature trend.
-void writeServiceCrossSectionTrendRows(const TrendState &state, int trendIndex);
+void writeGasLineCrossSectionTrendRows(const TrendState &state, int trendIndex);
 
 } // namespace trendoutput
 
