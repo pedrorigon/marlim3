@@ -109,6 +109,10 @@ CONCEPTS = [
     ("hydrate",          ["hydrate", "hidrato"]),
     ("production",       ["production", "producer", "prod"]),
     ("liquidHoldup",     ["holdup", "hol"]),
+    # Found after the 59-row table: three pairs no row covered (T104e).
+    ("volumeFactor",     ["volumefactor", "formationvolumefactor"]),
+    ("solutionGasRatio", ["solutiongasratio", "solutionratio"]),
+    ("waterCut",         ["watercut", "waterfraction"]),
 ]
 
 DECL_TYPES = (r'(?:const\s+)?(?:unsigned\s+|long\s+|short\s+)*'
@@ -129,7 +133,8 @@ def strip(text):
 # tell gasFlowRate from gasFlow -- the one distinction it exists to make.
 COMPOUNDS = {"flowrate", "flowarea", "flowpattern", "timestep", "gasline", "crosssection",
              "steadystate", "voidfraction", "surfacetension", "pressuredrop", "latentheat",
-             "driftflux", "massflux", "heatflux"}
+             "driftflux", "massflux", "heatflux", "volumefactor", "formationvolumefactor",
+             "solutiongasratio", "solutionratio", "watercut", "waterfraction"}
 
 
 def words(name):
@@ -137,7 +142,10 @@ def words(name):
              if not p.isdigit()]
     units, i = [], 0
     while i < len(parts):
-        if i + 1 < len(parts) and parts[i] + parts[i + 1] in COMPOUNDS:
+        if i + 2 < len(parts) and parts[i] + parts[i + 1] + parts[i + 2] in COMPOUNDS:
+            units.append(parts[i] + parts[i + 1] + parts[i + 2])
+            i += 3
+        elif i + 1 < len(parts) and parts[i] + parts[i + 1] in COMPOUNDS:
             units.append(parts[i] + parts[i + 1])
             i += 2
         else:
