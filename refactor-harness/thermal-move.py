@@ -1596,7 +1596,7 @@ def check_renova_temp(baseline_path: str, current_path: str) -> int:
 # locator keeps working against a pre-rename baseline and a renamed module
 # alike.
 MARKER_ALIASES = {
-    "    double fwd;": "    double downstreamWaterFraction;",
+    "    double fwd;": "    double leftFaceWaterFraction;",
     "    double ativa = 1.;": "    double activeDerivative = 1.;",
 }
 
@@ -2155,10 +2155,10 @@ def check_renova_temp_decomposition(
         "    state.cells[0].transmassLini",
         "\n    return InletMassTransferSeed{")
     for new_name, old_name in (
-        ("previousLiquidDensity", "rhol0"),
-        ("previousOilVolumeFactor", "boL"),
-        ("previousSolutionGasRatio", "rsL"),
-        ("previousSolutionGasPressureDerivative", "DRsBoL"),
+        ("inletLiquidDensity", "rhol0"),
+        ("inletOilVolumeFactor", "boL"),
+        ("inletSolutionGasRatio", "rsL"),
+        ("inletSolutionGasPressureDerivative", "DRsBoL"),
         ("cellIndex", "i"),
     ):
         inlet_core = re.sub(rf"\b{new_name}\b", old_name, inlet_core)
@@ -2189,19 +2189,19 @@ def check_renova_temp_decomposition(
     property_plumbing = """            DistributedMassTransferProperties properties =
                 prepareDistributedMassTransferProperties(
                     state, i, tmed, flue, flud);
-            double fwC = properties.cellWaterFraction;
+            double fwC = properties.leftCellWaterFraction;
             double rl = properties.liquidDensity;
             double rg = properties.gasDensity;
-            double betI = properties.downstreamComposition;
+            double betI = properties.leftFaceComposition;
             double rhol = properties.mixtureLiquidDensity;
-            double boR = properties.downstreamOilVolumeFactor;
-            double rsR = properties.downstreamSolutionGasRatio;
+            double boR = properties.leftFaceOilVolumeFactor;
+            double rsR = properties.leftFaceSolutionGasRatio;
             double DRsBoR =
-                properties.downstreamSolutionGasPressureDerivative;
-            double rsM = properties.cellSolutionGasRatio;
-            double DRsBoM = properties.cellSolutionGasPressureDerivative;
+                properties.leftFaceSolutionGasPressureDerivative;
+            double rsM = properties.leftCellSolutionGasRatio;
+            double DRsBoM = properties.leftCellSolutionGasPressureDerivative;
             double DRsBoMT =
-                properties.cellSolutionGasTemperatureDerivative;
+                properties.leftCellSolutionGasTemperatureDerivative;
 """
     derivative_plumbing = """            DistributedMassTransferCoefficients coefficients =
                 updateDistributedMassTransferDerivatives(

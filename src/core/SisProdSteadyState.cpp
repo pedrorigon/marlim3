@@ -3240,14 +3240,14 @@ double steadyPressureAtLastCell(const SteadyStateState &state) {
     double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
     double viscmix = alfmed * state.cells[state.lastCell].flui.ViscGas(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) + (1 - alfmed) * ((1. - betmed) * state.cells[state.lastCell].flui.ViscOleo(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) + betmed * state.cells[state.lastCell].fluicol.VisFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp));
 
-    double reynoldsUpstreamFace;
+    double mixtureReynolds;
     if (state.cells[state.lastCell].duto.revest == 0)
-        reynoldsUpstreamFace = state.cells[state.lastCell].Rey(state.cells[state.lastCell].duto.a, j, rhomix, viscmix);
+        mixtureReynolds = state.cells[state.lastCell].Rey(state.cells[state.lastCell].duto.a, j, rhomix, viscmix);
     else {
         double dhid = 4 * area / perimeter;
-        reynoldsUpstreamFace = state.cells[state.lastCell].Rey(dhid, j, rhomix, viscmix);
+        mixtureReynolds = state.cells[state.lastCell].Rey(dhid, j, rhomix, viscmix);
     }
-    double frictionFactor = state.cells[state.lastCell].fric(reynoldsUpstreamFace, state.cells[state.lastCell].duto.rug / diameter);
+    double frictionFactor = state.cells[state.lastCell].fric(mixtureReynolds, state.cells[state.lastCell].duto.rug / diameter);
     double gradfric = state.cells[state.lastCell].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
     double gradhidro = state.cells[state.lastCell].dPdLHidro * (9.82 * sin(state.cells[state.lastCell].duto.teta) * rhomix * dx);
     return -(1. * gradfric + gradhidro) / 98066.5;
@@ -3276,14 +3276,14 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
             double visl = ((1. - betmed) * state.cells[i - 1].flui.ViscOleo(state.cells[i - 1].pres, state.cells[i - 1].temp) + betmed * state.cells[i - 1].fluicol.VisFlu(state.cells[i - 1].pres, state.cells[i - 1].temp));
             double viscmix = alfmed * state.cells[i - 1].flui.ViscGas(state.cells[i - 1].pres, state.cells[i - 1].temp) + (1 - alfmed) * visl;
 
-            double reynoldsUpstreamFace;
+            double mixtureReynolds;
             if (state.cells[i].dutoL.revest == 0)
-                reynoldsUpstreamFace = state.cells[i - 1].Rey(state.cells[i].dutoL.a, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i - 1].Rey(state.cells[i].dutoL.a, j, rhomix, viscmix);
             else {
                 double dhid = 4 * area / perimeter;
-                reynoldsUpstreamFace = state.cells[i - 1].Rey(dhid, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i - 1].Rey(dhid, j, rhomix, viscmix);
             }
-            double frictionFactor = state.cells[i - 1].fric(reynoldsUpstreamFace, state.cells[i].dutoL.rug / diameter);
+            double frictionFactor = state.cells[i - 1].fric(mixtureReynolds, state.cells[i].dutoL.rug / diameter);
             if (i > 1 && state.cells[i - 1].fluicol.tipoF == 2) {
                 frictionFactor *= (1 - state.cells[i - 1].dR);
             }
@@ -3311,14 +3311,14 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
             double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
             double viscmix = alfmed * state.cells[i - 1].flui.ViscGas(pmed, tmed) + (1 - alfmed) * ((1. - betmed) * state.cells[i - 1].flui.ViscOleo(pmed, tmed) + betmed * state.cells[i - 1].fluicol.VisFlu(pmed, tmed));
 
-            double reynoldsUpstreamFace;
+            double mixtureReynolds;
             if (state.cells[i].dutoL.revest == 0)
-                reynoldsUpstreamFace = state.cells[i - 1].Rey(state.cells[i].dutoL.a, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i - 1].Rey(state.cells[i].dutoL.a, j, rhomix, viscmix);
             else {
                 double dhid = 4 * area / perimeter;
-                reynoldsUpstreamFace = state.cells[i - 1].Rey(dhid, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i - 1].Rey(dhid, j, rhomix, viscmix);
             }
-            double frictionFactor = state.cells[i - 1].fric(reynoldsUpstreamFace, state.cells[i].dutoL.rug / diameter);
+            double frictionFactor = state.cells[i - 1].fric(mixtureReynolds, state.cells[i].dutoL.rug / diameter);
             double gradfric = state.cells[i - 1].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
             double gradhidro = state.cells[i - 1].dPdLHidro * (9.82 * sin(state.cells[i].dutoL.teta) * rhomix * dx);
             state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / 98066.5;
@@ -3370,7 +3370,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
 
     double rhomix;
     double viscmix;
-    double reynoldsUpstreamFace;
+    double mixtureReynolds;
     double frictionFactor;
     double gradfric;
     double gradhidro;
@@ -3408,27 +3408,27 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             viscmix = alfmed * state.cells[i].flui.ViscGas(pmed, tmed) + (1 - alfmed) * visl;
 
             if (state.cells[i].duto.revest == 0)
-                reynoldsUpstreamFace = state.cells[i].Rey(state.cells[i].duto.a, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i].Rey(state.cells[i].duto.a, j, rhomix, viscmix);
             else {
                 double dhid = 4 * area / perimeter;
-                reynoldsUpstreamFace = state.cells[i].Rey(dhid, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i].Rey(dhid, j, rhomix, viscmix);
             }
-            frictionFactor = state.cells[i].fric(reynoldsUpstreamFace, state.cells[i].duto.rug / diameter);
+            frictionFactor = state.cells[i].fric(mixtureReynolds, state.cells[i].duto.rug / diameter);
             if (state.cells[i].fluicol.tipoF == 2) {
                 double ulmed = 0.;
-                double reynoldsLeftFace;
+                double liquidReynolds;
                 if (fabs(state.cells[i].MComp) > 1e-15) {
                     if (alfmed < 1 - 1e-15)
                         ulmed = ulsmed / (1 - alfmed);
                     else
                         ulmed = 0.;
                     if (state.cells[i].duto.revest == 0)
-                        reynoldsLeftFace = state.cells[i].Rey(state.cells[i].duto.a, ulmed, rhol, visl);
+                        liquidReynolds = state.cells[i].Rey(state.cells[i].duto.a, ulmed, rhol, visl);
                     else {
                         double dhid = 4 * area / perimeter;
-                        reynoldsLeftFace = state.cells[i].Rey(dhid, ulmed, rhol, visl);
+                        liquidReynolds = state.cells[i].Rey(dhid, ulmed, rhol, visl);
                     }
-                    state.cells[i].dR = state.cells[i].fluicol.calcDR(reynoldsLeftFace);
+                    state.cells[i].dR = state.cells[i].fluicol.calcDR(liquidReynolds);
                 } else
                     state.cells[i].dR = 0.;
                 frictionFactor *= (1 - state.cells[i].dR);
@@ -3436,7 +3436,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             gradfric = state.cells[i].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
             gradhidro = state.cells[i].dPdLHidro * (9.82 * sin(state.cells[i].duto.teta) * rhomix * dx);
             if (state.cells[i].mudaArea == 1)
-                dpArea = areaChangePressureDrop(state, i - 1, rhomix, reynoldsUpstreamFace, fabs(j));
+                dpArea = areaChangePressureDrop(state, i - 1, rhomix, mixtureReynolds, fabs(j));
 
             state.cells[i].pres = pmed - (gradfric + gradhidro) / 98066.5 + dpArea;
         } else {
@@ -3458,16 +3458,16 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             viscmix = alfmed * state.cells[i].flui.ViscGas(pmed, tmed) + (1 - alfmed) * ((1. - betmed) * state.cells[i].flui.ViscOleo(pmed, tmed) + betmed * state.cells[i].fluicol.VisFlu(pmed, tmed));
 
             if (state.cells[i].duto.revest == 0)
-                reynoldsUpstreamFace = state.cells[i].Rey(state.cells[i].duto.a, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i].Rey(state.cells[i].duto.a, j, rhomix, viscmix);
             else {
                 double dhid = 4 * area / perimeter;
-                reynoldsUpstreamFace = state.cells[i].Rey(dhid, j, rhomix, viscmix);
+                mixtureReynolds = state.cells[i].Rey(dhid, j, rhomix, viscmix);
             }
-            frictionFactor = state.cells[i].fric(reynoldsUpstreamFace, state.cells[i].duto.rug / diameter);
+            frictionFactor = state.cells[i].fric(mixtureReynolds, state.cells[i].duto.rug / diameter);
             gradfric = state.cells[i].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
             gradhidro = state.cells[i].dPdLHidro * (9.82 * sin(state.cells[i].duto.teta) * rhomix * dx);
             if (state.cells[i].mudaArea == 1)
-                dpArea = areaChangePressureDrop(state, i - 1, rhomix, reynoldsUpstreamFace, fabs(j));
+                dpArea = areaChangePressureDrop(state, i - 1, rhomix, mixtureReynolds, fabs(j));
 
             state.cells[i].pres = state.cells[i].presaux + state.cells[i - 1].dpB / 98066.5 - (gradfric + gradhidro) / 98066.5 + dpArea;
         }
@@ -3496,8 +3496,8 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
 
 void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
 
-    double waterCutDownstream;
-    double waterCutUpstream;
+    double waterCutLocal;
+    double waterCutLeftCell;
 
     double razdx = state.cells[i].dxR / (state.cells[i].dx + state.cells[i].dxR);
     double razdxL = state.cells[i].dx / (state.cells[i].dx + state.cells[i].dxL);
@@ -3511,35 +3511,35 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
 
     double oilVolumeFactorLocal = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp);
     double waterVolumeFactorLocal = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
-    waterCutDownstream = state.cells[i].flui.BSW * waterVolumeFactorLocal / (oilVolumeFactorLocal + waterVolumeFactorLocal * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLocal);
-    double solutionRatioRight = state.cells[i].flui.RS(state.cells[i + 1].presaux, tmed);
-    double oilVolumeFactorRight = state.cells[i].flui.BOFunc(state.cells[i + 1].presaux, tmed);
-    double oilVolumeFactorUpstream;
-    double waterVolumeFactorUpstream;
-    double solutionRatioLeft;
-    double oilVolumeFactorLeft;
-    double waterVolumeFactorLeft;
+    waterCutLocal = state.cells[i].flui.BSW * waterVolumeFactorLocal / (oilVolumeFactorLocal + waterVolumeFactorLocal * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLocal);
+    double solutionRatioRightFace = state.cells[i].flui.RS(state.cells[i + 1].presaux, tmed);
+    double oilVolumeFactorRightFace = state.cells[i].flui.BOFunc(state.cells[i + 1].presaux, tmed);
+    double oilVolumeFactorLeftCell;
+    double waterVolumeFactorLeftCell;
+    double solutionRatioLeftFace;
+    double oilVolumeFactorLeftFace;
+    double waterVolumeFactorLeftFace;
     double dengD = state.cells[i].flui.Deng;
     double dengE;
     double dissolvedGasGravityRatio = state.cells[i].flui.rDgD;
     double freeGasGravityRatio;
     if (i > 0) {
-        oilVolumeFactorUpstream = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        waterVolumeFactorUpstream = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        waterCutUpstream = state.cells[i - 1].flui.BSW * waterVolumeFactorUpstream / (oilVolumeFactorUpstream + waterVolumeFactorUpstream * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * oilVolumeFactorUpstream);
-        solutionRatioLeft = state.cells[i - 1].flui.RS(state.cells[i].presaux, tmed0);
-        oilVolumeFactorLeft = state.cells[i - 1].flui.BOFunc(state.cells[i].presaux, tmed0);
-        waterVolumeFactorLeft = state.cells[i - 1].flui.BAFunc(state.cells[i].presaux, tmed0);
+        oilVolumeFactorLeftCell = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
+        waterVolumeFactorLeftCell = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
+        waterCutLeftCell = state.cells[i - 1].flui.BSW * waterVolumeFactorLeftCell / (oilVolumeFactorLeftCell + waterVolumeFactorLeftCell * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * oilVolumeFactorLeftCell);
+        solutionRatioLeftFace = state.cells[i - 1].flui.RS(state.cells[i].presaux, tmed0);
+        oilVolumeFactorLeftFace = state.cells[i - 1].flui.BOFunc(state.cells[i].presaux, tmed0);
+        waterVolumeFactorLeftFace = state.cells[i - 1].flui.BAFunc(state.cells[i].presaux, tmed0);
         dengE = state.cells[i - 1].flui.Deng;
         freeGasGravityRatio = state.cells[i - 1].flui.rDgD;
     } else {
-        oilVolumeFactorUpstream = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp);
-        waterVolumeFactorUpstream = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        oilVolumeFactorLeftCell = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorLeftCell = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
 
-        waterCutUpstream = state.cells[i].flui.BSW * waterVolumeFactorUpstream / (oilVolumeFactorUpstream + waterVolumeFactorUpstream * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorUpstream);
-        solutionRatioLeft = state.cells[i].flui.RS(state.cells[i].presaux, tmed0);
-        oilVolumeFactorLeft = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed0);
-        waterVolumeFactorLeft = state.cells[i].flui.BAFunc(state.cells[i].presaux, tmed0);
+        waterCutLeftCell = state.cells[i].flui.BSW * waterVolumeFactorLeftCell / (oilVolumeFactorLeftCell + waterVolumeFactorLeftCell * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLeftCell);
+        solutionRatioLeftFace = state.cells[i].flui.RS(state.cells[i].presaux, tmed0);
+        oilVolumeFactorLeftFace = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed0);
+        waterVolumeFactorLeftFace = state.cells[i].flui.BAFunc(state.cells[i].presaux, tmed0);
         dengE = state.cells[i].flui.Deng;
         freeGasGravityRatio = state.cells[i].flui.rDgD;
     }
@@ -3559,7 +3559,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         betL = state.cells[i].betPigE;
 
     if (state.cells[i].acsr.tipo == 0)
-        state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * 1.225 * (1. - waterCutDownstream) * solutionRatioRight * (6.29 / 35.31467) / oilVolumeFactorRight) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * 1.225 * (1. - waterCutUpstream) * solutionRatioLeft * (6.29 / 35.31467) / oilVolumeFactorLeft));
+        state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * 1.225 * (1. - waterCutLocal) * solutionRatioRightFace * (6.29 / 35.31467) / oilVolumeFactorRightFace) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * 1.225 * (1. - waterCutLeftCell) * solutionRatioLeftFace * (6.29 / 35.31467) / oilVolumeFactorLeftFace));
     else
         state.cells[i].transmassR = 0.;
 
@@ -4092,7 +4092,7 @@ void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) 
     }
 }
 
-bool advanceProductionColumn(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
@@ -4242,7 +4242,7 @@ bool advanceProductionColumn(const SteadyStateState &state, double pchute, int &
     return false;
 }
 
-bool advanceReverseProductionColumn(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+bool advanceReverseProductionCells(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
@@ -4335,7 +4335,7 @@ bool advanceReverseProductionColumn(const SteadyStateState &state, double pchute
     return false;
 }
 
-bool advanceProductionColumnSecondary(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
@@ -4642,7 +4642,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             i = 1;
             // inicio da marcha propriamente dita
             double abortValue;
-            if (advanceProductionColumn(state, pchute, i, abortValue))
+            if (advanceProductionCells(state, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
                 corrigechute = 0; // fim da marcha
@@ -4785,7 +4785,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
             i = 1;
             // inicio da marcha propriamente dita
             double abortValue;
-            if (advanceReverseProductionColumn(state, pchute, i, abortValue))
+            if (advanceReverseProductionCells(state, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
                 corrigechute = 0; // fim da marcha
@@ -4991,7 +4991,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             i = 1;
             // inicio da marcha propriamente dita
             double abortValue;
-            if (advanceProductionColumnSecondary(state, pchute, i, abortValue))
+            if (advanceProductionCellsSecondary(state, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
                 corrigechute = 0; // fim da marcha
@@ -5094,7 +5094,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
     }
 }
 
-void advanceProductionColumnPressureToPressureSecondary(const SteadyStateState &state, int &i) {
+void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &state, int &i) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {
 
         advanceUpstreamSteadyPressure(state, i, 0);
@@ -5551,7 +5551,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
     state.steadyIteration = 0;
     while (state.steadyIteration < 3) {
         i = 1;
-        advanceProductionColumnPressureToPressureSecondary(state, i);
+        advanceProductionCellsPressureToPressureSecondary(state, i);
         state.steadyIteration++;
     }
 
@@ -6011,14 +6011,14 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
-            double reynoldsAtFace;
+            double mixtureReynolds;
             if (state.cells[i].duto.revest == 0)
-                reynoldsAtFace = state.cells[0].Rey(state.cells[i].duto.a, j, rmis, visMis);
+                mixtureReynolds = state.cells[0].Rey(state.cells[i].duto.a, j, rmis, visMis);
             else {
                 double dhid = 4 * state.cells[i].duto.area / state.cells[0].duto.peri;
-                reynoldsAtFace = state.cells[i].Rey(dhid, j, rmis, visMis);
+                mixtureReynolds = state.cells[i].Rey(dhid, j, rmis, visMis);
             }
-            frictionFactor = state.cells[i].fric(reynoldsAtFace, state.cells[0].duto.rug / state.cells[0].duto.a);
+            frictionFactor = state.cells[i].fric(mixtureReynolds, state.cells[0].duto.rug / state.cells[0].duto.a);
         }
         double perdafric = (frictionFactor * rmis * j * fabs(j) / 2.) * state.cells[i].duto.peri / state.cells[i].duto.area;
         taux = state.input.celp[i].textern;
@@ -6088,14 +6088,14 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
         double rlcA = state.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
         double massicC = rlcA * liquidFlowRate;
         j = (massicC / completionDensityAtGuess) / state.cells[0].duto.area;
-        double reynoldsAtFace;
+        double mixtureReynolds;
         if (state.cells[0].duto.revest == 0)
-            reynoldsAtFace = state.cells[0].Rey(state.cells[0].duto.a, j, rmis, visMis);
+            mixtureReynolds = state.cells[0].Rey(state.cells[0].duto.a, j, rmis, visMis);
         else {
             double dhid = 4 * state.cells[0].duto.area / state.cells[0].duto.peri;
-            reynoldsAtFace = state.cells[0].Rey(dhid, j, rmis, visMis);
+            mixtureReynolds = state.cells[0].Rey(dhid, j, rmis, visMis);
         }
-        frictionFactor = state.cells[0].fric(reynoldsAtFace, state.cells[0].duto.rug / state.cells[0].duto.a);
+        frictionFactor = state.cells[0].fric(mixtureReynolds, state.cells[0].duto.rug / state.cells[0].duto.a);
     }
     double perdafric = (frictionFactor * rmis * j * fabs(j) / 2.) * state.cells[0].duto.peri / state.cells[0].duto.area;
     for (int i = state.lastCell; i > 0; i--) {

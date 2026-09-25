@@ -314,12 +314,12 @@ PY
 }
 
 run_t064_decomposition_case renova-inlet-state \
-    'previousLiquidDensity =' \
-    'previousLiquidDensity +='
+    'inletLiquidDensity =' \
+    'inletLiquidDensity +='
 
 run_t064_decomposition_case renova-properties-temp \
-    'cellSolutionGasTemperatureDerivative = (cellSolutionGasRatio / cellOilVolumeFactor - shiftedCellSolutionGasRatio / shiftedCellOilVolumeFactor) /' \
-    'cellSolutionGasTemperatureDerivative = (cellSolutionGasRatio / cellOilVolumeFactor + shiftedCellSolutionGasRatio / shiftedCellOilVolumeFactor) /'
+    'leftCellSolutionGasTemperatureDerivative = (leftCellSolutionGasRatio / leftCellOilVolumeFactor - leftCellSolutionGasRatioAtPerturbedTemperature / leftCellOilVolumeFactorAtPerturbedTemperature) /' \
+    'leftCellSolutionGasTemperatureDerivative = (leftCellSolutionGasRatio / leftCellOilVolumeFactor + leftCellSolutionGasRatioAtPerturbedTemperature / leftCellOilVolumeFactorAtPerturbedTemperature) /'
 
 run_t064_decomposition_case renova-derivative-model \
     'state.massTransferModel != 0)' \

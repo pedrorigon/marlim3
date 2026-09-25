@@ -2504,10 +2504,10 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
 
 /// Walks the column cell by cell for the tertiary search.
 ///
-/// The same shape as advanceProductionColumn in the march module, and NOT the
+/// The same shape as advanceProductionCells in the march module, and NOT the
 /// same function: this one is inlined inside what the original called a search.
 /// See evidencia/buscaprod-diff.md.
-bool advanceTertiaryColumn(const SteadyStateSearchState &state, int &i, double &abortValue) {
+bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &abortValue) {
     
                 advanceUpstreamSteadyPressure(state.march, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
                 // da celula i
@@ -2639,7 +2639,7 @@ bool advanceTertiaryColumn(const SteadyStateSearchState &state, int &i, double &
 /// march of its own. See evidencia/buscaprod-diff.md -- it sits at 4 to 5 per cent
 /// similarity to the three real searches, which sit at 63 to 69 per cent to each
 /// other.
-bool marchTertiaryColumnUntilConverged(const SteadyStateSearchState &state, int &corrigechute, int &i, double betini, double alfini, double pentrada, double &abortValue) {
+bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &corrigechute, int &i, double betini, double alfini, double pentrada, double &abortValue) {
     while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
         // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
         // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
@@ -2713,7 +2713,7 @@ bool marchTertiaryColumnUntilConverged(const SteadyStateSearchState &state, int 
         i = 1;
         // inicio da marcha propriamente dita
         while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 0.1 && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
-            if (advanceTertiaryColumn(state, i, abortValue))
+            if (advanceTertiaryCells(state, i, abortValue))
                 return true;
         }
         if (i == state.march.lastCell + 1)
@@ -2812,7 +2812,7 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
         int i;
         int corrigechute = 1;
         double abortValue;
-        if (marchTertiaryColumnUntilConverged(state, corrigechute, i, betini, alfini, pentrada, abortValue))
+        if (marchTertiaryCellsUntilConverged(state, corrigechute, i, betini, alfini, pentrada, abortValue))
             return abortValue;
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista

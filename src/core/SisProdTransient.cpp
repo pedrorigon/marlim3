@@ -2067,7 +2067,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         valveOpeningLow(state.step); // caso varias valvulas
 
         if (state.step.input.controDesc == 1)
-            velmaxdesc = state.updaters.findInjectionPressureDownstream();
+            velmaxdesc = state.updaters.searchUnloadingInjectionPressure();
         state.updaters.solveGasLine();
         state.initialGasSurfacePressure = state.step.gasSurfacePressure;
         state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,

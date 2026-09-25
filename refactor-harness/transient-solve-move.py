@@ -75,7 +75,7 @@ CALLBACKS = {
     "geraMiniTabFlu": "state.step.updaters.generateFluidMiniTable",
     "subtempoGas": "state.step.updaters.advanceGasSubStep",
     "solveHydrateEnvelopes": "state.updaters.solveHydrateEnvelopes",
-    "BuscaPresInjDesc": "state.updaters.findInjectionPressureDownstream",
+    "BuscaPresInjDesc": "state.updaters.searchUnloadingInjectionPressure",
     "ImprimeTrendPCab": "state.updaters.writeProductionTrendHeader",
     "ImprimeTrendP": "state.updaters.writeProductionTrendRows",
     "ImprimeTrendGCab": "state.updaters.writeGasTrendHeader",

@@ -223,24 +223,24 @@ struct TemperatureSourceTerms {
 };
 
 struct DistributedMassTransferProperties {
-    double downstreamWaterFraction;
-    double upstreamWaterFraction;
-    double cellWaterFraction;
+    double leftFaceWaterFraction;
+    double leftCellLeftFaceWaterFraction;
+    double leftCellWaterFraction;
     double liquidDensity;
     double gasDensity;
-    double downstreamComposition;
-    double upstreamComposition;
+    double leftFaceComposition;
+    double leftCellLeftFaceComposition;
     double mixtureLiquidDensity;
-    double downstreamOilVolumeFactor;
-    double downstreamSolutionGasRatio;
-    double downstreamSolutionGasPressureDerivative;
-    double cellOilVolumeFactor;
-    double cellSolutionGasRatio;
-    double cellSolutionGasPressureDerivative;
-    double cellSolutionGasTemperatureDerivative;
+    double leftFaceOilVolumeFactor;
+    double leftFaceSolutionGasRatio;
+    double leftFaceSolutionGasPressureDerivative;
+    double leftCellOilVolumeFactor;
+    double leftCellSolutionGasRatio;
+    double leftCellSolutionGasPressureDerivative;
+    double leftCellSolutionGasTemperatureDerivative;
 };
 
-/// Upstream properties seeded at the inlet before the mass-transfer sweep.
+/// Left-cell-left-face values seeded from the inlet cell before the mass-transfer sweep.
 struct InletMassTransferSeed {
     double liquidDensity;
     double oilVolumeFactor;

@@ -2702,7 +2702,7 @@ void sisprod::composition::CompositionUpdaters::correctGasSpecificGravity(int i)
 void sisprod::transient::TransientSolveUpdaters::solveHydrateEnvelopes() const {
     system.solveHydrateEnvelopes();
 }
-double sisprod::transient::TransientSolveUpdaters::findInjectionPressureDownstream() const {
+double sisprod::transient::TransientSolveUpdaters::searchUnloadingInjectionPressure() const {
     return system.BuscaPresInjDesc();
 }
 void sisprod::transient::TransientSolveUpdaters::writeProductionTrendHeader(int i, int nrede) const {

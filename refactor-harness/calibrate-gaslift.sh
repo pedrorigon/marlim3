@@ -101,8 +101,8 @@ probe 'avancInter: handover ratio' \
     "$target_gaslift"
 
 probe 'resolveDescarga: liquid hydrostatic' \
-    'double hidro1L = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
-    'double hidro1L = (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * upstreamLiquidLength;' \
+    'double hidro1L = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * leftLiquidLength;' \
+    'double hidro1L = (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * leftLiquidLength;' \
     "$target_gaslift"
 
 # Splits the gas/liquid share of every control volume. Moving the threshold

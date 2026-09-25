@@ -81,9 +81,9 @@ FUNCTIONS = {
     "seedFirstCellVoidFraction": {"new_name": "seedFirstCellVoidFraction",
                                   "arguments": "pchute, alfini, betini, dryGasFlashTarget"},
     "marchGasLineAndCoupleAnnulus": {"new_name": "marchGasLineAndCoupleAnnulus", "arguments": "pchute"},
-    "advanceProductionColumn": {"new_name": "advanceProductionColumn", "arguments": "pchute, i, abortValue"},
-    "advanceReverseProductionColumn": {"new_name": "advanceReverseProductionColumn", "arguments": "pchute, i, abortValue"},
-    "advanceProductionColumnSecondary": {"new_name": "advanceProductionColumnSecondary", "arguments": "pchute, i, abortValue"},
+    "advanceProductionColumn": {"new_name": "advanceProductionCells", "arguments": "pchute, i, abortValue"},
+    "advanceReverseProductionColumn": {"new_name": "advanceReverseProductionCells", "arguments": "pchute, i, abortValue"},
+    "advanceProductionColumnSecondary": {"new_name": "advanceProductionCellsSecondary", "arguments": "pchute, i, abortValue"},
     "surfaceChokeMassFlow": {"new_name": "surfaceChokeMassFlowRate", "arguments": ""},
     "marchaProdPerm1": {"new_name": "marchProductionSteady", "arguments": "pchute"},
     "marchaProdPerm1Rev": {"new_name": "marchReverseProductionSteady", "arguments": "pchute"},
@@ -108,7 +108,7 @@ FUNCTIONS = {
     "seedFirstCellFromFlowRateGuess": {"new_name": "seedFirstCellFromFlowRateGuess",
                                        "arguments": "mchute, alfini, betini"},
     "advanceProductionColumnPressureToPressureSecondary": {
-        "new_name": "advanceProductionColumnPressureToPressureSecondary", "arguments": "i"},
+        "new_name": "advanceProductionCellsPressureToPressureSecondary", "arguments": "i"},
 }
 
 # Calls BETWEEN moved routines. The moved body must reach the namespace version,
@@ -160,9 +160,9 @@ CALLS = {
 
     "seedFirstCellVoidFraction": ("seedFirstCellVoidFraction", True),
     "marchGasLineAndCoupleAnnulus": ("marchGasLineAndCoupleAnnulus", True),
-    "advanceProductionColumn": ("advanceProductionColumn", True),
-    "advanceReverseProductionColumn": ("advanceReverseProductionColumn", True),
-    "advanceProductionColumnSecondary": ("advanceProductionColumnSecondary", True),
+    "advanceProductionColumn": ("advanceProductionCells", True),
+    "advanceReverseProductionColumn": ("advanceReverseProductionCells", True),
+    "advanceProductionColumnSecondary": ("advanceProductionCellsSecondary", True),
     "surfaceChokeMassFlow": ("surfaceChokeMassFlowRate", True),
 
     "marchaProdPresPres1": ("marchProductionPressureToPressure", True),
@@ -177,7 +177,7 @@ CALLS = {
     "hidroTramoSecundario": ("secondaryBranchHydrostatic", True),
     "seedFirstCellFromFlowRateGuess": ("seedFirstCellFromFlowRateGuess", True),
     "advanceProductionColumnPressureToPressureSecondary": (
-        "advanceProductionColumnPressureToPressureSecondary", True),
+        "advanceProductionCellsPressureToPressureSecondary", True),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so

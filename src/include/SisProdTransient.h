@@ -380,7 +380,7 @@ struct TransientSolveUpdaters {
     SProd &system;
 
     void solveHydrateEnvelopes() const;
-    [[nodiscard]] double findInjectionPressureDownstream() const;
+    [[nodiscard]] double searchUnloadingInjectionPressure() const;
     void writeProductionTrendHeader(int i, int nrede) const;
     void writeProductionTrendRows(int i, int nrede) const;
     void writeGasTrendHeader(int i, int nrede) const;
