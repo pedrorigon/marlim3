@@ -368,6 +368,9 @@ montasistema
 # the hydrate calculation renovaFonte's first cut lifted. L2 14/14 after each.
 renovaFonte
 auxMiniTab
+# The default constructor SProd() was cut too (nullOutputCouplingAndSaturationState),
+# missed at first because the ad-hoc scan could not match a function without a
+# return type. SProd is declared above since stage 1 and covers both overloads.
 
 # --- stage 9: composition moves (T102d) -----------------------------------
 # Moved to SisProdComposition.cpp as free functions over CompositionState; the

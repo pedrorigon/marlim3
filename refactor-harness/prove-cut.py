@@ -52,8 +52,12 @@ def source(rev):
     return raw.decode("utf-8", errors="surrogateescape")
 
 
+# `SProd()` names the default constructor. A constructor has no return type,
+# and the pattern this replaces required one character before `SProd::`,
+# so it never matched a constructor -- which is how T101 missed the default
+# constructor's 236 lines (found in T102 by measure-functions.py).
 def span(text, name):
-    m = re.search(r'^[A-Za-z][^\n;{}]*?\bSProd::%s\(' % re.escape(name), text, re.M)
+    m = re.search((r'^SProd::SProd\(\)' if name == "SProd()" else r'^(?:[A-Za-z][^\n;{}]*?\b)?SProd::%s\(' % re.escape(name)), text, re.M)
     if m is None:
         raise SystemExit("not found: SProd::%s" % name)
     o = braces.first_brace_after(text, m.start())

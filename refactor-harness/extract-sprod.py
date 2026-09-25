@@ -41,10 +41,17 @@ def first_sentence(doc):
     return m.group(1) if m else flat
 
 
+# `SProd()` names the default constructor. A constructor has no return type,
+# and the pattern this replaces required one character before `SProd::`,
+# so it never matched a constructor -- which is how T101 missed the default
+# constructor's 236 lines (found in T102 by measure-functions.py).
 def function_span(text, name):
     # `SProd &` and an escaped name admit operator= (T101); the rest were the
     # only hosts before.
-    m = re.search(rf'^(?:void|double|int|bool|SProd &)\s*SProd::{re.escape(name)}\(', text, re.M)
+    if name == "SProd()":
+        m = re.search(r'^SProd::SProd\(\)', text, re.M)
+    else:
+        m = re.search(rf'^(?:void|double|int|bool|SProd &)\s*SProd::{re.escape(name)}\(', text, re.M)
     if m is None:
         raise SystemExit("function not found: " + name)
     return m.start(), braces.match(text, braces.first_brace_after(text, m.start()))
@@ -145,7 +152,10 @@ def main():
     io.open(SRC, "w", encoding="utf-8", errors="surrogateescape").write("\n".join(all_lines))
 
     hdr = io.open(HDR, encoding="utf-8", errors="surrogateescape").read()
-    m = re.search(rf'^(\s*)(?:void|double|int|bool|SProd &)\s*{re.escape(args.function)}\(', hdr, re.M)
+    if args.function == "SProd()":
+        m = re.search(r'^(\s*)SProd\(\);', hdr, re.M)
+    else:
+        m = re.search(rf'^(\s*)(?:void|double|int|bool|SProd &)\s*{re.escape(args.function)}\(', hdr, re.M)
     if m is None:
         raise SystemExit(f"declaration of {args.function} not found in {HDR}")
     # The header gets the doc's first SENTENCE, rewrapped. It used to get the

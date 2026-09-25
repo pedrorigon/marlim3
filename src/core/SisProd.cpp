@@ -195,6 +195,58 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     redeParalelaS = -1;
     montasistema(compfonte, posicfonte, nfontes);
 }
+/// Empties the trend, transient-trend and profile bookkeeping of both lines,
+/// zeroes the column-annulus and network coupling indices and the profile
+/// counters, and nulls the PVTSim saturation tables -- the default constructor's
+/// share of the state montasistema later fills.
+void SProd::nullOutputCouplingAndSaturationState() {
+    ncelperftransg = 0;
+    TrendLengthG = 0;
+    MatTrendG = 0;
+    resettrendg = 0;
+    ntrendg = 0;
+    ntrendgB = 0;
+    TrendLengthTransG = 0;
+    MatTrendTransG = 0;
+    resettrendtransg = 0;
+    ntrendtransg = 0;
+    ntrendtransgB = 0;
+    ncelperftransp = 0;
+    TrendLengthP = 0;
+    MatTrendP = 0;
+    resettrend = 0;
+    ntrend = 0;
+    ntrendB = 0;
+    TrendLengthTransP = 0;
+    MatTrendTransP = 0;
+    resettrendtrans = 0;
+    ntrendtrans = 0;
+    ntrendtransB = 0;
+
+    AnulaColunaIni = 0;
+    AnulaColunaFim = 0;
+    ColunaAnulaIni = 0;
+    ColunaAnulaFim = 0;
+    verificaAcop = 0;
+    verificaAcopRedeP = 0;
+    verificaAcopRedeS = 0;
+    SecPrimIniRedeP = 0;
+    SecPrimFimRedeP = 0;
+    PrimSecIniRedeP = 0;
+    PrimSecFimRedeP = 0;
+    kontaTempoProf = 0;
+    //kontaTempoCelUni = 0;
+    kontaTempoProfG = 0;
+    kontaTempoTransProf = 0;
+    kontaTempoTransProfG = 0;
+
+    LerPB = 0;
+    PBPVTSim = 0;
+    TBPVTSim = 0;
+    RSLivia = 0;
+    lerRS = 0;
+}
+
 SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), matglobP(2 * 1, 3, 2), termolivreP(2 * 1), matglobG(
                                                                                                                                     3 * 1, 5, 5),
                  termolivreG(3 * 1) {
@@ -292,51 +344,7 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
     npig = 0;
     receb = 0;
 
-    ncelperftransg = 0;
-    TrendLengthG = 0;
-    MatTrendG = 0;
-    resettrendg = 0;
-    ntrendg = 0;
-    ntrendgB = 0;
-    TrendLengthTransG = 0;
-    MatTrendTransG = 0;
-    resettrendtransg = 0;
-    ntrendtransg = 0;
-    ntrendtransgB = 0;
-    ncelperftransp = 0;
-    TrendLengthP = 0;
-    MatTrendP = 0;
-    resettrend = 0;
-    ntrend = 0;
-    ntrendB = 0;
-    TrendLengthTransP = 0;
-    MatTrendTransP = 0;
-    resettrendtrans = 0;
-    ntrendtrans = 0;
-    ntrendtransB = 0;
-
-    AnulaColunaIni = 0;
-    AnulaColunaFim = 0;
-    ColunaAnulaIni = 0;
-    ColunaAnulaFim = 0;
-    verificaAcop = 0;
-    verificaAcopRedeP = 0;
-    verificaAcopRedeS = 0;
-    SecPrimIniRedeP = 0;
-    SecPrimFimRedeP = 0;
-    PrimSecIniRedeP = 0;
-    PrimSecFimRedeP = 0;
-    kontaTempoProf = 0;
-    //kontaTempoCelUni = 0;
-    kontaTempoProfG = 0;
-    kontaTempoTransProf = 0;
-    kontaTempoTransProfG = 0;
-
-    LerPB = 0;
-    PBPVTSim = 0;
-    TBPVTSim = 0;
-    RSLivia = 0;
-    lerRS = 0;
+    nullOutputCouplingAndSaturationState();
 
     noextremo = 1;
     noinicial = 1;

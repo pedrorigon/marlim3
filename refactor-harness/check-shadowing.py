@@ -32,16 +32,22 @@ import braces
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "src/core/SisProd.cpp"
 WARNING = re.compile(r'SisProd\.cpp:(\d+):\d+: warning: declaration of .(\w+). shadows (a member|a global|a previous local|a parameter)')
-# The calibration: renovaFracMol declares `double dt` at its outermost level,
-# hiding SProd::dt; buildGasLiftLine hides nothing. If the parsing breaks, the
-# first stops being found and the tool refuses to answer.
-CALIBRATION = (("renovaFracMol", "dt"), ("buildGasLiftLine", None))
+# The calibration: buildDynamicTablesAndInclinations declares locals named
+# temp that hide the global of that name; buildGasLiftLine hides nothing. If
+# the parsing breaks, the first stops being found and the tool refuses to
+# answer. (It first used renovaFracMol's `dt`, and failed its own calibration
+# the day renovaFracMol moved to the composition module -- as it should.)
+CALIBRATION = (("buildDynamicTablesAndInclinations", "temp"), ("buildGasLiftLine", None))
 
 
+# `SProd()` names the default constructor. A constructor has no return type,
+# and the pattern this replaces required one character before `SProd::`,
+# so it never matched a constructor -- which is how T101 missed the default
+# constructor's 236 lines (found in T102 by measure-functions.py).
 def ranges(text, names):
     out = {}
     for n in names:
-        m = re.search(r'^[A-Za-z][^\n;{}]*?\bSProd::%s\(' % re.escape(n), text, re.M)
+        m = re.search((r'^SProd::SProd\(\)' if n == "SProd()" else r'^(?:[A-Za-z][^\n;{}]*?\b)?SProd::%s\(' % re.escape(n)), text, re.M)
         if m is None:
             raise SystemExit("not found: SProd::%s" % n)
         e = braces.match(text, braces.first_brace_after(text, m.start()))

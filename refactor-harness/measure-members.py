@@ -117,8 +117,12 @@ def members_and_methods(hdr):
     return data, methods
 
 
+# `SProd()` names the default constructor. A constructor has no return type,
+# and the pattern this replaces required one character before `SProd::`,
+# so it never matched a constructor -- which is how T101 missed the default
+# constructor's 236 lines (found in T102 by measure-functions.py).
 def function_body(src, name):
-    m = re.search(r'^[A-Za-z][^\n;{}]*?\bSProd::%s\(' % re.escape(name), src, re.M)
+    m = re.search((r'^SProd::SProd\(\)' if name == "SProd()" else r'^(?:[A-Za-z][^\n;{}]*?\b)?SProd::%s\(' % re.escape(name)), src, re.M)
     if m is None:
         raise SystemExit("not found: SProd::%s" % name)
     o = braces.first_brace_after(src, m.start())
