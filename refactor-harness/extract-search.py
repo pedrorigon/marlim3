@@ -69,8 +69,11 @@ def line_bounds(text, start_char, first, last):
 
 def dedent(block, extra="    "):
     rows = block.split("\n")
-    pad = len(rows[0]) - len(rows[0].lstrip(" "))
-    return "\n".join((extra + r[pad:]) if r.startswith(" " * pad)
+    # The pad is the smallest indent of a line with code. It was the first
+    # row's, which is wrong when that row is blank: a loop body opening with an
+    # empty line came out indented twelve spaces instead of four (SC-004).
+    pad = min((len(r) - len(r.lstrip(" ")) for r in rows if r.strip()), default=0)
+    return "\n".join((extra + r[pad:]) if r.startswith(" " * pad) and r.strip()
                      else (extra + r.strip() if r.strip() else "") for r in rows)
 
 
