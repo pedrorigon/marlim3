@@ -385,7 +385,9 @@ avaliaParafina
 # decision (each loop body declares ~80 locals used to its end; literal cuts
 # needed 18 to 70 parameters). Proved by composition-move.py `check`.
 renovaRGOdgYco2
-renovaFracMol
+# renovaFracMol was deleted on 2026-09-28 by the owner's decision: private, no
+# caller in this tree or in main.
+renovaFracMol -> REMOVED
 renovaFracMol2
 # SC-015 -- the two per-cell loops that ran every time step from SisProd.cpp
 # moved to SisProdTransient.cpp (generateFluidMiniTables, storePreviousSources);

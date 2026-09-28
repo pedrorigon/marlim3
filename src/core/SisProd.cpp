@@ -3669,10 +3669,6 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {
 
 /*** alteracao4 ***/
 
-void SProd::renovaFracMol(ProFlu fluiRev) {
-    sisprod::composition::transportOverallMolarFractions(compositionStateOf(*this), fluiRev);
-}
-
 void SProd::renovaFracMol2(ProFlu fluiRev) {
     sisprod::composition::transportPhaseMolarFractions(compositionStateOf(*this), fluiRev);
 }

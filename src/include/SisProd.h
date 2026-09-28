@@ -1436,10 +1436,6 @@ class SProd {
     void avaliaParafina();
     /// Transports black-oil properties such as GOR, API, gas density, and CO2 fraction.
     void renovaRGOdgYco2(ProFlu fluiRev = ProFlu());
-  private:
-    /// Transports compositional molar fractions.
-    void renovaFracMol(ProFlu fluiRev = ProFlu());
-  public:
     /// Applies the alternate compositional molar-fraction transport update.
     void renovaFracMol2(ProFlu fluiRev = ProFlu());
     /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.

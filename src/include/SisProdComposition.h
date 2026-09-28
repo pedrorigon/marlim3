@@ -29,8 +29,9 @@ struct CompositionUpdaters {
 /// What the composition transport reads and writes.
 ///
 /// Seventeen fields, derived from measure-members.py over the six routines this
-/// module takes: renovaRGOdgYco2, renovaFracMol, renovaFracMol2, renovaalbetini,
-/// renovaMasEsp and avaliaParafina. Against 72 for TransientStepState and 28
+/// module took: renovaRGOdgYco2, renovaFracMol, renovaFracMol2, renovaalbetini,
+/// renovaMasEsp and avaliaParafina. renovaFracMol has since been removed: it
+/// had no caller, in this tree or in main. Against 72 for TransientStepState and 28
 /// for SteadyStateState, this is the narrowest state any stage has needed --
 /// composition transport is a separable domain that happened to live in the
 /// class, as the thermal and gas-lift ones were.
@@ -80,12 +81,6 @@ struct CompositionState {
 /// outlet under reverse flow; by value, as the original takes it (FR-035 weighs
 /// const& separately, at T110a).
 void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev);
-
-/// Transports the OVERALL compositional molar fractions. No caller anywhere, in
-/// this tree or in main; kept as public surface until its owner decides, and
-/// compared line by line with the one that runs in evidencia/fracmol-diff.md --
-/// 71 of their 73 differences are logic, so they stay two functions.
-void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRev);
 
 /// Transports the molar fractions of the oil and the gas phases separately, and
 /// the water density with them. The one the transient step calls.

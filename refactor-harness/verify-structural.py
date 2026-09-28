@@ -43,6 +43,10 @@ that the failures which remain are the ones nobody planned. A declared function
 that compares equal is reported as a STALE declaration: the list has to shrink
 when the reason for an entry goes away, or it stops meaning anything.
 
+An entry "old -> REMOVED" declares a function deleted on purpose: its absence is
+reported as REMOVED and not counted as a failure, and if it is still present the
+declaration is STALE. An absence nobody declared stays a MISSING failure.
+
 Exit code: 0 when every compared body matches; 1 otherwise.
 """
 from __future__ import annotations
@@ -201,6 +205,7 @@ def main() -> int:
     # function as having vanished when it had simply been renamed as planned.
     declared: set[str] = set()
     renamed_to: dict[str, str] = {}
+    removed: set[str] = set()
     if args.declared:
         with open(args.declared, encoding="utf-8") as handle:
             for line in handle:
@@ -210,7 +215,10 @@ def main() -> int:
                 if "->" in entry:
                     old_name, new_name = (part.strip() for part in entry.split("->", 1))
                     declared.add(old_name)
-                    renamed_to[old_name] = new_name
+                    if new_name == "REMOVED":
+                        removed.add(old_name)
+                    else:
+                        renamed_to[old_name] = new_name
                 else:
                     declared.add(entry)
         declared.discard("")
@@ -219,6 +227,10 @@ def main() -> int:
     declared_count = 0
     stale = 0
     for name in missing:
+        if name in removed:
+            print(f"REMOVED  {name}: deleted on purpose, declared in {args.declared}")
+            declared_count += 1
+            continue
         target = renamed_to.get(name)
         if target and target in current:
             # Declared rename: compare the baseline body against the body that
@@ -248,6 +260,12 @@ def main() -> int:
     for name in targets:
         if name not in baseline:
             print(f"NEW      {name}: absent from baseline (introduced here)")
+            continue
+
+        if name in removed:
+            print(f"STALE    {name}: declared as removed, but still present "
+                  f"-- drop the entry in {args.declared}")
+            stale += 1
             continue
 
         expected = tokenize(baseline[name])
