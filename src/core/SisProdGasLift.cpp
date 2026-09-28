@@ -95,6 +95,25 @@ template <typename Phase>
     return massSource;
 }
 
+/// The opening the injection choke presents to the gas line. Under a pressure
+/// condition it is the choke's own, and a choke throttling the line also sets
+/// the inlet mass source through it; under a flow-rate condition the source is
+/// given and the choke counts as open.
+double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
+    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+    if (chokeOpeningFraction < kThrottlingChokeOpening) {
+        state.injectionChoke.presEstag = state.initialGasPressure;
+        state.injectionChoke.tempEstag = state.initialGasTemperature;
+        state.injectionChoke.presGarg = state.gasCells[0].pres;
+        state.gasCells[0].massfonteCH = state.injectionChoke.massica();
+    }
+    return chokeOpeningFraction;
+}
+
+double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
+    return 1.;
+}
+
 /// Opens the injection choke if it is throttling, assembles the band system
 /// from every gas cell and solves it.
 ///
@@ -103,16 +122,9 @@ template <typename Phase>
 /// afterwards, and in that one runs the assembly inside a thermal-coupling
 /// cycle while the other runs it once.
 void assembleAndSolveGasSystem(const GasLiftState &state) {
-    double chokeOpeningFraction = 1.;
-    if (state.gasCells[0].tipoCC == 0) {
-        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (chokeOpeningFraction < kThrottlingChokeOpening) {
-            state.injectionChoke.presEstag = state.initialGasPressure;
-            state.injectionChoke.tempEstag = state.initialGasTemperature;
-            state.injectionChoke.presGarg = state.gasCells[0].pres;
-            state.gasCells[0].massfonteCH = state.injectionChoke.massica();
-        }
-    }
+    double chokeOpeningFraction = withGasInletCondition(
+        state.gasCells[0].tipoCC,
+        [&](auto condition) { return injectionChokeOpening(state, condition); });
 #pragma omp parallel for num_threads((*state.globals).ntrd)
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
 
@@ -178,21 +190,42 @@ void publishExternalFluid(Cel &annulusCell, const ExternalFluidProperties &fluid
     annulusCell.calor.viscextern1 = fluid.viscosityCentipoise * kPascalSecondPerCentipoise;
 }
 
+/// The pressure the unloading hydrostatics start the gas line from when the
+/// injection pressure does not give it: 10 kgf/cm^2, or the unloading's own
+/// initial pressure when the unloading is controlled -- which then becomes the
+/// line's initial pressure too.
+double defaultUnloadingStartPressure(const GasLiftState &state) {
+    double meanPressure = 10.;
+    if (state.input.controDesc == 1) {
+        meanPressure = state.input.presIniDescG;
+        state.initialGasPressure = state.input.presIniDescG;
+    }
+    return meanPressure;
+}
+
+/// The unloading starts from the configured injection pressure, unless the
+/// unloading is controlled.
+double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition) {
+    if (state.input.controDesc == 0)
+        return state.input.gasinj.presinj[0];
+    return defaultUnloadingStartPressure(state);
+}
+
+double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition) {
+    return defaultUnloadingStartPressure(state);
+}
+
 }  // namespace
 
 void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     double meanPressure;
     double meanTemperature;
 
-    if (state.input.gasinj.tipoCC == 0 && state.input.controDesc == 0)
-        meanPressure = state.input.gasinj.presinj[0];
-    else {
-        meanPressure = 10.;
-        if (state.input.controDesc == 1) {
-            meanPressure = state.input.presIniDescG;
-            state.initialGasPressure = state.input.presIniDescG;
-        }
-    }
+    // The configured condition, not the first gas cell's: the cells are being
+    // given their initial state here.
+    meanPressure = withGasInletCondition(
+        state.input.gasinj.tipoCC,
+        [&](auto condition) { return unloadingStartPressure(state, condition); });
 
     state.gasCells[0].presL = meanPressure;
     state.gasCells[0].pres = meanPressure;
@@ -1138,10 +1171,35 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
     }
 }
 
+namespace {
+
+/// One valve's gas mass source at steady state. Under a flow-rate condition,
+/// an equal share of the injection flow rate; under a pressure condition, what
+/// the valve's choke passes from the casing pressure, if the casing is above
+/// the production line.
+void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount,
+                                 double, InjectionFlowRateCondition) {
+    double valveFlowRate = (state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) / kSecondsPerDay) / valveCount;
+    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
+}
+
+void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
+                                 double casingTemperature, InjectionPressureCondition) {
+    int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
+    double casingPressure = state.gasCells[gasLiftGasCell].pres;
+    state.gasLiftChokes[valveIndex].presEstag = casingPressure;
+    state.gasLiftChokes[valveIndex].presGarg = state.cells[state.productionValveCellIndices[valveIndex]].pres;
+    state.gasLiftChokes[valveIndex].tempEstag = casingTemperature;
+    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH =
+        state.cells[state.productionValveCellIndices[valveIndex]].pres < casingPressure
+            ? state.gasLiftChokes[valveIndex].massica()
+            : 0.;
+}
+
+}  // namespace
+
 void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) {
     int valveCount = state.input.nvalvgas;
-    double valveFlowRate;
-    double casingPressure = state.initialGasPressure;
     double casingTemperature = state.gasCells[0].calor.Textern1;
     for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
         int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
@@ -1149,19 +1207,19 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
         if (cellIndex == gasLiftProductionCell) {
             // Only how the mass source is obtained differs. The three
             // statements that publish it were identical in both arms.
-            if (state.gasCells[0].tipoCC == 1) {
-                valveFlowRate = (state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) / kSecondsPerDay) / valveCount;
-                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
-            } else {
-                casingPressure = state.gasCells[gasLiftGasCell].pres;
-                state.gasLiftChokes[valveIndex].presEstag = casingPressure;
-                state.gasLiftChokes[valveIndex].presGarg = state.cells[state.productionValveCellIndices[valveIndex]].pres;
-                state.gasLiftChokes[valveIndex].tempEstag = casingTemperature;
-                state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH =
-                    state.cells[state.productionValveCellIndices[valveIndex]].pres < casingPressure
-                        ? state.gasLiftChokes[valveIndex].massica()
-                        : 0.;
-            }
+            //
+            // This site has always read the flag the other way round from the
+            // rest: "1 is the flow rate, anything else the pressure", where
+            // every other reads "0 is the pressure, anything else the flow
+            // rate". The readings differ only for a value outside {0, 1},
+            // which the input does not reject, and the difference is kept
+            // (evidencia/anomalias.md, A9-01).
+            withGasInletCondition(
+                state.gasCells[0].tipoCC == kGasInletInjectionFlowRate ? kGasInletInjectionFlowRate
+                                                                       : kGasInletInjectionPressure,
+                [&](auto condition) {
+                    setSteadyValveGasMassSource(state, valveIndex, valveCount, casingTemperature, condition);
+                });
             state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * kSecondsPerDay /
                                             state.gasCells[gasLiftGasCell].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
             state.cells[gasLiftProductionCell].acsr.injg.temp = casingTemperature;

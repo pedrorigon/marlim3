@@ -19,8 +19,12 @@ Usage:
 """
 from __future__ import annotations
 
+import io
+import pathlib
 import re
+import subprocess
 import sys
+import tempfile
 
 FUNCTIONS = {
     # The four mass-march variants. T084 measured them: only Rev and CompRev are
@@ -434,6 +438,33 @@ def require(path: str, old_name: str):
     return carved
 
 
+# Functions restructured on purpose after their move. The move is still
+# checked -- against the module as it stood at the commit named here, the last
+# one before the restructuring, where the token proof applies -- and the
+# restructuring carries its own proof, which the note names. Without this, a
+# check that passed the day before reports DIFFERS the day after, and a real
+# regression would read the same. L0 does the same with its --declared list.
+RESTRUCTURED = {
+    "marchaProdPerm1": ("0828baa", "SC-012 dropped a no-op test of the gas-line inlet "
+                        "condition and routed the valve-pressure estimate through "
+                        "withGasInletCondition (evidencia/estagio-9/sc012/)"),
+    "marchaProdPerm1Rev": ("0828baa", "SC-012 dropped a no-op test of the gas-line inlet "
+                           "condition (evidencia/estagio-9/sc012/)"),
+    "marchaProdPerm2": ("0828baa", "SC-012 dropped a no-op test of the gas-line inlet "
+                        "condition and routed the valve-pressure estimate through "
+                        "withGasInletCondition (evidencia/estagio-9/sc012/)"),
+}
+
+
+def main_check_file(name: str, baseline_path: str, current_path: str) -> int:
+    """The check against another file, for RESTRUCTURED."""
+    saved = sys.argv
+    sys.argv = [saved[0], "check", name, baseline_path, current_path]
+    try:
+        return main()
+    finally:
+        sys.argv = saved
+
 def main() -> int:
     if len(sys.argv) < 5:
         print(__doc__, file=sys.stderr)
@@ -519,6 +550,28 @@ def main() -> int:
             print(f"OK       {new_name} <- {name} "
                   f"({len(expected)} tokens modulo renames)")
             return 0
+        if name in RESTRUCTURED and not sys.argv[4].startswith("git:"):
+            before, why = RESTRUCTURED[name]
+            reference = subprocess.run(
+                ["git", "-C", str(pathlib.Path(__file__).resolve().parent.parent),
+                 "show", f"{before}:src/core/SisProdSteadyState.cpp"],
+                capture_output=True, text=True, check=True).stdout
+            scratch = pathlib.Path(tempfile.mkdtemp()) / "SisProdSteadyState.cpp"
+            scratch.write_text(reference, encoding="utf-8")
+            sys.argv[4] = "git:" + str(scratch)
+            saved = sys.stdout
+            sys.stdout = io.StringIO()
+            try:
+                status = main_check_file(name, sys.argv[3], str(scratch))
+            finally:
+                verdict = sys.stdout.getvalue().strip()
+                sys.stdout = saved
+            if status == 0:
+                print(f"RESTRUCTURED {new_name} <- {name}: the move checks against {before} "
+                      f"({verdict.split('(', 1)[-1].rstrip(')')}); after it, {why}")
+                return 0
+            print(verdict)
+            return 1
         position = next((i for i, pair in enumerate(zip(expected, actual))
                          if pair[0] != pair[1]), min(len(expected), len(actual)))
         print(f"DIFFERS  {new_name} <- {name} at token {position}")

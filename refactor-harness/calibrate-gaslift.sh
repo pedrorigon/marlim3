@@ -112,11 +112,13 @@ probe 'resolveDescarga: interface split' \
     'if (state.gasCells[gasCellIndex].razInter <= 0.6)' \
     "$target_gaslift"
 
+# SC-012 moved the throttling test into injectionChokeOpening, the overload for
+# an injection-pressure inlet, so the anchor follows it there. Same mutation.
 probe 'subtempoGasBuf: choke opening bound' \
-    '        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (chokeOpeningFraction < kThrottlingChokeOpening) {' \
-    '        chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-        if (chokeOpeningFraction < 0.3 * kThrottlingChokeOpening / 0.2) {' \
+    '    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+    if (chokeOpeningFraction < kThrottlingChokeOpening) {' \
+    '    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+    if (chokeOpeningFraction < 0.3 * kThrottlingChokeOpening / 0.2) {' \
     "$target_gaslift"
 
 # updateBufferedGasLine writes one field, in three byte-identical branches.

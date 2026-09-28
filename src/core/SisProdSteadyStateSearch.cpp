@@ -1,6 +1,7 @@
 #include "SisProdSteadyStateSearch.h"
 
 #include "Leitura.h"
+#include "SisProdConstants.h"
 #include "celula3.h"
 #include "celulaGas.h"
 #include "chokegas.h"
@@ -2722,6 +2723,39 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
     return false;
 }
 
+namespace {
+
+/// The marches per guess with convergence acceleration on: one more under a
+/// pressure condition on the gas line, where it couples less easily with the
+/// production line.
+int acceleratedMarchesPerGuess(InjectionPressureCondition) {
+    return 3;
+}
+
+int acceleratedMarchesPerGuess(InjectionFlowRateCondition) {
+    return 2;
+}
+
+/// The gas line at steady state under its inlet condition, as the tertiary
+/// search solves it: marched when the injection choke is not throttling and
+/// searched (tertiary) when it is, under a pressure condition; searched
+/// (secondary) under a flow-rate condition.
+void solveGasLineForSearch(const SteadyStateSearchState &state, InjectionPressureCondition) {
+    // marcha para o caso, pressao de injecao
+    if (state.march.input.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
+        for (int iter = 0; iter < 1; iter++) {
+            marchGasSteady(state.march);
+        }
+    } else
+        searchGasPressureSteadyTertiary(state); // choke de injecao ativo
+}
+
+void solveGasLineForSearch(const SteadyStateSearchState &state, InjectionFlowRateCondition) {
+    searchGasPressureSteadySecondary(state); // marcha na linha de gas para o caso de vazao de injecao
+}
+
+}  // namespace
+
 double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &state, double pentrada) {
     state.reverseSteady = 0;
     state.march.convergenceMonitor = 1000.;
@@ -2784,8 +2818,10 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
     // quando o tramo faz perte de um sistema de redes
     if (state.march.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 2;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        if (state.march.input.lingas == 1 && state.march.input.gasinj.tipoCC == 0)
-            limIter = 3; // no caso de se ter
+        if (state.march.input.lingas == 1)
+            limIter = withGasInletCondition(
+                state.march.input.gasinj.tipoCC,
+                [](auto condition) { return acceleratedMarchesPerGuess(condition); }); // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
         // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
         // melhor acoplado, deve-se fazer uma marcha iterativa a mais
@@ -2817,15 +2853,8 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista
         if (pentrada > 0 && state.march.input.lingas > 0 && state.march.input.nvalvgas > 0) {
-            if (state.march.gasCells[0].tipoCC == 0) {            // marcha para o caso, pressao de injecao
-                if (state.march.input.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
-                    for (int iter = 0; iter < 1; iter++) {
-                        marchGasSteady(state.march);
-                    }
-                } else
-                    searchGasPressureSteadyTertiary(state); // choke de injecao ativo
-            } else
-                searchGasPressureSteadySecondary(state); // marcha na linha de gas para o caso de vazao de injecao
+            withGasInletCondition(state.march.gasCells[0].tipoCC,
+                                  [&](auto condition) { solveGasLineForSearch(state, condition); });
         }
 
         if (state.march.input.acopColAnulPermForte > 0 && state.march.input.lingas > 0) {

@@ -4052,17 +4052,38 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
     }
 }
 
+/// Solves the gas line at steady state under its inlet condition. With the
+/// injection pressure given, marches the line when the injection choke is not
+/// throttling, and searches its pressure (tertiary) when it is. With the flow
+/// rate given, searches its pressure (secondary).
+void solveGasLineSteady(const SteadyStateState &state, InjectionPressureCondition) {
+    // marcha para o caso, pressao de injecao
+    if (state.input.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
+        for (int iter = 0; iter < 1; iter++) {
+            marchGasSteady(state);
+        }
+    } else
+        state.updaters.searchGasPressureSteadyTertiary(); // choke de injecao ativo
+}
+
+void solveGasLineSteady(const SteadyStateState &state, InjectionFlowRateCondition) {
+    state.updaters.searchGasPressureSteadySecondary(); // marcha na linha de gas para o caso de vazao de injecao
+}
+
+/// Before the first march, a pressure condition lets the gas-line pressure at
+/// the valves be estimated by hydrostatics, and the valves' injection computed
+/// from it. Under a flow-rate condition there is nothing to estimate: the valves
+/// share the given rate.
+void estimateValveGasPressure(const SteadyStateState &state, InjectionPressureCondition) {
+    gasLineHydrostatic(state);
+}
+
+void estimateValveGasPressure(const SteadyStateState &, InjectionFlowRateCondition) {}
+
 void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) {
     if (pchute > 0 && state.input.lingas > 0 && state.input.nvalvgas > 0) {
-        if (state.gasCells[0].tipoCC == 0) {            // marcha para o caso, pressao de injecao
-            if (state.input.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
-                for (int iter = 0; iter < 1; iter++) {
-                    marchGasSteady(state);
-                }
-            } else
-                state.updaters.searchGasPressureSteadyTertiary(); // choke de injecao ativo
-        } else
-            state.updaters.searchGasPressureSteadySecondary(); // marcha na linha de gas para o caso de vazao de injecao
+        withGasInletCondition(state.gasCells[0].tipoCC,
+                              [&](auto condition) { solveGasLineSteady(state, condition); });
     }
 
     if (state.input.acopColAnulPermForte > 0 && state.input.lingas > 0 && state.thermalSourceDisabled == 0) {
@@ -4558,8 +4579,13 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
     // quando o tramo faz perte de um sistema de redes
     if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        if (state.input.lingas == 1 && state.gasCells[0].tipoCC == 0)
-            limIter = 1; // no caso de se ter
+        // Here the original went on to test for a pressure condition on the gas
+        // line and set limIter to 1 again: the same value, so the test selected
+        // nothing, and SC-012 removed it (evidencia/anomalias.md, A9-02). The
+        // note that went with it, kept below, describes an extra march that
+        // only searchProductionBottomHolePressureTertiary makes.
+        //
+        // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
         // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
         // melhor acoplado, deve-se fazer uma marcha iterativa a mais
@@ -4635,8 +4661,8 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             // caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
             // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
-                if (state.gasCells[0].tipoCC == 0)
-                    gasLineHydrostatic(state);
+                withGasInletCondition(state.gasCells[0].tipoCC,
+                                      [&](auto condition) { estimateValveGasPressure(state, condition); });
                 state.updaters.initializeSteadyValveGasFlowRate(0);
             }
             i = 1;
@@ -4712,8 +4738,13 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     // quando o tramo faz perte de um sistema de redes
     if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        if (state.input.lingas == 1 && state.input.gasinj.tipoCC == 0)
-            limIter = 1; // no caso de se ter
+        // Here the original went on to test for a pressure condition on the gas
+        // line and set limIter to 1 again: the same value, so the test selected
+        // nothing, and SC-012 removed it (evidencia/anomalias.md, A9-02). The
+        // note that went with it, kept below, describes an extra march that
+        // only searchProductionBottomHolePressureTertiary makes.
+        //
+        // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
         // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
         // melhor acoplado, deve-se fazer uma marcha iterativa a mais
@@ -4903,8 +4934,13 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // quando o tramo faz perte de um sistema de redes
     if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        if (state.input.lingas == 1 && state.gasCells[0].tipoCC == 0)
-            limIter = 1; // no caso de se ter
+        // Here the original went on to test for a pressure condition on the gas
+        // line and set limIter to 1 again: the same value, so the test selected
+        // nothing, and SC-012 removed it (evidencia/anomalias.md, A9-02). The
+        // note that went with it, kept below, describes an extra march that
+        // only searchProductionBottomHolePressureTertiary makes.
+        //
+        // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
         // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
         // melhor acoplado, deve-se fazer uma marcha iterativa a mais
@@ -4984,8 +5020,8 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             // caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
             // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
-                if (state.gasCells[0].tipoCC == 0)
-                    gasLineHydrostatic(state);
+                withGasInletCondition(state.gasCells[0].tipoCC,
+                                      [&](auto condition) { estimateValveGasPressure(state, condition); });
                 state.updaters.initializeSteadyValveGasFlowRate(0);
             }
             i = 1;

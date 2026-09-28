@@ -1,9 +1,9 @@
 #ifndef SISPRODCONSTANTS_H_
 #define SISPRODCONSTANTS_H_
 
-/// Physical constants and accessory kinds shared by the extracted modules.
-/// Each keeps the exact spelling of the literal it replaces; the static_asserts
-/// at the end prove it.
+/// Physical constants, accessory kinds and gas-line inlet conditions shared by
+/// the extracted modules. Each keeps the exact spelling of the literal it
+/// replaces; the static_asserts at the end prove it.
 namespace sisprod {
 
 // ---------------------------------------------------------------- units ----
@@ -94,6 +94,42 @@ enum : int {
     kAccessoryMultiPump = 17,       ///< acsr.multibcs
 };
 
+// ------------------------------------------------ gas-line inlet condition ----
+
+/// The value of `tipoCC` on the gas line's first cell, and of the configured
+/// `gasinj.tipoCC`: what drives the gas line at the injection point. From the
+/// input schema (docs/schemas/branch.pt.json, gasInj.tipoCC): 0 is the
+/// injection pressure, 1 the injection flow rate.
+enum : int {
+    kGasInletInjectionPressure = 0, ///< the injection pressure is given
+    kGasInletInjectionFlowRate = 1, ///< the injection flow rate is given
+};
+
+/// The two conditions as types (SC-012). Where the gas line behaves differently
+/// under each, the difference is written once per condition, as an overload
+/// taking one of these, in the module that owns the data -- instead of the flag
+/// being tested at every place that cares, eleven places in three modules
+/// before this.
+struct InjectionPressureCondition {};
+struct InjectionFlowRateCondition {};
+
+/// The one place the inlet condition is decided: calls `visitor` with the
+/// condition `tipoCC` names. Zero is the injection pressure and anything else
+/// the flow rate. That is how every site but one read the flag (`== 0`), and
+/// the input does not reject a value outside {0, 1}, so the meaning of such a
+/// value is kept as well; the one site that read it the other way round says so
+/// where it is.
+///
+/// Called where the flag used to be tested, not once in an adapter. The first
+/// gas cell exists only when there is a gas line, and every one of those tests
+/// sat behind a guard that says so.
+template <typename Visitor>
+decltype(auto) withGasInletCondition(int tipoCC, Visitor &&visitor) {
+    if (tipoCC == kGasInletInjectionPressure)
+        return visitor(InjectionPressureCondition{});
+    return visitor(InjectionFlowRateCondition{});
+}
+
 static_assert(kAccessoryNone == 0);
 static_assert(kAccessoryGasInjection == 1);
 static_assert(kAccessoryLiquidInjection == 2);
@@ -106,6 +142,8 @@ static_assert(kAccessoryMultipleSource == 10);
 static_assert(kAccessoryRadialPorous == 15);
 static_assert(kAccessoryPorous2D == 16);
 static_assert(kAccessoryMultiPump == 17);
+static_assert(kGasInletInjectionPressure == 0);
+static_assert(kGasInletInjectionFlowRate == 1);
 
 static_assert(kPascalPerKgfPerCm2 == 98066.5);
 static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
