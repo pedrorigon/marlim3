@@ -71,6 +71,28 @@ extern time_t nowGlobFim;
 /// Broken-down local time corresponding to nowGlobFim.
 extern tm *ltmGlobFim;
 
+// The state adapters and the updaters of the extracted modules read members of
+// SProd that no consumer reads. They are friends, so those members can stay
+// private. Their types are only declared here: SisProd.cpp includes the module
+// headers, and consumers never need them.
+class SProd;
+namespace sisprod::composition { struct CompositionState; struct CompositionUpdaters; }
+namespace sisprod::gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
+namespace sisprod::steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
+namespace sisprod::thermal { struct ThermalClosureUpdater; struct ThermalSourceUpdater; struct ThermalState; }
+namespace sisprod::transient { struct TransientSolveState; struct TransientSolveUpdaters; struct TransientStepState; struct TransientStepUpdaters; }
+namespace trendoutput { struct TrendState; }
+namespace sisprod::adapters {
+sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system);
+sisprod::steady::SteadyStateState steadyStateOf(SProd &system);
+sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system);
+sisprod::transient::TransientStepState transientStateOf(SProd &system);
+sisprod::composition::CompositionState compositionStateOf(SProd &system);
+sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system);
+sisprod::thermal::ThermalState thermalStateOf(SProd &system);
+trendoutput::TrendState trendStateOf(const SProd &system);
+}  // namespace sisprod::adapters
+
 /**
  * @brief Models and solves a one-dimensional production system.
  *
@@ -79,6 +101,24 @@ extern tm *ltmGlobFim;
  * and steady-state/transient solution procedures.
  */
 class SProd {
+    // See the note above the class: the adapters and updaters are friends so the
+    // members only they read can be private.
+    friend sisprod::gaslift::GasLiftState sisprod::adapters::gasLiftStateOf(SProd &);
+    friend sisprod::steady::SteadyStateState sisprod::adapters::steadyStateOf(SProd &);
+    friend sisprod::steady::SteadyStateSearchState sisprod::adapters::searchStateOf(SProd &);
+    friend sisprod::transient::TransientStepState sisprod::adapters::transientStateOf(SProd &);
+    friend sisprod::composition::CompositionState sisprod::adapters::compositionStateOf(SProd &);
+    friend sisprod::transient::TransientSolveState sisprod::adapters::transientSolveStateOf(SProd &);
+    friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &);
+    friend trendoutput::TrendState sisprod::adapters::trendStateOf(const SProd &);
+    friend struct sisprod::steady::SteadyStateUpdaters;
+    friend struct sisprod::transient::TransientStepUpdaters;
+    friend struct sisprod::transient::TransientSolveUpdaters;
+    friend struct sisprod::gaslift::GasLiftTemperatureUpdater;
+    friend struct sisprod::thermal::ThermalClosureUpdater;
+    friend struct sisprod::thermal::ThermalSourceUpdater;
+    friend struct sisprod::composition::CompositionUpdaters;
+
   public:
   private:
     /**
@@ -98,6 +138,7 @@ class SProd {
      * @brief Enables latent-heat calculations for black-oil simulations.
      */
     int CalcLat;
+  private:
     /**
      * @brief Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil
      * ratio, and light/heavy mass fractions.
@@ -107,6 +148,7 @@ class SProd {
      * @brief Enables transport equations for gas density and the gas-phase CO2 molar fraction.
      */
     int trackDeng;
+  public:
   private:
     /**
      * @brief Number of gas sources; retained for compatibility with arq.ninjgas.
@@ -136,10 +178,12 @@ class SProd {
      */
     int reinicia;
 
+  private:
     /**
      * @brief Control parameter for slowly varying thermal coupling.
      */
     double trocaTermicaLenta;
+  public:
     /**
      * @brief Recent Master1 ratio values for the active state.
      */
@@ -341,6 +385,7 @@ class SProd {
      * @brief Previous-time-level value of tempoaberto.
      */
     int tempoabertoini;
+  private:
     /**
      * @brief Current Master1 valve state.
      */
@@ -349,6 +394,7 @@ class SProd {
      * @brief Counter used while changing the Master1 state.
      */
     int contaMaster1;
+  public:
     /**
      * @brief Indicates whether the surface choke is active.
      */
@@ -378,6 +424,7 @@ class SProd {
      * @brief Previous-time-level value of indpigP.
      */
     int indpigPini;
+  private:
     /**
      * @brief Number of pigs scheduled for launch.
      */
@@ -386,6 +433,7 @@ class SProd {
      * @brief Cell indices where pigs are received.
      */
     int *receb;
+  public:
 
   private:
     /**
@@ -393,10 +441,12 @@ class SProd {
      */
     int npontos;
   public:
+  private:
     /**
      * @brief Number of production fluids.
      */
     int nfluP;
+  public:
   private:
     /**
      * @brief Black-oil gas-compressibility-factor table.
@@ -411,10 +461,12 @@ class SProd {
      */
     double **dzdtP;
   public:
+  private:
     /**
      * @brief Black-oil gas specific-heat table.
      */
     double **cpg;
+  public:
   private:
     /**
      * @brief Black-oil produced-liquid specific-heat table.
@@ -425,10 +477,12 @@ class SProd {
      */
     double **drholdT;
   public:
+  private:
     /**
      * @brief Black-oil latent-heat table.
      */
     double **HLat;
+  public:
 
     /**
      * @brief Parsed user input and simulation configuration.
@@ -451,6 +505,7 @@ class SProd {
      * @brief Buffer used to write production-line profiles.
      */
     FullMtx<double> flut;
+  private:
     /**
      * @brief Global pressure-velocity coupling matrix for the gas line.
      */
@@ -463,6 +518,7 @@ class SProd {
      * @brief Global pressure-velocity coupling matrix for the multiphase production line.
      */
     BandMtx<double> matglobP;
+  public:
     /**
      * @brief Right-hand side and solution vector for the production-line pressure-velocity system.
      */
@@ -483,6 +539,7 @@ class SProd {
      */
     double tfinal;
 
+  private:
     /**
      * @brief Production-line cell indices associated with gas-lift valves.
      */
@@ -513,6 +570,7 @@ class SProd {
      * @brief Gas-line cells where radial temperature profiles are written.
      */
     int *ncelperftransg;
+  public:
   private:
     /**
      * @brief Maximum number of samples stored for each gas-line trend.
@@ -523,6 +581,7 @@ class SProd {
      * @brief Buffered gas-line trend data.
      */
     double ***MatTrendG;
+  private:
     /**
      * @brief Times at which gas-line trend buffers are reset.
      */
@@ -535,12 +594,14 @@ class SProd {
      * @brief Number of gas-line trend samples stored before the last flush.
      */
     int *ntrendgB;
+  public:
   private:
     /**
      * @brief Maximum number of wall-temperature samples stored for each gas-line trend.
      */
     int *TrendLengthTransG;
   public:
+  private:
     /**
      * @brief Buffered gas-line wall-temperature trend data.
      */
@@ -562,6 +623,7 @@ class SProd {
      * @brief Production-line cells where radial temperature profiles are written.
      */
     int *ncelperftransp;
+  public:
   private:
     /**
      * @brief Maximum number of samples stored for each production-line trend.
@@ -572,24 +634,29 @@ class SProd {
      * @brief Buffered production-line trend data.
      */
     double ***MatTrendP;
+  private:
     /**
      * @brief Times at which production-line trend buffers are reset.
      */
     double *resettrend;
+  public:
     /**
      * @brief Number of production-line trend samples currently stored.
      */
     int *ntrend;
+  private:
     /**
      * @brief Number of production-line trend samples stored before the last flush.
      */
     int *ntrendB;
+  public:
   private:
     /**
      * @brief Maximum number of wall-temperature samples stored for each production-line trend.
      */
     int *TrendLengthTransP;
   public:
+  private:
     /**
      * @brief Buffered production-line wall-temperature trend data.
      */
@@ -627,6 +694,7 @@ class SProd {
      * @brief Indicates whether column-annulus thermal coupling is enabled.
      */
     int verificaAcop;
+  public:
     /**
      * @brief Secondary-line index where parallel-network coupling with the primary line begins.
      */
@@ -652,6 +720,7 @@ class SProd {
      */
     int verificaAcopRedeS;
 
+  private:
     /**
      * @brief Current production-profile output index.
      */
@@ -668,6 +737,7 @@ class SProd {
      * @brief Current gas-line wall-temperature profile output index.
      */
     int kontaTempoTransProfG;
+  public:
   private:
     /**
      * @brief In-memory stream used to assemble event-log output.
@@ -678,6 +748,7 @@ class SProd {
      * @brief Event-log file name.
      */
     string tmpLog;
+  private:
     /**
      * @brief Number of events written to the event log.
      */
@@ -703,6 +774,7 @@ class SProd {
      * @brief Index of the next scheduled simulation event.
      */
     int indevento;
+  public:
     /**
      * @brief Reserved steady-state mode flag; currently unused.
      */
@@ -722,6 +794,7 @@ class SProd {
     int kontaMudaModelo;
   public:
 
+  private:
     /**
      * @brief History of recently accepted time steps.
      */
@@ -746,12 +819,14 @@ class SProd {
      * @brief Number of remaining steps under the current time-step restriction.
      */
     int kontarestriDt;
+  public:
   private:
     /**
      * @brief Counter for segregation-related time-step restrictions.
      */
     int kontarestriSegrega;
   public:
+  private:
     /**
      * @brief Accumulated CFL time steps used to compute dtCFLMed.
      */
@@ -760,6 +835,7 @@ class SProd {
      * @brief Accumulated accepted time steps used to compute dtSimMed.
      */
     double dtSimTotal;
+  public:
     /**
      * @brief Auxiliary CFL time-step accumulator.
      */
@@ -768,10 +844,12 @@ class SProd {
      * @brief Auxiliary accepted-time-step accumulator.
      */
     double dtauxFinal;
+  private:
     /**
      * @brief Counts alternating liquid-flow oscillations near an active surface choke.
      */
     int kontaGolfada;
+  public:
 
     /**
      * @brief Surface-choke model.
@@ -781,10 +859,12 @@ class SProd {
      * @brief Gas-injection choke model.
      */
     ChokeGas chokeInj;
+  private:
     /**
      * @brief Gas-lift valves installed in the system.
      */
     ChokeGas *chokeVGL;
+  public:
     /**
      * @brief Gas service-line control volumes.
      */
@@ -845,6 +925,7 @@ class SProd {
      */
     double velInterIni;
 
+  private:
     /**
      * @brief Time horizon used by the gas-lift unloading controller.
      */
@@ -869,6 +950,7 @@ class SProd {
      * @brief Time-step samples associated with the unloading-flow average.
      */
     vector<double> dtDesc;
+  public:
 
     /**
      * @brief Indicates that the section outlet is not connected to another network section.
@@ -908,6 +990,7 @@ class SProd {
      */
     double kimpT;
 
+  private:
     /**
      * @brief Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It
      * mitigates a pressure blind spot when the upstream side contains only liquid and increases if the
@@ -932,6 +1015,7 @@ class SProd {
      * @brief Average maximum temperature-change rate.
      */
     double DTMaxMed;
+  public:
     /**
      * @brief Initial holdup estimate used by the steady-state solver.
      */
@@ -949,10 +1033,12 @@ class SProd {
      * @brief Number of dynamic property tables.
      */
     int ntabDin;
+  private:
     /**
      * @brief Counter controlling compositional-property refreshes.
      */
     int kontaRenovaComp;
+  public:
     /**
      * @brief Section-blocking state.
      */
@@ -966,10 +1052,12 @@ class SProd {
      * @brief Temperature associated with reverse network flow.
      */
     double tempRev;
+  private:
     /**
      * @brief Indicates reverse flow in the steady-state network solution.
      */
     int revPerm;
+  public:
     /**
      * @brief Index corrections used by coupled thermal sections.
      */
@@ -987,6 +1075,7 @@ class SProd {
      */
     double dtCicMin;
 
+  private:
     /**
      * @brief Production cells handled by the two-dimensional Poisson model.
      */
@@ -1011,6 +1100,7 @@ class SProd {
      * @brief Signals that the time step must be adjusted.
      */
     int alteraTempo;
+  public:
 
     /**
      * @brief Initial source indices for parallel-network coupling.
@@ -1041,6 +1131,7 @@ class SProd {
      */
     int redeParalelaS;
 
+  private:
     vector<int> kontaTempoCelUni;
 
     const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
@@ -1076,6 +1167,7 @@ class SProd {
         "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
         "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    ",
 	    "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
+  public:
 
     /// Constructs and initializes a production-system simulation from the input and log files.
     SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
@@ -1310,8 +1402,10 @@ class SProd {
     /// Computes the unloading injection-pressure correction for one gas-lift valve.
     double CalcPresValvDesc(double velGarg, int ivalv);
   public:
+  private:
     /// Controls injection and upstream-choke pressures from gas-lift-valve flow rates.
     double BuscaPresInjDesc();
+  public:
 
   private:
     /// Updates gas-line state after solving pressure-velocity coupling.
@@ -1323,39 +1417,51 @@ class SProd {
     double areaValvCali(double PCal, double TCal, double PVO, double PT,
                         double dextern, double areagarg, double Rvalv, double Temp);
   public:
+  private:
     /// Advances the temperature of one gas-line control volume.
     void calctempGas(int i, double tempantiga, int modoPerm = 0);
+  public:
   private:
     /// Solves gas-line pressure and flow in the completion-fluid region during unloading.
     void resolveDescarga();
   public:
+  private:
     /// Updates gas-line temperature in the completion-fluid region during unloading.
     void tempDescarga(int i);
+  public:
   private:
     /// Advances the completion-fluid/gas interface in the service line.
     void avancInter();
   public:
+  private:
     /// Calculates gas temperature across a gas-lift valve using the Joule-Thomson model.
     double TempDescGL(int igl);
+  public:
   private:
     /// Maps gas-lift-valve positions to gas-line control volumes.
     void ValvGasTrans();
   public:
+  private:
     /// Advances the coupled gas-line pressure, velocity, and temperature solution.
     void subtempoGas();
+  public:
   private:
     /// Advances the intermediate gas-line state used by network convergence.
     void subtempoGasBuf();
   public:
 
+  private:
     /// Exchanges heat-transfer data between the production column and annulus.
     void conectaColuna();
+  public:
   private:
     /// Interpolates latent heat from enthalpy tables.
     double interpolaHLatente(double pres, double temp);
   public:
+  private:
     /// Advances the temperature of one production-line control volume.
     void calctemp(int i, double tempantiga, int modoPerm = 0);
+  public:
 
   private:
     /// Returns the mixture enthalpy helper value; currently unused.
@@ -1370,10 +1476,12 @@ class SProd {
     /// Calculates flow through Master1 while it operates as a choke.
     void FonteValv(int ind);
   public:
+  private:
     /// Stores source terms from the previous time level for possible rollback.
     /// Nothing in the product calls it since SC-015 moved the transient step's
     /// call into the module.
     void salvaFonte();
+  public:
   private:
     /// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s,
     /// takes the water and gas that hydrate formation consumed in cell ind during
@@ -1386,6 +1494,7 @@ class SProd {
     /// source (10) or a radial or 2D porous medium (15, 16).
     void refreshChokeMultipleAndPorousSources(int ind);
   public:
+  private:
     /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
     void renovaFonte(int ind);
     /// Stores previous void fractions and updates pig motion and reception.
@@ -1401,6 +1510,7 @@ class SProd {
     void CalcC0UdIni(int ind, double &c0, double &ud);
     /// Evaluates slip parameters at the inlet of an internal network section.
     void CalcC0UdIniBuf(int ind, double &c0, double &ud);
+  public:
 
   private:
     /// Applies hydrostatic and friction corrections; currently unused.
@@ -1410,9 +1520,11 @@ class SProd {
     /// in SC-015.
     void auxMiniTab(ProFlu &flu);
   public:
+  private:
     /// Generates the local fluid-property table. Nothing in the product calls it
     /// since SC-015 moved the transient step's call into the module.
     void geraMiniTabFlu();
+  public:
 
     /// Loads pressure-velocity results into cell and face state variables.
     void renova(int expli = 0);
@@ -1427,12 +1539,14 @@ class SProd {
 
     /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
     void renovaTemp();
+  private:
     /// Evaluates wax deposition and its effects.
     void avaliaParafina();
     /// Transports black-oil properties such as GOR, API, gas density, and CO2 fraction.
     void renovaRGOdgYco2(ProFlu fluiRev = ProFlu());
     /// Applies the alternate compositional molar-fraction transport update.
     void renovaFracMol2(ProFlu fluiRev = ProFlu());
+  public:
     /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
     void renovaterm(int aflu = 0);
     /// Computes T1 and T2 at the outlet of an internal network section.
@@ -1490,8 +1604,10 @@ class SProd {
     /// Updates the first boundary condition.
     void atualizaCC1();
 
+  private:
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
+  public:
     /// Advances the complete transient production-system solution and handles output and logging.
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
@@ -1504,6 +1620,7 @@ class SProd {
     void ImprimeTrendG(int i, int nrede = -1);
     /// Appends one gas-line trend sample to its output buffer.
     void ImprimeTrendGCab(int i, int nrede = -1);
+  private:
     /// Appends one production-line wall-temperature trend sample.
     void ImprimeTrendTransP(int i);
     /// Appends one production-line wall-temperature trend sample.
@@ -1512,6 +1629,7 @@ class SProd {
     void ImprimeTrendTransG(int i);
     /// Appends one gas-line wall-temperature trend sample.
     void ImprimeTrendTransGCab(int i);
+  public:
 
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
     double marchaProdPerm1(double pchute);
@@ -1575,10 +1693,12 @@ class SProd {
     /// Marches the steady gas line across the injection choke using a downstream-pressure guess.
     double marchaGasPerm3(double pchute);
   public:
+  private:
     /// Brackets and solves the pressure root for marchaGasPerm2.
     double buscaGasPresPerm2();
     /// Brackets and solves the pressure root for marchaGasPerm3.
     double buscaGasPresPerm3();
+  public:
 
   private:
     /// Marches pressure from the previous cell center to the downstream face.
@@ -1590,8 +1710,10 @@ class SProd {
     /// Marches pressure from the upstream face to the current cell center.
     void RenovaPresPermJus(int i, int RK);
   public:
+  private:
     /// Corrects gas density in one control volume.
     void corrDeng(int i);
+  public:
   private:
     /// Updates steady-state mass flow and fluid state after a source term.
     void RenovaMassPerm(int i);
@@ -1602,18 +1724,22 @@ class SProd {
     /// Updates steady-state mass flow and pseudocomponent composition after a source term.
     void RenovaMassPermCompRev(int i);
   public:
+  private:
     /// Calculates steady-state slip parameters at a downstream face.
     void CalcC0UdPerm(int ind, double &c0, double &ud);
+  public:
   private:
     /// Calculates steady-state interphase mass transfer.
     void RenovaTransMassPerm(int i);
     /// Calculates steady-state interphase mass transfer.
     void RenovaTransMassPermGas(int i);
   public:
+  private:
     /// Marches steady-state temperature from cell i-1 to cell i.
     void RenovaTempPerm(int i, int RK);
     /// Marches steady-state temperature in the reverse direction.
     void RenovaTempPermRev(int i, int RK);
+  public:
 
   private:
     /// Adds pump pressure gain at the upstream face of a production cell.
@@ -1621,6 +1747,7 @@ class SProd {
     /// Synchronizes neighboring face pressures after updating a cell-center pressure.
     void atualizaPeriPjusProd(int i);
   public:
+  private:
     /// Synchronizes neighboring face temperatures after updating a cell-center temperature.
     void atualizaPeriTempProd(int i);
 
@@ -1641,6 +1768,7 @@ class SProd {
     void conectaColunaPerm();
     /// Initializes estimated column-annulus heat transfer before the steady-state march.
     void IniciaconectaColunaPerm();
+  public:
 
   private:
     /// Refreshes fluid properties.

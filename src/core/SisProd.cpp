@@ -21,12 +21,16 @@
 #include <chrono>
 #include <math.h>
 
-namespace {
-// Defined further down, next to the rest of the thermal plumbing. Declared here
-// because the first delegates that need it appear before that definition.
-sisprod::thermal::ThermalState thermalStateOf(SProd &system);
-sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system);
-}  // namespace
+// The state adapters live in sisprod::adapters, where SisProd.h declares them
+// so that SProd can name them as friends; these keep every call site as it was.
+using sisprod::adapters::gasLiftStateOf;
+using sisprod::adapters::steadyStateOf;
+using sisprod::adapters::searchStateOf;
+using sisprod::adapters::transientStateOf;
+using sisprod::adapters::compositionStateOf;
+using sisprod::adapters::transientSolveStateOf;
+using sisprod::adapters::thermalStateOf;
+using sisprod::adapters::trendStateOf;
 
 void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
@@ -2630,7 +2634,7 @@ void sisprod::transient::TransientSolveUpdaters::solveGasLine() const {
 
 
 
-namespace {
+namespace sisprod::adapters {
 
 sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system) {
     return sisprod::gaslift::GasLiftState{
@@ -2951,7 +2955,7 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
     };
 }
 
-}  // namespace
+}  // namespace sisprod::adapters
 
 double SProd::interpolaHLatente(double pres, double temp) {
     return sisprod::thermal::interpolateLatentHeat(
@@ -3657,7 +3661,7 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
 }
 
 
-namespace {
+namespace sisprod::adapters {
 
 /// Binds the state the trend writers are allowed to read.
 ///
@@ -3680,7 +3684,7 @@ trendoutput::TrendState trendStateOf(const SProd &system) {
         .gasLineCrossSection = {system.MatTrendTransG, system.ntrendtransg, system.ntrendtransgB}};
 }
 
-} // namespace
+}  // namespace sisprod::adapters
 
 // The eight trend writers moved to SisProdTrendOutput.cpp. Four of them are
 // called from 28 sites in Num4Main.cpp, so the public signatures stay exactly

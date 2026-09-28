@@ -80,6 +80,13 @@ def statements(body):
 
 def names_of(stmt):
     s = " ".join(re.sub(r'//[^\n]*|/\*.*?\*/', ' ', stmt, flags=re.S).split())
+    # String literals and initializer lists hold commas that are not declarator
+    # separators: `const char *t[16] = {"a, b", ...}` would otherwise "declare"
+    # the words of its text.
+    s = re.sub(r'"(?:\\.|[^"\\])*"', '""', s)
+    prev = None
+    while prev != s:
+        prev, s = s, re.sub(r'\{[^{}]*\}', '{}', s)
     paren, eq = s.find("("), s.find("=")
     if paren >= 0 and (eq < 0 or paren < eq):
         m = re.search(r'(operator\s*\S+?|~?[A-Za-z_]\w*)\s*\($', s[:paren + 1])
@@ -122,22 +129,34 @@ def main():
     o = h.index("{", s)
     e = braces.match(h, o)
     body = h[o + 1:e]
-    # only the public region: up to the class's own `private:`
-    private_at = [m.start() for m in SPEC.finditer(body) if m.group(1) == "private"]
-    limit = private_at[0] if private_at else len(body)
+    # Only declarations that are public now are candidates. The first run of
+    # this tool met a single `private:` at the end of the class and could stop
+    # there; its own output left the public part interleaved with private runs,
+    # so each declaration's access is read from the last specifier before it
+    # (a class starts private), and a run never crosses a specifier.
+    specs = [(m.start(), m.group(1)) for m in SPEC.finditer(body)]
 
-    stmts = [(a, b) for a, b in statements(body) if b <= limit]
+    def access_at(pos):
+        acc = "private"
+        for p, a in specs:
+            if p >= pos:
+                break
+            acc = a
+        return acc
+
+    stmts = statements(body)
     flags = []
     for a, b in stmts:
         n = names_of(body[a:b])
-        flags.append(bool(n) and n <= targets)
-    runs, cur = [], None
+        flags.append(access_at(a) == "public" and bool(n) and n <= targets)
+    runs, cur, prev_end = [], None, 0
     for (a, b), f in zip(stmts, flags):
-        if f:
-            cur = [cur[0], b] if cur else [leading_comment_start(body, a), b]
-        elif cur:
+        if cur and (not f or any(prev_end <= p < a for p, _ in specs)):
             runs.append(cur)
             cur = None
+        if f:
+            cur = [cur[0], b] if cur else [leading_comment_start(body, a), b]
+        prev_end = b
     if cur:
         runs.append(cur)
 
