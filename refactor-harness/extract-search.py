@@ -84,6 +84,12 @@ def main():
     ap.add_argument("--doc", default="")
     ap.add_argument("--returns", default="double")
     ap.add_argument("--file", default=PATH)
+    ap.add_argument("--extra", action="append", default=[],
+                    help="a parameter the analyser cannot see, as 'type name', passed "
+                         "first. iface.py hides for-init declarations on purpose -- right "
+                         "for ranges AFTER the loop, wrong for ranges INSIDE it -- so a "
+                         "loop body needs its loop variable passed by hand (the same "
+                         "option extract-sprod.py has)")
     ap.add_argument("--state-type", default=STATE_TYPE)
     ap.add_argument("--body", action="store_true",
                     help="the range's first and last lines are the braces of an else or a "
@@ -121,11 +127,19 @@ def main():
     # first use is a write, which is flow analysis. A wider signature is the
     # cheaper mistake.
     params, moved = [], []
+    for spec in args.extra:
+        ty, name = spec.rsplit(" ", 1)
+        params.append(f"{ty} {name}")
     for ty, name, written, after in crossing_in:
         if name in ("state", "abortValue"):
             # state is passed first by construction; abortValue is the abort
             # protocol's own out-parameter and is appended below. Cutting a
             # helper that already has one would otherwise declare it twice.
+            continue
+        if ty.endswith("*"):
+            # A pointer goes by value -- the pointee is shared either way -- or
+            # by reference when the range reseats it (extract-sprod.py's rule).
+            params.append(f"{ty}{'&' if written else ''}{name}")
             continue
         by_reference = written or ty.split()[-1] not in SCALARS
         params.append(f"{ty} {'&' if by_reference else ''}{name}")
@@ -137,7 +151,7 @@ def main():
                      + ", ".join(params) + ") {")
         call = "    return %s(state%s%s);" % (
             args.helper, ", " if params else "",
-            ", ".join(p.split()[-1].lstrip("&") for p in params))
+            ", ".join(p.split()[-1].lstrip("&*") for p in params))
     elif not re.search(r'(?<![.\w])return\b',
                        re.sub(r'/\*.*?\*/', '', re.sub(r'//[^\n]*', '', block), flags=re.S)):
         # No early exit in the range, so no abort protocol. Adding one anyway
@@ -147,7 +161,7 @@ def main():
                      + ", ".join(params) + ") {")
         call = "    %s(state%s%s);" % (
             args.helper, ", " if params else "",
-            ", ".join(p.split()[-1].lstrip("&") for p in params))
+            ", ".join(p.split()[-1].lstrip("&*") for p in params))
     else:
         params.append("double &abortValue")
         signature = (f"bool {args.helper}(const {state_type} &state, "
@@ -187,12 +201,12 @@ def main():
         if second_hop:
             call = ("    if (%s(state%s%s, abortValue))\n        return true;" % (
                         args.helper, ", " if len(params) > 1 else "",
-                        ", ".join(p.split()[-1].lstrip("&") for p in params[:-1])))
+                        ", ".join(p.split()[-1].lstrip("&*") for p in params[:-1])))
         else:
             call = ("    double abortValue;\n"
                     "    if (%s(state%s%s, abortValue))\n        return abortValue;" % (
                         args.helper, ", " if len(params) > 1 else "",
-                        ", ".join(p.split()[-1].lstrip("&") for p in params[:-1])))
+                        ", ".join(p.split()[-1].lstrip("&*") for p in params[:-1])))
 
     # The call site sits at the range's own depth. It used to be written at a
     # fixed four spaces, which is right only at the top of a function; inside a
