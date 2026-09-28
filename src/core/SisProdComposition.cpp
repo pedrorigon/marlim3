@@ -1770,9 +1770,9 @@ namespace {
 /// Copies a phase's molar fractions into fracMolFase and renormalises them to
 /// sum one when the sum is positive. The smallest fraction is found and then
 /// set to zero before it is subtracted, so the subtraction is none; kept as it
-/// was. Was a lambda inside transportPhaseMolarFractions, moved out so the
-/// per-cell step can be cut from the loop (SC-004).
-void normalizarFracoes(vector<double>& fracMolFase, double* fracMolOriginal, int npseudo) {
+/// was. Was the lambda normalizarFracoes inside transportPhaseMolarFractions,
+/// moved out so the per-cell step can be cut from the loop (SC-004).
+void normalizePhaseFractions(vector<double>& fracMolFase, double* fracMolOriginal, int npseudo) {
     for (int kfrac = 0; kfrac < npseudo; kfrac++) {
     	fracMolFase[kfrac] = fracMolOriginal[kfrac];
     }
@@ -2294,7 +2294,7 @@ void upwindVapourAndMixtureFractions(const CompositionState &state, double vazMa
     	pesoMol0G = 0;
         double titLocal=(*state.cells[i].fluiL).FracMass(upstreamPressure, upstreamTemperature);
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, (*state.cells[i].fluiL).oCalculatedVapComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, (*state.cells[i].fluiL).oCalculatedVapComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol0G[kfrac] = fracMolFase[kfrac];
             pesoMol0G += (*state.cells[i].fluiL).masMol[kfrac] * fracMolFase[kfrac];
@@ -2310,7 +2310,7 @@ void upwindVapourAndMixtureFractions(const CompositionState &state, double vazMa
         pesoMol0G = 0;
         double titLocal=state.cells[i].flui.FracMass(state.cells[i].pres, state.cells[i].temp);
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, state.cells[i].flui.oCalculatedVapComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, state.cells[i].flui.oCalculatedVapComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol0G[kfrac] = fracMolFase[kfrac];
             pesoMol0G += state.cells[i].flui.masMol[kfrac] * fracMolFase[kfrac];
@@ -2327,7 +2327,7 @@ void upwindVapourAndMixtureFractions(const CompositionState &state, double vazMa
         pesoMol1G = 0;
         double titLocal=state.cells[i].flui.FracMass(state.cells[i].pres, state.cells[i].temp);
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, state.cells[i].flui.oCalculatedVapComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, state.cells[i].flui.oCalculatedVapComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol1G[kfrac] = fracMolFase[kfrac];
             pesoMol1G += state.cells[i].flui.masMol[kfrac] * fracMolFase[kfrac];
@@ -2343,7 +2343,7 @@ void upwindVapourAndMixtureFractions(const CompositionState &state, double vazMa
         pesoMol1G = 0;
         double titLocal=state.cells[i+1].flui.FracMass(state.cells[i+1].pres, state.cells[i+1].temp);
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, state.cells[i + 1].flui.oCalculatedVapComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, state.cells[i + 1].flui.oCalculatedVapComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol1G[kfrac] = fracMolFase[kfrac];
             pesoMol1G += state.cells[i + 1].flui.masMol[kfrac] * fracMolFase[kfrac];
@@ -2408,7 +2408,7 @@ void upwindLiquidFractions(const CompositionState &state, double &vazMasLiq1, do
         vazMasLiq0 *= titV0;
         pesoMol0O = 0;
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, (*state.cells[i].fluiL).oCalculatedLiqComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, (*state.cells[i].fluiL).oCalculatedLiqComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol0O[kfrac] = fracMolFase[kfrac];
             pesoMol0O += (*state.cells[i].fluiL).masMol[kfrac] * fracMolFase[kfrac];
@@ -2430,7 +2430,7 @@ void upwindLiquidFractions(const CompositionState &state, double &vazMasLiq1, do
         vazMasLiq0 *= titV0;
         pesoMol0O = 0;
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, state.cells[i].flui.oCalculatedLiqComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, state.cells[i].flui.oCalculatedLiqComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol0O[kfrac] = fracMolFase[kfrac];
             pesoMol0O += state.cells[i].flui.masMol[kfrac] * fracMolFase[kfrac];
@@ -2453,7 +2453,7 @@ void upwindLiquidFractions(const CompositionState &state, double &vazMasLiq1, do
         vazMasLiq1 *= titV1;
         pesoMol1O = 0;
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, state.cells[i].flui.oCalculatedLiqComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, state.cells[i].flui.oCalculatedLiqComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol1O[kfrac] = fracMolFase[kfrac];
             pesoMol1O += state.cells[i].flui.masMol[kfrac] * fracMolFase[kfrac];
@@ -2475,7 +2475,7 @@ void upwindLiquidFractions(const CompositionState &state, double &vazMasLiq1, do
         vazMasLiq1 *= titV1;
         pesoMol1O = 0;
         vector<double> fracMolFase(ncomp);
-        normalizarFracoes(fracMolFase, state.cells[i + 1].flui.oCalculatedLiqComposition, ncomp);
+        normalizePhaseFractions(fracMolFase, state.cells[i + 1].flui.oCalculatedLiqComposition, ncomp);
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             fracMol1O[kfrac] = fracMolFase[kfrac];
             pesoMol1O += state.cells[i + 1].flui.masMol[kfrac] * fracMolFase[kfrac];
