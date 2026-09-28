@@ -1223,17 +1223,12 @@ class SProd {
 
   private:
     /// Frees every array this object owns, reading its CURRENT sizes and switches,
-    /// so operator= must call it before copying anything in.
-    void releaseStorageBeforeAssignment();
+    /// so operator= and copiaSemJson must call it before copying anything in.
+    void releaseOwnedStorage();
   public:
     /// Performs a deep copy of the production-system state.
     SProd &operator=(const SProd &);
 
-  private:
-    /// Frees every array this object owns, reading its CURRENT sizes and switches,
-    /// so copiaSemJson must call it before copying anything in.
-    void releaseStorageBeforeCopy();
-  public:
     /// Copies an already parsed system configuration without reading the JSON file again.
     void copiaSemJson(Ler &, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq,
                       double vbetaRev, double vbetaRevini, double vtitRev, double vtitRevini,

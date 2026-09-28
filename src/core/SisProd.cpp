@@ -441,11 +441,12 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
 }
 
 /// Frees every array this object owns, reading its CURRENT sizes and switches, so
-/// operator= must call it before copying anything in. Twin of
-/// releaseStorageBeforeCopy, which does the same for copiaSemJson: the two differ
-/// only in six null tests written as `p != 0` here and `p` there, and must change
-/// together with the constructors (data-model.md, lifecycle constraints).
-void SProd::releaseStorageBeforeAssignment() {
+/// operator= and copiaSemJson must call it before copying anything in. Each used
+/// to have its own copy; the two differed only in six null tests written as
+/// `p != 0` in one and `p` in the other, which mean the same for a pointer, and
+/// GCC already folded them into one at -O3. Must change together with the
+/// constructors (data-model.md, lifecycle constraints).
+void SProd::releaseOwnedStorage() {
     if (arq.lingas > 0)
         delete[] celulaG;
     if (chokeVGL!=0 && arq.lingas > 0)
@@ -572,7 +573,7 @@ void SProd::releaseStorageBeforeAssignment() {
 }
 
 SProd &SProd::operator=(const SProd &sp) {
-    releaseStorageBeforeAssignment();
+    releaseOwnedStorage();
 
     arq = sp.arq;
     resolveDriftSelectors();
@@ -753,139 +754,9 @@ SProd &SProd::operator=(const SProd &sp) {
     return *this;
 }
 
-/// Frees every array this object owns, reading its CURRENT sizes and switches, so
-/// copiaSemJson must call it before copying anything in. Twin of
-/// releaseStorageBeforeAssignment, which does the same for operator=: the two
-/// differ only in six null tests written as `p` here and `p != 0` there, and must
-/// change together with the constructors (data-model.md, lifecycle constraints).
-void SProd::releaseStorageBeforeCopy() {
-    if (arq.lingas > 0)
-        delete[] celulaG;
-    if (chokeVGL!=0 && arq.lingas > 0)
-        delete[] chokeVGL;
-    if (posicVGLP!=0 && arq.lingas > 0)
-        delete[] posicVGLP;
-    if (posicVGLG!=0 && arq.lingas > 0)
-        delete[] posicVGLG;
-    if (nabreM1 > 0)
-        delete[] abreM1;
-    if (nfechaM1 > 0)
-        delete[] fechaM1;
-
-    if (arq.nperfistransp > 0)
-        delete[] ncelperftransp;
-    if (arq.nperfistransg > 0 && arq.lingas > 0)
-        delete[] ncelperftransg;
-
-    if (arq.ntendp > 0 && redeTemporario == 0) {
-         for (int i = 0; i < arq.ntendp && MatTrendP && TrendLengthP; i++) {
-             if (MatTrendP[i]) {
-                 for (int j = 0; j < TrendLengthP[i]; j++)
-                     delete[] MatTrendP[i][j];
-                 delete[] MatTrendP[i];
-             }
-         }
-         if (MatTrendP!=0)
-             delete[] MatTrendP;
-         if (TrendLengthP!=0)
-             delete[] TrendLengthP;
-         if (resettrend!=0)
-             delete[] resettrend;
-         if (ntrend!=0)
-             delete[] ntrend;
-         if (ntrendB!=0)
-             delete[] ntrendB;
-     }
-
-     if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0) {
-         for (int i = 0; i < arq.ntendg && MatTrendG && TrendLengthG; i++) {
-             if (MatTrendG[i]) {
-                 for (int j = 0; j < TrendLengthG[i]; j++)
-                     delete[] MatTrendG[i][j];
-                 delete[] MatTrendG[i];
-             }
-         }
-         if (MatTrendG!=0)
-             delete[] MatTrendG;
-         if (TrendLengthG!=0)
-             delete[] TrendLengthG;
-         if (resettrendg!=0)
-             delete[] resettrendg;
-         if (ntrendg!=0)
-             delete[] ntrendg;
-         if (ntrendgB!=0)
-             delete[] ntrendgB;
-     }
-
-     if (arq.ntendtransp > 0 && redeTemporario == 0) {
-         for (int i = 0; i < arq.ntendtransp && MatTrendTransP && TrendLengthTransP; i++) {
-             if (MatTrendTransP[i]) {
-                 for (int j = 0; j < TrendLengthTransP[i]; j++)
-                     delete[] MatTrendTransP[i][j];
-                 delete[] MatTrendTransP[i];
-             }
-         }
-         if (MatTrendTransP)
-             delete[] MatTrendTransP;
-         if (TrendLengthTransP)
-             delete[] TrendLengthTransP;
-         if (resettrendtrans)
-             delete[] resettrendtrans;
-         if (ntrendtrans!=0)
-             delete[] ntrendtrans;
-         if (ntrendtransB!=0)
-             delete[] ntrendtransB;
-     }
-
-     if (arq.ntendtransg > 0 && redeTemporario == 0) {
-         for (int i = 0; i < arq.ntendtransg && MatTrendTransG && TrendLengthTransG; i++) {
-             if (MatTrendTransG[i]) {
-                 for (int j = 0; j < TrendLengthTransG[i]; j++)
-                     delete[] MatTrendTransG[i][j];
-                 delete[] MatTrendTransG[i];
-             }
-         }
-         if (MatTrendTransG)
-             delete[] MatTrendTransG;
-         if (TrendLengthTransG)
-             delete[] TrendLengthTransG;
-         if (resettrendtransg)
-             delete[] resettrendtransg;
-         if (ntrendtransg!=0)
-             delete[] ntrendtransg;
-         if (ntrendtransgB!=0)
-             delete[] ntrendtransgB;
-     }
-
-    int ndiv = arq.tabent.npont - 1;
-    if (CalcLat > 0 && arq.flashCompleto == 0) {
-        for (int i = 0; i < ndiv + 2; i++)
-            delete[] HLat[i];
-        delete[] HLat;
-    }
-    if (LerPB > 0) {
-        delete[] PBPVTSim;
-        delete[] TBPVTSim;
-        if (lerRS > 0) {
-            for (int i = 0; i < ndiv + 2; i++)
-                delete[] RSLivia[i];
-            delete[] RSLivia;
-        }
-    }
-
-    if (ncel > 0)
-        delete[] celula;
-    if (npig > 0)
-        delete[] receb;
-
-    if (arq.tabelaDinamica == 1) {
-        tabDin.clear();
-    }
-}
-
 void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq, double vbetaRev,
                          double vbetaRevini, double vtitRev, double vtitRevini, double vdtCicMin) {
-    releaseStorageBeforeCopy();
+    releaseOwnedStorage();
 
     arq.copiaSemJson(sp);
     resolveDriftSelectors();
