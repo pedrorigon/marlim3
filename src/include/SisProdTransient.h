@@ -61,22 +61,18 @@ namespace sisprod::transient {
 /// looking for an assignment, not assumed -- stage 6 shipped a header promising
 /// const for a deck the module writes through, stage 7 did the same for a choke,
 /// and in both cases the compiler is what said so.
-/// The two things the transient step needs from outside itself.
+/// The one thing the transient step needs from outside itself.
 ///
-/// Only two, and both for stated reasons rather than convenience:
+/// subtempoGas moved to the gas-lift module in stage 6, and reaching it needs a
+/// GasLiftState that only SisProd.cpp knows how to assemble -- the same routing
+/// SteadyStateUpdaters uses, for the same reason.
 ///
-///   * geraMiniTabFlu STAYS in SisProd.cpp, because T126's acceptance requires
-///     atualizaMiniTab to keep invoking it there. (This note used to add that
-///     PorosoRad-Simples.cpp and solverPoroso.cpp consume it too. They do not:
-///     PorosRadSimp and solverPoro define geraMiniTabFlu methods of their own,
-///     which SProd::geraMiniTabFlu calls. Corrected in T104c.)
-///   * subtempoGas moved to the gas-lift module in stage 6, and reaching it
-///     needs a GasLiftState that only SisProd.cpp knows how to assemble -- the
-///     same routing SteadyStateUpdaters uses, for the same reason.
+/// There used to be a second, geraMiniTabFlu, left in SisProd.cpp by T126 on
+/// the premise that PorosoRad-Simples.cpp and solverPoroso.cpp consume it. They
+/// do not (T104c), and SC-015 moved it here as generateFluidMiniTables.
 struct TransientStepUpdaters {
     SProd &system;
 
-    void generateFluidMiniTable() const;
     void advanceGasSubStep() const;
 };
 
@@ -354,25 +350,32 @@ void restartFractionEvolution(const TransientStepState &state);
 /// Pig position, the pressure-volume coupling, the fluid mini-table and the
 /// inlet condition.
 ///
-/// refreshFluidMiniTable still invokes geraMiniTabFlu, which REMAINS in
-/// SisProd.cpp as T126 requires, reached through the updaters. Its only
-/// caller is that updater; see the note on TransientStepUpdaters.
+/// refreshFluidMiniTable invokes generateFluidMiniTables, below.
 void updatePig(const TransientStepState &state);
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0, int ciclo = 0);
 void refreshFluidMiniTable(const TransientStepState &state);
 void refreshInletCondition(const TransientStepState &state);
 
+/// The per-cell loops that ran every time step from SisProd.cpp until SC-015:
+/// recentring the fluid mini-tables (was geraMiniTabFlu, with auxMiniTab), and
+/// storing the mass sources at the previous time level (was salvaFonte).
+void generateFluidMiniTables(const TransientStepState &state);
+void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui);
+void storePreviousSources(const TransientStepState &state);
+
 // =============================================================== the solve ====
 
-/// What SolveTrans needs from outside itself: the twenty-one SProd methods it
-/// calls that do not move with it.
+/// What SolveTrans needs from outside itself: the twenty SProd methods it calls
+/// that do not move with it.
 ///
-/// Twenty-one is the measurement behind the warning at the top of this header.
-/// The step's own routines needed two callbacks; the routine that orchestrates
-/// the step needs ten times that, because it is the place where every other
-/// part of the engine meets. solveHydrateEnvelopes is here for a harder reason
-/// than convenience: it constructs the hydrate solvers from the whole SProd
-/// (*this), which no state struct can supply.
+/// Twenty-one when T127 moved it, and that is the measurement behind the warning
+/// at the top of this header. The step's own routines needed two callbacks; the
+/// routine that orchestrates the step needed ten times that, because it is the
+/// place where every other part of the engine meets. SC-015 has since moved one
+/// of each into this module (geraMiniTabFlu and salvaFonte).
+/// solveHydrateEnvelopes is here for a harder reason than convenience: it
+/// constructs the hydrate solvers from the whole SProd (*this), which no state
+/// struct can supply.
 ///
 /// Default arguments are carried only where a call inside the moved code relies
 /// on them: updateThermal is called with none, as renovaterm() was.
@@ -398,7 +401,6 @@ struct TransientSolveUpdaters {
     void updateTemperatures() const;
     void updateInitialFractions() const;
     void updateThermal(int aflu = 0) const;
-    void saveSources() const;
     void solveGasLine() const;
 };
 

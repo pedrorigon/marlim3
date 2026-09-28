@@ -1469,7 +1469,7 @@ void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, in
 
 void refreshFluidMiniTable(const TransientStepState &state) {
     //if(arq.miniTabAtraso>0)
-    	state.updaters.generateFluidMiniTable();
+    	generateFluidMiniTables(state);
     double betIV;
     double solutionGasRatioInSitu;
     double oilVolumeFactorInSitu;
@@ -2118,7 +2118,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     if (state.step.input.modoParafina == 1)
         state.updaters.evaluateParaffin();
 
-    state.updaters.saveSources();
+    storePreviousSources(state.step);
     state.updaters.updateTemperatures();
 
     state.step.outletPressure = state.step.cells[state.step.lastCell].pres;
@@ -2141,7 +2141,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         state.updaters.updateMolarFractions(fluiRev);
         state.compositionalRefreshCounter++;
         if (state.compositionalRefreshCounter == state.step.input.miniTabAtraso + 1 && state.step.input.miniTabAtraso > 0) {
-            state.step.updaters.generateFluidMiniTable();
+            generateFluidMiniTables(state.step);
             state.compositionalRefreshCounter = 0;
         }
     } // casoComp
@@ -2203,6 +2203,376 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     state.printCounter++;
     if ((*state.step.globals).chaverede == 0)
         (*state.step.globals).lixo5 += state.step.timeStep;
+}
+
+// SC-015: the two per-cell loops that ran every time step from SisProd.cpp,
+// geraMiniTabFlu and salvaFonte, and the helpers only they call. T126 had
+// kept geraMiniTabFlu there on a premise T104c showed false.
+namespace {
+
+/// Evaluates the fluid at the two minimum-pressure corners of the mini-table,
+/// (pmin, tmin) and (pmin, tmax): refreshes fluC's composition at each corner and
+/// writes every tabulated property of flui's mini-table there, plus the
+/// bubble-point pressure at each temperature.
+void fillMiniTableCornersAtMinPressure(const TransientStepState &state, ProFlu &fluC, ProFlu &flui) {
+    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
+        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmin,
+                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
+                              fluC.oCalculatedVapComposition, state.input.pocinjec);
+    else
+        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmin, -1, NULL, NULL, state.input.pocinjec);
+    flui.miniTabDin.rholF[0][0] =
+        fluC.MasEspoleo(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.rhogF[0][0] =
+        fluC.MasEspGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.DrhogDpF[0][0] =
+        fluC.drhodp(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.DrholDtF[0][0] =
+        fluC.DrholDT(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.DrhogDtF[0][0] =
+        fluC.drhodt(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.valBO[0][0] =
+        fluC.BOFunc(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.valZ[0][0] =
+        fluC.Zdran(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.valdZdT[0][0] =
+        fluC.DZDT(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.valdZdP[0][0] =
+        fluC.DZDP(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.tit[0][0] =
+        fluC.FracMass(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.rs[0][0] =
+        fluC.RS(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.cplF[0][0] =
+        fluC.CalorLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.cpgF[0][0] =
+        fluC.CalorGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.HlF[0][0] =
+        fluC.EntalpLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.HgF[0][0] =
+        fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    flui.miniTabDin.PBF[0] =
+        fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
+        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmax,
+                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
+                              fluC.oCalculatedVapComposition, state.input.pocinjec);
+    else
+        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmax, -1, NULL, NULL, state.input.pocinjec);
+    flui.miniTabDin.rholF[0][1] =
+        fluC.MasEspoleo(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.rhogF[0][1] =
+        fluC.MasEspGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.DrhogDpF[0][1] =
+        fluC.drhodp(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.DrholDtF[0][1] =
+        fluC.DrholDT(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.DrhogDtF[0][1] =
+        fluC.drhodt(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.valBO[0][1] =
+        fluC.BOFunc(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.valZ[0][1] =
+        fluC.Zdran(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.valdZdT[0][1] =
+        fluC.DZDT(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.valdZdP[0][1] =
+        fluC.DZDP(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.tit[0][1] =
+        fluC.FracMass(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.rs[0][1] =
+        fluC.RS(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.cplF[0][1] =
+        fluC.CalorLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.cpgF[0][1] =
+        fluC.CalorGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.HlF[0][1] =
+        fluC.EntalpLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.HgF[0][1] =
+        fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    flui.miniTabDin.PBF[1] =
+        fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+}
+
+/// Evaluates the fluid at the two maximum-pressure corners of the mini-table,
+/// (pmax, tmin) and (pmax, tmax): refreshes fluC's composition at each corner and
+/// writes every tabulated property of flui's mini-table there.
+void fillMiniTableCornersAtMaxPressure(const TransientStepState &state, ProFlu &fluC, ProFlu &flui) {
+    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
+        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin,
+                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
+                              fluC.oCalculatedVapComposition, state.input.pocinjec);
+    else
+        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin, -1, NULL, NULL, state.input.pocinjec);
+    flui.miniTabDin.rholF[1][0] =
+        fluC.MasEspoleo(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.rhogF[1][0] =
+        fluC.MasEspGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.DrhogDpF[1][0] =
+        fluC.drhodp(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.DrholDtF[1][0] =
+        fluC.DrholDT(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.DrhogDtF[1][0] =
+        fluC.drhodt(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.valBO[1][0] =
+        fluC.BOFunc(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.valZ[1][0] =
+        fluC.Zdran(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.valdZdT[1][0] =
+        fluC.DZDT(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.valdZdP[1][0] =
+        fluC.DZDP(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.tit[1][0] =
+        fluC.FracMass(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.rs[1][0] =
+        fluC.RS(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.cplF[1][0] =
+        fluC.CalorLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.cpgF[1][0] =
+        fluC.CalorGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.HlF[1][0] =
+        fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    flui.miniTabDin.HgF[1][0] =
+        fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
+    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
+        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmax,
+                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
+                              fluC.oCalculatedVapComposition, state.input.pocinjec);
+    else
+        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmax, -1, NULL, NULL, state.input.pocinjec);
+    flui.miniTabDin.rholF[1][1] =
+        fluC.MasEspoleo(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.rhogF[1][1] =
+        fluC.MasEspGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.DrhogDpF[1][1] =
+        fluC.drhodp(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.DrholDtF[1][1] =
+        fluC.DrholDT(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.DrhogDtF[1][1] =
+        fluC.drhodt(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.valBO[1][1] =
+        fluC.BOFunc(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.valZ[1][1] =
+        fluC.Zdran(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.valdZdT[1][1] =
+        fluC.DZDT(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.valdZdP[1][1] =
+        fluC.DZDP(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.tit[1][1] =
+        fluC.FracMass(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.rs[1][1] =
+        fluC.RS(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.cplF[1][1] =
+        fluC.CalorLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.cpgF[1][1] =
+        fluC.CalorGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.HlF[1][1] =
+        fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    flui.miniTabDin.HgF[1][1] =
+        fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+}
+
+}  // namespace
+
+/// Builds a fluid's dynamic mini-table: evaluates it at the four corners
+/// (pmin/pmax x tmin/tmax) and reorders the quality corners. Was auxMiniTab.
+void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
+    ProFlu fluC;
+    fluC = flui;
+    fluC.atualizaPropCompStandard();
+    fillMiniTableCornersAtMinPressure(state, fluC, flui);
+    fillMiniTableCornersAtMaxPressure(state, fluC, flui);
+
+
+    std::pair<double, int> titVec[4];
+
+    for(int j=0;j<2;j++){
+    	for(int k=0;k<2;k++){
+    		titVec[2*j+k]={flui.miniTabDin.tit[j][k],2*j+k};
+    	}
+    }
+    std::sort(titVec, titVec + 4);
+    if(titVec[0].first<1e-3){
+    	int busca=1;
+    	while(busca<4 && titVec[busca].first<1e-3)busca++;
+    	if(busca<4){
+    		int jtroca;
+    		int ktroca;
+    		if(titVec[busca].second==0){
+    			jtroca=0;
+    			ktroca=0;
+    		}
+    		else if(titVec[busca].second==1){
+    			jtroca=0;
+    			ktroca=1;
+    		}
+    		else if(titVec[busca].second==2){
+    			jtroca=1;
+    			ktroca=0;
+    		}
+    		else if(titVec[busca].second==3){
+    			jtroca=1;
+    			ktroca=1;
+    		}
+    	    for(int j=0;j<2;j++){
+    	    	for(int k=0;k<2;k++){
+    	    		if(flui.miniTabDin.tit[j][k]<1e-3){
+    	    			flui.miniTabDin.rhogF[j][k]=flui.miniTabDin.rhogF[jtroca][ktroca];
+    	    			flui.miniTabDin.DrhogDpF[j][k]=flui.miniTabDin.DrhogDpF[jtroca][ktroca];
+    	    			flui.miniTabDin.DrhogDtF[j][k]=flui.miniTabDin.DrhogDtF[jtroca][ktroca];
+    	    			flui.miniTabDin.valZ[j][k]=flui.miniTabDin.valZ[jtroca][ktroca];
+    	    			flui.miniTabDin.valdZdT[j][k]=flui.miniTabDin.valdZdT[jtroca][ktroca];
+    	    			flui.miniTabDin.valdZdP[j][k]=flui.miniTabDin.valdZdP[jtroca][ktroca];
+    	    			flui.miniTabDin.cpgF[j][k]=flui.miniTabDin.cpgF[jtroca][ktroca];
+    	    			flui.miniTabDin.HgF[j][k]=flui.miniTabDin.HgF[jtroca][ktroca];
+    	    		}
+    	    	}
+    	    }
+    	}
+    }
+    if(titVec[3].first>1.-1e-3){
+    	int busca=2;
+    	while(busca>=0 && titVec[busca].first>1.+1e-3)busca--;
+    	if(busca>=0){
+    		int jtroca;
+    		int ktroca;
+    		if(titVec[busca].second==0){
+    			jtroca=0;
+    			ktroca=0;
+    		}
+    		else if(titVec[busca].second==1){
+    			jtroca=0;
+    			ktroca=1;
+    		}
+    		else if(titVec[busca].second==2){
+    			jtroca=1;
+    			ktroca=0;
+    		}
+    		else if(titVec[busca].second==3){
+    			jtroca=1;
+    			ktroca=1;
+    		}
+    	    for(int j=0;j<2;j++){
+    	    	for(int k=0;k<2;k++){
+    	    		if(flui.miniTabDin.tit[j][k]>1.-1e-3){
+    	    			flui.miniTabDin.rholF[j][k]=flui.miniTabDin.rholF[jtroca][ktroca];
+    	    			flui.miniTabDin.valBO[j][k]=flui.miniTabDin.valBO[jtroca][ktroca];
+    	    			flui.miniTabDin.DrholDtF[j][k]=flui.miniTabDin.DrholDtF[jtroca][ktroca];
+    	    			flui.miniTabDin.rs[j][k]=flui.miniTabDin.rs[jtroca][ktroca];
+    	    			flui.miniTabDin.cplF[j][k]=flui.miniTabDin.cplF[jtroca][ktroca];
+    	    			flui.miniTabDin.HlF[j][k]=flui.miniTabDin.HlF[jtroca][ktroca];
+    	    		}
+    	    	}
+    	    }
+    	}
+    }
+}
+
+/// Recentres every cell's mini-table, and the mini-tables of the accessory
+/// fluids, on the cell's current pressure and temperature. Was geraMiniTabFlu.
+void generateFluidMiniTables(const TransientStepState &state) {
+    (*state.globals).modoTransiente = 0;
+#pragma omp parallel for num_threads((*state.globals).ntrd)
+    for (int i = 0; i <= state.lastCell; i++) {
+        double delp;
+        double delt;
+        delp = 0.5 * state.cells[i].pres;
+        if (delp > state.input.miniTabDp)
+            delp = state.input.miniTabDp;
+        if (delp < 5) {
+            state.cells[i].flui.miniTabDin.pmax = state.cells[i].pres + 5.;
+            state.cells[i].flui.miniTabDin.pmin = state.cells[i].pres - delp;
+            if (state.cells[i].flui.miniTabDin.pmin < 0.9)
+                state.cells[i].flui.miniTabDin.pmin = 0.9;
+        } else {
+            state.cells[i].flui.miniTabDin.pmax = state.cells[i].pres + delp;
+            state.cells[i].flui.miniTabDin.pmin = state.cells[i].pres - delp;
+        }
+        delt = state.input.miniTabDt;
+        state.cells[i].flui.miniTabDin.tmax = state.cells[i].temp + delt;
+        state.cells[i].flui.miniTabDin.tmin = state.cells[i].temp - delt;
+        if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].flui);
+        if (state.cells[i].acsr.tipo == 1) {
+            state.cells[i].acsr.injg.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
+            state.cells[i].acsr.injg.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
+            state.cells[i].acsr.injg.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
+            state.cells[i].acsr.injg.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
+            state.cells[i].acsr.injg.FluidoPro.atualizaPropCompStandard();
+            if (state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta < 1.)
+                state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
+                                                               state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta, state.cells[i].acsr.injg.FluidoPro.oCalculatedLiqComposition,
+                                                               state.cells[i].acsr.injg.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
+            else
+                state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
+            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injg.FluidoPro);
+        } else if (state.cells[i].acsr.tipo == 2) {
+            state.cells[i].acsr.injl.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
+            state.cells[i].acsr.injl.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
+            state.cells[i].acsr.injl.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
+            state.cells[i].acsr.injl.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
+            state.cells[i].acsr.injl.FluidoPro.atualizaPropCompStandard();
+            if (state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta < 1.)
+                state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
+                                                               state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta, state.cells[i].acsr.injl.FluidoPro.oCalculatedLiqComposition,
+                                                               state.cells[i].acsr.injl.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
+            else
+                state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
+            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injl.FluidoPro);
+        } else if (state.cells[i].acsr.tipo == 3) {
+            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
+            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
+            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
+            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
+            state.cells[i].acsr.ipr.FluidoPro.atualizaPropCompStandard();
+            if (state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta < 1.)
+                state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
+                                                              state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta, state.cells[i].acsr.ipr.FluidoPro.oCalculatedLiqComposition,
+                                                              state.cells[i].acsr.ipr.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
+            else
+                state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
+            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.ipr.FluidoPro);
+        } else if (state.cells[i].acsr.tipo == 15) {
+        	if(state.input.miniTabAtraso > 0)state.cells[i].acsr.radialPoro.geraMiniTabFlu();
+        } else if (state.cells[i].acsr.tipo == 16) {
+        	if(state.input.miniTabAtraso > 0)state.cells[i].acsr.poroso2D.geraMiniTabFlu();
+        } else if (state.cells[i].acsr.tipo == 9) {
+            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
+            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
+            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
+            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
+            state.cells[i].acsr.fontechk.fluidoP.atualizaPropCompStandard();
+            if (state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta > 0. && state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta < 1.)
+                state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
+                                                                 state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta, state.cells[i].acsr.fontechk.fluidoP.oCalculatedLiqComposition,
+                                                                 state.cells[i].acsr.fontechk.fluidoP.oCalculatedVapComposition, state.input.pocinjec);
+            else
+                state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
+            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.fontechk.fluidoP);
+        } else if (state.cells[i].acsr.tipo == 10) {
+            state.cells[i].acsr.injm.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
+            state.cells[i].acsr.injm.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
+            state.cells[i].acsr.injm.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
+            state.cells[i].acsr.injm.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
+            state.cells[i].acsr.injm.FluidoPro.atualizaPropCompStandard();
+            if (state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta < 1.)
+                state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
+                                                               state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta, state.cells[i].acsr.injm.FluidoPro.oCalculatedLiqComposition,
+                                                               state.cells[i].acsr.injm.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
+            else
+                state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
+            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injm.FluidoPro);
+        }
+    }
+    (*state.globals).modoTransiente = 1;
+}
+
+/// Copies each cell's mass sources to the previous-time-level fields (...ini).
+/// Was salvaFonte.
+void storePreviousSources(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].fontemassLRini = state.cells[i].fontemassLR;
+        state.cells[i].fontemassCRini = state.cells[i].fontemassCR;
+        state.cells[i].fontemassGRini = state.cells[i].fontemassGR;
+    }
 }
 
 }  // namespace sisprod::transient

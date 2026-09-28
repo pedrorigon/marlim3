@@ -56,6 +56,8 @@ CALLS = {
     "SolveAcopPV": ("solvePressureVolumeCoupling", "state.step"),
     "atualizaMiniTab": ("refreshFluidMiniTable", "state.step"),
     "atualizaCC1": ("refreshInletCondition", "state.step"),
+    "geraMiniTabFlu": ("generateFluidMiniTables", "state.step"),
+    "salvaFonte": ("storePreviousSources", "state.step"),
     "advanceCouplingIteration": ("advanceCouplingIteration", "state"),
     "writeProgressReport": ("writeProgressReport", "state"),
     "writeEventLog": ("writeEventLog", "state"),
@@ -72,7 +74,6 @@ CALLS = {
 # Nothing yet: the renova group reaches no SProd method. SolveTrans will add
 # entries here when T127 moves it.
 CALLBACKS = {
-    "geraMiniTabFlu": "state.step.updaters.generateFluidMiniTable",
     "subtempoGas": "state.step.updaters.advanceGasSubStep",
     "solveHydrateEnvelopes": "state.updaters.solveHydrateEnvelopes",
     "BuscaPresInjDesc": "state.updaters.searchUnloadingInjectionPressure",
@@ -93,7 +94,6 @@ CALLBACKS = {
     "renovaTemp": "state.updaters.updateTemperatures",
     "renovaalbetini": "state.updaters.updateInitialFractions",
     "renovaterm": "state.updaters.updateThermal",
-    "salvaFonte": "state.updaters.saveSources",
     "solveLinGas": "state.updaters.solveGasLine",
 }
 

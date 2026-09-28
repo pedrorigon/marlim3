@@ -387,3 +387,11 @@ avaliaParafina
 renovaRGOdgYco2
 renovaFracMol
 renovaFracMol2
+# SC-015 -- the two per-cell loops that ran every time step from SisProd.cpp
+# moved to SisProdTransient.cpp (generateFluidMiniTables, storePreviousSources);
+# SProd keeps one-line delegations. T126 had kept geraMiniTabFlu here on a
+# premise T104c showed false. Proved token for token by transient-move.py
+# `check` against the pre-move commit; auxMiniTab (declared above, T101) moved
+# with it as fillFluidMiniTable, and the two corner helpers as module internals.
+geraMiniTabFlu
+salvaFonte

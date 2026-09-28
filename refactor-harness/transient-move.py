@@ -67,13 +67,24 @@ FUNCTIONS = {
     "SubReiniEvolFrac": {"new_name": "restartFractionEvolutionSub", "arguments": ""},
     "ReiniEvolFrac": {"new_name": "restartFractionEvolution", "arguments": ""},
 
-    # T126. atualizaMiniTab keeps calling geraMiniTabFlu, which stays in
-    # SisProd.cpp -- it is consumed by PorosoRad-Simples.cpp and solverPoroso.cpp
-    # as well, so it is surface.
+    # T126 left geraMiniTabFlu in SisProd.cpp on the premise that
+    # PorosoRad-Simples.cpp and solverPoroso.cpp consume it. They do not: they
+    # define geraMiniTabFlu methods of their own (T104c). SC-015 moves it below.
     "AtualizaPig": {"new_name": "updatePig", "arguments": ""},
     "SolveAcopPV": {"new_name": "solvePressureVolumeCoupling", "arguments": "vexpli, ciclo"},
     "atualizaMiniTab": {"new_name": "refreshFluidMiniTable", "arguments": ""},
     "atualizaCC1": {"new_name": "refreshInletCondition", "arguments": ""},
+
+    # SC-015 -- the two per-cell loops that still ran every time step from
+    # SisProd.cpp, with the helpers only they call. The corner helpers were cut
+    # from auxMiniTab by T101 and stay internal to the module.
+    "fillMiniTableCornersAtMinPressure": {"new_name": "fillMiniTableCornersAtMinPressure",
+                                          "arguments": "fluC, flui"},
+    "fillMiniTableCornersAtMaxPressure": {"new_name": "fillMiniTableCornersAtMaxPressure",
+                                          "arguments": "fluC, flui"},
+    "auxMiniTab": {"new_name": "fillFluidMiniTable", "arguments": "flui"},
+    "geraMiniTabFlu": {"new_name": "generateFluidMiniTables", "arguments": ""},
+    "salvaFonte": {"new_name": "storePreviousSources", "arguments": ""},
 }
 
 # Calls between moved routines. The renova group calls no SProd method at all
@@ -109,6 +120,11 @@ CALLS = {
     "SolveAcopPV": ("solvePressureVolumeCoupling", "state"),
     "atualizaMiniTab": ("refreshFluidMiniTable", "state"),
     "atualizaCC1": ("refreshInletCondition", "state"),
+    "fillMiniTableCornersAtMinPressure": ("fillMiniTableCornersAtMinPressure", "state"),
+    "fillMiniTableCornersAtMaxPressure": ("fillMiniTableCornersAtMaxPressure", "state"),
+    "auxMiniTab": ("fillFluidMiniTable", "state"),
+    "geraMiniTabFlu": ("generateFluidMiniTables", "state"),
+    "salvaFonte": ("storePreviousSources", "state"),
 }
 
 # SProd member -> SteadyStateState field. Longest first when the pattern is built, so
@@ -119,7 +135,6 @@ CALLS = {
 # Nothing yet: the renova group reaches no SProd method. SolveTrans will add
 # entries here when T127 moves it.
 CALLBACKS = {
-    "geraMiniTabFlu": "state.updaters.generateFluidMiniTable",
     "subtempoGas": "state.updaters.advanceGasSubStep",
 }
 

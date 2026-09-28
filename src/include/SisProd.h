@@ -1376,6 +1376,8 @@ class SProd {
     void FonteValv(int ind);
   public:
     /// Stores source terms from the previous time level for possible rollback.
+    /// Nothing in the product calls it since SC-015 moved the transient step's
+    /// call into the module.
     void salvaFonte();
   private:
     /// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s,
@@ -1408,19 +1410,13 @@ class SProd {
   private:
     /// Applies hydrostatic and friction corrections; currently unused.
     void correcHidroFric(int i, double &hidro, double &fric);
-    /// Evaluates the fluid at the two minimum-pressure corners of the mini-table,
-    /// (pmin, tmin) and (pmin, tmax): refreshes fluC's composition at each corner
-    /// and writes every tabulated property of flui's mini-table there, plus the
-    /// bubble-point pressure at each temperature.
-    void fillMiniTableCornersAtMinPressure(ProFlu &fluC, ProFlu &flui);
-    /// Evaluates the fluid at the two maximum-pressure corners of the mini-table,
-    /// (pmax, tmin) and (pmax, tmax): refreshes fluC's composition at each corner
-    /// and writes every tabulated property of flui's mini-table there.
-    void fillMiniTableCornersAtMaxPressure(ProFlu &fluC, ProFlu &flui);
-    /// Prepares auxiliary data for a local fluid-property table.
+    /// Prepares auxiliary data for a local fluid-property table; currently
+    /// unused -- its only caller, geraMiniTabFlu, moved to the transient module
+    /// in SC-015.
     void auxMiniTab(ProFlu &flu);
   public:
-    /// Generates the local fluid-property table.
+    /// Generates the local fluid-property table. Nothing in the product calls it
+    /// since SC-015 moved the transient step's call into the module.
     void geraMiniTabFlu();
 
     /// Loads pressure-velocity results into cell and face state variables.
