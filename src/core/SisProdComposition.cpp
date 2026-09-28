@@ -446,7 +446,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
         double rhogSTF = rhogST;
         double razdgdF = 1.;
         double razdglF = 1.;
-        double titFonte = 0.;
+        double sourceStockTankQuality = 0.;
         ProFlu fluF;
         if (state.cells[i].acsr.tipo == 1 && state.cells[i].acsr.injg.seco == 1) {
             if (state.cells[i].acsr.injg.QGas > 0.)
@@ -462,7 +462,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             else
                 fluF = state.cells[i].flui;
 
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
@@ -505,7 +505,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             else
                 fluF = state.cells[i].flui;
 
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
@@ -548,7 +548,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             else
                 fluF = state.cells[i].flui;
 
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
@@ -594,7 +594,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             else
                 fluF = state.cells[i].flui;
 
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
@@ -637,7 +637,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
 
             if (fluF.BSW < 1 - (*state.globals).localtiny)
                 rholSTF = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag + fluF.Deng * 1.225 * rgoFO * (1. - fluF.BSW);
@@ -680,7 +680,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             else
                 fluF = state.cells[i].flui;
 
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
@@ -719,7 +719,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
             else
                 fluF = state.cells[i].flui;
 
-            titFonte = fluF.dStockTankVaporMassFraction;
+            sourceStockTankQuality = fluF.dStockTankVaporMassFraction;
             dgFO = fluF.Deng;
             yco2FO = fluF.yco2;
             rgoFO = fluF.RGO;
@@ -759,7 +759,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
                 dgFO = state.cells[i].flui.Deng;
                 yco2FO = state.cells[i].flui.yco2;
                 rgoFO = state.cells[i].flui.RGO;
-                titFonte = state.cells[i].flui.dStockTankVaporMassFraction;
+                sourceStockTankQuality = state.cells[i].flui.dStockTankVaporMassFraction;
                 double rholiq = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) + state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
                 double rhogas = state.cells[i].flui.Deng * 1.225;
                 rholSTF = rholiq + rhogas * rgoFO * (1. - state.cells[i].flui.BSW);
@@ -788,7 +788,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
                     rholiq = (1 - state.cells[i - 1].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i - 1].flui.API)) +
                              state.cells[i - 1].flui.BSW * 1000 * state.cells[i - 1].flui.Denag;
                     rhogas = state.cells[i - 1].flui.Deng * 1.225;
-                    titFonte = state.cells[i - 1].flui.dStockTankVaporMassFraction;
+                    sourceStockTankQuality = state.cells[i - 1].flui.dStockTankVaporMassFraction;
                     rholSTF = rholiq + rhogas * rgoFO * (1. - state.cells[i - 1].flui.BSW);
                     rhogSTF = rhogas;
                     double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
@@ -815,7 +815,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
                     rholiq = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) +
                              state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
                     rhogas = state.cells[i].flui.Deng * 1.225;
-                    titFonte = state.cells[i].flui.dStockTankVaporMassFraction;
+                    sourceStockTankQuality = state.cells[i].flui.dStockTankVaporMassFraction;
                     rholSTF = rholiq + rhogas * rgoFO * (1. - state.cells[i].flui.BSW);
                     rhogSTF = rhogas;
                     double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
@@ -840,7 +840,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
         }
         freeGasSource *= (razdglF / (rhogSTF));
 
-        if (titFonte > 1. - 1e-15) {
+        if (sourceStockTankQuality > 1. - 1e-15) {
             dissolvedGasSource = 0.;
             deadOilSource = 0.;
             waterSource = 0.;

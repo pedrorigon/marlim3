@@ -3803,8 +3803,8 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
     double relaxa = 0.5; // relaxacao para a iteracao da vazao total de injecao estimada a cada iteracao
     double presteste = -10;
     double presteste0 = -10;
-    int vazBaix = 0;
-    while (((erro > 0.00001 && vazBaix == 0) || erro1 > 0.00001) && itera < 600) { // iteracao de convergencia
+    int injectionFlowRateIsLow = 0;
+    while (((erro > 0.00001 && injectionFlowRateIsLow == 0) || erro1 > 0.00001) && itera < 600) { // iteracao de convergencia
         presteste0 = presteste;
         if (itera > 20)
             relaxa = 0.1;
@@ -3851,9 +3851,9 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
         itera++;
         massGas = (relaxa * massGas + (1. - relaxa) * massGas2); // relaxacao da estimativa de vazao de injecao
         if (0.05 * state.gasCells[0].duto.area * state.gasCells[0].rg > massGas)
-            vazBaix = 1;
+            injectionFlowRateIsLow = 1;
         else
-            vazBaix = 0;
+            injectionFlowRateIsLow = 0;
         if (fabs(massGas) > 1e-15)
             erro = fabs(massGas - massGas2) / fabs(massGas); // erro na estimativa de vazao
         // de uma iteracao para a outra
@@ -4519,7 +4519,7 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
 
 double marchProductionSteady(const SteadyStateState &state, double pchute) {
 
-    int corrigechute = 1;
+    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
 
@@ -4584,8 +4584,8 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             state.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
         // obtidas na primeira iteracao de marcha
         int i;
-        corrigechute = 1;
-        while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
+        guessNeedsCorrection = 1;
+        while (guessNeedsCorrection == 1) { // opcao antiga, ja nao tem mais efeito
             // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
             // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
             // sai do metodo retornando ou 1e10 ou -1e10
@@ -4645,7 +4645,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             if (advanceProductionCells(state, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
-                corrigechute = 0; // fim da marcha
+                guessNeedsCorrection = 0; // fim da marcha
         }
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista
@@ -4674,7 +4674,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
 
 double marchReverseProductionSteady(const SteadyStateState &state, double pchute) {
 
-    int corrigechute = 1;
+    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
     state.slowHeatTransferThreshold = 0.1;
@@ -4739,8 +4739,8 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
             state.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
         // obtidas na primeira iteracao de marcha
         int i;
-        corrigechute = 1;
-        while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
+        guessNeedsCorrection = 1;
+        while (guessNeedsCorrection == 1) { // opcao antiga, ja nao tem mais efeito
             // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
             // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
             // sai do metodo retornando ou 1e10 ou -1e10
@@ -4788,7 +4788,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
             if (advanceReverseProductionCells(state, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
-                corrigechute = 0; // fim da marcha
+                guessNeedsCorrection = 0; // fim da marcha
         }
 
         masfim = state.cells[state.lastCell - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
@@ -4867,7 +4867,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
 
 double marchProductionSteadySecondary(const SteadyStateState &state, double pchute) {
 
-    int corrigechute = 1;
+    int guessNeedsCorrection = 1;
 
     double alfini = 0.;
     double betini = 0.;
@@ -4928,8 +4928,8 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             state.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
         // obtidas na primeira iteracao de marcha
         int i;
-        corrigechute = 1;
-        while (corrigechute == 1) { // opcao antiga, ja nao tem mais efeito
+        guessNeedsCorrection = 1;
+        while (guessNeedsCorrection == 1) { // opcao antiga, ja nao tem mais efeito
             // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
             // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
             // sai do metodo retornando ou 1e10 ou -1e10
@@ -4994,7 +4994,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             if (advanceProductionCellsSecondary(state, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
-                corrigechute = 0; // fim da marcha
+                guessNeedsCorrection = 0; // fim da marcha
         }
         // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
         // caso exista
@@ -5145,7 +5145,7 @@ void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &s
 
 double marchProductionPressureToPressure(const SteadyStateState &state, double mchute) {
 
-    int corrigechute = 1;
+    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
 
@@ -5426,7 +5426,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
 
 double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double mchute) {
 
-    int corrigechute = 1;
+    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
 
@@ -5800,7 +5800,7 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
 
 double marchInjectionSteady(const SteadyStateState &state, double chute) {
 
-    int corrigechute = 1;
+    int guessNeedsCorrection = 1;
 
     if (state.input.flashCompleto < 1)
         state.cells[0].temp = state.cells[0].acsr.injl.temp;
@@ -5897,8 +5897,8 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
     double masfim = 0.;
 
     int i;
-    corrigechute = 1;
-    while (corrigechute == 1) {
+    guessNeedsCorrection = 1;
+    while (guessNeedsCorrection == 1) {
         state.cells[0].presauxL = state.gasSurfacePressure - delp;
         state.cells[0].presLini = state.gasSurfacePressure - delp;
         state.cells[0].presL = state.gasSurfacePressure - delp;
@@ -5966,7 +5966,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
                 return 1e10;
         }
         if (i == state.lastCell + 1)
-            corrigechute = 0;
+            guessNeedsCorrection = 0;
     }
     state.updaters.updateSource(state.lastCell);
     masfim += (state.cells[state.lastCell].fontemassCR + state.cells[state.lastCell].fontemassLR + state.cells[state.lastCell].fontemassGR);
@@ -5977,7 +5977,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
         return state.input.condpocinj.presfundo - state.cells[state.lastCell].pres;
 }
 
-double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, double liquidFlowRate, double vazG) {
+double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, double liquidFlowRate, double gasFlowRate) {
     double pchute = state.gasSurfacePressure;
     double taux;
     state.cells[state.lastCell].pres = pchute;
@@ -5985,7 +5985,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
     double rmis = 0.;
     double frictionFactor = 0.;
     for (int i = state.lastCell; i > 0; i--) {
-        if (liquidFlowRate > 0. || vazG > 0.) {
+        if (liquidFlowRate > 0. || gasFlowRate > 0.) {
             taux = state.input.celp[0].textern;
             double completionFraction = 0.;
             double visC = state.cells[i].fluicol.VisFlu(pchute, taux);
@@ -6006,7 +6006,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             massic = 1 * liquidFlowRate * (1. - completionFraction) * multiplicador;
             double fracmasshidra = state.cells[i].flui.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic;
-            double massicG = fracmasshidra * massic + vazG * Rhogs;
+            double massicG = fracmasshidra * massic + gasFlowRate * Rhogs;
             j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.cells[i].duto.area;
             double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
