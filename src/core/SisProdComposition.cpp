@@ -1673,6 +1673,47 @@ void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRe
     delete[] fluC;
 }
 
+namespace {
+
+/// Copies a phase's molar fractions into fracMolFase and renormalises them to
+/// sum one when the sum is positive. The smallest fraction is found and then
+/// set to zero before it is subtracted, so the subtraction is none; kept as it
+/// was. Was a lambda inside transportPhaseMolarFractions, moved out so the
+/// per-cell step can be cut from the loop (SC-004).
+void normalizarFracoes(vector<double>& fracMolFase, double* fracMolOriginal, int npseudo) {
+    for (int kfrac = 0; kfrac < npseudo; kfrac++) {
+    	fracMolFase[kfrac] = fracMolOriginal[kfrac];
+    }
+	// Encontrar o menor valor
+    double menorFracFase = fracMolFase[0];
+    for (int kfrac = 1; kfrac < npseudo; kfrac++) {
+        if (menorFracFase > fracMolFase[kfrac]) {
+            menorFracFase = fracMolFase[kfrac];
+        }
+    }
+    menorFracFase=0.;
+
+    // Subtrair o menor valor
+    for (int kfrac = 0; kfrac < npseudo; kfrac++) {
+    	fracMolFase[kfrac] -= menorFracFase;
+    }
+
+    // Calcular soma total
+    double fracTotFase = 0.;
+    for (int kfrac = 0; kfrac < npseudo; kfrac++) {
+        fracTotFase += fracMolFase[kfrac];
+    }
+
+    // Normalizar
+    if (fracTotFase > 0) {
+    	for (int kfrac = 0; kfrac < npseudo; kfrac++) {
+    		fracMolFase[kfrac] /= fracTotFase;
+        }
+    }
+}
+
+}  // namespace
+
 void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev) {
     Vcr<double> BSW(state.lastCell);
     Vcr<double> denag(state.lastCell);
@@ -1700,38 +1741,6 @@ void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev)
     int imin = 1;
     if ((*state.globals).chaverede != 0 && (state.cells[0].acsr.tipo == 10 || state.input.ConContEntrada > 0))
         imin = 0;
-
-    auto normalizarFracoes = [](vector<double>& fracMolFase, double* fracMolOriginal, int npseudo) {
-        for (int kfrac = 0; kfrac < npseudo; kfrac++) {
-        	fracMolFase[kfrac] = fracMolOriginal[kfrac];
-        }
-    	// Encontrar o menor valor
-        double menorFracFase = fracMolFase[0];
-        for (int kfrac = 1; kfrac < npseudo; kfrac++) {
-            if (menorFracFase > fracMolFase[kfrac]) {
-                menorFracFase = fracMolFase[kfrac];
-            }
-        }
-        menorFracFase=0.;
-
-        // Subtrair o menor valor
-        for (int kfrac = 0; kfrac < npseudo; kfrac++) {
-        	fracMolFase[kfrac] -= menorFracFase;
-        }
-
-        // Calcular soma total
-        double fracTotFase = 0.;
-        for (int kfrac = 0; kfrac < npseudo; kfrac++) {
-            fracTotFase += fracMolFase[kfrac];
-        }
-
-        // Normalizar
-        if (fracTotFase > 0) {
-        	for (int kfrac = 0; kfrac < npseudo; kfrac++) {
-        		fracMolFase[kfrac] /= fracTotFase;
-            }
-        }
-    };
 
     for (int i = imin; i < state.lastCell; i++) {
 
