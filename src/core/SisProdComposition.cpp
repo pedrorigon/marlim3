@@ -1011,6 +1011,477 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
     }
 }
 
+namespace {
+
+/// The dead-oil and water balances of cell i: their residuals against the stock-tank
+/// volumes, and from them the transported dead-oil viscosities and BSW, when there
+/// is more than one production fluid or the line is part of a network.
+/// Cut from transportOverallMolarFractions (SC-004).
+void transportViscosityAndWaterCut(const CompositionState &state, int i, Vcr<double> &VISCL, Vcr<double> &VISCH, Vcr<double> &BSW, double volaguaFim, double volpesFim, double viscHF, double viscLF, double viscHini, double viscLini, double BSWF, double BSWini, double waterSource, double deadOilSource, double viscH1, double viscL1, double BSW1, double bsw1, double oilVolumeFactorRight, double betI1, double viscH0, double viscL0, double BSW0, double bsw0, double oilVolumeFactorLeft, double betI0, double dx, double flowArea, double dt) {
+    double MultPe;
+    double MultPd = 0.;
+    double residuoP;
+    double MultAe = 0.;
+    double MultAd;
+    double residuoA;
+    if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+        MultPe = 0.;
+        if (state.cells[i].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+            MultPe = state.cells[i].QL * (1 - betI0) * (1 - bsw0) / oilVolumeFactorLeft;
+        MultPd = 0.;
+        if (state.cells[i + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+            MultPd = state.cells[i + 1].QL * (1 - betI1) * (1 - bsw1) / oilVolumeFactorRight;
+        residuoP = (volpesFim - state.cells[i].VolPesaST) * flowArea / dt + (MultPd - MultPe) / dx - deadOilSource / dx;
+        MultAe = 0.;
+        if (state.cells[i].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+            MultAe = state.cells[i].QL * (1 - betI0) * bsw0 / oilVolumeFactorLeft;
+        MultAd = 0.;
+        if (state.cells[i + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
+            MultAd = state.cells[i + 1].QL * (1 - betI1) * bsw1 / oilVolumeFactorRight;
+        residuoA = (volaguaFim - state.cells[i].VolAguaST) * flowArea / dt + (MultAd - MultAe) / dx - waterSource / dx;
+    }
+    if ((state.input.nfluP > 1 && (state.input.flashCompleto == 0 || state.cells[i].flui.viscBlackOil == 1)) || (*state.globals).chaverede != 0) {
+        if (volpesFim > 1e-3 && (deadOilSource > 0 || (MultPd < 0 || MultPe > 0))) {
+            VISCL[i] = (dt * (viscLF * deadOilSource / dx + viscLini * residuoP - (viscL1 * MultPd - viscL0 * MultPe) / dx) + viscLini * state.cells[i].VolPesaST * flowArea) / (volpesFim * flowArea);
+            VISCH[i] = (dt * (viscHF * deadOilSource / dx + viscHini * residuoP - (viscH1 * MultPd - viscH0 * MultPe) / dx) + viscHini * state.cells[i].VolPesaST * flowArea) / (volpesFim * flowArea);
+        } else {
+            VISCL[i] = viscLini;
+            VISCH[i] = viscHini;
+        }
+    }
+    if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+        if ((volaguaFim + volpesFim) > 1e-3 && ((deadOilSource > 0 || waterSource > 0) ||
+                                                ((MultPd < 0 || MultPe > 0) || (MultAd < 0 || MultAe > 0))))
+            BSW[i] = (dt * (BSWF * (waterSource + deadOilSource) / dx + BSWini * (residuoA + residuoP) - (BSW1 * (MultAd + MultPd) - BSW0 * (MultAe + MultPe)) / dx) + BSWini * (state.cells[i].VolAguaST + state.cells[i].VolPesaST) * flowArea) / ((volaguaFim + volpesFim) * flowArea);
+        else
+            BSW[i] = BSWini;
+    }
+}
+
+/// For the accessory in cell i, turns the source's mass rates into stock-tank volume
+/// rates of dead oil and water, and takes the source fluid's BSW and dead-oil
+/// viscosities; with no accessory and dissolved gas coming in, the same from the
+/// cell's own fluid.
+/// Cut from transportOverallMolarFractions (SC-004).
+void sourceStandardRatesByAccessory(const CompositionState &state, int i, double &viscHF, double &viscLF, double &BSWF, double &waterSource, double &deadOilSource, double freeGasSource, double dissolvedGasSource, ProFlu &fluF, double temperatureHigh, double temperatureLow) {
+    if (state.cells[i].acsr.tipo == 2) {
+        double solutionGasRatioSource = state.cells[i].acsr.injl.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+            double bswaux = state.cells[i].acsr.injl.FluidoPro.BSW;
+            double contrabsw = 1. - bswaux;
+            if (contrabsw < (*state.globals).localtiny)
+                contrabsw = 0.9 * (*state.globals).localtiny;
+            double rhoPSTF;
+            if (contrabsw > (*state.globals).localtiny)
+                rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.injl.FluidoPro.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.injl.FluidoPro.Denag + state.cells[i].acsr.injl.FluidoPro.Deng * 1.225 * solutionGasRatioSource;
+            else
+                rhoPSTF = 1000 * state.cells[i].acsr.injl.FluidoPro.Denag;
+            if (contrabsw > (*state.globals).localtiny) {
+                deadOilSource *= (1. / rhoPSTF);
+                waterSource *= ((bswaux / contrabsw) / rhoPSTF);
+            } else {
+                deadOilSource = 0.;
+                waterSource *= (1 / (state.cells[i].acsr.injl.FluidoPro.BSW * 1000 * state.cells[i].acsr.injl.FluidoPro.Denag));
+            }
+            BSWF = state.cells[i].acsr.injl.FluidoPro.BSW;
+            viscLF = 0 * 30 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureLow);
+            viscHF = 0 * 20 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureHigh);
+        }
+    } else if (state.cells[i].acsr.tipo == 10) {
+        double solutionGasRatioSource = state.cells[i].acsr.injm.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+            double bswaux = state.cells[i].acsr.injm.FluidoPro.BSW;
+            double contrabsw = 1. - bswaux;
+            if (contrabsw < (*state.globals).localtiny)
+                contrabsw = 0.9 * (*state.globals).localtiny;
+            double rhoPSTF;
+            if (contrabsw > (*state.globals).localtiny)
+                rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.injm.FluidoPro.API)) +
+                          (bswaux / contrabsw) * 1000 *
+                              state.cells[i].acsr.injm.FluidoPro.Denag +
+                          state.cells[i].acsr.injm.FluidoPro.Deng * 1.225 * solutionGasRatioSource;
+            else
+                rhoPSTF = 1000 * state.cells[i].acsr.injm.FluidoPro.Denag;
+            if (contrabsw > (*state.globals).localtiny) {
+                deadOilSource *= (1. / rhoPSTF);
+                waterSource *= ((bswaux / contrabsw) / rhoPSTF);
+            } else {
+                deadOilSource = 0.;
+                waterSource *= (1 / (state.cells[i].acsr.injm.FluidoPro.BSW * 1000 * state.cells[i].acsr.injm.FluidoPro.Denag));
+            }
+            BSWF = state.cells[i].acsr.injm.FluidoPro.BSW;
+            viscLF = 0 * 30 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureLow);
+            viscHF = 0 * 20 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
+        }
+    } else if (state.cells[i].acsr.tipo == 3) {
+        double solutionGasRatioSource = state.cells[i].acsr.ipr.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+            double bswaux = state.cells[i].acsr.ipr.FluidoPro.BSW;
+            double contrabsw = 1. - bswaux;
+            if (contrabsw <= (*state.globals).localtiny)
+                contrabsw = 0.9 * (*state.globals).localtiny;
+            double rhoPSTF;
+            if (contrabsw > 0)
+                rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.ipr.FluidoPro.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.ipr.FluidoPro.Denag + state.cells[i].acsr.ipr.FluidoPro.Deng * 1.225 * solutionGasRatioSource;
+            else
+                rhoPSTF = 1000 * state.cells[i].acsr.ipr.FluidoPro.Denag;
+            if (contrabsw > (*state.globals).localtiny) {
+                deadOilSource *= (1. / rhoPSTF);
+                waterSource *= ((bswaux / contrabsw) / rhoPSTF);
+            } else {
+                deadOilSource = 0.;
+                waterSource *= (1 / (state.cells[i].acsr.ipr.FluidoPro.BSW * 1000 * state.cells[i].acsr.ipr.FluidoPro.Denag));
+            }
+            BSWF = state.cells[i].acsr.ipr.FluidoPro.BSW;
+            viscLF = 0 * 30 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureLow);
+            viscHF = 0 * 20 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureHigh);
+        }
+    } else if (state.cells[i].acsr.tipo == 9) {
+
+        double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+            double bswaux = fluF.BSW;
+            double contrabsw = 1. - bswaux;
+            if (contrabsw <= (*state.globals).localtiny)
+                contrabsw = 0.9 * (*state.globals).localtiny;
+            double rhoPSTF;
+            if (contrabsw > (*state.globals).localtiny)
+                rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag + fluF.Deng * 1.225 * solutionGasRatioSource;
+            else
+                rhoPSTF = 1000 * fluF.Denag;
+            if (contrabsw > (*state.globals).localtiny) {
+                deadOilSource *= (1. / rhoPSTF);
+                waterSource *= ((bswaux / contrabsw) / rhoPSTF);
+            } else {
+                deadOilSource = 0.;
+                waterSource *= (1 / (fluF.BSW * 1000 * fluF.Denag));
+            }
+            BSWF = fluF.BSW;
+            viscLF = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
+            viscHF = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        }
+    } else if (state.cells[i].acsr.tipo == 15) {
+        double solutionGasRatioSource = state.cells[i].acsr.radialPoro.flup.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+            double bswaux = state.cells[i].acsr.radialPoro.BSW;
+            double contrabsw = 1. - bswaux;
+            if (contrabsw <= (*state.globals).localtiny)
+                contrabsw = 0.9 * (*state.globals).localtiny;
+            double rhoPSTF;
+            if (contrabsw > 0)
+                rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.radialPoro.flup.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.radialPoro.flup.Denag + state.cells[i].acsr.radialPoro.flup.Deng * 1.225 * solutionGasRatioSource;
+            else
+                rhoPSTF = 1000 * state.cells[i].acsr.radialPoro.flup.Denag;
+            if (contrabsw > (*state.globals).localtiny) {
+                deadOilSource *= (1. / rhoPSTF);
+                waterSource *= ((bswaux / contrabsw) / rhoPSTF);
+            } else {
+                deadOilSource = 0.;
+                waterSource *= (1 / (state.cells[i].acsr.radialPoro.BSW * 1000 * state.cells[i].acsr.radialPoro.flup.Denag));
+            }
+            BSWF = state.cells[i].acsr.radialPoro.BSW;
+            viscLF = 0 * 30 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureLow);
+            viscHF = 0 * 20 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureHigh);
+        }
+    } else if (state.cells[i].acsr.tipo == 16) {
+        double solutionGasRatioSource = state.cells[i].acsr.poroso2D.dados.flup.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+            double bswaux = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
+            double contrabsw = 1. - bswaux;
+            if (contrabsw <= (*state.globals).localtiny)
+                contrabsw = 0.9 * (*state.globals).localtiny;
+            double rhoPSTF;
+            if (contrabsw > 0)
+                rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.poroso2D.dados.flup.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.poroso2D.dados.flup.Denag + state.cells[i].acsr.poroso2D.dados.flup.Deng * 1.225 * solutionGasRatioSource;
+            else
+                rhoPSTF = 1000 * state.cells[i].acsr.poroso2D.dados.flup.Denag;
+            if (contrabsw > (*state.globals).localtiny) {
+                deadOilSource *= (1. / rhoPSTF);
+                waterSource *= ((bswaux / contrabsw) / rhoPSTF);
+            } else {
+                deadOilSource = 0.;
+                waterSource *= (1 / (state.cells[i].acsr.poroso2D.dados.transfer.BSW * 1000 * state.cells[i].acsr.poroso2D.dados.flup.Denag));
+            }
+            BSWF = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
+            viscLF = 0 * 30 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureLow);
+            viscHF = 0 * 20 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureHigh);
+        }
+    } else if ((fabs(dissolvedGasSource) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 &&
+                state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16) ||
+               (fabs(freeGasSource) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 1 && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 && state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16)) {
+        if (state.cells[i].acsr.tipo == 5 || state.cells[i].acsr.tipo == 8) {
+            double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+                double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) + state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
+                deadOilSource *= ((1 - state.cells[i].flui.BSW) / rhoPSTF);
+                waterSource *= (state.cells[i].flui.BSW / rhoPSTF);
+                BSWF = state.cells[i].flui.BSW;
+                viscLF = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
+                viscHF = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+            }
+        } else if ((*state.cells[i].acsrL).tipo == 5 || (*state.cells[i].acsrL).tipo == 8) {
+            if (i > 0) {
+                double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+                if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+                    double rhoPSTF = (1 - state.cells[i - 1].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i - 1].flui.API)) +
+                                     state.cells[i - 1].flui.BSW * 1000 *
+                                         state.cells[i - 1].flui.Denag;
+                    deadOilSource *= ((1 - state.cells[i - 1].flui.BSW) / rhoPSTF);
+                    waterSource *= (state.cells[i - 1].flui.BSW / rhoPSTF);
+                    BSWF = state.cells[i - 1].flui.BSW;
+                    viscLF = 0 * 30 + 1 * state.cells[i - 1].flui.VisOM(temperatureLow);
+                    viscHF = 0 * 20 + 1 * state.cells[i - 1].flui.VisOM(temperatureHigh);
+                }
+            } else {
+                double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+                if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
+                    double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) +
+                                     state.cells[i].flui.BSW * 1000 *
+                                         state.cells[i].flui.Denag;
+                    deadOilSource *= ((1 - state.cells[i].flui.BSW) / rhoPSTF);
+                    waterSource *= (state.cells[i].flui.BSW / rhoPSTF);
+                    BSWF = state.cells[i].flui.BSW;
+                    viscLF = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
+                    viscHF = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+                }
+            }
+        }
+    }
+}
+
+/// The overall molar fractions of cell i from its mole balance: the moles in the
+/// cell at the previous time level, the source and the face fluxes, in two passes,
+/// the second with the molar mass the first produced.
+/// Cut from transportOverallMolarFractions (SC-004).
+void solveCellOverallMolarFractions(const CompositionState &state, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, Vcr<double> &fracMolF, double &tempMol, double freeGasSource, double dissolvedGasSource, double vazMasGas1, double vazMasGas0, double vazMasLiq1, double vazMasLiq0, double dx, double dt, double &pesoMolC, double pesoMolF, double pesoMol1, double pesoMol0, ProFlu *fluC, int ncomp) {
+    for (int corrige = 0; corrige < 2; corrige++) {
+        tempMol = (fluC[i].MasEspoleo(state.cells[i].pres, state.cells[i].temp) * (1 - state.cells[i].alf) +
+                   fluC[i].MasEspGas(state.cells[i].pres, state.cells[i].temp) *
+                       state.cells[i].alf) *
+                  state.cells[i].duto.area / pesoMolC;
+        for (int kfrac = 0; kfrac < ncomp; kfrac++) {
+            fluC[i].fracMol[kfrac] = (state.cells[i].nMolIni * state.cells[i].flui.fracMol[kfrac] +
+                                      ((dissolvedGasSource + freeGasSource) * fracMolF[kfrac] / pesoMolF -
+                                       (vazMasLiq1 + vazMasGas1) * fracMol1[kfrac] / pesoMol1 -
+                                       (vazMasLiq0 + vazMasGas0) * fracMol0[kfrac] / pesoMol0) *
+                                          dt / dx) /
+                                     tempMol;
+        }
+        pesoMolC = 0;
+        for (int kfrac = 0; kfrac < ncomp; kfrac++)
+            pesoMolC += fluC[i].masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
+        fluC[i].atualizaPropCompStandard();
+        fluC[i].atualizaPropComp(state.cells[i].pres, state.cells[i].temp, fluC[i].dCalculatedBeta,
+                                 fluC[i].oCalculatedLiqComposition,
+                                 fluC[i].oCalculatedVapComposition, state.input.pocinjec);
+    }
+}
+
+/// The fluid a source in cell i brings: the accessory's own fluid, refreshed at the
+/// cell's pressure and temperature, or the cell's when the source is idle, with its
+/// water cut, volume factors, densities and quality.
+/// Cut from transportOverallMolarFractions (SC-004).
+void readAccessorySourceFluid(const CompositionState &state, int i, double &rhoWF, double &rhoOF, double &waterCutSource, double &waterVolumeFactorSource, double &oilVolumeFactorSource, ProFlu &fluF, double &titF) {
+    if (state.cells[i].acsr.tipo == 1) {
+        state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
+                                                       state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if (state.cells[i].acsr.injg.QGas > 0.)
+            fluF = state.cells[i].acsr.injg.FluidoPro;
+        else
+            fluF = state.cells[i].flui;
+        waterCutSource = 0.;
+        titF = 1.;
+    } else if (state.cells[i].acsr.tipo == 2) {
+        state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
+                                                       state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if (state.cells[i].acsr.injl.QLiq > 0.)
+            fluF = state.cells[i].acsr.injl.FluidoPro;
+        else
+            fluF = state.cells[i].flui;
+        oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
+        rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
+    } else if (state.cells[i].acsr.tipo == 3) {
+        state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
+                                                      state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if ((state.cells[i].acsr.ipr.Pres) > state.cells[i].pres)
+            fluF = state.cells[i].acsr.ipr.FluidoPro;
+        else
+            fluF = state.cells[i].flui;
+        oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
+        rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
+    } else if (state.cells[i].acsr.tipo == 10) {
+        state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
+                                                       state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if ((state.cells[i].acsr.injm.MassC + state.cells[i].acsr.injm.MassG + state.cells[i].acsr.injm.MassP) > 0.)
+            fluF = state.cells[i].acsr.injm.FluidoPro;
+        else
+            fluF = state.cells[i].flui;
+        oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
+        rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
+    } else if (state.cells[i].acsr.tipo == 9 && state.cells[i].acsr.fontechk.abertura > 1e-6) {
+        state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
+                                                         state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        state.cells[i].acsr.fontechk.fluidoPamb.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
+                                                            state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if (state.cells[i].acsr.fontechk.presT > state.cells[i].acsr.fontechk.pamb) {
+            fluF = state.cells[i].acsr.fontechk.fluidoP;
+        } else {
+            fluF = state.cells[i].acsr.fontechk.fluidoPamb;
+        }
+        oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
+        rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
+    } else if (state.cells[i].acsr.tipo == 15) {
+        double tRes = state.cells[i].acsr.radialPoro.tRes;
+        state.cells[i].acsr.radialPoro.flup.atualizaPropComp(state.cells[i].pres, tRes, state.cells[i].flui.dCalculatedBeta,
+                                                        state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if ((state.cells[i].fontemassLR + state.cells[i].fontemassGR) > 1e-15)
+            fluF = state.cells[i].acsr.radialPoro.flup;
+        else
+            fluF = state.cells[i].flui;
+        oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
+        rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
+    } else if (state.cells[i].acsr.tipo == 16) {
+        double tRes = state.cells[i].acsr.poroso2D.dados.tRes;
+        state.cells[i].acsr.poroso2D.dados.flup.atualizaPropComp(state.cells[i].pres, tRes, state.cells[i].flui.dCalculatedBeta,
+                                                            state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
+        if ((state.cells[i].fontemassLR + state.cells[i].fontemassGR) > 1e-15)
+            fluF = state.cells[i].acsr.poroso2D.dados.flup;
+        else
+            fluF = state.cells[i].flui;
+        oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
+        waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
+        rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
+    }
+}
+
+/// The molar fractions and molar masses at cell i's two faces, each taken from the
+/// side the mixture comes from, and the liquid and gas mass rates through them.
+/// Cut from transportOverallMolarFractions (SC-004).
+void upwindFaceMolarFractions(const CompositionState &state, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, double &vazMasLiq1, double &vazMasLiq0, double &titV1, double &titV0, double bsw1, double betI1, double bsw0, double betI0, double &pesoMol1, double &pesoMol0, int ncomp) {
+    if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].MC >= 0.) {
+        double upstreamPressure;
+        double upstreamTemperature;
+        if (i > 0) {
+            upstreamPressure = state.cells[i - 1].pres;
+            upstreamTemperature = state.cells[i - 1].temp;
+        } else {
+            upstreamPressure = state.inletPressure;
+            upstreamTemperature = state.inletTemperature;
+        }
+        double waterCutCarried = bsw0;
+        double rhoOV = (*state.cells[i].fluiL).MasEspoleo(upstreamPressure, upstreamTemperature);
+        double rhoWV = (*state.cells[i].fluiL).MasEspAgua(upstreamPressure, upstreamTemperature);
+        titV0 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
+        vazMasLiq0 -= betI0 * state.cells[i].QL * state.cells[i].fluicol.MasEspFlu(upstreamPressure, upstreamTemperature);
+        vazMasLiq0 *= titV0;
+        pesoMol0 = 0;
+        for (int kfrac = 0; kfrac < ncomp; kfrac++) {
+            fracMol0[kfrac] = (*state.cells[i].fluiL).fracMol[kfrac];
+            pesoMol0 += (*state.cells[i].fluiL).masMol[kfrac] * (*state.cells[i].fluiL).fracMol[kfrac];
+        }
+    } else {
+        double waterCutCarried = bsw0;
+        double rhoOV = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        double rhoWV = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titV0 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
+        vazMasLiq0 -= betI0 * state.cells[i].QL * state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
+        vazMasLiq0 *= titV0;
+        pesoMol0 = 0;
+        for (int kfrac = 0; kfrac < ncomp; kfrac++) {
+            fracMol0[kfrac] = state.cells[i].flui.fracMol[kfrac];
+            pesoMol0 += state.cells[i].flui.masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
+        }
+    }
+    if (state.cells[i + 1].MC >= 0.) {
+        double waterCutCarried = bsw1;
+        double rhoOV = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        double rhoWV = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        titV1 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
+        vazMasLiq1 -= betI1 * state.cells[i].QL * state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
+        vazMasLiq1 *= titV1;
+        pesoMol1 = 0;
+        for (int kfrac = 0; kfrac < ncomp; kfrac++) {
+            fracMol1[kfrac] = state.cells[i].flui.fracMol[kfrac];
+            pesoMol1 += state.cells[i].flui.masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
+        }
+    } else {
+        double waterCutCarried = bsw1;
+        double rhoOV = state.cells[i + 1].flui.MasEspoleo(state.cells[i + 1].pres, state.cells[i + 1].temp);
+        double rhoWV = state.cells[i + 1].flui.MasEspAgua(state.cells[i + 1].pres, state.cells[i + 1].temp);
+        titV1 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
+        vazMasLiq1 -= betI1 * state.cells[i + 1].QL * state.cells[i].fluicol.MasEspFlu(state.cells[i + 1].pres, state.cells[i + 1].temp);
+        vazMasLiq1 *= titV1;
+        pesoMol1 = 0;
+        for (int kfrac = 0; kfrac < ncomp; kfrac++) {
+            fracMol1[kfrac] = state.cells[i + 1].flui.fracMol[kfrac];
+            pesoMol1 += state.cells[i + 1].flui.masMol[kfrac] * state.cells[i + 1].flui.fracMol[kfrac];
+        }
+    }
+}
+
+/// The liquid's properties at cell i's left face, from the side the liquid comes
+/// from: the upstream cell or the inlet when it flows in, cell i itself when it
+/// flows back.
+/// Cut from transportOverallMolarFractions (SC-004).
+void upwindLeftFaceLiquidProperties(const CompositionState &state, int i, double &viscH0, double &viscL0, double &BSW0, double &bsw0, double &waterVolumeFactorLeft, double &oilVolumeFactorLeft, double &betI0, double temperatureHigh, double temperatureLow) {
+    if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].QL >= 0.) {
+        double upstreamPressure;
+        double upstreamTemperature;
+        if (i > 0) {
+            upstreamPressure = state.cells[i - 1].pres;
+            upstreamTemperature = state.cells[i - 1].temp;
+        } else {
+            upstreamPressure = state.inletPressure;
+            upstreamTemperature = state.inletTemperature;
+        }
+        if (state.input.ConContEntrada == 0)
+            betI0 = state.cells[i - 1].betPigD; // testeBeta
+        else
+            betI0 = state.inletCompletionFraction; // testeBeta
+        double solutionGasRatioLeft = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
+        oilVolumeFactorLeft = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, solutionGasRatioLeft);
+        waterVolumeFactorLeft = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
+        bsw0 = (*state.cells[i].fluiL).BSW * waterVolumeFactorLeft / (oilVolumeFactorLeft + waterVolumeFactorLeft * (*state.cells[i].fluiL).BSW - (*state.cells[i].fluiL).BSW * oilVolumeFactorLeft);
+        BSW0 = (*state.cells[i].fluiL).BSW;
+        viscL0 = 0 * 30 + 1 * (*state.cells[i].fluiL).VisOM(temperatureLow);
+        viscH0 = 0 * 20 + 1 * (*state.cells[i].fluiL).VisOM(temperatureHigh);
+    } else {
+        betI0 = state.cells[i].betPigE; // testebeta
+        double solutionGasRatioLeft = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
+        oilVolumeFactorLeft = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioLeft);
+        waterVolumeFactorLeft = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        bsw0 = state.cells[i].flui.BSW * waterVolumeFactorLeft / (oilVolumeFactorLeft + waterVolumeFactorLeft * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLeft);
+        BSW0 = state.cells[i].flui.BSW;
+        viscL0 = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
+        viscH0 = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+    }
+}
+
+}  // namespace
+
 void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRev) {
     Vcr<double> BSW(state.lastCell);
     Vcr<double> VISCL(state.lastCell);
@@ -1080,37 +1551,7 @@ void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRe
             else
                 betI0 = state.cells[i].betPigE;
         }
-        if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].QL >= 0.) {
-            double upstreamPressure;
-            double upstreamTemperature;
-            if (i > 0) {
-                upstreamPressure = state.cells[i - 1].pres;
-                upstreamTemperature = state.cells[i - 1].temp;
-            } else {
-                upstreamPressure = state.inletPressure;
-                upstreamTemperature = state.inletTemperature;
-            }
-            if (state.input.ConContEntrada == 0)
-                betI0 = state.cells[i - 1].betPigD; // testeBeta
-            else
-                betI0 = state.inletCompletionFraction; // testeBeta
-            double solutionGasRatioLeft = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
-            oilVolumeFactorLeft = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, solutionGasRatioLeft);
-            waterVolumeFactorLeft = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
-            bsw0 = (*state.cells[i].fluiL).BSW * waterVolumeFactorLeft / (oilVolumeFactorLeft + waterVolumeFactorLeft * (*state.cells[i].fluiL).BSW - (*state.cells[i].fluiL).BSW * oilVolumeFactorLeft);
-            BSW0 = (*state.cells[i].fluiL).BSW;
-            viscL0 = 0 * 30 + 1 * (*state.cells[i].fluiL).VisOM(temperatureLow);
-            viscH0 = 0 * 20 + 1 * (*state.cells[i].fluiL).VisOM(temperatureHigh);
-        } else {
-            betI0 = state.cells[i].betPigE; // testebeta
-            double solutionGasRatioLeft = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
-            oilVolumeFactorLeft = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioLeft);
-            waterVolumeFactorLeft = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            bsw0 = state.cells[i].flui.BSW * waterVolumeFactorLeft / (oilVolumeFactorLeft + waterVolumeFactorLeft * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLeft);
-            BSW0 = state.cells[i].flui.BSW;
-            viscL0 = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-            viscH0 = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
-        }
+        upwindLeftFaceLiquidProperties(state, i, viscH0, viscL0, BSW0, bsw0, waterVolumeFactorLeft, oilVolumeFactorLeft, betI0, temperatureHigh, temperatureLow);
         if (oilVolumeFactorLeft < 1e-15)
             oilVolumeFactorLeft = 1e-15;
 
@@ -1146,163 +1587,13 @@ void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRe
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
             pesoMolC += state.cells[i].flui.masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
         }
-        if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].MC >= 0.) {
-            double upstreamPressure;
-            double upstreamTemperature;
-            if (i > 0) {
-                upstreamPressure = state.cells[i - 1].pres;
-                upstreamTemperature = state.cells[i - 1].temp;
-            } else {
-                upstreamPressure = state.inletPressure;
-                upstreamTemperature = state.inletTemperature;
-            }
-            double waterCutCarried = bsw0;
-            double rhoOV = (*state.cells[i].fluiL).MasEspoleo(upstreamPressure, upstreamTemperature);
-            double rhoWV = (*state.cells[i].fluiL).MasEspAgua(upstreamPressure, upstreamTemperature);
-            titV0 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
-            vazMasLiq0 -= betI0 * state.cells[i].QL * state.cells[i].fluicol.MasEspFlu(upstreamPressure, upstreamTemperature);
-            vazMasLiq0 *= titV0;
-            pesoMol0 = 0;
-            for (int kfrac = 0; kfrac < ncomp; kfrac++) {
-                fracMol0[kfrac] = (*state.cells[i].fluiL).fracMol[kfrac];
-                pesoMol0 += (*state.cells[i].fluiL).masMol[kfrac] * (*state.cells[i].fluiL).fracMol[kfrac];
-            }
-        } else {
-            double waterCutCarried = bsw0;
-            double rhoOV = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            double rhoWV = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titV0 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
-            vazMasLiq0 -= betI0 * state.cells[i].QL * state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
-            vazMasLiq0 *= titV0;
-            pesoMol0 = 0;
-            for (int kfrac = 0; kfrac < ncomp; kfrac++) {
-                fracMol0[kfrac] = state.cells[i].flui.fracMol[kfrac];
-                pesoMol0 += state.cells[i].flui.masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
-            }
-        }
-        if (state.cells[i + 1].MC >= 0.) {
-            double waterCutCarried = bsw1;
-            double rhoOV = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            double rhoWV = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titV1 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
-            vazMasLiq1 -= betI1 * state.cells[i].QL * state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
-            vazMasLiq1 *= titV1;
-            pesoMol1 = 0;
-            for (int kfrac = 0; kfrac < ncomp; kfrac++) {
-                fracMol1[kfrac] = state.cells[i].flui.fracMol[kfrac];
-                pesoMol1 += state.cells[i].flui.masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
-            }
-        } else {
-            double waterCutCarried = bsw1;
-            double rhoOV = state.cells[i + 1].flui.MasEspoleo(state.cells[i + 1].pres, state.cells[i + 1].temp);
-            double rhoWV = state.cells[i + 1].flui.MasEspAgua(state.cells[i + 1].pres, state.cells[i + 1].temp);
-            titV1 = (1 - waterCutCarried) * rhoOV / ((1 - waterCutCarried) * rhoOV + waterCutCarried * rhoWV);
-            vazMasLiq1 -= betI1 * state.cells[i + 1].QL * state.cells[i].fluicol.MasEspFlu(state.cells[i + 1].pres, state.cells[i + 1].temp);
-            vazMasLiq1 *= titV1;
-            pesoMol1 = 0;
-            for (int kfrac = 0; kfrac < ncomp; kfrac++) {
-                fracMol1[kfrac] = state.cells[i + 1].flui.fracMol[kfrac];
-                pesoMol1 += state.cells[i + 1].flui.masMol[kfrac] * state.cells[i + 1].flui.fracMol[kfrac];
-            }
-        }
+        upwindFaceMolarFractions(state, i, fracMol0, fracMol1, vazMasLiq1, vazMasLiq0, titV1, titV0, bsw1, betI1, bsw0, betI0, pesoMol1, pesoMol0, ncomp);
         double dissolvedGasSource = state.cells[i].fontemassLR;
         double freeGasSource = state.cells[i].fontemassGR;
         double deadOilSource = state.cells[i].fontemassLR;
         double waterSource = state.cells[i].fontemassLR;
 
-        if (state.cells[i].acsr.tipo == 1) {
-            state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
-                                                           state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if (state.cells[i].acsr.injg.QGas > 0.)
-                fluF = state.cells[i].acsr.injg.FluidoPro;
-            else
-                fluF = state.cells[i].flui;
-            waterCutSource = 0.;
-            titF = 1.;
-        } else if (state.cells[i].acsr.tipo == 2) {
-            state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
-                                                           state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if (state.cells[i].acsr.injl.QLiq > 0.)
-                fluF = state.cells[i].acsr.injl.FluidoPro;
-            else
-                fluF = state.cells[i].flui;
-            oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
-            waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
-            rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-        } else if (state.cells[i].acsr.tipo == 3) {
-            state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
-                                                          state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if ((state.cells[i].acsr.ipr.Pres) > state.cells[i].pres)
-                fluF = state.cells[i].acsr.ipr.FluidoPro;
-            else
-                fluF = state.cells[i].flui;
-            oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
-            waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
-            rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-        } else if (state.cells[i].acsr.tipo == 10) {
-            state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
-                                                           state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if ((state.cells[i].acsr.injm.MassC + state.cells[i].acsr.injm.MassG + state.cells[i].acsr.injm.MassP) > 0.)
-                fluF = state.cells[i].acsr.injm.FluidoPro;
-            else
-                fluF = state.cells[i].flui;
-            oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
-            waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
-            rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-        } else if (state.cells[i].acsr.tipo == 9 && state.cells[i].acsr.fontechk.abertura > 1e-6) {
-            state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
-                                                             state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            state.cells[i].acsr.fontechk.fluidoPamb.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, state.cells[i].flui.dCalculatedBeta,
-                                                                state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if (state.cells[i].acsr.fontechk.presT > state.cells[i].acsr.fontechk.pamb) {
-                fluF = state.cells[i].acsr.fontechk.fluidoP;
-            } else {
-                fluF = state.cells[i].acsr.fontechk.fluidoPamb;
-            }
-            oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
-            waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
-            rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-        } else if (state.cells[i].acsr.tipo == 15) {
-            double tRes = state.cells[i].acsr.radialPoro.tRes;
-            state.cells[i].acsr.radialPoro.flup.atualizaPropComp(state.cells[i].pres, tRes, state.cells[i].flui.dCalculatedBeta,
-                                                            state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if ((state.cells[i].fontemassLR + state.cells[i].fontemassGR) > 1e-15)
-                fluF = state.cells[i].acsr.radialPoro.flup;
-            else
-                fluF = state.cells[i].flui;
-            oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
-            waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
-            rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-        } else if (state.cells[i].acsr.tipo == 16) {
-            double tRes = state.cells[i].acsr.poroso2D.dados.tRes;
-            state.cells[i].acsr.poroso2D.dados.flup.atualizaPropComp(state.cells[i].pres, tRes, state.cells[i].flui.dCalculatedBeta,
-                                                                state.cells[i].flui.oCalculatedLiqComposition, state.cells[i].flui.oCalculatedVapComposition, state.input.pocinjec);
-            if ((state.cells[i].fontemassLR + state.cells[i].fontemassGR) > 1e-15)
-                fluF = state.cells[i].acsr.poroso2D.dados.flup;
-            else
-                fluF = state.cells[i].flui;
-            oilVolumeFactorSource = fluF.BOFunc(state.cells[i].pres, state.cells[i].temp);
-            waterVolumeFactorSource = fluF.BAFunc(state.cells[i].pres, state.cells[i].temp);
-            waterCutSource = fluF.BSW * waterVolumeFactorSource / (oilVolumeFactorSource + waterVolumeFactorSource * fluF.BSW - fluF.BSW * oilVolumeFactorSource);
-            rhoOF = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-            rhoWF = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-            titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-        }
+        readAccessorySourceFluid(state, i, rhoWF, rhoOF, waterCutSource, waterVolumeFactorSource, oilVolumeFactorSource, fluF, titF);
 
         pesoMolF = 0;
         for (int j = 0; j < ncomp; j++)
@@ -1310,27 +1601,7 @@ void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRe
         dissolvedGasSource *= titF;
         double tempMol;
         fluC[i] = state.cells[i].flui;
-        for (int corrige = 0; corrige < 2; corrige++) {
-            tempMol = (fluC[i].MasEspoleo(state.cells[i].pres, state.cells[i].temp) * (1 - state.cells[i].alf) +
-                       fluC[i].MasEspGas(state.cells[i].pres, state.cells[i].temp) *
-                           state.cells[i].alf) *
-                      state.cells[i].duto.area / pesoMolC;
-            for (int kfrac = 0; kfrac < ncomp; kfrac++) {
-                fluC[i].fracMol[kfrac] = (state.cells[i].nMolIni * state.cells[i].flui.fracMol[kfrac] +
-                                          ((dissolvedGasSource + freeGasSource) * fracMolF[kfrac] / pesoMolF -
-                                           (vazMasLiq1 + vazMasGas1) * fracMol1[kfrac] / pesoMol1 -
-                                           (vazMasLiq0 + vazMasGas0) * fracMol0[kfrac] / pesoMol0) *
-                                              dt / dx) /
-                                         tempMol;
-            }
-            pesoMolC = 0;
-            for (int kfrac = 0; kfrac < ncomp; kfrac++)
-                pesoMolC += fluC[i].masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
-            fluC[i].atualizaPropCompStandard();
-            fluC[i].atualizaPropComp(state.cells[i].pres, state.cells[i].temp, fluC[i].dCalculatedBeta,
-                                     fluC[i].oCalculatedLiqComposition,
-                                     fluC[i].oCalculatedVapComposition, state.input.pocinjec);
-        }
+        solveCellOverallMolarFractions(state, i, fracMol0, fracMol1, fracMolF, tempMol, freeGasSource, dissolvedGasSource, vazMasGas1, vazMasGas0, vazMasLiq1, vazMasLiq0, dx, dt, pesoMolC, pesoMolF, pesoMol1, pesoMol0, fluC, ncomp);
         state.cells[i].nMol = (fluC[i].MasEspoleo(state.cells[i].pres, state.cells[i].temp) * (1 - state.cells[i].alf) +
                           fluC[i].MasEspGas(state.cells[i].pres, state.cells[i].temp) *
                               state.cells[i].alf) *
@@ -1351,189 +1622,7 @@ void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRe
         double viscLF = viscLini;
         double viscHF = viscHini;
 
-        if (state.cells[i].acsr.tipo == 2) {
-            double solutionGasRatioSource = state.cells[i].acsr.injl.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                double bswaux = state.cells[i].acsr.injl.FluidoPro.BSW;
-                double contrabsw = 1. - bswaux;
-                if (contrabsw < (*state.globals).localtiny)
-                    contrabsw = 0.9 * (*state.globals).localtiny;
-                double rhoPSTF;
-                if (contrabsw > (*state.globals).localtiny)
-                    rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.injl.FluidoPro.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.injl.FluidoPro.Denag + state.cells[i].acsr.injl.FluidoPro.Deng * 1.225 * solutionGasRatioSource;
-                else
-                    rhoPSTF = 1000 * state.cells[i].acsr.injl.FluidoPro.Denag;
-                if (contrabsw > (*state.globals).localtiny) {
-                    deadOilSource *= (1. / rhoPSTF);
-                    waterSource *= ((bswaux / contrabsw) / rhoPSTF);
-                } else {
-                    deadOilSource = 0.;
-                    waterSource *= (1 / (state.cells[i].acsr.injl.FluidoPro.BSW * 1000 * state.cells[i].acsr.injl.FluidoPro.Denag));
-                }
-                BSWF = state.cells[i].acsr.injl.FluidoPro.BSW;
-                viscLF = 0 * 30 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureLow);
-                viscHF = 0 * 20 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureHigh);
-            }
-        } else if (state.cells[i].acsr.tipo == 10) {
-            double solutionGasRatioSource = state.cells[i].acsr.injm.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                double bswaux = state.cells[i].acsr.injm.FluidoPro.BSW;
-                double contrabsw = 1. - bswaux;
-                if (contrabsw < (*state.globals).localtiny)
-                    contrabsw = 0.9 * (*state.globals).localtiny;
-                double rhoPSTF;
-                if (contrabsw > (*state.globals).localtiny)
-                    rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.injm.FluidoPro.API)) +
-                              (bswaux / contrabsw) * 1000 *
-                                  state.cells[i].acsr.injm.FluidoPro.Denag +
-                              state.cells[i].acsr.injm.FluidoPro.Deng * 1.225 * solutionGasRatioSource;
-                else
-                    rhoPSTF = 1000 * state.cells[i].acsr.injm.FluidoPro.Denag;
-                if (contrabsw > (*state.globals).localtiny) {
-                    deadOilSource *= (1. / rhoPSTF);
-                    waterSource *= ((bswaux / contrabsw) / rhoPSTF);
-                } else {
-                    deadOilSource = 0.;
-                    waterSource *= (1 / (state.cells[i].acsr.injm.FluidoPro.BSW * 1000 * state.cells[i].acsr.injm.FluidoPro.Denag));
-                }
-                BSWF = state.cells[i].acsr.injm.FluidoPro.BSW;
-                viscLF = 0 * 30 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureLow);
-                viscHF = 0 * 20 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
-            }
-        } else if (state.cells[i].acsr.tipo == 3) {
-            double solutionGasRatioSource = state.cells[i].acsr.ipr.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                double bswaux = state.cells[i].acsr.ipr.FluidoPro.BSW;
-                double contrabsw = 1. - bswaux;
-                if (contrabsw <= (*state.globals).localtiny)
-                    contrabsw = 0.9 * (*state.globals).localtiny;
-                double rhoPSTF;
-                if (contrabsw > 0)
-                    rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.ipr.FluidoPro.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.ipr.FluidoPro.Denag + state.cells[i].acsr.ipr.FluidoPro.Deng * 1.225 * solutionGasRatioSource;
-                else
-                    rhoPSTF = 1000 * state.cells[i].acsr.ipr.FluidoPro.Denag;
-                if (contrabsw > (*state.globals).localtiny) {
-                    deadOilSource *= (1. / rhoPSTF);
-                    waterSource *= ((bswaux / contrabsw) / rhoPSTF);
-                } else {
-                    deadOilSource = 0.;
-                    waterSource *= (1 / (state.cells[i].acsr.ipr.FluidoPro.BSW * 1000 * state.cells[i].acsr.ipr.FluidoPro.Denag));
-                }
-                BSWF = state.cells[i].acsr.ipr.FluidoPro.BSW;
-                viscLF = 0 * 30 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureLow);
-                viscHF = 0 * 20 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureHigh);
-            }
-        } else if (state.cells[i].acsr.tipo == 9) {
-
-            double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                double bswaux = fluF.BSW;
-                double contrabsw = 1. - bswaux;
-                if (contrabsw <= (*state.globals).localtiny)
-                    contrabsw = 0.9 * (*state.globals).localtiny;
-                double rhoPSTF;
-                if (contrabsw > (*state.globals).localtiny)
-                    rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag + fluF.Deng * 1.225 * solutionGasRatioSource;
-                else
-                    rhoPSTF = 1000 * fluF.Denag;
-                if (contrabsw > (*state.globals).localtiny) {
-                    deadOilSource *= (1. / rhoPSTF);
-                    waterSource *= ((bswaux / contrabsw) / rhoPSTF);
-                } else {
-                    deadOilSource = 0.;
-                    waterSource *= (1 / (fluF.BSW * 1000 * fluF.Denag));
-                }
-                BSWF = fluF.BSW;
-                viscLF = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-                viscHF = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
-            }
-        } else if (state.cells[i].acsr.tipo == 15) {
-            double solutionGasRatioSource = state.cells[i].acsr.radialPoro.flup.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                double bswaux = state.cells[i].acsr.radialPoro.BSW;
-                double contrabsw = 1. - bswaux;
-                if (contrabsw <= (*state.globals).localtiny)
-                    contrabsw = 0.9 * (*state.globals).localtiny;
-                double rhoPSTF;
-                if (contrabsw > 0)
-                    rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.radialPoro.flup.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.radialPoro.flup.Denag + state.cells[i].acsr.radialPoro.flup.Deng * 1.225 * solutionGasRatioSource;
-                else
-                    rhoPSTF = 1000 * state.cells[i].acsr.radialPoro.flup.Denag;
-                if (contrabsw > (*state.globals).localtiny) {
-                    deadOilSource *= (1. / rhoPSTF);
-                    waterSource *= ((bswaux / contrabsw) / rhoPSTF);
-                } else {
-                    deadOilSource = 0.;
-                    waterSource *= (1 / (state.cells[i].acsr.radialPoro.BSW * 1000 * state.cells[i].acsr.radialPoro.flup.Denag));
-                }
-                BSWF = state.cells[i].acsr.radialPoro.BSW;
-                viscLF = 0 * 30 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureLow);
-                viscHF = 0 * 20 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureHigh);
-            }
-        } else if (state.cells[i].acsr.tipo == 16) {
-            double solutionGasRatioSource = state.cells[i].acsr.poroso2D.dados.flup.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-            if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                double bswaux = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
-                double contrabsw = 1. - bswaux;
-                if (contrabsw <= (*state.globals).localtiny)
-                    contrabsw = 0.9 * (*state.globals).localtiny;
-                double rhoPSTF;
-                if (contrabsw > 0)
-                    rhoPSTF = (1000 * 141.5 / (131.5 + state.cells[i].acsr.poroso2D.dados.flup.API)) + (bswaux / contrabsw) * 1000 * state.cells[i].acsr.poroso2D.dados.flup.Denag + state.cells[i].acsr.poroso2D.dados.flup.Deng * 1.225 * solutionGasRatioSource;
-                else
-                    rhoPSTF = 1000 * state.cells[i].acsr.poroso2D.dados.flup.Denag;
-                if (contrabsw > (*state.globals).localtiny) {
-                    deadOilSource *= (1. / rhoPSTF);
-                    waterSource *= ((bswaux / contrabsw) / rhoPSTF);
-                } else {
-                    deadOilSource = 0.;
-                    waterSource *= (1 / (state.cells[i].acsr.poroso2D.dados.transfer.BSW * 1000 * state.cells[i].acsr.poroso2D.dados.flup.Denag));
-                }
-                BSWF = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
-                viscLF = 0 * 30 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureLow);
-                viscHF = 0 * 20 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureHigh);
-            }
-        } else if ((fabs(dissolvedGasSource) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 &&
-                    state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16) ||
-                   (fabs(freeGasSource) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 1 && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 && state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16)) {
-            if (state.cells[i].acsr.tipo == 5 || state.cells[i].acsr.tipo == 8) {
-                double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-                if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                    double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) + state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
-                    deadOilSource *= ((1 - state.cells[i].flui.BSW) / rhoPSTF);
-                    waterSource *= (state.cells[i].flui.BSW / rhoPSTF);
-                    BSWF = state.cells[i].flui.BSW;
-                    viscLF = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-                    viscHF = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
-                }
-            } else if ((*state.cells[i].acsrL).tipo == 5 || (*state.cells[i].acsrL).tipo == 8) {
-                if (i > 0) {
-                    double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-                    if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                        double rhoPSTF = (1 - state.cells[i - 1].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i - 1].flui.API)) +
-                                         state.cells[i - 1].flui.BSW * 1000 *
-                                             state.cells[i - 1].flui.Denag;
-                        deadOilSource *= ((1 - state.cells[i - 1].flui.BSW) / rhoPSTF);
-                        waterSource *= (state.cells[i - 1].flui.BSW / rhoPSTF);
-                        BSWF = state.cells[i - 1].flui.BSW;
-                        viscLF = 0 * 30 + 1 * state.cells[i - 1].flui.VisOM(temperatureLow);
-                        viscHF = 0 * 20 + 1 * state.cells[i - 1].flui.VisOM(temperatureHigh);
-                    }
-                } else {
-                    double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
-                    if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-                        double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) +
-                                         state.cells[i].flui.BSW * 1000 *
-                                             state.cells[i].flui.Denag;
-                        deadOilSource *= ((1 - state.cells[i].flui.BSW) / rhoPSTF);
-                        waterSource *= (state.cells[i].flui.BSW / rhoPSTF);
-                        BSWF = state.cells[i].flui.BSW;
-                        viscLF = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-                        viscHF = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
-                    }
-                }
-            }
-        }
+        sourceStandardRatesByAccessory(state, i, viscHF, viscLF, BSWF, waterSource, deadOilSource, freeGasSource, dissolvedGasSource, fluF, temperatureHigh, temperatureLow);
         if (titF > 1. - 1e-15) {
             dissolvedGasSource = 0.;
             deadOilSource = 0.;
@@ -1542,44 +1631,7 @@ void transportOverallMolarFractions(const CompositionState &state, ProFlu fluiRe
 
         double volpesFim = liquidHoldup * (1 - completionFraction) * (1 - bsw) / oilVolumeFactorInSitu;
         double volaguaFim = liquidHoldup * (1 - completionFraction) * bsw; // nao deveria ser dividido por Bo???????????
-        double MultPe;
-        double MultPd = 0.;
-        double residuoP;
-        double MultAe = 0.;
-        double MultAd;
-        double residuoA;
-        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-            MultPe = 0.;
-            if (state.cells[i].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                MultPe = state.cells[i].QL * (1 - betI0) * (1 - bsw0) / oilVolumeFactorLeft;
-            MultPd = 0.;
-            if (state.cells[i + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                MultPd = state.cells[i + 1].QL * (1 - betI1) * (1 - bsw1) / oilVolumeFactorRight;
-            residuoP = (volpesFim - state.cells[i].VolPesaST) * flowArea / dt + (MultPd - MultPe) / dx - deadOilSource / dx;
-            MultAe = 0.;
-            if (state.cells[i].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                MultAe = state.cells[i].QL * (1 - betI0) * bsw0 / oilVolumeFactorLeft;
-            MultAd = 0.;
-            if (state.cells[i + 1].flui.dStockTankVaporMassFraction < 1. - 1e-15)
-                MultAd = state.cells[i + 1].QL * (1 - betI1) * bsw1 / oilVolumeFactorRight;
-            residuoA = (volaguaFim - state.cells[i].VolAguaST) * flowArea / dt + (MultAd - MultAe) / dx - waterSource / dx;
-        }
-        if ((state.input.nfluP > 1 && (state.input.flashCompleto == 0 || state.cells[i].flui.viscBlackOil == 1)) || (*state.globals).chaverede != 0) {
-            if (volpesFim > 1e-3 && (deadOilSource > 0 || (MultPd < 0 || MultPe > 0))) {
-                VISCL[i] = (dt * (viscLF * deadOilSource / dx + viscLini * residuoP - (viscL1 * MultPd - viscL0 * MultPe) / dx) + viscLini * state.cells[i].VolPesaST * flowArea) / (volpesFim * flowArea);
-                VISCH[i] = (dt * (viscHF * deadOilSource / dx + viscHini * residuoP - (viscH1 * MultPd - viscH0 * MultPe) / dx) + viscHini * state.cells[i].VolPesaST * flowArea) / (volpesFim * flowArea);
-            } else {
-                VISCL[i] = viscLini;
-                VISCH[i] = viscHini;
-            }
-        }
-        if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
-            if ((volaguaFim + volpesFim) > 1e-3 && ((deadOilSource > 0 || waterSource > 0) ||
-                                                    ((MultPd < 0 || MultPe > 0) || (MultAd < 0 || MultAe > 0))))
-                BSW[i] = (dt * (BSWF * (waterSource + deadOilSource) / dx + BSWini * (residuoA + residuoP) - (BSW1 * (MultAd + MultPd) - BSW0 * (MultAe + MultPe)) / dx) + BSWini * (state.cells[i].VolAguaST + state.cells[i].VolPesaST) * flowArea) / ((volaguaFim + volpesFim) * flowArea);
-            else
-                BSW[i] = BSWini;
-        }
+        transportViscosityAndWaterCut(state, i, VISCL, VISCH, BSW, volaguaFim, volpesFim, viscHF, viscLF, viscHini, viscLini, BSWF, BSWini, waterSource, deadOilSource, viscH1, viscL1, BSW1, bsw1, oilVolumeFactorRight, betI1, viscH0, viscL0, BSW0, bsw0, oilVolumeFactorLeft, betI0, dx, flowArea, dt);
         state.cells[i].VolPesaST = volpesFim;
         state.cells[i].VolAguaST = volaguaFim;
     }
