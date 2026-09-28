@@ -18,11 +18,17 @@ failed to pass cannot silently bind to something else), that makes the cut a
 proved literal move.
 
 Usage:
-    prove-cut.py <rev-before> <rev-after> <host> <helper> [<helper> ...]
+    prove-cut.py [--file <path>] <rev-before> <rev-after> <host> <helper> [<helper> ...]
 
 <rev-after> may be WORKTREE. Helpers are put back in the order given; list
 them outermost first when one was cut out of another. Exit 0 when the token
 streams are identical.
+
+--file names the source both revisions are read from; the default is
+src/core/SisProd.cpp, where every cut before SC-004 was made. In another file
+the host and the helpers are free functions: a name is found where its
+definition starts a line, and a declaration of the same name (no body before the
+next `;`) is skipped rather than taken for it.
 """
 import io
 import re
@@ -57,9 +63,17 @@ def source(rev):
 # so it never matched a constructor -- which is how T101 missed the default
 # constructor's 236 lines (found in T102 by measure-functions.py).
 def span(text, name):
-    m = re.search((r'^SProd::SProd\(\)' if name == "SProd()" else r'^(?:[A-Za-z][^\n;{}]*?\b)?SProd::%s\(' % re.escape(name)), text, re.M)
-    if m is None:
-        raise SystemExit("not found: SProd::%s" % name)
+    if SRC == "src/core/SisProd.cpp":
+        m = re.search((r'^SProd::SProd\(\)' if name == "SProd()" else r'^(?:[A-Za-z][^\n;{}]*?\b)?SProd::%s\(' % re.escape(name)), text, re.M)
+        if m is None:
+            raise SystemExit("not found: SProd::%s" % name)
+    else:
+        # A free function: the first line-start occurrence whose signature
+        # reaches a `{` before any `;` -- a forward declaration is skipped.
+        m = next((d for d in re.finditer(r'^(?:[A-Za-z][^\n;{}]*?\b)?%s\(' % re.escape(name), text, re.M)
+                  if ';' not in text[d.start():braces.first_brace_after(text, d.start())]), None)
+        if m is None:
+            raise SystemExit("not found: a definition of %s in %s" % (name, SRC))
     o = braces.first_brace_after(text, m.start())
     return m.start(), o, braces.match(text, o)
 
@@ -81,10 +95,14 @@ def param_names(signature):
 
 
 def main():
-    if len(sys.argv) < 5:
+    global SRC
+    argv = sys.argv[1:]
+    if argv[:1] == ["--file"]:
+        SRC, argv = argv[1], argv[2:]
+    if len(argv) < 4:
         print(__doc__)
         return 2
-    before, after, host, helpers = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+    before, after, host, helpers = argv[0], argv[1], argv[2], argv[3:]
     old, new = source(before), source(after)
 
     s, o, e = span(old, host)

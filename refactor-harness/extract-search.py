@@ -19,6 +19,16 @@ Usage:
 --tail says the range ends the function, so its returns stay returns and the
 call site becomes `return helper(...)`. Without it, each return becomes
 `{ abortValue = <v>; return true; }` and the helper answers "must it stop?".
+
+--file and --state-type point it at another module (SC-004 cuts the
+composition routines and the steady mass march with it); the defaults are the
+search module and its state, where it was written.
+
+A local that crosses the boundary is passed by value only when it is a scalar
+the range never writes. Anything else goes by reference: a `ProFlu` passed by
+value is a copy, and a method called on the copy -- one that refreshes a
+table or a cache inside the object -- would no longer reach the caller's
+object, which is a change of behaviour no assignment in the text reveals.
 """
 import argparse
 import io
@@ -35,6 +45,8 @@ import braces
 import iface
 
 PATH = "src/core/SisProdSteadyStateSearch.cpp"
+STATE_TYPE = "SteadyStateSearchState"
+SCALARS = {"int", "double", "bool", "float", "long", "char", "unsigned", "size_t"}
 RETURN = re.compile(r'(\n[ \t]*)return\s+([^;]+);')
 
 
@@ -71,12 +83,16 @@ def main():
     ap.add_argument("--tail", action="store_true")
     ap.add_argument("--doc", default="")
     ap.add_argument("--returns", default="double")
+    ap.add_argument("--file", default=PATH)
+    ap.add_argument("--state-type", default=STATE_TYPE)
     ap.add_argument("--body", action="store_true",
                     help="the range's first and last lines are the braces of an else or a "
                          "loop; lift what is between them and leave the brace line in place")
     args = ap.parse_args()
+    path = args.file
+    state_type = args.state_type
 
-    text = io.open(PATH, encoding="utf-8", errors="surrogateescape").read()
+    text = io.open(path, encoding="utf-8", errors="surrogateescape").read()
     fa, fb = function_span(text, args.function)
     first, last = args.first, args.last
     if args.body:
@@ -111,12 +127,13 @@ def main():
             # protocol's own out-parameter and is appended below. Cutting a
             # helper that already has one would otherwise declare it twice.
             continue
-        params.append(f"{ty} {'&' if written else ''}{name}")
+        by_reference = written or ty.split()[-1] not in SCALARS
+        params.append(f"{ty} {'&' if by_reference else ''}{name}")
 
     body = dedent(block)
 
     if args.tail:
-        signature = (f"{args.returns} {args.helper}(const SteadyStateSearchState &state, "
+        signature = (f"{args.returns} {args.helper}(const {state_type} &state, "
                      + ", ".join(params) + ") {")
         call = "    return %s(state%s%s);" % (
             args.helper, ", " if params else "",
@@ -126,14 +143,14 @@ def main():
         # No early exit in the range, so no abort protocol. Adding one anyway
         # would put a parameter and a return value in the signature that say
         # nothing, which is the opposite of what naming a block is for.
-        signature = (f"void {args.helper}(const SteadyStateSearchState &state, "
+        signature = (f"void {args.helper}(const {state_type} &state, "
                      + ", ".join(params) + ") {")
         call = "    %s(state%s%s);" % (
             args.helper, ", " if params else "",
             ", ".join(p.split()[-1].lstrip("&") for p in params))
     else:
         params.append("double &abortValue")
-        signature = (f"bool {args.helper}(const SteadyStateSearchState &state, "
+        signature = (f"bool {args.helper}(const {state_type} &state, "
                      + ", ".join(params) + ") {")
         count = [0]
         signature_of_host = text[fa:braces.first_brace_after(text, fa)]
@@ -198,7 +215,7 @@ def main():
         else:
             break
     text = text[:s] + helper + text[s:]
-    io.open(PATH, "w", encoding="utf-8", errors="surrogateescape").write(text)
+    io.open(path, "w", encoding="utf-8", errors="surrogateescape").write(text)
     print("%-52s %3d linhas -> auxiliar; %d parametro(s), %d local(is) movido(s)" % (
         args.helper, block.count("\n") + 1, len(params), len(moved)))
 
