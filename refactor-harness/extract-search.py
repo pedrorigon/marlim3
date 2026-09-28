@@ -87,6 +87,11 @@ def main():
     ap.add_argument("--doc", default="")
     ap.add_argument("--returns", default="double")
     ap.add_argument("--file", default=PATH)
+    ap.add_argument("--not-passed", action="append", default=[],
+                    help="a visible outer name the block redeclares before any use, so "
+                         "every use inside binds to the block's own declaration; passing "
+                         "it would redeclare a parameter. The tipo 9 arm of "
+                         "transportCellBlackOilProperties opens with `ProFlu fluF;` (SC-004)")
     ap.add_argument("--extra", action="append", default=[],
                     help="a parameter the analyser cannot see, as 'type name', passed "
                          "first. iface.py hides for-init declarations on purpose -- right "
@@ -115,7 +120,16 @@ def main():
     scratch = str(pathlib.Path(tempfile.gettempdir()) / "_extract_search_scope.cpp")
     io.open(scratch, "w", encoding="utf-8", errors="surrogateescape").write(text[fa:fb + 1])
     crossing_in, crossing_out = iface.interface(scratch, first, last)
-    if crossing_out:
+    if crossing_out and args.body:
+        # With --body the range is the whole body of a brace block, and C++
+        # scoping closes it right after the range: nothing declared inside can
+        # be read after it. A name iface.py reports as escaping is then read
+        # after the block from an OUTER declaration that this one shadows --
+        # transportBlackOilProperties's tipo 9 arm declares its own
+        # `ProFlu fluF;` over the function's (SC-004). Reported, not refused.
+        print("note: %s declared inside the block and named after it; the later "
+              "uses bind to an outer declaration it shadows" % ", ".join(n for _, n in crossing_out))
+    elif crossing_out:
         raise SystemExit("locals declared inside the range and read after it: %s\n"
                          "That is an out-parameter the tool will not invent."
                          % ", ".join(n for _, n in crossing_out))
@@ -134,6 +148,8 @@ def main():
         ty, name = spec.rsplit(" ", 1)
         params.append(f"{ty} {name}")
     for ty, name, written, after in crossing_in:
+        if name in args.not_passed:
+            continue
         if name in ("state", "abortValue"):
             # state is passed first by construction; abortValue is the abort
             # protocol's own out-parameter and is appended below. Cutting a
