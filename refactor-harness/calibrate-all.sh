@@ -85,6 +85,7 @@ run calibrate-thermal-move
 run calibrate-c0ud
 run calibrate-solvers
 run calibrate-solver-move
+run calibrate-time-step-policies
 run calibrate-dispatch
 run calibrate-performance-gate
 run calibrate-steady-decomposition "$pre_decomposition"
