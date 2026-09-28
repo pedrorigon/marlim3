@@ -360,6 +360,102 @@ def substitute_outside_comments(pattern, replacement, text: str) -> str:
     return "".join(out)
 
 
+# T109a made the restrictions of the time step policies of a registry resolved
+# at compile time. Where the step used to call each one behind its own
+# condition, it now calls
+#
+#     TimeStepPolicies::apply<TimeStepHook::H>({step, couplingIteration, scheme});
+#
+# and the inverse has to turn that call back into what it stands for. It does
+# not take that on trust from a table written here: the expansion is read from
+# the policy definitions in the module being checked, so a policy whose
+# condition, action, hook or place in the list changes makes the check fail.
+#
+# The expansion is what the compiler does with the call: `if constexpr` keeps
+# the policies listed at hook H, the fold runs them in list order, and each one
+# becomes `if (applies) apply;` with the context's fields bound to the three
+# values of the call. A policy that delegates to another (`Other::applies`,
+# `Other::apply`, `Other::hook`) is resolved to the other's definition, so a
+# test policy that only delegates expands to what it delegates to.
+REGISTRY_CALL = re.compile(
+    r"TimeStepPolicies::apply<TimeStepHook::(\w+)>\(\s*\{([^{}]*)\}\s*\);")
+POLICY_HOOK = re.compile(
+    r"static constexpr TimeStepHook hook = (?:TimeStepHook::(\w+)|(\w+)::hook);")
+POLICY_APPLIES = re.compile(
+    r"static bool applies\(const TimeStepPolicyContext &context\) \{\s*return (.*?);\s*\}", re.S)
+POLICY_APPLY = re.compile(
+    r"static void apply\(const TimeStepPolicyContext &context\) \{(.*?)\n    \}", re.S)
+DELEGATED_APPLIES = re.compile(r"^(\w+)::applies\(context\)$")
+DELEGATED_APPLY = re.compile(r"^(\w+)::apply\(context\);$")
+
+
+def _registered_policies(module: str):
+    """The context's fields, and each listed policy as (hook, condition, action)."""
+    clean = COMMENT.sub(" ", module)
+    context = re.search(r"\bstruct TimeStepPolicyContext \{(.*?)\};", clean, re.S)
+    listed = re.search(r"\busing TimeStepPolicies = TimeStepPolicyRegistry<(.*?)>;",
+                       clean, re.S)
+    if context is None or listed is None:
+        raise ValueError("the body calls TimeStepPolicies, but the module defines "
+                         "no TimeStepPolicyContext or no TimeStepPolicies")
+    fields = re.findall(r"(\w+)\s*;", context.group(1))
+
+    def definition(name: str, depth: int = 0):
+        if depth > 8:
+            raise ValueError(f"{name}: delegation deeper than eight policies")
+        struct = re.search(rf"\bstruct {name} \{{(.*?)\n\}};", clean, re.S)
+        if struct is None:
+            raise ValueError(f"{name} is listed or delegated to, and the module "
+                             f"does not define it")
+        body = struct.group(1)
+        hook, condition, action = (POLICY_HOOK.search(body), POLICY_APPLIES.search(body),
+                                   POLICY_APPLY.search(body))
+        if hook is None or condition is None or action is None:
+            raise ValueError(f"{name} is not in the form the expansion reads: a hook, "
+                             f"`return <condition>;`, and an apply body")
+        hook_name = hook.group(1) or definition(hook.group(2), depth + 1)[0]
+        condition_text = condition.group(1).strip()
+        delegated = DELEGATED_APPLIES.match(condition_text)
+        if delegated:
+            condition_text = definition(delegated.group(1), depth + 1)[1]
+        action_text = action.group(1).strip()
+        delegated = DELEGATED_APPLY.match(action_text)
+        if delegated:
+            action_text = definition(delegated.group(1), depth + 1)[2]
+        return hook_name, condition_text, action_text
+
+    names = [part.strip() for part in listed.group(1).split(",")]
+    return fields, [definition(name) for name in names]
+
+
+def expand_time_step_policies(body: str, module: str) -> str:
+    if "TimeStepPolicies::apply<" not in body:
+        return body
+    fields, policies = _registered_policies(module)
+
+    def expand(match):
+        values = [value.strip() for value in match.group(2).split(",")]
+        if len(values) != len(fields) or not all(re.fullmatch(r"[\w.]+", v) for v in values):
+            raise ValueError(f"cannot bind {match.group(0)!r} to the context fields "
+                             f"{fields}: the expansion binds one plain name per field")
+        binding = dict(zip(fields, values))
+
+        def bind(text: str) -> str:
+            return re.sub(r"\bcontext\.(\w+)", lambda m: binding[m.group(1)], text)
+
+        statements = []
+        for hook, condition, action in policies:
+            if hook != match.group(1):
+                continue
+            action = bind(action)
+            if action.count(";") > 1:
+                action = "{ " + action + " }"
+            statements.append(f"if ({bind(condition)}) {action}")
+        return "\n".join(statements)
+
+    return substitute_outside_comments(REGISTRY_CALL, expand, body)
+
+
 def carve(source: str, name: str):
     lines = source.split("\n")
     start = next((i for i, line in enumerate(lines)
@@ -548,7 +644,8 @@ def main() -> int:
                 break
             end += 1
         expected = tokenize(baseline[2])
-        actual = tokenize(inverse(name, "\n".join(lines[start:end + 1])))
+        actual = tokenize(inverse(name, expand_time_step_policies(
+            "\n".join(lines[start:end + 1]), current_source)))
         if expected == actual:
             print(f"OK       {new_name} <- {name} ({len(expected)} tokens)")
             return 0

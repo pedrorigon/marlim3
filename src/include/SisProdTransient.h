@@ -326,6 +326,12 @@ void computeImplicitTimeStep(const TransientStepState &state);
 /// Measured against the same dt series as computeTimeStep, because they write
 /// the same dt. valveOpeningLow and valveOpeningHigh are the two ends of the
 /// valve ramp; separate in the original and separate here.
+///
+/// The step this module runs applies the first three as policies of a registry
+/// (TimeStepPolicies in SisProdTransient.cpp, T109a), where a new restriction is
+/// added by listing it. They stay declared here because SProd's methods for the
+/// same jobs delegate to them, and Num4Main.cpp calls those methods when it
+/// sequences a network run itself (FR-031).
 void dampMaximumTimeStep(const TransientStepState &state);
 void evaluatePressureRateOfChange(const TransientStepState &state, double razMast, double razMast0, int vexpli);
 void restrictTimeStepByValve(const TransientStepState &state);

@@ -11,6 +11,9 @@
 
 #include <math.h>
 
+// For the TimeStepPolicy concept (T109a), as in RootFindingSolvers.h.
+#include <concepts>
+
 // The run's start date, which the progress report prints. Globals defined
 // elsewhere and declared extern in SisProd.h -- a header this module does not
 // include on purpose, so the four declarations it needs are repeated here, and
@@ -1539,6 +1542,111 @@ void refreshInletCondition(const TransientStepState &state) {
 
 namespace {
 
+// ---------------------------------------------- time-step policy registry --
+//
+// The restrictions on the time step, as a list of policies instead of calls
+// written into the step (T109a). A policy names the point of the step where it
+// acts (its hook), the condition under which it acts, and the action. The step
+// asks the registry for the policies of a hook, and they run in the order they
+// are listed. Adding a policy is writing it and listing it in TimeStepPolicies:
+// neither the step nor any other policy changes.
+//
+// Resolved at compile time: `if constexpr` drops the policies of every other
+// hook, so a hook costs what its own conditions cost and nothing is called
+// through a pointer (FR-022). The three policies below make the calls the step
+// used to make, under the same conditions and in the same order.
+//
+// The registry covers the step this module runs, a single line (chaverede ==
+// 0). A network run is sequenced by Num4Main.cpp, which calls the same three
+// restrictions through SProd's surface. FR-031 keeps that sequence there, so a
+// policy listed here does not reach a network run.
+enum class TimeStepHook {
+    CouplingIterationStart, // start of a pressure-volume coupling iteration
+    AfterPigUpdate,         // after the pig moves, in the same iteration
+    AfterValveOpenings,     // after the step re-reads the valve openings
+};
+
+/// What a policy may read. couplingIteration is kontaAcop inside the coupling
+/// loop, and kOutsideCouplingLoop at a hook outside it.
+struct TimeStepPolicyContext {
+    const TransientStepState &step;
+    int couplingIteration;
+    int explicitScheme;
+};
+
+constexpr int kOutsideCouplingLoop = -1;
+
+/// What the registry requires of a policy. A listed type that lacks one of the
+/// three fails here, in one line, instead of inside the fold below.
+template <typename Policy>
+concept TimeStepPolicy = requires(const TimeStepPolicyContext &context) {
+    { Policy::hook } -> std::convertible_to<TimeStepHook>;
+    { Policy::applies(context) } -> std::same_as<bool>;
+    { Policy::apply(context) } -> std::same_as<void>;
+};
+
+/// With valve time-step control on, the valves' travel restricts the time
+/// step, once per step, at the first coupling iteration.
+struct RestrictTimeStepByValvePolicy {
+    static constexpr TimeStepHook hook = TimeStepHook::CouplingIterationStart;
+    static bool applies(const TimeStepPolicyContext &context) {
+        return context.couplingIteration == 0 && context.step.input.controleDTvalv == 1;
+    }
+    static void apply(const TimeStepPolicyContext &context) {
+        restrictTimeStepByValve(context.step);
+    }
+};
+
+/// Damps the maximum time step at the coupling iteration numbered by the
+/// full-model flag: the only iteration of the reduced model, the second of the
+/// full one.
+struct DampMaximumTimeStepPolicy {
+    static constexpr TimeStepHook hook = TimeStepHook::AfterPigUpdate;
+    static bool applies(const TimeStepPolicyContext &context) {
+        return context.couplingIteration == 1 * context.step.fullModel;
+    }
+    static void apply(const TimeStepPolicyContext &context) {
+        dampMaximumTimeStep(context.step);
+    }
+};
+
+/// With the full model on, the rates of change of pressure and temperature
+/// decide whether it stays on, and with it how many coupling iterations the
+/// step takes.
+struct PressureRateOfChangePolicy {
+    static constexpr TimeStepHook hook = TimeStepHook::AfterValveOpenings;
+    static bool applies(const TimeStepPolicyContext &context) {
+        return context.step.fullModel == 1;
+    }
+    static void apply(const TimeStepPolicyContext &context) {
+        evaluatePressureRateOfChange(context.step, 0, 0, context.explicitScheme);
+    }
+};
+
+/// The policies of a hook, applied in the order they are listed.
+template <TimeStepPolicy... Policies>
+struct TimeStepPolicyRegistry {
+    template <TimeStepHook Hook>
+    static void apply(const TimeStepPolicyContext &context) {
+        (applyIfAt<Policies, Hook>(context), ...);
+    }
+
+  private:
+    template <typename Policy, TimeStepHook Hook>
+    static void applyIfAt(const TimeStepPolicyContext &context) {
+        if constexpr (Policy::hook == Hook) {
+            if (Policy::applies(context))
+                Policy::apply(context);
+        }
+    }
+};
+
+/// Every time-step policy of the step. Registering one is listing it here.
+using TimeStepPolicies = TimeStepPolicyRegistry<
+    RestrictTimeStepByValvePolicy,
+    DampMaximumTimeStepPolicy,
+    PressureRateOfChangePolicy>;
+
 void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
     if (state.step.fullModel == 0) {
         for (int i = 0; i <= state.step.lastCell; i++)
@@ -1600,8 +1708,8 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
 
     // caso so Master
     // caso so Master
-    if (kontaAcop == 0 && state.step.input.controleDTvalv == 1)
-        restrictTimeStepByValve(state.step); // caso varias valvulas
+    TimeStepPolicies::apply<TimeStepHook::CouplingIterationStart>(
+        {state.step, kontaAcop, vExpli}); // caso varias valvulas
     if (state.step.restart == -1) {
         restartFractionEvolutionInitial(state.step);
         for (int i = 0; i <= state.step.lastCell; i++) {
@@ -1636,8 +1744,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     if (kontaAcop == 0)
         state.minimumCycleTimeStep = state.step.timeStep;
 
-    if (kontaAcop == 1 * state.step.fullModel)
-        dampMaximumTimeStep(state.step);
+    TimeStepPolicies::apply<TimeStepHook::AfterPigUpdate>({state.step, kontaAcop, vExpli});
 
     double gasMassSource = 0.;
     double liquidMassSource = 0.;
@@ -2082,8 +2189,8 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         for (int i = 0; i <= state.step.input.nvalv; i++)
             if (state.step.masterRatio1[i] != state.step.masterRatio0[i])
                 state.step.fullModel = 0; // caso varias valvulas
-        if (state.step.fullModel == 1)
-            evaluatePressureRateOfChange(state.step, 0, 0, vExpli); // caso varias valvulas
+        TimeStepPolicies::apply<TimeStepHook::AfterValveOpenings>(
+            {state.step, kOutsideCouplingLoop, vExpli}); // caso varias valvulas
         if (state.step.fullModel == 0)
             state.step.input.cicloAcopTerm = 0;
         else
