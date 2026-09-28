@@ -3814,14 +3814,31 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
     }
 }
 
-/// Brackets and solves the root for the second injection search.
-double bracketInjectionRoot2(const SteadyStateSearchState &state, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
+namespace {
+
+/// What the downward walk of a surface-pressure injection search does with a
+/// guess below 1 kgf/cm2, the code's atmospheric pressure.
+///
+/// It exists because the second and the fifth injection searches bracket their
+/// root with the same text except here: the second refuses such a guess -- it
+/// steps back to 99 % of the previous one instead of 90 %, and gives up if even
+/// that is below atmospheric -- and the fifth hands it to the march. Nothing in
+/// the code says why. Naming the disagreement is not the same as resolving it:
+/// see evidencia/buscainj-diff.md.
+enum class SubAtmosphericGuess {
+    refused,
+    marched,
+};
+
+/// Brackets and solves the root for the two injection searches whose unknown is
+/// the surface pressure: the second (condContorno 0) and the fifth (5).
+double bracketInjectionPressureRoot(const SteadyStateSearchState &state, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, SubAtmosphericGuess subAtmosphericGuess) {
     if (marchResidual < 0.) {
         negativeResidualGuess = pchute;
         while (marchResidual < 0) {
             pchuteAux = pchute2;
             pchute2 *= 0.9;
-            if (pchute2 < 1.) {
+            if (subAtmosphericGuess == SubAtmosphericGuess::refused && pchute2 < 1.) {
                 pchute2 = pchuteAux;
                 pchute2 *= 0.99;
                 if (pchute2 < 1. && state.march.input.AP == 0)
@@ -3899,6 +3916,8 @@ double bracketInjectionRoot2(const SteadyStateSearchState &state, double &positi
     }
     return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0);
 }
+
+}  // namespace
 
 double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, double chute) {
     double pchute;
@@ -4022,7 +4041,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
     if (fabs(marchResidual) < 1e-15)
         return pchute;
     else {
-        return bracketInjectionRoot2(state, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketInjectionPressureRoot(state, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, SubAtmosphericGuess::refused);
     }
 }
 
@@ -4359,84 +4378,6 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state) {
     return masfim;
 }
 
-/// Brackets and solves the root for the fifth injection search.
-double bracketInjectionRoot5(const SteadyStateSearchState &state, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute) {
-    if (marchResidual < 0.) {
-        negativeResidualGuess = pchute;
-        while (marchResidual < 0) {
-            pchuteAux = pchute2;
-            pchute2 *= 0.9;
-            marchResidual = marchInjectionSteady(state.march, pchute2);
-            kontaiter++;
-            if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
-                    NumError(
-                        "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
-                else {
-                    if ((*state.march.globals).iterRede > 0)
-                        return -1.1e10;
-                    else
-                        return 1.1e10;
-                }
-            }
-            while (marchResidual < -0.9e10) {
-                pchute2 = 0.5 * (pchute2 + pchuteAux);
-                marchResidual = marchInjectionSteady(state.march, pchute2);
-                kontaiter++;
-                if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
-                        NumError(
-                            "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
-                    else {
-                        if ((*state.march.globals).iterRede > 0)
-                            return -1.1e10;
-                        else
-                            return 1.1e10;
-                    }
-                }
-            }
-        }
-        positiveResidualGuess = pchute2;
-    } else if (marchResidual > 0.) {
-        positiveResidualGuess = pchute;
-        while (marchResidual > 0) {
-            pchuteAux = pchute2;
-            pchute2 *= 1.1;
-            marchResidual = marchInjectionSteady(state.march, pchute2);
-            kontaiter++;
-            if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
-                    NumError(
-                        "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
-                else {
-                    if ((*state.march.globals).iterRede > 0)
-                        return -1.1e10;
-                    else
-                        return 1.1e10;
-                }
-            }
-            while (marchResidual > 0.9e10) {
-                pchute2 = 0.5 * (pchute2 + pchuteAux);
-                marchResidual = marchInjectionSteady(state.march, pchute2);
-                kontaiter++;
-                if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
-                        NumError(
-                            "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
-                    else {
-                        if ((*state.march.globals).iterRede > 0)
-                            return -1.1e10;
-                        else
-                            return 1.1e10;
-                    }
-                }
-            }
-        }
-        negativeResidualGuess = pchute2;
-    }
-    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0);
-}
-
 double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, double chute) {
 
     double pchute = state.march.input.condpocinj.presfundo;
@@ -4566,7 +4507,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
     if (fabs(marchResidual) < 1e-15)
         return pchute;
     else {
-        return bracketInjectionRoot5(state, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute);
+        return bracketInjectionPressureRoot(state, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, SubAtmosphericGuess::marched);
     }
 }
 
