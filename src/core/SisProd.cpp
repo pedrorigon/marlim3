@@ -39,6 +39,7 @@ using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
 using sisprod::kGravity;
 using sisprod::kGravityUnloadingVariant;
+using sisprod::kKgfPerCm2PerPascal;
 using sisprod::kPascalPerKgfPerCm2Coarse;
 using sisprod::kPascalPerKgfPerCm2PvtSim;
 using sisprod::kPascalPerKgfPerCm2Variant;
@@ -781,6 +782,32 @@ void SProd::assignPvtSimBubbleTablesToCells() {
     }
 }
 
+namespace {
+
+/// Reads one row of a PVTSim table file: skips words up to `name`, then
+/// converts the numbers on the rest of that line into row[0] to row[last].
+template <typename Row, typename Convert>
+void readPvtSimRow(ifstream &file, string &word, const char *name, Row &row, int last, Convert convert) {
+    while (word != name)
+        file >> word;
+    char line[4000];
+    file.get(line, 4000);
+    char *token = strtok(line, " ,()=");
+    row[0] = convert(atof(token));
+    for (int k = 1; k <= last; k++) {
+        token = strtok(NULL, " ,");
+        row[k] = convert(atof(token));
+    }
+}
+
+/// Writes a table to the file at `path`, replacing it.
+void writeTable(const string &path, const FullMtx<double> &table) {
+    ofstream file(path.c_str(), ios_base::out);
+    file << table;
+}
+
+}  // namespace
+
 /// Reads the bubble-point curve from the PVTSim file, points the cell fluids at it
 /// and writes perfilBolha; with tabRSPB on, also reads the solution gas-oil ratio
 /// table and writes perfilRSLivia.
@@ -789,54 +816,22 @@ void SProd::loadPvtSimSaturationTables() {
     int ndiv = arq.tabent.npont - 1;
     PBPVTSim = new double[ndiv + 1];
     TBPVTSim = new double[ndiv + 1];
-    double *PresPVTSim;
-    PresPVTSim = new double[ndiv + 1];
+    vector<double> PresPVTSim(ndiv + 1);
 
     string impfile;
     impfile = arq.pvtsimarq;
     string dadosMR = impfile;
     ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
     string chave;
-    char *tenta;
-    double testatok;
     char line[4000];
     lendoPVTSim.get(line, 4000);
-    tenta = strtok(line, " ,()=");
     lendoPVTSim >> chave;
-    while (chave != "PRESSURE") {
-        lendoPVTSim >> chave;
-    }
     int lacoleitura = ndiv;
-    lendoPVTSim.get(line, 4000);
-    tenta = strtok(line, " ,()=");
-    PresPVTSim[0] = atof(tenta) / kPascalPerKgfPerCm2PvtSim;
-    for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-        tenta = strtok(NULL, " ,");
-        testatok = atof(tenta);
-        PresPVTSim[kontaPVT] = testatok / kPascalPerKgfPerCm2PvtSim;
-    }
-    while (chave != "BUBBLEPRESSURES") {
-        lendoPVTSim >> chave;
-    }
-    lendoPVTSim.get(line, 4000);
-    tenta = strtok(line, " ,()=");
-    PBPVTSim[0] = atof(tenta) * kPsiPerPascal;
-    for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-        tenta = strtok(NULL, " ,");
-        testatok = atof(tenta);
-        PBPVTSim[kontaPVT] = testatok * kPsiPerPascal;
-    }
-    while (chave != "BUBBLETEMPERATURES") {
-        lendoPVTSim >> chave;
-    }
-    lendoPVTSim.get(line, 4000);
-    tenta = strtok(line, " ,()=");
-    TBPVTSim[0] = atof(tenta);
-    for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-        tenta = strtok(NULL, " ,");
-        testatok = atof(tenta);
-        TBPVTSim[kontaPVT] = testatok;
-    }
+    readPvtSimRow(lendoPVTSim, chave, "PRESSURE", PresPVTSim, lacoleitura,
+                  [](double value) { return value / kPascalPerKgfPerCm2PvtSim; });
+    readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", PBPVTSim, lacoleitura,
+                  [](double value) { return value * kPsiPerPascal; });
+    readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", TBPVTSim, lacoleitura, [](double value) { return value; });
     assignPvtSimBubbleTablesToCells();
 
     FullMtx<double> BolhaTemp(ndiv + 2, 2);
@@ -844,12 +839,7 @@ void SProd::loadPvtSimSaturationTables() {
         BolhaTemp[i][0] = TBPVTSim[i];
         BolhaTemp[i][1] = PBPVTSim[i];
     }
-    ostringstream saidaBolha;
-    saidaBolha << pathPrefixoArqSaida << "perfilBolha";
-    string tmp = saidaBolha.str();
-    ofstream escreveMass(tmp.c_str(), ios_base::out);
-    escreveMass << BolhaTemp;
-    escreveMass.close();
+    writeTable(pathPrefixoArqSaida + "perfilBolha", BolhaTemp);
 
     if (arq.tabRSPB == 1) {
         lerRS = 1;
@@ -916,12 +906,7 @@ void SProd::loadPvtSimSaturationTables() {
             for (int j = 1; j <= ndiv + 1; j++)
                 RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
         }
-        ostringstream saidaRS;
-        saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
-        tmp = saidaRS.str();
-        ofstream escreveRS(tmp.c_str(), ios_base::out);
-        escreveRS << RSTemp;
-        escreveRS.close();
+        writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
         for (int i = 0; i <= ncel; i++) {
             celula[i].flui.TabRSLivia = RSLivia;
@@ -960,7 +945,6 @@ void SProd::loadPvtSimSaturationTables() {
             }
         }
     }
-    delete[] PresPVTSim;
 }
 
 /// Builds the bubble-point curve and the solution gas-oil ratio table from the
@@ -1003,19 +987,8 @@ void SProd::generateSaturationTablesFromCorrelations() {
         pteste += dpteste;
     }
 
-    ostringstream saidaBolha;
-    saidaBolha << pathPrefixoArqSaida << "perfilBolha";
-    string tmp = saidaBolha.str();
-    ofstream escreveMass(tmp.c_str(), ios_base::out);
-    escreveMass << PBTemp;
-    escreveMass.close();
-
-    ostringstream saidaRS;
-    saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
-    tmp = saidaRS.str();
-    ofstream escreveRS(tmp.c_str(), ios_base::out);
-    escreveRS << RSTemp;
-    escreveRS.close();
+    writeTable(pathPrefixoArqSaida + "perfilBolha", PBTemp);
+    writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
     for (int i = 0; i <= ncel; i++) {
         celula[i].flui.PBPVTSim = PBPVTSim;
@@ -1530,24 +1503,9 @@ void SProd::configureLatentHeat() {
             if (strcmp(tenta, "THREE") == 0)
                 lacoleitura = 18;
 
-            while (chave != "PRESSURE")
-                lendoPVTSim >> chave;
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            presPVTSim[0] = atof(tenta) * 1.01971621e-5;
-            for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
-            }
-            while (chave != "TEMPERATURE")
-                lendoPVTSim >> chave;
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            tempPVTSim[0] = atof(tenta);
-            for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                tempPVTSim[kontaPVT] = atof(tenta);
-            }
+            readPvtSimRow(lendoPVTSim, chave, "PRESSURE", presPVTSim, ndiv,
+                          [](double value) { return value * kKgfPerCm2PerPascal; });
+            readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", tempPVTSim, ndiv, [](double value) { return value; });
 
             for (int i = 1; i <= ndiv + 1; i++) {
                 HLatTemp[i][0] = presPVTSim[i - 1];
@@ -1580,12 +1538,8 @@ void SProd::configureLatentHeat() {
                 for (int j = 0; j < ndiv + 2; j++)
                     HLat[i][j] = HLatTemp[i][j];
             }
-            ostringstream saidaLatente;
-            saidaLatente << pathPrefixoArqSaida << "perfilLatente.dat";
-            string tmp = saidaLatente.str();
-            ofstream escreveMass(tmp.c_str(), ios_base::out);
-            escreveMass << HLatTemp;
-            escreveMass.close();
+            string tmp = pathPrefixoArqSaida + "perfilLatente.dat";
+            writeTable(tmp, HLatTemp);
             // caso nao seja simulacao POCO_INJETOR
             if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
                 arqRelatorioPerfis << tmp.c_str() << endl;

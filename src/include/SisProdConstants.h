@@ -25,6 +25,10 @@ inline constexpr double kPascalPerKgfPerCm2PvtSim = 98068.059233;
 /// Preserved like the spellings above.
 inline constexpr double kPascalPerKgfPerCm2Coarse = 98600.;
 
+/// Kgf/cm^2 per pascal, 1 / 98066.5 written as a factor. The latent-heat
+/// reader multiplies by it; a product and the division round differently.
+inline constexpr double kKgfPerCm2PerPascal = 1.01971621e-5;
+
 /// Psi per pascal, 1 / 6894.757.
 inline constexpr double kPsiPerPascal = 0.00014503773800722;
 
@@ -173,6 +177,7 @@ static_assert(kPascalPerKgfPerCm2 == 98066.5);
 static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
 static_assert(kPascalPerKgfPerCm2PvtSim == 98068.059233);
 static_assert(kPascalPerKgfPerCm2Coarse == 98600.);
+static_assert(kKgfPerCm2PerPascal == 1.01971621e-5);
 static_assert(kPsiPerPascal == 0.00014503773800722);
 static_assert(kAtmospherePerKgfPerCm2 == 0.9678411);
 static_assert(kPsiPerAtmosphere == 14.69595);
