@@ -732,53 +732,56 @@ void SProd::HidroDescargaP() {
     }
 }
 
+namespace {
+
+/// Calls apply on each fluid the cell's source carries: that of a liquid,
+/// inflow-performance or multiple source, or, for a porous reservoir, its own
+/// and those of its cells. A gas injection's fluid is not visited. An apply that
+/// also takes a pressure and a temperature gets the cell's for the source's own
+/// fluid and each reservoir cell's for that cell's.
+template <typename Apply>
+void forEachSourceFluid(Cel &cell, Apply &&apply) {
+    auto visit = [&](ProFlu &fluid, double pressure, double temperature) {
+        if constexpr (std::invocable<Apply &, ProFlu &>)
+            apply(fluid);
+        else
+            apply(fluid, pressure, temperature);
+    };
+    acessorio &source = cell.acsr;
+    if (source.tipo == kAccessoryLiquidInjection) {
+        visit(source.injl.FluidoPro, cell.pres, cell.temp);
+    } else if (source.tipo == kAccessoryInflowPerformance) {
+        visit(source.ipr.FluidoPro, cell.pres, cell.temp);
+    } else if (source.tipo == kAccessoryMultipleSource) {
+        visit(source.injm.FluidoPro, cell.pres, cell.temp);
+    } else if (source.tipo == kAccessoryRadialPorous) {
+        visit(source.radialPoro.flup, cell.pres, cell.temp);
+        for (int k = 0; k < source.radialPoro.ncel; k++)
+            visit(source.radialPoro.celula[k].flup, source.radialPoro.celula[k].Pcamada, source.radialPoro.tRes);
+    } else if (source.tipo == kAccessoryPorous2D) {
+        visit(source.poroso2D.dados.flup, cell.pres, cell.temp);
+        for (int k = 0; k < source.poroso2D.dados.transfer.ncel; k++)
+            visit(source.poroso2D.dados.transfer.celula[k].flup, source.poroso2D.dados.transfer.celula[k].Pcamada,
+                  source.poroso2D.dados.transfer.tRes);
+        for (int k = 0; k < source.poroso2D.malha.nele; k++)
+            visit(source.poroso2D.malha.mlh2d[k].flup, source.poroso2D.malha.mlh2d[k].cel2D.presC,
+                  source.poroso2D.malha.mlh2d[k].tRes);
+    }
+}
+
+}  // namespace
+
 /// Points every cell fluid, and every source fluid it carries, at the bubble-point
 /// tables read from the PVTSim file, and switches them to saturation model 4.
 void SProd::assignPvtSimBubbleTablesToCells() {
+    auto assignTables = [&](ProFlu &fluid) {
+        fluid.PBPVTSim = PBPVTSim;
+        fluid.TBPVTSim = TBPVTSim;
+        fluid.corrSat = 4;
+    };
     for (int i = 0; i <= ncel; i++) {
-        celula[i].flui.PBPVTSim = PBPVTSim;
-        celula[i].flui.TBPVTSim = TBPVTSim;
-        celula[i].flui.corrSat = 4;
-        if (celula[i].acsr.tipo == kAccessoryLiquidInjection) {
-            celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
-            celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
-            celula[i].acsr.injl.FluidoPro.corrSat = 4;
-        }
-        if (celula[i].acsr.tipo == kAccessoryInflowPerformance) {
-            celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
-            celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
-            celula[i].acsr.ipr.FluidoPro.corrSat = 4;
-        }
-        if (celula[i].acsr.tipo == kAccessoryMultipleSource) {
-            celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
-            celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
-            celula[i].acsr.injm.FluidoPro.corrSat = 4;
-        }
-        if (celula[i].acsr.tipo == kAccessoryRadialPorous) {
-            celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
-            celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
-            celula[i].acsr.radialPoro.flup.corrSat = 4;
-            for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
-                celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
-                celula[i].acsr.radialPoro.celula[iRP].flup.corrSat = 4;
-            }
-        }
-        if (celula[i].acsr.tipo == kAccessoryPorous2D) {
-            celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
-            celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
-            celula[i].acsr.poroso2D.dados.flup.corrSat = 4;
-            for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.corrSat = 4;
-            }
-            for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.corrSat = 4;
-            }
-        }
+        assignTables(celula[i].flui);
+        forEachSourceFluid(celula[i], assignTables);
     }
 }
 
@@ -908,41 +911,13 @@ void SProd::loadPvtSimSaturationTables() {
         }
         writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
+        auto pointAtRatioTable = [&](ProFlu &fluid) {
+            fluid.TabRSLivia = RSLivia;
+            fluid.tabRSPB = 1;
+        };
         for (int i = 0; i <= ncel; i++) {
-            celula[i].flui.TabRSLivia = RSLivia;
-            celula[i].flui.tabRSPB = 1;
-            if (celula[i].acsr.tipo == kAccessoryLiquidInjection) {
-                celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
-                celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
-            }
-            if (celula[i].acsr.tipo == kAccessoryInflowPerformance) {
-                celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
-                celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
-            }
-            if (celula[i].acsr.tipo == kAccessoryMultipleSource) {
-                celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
-                celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
-            }
-            if (celula[i].acsr.tipo == kAccessoryRadialPorous) {
-                celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
-                celula[i].acsr.radialPoro.flup.tabRSPB = 1;
-                for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                    celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
-                    celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
-                }
-            }
-            if (celula[i].acsr.tipo == kAccessoryPorous2D) {
-                celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
-                celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
-                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
-                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
-                }
-                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
-                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
-                }
-            }
+            pointAtRatioTable(celula[i].flui);
+            forEachSourceFluid(celula[i], pointAtRatioTable);
         }
     }
 }
@@ -990,60 +965,15 @@ void SProd::generateSaturationTablesFromCorrelations() {
     writeTable(pathPrefixoArqSaida + "perfilBolha", PBTemp);
     writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
+    auto pointAtTables = [&](ProFlu &fluid) {
+        fluid.PBPVTSim = PBPVTSim;
+        fluid.TBPVTSim = TBPVTSim;
+        fluid.TabRSLivia = RSLivia;
+        fluid.tabRSPB = 1;
+    };
     for (int i = 0; i <= ncel; i++) {
-        celula[i].flui.PBPVTSim = PBPVTSim;
-        celula[i].flui.TBPVTSim = TBPVTSim;
-        celula[i].flui.TabRSLivia = RSLivia;
-        celula[i].flui.tabRSPB = 1;
-
-        if (celula[i].acsr.tipo == kAccessoryLiquidInjection) {
-            celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
-            celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
-            celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
-            celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
-        }
-        if (celula[i].acsr.tipo == kAccessoryInflowPerformance) {
-            celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
-            celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
-            celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
-            celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
-        }
-        if (celula[i].acsr.tipo == kAccessoryMultipleSource) {
-            celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
-            celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
-            celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
-            celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
-        }
-        if (celula[i].acsr.tipo == kAccessoryRadialPorous) {
-            celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
-            celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
-            celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
-            celula[i].acsr.radialPoro.flup.tabRSPB = 1;
-            for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
-                celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
-                celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
-                celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
-            }
-        }
-        if (celula[i].acsr.tipo == kAccessoryPorous2D) {
-            celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
-            celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
-            celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
-            celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
-            for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
-                celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
-            }
-            for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
-                celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
-            }
-        }
+        pointAtTables(celula[i].flui);
+        forEachSourceFluid(celula[i], pointAtTables);
     }
 
     LerPB = 1;
@@ -1557,40 +1487,10 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
             celula[i].flui.razDegD(celula[i].pres, celula[i].temp);
             celula[i].flui.rzDegL(celula[i].pres, celula[i].temp);
             celula[i].flui.PcTcIS();
-            if (celula[i].acsr.tipo == kAccessoryLiquidInjection) {
-                celula[i].acsr.injl.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
-                celula[i].acsr.injl.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
-            } else if (celula[i].acsr.tipo == kAccessoryInflowPerformance) {
-                celula[i].acsr.ipr.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
-                celula[i].acsr.ipr.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
-            } else if (celula[i].acsr.tipo == kAccessoryMultipleSource) {
-                celula[i].acsr.injm.FluidoPro.razDegD(celula[i].pres, celula[i].temp);
-                celula[i].acsr.injm.FluidoPro.rzDegL(celula[i].pres, celula[i].temp);
-            } else if (celula[i].acsr.tipo == kAccessoryRadialPorous) {
-                celula[i].acsr.radialPoro.flup.razDegD(celula[i].pres, celula[i].temp);
-                celula[i].acsr.radialPoro.flup.rzDegL(celula[i].pres, celula[i].temp);
-                for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                    double pres = celula[i].acsr.radialPoro.celula[iRP].Pcamada;
-                    double temp = celula[i].acsr.radialPoro.tRes;
-                    celula[i].acsr.radialPoro.celula[iRP].flup.razDegD(pres, temp);
-                    celula[i].acsr.radialPoro.celula[iRP].flup.rzDegL(pres, temp);
-                }
-            } else if (celula[i].acsr.tipo == kAccessoryPorous2D) {
-                celula[i].acsr.poroso2D.dados.flup.razDegD(celula[i].pres, celula[i].temp);
-                celula[i].acsr.poroso2D.dados.flup.rzDegL(celula[i].pres, celula[i].temp);
-                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                    double pres = celula[i].acsr.poroso2D.dados.transfer.celula[iRP].Pcamada;
-                    double temp = celula[i].acsr.poroso2D.dados.transfer.tRes;
-                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.razDegD(pres, temp);
-                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rzDegL(pres, temp);
-                }
-                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                    double pres = celula[i].acsr.poroso2D.malha.mlh2d[iRP].cel2D.presC;
-                    double temp = celula[i].acsr.poroso2D.malha.mlh2d[iRP].tRes;
-                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.razDegD(pres, temp);
-                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rzDegL(pres, temp);
-                }
-            }
+            forEachSourceFluid(celula[i], [](ProFlu &fluid, double pres, double temp) {
+                fluid.razDegD(pres, temp);
+                fluid.rzDegL(pres, temp);
+            });
         }
     }
 
