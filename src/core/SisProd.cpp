@@ -798,7 +798,6 @@ void SProd::loadPvtSimSaturationTables() {
     ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
     string chave;
     char *tenta;
-    tenta = new char[400];
     double testatok;
     char line[4000];
     lendoPVTSim.get(line, 4000);
@@ -853,7 +852,6 @@ void SProd::loadPvtSimSaturationTables() {
     escreveMass.close();
 
     if (arq.tabRSPB == 1) {
-        arq.tabRSPB = 1;
         lerRS = 1;
         RSLivia = new double *[ndiv + 2];
         for (int i = 0; i < ndiv + 2; i++) {
@@ -864,32 +862,26 @@ void SProd::loadPvtSimSaturationTables() {
             RSLivia[0][i] = TBPVTSim[i - 1];
             for (int j = 1; j <= ndiv + 1; j++) {
                 if (TBPVTSim[j - 1] > -10) {
-                    double a1, a2, a3;
                     double TFa = 1.8 * TBPVTSim[j - 1] + 32;
 
-                    double A0, A1, A2, A3, A4;
-                    double B0, B1, B2, B3, B4;
-                    double C0, C1, C2, C3, C4;
-                    double D0, D1, D2;
-
-                    A0 = 6542.69213 * 1e-11;
-                    A1 = 2.60464618;
-                    A2 = 1.21334544;
-                    A3 = 0.16464125;
-                    A4 = 1.19382967;
-                    B0 = 87 * 1e-8;
-                    B1 = 4.77390016;
-                    B2 = 1.77267703;
-                    B3 = -0.73072038;
-                    B4 = 1.58093857;
-                    C0 = 3226.09 * 1e-6;
-                    C1 = 0.09281075;
-                    C2 = 0.13633665;
-                    C3 = 0.09634381;
-                    C4 = 0.53238728;
-                    D0 = 1.00544053;
-                    D1 = -0.00134177;
-                    D2 = 0.51839397;
+                    constexpr double A0 = 6542.69213 * 1e-11;
+                    constexpr double A1 = 2.60464618;
+                    constexpr double A2 = 1.21334544;
+                    constexpr double A3 = 0.16464125;
+                    constexpr double A4 = 1.19382967;
+                    constexpr double B0 = 87 * 1e-8;
+                    constexpr double B1 = 4.77390016;
+                    constexpr double B2 = 1.77267703;
+                    constexpr double B3 = -0.73072038;
+                    constexpr double B4 = 1.58093857;
+                    constexpr double C0 = 3226.09 * 1e-6;
+                    constexpr double C1 = 0.09281075;
+                    constexpr double C2 = 0.13633665;
+                    constexpr double C3 = 0.09634381;
+                    constexpr double C4 = 0.53238728;
+                    constexpr double D0 = 1.00544053;
+                    constexpr double D1 = -0.00134177;
+                    constexpr double D2 = 0.51839397;
 
                     double yco2 = celula[0].flui.yco2;
                     double Deng = celula[0].flui.Deng;
@@ -897,16 +889,12 @@ void SProd::loadPvtSimSaturationTables() {
                     double multCor = (D0 + D1 * yco2 * pow(TFa, D2));
                     double pbtemp = PBPVTSim[j - 1];
 
-                    a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
-                    a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
-                    a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
-
                     double pcor = (RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere * multCor;
                     double pr = pcor / pbtemp;
 
-                    a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
-                    a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
-                    a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
+                    double a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
+                    double a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
+                    double a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
                     double Rsr = a1 * pow(pr, a2) + (1. - a1) * pow(pr, a3);
                     double rstemp = 0.;
@@ -925,10 +913,8 @@ void SProd::loadPvtSimSaturationTables() {
         for (int i = 1; i <= ndiv + 1; i++) {
             RSTemp[i][0] = RSLivia[i][0];
             RSTemp[0][i] = RSLivia[0][i];
-            for (int j = 1; j <= ndiv + 1; j++) {
-                if (i > 0 || j > 0)
-                    RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
-            }
+            for (int j = 1; j <= ndiv + 1; j++)
+                RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
         }
         ostringstream saidaRS;
         saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
@@ -1527,7 +1513,6 @@ void SProd::configureLatentHeat() {
             ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
             string chave;
             char *tenta;
-            tenta = new char[400];
             double testatok;
             int ndiv = arq.tabent.npont - 1;
             Vcr<double> presPVTSim(ndiv + 1, 0.);
