@@ -1171,6 +1171,19 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
         arq.gerafPoro2DFonte(celula);
 }
 
+namespace {
+
+/// Gives `cell` a multiple, a liquid and a gas source, all with zero flow,
+/// carrying the fluids of `inlet` (and, for the multiple source, its
+/// temperature).
+void attachEmptySources(Cel &cell, Cel &inlet) {
+    cell.acsr.injm = InjMult(0, 0, 0, inlet.temp, inlet.flui, inlet.fluicol);
+    cell.acsr.injl = InjLiq(0, 0, 0, inlet.flui, inlet.fluicol);
+    cell.acsr.injg = InjGas(0, 0, inlet.flui, inlet.fluicol);
+}
+
+}  // namespace
+
 /// Gives the inlet the sources its boundary condition needs (and the second cell,
 /// under a blockage), then places the accessories -- pumps, volumetric pumps,
 /// pressure-drop requirements, heat sources, the master valve and the other
@@ -1194,20 +1207,10 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
                 celula[0].acsr.tipo = kAccessoryLiquidInjection;
             else
                 celula[0].acsr.tipo = kAccessoryMultipleSource;
-            InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injm = injmassMRT;
-            InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injl = injliqMRT;
-            InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injg = injgasMRT;
+            attachEmptySources(celula[0], celula[0]);
         } else if (nfontes == 0 || arq.ConContEntrada == 1) {
-            InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
-            injgasMRT.seco = 0;
-            celula[0].acsr.injg = injgasMRT;
-            InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injm = injmassMRT;
-            InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injl = injliqMRT;
+            attachEmptySources(celula[0], celula[0]);
+            celula[0].acsr.injg.seco = 0;
             if (arq.tipoFluido == 1)
                 celula[0].acsr.tipo = kAccessoryGasInjection;
             else if (arq.tipoFluido == 0)
@@ -1223,12 +1226,7 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
             celula[1].acsr.tipo = kAccessoryGasInjection;
         else
             celula[1].acsr.tipo = kAccessoryMultipleSource;
-        InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-        celula[1].acsr.injm = injmassMRT;
-        InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
-        celula[1].acsr.injl = injliqMRT;
-        InjGas injgasMRT(0, 0, celula[0].flui, celula[0].fluicol);
-        celula[1].acsr.injg = injgasMRT;
+        attachEmptySources(celula[1], celula[0]);
     } else if (bloq == 1) {
         logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                    "Foi escolhida uma condicao de bloqueio que afeta este tramo, para que a selecao de fontes seja"
