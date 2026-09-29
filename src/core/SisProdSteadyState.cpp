@@ -805,8 +805,6 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
         double totalGrad;
         double reynolds;
         unsigned char flowType;
-        char *errorMsg;
-        unsigned char errorFlag;
         executarCorrelacao(state.cells, i, 0, state.input.AceleraConvergPerm,
                            state.cells[i - 1].correlacaoMR2,
                            holdup, frictionGrad, gravityGrad, totalGrad,
@@ -1441,7 +1439,6 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     double titulo = state.cells[i].flui.dVaporMassFraction;
 
     double betI;
-    double waterCutInSitu;
     ProFlu fluI;
     ProFluCol fluCI;
     if (state.cells[i].MC >= 0 && i > 0) {
@@ -3006,8 +3003,6 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
             double totalGrad;
             double reynolds;
             unsigned char flowType;
-            char *errorMsg;
-            unsigned char errorFlag;
             executarCorrelacao(state.cells, i, 0, state.input.AceleraConvergPerm,
                                state.cells[i - 1].correlacaoMR2,
                                holdup, frictionGrad, gravityGrad, totalGrad,
@@ -3378,8 +3373,6 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
         double totalGrad;
         double reynolds;
         unsigned char flowType;
-        char *errorMsg;
-        unsigned char errorFlag;
 
         double dx = 0.5 * state.cells[i].dxL;
         double diameter = state.cells[i].dutoL.a;
@@ -3523,8 +3516,6 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
         double totalGrad;
         double reynolds;
         unsigned char flowType;
-        char *errorMsg;
-        unsigned char errorFlag;
         executarCorrelacao(state.cells, i, 2, state.input.AceleraConvergPerm,
                            state.cells[i - 1].correlacaoMR2,
                            holdup, frictionGrad, gravityGrad, totalGrad,
@@ -5226,7 +5217,6 @@ void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &s
 
 double marchProductionPressureToPressure(const SteadyStateState &state, double mchute) {
 
-    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
 
@@ -5507,7 +5497,6 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
 
 double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double mchute) {
 
-    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
 
@@ -6203,7 +6192,6 @@ double secondaryBranchHydrostatic(const SteadyStateState &state, double titulo) 
     else
         pchute = state.cells[0].pres;
     double taux;
-    double liquidHoldup;
     double completionFraction;
     if (state.input.ConContEntrada == 1)
         completionFraction = state.input.CCPres.bet[0];

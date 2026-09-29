@@ -1206,7 +1206,6 @@ void SProd::loadPvtSimSaturationTables() {
     lendoPVTSim.get(line, 4000);
     tenta = strtok(line, " ,()=");
     PresPVTSim[0] = atof(tenta) / 98068.059233;
-    double valor;
     for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
         tenta = strtok(NULL, " ,");
         testatok = atof(tenta);

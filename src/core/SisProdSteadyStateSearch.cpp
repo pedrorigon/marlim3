@@ -754,9 +754,6 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     // retorna 1e10
     classifyReverseMarchSentinel(state, marchResidual, pchuteAux, perdafric, taux);
 
-    double mult1 = 0.9;
-    double mult2 = 1.1;
-    int tipo = 1;
 
     // para o caso de ter dado eerado a primeira marcha, com pchuteAux faz-se uma nova tentativa
     int kontaiter = 0; // contador para o laco em que se tentara uma nova estimativa
@@ -1623,7 +1620,6 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     // retorna 1e10
     classifyMarchSentinel(state, marchResidual, pchuteAux, completionFractionGuess, perdafric, taux, pchute);
 
-    int tipo = 1;
 
     // para o caso de ter dado eerado a primeira marcha, com pchuteAux faz-se uma nova tentativa
     int kontaiter = 0; // contador para o laco em que se tentara uma nova estimativa
@@ -1726,7 +1722,6 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     double guessLowerBound = 0.;
     double val0 = marchResidual;
     int reversao = 0;
-    double atenua = 1.;
     double reduz = 1. - state.march.input.buscaFC;
     double amplifica = 1. + state.march.input.buscaFC;
     if (fabs(marchResidual) < 1e-3)
@@ -2481,7 +2476,6 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     double guessLowerBound = 0.;
     double negativeResidualGuess = 0.;
     double positiveResidualGuess = 0.;
-    double atenua = 1.;
     double reduz = 1. - state.march.input.buscaFC;
     double amplifica = 1. + state.march.input.buscaFC;
     if (fabs(marchResidual) < 1e-3)
@@ -2931,7 +2925,6 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double guessLowerBound = 0.;
     state.march.input.buscaFC = fabs(state.march.input.buscaFC);
 
     double negativeResidualGuess = 0.;
@@ -4865,9 +4858,6 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
     // If non-positive, estimate a new value.
     double pchute = pPartida;
     double taux; // Auxiliary temperature used to estimate pchute.
-    double j = 0.;
-    double rmis = 0.;
-    double frictionFactor = 0.;
     double perdafric = 0.;
     double completionFractionGuess = 0.;
     if (state.march.cells[0].acsr.tipo == 2)
@@ -4962,7 +4952,6 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
     double guessLowerBound = 0.;
     double negativeResidualGuess = 0.;
     double positiveResidualGuess = 0.;
-    double atenua = 1.;
     double reduz = 1. - state.march.input.buscaFC;
     double amplifica = 1. + state.march.input.buscaFC;
     if (fabs(marchResidual) < 1e-3)

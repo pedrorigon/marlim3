@@ -507,7 +507,6 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     double masentrada = state.cells[state.lastCell - 1].MR;
     double massgas = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
     double maxSup = 0.;
-    double chokemas = 0;
 
     double rholp = state.cells[state.lastCell].rpC;
     double rholc = state.cells[state.lastCell].rcC;
@@ -1442,9 +1441,6 @@ void updatePig(const TransientStepState &state) {
         state.cells[0].betLI = state.cells[0].betI;
     }
     for (int i = 1; i <= state.lastCell; i++) {
-        double betLI;
-        double betI;
-        double betRI;
         state.cells[i].betI = state.cells[i].betPigE;
         if (state.cells[i].QL > 0.)
             state.cells[i].betI = state.cells[i - 1].betPigD; // testeBeta
