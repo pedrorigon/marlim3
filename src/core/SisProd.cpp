@@ -38,10 +38,10 @@ void SProd::resolveDriftSelectors() {
 
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
-             int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
-                                                           flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), matglobP(2 * arq.ncelp, 3, 2), termolivreP(
-                                                                                                                                                       2 * arq.ncelp),
-                                                           matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg) {
+             int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
+                                                           flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
+                                                           matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg),
+                                                           matglobP(2 * arq.ncelp, 3, 2), termolivreP(2 * arq.ncelp) {
     resolveDriftSelectors();
 
     zdranP = 0;
@@ -251,9 +251,9 @@ void SProd::nullOutputCouplingAndSaturationState() {
     lerRS = 0;
 }
 
-SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), matglobP(2 * 1, 3, 2), termolivreP(2 * 1), matglobG(
-                                                                                                                                    3 * 1, 5, 5),
-                 termolivreG(3 * 1) {
+SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 + 1),
+                 matglobG(3 * 1, 5, 5), termolivreG(3 * 1),
+                 matglobP(2 * 1, 3, 2), termolivreP(2 * 1) {
     resolveDriftSelectors();
     tfinal = 0;
     dtini = 0;
