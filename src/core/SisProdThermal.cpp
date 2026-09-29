@@ -73,6 +73,8 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
     return latentHeat;
 }
 
+namespace {
+
 [[nodiscard]] SourceEnthalpy sourceEnthalpyOf(const ThermalState &state, int cellIndex) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
@@ -178,6 +180,8 @@ double interpolateLatentHeat(const ThermalState &state, double pressure, double 
            (cell.acsr.tipo == kAccessoryMultiPump &&
             cell.acsr.multibcs.freq > 0);
 }
+
+}  // namespace
 
 double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
     Cel &cell = state.cells[cellIndex];
@@ -1718,7 +1722,6 @@ void applyDistributedMassTransferModel(
     }
 }
 
-}  // namespace
 
 /// Zeroes every mass-transfer derivative on the face between cellIndex - 1 and
 /// cellIndex. The transmass value itself is left to the caller.
@@ -1739,6 +1742,8 @@ void clearMassTransferDerivatives(const ThermalState &state, int cellIndex) {
     cell.DTransDtTL = 0.;
     }
 }
+
+}  // namespace
 
 void updateDistributedMassTransfer(const ThermalState &state) {
     // #pragma omp parallel for num_threads(state.input.nthrd)
@@ -3013,6 +3018,8 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     cell.calor.betint = -(1 / cell.calor.rhoint) * (liquidDensityChange * (1 - meanVoidFraction) + gasDensityChange * meanVoidFraction) / (temperaturePerturbation);
 }
 
+namespace {
+
 /// Refreshes one cell's temperature and its rate of change. Beyond lastCell the
 /// temperature comes from the external boundary or the gas surface.
 void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex) {
@@ -3046,6 +3053,8 @@ for (int cellIndex = 0; cellIndex <= state.lastCell; cellIndex++) {
     }
 }
 }
+
+}  // namespace
 
 void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCycle) {
     if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.chkv == 0) {

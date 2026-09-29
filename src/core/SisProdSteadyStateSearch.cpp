@@ -307,6 +307,8 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
     }
 }
 
+namespace {
+
 /// Brackets and solves the root for the reverse search.
 ///
 /// Unlike the forward search this is one block rather than two arms: the reverse
@@ -721,6 +723,8 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
         pchute = chute; // caso chute nao seja negativo utiliza a estimativa enviada na
 }
 
+}  // namespace
+
 double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &state, double chute) {
     state.reverseSteady = 1;
     state.march.convergenceMonitor = 1000.;
@@ -843,6 +847,8 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
         return bracketReverseRoot(state, aumenta, reduz, guessLowerBound, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute);
     }
 }
+
+namespace {
 
 /// Raises the guess until the march stops failing on too large an increment.
 ///
@@ -1587,6 +1593,8 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
         pchute = chute; // caso chute nao seja negativo utiliza a estimativa enviada na
 }
 
+}  // namespace
+
 double searchProductionBottomHolePressure(const SteadyStateSearchState &state, double chute, int kontaTenta) {
     state.reverseSteady = 0;
     state.march.convergenceMonitor = 1000.;
@@ -1746,6 +1754,8 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
             return searchReverseProductionBottomHolePressure(state, pchute * 1.);
     }
 }
+
+namespace {
 
 /// Brackets the root when the choke passes less than the column delivers.
 bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double amplifica, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult2, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
@@ -2356,6 +2366,8 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
         pchute = chute; // caso chute nao seja negativo utiliza a estimativa enviada na
 }
 
+}  // namespace
+
 double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState &state, double chute, int kontaTenta) {
     // busca de dois chutes iniciais com valores com sinais opostos
     // para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
@@ -2496,6 +2508,8 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
         // de funcao
     }
 }
+
+namespace {
 
 /// Walks the column cell by cell for the tertiary search.
 ///
@@ -2717,7 +2731,6 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
     return false;
 }
 
-namespace {
 
 /// The marches per guess with convergence acceleration on: one more under a
 /// pressure condition on the gas line, where it couples less easily with the
@@ -3390,6 +3403,8 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
     }
 }
 
+namespace {
+
 /// Brackets and solves the mass-flow root for the tertiary pressure-to-pressure search.
 double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state, int &testaEscoa, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, double &mchute2, double &mchuteAux, int &kontaiter, double &marchResidual, double mchute, double maximumFlowRate) {
     if (marchResidual < 0.) {
@@ -3515,6 +3530,8 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
         return 0.;
     }
 }
+
+}  // namespace
 
 double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &state, double chute, double maximumFlowRate) {
 
@@ -4504,6 +4521,8 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
     }
 }
 
+namespace {
+
 /// Brackets the branch root upward when the first march came back positive.
 ///
 /// One arm of the sign split in bracketSecondaryBranchRoot.
@@ -4848,6 +4867,8 @@ void classifyBranchMarchSentinel(const SteadyStateSearchState &state, double mar
             pchuteAux = 1100;
     }
 }
+
+}  // namespace
 
 double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double pPartida, int indPartida) {
     // Find two initial guesses with opposite signs to bracket the root.
