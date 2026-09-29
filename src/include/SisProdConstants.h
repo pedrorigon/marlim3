@@ -15,6 +15,24 @@ inline constexpr double kPascalPerKgfPerCm2 = 98066.5;
 /// difference is preserved: harmonising it would change results.
 inline constexpr double kPascalPerKgfPerCm2Variant = 98066.52;
 
+/// The PVTSim table reader's spelling. With it one atmosphere is 1.033211
+/// kgf/cm^2, the value kAtmosphereInKgfPerCm2 keeps.
+inline constexpr double kPascalPerKgfPerCm2PvtSim = 98068.059233;
+
+/// The half-cell hydrostatic terms beside a choke or valve, and some pressure
+/// gradients of the steady temperature march, divide by 98600: 0.54% above
+/// 98066.5. Preserved like the spellings above.
+inline constexpr double kPascalPerKgfPerCm2Hydrostatic = 98600.;
+
+/// Psi per pascal, 1 / 6894.757.
+inline constexpr double kPsiPerPascal = 0.00014503773800722;
+
+/// Atmospheres per kgf/cm^2 (98066.5 / 101325) and psi per atmosphere. The
+/// saturation correlation of the PVTSim tables goes from kgf/cm^2 to psi
+/// through the atmosphere.
+inline constexpr double kAtmospherePerKgfPerCm2 = 0.9678411;
+inline constexpr double kPsiPerAtmosphere = 14.69595;
+
 /// Used as the ratio 6.29 / 35.31467, converting a solution gas-oil ratio from
 /// scf/bbl to m3/m3. Leave it as a division: the quotient written by hand
 /// rounds to a different double.
@@ -147,6 +165,11 @@ static_assert(kGasInletInjectionFlowRate == 1);
 
 static_assert(kPascalPerKgfPerCm2 == 98066.5);
 static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
+static_assert(kPascalPerKgfPerCm2PvtSim == 98068.059233);
+static_assert(kPascalPerKgfPerCm2Hydrostatic == 98600.);
+static_assert(kPsiPerPascal == 0.00014503773800722);
+static_assert(kAtmospherePerKgfPerCm2 == 0.9678411);
+static_assert(kPsiPerAtmosphere == 14.69595);
 static_assert(kBarrelPerCubicMetre == 6.29);
 static_assert(kCubicFootPerCubicMetre == 35.31467);
 static_assert(kAirDensityAtStandardConditions == 1.225);

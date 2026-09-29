@@ -397,3 +397,12 @@ renovaFracMol2
 # with it as fillFluidMiniTable, and the two corner helpers as module internals.
 geraMiniTabFlu
 salvaFonte
+
+# --- stage 9: named constants (code analysis) -----------------------------
+# Unit conversions and physical constants written as literals now use the names
+# in SisProdConstants.h, each spelled exactly as the literal it replaces (the
+# header's static_asserts). Verified by object identity: all 83 objects and the
+# binary byte-identical to the commit before.
+FonteValv
+HidroDescargaP
+correcHidroFric

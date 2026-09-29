@@ -33,6 +33,18 @@ using sisprod::adapters::transientSolveStateOf;
 using sisprod::adapters::thermalStateOf;
 using sisprod::adapters::trendStateOf;
 using enum sisprod::AccessoryKind;
+using sisprod::kAirDensityAtStandardConditions;
+using sisprod::kAtmospherePerKgfPerCm2;
+using sisprod::kBarrelPerCubicMetre;
+using sisprod::kCubicFootPerCubicMetre;
+using sisprod::kGravity;
+using sisprod::kGravityUnloadingVariant;
+using sisprod::kPascalPerKgfPerCm2Hydrostatic;
+using sisprod::kPascalPerKgfPerCm2PvtSim;
+using sisprod::kPascalPerKgfPerCm2Variant;
+using sisprod::kPsiPerAtmosphere;
+using sisprod::kPsiPerPascal;
+using sisprod::kSecondsPerDay;
 
 void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
@@ -1020,7 +1032,7 @@ void SProd::HidroDescargaP() {
         double dx0 = 0.5 * celula[i].dxL;
         double A1 = celula[i].duto.area;
         double dx1 = 0.5 * celula[i].dx;
-        pmed -= rho0 * 9.81 * dx0 * sin(celula[i - 1].duto.teta) / 98066.52;
+        pmed -= rho0 * kGravityUnloadingVariant * dx0 * sin(celula[i - 1].duto.teta) / kPascalPerKgfPerCm2Variant;
         tmed = celula[i].calor.Textern1;
         double taux = (dx0 * celula[i - 1].temp + dx1 * tmed) / (dx0 + dx1);
         celula[i].presaux = pmed;
@@ -1030,7 +1042,7 @@ void SProd::HidroDescargaP() {
             rho1 = celula[i].fluicol.MasEspFlu(pmed, tmed);
         else
             rho1 = celula[i].flui.MasEspGas(pmed, tmed);
-        pmed -= rho1 * 9.81 * dx1 * sin(celula[i].duto.teta) / 98066.52;
+        pmed -= rho1 * kGravityUnloadingVariant * dx1 * sin(celula[i].duto.teta) / kPascalPerKgfPerCm2Variant;
         rho0 = rho1;
 
         celula[i].presL = celula[i - 1].pres;
@@ -1207,22 +1219,22 @@ void SProd::loadPvtSimSaturationTables() {
     int lacoleitura = ndiv;
     lendoPVTSim.get(line, 4000);
     tenta = strtok(line, " ,()=");
-    PresPVTSim[0] = atof(tenta) / 98068.059233;
+    PresPVTSim[0] = atof(tenta) / kPascalPerKgfPerCm2PvtSim;
     for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
         tenta = strtok(NULL, " ,");
         testatok = atof(tenta);
-        PresPVTSim[kontaPVT] = testatok / 98068.059233;
+        PresPVTSim[kontaPVT] = testatok / kPascalPerKgfPerCm2PvtSim;
     }
     while (chave != "BUBBLEPRESSURES") {
         lendoPVTSim >> chave;
     }
     lendoPVTSim.get(line, 4000);
     tenta = strtok(line, " ,()=");
-    PBPVTSim[0] = atof(tenta) * 0.00014503773800722;
+    PBPVTSim[0] = atof(tenta) * kPsiPerPascal;
     for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
         tenta = strtok(NULL, " ,");
         testatok = atof(tenta);
-        PBPVTSim[kontaPVT] = testatok * 0.00014503773800722;
+        PBPVTSim[kontaPVT] = testatok * kPsiPerPascal;
     }
     while (chave != "BUBBLETEMPERATURES") {
         lendoPVTSim >> chave;
@@ -1298,7 +1310,7 @@ void SProd::loadPvtSimSaturationTables() {
                     a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
                     a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
-                    double pcor = (RSLivia[i][0] * 0.9678411) * 14.69595 * multCor;
+                    double pcor = (RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere * multCor;
                     double pr = pcor / pbtemp;
 
                     a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
@@ -1309,7 +1321,7 @@ void SProd::loadPvtSimSaturationTables() {
                     double rstemp = 0.;
                     if (rstemp < 0.)
                         rstemp = 0.;
-                    else if ((RSLivia[i][0] * 0.9678411) * 14.69595 > pbtemp)
+                    else if ((RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere > pbtemp)
                         rstemp = 1.;
                     else
                         rstemp = Rsr;
@@ -1324,7 +1336,7 @@ void SProd::loadPvtSimSaturationTables() {
             RSTemp[0][i] = RSLivia[0][i];
             for (int j = 1; j <= ndiv + 1; j++) {
                 if (i > 0 || j > 0)
-                    RSTemp[i][j] = RSLivia[i][j] * 6.29 / 35.31467;
+                    RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
             }
         }
         ostringstream saidaRS;
@@ -1408,7 +1420,7 @@ void SProd::generateSaturationTablesFromCorrelations() {
             RSLivia[0][j] = ttestepb;
             RSLivia[i][j] = arq.flup[0].RS(pteste, ttestepb);
             RSTemp[0][j] = RSLivia[0][j];
-            RSTemp[i][j] = RSLivia[i][j] * 6.29 / 35.31467;
+            RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
             ttestepb += dtteste;
         }
         pteste += dpteste;
@@ -3007,8 +3019,8 @@ void SProd::FonteValv(int ind) {
         double rholcJ = celula[ind + 1].fluicol.MasEspFlu(celula[ind + 1].pres, celula[ind + 1].temp);
         double rholmixJ = (1 - betJ) * rholpJ + betJ * rholcJ;
 
-        double hidroM = sin(celula[ind].duto.teta) * (0.5 * celula[ind].dx) * (rholmix * (1 - alfE) + alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp)) * 9.82 / 98600.;
-        double hidroJ = sin(celula[ind + 1].duto.teta) * (0.5 * celula[ind + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp)) * 9.82 / 98600.;
+        double hidroM = sin(celula[ind].duto.teta) * (0.5 * celula[ind].dx) * (rholmix * (1 - alfE) + alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp)) * kGravity / kPascalPerKgfPerCm2Hydrostatic;
+        double hidroJ = sin(celula[ind + 1].duto.teta) * (0.5 * celula[ind + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp)) * kGravity / kPascalPerKgfPerCm2Hydrostatic;
 
         double masentrada = celula[ind].MC;
         double massgas = celula[ind].MC - celula[ind].Mliqini;
@@ -3224,7 +3236,7 @@ void SProd::refreshChokeMultipleAndPorousSources(int ind) {
             rs = celula[ind + 1].flui.RS(celula[ind].pres, celula[ind].temp);
             bo = celula[ind + 1].flui.BOFunc(celula[ind].pres, celula[ind].temp, rs);
             ba = celula[ind + 1].flui.BAFunc(celula[ind].pres, celula[ind].temp);
-            rs = rs * 6.29 / 35.31467;
+            rs = rs * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
         } else {
             bo = 1;
             rs = 0;
@@ -3255,7 +3267,7 @@ void SProd::refreshChokeMultipleAndPorousSources(int ind) {
             rs = celula[ind + 1].flui.RS(celula[ind].pres, celula[ind].temp);
             bo = celula[ind + 1].flui.BOFunc(celula[ind].pres, celula[ind].temp, rs);
             ba = celula[ind + 1].flui.BAFunc(celula[ind].pres, celula[ind].temp);
-            rs = rs * 6.29 / 35.31467;
+            rs = rs * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
         } else {
             bo = 1;
             rs = 0;
@@ -3321,7 +3333,7 @@ void SProd::renovaFonte(int ind) {
                 celula[ind].fontemassGR += masT * tit;
                 celula[ind].fontemassLR += masT * (1. - tit);
                 double rcomp = celula[ind].acsr.injg.fluidocol.MasEspFlu(1., 20.);
-                celula[ind].fontemassCR += rcomp * celula[ind].acsr.injg.razCompGas * celula[ind].acsr.injg.QGas / 86400.;
+                celula[ind].fontemassCR += rcomp * celula[ind].acsr.injg.razCompGas * celula[ind].acsr.injg.QGas / kSecondsPerDay;
             }
         } else {
             celula[ind].fontemassGR += 0.;
@@ -3331,9 +3343,9 @@ void SProd::renovaFonte(int ind) {
     }
     if (celula[ind].acsr.tipo == kAccessoryLiquidInjection) {
         double rlcA = celula[ind].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-        celula[ind].fontemassCR += rlcA * celula[ind].acsr.injl.QLiq * celula[ind].acsr.injl.bet / 86400;
-        double massic = celula[ind].acsr.injl.QLiq * (1. - celula[ind].acsr.injl.bet) / 86400;
-        double Rhogs = celula[ind].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+        celula[ind].fontemassCR += rlcA * celula[ind].acsr.injl.QLiq * celula[ind].acsr.injl.bet / kSecondsPerDay;
+        double massic = celula[ind].acsr.injl.QLiq * (1. - celula[ind].acsr.injl.bet) / kSecondsPerDay;
+        double Rhogs = celula[ind].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
         double Rhols = (1000 * 141.5 / (131.5 + celula[ind].acsr.injl.FluidoPro.API)) * (1 - celula[ind].acsr.injl.FluidoPro.BSW) + 1000. * celula[ind].acsr.injl.FluidoPro.Denag * celula[ind].acsr.injl.FluidoPro.BSW;
         double multiplicador = (Rhols + celula[ind].acsr.injl.FluidoPro.RGO * Rhogs * (1 - celula[ind].acsr.injl.FluidoPro.BSW));
         massic *= multiplicador;
@@ -3503,7 +3515,7 @@ void SProd::correcHidroFric(int i, double &hidro, double &fric) {
     }
     double f1 = celula[i].fric(re1, celula[i].duto.rug / dia);
     fric = (1 - arq.MedSimpPresFront) * 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-    hidro = (1 - arq.MedSimpPresFront) * 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
+    hidro = (1 - arq.MedSimpPresFront) * kGravity * sin(celula[i].duto.teta) * rhomix * dx;
 }
 
 void SProd::auxMiniTab(ProFlu &flui) {
