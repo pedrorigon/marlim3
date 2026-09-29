@@ -38,11 +38,9 @@ using sisprod::kAtmospherePerKgfPerCm2;
 using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
 using sisprod::kGravity;
-using sisprod::kGravityUnloadingVariant;
 using sisprod::kKgfPerCm2PerPascal;
 using sisprod::kPascalPerKgfPerCm2Coarse;
 using sisprod::kPascalPerKgfPerCm2PvtSim;
-using sisprod::kPascalPerKgfPerCm2Variant;
 using sisprod::kPsiPerAtmosphere;
 using sisprod::kPsiPerPascal;
 using sisprod::kSecondsPerDay;
@@ -533,164 +531,7 @@ void SProd::HidroDescargaG() {
 }
 
 void SProd::HidroDescargaP() {
-    celula[0].massfonteCH = 0;
-    celula[0].fontemassCL = 0;
-    celula[0].fontemassLL = 0;
-    celula[0].fontemassGL = 0;
-    celula[0].fontemassCR = 0;
-    celula[0].fontemassLR = 0;
-    celula[0].fontemassGR = 0;
-    const bool inletBelowInterface = 0 <= arq.celdescargaP;
-    celula[0].alf = inletBelowInterface ? 0. : 1.;
-    celula[0].bet = inletBelowInterface ? 1. : 0.;
-    celula[0].betI = celula[0].bet;
-    celula[0].alfini = celula[0].alf;
-    celula[0].betini = celula[0].bet;
-    celula[0].alfPigD = celula[0].alf;
-    celula[0].betPigD = celula[0].bet;
-    celula[0].alfPigE = celula[0].alf;
-    celula[0].betPigE = celula[0].bet;
-    celula[1].alfL = celula[0].alf;
-    celula[1].betL = celula[0].bet;
-    celula[1].betLI = celula[0].bet;
-    celula[1].alfLini = celula[0].alf;
-    celula[1].betLini = celula[0].bet;
-    double pmed;
-    double tmed;
-    pmed = celula[0].acsr.ipr.Pres;
-    celula[0].presL = pmed;
-    celula[1].presL = pmed;
-    celula[0].pres = pmed;
-    celula[0].presini = pmed;
-    celula[1].presLini = pmed;
-    celula[0].presauxL = pmed;
-    tmed = celula[0].calor.Textern1;
-    celula[0].tempL = tmed;
-    celula[0].temp = tmed;
-    celula[0].tempini = tmed;
-    celula[1].tempL = tmed;
-    double rho0;
-    if (inletBelowInterface)
-        rho0 = celula[0].fluicol.MasEspFlu(pmed, tmed);
-    else
-        rho0 = celula[0].flui.MasEspGas(pmed, tmed);
-    double rho1;
-    rho1 = celula[0].fluicol.MasEspFlu(pmed, tmed);
-
-    celula[0].FW = 0;
-    celula[0].FWini = 0;
-    celula[0].arranjo = 0;
-    celula[0].QLL = 0;
-    celula[1].QLL = celula[0].QLL;
-    celula[0].QL = 0;
-    celula[0].QG = 0;
-    celula[0].rpL = rho1;
-    celula[0].rpC = rho1;
-    celula[1].rpL = celula[0].rpC;
-    celula[0].rcL = rho1;
-    celula[0].rcC = rho1;
-    celula[1].rcL = celula[0].rcC;
-
-    celula[0].MC = 0.;
-    celula[0].ML = 0.;
-    celula[1].ML = celula[0].MC;
-    celula[0].Mliqini = celula[0].MC;
-    celula[1].MliqiniL = celula[0].MC;
-    celula[0].MliqiniL = celula[0].MC;
-
-    celula[0].rpLi = rho1;
-    celula[0].rpCi = rho1;
-    celula[0].rcLi = rho1;
-    celula[0].rcCi = rho1;
-
-    for (int i = 1; i <= ncel; i++) {
-        const bool belowInterface = i <= arq.celdescargaP;
-        double A0 = celula[i - 1].duto.area;
-        double dx0 = 0.5 * celula[i].dxL;
-        double A1 = celula[i].duto.area;
-        double dx1 = 0.5 * celula[i].dx;
-        pmed -= rho0 * kGravityUnloadingVariant * dx0 * sin(celula[i - 1].duto.teta) / kPascalPerKgfPerCm2Variant;
-        tmed = celula[i].calor.Textern1;
-        double taux = (dx0 * celula[i - 1].temp + dx1 * tmed) / (dx0 + dx1);
-        celula[i].presaux = pmed;
-        celula[i - 1].presauxR = celula[i].presaux;
-        celula[i].presauxL = celula[i - 1].presaux;
-        if (belowInterface)
-            rho1 = celula[i].fluicol.MasEspFlu(pmed, tmed);
-        else
-            rho1 = celula[i].flui.MasEspGas(pmed, tmed);
-        pmed -= rho1 * kGravityUnloadingVariant * dx1 * sin(celula[i].duto.teta) / kPascalPerKgfPerCm2Variant;
-        rho0 = rho1;
-
-        celula[i].presL = celula[i - 1].pres;
-        celula[i].pres = pmed;
-        celula[i - 1].presR = pmed;
-        celula[i].presini = pmed;
-        celula[i].presLini = celula[i - 1].presini;
-        celula[i].presauxL = celula[i - 1].presaux;
-        celula[i].tempL = celula[i - 1].temp;
-        celula[i].temp = tmed;
-        celula[i - 1].tempR = tmed;
-        celula[i].tempini = tmed;
-
-        celula[i].FW = 0;
-        celula[i].FWini = 0;
-        celula[i].arranjo = 0;
-        celula[i].QL = 0;
-        celula[i - 1].QLR = celula[i].QL;
-        celula[i].QG = 0;
-        celula[i].rpL = rho1;
-        celula[i].rpC = rho1;
-        celula[i - 1].rpR = celula[i].rpC;
-        celula[i].rcL = rho1;
-        celula[i].rcC = rho1;
-        celula[i - 1].rcR = celula[i].rcC;
-
-        double rhoaux;
-        if (belowInterface)
-            rhoaux = celula[i].fluicol.MasEspFlu(celula[i].presaux, taux);
-        else
-            rhoaux = celula[0].flui.MasEspGas(celula[i].presaux, taux);
-        celula[i].rpCi = rhoaux;
-        celula[i - 1].rpRi = rhoaux;
-        celula[i].rcCi = rhoaux;
-        celula[i - 1].rcRi = rhoaux;
-
-        celula[i].massfonteCH = 0;
-        celula[i].fontemassCL = 0;
-        celula[i].fontemassLL = 0;
-        celula[i].fontemassGL = 0;
-        celula[i].fontemassCR = 0;
-        celula[i].fontemassLR = 0;
-        celula[i].fontemassGR = 0;
-        celula[i].alf = belowInterface ? 0. : 1.;
-        celula[i].bet = belowInterface ? 1. : 0.;
-        celula[i - 1].betR = celula[i].bet;
-        celula[i - 1].betRini = celula[i].bet;
-        celula[i - 1].alfR = celula[i].alf;
-        celula[i - 1].alfRini = celula[i].alf;
-        celula[i].betI = celula[i].bet;
-        celula[i].alfini = celula[i].alf;
-        celula[i].betini = celula[i].bet;
-        celula[i].alfPigD = celula[i].alf;
-        celula[i].betPigD = celula[i].bet;
-        celula[i].alfPigE = celula[i].alf;
-        celula[i].betPigE = celula[i].bet;
-
-        if (i < ncel) {
-            celula[i + 1].tempL = tmed;
-            celula[i + 1].QLL = celula[i].QL;
-            celula[i + 1].rpL = celula[i].rpC;
-            celula[i + 1].rcL = celula[i].rcC;
-            celula[i + 1].rpLi = rhoaux;
-            celula[i + 1].rcLi = rhoaux;
-            celula[i + 1].alfL = celula[i].alf;
-            celula[i + 1].betL = celula[i].bet;
-            celula[i + 1].betLI = celula[i].bet;
-            celula[i + 1].alfLini = celula[i].alf;
-            celula[i + 1].betLini = celula[i].bet;
-        }
-    }
+    sisprod::gaslift::computeProductionUnloadingHydrostatics(gasLiftStateOf(*this));
 }
 
 namespace {

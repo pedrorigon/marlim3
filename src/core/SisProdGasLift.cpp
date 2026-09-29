@@ -275,6 +275,167 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     }
 }
 
+void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
+    state.cells[0].massfonteCH = 0;
+    state.cells[0].fontemassCL = 0;
+    state.cells[0].fontemassLL = 0;
+    state.cells[0].fontemassGL = 0;
+    state.cells[0].fontemassCR = 0;
+    state.cells[0].fontemassLR = 0;
+    state.cells[0].fontemassGR = 0;
+    const bool inletBelowInterface = 0 <= state.input.celdescargaP;
+    state.cells[0].alf = inletBelowInterface ? 0. : 1.;
+    state.cells[0].bet = inletBelowInterface ? 1. : 0.;
+    state.cells[0].betI = state.cells[0].bet;
+    state.cells[0].alfini = state.cells[0].alf;
+    state.cells[0].betini = state.cells[0].bet;
+    state.cells[0].alfPigD = state.cells[0].alf;
+    state.cells[0].betPigD = state.cells[0].bet;
+    state.cells[0].alfPigE = state.cells[0].alf;
+    state.cells[0].betPigE = state.cells[0].bet;
+    state.cells[1].alfL = state.cells[0].alf;
+    state.cells[1].betL = state.cells[0].bet;
+    state.cells[1].betLI = state.cells[0].bet;
+    state.cells[1].alfLini = state.cells[0].alf;
+    state.cells[1].betLini = state.cells[0].bet;
+    double pmed;
+    double tmed;
+    pmed = state.cells[0].acsr.ipr.Pres;
+    state.cells[0].presL = pmed;
+    state.cells[1].presL = pmed;
+    state.cells[0].pres = pmed;
+    state.cells[0].presini = pmed;
+    state.cells[1].presLini = pmed;
+    state.cells[0].presauxL = pmed;
+    tmed = state.cells[0].calor.Textern1;
+    state.cells[0].tempL = tmed;
+    state.cells[0].temp = tmed;
+    state.cells[0].tempini = tmed;
+    state.cells[1].tempL = tmed;
+    double rho0;
+    if (inletBelowInterface)
+        rho0 = state.cells[0].fluicol.MasEspFlu(pmed, tmed);
+    else
+        rho0 = state.cells[0].flui.MasEspGas(pmed, tmed);
+    double rho1;
+    rho1 = state.cells[0].fluicol.MasEspFlu(pmed, tmed);
+
+    state.cells[0].FW = 0;
+    state.cells[0].FWini = 0;
+    state.cells[0].arranjo = 0;
+    state.cells[0].QLL = 0;
+    state.cells[1].QLL = state.cells[0].QLL;
+    state.cells[0].QL = 0;
+    state.cells[0].QG = 0;
+    state.cells[0].rpL = rho1;
+    state.cells[0].rpC = rho1;
+    state.cells[1].rpL = state.cells[0].rpC;
+    state.cells[0].rcL = rho1;
+    state.cells[0].rcC = rho1;
+    state.cells[1].rcL = state.cells[0].rcC;
+
+    state.cells[0].MC = 0.;
+    state.cells[0].ML = 0.;
+    state.cells[1].ML = state.cells[0].MC;
+    state.cells[0].Mliqini = state.cells[0].MC;
+    state.cells[1].MliqiniL = state.cells[0].MC;
+    state.cells[0].MliqiniL = state.cells[0].MC;
+
+    state.cells[0].rpLi = rho1;
+    state.cells[0].rpCi = rho1;
+    state.cells[0].rcLi = rho1;
+    state.cells[0].rcCi = rho1;
+
+    for (int i = 1; i <= state.lastCell; i++) {
+        const bool belowInterface = i <= state.input.celdescargaP;
+        double A0 = state.cells[i - 1].duto.area;
+        double dx0 = 0.5 * state.cells[i].dxL;
+        double A1 = state.cells[i].duto.area;
+        double dx1 = 0.5 * state.cells[i].dx;
+        pmed -= rho0 * kGravityUnloadingVariant * dx0 * sin(state.cells[i - 1].duto.teta) / kPascalPerKgfPerCm2Variant;
+        tmed = state.cells[i].calor.Textern1;
+        double taux = (dx0 * state.cells[i - 1].temp + dx1 * tmed) / (dx0 + dx1);
+        state.cells[i].presaux = pmed;
+        state.cells[i - 1].presauxR = state.cells[i].presaux;
+        state.cells[i].presauxL = state.cells[i - 1].presaux;
+        if (belowInterface)
+            rho1 = state.cells[i].fluicol.MasEspFlu(pmed, tmed);
+        else
+            rho1 = state.cells[i].flui.MasEspGas(pmed, tmed);
+        pmed -= rho1 * kGravityUnloadingVariant * dx1 * sin(state.cells[i].duto.teta) / kPascalPerKgfPerCm2Variant;
+        rho0 = rho1;
+
+        state.cells[i].presL = state.cells[i - 1].pres;
+        state.cells[i].pres = pmed;
+        state.cells[i - 1].presR = pmed;
+        state.cells[i].presini = pmed;
+        state.cells[i].presLini = state.cells[i - 1].presini;
+        state.cells[i].presauxL = state.cells[i - 1].presaux;
+        state.cells[i].tempL = state.cells[i - 1].temp;
+        state.cells[i].temp = tmed;
+        state.cells[i - 1].tempR = tmed;
+        state.cells[i].tempini = tmed;
+
+        state.cells[i].FW = 0;
+        state.cells[i].FWini = 0;
+        state.cells[i].arranjo = 0;
+        state.cells[i].QL = 0;
+        state.cells[i - 1].QLR = state.cells[i].QL;
+        state.cells[i].QG = 0;
+        state.cells[i].rpL = rho1;
+        state.cells[i].rpC = rho1;
+        state.cells[i - 1].rpR = state.cells[i].rpC;
+        state.cells[i].rcL = rho1;
+        state.cells[i].rcC = rho1;
+        state.cells[i - 1].rcR = state.cells[i].rcC;
+
+        double rhoaux;
+        if (belowInterface)
+            rhoaux = state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, taux);
+        else
+            rhoaux = state.cells[0].flui.MasEspGas(state.cells[i].presaux, taux);
+        state.cells[i].rpCi = rhoaux;
+        state.cells[i - 1].rpRi = rhoaux;
+        state.cells[i].rcCi = rhoaux;
+        state.cells[i - 1].rcRi = rhoaux;
+
+        state.cells[i].massfonteCH = 0;
+        state.cells[i].fontemassCL = 0;
+        state.cells[i].fontemassLL = 0;
+        state.cells[i].fontemassGL = 0;
+        state.cells[i].fontemassCR = 0;
+        state.cells[i].fontemassLR = 0;
+        state.cells[i].fontemassGR = 0;
+        state.cells[i].alf = belowInterface ? 0. : 1.;
+        state.cells[i].bet = belowInterface ? 1. : 0.;
+        state.cells[i - 1].betR = state.cells[i].bet;
+        state.cells[i - 1].betRini = state.cells[i].bet;
+        state.cells[i - 1].alfR = state.cells[i].alf;
+        state.cells[i - 1].alfRini = state.cells[i].alf;
+        state.cells[i].betI = state.cells[i].bet;
+        state.cells[i].alfini = state.cells[i].alf;
+        state.cells[i].betini = state.cells[i].bet;
+        state.cells[i].alfPigD = state.cells[i].alf;
+        state.cells[i].betPigD = state.cells[i].bet;
+        state.cells[i].alfPigE = state.cells[i].alf;
+        state.cells[i].betPigE = state.cells[i].bet;
+
+        if (i < state.lastCell) {
+            state.cells[i + 1].tempL = tmed;
+            state.cells[i + 1].QLL = state.cells[i].QL;
+            state.cells[i + 1].rpL = state.cells[i].rpC;
+            state.cells[i + 1].rcL = state.cells[i].rcC;
+            state.cells[i + 1].rpLi = rhoaux;
+            state.cells[i + 1].rcLi = rhoaux;
+            state.cells[i + 1].alfL = state.cells[i].alf;
+            state.cells[i + 1].betL = state.cells[i].bet;
+            state.cells[i + 1].betLI = state.cells[i].bet;
+            state.cells[i + 1].alfLini = state.cells[i].alf;
+            state.cells[i + 1].betLini = state.cells[i].bet;
+        }
+    }
+}
+
 void updateGasLine(const GasLiftState &state) {
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         if (gasCellIndex != 0 && gasCellIndex != state.gasCellCount) {

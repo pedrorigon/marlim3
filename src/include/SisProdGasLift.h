@@ -153,6 +153,9 @@ struct GasLiftState {
 /// Hydrostatics of the gas column during unloading.
 void computeGasUnloadingHydrostatics(const GasLiftState &state);
 
+/// Hydrostatics of the production column during unloading.
+void computeProductionUnloadingHydrostatics(const GasLiftState &state);
+
 /// Advances the gas line by one sub-time-step.
 void advanceGasSubStep(const GasLiftState &state);
 
