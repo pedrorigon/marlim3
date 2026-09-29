@@ -1141,11 +1141,8 @@ class SProd {
           int nfontes = 0,
           int redeperm = 1);
   private:
-    /// Empties the trend, transient-trend and profile bookkeeping of both lines,
-    /// zeroes the column-annulus and network coupling indices and the profile
-    /// counters, and nulls the PVTSim saturation tables -- the default
-    /// constructor's share of the state montasistema later fills.
-    void nullOutputCouplingAndSaturationState();
+    /// The run state every construction and reassignment starts from.
+    void resetRunState();
   public:
     /// Creates an empty production-system object.
     SProd();

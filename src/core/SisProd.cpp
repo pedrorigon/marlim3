@@ -50,14 +50,9 @@ void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
 }
 
-SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
-             int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
-                                                           flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
-                                                           matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg),
-                                                           matglobP(2 * arq.ncelp, 3, 2), termolivreP(2 * arq.ncelp) {
-    resolveDriftSelectors();
-
+/// The run state every construction and reassignment starts from, before each
+/// path sets what is its own and montasistema builds the system.
+void SProd::resetRunState() {
     zdranP = 0;
     dzdpP = 0;
     dzdtP = 0;
@@ -84,9 +79,6 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     celInter = 1e7;
     dtInter = 0.;
     velInter = 0.;
-    celInterIni = celInter;
-    dtInterIni = dtInter;
-    velInterIni = velInter;
 
     ncelperftransg = 0;
     TrendLengthG = 0;
@@ -113,11 +105,6 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     LerPB = 0;
     PBPVTSim = 0;
     TBPVTSim = 0;
-    RSLivia = 0;
-    lerRS = 0;
-    noextremo = 1;
-    noinicial = 1;
-    derivaAnel = -1;
 
     fontemassPRBuf = 0.;
     fontemassCRBuf = 0.;
@@ -141,20 +128,12 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
 
     tGSup = 0.;
     tGSupIni = 0.;
-    redeTemporario = temporario;
-
-    betaRev = 0;
-    betaRevini = 0;
-    titRev = 1.;
-    titRevini = 1.;
 
     dtCFLMed = 1.;
     dtSimMed = 1.;
     restriDt = 0;
     kontarestriDt = 0;
-    dtCFLTotal = 0.;
-    dtSimTotal = 0.;
-    dtauxCFL = 0;
+    dtauxCFL = 0.;
     dtauxFinal = 0.;
 
     kimpT = 0.;
@@ -178,13 +157,6 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
 
     buscaIni = 0;
 
-    bloq = vbloq;
-
-    vg1dSP = Vvg1dSP;
-
-    if (TD >= 0)
-        arq.tabelaDinamica = TD;
-
     for (int i = 0; i < 10; i++) {
         vRazMast0[i] = 0.;
         vRazMast1[i] = 0.;
@@ -207,68 +179,51 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     monitConvPermBase = 1.;
 
     alteraTempo = 0;
+}
+
+SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
+             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
+             int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
+                                                           flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
+                                                           matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg),
+                                                           matglobP(2 * arq.ncelp, 3, 2), termolivreP(2 * arq.ncelp) {
+    resolveDriftSelectors();
+    resetRunState();
+    celInterIni = celInter;
+    dtInterIni = dtInter;
+    velInterIni = velInter;
+    RSLivia = 0;
+    lerRS = 0;
+    noextremo = 1;
+    noinicial = 1;
+    derivaAnel = -1;
+    redeTemporario = temporario;
+
+    betaRev = 0;
+    betaRevini = 0;
+    titRev = 1.;
+    titRevini = 1.;
+    dtCFLTotal = 0.;
+    dtSimTotal = 0.;
+
+    bloq = vbloq;
+
+    vg1dSP = Vvg1dSP;
+
+    if (TD >= 0)
+        arq.tabelaDinamica = TD;
 
     redeParalelaCCsecundario = -1;
     redeParalelaP = -1;
     redeParalelaS = -1;
     montasistema(compfonte, posicfonte, nfontes);
 }
-/// Empties the trend, transient-trend and profile bookkeeping of both lines,
-/// zeroes the column-annulus and network coupling indices and the profile
-/// counters, and nulls the PVTSim saturation tables -- the default constructor's
-/// share of the state montasistema later fills.
-void SProd::nullOutputCouplingAndSaturationState() {
-    ncelperftransg = 0;
-    TrendLengthG = 0;
-    MatTrendG = 0;
-    resettrendg = 0;
-    ntrendg = 0;
-    ntrendgB = 0;
-    TrendLengthTransG = 0;
-    MatTrendTransG = 0;
-    resettrendtransg = 0;
-    ntrendtransg = 0;
-    ntrendtransgB = 0;
-    ncelperftransp = 0;
-    TrendLengthP = 0;
-    MatTrendP = 0;
-    resettrend = 0;
-    ntrend = 0;
-    ntrendB = 0;
-    TrendLengthTransP = 0;
-    MatTrendTransP = 0;
-    resettrendtrans = 0;
-    ntrendtrans = 0;
-    ntrendtransB = 0;
-
-    AnulaColunaIni = 0;
-    AnulaColunaFim = 0;
-    ColunaAnulaIni = 0;
-    ColunaAnulaFim = 0;
-    verificaAcop = 0;
-    verificaAcopRedeP = 0;
-    verificaAcopRedeS = 0;
-    SecPrimIniRedeP = 0;
-    SecPrimFimRedeP = 0;
-    PrimSecIniRedeP = 0;
-    PrimSecFimRedeP = 0;
-    kontaTempoProf = 0;
-    //kontaTempoCelUni = 0;
-    kontaTempoProfG = 0;
-    kontaTempoTransProf = 0;
-    kontaTempoTransProfG = 0;
-
-    LerPB = 0;
-    PBPVTSim = 0;
-    TBPVTSim = 0;
-    RSLivia = 0;
-    lerRS = 0;
-}
 
 SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 + 1),
                  matglobG(3 * 1, 5, 5), termolivreG(3 * 1),
                  matglobP(2 * 1, 3, 2), termolivreP(2 * 1) {
     resolveDriftSelectors();
+    resetRunState();
     tfinal = 0;
     dtini = 0;
     contaLog = 0;
@@ -284,42 +239,14 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
     jTotal = 0.;
 
     alfTotal = 0.;
-    kontaTempoProf = 0;
-    //kontaTempoCelUni = 0;
     dt = 0.;
     nabreM1 = 0;
     nfechaM1 = 0;
-    zdranP = 0;
-    dzdpP = 0;
-    dzdtP = 0;
-    cpg = 0;
-    cpl = 0;
-    drholdT = 0;
     HLat = 0;
-    npontos = 0;
-    nfluP = 0;
-    chokeVGL = 0;
-    posicVGLP = 0;
-    posicVGLG = 0;
-    fechaM1 = 0;
-    abreM1 = 0;
-    celulaG = 0;
-    celula = 0;
-    celInter = 1e7;
-    dtInter = 0.;
-    velInter = 0.;
 
     celInterIni = 0.;
     dtInterIni = 0.;
     velInterIni = 0.;
-
-    ModelCp = 0;
-    Modeljtl = 0;
-    CalcLat = 0;
-    trackRGO = 0;
-    trackDeng = 0;
-    ninjgas = 0;
-    lingas = 0;
     injPoc = 0;
 
     indTramo = -1;
@@ -330,8 +257,6 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
 
     pGSup = 0;
     pGSupIni = 0.;
-    tGSup = 0;
-    tGSupIni = 0;
     temperatura = 0;
 
     masSup = 0;
@@ -360,98 +285,42 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
     indpigP = 0;
     indpigPini = indpigP;
     npig = 0;
-    receb = 0;
 
-    nullOutputCouplingAndSaturationState();
+    AnulaColunaIni = 0;
+    AnulaColunaFim = 0;
+    ColunaAnulaIni = 0;
+    ColunaAnulaFim = 0;
+    verificaAcop = 0;
+    verificaAcopRedeP = 0;
+    verificaAcopRedeS = 0;
+    SecPrimIniRedeP = 0;
+    SecPrimFimRedeP = 0;
+    PrimSecIniRedeP = 0;
+    PrimSecFimRedeP = 0;
+    kontaTempoProf = 0;
+    //kontaTempoCelUni = 0;
+    kontaTempoProfG = 0;
+    kontaTempoTransProf = 0;
+    kontaTempoTransProfG = 0;
+    RSLivia = 0;
+    lerRS = 0;
 
     noextremo = 1;
     noinicial = 1;
     derivaAnel = -1;
 
-    fontemassPRBuf = 0.;
-    fontemassCRBuf = 0.;
-    fontemassGRBuf = 0.;
-
-    presE = -1;
-    tempE = -1;
-    titE = -1;
-    betaE = -1;
-    alfE = -1;
-    presEini = -1;
-    tempEini = -1;
-    titEini = -1;
-    betaEini = -1;
-    alfEini = -1;
-
     titRev = 1.;
     titRevini = 1.;
-
-    tempMedContDesc = 10.;
-    maxVecContDesc = 1000;
-    vazmedDesc = 0;
-    tempmedDEsc = 0;
     betaRev = 0.;
     betaRevini = 1.;
     redeTemporario = 0;
-
-    dtCFLMed = 1.;
-    dtSimMed = 1.;
-    restriDt = 0;
-    kontarestriDt = 0;
     dtCFLTotal = 0.;
     dtSimTotal = 0.;
-    dtauxCFL = 0.;
-    dtauxFinal = 0.;
-
-    kimpT = 0.;
-
-    kontaGolfada = 1000.;
-
-    mudaModoChk = 0;
-    mudaModoChkini = 0;
-
-    momentoDesesp = 0;
-
-    modeloCompleto = 1;
-    modeloCompleto0 = 1;
-    kontaMudaModelo = 0;
-    kontarestriSegrega = 0;
-
-    DpMaxMed = 1.;
-    DTMaxMed = 1.;
-
-    chuteHol = -1.;
-
-    buscaIni = 0;
-    ntabDin = 0;
-
-    for (int i = 0; i < 10; i++) {
-        vRazMast0[i] = 0.;
-        vRazMast1[i] = 0.;
-        vRazMastCrit[i] = 0.5;
-    }
-
-    kontaRenovaComp = 0;
 
     bloq = 0;
 
-    fluiRevRede = ProFlu();
-    tempRev = 0.;
-    revPerm = 0;
-
     vg1dSP = 0;
-
-    nCelulaPoisson2D = 0;
-
-    trocaTermicaLenta = 0.01;
-
-    semTermo = 0;
     dtCicMin = dt;
-
-    monitConvPerm = 1000.;
-    monitConvPermBase = 1.;
-
-    alteraTempo = 0;
 
     redeParalelaCCsecundario = -1;
     redeParalelaP = -1;
@@ -576,149 +445,23 @@ SProd &SProd::operator=(const SProd &sp) {
     matglobG = sp.matglobG;
     termolivreG = sp.termolivreG;
     vg1dSP = sp.vg1dSP;
-    zdranP = 0;
-    dzdpP = 0;
-    dzdtP = 0;
-    cpg = 0;
-    cpl = 0;
-    drholdT = 0;
-    npontos = 0;
-    nfluP = 0;
-    ModelCp = 0;
-    Modeljtl = 0;
-    CalcLat = 0;
-    LerPB = 0;
-    PBPVTSim = 0;
-    TBPVTSim = 0;
-    trackRGO = 0;
-    trackDeng = 0;
-    ninjgas = 0;
-    lingas = 0;
-    chokeVGL = 0;
-    posicVGLP = 0;
-    posicVGLG = 0;
-    receb = 0;
-    fechaM1 = 0;
-    abreM1 = 0;
-    celulaG = 0;
-    celula = 0;
-    celInter = 1e7;
-    dtInter = 0.;
-    velInter = 0.;
+    resetRunState();
     celInterIni = celInter;
     dtInterIni = dtInter;
     velInterIni = velInter;
 
-    ncelperftransg = 0;
-    TrendLengthG = 0;
-    MatTrendG = 0;
-    resettrendg = 0;
-    ntrendg = 0;
-    ntrendgB = 0;
-    TrendLengthTransG = 0;
-    MatTrendTransG = 0;
-    resettrendtransg = 0;
-    ntrendtransg = 0;
-    ntrendtransgB = 0;
-    ncelperftransp = 0;
-    TrendLengthP = 0;
-    MatTrendP = 0;
-    resettrend = 0;
-    ntrend = 0;
-    ntrendB = 0;
-    TrendLengthTransP = 0;
-    MatTrendTransP = 0;
-    resettrendtrans = 0;
-    ntrendtrans = 0;
-    ntrendtransB = 0;
-
     noextremo = sp.noextremo;
     noinicial = sp.noinicial;
     derivaAnel = sp.derivaAnel;
-
-    fontemassPRBuf = 0.;
-    fontemassCRBuf = 0.;
-    fontemassGRBuf = 0.;
-
-    presE = -1;
-    tempE = -1;
-    titE = -1;
-    betaE = -1;
-    alfE = -1;
-    presEini = -1;
-    tempEini = -1;
-    titEini = -1;
-    betaEini = -1;
-    alfEini = -1;
 
     betaRev = sp.betaRev;
     betaRevini = sp.betaRevini;
     titRev = sp.titRev;
     titRevini = sp.titRevini;
 
-    tempMedContDesc = 10.;
-    maxVecContDesc = 1000;
-    vazmedDesc = 0;
-    tempmedDEsc = 0;
-
-    tGSup = 0.;
-    tGSupIni = 0.;
-
-    dtCFLMed = 1.;
-    dtSimMed = 1.;
-    restriDt = 0;
-    kontarestriDt = 0;
-    dtauxCFL = 0.;
-    dtauxFinal = 0.;
-
-    kimpT = 0.;
-    kontaGolfada = 1000.;
-
-    mudaModoChk = 0;
-    mudaModoChkini = 0;
-
-    momentoDesesp = 0;
-
-    modeloCompleto = 1;
-    modeloCompleto0 = 1;
-    kontaMudaModelo = 0;
-    kontarestriSegrega = 0;
-
-    DpMaxMed = 1.;
-    DTMaxMed = 1.;
-
-    chuteHol = -1.;
-
-    buscaIni = 0;
-
-    for (int i = 0; i < 10; i++) {
-        vRazMast0[i] = 0.;
-        vRazMast1[i] = 0.;
-        vRazMastCrit[i] = 0.5;
-    }
-
-    kontaRenovaComp = 0;
-
     bloq = sp.bloq;
 
-    fluiRevRede = ProFlu();
-    tempRev = 0.;
-    revPerm = 0;
-
-    ntabDin = 0;
-
-    nCelulaPoisson2D = 0;
-
-    trocaTermicaLenta = 0.01;
-
-    semTermo = 0;
-
     dtCicMin = sp.dtCicMin;
-
-    monitConvPerm = 1000.;
-    monitConvPermBase = 1.;
-
-    alteraTempo = 0;
     redeParalelaCCsecundario = sp.redeParalelaCCsecundario;
     redeParalelaP = sp.redeParalelaP;
     redeParalelaS = sp.redeParalelaS;
@@ -759,149 +502,23 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
     matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5);
     termolivreG = Vcr<double>(3 * arq.ncelg);
     vg1dSP = arq.vg1dSP;
-    zdranP = 0;
-    dzdpP = 0;
-    dzdtP = 0;
-    cpg = 0;
-    cpl = 0;
-    drholdT = 0;
-    npontos = 0;
-    nfluP = 0;
-    ModelCp = 0;
-    Modeljtl = 0;
-    CalcLat = 0;
-    LerPB = 0;
-    PBPVTSim = 0;
-    TBPVTSim = 0;
-    trackRGO = 0;
-    trackDeng = 0;
-    ninjgas = 0;
-    lingas = 0;
-    chokeVGL = 0;
-    posicVGLP = 0;
-    posicVGLG = 0;
-    receb = 0;
-    fechaM1 = 0;
-    abreM1 = 0;
-    celulaG = 0;
-    celula = 0;
-    celInter = 1e7;
-    dtInter = 0.;
-    velInter = 0.;
+    resetRunState();
     celInterIni = celInter;
     dtInterIni = dtInter;
     velInterIni = velInter;
 
-    ncelperftransg = 0;
-    TrendLengthG = 0;
-    MatTrendG = 0;
-    resettrendg = 0;
-    ntrendg = 0;
-    ntrendgB = 0;
-    TrendLengthTransG = 0;
-    MatTrendTransG = 0;
-    resettrendtransg = 0;
-    ntrendtransg = 0;
-    ntrendtransgB = 0;
-    ncelperftransp = 0;
-    TrendLengthP = 0;
-    MatTrendP = 0;
-    resettrend = 0;
-    ntrend = 0;
-    ntrendB = 0;
-    TrendLengthTransP = 0;
-    MatTrendTransP = 0;
-    resettrendtrans = 0;
-    ntrendtrans = 0;
-    ntrendtransB = 0;
-
     noextremo = vnoextremo;
     noinicial = vnoinicial;
     derivaAnel = vderivaAnel;
-
-    fontemassPRBuf = 0.;
-    fontemassCRBuf = 0.;
-    fontemassGRBuf = 0.;
-
-    presE = -1;
-    tempE = -1;
-    titE = -1;
-    betaE = -1;
-    alfE = -1;
-    presEini = -1;
-    tempEini = -1;
-    titEini = -1;
-    betaEini = -1;
-    alfEini = -1;
 
     betaRev = vbetaRev;
     betaRevini = vbetaRevini;
     titRev = vtitRev;
     titRevini = vtitRevini;
 
-    tempMedContDesc = 10.;
-    maxVecContDesc = 1000;
-    vazmedDesc = 0;
-    tempmedDEsc = 0;
-
-    tGSup = 0.;
-    tGSupIni = 0.;
-
-    dtCFLMed = 1.;
-    dtSimMed = 1.;
-    restriDt = 0;
-    kontarestriDt = 0;
-    dtauxCFL = 0.;
-    dtauxFinal = 0.;
-
-    kimpT = 0.;
-    kontaGolfada = 1000.;
-
-    mudaModoChk = 0;
-    mudaModoChkini = 0;
-
-    momentoDesesp = 0;
-
-    modeloCompleto = 1;
-    modeloCompleto0 = 1;
-    kontaMudaModelo = 0;
-    kontarestriSegrega = 0;
-
-    DpMaxMed = 1.;
-    DTMaxMed = 1.;
-
-    chuteHol = -1.;
-
-    buscaIni = 0;
-
-    for (int i = 0; i < 10; i++) {
-        vRazMast0[i] = 0.;
-        vRazMast1[i] = 0.;
-        vRazMastCrit[i] = 0.5;
-    }
-
-    kontaRenovaComp = 0;
-
     bloq = vbloq;
 
-    fluiRevRede = ProFlu();
-    tempRev = 0.;
-    revPerm = 0;
-
-    ntabDin = 0;
-
-    nCelulaPoisson2D = 0;
-
-    trocaTermicaLenta = 0.01;
-
-    semTermo = 0;
-
     dtCicMin = vdtCicMin;
-
-    monitConvPerm = 1000.;
-    monitConvPermBase = 1.;
-
-    alteraTempo = 0;
 
     redeParalelaCCsecundario = -1;
     redeParalelaP = -1;
