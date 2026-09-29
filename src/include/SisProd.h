@@ -1150,6 +1150,10 @@ class SProd {
     /// Creates an empty production-system object.
     SProd();
 
+    /// Not copyable: the object owns raw arrays, which operator= rebuilds
+    /// instead of sharing.
+    SProd(const SProd &) = delete;
+
     /// Releases dynamically allocated simulation buffers and cell arrays.
     ~SProd() {
         if (arq.lingas > 0)
