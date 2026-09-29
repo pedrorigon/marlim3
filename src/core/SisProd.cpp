@@ -458,6 +458,50 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
     redeParalelaS = -1;
 }
 
+namespace {
+
+/// Allocates one set of trend matrices: for each of the count trends, length[i]
+/// rows of rowWidth(i) values whose first sentinelCount(i) hold the -10000
+/// sentinel, and the reset timers and sample counts, zeroed.
+template <typename RowWidth, typename SentinelCount>
+void allocateTrendSet(int count, const int *length, RowWidth rowWidth, SentinelCount sentinelCount,
+                      double ***&matrices, double *&resetTimers, int *&counts, int *&bufferedCounts) {
+    resetTimers = new double[count];
+    counts = new int[count];
+    bufferedCounts = new int[count];
+    matrices = new double **[count];
+    for (int i = 0; i < count; i++) {
+        matrices[i] = new double *[length[i]];
+        for (int j = 0; j < length[i]; j++) {
+            matrices[i][j] = new double[rowWidth(i)];
+            for (int k = 0; k < sentinelCount(i); k++)
+                matrices[i][j][k] = -10000.;
+        }
+        resetTimers[i] = 0;
+        counts[i] = 0;
+        bufferedCounts[i] = 0;
+    }
+}
+
+/// Frees one set of trend matrices and its bookkeeping.
+void releaseTrendSet(int count, double ***matrices, int *length, double *resetTimers, int *counts,
+                     int *bufferedCounts) {
+    for (int i = 0; i < count && matrices && length; i++) {
+        if (matrices[i]) {
+            for (int j = 0; j < length[i]; j++)
+                delete[] matrices[i][j];
+            delete[] matrices[i];
+        }
+    }
+    delete[] matrices;
+    delete[] length;
+    delete[] resetTimers;
+    delete[] counts;
+    delete[] bufferedCounts;
+}
+
+}  // namespace
+
 /// Frees every array this object owns, reading its current sizes and switches.
 /// An array added to the construction must be released here too.
 void SProd::releaseOwnedStorage() {
@@ -479,86 +523,16 @@ void SProd::releaseOwnedStorage() {
     if (arq.nperfistransg > 0 && arq.lingas > 0)
         delete[] ncelperftransg;
 
-    if (arq.ntendp > 0 && redeTemporario == 0) {
-        for (int i = 0; i < arq.ntendp && MatTrendP && TrendLengthP; i++) {
-            if (MatTrendP[i]) {
-                for (int j = 0; j < TrendLengthP[i]; j++)
-                    delete[] MatTrendP[i][j];
-                delete[] MatTrendP[i];
-            }
-        }
-        if (MatTrendP!=0)
-            delete[] MatTrendP;
-        if (TrendLengthP!=0)
-            delete[] TrendLengthP;
-        if (resettrend!=0)
-            delete[] resettrend;
-        if (ntrend!=0)
-            delete[] ntrend;
-        if (ntrendB!=0)
-            delete[] ntrendB;
-    }
-
-
-    if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0) {
-        for (int i = 0; i < arq.ntendg && MatTrendG && TrendLengthG; i++) {
-            if (MatTrendG[i]) {
-                for (int j = 0; j < TrendLengthG[i]; j++)
-                    delete[] MatTrendG[i][j];
-                delete[] MatTrendG[i];
-            }
-        }
-        if (MatTrendG!=0)
-            delete[] MatTrendG;
-        if (TrendLengthG!=0)
-            delete[] TrendLengthG;
-        if (resettrendg!=0)
-            delete[] resettrendg;
-        if (ntrendg!=0)
-            delete[] ntrendg;
-        if (ntrendgB!=0)
-            delete[] ntrendgB;
-    }
-
-    if (arq.ntendtransp > 0 && redeTemporario == 0) {
-        for (int i = 0; i < arq.ntendtransp && MatTrendTransP && TrendLengthTransP; i++) {
-            if (MatTrendTransP[i]) {
-                for (int j = 0; j < TrendLengthTransP[i]; j++)
-                    delete[] MatTrendTransP[i][j];
-                delete[] MatTrendTransP[i];
-            }
-        }
-        if (MatTrendTransP!=0)
-            delete[] MatTrendTransP;
-        if (TrendLengthTransP!=0)
-            delete[] TrendLengthTransP;
-        if (resettrendtrans!=0)
-            delete[] resettrendtrans;
-        if (ntrendtrans!=0)
-            delete[] ntrendtrans;
-        if (ntrendtransB!=0)
-            delete[] ntrendtransB;
-    }
-
-    if (arq.ntendtransg > 0 && redeTemporario == 0) {
-        for (int i = 0; i < arq.ntendtransg && MatTrendTransG && TrendLengthTransG; i++) {
-            if (MatTrendTransG[i]) {
-                for (int j = 0; j < TrendLengthTransG[i]; j++)
-                    delete[] MatTrendTransG[i][j];
-                delete[] MatTrendTransG[i];
-            }
-        }
-        if (MatTrendTransG!=0)
-            delete[] MatTrendTransG;
-        if (TrendLengthTransG!=0)
-            delete[] TrendLengthTransG;
-        if (resettrendtransg!=0)
-            delete[] resettrendtransg;
-        if (ntrendtransg!=0)
-            delete[] ntrendtransg;
-        if (ntrendtransgB!=0)
-            delete[] ntrendtransgB;
-    }
+    if (arq.ntendp > 0 && redeTemporario == 0)
+        releaseTrendSet(arq.ntendp, MatTrendP, TrendLengthP, resettrend, ntrend, ntrendB);
+    if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0)
+        releaseTrendSet(arq.ntendg, MatTrendG, TrendLengthG, resettrendg, ntrendg, ntrendgB);
+    if (arq.ntendtransp > 0 && redeTemporario == 0)
+        releaseTrendSet(arq.ntendtransp, MatTrendTransP, TrendLengthTransP, resettrendtrans, ntrendtrans,
+                        ntrendtransB);
+    if (arq.ntendtransg > 0 && redeTemporario == 0)
+        releaseTrendSet(arq.ntendtransg, MatTrendTransG, TrendLengthTransG, resettrendtransg, ntrendtransg,
+                        ntrendtransgB);
 
     int ndiv = arq.tabent.npont - 1;
     if (CalcLat > 0 && arq.flashCompleto == 0) {
@@ -2166,69 +2140,22 @@ void SProd::allocateEventProfileAndTrendArrays() {
             TrendLengthP = new int[arq.ntendp];
             for (int i = 0; i < arq.ntendp; i++)
                 TrendLengthP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); // round(arq.tfinal / arq.trendp[i].dt);
+            allocateTrendSet(arq.ntendp, TrendLengthP, [&](int i) { return arq.nvartrendp[i] + 2; },
+                             [&](int i) { return arq.nvartrendp[i] + 1; }, MatTrendP, resettrend, ntrend, ntrendB);
         }
-        if (arq.ntendp > 0) {
-            resettrend = new double[arq.ntendp];
-            ntrend = new int[arq.ntendp];
-            ntrendB = new int[arq.ntendp];
-            MatTrendP = new double **[arq.ntendp];
-            for (int i = 0; i < arq.ntendp; i++) {
-                MatTrendP[i] = new double *[TrendLengthP[i]];
-                for (int j = 0; j < TrendLengthP[i]; j++) {
-                    MatTrendP[i][j] = new double[arq.nvartrendp[i] + 2];
-                    for (int k = 0; k <= arq.nvartrendp[i]; k++)
-                        MatTrendP[i][j][k] = -10000.;
-                }
-                resettrend[i] = 0;
-                ntrend[i] = 0;
-                ntrendB[i] = 0;
-            }
-        }
-
         if (arq.ntendg > 0) {
             TrendLengthG = new int[arq.ntendg];
             for (int i = 0; i < arq.ntendg; i++)
                 TrendLengthG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt);
-        }
-        if (arq.ntendg > 0) {
-            resettrendg = new double[arq.ntendg];
-            ntrendg = new int[arq.ntendg];
-            ntrendgB = new int[arq.ntendg];
-            MatTrendG = new double **[arq.ntendg];
-            for (int i = 0; i < arq.ntendg; i++) {
-                MatTrendG[i] = new double *[TrendLengthG[i]];
-                for (int j = 0; j < TrendLengthG[i]; j++) {
-                    MatTrendG[i][j] = new double[arq.nvartrendg[i] + 2];
-                    for (int k = 0; k <= arq.nvartrendg[i]; k++)
-                        MatTrendG[i][j][k] = -10000.;
-                }
-                resettrendg[i] = 0;
-                ntrendg[i] = 0;
-                ntrendgB[i] = 0;
-            }
+            allocateTrendSet(arq.ntendg, TrendLengthG, [&](int i) { return arq.nvartrendg[i] + 2; },
+                             [&](int i) { return arq.nvartrendg[i] + 1; }, MatTrendG, resettrendg, ntrendg, ntrendgB);
         }
         if (arq.ntendtransp > 0) {
             TrendLengthTransP = new int[arq.ntendtransp];
             for (int i = 0; i < arq.ntendtransp; i++)
                 TrendLengthTransP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt);
-        }
-        if (arq.ntendtransp > 0) {
-            resettrendtrans = new double[arq.ntendtransp];
-            ntrendtrans = new int[arq.ntendtransp];
-            ntrendtransB = new int[arq.ntendtransp];
-            MatTrendTransP = new double **[arq.ntendtransp];
-            for (int i = 0; i < arq.ntendtransp; i++) {
-                MatTrendTransP[i] = new double *[TrendLengthTransP[i]];
-                for (int j = 0; j < TrendLengthTransP[i]; j++)
-                    MatTrendTransP[i][j] = new double[2];
-                for (int j = 0; j < TrendLengthTransP[i]; j++)
-                    for (int k = 0; k < 2; k++)
-                        MatTrendTransP[i][j][k] = -10000.;
-
-                resettrendtrans[i] = 0;
-                ntrendtrans[i] = 0;
-                ntrendtransB[i] = 0;
-            }
+            allocateTrendSet(arq.ntendtransp, TrendLengthTransP, [](int) { return 2; }, [](int) { return 2; },
+                             MatTrendTransP, resettrendtrans, ntrendtrans, ntrendtransB);
         }
         if (arq.ntendtransg > 0 && arq.lingas > 0) {
             TrendLengthTransG = new int[arq.ntendtransg];
@@ -2236,22 +2163,8 @@ void SProd::allocateEventProfileAndTrendArrays() {
                 TrendLengthTransG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt);
         }
         if (arq.ntendtransg > 0) {
-            resettrendtransg = new double[arq.ntendtransg];
-            ntrendtransg = new int[arq.ntendtransg];
-            ntrendtransgB = new int[arq.ntendtransg];
-            MatTrendTransG = new double **[arq.ntendtransg];
-            for (int i = 0; i < arq.ntendtransg; i++) {
-                MatTrendTransG[i] = new double *[TrendLengthTransG[i]];
-                for (int j = 0; j < TrendLengthTransG[i]; j++)
-                    MatTrendTransG[i][j] = new double[2];
-                for (int j = 0; j < TrendLengthTransG[i]; j++)
-                    for (int k = 0; k < 2; k++)
-                        MatTrendTransG[i][j][k] = -10000.;
-
-                resettrendtransg[i] = 0;
-                ntrendtransg[i] = 0;
-                ntrendtransgB[i] = 0;
-            }
+            allocateTrendSet(arq.ntendtransg, TrendLengthTransG, [](int) { return 2; }, [](int) { return 2; },
+                             MatTrendTransG, resettrendtransg, ntrendtransg, ntrendtransgB);
         }
     }
 }
