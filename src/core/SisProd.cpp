@@ -1073,7 +1073,6 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     reinicia = 0;
     masChkSupini = 0;
     betaRev = 0.;
-    trackRGO = arq.trackRGO;
     trackDeng = arq.trackDeng;
     ninjgas = arq.ninjgas;
     lingas = arq.lingas;
@@ -1084,9 +1083,6 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     if (arq.flashCompleto == 1)
         arq.trackRGO = 1;
     trackRGO = arq.trackRGO;
-    trackDeng = arq.trackDeng;
-    ninjgas = arq.ninjgas;
-    lingas = arq.lingas;
     injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
     arq.fluc.injPoc = injPoc;
     if (arq.flashCompleto == 1)
@@ -1108,10 +1104,8 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     }
 
     npontos = arq.tabent.npont;
-    ModelCp = arq.modelcp;
     if (arq.modelcp > 0)
         arq.geraTabCp();
-    Modeljtl = arq.modelJTL;
     if (arq.modelJTL == 1)
         arq.geraTabDrholDt();
     cpg = arq.cpg;
@@ -1201,7 +1195,6 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
             else
                 celula[0].acsr.tipo = kAccessoryMultipleSource;
             InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injm.condTermo = 1;
             celula[0].acsr.injm = injmassMRT;
             InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
             celula[0].acsr.injl = injliqMRT;
@@ -1212,7 +1205,6 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
             injgasMRT.seco = 0;
             celula[0].acsr.injg = injgasMRT;
             InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-            celula[0].acsr.injm.condTermo = 1;
             celula[0].acsr.injm = injmassMRT;
             InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
             celula[0].acsr.injl = injliqMRT;
@@ -1232,7 +1224,6 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
         else
             celula[1].acsr.tipo = kAccessoryMultipleSource;
         InjMult injmassMRT(0, 0, 0, celula[0].temp, celula[0].flui, celula[0].fluicol);
-        celula[1].acsr.injm.condTermo = 1;
         celula[1].acsr.injm = injmassMRT;
         InjLiq injliqMRT(0, 0, 0, celula[0].flui, celula[0].fluicol);
         celula[1].acsr.injl = injliqMRT;
@@ -1314,10 +1305,11 @@ void SProd::buildGasLiftLine() {
                 arq.valvgl[i].frec = 0.;
                 arq.valvgl[i].cd = 1.;
             }
-            chokeVGL[i] = ChokeGas(arq.flug, M_PI * diaG * diaG / 4.,
+            double throatArea = M_PI * diaG * diaG / 4.;
+            chokeVGL[i] = ChokeGas(arq.flug, throatArea,
                                    arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
                                    tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
-                                   (M_PI * diaG * diaG / 4.) / arq.valvgl[i].razarea,
+                                   throatArea / arq.valvgl[i].razarea,
                                    arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
             celulaG[posicVGLG[i]].pEstag = chokeVGL[i].presEstag;
             celulaG[posicVGLG[i]].tEstag = chokeVGL[i].tempEstag;
@@ -1413,41 +1405,14 @@ void SProd::validateSetupAndApplyInitialState() {
 /// that side.
 void SProd::buildDynamicTablesAndInclinations() {
     if (arq.tabelaDinamica == 1) {
-        int minNPontos = 0;
         ntabDin = 1;
-        tabelaDinamica temp;
-        temp.npontosP = minNPontos;
-        temp.npontosT = minNPontos;
-        temp.celIni = 0;
-        temp.rhogF = 0;
-        temp.rholF = 0;
-        temp.DrhogDpF = 0;
-        temp.DrhogDtF = 0;
-        temp.DrholDpF = 0;
-        temp.DrholDtF = 0;
-        temp.valBO = 0;
-        temp.HgF = 0;
-        temp.HlF = 0;
-        temp.cpgF = 0;
-        temp.cplF = 0;
-        temp.valZ = 0;
-        temp.valdZdT = 0;
-        temp.valdZdP = 0;
-        temp.tit = 0;
-        temp.rs = 0;
-        temp.viscG = 0;
-        temp.viscO = 0;
-        temp.TBF = 0;
-        temp.PBF = 0;
-        tabDin.push_back(temp);
+        tabDin.push_back(tabelaDinamica());
         for (int i = 1; i < ncel; i++) {
             if ((celula[i].acsr.tipo == kAccessoryGasInjection) ||
                 (celula[i].acsr.tipo == kAccessoryLiquidInjection) ||
                 celula[i].acsr.tipo == kAccessoryInflowPerformance ||
                 (celula[i].acsr.tipo == kAccessoryMultipleSource) || celula[i].acsr.tipo == kAccessoryLeak || celula[i].acsr.tipo == kAccessoryRadialPorous || celula[i].acsr.tipo == kAccessoryPorous2D) {
                 tabelaDinamica temp;
-                temp.npontosP = minNPontos;
-                temp.npontosT = minNPontos;
                 temp.celIni = i + 1;
                 tabDin[ntabDin - 1].celFim = i;
                 tabDin.push_back(temp);
@@ -1639,7 +1604,6 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
         celula[0].flui = celula[0].acsr.ipr.FluidoPro;
     } else if (celula[0].acsr.tipo == kAccessoryMultipleSource) {
         celula[0].flui = celula[0].acsr.injm.FluidoPro;
-        ;
     } else if (celula[0].acsr.tipo == kAccessoryRadialPorous) {
         celula[0].flui = celula[0].acsr.radialPoro.flup;
     } else if (celula[0].acsr.tipo == kAccessoryPorous2D) {
