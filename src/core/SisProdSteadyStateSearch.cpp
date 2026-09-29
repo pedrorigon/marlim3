@@ -471,14 +471,14 @@ bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, double
             kontaiter++; // 50 iteracoes no maximo
         }
         while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter < 100) { // estimativa de pressao de fundo ainda baixa
-            if (state.march.cells[0].acsr.tipo == 1 || state.march.cells[0].acsr.tipo == 2 || state.march.cells[0].acsr.tipo == 10)
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
                 pchuteAux *= 1.01; // aumentando a estimativa
             // verificando se este aumento ultrapassa o limite de pressao de uma eventual IPR no
             // fundo
             int limpres = 0;
-            if (state.march.cells[0].acsr.tipo == 3 &&
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchuteAux) < -0.01 * state.march.cells[0].acsr.ipr.Pres) {
 
                 pchuteAux = (10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
@@ -561,7 +561,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
             pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) > -0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = (10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchuteAux > 1.01 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -590,7 +590,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
             pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) > -0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = (10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchuteAux > 1.01 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -608,7 +608,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
 void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
 
-        if (state.march.cells[0].acsr.tipo == 2 && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
+        if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
             // este espaco faz uma estimativa de quanto deve ser a perda de carga media
             // a partir do valor da vazao no inicio da tubulacao, isto e feito apenas
             // se existir uma fonte de liquido, celula[0].acsr.tipo == 2
@@ -701,7 +701,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
             // para evitar isto, se corrige a pressao para um valor proximo da
             // pressao estatica da IPR da celula
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -0.01 * state.march.cells[i - 1].acsr.ipr.Pres) && i == 1) {
                 pchute = (10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchute > 1.1 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -797,7 +797,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
         // entre o alto demais e o baixo demais
         if ((fabs(pchute - pchuteAux) / pchute) < 0.001 && marchResidual < -0.9e10) {
             pchute = 1.05 * pchute;
-            if (state.march.cells[0].acsr.tipo == 3 && (state.march.cells[0].acsr.ipr.Pres - pchute) > 0.00 * state.march.cells[0].acsr.ipr.Pres) {
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[0].acsr.ipr.Pres - pchute) > 0.00 * state.march.cells[0].acsr.ipr.Pres) {
                 pchute = (10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchute > 1.01 * state.march.cells[0].acsr.ipr.Pres)
                     pchute = 1.01 * state.march.cells[0].acsr.ipr.Pres;
@@ -936,7 +936,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
         pchuteAux = pchute2;
         pchute2 *= amplifica; // Aumentando a pressao na busca de marchResidual>0
         int limpres = 0;
-        if (state.march.cells[0].acsr.tipo == 3 &&
+        if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
             (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
             if (chute < 0) {
                 pchute2 = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
@@ -1000,7 +1000,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
         }
         if (marchResidual > 0 && marchResidual < 0.9e10) {
             positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
-            if (marchResidual > val0 && state.march.cells[0].acsr.tipo == 3 && state.march.input.lingas == 0) {
+            if (marchResidual > val0 && state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && state.march.input.lingas == 0) {
 
                 kontaReverso++;
                 if (kontaReverso == 2) {
@@ -1105,7 +1105,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
         }
         if (marchResidual < 0 && marchResidual > -0.9e10) {
             negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
-            if (marchResidual < val0 && state.march.cells[0].acsr.tipo == 3 && state.march.input.lingas == 0) {
+            if (marchResidual < val0 && state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && state.march.input.lingas == 0) {
 
                 kontaReverso++;
                 if (kontaReverso == 2) {
@@ -1272,14 +1272,14 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
             kontaiter++; // 50 iteracoes no maximo
         }
         while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // estimativa de pressao de fundo ainda baixa
-            if (state.march.cells[0].acsr.tipo == 1 || state.march.cells[0].acsr.tipo == 2 || state.march.cells[0].acsr.tipo == 10)
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
                 pchuteAux *= 1.01; // aumentando a estimativa
             // verificando se este aumento ultrapassa o limite de pressao de uma eventual IPR no
             // fundo
             int limpres = 0;
-            if (state.march.cells[0].acsr.tipo == 3 &&
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[0].acsr.ipr.Pres) {
 
                 pchuteAux = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
@@ -1411,7 +1411,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
             pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -1447,7 +1447,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
             pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -1471,7 +1471,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
 void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
 
-        if (state.march.cells[0].acsr.tipo == 2 && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
+        if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
             completionFractionGuess = state.march.cells[0].acsr.injl.bet;
             // este espaco faz uma estimativa de quanto deve ser a perda de carga media
             // a partir do valor da vazao no inicio da tubulacao, isto e feito apenas
@@ -1565,7 +1565,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
             // para evitar isto, se corrige a pressao para um valor proximo da
             // pressao estatica da IPR da celula
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres) && i == 1) {
                 double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * 86400;
                 pchute = -(flowRateGuess / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
@@ -1670,7 +1670,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
         // entre o alto demais e o baixo demais
         if ((fabs(pchute - pchuteAux) / pchute) < 0.001 && marchResidual < -0.9e10) {
             pchute = 1.05 * pchute;
-            if (state.march.cells[0].acsr.tipo == 3 && (state.march.cells[0].acsr.ipr.Pres - pchute) < 0.00 * state.march.cells[0].acsr.ipr.Pres) {
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[0].acsr.ipr.Pres - pchute) < 0.00 * state.march.cells[0].acsr.ipr.Pres) {
                 pchute = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchute < 0.99 * state.march.cells[0].acsr.ipr.Pres)
                     pchute = 0.99 * state.march.cells[0].acsr.ipr.Pres;
@@ -1764,7 +1764,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
         if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
         int limpres = 0;
-        if (state.march.cells[0].acsr.tipo == 3 &&
+        if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
             (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
             if (chute < 0) {
                 pchute2 = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
@@ -1878,7 +1878,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
             // que leva a marchResidual>0 e a pressao alta demais
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
-            if (state.march.cells[0].acsr.tipo == 3 &&
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
                 pchute2 = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchute2 < 0.999 * state.march.cells[0].acsr.ipr.Pres)
@@ -1964,7 +1964,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
         // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
         if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
-        if (state.march.cells[0].acsr.tipo == 3 &&
+        if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
             (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
             pchute2 = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
             if (pchute2 < 0.999 * state.march.cells[0].acsr.ipr.Pres)
@@ -2026,7 +2026,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
             // que leva a marchResidual<0 e a pressao baixa demais
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
-            if (state.march.cells[0].acsr.tipo == 3 &&
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
                 pchute2 = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchute2 < 0.999 * state.march.cells[0].acsr.ipr.Pres)
@@ -2122,13 +2122,13 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, doub
             kontaiter++; // 50 iteracoes no maximo
         }
         while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // estimativa de pressao de fundo ainda baixa
-            if (state.march.cells[0].acsr.tipo == 1 || state.march.cells[0].acsr.tipo == 2 || state.march.cells[0].acsr.tipo == 10)
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
                 pchuteAux *= 1.01; // aumentando a estimativa
             // verificando se este aumento ultrapassa o limite de pressao de uma eventual IPR no
             // fundo
-            if (state.march.cells[0].acsr.tipo == 3 &&
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[0].acsr.ipr.Pres) {
                 pchuteAux = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchuteAux < 0.99 * state.march.cells[0].acsr.ipr.Pres)
@@ -2197,7 +2197,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
             pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -2224,7 +2224,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
             pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
@@ -2241,7 +2241,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
 /// Estimates the bottom-hole pressure the secondary search starts from.
 void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
-        if (state.march.cells[0].acsr.tipo == 2 && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
+        if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
             // este espaco faz uma estimativa de quanto deve ser a perda de carga media
             // a partir do valor da vazao no inicio da tubulacao, isto e feito apenas
             // se existir uma fonte de liquido, celula[0].acsr.tipo == 2
@@ -2335,7 +2335,7 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
             // para evitar isto, se corrige a pressao para um valor proximo da
             // pressao estatica da IPR da celula
-            if (state.march.cells[i - 1].acsr.tipo == 3 &&
+            if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * 86400;
                 pchute = -(flowRateGuess / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
@@ -2430,7 +2430,7 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
         // entre o alto demais e o baixo demais
         if ((fabs(pchute - pchuteAux) / pchute) < 0.001 && marchResidual < -0.9e10) {
             pchute = 1.05 * pchute;
-            if (state.march.cells[0].acsr.tipo == 3 &&
+            if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[0].acsr.ipr.Pres) {
                 pchute = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchute < 0.99 * state.march.cells[0].acsr.ipr.Pres)
@@ -2606,19 +2606,19 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         abortValue = -1e10;
                         return true;
                     }
-                } else if ((state.march.cells[i - 1].acsr.tipo == 3 &&
+                } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                             ((state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
                     {
                         abortValue = 1e10;
                         return true;
                     }
-                } else if ((state.march.cells[i - 1].acsr.tipo == 15 &&
+                } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryRadialPorous &&
                             ((state.march.cells[i - 1].acsr.radialPoro.pRes[0] - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
                     {
                         abortValue = 1e10;
                         return true;
                     }
-                } else if ((state.march.cells[i - 1].acsr.tipo == 16 &&
+                } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryPorous2D &&
                             ((state.march.cells[i - 1].acsr.poroso2D.dados.pRes - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
                     {
                         abortValue = 1e10;
@@ -2678,19 +2678,19 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
                 abortValue = -1e10;
                 return true;
             }
-        else if ((state.march.cells[0].acsr.tipo == 3 &&
+        else if ((state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                   (state.march.cells[0].acsr.ipr.Pres - state.march.cells[0].pres) < (*state.march.globals).localtiny))
             {
                 abortValue = 1e10;
                 return true;
             }
-        else if ((state.march.cells[0].acsr.tipo == 15 &&
+        else if ((state.march.cells[0].acsr.tipo == kAccessoryRadialPorous &&
                   (state.march.cells[0].acsr.radialPoro.pRes[0] - state.march.cells[0].pres) < (*state.march.globals).localtiny))
             {
                 abortValue = 1e10;
                 return true;
             }
-        else if ((state.march.cells[0].acsr.tipo == 16 &&
+        else if ((state.march.cells[0].acsr.tipo == kAccessoryPorous2D &&
                   (state.march.cells[0].acsr.poroso2D.dados.pRes - state.march.cells[0].pres) < (*state.march.globals).localtiny))
             {
                 abortValue = 1e10;
@@ -2901,11 +2901,11 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
 double searchReverseProductionPressureToPressure(const SteadyStateSearchState &state, double chute, double maximumFlowRate, int kontaiter) {
     state.reverseSteady = 1;
     state.march.convergenceMonitor = 1000.;
-    if (state.march.cells[0].acsr.tipo == 1) {
+    if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection) {
         state.march.cells[0].acsr.injg.FluidoPro = state.reverseNetworkFluid;
-    } else if (state.march.cells[0].acsr.tipo == 2) {
+    } else if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
         state.march.cells[0].acsr.injl.FluidoPro = state.reverseNetworkFluid;
-    } else if (state.march.cells[0].acsr.tipo == 10) {
+    } else if (state.march.cells[0].acsr.tipo == kAccessoryMultipleSource) {
         state.march.cells[0].acsr.injm.FluidoPro = state.reverseNetworkFluid;
     }
     double mchute = chute;
@@ -2966,7 +2966,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                 double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
                 double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
                 double multiplica;
-                if (state.march.cells[0].acsr.tipo == 2)
+                if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
@@ -3021,9 +3021,9 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
         if (testaEscoa == 1 && reversao == 0)
             return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 0);
         else if (reversao == 0) {
-            if (state.march.cells[0].acsr.tipo == 1) {
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection) {
                 state.march.cells[0].acsr.injg.QGas = 0.;
-            } else if (state.march.cells[0].acsr.tipo == 2) {
+            } else if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
                 state.march.cells[0].acsr.injl.QLiq = 0.;
             }
             return 0.;
@@ -3110,7 +3110,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                 double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
                 double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
                 double multiplica;
-                if (state.march.cells[0].acsr.tipo == 2)
+                if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
@@ -3215,9 +3215,9 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
         if (testaEscoa == 1 && reversao == 0)
             return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 0);
         else if (reversao == 0) {
-            if (state.march.cells[0].acsr.tipo == 1) {
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection) {
                 state.march.cells[0].acsr.injg.QGas = -2121212121;
-            } else if (state.march.cells[0].acsr.tipo == 2) {
+            } else if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
                 state.march.cells[0].acsr.injl.QLiq = -2121212121;
             }
             return 0.;
@@ -3289,7 +3289,7 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                 double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
                 double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
                 double multiplica;
-                if (state.march.cells[0].acsr.tipo == 2)
+                if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
@@ -3380,9 +3380,9 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
         if (testaEscoa == 1)
             return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 1);
         else {
-            if (state.march.cells[0].acsr.tipo == 1) {
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection) {
                 state.march.cells[0].acsr.injg.QGas = 0.;
-            } else if (state.march.cells[0].acsr.tipo == 2) {
+            } else if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
                 state.march.cells[0].acsr.injl.QLiq = 0.;
             }
             return 0.;
@@ -3416,7 +3416,7 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
             double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
             double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
             double multiplica;
-            if (state.march.cells[0].acsr.tipo == 2)
+            if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                 multiplica = rmisLst;
             else
                 multiplica = rGst;
@@ -3507,9 +3507,9 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
     if (testaEscoa == 1)
         return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 2, 1);
     else {
-        if (state.march.cells[0].acsr.tipo == 1) {
+        if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection) {
             state.march.cells[0].acsr.injg.QGas = 0.;
-        } else if (state.march.cells[0].acsr.tipo == 2) {
+        } else if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
             state.march.cells[0].acsr.injl.QLiq = 0.;
         }
         return 0.;
@@ -3545,22 +3545,22 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
             // a pressao estatica, nao se trabalha com vazoes negativas neste solver
             // para evitar isto, se corrige a pressao para um valor proximo da
             // pressao estatica da IPR da celula
-            if (state.march.cells[i].acsr.tipo == 3 && ((state.march.cells[i].acsr.ipr.Pres - pchute) > 0.0) && i == state.march.lastCell - 1) {
+            if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && ((state.march.cells[i].acsr.ipr.Pres - pchute) > 0.0) && i == state.march.lastCell - 1) {
 
                 pchute = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchute < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchute = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
             double accessoryFlowRate = 0.;
-            if (state.march.cells[i].acsr.tipo == 3)
+            if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance)
                 accessoryFlowRate = -(state.march.cells[i].acsr.ipr.Pres - pchute) * state.march.cells[i].acsr.ipr.ip;
-            else if (state.march.cells[i].acsr.tipo == 1 && state.march.input.tipoFluido == 1)
+            else if (state.march.cells[i].acsr.tipo == kAccessoryGasInjection && state.march.input.tipoFluido == 1)
                 accessoryFlowRate = -state.march.cells[i].acsr.injg.QGas;
-            else if (state.march.cells[i].acsr.tipo == 2 && state.march.input.tipoFluido == 0)
+            else if (state.march.cells[i].acsr.tipo == kAccessoryLiquidInjection && state.march.input.tipoFluido == 0)
                 accessoryFlowRate = -state.march.cells[i].acsr.injl.QLiq;
-            else if (state.march.cells[i].acsr.tipo == 9 && state.march.cells[0].acsr.tipo == 1) {
+            else if (state.march.cells[i].acsr.tipo == kAccessoryLeak && state.march.cells[0].acsr.tipo == kAccessoryGasInjection) {
                 accessoryFlowRate = 10000.;
-            } else if (state.march.cells[i].acsr.tipo == 9 && state.march.cells[0].acsr.tipo == 2) {
+            } else if (state.march.cells[i].acsr.tipo == kAccessoryLeak && state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
                 accessoryFlowRate = 1000.;
             }
 
@@ -3623,7 +3623,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pavanc, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pavanc -= rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
-                if (state.march.cells[i].acsr.tipo == 3 && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
                             "Poco injetor provavelmente produzindo quando se utiliza este valor de pressao na superficie");
@@ -3634,7 +3634,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i].acsr.tipo == 3) {
+                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= state.march.cells[i].acsr.ipr.ij * (state.march.cells[i].acsr.ipr.Pres - pavanc);
                     else
@@ -3655,7 +3655,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                 double rhog = state.march.cells[i].flui.MasEspGas(pavanc, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pavanc -= rhog * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
-                if (state.march.cells[i].acsr.tipo == 3 && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
                             "Poco injetor provavelmente produzindo quando se utiliza este valor de pressao na superficie");
@@ -3666,7 +3666,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i].acsr.tipo == 3) {
+                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= state.march.cells[i].acsr.ipr.ij * (state.march.cells[i].acsr.ipr.Pres - pavanc);
                     else
@@ -3946,7 +3946,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -3978,7 +3978,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].flui.MasEspGas(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -4064,7 +4064,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4074,7 +4074,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == 3) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= (state.march.cells[i - 1].acsr.ipr.ij) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                     mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].fluicol.MasEspFlu(state.march.cells[i - 1].pres, 0.) / state.march.cells[state.march.lastCell].fluicol.MasEspFlu(1.01, 15.)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
@@ -4093,7 +4093,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].flui.MasEspGas(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4103,7 +4103,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == 3) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= (state.march.cells[i - 1].acsr.ipr.ij) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                     mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, 0.) / (state.march.cells[0].flui.Deng * 1.225)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
@@ -4149,7 +4149,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].fluicol.MasEspFlu(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / state.march.cells[state.march.lastCell].fluicol.MasEspFlu(1.01, 15.)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + state.march.updaters.steadyInjectionPressureDrop(i);
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4159,7 +4159,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == 3) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= state.march.cells[i - 1].acsr.ipr.ij * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                     else
@@ -4173,7 +4173,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / (state.march.cells[0].flui.Deng * 1.225)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + state.march.updaters.steadyInjectionPressureDrop(i);
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4183,7 +4183,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == 3) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= state.march.cells[i - 1].acsr.ipr.ij * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                     else
@@ -4342,7 +4342,7 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state) {
                     else
                         return 1.1e10;
                 }
-            } else if ((state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny)) {
+            } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny)) {
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                     NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                 else {
@@ -4412,7 +4412,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
         } else {
@@ -4447,7 +4447,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
                             return 1.1e10;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == 3 && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
         }
@@ -4682,7 +4682,7 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
                 pchute2 = 0.5 * (pchute2 + pchuteAux); // Midpoint between the lowest pressure yielding marchResidual < 0 and the lower pressure bound.
                 if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                     pchute2 = 0.9 * state.march.input.tabent.pmax;
-                if (state.march.cells[0].acsr.tipo == 3 &&
+                if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                     (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
                     pchute2 = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                     if (pchute2 < 0.999 * state.march.cells[0].acsr.ipr.Pres)
@@ -4754,7 +4754,7 @@ bool retryUntilBranchMarchCompletes(const SteadyStateSearchState &state, double 
             kontaiter++; // 50 iterations maximum
         }
         while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // Estimated background pressure remains low
-            if (state.march.cells[0].acsr.tipo == 1 || state.march.cells[0].acsr.tipo == 2 || state.march.cells[0].acsr.tipo == 10)
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
                 pchuteAux *= 1.01; // increasing the estimate
@@ -4813,7 +4813,7 @@ void classifyBranchMarchSentinel(const SteadyStateSearchState &state, double mar
             double rhol = 1000 + 0 * state.march.cells[i].flui.MasEspLiq(pchuteAux, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
             double alfa = 0.;
-            if (state.march.cells[0].acsr.tipo == 1)
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection)
                 alfa = 1.;
             else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
@@ -4834,7 +4834,7 @@ void classifyBranchMarchSentinel(const SteadyStateSearchState &state, double mar
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
             // in this case, use a high void fraction for the hydrostatic calculation.
             double alfa = 0.8;
-            if (state.march.cells[0].acsr.tipo == 1)
+            if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection)
                 alfa = 1.;
             else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess;
@@ -4860,7 +4860,7 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
     double taux; // Auxiliary temperature used to estimate pchute.
     double perdafric = 0.;
     double completionFractionGuess = 0.;
-    if (state.march.cells[0].acsr.tipo == 2)
+    if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
         completionFractionGuess = state.march.cells[0].acsr.injl.bet;
 
     for (int i = indPartida; i > 0; i--) {
@@ -4876,7 +4876,7 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
             double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
             alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
         }
-        if (state.march.cells[0].acsr.tipo == 1)
+        if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection)
             alfa = 1.;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);

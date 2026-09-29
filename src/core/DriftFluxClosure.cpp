@@ -14,6 +14,7 @@
 // reads nothing but its arguments. estrat.h and mapa.h bring the two
 // flow-pattern map classes the variants construct on the stack.
 #include "Leitura.h"
+#include "SisProdConstants.h"
 #include "celula3.h"
 #include "estrat.h"
 #include "mapa.h"
@@ -352,6 +353,8 @@ void C0UdEstratificado(double liquidDensity, double gasDensity, double surfaceTe
 
 namespace coefficient {
 
+using enum sisprod::AccessoryKind;
+
 /*
  * The five bodies below were MOVED, token for token, from SisProd.cpp. The
  * transformation is a substitution table -- the method signature, and eleven
@@ -492,7 +495,7 @@ double transientInclinationAngle(const ClosureState &state, int cellIndex) {
     const double leftCellLength = state.cells[cellIndex].dxL;
     double inclinationAngle = (cellLength * state.cells[cellIndex].dutoL.teta + leftCellLength * state.cells[cellIndex].duto.teta) / totalLength;
     if (cellIndex >= 2) {
-        if (state.cells[cellIndex - 2].acsr.tipo == 5 && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
+        if (state.cells[cellIndex - 2].acsr.tipo == kAccessoryChoke && state.cells[cellIndex - 2].acsr.chk.AreaGarg <= (1e-3)) {
             if (Source::gasForSign(state.cells, cellIndex) >= 0)
                 inclinationAngle = state.cells[cellIndex].duto.teta;
             else
@@ -522,7 +525,7 @@ double transientInclinationAngle(const ClosureState &state, int cellIndex) {
 double horizontalCorrectionOf(const ClosureState &state, int cellIndex, int accessoryCellIndex) {
     double horizontalCorrection = 1.;
     if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
-        if (state.cells[accessoryCellIndex].acsr.tipo != 5 || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {
+        if (state.cells[accessoryCellIndex].acsr.tipo != kAccessoryChoke || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {
             if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
                 horizontalCorrection = -1.;
             else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
@@ -895,7 +898,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         applyPigOverride(state, cellIndex, c0, ud);
     } else if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
         applyPigOverride(state, cellIndex, c0, ud);
-    } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
+    } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
         double upstreamLengthRatio;
@@ -1075,7 +1078,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         applyPigOverride(state, cellIndex, c0, ud);
     } else if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
         applyPigOverride(state, cellIndex, c0, ud);
-    } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
+    } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
         double upstreamLengthRatio;
@@ -1247,7 +1250,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         ud = 0.;
         state.cells[cellIndex].arranjo = 1.;
 
-    } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
+    } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
 
         noSlipLiquidHoldup = inletNoSlipHoldup<InstantaneousSource>(state, cellIndex);
@@ -1433,7 +1436,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         ud = 0.;
         state.cells[cellIndex].arranjo = 1.;
 
-    } else if ((state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
+    } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
 
         noSlipLiquidHoldup = inletNoSlipHoldup<BufferedSource>(state, cellIndex);
@@ -1581,7 +1584,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
 
     c0 = 1.;
     ud = 0.;
-    if (state.cells[cellIndex].acsr.tipo != 4 || state.cells[cellIndex].acsr.bcs.freqnova <= 1.) {
+    if (state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.) {
         double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dx / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
         double upstreamLengthRatio;

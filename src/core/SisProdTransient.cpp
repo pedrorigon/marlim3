@@ -2,6 +2,7 @@
 
 #include "Acidentes2.h"
 #include "Leitura.h"
+#include "SisProdConstants.h"
 #include "Matriz.h"
 #include "Vetor.h"
 #include "solver3DPoisson.h"
@@ -111,7 +112,7 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
     gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
     gradhidro = (1 - medpres) * 9.82 * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
 
-    if (state.cells[i - 1].acsr.tipo != 5 || state.cells[i - 1].acsr.chk.AreaGarg > state.cells[i - 1].acsr.chk.AreaTub * 0.5)
+    if (state.cells[i - 1].acsr.tipo != kAccessoryChoke || state.cells[i - 1].acsr.chk.AreaGarg > state.cells[i - 1].acsr.chk.AreaTub * 0.5)
         state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
                             0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / 98066.5);
     state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / 98066.5;
@@ -1016,9 +1017,9 @@ void computeImplicitTimeStep(const TransientStepState &state) {
     }
 
     for (int i = 0; i <= state.lastCell; i++) {
-        if (state.cells[i].acsr.tipo == 15) {
+        if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
             state.cells[i].acsr.radialPoro.dt = state.timeStep;
-        } else if (state.cells[i].acsr.tipo == 16) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
             state.cells[i].acsr.poroso2D.dt = state.timeStep;
         }
     }
@@ -1061,7 +1062,7 @@ void computeTimeStep(const TransientStepState &state, int vexpli) {
 
     int parada = 0;
     for (int i = 1; i < state.lastCell; i++) {
-        if (state.cells[i].acsr.tipo == 5 && state.cells[i].acsr.chk.AreaGarg <= 1e-15 * state.cells[i].acsr.chk.AreaTub)
+        if (state.cells[i].acsr.tipo == kAccessoryChoke && state.cells[i].acsr.chk.AreaGarg <= 1e-15 * state.cells[i].acsr.chk.AreaTub)
             parada = 1;
         else if (state.surfaceChoke.AreaGarg <= 1.e-15 * state.surfaceChoke.AreaTub)
             parada = 1;
@@ -1096,12 +1097,12 @@ void computeTimeStep(const TransientStepState &state, int vexpli) {
     }
 
     for (int i = 0; i <= state.lastCell; i++) {
-        if (state.cells[i].acsr.tipo == 15) {
+        if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
             state.cells[i].acsr.radialPoro.defineDT(0);
             if (state.cells[i].acsr.radialPoro.dt < state.timeStep)
                 state.timeStep = state.cells[i].acsr.radialPoro.dt;
         }
-        if (state.cells[i].acsr.tipo == 16) {
+        if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
             state.cells[i].acsr.poroso2D.defineDT(0);
             if (state.cells[i].acsr.poroso2D.dt < state.timeStep)
                 state.timeStep = state.cells[i].acsr.poroso2D.dt;
@@ -1680,14 +1681,14 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     }
     evolveFractions(state.step, alfRev, betRev, kontaAcop);
     for (int i = 0; i <= state.step.lastCell; i++) {
-        if (state.step.cells[i].acsr.tipo == 15) {
+        if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
             state.step.cells[i].acsr.radialPoro.avancoSW(state.step.timeStep);
             if (state.step.cells[i].acsr.radialPoro.reinicia == -1) {
                 if (state.step.restart > -1)
                     state.step.restart = -1;
                 // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
             }
-        } else if (state.step.cells[i].acsr.tipo == 16) {
+        } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
             state.step.cells[i].acsr.poroso2D.avancoSW(state.step.timeStep);
             if (state.step.cells[i].acsr.poroso2D.reinicia == -1) {
                 if (state.step.restart > -1)
@@ -1709,17 +1710,17 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     if (state.step.restart == -1) {
         restartFractionEvolutionInitial(state.step);
         for (int i = 0; i <= state.step.lastCell; i++) {
-            if (state.step.cells[i].acsr.tipo == 15) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
                 state.step.cells[i].acsr.radialPoro.reavaliaDT(state.step.timeStep);
-            } else if (state.step.cells[i].acsr.tipo == 16) {
+            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
                 state.step.cells[i].acsr.poroso2D.reavaliaDT(state.step.timeStep);
             }
         }
         for (int i = 0; i <= state.step.lastCell; i++) {
-            if (state.step.cells[i].acsr.tipo == 15) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
                 state.step.cells[i].acsr.radialPoro.reiniciaEvoluiSW(state.step.timeStep);
             }
-            if (state.step.cells[i].acsr.tipo == 16) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
                 state.step.cells[i].acsr.poroso2D.reiniciaEvoluiSW(state.step.timeStep);
             }
         }
@@ -1728,9 +1729,9 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
         evolveFractions(state.step, alfRev, betRev, kontaAcop);
         state.step.restart = 0;
         for (int i = 0; i <= state.step.lastCell; i++) {
-            if (state.step.cells[i].acsr.tipo == 15) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
                 state.step.cells[i].acsr.radialPoro.avancoSWcorrec();
-            } else if (state.step.cells[i].acsr.tipo == 16) {
+            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
                 state.step.cells[i].acsr.poroso2D.avancoSWcorrec();
             }
         }
@@ -1787,9 +1788,9 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     if (kontaAcop != 1 * state.step.fullModel) {
         for (int i = 0; i <= state.step.lastCell; i++) {
             state.step.cells[i].FeiticoDoTempo2();
-            if (state.step.cells[i].acsr.tipo == 15) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
                 state.step.cells[i].acsr.radialPoro.FeiticoDoTempoSW();
-            } else if (state.step.cells[i].acsr.tipo == 16) {
+            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
                 state.step.cells[i].acsr.poroso2D.FeiticoDoTempoSW();
             }
         }
@@ -2594,7 +2595,7 @@ void generateFluidMiniTables(const TransientStepState &state) {
         state.cells[i].flui.miniTabDin.tmax = state.cells[i].temp + delt;
         state.cells[i].flui.miniTabDin.tmin = state.cells[i].temp - delt;
         if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].flui);
-        if (state.cells[i].acsr.tipo == 1) {
+        if (state.cells[i].acsr.tipo == kAccessoryGasInjection) {
             state.cells[i].acsr.injg.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
             state.cells[i].acsr.injg.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
             state.cells[i].acsr.injg.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
@@ -2607,7 +2608,7 @@ void generateFluidMiniTables(const TransientStepState &state) {
             else
                 state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injg.FluidoPro);
-        } else if (state.cells[i].acsr.tipo == 2) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
             state.cells[i].acsr.injl.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
             state.cells[i].acsr.injl.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
             state.cells[i].acsr.injl.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
@@ -2620,7 +2621,7 @@ void generateFluidMiniTables(const TransientStepState &state) {
             else
                 state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injl.FluidoPro);
-        } else if (state.cells[i].acsr.tipo == 3) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
             state.cells[i].acsr.ipr.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
             state.cells[i].acsr.ipr.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
             state.cells[i].acsr.ipr.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
@@ -2633,11 +2634,11 @@ void generateFluidMiniTables(const TransientStepState &state) {
             else
                 state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.ipr.FluidoPro);
-        } else if (state.cells[i].acsr.tipo == 15) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
         	if(state.input.miniTabAtraso > 0)state.cells[i].acsr.radialPoro.geraMiniTabFlu();
-        } else if (state.cells[i].acsr.tipo == 16) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         	if(state.input.miniTabAtraso > 0)state.cells[i].acsr.poroso2D.geraMiniTabFlu();
-        } else if (state.cells[i].acsr.tipo == 9) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
             state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
             state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
             state.cells[i].acsr.fontechk.fluidoP.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
@@ -2650,7 +2651,7 @@ void generateFluidMiniTables(const TransientStepState &state) {
             else
                 state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.fontechk.fluidoP);
-        } else if (state.cells[i].acsr.tipo == 10) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
             state.cells[i].acsr.injm.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
             state.cells[i].acsr.injm.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
             state.cells[i].acsr.injm.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;

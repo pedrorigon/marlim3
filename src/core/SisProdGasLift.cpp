@@ -398,7 +398,7 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
         }
         double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.;
         meanPressure -= (-kGravity * mixtureDensity * sin(state.cells[cellIndex].duto.teta) - tens1 * perimeter / flowArea) * cellLength / kPascalPerKgfPerCm2;
-        if (state.cells[cellIndex].acsr.tipo == 3) {
+        if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
             double candidateMaximumPressure = state.cells[cellIndex].acsr.ipr.Pres - (meanPressure - state.gasSurfacePressure);
             if (candidateMaximumPressure < state.input.presMaxDesc)
                 state.input.presMaxDesc = candidateMaximumPressure;

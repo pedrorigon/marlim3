@@ -122,8 +122,8 @@ run_case "inst/simplify-0QG+1QL" "DriftFluxClosure.cpp" \
     "if (((0. * state.cells[cellIndex].QG + 1 * state.cells[cellIndex].QL) < 0.))" \
     "if ((state.cells[cellIndex].QL < 0.))" "caught"
 run_case "inst/correcHor-neighbour" "DriftFluxClosure.cpp" \
-    "if (state.cells[accessoryCellIndex].acsr.tipo != 5 || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {" \
-    "if (state.cells[cellIndex].acsr.tipo != 5 || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {" "caught"
+    "if (state.cells[accessoryCellIndex].acsr.tipo != kAccessoryChoke || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {" \
+    "if (state.cells[cellIndex].acsr.tipo != kAccessoryChoke || state.cells[cellIndex].acsr.chk.AreaGarg > 1e-10) {" "caught"
 run_case "inst/map-dispatch" "DriftFluxClosure.cpp" \
     "                if (state.selectors.stratified == 2)
                     stratifiedMap.mapaTD();

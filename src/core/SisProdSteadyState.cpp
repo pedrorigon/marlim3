@@ -22,21 +22,21 @@ void correctGasSpecificGravity(const SteadyStateState &state, int i) {
         state.cells[i].flui.rDgL = 1.;
         state.cells[i].flui.PCis = state.cells[i].flui.PC;
         state.cells[i].flui.TCis = state.cells[i].flui.TC;
-        if (state.cells[i].acsr.tipo == 1 && state.cells[i].acsr.injg.seco == 0) {
+        if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 0) {
             state.cells[i].acsr.injg.FluidoPro.rDgD = 1.;
             state.cells[i].acsr.injg.FluidoPro.rDgL = 1.;
         }
-        if (state.cells[i].acsr.tipo == 2) {
+        if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
             state.cells[i].acsr.injl.FluidoPro.rDgD = 1.;
             state.cells[i].acsr.injl.FluidoPro.rDgL = 1.;
-        } else if (state.cells[i].acsr.tipo == 3) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
             state.cells[i].acsr.ipr.FluidoPro.rDgD = 1.;
             state.cells[i].acsr.ipr.FluidoPro.rDgL = 1.;
-        } else if (state.cells[i].acsr.tipo == 10) {
+        } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
             state.cells[i].acsr.injm.FluidoPro.rDgD = 1.;
             state.cells[i].acsr.injm.FluidoPro.rDgL = 1.;
         }
-        if (state.cells[i].acsr.tipo == 15) {
+        if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
             state.cells[i].acsr.radialPoro.flup.rDgD = 1.;
             state.cells[i].acsr.radialPoro.flup.rDgL = 1.;
             for (int porousCell = 0; porousCell < state.cells[i].acsr.radialPoro.ncel; porousCell++) {
@@ -44,7 +44,7 @@ void correctGasSpecificGravity(const SteadyStateState &state, int i) {
                 state.cells[i].acsr.radialPoro.celula[porousCell].flup.rDgL = 1.;
             }
         }
-        if (state.cells[i].acsr.tipo == 16) {
+        if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
             state.cells[i].acsr.poroso2D.dados.flup.rDgD = 1.;
             state.cells[i].acsr.poroso2D.dados.flup.rDgL = 1.;
             for (int porousCell = 0; porousCell < state.cells[i].acsr.poroso2D.dados.transfer.ncel; porousCell++) {
@@ -65,22 +65,22 @@ void correctGasSpecificGravity(const SteadyStateState &state, int i) {
         state.cells[i].flui.PcTcIS(); // como a densidade de gas livre mudou, suas pressoes
         // criticas devem ser recalculadas
         // caso tenha alguma fonte, se calcula as densidades in situ das fontes
-        if (state.cells[i].acsr.tipo == 1 && state.cells[i].acsr.injg.seco == 0) { // fonte de liquido
+        if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 0) { // fonte de liquido
             state.cells[i].acsr.injg.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
             state.cells[i].acsr.injg.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
         }
-        if (state.cells[i].acsr.tipo == 2) { // fonte de liquido
+        if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) { // fonte de liquido
             state.cells[i].acsr.injl.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
             state.cells[i].acsr.injl.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
-        } else if (state.cells[i].acsr.tipo == 3) { // ipr
+        } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) { // ipr
             state.cells[i].acsr.ipr.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
             state.cells[i].acsr.ipr.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
             ;
-        } else if (state.cells[i].acsr.tipo == 10) { // fonte de massa generica
+        } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) { // fonte de massa generica
             state.cells[i].acsr.injm.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
             state.cells[i].acsr.injm.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
         }
-        if (state.cells[i].acsr.tipo == 15) {
+        if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
             state.cells[i].acsr.radialPoro.flup.razDegD(state.cells[i].pres, state.cells[i].temp);
             state.cells[i].acsr.radialPoro.flup.rzDegL(state.cells[i].pres, state.cells[i].temp);
             for (int porousCell = 0; porousCell < state.cells[i].acsr.radialPoro.ncel; porousCell++) {
@@ -90,7 +90,7 @@ void correctGasSpecificGravity(const SteadyStateState &state, int i) {
                 state.cells[i].acsr.radialPoro.celula[porousCell].flup.rzDegL(pres, temp);
             }
         }
-        if (state.cells[i].acsr.tipo == 16) {
+        if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
             state.cells[i].acsr.poroso2D.dados.flup.razDegD(state.cells[i].pres, state.cells[i].temp);
             state.cells[i].acsr.poroso2D.dados.flup.rzDegL(state.cells[i].pres, state.cells[i].temp);
             for (int porousCell = 0; porousCell < state.cells[i].acsr.poroso2D.dados.transfer.ncel; porousCell++) {
@@ -334,25 +334,25 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         state.cells[i - 1].MRini = state.cells[i - 1].MR;
         state.cells[i].MComp = state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR;
 
-        if (state.cells[i - 1].acsr.tipo == 1) {
+        if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection) {
             fluF = state.cells[i - 1].acsr.injg.FluidoPro;
             residenceTimeSource = state.cells[i - 1].acsr.injg.fluidocol.TR;
-        } else if (state.cells[i - 1].acsr.tipo == 2) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryLiquidInjection) {
             fluF = state.cells[i - 1].acsr.injl.FluidoPro;
             residenceTimeSource = state.cells[i - 1].acsr.injl.fluidocol.TR;
-        } else if (state.cells[i - 1].acsr.tipo == 3) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
             fluF = state.cells[i - 1].acsr.ipr.FluidoPro;
             residenceTimeSource = 0.;
-        } else if (state.cells[i - 1].acsr.tipo == 15) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous) {
             fluF = state.cells[i - 1].acsr.radialPoro.flup;
             residenceTimeSource = 0.;
-        } else if (state.cells[i - 1].acsr.tipo == 16) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D) {
             fluF = state.cells[i - 1].acsr.poroso2D.dados.flup;
             residenceTimeSource = 0.;
-        } else if (state.cells[i - 1].acsr.tipo == 10) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryMultipleSource) {
             fluF = state.cells[i - 1].acsr.injm.FluidoPro;
             residenceTimeSource = state.cells[i - 1].acsr.injm.fluidocol.TR;
-        } else if (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryLeak && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
             if (state.cells[i - 1].acsr.fontechk.presT > state.cells[i - 1].acsr.fontechk.pamb) {
                 fluF = state.cells[i - 1].acsr.fontechk.fluidoP;
             } else {
@@ -385,9 +385,9 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         correctGasSpecificGravity(state, i);
     }
     if (i == 0) {
-        if (state.cells[0].acsr.tipo == 15)
+        if (state.cells[0].acsr.tipo == kAccessoryRadialPorous)
             state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-        else if (state.cells[0].acsr.tipo == 16)
+        else if (state.cells[0].acsr.tipo == kAccessoryPorous2D)
             state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
     }
 
@@ -571,23 +571,23 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         state.cells[i - 1].MRini = state.cells[i - 1].MR;
         state.cells[i].MComp = state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR;
 
-        if (state.cells[i - 1].acsr.tipo == 1) {
+        if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection) {
             state.cells[i - 1].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             fluF = state.cells[i - 1].acsr.injg.FluidoPro;
             residenceTimeSource = state.cells[i - 1].acsr.injg.fluidocol.TR;
-        } else if (state.cells[i - 1].acsr.tipo == 2) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryLiquidInjection) {
             state.cells[i - 1].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             fluF = state.cells[i - 1].acsr.injl.FluidoPro;
             residenceTimeSource = state.cells[i - 1].acsr.injl.fluidocol.TR;
-        } else if (state.cells[i - 1].acsr.tipo == 3) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
             state.cells[i - 1].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             fluF = state.cells[i - 1].acsr.ipr.FluidoPro;
             residenceTimeSource = 0.;
-        } else if (state.cells[i - 1].acsr.tipo == 10) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryMultipleSource) {
             state.cells[i - 1].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             fluF = state.cells[i - 1].acsr.injm.FluidoPro;
             residenceTimeSource = state.cells[i - 1].acsr.injm.fluidocol.TR;
-        } else if (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryLeak && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
             state.cells[i - 1].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             state.cells[i - 1].acsr.fontechk.fluidoPamb.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             if (state.cells[i - 1].acsr.fontechk.presT > state.cells[i - 1].acsr.fontechk.pamb) {
@@ -595,11 +595,11 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
             } else {
                 fluF = state.cells[i - 1].acsr.fontechk.fluidoPamb;
             }
-        } else if (state.cells[i - 1].acsr.tipo == 15) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous) {
             state.cells[i - 1].acsr.radialPoro.flup.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             fluF = state.cells[i - 1].acsr.radialPoro.flup;
             residenceTimeSource = 0.;
-        } else if (state.cells[i - 1].acsr.tipo == 16) {
+        } else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D) {
             state.cells[i - 1].acsr.poroso2D.dados.flup.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             fluF = state.cells[i - 1].acsr.poroso2D.dados.flup;
             residenceTimeSource = 0.;
@@ -627,9 +627,9 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         state.cells[i].flui = state.cells[i - 1].flui;
     }
     if (i == 0) {
-        if (state.cells[0].acsr.tipo == 15)
+        if (state.cells[0].acsr.tipo == kAccessoryRadialPorous)
             state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-        else if (state.cells[0].acsr.tipo == 16)
+        else if (state.cells[0].acsr.tipo == kAccessoryPorous2D)
             state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
     }
 
@@ -975,7 +975,7 @@ namespace {
 void readCompositionalSourceProperties(const SteadyStateState &state, int i, double &titF, ProFlu &fluF,
                                        double &oilVolumeFactorSource, double &waterVolumeFactorSource, double &waterCutSource, double &rhoOF, double &rhoWF,
                                        double &residenceTimeSource) {
-    if (state.cells[i - 1].acsr.tipo == 1) {
+    if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection) {
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i - 1].pres, state.cells[i - 1].temp, state.cells[i - 1].flui.dCalculatedBeta,
                                                                state.cells[i - 1].flui.oCalculatedLiqComposition, state.cells[i - 1].flui.oCalculatedVapComposition, state.input.pocinjec);
@@ -985,7 +985,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
         waterCutSource = 0.;
         titF = 1.;
         residenceTimeSource = state.cells[i - 1].acsr.injg.fluidocol.TR;
-    } else if (state.cells[i - 1].acsr.tipo == 2) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryLiquidInjection) {
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i - 1].pres, state.cells[i - 1].temp, state.cells[i - 1].flui.dCalculatedBeta,
                                                                state.cells[i - 1].flui.oCalculatedLiqComposition, state.cells[i - 1].flui.oCalculatedVapComposition, state.input.pocinjec);
@@ -999,7 +999,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
         rhoWF = fluF.MasEspAgua(state.cells[i - 1].pres, state.cells[i - 1].temp);
         titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
         residenceTimeSource = state.cells[i - 1].acsr.injl.fluidocol.TR;
-    } else if (state.cells[i - 1].acsr.tipo == 3) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i - 1].pres, state.cells[i - 1].temp, state.cells[i - 1].flui.dCalculatedBeta,
                                                               state.cells[i - 1].flui.oCalculatedLiqComposition, state.cells[i - 1].flui.oCalculatedVapComposition, state.input.pocinjec);
@@ -1013,7 +1013,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
         rhoWF = fluF.MasEspAgua(state.cells[i - 1].pres, state.cells[i - 1].temp);
         titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
         residenceTimeSource = 0.;
-    } else if (state.cells[i - 1].acsr.tipo == 10) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryMultipleSource) {
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i - 1].pres, state.cells[i - 1].temp, state.cells[i - 1].flui.dCalculatedBeta,
                                                                state.cells[i - 1].flui.oCalculatedLiqComposition, state.cells[i - 1].flui.oCalculatedVapComposition, state.input.pocinjec);
@@ -1027,7 +1027,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
         rhoWF = fluF.MasEspAgua(state.cells[i - 1].pres, state.cells[i - 1].temp);
         titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
         residenceTimeSource = state.cells[i - 1].acsr.injm.fluidocol.TR;
-    } else if (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryLeak && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
 
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i - 1].pres, state.cells[i - 1].temp, state.cells[i - 1].flui.dCalculatedBeta,
@@ -1050,7 +1050,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
         rhoOF = fluF.MasEspoleo(state.cells[i - 1].pres, state.cells[i - 1].temp);
         rhoWF = fluF.MasEspAgua(state.cells[i - 1].pres, state.cells[i - 1].temp);
         titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
-    } else if (state.cells[i - 1].acsr.tipo == 15) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous) {
         double tRes = state.cells[i - 1].acsr.radialPoro.tRes;
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.radialPoro.flup.atualizaPropComp(state.cells[i - 1].pres, tRes,
@@ -1066,7 +1066,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
         rhoWF = fluF.MasEspAgua(state.cells[i - 1].pres, state.cells[i - 1].temp);
         titF = (1 - waterCutSource) * rhoOF / ((1 - waterCutSource) * rhoOF + waterCutSource * rhoWF);
         residenceTimeSource = 0.;
-    } else if (state.cells[i - 1].acsr.tipo == 16) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D) {
         double tRes = state.cells[i - 1].acsr.poroso2D.dados.transfer.tRes;
         if (i > 0 && (state.cells[i - 1].flui.dCalculatedBeta > 0. && state.cells[i - 1].flui.dCalculatedBeta < 1.))
             state.cells[i - 1].acsr.poroso2D.dados.flup.atualizaPropComp(state.cells[i - 1].pres, tRes,
@@ -1376,9 +1376,9 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     left.mComp = state.cells[i].MComp = state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR;
     state.cells[i].MC = state.cells[i - 1].MC + state.cells[i - 1].fontemassLR + state.cells[i - 1].fontemassCR + state.cells[i - 1].fontemassGR;
     if (i == 0) {
-        if (state.cells[0].acsr.tipo == 15)
+        if (state.cells[0].acsr.tipo == kAccessoryRadialPorous)
             state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-        else if (state.cells[0].acsr.tipo == 16)
+        else if (state.cells[0].acsr.tipo == kAccessoryPorous2D)
             state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
     }
 
@@ -1417,8 +1417,8 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     else
         left.tmed = state.cells[i - 1].temp;
     // primeiro teste: nÃ£o hÃ¡ fontes na celula i-1:
-    if (state.cells[i - 1].acsr.tipo != 1 && state.cells[i - 1].acsr.tipo != 2 && state.cells[i - 1].acsr.tipo != 3 && state.cells[i - 1].acsr.tipo != 10 && (state.cells[i - 1].acsr.tipo != 9 || (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura <= 1e-6)) &&
-        state.cells[i - 1].acsr.tipo != 15 && state.cells[i - 1].acsr.tipo != 16) {
+    if (state.cells[i - 1].acsr.tipo != kAccessoryGasInjection && state.cells[i - 1].acsr.tipo != kAccessoryLiquidInjection && state.cells[i - 1].acsr.tipo != kAccessoryInflowPerformance && state.cells[i - 1].acsr.tipo != kAccessoryMultipleSource && (state.cells[i - 1].acsr.tipo != kAccessoryLeak || (state.cells[i - 1].acsr.tipo == kAccessoryLeak && state.cells[i - 1].acsr.fontechk.abertura <= 1e-6)) &&
+        state.cells[i - 1].acsr.tipo != kAccessoryRadialPorous && state.cells[i - 1].acsr.tipo != kAccessoryPorous2D) {
         carryUpstreamCompositionIntoCell(state, left, i);
     } else {
         mixUpstreamSourceIntoCell(state, left, source, i, temperatureHigh, temperatureLow, fluF, mudaRGO);
@@ -3073,11 +3073,11 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
     if (state.input.flashCompleto == 1)
         mudaRGO = 1;
 
-    if (state.cells[i - 1].acsr.tipo == 1 && state.cells[i - 1].acsr.injg.QGas < 0) {
+    if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection && state.cells[i - 1].acsr.injg.QGas < 0) {
         state.cells[i - 1].acsr.injg.FluidoPro = state.cells[i - 1].flui;
-    } else if (state.cells[i - 1].acsr.tipo == 2 && state.cells[i - 1].acsr.injl.QLiq < 0) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryLiquidInjection && state.cells[i - 1].acsr.injl.QLiq < 0) {
         state.cells[i - 1].acsr.injl.FluidoPro = state.cells[i - 1].flui;
-    } else if (state.cells[i - 1].acsr.tipo == 10 && state.cells[i - 1].acsr.injm.MassC + state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP < 0) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryMultipleSource && state.cells[i - 1].acsr.injm.MassC + state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP < 0) {
         state.cells[i - 1].acsr.injm.FluidoPro = state.cells[i - 1].flui;
     }
 
@@ -3142,33 +3142,33 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
     else
         tmed = state.cells[i - 1].temp;
     // primeiro teste: nÃƒÂ£o ha fontes na celula i-1:
-    if (state.cells[i - 1].acsr.tipo != 1 && state.cells[i - 1].acsr.tipo != 2 && state.cells[i - 1].acsr.tipo != 3 && state.cells[i - 1].acsr.tipo != 10 && (state.cells[i - 1].acsr.tipo != 9 || (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura <= 1e-6)) && state.cells[i - 1].acsr.tipo != 15 && state.cells[i - 1].acsr.tipo != 16) {
+    if (state.cells[i - 1].acsr.tipo != kAccessoryGasInjection && state.cells[i - 1].acsr.tipo != kAccessoryLiquidInjection && state.cells[i - 1].acsr.tipo != kAccessoryInflowPerformance && state.cells[i - 1].acsr.tipo != kAccessoryMultipleSource && (state.cells[i - 1].acsr.tipo != kAccessoryLeak || (state.cells[i - 1].acsr.tipo == kAccessoryLeak && state.cells[i - 1].acsr.fontechk.abertura <= 1e-6)) && state.cells[i - 1].acsr.tipo != kAccessoryRadialPorous && state.cells[i - 1].acsr.tipo != kAccessoryPorous2D) {
         applySteadyMassWithoutSource(state, i, mudaRGO, oilVolumeFactor, solutionGasRatio, tmed, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso em que se tem uma fonte de gas na celula i-1, o que mudara a RGO e a densidade de gas em i
-    else if (state.cells[i - 1].acsr.tipo == 1 && state.cells[i - 1].acsr.injg.seco == 1) {
+    else if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection && state.cells[i - 1].acsr.injg.seco == 1) {
         applySteadyMassDryGasInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
-    } else if (state.cells[i - 1].acsr.tipo == 1 && state.cells[i - 1].acsr.injg.seco == 0) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection && state.cells[i - 1].acsr.injg.seco == 0) {
         applySteadyMassWetGasInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso de fonte de liquido na celula i-1:
-    else if (state.cells[i - 1].acsr.tipo == 2) {
+    else if (state.cells[i - 1].acsr.tipo == kAccessoryLiquidInjection) {
         applySteadyMassLiquidInjection(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso de IPR na celula i-1:
-    else if (state.cells[i - 1].acsr.tipo == 3) {
+    else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
         applySteadyMassInflowPerformance(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso de fonte de massa na celula i-1:
-    else if (state.cells[i - 1].acsr.tipo == 10) {
+    else if (state.cells[i - 1].acsr.tipo == kAccessoryMultipleSource) {
         applySteadyMassMultipleSource(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
     // caso especial, fonte de vazamento:
-    else if (state.cells[i - 1].acsr.tipo == 9 && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
+    else if (state.cells[i - 1].acsr.tipo == kAccessoryLeak && state.cells[i - 1].acsr.fontechk.abertura > 1e-6) {
         applySteadyMassLeakSource(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
-    } else if (state.cells[i - 1].acsr.tipo == 15) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous) {
         applySteadyMassRadialPorous(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
-    } else if (state.cells[i - 1].acsr.tipo == 16) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D) {
         applySteadyMassPorous2D(state, i, mudaRGO, temperatureLow, temperatureHigh, oilVolumeFactor, waterVolumeFactor, solutionGasRatio, tmed, residenceTimeSource, oilVolumeFactorInSitu, waterVolumeFactorInSitu, waterCutInSitu);
     }
 
@@ -3594,7 +3594,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
     } else
         betL = state.cells[i].betPigE;
 
-    if (state.cells[i].acsr.tipo == 0)
+    if (state.cells[i].acsr.tipo == kAccessoryNone)
         state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * 1.225 * (1. - waterCutLocal) * solutionGasRatioRightFace * (6.29 / 35.31467) / oilVolumeFactorRightFace) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * 1.225 * (1. - waterCutLeftCell) * solutionGasRatioLeftFace * (6.29 / 35.31467) / oilVolumeFactorLeftFace));
     else
         state.cells[i].transmassR = 0.;
@@ -3610,7 +3610,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
 
 void advanceSteadyGasMassTransfer(const SteadyStateState &state, int i) {
 
-    if (state.cells[i].acsr.tipo == 0 && fabs(state.cells[i + 1].flui.dVaporMassFraction - state.cells[i].flui.dVaporMassFraction) < 0.2) {
+    if (state.cells[i].acsr.tipo == kAccessoryNone && fabs(state.cells[i + 1].flui.dVaporMassFraction - state.cells[i].flui.dVaporMassFraction) < 0.2) {
         state.cells[i].transmassR = ((state.cells[i + 1].MC - state.cells[i + 1].Mliqini) -
                                 (state.cells[i].MC - state.cells[i].Mliqini));
     } else
@@ -3738,7 +3738,7 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
     double sinalQ = 1.;
     if (fabs(state.cells[i - 1].QL + state.cells[i - 1].QG) > 1e-15)
         sinalQ = fabs(state.cells[i - 1].QL + state.cells[i - 1].QG) / (state.cells[i - 1].QL + state.cells[i - 1].QG);
-    if (state.cells[i - 1].acsr.tipo == 4 && state.cells[i - 1].acsr.bcs.freqnova > 1.) {
+    if (state.cells[i - 1].acsr.tipo == kAccessoryPump && state.cells[i - 1].acsr.bcs.freqnova > 1.) {
         double vazmix = fabs(state.cells[i - 1].QL + state.cells[i - 1].QG);
         double alf0 = state.cells[i - 1].alf;
         double bet0 = state.cells[i - 1].bet;
@@ -3782,7 +3782,7 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
         state.cells[i - 1].potB = sinalQ * (Wcomp + Wbomb);
         state.cells[i - 1].potTermo = sinalQ * ((1. - state.cells[i - 1].acsr.eficLiq / 100.) * Wbomb + (1. - state.cells[i - 1].acsr.eficGas / 100.) * Wcomp);
         state.cells[i - 1].potBT = state.cells[i - 1].potB;
-    } else if (state.cells[i - 1].acsr.tipo == 17 && state.cells[i - 1].acsr.multibcs.freqnova > 1.) {
+    } else if (state.cells[i - 1].acsr.tipo == kAccessoryMultiPump && state.cells[i - 1].acsr.multibcs.freqnova > 1.) {
         double alf0 = state.cells[i - 1].alf;
         double bet0 = state.cells[i - 1].bet;
         state.cells[i - 1].acsr.multibcs.flui = state.cells[i - 1].flui;
@@ -3933,7 +3933,7 @@ enum class DryGasFlashTarget {
 void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, double &alfini, double &betini,
                                       DryGasFlashTarget dryGasFlashTarget) {
     // estimativa da fracao de vazio na primeira celula do sistema
-    if (state.cells[0].acsr.tipo == 0) { // sem nenhuma fonte
+    if (state.cells[0].acsr.tipo == kAccessoryNone) { // sem nenhuma fonte
         state.cells[0].temp = state.input.celp[0].textern;
         alfini = 1.;
         betini = 0.;
@@ -3941,7 +3941,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
             if (state.input.tabelaDinamica == 0)
                 state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
         }
-    } else if (state.cells[0].acsr.tipo == 1) { // fonte de gas
+    } else if (state.cells[0].acsr.tipo == kAccessoryGasInjection) { // fonte de gas
         state.cells[0].temp = state.cells[0].acsr.injg.temp;
         if (state.input.flashCompleto == 2) {
             // The only place the three marches disagree. See H4 in
@@ -3986,7 +3986,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
             else
                 betini = 0.;
         }
-    } else if (state.cells[0].acsr.tipo == 2) { // fonte de liquido, faz-se uma estimativa a partir
+    } else if (state.cells[0].acsr.tipo == kAccessoryLiquidInjection) { // fonte de liquido, faz-se uma estimativa a partir
         // da vazÃƒÂ£o volumÃƒÂ©trica das fases, fracao de vazio = fracao de vazio sem escorregamento
         state.cells[0].temp = state.cells[0].acsr.injl.temp;
         if (state.input.flashCompleto == 2) {
@@ -4006,7 +4006,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
                       state.cells[0].acsr.injl.QLiq * state.cells[0].acsr.injl.bet;
         alfini = qgas / (qliq + qgas);
         betini = state.cells[0].acsr.injl.bet;
-    } else if (state.cells[0].acsr.tipo == 3) { // IPR no inicio da tubulacao
+    } else if (state.cells[0].acsr.tipo == kAccessoryInflowPerformance) { // IPR no inicio da tubulacao
         // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
         state.cells[0].temp = state.cells[0].acsr.ipr.Tres;
         if (state.input.flashCompleto == 2) {
@@ -4020,7 +4020,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
                       state.cells[0].acsr.ipr.FluidoPro.MasEspLiq(pchute, state.cells[0].temp);
         alfini = qgas / (qliq + qgas);
         betini = 0.;
-    } else if (state.cells[0].acsr.tipo == 15) { // IPR no inicio da tubulacao
+    } else if (state.cells[0].acsr.tipo == kAccessoryRadialPorous) { // IPR no inicio da tubulacao
         // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
         state.cells[0].temp = state.cells[0].acsr.radialPoro.tRes;
         state.cells[0].pres = pchute;
@@ -4036,7 +4036,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
                       state.cells[0].acsr.radialPoro.flup.MasEspLiq(pchute, state.cells[0].temp);
         alfini = qgas / (qliq + qgas);
         betini = 0.;
-    } else if (state.cells[0].acsr.tipo == 16) { // IPR no inicio da tubulacao
+    } else if (state.cells[0].acsr.tipo == kAccessoryPorous2D) { // IPR no inicio da tubulacao
         // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
         state.cells[0].temp = state.cells[0].acsr.poroso2D.dados.tRes;
         state.cells[0].pres = pchute;
@@ -4052,7 +4052,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
                       state.cells[0].acsr.poroso2D.dados.flup.MasEspLiq(pchute, state.cells[0].temp);
         alfini = qgas / (qliq + qgas);
         betini = 0.;
-    } else if (state.cells[0].acsr.tipo == 10) { // fonte de massa no inicio da tubulacao
+    } else if (state.cells[0].acsr.tipo == kAccessoryMultipleSource) { // fonte de massa no inicio da tubulacao
         // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
         state.cells[0].temp = state.cells[0].acsr.injm.temp;
         if (state.input.flashCompleto == 2) {
@@ -4081,9 +4081,9 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
         alfini = 1.;
         betini = 0.;
     }
-    if (state.cells[0].acsr.tipo == 15) {
+    if (state.cells[0].acsr.tipo == kAccessoryRadialPorous) {
         state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-    } else if (state.cells[0].acsr.tipo == 16) {
+    } else if (state.cells[0].acsr.tipo == kAccessoryPorous2D) {
         state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
     }
 }
@@ -4288,7 +4288,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
                 abortValue = -1e10;
                 return true;
             }
-        } else if ((state.cells[i - 1].acsr.tipo == 3 &&
+        } else if ((state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                     ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).localtiny) && i == 1)) {
             {
                 abortValue = 1e10;
@@ -4503,17 +4503,17 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
                 abortValue = -1e10;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == 3 && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < 1e-15 && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < 1e-15 && i == 1))
             {
                 abortValue = 1e10;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == 15 && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < 1e-15 && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < 1e-15 && i == 1))
             {
                 abortValue = 1e10;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == 16 && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < 1e-15 && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < 1e-15 && i == 1))
             {
                 abortValue = 1e10;
                 return true;
@@ -4686,7 +4686,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             if (state.cells[0].pres <= 0.1 ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
                 return -1e10;
-            else if ((state.cells[0].acsr.tipo == 3 &&
+            else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                       (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).localtiny))
                 return 1e10;
             // IniciaVazValvGasPerm e um metodo que faz uma estimativa da vazao na valvula de GL
@@ -5041,11 +5041,11 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             if (state.cells[0].pres <= 0.1 ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].presaux) > (*state.globals).localtiny))
                 return -1e10;
-            else if ((state.cells[0].acsr.tipo == 3 && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < 1e-15)) {
+            else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < 1e-15)) {
                 return 1e10;
-            } else if ((state.cells[0].acsr.tipo == 15 && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < 1e-15)) {
+            } else if ((state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < 1e-15)) {
                 return 1e10;
-            } else if ((state.cells[0].acsr.tipo == 16 && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < 1e-15)) {
+            } else if ((state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < 1e-15)) {
                 return 1e10;
             }
             // IniciaVazValvGasPerm e um metodo que faz uma estimativa da vazao na valvula de GL
@@ -5105,7 +5105,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
 namespace {
 
 void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute, double &alfini, double &betini) {
-    if (state.cells[0].acsr.tipo == 1) {
+    if (state.cells[0].acsr.tipo == kAccessoryGasInjection) {
         state.cells[0].temp = state.cells[0].acsr.injg.temp;
         if (state.input.flashCompleto == 2) {
             if (state.input.tabelaDinamica == 0)
@@ -5113,7 +5113,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
             state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.cells[0].pres, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
         }
         state.cells[0].acsr.injg.QGas = mchute;
-    } else if (state.cells[0].acsr.tipo == 2) {
+    } else if (state.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
         state.cells[0].temp = state.cells[0].acsr.injl.temp;
         if (state.input.flashCompleto == 2) {
             if (state.input.tabelaDinamica == 0)
@@ -5123,7 +5123,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
         state.cells[0].acsr.injl.QLiq = mchute;
     }
 
-    if (state.cells[0].acsr.tipo == 1) {
+    if (state.cells[0].acsr.tipo == kAccessoryGasInjection) {
         if (state.cells[0].acsr.injg.seco == 1) {
             alfini = 1.;
             betini = 0.;
@@ -5150,7 +5150,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
             else
                 betini = 0.;
         }
-    } else if (state.cells[0].acsr.tipo == 2) {
+    } else if (state.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
         double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                       (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
                       (state.cells[0].acsr.injl.FluidoPro.RGO -
@@ -5500,7 +5500,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
     double alfini = 0.;
     double betini = 0.;
 
-    if (state.cells[0].acsr.tipo == 1) {
+    if (state.cells[0].acsr.tipo == kAccessoryGasInjection) {
         state.cells[0].temp = state.cells[0].acsr.injg.temp;
         if (state.input.flashCompleto == 2) {
             if (state.input.tabelaDinamica == 0)
@@ -5508,7 +5508,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.cells[0].pres, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
         }
         state.cells[0].acsr.injg.QGas = mchute;
-    } else if (state.cells[0].acsr.tipo == 2) {
+    } else if (state.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
         state.cells[0].temp = state.cells[0].acsr.injl.temp;
         if (state.input.flashCompleto == 2) {
             if (state.input.tabelaDinamica == 0)
@@ -5518,7 +5518,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
         state.cells[0].acsr.injl.QLiq = mchute;
     }
 
-    if (state.cells[0].acsr.tipo == 1) {
+    if (state.cells[0].acsr.tipo == kAccessoryGasInjection) {
         if (state.cells[0].acsr.injg.seco == 1) {
             alfini = 1.;
             betini = 0.;
@@ -5554,7 +5554,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             else
                 betini = 0.;
         }
-    } else if (state.cells[0].acsr.tipo == 2) {
+    } else if (state.cells[0].acsr.tipo == kAccessoryLiquidInjection) {
         double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                       (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
                       (state.cells[0].acsr.injl.FluidoPro.RGO -
@@ -6030,7 +6030,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
             }
             masfim += (state.cells[i - 1].fontemassCR + state.cells[i - 1].fontemassLR + state.cells[i - 1].fontemassGR);
             i++;
-            if (state.cells[i - 1].pres <= 1 || (state.cells[i - 1].acsr.tipo == 3 && (state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) > -(*state.globals).localtiny))
+            if (state.cells[i - 1].pres <= 1 || (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) > -(*state.globals).localtiny))
                 return -1e10;
             else if (i < (state.lastCell + 1) && masfim < -(*state.globals).localtiny)
                 return 1e10;
@@ -6104,15 +6104,15 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
         pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
         if (state.cells[i - 1].acsr.tipo == 7)
             pchute -= state.cells[i - 1].acsr.delp;
-        if (state.cells[i - 1].acsr.tipo == 3 && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
             pchute = 0.99 * state.cells[i - 1].acsr.ipr.Pres;
-        if (state.cells[i - 1].acsr.tipo == 15 && (state.cells[i - 1].acsr.radialPoro.pRes[0] - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && (state.cells[i - 1].acsr.radialPoro.pRes[0] - pchute) < (*state.globals).localtiny)
             pchute = 0.99 * state.cells[i - 1].acsr.radialPoro.pRes[0];
-        if (state.cells[i - 1].acsr.tipo == 16 && (state.cells[i - 1].acsr.poroso2D.dados.pRes - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && (state.cells[i - 1].acsr.poroso2D.dados.pRes - pchute) < (*state.globals).localtiny)
             pchute = 0.99 * state.cells[i - 1].acsr.poroso2D.dados.pRes;
 
         state.cells[i - 1].dpB = 0.;
-        if (state.cells[i - 1].acsr.tipo == 4 && state.cells[i - 1].acsr.bcs.freqnova > 1. && liquidFlowRate >= 0.) {
+        if (state.cells[i - 1].acsr.tipo == kAccessoryPump && state.cells[i - 1].acsr.bcs.freqnova > 1. && liquidFlowRate >= 0.) {
             double vazmix = j * state.cells[i - 1].dutoL.area;
             double rhomis = state.cells[i - 1].flui.MasEspLiq(pchute, taux);
             double vismis = state.cells[i - 1].flui.ViscOleo(pchute, taux);
@@ -6120,7 +6120,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
             state.cells[i - 1].dpB = 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
         }
-        if (state.cells[i - 1].acsr.tipo == 17 && state.cells[i - 1].acsr.multibcs.freqnova > 1. && liquidFlowRate >= 0.) {
+        if (state.cells[i - 1].acsr.tipo == kAccessoryMultiPump && state.cells[i - 1].acsr.multibcs.freqnova > 1. && liquidFlowRate >= 0.) {
             double alf0 = state.cells[i - 1].alf;
             double bet0 = state.cells[i - 1].bet;
             state.cells[i - 1].acsr.multibcs.flui = state.cells[i - 1].flui;
@@ -6139,7 +6139,7 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
     double pchute = 0.;
     if (state.input.condpocinj.presfundo > 1e-5)
         pchute = state.input.condpocinj.presfundo;
-    else if (state.cells[state.lastCell].acsr.tipo == 3)
+    else if (state.cells[state.lastCell].acsr.tipo == kAccessoryInflowPerformance)
         pchute = state.cells[state.lastCell].acsr.ipr.Pres;
     else
         NumError("Sem pressao no fim do tramo e sem IPR-metodo hidroreversoInj");
@@ -6178,7 +6178,7 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
         pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
         if (state.cells[i - 1].acsr.tipo == 7)
             pchute -= state.cells[i - 1].acsr.delp;
-        if (state.cells[i - 1].acsr.tipo == 3 && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
             pchute = 0.99 * state.cells[i - 1].acsr.ipr.Pres;
         state.cells[i - 1].pres = pchute;
     }

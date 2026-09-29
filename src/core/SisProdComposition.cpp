@@ -1,6 +1,7 @@
 #include "SisProdComposition.h"
 
 #include "Leitura.h"
+#include "SisProdConstants.h"
 #include "celula3.h"
 #include "variaveisGlobais1D.h"
 
@@ -386,7 +387,7 @@ void transportBlackOilBalances(const CompositionState &state, const BlackOilFace
 /// No accessory, but mass coming in: the source is the cell's own fluid.
 /// Cut from transportCellBlackOilProperties (SC-004).
 void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &source, int i, double temperatureHigh, double temperatureLow) {
-    if (state.cells[i].acsr.tipo == 5 || state.cells[i].acsr.tipo == 8) {
+    if (state.cells[i].acsr.tipo == kAccessoryChoke || state.cells[i].acsr.tipo == kAccessoryVolumetricPump) {
         source.dgO = state.cells[i].flui.Deng;
         source.yco2O = state.cells[i].flui.yco2;
         source.rgo = state.cells[i].flui.RGO;
@@ -408,7 +409,7 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
             source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
         }
-    } else if ((*state.cells[i].acsrL).tipo == 5 || (*state.cells[i].acsrL).tipo == 8) {
+    } else if ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump) {
         double rholiq;
         double rhogas;
 
@@ -1022,7 +1023,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     source.razdgl = 1.;
     source.stockTankQuality = 0.;
     ProFlu fluF;
-    if (state.cells[i].acsr.tipo == 1 && state.cells[i].acsr.injg.seco == 1) {
+    if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 1) {
         if (state.cells[i].acsr.injg.QGas > 0.)
             fluF = state.cells[i].acsr.injg.FluidoPro;
         else
@@ -1030,23 +1031,23 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
         source.dgG = fluF.Deng;
         source.yco2G = fluF.yco2;
         source.rhogST = fluF.Deng * 1.225;
-    } else if (state.cells[i].acsr.tipo == 1 && state.cells[i].acsr.injg.seco == 0) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 0) {
         blackOilSourceWetGasInjection(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if (state.cells[i].acsr.tipo == 2) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
         blackOilSourceLiquidInjection(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if (state.cells[i].acsr.tipo == 10) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
         blackOilSourceMultipleSource(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if (state.cells[i].acsr.tipo == 3) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
         blackOilSourceInflowPerformance(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if (state.cells[i].acsr.tipo == 9) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
         blackOilSourceLeak(state, source, i, temperatureHigh, temperatureLow);
-    } else if (state.cells[i].acsr.tipo == 15) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
         blackOilSourceRadialPorous(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if (state.cells[i].acsr.tipo == 16) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         blackOilSourcePorous2D(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 &&
-                state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16) ||
-               (fabs(source.freeGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 1 && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 && state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16)) {
+    } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != kAccessoryLiquidInjection && state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
+                state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D) ||
+               (fabs(source.freeGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != kAccessoryGasInjection && state.cells[i].acsr.tipo != kAccessoryLiquidInjection && state.cells[i].acsr.tipo != kAccessoryInflowPerformance && state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D)) {
         blackOilSourceCellFluid(state, source, i, temperatureHigh, temperatureLow);
     }
     source.freeGas *= (source.razdgl / (source.rhogST));
@@ -1105,11 +1106,11 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) 
     else
         temperatureHigh = 70.;
     int imin = 1;
-    if ((*state.globals).chaverede != 0 && (state.cells[0].acsr.tipo == 10 || state.input.ConContEntrada > 0))
+    if ((*state.globals).chaverede != 0 && (state.cells[0].acsr.tipo == kAccessoryMultipleSource || state.input.ConContEntrada > 0))
         imin = 0;
-    if (state.cells[0].acsr.tipo == 15 && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
+    if (state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
         state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-    else if (state.cells[0].acsr.tipo == 16 && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
+    else if (state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
         state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
 #pragma omp parallel for num_threads((*state.globals).ntrd)
     for (int i = imin; i < state.lastCell; i++) {
@@ -1378,7 +1379,7 @@ void transportPhaseVolumesAndViscosities(const CompositionState &state, const Ph
 /// from the cell's own fluid.
 /// Cut from transportCellPhaseMolarFractions (SC-004).
 void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
-    if (state.cells[i].acsr.tipo == 2) {
+    if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
         double solutionGasRatioSource = state.cells[i].acsr.injl.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.injl.FluidoPro.BSW;
@@ -1402,7 +1403,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscL = 0 * 30 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureHigh);
         }
-    } else if (state.cells[i].acsr.tipo == 10) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
         double solutionGasRatioSource = state.cells[i].acsr.injm.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.injm.FluidoPro.BSW;
@@ -1429,7 +1430,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscL = 0 * 30 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
         }
-    } else if (state.cells[i].acsr.tipo == 3) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
         double solutionGasRatioSource = state.cells[i].acsr.ipr.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.ipr.FluidoPro.BSW;
@@ -1453,7 +1454,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscL = 0 * 30 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureHigh);
         }
-    } else if (state.cells[i].acsr.tipo == 9) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
 
         double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
@@ -1478,7 +1479,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
         }
-    } else if (state.cells[i].acsr.tipo == 15) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
         double solutionGasRatioSource = state.cells[i].acsr.radialPoro.flup.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.radialPoro.BSW;
@@ -1502,7 +1503,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscL = 0 * 30 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureHigh);
         }
-    } else if (state.cells[i].acsr.tipo == 16) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         double solutionGasRatioSource = state.cells[i].acsr.poroso2D.dados.flup.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
@@ -1526,10 +1527,10 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscL = 0 * 30 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureHigh);
         }
-    } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 &&
-                state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16) ||
-               (fabs(source.freeGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != 1 && state.cells[i].acsr.tipo != 2 && state.cells[i].acsr.tipo != 3 && state.cells[i].acsr.tipo != 9 && state.cells[i].acsr.tipo != 15 && state.cells[i].acsr.tipo != 16)) {
-        if (state.cells[i].acsr.tipo == 5 || state.cells[i].acsr.tipo == 8) {
+    } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != kAccessoryLiquidInjection && state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
+                state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D) ||
+               (fabs(source.freeGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != kAccessoryGasInjection && state.cells[i].acsr.tipo != kAccessoryLiquidInjection && state.cells[i].acsr.tipo != kAccessoryInflowPerformance && state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D)) {
+        if (state.cells[i].acsr.tipo == kAccessoryChoke || state.cells[i].acsr.tipo == kAccessoryVolumetricPump) {
             double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
             if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
                 double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) + state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
@@ -1540,7 +1541,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                 source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
                 source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
             }
-        } else if ((*state.cells[i].acsrL).tipo == 5 || (*state.cells[i].acsrL).tipo == 8) {
+        } else if ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump) {
             if (i > 0) {
                 double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
                 if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
@@ -1654,7 +1655,7 @@ void solveCellPhaseMolarFractions(const CompositionState &state, const PhaseFace
 /// and quality.
 /// Cut from transportCellPhaseMolarFractions (SC-004).
 void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, ProFlu &fluF, int i) {
-    if (state.cells[i].acsr.tipo == 1) {
+    if (state.cells[i].acsr.tipo == kAccessoryGasInjection) {
         if (state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta < 0. || state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta > 1.)
             state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
         else
@@ -1667,7 +1668,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
             fluF = state.cells[i].flui;
         source.waterCut = 0.;
         source.tit = 1.;
-    } else if (state.cells[i].acsr.tipo == 2) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
         if (state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta < 0. || state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta > 1.)
             state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
         else
@@ -1684,7 +1685,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
         source.rhoO = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
         source.rhoW = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
         source.tit = (1 - source.waterCut) * source.rhoO / ((1 - source.waterCut) * source.rhoO + source.waterCut * source.rhoW);
-    } else if (state.cells[i].acsr.tipo == 3) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
         if (state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta < 0. || state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta > 1.)
             state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
         else
@@ -1701,7 +1702,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
         source.rhoO = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
         source.rhoW = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
         source.tit = (1 - source.waterCut) * source.rhoO / ((1 - source.waterCut) * source.rhoO + source.waterCut * source.rhoW);
-    } else if (state.cells[i].acsr.tipo == 10) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
         if (state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta < 0. || state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta > 1.)
             state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
         else
@@ -1718,7 +1719,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
         source.rhoO = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
         source.rhoW = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
         source.tit = (1 - source.waterCut) * source.rhoO / ((1 - source.waterCut) * source.rhoO + source.waterCut * source.rhoW);
-    } else if (state.cells[i].acsr.tipo == 9 && state.cells[i].acsr.fontechk.abertura > 1e-6) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryLeak && state.cells[i].acsr.fontechk.abertura > 1e-6) {
         if (state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta < 0. || state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta > 1.)
             state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
         else
@@ -1742,7 +1743,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
         source.rhoO = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
         source.rhoW = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
         source.tit = (1 - source.waterCut) * source.rhoO / ((1 - source.waterCut) * source.rhoO + source.waterCut * source.rhoW);
-    } else if (state.cells[i].acsr.tipo == 15) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
         double tRes = state.cells[i].acsr.radialPoro.tRes;
         if (state.cells[i].acsr.radialPoro.flup.dCalculatedBeta < 0. || state.cells[i].acsr.radialPoro.flup.dCalculatedBeta > 1.)
             state.cells[i].acsr.radialPoro.flup.atualizaPropComp(state.cells[i].pres, tRes, -1, NULL, NULL, state.input.pocinjec);
@@ -1760,7 +1761,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
         source.rhoO = fluF.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
         source.rhoW = fluF.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
         source.tit = (1 - source.waterCut) * source.rhoO / ((1 - source.waterCut) * source.rhoO + source.waterCut * source.rhoW);
-    } else if (state.cells[i].acsr.tipo == 16) {
+    } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         double tRes = state.cells[i].acsr.poroso2D.dados.tRes;
         if (state.cells[i].acsr.poroso2D.dados.flup.dCalculatedBeta < 0. || state.cells[i].acsr.poroso2D.dados.flup.dCalculatedBeta > 1.)
             state.cells[i].acsr.poroso2D.dados.flup.atualizaPropComp(state.cells[i].pres, tRes, -1, NULL, NULL, state.input.pocinjec);
@@ -2224,9 +2225,9 @@ void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev)
     Vcr<double> fracMol0G(ncomp);
     Vcr<double> fracMol1G(ncomp);
     Vcr<double> fracMolF(ncomp);
-    if (state.cells[0].acsr.tipo == 15 && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
+    if (state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
         state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-    else if (state.cells[0].acsr.tipo == 16 && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
+    else if (state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
         state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
     double dt = state.cells[1].dt;
     double temperatureLow = 0.;
@@ -2234,7 +2235,7 @@ void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev)
     if (state.compositionalRefreshCounter == state.input.miniTabAtraso  && state.input.miniTabAtraso > 0)
         (*state.globals).modoTransiente = 0;
     int imin = 1;
-    if ((*state.globals).chaverede != 0 && (state.cells[0].acsr.tipo == 10 || state.input.ConContEntrada > 0))
+    if ((*state.globals).chaverede != 0 && (state.cells[0].acsr.tipo == kAccessoryMultipleSource || state.input.ConContEntrada > 0))
         imin = 0;
 
     for (int i = imin; i < state.lastCell; i++) {

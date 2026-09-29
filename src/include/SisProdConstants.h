@@ -79,7 +79,7 @@ inline constexpr double kMaximumTemperatureCelsius = 200.;
 /// cell. Read from where the field is assigned, in Leitura.cpp and
 /// LeituraVapor.cpp; the contradictory table in acessorios.h belongs to a dead
 /// function. Type 7 is absent because no assignment names it.
-enum : int {
+enum AccessoryKind : int {
     kAccessoryNone = 0,             ///< no source attached
     kAccessoryGasInjection = 1,     ///< acsr.injg
     kAccessoryLiquidInjection = 2,  ///< acsr.injl
