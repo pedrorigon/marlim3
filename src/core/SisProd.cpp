@@ -1289,9 +1289,9 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
             celula[i].flui.razDegD(celula[i].pres, celula[i].temp);
             celula[i].flui.rzDegL(celula[i].pres, celula[i].temp);
             celula[i].flui.PcTcIS();
-            forEachSourceFluid(celula[i], [](ProFlu &fluid, double pres, double temp) {
-                fluid.razDegD(pres, temp);
-                fluid.rzDegL(pres, temp);
+            forEachSourceFluid(celula[i], [](ProFlu &fluid, double pressure, double temperature) {
+                fluid.razDegD(pressure, temperature);
+                fluid.rzDegL(pressure, temperature);
             });
         }
     }
