@@ -402,7 +402,10 @@ salvaFonte
 # Unit conversions and physical constants written as literals now use the names
 # in SisProdConstants.h, each spelled exactly as the literal it replaces (the
 # header's static_asserts). Verified by object identity: all 83 objects and the
-# binary byte-identical to the commit before.
+# binary byte-identical to the commit before. HidroDescargaP was then
+# restructured (its two pairs of branches, which differed only in the void and
+# beta fractions they store, merged): verified by the argument in its commit and
+# the unloading differential decks.
 FonteValv
 HidroDescargaP
 correcHidroFric

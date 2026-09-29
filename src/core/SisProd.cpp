@@ -540,37 +540,21 @@ void SProd::HidroDescargaP() {
     celula[0].fontemassCR = 0;
     celula[0].fontemassLR = 0;
     celula[0].fontemassGR = 0;
-    if (0 <= arq.celdescargaP) {
-        celula[0].alf = 0.;
-        celula[0].bet = 1.;
-        celula[0].betI = celula[0].bet;
-        celula[0].alfini = celula[0].alf;
-        celula[0].betini = celula[0].bet;
-        celula[0].alfPigD = celula[0].alf;
-        celula[0].betPigD = celula[0].bet;
-        celula[0].alfPigE = celula[0].alf;
-        celula[0].betPigE = celula[0].bet;
-        celula[1].alfL = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[1].betLI = celula[0].bet;
-        celula[1].alfLini = celula[0].alf;
-        celula[1].betLini = celula[0].bet;
-    } else {
-        celula[0].alf = 1.;
-        celula[0].bet = 0.;
-        celula[0].betI = celula[0].bet;
-        celula[0].alfini = celula[0].alf;
-        celula[0].betini = celula[0].bet;
-        celula[0].alfPigD = celula[0].alf;
-        celula[0].betPigD = celula[0].bet;
-        celula[0].alfPigE = celula[0].alf;
-        celula[0].betPigE = celula[0].bet;
-        celula[1].alfL = celula[0].alf;
-        celula[1].betL = celula[0].bet;
-        celula[1].betLI = celula[0].bet;
-        celula[1].alfLini = celula[0].alf;
-        celula[1].betLini = celula[0].bet;
-    }
+    const bool inletBelowInterface = 0 <= arq.celdescargaP;
+    celula[0].alf = inletBelowInterface ? 0. : 1.;
+    celula[0].bet = inletBelowInterface ? 1. : 0.;
+    celula[0].betI = celula[0].bet;
+    celula[0].alfini = celula[0].alf;
+    celula[0].betini = celula[0].bet;
+    celula[0].alfPigD = celula[0].alf;
+    celula[0].betPigD = celula[0].bet;
+    celula[0].alfPigE = celula[0].alf;
+    celula[0].betPigE = celula[0].bet;
+    celula[1].alfL = celula[0].alf;
+    celula[1].betL = celula[0].bet;
+    celula[1].betLI = celula[0].bet;
+    celula[1].alfLini = celula[0].alf;
+    celula[1].betLini = celula[0].bet;
     double pmed;
     double tmed;
     pmed = celula[0].acsr.ipr.Pres;
@@ -586,7 +570,7 @@ void SProd::HidroDescargaP() {
     celula[0].tempini = tmed;
     celula[1].tempL = tmed;
     double rho0;
-    if (0 <= arq.celdescargaP)
+    if (inletBelowInterface)
         rho0 = celula[0].fluicol.MasEspFlu(pmed, tmed);
     else
         rho0 = celula[0].flui.MasEspGas(pmed, tmed);
@@ -620,6 +604,7 @@ void SProd::HidroDescargaP() {
     celula[0].rcCi = rho1;
 
     for (int i = 1; i <= ncel; i++) {
+        const bool belowInterface = i <= arq.celdescargaP;
         double A0 = celula[i - 1].duto.area;
         double dx0 = 0.5 * celula[i].dxL;
         double A1 = celula[i].duto.area;
@@ -630,7 +615,7 @@ void SProd::HidroDescargaP() {
         celula[i].presaux = pmed;
         celula[i - 1].presauxR = celula[i].presaux;
         celula[i].presauxL = celula[i - 1].presaux;
-        if (i <= arq.celdescargaP)
+        if (belowInterface)
             rho1 = celula[i].fluicol.MasEspFlu(pmed, tmed);
         else
             rho1 = celula[i].flui.MasEspGas(pmed, tmed);
@@ -662,7 +647,7 @@ void SProd::HidroDescargaP() {
         celula[i - 1].rcR = celula[i].rcC;
 
         double rhoaux;
-        if (i <= arq.celdescargaP)
+        if (belowInterface)
             rhoaux = celula[i].fluicol.MasEspFlu(celula[i].presaux, taux);
         else
             rhoaux = celula[0].flui.MasEspGas(celula[i].presaux, taux);
@@ -678,43 +663,19 @@ void SProd::HidroDescargaP() {
         celula[i].fontemassCR = 0;
         celula[i].fontemassLR = 0;
         celula[i].fontemassGR = 0;
-        if (i <= arq.celdescargaP) {
-            celula[i].alf = 0.;
-            celula[i].bet = 1.;
-            celula[i - 1].betR = celula[i].bet;
-            celula[i - 1].betRini = celula[i].bet;
-            celula[i - 1].alfR = celula[i].alf;
-            celula[i - 1].alfRini = celula[i].alf;
-            celula[i].betI = celula[i].bet;
-            celula[i].alfini = celula[i].alf;
-            celula[i].betini = celula[i].bet;
-            celula[i].alfPigD = celula[i].alf;
-            celula[i].betPigD = celula[i].bet;
-            celula[i].alfPigE = celula[i].alf;
-            celula[i].betPigE = celula[i].bet;
-            celula[i - 1].alfR = celula[i].alf;
-            celula[i - 1].alfRini = celula[i].alf;
-            celula[i - 1].betR = celula[i].bet;
-            celula[i - 1].betRini = celula[i].bet;
-        } else {
-            celula[i].alf = 1.;
-            celula[i].bet = 0.;
-            celula[i - 1].betR = celula[i].bet;
-            celula[i - 1].betRini = celula[i].bet;
-            celula[i - 1].alfR = celula[i].alf;
-            celula[i - 1].alfRini = celula[i].alf;
-            celula[i].betI = celula[i].bet;
-            celula[i].alfini = celula[i].alf;
-            celula[i].betini = celula[i].bet;
-            celula[i].alfPigD = celula[i].alf;
-            celula[i].betPigD = celula[i].bet;
-            celula[i].alfPigE = celula[i].alf;
-            celula[i].betPigE = celula[i].bet;
-            celula[i - 1].alfR = celula[i].alf;
-            celula[i - 1].alfRini = celula[i].alf;
-            celula[i - 1].betR = celula[i].bet;
-            celula[i - 1].betRini = celula[i].bet;
-        }
+        celula[i].alf = belowInterface ? 0. : 1.;
+        celula[i].bet = belowInterface ? 1. : 0.;
+        celula[i - 1].betR = celula[i].bet;
+        celula[i - 1].betRini = celula[i].bet;
+        celula[i - 1].alfR = celula[i].alf;
+        celula[i - 1].alfRini = celula[i].alf;
+        celula[i].betI = celula[i].bet;
+        celula[i].alfini = celula[i].alf;
+        celula[i].betini = celula[i].bet;
+        celula[i].alfPigD = celula[i].alf;
+        celula[i].betPigD = celula[i].bet;
+        celula[i].alfPigE = celula[i].alf;
+        celula[i].betPigE = celula[i].bet;
 
         if (i < ncel) {
             celula[i + 1].tempL = tmed;
