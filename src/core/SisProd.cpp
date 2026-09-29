@@ -458,12 +458,8 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
     redeParalelaS = -1;
 }
 
-/// Frees every array this object owns, reading its CURRENT sizes and switches, so
-/// operator= and copiaSemJson must call it before copying anything in. Each used
-/// to have its own copy; the two differed only in six null tests written as
-/// `p != 0` in one and `p` in the other, which mean the same for a pointer, and
-/// GCC already folded them into one at -O3. Must change together with the
-/// constructors (data-model.md, lifecycle constraints).
+/// Frees every array this object owns, reading its current sizes and switches.
+/// An array added to the construction must be released here too.
 void SProd::releaseOwnedStorage() {
     if (arq.lingas > 0)
         delete[] celulaG;
@@ -588,6 +584,10 @@ void SProd::releaseOwnedStorage() {
     if (arq.tabelaDinamica == 1) {
         tabDin.clear();
     }
+}
+
+SProd::~SProd() {
+    releaseOwnedStorage();
 }
 
 SProd &SProd::operator=(const SProd &sp) {
