@@ -83,10 +83,10 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
     } else
         medpres = 1;
     double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    double gradhidro = (1 - medpres) * 9.82 * sin(state.cells[i].duto.teta) * rhomix * dx;
+    double gradhidro = (1 - medpres) * kGravity * sin(state.cells[i].duto.teta) * rhomix * dx;
     state.cells[i].presauxini = state.cells[i].presaux;
-    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / 98066.5;
-    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / 98066.5;
+    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
+    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
     dx = 0.5 * state.cells[i].dxL;
     diameter = state.cells[i - 1].duto.a;
     area = 0.25 * M_PI * diameter * diameter;
@@ -110,12 +110,12 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
     frictionFactor = state.cells[i - 1].fric(reynolds, state.cells[i - 1].duto.rug / diameter);
 
     gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    gradhidro = (1 - medpres) * 9.82 * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
+    gradhidro = (1 - medpres) * kGravity * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
 
     if (state.cells[i - 1].acsr.tipo != kAccessoryChoke || state.cells[i - 1].acsr.chk.AreaGarg > state.cells[i - 1].acsr.chk.AreaTub * 0.5)
         state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
-                            0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / 98066.5);
-    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / 98066.5;
+                            0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2);
+    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / kPascalPerKgfPerCm2;
     state.cells[i - 1].presauxRini = state.cells[i - 1].presauxR;
     state.cells[i - 1].presauxR = state.cells[i].presaux;
     if (i < state.lastCell) {
@@ -263,11 +263,11 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     double frictionFactor = state.cells[i].fric(reynolds, state.cells[i].duto.rug / diameter);
     double medpres = 0;
     double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    double gradhidro = (1 - medpres) * 9.82 * sin(state.cells[i].duto.teta) * rhomix * dx;
+    double gradhidro = (1 - medpres) * kGravity * sin(state.cells[i].duto.teta) * rhomix * dx;
 
     state.cells[i].presauxini = state.cells[i].presaux;
-    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / 98066.5;
-    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / 98066.5;
+    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
+    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
     dx = 0.5 * state.cells[i].dxL;
     diameter = state.cells[i - 1].duto.a;
     area = 0.25 * M_PI * diameter * diameter;
@@ -290,11 +290,11 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     }
     frictionFactor = state.cells[i - 1].fric(reynolds, state.cells[i - 1].duto.rug / diameter);
     gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    gradhidro = (1 - medpres) * 9.82 * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
+    gradhidro = (1 - medpres) * kGravity * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
 
     state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
-                        0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / 98066.5);
-    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / 98066.5;
+                        0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2);
+    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / kPascalPerKgfPerCm2;
     state.cells[i - 1].presauxRini = state.cells[i - 1].presauxR;
     state.cells[i - 1].presauxR = state.cells[i].presaux;
     if (i < state.lastCell) {
@@ -549,7 +549,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
         double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
         double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
         double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
-        state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * 98066.52;
+        state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * kPascalPerKgfPerCm2Variant;
     }
     if (ypres > 1.) {
         if (state.input.chkv == 0)
@@ -606,7 +606,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     int abertoini = state.surfaceChokeOpen;
     double delp;
     if (surfaceChokeIsOpen(state))
-        delp = (0.5 / 98066.5) * (1 / romix) * (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
+        delp = (0.5 / kPascalPerKgfPerCm2) * (1 / romix) * (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
     else
         delp = 0;
 
@@ -790,7 +790,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
 
     double delp;
     if (surfaceChokeIsOpen(state))
-        delp = (0.5 / 98066.5) * (1 / romix) *
+        delp = (0.5 / kPascalPerKgfPerCm2) * (1 / romix) *
                (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
     else
         delp = 0.;
@@ -1251,7 +1251,7 @@ void restrictTimeStepByValve(const TransientStepState &state) {
                         state.desperationMoment = 1;
                     if (state.desperationMoment < 1.)
                         state.desperationMoment = 1.;
-                    state.cells[celpos].fontemassGL += state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * 1.225 / 86400;
+                    state.cells[celpos].fontemassGL += state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / kSecondsPerDay;
                     state.cells[celpos - 1].fontemassGR = state.cells[celpos].fontemassGL;
                 }
                 if (state.cells[celpos].alf < 0.5)
@@ -1510,7 +1510,7 @@ void refreshFluidMiniTable(const TransientStepState &state) {
 void refreshInletCondition(const TransientStepState &state) {
     if (state.input.ConContEntrada == 1) {
         if (state.input.tipoFluido == 0 && state.input.flashCompleto == 2) {
-            double rgST = state.cells[0].flui.Deng * 1.225;
+            double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
             double roST = 141.5 * 1000. / (131.5 + state.cells[0].flui.API);
             double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
             double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
@@ -1521,7 +1521,7 @@ void refreshInletCondition(const TransientStepState &state) {
             double val1 = ((1. - state.inletCompletionFraction) * liquidDensity * titH / (1. - titH));
             state.inletQuality = val1 / (rlMix + val1);
         } else if (state.input.tipoFluido == 1) {
-            double rgST = state.cells[0].flui.Deng * 1.225;
+            double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
             double roST = 141.5 * 1000. / (131.5 + state.cells[0].flui.API);
             double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
             double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);

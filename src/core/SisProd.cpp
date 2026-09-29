@@ -39,7 +39,7 @@ using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
 using sisprod::kGravity;
 using sisprod::kGravityUnloadingVariant;
-using sisprod::kPascalPerKgfPerCm2Hydrostatic;
+using sisprod::kPascalPerKgfPerCm2Coarse;
 using sisprod::kPascalPerKgfPerCm2PvtSim;
 using sisprod::kPascalPerKgfPerCm2Variant;
 using sisprod::kPsiPerAtmosphere;
@@ -3019,8 +3019,8 @@ void SProd::FonteValv(int ind) {
         double rholcJ = celula[ind + 1].fluicol.MasEspFlu(celula[ind + 1].pres, celula[ind + 1].temp);
         double rholmixJ = (1 - betJ) * rholpJ + betJ * rholcJ;
 
-        double hidroM = sin(celula[ind].duto.teta) * (0.5 * celula[ind].dx) * (rholmix * (1 - alfE) + alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp)) * kGravity / kPascalPerKgfPerCm2Hydrostatic;
-        double hidroJ = sin(celula[ind + 1].duto.teta) * (0.5 * celula[ind + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp)) * kGravity / kPascalPerKgfPerCm2Hydrostatic;
+        double hidroM = sin(celula[ind].duto.teta) * (0.5 * celula[ind].dx) * (rholmix * (1 - alfE) + alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
+        double hidroJ = sin(celula[ind + 1].duto.teta) * (0.5 * celula[ind + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
 
         double masentrada = celula[ind].MC;
         double massgas = celula[ind].MC - celula[ind].Mliqini;

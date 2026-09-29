@@ -315,7 +315,7 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     // valve opening pressure is the casing pressure; the ratio is of areas.
 
     double bellowsPressureAt80F = calibrationPressure * (1 - valveRatio);
-    bellowsPressureAt80F = (bellowsPressureAt80F + 14.6959488) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - 14.6959488;
+    bellowsPressureAt80F = (bellowsPressureAt80F + kAtmosphereInPsi) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - kAtmosphereInPsi;
     double bellowsPressure = bellowsPressureAt80F * (1 + 0.00215 * (bottomHoleTemperatureFahrenheit - 80));
     // The two assignments to the opening fraction that used to stand here --
     // one on `openingCriterion > bellowsPressure`, one on the closed-valve rule
@@ -1260,7 +1260,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
             double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
             double dpdx;
-            dpdx = 2. * (state.gasCells[cellIndex].pres - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) * 98600. / dx;
+            dpdx = 2. * (state.gasCells[cellIndex].pres - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) * kPascalPerKgfPerCm2Coarse / dx;
 
             double kineticTerm;
             double superficialVelocityGradient = 0.;

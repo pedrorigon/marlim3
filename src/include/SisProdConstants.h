@@ -19,10 +19,11 @@ inline constexpr double kPascalPerKgfPerCm2Variant = 98066.52;
 /// kgf/cm^2, the value kAtmosphereInKgfPerCm2 keeps.
 inline constexpr double kPascalPerKgfPerCm2PvtSim = 98068.059233;
 
-/// The half-cell hydrostatic terms beside a choke or valve, and some pressure
-/// gradients of the steady temperature march, divide by 98600: 0.54% above
-/// 98066.5. Preserved like the spellings above.
-inline constexpr double kPascalPerKgfPerCm2Hydrostatic = 98600.;
+/// A coarse spelling, 0.54% above 98066.5. The half-cell hydrostatic terms
+/// beside a choke or valve use it, as do the interfacial work terms and the
+/// pressure gradients of the gas and reverse steady temperature marches.
+/// Preserved like the spellings above.
+inline constexpr double kPascalPerKgfPerCm2Coarse = 98600.;
 
 /// Psi per pascal, 1 / 6894.757.
 inline constexpr double kPsiPerPascal = 0.00014503773800722;
@@ -59,6 +60,11 @@ inline constexpr double kPsiPerKgfPerCm2 = 14.223595;
 /// One standard atmosphere in kgf/cm^2, subtracted to turn absolute pressure
 /// into gauge before the imperial conversion.
 inline constexpr double kAtmosphereInKgfPerCm2 = 1.033211;
+
+/// One standard atmosphere in psi, added and subtracted to go between gauge
+/// and absolute pressure in the gas-lift valve calibration. The PVTSim reader
+/// rounds the same quantity as kPsiPerAtmosphere.
+inline constexpr double kAtmosphereInPsi = 14.6959488;
 
 /// Seconds per day. Flow rates are carried in kg/s and reported in m3/day.
 inline constexpr double kSecondsPerDay = 86400.;
@@ -166,7 +172,7 @@ static_assert(kGasInletInjectionFlowRate == 1);
 static_assert(kPascalPerKgfPerCm2 == 98066.5);
 static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
 static_assert(kPascalPerKgfPerCm2PvtSim == 98068.059233);
-static_assert(kPascalPerKgfPerCm2Hydrostatic == 98600.);
+static_assert(kPascalPerKgfPerCm2Coarse == 98600.);
 static_assert(kPsiPerPascal == 0.00014503773800722);
 static_assert(kAtmospherePerKgfPerCm2 == 0.9678411);
 static_assert(kPsiPerAtmosphere == 14.69595);
@@ -177,6 +183,7 @@ static_assert(kGravity == 9.82);
 static_assert(kGravityUnloadingVariant == 9.81);
 static_assert(kPsiPerKgfPerCm2 == 14.223595);
 static_assert(kAtmosphereInKgfPerCm2 == 1.033211);
+static_assert(kAtmosphereInPsi == 14.6959488);
 static_assert(kSecondsPerDay == 86400.);
 static_assert(kPascalSecondPerCentipoise == 1.e-3);
 static_assert(kStandardPressureKgfPerCm2 == 1.);

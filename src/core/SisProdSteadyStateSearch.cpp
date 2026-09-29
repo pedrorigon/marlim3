@@ -146,7 +146,7 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
             // para fazer a estimativa da pressao de njecao
             double dx = 0.5 * (state.march.gasCells[k].dx0 + state.march.gasCells[k].dxL);
             double rhog = state.march.gasCells[k].flui.MasEspGas(pchute, deepestValveTemperatureGuess);
-            pchute += rhog * 9.81 * sin(state.march.gasCells[k].duto.teta) * dx / 98066.5; // avanco apenas pela hidrostatica
+            pchute += rhog * 9.81 * sin(state.march.gasCells[k].duto.teta) * dx / kPascalPerKgfPerCm2; // avanco apenas pela hidrostatica
         }
     } else {
         for (int k = state.march.gasCellCount; k > 0; k--)
@@ -558,7 +558,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
@@ -587,7 +587,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
@@ -631,16 +631,16 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
             // estimativa grosseira da vazao massica do liquido complementar
-            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / 86400;
+            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
             // estimativa grosseira da vazao massica de liquido e gas produzidos
             double massic;
             // massas especificas, condicao standard
-            double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+            double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplicador da vazao standard para se obter a Vazao massicagÃ¡s+liquido produzido
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
             // massic *= multiplicador;//alteracao8
-            massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / 86400;
+            massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             // titulo do gas em relacao a misturaoleo+agua+gas
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic; // vazao massica de liquido produzido
@@ -693,7 +693,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
             // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-            pchute += ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
+            pchute += ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2);
             // incremento de pressao devido a algum ganho de pressao constante em alguma celula
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchute += state.march.cells[i - 1].acsr.delp;
@@ -1408,7 +1408,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
@@ -1444,7 +1444,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchuteAux -= state.march.cells[i - 1].acsr.delp;
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
@@ -1493,16 +1493,16 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
             // estimativa grosseira da vazao massica do liquido complementar
-            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / 86400;
+            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
             // estimativa grosseira da vazao massica de liquido e gas produzidos
             double massic;
             // massas especificas, condicao standard
-            double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+            double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplicador da vazao standard para se obter a Vazao massicagÃ¡s+liquido produzido
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
             // massic *= multiplicador;//alteracao8
-            massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / 86400;
+            massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             // titulo do gas em relacao a misturaoleo+agua+gas
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic; // vazao massica de liquido produzido
@@ -1555,7 +1555,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
             // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-            pchute += ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
+            pchute += ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2);
             if (pchute < 0.8)
                 pchute = 0.8;
             // incremento de pressao devido a algum ganho de pressao constante em alguma celula
@@ -1567,7 +1567,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             // pressao estatica da IPR da celula
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres) && i == 1) {
-                double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * 86400;
+                double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * kSecondsPerDay;
                 pchute = -(flowRateGuess / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchute > 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchute = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
@@ -2196,7 +2196,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
@@ -2223,7 +2223,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 pchuteAux = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
@@ -2265,19 +2265,19 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
             // estimativa grosseira da vazao massica do liquido complementar
-            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / 86400;
+            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
             // estimativa grosseira da vazao massica de liquido e gas produzidos
-            double massic = rlpA * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / 86400;
+            double massic = rlpA * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             // massas especificas, condicao standard
-            double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
+            double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplicador da vazao standard para se obter a Vazao massicagÃ¡s+liquido produzido
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
             // massic *= multiplicador;//alteracao8
             if ((*state.march.globals).chaverede == 1)
-                massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / 86400;
+                massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             else
-                massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / 86400;
+                massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             // titulo do gas em relacao a misturaoleo+agua+gas
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic; // vazao massica de liquido produzido
@@ -2330,14 +2330,14 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
             // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-            pchute += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchute += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             // caso exista alguma IPR no meio do duto, verifica se a pressao estimada esta maior que
             // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
             // para evitar isto, se corrige a pressao para um valor proximo da
             // pressao estatica da IPR da celula
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
-                double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * 86400;
+                double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * kSecondsPerDay;
                 pchute = -(flowRateGuess / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
                 if (pchute > 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchute = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
@@ -2970,7 +2970,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
-                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * 86400);
+                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * kSecondsPerDay);
                 if (kontaiter > 200 && fabs(velocityGuess) > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3114,7 +3114,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
-                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * 86400);
+                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * kSecondsPerDay);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3293,7 +3293,7 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
-                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * 86400);
+                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * kSecondsPerDay);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3420,7 +3420,7 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 multiplica = rmisLst;
             else
                 multiplica = rGst;
-            velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * 86400);
+            velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * kSecondsPerDay);
             if (kontaiter > 200 && velocityGuess > 0.01) {
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                     NumError(
@@ -3537,7 +3537,7 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i + 1].dx);
             // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-            pchute -= ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed) / 98066.5);
+            pchute -= ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed) / kPascalPerKgfPerCm2);
             // incremento de pressao devido a algum ganho de pressao constante em alguma celula
             if (state.march.cells[i].acsr.tipo == 7)
                 pchute -= state.march.cells[i].acsr.delp;
@@ -3622,7 +3622,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
             for (int i = 1; i <= state.march.lastCell; i++) {
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pavanc, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                pavanc -= rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
+                pavanc -= rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / kPascalPerKgfPerCm2;
                 if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3654,7 +3654,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
             for (int i = 1; i <= state.march.lastCell; i++) {
                 double rhog = state.march.cells[i].flui.MasEspGas(pavanc, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                pavanc -= rhog * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
+                pavanc -= rhog * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / kPascalPerKgfPerCm2;
                 if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3670,7 +3670,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= state.march.cells[i].acsr.ipr.ij * (state.march.cells[i].acsr.ipr.Pres - pavanc);
                     else
-                        mchute -= (state.march.cells[i].acsr.ipr.ij * rhog) * (state.march.cells[i].acsr.ipr.Pres - pavanc) / (state.march.cells[0].flui.Deng * 1.225);
+                        mchute -= (state.march.cells[i].acsr.ipr.ij * rhog) * (state.march.cells[i].acsr.ipr.Pres - pavanc) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions);
                 }
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -3678,7 +3678,7 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, d
                 if (state.march.cells[0].acsr.injg.QGas > 1e-5)
                     mchute = state.march.cells[0].acsr.injg.QGas;
                 else
-                    mchute += 100. * state.march.cells[state.march.lastCell].flui.MasEspGas(pavanc, taux) / (state.march.cells[0].flui.Deng * 1.225);
+                    mchute += 100. * state.march.cells[state.march.lastCell].flui.MasEspGas(pavanc, taux) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions);
             }
         }
     } else
@@ -3930,7 +3930,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
             double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
             rmis = completionDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq / 86400;
+            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq / kSecondsPerDay;
             j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
@@ -3945,13 +3945,13 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
             for (int i = state.march.lastCell; i > 0; i--) {
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
                 taux = state.march.cells[i].calor.Textern1;
             }
         } else {
-            pchute = state.march.cells[state.march.lastCell].acsr.ipr.Pres + ((state.march.cells[0].acsr.injg.QGas) * (state.march.cells[0].flui.Deng * 1.225) / (state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].acsr.ipr.Pres, state.march.cells[state.march.lastCell].calor.Textern1)));
+            pchute = state.march.cells[state.march.lastCell].acsr.ipr.Pres + ((state.march.cells[0].acsr.injg.QGas) * (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions) / (state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].acsr.ipr.Pres, state.march.cells[state.march.lastCell].calor.Textern1)));
             double taux = state.march.cells[0].calor.Textern1;
             double rmis;
             double j;
@@ -3961,8 +3961,8 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
             double visMis = visC;
             double completionDensityAtGuess = state.march.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, taux);
             rmis = completionDensityAtGuess;
-            double rlcA = (state.march.cells[0].flui.Deng * 1.225);
-            double massicC = rlcA * state.march.cells[0].acsr.injg.QGas / 86400;
+            double rlcA = (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions);
+            double massicC = rlcA * state.march.cells[0].acsr.injg.QGas / kSecondsPerDay;
             j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
@@ -3977,7 +3977,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
             for (int i = state.march.lastCell; i > 0; i--) {
                 double rhol = state.march.cells[i].flui.MasEspGas(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
                 taux = state.march.cells[i].calor.Textern1;
@@ -4063,7 +4063,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
             for (int i = state.march.lastCell; i > 0; i--) {
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
+                state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / kPascalPerKgfPerCm2;
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
@@ -4087,12 +4087,12 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
             else
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].pres,
                                                                                   state.march.cells[state.march.lastCell].calor.Textern1)) *
-                         (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres) / (state.march.cells[0].flui.Deng * 1.225);
+                         (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions);
             double taux = state.march.cells[0].calor.Textern1;
             for (int i = state.march.lastCell; i > 0; i--) {
                 double rhol = state.march.cells[i].flui.MasEspGas(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / 98066.5;
+                state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / kPascalPerKgfPerCm2;
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
@@ -4106,7 +4106,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= (state.march.cells[i - 1].acsr.ipr.ij) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
-                    mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, 0.) / (state.march.cells[0].flui.Deng * 1.225)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
+                    mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, 0.) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                 }
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -4170,7 +4170,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
             if (state.march.input.condpocinj.tipoFlui < 2)
                 mchute = -state.march.cells[state.march.lastCell].acsr.ipr.ij * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             else
-                mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / (state.march.cells[0].flui.Deng * 1.225)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
+                mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + state.march.updaters.steadyInjectionPressureDrop(i);
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
@@ -4187,7 +4187,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= state.march.cells[i - 1].acsr.ipr.ij * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                     else
-                        mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, state.march.cells[i - 1].temp) / (state.march.cells[0].flui.Deng * 1.225)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
+                        mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, state.march.cells[i - 1].temp) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                 }
             }
         }
@@ -4386,7 +4386,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
             double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
             rmis = completionDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq / 86400;
+            double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq / kSecondsPerDay;
             j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
@@ -4400,7 +4400,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
             for (int i = state.march.lastCell; i > 0; i--) {
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
                 if (pchute < 0.5) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -4420,8 +4420,8 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
             double visMis = visC;
             double completionDensityAtGuess = state.march.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, taux);
             rmis = completionDensityAtGuess;
-            double rlcA = (state.march.cells[0].acsr.injg.FluidoPro.Deng * 1.225);
-            double massicC = rlcA * state.march.cells[0].acsr.injg.QGas / 86400;
+            double rlcA = (state.march.cells[0].acsr.injg.FluidoPro.Deng * kAirDensityAtStandardConditions);
+            double massicC = rlcA * state.march.cells[0].acsr.injg.QGas / kSecondsPerDay;
             j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
@@ -4435,7 +4435,7 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
             for (int i = state.march.lastCell; i > 0; i--) {
                 double rhol = state.march.cells[i].flui.MasEspGas(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+                pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
                 if (pchute < 0.5) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -4819,7 +4819,7 @@ void classifyBranchMarchSentinel(const SteadyStateSearchState &state, double mar
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
@@ -4840,7 +4840,7 @@ void classifyBranchMarchSentinel(const SteadyStateSearchState &state, double mar
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
@@ -4881,7 +4881,7 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
         // Advance the pressure using hydrostatic head and estimated friction loss.
-        pchute += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+        pchute += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
         if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
             pchute = 0.9 * state.march.input.tabent.pmax;
     }

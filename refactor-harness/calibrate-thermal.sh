@@ -204,8 +204,8 @@ queue_case forward-velocity-cap SisProdThermal.cpp \
     'if (globals.blackOilTemp == 2 && fabs(meanSuperficialGasVelocity) > 5)' caught
 
 queue_case reverse-bcs-gradient SisProdThermal.cpp \
-    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * 98600. / cellLength;' \
-    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * 98066.5 / cellLength;' caught
+    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * kPascalPerKgfPerCm2Coarse / cellLength;' \
+    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * kPascalPerKgfPerCm2 / cellLength;' caught
 
 # Two bodies carry this guard; the cellIndex - 1 read pins it to the forward
 # steady march rather than to computeTemperature.
