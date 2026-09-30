@@ -26,8 +26,7 @@ struct GasLiftTemperatureUpdater {
     SProd &system;
 
     void dischargeTemperature(int cellIndex) const;
-    /// steadyMode defaults to 0, matching SProd::calctempGas: callers in the
-    /// moved bodies omit it.
+    /// steadyMode defaults to 0, as SProd::calctempGas does; most callers omit it.
     void computeGasTemperature(int cellIndex, double previousTemperature,
                         int steadyMode = 0) const;
     double gasLiftDischargeTemperature(int valveIndex) const;
@@ -37,34 +36,11 @@ struct GasLiftTemperatureUpdater {
 /// may read.
 ///
 /// Same role as ThermalState in the thermal module: it names in one place what
-/// this domain is allowed to touch, and it makes the routines callable WITHOUT
-/// an SProd. That second property is not tidiness -- it is what lets a dedicated
-/// harness drive them over synthetic cells, which for several of these routines
-/// is the only verification that executes them at all.
+/// this domain is allowed to touch, and it makes the routines callable without
+/// an SProd, so they can be driven over synthetic cells.
 ///
-/// The numbers, measured with gcov over the three distinct gas-lift scenarios in
-/// the demo corpus and over this harness, rather than estimated:
-///
-///   12 of the 22 functions are executed by the corpus. The other 10 are not,
-///      because the unloading path needs configuracaoInicial/condicaoInicial
-///      == 3 (arq.descarga == 1) and no model in the corpus sets it -- a
-///      property of the corpus, not of how many models happen to be run;
-///   14 are executed by verify-gaslift.sh, whose 116-row table is compared
-///      against a reference captured from the tree as it stood BEFORE this
-///      stage moved anything;
-///   22 of 22 by the two together. No function of this module is now without
-///      an execution-level check.
-///
-/// An earlier version of this comment claimed the harness reached twelve of
-/// them when it reached eight, and that the twelve were unexecuted when ten
-/// were. Both numbers were wrong in the reassuring direction, which is the
-/// direction that matters.
-///
-/// Scalars are held BY REFERENCE, not by value. Copying them into the struct
-/// would read every one at construction, before the branch that decides whether
-/// the original would have read it at all -- the defect the root-finding stage
-/// had to undo, and the reason DriftFluxClosure's ClosureState carries the same
-/// warning.
+/// Scalars are held by reference, not by value: a copy would read every one at
+/// construction, before the branch that decides whether it is read at all.
 struct GasLiftState {
     /// Gas-line cells -- SProd::celulaG. Written as well as read.
     CelG *gasCells;
@@ -166,10 +142,7 @@ void advanceBufferedGasSubStep(const GasLiftState &state);
 void updateGasLine(const GasLiftState &state);
 
 /// Same, buffered. Reachable only from advanceBufferedGasSubStep, which nothing
-/// calls, so this is dead code moved for completeness -- and it was already dead
-/// in the baseline: subtempoGasBuf has a single occurrence in 0f3b64f, its own
-/// definition. It is still driven and probed by verify-gaslift.sh, because dead
-/// code that nothing checks is dead code nobody can safely delete later.
+/// calls.
 void updateBufferedGasLine(const GasLiftState &state);
 
 /// Throat area of a calibrated gas-lift valve.

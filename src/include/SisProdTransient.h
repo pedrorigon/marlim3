@@ -29,68 +29,29 @@ template <class T> class BandMtx;
 
 namespace sisprod::transient {
 
-/// The sequence contract, from T015d: the time loop is driven by Num4Main.cpp
-/// and is NOT internalised here (FR-031). Nothing in this module advances time
-/// on its own; it computes one step and the step size, and the caller decides
-/// when to call again.
+/// The time loop is driven by Num4Main.cpp, not by this module: it computes one
+/// step and the step size, and the caller decides when to call again.
 
-/// What one transient step reads and writes.
-///
-/// Seventy-two fields, against twenty-eight for SteadyStateState, and that
-/// number is the most useful thing this header records.
-///
-/// Measured, not estimated: the twenty-two routines this stage moves touch 119
-/// of SProd's members. SolveTrans alone touches 85 of them, 48 of which nothing
-/// else in the stage touches; the other twenty-one routines share 72 between
-/// them, and most touch fewer than twenty.
-///
-/// That distribution is why the state splits in two rather than being one
-/// struct of 119 fields, and it is also a warning. The thermal, gas-lift and
-/// steady modules were separable domains that happened to live in one class.
-/// The transient step is closer to the class's main loop: it reaches 42% of
-/// SProd. Extracting it is still worth doing -- the step and the time-step
-/// policy are the numerically load-bearing part of the engine and deserve to be
-/// readable -- but nobody should expect the seam to be as clean as stage 5's.
-///
-/// Scalars are held BY REFERENCE, not by value, for the reason DriftFluxClosure
-/// and GasLiftState record: copying them into the struct would read every one at
-/// construction, before the branch that decides whether the original would have
-/// read it at all.
-///
-/// const marks what the step does not write. That was measured per field by
-/// looking for an assignment, not assumed -- stage 6 shipped a header promising
-/// const for a deck the module writes through, stage 7 did the same for a choke,
-/// and in both cases the compiler is what said so.
-/// The one thing the transient step needs from outside itself.
-///
-/// subtempoGas moved to the gas-lift module in stage 6, and reaching it needs a
-/// GasLiftState that only SisProd.cpp knows how to assemble -- the same routing
-/// SteadyStateUpdaters uses, for the same reason.
-///
-/// There used to be a second, geraMiniTabFlu, left in SisProd.cpp by T126 on
-/// the premise that PorosoRad-Simples.cpp and solverPoroso.cpp consume it. They
-/// do not (T104c), and SC-015 moved it here as generateFluidMiniTables.
+/// The one thing the transient step needs from outside itself: subtempoGas,
+/// which lives in the gas-lift module and needs a GasLiftState that only the
+/// adapters assemble -- the same routing SteadyStateUpdaters uses.
 struct TransientStepUpdaters {
     SProd &system;
 
     void advanceGasSubStep() const;
 };
 
-/// const marks what the step does not write, and it marks SCALARS ONLY -- and
-/// even that proved too generous. Eight fields lost it when SolveTrans moved:
-/// five it assigns directly, and three it writes BY REFERENCE through
-/// Ler::atualiza, which takes pGSup, presE and tempE as double& (titE and betaE
-/// are taken the same way, but were never marked const). The step's own
-/// routines only read them; the solve that composes this struct does not.
+/// What one transient step reads and writes.
 ///
-/// const marks what the step does not write, and it marks SCALARS ONLY.
+/// Scalars are held by reference, not by value: a copy would read every one at
+/// construction, before the branch that decides whether it is read at all.
 ///
-/// A class or pointer field can be mutated two ways that do not look like an
-/// assignment to the field itself: `input.valTempChokeJus = ...` writes through
-/// it, and a non-const method call on `surfaceChoke` mutates it. The generator
-/// looked for assignments to the NAME and so promised const for both. The
-/// compiler said so -- the fourth and fifth time in this refactoring that a
-/// header made that promise, after stage 6's deck and stage 7's choke.
+/// const marks what the step does not write, and it marks scalars only. A class
+/// or pointer field can be changed without an assignment to the field itself:
+/// `input.valTempChokeJus = ...` writes through it, and a non-const method call
+/// on `surfaceChoke` changes it. The fields SolveTrans writes, directly or by
+/// reference through Ler::atualiza (pGSup, presE, tempE, titE, betaE), are not
+/// const either.
 struct TransientStepState {
     /// SProd::DTMaxMed -- escrito.
     double &meanMaximumTimeStep;
@@ -252,9 +213,7 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli);
 void updateFirstCell(const TransientStepState &state, int i, int expli);
 void updateLastCell(const TransientStepState &state, int i, int expli);
 
-/// Updates the flow rates. Writes a strict subset of what updateCells writes --
-/// measured in evidencia/renova-diff.md, where it is also recorded that the
-/// textual similarity metric reports 37% for a pair that shares every field.
+/// Updates the flow rates. Writes a strict subset of what updateCells writes.
 void updateFlowRates(const TransientStepState &state);
 
 // ---------------------------------------------------------- buffer update ----
@@ -284,16 +243,14 @@ void updateBufferFromCells(const TransientStepState &state);
 /// Applies the outlet boundary condition, against the real state and against
 /// the buffered state.
 ///
-/// Two functions, 52% alike by structure and 37% by text; the gap is measured
-/// in evidencia/calccc-diff.md. They differ by more than their source: the
-/// pressure form computes the Joule-Thomson temperature downstream of the choke
-/// and the buffer form does not; the buffer form propagates the mass sources
-/// and the pressure form does not.
+/// The two differ by more than their source: the pressure form computes the
+/// Joule-Thomson temperature downstream of the choke and the buffer form does
+/// not; the buffer form propagates the mass sources and the pressure form does
+/// not.
 ///
-/// SProdVap has its OWN calcCCpres and calcCCBuffer, two arguments instead of
-/// three -- parallel implementations in a different class, not overloads, and
-/// out of scope under FR-038. Anyone reading this module for "the" boundary
-/// condition is reading half of it.
+/// SProdVap has its own calcCCpres and calcCCBuffer, taking two arguments
+/// instead of three: parallel implementations in another class, not
+/// overloads.
 void applyOutletPressureCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
 void applyOutletBufferCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
 
@@ -301,20 +258,9 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
 
 /// Decides the time step, explicitly or implicitly.
 ///
-/// This is the numerically load-bearing function of the whole refactoring. A
-/// last-bit drift here does not make a small difference in the answer: it makes
-/// a DIFFERENT TEMPORAL DISCRETISATION, and from that step onward the run is a
-/// different simulation.
-///
-/// So it is not verified by L2 alone. T122 captured the complete series of
-/// 210,206 calls in %a, and refactor-harness/verify-determinadt.sh compares the
-/// current tree against it call by call. L2 would say "the outputs differ"; the
-/// series says where the mesh first diverged, which is the only actionable
-/// answer once the step feeds back into everything.
-///
-/// Coverage, stated because it limits what any of this proves: EIGHT of the
-/// fourteen corpus models reach this function at all. A defect here is
-/// invisible to the other six, with their L2 still green.
+/// A last-bit change here does not make a small difference in the answer: it
+/// makes a different temporal discretisation, and from that step onward the run
+/// is a different simulation.
 void computeTimeStep(const TransientStepState &state, int vexpli = 0);
 void computeExplicitTimeStep(const TransientStepState &state);
 void computeImplicitTimeStep(const TransientStepState &state);
@@ -322,16 +268,13 @@ void computeImplicitTimeStep(const TransientStepState &state);
 // ------------------------------------------------------ time-step policy ----
 
 /// The restrictions applied to the time step after computeTimeStep proposes it.
-///
-/// Measured against the same dt series as computeTimeStep, because they write
-/// the same dt. valveOpeningLow and valveOpeningHigh are the two ends of the
-/// valve ramp; separate in the original and separate here.
+/// valveOpeningLow and valveOpeningHigh are the two ends of the valve ramp.
 ///
 /// The step this module runs applies the first three as policies of a registry
-/// (TimeStepPolicies in SisProdTransient.cpp, T109a), where a new restriction is
-/// added by listing it. They stay declared here because SProd's methods for the
-/// same jobs delegate to them, and Num4Main.cpp calls those methods when it
-/// sequences a network run itself (FR-031).
+/// (TimeStepPolicies in SisProdTransient.cpp), where a new restriction is added
+/// by listing it. They are declared here because SProd's methods for the same
+/// jobs delegate to them, and Num4Main.cpp calls those methods when it
+/// sequences a network run itself.
 void dampMaximumTimeStep(const TransientStepState &state);
 void evaluatePressureRateOfChange(const TransientStepState &state, double razMast, double razMast0, int vexpli);
 void restrictTimeStepByValve(const TransientStepState &state);
@@ -341,11 +284,8 @@ void valveOpeningHigh(const TransientStepState &state);
 // ---------------------------------------------------- fraction evolution ----
 
 /// Advances the phase fractions in time, and the three ways of restarting that
-/// evolution.
-///
-/// restartFractionEvolutionInitial and restartFractionEvolution stay TWO
-/// functions. Num4Main.cpp selects between them at 2778 and 2804, and T125's
-/// acceptance requires the distinction preserved rather than collapsed.
+/// evolution. restartFractionEvolutionInitial and restartFractionEvolution are
+/// two functions because Num4Main.cpp selects between them.
 void evolveFractions(const TransientStepState &state, double alfrev = 1., double betrev = 0., int ciclo = 0);
 void restartFractionEvolutionInitial(const TransientStepState &state);
 void restartFractionEvolutionSub(const TransientStepState &state);
@@ -362,29 +302,21 @@ void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0
 void refreshFluidMiniTable(const TransientStepState &state);
 void refreshInletCondition(const TransientStepState &state);
 
-/// The per-cell loops that ran every time step from SisProd.cpp until SC-015:
-/// recentring the fluid mini-tables (was geraMiniTabFlu, with auxMiniTab), and
-/// storing the mass sources at the previous time level (was salvaFonte).
+/// The per-cell loops run every time step: recentring the fluid mini-tables,
+/// and storing the mass sources at the previous time level.
 void generateFluidMiniTables(const TransientStepState &state);
 void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui);
 void storePreviousSources(const TransientStepState &state);
 
 // =============================================================== the solve ====
 
-/// What SolveTrans needs from outside itself: the twenty SProd methods it calls
-/// that do not move with it.
+/// What SolveTrans needs from outside itself: the SProd methods it calls.
 ///
-/// Twenty-one when T127 moved it, and that is the measurement behind the warning
-/// at the top of this header. The step's own routines needed two callbacks; the
-/// routine that orchestrates the step needed ten times that, because it is the
-/// place where every other part of the engine meets. SC-015 has since moved one
-/// of each into this module (geraMiniTabFlu and salvaFonte).
-/// solveHydrateEnvelopes is here for a harder reason than convenience: it
-/// constructs the hydrate solvers from the whole SProd (*this), which no state
-/// struct can supply.
+/// solveHydrateEnvelopes constructs the hydrate solvers from the whole SProd,
+/// which no state struct can supply.
 ///
-/// Default arguments are carried only where a call inside the moved code relies
-/// on them: updateThermal is called with none, as renovaterm() was.
+/// Default arguments are carried only where a call relies on them:
+/// updateThermal is called with none.
 struct TransientSolveUpdaters {
     SProd &system;
 
@@ -412,15 +344,12 @@ struct TransientSolveUpdaters {
 
 /// The state SolveTrans reads.
 ///
-/// It COMPOSES the step state rather than restating it -- the same shape as
-/// SteadyStateSearchState in stage 7, and the split this header announced when
-/// it was written. The 52 fields below are the members SolveTrans touches that
-/// none of the step's routines do.
+/// It composes the step state rather than restating it, as
+/// SteadyStateSearchState does: the fields below are the members SolveTrans
+/// touches that none of the step's routines do.
 ///
-/// None of them is promised const. The generator that marked const in
-/// TransientStepState looked for assignment TO a field and missed writes
-/// THROUGH one and writes by reference; this stage paid for that twice. Here the
-/// promise is simply not made. Pointers are held by reference (`T *&`), so the
+/// None of them is const: writes through a field and by reference do not look
+/// like assignments to it. Pointers are held by reference (`T *&`), so the
 /// state stays exact even if the solve reseats one.
 struct TransientSolveState {
     /// Everything the step reads. SolveTrans hands this to every step routine.
@@ -535,11 +464,9 @@ struct TransientSolveState {
     TransientSolveUpdaters updaters;
 };
 
-/// One transient step, and the six parts it was cut into.
-///
-/// The phase order is T127's acceptance and is preserved: hydrates, mini-table,
-/// the t = 0 trend, computeTimeStep, the coupling loop (fraction evolution, pig,
-/// pressure-volume coupling), then the output phases.
+/// One transient step, in six parts that run in this order: hydrates,
+/// mini-table, the t = 0 trend, computeTimeStep, the coupling loop (fraction
+/// evolution, pig, pressure-volume coupling), then the output phases.
 void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev,
                         int nrede, ProFlu fluiRev);
 

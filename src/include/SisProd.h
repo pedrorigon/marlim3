@@ -71,9 +71,9 @@ extern time_t nowGlobFim;
 /// Broken-down local time corresponding to nowGlobFim.
 extern tm *ltmGlobFim;
 
-// The state adapters and the updaters of the extracted modules read members of
-// SProd that no consumer reads. They are friends, so those members can stay
-// private. Their types are only declared here: SisProd.cpp includes the module
+// The state adapters and the modules' updaters read members of SProd that no
+// consumer reads. They are friends, so those members can stay private. Their
+// types are only declared here: the files that define them include the module
 // headers, and consumers never need them.
 class SProd;
 namespace sisprod::composition { struct CompositionState; struct CompositionUpdaters; }
@@ -1287,8 +1287,7 @@ class SProd {
     /// Calculates flow through Master1 while it operates as a choke.
     void FonteValv(int ind);
     /// Stores source terms from the previous time level for possible rollback.
-    /// Nothing in the product calls it since SC-015 moved the transient step's
-    /// call into the module.
+    /// Nothing in the product calls it.
     void salvaFonte();
     /// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s,
     /// takes the water and gas that hydrate formation consumed in cell ind during
@@ -1317,12 +1316,10 @@ class SProd {
     void CalcC0UdIniBuf(int ind, double &c0, double &ud);
     /// Applies hydrostatic and friction corrections; currently unused.
     void correcHidroFric(int i, double &hidro, double &fric);
-    /// Prepares auxiliary data for a local fluid-property table; currently
-    /// unused -- its only caller, geraMiniTabFlu, moved to the transient module
-    /// in SC-015.
+    /// Prepares auxiliary data for a local fluid-property table. Nothing in the
+    /// product calls it.
     void auxMiniTab(ProFlu &flu);
-    /// Generates the local fluid-property table. Nothing in the product calls it
-    /// since SC-015 moved the transient step's call into the module.
+    /// Generates the local fluid-property table. Nothing in the product calls it.
     void geraMiniTabFlu();
   public:
 
@@ -1468,21 +1465,17 @@ class SProd {
     /// boundary formulation: marchaProdPresPres2 with the choke's throughput
     /// forced to zero, which is the closed-choke case.
     ///
-    /// Unused. Nothing in the project calls it, and that is not an oversight:
-    /// marchaProdPresPres2 already reduces to exactly this when the choke is
-    /// shut, because the throat area is `abertura[0] * area` and both
+    /// Nothing calls it: marchaProdPresPres2 already reduces to exactly this when
+    /// the choke is shut, because the throat area is `abertura[0] * area` and both
     /// vazmaxSachd and vazmassSachd scale to zero with it -- leaving the same
     /// `0. - celula[ncel - 1].MR` residual this function returns literally.
-    /// Measured, not assumed; see evidencia/anomalias.md, A2-01.
     double marchaProdPresPres3(double mchute);
   public:
     /// Brackets and solves the mass-flow root for the closed-choke case, chosen
     /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
     ///
-    /// It reaches marchaProdPresPres2, NOT marchaProdPresPres3 -- via
-    /// zriddr(.., 2, 1) and multMarcha. That is correct behaviour by the
-    /// reduction described above, and the comment used to say
-    /// marchaProdPresPres3, which reads as a bug and is not one.
+    /// It reaches marchaProdPresPres2, not marchaProdPresPres3 -- via zriddr(.., 2,
+    /// 1) and multMarcha -- which is correct by the reduction described above.
     double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
 
   private:

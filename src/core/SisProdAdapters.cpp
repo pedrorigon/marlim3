@@ -25,12 +25,12 @@ double sisprod::gaslift::GasLiftTemperatureUpdater::gasLiftDischargeTemperature(
     return system.TempDescGL(valveIndex);
 }
 
-// ------------------------------------ steady-state callbacks (T086) ----
+// ------------------------------------------- steady-state callbacks ----
 //
-// Sixteen forwards, fourteen of which reach code that already lives in an
-// extracted module. They come back through SProd anyway, because reaching
-// sisprod::gaslift or sisprod::thermal needs one of THEIR state structs, and
-// the only place that knows how to build those is this file.
+// Sixteen forwards, fourteen of which reach code in another module. They come
+// back through SProd because reaching sisprod::gaslift or sisprod::thermal
+// needs one of their state structs, and the adapters in this file are the
+// only place that builds those.
 void sisprod::steady::SteadyStateUpdaters::steadyDriftClosure(int cellIndex, double &c0, double &ud) const {
     system.CalcC0UdPerm(cellIndex, c0, ud);
 }
@@ -81,9 +81,8 @@ double sisprod::steady::SteadyStateUpdaters::steadyGasPressureDrop(int cellIndex
 double sisprod::steady::SteadyStateUpdaters::steadyInjectionPressureDrop(int cellIndex) const {
     return system.delpInjPerm(cellIndex);
 }
-// The two searches a march calls. Their results were discarded at the call
-// site in the original and they are discarded here; see the note on the
-// declarations.
+// The two searches a march calls; their results are discarded at the call
+// site.
 void sisprod::steady::SteadyStateUpdaters::searchGasPressureSteadySecondary() const {
     system.buscaGasPresPerm2();
 }

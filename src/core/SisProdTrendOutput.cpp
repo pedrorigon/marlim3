@@ -1,20 +1,16 @@
 /*
  * SisProdTrendOutput.cpp
  *
- * Trend-file output for the production and service lines, extracted from
- * SisProd.cpp. See SisProdTrendOutput.h for why the writers take their state
- * through TrendState instead of reading it from SProd.
+ * Trend-file output for the production and service lines. See
+ * SisProdTrendOutput.h for why the writers take their state through TrendState
+ * instead of reading it from SProd.
  *
  * Layout, top to bottom: language selection, the caption tables, the file-name
  * builders, and the two skeletons the eight entry points share. Nothing above a
  * section is allowed to depend on anything below it.
  *
- * The caption tables are data, not code. Sixty-two production captions and
- * thirty-two service captions used to be sixty-two and thirty-two consecutive
- * if statements; expressing them as a table of (flag, pt-BR text, en text)
- * makes adding a column an edit to one line of data, and removes the only place
- * in this module where a long conditional chain was doing bookkeeping rather
- * than deciding anything.
+ * The caption tables are data, not code: rows of (flag, pt-BR text, en text),
+ * so adding a column is an edit to one line of data.
  */
 #include "SisProdTrendOutput.h"
 
@@ -220,9 +216,8 @@ void writeFluctuationColumns(ostream &trendFile, const CaptionTranslator &transl
 /// Distance from the line origin to the trend cell, accumulated cell by cell.
 ///
 /// Templated on the cell type because the production and service meshes are
-/// different structs that happen to share a dx. The accumulation order is the
-/// baseline's and must stay that way: reordering a floating-point sum changes
-/// its result.
+/// different structs that happen to share a dx. The accumulation order must stay
+/// as it is: reordering a floating-point sum changes its result.
 template <typename Cell>
 double lengthFromOrigin(const Cell *cells, int lastCellIndex) {
     double length = 0;
@@ -261,13 +256,10 @@ void writeCrossSectionCaptions(ostream &trendFile, const CaptionTranslator &tran
 
 // ------------------------------------------------------------- file names --
 
-/// Builds the name of a production- or service-line trend file.
-///
-/// One builder for all four line writers. It could only become one once the
-/// captions file and the data file agreed on how to spell the position: the
-/// header used to round it, and round() on an int yields a double, which
-/// ostream prints in exponent form at or above 1e6 -- sending the two halves of
-/// the same trend to two different files.
+/// Builds the name of a production- or service-line trend file. The captions
+/// file and the data file both take their name from it, so the two halves of a
+/// trend always share one. The position is not rounded: round() on an int
+/// yields a double, which ostream prints in exponent form at or above 1e6.
 string lineTrendFileName(const TrendState &state, const char *prefix,
                          int position, int networkIndex) {
     ostringstream fileNameStream;
@@ -375,15 +367,13 @@ constexpr int kCrossSectionColumnCount = 2;
 /// The skeleton the four header writers share.
 ///
 /// writeCaptions is the hook, and it is a template parameter rather than a
-/// function pointer or a virtual, so it resolves at compile time and the
-/// Template Method adds no indirect dispatch of its own (FR-022). The object
-/// file does contain indirect calls, all of them into the standard library's
-/// iostreams, exactly as the baseline did.
+/// function pointer or a virtual, so it resolves at compile time and adds no
+/// indirect dispatch.
 ///
 /// blankLineBeforeClose is a value, not a mode flag. Of the four headers only
-/// the service one asks for it, and it lands OUTSIDE the print-pass guard, so a
+/// the service one asks for it, and it lands outside the print-pass guard, so a
 /// service trend file starts with a blank line even on the passes that write no
-/// captions. That asymmetry comes from the baseline and is preserved.
+/// captions.
 template <typename WriteCaptions>
 void writeTrendHeaderFile(const TrendState &state, const string &fileName,
                           WriteCaptions writeCaptions, bool blankLineBeforeClose) {

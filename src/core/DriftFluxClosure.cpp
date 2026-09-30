@@ -32,7 +32,7 @@ namespace {
 ///
 /// Choi, Hibiki Ishii and Franca Lahey all derive it the same way. It is a
 /// plain comparison rather than copysign, which would return -1 for negative
-/// zero where the original returns 1.
+/// zero where this returns 1.
 inline double inclinationSignOf(double inclinationAngle) {
     return inclinationAngle < 0. ? -1. : 1.;
 }
@@ -47,8 +47,7 @@ inline double ductArea(double diameter) {
 ///
 /// Below a combined superficial velocity of 0.01 m/s the correlations can
 /// return a drift velocity whose sign contradicts the duct inclination, which
-/// is unphysical: buoyancy drives gas upward. All five correlations carried an
-/// identical copy of this guard, so it lives in one place now.
+/// is unphysical: buoyancy drives gas upward. All five correlations apply it.
 ///
 /// @param gasFlowRate      Volumetric gas flow rate.
 /// @param liquidFlowRate   Volumetric liquid flow rate.
@@ -111,26 +110,18 @@ double darcyFrictionFactor(double relativeRoughness, double reynolds) {
 /// additive terms and the drift velocity from an inclination factor, a
 /// buoyancy scale and three correction factors. The two exported variants run
 /// exactly this algorithm and differ only in which Reynolds number feeds the
-/// friction factor and the Reynolds dependent terms, which is why they share
-/// one body here instead of the eighty duplicated lines they used to be.
+/// friction factor and the Reynolds dependent terms.
 ///
 /// @param reynolds Reynolds number the variant selects, mixture or liquid.
 ///
 /// @note This variant carries no flow direction sign, unlike Choi, Hibiki Ishii
-///       and Franca Lahey. The original code declared one, then assigned 1 on
-///       both branches of a test on the inclination, so it was always 1 and the
-///       branch was dead. It has been folded away, which changes nothing.
-///
-///       Substituting -1, the reading the dead branch invites, is not a fix. It
-///       drives the Froude radicand negative, and although the resulting NaN
-///       never reaches c0 or ud, it makes both guards below permanently false,
-///       so the duct shape term would stop being zeroed and downwardFlowSign
-///       would stop flipping for downward low Froude flow. A published
-///       correlation does not carry guards that can never fire, which is the
-///       argument that this variant simply has no such sign.
-///
-///       Direction is handled here by downwardFlowSign, factor C4 of the
-///       published model. See evidencia/estagio-1/achado-sinal-bhagwatghajar.md.
+///       and Franca Lahey. Taking -1 for downward flow, as they do, is not a
+///       fix: it drives the Froude radicand negative, and although the resulting
+///       NaN never reaches c0 or ud, it makes both guards below permanently
+///       false, so the duct shape term would stop being zeroed and
+///       downwardFlowSign would stop flipping for downward low Froude flow.
+///       Direction is handled by downwardFlowSign, factor C4 of the published
+///       model.
 void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                        double reynolds, double gasFlowRate, double liquidFlowRate, double diameter,
                        double roughness, double inclinationAngle, double &c0, double &ud,
@@ -356,25 +347,16 @@ namespace coefficient {
 using enum sisprod::AccessoryKind;
 
 /*
- * The five bodies below were MOVED, token for token, from SisProd.cpp. The
- * transformation is a substitution table -- the method signature, and eleven
- * SProd members rewritten as ClosureState fields -- and refactor-harness/
- * c0ud-move.py applies its inverse and compares the token stream against the
- * commit the move started from. 13556 tokens, exact.
+ * The five variants disagree about which cell's accessory the horizontal
+ * correction reads, whether the flow-pattern map runs at all, whether the
+ * transition counter is kept, and which of arq.escorregaTran and
+ * arq.escorregaPerm ends the calculation, so each keeps its own control flow
+ * and only the blocks they share exactly are factored out. In all five, the
+ * chain betneg -> upstreamLiquidFlowRate -> mult0 is computed and never read.
  *
- * Nothing here is tidied. The variants disagree about which cell's accessory
- * the horizontal correction reads, whether the flow-pattern map runs at all,
- * whether the transition counter is kept, and which of arq.escorregaTran and
- * arq.escorregaPerm ends the calculation. Six preserved anomalies are
- * catalogued as A3-01 to A3-06 in
- * specs/001-refatoracao-sisprod/evidencia/c0ud-diff.md; the dead chain
- * betneg -> upstreamLiquidFlowRate -> mult0, dead in all five, is A3-07.
- *
- * The `// duvidabeta` and `// testeBeta` markers below are the original
- * author's, kept where they were. They are Portuguese for "beta doubt" and
- * "beta test", and they sit on the assignments of betI and betneg -- which is
- * anomaly A3-01, where a later unconditional assignment makes the selection
- * above it dead. They are evidence that someone was unsure here, so they stay.
+ * The `// duvidabeta` ("beta doubt") and `// testeBeta` ("beta test") markers
+ * sit on the assignments of betI and betneg, where a later unconditional
+ * assignment makes the selection above it dead.
  */
 
 namespace {
@@ -446,15 +428,13 @@ struct SteadyStateSource {
 
 /// No-slip liquid holdup at the face, for the transient variants.
 ///
-/// Identical in CalcC0Ud and CalcC0UdBuf once the sign source is the policy's:
-/// the two differed only in reading QG against MCBuf - MliqiniBuf, which is
-/// exactly what gasForSign is for. The hook is called at each test, never read
-/// once into a local, so a value the original consulted twice is still consulted
-/// twice.
+/// Shared by CalcC0Ud and CalcC0UdBuf: gasForSign supplies the gas rate the
+/// sign tests read, QG or MCBuf - MliqiniBuf. It is called at each test rather
+/// than read once into a local, so a value tested twice is read twice.
 ///
-/// The two localtiny guards are the original's: the first replaces a holdup
-/// derived from a vanishing gas rate, the second rejects one that has collapsed
-/// onto either end of its range.
+/// Of the two localtiny guards, the first replaces a holdup derived from a
+/// vanishing gas rate, the second rejects one that has collapsed onto either
+/// end of its range.
 template <typename Source>
 double transientNoSlipHoldup(const ClosureState &state, int cellIndex) {
     double noSlipLiquidHoldup;
@@ -481,13 +461,11 @@ double transientNoSlipHoldup(const ClosureState &state, int cellIndex) {
 ///
 /// The length-weighted mean of the two duct inclinations, overridden two cells
 /// downstream of a shut choke by whichever single duct the flow actually comes
-/// from. Identical in CalcC0Ud and CalcC0UdBuf once the sign source is the
-/// policy's.
+/// from. Shared by CalcC0Ud and CalcC0UdBuf.
 ///
 /// The weighting reads cellLength against dutoL and leftCellLength against
 /// duto -- crossed, which is the usual interpolation. CalcC0UdPerm weights it
-/// the other way round and therefore does NOT use this function; that is
-/// anomaly A3-02, preserved.
+/// the other way round and therefore does not use this function.
 template <typename Source>
 double transientInclinationAngle(const ClosureState &state, int cellIndex) {
     const double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -512,11 +490,9 @@ double transientInclinationAngle(const ClosureState &state, int cellIndex) {
 
 /// Sign correction applied to the drift term on a horizontal face.
 ///
-/// Identical in the four transient variants except for WHICH cell's accessory
-/// opens the guard: CalcC0Ud reads the upstream one, the other three read the
-/// face's own. That difference is anomaly A3-01's neighbour -- site 14 of the
-/// normalized comparison -- and it is preserved by making the accessory cell a
-/// parameter rather than by picking one and calling the rest wrong.
+/// The four transient variants differ in which cell's accessory opens the
+/// guard: CalcC0Ud reads the upstream one, the other three the face's own, so
+/// the accessory cell is a parameter.
 ///
 /// The two arms differ in more than the accessory: the first requires both
 /// junction angles to agree in sign, the second reads the downstream angle
@@ -543,14 +519,11 @@ double horizontalCorrectionOf(const ClosureState &state, int cellIndex, int acce
 /// No-slip liquid holdup at the face, for the initialisation variants.
 ///
 /// Same shape as the transient one, reading the inlet void fraction instead of
-/// the neighbouring cell's. Identical in CalcC0UdIni and CalcC0UdIniBuf once the
-/// sign source is the policy's.
+/// the neighbouring cell's. Shared by CalcC0UdIni and CalcC0UdIniBuf.
 ///
 /// One guard mixes the two: the second condition of the else-if still tests
-/// cells[cellIndex - 1].alfPigD while everything around it moved to the inlet
-/// fraction. That is anomaly A3-04, an incomplete substitution in the original,
-/// and it is preserved exactly -- correcting it here would change results in a
-/// variant no model in the corpus executes.
+/// cells[cellIndex - 1].alfPigD while everything around it reads the inlet
+/// fraction.
 template <typename Source>
 double inletNoSlipHoldup(const ClosureState &state, int cellIndex) {
     double noSlipLiquidHoldup = 1 - state.inletVoidFraction;
@@ -572,11 +545,8 @@ double inletNoSlipHoldup(const ClosureState &state, int cellIndex) {
 /// No slip while a pig occupies the face: the drift terms are forced off and the
 /// flow pattern is pinned to slug.
 ///
-/// This is the body of BOTH arms of the pig guard in the two transient variants,
-/// textually identical in all four places -- the conditions differ, what they do
-/// does not. Sharing it does not merge the branches: it makes the fact that they
-/// agree visible, the way the root-finding stage argued a preserved branch is
-/// worth keeping precisely as a marker.
+/// The body of both arms of the pig guard in the two transient variants: the
+/// conditions differ, what they do does not.
 void applyPigOverride(const ClosureState &state, int cellIndex, double &c0, double &ud) {
     c0 = 1.;
     ud = 0.;
@@ -637,16 +607,10 @@ struct MixtureProperties {
 
 /// Pressure and temperature the property model is evaluated at, for CalcC0Ud.
 ///
-/// Used once, and named because it is one question answered over twenty lines:
-/// at what conditions are the phase properties taken.
-///
-/// Three assignments here are immediately overwritten, and that is the
-/// original's shape, not an oversight in the move: the length-weighted mean
+/// Three assignments here are immediately overwritten: the length-weighted mean
 /// temperature is replaced by the left cell's, which is replaced again by the
 /// face's or by the surface temperature. The upstream pressure and temperature
-/// it also computes are never read by anything -- part of the dead chain
-/// catalogued as A3-06 -- and are kept because removing them would change the
-/// token stream of code no model in the corpus executes.
+/// it also computes are never read.
 struct MeanConditions {
     double pressure;     ///< pmed
     double temperature;  ///< tmed
@@ -682,17 +646,9 @@ MeanConditions instantaneousMeanConditions(const ClosureState &state, int cellIn
 
 /// Phase properties at the face, from the instantaneous state.
 ///
-/// Used once, by CalcC0Ud, and named rather than inlined because it is one
-/// question -- what are the two phases like here -- answered over thirty lines
-/// in the middle of a much longer one.
-///
-/// It is the only variant that consults the cached densities rpCi, rcCi and
-/// rgCi: at the two ends of the line it calls the property model, and in between
-/// it takes the cache. The other four always call the model. That asymmetry is
-/// the original's and is preserved.
-///
-/// The `// testeBeta` marker on the first branch is the original author's; see
-/// the note on the preserved anomalies above.
+/// The only variant that consults the cached densities rpCi, rcCi and rgCi: at
+/// the two ends of the line it calls the property model, and in between it
+/// takes the cache. The other four always call the model.
 PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cellIndex, double betI,
                                              double meanPressure, double meanTemperature,
                                              double noSlipLiquidHoldup, double &surfaceTension) {
@@ -732,12 +688,8 @@ PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cell
     return PhaseProperties{liquidDensity, gasDensity, liquidViscosity, gasViscosity, noSlipLiquidHoldup};
 }
 
-/// The dispersed and stratified closures, evaluated as a pair and then blended.
-///
-/// They travelled as four loose doubles between the two helpers, which is four
-/// values of one type in a row and no way for anything to notice a swap. Kept
-/// together they are named at every use, and the two helpers now agree on one
-/// shape: one fills it, the other reads it.
+/// The dispersed and stratified closures, evaluated as a pair and then
+/// blended: one helper fills it, the other reads it.
 struct FlowPatternPair {
     double dispersedC0;   ///< c0D
     double dispersedUd;   ///< udD
@@ -791,13 +743,10 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
     return FlowScales{gasVolumetricFlowRate, liquidVolumetricFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds};
 }
 
-/// Dispersed and stratified closure, evaluated as a pair. 167 tokens, identical
-/// in all five.
+/// Dispersed and stratified closure, evaluated as a pair; the same in all five
+/// variants.
 ///
-/// mult0 and mult1 are dead -- assigned from ul0 and ul1 and never read, in
-/// every variant. They are kept because they are part of the block that was
-/// proven identical, and because deleting them would erase the only evidence
-/// that a weighting was once intended here (A3-06).
+/// mult0 and mult1 are assigned from ul0 and ul1 and never read.
 void evaluateFlowPatternPair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
                         double upstreamLiquidFlowRate, FlowPatternPair &pair) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
@@ -853,20 +802,13 @@ void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, const 
     }
 }
 
-/// Discards the computed slip when the deck disables it. 113 tokens; the five
-/// bodies carried two spellings of it, differing only in which configuration
-/// field is read -- escorregaTran in the four transient variants, escorregaPerm
-/// in the steady-state one -- and in writing the second zero of the last line as
-/// `0.` in two of them and `0` in the other three.
-///
-/// The field is a parameter, which is what makes the two spellings one. The
-/// zero is not a second difference to preserve: `0 * ud` converts the int to
-/// 0.0 before multiplying, so it IS `0. * ud`, same operation and same rounding.
+/// Discards the computed slip when the deck disables it: the field read is
+/// escorregaTran in the four transient variants and escorregaPerm in the
+/// steady-state one.
 ///
 /// Everything above the two assignments is dead: correcaoUd and correcaoCo are
-/// computed, clamped, and then multiplied by zero. Preserved, not removed --
-/// c0 is forced to 1 and ud to 0 whenever slip is off, and the arithmetic that
-/// says so is the record of what was once intended (A3-06).
+/// computed, clamped, and then multiplied by zero, so c0 is forced to 1 and ud
+/// to 0 whenever slip is off.
 void applyNoSlipOverride(const Cel *cells, int cellIndex, int slipEnabled, double &c0, double &ud) {
     if (slipEnabled == 0) {
         double meanSuperficialLiquidVelocity = cells[cellIndex].QL / cells[cellIndex].duto.area;

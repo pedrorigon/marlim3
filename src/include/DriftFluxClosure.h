@@ -4,11 +4,8 @@
 /// Drift-flux closure relations.
 ///
 /// The functions in driftflux::correlations are pure: they read nothing but
-/// their arguments and write nothing but the c0 and ud output references. That
-/// property is what makes them verifiable in isolation against a tabulated
-/// sweep, which matters here more than usual -- three of the five correlations
-/// are never reached by the demo corpus, so running the models proves nothing
-/// about them.
+/// their arguments and write nothing but the c0 and ud output references, which
+/// makes them testable in isolation against a tabulated sweep.
 // Declared, not included: ClosureState below holds only pointers and references
 // to these, so this header stays free of the cell, input-deck and globals
 // headers and can still be compiled on its own.
@@ -54,8 +51,6 @@ void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension,
 ///
 /// The three aggregators accept different subsets of these values, and each
 /// leaves c0 and ud untouched when the selector falls outside its own subset.
-/// That is observable behaviour of the original switch statements, so the
-/// subsets are kept apart rather than merged into one table.
 ///
 ///   0  Choi              accepted by all three
 ///   1  BhagwatGhajar     accepted by all three
@@ -107,43 +102,27 @@ void C0UdEstratificado(double liquidDensity, double gasDensity, double surfaceTe
 
 /// Distribution coefficient: the five variants of CalcC0Ud.
 ///
-/// These are not pure. They read celula[] intensively, they write back into it
-/// -- arranjo, arranjoR, transic, transic0, perdaEstratL/G, c0Spare, udSpare --
-/// and they call the correlations above. What they do NOT do is call any other
-/// method of SProd or touch `this`, which is what makes moving them possible at
-/// all (verified: the only calls in the five bodies are fabs, pow and the two
-/// local flow-pattern map objects).
+/// These are not pure. They read the cells intensively, they write back into
+/// them -- arranjo, arranjoR, transic, transic0, perdaEstratL/G, c0Spare,
+/// udSpare -- and they call the correlations above. They call no method of
+/// SProd: the only calls in the five bodies are fabs, pow and the two local
+/// flow-pattern map objects.
 ///
-/// The five differ far more than their names suggest. A normalized comparison
-/// of the two closest non-initialisation variants found 38 divergence sites, of
-/// which 21 are control flow and only 7 are the data source that the original
-/// design expected to be the whole story: one builds the flow-pattern map and
-/// writes the pattern back, another reads the pattern it was given; one runs the
-/// transition counter, another does not. Measurement and the full table are in
-/// specs/001-refatoracao-sisprod/evidencia/c0ud-diff.md.
-///
-/// So the five keep their own control flow, and only the blocks a normalized
-/// comparison proved identical are shared. Sharing more would mean either a
-/// runtime mode test inside a shared core, or a policy whose hooks have one
-/// caller each -- the original function wearing a hat.
+/// The five differ far more than their names suggest: one builds the
+/// flow-pattern map and writes the pattern back, another reads the pattern it
+/// was given; one runs the transition counter, another does not. So each keeps
+/// its own control flow, and only the blocks they share exactly are shared.
 namespace coefficient {
 
 /// The state the five read, and the only state they may read.
 ///
 /// Same role as TrendState in the trend module: it names in one place what a
 /// closure evaluation is allowed to touch, and it makes the five callable
-/// WITHOUT an SProd. That second property is not tidiness -- it is what lets a
-/// dedicated harness drive them over synthetic cells, which is the only
-/// verification that reaches CalcC0UdBuf, CalcC0UdIni and CalcC0UdIniBuf. The
-/// demo corpus never executes those three, so the artifact and regression
-/// layers are green for them whatever happens.
+/// without an SProd, so they can be driven over synthetic cells.
 ///
-/// The scalars are held BY REFERENCE, not by value. Copying them into the
-/// struct would read every one of them at construction, before the branch that
-/// decides whether the original would have read it at all. Nothing writes them
-/// during a call, so a copy would give the same numbers here -- but "the same
-/// numbers today" is how a conditional read silently becomes unconditional, and
-/// that is precisely the defect the root-finding stage had to undo.
+/// The scalars are held by reference, not by value: a copy would read every one
+/// of them at construction, before the branch that decides whether it is read
+/// at all.
 struct ClosureState {
     /// The cell array -- SProd::celula. Written as well as read.
     Cel *cells;

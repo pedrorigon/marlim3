@@ -14,14 +14,14 @@ struct varGlob1D;
 
 namespace sisprod::thermal {
 
-/// Direct adapter for the legacy source refresh owned by SProd.
+/// Direct adapter for the source refresh owned by SProd.
 struct ThermalSourceUpdater {
     SProd &system;
 
     void operator()(int cellIndex) const;
 };
 
-/// Direct adapter for the four legacy drift-closure entry points owned by SProd.
+/// Direct adapter for the four drift-closure entry points owned by SProd.
 struct ThermalClosureUpdater {
     SProd &system;
 
@@ -35,7 +35,7 @@ struct ThermalClosureUpdater {
                                 double &driftVelocity) const;
 };
 
-/// Direct adapter for the legacy transient coupling owned by SProd.
+/// Direct adapter for the transient coupling owned by SProd.
 struct ThermalEvolutionUpdater {
     SProd &system;
 
@@ -112,7 +112,7 @@ double interpolateMixtureEnergy(const ThermalState &state, int cellIndex,
 /// Updates one control-volume temperature from tabulated mixture enthalpy.
 void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex);
 
-/// Computes the legacy thermal phase-change mass source for one cell.
+/// Computes the thermal phase-change mass source for one cell.
 void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
 
 /// Updates one control-volume temperature from the thermal energy balance.
@@ -139,11 +139,11 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
 void advanceTransientEnergy(const ThermalState &state, int cycle,
                             int maximumCycle);
 
-/// Advances the legacy steady-state temperature march in the direct direction.
+/// Advances the steady-state temperature march in the direct direction.
 void advanceSteadyTemperature(const ThermalState &state, int cellIndex,
                               int rungeKuttaStage);
 
-/// Advances the distinct legacy steady-state temperature march in reverse.
+/// Advances the steady-state temperature march in reverse, a march of its own.
 void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex,
                                      int rungeKuttaStage);
 
@@ -175,8 +175,8 @@ struct SourceEnthalpy {
     double temperature;
     double gasEnthalpy;
     double liquidEnthalpy;
-    /// Complementary-fluid heat. The legacy name is kept: three assignment
-    /// sites carry a comment saying it is still to be corrected.
+    /// Complementary-fluid heat (hcF). Three assignment sites carry a comment
+    /// saying it is still to be corrected.
     double hcF;
 };
 

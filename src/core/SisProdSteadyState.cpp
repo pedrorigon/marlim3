@@ -114,17 +114,12 @@ namespace {
 /// Resolves the phase fractions of cell i for the two reverse mass marches.
 ///
 /// Four regimes -- no flow, liquid only, gas only, two-phase -- and the drift
-/// closure the two-phase arm needs. advanceReverseSteadyMass and
-/// advanceReverseCompositionalSteadyMass carried these 182 lines twice, with no
-/// difference at all between the copies.
+/// closure the two-phase arm needs, shared by advanceReverseSteadyMass and
+/// advanceReverseCompositionalSteadyMass.
 ///
-/// T084 section 5.1 recommended sharing this and T086 moved both variants
-/// without doing it, so it is done here rather than left as a duplicate the
-/// stage itself created.
-///
-/// What comes AFTER this block is not shared and must not be: that is H15 of
-/// evidencia/renovamass-diff.md, where Rev zeroes the completion-fluid
-/// residence time and CompRev propagates it from the cell upstream.
+/// What comes after this block in the two callers is not shared and must not
+/// be: advanceReverseSteadyMass zeroes the completion-fluid residence time and
+/// advanceReverseCompositionalSteadyMass propagates it from the cell upstream.
 void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
         if (state.input.tipoFluido == 1) {
@@ -494,13 +489,8 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
 namespace {
 
 /// Refreshes the compositional flash of cell i, seeded from the nearest cell
-/// upstream or downstream that has a usable calculated beta.
-///
-/// Carried by advanceReverseCompositionalSteadyMass and
-/// advanceCompositionalSteadyMass. The two copies differed by four lines, and
-/// those four were a debug anchor -- an empty `int para; para = 0;` behind a
-/// test on flui.iIER -- of the same class stage 6 removed from the gas-lift
-/// module. It has no effect and is not carried in here.
+/// upstream or downstream that has a usable calculated beta. Shared by
+/// advanceReverseCompositionalSteadyMass and advanceCompositionalSteadyMass.
 void refreshCompositionalFlashFromNeighbour(const SteadyStateState &state, int i, double pmed, double tmed) {
     if (((state.steadyIteration == 0 && i <= 1 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) && state.input.tabelaDinamica == 0) {
         state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
@@ -969,9 +959,7 @@ namespace {
 /// Reads the black-oil reference properties of the accessory feeding cell i - 1.
 ///
 /// Seven arms on acsr.tipo, each writing the same seven outputs from a
-/// different source object. The wide out-parameter list is the shape T085 gave
-/// the helpers it carved out of the base variant; it is kept rather than
-/// improved so the two families still read alike.
+/// different source object.
 void readCompositionalSourceProperties(const SteadyStateState &state, int i, double &titF, ProFlu &fluF,
                                        double &oilVolumeFactorSource, double &waterVolumeFactorSource, double &waterCutSource, double &rhoOF, double &rhoWF,
                                        double &residenceTimeSource) {
@@ -1088,7 +1076,7 @@ void readCompositionalSourceProperties(const SteadyStateState &state, int i, dou
 /// Cell i's left face in the compositional steady-state mass step: the upstream
 /// cell's properties there, the mass flow rates that cross it (vazMas*) and that
 /// its source adds (fonteMas*), and the complementary and hydrocarbon mass flow
-/// rates. left.vazMasLiq was vazMasLiqL, left.fonteMasGas was fonteMasGasL.
+/// rates.
 struct SteadyFace {
     double tmed;
     double titV;
@@ -1119,7 +1107,6 @@ struct SteadySource {
 /// Cell i-1 holds a source: the stream it passes to cell i mixes its own flow
 /// with the source's, weighted by the standard oil and water rates before and
 /// from the source, and the complementary-liquid fraction is re-evaluated.
-/// Cut from advanceCompositionalSteadyMass (SC-004).
 void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, const SteadySource &source, int i, double temperatureHigh, double temperatureLow, ProFlu &fluF, int mudaRGO) {
     double waterCutCarried = state.cells[i - 1].FW;
     double rhoOV = state.cells[i - 1].flui.MasEspoleo(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -1276,7 +1263,6 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
 /// Cell i-1 holds no source: the separator gas-oil ratio, BSW, API, gas density
 /// and the rest pass unchanged into cell i, and the volume of light components is
 /// refreshed, because the transient reads it.
-/// Cut from advanceCompositionalSteadyMass (SC-004).
 void carryUpstreamCompositionIntoCell(const SteadyStateState &state, SteadyFace &left, int i) {
     // neste caso, variaveis como RGO de separador, BSW, API, densidade de gas e outras nÃ£o muda, sao iguais
     // aos valores da celula i-1
@@ -1537,9 +1523,8 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
 
 // ------------------------------------------------- mass march helpers ----
 //
-// The fourteen bodies T085 carved out of RenovaMassPerm. They were private to
-// SProd and they stay private here: nothing outside advanceSteadyMass calls
-// them, so they get internal linkage rather than a line in the header.
+// Nothing outside advanceSteadyMass calls these fourteen, so they have internal
+// linkage rather than a line in the header.
 //
 // Nine are the arms of the accessory dispatch, one per kind attached to the
 // upstream cell. Five close the march once the sources are known, chosen by
@@ -3918,10 +3903,6 @@ namespace {
 
 /// Which fluid receives the dry-gas aware (six-argument) compositional flash in
 /// the gas-source arm of the steady production marches.
-///
-/// It exists because marchProductionSteady and marchProductionSteadySecondary
-/// disagreed about it and nothing in the code said why. Naming the disagreement
-/// is not the same as resolving it: see H4 in evidencia/marchaprod-diff.md.
 enum class DryGasFlashTarget {
     /// marchProductionSteady, marchReverseProductionSteady: the flag goes to
     /// the injected gas.
@@ -3944,12 +3925,10 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
     } else if (state.cells[0].acsr.tipo == kAccessoryGasInjection) { // fonte de gas
         state.cells[0].temp = state.cells[0].acsr.injg.temp;
         if (state.input.flashCompleto == 2) {
-            // The only place the three marches disagree. See H4 in
-            // evidencia/marchaprod-diff.md: marchaProdPerm1 and
-            // marchaProdPerm1Rev hand the dry-gas flag to the SOURCE fluid,
-            // marchaProdPerm2 to the CELL fluid. Both forms are kept, on
-            // purpose, because at most one of them can be right and this
-            // refactoring is not the place to decide which.
+            // The only place the three marches disagree: marchProductionSteady and
+            // marchReverseProductionSteady hand the dry-gas flag to the source's fluid,
+            // marchProductionSteadySecondary to the cell's. Nothing in the code says
+            // which is intended, so both forms are kept.
             if (dryGasFlashTarget == DryGasFlashTarget::sourceFluid) {
                 if (state.input.tabelaDinamica == 0)
                     state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
@@ -4615,11 +4594,8 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
     // quando o tramo faz perte de um sistema de redes
     if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        // Here the original went on to test for a pressure condition on the gas
-        // line and set limIter to 1 again: the same value, so the test selected
-        // nothing, and SC-012 removed it (evidencia/anomalias.md, A9-02). The
-        // note that went with it, kept below, describes an extra march that
-        // only searchProductionBottomHolePressureTertiary makes.
+        // The extra march the note below describes is made only by
+        // searchProductionBottomHolePressureTertiary.
         //
         // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
@@ -4774,11 +4750,8 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     // quando o tramo faz perte de um sistema de redes
     if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        // Here the original went on to test for a pressure condition on the gas
-        // line and set limIter to 1 again: the same value, so the test selected
-        // nothing, and SC-012 removed it (evidencia/anomalias.md, A9-02). The
-        // note that went with it, kept below, describes an extra march that
-        // only searchProductionBottomHolePressureTertiary makes.
+        // The extra march the note below describes is made only by
+        // searchProductionBottomHolePressureTertiary.
         //
         // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
@@ -4970,11 +4943,8 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // quando o tramo faz perte de um sistema de redes
     if (state.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
         limIter = 1;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
-        // Here the original went on to test for a pressure condition on the gas
-        // line and set limIter to 1 again: the same value, so the test selected
-        // nothing, and SC-012 removed it (evidencia/anomalias.md, A9-02). The
-        // note that went with it, kept below, describes an extra march that
-        // only searchProductionBottomHolePressureTertiary makes.
+        // The extra march the note below describes is made only by
+        // searchProductionBottomHolePressureTertiary.
         //
         // no caso de se ter
         // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico

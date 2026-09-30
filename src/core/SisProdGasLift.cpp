@@ -68,8 +68,8 @@ struct CompletionFluidThroughValve {
     static double recovery(const ChokeGas &choke) { return choke.frecliq; }
     static double massFlowRate(ChokeGas &choke, const Ler &input) { return choke.massica(1, input.salinDescarga); }
 };
-/// Gas-side recovery, completion-fluid mass flow. Not a combination anyone
-/// would invent; it is what the unloading search does and it is preserved.
+/// Gas-side recovery, completion-fluid mass flow: the combination the unloading
+/// search uses.
 struct UnloadingThroughValve {
     static double recovery(const ChokeGas &choke) { return choke.frec; }
     static double massFlowRate(ChokeGas &choke, const Ler &input) { return choke.massica(1, input.salinDescarga); }
@@ -78,9 +78,8 @@ struct UnloadingThroughValve {
 /// Primes the choke from the two cells it spans and returns the mass source it
 /// delivers, already scaled by the calibrated opening when the valve is one.
 ///
-/// The four sites this replaces each wrote the result into a different place --
-/// three into the gas cell's source term, one into a local -- so the value is
-/// returned rather than stored.
+/// The callers use it differently -- three add it to the gas cell's source
+/// term, one keeps it in a local -- so the value is returned rather than stored.
 template <typename Phase>
 [[nodiscard]] double primeValveMassSource(const GasLiftState &state, int valveIndex,
                                           const CelG &gasCell, const Cel &productionCell) {
@@ -158,7 +157,7 @@ void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
 
 /// Walks a pressure towards a target by a fixed factor per step, without
 /// overshooting it. Down at 5% a step, up at 5% a step -- the two rates are not
-/// each other's inverse and are preserved as written.
+/// each other's inverse.
 void relaxTowards(double &pressure, double target) {
     if (pressure > target) {
         pressure *= 0.95;
@@ -478,15 +477,8 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     double bellowsPressureAt80F = calibrationPressure * (1 - valveRatio);
     bellowsPressureAt80F = (bellowsPressureAt80F + kAtmosphereInPsi) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - kAtmosphereInPsi;
     double bellowsPressure = bellowsPressureAt80F * (1 + 0.00215 * (bottomHoleTemperatureFahrenheit - 80));
-    // The two assignments to the opening fraction that used to stand here --
-    // one on `openingCriterion > bellowsPressure`, one on the closed-valve rule
-    // below -- were both overwritten unconditionally by the area ratio at the
-    // end of the function, so neither ever reached the return. The criterion
-    // itself fed nothing else and is gone with them.
-    //
-    // This is reported, not silently repaired: it means the documented rule
-    // "IF THE VALVE IS CLOSED, QG = 0" has no effect today. Restoring it would
-    // change results and is an engineering decision, not a refactoring one.
+    // A closed valve is not forced to zero here: the opening fraction returned is
+    // always the area ratio computed at the end.
     double bellowsArea = throatArea / valveRatio;
     // The spring rate depends only on whether the valve is a large-bore one.
     const double externalDiameterInches = externalDiameter * kCentimetrePerMetre / kCentimetrePerInch;
@@ -724,8 +716,6 @@ void advanceInterface(const GasLiftState &state) {
         if (((state.gasCells[state.interfaceCell].razInter <= (*state.globals).localtiny) && (state.gasCells[state.interfaceCell].razInter >= -(*state.globals).localtiny)))
             state.gasCells[state.interfaceCell].razInter = 0;
         else if (state.gasCells[state.interfaceCell].razInter < -(*state.globals).localtiny) {
-            // Both arms of the branch that used to stand here set the ratio to
-            // the same value; only the time-step side effect was conditional.
             const double interfaceCrossingTimeStep =
                 -state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
             if (interfaceCrossingTimeStep > (*state.globals).localtiny)
@@ -1003,11 +993,10 @@ void connectTubing(const GasLiftState &state) {
         const CelG &tubingCell = state.gasCells[tubingCellIndex];
         const double pres = tubingCell.pres;
         const double temp = tubingCell.temp;
-        // The four property calls stay in the order the original made them --
-        // specific heat, density, conductivity, viscosity -- rather than the
-        // order the struct lists its fields. A braced initialiser would have
-        // reordered them, and nothing here proves these correlations are free
-        // of side effects.
+        // The four property calls run in this order -- specific heat, density,
+        // conductivity, viscosity -- not in the order the struct lists its fields: a
+        // braced initialiser would reorder them, and these correlations are not known
+        // to be free of side effects.
         ExternalFluidProperties fluid;
         if (tubingCellIndex < state.interfaceCell) {
             const double specificHeat = tubingCell.flui.CalorGas(pres, temp);
@@ -1244,10 +1233,6 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 
     double meanPressure = state.gasCells[cellIndex - 1].pres - (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
 
-    // The branch on steadyIteration that used to stand here assigned a weighted
-    // mean in one arm and the upstream temperature in the other, and the next
-    // line then overwrote it with the upstream temperature unconditionally.
-    // Neither arm reached anything.
     double meanTemperature = state.gasCells[cellIndex - 1].temp;
 
     dx = 0.5 * state.gasCells[cellIndex].dx0;
@@ -1366,15 +1351,13 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
         int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
         int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
         if (cellIndex == gasLiftProductionCell) {
-            // Only how the mass source is obtained differs. The three
-            // statements that publish it were identical in both arms.
+            // Only how the mass source is obtained differs; the three statements that
+            // publish it are the same in both arms.
             //
-            // This site has always read the flag the other way round from the
-            // rest: "1 is the flow rate, anything else the pressure", where
-            // every other reads "0 is the pressure, anything else the flow
-            // rate". The readings differ only for a value outside {0, 1},
-            // which the input does not reject, and the difference is kept
-            // (evidencia/anomalias.md, A9-01).
+            // This site reads the flag the other way round from the rest: "1 is the flow
+            // rate, anything else the pressure", where every other reads "0 is the
+            // pressure, anything else the flow rate". The readings differ only for a
+            // value outside {0, 1}, which the input does not reject.
             withGasInletCondition(
                 state.gasCells[0].tipoCC == kGasInletInjectionFlowRate ? kGasInletInjectionFlowRate
                                                                        : kGasInletInjectionPressure,

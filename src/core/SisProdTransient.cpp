@@ -12,7 +12,7 @@
 
 #include <math.h>
 
-// For the TimeStepPolicy concept (T109a), as in RootFindingSolvers.h.
+// For the TimeStepPolicy concept.
 #include <concepts>
 
 // The run's start date, which the progress report prints. Globals defined
@@ -1542,21 +1542,20 @@ namespace {
 // ---------------------------------------------- time-step policy registry --
 //
 // The restrictions on the time step, as a list of policies instead of calls
-// written into the step (T109a). A policy names the point of the step where it
-// acts (its hook), the condition under which it acts, and the action. The step
-// asks the registry for the policies of a hook, and they run in the order they
-// are listed. Adding a policy is writing it and listing it in TimeStepPolicies:
+// written into the step. A policy names the point of the step where it acts
+// (its hook), the condition under which it acts, and the action. The step asks
+// the registry for the policies of a hook, and they run in the order they are
+// listed. Adding a policy is writing it and listing it in TimeStepPolicies:
 // neither the step nor any other policy changes.
 //
 // Resolved at compile time: `if constexpr` drops the policies of every other
 // hook, so a hook costs what its own conditions cost and nothing is called
-// through a pointer (FR-022). The three policies below make the calls the step
-// used to make, under the same conditions and in the same order.
+// through a pointer.
 //
 // The registry covers the step this module runs, a single line (chaverede ==
 // 0). A network run is sequenced by Num4Main.cpp, which calls the same three
-// restrictions through SProd's surface. FR-031 keeps that sequence there, so a
-// policy listed here does not reach a network run.
+// restrictions through SProd's surface, so a policy listed here does not
+// reach a network run.
 enum class TimeStepHook {
     CouplingIterationStart, // start of a pressure-volume coupling iteration
     AfterPigUpdate,         // after the pig moves, in the same iteration
@@ -2309,9 +2308,8 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         (*state.step.globals).lixo5 += state.step.timeStep;
 }
 
-// SC-015: the two per-cell loops that ran every time step from SisProd.cpp,
-// geraMiniTabFlu and salvaFonte, and the helpers only they call. T126 had
-// kept geraMiniTabFlu there on a premise T104c showed false.
+// The per-cell loops run every time step -- the fluid mini-tables and the
+// mass sources at the previous time level -- and the helpers only they call.
 namespace {
 
 /// Evaluates the fluid at the two minimum-pressure corners of the mini-table,
@@ -2478,7 +2476,7 @@ void fillMiniTableCornersAtMaxPressure(const TransientStepState &state, ProFlu &
 }  // namespace
 
 /// Builds a fluid's dynamic mini-table: evaluates it at the four corners
-/// (pmin/pmax x tmin/tmax) and reorders the quality corners. Was auxMiniTab.
+/// (pmin/pmax x tmin/tmax) and reorders the quality corners.
 void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
     ProFlu fluC;
     fluC = flui;
@@ -2572,7 +2570,7 @@ void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
 }
 
 /// Recentres every cell's mini-table, and the mini-tables of the accessory
-/// fluids, on the cell's current pressure and temperature. Was geraMiniTabFlu.
+/// fluids, on the cell's current pressure and temperature.
 void generateFluidMiniTables(const TransientStepState &state) {
     (*state.globals).modoTransiente = 0;
 #pragma omp parallel for num_threads((*state.globals).ntrd)
@@ -2670,7 +2668,6 @@ void generateFluidMiniTables(const TransientStepState &state) {
 }
 
 /// Copies each cell's mass sources to the previous-time-level fields (...ini).
-/// Was salvaFonte.
 void storePreviousSources(const TransientStepState &state) {
     for (int i = 0; i <= state.lastCell; i++) {
         state.cells[i].fontemassLRini = state.cells[i].fontemassLR;

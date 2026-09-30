@@ -2,8 +2,8 @@
 #define SISPRODCONSTANTS_H_
 
 /// Physical constants, accessory kinds and gas-line inlet conditions shared by
-/// the extracted modules. Each keeps the exact spelling of the literal it
-/// replaces; the static_asserts at the end prove it.
+/// SProd and its modules. The static_asserts at the end pin each value to its
+/// spelling.
 namespace sisprod {
 
 // ---------------------------------------------------------------- units ----
@@ -11,8 +11,8 @@ namespace sisprod {
 /// Pascals per kgf/cm^2. Pressure is carried in kgf/cm^2 and needed in Pa.
 inline constexpr double kPascalPerKgfPerCm2 = 98066.5;
 
-/// The same conversion, spelled differently elsewhere in the tree. The
-/// difference is preserved: harmonising it would change results.
+/// The same conversion, spelled differently in some places. Using one value
+/// for both would change results.
 inline constexpr double kPascalPerKgfPerCm2Variant = 98066.52;
 
 /// The PVTSim table reader's spelling. With it one atmosphere is 1.033211
@@ -52,10 +52,9 @@ inline constexpr double kAirDensityAtStandardConditions = 1.225;
 /// "correcting" it would change every hydrostatic term.
 inline constexpr double kGravity = 9.82;
 
-/// The gas-lift unloading hydrostatics spell gravity differently. The value is
-/// preserved rather than harmonised, for the same reason as the pressure
-/// variant above: the two are not interchangeable without changing results.
-/// That they disagree is a finding about the source, not a licence to fix it.
+/// The gas-lift unloading hydrostatics spell gravity differently. As with the
+/// pressure variant above, the two are not interchangeable without changing
+/// results.
 inline constexpr double kGravityUnloadingVariant = 9.81;
 
 /// Psi per kgf/cm^2. Gas-lift valve correlations are imperial throughout.
@@ -133,24 +132,21 @@ enum : int {
     kGasInletInjectionFlowRate = 1, ///< the injection flow rate is given
 };
 
-/// The two conditions as types (SC-012). Where the gas line behaves differently
-/// under each, the difference is written once per condition, as an overload
-/// taking one of these, in the module that owns the data -- instead of the flag
-/// being tested at every place that cares, eleven places in three modules
-/// before this.
+/// The two conditions as types. Where the gas line behaves differently under
+/// each, the difference is written once per condition, as an overload taking
+/// one of these, in the module that owns the data, instead of the flag being
+/// tested at every place that cares.
 struct InjectionPressureCondition {};
 struct InjectionFlowRateCondition {};
 
 /// The one place the inlet condition is decided: calls `visitor` with the
 /// condition `tipoCC` names. Zero is the injection pressure and anything else
-/// the flow rate. That is how every site but one read the flag (`== 0`), and
-/// the input does not reject a value outside {0, 1}, so the meaning of such a
-/// value is kept as well; the one site that read it the other way round says so
-/// where it is.
+/// the flow rate; the input does not reject a value outside {0, 1}. The one site
+/// that reads the flag the other way round says so where it is.
 ///
-/// Called where the flag used to be tested, not once in an adapter. The first
-/// gas cell exists only when there is a gas line, and every one of those tests
-/// sat behind a guard that says so.
+/// Called where the condition matters, not once in an adapter: the first gas
+/// cell exists only when there is a gas line, and every call sits behind a
+/// guard that says so.
 template <typename Visitor>
 decltype(auto) withGasInletCondition(int tipoCC, Visitor &&visitor) {
     if (tipoCC == kGasInletInjectionPressure)

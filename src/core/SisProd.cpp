@@ -23,7 +23,7 @@
 #include <math.h>
 
 // The state adapters live in sisprod::adapters, where SisProd.h declares them
-// so that SProd can name them as friends; these keep every call site as it was.
+// so that SProd can name them as friends.
 using sisprod::adapters::gasLiftStateOf;
 using sisprod::adapters::steadyStateOf;
 using sisprod::adapters::searchStateOf;
@@ -1250,10 +1250,10 @@ void SProd::atualizaCC1() {
 
 /// Runs the hydrate-envelope solvers for the production and gas lines.
 ///
-/// Kept a member of SProd, and it must stay one: both solvers are constructed from
+/// A member of SProd, and it must stay one: both solvers are constructed from
 /// the whole SProd object (*this), which a free function taking a state struct
-/// does not have. SolveTrans reaches it through a callback once it moves, so the
-/// hydrate phase still runs first, where T127 requires it.
+/// does not have. SolveTrans reaches it through a callback, so the hydrate
+/// phase runs first in the step.
 void SProd::solveHydrateEnvelopes() {
     if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
         FA_Hidrato solverHidrato(*this);
@@ -1270,9 +1270,8 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
     sisprod::transient::solveTransientStep(transientSolveStateOf(*this), titRev, alfRev, betRev, nrede, fluiRev);
 }
 
-// The eight trend writers moved to SisProdTrendOutput.cpp. Four of them are
-// called from 28 sites in Num4Main.cpp, so the public signatures stay exactly
-// as they were (FR-032) and these forward. Nothing in SisProd.h changed.
+// The trend writers live in SisProdTrendOutput.cpp; Num4Main.cpp calls four
+// of them through these.
 void SProd::ImprimeTrendPCab(int i, int nrede) {
     trendoutput::writeProductionTrendHeader(trendStateOf(*this), i, nrede);
 }

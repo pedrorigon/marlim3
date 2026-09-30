@@ -13,13 +13,11 @@ class SProd;
 
 namespace sisprod::composition {
 
-/// Calls the moved bodies make back into SProd.
-///
-/// One, measured: the black-oil and molar-fraction transports correct each
-/// cell's gas specific gravity through SProd::corrDeng, which is itself a
-/// delegation to sisprod::steady::correctGasSpecificGravity. Routing it through
-/// SProd keeps this module depending on the class rather than on the steady
-/// module's state, as the transient module does for its own callbacks.
+/// Calls the transports make back into SProd: one, the gas specific gravity
+/// correction (SProd::corrDeng), which delegates to
+/// sisprod::steady::correctGasSpecificGravity. Routing it through SProd keeps
+/// this module depending on the class rather than on the steady module's
+/// state, as the transient module does for its own callbacks.
 struct CompositionUpdaters {
     SProd &system;
 
@@ -28,32 +26,14 @@ struct CompositionUpdaters {
 
 /// What the composition transport reads and writes.
 ///
-/// Seventeen fields, derived from measure-members.py over the six routines this
-/// module took: renovaRGOdgYco2, renovaFracMol, renovaFracMol2, renovaalbetini,
-/// renovaMasEsp and avaliaParafina. renovaFracMol has since been removed: it
-/// had no caller, in this tree or in main. Against 72 for TransientStepState and 28
-/// for SteadyStateState, this is the narrowest state any stage has needed --
-/// composition transport is a separable domain that happened to live in the
-/// class, as the thermal and gas-lift ones were.
-///
 /// There is no time step here although the three transports use one: each
-/// declares `double dt = celula[1].dt;` at its outermost level, which hides
-/// SProd::dt for the whole body. The first measurement counted those as uses of
-/// the member and put a timeStep field in; the compiler's -Wshadow and the
-/// corrected measurement agree it was never read.
+/// declares its own dt, from the first cell's, at its outermost level.
 ///
-/// Scalars are held BY REFERENCE, not by value, for the reason every state in
-/// this refactoring records: copying them in would read each one at
-/// construction, before the branch that decides whether the original would
-/// have read it at all.
+/// Scalars are held by reference, not by value: a copy would read each one at
+/// construction, before the branch that decides whether it is read at all.
 ///
-/// Nothing is marked const yet. Four headers before this one promised const
-/// from a reading of the code and the compiler refused the promise each time;
-/// here the marking is left to the move, where the compiler decides it per
-/// field.
-///
-/// Field names follow the ones the other modules already gave the same members
-/// (SC-017); pig names are new and come from the members' own documentation.
+/// Nothing is marked const. Field names follow the ones the other modules give
+/// the same members.
 struct CompositionState {
     Cel *&cells;                          // celula
     int &lastCell;                        // ncel
@@ -78,8 +58,7 @@ struct CompositionState {
 
 /// Transports black-oil properties -- gas-oil ratio, API gravity, gas density,
 /// CO2 fraction -- along the line. fluiRev is the fluid entering through the
-/// outlet under reverse flow; by value, as the original takes it (FR-035 weighs
-/// const& separately, at T110a).
+/// outlet under reverse flow, taken by value.
 void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev);
 
 /// Transports the molar fractions of the oil and the gas phases separately, and

@@ -13,12 +13,9 @@ namespace sisprod::steady {
 
 namespace {
 
-/// The nine rows of the steady-state march dispatch table.
-///
-/// Named after the methods they select, deliberately: a dispatch table is read
-/// by checking that each row goes where it says, and `case
-/// SteadyMarch::marchaProdPresPres1Rev: return marchaProdPresPres1Rev(chute);`
-/// makes a mis-wired row visible without cross-referencing anything.
+/// The nine rows of the steady-state march dispatch table, named after the
+/// SProd methods that run each march (SProd::marchaProdPerm1 runs
+/// marchProductionSteady, and so on), so that each row reads against them.
 enum class SteadyMarch {
     marchaInjPerm1,
     marchaGasPerm2,
@@ -31,25 +28,13 @@ enum class SteadyMarch {
     marchaProdPresPres2,
 };
 
-/// Resolves the four selectors to one row of the table.
+/// Resolves the four selectors to one row of the table: a pure function of
+/// five values.
 ///
-/// This was a conditional chain nested four deep inside multMarcha. Pulled out,
-/// it is a pure function of five values -- which is what makes the table
-/// verifiable: refactor-harness/verify-dispatch.py sweeps every combination of
-/// the selectors against the original chain carved out of the baseline commit.
-/// Nothing else can check this. Measured over the 360 zriddr calls the corpus
-/// makes, only three (prod, tipoCC) pairs ever occur -- (0,0), (1,0) and (1,1) --
-/// so the corpus reaches at most FOUR of the nine rows. The injection row, the
-/// second gas-line row and all three pressure-pressure rows never run, and a
-/// mis-wired row among those five would leave every gate green.
-///
-/// Documented row by row in evidencia/tabela-despacho.md.
 /// productionChokeOpening is the array, not the value, so that the subscript
-/// happens only in the branch that needs it -- as it did when this was a nested
-/// chain. Ler::copia_chokeSup leaves chokep.abertura null when parserie is not
-/// positive, and reading it on every dispatch would turn a conditional
-/// dereference into an unconditional one. No corpus model takes that path, so
-/// no gate would have said anything.
+/// happens only in the branch that needs it: Ler::copia_chokeSup leaves
+/// chokep.abertura null when parserie is not positive, and reading it on every
+/// dispatch would turn a conditional dereference into an unconditional one.
 SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int reverseMarch,
                               const double *productionChokeOpening) {
     if (injectorWell != 0)
@@ -63,21 +48,13 @@ SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int revers
                                  : SteadyMarch::marchaProdPerm1Rev;
     }
     if (tipoCC != 0) {
-        // A2-01. Both arms select the same march, and that is correct, not a
-        // bug -- which took measuring to establish. The obvious reading is that
-        // the else should reach marchaProdPresPres3, since that function exists,
-        // has no caller, and Num4Main splits on this very condition to choose
-        // buscaProdPresPresPerm3. It should not. marchaProdPresPres2 already
-        // reduces to marchaProdPresPres3 when the choke is shut: the throat area
-        // is `abertura[0] * area`, so vazmaxSachd and vazmassSachd both go to
-        // zero with it, and the residual becomes the same `0. - MR` that
-        // marchaProdPresPres3 returns literally. Routing here to
-        // marchaProdPresPres3 would swap a guarded, general march for a narrower
-        // ancestor -- a regression wearing the shape of a fix.
-        //
-        // The branch is kept rather than collapsed because it is the only
-        // surviving record that the two cases were once distinct. See A2-01 in
-        // evidencia/anomalias.md for the measurement.
+        // Both arms select the same march, and that is correct: the secondary
+        // pressure-to-pressure march already reduces to the tertiary one when the
+        // choke is shut. The throat area is `abertura[0] * area`, so vazmaxSachd and
+        // vazmassSachd both go to zero with it, and the residual becomes the same
+        // `0. - MR` that marchProductionPressureToPressureTertiary returns literally.
+        // Routing the else there would swap a guarded, general march for a narrower
+        // one.
         return productionChokeOpening[0] > 1e-15 ? SteadyMarch::marchaProdPresPres2
                                                  : SteadyMarch::marchaProdPresPres2;
     }
@@ -98,27 +75,25 @@ double dispatchMarch(const SteadyStateSearchState &state, double chute, int prod
     case SteadyMarch::marchaProdPresPres1:    return marchProductionPressureToPressure(state.march, chute);
     case SteadyMarch::marchaProdPresPres1Rev: return marchReverseProductionPressureToPressure(state.march, chute);
     case SteadyMarch::marchaProdPresPres2:    return marchProductionPressureToPressureSecondary(state.march, chute);
-    // Falls out of the switch rather than returning inside it. An exhaustive
-    // switch over a scoped enum still trips -Wreturn-type on GCC 11, and gate 1
-    // admits no new warnings; a default: label would add an unreachable path
-    // the original did not have.
+    // Falls out of the switch rather than returning inside it: an exhaustive
+    // switch over a scoped enum still trips -Wreturn-type on GCC 11, and a
+    // default: label would add an unreachable path.
     case SteadyMarch::marchaInjPerm1:         break;
     }
     return marchInjectionSteady(state.march, chute);
 }
 
 double solveSteadyRoot(const SteadyStateSearchState &state, double lowerBracket, double upperBracket, int prod, int tipoCC) {
-    // Hoisted out of the solver: arq is input-deck configuration, and a
+    // Read here rather than in the solver: arq is input-deck configuration, and a
     // generic root finder has no business reading it. minit gates three early
-    // returns inside the solver; see A2-05 in evidencia/anomalias.md for what
-    // that gating reaches.
+    // returns inside the solver.
     int minit=0;
     if(state.march.input.acopColAnulPermForte == 1)minit=10;
     return rootfinding::zriddr(
         lowerBracket, upperBracket,
         [&](double guess) { return dispatchMarch(state, guess, prod, tipoCC); },
         // Domain feedback, kept on the domain side: the solver composes it as
-        // monitor(objective(x)), which is the order the original evaluated in.
+        // monitor(objective(x)).
         [&](double residual) {
             double normalized = residual / state.march.baseConvergenceMonitor;
             if (prod != 0) {
@@ -2513,9 +2488,8 @@ namespace {
 
 /// Walks the column cell by cell for the tertiary search.
 ///
-/// The same shape as advanceProductionCells in the march module, and NOT the
-/// same function: this one is inlined inside what the original called a search.
-/// See evidencia/buscaprod-diff.md.
+/// The same shape as advanceProductionCells in the march module, and not the
+/// same function.
 bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &abortValue) {
     
                 advanceUpstreamSteadyPressure(state.march, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
@@ -2644,10 +2618,8 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
 
 /// Marches the column to convergence for the tertiary search.
 ///
-/// This function is not a search: it calls no solver and no march, and inlines a
-/// march of its own. See evidencia/buscaprod-diff.md -- it sits at 4 to 5 per cent
-/// similarity to the three real searches, which sit at 63 to 69 per cent to each
-/// other.
+/// Not a search: it calls no solver and no march, and inlines a march of its
+/// own.
 bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &guessNeedsCorrection, int &i, double betini, double alfini, double pentrada, double &abortValue) {
     while (guessNeedsCorrection == 1) { // opcao antiga, ja nao tem mais efeito
         // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
@@ -3829,12 +3801,11 @@ namespace {
 /// What the downward walk of a surface-pressure injection search does with a
 /// guess below 1 kgf/cm2, the code's atmospheric pressure.
 ///
-/// It exists because the second and the fifth injection searches bracket their
-/// root with the same text except here: the second refuses such a guess -- it
-/// steps back to 99 % of the previous one instead of 90 %, and gives up if even
-/// that is below atmospheric -- and the fifth hands it to the march. Nothing in
-/// the code says why. Naming the disagreement is not the same as resolving it:
-/// see evidencia/buscainj-diff.md.
+/// The second and the fifth injection searches bracket their root the same way
+/// except here: the second refuses such a guess -- it steps back to 99 % of the
+/// previous one instead of 90 %, and gives up if even that is below
+/// atmospheric -- and the fifth hands it to the march. Nothing in the code says
+/// why.
 enum class SubAtmosphericGuess {
     refused,
     marched,

@@ -29,12 +29,9 @@ namespace rootfinding {
 
 /// A residual function a solver drives to zero: position in, residual out.
 ///
-/// Constrained rather than left as a bare `typename`, and the reason is
-/// specific to this module. zbrent and bisect have no call site in the product,
-/// so the only thing that ever instantiates them is the verification harness. A
-/// caller that passes the wrong shape would otherwise get a page of diagnostics
-/// from inside the arithmetic, naming variables it never heard of, instead of
-/// one line saying the argument does not satisfy ObjectiveFunction.
+/// Constrained rather than a bare `typename`: a caller that passes the wrong
+/// shape gets one line saying the argument does not satisfy ObjectiveFunction,
+/// instead of a page of diagnostics from inside the arithmetic.
 template <typename Function>
 concept ObjectiveFunction =
     std::invocable<Function, double> &&
@@ -60,11 +57,8 @@ concept ResidualMonitor = ObjectiveFunction<Function>;
     return (signSource >= 0 ? 1.0 : -1.0) * fabs(magnitude);
 }
 
-/// Sign of a value, as -1 or 1, with zero counting as negative.
-///
-/// It has no caller anywhere in the project and never had one; it is preserved
-/// because removing dead code is a behaviour change this programme is not
-/// authorised to make. Out of line precisely because nothing calls it.
+/// Sign of a value, as -1 or 1, with zero counting as negative. Nothing in the
+/// project calls it.
 ///
 /// \param value  Value to inspect.
 /// \return -1 when value <= 0, otherwise 1.
@@ -83,17 +77,11 @@ void reportIterationLimit(const char *message);
 /// Finds a root by bisection: halve the bracket, keep the half that still
 /// straddles the sign change.
 ///
-/// Was SProd::falsacorda -- Portuguese for "false chord", the regula falsi --
-/// and the body was never that. It takes the midpoint of the bracket, not the
-/// intercept of the secant. Whoever wrote it knew: the loop carries the original
-/// comment "this block treats the 'falsacorda' properly", with the name in
-/// quotes, and multFC below is the unused 0.5 that the halving line hardcodes.
-/// Renamed rather than translated, because falsePosition would have made the
-/// name lie with more authority. See A2-06 in evidencia/anomalias.md.
+/// The loop's comment calls it falsacorda ("false chord", the regula falsi),
+/// but it takes the midpoint of the bracket, not the intercept of the secant;
+/// multFC below is the 0.5 the halving line hardcodes, and nothing reads it.
 ///
-/// Reachable only from zbrent, which nothing calls, so it never executes. Its
-/// verification is refactor-harness/solver-move.py for the move and
-/// verify-solvers.sh, which instantiates and exercises it, for everything since.
+/// Reachable only from zbrent, which nothing calls.
 /// \tparam Objective  Residual function; see the ObjectiveFunction concept.
 /// \param bracketLow   Interval endpoint the sign test treats as the low side.
 /// \param bracketHigh  Interval endpoint the sign test treats as the high side.
@@ -126,18 +114,8 @@ template <ObjectiveFunction Objective>
 /// interpolation, falling back to bisection when the interval does not bracket
 /// a sign change.
 ///
-/// Measured over the whole tree, this has NO call site. It is moved as it
-/// stands, and never runs. Two consequences worth stating where they will be
-/// read: L2 and L3 cannot see a defect introduced here, and because an
-/// uninstantiated template is only parsed, neither can the compiler. What
-/// covers it is solver-move.py for the move and verify-solvers.sh, which
-/// instantiates and exercises it, for everything after.
-///
-/// The declaration this replaced carried default arguments -- tol and epsn both
-/// 0.00001, maxit 100. They are not reproduced, because a default on a function
-/// with no caller only invites one to be written without thinking about the
-/// tolerance; the values are recorded here instead, since they are the only
-/// statement anyone ever made about what this solver expects.
+/// Nothing calls it. It was written for tolerances of 0.00001 (tol and epsn) and
+/// 100 iterations; they are not defaults, so a caller has to choose them.
 /// \tparam Objective          Residual function; see the ObjectiveFunction concept.
 /// \param bracketLow          Interval endpoint.
 /// \param bracketHigh         Interval endpoint.
@@ -224,33 +202,23 @@ template <ObjectiveFunction Objective>
     }
 }
 
-/// Finds a root by Ridders' method. The only solver here that executes.
+/// Finds a root by Ridders' method. The only solver here that runs.
 ///
-/// Two callables, not one, because the original evaluates the objective in two
-/// different ways. Twelve of its fourteen evaluations are raw; two are divided
-/// by a convergence-monitor base and recorded in a member the outer pressure
-/// loops read back. That scaling and that write are domain feedback, so they
-/// travel in `monitor` and the solver keeps only the composition
-/// `monitor(objective(x))` -- the same order of operations the original had.
+/// Two callables, not one, because the objective is evaluated in two ways.
+/// Twelve of its fourteen evaluations are raw; two are divided by a
+/// convergence-monitor base and recorded in a member the outer pressure loops
+/// read back. That scaling and that write are domain feedback, so they travel
+/// in `monitor` and the solver keeps only the composition
+/// `monitor(objective(x))`.
 ///
-/// `reverseMarch` selects nothing today: all three branches that test it have
-/// identical arms. They are kept verbatim rather than collapsed. Collapsing
-/// would be behaviour-preserving -- reading an int member has no side effect --
-/// but the branch is the only surviving evidence that someone meant to treat
-/// the reverse march differently here, and erasing it would make that
-/// unrecoverable from the code. See A2-02 to A2-04 in evidencia/anomalias.md.
+/// `reverseMarch` selects nothing: all three branches that test it have
+/// identical arms. It is passed once, on entry; if those arms ever differ, it has
+/// to be read inside the loop again, since revPerm can change mid-solve.
 ///
-/// `minimumIterations` is derived from the input deck at the binding site. It
-/// also gates three early returns that would otherwise be unconditional, which
-/// is how the division at A2-05 becomes reachable. Deriving it before the solve
-/// rather than inside it is safe because nothing in SisProd.cpp assigns the flag
-/// it comes from -- all seven assignments are in Leitura.cpp, parsing decks.
-///
-/// `reverseMarch` is passed once, on entry, and the original read it three times
-/// during the iteration. That is only safe because those three branches have
-/// identical arms today. If A2-02 is ever corrected so that they differ, this
-/// has to go back to being read inside the loop -- the value can change mid
-/// solve, since SisProd.cpp assigns revPerm in eighteen places.
+/// `minimumIterations` is derived from the input deck at the binding site, which
+/// is safe because the flag it comes from is only assigned when the deck is
+/// read. It also gates three early returns that would otherwise be
+/// unconditional.
 /// \tparam Objective          Residual function; see the ObjectiveFunction concept.
 /// \tparam Monitor            Residual post-processing; see ResidualMonitor.
 /// \param bracketLow          Endpoint where the residual is expected negative.
@@ -258,7 +226,7 @@ template <ObjectiveFunction Objective>
 /// \param objective           Evaluated twelve times per solve on the raw path.
 /// \param monitor             Applied to the two evaluations that feed the
 ///                            convergence monitor, as monitor(objective(x)).
-/// \param reverseMarch        Selects nothing today; see A2-02 above.
+/// \param reverseMarch        Selects nothing; see above.
 /// \param minimumIterations   Iterations that must pass before the three early
 ///                            returns are honoured.
 /// \return The best position found, or 1e10 / -1e10 / 1.e10 sentinels for the

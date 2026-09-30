@@ -17,23 +17,13 @@ namespace sisprod::steady {
 
 /// The callbacks the steady march needs from outside itself.
 ///
-/// Fourteen of these already live in extracted modules -- nine in
-/// sisprod::gaslift, five in sisprod::thermal -- and could in principle be
-/// called directly. They cannot be: reaching them needs a GasLiftState or a
-/// ThermalState, and the adapters that build those (gasLiftStateOf,
-/// thermalStateOf) are internal to SisProd.cpp, where the SProd they read is.
-/// So the call goes back through SProd exactly as GasLiftTemperatureUpdater
-/// does, and SisProd.cpp remains the one place that knows how to assemble any
-/// module's state.
+/// Fourteen of these live in other modules -- nine in sisprod::gaslift, five in
+/// sisprod::thermal -- but reaching them needs a GasLiftState or a
+/// ThermalState, which only the adapters build from an SProd. So the call goes
+/// back through SProd, as GasLiftTemperatureUpdater does, and the adapters
+/// remain the one place that knows how to assemble a module's state.
 ///
 /// The remaining two are still SProd's own: CalcC0UdPerm and renovaFonte.
-///
-/// Four of these signatures were WRONG when this header was first written, and
-/// the compiler said so on the first attempt to define them. CalcC0UdPerm
-/// returns its two coefficients through reference parameters, the two
-/// temperature marches take a Runge-Kutta stage, and calctemp takes the
-/// previous temperature and a steady-mode flag. They are transcribed from
-/// SisProd.h now rather than assumed from the call sites.
 struct SteadyStateUpdaters {
     SProd &system;
 
@@ -59,16 +49,14 @@ struct SteadyStateUpdaters {
     [[nodiscard]] double steadyGasPressureDrop(int cellIndex) const;
     [[nodiscard]] double steadyInjectionPressureDrop(int cellIndex) const;
 
-    // --- searches, called BY a march ----------------------------------------
-    // These two break the shape the rest of this struct has. Everything above
-    // is something the march needs from another domain; these are searches,
-    // in the module that is supposed to sit on the other side of the cut.
-    // marchaProdPerm1 and marchaProdPerm2 call them after the column converges,
-    // to march the gas line. Section 8 of evidencia/marchaprod-diff.md has the
-    // measurement and what it costs the stage-7 story.
+    // --- searches, called by a march ----------------------------------------
+    // These two break the shape the rest of this struct has: everything above is
+    // something the march needs from another domain, while these are searches.
+    // marchProductionSteady and marchProductionSteadySecondary call them after the
+    // column converges, to march the gas line.
     //
-    // Their return value is discarded at the call site, as it was in the
-    // original, so these are declared void.
+    // Their return value is discarded at the call site, so these are declared
+    // void.
     void searchGasPressureSteadySecondary() const;
     void searchGasPressureSteadyTertiary() const;
 };
@@ -76,24 +64,14 @@ struct SteadyStateUpdaters {
 /// The state the steady march reads, and the only state it may read.
 ///
 /// Same role as ThermalState and GasLiftState: it names in one place what this
-/// domain touches, and it makes the routines callable WITHOUT an SProd, which
-/// is what lets a dedicated harness drive them over synthetic cells.
+/// domain touches, and it makes the routines callable without an SProd, so they
+/// can be driven over synthetic cells. The searches read seventeen of these
+/// fields, which is why SteadyStateSearchState composes this struct.
 ///
-/// The field list is not a guess. It was derived by walking all 31 march
-/// bodies -- 6,492 lines -- and intersecting every identifier against SProd's
-/// declared data members. Twenty-eight came back; seventeen of them are also
-/// read by the searches and are the reason SteadyStateSearchState composes this
-/// struct rather than restating it.
+/// Scalars are held by reference, not by value: a copy would read every one at
+/// construction, before the branch that decides whether it is read at all.
 ///
-/// Scalars are held BY REFERENCE, not by value. Copying them into the struct
-/// would read every one at construction, before the branch that decides whether
-/// the original would have read it at all -- the defect the root-finding stage
-/// had to undo, and the reason DriftFluxClosure's ClosureState and
-/// GasLiftState carry the same warning.
-///
-/// const marks what the march does not write. That was measured the same way,
-/// not assumed: stage 6 shipped a header promising `const Ler &input` for a
-/// deck the module writes through, and only the compiler caught it.
+/// const marks what the march does not write.
 struct SteadyStateState {
     /// Production cells -- SProd::celula. Written.
     Cel *cells;
@@ -111,18 +89,8 @@ struct SteadyStateState {
 
     /// Injection choke -- SProd::chokeInj. Written.
     ChokeGas &injectionChoke;
-    /// Surface choke -- SProd::chokeSup. NOT const.
-    ///
-    /// This said "read only" until T090 moved marchaProdPerm2, which calls
-    /// vazmassSachd and vazmaxSachd on it; neither is const-qualified. The
-    /// third time in this refactoring that a header promised const for
-    /// something the module reaches through non-const, and the third time the
-    /// compiler is what said so -- after `const Ler &input` in stage 6 and
-    /// before whatever the next one turns out to be.
-    ///
-    /// Marking the two choke methods const would be the smaller lie to fix, but
-    /// FR-038 puts choke's declarations out of bounds and a type change is not
-    /// a move. So the promise is corrected here rather than on the class.
+    /// Surface choke -- SProd::chokeSup. Not const: marchProductionSteadySecondary
+    /// calls vazmassSachd and vazmaxSachd on it, and neither is const-qualified.
     choke &surfaceChoke;
     /// Gas-line and production cell index of each gas-lift valve --
     /// SProd::posicVGLG and posicVGLP.
@@ -219,7 +187,7 @@ void correctGasSpecificGravity(const SteadyStateState &state, int cellIndex);
 
 /// Marches the gas line. The mass guess defaults to -1, meaning "derive it".
 /// Not [[nodiscard]]: the production marches call it for its effect on the gas
-/// cells and drop the value, as the original did.
+/// cells and drop the value.
 double marchGasSteady(const SteadyStateState &state, double massGuess = -1);
 [[nodiscard]] double marchGasSteadySecondary(const SteadyStateState &state, double pressureGuess,
                                              double massGuess = -1);

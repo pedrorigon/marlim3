@@ -4,24 +4,14 @@
 #include "RootFindingSolvers.h"
 #include "SisProdSteadyState.h"
 
-// SisProdSteadyState.h deliberately does NOT include this header, and that
-// stays true. The reason first written here did not.
-//
-// It claimed the dependency runs one way, that no march calls a search. T090
-// measured otherwise: marchaProdPerm1 and marchaProdPerm2 march the gas line
-// after the column converges, and that block calls buscaGasPresPerm2 and
-// buscaGasPresPerm3, both of which live on this side. The call graph between
-// the two halves has a cycle.
-//
-// What holds the cut together is therefore weaker than an absent edge, and
-// worth stating as what it is: the march reaches those two through
+// SisProdSteadyState.h does not include this header, and must not. The march
+// does reach two searches -- marchProductionSteady and
+// marchProductionSteadySecondary march the gas line after the column
+// converges, through searchGasPressureSteadySecondary and
+// searchGasPressureSteadyTertiary -- but it reaches them through
 // SteadyStateUpdaters, back via SProd, the same way it reaches calctemp. The
-// cycle is an edge in the data, not an edge in the build. So the include stays
-// one-way and T098b's grep still means something -- but it means "no
-// compile-time cycle", not "no dependency".
-//
-// If this include ever needs to be reversed, the cut is wrong, not the include.
-// See section 8 of evidencia/marchaprod-diff.md.
+// cycle between the two halves is in the data, not in the build, and the
+// include stays one-way.
 
 namespace sisprod::steady {
 
@@ -61,11 +51,10 @@ struct SteadyStateSearchState {
 
 /// Drives dispatchMarch to a root between two bracketing guesses.
 ///
-/// The generic half of this lives in rootfinding::zriddr and knew nothing about
-/// production when stage 2 put it there. What stays here is the domain half:
-/// reading acopColAnulPermForte to decide the minimum iteration count, and
-/// normalising the residual against the convergence monitor. Both were hoisted
-/// out of the solver on purpose and are not pushed back in.
+/// The generic half lives in rootfinding::zriddr and knows nothing about
+/// production. The domain half stays here: reading acopColAnulPermForte to
+/// decide the minimum iteration count, and normalising the residual against
+/// the convergence monitor.
 [[nodiscard]] double solveSteadyRoot(const SteadyStateSearchState &state, double x1, double x2,
                                      int isProduction, int boundaryConditionKind);
 
@@ -100,16 +89,15 @@ struct SteadyStateSearchState {
 
 /// Searches the gas-line pressure that closes the injection balance. Not
 /// [[nodiscard]]: the march runs them for their effect on the gas line and
-/// drops the value, as the original did.
+/// drops the value.
 double searchGasPressureSteadySecondary(const SteadyStateSearchState &state);
 double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state);
 
 // -------------------------------------------- injection bottom-hole search --
 
-/// Five variants of the injection bottom-hole search. They are numbered rather
-/// than named because the original numbered them and nothing in the code says
-/// what distinguishes four from five; T095 compares them before any of them is
-/// unified.
+/// Five variants of the injection bottom-hole search; the well's boundary
+/// condition selects one. The first, second and fifth search a root, the third
+/// iterates to a fixed point and the fourth is a march.
 [[nodiscard]] double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, double guess = -1.);
 [[nodiscard]] double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, double guess = -1.);
 [[nodiscard]] double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, double guess = -1.);
@@ -119,10 +107,6 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state);
 // --------------------------------------------------- secondary-branch search --
 
 /// Searches the flow rate through the secondary branch.
-///
-/// Missing from this header until T091 moved it and the compiler said so. The
-/// header was written from the task list, and the task list names this function
-/// under T096 with the hydrostatics rather than with the searches.
 [[nodiscard]] double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double startPressure,
                                                   int startIndex);
 
