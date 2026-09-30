@@ -25,72 +25,60 @@ namespace {
 /// hands them back through the two out-parameters, and lowers the cell's BSW for
 /// the free water that is gone.
 void consumeHydrateFormationMass(const SourceState &state, double &gas_consumido_Mg, double &agua_consumida_Mw, int ind) {
-    if (state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 2 && (*state.globals).lixo5 > 0.01) {
+    const bool model2 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 2 && (*state.globals).lixo5 > 0.01;
+    const bool model3 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 3 && (*state.globals).lixo5 > 0.01;
+    if (model2 || model3) {
 
         agua_consumida_Mw = state.cells[ind].agua_consumida_massa_step;
 
         gas_consumido_Mg = state.cells[ind].gas_consumido_massa_step;
 
-    // Update the BSW
-    double A_cross = state.cells[ind].duto.area;
-    double Lcel    = state.cells[ind].dx;
-    double Vlivre  = std::max(A_cross * Lcel - state.cells[ind].V_h, 1e-12);
+        // Update the BSW
+        double A_cross = state.cells[ind].duto.area;
+        double Lcel    = state.cells[ind].dx;
+        double Vlivre  = std::max(A_cross * Lcel - (model2 ? state.cells[ind].V_h : state.cells[ind].V_h_total), 1e-12);
 
-    double frac_agua = std::max((1-state.cells[ind].alfR)*(1-state.cells[ind].betR)*state.cells[ind].FW, 1e-12);
-    double frac_oleo = std::max((1-state.cells[ind].alfR)*(1-state.cells[ind].betR)*(1-state.cells[ind].FW), 1e-12);
+        double frac_agua = std::max((1-state.cells[ind].alfR)*(1-state.cells[ind].betR)*state.cells[ind].FW, 1e-12);
+        double frac_oleo = std::max((1-state.cells[ind].alfR)*(1-state.cells[ind].betR)*(1-state.cells[ind].FW), 1e-12);
 
-    double Vagua = frac_agua * Vlivre;
-    double Voil  = frac_oleo * Vlivre;
+        double Vagua = frac_agua * Vlivre;
+        double Voil  = frac_oleo * Vlivre;
 
-    double rho_w = std::max(state.cells[ind].flui.MasEspAgua(state.cells[ind].pres, state.cells[ind].temp), 1e-12);
-    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
-    if (Vagua_new < 0.0) Vagua_new = 0.0;
+        double rho_w = std::max(state.cells[ind].flui.MasEspAgua(state.cells[ind].pres, state.cells[ind].temp), 1e-12);
+        double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
+        if (Vagua_new < 0.0) Vagua_new = 0.0;
 
-    double BSW_old = state.cells[ind].flui.BSW;
-    double den = Voil + Vagua_new;
-    if (den > 1e-12) {
-    state.cells[ind].flui.BSW = Vagua_new / den;
-    } else {
-    state.cells[ind].flui.BSW = BSW_old;
-    }
-    //state.cells[ind].FW=state.cells[ind].flui.BSW;
-    if (ind==3) cout << " t [s]: " << (*state.globals).lixo5 << " BSW: " << BSW_old << " FW: " << state.cells[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << state.cells[ind].flui.BSW << endl;
-    //if (ind==3) system("pause");
-
-    } // hydrate change
-
-    if (state.input.calculaEnvelope==1 && state.input.tipoHmodel==3 && (*state.globals).lixo5>0.01) { // hydrate change
-
-    agua_consumida_Mw  = state.cells[ind].agua_consumida_massa_step;
-
-    gas_consumido_Mg   = state.cells[ind].gas_consumido_massa_step;
-
-    // Update the BSW
-    double A_cross = state.cells[ind].duto.area;
-    double Lcel    = state.cells[ind].dx;
-    double Vlivre  = std::max(A_cross * Lcel - state.cells[ind].V_h_total, 1e-12);
-
-    double frac_agua = std::max((1-state.cells[ind].alfR)*(1-state.cells[ind].betR)*state.cells[ind].FW, 1e-12);
-    double frac_oleo = std::max((1-state.cells[ind].alfR)*(1-state.cells[ind].betR)*(1-state.cells[ind].FW), 1e-12);
-
-    double Vagua = frac_agua * Vlivre;
-    double Voil  = frac_oleo * Vlivre;
-
-    double rho_w = std::max(state.cells[ind].flui.MasEspAgua(state.cells[ind].pres, state.cells[ind].temp), 1e-12);
-    double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
-    if (Vagua_new < 0.0) Vagua_new = 0.0;
-
-    double BSW_old = state.cells[ind].flui.BSW;
-    double den = Voil + Vagua_new;
-    if (den > 1e-12) {
-    state.cells[ind].flui.BSW = Vagua_new / den;
-    } else {
-    state.cells[ind].flui.BSW = BSW_old;
-    }
-
-    //if (ind==3) cout << " t [s]: " << (*state.globals).lixo5 << " BSW: " << BSW_old << " FW: " << state.cells[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << state.cells[ind].flui.BSW << endl;
+        double BSW_old = state.cells[ind].flui.BSW;
+        double den = Voil + Vagua_new;
+        if (den > 1e-12) {
+            state.cells[ind].flui.BSW = Vagua_new / den;
+        } else {
+            state.cells[ind].flui.BSW = BSW_old;
+        }
+        //state.cells[ind].FW=state.cells[ind].flui.BSW;
+        if (model2 && ind==3) cout << " t [s]: " << (*state.globals).lixo5 << " BSW: " << BSW_old << " FW: " << state.cells[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << state.cells[ind].flui.BSW << endl;
+        //if (ind==3) system("pause");
 
     } // hydrate change
+}
+
+/// In-situ water fraction of the fluid of fluidCell, at the pressure and
+/// temperature of cell.
+double inSituWaterFraction(const Cel &cell, Cel &fluidCell) {
+    double rs;
+    double bo;
+    double ba;
+    if (cell.flui.RGO < 1e7) {
+        rs = fluidCell.flui.RS(cell.pres, cell.temp);
+        bo = fluidCell.flui.BOFunc(cell.pres, cell.temp, rs);
+        ba = fluidCell.flui.BAFunc(cell.pres, cell.temp);
+        rs = rs * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+    } else {
+        bo = 1;
+        rs = 0;
+        ba = 0.;
+    }
+    return fluidCell.flui.BSW * ba / (bo + ba * fluidCell.flui.BSW - fluidCell.flui.BSW * bo);
 }
 
 /// Adds to cell ind the mass its source delivers this step when the source is a
@@ -111,32 +99,25 @@ void refreshChokeMultipleAndPorousSources(const SourceState &state, int ind) {
         double rhoC = state.cells[ind].fluicol.MasEspFlu(pres, temp);
         state.cells[ind].acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
         state.cells[ind].acsr.fontechk.betIST = bet;
-        if ((*state.globals).chaveRedeParalela == 0 || (*state.globals).iterRede > 0 || state.parallelSecondaryBranch == 1 || state.parallelSecondaryBoundaryCondition == 1) {
+        int iconex = -1;
+        if (!((*state.globals).chaveRedeParalela == 0 || (*state.globals).iterRede > 0 || state.parallelSecondaryBranch == 1 || state.parallelSecondaryBoundaryCondition == 1)) {
+            int nfonte = state.parallelSourceCells.size();
+            for (int ifonte = 0; ifonte < nfonte; ifonte++) {
+                if (state.parallelSourceCells[ifonte] == ind) {
+                    iconex = ifonte;
+                    break;
+                }
+            }
+        }
+        if (iconex < 0) {
             state.cells[ind].acsr.fontechk.VMas();
             state.cells[ind].fontemassLR += state.cells[ind].acsr.fontechk.masP;
             state.cells[ind].fontemassCR += state.cells[ind].acsr.fontechk.masC;
             state.cells[ind].fontemassGR += state.cells[ind].acsr.fontechk.masG;
         } else {
-            int nfonte = state.parallelSourceCells.size();
-            int match = 0;
-            int iconex;
-            for (int ifonte = 0; ifonte < nfonte; ifonte++) {
-                if (state.parallelSourceCells[ifonte] == ind) {
-                    match = 1;
-                    iconex = ifonte;
-                    break;
-                }
-            }
-            if (match == 0) {
-                state.cells[ind].acsr.fontechk.VMas();
-                state.cells[ind].fontemassLR += state.cells[ind].acsr.fontechk.masP;
-                state.cells[ind].fontemassCR += state.cells[ind].acsr.fontechk.masC;
-                state.cells[ind].fontemassGR += state.cells[ind].acsr.fontechk.masG;
-            } else {
-                state.cells[ind].fontemassLR += state.parallelSourceProductionLiquid[iconex];
-                state.cells[ind].fontemassCR += state.parallelSourceComplementaryLiquid[iconex];
-                state.cells[ind].fontemassGR += state.parallelSourceGas[iconex];
-            }
+            state.cells[ind].fontemassLR += state.parallelSourceProductionLiquid[iconex];
+            state.cells[ind].fontemassCR += state.parallelSourceComplementaryLiquid[iconex];
+            state.cells[ind].fontemassGR += state.parallelSourceGas[iconex];
         }
     }
     if (state.cells[ind].acsr.tipo == kAccessoryMultipleSource) {
@@ -154,67 +135,33 @@ void refreshChokeMultipleAndPorousSources(const SourceState &state, int ind) {
     }
     if (state.cells[ind].acsr.tipo == kAccessoryRadialPorous) {
         state.cells[ind].acsr.radialPoro.pW.val[0] = state.cells[ind].pres;
-        double rs;
-        double bo;
-        double ba;
-        if (state.cells[ind].flui.RGO < 1e7) {
-            rs = state.cells[ind + 1].flui.RS(state.cells[ind].pres, state.cells[ind].temp);
-            bo = state.cells[ind + 1].flui.BOFunc(state.cells[ind].pres, state.cells[ind].temp, rs);
-            ba = state.cells[ind + 1].flui.BAFunc(state.cells[ind].pres, state.cells[ind].temp);
-            rs = rs * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
-        } else {
-            bo = 1;
-            rs = 0;
-            ba = 0.;
-        }
         // in-situ BSW of the previous cell (in the march, cell i)
-        double vfw = state.cells[ind + 1].flui.BSW * ba / (bo + ba * state.cells[ind + 1].flui.BSW - state.cells[ind + 1].flui.BSW * bo);
+        double vfw = inSituWaterFraction(state.cells[ind], state.cells[ind + 1]);
         state.cells[ind].acsr.radialPoro.sWPoc = vfw * (1. - state.cells[ind].acsr.radialPoro.satAconat) + state.cells[ind].acsr.radialPoro.satAconat;
         state.cells[ind].acsr.radialPoro.Pint = state.cells[ind].pres;
-        if (state.steadyMode == 0) {
+        if (state.steadyMode == 0)
             state.cells[ind].acsr.radialPoro.avancoPressao();
-            state.cells[ind].fontemassLR = state.cells[ind].acsr.radialPoro.fluxIni + state.cells[ind].acsr.radialPoro.fluxIniA;
-            state.cells[ind].fontemassCR = 0.;
-            state.cells[ind].fontemassGR = state.cells[ind].acsr.radialPoro.fluxIniG;
-        } else {
+        else
             state.cells[ind].acsr.radialPoro.pseudoTrans();
-            state.cells[ind].fontemassLR = state.cells[ind].acsr.radialPoro.fluxIni + state.cells[ind].acsr.radialPoro.fluxIniA;
-            state.cells[ind].fontemassCR = 0.;
-            state.cells[ind].fontemassGR = state.cells[ind].acsr.radialPoro.fluxIniG;
-        }
+        state.cells[ind].fontemassLR = state.cells[ind].acsr.radialPoro.fluxIni + state.cells[ind].acsr.radialPoro.fluxIniA;
+        state.cells[ind].fontemassCR = 0.;
+        state.cells[ind].fontemassGR = state.cells[ind].acsr.radialPoro.fluxIniG;
     }
     if (state.cells[ind].acsr.tipo == kAccessoryPorous2D) {
         state.cells[ind].acsr.poroso2D.dados.pW.val[0] = state.cells[ind].pres;
-        double rs;
-        double bo;
-        double ba;
-        if (state.cells[ind].flui.RGO < 1e7) {
-            rs = state.cells[ind + 1].flui.RS(state.cells[ind].pres, state.cells[ind].temp);
-            bo = state.cells[ind + 1].flui.BOFunc(state.cells[ind].pres, state.cells[ind].temp, rs);
-            ba = state.cells[ind + 1].flui.BAFunc(state.cells[ind].pres, state.cells[ind].temp);
-            rs = rs * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
-        } else {
-            bo = 1;
-            rs = 0;
-            ba = 0.;
-        }
         // in-situ BSW of the previous cell (in the march, cell i)
-        double vfw = state.cells[ind + 1].flui.BSW * ba / (bo + ba * state.cells[ind + 1].flui.BSW - state.cells[ind + 1].flui.BSW * bo);
+        double vfw = inSituWaterFraction(state.cells[ind], state.cells[ind + 1]);
         state.cells[ind].acsr.poroso2D.sWPoc = vfw * (1. - state.cells[ind].acsr.poroso2D.dados.satAconat) + state.cells[ind].acsr.poroso2D.dados.satAconat;
         state.cells[ind].acsr.poroso2D.dados.transfer.sWPoc = state.cells[ind].acsr.poroso2D.sWPoc;
         state.cells[ind].acsr.poroso2D.dados.pInt = state.cells[ind].pres;
         state.cells[ind].acsr.poroso2D.dados.transfer.Pint = state.cells[ind].pres;
-        if (state.steadyMode == 0) {
+        if (state.steadyMode == 0)
             state.cells[ind].acsr.poroso2D.avancoPressao();
-            state.cells[ind].fontemassLR = state.cells[ind].acsr.poroso2D.dados.transfer.fluxIni + state.cells[ind].acsr.poroso2D.dados.transfer.fluxIniA;
-            state.cells[ind].fontemassCR = 0.;
-            state.cells[ind].fontemassGR = state.cells[ind].acsr.poroso2D.dados.transfer.fluxIniG;
-        } else {
+        else
             state.cells[ind].acsr.poroso2D.pseudoTransientePoroso();
-            state.cells[ind].fontemassLR = state.cells[ind].acsr.poroso2D.dados.transfer.fluxIni + state.cells[ind].acsr.poroso2D.dados.transfer.fluxIniA;
-            state.cells[ind].fontemassCR = 0.;
-            state.cells[ind].fontemassGR = state.cells[ind].acsr.poroso2D.dados.transfer.fluxIniG;
-        }
+        state.cells[ind].fontemassLR = state.cells[ind].acsr.poroso2D.dados.transfer.fluxIni + state.cells[ind].acsr.poroso2D.dados.transfer.fluxIniA;
+        state.cells[ind].fontemassCR = 0.;
+        state.cells[ind].fontemassGR = state.cells[ind].acsr.poroso2D.dados.transfer.fluxIniG;
     }
 }
 
