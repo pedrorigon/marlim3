@@ -4,6 +4,7 @@
 #include "SisProd.h"
 #include "SisProdComposition.h"
 #include "SisProdGasLift.h"
+#include "SisProdSources.h"
 #include "SisProdSteadyState.h"
 #include "SisProdSteadyStateSearch.h"
 #include "SisProdThermal.h"
@@ -451,6 +452,23 @@ sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system) {
 }
 
 
+
+/// The state the source terms of a cell read and write.
+sisprod::sources::SourceState sourceStateOf(SProd &system) {
+    return sisprod::sources::SourceState{
+        .cells = system.celula,
+        .input = system.arq,
+        .globals = system.vg1dSP,
+        .lastCell = system.ncel,
+        .steadyMode = system.modoPerm,
+        .parallelSecondaryBranch = system.redeParalelaS,
+        .parallelSecondaryBoundaryCondition = system.redeParalelaCCsecundario,
+        .parallelSourceCells = system.indFonteRedeParalelaIni,
+        .parallelSourceProductionLiquid = system.fonteMpRedeParalelaIni,
+        .parallelSourceComplementaryLiquid = system.fonteMcRedeParalelaIni,
+        .parallelSourceGas = system.fonteMgRedeParalelaIni,
+    };
+}
 
 sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
     return sisprod::thermal::ThermalState{

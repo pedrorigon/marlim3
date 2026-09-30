@@ -78,6 +78,7 @@ extern tm *ltmGlobFim;
 class SProd;
 namespace sisprod::composition { struct CompositionState; struct CompositionUpdaters; }
 namespace sisprod::gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
+namespace sisprod::sources { struct SourceState; }
 namespace sisprod::steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
 namespace sisprod::thermal { struct ThermalClosureUpdater; struct ThermalSourceUpdater; struct ThermalState; }
 namespace sisprod::transient { struct TransientSolveState; struct TransientSolveUpdaters; struct TransientStepState; struct TransientStepUpdaters; }
@@ -90,6 +91,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system);
 sisprod::composition::CompositionState compositionStateOf(SProd &system);
 sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system);
 sisprod::thermal::ThermalState thermalStateOf(SProd &system);
+sisprod::sources::SourceState sourceStateOf(SProd &system);
 trendoutput::TrendState trendStateOf(const SProd &system);
 }  // namespace sisprod::adapters
 
@@ -110,6 +112,7 @@ class SProd {
     friend sisprod::composition::CompositionState sisprod::adapters::compositionStateOf(SProd &);
     friend sisprod::transient::TransientSolveState sisprod::adapters::transientSolveStateOf(SProd &);
     friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &);
+    friend sisprod::sources::SourceState sisprod::adapters::sourceStateOf(SProd &);
     friend trendoutput::TrendState sisprod::adapters::trendStateOf(const SProd &);
     friend struct sisprod::steady::SteadyStateUpdaters;
     friend struct sisprod::transient::TransientStepUpdaters;
@@ -745,7 +748,8 @@ class SProd {
     int indevento;
   public:
     /**
-     * @brief Reserved steady-state mode flag; currently unused.
+     * @brief Steady-state mode flag: 1 while Num4Main solves a network branch at
+     * steady state. The source terms read it (sisprod::sources::SourceState).
      */
     int modoPerm;
     /**
@@ -1289,16 +1293,6 @@ class SProd {
     /// Stores source terms from the previous time level for possible rollback.
     /// Nothing in the product calls it.
     void salvaFonte();
-    /// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s,
-    /// takes the water and gas that hydrate formation consumed in cell ind during
-    /// the step, hands them back through the two out-parameters, and lowers the
-    /// cell's BSW for the free water that is gone.
-    void consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_consumida_Mw, int ind);
-    /// Adds to cell ind the mass its source delivers this step when the source is a
-    /// choke source (type 9 -- on the first iteration of a parallel network, on its
-    /// primary side, the flow recorded for that connection instead), a multiple
-    /// source (10) or a radial or 2D porous medium (15, 16).
-    void refreshChokeMultipleAndPorousSources(int ind);
     /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
     void renovaFonte(int ind);
     /// Stores previous void fractions and updates pig motion and reception.

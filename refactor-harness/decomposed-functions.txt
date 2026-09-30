@@ -409,3 +409,14 @@ salvaFonte
 FonteValv
 HidroDescargaP
 correcHidroFric
+
+# --- stage 9: source terms (code analysis, D4) -----------------------------
+# renovaFonte and FonteValv (declared above) moved with their two helpers,
+# consumeHydrateFormationMass and refreshChokeMultipleAndPorousSources, to
+# SisProdSources.cpp as sisprod::sources::renewSourceTerms and
+# addMasterValveFlow; SProd keeps one-line delegations. Proved by
+# sources_move.py `check` (the four bodies token for token identical after the
+# inverse substitution of the SourceState fields), the -O0 census (identical
+# sequences; the only change is the const overload of vector::operator[] on the
+# four read-only parallel-network vectors), L2, and the example and network
+# differentials of analise-codigo/ferramentas.
