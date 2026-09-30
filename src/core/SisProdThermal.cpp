@@ -1247,7 +1247,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
     double gasDensity;
     double betI;
 
-    // casoComp
+    // compositional case
 
     liquidDensity = leftFaceFluid.MasEspLiq(cell.presaux, meanTemperature);
     if (cellHasNegativeLiquidMassFlowRate)
@@ -1291,7 +1291,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             leftFaceFluid.oCalculatedVapComposition, state.input.pocinjec);
         leftFaceOilVolumeFactorAtPerturbedPressure = leftFaceFluid.BOFunc(cell.presaux * kDerivativePerturbationFactor, meanTemperature);
         leftFaceSolutionGasRatioAtPerturbedPressure = leftFaceFluid.RS(cell.presaux * kDerivativePerturbationFactor, meanTemperature);
-    } // casoComp
+    } // compositional case
     double leftFaceSolutionGasPressureDerivative =
         (leftFaceSolutionGasRatio / leftFaceOilVolumeFactor - leftFaceSolutionGasRatioAtPerturbedPressure / leftFaceOilVolumeFactorAtPerturbedPressure) / (cell.presaux * 0.001);
     double leftCellOilVolumeFactor;
@@ -1322,7 +1322,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             leftCell.pres * kDerivativePerturbationFactor, leftCell.temp);
         leftCellSolutionGasRatioAtPerturbedPressure = flutemp.RS(
             leftCell.pres * kDerivativePerturbationFactor, leftCell.temp);
-    } // casoComp
+    } // compositional case
     double leftCellSolutionGasPressureDerivative =
         (leftCellSolutionGasRatio / leftCellOilVolumeFactor - leftCellSolutionGasRatioAtPerturbedPressure / leftCellOilVolumeFactorAtPerturbedPressure) / (leftCell.pres * 0.001);
     double leftCellOilVolumeFactorAtPerturbedTemperature = 0.;
@@ -1350,7 +1350,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             leftCellSolutionGasRatioAtPerturbedTemperature = flutemp.RS(
                 leftCell.pres,
                 leftCell.temp * kDerivativePerturbationFactor);
-        } // casoComp
+        } // compositional case
         leftCellSolutionGasTemperatureDerivative = (leftCellSolutionGasRatio / leftCellOilVolumeFactor - leftCellSolutionGasRatioAtPerturbedTemperature / leftCellOilVolumeFactorAtPerturbedTemperature) /
                    (leftCell.temp * 0.001);
     }
@@ -1411,7 +1411,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
             cell.pres * kDerivativePerturbationFactor, cell.temp);
         cellSolutionGasRatioAtPerturbedPressure = flutemp.RS(
             cell.pres * kDerivativePerturbationFactor, cell.temp);
-    } // casoComp
+    } // compositional case
     double cellSolutionGasPressureDerivative =
         (cellSolutionGasRatio / cellOilVolumeFactor - cellSolutionGasRatioAtPerturbedPressure / cellOilVolumeFactorAtPerturbedPressure) / (cell.pres * 0.001);
     return cellSolutionGasPressureDerivative;
@@ -3448,8 +3448,8 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double gasDensity = leftCell.flui.MasEspGas(meanPressure, meanTemperature); // celula[cellIndex].rgCi;
         double liquidSpecificHeat = (1. - betmed) * leftCell.flui.CalorLiq(interfaceMeanPressure, interfaceMeanTemperature) + betmed * leftCell.fluicol.CalorLiq(interfaceMeanPressure, interfaceMeanTemperature);
         double gasSpecificHeat = leftCell.flui.CalorGas(interfaceMeanPressure, interfaceMeanTemperature);
-        // liquidJouleThomson=Joule Thomson do liquido X cp
-        // gasJouleThomson=Joule Thomson do gas X cp
+        // liquidJouleThomson = liquid Joule-Thomson coefficient x cp
+        // gasJouleThomson = gas Joule-Thomson coefficient x cp
         /////??????????????????????????????????????????????????????????????????????????????????????????
         double liquidJouleThomson = (1. - betmed) * leftCell.flui.JTL(interfaceMeanPressure, interfaceMeanTemperature) - betmed / rc;
         /////??????????????????????????????????????????????????????????????????????????????????????????

@@ -616,7 +616,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
-            // massic *= multiplicador;//alteracao8
+            // massic *= multiplicador; // change 8
             massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             // gas quality relative to the oil+water+gas mixture
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
@@ -709,7 +709,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     // of the choke; pchute is the guess actually used in the search
     // if chute>0, pchute=chute, otherwise it is estimated
     double taux; // auxiliary temperature value for a possible calculation
-    // de pchute
+    // of pchute
     double j = 0.;
     double rmis = 0.;
     double frictionFactor = 0.;
@@ -1482,7 +1482,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
-            // massic *= multiplicador;//alteracao8
+            // massic *= multiplicador; // change 8
             massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             // gas quality relative to the oil+water+gas mixture
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
@@ -1579,7 +1579,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     // of the choke; pchute is the guess actually used in the search
     // if chute>0, pchute=chute, otherwise it is estimated
     double taux; // auxiliary temperature value for a possible calculation
-    // de pchute
+    // of pchute
     double j = 0.;
     double rmis = 0.;
     double frictionFactor = 0.;
@@ -2258,7 +2258,7 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
-            // massic *= multiplicador;//alteracao8
+            // massic *= multiplicador; // change 8
             if ((*state.march.globals).chaverede == 1)
                 massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             else
@@ -2352,7 +2352,7 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     // of the choke; pchute is the guess actually used in the search
     // if chute>0, pchute=chute, otherwise it is estimated
     double taux; // auxiliary temperature value for a possible calculation
-    // de pchute
+    // of pchute
     double j = 0.;
     double rmis = 0.;
     double frictionFactor = 0.;

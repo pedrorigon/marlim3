@@ -1023,7 +1023,7 @@ void computeImplicitTimeStep(const TransientStepState &state) {
             state.cells[i].acsr.poroso2D.dt = state.timeStep;
         }
     }
-    // dtInter=dt;//alteracao2
+    // dtInter=dt; // change 2
 }
 
 void computeExplicitTimeStep(const TransientStepState &state) {
@@ -2247,7 +2247,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
             generateFluidMiniTables(state.step);
             state.compositionalRefreshCounter = 0;
         }
-    } // casoComp
+    } // compositional case
     state.updaters.updateDensities();
 
     state.temperatureHistory.push_back(state.step.timeStep);
@@ -2293,7 +2293,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         (*state.step.globals).lixo5 = (*state.step.globals).lixo5R;
     writeProfiles(state, nrede);
     writeTrends(state, ordemImpT, velmaxdesc, nrede);
-    //(*vg1dSP).lixo5 += dt;//alteracao7
+    // (*vg1dSP).lixo5 += dt; // change 7
     end = chrono::steady_clock::now();
     (*state.step.globals).contador = state.step.stepIndex;
     writeScreenOutput(state, begin, end);

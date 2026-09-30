@@ -1152,7 +1152,7 @@ void SProd::renovaRGOdgYco2(ProFlu fluiRev) {
     sisprod::composition::transportBlackOilProperties(compositionStateOf(*this), fluiRev);
 }
 
-/*** alteracao4 ***/
+/*** change 4 ***/
 
 void SProd::renovaFracMol2(ProFlu fluiRev) {
     sisprod::composition::transportPhaseMolarFractions(compositionStateOf(*this), fluiRev);

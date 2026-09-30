@@ -2076,7 +2076,7 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
 
     // betI1 = celula[i + 1].betPigE;    // beta doubt
     if (state.cells[i + 1].QL < 0.) {
-        right.betI = state.cells[i + 1].betPigE; // testeBet
+        right.betI = state.cells[i + 1].betPigE; // beta test
         right.solutionGasRatio = state.cells[i + 1].flui.RS(state.cells[i + 1].pres, state.cells[i + 1].temp);
         right.oilVolumeFactor = state.cells[i + 1].flui.BOFunc(state.cells[i + 1].pres, state.cells[i + 1].temp, right.solutionGasRatio);
         right.waterVolumeFactor = state.cells[i + 1].flui.BAFunc(state.cells[i + 1].pres, state.cells[i + 1].temp);
