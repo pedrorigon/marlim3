@@ -273,9 +273,8 @@ sisprod::steady::SteadyStateState steadyStateOf(SProd &system) {
 
 /// The state a boundary-condition search reads.
 ///
-/// It composes the march state rather than rebuilding it, which is the whole
-/// reason SteadyStateSearchState has a `march` member: of the 31 SProd members
-/// the two halves touch, 17 are read by both, and two spellings of one fact
+/// It composes the march state rather than rebuilding it: the two halves read
+/// many of the same SProd members, and two bindings of one member could
 /// disagree silently.
 sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system) {
     return sisprod::steady::SteadyStateSearchState{
@@ -287,12 +286,6 @@ sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system) {
 }
 
 /// The state one transient step reads.
-///
-/// Seventy-two fields, generated from the same measurement that generated the
-/// header -- what the 22 routines of this stage actually touch -- rather than
-/// written twice. The ORDER is the header's declaration order, because C++20
-/// designated initialisers must follow it; the first attempt sorted them by
-/// name and the compiler rejected every field after the first.
 sisprod::transient::TransientStepState transientStateOf(SProd &system) {
     return sisprod::transient::TransientStepState{
         .meanMaximumTimeStep = system.DTMaxMed,
@@ -371,9 +364,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
     };
 }
 
-/// The composition module's view of SProd: seventeen members by reference,
-/// generated from SisProdComposition.h by composition-move.py so the field
-/// order is the header's, as designated initialisers require.
+/// The composition module's view of SProd: seventeen members by reference.
 sisprod::composition::CompositionState compositionStateOf(SProd &system) {
     return sisprod::composition::CompositionState{
         .cells = system.celula,
@@ -399,8 +390,7 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system) {
 
 
 /// The state SolveTrans reads: the step state, composed rather than rebuilt,
-/// plus the 52 members only the solve touches. Initialiser order is the
-/// header's declaration order, which C++20 requires.
+/// plus the members only the solve touches.
 sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system) {
     return sisprod::transient::TransientSolveState{
         .step = transientStateOf(system),

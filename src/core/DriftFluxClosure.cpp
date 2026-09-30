@@ -1,9 +1,8 @@
 #include "DriftFluxClosure.h"
 
-// Matches the include SisProd.cpp used when these functions lived there.
-// It is load-bearing: the Colebrook loop below calls abs() on double operands,
-// and picking up int abs(int) instead would truncate the iterate and the
-// convergence delta, ending the loop early with badly wrong values. The
+// <math.h> is load-bearing: the Colebrook loop below calls abs() on double
+// operands, and picking up int abs(int) instead would truncate the iterate and
+// the convergence delta, ending the loop early with badly wrong values. The
 // static_assert fails the build if the overload ever stops being the
 // floating-point one.
 #include <math.h>
@@ -71,11 +70,9 @@ inline void alignDriftWithInclination(double gasFlowRate, double liquidFlowRate,
 ///
 /// The fixed point converges in at most two iterations over a grid far wider
 /// than anything the engine produces, Reynolds from 1e-9 to 1e12 and roughness
-/// from smooth to 1e-2, so the bound below is insurance and never binds. It is
-/// checked after the body runs, which keeps the loop a do while and leaves the
-/// arithmetic untouched.
+/// from smooth to 1e-2, so the bound below is insurance and never binds.
 ///
-/// A stall was never the real hazard anyway: if the iterate turns into NaN the
+/// A stall is not the real hazard anyway: if the iterate turns into NaN the
 /// convergence delta does too, and a NaN comparison is false, so the loop
 /// exits on its own.
 double darcyFrictionFactor(double relativeRoughness, double reynolds) {
@@ -264,9 +261,8 @@ void blendAcrossInclination(double liquidDensity, double gasDensity, double surf
 /// Applies the selectors that every flow regime accepts.
 ///
 /// Anything outside this set falls through and leaves c0 and ud exactly as the
-/// caller passed them. The original switches carried no default, and that
-/// silence is observable behaviour rather than an oversight, which is also why
-/// the three regimes keep separate case sets instead of sharing one table.
+/// caller passed them. That fall-through is observable behaviour, which is also
+/// why the three regimes keep separate case sets instead of sharing one table.
 void applyCommonCorrelation(int correlationIndex, double liquidDensity, double gasDensity,
                             double surfaceTension, double voidFraction, double mixtureReynolds,
                             double liquidReynolds, double gasFlowRate, double liquidFlowRate,
@@ -351,7 +347,7 @@ using enum sisprod::AccessoryKind;
  * correction reads, whether the flow-pattern map runs at all, whether the
  * transition counter is kept, and which of arq.escorregaTran and
  * arq.escorregaPerm ends the calculation, so each keeps its own control flow
- * and only the blocks they share exactly are factored out. In all five, the
+ * and shares only the blocks they have exactly in common. In all five, the
  * chain betneg -> upstreamLiquidFlowRate -> mult0 is computed and never read.
  *
  * The `// beta doubt` and `// beta test` markers sit on the assignments of
@@ -362,22 +358,18 @@ using enum sisprod::AccessoryKind;
 namespace {
 
 /*
- * Data Source Policy.
+ * Data sources.
  *
- * The contract named five sources, one per variant. Measurement says there are
- * THREE: CalcC0Ud and CalcC0UdIni read exactly the same fields, and so do
- * CalcC0UdBuf and CalcC0UdIniBuf -- the initialisation variants are not a
- * different source, they are different control flow over the same source, which
- * is not something a data-source policy can express. What actually varies is
- * instantaneous versus buffered versus steady state.
+ * The five variants read three sources: CalcC0Ud and CalcC0UdIni read exactly
+ * the same fields, and so do CalcC0UdBuf and CalcC0UdIniBuf -- the
+ * initialisation variants differ from the others in control flow, not in
+ * source. What varies is instantaneous versus buffered versus steady state.
  *
  * The hooks are called AT THE POINT OF USE, never hoisted into a local at the
- * top of a body. A call substituted for an expression is evaluated where the
- * expression was; a value read once and reused is not, and the difference is
- * exactly how a conditional read became unconditional in the root-finding
- * stage. gasForSign and gasFlowRate are separate hooks because they are
- * separate expressions in the instantaneous variants: the sign tests read QG,
- * while the flow rate is MC - Mliqini.
+ * top of a body: a value read once and reused would turn a conditional read
+ * into an unconditional one. gasForSign and gasFlowRate are separate hooks
+ * because they are separate expressions in the instantaneous variants: the
+ * sign tests read QG, while the flow rate is MC - Mliqini.
  *
  * Stateless structs with static members, resolved at compile time, defined in
  * the same translation unit as their only callers: no indirect call survives.
@@ -521,7 +513,7 @@ double horizontalCorrectionOf(const ClosureState &state, int cellIndex, int acce
 /// Same shape as the transient one, reading the inlet void fraction instead of
 /// the neighbouring cell's. Shared by CalcC0UdIni and CalcC0UdIniBuf.
 ///
-/// One guard mixes the two: the second condition of the else-if still tests
+/// One guard mixes the two: the second condition of the else-if tests
 /// cells[cellIndex - 1].alfPigD while everything around it reads the inlet
 /// fraction.
 template <typename Source>
@@ -558,51 +550,39 @@ void applyPigOverride(const ClosureState &state, int cellIndex, double &c0, doub
 
 /// The phase properties the flow scales are built from.
 ///
-/// Same reasoning as MixtureProperties: five adjacent doubles is five chances to
-/// transpose a pair with nothing to catch it. This one bit before it was caught:
-/// the densities were passed gas-then-liquid while the viscosities went
-/// liquid-then-gas, an asymmetry with no reason behind it and no way for the
-/// compiler to notice a call site that got it wrong.
+/// Named for the same reason as MixtureProperties: five adjacent doubles are
+/// five chances to transpose a pair with nothing to catch it.
 struct PhaseProperties {
-    double liquidDensity;       ///< rlm
-    double gasDensity;          ///< rgm
-    double liquidViscosity;     ///< viscl1
-    double gasViscosity;        ///< viscg1
-    double noSlipLiquidHoldup;  ///< hns
+    double liquidDensity;
+    double gasDensity;
+    double liquidViscosity;
+    double gasViscosity;
+    double noSlipLiquidHoldup;
 };
 
 /// The scalars the closure helpers below read, named instead of counted.
 ///
-/// evaluateFlowPatternPair and evaluateDispersedOrAnnular took eleven and twelve
-/// doubles positionally, in the order the correlation signatures use. That order
-/// is a real convention and worth keeping, but eleven adjacent doubles is also
-/// eleven chances to transpose a pair silently -- every one of them is the same
-/// type, so neither the compiler nor the sweep would say a word about a call
-/// site that swapped two. Built once per body with designated initializers,
-/// against locals of the same name, a transposition is visible on the line
-/// where it happens.
-///
-/// Constructed once per variant, immediately before the Reynolds guard that
-/// gates both helpers.
+/// Built once per variant with designated initializers, immediately before the
+/// Reynolds guard that gates both helpers, so a transposed pair of doubles
+/// shows on the line where it happens. The field order is the one the
+/// correlation signatures use.
 ///
 /// The fields are REFERENCES, for the reason ClosureState holds references:
 /// several of these locals are assigned again further down, and a copy taken
-/// here would freeze the value at construction rather than at use. Nothing
-/// between construction and use writes them today -- but "nothing writes it
-/// today" is how a read moves without anyone noticing.
+/// here would freeze the value at construction rather than at use.
 struct MixtureProperties {
-    const double &liquidDensity;         ///< rlm
-    const double &gasDensity;            ///< rgm
-    const double &surfaceTension;        ///< tensup1
-    const double &voidFraction;          ///< alf0
-    const double &gasFlowRate;           ///< ug1, a volumetric rate
-    const double &liquidFlowRate;        ///< ul1, a volumetric rate
-    const double &diameter;              ///< dia1
-    const double &flowArea;              ///< A1
-    const double &mixtureReynolds;       ///< nrey
-    const double &liquidReynolds;        ///< nreyl
-    const double &inclinationAngle;      ///< ang
-    const double &horizontalCorrection;  ///< correcHor
+    const double &liquidDensity;
+    const double &gasDensity;
+    const double &surfaceTension;
+    const double &voidFraction;
+    const double &gasFlowRate;     ///< A volumetric rate.
+    const double &liquidFlowRate;  ///< A volumetric rate.
+    const double &diameter;
+    const double &flowArea;
+    const double &mixtureReynolds;
+    const double &liquidReynolds;
+    const double &inclinationAngle;
+    const double &horizontalCorrection;
 };
 
 /// Pressure and temperature the property model is evaluated at, for CalcC0Ud.
@@ -612,8 +592,8 @@ struct MixtureProperties {
 /// face's or by the surface temperature. The upstream pressure and temperature
 /// it also computes are never read.
 struct MeanConditions {
-    double pressure;     ///< pmed
-    double temperature;  ///< tmed
+    double pressure;
+    double temperature;
 };
 
 MeanConditions instantaneousMeanConditions(const ClosureState &state, int cellIndex,
@@ -691,42 +671,33 @@ PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cell
 /// The dispersed and stratified closures, evaluated as a pair and then
 /// blended: one helper fills it, the other reads it.
 struct FlowPatternPair {
-    double dispersedC0;   ///< c0D
-    double dispersedUd;   ///< udD
-    double stratifiedC0;  ///< c0E
-    double stratifiedUd;  ///< udE
+    double dispersedC0;
+    double dispersedUd;
+    double stratifiedC0;
+    double stratifiedUd;
 };
 
 /// The flow rates and the two Reynolds numbers built from them.
 ///
 /// The five call sites take these apart with a structured binding, so THE ORDER
 /// OF THESE FIELDS IS LOAD-BEARING: reordering them silently rebinds every call
-/// site to the wrong values. It replaced six lines of hand unpacking per body,
-/// which had the same hazard five times over and no reason for anyone to check
-/// it -- `const double diameter = scales.area;` would have compiled.
+/// site to the wrong values.
 struct FlowScales {
-    double gasVolumetricFlowRate;      ///< ug1
-    double liquidVolumetricFlowRate;   ///< ul1
-    double diameter;     ///< dia1
-    double area;         ///< A1
-    double mixture;      ///< nrey
-    double liquid;       ///< nreyl
+    double gasVolumetricFlowRate;
+    double liquidVolumetricFlowRate;
+    double diameter;
+    double area;
+    double mixture;
+    double liquid;
 };
 
-/// Flow rates, duct size and Reynolds numbers -- the one block that is both
-/// identical in all five variants AND parameterised by where the rates come
-/// from. 145 tokens, proven identical across the five before being shared.
+/// Flow rates, duct size and Reynolds numbers, the same in all five variants
+/// apart from where the rates come from.
 ///
-/// The duct diameter is chosen INSIDE this function, not passed in, because the
-/// original reads cells[ind - 1].duto.a only when ind > 0 && ug1 >= 0. Taking it
-/// as an argument would make that read unconditional.
-///
-/// The four phase properties are in one order -- liquid, then gas, for the
-/// densities and again for the viscosities. They were not, at first: the
-/// densities went gas-then-liquid while the viscosities went liquid-then-gas,
-/// and since all four are double, a call site that got a pair the wrong way
-/// round would have compiled in silence and returned wrong Reynolds numbers.
-/// Nothing here can catch that; only the order being unsurprising can.
+/// The duct diameter is chosen INSIDE this function, not passed in, because
+/// cells[cellIndex - 1].duto.a is read only when cellIndex > 0 and the gas
+/// volumetric flow rate is not negative. Taking it as an argument would make
+/// that read unconditional.
 template <typename Source>
 FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhaseProperties &phases) {
     double gasVolumetricFlowRate = Source::gasFlowRate(state.cells, cellIndex) / phases.gasDensity;
@@ -746,7 +717,8 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
 /// Dispersed and stratified closure, evaluated as a pair; the same in all five
 /// variants.
 ///
-/// mult0 and mult1 are assigned from ul0 and ul1 and never read.
+/// mult0 and mult1 are assigned from upstreamLiquidFlowRate and the liquid flow
+/// rate, and never read.
 void evaluateFlowPatternPair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
                         double upstreamLiquidFlowRate, FlowPatternPair &pair) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
@@ -766,10 +738,11 @@ void evaluateFlowPatternPair(const ClosureState &state, int cellIndex, const Mix
 }
 
 /// Blends the dispersed and stratified results by superficial velocity, with a
-/// linear ramp between jmin and jmax. 128 tokens, identical in all five.
+/// linear ramp between the two limits.
 ///
-/// The ramp is written (1. - raz) * c0E + raz * c0D and MUST stay that way: the
-/// algebraically equal c0D + (1. - raz) * (c0E - c0D) rounds differently.
+/// The ramp is written (1. - blendRatio) * stratified + blendRatio * dispersed
+/// and MUST stay that way: the algebraically equal
+/// dispersed + (1. - blendRatio) * (stratified - dispersed) rounds differently.
 void blendBySuperficialVelocity(const MixtureProperties &mix, const FlowPatternPair &pair,
                                 double &c0, double &ud) {
     double maxSuperficialVelocity = 0.05;
@@ -788,7 +761,6 @@ void blendBySuperficialVelocity(const MixtureProperties &mix, const FlowPatternP
 }
 
 /// Dispersed closure, upgraded to annular/churn when the pattern says so.
-/// 132 tokens, identical in all five.
 void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
                                 int flowPattern, double &c0, double &ud) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
@@ -806,9 +778,9 @@ void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, const 
 /// escorregaTran in the four transient variants and escorregaPerm in the
 /// steady-state one.
 ///
-/// Everything above the two assignments is dead: correcaoUd and correcaoCo are
-/// computed, clamped, and then multiplied by zero, so c0 is forced to 1 and ud
-/// to 0 whenever slip is off.
+/// Everything above the two assignments is dead: driftCorrection and
+/// distributionCorrection are computed, clamped, and then multiplied by zero, so
+/// c0 is forced to 1 and ud to 0 whenever slip is off.
 void applyNoSlipOverride(const Cel *cells, int cellIndex, int slipEnabled, double &c0, double &ud) {
     if (slipEnabled == 0) {
         double meanSuperficialLiquidVelocity = cells[cellIndex].QL / cells[cellIndex].duto.area;

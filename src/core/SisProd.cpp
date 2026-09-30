@@ -1250,10 +1250,9 @@ void SProd::atualizaCC1() {
 
 /// Runs the hydrate-envelope solvers for the production and gas lines.
 ///
-/// A member of SProd, and it must stay one: both solvers are constructed from
-/// the whole SProd object (*this), which a free function taking a state struct
-/// does not have. SolveTrans reaches it through a callback, so the hydrate
-/// phase runs first in the step.
+/// Both solvers are constructed from the whole SProd object (*this).
+/// SolveTrans reaches it through a callback, so the hydrate phase runs first in
+/// the step.
 void SProd::solveHydrateEnvelopes() {
     if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { // *vg1dSP).lixo5>0 && //chris - hydrates
         FA_Hidrato solverHidrato(*this);

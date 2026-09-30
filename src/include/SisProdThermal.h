@@ -260,9 +260,8 @@ struct DistributedMassTransferCoefficients {
 struct SlugClosure {
     double c0;
     double ud;
-    /// Read after the call by the interior selector only. Returned rather than
-    /// passed by reference so the other three callers do not carry a variable
-    /// they never read, which would trade duplication for a warning.
+    /// Read after the call by the interior selector only; returned rather than
+    /// passed by reference so the other three callers need no variable for it.
     double meanDiameter;
 };
 

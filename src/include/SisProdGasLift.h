@@ -49,8 +49,7 @@ struct GasLiftState {
     Cel *cells;
     /// Input deck -- SProd::arq. NOT const: the unloading schedule uses
     /// presMaxDesc as scratch, recomputing it as a minimum over the IPR
-    /// accessories and writing it back. Declaring it const would have been a
-    /// claim this module does not honour.
+    /// accessories and writing it back.
     Ler &input;
     /// Shared 1D globals -- SProd::vg1dSP.
     varGlob1D *globals;
@@ -113,8 +112,7 @@ struct GasLiftState {
     ///
     /// The two vectors are NOT const: they are sliding windows. advanceGasSubStep
     /// push_backs the current step at the tail and erases the front once the
-    /// window passes maximumContinuousUnloadingCount. Declaring them const was a
-    /// claim this module does not honour.
+    /// window passes maximumContinuousUnloadingCount.
     double &meanUnloadingFlowRate;
     double &meanUnloadingTemperature;
     std::vector<double> &maximumMeanUnloadingFlowRates;

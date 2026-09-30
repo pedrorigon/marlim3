@@ -21,12 +21,8 @@ struct varGlob1D;
 
 namespace trendoutput {
 
-/// One trend group: the sample buffer and the window still to be written.
-///
-/// The four groups are uniform, which is the point. Before this shape the four
-/// buffers and their counters were eight loose fields, and one writer read the
-/// wrong pair -- a defect no amount of care at the call site would have made
-/// visible, because nothing tied a buffer to its counters.
+/// One trend group: the sample buffer and the window still to be written, kept
+/// together so that no writer can pair a buffer with another group's counters.
 struct TrendSeries {
     /// Samples, indexed [series][row][column] -- MatTrend*.
     double ***samples;

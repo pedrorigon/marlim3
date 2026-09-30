@@ -21,8 +21,8 @@ inline constexpr double kPascalPerKgfPerCm2PvtSim = 98068.059233;
 
 /// A coarse spelling, 0.54% above 98066.5. The half-cell hydrostatic terms
 /// beside a choke or valve use it, as do the interfacial work terms and the
-/// pressure gradients of the gas and reverse steady temperature marches.
-/// Preserved like the spellings above.
+/// pressure gradients of the gas and reverse steady temperature marches. Not
+/// interchangeable with the spellings above either.
 inline constexpr double kPascalPerKgfPerCm2Coarse = 98600.;
 
 /// Kgf/cm^2 per pascal, 1 / 98066.5 written as a factor. The latent-heat
@@ -81,9 +81,8 @@ inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
 inline constexpr double kStandardPressureKgfPerCm2 = 1.;
 inline constexpr double kStandardTemperatureCelsius = 15.;
 
-/// Celsius to Fahrenheit, written exactly as the sites it replaces spell it.
-/// A function rather than two constants: the two factors are never used apart,
-/// and naming the conversion is the point.
+/// Celsius to Fahrenheit. A function rather than two constants: the two factors
+/// are never used apart.
 inline constexpr double celsiusToFahrenheit(double celsius) {
     return 1.8 * celsius + 32;
 }

@@ -2,14 +2,13 @@
 #define SISPRODTRANSIENT_H_
 
 // Declared, not included. TransientStepState holds only references and
-// pointers, so the definitions are needed at the adapter in SisProd.cpp and not
-// here -- which is what lets this header compile on its own with nothing but
-// -Isrc/include. Including Acidentes2.h for `choke` pulls in Log.h and through
-// it rapidjson, and the header stops being self-contained; that is what the
-// first draft did and what the acceptance check caught.
+// pointers, so the definitions are needed where the state is built and not
+// here, and this header compiles on its own with nothing but -Isrc/include.
+// Including Acidentes2.h for `choke` would pull in Log.h and through it
+// rapidjson, and the header would stop being self-contained.
 //
-// The template forward declarations follow SisProdGasLift.h, which established
-// the same three for the same reason.
+// The template forward declarations are the same three SisProdGasLift.h makes,
+// for the same reason.
 class Cel;
 class CelG;
 class Ler;
@@ -203,11 +202,9 @@ struct TransientStepState {
 
 // ------------------------------------------------------------ cell update ----
 
-/// Updates every cell after a transient solve, in index order.
-///
-/// The iteration order over cells is load-bearing and is why the three arms
-/// below are separate functions rather than one parameterised by position: the
-/// split is the loop body's own structure, so the order is untouched.
+/// Updates every cell after a transient solve, in index order, which is
+/// load-bearing: the first, interior and last cells each have their own
+/// update, called from the one loop.
 void updateCells(const TransientStepState &state, int expli = 0);
 void updateInteriorCell(const TransientStepState &state, int i, int expli);
 void updateFirstCell(const TransientStepState &state, int i, int expli);
@@ -221,8 +218,8 @@ void updateFlowRates(const TransientStepState &state);
 /// Fills the buffered state from the solver's free-term vector, and from the
 /// cells' own current values.
 ///
-/// TWO functions, and they stay two. Num4Main.cpp picks between them in
-/// alternative branches of one if, and they differ by more than their source:
+/// Two functions, not one: Num4Main.cpp picks between them in alternative
+/// branches of one if, and they differ by more than their source:
 /// updateBufferFromSolution propagates state to the last cell's right face and
 /// does not touch the mass sources, updateBufferFromCells does exactly the
 /// opposite. Nothing in the code says whether that asymmetry is intended.

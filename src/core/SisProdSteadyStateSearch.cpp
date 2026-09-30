@@ -1446,9 +1446,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
 /// Estimates the bottom-hole pressure the search starts from.
 ///
 /// With a negative guess the pressure is built from the surface pressure, the head
-/// accessory and a friction estimate; otherwise the caller's guess stands. j, rmis
-/// and frictionFactor became locals here rather than parameters: the range writes them and
-/// nothing reads them afterwards.
+/// accessory and a friction estimate; otherwise the caller's guess stands.
 void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
 

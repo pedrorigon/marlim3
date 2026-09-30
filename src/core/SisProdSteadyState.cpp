@@ -729,10 +729,8 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
 
 namespace {
 
-/// Two-phase branch of the compositional phase-regime chain.
-///
-/// Split out of applyCompositionalPhaseRegime only so that neither is over 200
-/// lines. It is one arm of a four-way chain and has no other caller.
+/// Two-phase branch of the compositional phase-regime chain: one arm of the
+/// four-way chain in applyCompositionalPhaseRegime, with no other caller.
 void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
     double c0 = 1.;
     double ud = 0.;
@@ -852,8 +850,7 @@ namespace {
 /// Same four regimes as applyReverseSteadyPhaseFractions and NOT the same
 /// function: this one compares against localtiny * 1e-5 where the reverse
 /// variants compare against localtiny. Five orders of magnitude, with nothing
-/// in the code saying why. Sharing the two would mean choosing one of the
-/// thresholds, and that is a decision, not a move.
+/// in the code saying why.
 void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny * 1e-5) {
         if (state.input.tipoFluido == 1) {
@@ -1092,8 +1089,7 @@ struct SteadyFace {
 };
 
 /// The source in cell i-1, as readCompositionalSourceProperties reads it: its
-/// quality, volume factors, water cut, densities and residence time (they were
-/// titF, oilVolumeFactorSource, rhoOF and so on).
+/// quality, volume factors, water cut, densities and residence time.
 struct SteadySource {
     double tit;
     double oilVolumeFactor;
@@ -3928,7 +3924,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
             // The only place the three marches disagree: marchProductionSteady and
             // marchReverseProductionSteady hand the dry-gas flag to the source's fluid,
             // marchProductionSteadySecondary to the cell's. Nothing in the code says
-            // which is intended, so both forms are kept.
+            // which is intended.
             if (dryGasFlashTarget == DryGasFlashTarget::sourceFluid) {
                 if (state.input.tabelaDinamica == 0)
                     state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);

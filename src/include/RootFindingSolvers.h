@@ -3,11 +3,8 @@
 
 /// Generic root-finding algorithms.
 ///
-/// These three solvers were members of SProd and took `prod` and `tipoCC`,
-/// two production-domain selectors, purely to hand them back to
-/// SProd::multMarcha on every evaluation. Neither means anything to Brent's
-/// method. They are gone from the signatures: the caller builds a callable
-/// that has already captured them, and the solver sees only `objective(x)`.
+/// A solver sees only `objective(x)`: whatever else the residual depends on is
+/// captured by the caller in the callable.
 ///
 /// Everything here lives in namespace rootfinding, and that is load-bearing
 /// rather than tidy. FerramentasNumericas.h already declares templates named
@@ -16,8 +13,8 @@
 /// resolve silently to the other overload, which takes `const T *const` and
 /// would compile.
 
-// fabs and sqrt. This is the include SisProd.cpp used when the solvers lived
-// there, so overload resolution is the one they were written against.
+// fabs and sqrt, with the overload set <math.h> brings into the global
+// namespace, as everywhere else in SisProd.
 #include <math.h>
 
 // For the two concepts below. Both are lightweight and neither drags in
@@ -114,8 +111,8 @@ template <ObjectiveFunction Objective>
 /// interpolation, falling back to bisection when the interval does not bracket
 /// a sign change.
 ///
-/// Nothing calls it. It was written for tolerances of 0.00001 (tol and epsn) and
-/// 100 iterations; they are not defaults, so a caller has to choose them.
+/// Nothing calls it. It is tuned for tolerances of 0.00001 and 100 iterations;
+/// they are not defaults, so a caller has to choose them.
 /// \tparam Objective          Residual function; see the ObjectiveFunction concept.
 /// \param bracketLow          Interval endpoint.
 /// \param bracketHigh         Interval endpoint.
@@ -212,8 +209,8 @@ template <ObjectiveFunction Objective>
 /// `monitor(objective(x))`.
 ///
 /// `reverseMarch` selects nothing: all three branches that test it have
-/// identical arms. It is passed once, on entry; if those arms ever differ, it has
-/// to be read inside the loop again, since revPerm can change mid-solve.
+/// identical arms. It is passed once, on entry; if those arms ever differ, it
+/// has to be read inside the loop instead, since revPerm can change mid-solve.
 ///
 /// `minimumIterations` is derived from the input deck at the binding site, which
 /// is safe because the flag it comes from is only assigned when the deck is

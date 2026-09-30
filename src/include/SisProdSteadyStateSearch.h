@@ -17,13 +17,9 @@ namespace sisprod::steady {
 
 /// The state a boundary-condition search reads.
 ///
-/// It COMPOSES the march state rather than restating it. That is not tidiness:
-/// of the 31 SProd members these routines touch, 17 are read by both halves.
-/// Restating them would create two spellings of one fact, and the first time
-/// they disagreed the compiler would not say so.
-///
-/// Three members belong to the searches alone, and they are what this struct
-/// adds.
+/// It COMPOSES the march state rather than restating it: the two halves read
+/// many of the same SProd members, and two bindings of one member could
+/// disagree silently. The three members below belong to the searches alone.
 struct SteadyStateSearchState {
     /// Everything the march reads. A search passes this straight through when
     /// it calls one.

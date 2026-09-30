@@ -14,18 +14,6 @@ namespace sisprod::gaslift {
 
 namespace {
 
-/// The diameter a Reynolds number is formed on: the bore when the segment is
-/// bare, the hydraulic diameter when it is cased.
-///
-/// This replaces eleven if/else pairs. Several of them also chose which CELL to
-/// call Rey on -- and that choice never mattered: CelG::Rey and Cel::Rey are
-///
-///     return dia * fabs(vel) * rho / (vis * 1e-3);
-///
-/// with no member access at all, so the receiver is irrelevant and two branches
-/// that differed only in it computed the same number. One of those pairs even
-/// selected OPPOSITE cells under the same predicate in its two halves, which
-/// looks like a bug and is simply indifferent.
 /// Below this opening the injection choke is throttling and becomes the mass
 /// source of the first cell instead of a free boundary.
 inline constexpr double kThrottlingChokeOpening = 0.2;
@@ -41,6 +29,11 @@ inline constexpr double kLargeBoreValveInches = 1.1;
 inline constexpr double kLargeBoreSpringRate = 500.0;
 inline constexpr double kSmallBoreSpringRate = 1950.0;
 
+/// The diameter a Reynolds number is formed on: the bore when the segment is
+/// bare, the hydraulic diameter when it is cased.
+///
+/// Cel::Rey and CelG::Rey read no member of their cell, so which cell a
+/// Reynolds number below is computed on does not matter.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
                                             double perimeter) {
     return cased == 0 ? bore : 4 * area / perimeter;
@@ -58,8 +51,7 @@ inline constexpr double kSmallBoreSpringRate = 1950.0;
 }
 
 /// What flows through a gas-lift valve, and how its throat pressure is
-/// recovered. Four call sites shared one twelve-line body and differed in
-/// exactly these two things, so they are what the policy carries.
+/// recovered.
 struct GasThroughValve {
     static double recovery(const ChokeGas &choke) { return choke.frec; }
     static double massFlowRate(ChokeGas &choke, const Ler &) { return choke.massica(); }
@@ -115,11 +107,6 @@ double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
 
 /// Opens the injection choke if it is throttling, assembles the band system
 /// from every gas cell and solves it.
-///
-/// advanceGasSubStep and advanceBufferedGasSubStep carried these twenty-one
-/// lines byte for byte. The two differ only in what they do with the solution
-/// afterwards, and in that one runs the assembly inside a thermal-coupling
-/// cycle while the other runs it once.
 void assembleAndSolveGasSystem(const GasLiftState &state) {
     double chokeOpeningFraction = withGasInletCondition(
         state.gasCells[0].tipoCC,
@@ -141,8 +128,7 @@ void assembleAndSolveGasSystem(const GasLiftState &state) {
 }
 
 /// Clamps a gas cell's temperature to the physical range and copies it to the
-/// neighbours that face it. Both arms of updateSteadyGasTemperature carried
-/// these four statements verbatim.
+/// neighbours that face it.
 void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
     if (state.gasCells[cellIndex].temp < kMinimumTemperatureCelsius)
         state.gasCells[cellIndex].temp = kMinimumTemperatureCelsius;
@@ -171,10 +157,7 @@ void relaxTowards(double &pressure, double target) {
 }
 
 /// Publishes one fluid's transport properties onto the annulus cell that faces
-/// a tubing cell. connectTubing, connectTubingSteady and
-/// initializeTubingConnectionSteady each wrote these five fields in the same
-/// order; only which fluid answers, and at which pressure and temperature,
-/// differed.
+/// a tubing cell.
 struct ExternalFluidProperties {
     double conductivity;
     double specificHeat;
@@ -461,10 +444,6 @@ void updateGasLine(const GasLiftState &state) {
 }
 
 void updateBufferedGasLine(const GasLiftState &state) {
-    // This had three branches -- interior cell, inlet, outlet -- carrying the
-    // same assignment byte for byte. The conditions are comparisons on an int
-    // and a const int&, so they had no effect beyond choosing which copy of one
-    // statement to run.
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++)
         state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
 }
@@ -489,8 +468,8 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     double throatDiameter = sqrt(throatArea * 4. / M_PI);
     double throatRadius = throatDiameter / 2.0;
     double bellowsRadius = sqrt(bellowsArea / M_PI);
-    // Named once instead of evaluated three times: the seat offset, the
-    // distance from the stem axis to where the bellows meets the seat.
+    // The seat offset: the distance from the stem axis to where the bellows
+    // meets the seat.
     const double seatOffset = sqrt(bellowsRadius * bellowsRadius - throatRadius * throatRadius);
     double openingArea = M_PI * throatRadius * stemTravel * (stemTravel + 2.0 * seatOffset);
     openingArea = openingArea / sqrt((stemTravel + seatOffset) * (stemTravel + seatOffset) + throatRadius * throatRadius);
@@ -539,9 +518,6 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
         double mixtureDensity = voidFraction * gasDensity + (1. - voidFraction) * liquidDensity;
         double mixtureViscosity = voidFraction * viscG + (1. - voidFraction) * liquidViscosity;
         double vel1 = state.cells[cellIndex].QL / (flowArea * liquidDensity) + state.cells[cellIndex].QG / (flowArea * gasDensity);
-        // One guard where there were two testing the same expression. The
-        // first left `reynolds` uninitialised on its false path, which was safe
-        // only because the second never read it there.
         double frictionFactor = 0.;
         if (fabs(vel1) > 1e-15) {
             const double reynolds = state.cells[cellIndex].Rey(
@@ -599,9 +575,6 @@ void solveUnloading(const GasLiftState &state) {
         double viscL = state.gasCells[gasCellIndex].VisFlu(leftCellPressure, temp);
         double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(leftCellPressure, temp);
         double viscG = state.gasCells[gasCellIndex].flui.ViscGas(leftCellPressure, temp);
-        // Which density carries the velocity, decided once. Written as an
-        // assignment followed by a conditional overwrite, this did two
-        // divisions per velocity and discarded the first.
         const double carryingDensity =
             state.gasCells[gasCellIndex].razInter > (*state.globals).localtiny ? gasDensity : rhoL;
         double vel1 = state.gasCells[gasCellIndex].VGasL / (carryingDensity * state.gasCells[gasCellIndex - 1].duto.area);
@@ -761,8 +734,7 @@ void updateTransientGasValves(const GasLiftState &state) {
 
         state.gasCells[gasCellIndex].massfonteCH = 0.;
         // Behind the interface the valve discharges completion fluid, ahead of
-        // it gas. That was the ONLY difference between the two loops that used
-        // to stand here; everything else in them was identical.
+        // it gas.
         const bool valveBehindInterface = state.gasCells[gasCellIndex].razInter < 0.5;
         for (int candidateValveIndex = 0; candidateValveIndex < valveCount; candidateValveIndex++) {
             if (gasCellIndex == state.gasValveCellIndices[candidateValveIndex]) {
@@ -947,9 +919,6 @@ void advanceGasSubStep(const GasLiftState &state) {
         state.gasCells[gasCellIndex].u1LL = gasCellIndex == 0
                                                 ? state.gasCells[gasCellIndex].u1L
                                                 : state.gasCells[gasCellIndex - 1].u1L;
-        // Two passes over the same predicate became one. Moving the density
-        // hand-back after u1L is safe: nothing between them reads rgR, and
-        // u1LL above reads the UPSTREAM cell's u1L, set an iteration ago.
         if (gasCellIndex > 0) {
             state.gasCells[gasCellIndex - 1].rgR = state.gasCells[gasCellIndex].rg;
             state.gasCells[gasCellIndex - 1].u1R = state.gasCells[gasCellIndex].u1L;
@@ -1024,7 +993,6 @@ void solveGasLine(const GasLiftState &state) {
         for (int valveIndex = 0; valveIndex < state.input.nvalvgas; valveIndex++) {
             int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
             int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
-            // The same three-term test decided both blocks below. Named once.
             const bool valveDischargesGas =
                 gasLiftGasCell < state.interfaceCell ||
                 (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > 0.5);

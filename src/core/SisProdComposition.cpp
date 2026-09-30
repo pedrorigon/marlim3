@@ -225,8 +225,7 @@ struct BlackOilFace {
     double viscH;
     double razdgd;
     double razdgl;
-    /// Written for both faces and read for neither. As a local, the right
-    /// face's (rhog1) drew GCC's "set but not used"; a member draws nothing.
+    /// Written for both faces and read for neither.
     double rhog;
     double rhogST;
     double dgG;
@@ -258,10 +257,9 @@ struct BlackOilCell {
     double viscHini;
 };
 
-/// The source of cell i, by accessory: the mass rates it brings (dissolvedGas,
-/// freeGas, deadOil, water; they were dissolvedGasSource and so on) and the
-/// properties of the fluid it brings them in (they were APIF, dgFO, dgFG and so
-/// on, and hold cell i's own values when there is no source).
+/// The source of cell i, by accessory: the mass rates it brings and the
+/// properties of the fluid it brings them in, which hold cell i's own values
+/// when there is no source.
 struct BlackOilSource {
     double dissolvedGas;
     double freeGas;
@@ -1211,9 +1209,7 @@ struct PhaseCell {
     double pesoMol;
 };
 
-/// Cell i's properties once its molar fractions are solved for. The
-/// *Transported locals lost that suffix; betIV, bswV, rhoOVol, rhoWVol and
-/// titVol keep their names.
+/// Cell i's properties once its molar fractions are solved for.
 struct PhaseTransported {
     double betIV;
     double solutionGasRatio;
@@ -1227,8 +1223,7 @@ struct PhaseTransported {
 };
 
 /// The source of cell i, by accessory: the mass rates it brings and the
-/// properties of the fluid it brings them in (they were BSWF, rhoOF,
-/// waterCutSource, titF, pesoMolF and so on).
+/// properties of the fluid it brings them in.
 struct PhaseSource {
     double dissolvedGas;
     double freeGas;

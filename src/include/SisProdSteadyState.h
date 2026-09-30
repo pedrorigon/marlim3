@@ -23,7 +23,7 @@ namespace sisprod::steady {
 /// back through SProd, as GasLiftTemperatureUpdater does, and the adapters
 /// remain the one place that knows how to assemble a module's state.
 ///
-/// The remaining two are still SProd's own: CalcC0UdPerm and renovaFonte.
+/// The remaining two are SProd's own: CalcC0UdPerm and renovaFonte.
 struct SteadyStateUpdaters {
     SProd &system;
 

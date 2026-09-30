@@ -285,11 +285,8 @@ CrossSectionPosition crossSectionPositionOf(const detTRENDTrans &trend) {
     return {trend.comp, trend.camada - 1, trend.discre - 1};
 }
 
-/// Builds the name of a cross-section temperature trend file.
-///
-/// Also one builder for both writers, and also only after a fix: the service
-/// writer spelled its branch-path file TENDTRANSP, so inside a network it
-/// overwrote the production trend of the same branch.
+/// Builds the name of a cross-section temperature trend file; the production
+/// and service writers pass their own prefix.
 string crossSectionTrendFileName(const TrendState &state, const char *prefix,
                                  const CrossSectionPosition &position) {
     ostringstream fileNameStream;
@@ -314,11 +311,9 @@ void reportProducedFile(const TrendState &state, const string &fileName) {
 
 // --------------------------------------------------------------- skeletons --
 
-/// Opens a trend file, lets the caller fill it, then closes and reports it.
-///
-/// Every trend file this module produces goes through here, which is the point:
-/// reporting the file to the profile index is not something a writer can forget
-/// to do, because it is not a writer's job any more.
+/// Opens a trend file, lets the caller fill it, then closes it and reports it
+/// to the profile index. Every trend file this module produces goes through
+/// here.
 template <typename WriteContent>
 void produceTrendFile(const TrendState &state, const string &fileName,
                       ios_base::openmode mode, bool blankLineBeforeClose,
@@ -331,12 +326,8 @@ void produceTrendFile(const TrendState &state, const string &fileName,
     reportProducedFile(state, fileName);
 }
 
-/// The block of samples one row writer emits.
-///
-/// Rows are read straight out of the trend buffer. An earlier form copied the
-/// window into a FullMtx first, allocating one vector per row on every call --
-/// some four thousand calls per run -- to hand the same values to the same loop
-/// in the same order.
+/// The block of samples one row writer emits, read straight out of the trend
+/// buffer.
 struct SampleWindow {
     double **samples;
     int firstRow;
@@ -388,10 +379,9 @@ void writeTrendHeaderFile(const TrendState &state, const string &fileName,
 
 /// The skeleton the four row writers share.
 ///
-/// The AP sequence column exists only for the line trends. It is emitted once
-/// ahead of the data columns rather than tested inside the column loop, which
-/// is one conditional fewer per value and a truer description: it is a prefix,
-/// not a special case of a data column.
+/// The AP sequence column exists only for the line trends, and is emitted once
+/// ahead of the data columns: it is a prefix, not a special case of a data
+/// column.
 void writeTrendRowsFile(const TrendState &state, const string &fileName,
                         const SampleWindow &window, bool supportsApSequence,
                         bool blankLineBeforeClose) {

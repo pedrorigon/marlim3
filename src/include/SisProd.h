@@ -1570,8 +1570,8 @@ class SProd {
     ///
     /// Binds the production domain to rootfinding::zriddr: it captures prod and
     /// tipoCC in the objective, derives the minimum iteration count from the
-    /// input deck, and carries the convergence monitor. The algorithm itself no
-    /// longer knows about any of that.
+    /// input deck, and carries the convergence monitor. The algorithm itself
+    /// knows nothing of that.
     double zriddr(double x1, double x2, int prod, int tipoCC);
   public:
 
@@ -1600,8 +1600,7 @@ class SProd {
      * @brief Caches the drift-flux correlation of each regime from arq.
      *
      * Called wherever arq is built or replaced, so driftSelectors never goes
-     * stale. Keeping it in one place is what stops the four call sites from
-     * drifting apart.
+     * stale.
      */
     void resolveDriftSelectors();
 };

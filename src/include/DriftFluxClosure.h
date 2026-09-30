@@ -64,8 +64,7 @@ void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension,
 ///
 /// The three fields are constant for a whole simulation: the engine parses them
 /// from the input file and never writes them again. Holding them together says
-/// so, and lets the per cell path stop consulting configuration, which is what
-/// the performance requirement asks for.
+/// so, and keeps configuration out of the per-cell path.
 ///
 /// The values are the ones documented above. Each regime accepts its own subset
 /// and ignores the rest, so the fields are not interchangeable.
@@ -153,23 +152,23 @@ struct ClosureState {
 };
 
 /// Slip parameters at a production-line face, from the instantaneous state.
-/// Was SProd::CalcC0Ud.
+/// Called by SProd::CalcC0Ud.
 void instantaneous(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters for the intermediate network state, from the buffered
-/// fields. Was SProd::CalcC0UdBuf.
+/// fields. Called by SProd::CalcC0UdBuf.
 void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters at the inlet of an internal network section.
-/// Was SProd::CalcC0UdIni.
+/// Called by SProd::CalcC0UdIni.
 void initialization(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters at the inlet of an internal network section, from the
-/// buffered fields. Was SProd::CalcC0UdIniBuf.
+/// buffered fields. Called by SProd::CalcC0UdIniBuf.
 void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Steady-state slip parameters at a downstream face.
-/// Was SProd::CalcC0UdPerm.
+/// Called by SProd::CalcC0UdPerm.
 void steadyState(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 }  // namespace coefficient
