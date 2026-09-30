@@ -4816,7 +4816,7 @@ void classifyBranchMarchSentinel(const SteadyStateSearchState &state, double mar
         if (pchuteAux > 1100)
             pchuteAux = 1100;  // limit of pchuteAux
     } else if (marchResidual > 0.9e10) { // pressure at some point exceeded some static pressure
-        // must decrease the chute value
+        // the guess must be lowered
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
@@ -4878,7 +4878,7 @@ double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double
             pchute = 0.9 * state.march.input.tabent.pmax;
     }
     if (pchute > 1000)
-        pchute = 1000.; // maximum pressure of maximum chute
+        pchute = 1000.; // maximum pressure guess
 
     // Method parameters.
     double pchute2;        // Second pressure guess.

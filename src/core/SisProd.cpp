@@ -839,7 +839,7 @@ void SProd::refreshChokeMultipleAndPorousSources(int ind) {
             rs = 0;
             ba = 0.;
         }
-        // In-situ BSW of the previous cell, which in the march is cell i
+        // in-situ BSW of the previous cell (in the march, cell i)
         double vfw = celula[ind + 1].flui.BSW * ba / (bo + ba * celula[ind + 1].flui.BSW - celula[ind + 1].flui.BSW * bo);
         celula[ind].acsr.radialPoro.sWPoc = vfw * (1. - celula[ind].acsr.radialPoro.satAconat) + celula[ind].acsr.radialPoro.satAconat;
         celula[ind].acsr.radialPoro.Pint = celula[ind].pres;
@@ -870,7 +870,7 @@ void SProd::refreshChokeMultipleAndPorousSources(int ind) {
             rs = 0;
             ba = 0.;
         }
-        // In-situ BSW of the previous cell, which in the march is cell i
+        // in-situ BSW of the previous cell (in the march, cell i)
         double vfw = celula[ind + 1].flui.BSW * ba / (bo + ba * celula[ind + 1].flui.BSW - celula[ind + 1].flui.BSW * bo);
         celula[ind].acsr.poroso2D.sWPoc = vfw * (1. - celula[ind].acsr.poroso2D.dados.satAconat) + celula[ind].acsr.poroso2D.dados.satAconat;
         celula[ind].acsr.poroso2D.dados.transfer.sWPoc = celula[ind].acsr.poroso2D.sWPoc;
