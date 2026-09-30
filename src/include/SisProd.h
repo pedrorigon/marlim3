@@ -302,17 +302,20 @@ class SProd {
      */
     int ncelGas;
     /**
-     * @brief Gas-injection pressure.
+     * @brief Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity
+     * analysis case sets it; the steady summary and the restart file record it either way.
      */
-    double presiniG;
+    double presiniG = 0.;
     /**
-     * @brief Gas-injection temperature in the service line.
+     * @brief Gas-injection temperature in the service line. Zero until an injection condition
+     * or a sensitivity analysis case sets it; the restart file records it either way.
      */
-    double tempiniG;
+    double tempiniG = 0.;
     /**
-     * @brief Reserved source mass-flow value; currently unused.
+     * @brief Kept for the restart file, which records it; nothing in the
+     * simulation reads it.
      */
-    double massfonte;
+    double massfonte = 0.;
     /**
      * @brief CFL safety factor, typically set to 0.8.
      */
@@ -329,10 +332,10 @@ class SProd {
      */
     double jMedMov;
     /**
-     * @brief Time-averaged void fraction in the final production-line control volume. Used by the surface-choke
-     * operating-mode logic.
+     * @brief Time-averaged void fraction in the final production-line control volume, updated once the
+     * averaging window fills. Zero until then; only the restart file reads it.
      */
-    double alfMedMov;
+    double alfMedMov = 0.;
     /**
      * @brief Start time of the moving-average window.
      */
@@ -1039,9 +1042,10 @@ class SProd {
      */
     solverP3D poisson3D;
     /**
-     * @brief Minimum time step allowed by the current cycle.
+     * @brief Minimum time step allowed by the current cycle. Zero until a
+     * transient cycle sets it.
      */
-    double dtCicMin;
+    double dtCicMin = 0.;
 
   private:
     /**

@@ -254,14 +254,10 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
     tempSup = 0;
 
     ncelGas = 0;
-    presiniG = 0;
-    tempiniG = 0;
-    massfonte = 0;
 
     mult = 0;
     presMedMov = 0;
     jMedMov = 0;
-    alfMedMov = 0;
     tMedMov = 0;
 
     aberto = 0;
@@ -311,7 +307,6 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
     bloq = 0;
 
     vg1dSP = 0;
-    dtCicMin = dt;
 
     redeParalelaCCsecundario = -1;
     redeParalelaP = -1;
