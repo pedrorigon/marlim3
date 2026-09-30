@@ -2888,7 +2888,7 @@ void Ler::parse_configuracao_inicial(
 			if (configuracao_inicial_json.Formacao().TempoProducao().exists())
 			tempProd=
 					configuracao_inicial_json.Formacao().TempoProducao();
-			formacPoc = new detFormacao[nform];
+			formacPoc = new detFormacao[nform]();
 			// criar vetor de inteiros para armazenar os ids
 			std::vector<int> identificadores;
 			// criar variavel para o maior identificador encontrado
@@ -2941,7 +2941,7 @@ void Ler::parse_configuracao_inicial(
 			}
 		} else {
 			nform = 1;
-			formacPoc = new detFormacao[nform];
+			formacPoc = new detFormacao[nform]();
 			formacPoc[0].tempo = -100.;
 			formacPoc[0].cond = 0.;
 			formacPoc[0].cp = 0.;
@@ -3375,7 +3375,7 @@ void Ler::parse_fluidos_producao(
 		if (nfluP > 0) {
 			flup = new ProFlu [nfluP];
 			indFlup=new int [nfluP];
-			tabVisc= new detTabVisc[nfluP];
+			tabVisc= new detTabVisc[nfluP]();
 			for(int iflu=0;iflu<nfluP;iflu++){
 				tabVisc[iflu].parserie=0;
 				tabVisc[iflu].temp=0;
@@ -5119,7 +5119,7 @@ void Ler::parse_unidades_producao(
 	int maiorIdentificador = -99999;
 	try {
 		if (nunidadep > 0) {
-			unidadeP = new detalhaP[nunidadep];
+			unidadeP = new detalhaP[nunidadep]();
 			ncelp = 0;
 			// iniciar vetor de inteiros para armazenar os ids
 			identificadores.resize(nunidadep);
@@ -5760,7 +5760,7 @@ void Ler::parse_unidades_producaoAmb(
 	int maiorIdentificador = -99999;
 	try {
 		if (nunidadep > 0) {
-			unidadeP = new detalhaP[nunidadep];
+			unidadeP = new detalhaP[nunidadep]();
 			ncelp = 0;
 			// iniciar vetor de inteiros para armazenar os ids
 			identificadores.resize(nunidadep);
@@ -6396,7 +6396,7 @@ void Ler::parse_unidades_servico(
 
 	try {
 		if (nunidadeg > 0) {
-			unidadeG = new detalhaG[nunidadeg];
+			unidadeG = new detalhaG[nunidadeg]();
 			ncelg = 0;
 			// iniciar vetor de inteiros para armazenar os ids
 			identificadores.resize(nunidadeg);
@@ -6882,7 +6882,7 @@ void Ler::parse_unidades_servicoAmb(
 
 	try {
 		if (nunidadeg > 0) {
-			unidadeG = new detalhaG[nunidadeg];
+			unidadeG = new detalhaG[nunidadeg]();
 			ncelg = 0;
 			// iniciar vetor de inteiros para armazenar os ids
 			identificadores.resize(nunidadeg);
@@ -7528,7 +7528,7 @@ void Ler::parse_ipr(JSON_entrada_ipr& ipr_json) {
 
 		if (nipr > 0) {
 			// declarar o vetor ipr
-			IPRS = new detIPR[nipr];
+			IPRS = new detIPR[nipr]();
 			// iniciar vetor de inteiros para armazenar os ids
 			identificadores.resize(nipr);
 			// loop para parse das estruturas do ipr
@@ -7896,7 +7896,7 @@ void Ler::parse_fonte_gaslift(JSON_entrada_fonteGasLift& fonte_gaslift_json) {
 				nvalvgas++;
 		}
 		if (nvalvgas > 0) {
-			valvgl = new detVALVGL[nvalvgas];
+			valvgl = new detVALVGL[nvalvgas]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nvalvgas);
 
@@ -8113,7 +8113,7 @@ void Ler::parse_fonte_gas(JSON_entrada_fonteGas& fonte_gas_json) {
 		// caso o tamanho do elemento seja maior que zero
 		if (ninjgas > 0) {
 			// declarar o vetor fonteg
-			fonteg = new detFONGAS[ninjgas];
+			fonteg = new detFONGAS[ninjgas]();
 			// iniciar vetor de inteiros para armazenar os ids
 			identificadores.resize(ninjgas);
 			// loop para parse das estruturas do fonteGas
@@ -8250,7 +8250,7 @@ void Ler::parse_valv(JSON_entrada_valvula& valvula_json) {
 			int iIni;
 			iIni = 0;
 			// declarar o vetor valv
-			valv = new detValv[nvalv];
+			valv = new detValv[nvalv]();
 
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nvalv);
@@ -8290,7 +8290,7 @@ void Ler::parse_valv(JSON_entrada_valvula& valvula_json) {
 								"Chaves dimensao de #/valvula/x1 diferente de  #/valvula/cv1");
 					}
 					valv[i].ncv =valvula_json[indAtivo].x1().size()-1;
-					valv[i].cvCurv= new detCV [valv[i].ncv];
+					valv[i].cvCurv= new detCV [valv[i].ncv]();
 					for(int konta=0;konta<valv[i].ncv;konta++){
 						valv[i].cvCurv[konta].x1=valvula_json[indAtivo].x1()[konta];
 						valv[i].cvCurv[konta].x2=valvula_json[indAtivo].x1()[konta+1];
@@ -8382,7 +8382,7 @@ void Ler::parse_fonte_liquido(JSON_entrada_fonteLiquido& fonte_liquido_json) {
 			if (pocinjec == 1) {
 				ninjliq++;
 				// declarar o vetor fontel
-				fontel = new detFONLIQ[ninjliq];
+				fontel = new detFONLIQ[ninjliq]();
 				// incluir fonte de liquido adicional
 				fontel[0].comp = 0;
 				fontel[0].posicP = 0;
@@ -8400,7 +8400,7 @@ void Ler::parse_fonte_liquido(JSON_entrada_fonteLiquido& fonte_liquido_json) {
 			} else {
 				iIni = 0;
 				// declarar o vetor fontel
-				fontel = new detFONLIQ[ninjliq];
+				fontel = new detFONLIQ[ninjliq]();
 			}
 
 			// criar vetor de inteiros para armazenar os ids
@@ -8518,7 +8518,7 @@ void Ler::parse_fonte_massa(JSON_entrada_fonteMassa& fonte_massa_json) {
 			if(ConContEntrada!=2)iIni = 0;
 			else iIni=1;
 			// declarar o vetor fontel
-			fontem = new detFONMASS[ninjmass];
+			fontem = new detFONMASS[ninjmass]();
 
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(ninjmass);
@@ -8672,7 +8672,7 @@ void Ler::parse_fonte_PoroRadial(JSON_entrada_fontePoroRadial& fonte_poroRadial_
 			int iIni;
 			iIni = 0;
 			// declarar o vetor fontel
-			porosoRad = new detPoroRad[nPoroRad];
+			porosoRad = new detPoroRad[nPoroRad]();
 
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nPoroRad);
@@ -8745,7 +8745,7 @@ void Ler::parse_fonte_Poro2D(JSON_entrada_fontePoro2D& fonte_poro2D_json) {
 			int iIni;
 			iIni = 0;
 			// declarar o vetor fontel
-			poroso2D = new detPoro2D[nPoro2D];
+			poroso2D = new detPoro2D[nPoro2D]();
 
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nPoro2D);
@@ -8825,7 +8825,7 @@ void Ler::parse_furo(JSON_entrada_fontePressao &fontePressao_json) {
 			int iIni;
 			iIni = 0;
 			// declarar o vetor fontel
-			furo = new detFURO[nfuro];
+			furo = new detFURO[nfuro]();
 
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nfuro);
@@ -8978,7 +8978,7 @@ void Ler::parse_bcs(JSON_entrada_bcs& bcs_json) {
 				nbcs++;
 		}
 		if (nbcs > 0) {
-			bcs = new detBCS[nbcs];
+			bcs = new detBCS[nbcs]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nbcs);
 			// loop para parse das estruturas do bcs
@@ -9115,7 +9115,7 @@ void Ler::parse_multibcs(JSON_entrada_multibcs& multibcs_json) {
 				nmultibcs++;
 		}
 		if (nmultibcs > 0) {
-			multiBcs = new detMultiBCS[nmultibcs];
+			multiBcs = new detMultiBCS[nmultibcs]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nmultibcs);
 			// loop para parse das estruturas do bcs
@@ -9196,7 +9196,7 @@ void Ler::parse_multibcs(JSON_entrada_multibcs& multibcs_json) {
 					multiBcs[i].ncurva=new int[multiBcs[i].nBCS];
 					multiBcs[i].nestagParc=new int[multiBcs[i].nBCS];
 					multiBcs[i].nestagParcFab=new int[multiBcs[i].nBCS];
-					multiBcs[i].BCSinterno = new detBCS[multiBcs[i].nBCS];
+					multiBcs[i].BCSinterno = new detBCS[multiBcs[i].nBCS]();
 					for(int j=0; j<multiBcs[i].nBCS;j++){
 						// caso os tamanhos dos vetores das chaves difiram entre si
 						if ((multibcs_json[indAtivo].curva()[j].vazao().size()
@@ -9300,7 +9300,7 @@ void Ler::parse_bomba_volumetrica(
 				nbvol++;
 		}
 		if (nbvol > 0) {
-			bvol = new detBVOL[nbvol];
+			bvol = new detBVOL[nbvol]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nbvol);
 			// loop para parse das estruturas de bombas volumÃ©tricas
@@ -9396,7 +9396,7 @@ void Ler::parse_delta_pressao(JSON_entrada_deltaPressao& delta_pressao_json) {
 				ndpreq++;
 		}
 		if (ndpreq > 0) {
-			dpreq = new detDPREQ[ndpreq];
+			dpreq = new detDPREQ[ndpreq]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(ndpreq);
 			// loop para parse das estruturas de deltas de pressÃ£o
@@ -9499,7 +9499,7 @@ void Ler::parse_fonteCalor(JSON_entrada_fonteCalor& fonteCalor_json) {
 				ncalor++;
 		}
 		if (ncalor > 0) {
-			fonteCal = new detCalor[ncalor];
+			fonteCal = new detCalor[ncalor]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(ncalor);
 			// loop para parse das estruturas de deltas de pressÃ£o
@@ -9594,7 +9594,7 @@ void Ler::parse_master1(JSON_entrada_master1& master1_json) {
 						"Chaves dimensao de #/master1/x1 diferente de  #/master1/cv1");
 			}
 			master1.ncv =master1_json.x1().size()-1;
-			master1.cvCurv= new detCV [master1.ncv];
+			master1.cvCurv= new detCV [master1.ncv]();
 			for(int konta=0;konta<master1.ncv;konta++){
 				master1.cvCurv[konta].x1=master1_json.x1()[konta];
 				master1.cvCurv[konta].x2=master1_json.x1()[konta+1];
@@ -9855,7 +9855,7 @@ void Ler::parse_chokeSup(JSON_entrada_chokeSup& chokeSup_json) {
 							"Chaves dimensao de #/choke/x1 diferente de  #/choke/cv1");
 				}
 				chokep.ncv =chokeSup_json.x1().size()-1;
-				chokep.cvCurv= new detCV [chokep.ncv];
+				chokep.cvCurv= new detCV [chokep.ncv]();
 				for(int konta=0;konta<chokep.ncv;konta++){
 					chokep.cvCurv[konta].x1=chokeSup_json.x1()[konta];
 					chokep.cvCurv[konta].x2=chokeSup_json.x1()[konta+1];
@@ -9993,7 +9993,7 @@ void Ler::parse_fontechk(JSON_entrada_fonteChoke& fontechk_json) {
 							chaveJson,
 							"Chaves #/fontechk/tempo, #/fontechk/abertura com tamanhos diferentes");
 				} else {
-					fontechk = new detCHOKESUP[nfontechk];
+					fontechk = new detCHOKESUP[nfontechk]();
 					for (int i = 0; i < nfontechk; i++) {
 						fontechk[i].curvaCV=0;
 						fontechk[i].parserie = fontechk_json.abertura().size();
@@ -10049,7 +10049,7 @@ void Ler::parse_pig(JSON_entrada_pig& pig_json) {
 				npig++;
 		}
 		if (npig > 0) {
-			pig = new detPig[npig];
+			pig = new detPig[npig]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(npig);
 			// loop para parse das estruturas de pigs
@@ -10137,7 +10137,7 @@ void Ler::parse_intermitencia(JSON_entrada_intermitenciaSevera& intermitencia_js
 			int iIni;
 			iIni = 0;
 			// declarar o vetor fontel
-			intermi = new detIntermi[nintermi];
+			intermi = new detIntermi[nintermi]();
 
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nintermi);
@@ -10231,7 +10231,7 @@ void Ler::parse_celulaUnitaria(JSON_entrada_detalheCelulaUnitaria& celulaUnitari
 				nCelUnit++;
 		}
 		if (nCelUnit > 0) {
-			celUnit = new detCelUnit[nCelUnit];
+			celUnit = new detCelUnit[nCelUnit]();
 			// criar vetor de inteiros para armazenar os ids
 			identificadores.resize(nCelUnit);
 			// loop para parse das estruturas do celUnit
@@ -11189,7 +11189,7 @@ void Ler::parse_tendencia_producao(
 				ntendp++;
 		}
 		if (ntendp > 0) {
-			trendp = new detTRENDP[ntendp];
+			trendp = new detTRENDP[ntendp]();
 			nvartrendp = new int[ntendp];
 			// loop para parse das estruturas de tendencias de producao
 			int indAtivo = -1;
@@ -11775,7 +11775,7 @@ void Ler::parse_tendencia_servico(
 				ntendg++;
 		}
 		if (ntendg > 0) {
-			trendg = new detTRENDG[ntendg];
+			trendg = new detTRENDG[ntendg]();
 			nvartrendg = new int[ntendg];
 			// loop para parse das estruturas de tendencias de servico
 			int indAtivo = -1;
@@ -12230,7 +12230,7 @@ void Ler::parse_tendencia_trans_producao(
 				ntendtransp++;
 		}
 		if (ntendtransp > 0) {
-			trendtransp = new detTRENDTrans[ntendtransp];
+			trendtransp = new detTRENDTrans[ntendtransp]();
 			// loop para parse das estruturas de tendencias trans producao
 			int indAtivo = -1;
 			for (int i = 0; i < ntendtransp; i++) {
@@ -12310,7 +12310,7 @@ void Ler::parse_tendencia_trans_servico(
 				ntendtransg++;
 		}
 		if (ntendtransg > 0) {
-			trendtransg = new detTRENDTrans[ntendtransg];
+			trendtransg = new detTRENDTrans[ntendtransg]();
 			// loop para parse das estruturas de tendencias trans servico
 			int indAtivo = -1;
 			for (int i = 0; i < ntendtransg; i++) {
@@ -12386,7 +12386,7 @@ void Ler::parse_tela(JSON_entrada_tela& tela_json) {
 				ntela++;
 		}
 		if (ntela > 0) {
-			tela = new detTela[ntela];
+			tela = new detTela[ntela]();
 			// loop para parse das estruturas de tela
 			int indAtivo = -1;
 			for (int i = 0; i < ntela; i++) {
@@ -12868,14 +12868,14 @@ void Ler::lerArq() {
 		// determinar a quantidade total de dutos
 		nduto = nunidadep + nunidadeg;
 		// instanciar vetor de dutos
-		duto = new detduto[nduto];
+		duto = new detduto[nduto]();
 
 		// parse unidades de producao
 		if(conINIAmbP==0)parse_unidades_producao(jsonDoc.dutosProducao());
 		else parse_unidades_producaoAmb(jsonDoc.dutosProducao());
 
 		// gerar celulas de producao
-		celp = new detcelp[ncelp];
+		celp = new detcelp[ncelp]();
 		int tempncel = 0;
 		anmP = 0 * unidadeP[0].dx[0];
 		int para = 0;
@@ -13014,7 +13014,7 @@ void Ler::lerArq() {
 			else if(conINIAmbS==1)parse_unidades_servicoAmb(jsonDoc.dutosServico());
 
 			// gerar as cÃ©lulas da linha de servico
-			celg = new detcelg[ncelg];
+			celg = new detcelg[ncelg]();
 			int tempncel = 0;
 			int para = 0;
 			anmG = unidadeG[0].dx[0];
@@ -13156,7 +13156,7 @@ void Ler::lerArq() {
 		else if(((flashCompleto==2 || flashCompleto==1) && pocinjec == 1)){
 			ninjgas++;
 			// declarar o vetor fontel com valores default
-			fonteg = new detFONGAS[ninjgas];
+			fonteg = new detFONGAS[ninjgas]();
 			// incluir fonte de liquido adicional
 			fonteg[0].comp = 0;
 			fonteg[0].posicP = 0;
@@ -13181,7 +13181,7 @@ void Ler::lerArq() {
 			// caso simulacao de injecao
 			ninjliq++;
 			// declarar o vetor fontel com valores default
-			fontel = new detFONLIQ[ninjliq];
+			fontel = new detFONLIQ[ninjliq]();
 			// incluir fonte de liquido adicional
 			fontel[0].comp = 0;
 			fontel[0].posicP = 0;
@@ -13581,13 +13581,13 @@ void Ler::copiaArq(Ler& arqAntigo) {
 	nunidadep = arqAntigo.nunidadep;
 	nunidadeg = arqAntigo.nunidadeg;
 	nduto = nunidadep + nunidadeg;
-	duto = new detduto[nduto];
+	duto = new detduto[nduto]();
 	copia_unidades_producao(arqAntigo);
 
 
 
 	// gerar celulas de producao
-	celp = new detcelp[ncelp];
+	celp = new detcelp[ncelp]();
 	int tempncel = 0;
 	anmP = 0 * unidadeP[0].dx[0];
 	int para = 0;
@@ -13723,7 +13723,7 @@ void Ler::copiaArq(Ler& arqAntigo) {
 	if (pocinjec == 0 && nunidadeg > 0) {
 		copia_unidades_servico(arqAntigo);
 		// gerar as celulas da linha de servico
-		celg = new detcelg[ncelg];
+		celg = new detcelg[ncelg]();
 		int tempncel = 0;
 		int para = 0;
 		anmG = unidadeG[0].dx[0];
@@ -19762,7 +19762,7 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 		razCompGasReves=arqAntigo.razCompGasReves;
 		nform =arqAntigo.nform;
 		if(nform>0){
-			formacPoc = new detFormacao[nform];
+			formacPoc = new detFormacao[nform]();
 			for (int i = 0; i < nform; i++) {  //alteracao2
 				formacPoc[i].id = arqAntigo.formacPoc[i].id;
 				formacPoc[i].tempo = arqAntigo.formacPoc[i].tempo;  //alteracao2
@@ -19904,7 +19904,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 	if (nfluP > 0) {
 		flup = new ProFlu [nfluP];
 		indFlup=new int [nfluP];
-		tabVisc= new detTabVisc[nfluP];
+		tabVisc= new detTabVisc[nfluP]();
 		for(int iflu=0;iflu<nfluP;iflu++){
 			tabVisc[iflu].parserie=0;
 			tabVisc[iflu].temp=0;
@@ -20324,7 +20324,7 @@ void Ler::copia_fluido_gas(Ler& arqAntigo) {
 void Ler::copia_unidades_producao(Ler& arqAntigo) {
 
 
-	unidadeP = new detalhaP[nunidadep];
+	unidadeP = new detalhaP[nunidadep]();
 	ncelp=arqAntigo.ncelp;
 	nCompTotalUnidadesP=arqAntigo.nCompTotalUnidadesP;
 	for (int ind = 0; ind < nunidadep; ind++) {
@@ -20399,7 +20399,7 @@ void Ler::copia_unidades_producao(Ler& arqAntigo) {
 void Ler::copia_unidades_servico(Ler& arqAntigo) {
 
 	if (nunidadeg > 0) {
-		unidadeG = new detalhaG[nunidadeg];
+		unidadeG = new detalhaG[nunidadeg]();
 		ncelg=arqAntigo.ncelg;
 		nCompTotalUnidadesG = arqAntigo.nCompTotalUnidadesG;
 		for (int i = 0; i < nunidadeg; i++) {
@@ -20484,7 +20484,7 @@ void Ler::copia_hidrato(Ler& arqAntigo) {
 void Ler::copia_ipr(Ler& arqAntigo) {
 
 	nipr=arqAntigo.nipr;
-	IPRS = new detIPR[nipr];
+	IPRS = new detIPR[nipr]();
 	for (int i = 0; i < nipr; i++) {
 		IPRS[i].comp =arqAntigo.IPRS[i].comp;
 		IPRS[i].indcel =arqAntigo.IPRS[i].indcel;
@@ -20594,7 +20594,7 @@ void Ler::copia_chokeSup(Ler& arqAntigo) {
 	chokep.ncv=arqAntigo.chokep.ncv;
 	chokep.ncv =arqAntigo.chokep.ncv;
 	if(chokep.ncv>0){
-		chokep.cvCurv= new detCV [chokep.ncv];
+		chokep.cvCurv= new detCV [chokep.ncv]();
 		for(int konta=0;konta<chokep.ncv;konta++){
 			chokep.cvCurv[konta].x1=arqAntigo.chokep.cvCurv[konta].x1;
 			chokep.cvCurv[konta].x2=arqAntigo.chokep.cvCurv[konta].x2;
@@ -20656,7 +20656,7 @@ void Ler::copia_master1(Ler& arqAntigo) {
 	master1.posic = arqAntigo.master1.posic;
 
 	if(master1.curvaCV==1){
-		master1.cvCurv= new detCV [master1.ncv];
+		master1.cvCurv= new detCV [master1.ncv]();
 		for(int konta=0;konta<master1.ncv;konta++){
 			master1.cvCurv[konta].x1=arqAntigo.master1.cvCurv[konta].x1;
 			master1.cvCurv[konta].x2=arqAntigo.master1.cvCurv[konta].x2;
@@ -20702,13 +20702,13 @@ void Ler::copia_valv(Ler& arqAntigo) {
 
 	nvalv=arqAntigo.nvalv;
 	if(nvalv>0){
-		valv = new detValv[nvalv];
+		valv = new detValv[nvalv]();
 		for(int i=0;i<nvalv;i++){
 			valv[i].curvaCV=arqAntigo.valv[i].curvaCV;
 			valv[i].curvaDinamic=arqAntigo.valv[i].curvaDinamic;
 			valv[i].ncv=arqAntigo.valv[i].ncv;
 			if(valv[i].curvaCV==1){
-				valv[i].cvCurv= new detCV [valv[i].ncv];
+				valv[i].cvCurv= new detCV [valv[i].ncv]();
 				for(int konta=0;konta<valv[i].ncv;konta++){
 					valv[i].cvCurv[konta].x1=arqAntigo.valv[i].cvCurv[konta].x1;
 					valv[i].cvCurv[konta].x2=arqAntigo.valv[i].cvCurv[konta].x2;
@@ -20764,7 +20764,7 @@ void Ler::copia_fonte_gas(Ler& arqAntigo) {
 
 	ninjgas = arqAntigo.ninjgas;
 	if (ninjgas > 0) {
-		fonteg = new detFONGAS[ninjgas];
+		fonteg = new detFONGAS[ninjgas]();
 		for (int i = 0; i < ninjgas; i++) {
 			fonteg[i].comp =arqAntigo.fonteg[i].comp;
 			fonteg[i].posicP = arqAntigo.fonteg[i].posicP;
@@ -20791,7 +20791,7 @@ void Ler::copia_fonte_liquido(Ler& arqAntigo) {
 
 	ninjliq = arqAntigo.ninjliq;
 	if (ninjliq > 0) {
-		fontel = new detFONLIQ[ninjliq];
+		fontel = new detFONLIQ[ninjliq]();
 		for(int i=0; i<ninjliq;i++){
 			fontel[i].comp = arqAntigo.fontel[i].comp;
 			fontel[i].posicP = arqAntigo.fontel[i].posicP;
@@ -20814,7 +20814,7 @@ void Ler::copia_fonte_liquido(Ler& arqAntigo) {
 void Ler::copia_fonte_PoroRadial(Ler& arqAntigo) {
 	nPoroRad = arqAntigo.nPoroRad;
 	if (nPoroRad > 0) {
-		porosoRad = new detPoroRad[nPoroRad];
+		porosoRad = new detPoroRad[nPoroRad]();
 		for (int i = 0; i < nPoroRad; i++) {
 			porosoRad[i].comp =arqAntigo.porosoRad[i].comp;
 			porosoRad[i].posicP =arqAntigo.porosoRad[i].posicP;
@@ -20828,7 +20828,7 @@ void Ler::copia_fonte_Poro2D(Ler& arqAntigo) {
 
 	nPoro2D = arqAntigo.nPoro2D;
 	if (nPoro2D > 0) {
-		poroso2D = new detPoro2D[nPoro2D];
+		poroso2D = new detPoro2D[nPoro2D]();
 		for (int i = 0; i < nPoro2D; i++) {
 			poroso2D[i].comp =arqAntigo.poroso2D[i].comp;
 			poroso2D[i].posicP =arqAntigo.poroso2D[i].posicP;
@@ -20841,7 +20841,7 @@ void Ler::copia_fonte_massa(Ler& arqAntigo) {
 
 	ninjmass = arqAntigo.ninjmass;
 	if (ninjmass > 0) {
-		fontem = new detFONMASS[ninjmass];
+		fontem = new detFONMASS[ninjmass]();
 		for (int i = 0; i < ninjmass; i++) {
 			fontem[i].condiTermo=arqAntigo.fontem[i].condiTermo;
 			fontem[i].comp =arqAntigo.fontem[i].comp;
@@ -20908,7 +20908,7 @@ void Ler::copia_fontechk(Ler& arqAntigo) {
 
 	nfontechk = arqAntigo.nfontechk;
 	if (nfontechk > 0) {
-		fontechk = new detCHOKESUP[nfontechk];
+		fontechk = new detCHOKESUP[nfontechk]();
 		for (int i = 0; i < nfontechk; i++) {
 				fontechk[i].curvaCV=arqAntigo.fontechk[i].curvaCV;
 				fontechk[i].parserie = arqAntigo.fontechk[i].parserie;
@@ -20930,7 +20930,7 @@ void Ler::copia_pig(Ler& arqAntigo) {
 
 	npig = arqAntigo.npig;
 	if (npig > 0) {
-		pig = new detPig[npig];
+		pig = new detPig[npig]();
 		for (int i = 0; i < npig; i++) {
 			pig[i].compL = arqAntigo.pig[i].compL;
 			pig[i].compR = arqAntigo.pig[i].compR;
@@ -20949,7 +20949,7 @@ void Ler::copia_bcs(Ler& arqAntigo) {
 
 	nbcs = arqAntigo.nbcs;
 	if (nbcs > 0) {
-		bcs = new detBCS[nbcs];
+		bcs = new detBCS[nbcs]();
 		for (int i = 0; i < nbcs; i++) {
 			bcs[i].comp = arqAntigo.bcs[i].comp;
 			bcs[i].posicP = arqAntigo.bcs[i].posicP;
@@ -20986,7 +20986,7 @@ void Ler::copia_multibcs(Ler& arqAntigo) {
 
 	nmultibcs = arqAntigo.nmultibcs;
 	if (nmultibcs > 0) {
-		multiBcs = new detMultiBCS[nmultibcs];
+		multiBcs = new detMultiBCS[nmultibcs]();
 		for (int i = 0; i < nmultibcs; i++) {
 			multiBcs[i].comp = arqAntigo.multiBcs[i].comp;
 			multiBcs[i].posicP = arqAntigo.multiBcs[i].posicP;
@@ -21005,7 +21005,7 @@ void Ler::copia_multibcs(Ler& arqAntigo) {
 			multiBcs[i].correcHI=arqAntigo.multiBcs[i].correcHI;
 			multiBcs[i].equilTerm=arqAntigo.multiBcs[i].equilTerm;
 			multiBcs[i].nBCS=arqAntigo.multiBcs[i].nBCS;
-			multiBcs[i].BCSinterno= new detBCS[multiBcs[i].nBCS];
+			multiBcs[i].BCSinterno= new detBCS[multiBcs[i].nBCS]();
 			multiBcs[i].nestagParcFab=new int[multiBcs[i].nBCS];
 			multiBcs[i].nestagParc=new int[multiBcs[i].nBCS];
 			multiBcs[i].ncurva=new int[multiBcs[i].nBCS];
@@ -21047,7 +21047,7 @@ void Ler::copia_bomba_volumetrica(Ler& arqAntigo) {
 
 	nbvol = arqAntigo.nbvol;
 	if (nbvol > 0) {
-		bvol = new detBVOL[nbvol];
+		bvol = new detBVOL[nbvol]();
 		for (int i = 0; i < nbvol; i++) {
 			bvol[i].comp = arqAntigo.bvol[i].comp;
 			bvol[i].posicP = arqAntigo.bvol[i].posicP;
@@ -21069,7 +21069,7 @@ void Ler::copia_delta_pressao(Ler& arqAntigo) {
 
 	ndpreq = arqAntigo.ndpreq;
 	if (ndpreq > 0) {
-		dpreq = new detDPREQ[ndpreq];
+		dpreq = new detDPREQ[ndpreq]();
 		for (int i = 0; i < ndpreq; i++) {
 			dpreq[i].comp = arqAntigo.dpreq[i].comp;
 			dpreq[i].posicP = arqAntigo.dpreq[i].posicP;
@@ -21093,7 +21093,7 @@ void Ler::copia_fonteCalor(Ler& arqAntigo) {
 
 	ncalor = arqAntigo.ncalor;
 	if (ncalor > 0) {
-		fonteCal = new detCalor[ncalor];
+		fonteCal = new detCalor[ncalor]();
 		for (int i = 0; i < ndpreq; i++) {
 			fonteCal[i].comp = arqAntigo.fonteCal[i].comp;
 			fonteCal[i].posicP = arqAntigo.fonteCal[i].posicP;
@@ -21114,7 +21114,7 @@ void Ler::copia_fonte_gaslift(Ler& arqAntigo) {
 
 	nvalvgas = arqAntigo.nvalvgas;
 	if (nvalvgas > 0) {
-		valvgl = new detVALVGL[nvalvgas];
+		valvgl = new detVALVGL[nvalvgas]();
 		for (int i = 0; i < nvalvgas; i++) {
 			valvgl[i].compP = arqAntigo.valvgl[i].compP;
 			valvgl[i].compG = arqAntigo.valvgl[i].compG;
@@ -21139,7 +21139,7 @@ void Ler::copia_intermitencia(Ler& arqAntigo) {
 
 	nintermi = arqAntigo.nintermi;
 	if (nintermi> 0) {
-		intermi = new detIntermi[nintermi];
+		intermi = new detIntermi[nintermi]();
 		for(int i=0; i<nintermi;i++){
 			intermi[i].indInicioTrechoAcumula=arqAntigo.intermi[i].indInicioTrechoAcumula;
 			intermi[i].indFimTrechoAcumula=arqAntigo.intermi[i].indFimTrechoAcumula;
@@ -21154,7 +21154,7 @@ void Ler::copia_celulaUnitaria(Ler& arqAntigo) {
 
 	nCelUnit = arqAntigo.nCelUnit;
 	if (nCelUnit> 0) {
-		celUnit = new detCelUnit[nCelUnit];
+		celUnit = new detCelUnit[nCelUnit]();
 		for(int i=0; i<nCelUnit;i++){
 			celUnit[i].comp=arqAntigo.celUnit[i].comp;
 			celUnit[i].posicP=arqAntigo.celUnit[i].posicP;
@@ -21331,7 +21331,7 @@ void Ler::copia_tendencia_producao(Ler& arqAntigo) {
 
 	ntendp=arqAntigo.ntendp;
 	if (ntendp > 0) {
-			trendp = new detTRENDP[ntendp];
+			trendp = new detTRENDP[ntendp]();
 			nvartrendp = new int[ntendp];
 			for (int i = 0; i < ntendp; i++) {
 
@@ -21426,7 +21426,7 @@ void Ler::copia_tendencia_servico(Ler& arqAntigo) {
 
 	ntendg = arqAntigo.ntendg;
 	if (ntendg > 0) {
-		trendg = new detTRENDG[ntendg];
+		trendg = new detTRENDG[ntendg]();
 		nvartrendg = new int[ntendg];
 		for (int i = 0; i < ntendg; i++) {
 			nvartrendg[i] = arqAntigo.nvartrendg[i];
@@ -21475,7 +21475,7 @@ void Ler::copia_tendencia_trans_producao(Ler& arqAntigo) {
 
 	ntendtransp = arqAntigo.ntendtransp;
 	if (ntendtransp > 0) {
-		trendtransp = new detTRENDTrans[ntendtransp];
+		trendtransp = new detTRENDTrans[ntendtransp]();
 		for (int i = 0; i < ntendtransp; i++) {
 			trendtransp[i].comp=arqAntigo.trendtransp[i].comp;
 			trendtransp[i].posic = arqAntigo.trendtransp[i].posic;
@@ -21492,7 +21492,7 @@ void Ler::copia_tendencia_trans_servico(Ler& arqAntigo) {
 
 	ntendtransg = arqAntigo.ntendtransg;
 	if (ntendtransg > 0) {
-		trendtransg = new detTRENDTrans[ntendtransg];
+		trendtransg = new detTRENDTrans[ntendtransg]();
 		for (int i = 0; i < ntendtransg; i++) {
 			trendtransg[i].comp=arqAntigo.trendtransg[i].comp;
 			trendtransg[i].posic = arqAntigo.trendtransg[i].posic;
@@ -21508,7 +21508,7 @@ void Ler::copia_tela(Ler& arqAntigo) {
 
 	ntela = arqAntigo.ntela;
 	if (ntela > 0) {
-		tela = new detTela[ntela];
+		tela = new detTela[ntela]();
 		for (int i = 0; i < ntela; i++) {
 			tela[i].col = arqAntigo.tela[i].col;
 			tela[i].posic = arqAntigo.tela[i].posic;
