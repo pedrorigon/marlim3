@@ -815,7 +815,7 @@ void upwindLeftFaceGasProperties(const CompositionState &state, BlackOilFace &le
 /// The liquid at cell i's right face when it flows back from cell i+1.
 void upwindRightFaceLiquidProperties(const CompositionState &state, BlackOilFace &right, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i + 1].QL < 0.) {
-        right.betI = state.cells[i + 1].betPigE; // testeBeta
+        right.betI = state.cells[i + 1].betPigE; // beta test
         right.rgo = state.cells[i + 1].flui.RGO;
         right.solutionGasRatio = state.cells[i + 1].flui.RS(state.cells[i + 1].pres, state.cells[i + 1].temp);
         right.oilVolumeFactor = state.cells[i + 1].flui.BOFunc(state.cells[i + 1].pres, state.cells[i + 1].temp, right.solutionGasRatio);
@@ -850,9 +850,9 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         }
         left.rgo = (*state.cells[i].fluiL).RGO;
         if (state.input.ConContEntrada == 0)
-            left.betI = state.cells[i - 1].betPigD; // testeBeta
+            left.betI = state.cells[i - 1].betPigD; // beta test
         else
-            left.betI = state.inletCompletionFraction; // testeBeta
+            left.betI = state.inletCompletionFraction; // beta test
         left.solutionGasRatio = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, left.solutionGasRatio);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
@@ -868,7 +868,7 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         left.viscL = 0 * 30 + 1 * (*state.cells[i].fluiL).VisOM(temperatureLow);
         left.viscH = 0 * 20 + 1 * (*state.cells[i].fluiL).VisOM(temperatureHigh);
     } else {
-        left.betI = state.cells[i].betPigE; // testebeta
+        left.betI = state.cells[i].betPigE; // beta test
         left.rgo = state.cells[i].flui.RGO;
         left.solutionGasRatio = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, left.solutionGasRatio);
@@ -943,7 +943,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     right.razdgd = 1 / state.cells[i].flui.rDgD;
     right.razdgl = 1 / state.cells[i].flui.rDgL;
 
-    // betI1 = celula[i + 1].betPigE;    //duvidabeta
+    // betI1 = celula[i + 1].betPigE;    // beta doubt
     upwindRightFaceLiquidProperties(state, right, i, temperatureHigh, temperatureLow);
     if (right.oilVolumeFactor < 1e-15)
         right.oilVolumeFactor = 1e-15;
@@ -1057,7 +1057,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
         balance.volleveFim = 0.;
     balance.residuo = (balance.volleveFim - state.cells[i].VolLeveST) * flowArea / dt + (balance.MultOd - balance.MultOe) / dx + (balance.MultGd - balance.MultGe) / dx - (source.dissolvedGas / dx + source.freeGas / dx);
     balance.volpesFim = cell.liquidHoldup * (1 - cell.completionFraction) * (1 - cell.bsw) / cell.oilVolumeFactor;
-    balance.volaguaFim = cell.liquidHoldup * (1 - cell.completionFraction) * cell.bsw; // nao deveria ser dividido por Bo???????????
+    balance.volaguaFim = cell.liquidHoldup * (1 - cell.completionFraction) * cell.bsw; // shouldn't this be divided by Bo???????????
     balance.MultPe = 0.;
     balance.MultPd = 0.;
     balance.residuoP = 0.;
@@ -1267,7 +1267,7 @@ void normalizePhaseFractions(vector<double>& fracMolFase, double* fracMolOrigina
     for (int kfrac = 0; kfrac < npseudo; kfrac++) {
     	fracMolFase[kfrac] = fracMolOriginal[kfrac];
     }
-	// Encontrar o menor valor
+	// Find the smallest value
     double menorFracFase = fracMolFase[0];
     for (int kfrac = 1; kfrac < npseudo; kfrac++) {
         if (menorFracFase > fracMolFase[kfrac]) {
@@ -1276,7 +1276,7 @@ void normalizePhaseFractions(vector<double>& fracMolFase, double* fracMolOrigina
     }
     menorFracFase=0.;
 
-    // Subtrair o menor valor
+    // Subtract the smallest value
     for (int kfrac = 0; kfrac < npseudo; kfrac++) {
     	fracMolFase[kfrac] -= menorFracFase;
     }
@@ -1990,9 +1990,9 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
             upstreamTemperature = state.inletTemperature;
         }
         if (state.input.ConContEntrada == 0)
-            left.betI = state.cells[i - 1].betPigD; // testeBeta
+            left.betI = state.cells[i - 1].betPigD; // beta test
         else
-            left.betI = state.inletCompletionFraction; // testeBeta
+            left.betI = state.inletCompletionFraction; // beta test
         double solutionGasRatioLeft = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, solutionGasRatioLeft);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
@@ -2002,7 +2002,7 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
         left.viscL = 0 * 30 + 1 * (*state.cells[i].fluiL).VisOM(temperatureLow);
         left.viscH = 0 * 20 + 1 * (*state.cells[i].fluiL).VisOM(temperatureHigh);
     } else {
-        left.betI = state.cells[i].betPigE; // testebeta
+        left.betI = state.cells[i].betPigE; // beta test
         double solutionGasRatioLeft = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioLeft);
         left.waterVolumeFactor = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
@@ -2074,7 +2074,7 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     right.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
     right.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
 
-    // betI1 = celula[i + 1].betPigE;    //duvidabeta
+    // betI1 = celula[i + 1].betPigE;    // beta doubt
     if (state.cells[i + 1].QL < 0.) {
         right.betI = state.cells[i + 1].betPigE; // testeBet
         right.solutionGasRatio = state.cells[i + 1].flui.RS(state.cells[i + 1].pres, state.cells[i + 1].temp);
@@ -2172,7 +2172,7 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
 
     PhaseBalance balance;
     balance.volpesFim = cell.liquidHoldup * (1 - cell.completionFraction) * (1 - cell.bsw) / cell.oilVolumeFactor;
-    balance.volaguaFim = cell.liquidHoldup * (1 - cell.completionFraction) * cell.bsw / cell.oilVolumeFactor; // nao deveria ser dividido por Bo???????????
+    balance.volaguaFim = cell.liquidHoldup * (1 - cell.completionFraction) * cell.bsw / cell.oilVolumeFactor; // shouldn't this be divided by Bo???????????
     balance.MultPd = 0.;
     balance.residuoP = 0.;
     balance.MultAe = 0.;

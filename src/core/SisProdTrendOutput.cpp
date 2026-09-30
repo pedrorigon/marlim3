@@ -305,7 +305,7 @@ string crossSectionTrendFileName(const TrendState &state, const char *prefix,
 
 /// Records a produced file in the profile report.
 void reportProducedFile(const TrendState &state, const string &fileName) {
-    // caso nao seja simulacao POCO_INJETOR
+    // unless this is an injection-well (POCO_INJETOR) simulation
     if (state.input.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
         arqRelatorioPerfis << fileName.c_str() << endl;
         arqRelatorioPerfis.flush();

@@ -79,7 +79,7 @@ inline void alignDriftWithInclination(double gasFlowRate, double liquidFlowRate,
 /// convergence delta does too, and a NaN comparison is false, so the loop
 /// exits on its own.
 double darcyFrictionFactor(double relativeRoughness, double reynolds) {
-    if (reynolds > 2400) { // regime turbulento do escoamento
+    if (reynolds > 2400) { // turbulent flow regime
         double frictionFactorEstimate =
             (1 / (-18e-1 * log10(pow((relativeRoughness / (3.7)), 1.11) + (69e-1 / (reynolds + 1e-15)))));
         frictionFactorEstimate *= frictionFactorEstimate; // Haaland.
@@ -147,13 +147,13 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     const double distributionTerm1 = (2 - densityRatioSquared) / (1 + scaledReynoldsSquared);
     const double distributionTerm2 = (pow(((1 + densityRatioSquared * cos(inclinationAngle)) / (1 + cos(inclinationAngle))), (1 - voidFraction) / 5.)) /
              (1 + 1 / scaledReynoldsSquared);
-    const double ductShapeCoefficient = 0.2; // duto circular ou anular. Retangular seria 0.4.
+    const double ductShapeCoefficient = 0.2; // circular or annular duct; a rectangular one would be 0.4.
     double ductShapeTerm = (ductShapeCoefficient - ductShapeCoefficient * sqrt(gasDensity / liquidDensity)) * (pow((2.6 - noSlipGasFraction), 0.15) - sqrt(frictionFactor)) * pow((1 - massQuality), 1.5);
     if (gasFlowRate * liquidFlowRate < 0.)
         ductShapeTerm = 0;
     if (inclinationAngle >= -50 * M_PI / 180. && inclinationAngle <= 0 && froudeNumber <= 0.1)
         ductShapeTerm = 0.0;
-    c0 = distributionTerm1 + distributionTerm2 + ductShapeTerm; // Calculo do Parametro de Distribuicao.
+    c0 = distributionTerm1 + distributionTerm2 + ductShapeTerm; // Distribution parameter.
 
     const double mixtureViscosity = diameter * (fabs(gasFlowRate / flowArea) + fabs(liquidFlowRate / flowArea)) * mixtureDensity / reynolds;
     const double inclinationFactor = (0.35 * sin(inclinationAngle) + 0.45 * cos(inclinationAngle));
@@ -165,7 +165,7 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
         (laplaceNumber < 0.025) ? pow((laplaceNumber / 0.025), 0.90) : 1.0;
     const double downwardFlowSign =
         (inclinationAngle >= -(50 * M_PI / 180.) && inclinationAngle < 0 && froudeNumber <= 0.1) ? -1.0 : 1.0;
-    ud = horizontalCorrection * inclinationFactor * buoyancyVelocityScale * viscosityCorrection * laplaceCorrection * downwardFlowSign; // Calculo da Velocidade de Deslizamento.
+    ud = horizontalCorrection * inclinationFactor * buoyancyVelocityScale * viscosityCorrection * laplaceCorrection * downwardFlowSign; // Drift velocity.
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
 
@@ -354,9 +354,9 @@ using enum sisprod::AccessoryKind;
  * and only the blocks they share exactly are factored out. In all five, the
  * chain betneg -> upstreamLiquidFlowRate -> mult0 is computed and never read.
  *
- * The `// duvidabeta` ("beta doubt") and `// testeBeta` ("beta test") markers
- * sit on the assignments of betI and betneg, where a later unconditional
- * assignment makes the selection above it dead.
+ * The `// beta doubt` and `// beta test` markers sit on the assignments of
+ * betI and betneg, where a later unconditional assignment makes the selection
+ * above it dead.
  */
 
 namespace {
@@ -654,7 +654,7 @@ PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cell
                                              double noSlipLiquidHoldup, double &surfaceTension) {
     double liquidDensity;
     double liquidViscosity;
-    if (state.cells[cellIndex].QL < 0.) { // testeBeta
+    if (state.cells[cellIndex].QL < 0.) { // beta test
         if (cellIndex == 0 || cellIndex == state.lastCell)
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
         else
@@ -868,7 +868,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         if (cellIndex > 0)
             betI = state.cells[cellIndex - 1].betPigD;
         if (((0. * state.cells[cellIndex].QG + 1 * state.cells[cellIndex].QL) < 0.))
-            betI = state.cells[cellIndex].betPigE; // duvidabeta
+            betI = state.cells[cellIndex].betPigE; // beta doubt
 
         double betneg;
         if (cellIndex > 0) {
@@ -876,7 +876,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
             if (cellIndex > 1)
                 betneg = state.cells[cellIndex - 2].betPigD;
             if ((0.99 * state.cells[cellIndex - 1].QG + 0.01 * state.cells[cellIndex - 1].QL) < 0.)
-                betneg = state.cells[cellIndex - 1].betPigE; // duvidabeta
+                betneg = state.cells[cellIndex - 1].betPigE; // beta doubt
 
         } else
             betneg = state.cells[cellIndex].bet;
@@ -1048,16 +1048,16 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         if (cellIndex > 0)
             betI = state.cells[cellIndex - 1].betPigD;
         if ((state.cells[cellIndex].MliqiniBuf) < 0.)
-            betI = state.cells[cellIndex].betPigE; // testeBeta
-        betI = state.cells[cellIndex].betPigE;     // duvidabeta
+            betI = state.cells[cellIndex].betPigE; // beta test
+        betI = state.cells[cellIndex].betPigE;     // beta doubt
         double betneg;
         if (cellIndex > 0) {
             betneg = state.cells[cellIndex - 1].betL;
             if (cellIndex > 1)
                 betneg = state.cells[cellIndex - 2].betPigD;
             if (state.cells[cellIndex].MliqiniLBuf < 0.)
-                betneg = state.cells[cellIndex - 1].betPigE; // testeBeta
-            betneg = state.cells[cellIndex - 1].betPigE;     // duvidabeta
+                betneg = state.cells[cellIndex - 1].betPigE; // beta test
+            betneg = state.cells[cellIndex - 1].betPigE;     // beta doubt
         } else
             betneg = state.cells[cellIndex].bet;
 
@@ -1087,7 +1087,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         double liquidDensity;
         double liquidViscosity;
         double surfaceTension;
-        if ((state.cells[cellIndex].MliqiniBuf) < 0.) { // testeBeta
+        if ((state.cells[cellIndex].MliqiniBuf) < 0.) { // beta test
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
             liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
             surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
@@ -1214,8 +1214,8 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         if (cellIndex > 0)
             betI = state.inletCompletionFraction;
         if (state.cells[cellIndex].QL < 0.)
-            betI = state.cells[cellIndex].betPigE; // testeBeta
-        betI = state.cells[cellIndex].betPigE;     // duvidabeta
+            betI = state.cells[cellIndex].betPigE; // beta test
+        betI = state.cells[cellIndex].betPigE;     // beta doubt
         double betneg;
         if (cellIndex > 0) {
             betneg = state.inletCompletionFraction;
@@ -1243,7 +1243,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         double liquidDensity;
         double liquidViscosity;
         double surfaceTension;
-        if (state.cells[cellIndex].QL < 0.) { // testeBeta
+        if (state.cells[cellIndex].QL < 0.) { // beta test
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
             liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
             surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
@@ -1400,8 +1400,8 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         if (cellIndex > 0)
             betI = state.inletCompletionFraction;
         if (state.cells[cellIndex].QL < 0.)
-            betI = state.cells[cellIndex].betPigE; // testeBeta
-        betI = state.cells[cellIndex].betPigE;     // duvidabeta
+            betI = state.cells[cellIndex].betPigE; // beta test
+        betI = state.cells[cellIndex].betPigE;     // beta doubt
         double betneg;
         if (cellIndex > 0) {
             betneg = state.inletCompletionFraction;
@@ -1427,7 +1427,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         double liquidDensity;
         double liquidViscosity;
         double surfaceTension;
-        if (state.cells[cellIndex].MliqiniBuf < 0.) { // testeBeta
+        if (state.cells[cellIndex].MliqiniBuf < 0.) { // beta test
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
             liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
             surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);

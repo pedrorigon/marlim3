@@ -744,7 +744,7 @@ void SProd::configureLatentHeat() {
             }
             string tmp = pathPrefixoArqSaida + "perfilLatente.dat";
             writeTable(tmp, HLatTemp);
-            // caso nao seja simulacao POCO_INJETOR
+            // unless this is an injection-well (POCO_INJETOR) simulation
             if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
                 arqRelatorioPerfis << tmp.c_str() << endl;
                 arqRelatorioPerfis.flush();
@@ -969,7 +969,7 @@ void SProd::resetCouplingAndOutputState() {
         int nevent = arq.logevento.size();
         while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt && contaLog < nevent) {
             time_t now = time(0);
-            tm *ltm = localtime(&now); // Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+            tm *ltm = localtime(&now); // Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
             ofstream escreveIni(tmpLog.c_str(), ios_base::app);
             escreveIni << "Evento Externo = ";
             escreveIni << arq.logevento[contaLog].instante << " ; ";
@@ -1036,7 +1036,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         cout << "EXCECAO INESPERADA: " << excInt.what() << endl;
         // incluir falha
         logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "", "", excInt.what());
-        // gravar arquivo de log
+        // write the log file
         logger.writeOutputLog();
         // encerrar a aplicacao
         exit(EXIT_SUCCESS);

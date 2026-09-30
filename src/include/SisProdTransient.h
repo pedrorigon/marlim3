@@ -53,149 +53,149 @@ struct TransientStepUpdaters {
 /// reference through Ler::atualiza (pGSup, presE, tempE, titE, betaE), are not
 /// const either.
 struct TransientStepState {
-    /// SProd::DTMaxMed -- escrito.
+    /// SProd::DTMaxMed -- written.
     double &meanMaximumTimeStep;
-    /// SProd::DpMaxMed -- escrito.
+    /// SProd::DpMaxMed -- written.
     double &meanMaximumPressureChange;
-    /// SProd::EstadoMaster1 -- escrito.
+    /// SProd::EstadoMaster1 -- written.
     int &masterState;
-    /// SProd::aberto -- escrito.
+    /// SProd::aberto -- written.
     int &surfaceChokeOpen;
-    /// SProd::abertoini -- escrito.
+    /// SProd::abertoini -- written.
     int &initiallyOpen;
-    /// SProd::alteraTempo -- escrito.
+    /// SProd::alteraTempo -- written.
     int &timeChanged;
-    /// SProd::betaE -- escrito.
+    /// SProd::betaE -- written.
     double &inletCompletionFraction;
-    /// SProd::celInter -- escrito.
+    /// SProd::celInter -- written.
     int &interfaceCell;
-    /// SProd::contaMaster1 -- escrito.
+    /// SProd::contaMaster1 -- written.
     int &masterCounter;
-    /// SProd::cpg -- escrito.
+    /// SProd::cpg -- written.
     double** gasSpecificHeatTable;
-    /// SProd::dt -- escrito.
+    /// SProd::dt -- written.
     double &timeStep;
-    /// SProd::dtCFLMed -- escrito.
+    /// SProd::dtCFLMed -- written.
     double &meanCflTimeStep;
-    /// SProd::dtCFLTotal -- escrito.
+    /// SProd::dtCFLTotal -- written.
     double &totalCflTimeStep;
-    /// SProd::dtInter -- escrito.
+    /// SProd::dtInter -- written.
     double &interfaceTimeStep;
-    /// SProd::dtSimMed -- escrito.
+    /// SProd::dtSimMed -- written.
     double &meanSimulationTimeStep;
-    /// SProd::dtSimTotal -- escrito.
+    /// SProd::dtSimTotal -- written.
     double &totalSimulationTimeStep;
-    /// SProd::fontemassCRBuf -- escrito.
+    /// SProd::fontemassCRBuf -- written.
     double &bufferedCompletionMassSource;
-    /// SProd::fontemassGRBuf -- escrito.
+    /// SProd::fontemassGRBuf -- written.
     double &bufferedGasMassSource;
-    /// SProd::fontemassPRBuf -- escrito.
+    /// SProd::fontemassPRBuf -- written.
     double &bufferedLiquidMassSource;
-    /// SProd::indevento -- escrito.
+    /// SProd::indevento -- written.
     int &eventIndex;
-    /// SProd::kontaGolfada -- escrito.
+    /// SProd::kontaGolfada -- written.
     int &slugCount;
-    /// SProd::kontarestriDt -- escrito.
+    /// SProd::kontarestriDt -- written.
     int &timeStepRestrictionCount;
-    /// SProd::masChkSup -- escrito.
+    /// SProd::masChkSup -- written.
     int &surfaceChokeMassFlag;
-    /// SProd::modeloCompleto -- escrito.
+    /// SProd::modeloCompleto -- written.
     int &fullModel;
-    /// SProd::momentoDesesp -- escrito.
+    /// SProd::momentoDesesp -- written.
     double &desperationMoment;
-    /// SProd::mudaModoChk -- escrito.
+    /// SProd::mudaModoChk -- written.
     int &chokeModeChanged;
-    /// SProd::mult -- escrito.
+    /// SProd::mult -- written.
     double &multiplier;
-    /// SProd::presfim -- escrito.
+    /// SProd::presfim -- written.
     double &outletPressure;
-    /// SProd::reinicia -- escrito.
+    /// SProd::reinicia -- written.
     int &restart;
-    /// SProd::restriDt -- escrito.
+    /// SProd::restriDt -- written.
     int &timeStepRestricted;
-    /// SProd::tempoaberto -- escrito.
+    /// SProd::tempoaberto -- written.
     int &openTime;
-    /// SProd::termolivreP -- escrito.
+    /// SProd::termolivreP -- written.
     Vcr<double> &productionSolution;
-    /// SProd::titE -- escrito.
+    /// SProd::titE -- written.
     double &inletQuality;
-    /// SProd::vRazMast0 -- escrito.
+    /// SProd::vRazMast0 -- written.
     double *masterRatio0;
-    /// SProd::vRazMast1 -- escrito.
+    /// SProd::vRazMast1 -- written.
     double *masterRatio1;
-    /// SProd::vRazMastCrit -- escrito.
+    /// SProd::vRazMastCrit -- written.
     double *masterCriticalRatio;
-    /// SProd::velInter -- escrito.
+    /// SProd::velInter -- written.
     double &interfaceVelocity;
-    /// SProd::abreM1 -- so lido.
+    /// SProd::abreM1 -- read only.
     double* masterOpenSchedule;
-    /// SProd::arq -- so lido.
+    /// SProd::arq -- read only.
     Ler &input;
-    /// SProd::celInterIni -- so lido.
+    /// SProd::celInterIni -- read only.
     const int &initialInterfaceCell;
-    /// SProd::celula -- so lido.
+    /// SProd::celula -- read only.
     Cel* cells;
-    /// SProd::celulaG -- so lido.
+    /// SProd::celulaG -- read only.
     CelG* gasCells;
-    /// SProd::chokeSup -- so lido.
+    /// SProd::chokeSup -- read only.
     choke &surfaceChoke;
-    /// SProd::dtCFL -- so lido.
+    /// SProd::dtCFL -- read only.
     std::vector<double> &cflTimeSteps;
-    /// SProd::dtInterIni -- so lido.
+    /// SProd::dtInterIni -- read only.
     const double &initialInterfaceTimeStep;
-    /// SProd::dtSim -- so lido.
+    /// SProd::dtSim -- read only.
     std::vector<double> &simulationTimeSteps;
-    /// SProd::dtauxCFL -- so lido.
+    /// SProd::dtauxCFL -- read only.
     double &auxiliaryCflTimeStep;
-    /// SProd::dtauxFinal -- so lido.
+    /// SProd::dtauxFinal -- read only.
     double &finalAuxiliaryTimeStep;
-    /// SProd::fechaM1 -- so lido.
+    /// SProd::fechaM1 -- read only.
     double* masterCloseSchedule;
-    /// SProd::flut -- so lido.
+    /// SProd::flut -- read only.
     FullMtx<double> &productionFreeTerms;
-    /// SProd::flutG -- so lido.
+    /// SProd::flutG -- read only.
     FullMtx<double> &gasFreeTerms;
-    /// SProd::indTramo -- so lido.
+    /// SProd::indTramo -- read only.
     const int &branchIndex;
-    /// SProd::jMedMov -- so lido.
+    /// SProd::jMedMov -- read only.
     double &movingMeanFlux;
-    /// SProd::kSP -- so lido.
+    /// SProd::kSP -- read only.
     int &stepIndex;
-    /// SProd::matglobP -- so lido.
+    /// SProd::matglobP -- read only.
     BandMtx<double> &productionMatrix;
-    /// SProd::menorDx -- so lido.
+    /// SProd::menorDx -- read only.
     const double &smallestCellLength;
-    /// SProd::nabreM1 -- so lido.
+    /// SProd::nabreM1 -- read only.
     const int &masterOpenCount;
-    /// SProd::ncel -- so lido.
+    /// SProd::ncel -- read only.
     const int &lastCell;
-    /// SProd::ncelGas -- so lido.
+    /// SProd::ncelGas -- read only.
     const int &gasCellCount;
-    /// SProd::ncelperftransp -- so lido.
+    /// SProd::ncelperftransp -- read only.
     int* productionCrossSectionCount;
-    /// SProd::nfechaM1 -- so lido.
+    /// SProd::nfechaM1 -- read only.
     const int &masterCloseCount;
-    /// SProd::noextremo -- so lido.
+    /// SProd::noextremo -- read only.
     const int &endNode;
-    /// SProd::pGSup -- so lido.
+    /// SProd::pGSup -- read only.
     double &gasSurfacePressure;
-    /// SProd::presE -- so lido.
+    /// SProd::presE -- read only.
     double &inletPressure;
-    /// SProd::presMedMov -- so lido.
+    /// SProd::presMedMov -- read only.
     double &movingMeanPressure;
-    /// SProd::tMedMov -- so lido.
+    /// SProd::tMedMov -- read only.
     const double &movingMeanTemperature;
-    /// SProd::taxaDTMax -- so lido.
+    /// SProd::taxaDTMax -- read only.
     std::vector<double> &maximumTimeStepRates;
-    /// SProd::taxaDpMax -- so lido.
+    /// SProd::taxaDpMax -- read only.
     std::vector<double> &maximumPressureRates;
-    /// SProd::tempE -- so lido.
+    /// SProd::tempE -- read only.
     double &inletTemperature;
-    /// SProd::titRev -- so lido.
+    /// SProd::titRev -- read only.
     const double &reverseQuality;
-    /// SProd::velInterIni -- so lido.
+    /// SProd::velInterIni -- read only.
     const double &initialInterfaceVelocity;
-    /// SProd::vg1dSP -- so lido.
+    /// SProd::vg1dSP -- read only.
     varGlob1D* globals;
     /// Everything the step needs that is not its own.
     TransientStepUpdaters updaters;

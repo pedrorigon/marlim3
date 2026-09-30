@@ -135,7 +135,7 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
 
     double betI;
     if (((state.cells[i].MC - state.cells[i].Mliqini) * 0 + 1 * state.cells[i].Mliqini) < 0)
-        betI = state.cells[i].bet; // duvidabeta
+        betI = state.cells[i].bet; // beta doubt
     else
         betI = state.cells[i].betL;
 
@@ -222,8 +222,8 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     state.cells[state.lastCell].MCini = state.cells[state.lastCell].MC;
     if (expli == 0)
         state.cells[state.lastCell].MC = state.productionSolution[2 * state.lastCell];
-    // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     state.cells[state.lastCell - 1].presRini = state.cells[state.lastCell - 1].presR;
     state.cells[state.lastCell - 1].presR = state.cells[state.lastCell].pres;
     state.cells[state.lastCell - 1].MRini = state.cells[state.lastCell - 1].MR;
@@ -314,7 +314,7 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
 
     double betI;
     if (((state.cells[i].MC - state.cells[i].Mliqini) * 0.99 + 0.01 * state.cells[i].Mliqini) < 0)
-        betI = state.cells[i].bet; // duvidabeta
+        betI = state.cells[i].bet; // beta doubt
     else
         betI = state.cells[i].betL;
 
@@ -357,7 +357,7 @@ void updateFlowRates(const TransientStepState &state) {
 
             double betI;
             if (((state.cells[i].MC - state.cells[i].Mliqini) * 0 + 1 * state.cells[i].Mliqini) < 0)
-                betI = state.cells[i].bet; // duvidabeta
+                betI = state.cells[i].bet; // beta doubt
             else
                 betI = state.cells[i].betL;
 
@@ -404,7 +404,7 @@ void updateFlowRates(const TransientStepState &state) {
 
             double betI;
             if (((state.cells[i].MC - state.cells[i].Mliqini) * 0.99 + 0.01 * state.cells[i].Mliqini) < 0)
-                betI = state.cells[i].bet; // duvidabeta
+                betI = state.cells[i].bet; // beta doubt
             else
                 betI = state.cells[i].betL;
 
@@ -684,7 +684,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
         double betloc;
         if ((state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniR > 0.)
-            betloc = state.cells[state.lastCell - 1].bet; // testeBeta//duvidabeta
+            betloc = state.cells[state.lastCell - 1].bet; // beta test // beta doubt
         else
             betloc = betRev;
 
@@ -808,7 +808,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             sinal = 0.;
         double betloc;
         if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
-            betloc = state.cells[state.lastCell - 1].bet; // testeBeta//duvidabeta
+            betloc = state.cells[state.lastCell - 1].bet; // beta test // beta doubt
         else
             betloc = betRev;
         double rhomistBuf = betloc *
@@ -849,7 +849,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
                 sinal = 0.;
             double betloc;
             if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0.0 + 1.0 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
-                betloc = state.cells[state.lastCell - 1].bet; // testeBeta//duvidabeta
+                betloc = state.cells[state.lastCell - 1].bet; // beta test // beta doubt
             else
                 betloc = betRev;
             double rhomistBuf = betloc *
@@ -1210,16 +1210,16 @@ void evaluatePressureRateOfChange(const TransientStepState &state, double razMas
         if (state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area < 1e-3 &&
             (state.meanMaximumPressureChange > state.input.taxaDespre / 10. || state.meanMaximumTimeStep > 0.001))
             state.fullModel = 1;
-        int linAberta = 1; // caso varias valvulas
+        int linAberta = 1; // several-valve case
         for (int i = 0; i <= state.input.nvalv; i++)
             if (state.masterRatio1[i] <= 1e-3)
-                linAberta = 0; // caso varias valvulas
+                linAberta = 0; // several-valve case
         if ((linAberta == 1 && state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area > 1e-3))
-            state.fullModel = 1; // caso varias valvulas
+            state.fullModel = 1; // several-valve case
     }
     for (int i = 0; i <= state.input.nvalv; i++)
         if (state.masterRatio1[i] != state.masterRatio0[i])
-            state.fullModel = 0; // caso varias valvulas
+            state.fullModel = 0; // several-valve case
     if ((state.meanMaximumPressureChange > 10 || state.meanMaximumTimeStep > 1) && state.fullModel == 1 && vexpli == 0) {
         state.fullModel = 0;
     }
@@ -1438,13 +1438,13 @@ void updatePig(const TransientStepState &state) {
     } else {
         state.cells[0].betI = state.inletCompletionFraction;
         if ((state.cells[0].MC - state.cells[0].Mliqini) * 0 + state.cells[0].Mliqini < 0.)
-            state.cells[0].betI = state.cells[0].betPigE; // testeBeta
+            state.cells[0].betI = state.cells[0].betPigE; // beta test
         state.cells[0].betLI = state.cells[0].betI;
     }
     for (int i = 1; i <= state.lastCell; i++) {
         state.cells[i].betI = state.cells[i].betPigE;
         if (state.cells[i].QL > 0.)
-            state.cells[i].betI = state.cells[i - 1].betPigD; // testeBeta
+            state.cells[i].betI = state.cells[i - 1].betPigD; // beta test
         state.cells[i - 1].betRI = state.cells[i].betI;
         if (i < state.lastCell)
             state.cells[i + 1].betLI = state.cells[i].betI;
@@ -1702,10 +1702,10 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
             state.step.cells[i + 1].mudaDTL = state.step.cells[i].mudaDT;
     }
 
-    // caso so Master
-    // caso so Master
+    // master-only case
+    // master-only case
     TimeStepPolicies::apply<TimeStepHook::CouplingIterationStart>(
-        {state.step, kontaAcop, vExpli}); // caso varias valvulas
+        {state.step, kontaAcop, vExpli}); // several-valve case
     if (state.step.restart == -1) {
         restartFractionEvolutionInitial(state.step);
         for (int i = 0; i <= state.step.lastCell; i++) {
@@ -1756,7 +1756,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
 
     if (state.step.cells[state.step.lastCell].alf < 0.05 && state.step.surfaceChokeMassFlag == 1)
         state.step.cells[state.step.lastCell].alf = 0.05;
-    // caso varias valvulas
+    // several-valve case
     for (int j = 0; j <= state.step.input.nvalv; j++) {
         int celposAux;
         if (j > 0)
@@ -1766,7 +1766,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
         if (state.step.cells[celposAux].alf < 0.05 && state.step.masterRatio1[j] <= state.step.input.master1.razareaativ)
             state.step.cells[celposAux].alf = 0.05;
     }
-    // caso varias valvulas
+    // several-valve case
     solvePressureVolumeCoupling(state.step, vExpli);
 
     if (kontaAcop < 1 * state.step.fullModel) {
@@ -1988,7 +1988,7 @@ void writeEventLog(const TransientSolveState &state, int maxEvento) {
         while (fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) {
             // current date/time based on current system
             time_t now = time(0);
-            tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+            tm *ltm = localtime(&now); /////////// Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
             ostringstream saidaT;
             if (state.step.branchIndex < 0) {
                 saidaT << state.logBuffer;
@@ -2114,7 +2114,7 @@ void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
                 escreveIni << "                                 FIM                                  " << endl;
         }
         time_t now = time(0);
-        tm *ltm = localtime(&now); ///////////Retirado de https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+        tm *ltm = localtime(&now); /////////// Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
         escreveIni << "datahora = ";
         escreveIni << ltm->tm_mday << "/";
         escreveIni << 1 + ltm->tm_mon << "/";
@@ -2166,8 +2166,8 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
 
         state.step.restart = 0;
         int celpos = state.step.input.master1.posic;
-        // razMast0=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
-        valveOpeningLow(state.step); // caso varias valvulas
+        // razMast0=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//master-only case
+        valveOpeningLow(state.step); // several-valve case
 
         if (state.step.input.controDesc == 1)
             velmaxdesc = state.updaters.searchUnloadingInjectionPressure();
@@ -2179,14 +2179,14 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         refreshInletCondition(state.step);
 
         for (int i = 0; i <= state.step.input.nvalv; i++)
-            state.step.masterCriticalRatio[i] = 0.5; // caso varias valvulas
-        valveOpeningHigh(state.step);            // caso varias valvulas
-        // razMast=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//caso so Master
+            state.step.masterCriticalRatio[i] = 0.5; // several-valve case
+        valveOpeningHigh(state.step);            // several-valve case
+        // razMast=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//master-only case
         for (int i = 0; i <= state.step.input.nvalv; i++)
             if (state.step.masterRatio1[i] != state.step.masterRatio0[i])
-                state.step.fullModel = 0; // caso varias valvulas
+                state.step.fullModel = 0; // several-valve case
         TimeStepPolicies::apply<TimeStepHook::AfterValveOpenings>(
-            {state.step, kOutsideCouplingLoop, vExpli}); // caso varias valvulas
+            {state.step, kOutsideCouplingLoop, vExpli}); // several-valve case
         if (state.step.fullModel == 0)
             state.step.input.cicloAcopTerm = 0;
         else
