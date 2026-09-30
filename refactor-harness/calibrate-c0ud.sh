@@ -136,7 +136,7 @@ run_case "inst/map-dispatch" "DriftFluxClosure.cpp" \
 
 printf '\nbuffered (was CalcC0UdBuf) -- NEVER executes in the corpus\n'
 run_case "buf/drop-A3-01-betI" "DriftFluxClosure.cpp" \
-    "        betI = state.cells[cellIndex].betPigE;     // duvidabeta
+    "        betI = state.cells[cellIndex].betPigE;     // beta doubt
         double betneg;
         if (cellIndex > 0) {
             betneg = state.cells[cellIndex - 1].betL;" \
