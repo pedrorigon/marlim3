@@ -110,29 +110,29 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
     int maisprof = 0;
     for (int i = 1; i < valveCount; i++)
         if (state.march.productionValveCellIndices[i] < state.march.productionValveCellIndices[maisprof])
-            maisprof = i;                      // busca a vÃ¡lvula mais profunda
-    pchute = state.march.cells[state.march.productionValveCellIndices[maisprof]].pres; // estima uma pressao para a valvula mais profunda da linha,
-    // a pressao na coluna de producao para esta valvula, observar que quando este metodo e chamado,
-    // a marcha na linha de producao jÃ¡ foi feita
+            maisprof = i;                      // finds the deepest valve
+    pchute = state.march.cells[state.march.productionValveCellIndices[maisprof]].pres; // estimates a pressure for the deepest valve of the line,
+    // the pressure in the production tubing at this valve; note that when this method is called,
+    // the march along the production line has already been done
     double deepestValveTemperatureGuess;
-    if (state.march.steadyIteration == 0) {                              // para o caso da primeira iteracao do sistema linha de producao-linha de gas
-        deepestValveTemperatureGuess = state.march.cells[state.march.productionValveCellIndices[maisprof]].temp; // estimativa da temperatura na VGL mais profunda
-        for (int k = state.march.gasCellCount; k > 0; k--) {           // marcha da ultima celula para a primeira
-            // para fazer a estimativa da pressao de njecao
+    if (state.march.steadyIteration == 0) {                              // for the first iteration of the production line-gas line system
+        deepestValveTemperatureGuess = state.march.cells[state.march.productionValveCellIndices[maisprof]].temp; // estimate of the temperature at the deepest gas-lift valve
+        for (int k = state.march.gasCellCount; k > 0; k--) {           // march from the last cell to the first
+            // to estimate the injection pressure
             double dx = 0.5 * (state.march.gasCells[k].dx0 + state.march.gasCells[k].dxL);
             double rhog = state.march.gasCells[k].flui.MasEspGas(pchute, deepestValveTemperatureGuess);
-            pchute += rhog * 9.81 * sin(state.march.gasCells[k].duto.teta) * dx / kPascalPerKgfPerCm2; // avanco apenas pela hidrostatica
+            pchute += rhog * 9.81 * sin(state.march.gasCells[k].duto.teta) * dx / kPascalPerKgfPerCm2; // advance by the hydrostatics only
         }
     } else {
         for (int k = state.march.gasCellCount; k > 0; k--)
-            pchute += state.march.updaters.steadyGasPressureDrop(k); // avanco usando os resultados da ireacao anterior, usando a hidrostatica
-        // e a friccao
+            pchute += state.march.updaters.steadyGasPressureDrop(k); // advance using the results of the previous iteration, with the hydrostatics
+        // and the friction
     }
 
     double delmas = 10;
-    delmas = marchGasSteadySecondary(state.march, pchute); // marcha feita com a pressao de injecao estimada e a vazao de
-    // injecao definida, retorna a diferenca entre a soma das vazÃµes em cada VGL calculadas na marcha
-    // e a vazao de injecao definida, se negativa->pchute baixo, se positiva-> pchute alto
+    delmas = marchGasSteadySecondary(state.march, pchute); // march with the estimated injection pressure and the defined injection
+    // flow rate; returns the difference between the sum of the valve flow rates computed in the march
+    // and the defined injection flow rate: negative -> pchute low, positive -> pchute high
     double pchute2 = pchute;
     int kontaiter = 0;
     double negativeResidualGuess = 0.;
@@ -140,8 +140,8 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
     if (fabs(delmas) < 1e-3)
         return pchute;
     else {
-        if (delmas < 0) { // pchute baixo, nova estimativa aumentando pchute, para encontrar um outro valor
-            // de delmas positivo, para iniciar a falsa corda
+        if (delmas < 0) { // pchute low: new estimate raising pchute, to find another value
+            // of delmas that is positive, to start the false chord
             negativeResidualGuess = pchute2;
             while (delmas < 0 && kontaiter < 800) {
                 pchute2 *= 1.1;
@@ -161,8 +161,8 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
                 }
             }
             positiveResidualGuess = pchute2;
-        } else if (delmas > 0) { // pchute alto, nova estimativa diminuindo pchute, para encontrar um outro valor
-            // de delmas negativo, para iniciar a falsa corda
+        } else if (delmas > 0) { // pchute high: new estimate lowering pchute, to find another value
+            // of delmas that is negative, to start the false chord
             positiveResidualGuess = pchute2;
             while (delmas > 0 && kontaiter < 800) {
                 pchute2 *= 0.9;
@@ -183,22 +183,22 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
             }
             negativeResidualGuess = pchute2;
         }
-        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 0, 0); // calculo de zero de funcao
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 0, 0); // root finding
     }
 }
 
 double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
     int valveCount = state.march.input.nvalvgas;
-    // dois chutes de pressao a montante do choke de injecao, a convergencia para este caso,
-    // choke de injecao e mais dificil, portanto, se testa mais possibiliodades de hutes:
-    double pchute = state.march.injectionChoke.presEstag * 0.8; // pressao a montante do choke 20% menor que a pressao a jusante
-    double pchute2 = state.march.gasCells[0].pres;         // Na primeira iteracao este valor Ã© a prÃ³pria pressao a montante
+    // two pressure guesses upstream of the injection choke; convergence in this case,
+    // with an injection choke, is harder, so more guesses are tried:
+    double pchute = state.march.injectionChoke.presEstag * 0.8; // upstream choke pressure 20% below the downstream pressure
+    double pchute2 = state.march.gasCells[0].pres;         // On the first iteration this value is the upstream pressure itself
 
-    // duas marchas para os dois chutes:
+    // two marches for the two guesses:
     double delmas;
-    delmas = marchGasSteadyTertiary(state.march, pchute); // o valor retornado Ã© a diferenca entre a soma das vazoes VGL
-    // e o valor calculado da vazao no choke de injecao, se der negativo, significa que a pressao a montante
-    // se positivo, pressao a montante muito grande
+    delmas = marchGasSteadyTertiary(state.march, pchute); // the value returned is the difference between the sum of the valve flow rates
+    // and the flow rate computed at the injection choke; negative means the upstream pressure is too low,
+    // positive, the upstream pressure is too high
     double delmas2;
     delmas2 = marchGasSteadyTertiary(state.march, pchute2);
 
@@ -208,7 +208,7 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
     if (fabs(delmas) < 1e-3)
         return pchute;
     else {
-        if (delmas < 0) { // chute de pressao pequeno, deve ser aumentado
+        if (delmas < 0) { // pressure guess too low, to be raised
             negativeResidualGuess = pchute;
             while (delmas < 0 && kontaiter < 800) {
                 pchute *= 1.01;
@@ -220,7 +220,7 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
                 kontaiter++;
             }
             positiveResidualGuess = pchute;
-        } else if (delmas >= 0) { // chute de pressao grande, deve ser diminuido
+        } else if (delmas >= 0) { // pressure guess too high, to be lowered
             kontaiter = 0;
             positiveResidualGuess = pchute;
             while (delmas > 0 && kontaiter < 800) {
@@ -232,8 +232,8 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
             }
             negativeResidualGuess = pchute;
         }
-        // caso nÃ£o funcione com o primeiro chute
-        if (delmas2 >= 0 && kontaiter >= 800) { // chute de pressao pequeno, deve ser aumentado
+        // in case it does not work with the first guess
+        if (delmas2 >= 0 && kontaiter >= 800) { // pressure guess too low, to be raised
             kontaiter = 0;
             positiveResidualGuess = pchute2;
             while (delmas2 > 0 && kontaiter < 800) {
@@ -243,7 +243,7 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
                     positiveResidualGuess = pchute2;
                 kontaiter++;
             }
-            if (kontaiter >= 800) { // falha na busca de estimativa para a falsa corda
+            if (kontaiter >= 800) { // failed to find a guess for the false chord
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
                 else {
@@ -254,7 +254,7 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
                 }
             }
             negativeResidualGuess = pchute2;
-        } else if (delmas2 <= 0 && kontaiter >= 800) { // chute de pressao grande, deve ser diminuido
+        } else if (delmas2 <= 0 && kontaiter >= 800) { // pressure guess too high, to be lowered
             kontaiter = 0;
             negativeResidualGuess = pchute2;
             while (delmas2 < 0 && kontaiter < 800) {
@@ -266,7 +266,7 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
                     negativeResidualGuess = pchute2;
                 kontaiter++;
             }
-            if (kontaiter >= 800) { // falha na busca de estimativa para a falsa corda
+            if (kontaiter >= 800) { // failed to find a guess for the false chord
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
                 else {
@@ -278,7 +278,7 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
             }
             positiveResidualGuess = pchute2;
         }
-        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 0, 1); // calculo de zero de funcao
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 0, 1); // root finding
     }
 }
 
@@ -289,30 +289,30 @@ namespace {
 /// Unlike the forward search this is one block rather than two arms: the reverse
 /// march's residual does not split on sign the same way.
 double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, double reduz, double &guessLowerBound, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute) {
-    if (marchResidual < 0.) { // caso em que pressao a montante do choke < pressao da ultima celula, calculada pela
-        // marcha, isto implica em pressao de chute alta , deve-se agora buscar
-        // uma pressao de chute baixa para que marchResidual seja positivo e assim iniciar o processo
-        // de calculo de zero de funcao
-        negativeResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor negativo
-        // a cada nova busca em que marchResidual se aproxima de zero, mas ainda negativo
-        // negativeResidualGuess Ã© atualizado com a Ãºltima pressao de chute
+    if (marchResidual < 0.) { // case where the upstream choke pressure < the pressure of the last cell computed by the
+        // march: the pressure guess is high, so now look for
+        // a low pressure guess that makes marchResidual positive, to start the
+        // root finding
+        negativeResidualGuess = pchute; // storing the pressure guess that gives the negative value
+        // at each new search in which marchResidual gets closer to zero but is still negative
+        // negativeResidualGuess is updated with the last pressure guess
         while (marchResidual < 0) {
             if (fabs(pchute2 - pchute) / pchute < (1. - reduz) / 10. && kontaiter > 100) {
                 pchute2 *= 0.5;
             }
             pchuteAux = pchute2;
-            pchute2 *= reduz; // Diminuindo a pressao na busca de marchResidual>0
+            pchute2 *= reduz; // Lowering the pressure in search of marchResidual>0
             if (pchute2 <= guessLowerBound)
-                pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound inicialmente
-            // e zero, mas pode acontecer de baixar demais pchute2 ao ponto de marchResidual=-1e10
-            //(pressao abaixo de 0.5 no meio da marcha), neste caso, guessLowerBound se torna este valor de
-            // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
+                pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound is initially
+            // zero, but pchute2 may be lowered so far that marchResidual=-1e10
+            // (pressure below 0.5 somewhere in the march); then guessLowerBound becomes this value of
+            // pchute2, as it is then known that one cannot go below guessLowerBound
             marchResidual = marchReverseProductionSteady(state.march, pchute2);
             if (marchResidual < 0 && marchResidual > -0.9e10)
-                negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
+                negativeResidualGuess = pchute2; // updating negativeResidualGuess
             kontaiter++;
-            if (kontaiter > 100) { // limite de iteracoes, falha na busca do segundo chute
-                // fim da simulacao ou aviso de falha
+            if (kontaiter > 100) { // iteration limit: failed to find the second guess
+                // end of the simulation or a failure warning
                 if ((*state.march.globals).chaverede == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                         NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
@@ -330,12 +330,12 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
                         return 1.1e10;
                 }
             }
-            while (marchResidual < -0.9e10) { // a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
-                // de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
-                // deve-se aumentar a estimativa de pressao baixa
+            while (marchResidual < -0.9e10) { // the pressure reduction was too large and the march could not
+                // reach the end without the pressure falling below 0.5 kgf/cm2;
+                // the low pressure estimate must be raised
                 guessLowerBound = pchute2;
-                pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a menor pressao
-                // que leva a marchResidual<0 e a pressao baixa demais
+                pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the lowest pressure
+                // that gives marchResidual<0 and the pressure that is too low
                 marchResidual = marchReverseProductionSteady(state.march, pchute2);
                 if (marchResidual < 0 && marchResidual > -0.9e10)
                     negativeResidualGuess = pchute2;
@@ -361,24 +361,24 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
             }
         }
         positiveResidualGuess = pchute2;
-    } else if (marchResidual > 0.) { // caso em que pressao a montante do choke > pressao da ultima celula,
-        // calculada pela
-        // marcha, isto implica em pressao de chute baixa , deve-se agora buscar
-        // uma pressao de chute alta para que marchResidual seja negativo e assim iniciar o processo
-        // de calculo de zero de funcao
-        positiveResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor positivo
-        // a cada nova busca em que marchResidual se aproxima de zero, mas ainda positivo
-        // positiveResidualGuess e atualizado com a Ãºltima pressao de chute
+    } else if (marchResidual > 0.) { // case where the upstream choke pressure > the pressure of the last cell
+        // computed by the
+        // march: the pressure guess is low, so now look for
+        // a high pressure guess that makes marchResidual negative, to start the
+        // root finding
+        positiveResidualGuess = pchute; // storing the pressure guess that gives the positive value
+        // at each new search in which marchResidual gets closer to zero but is still positive
+        // positiveResidualGuess is updated with the last pressure guess
         while (marchResidual > 0) {
             pchuteAux = pchute2;
-            pchute2 *= aumenta; // Aumentando a pressao na busca de marchResidual>0
+            pchute2 *= aumenta; // Raising the pressure in search of marchResidual>0
             int limpres = 0;
             marchResidual = marchReverseProductionSteady(state.march, pchute2);
             if (marchResidual > 0 && marchResidual < 0.9e10)
-                positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
+                positiveResidualGuess = pchute2; // updating positiveResidualGuess
             kontaiter++;
-            if (kontaiter > 100) { // limite de iteracoes, falha na busca do segundo chute
-                // fim da simulacao ou aviso de falha
+            if (kontaiter > 100) { // iteration limit: failed to find the second guess
+                // end of the simulation or a failure warning
                 if ((*state.march.globals).chaverede == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                         NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
@@ -396,14 +396,14 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
                         return 1.1e10;
                 }
             }
-            while (marchResidual > 0.9e10) { // o incremento de pressao foi demais e a marcha nao foi capaz
-                // de ir ate o final sem que a pressao ficasse maior do que a pressao estatica
-                // em um eventual IPR no meio da marcha ou maior que o limitre maximo de pressao
-                // da tabela PVTSim, quando for este o caso
-                // deve-se diminuir a estimativa de pressao baixa
+            while (marchResidual > 0.9e10) { // the pressure increment was too large and the march could not
+                // reach the end without the pressure rising above the static pressure
+                // of an IPR along the march, or above the maximum pressure
+                // of the PVTSim table, when there is one;
+                // the low pressure estimate must be lowered
                 guessLowerBound = pchute2;
-                pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a maior pressao
-                // que leva a marchResidual>0 e a pressao alta demais
+                pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the highest pressure
+                // that gives marchResidual>0 and the pressure that is too high
                 marchResidual = marchReverseProductionSteady(state.march, pchute2);
                 if (marchResidual > 0 && marchResidual < 0.9e10)
                     positiveResidualGuess = pchute2;
@@ -432,28 +432,28 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
         negativeResidualGuess = pchute2;
     }
 
-    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0); // com as duas estimativas de pressao
-    // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
-    // de funcao
+    return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0); // with the two pressure estimates
+    // on opposite-sign sides of the curve, the root finding
+    // starts
 }
 
 /// Walks the guess until the reverse march stops returning a sentinel.
 bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, double pchuteAux0, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute, double chute, double &abortValue) {
     if ((marchResidual < -0.9e10 || marchResidual > 0.9e10) && kontaiter <= 100) {
         double valtemp;
-        valtemp = marchReverseProductionSteady(state.march, pchuteAux);   // marcha com pchuteAux
-        while (valtemp > 0.9e10 && marchResidual > 0.9e10) { // estimativa de pressao de fundo ainda alta
-            pchuteAux *= 0.99;                     // reduzindo a estimativa
+        valtemp = marchReverseProductionSteady(state.march, pchuteAux);   // march with pchuteAux
+        while (valtemp > 0.9e10 && marchResidual > 0.9e10) { // bottom-hole pressure estimate still high
+            pchuteAux *= 0.99;                     // lowering the estimate
             valtemp = marchReverseProductionSteady(state.march, pchuteAux);
-            kontaiter++; // 50 iteracoes no maximo
+            kontaiter++; // at most 50 iterations
         }
-        while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter < 100) { // estimativa de pressao de fundo ainda baixa
+        while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter < 100) { // bottom-hole pressure estimate still low
             if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
-                pchuteAux *= 1.01; // aumentando a estimativa
-            // verificando se este aumento ultrapassa o limite de pressao de uma eventual IPR no
-            // fundo
+                pchuteAux *= 1.01; // raising the estimate
+            // checking whether this raise exceeds the pressure limit of an IPR at the
+            // bottom
             int limpres = 0;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchuteAux) < -0.01 * state.march.cells[0].acsr.ipr.Pres) {
@@ -462,41 +462,41 @@ bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, double
                 if (pchuteAux > 1.01 * state.march.cells[0].acsr.ipr.Pres)
                     pchuteAux = 1.01 * state.march.cells[0].acsr.ipr.Pres;
 
-                limpres = 1; // indicadpor de que este avanÃ§o de pressao esta muito alto
-                // outros avancos devem ser feitos em um passo menor
+                limpres = 1; // flag: this pressure step is too large;
+                // further steps must be smaller
             }
-            // verificando se este aumento de estimativa foca acima do valor maximo de pressao
-            // de uma eventual tabela PVTSim
+            // checking whether this raised estimate is above the maximum pressure
+            // of a PVTSim table, if there is one
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
-            valtemp = marchReverseProductionSteady(state.march, pchuteAux); // nova tentativa
-            if (valtemp < -0.9e10 && limpres == 1) { // continua alto e existe o indicador
-                // de que deve-se usar um passo de aumento de pressao menor
+            valtemp = marchReverseProductionSteady(state.march, pchuteAux); // new attempt
+            if (valtemp < -0.9e10 && limpres == 1) { // still high, and the flag says
+                // a smaller pressure step must be used
                 int iterpres = 0;
-                while (valtemp < -0.9e10 && iterpres < 10) { // novo laco com um passo menor,
-                    // maximo de 10 iteracoes
+                while (valtemp < -0.9e10 && iterpres < 10) { // new loop with a smaller step,
+                    // at most 10 iterations
                     pchuteAux *= 1.001;
                     valtemp = marchReverseProductionSteady(state.march, pchuteAux);
                     iterpres++;
                 }
                 if (iterpres >= 10) {
-                    // caso em que atingiu o maximo de passos de incremento de pressa em uma situacao
-                    // de passo pequeno, retorna um aviso que deu problema ou finaliza a simulacao
+                    // case where the maximum number of pressure steps was reached with a
+                    // small step: returns a warning that something went wrong, or ends the simulation
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
-                        // neste caso, se finaliza a simulacao, nao tem um transiente
-                        // a ser feito a seguir e nem se estÃ¡ em uma rede
+                        // in this case the simulation ends: there is no transient
+                        // to run next and this is not a network
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                     else {
-                        // apresenta apenas um aviso
+                        // only shows a warning
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                        // se for em uma iteracao de rede, apos a primeira iteracao
+                        // if in a network iteration, after the first iteration
                         if ((*state.march.globals).iterRede > 0)
                             {
                                 abortValue = -1.1e10;
                                 return true;
                             }
-                        // se logo apÃƒÂ³s tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                        // if a transient simulation follows, or this is the first network iteration
                         else
                             {
                                 abortValue = 1.1e10;
@@ -510,7 +510,7 @@ bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, double
             }
             kontaiter++;
         }
-        if (valtemp > -0.9e10 && valtemp < 0.9e10) { // conseguiu fazer a marcha atÃƒÂ© o final
+        if (valtemp > -0.9e10 && valtemp < 0.9e10) { // the march reached the end
             marchResidual = valtemp;
             pchute = pchuteAux;
         }
@@ -520,9 +520,9 @@ bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, double
 
 /// Moves the guess according to which sentinel the reverse march returned.
 void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double marchResidual, double &pchuteAux, double perdafric, double &taux) {
-    if (marchResidual < -0.9e10) { // pressao muito baixa na marcha, deve ser aumentado o valor de chute
-        // faz-se uma nova estimativa, sÃ³ que agora admitindo uma hidrostÃ¡tica de Ã¡gua,
-        // o que darÃ¡ uma pressao de fundpo mais alta
+    if (marchResidual < -0.9e10) { // pressure too low in the march: the guess must be raised
+        // a new estimate is made, now assuming a water hydrostatic head,
+        // which gives a higher bottom-hole pressure
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
@@ -548,15 +548,15 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1100)
-            pchuteAux = 1100;  // limite de pchuteAux
-    } else if (marchResidual > 0.9e10) { // pressÃƒÂ£o em algum ponto ficou acima de alguma pressao estatica
-        // deve-se diminuir o valor do chute
+            pchuteAux = 1100;  // pchuteAux limit
+    } else if (marchResidual > 0.9e10) { // the pressure somewhere went above a static pressure;
+        // the guess must be lowered
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchuteAux, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
-            // neste caso, utiliza-se uma fraÃ§Ã£o de vazio alta para a hidrostÃ¡tica
+            // in this case a high void fraction is used for the hydrostatics
             double alfa = 0.8;
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
@@ -586,15 +586,15 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
     if (chute < 0) {
 
         if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
-            // este espaco faz uma estimativa de quanto deve ser a perda de carga media
-            // a partir do valor da vazao no inicio da tubulacao, isto e feito apenas
-            // se existir uma fonte de liquido, celula[0].acsr.tipo == 2
-            taux = state.march.input.celp[0].textern; // a temperatura em que esta estimativa sera feita
-            // e dada pela temperatura da fonte, a pressao para o calculo das propriedades
-            // e feita por pGSup
+            // this block estimates the mean pressure loss
+            // from the flow rate at the start of the pipe; this is done only
+            // if there is a liquid source, celula[0].acsr.tipo == 2
+            taux = state.march.input.celp[0].textern; // the temperature of this estimate
+            // is the source's; the pressure for the properties
+            // is pGSup
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
-            ///////////propriedades fisicas:
+            /////////// physical properties:
             double completionFraction = state.march.cells[0].acsr.injl.bet;
             completionFractionGuess = completionFraction;
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
@@ -607,29 +607,29 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
             double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            // estimativa grosseira da vazao massica do liquido complementar
+            // rough estimate of the completion-fluid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
-            // estimativa grosseira da vazao massica de liquido e gas produzidos
+            // rough estimate of the produced liquid and gas mass flow rates
             double massic;
-            // massas especificas, condicao standard
+            // densities at standard conditions
             double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
-            // multiplicador da vazao standard para se obter a Vazao massicagÃ¡s+liquido produzido
+            // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
             // massic *= multiplicador;//alteracao8
             massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
-            // titulo do gas em relacao a misturaoleo+agua+gas
+            // gas quality relative to the oil+water+gas mixture
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
-            double massicP = (1. - fracmasshidra) * massic; // vazao massica de liquido produzido
-            double massicG = fracmasshidra * massic;        // vazao massaica de gas
-            /// estimativa grosseira da velocidade da mistura
+            double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
+            double massicG = fracmasshidra * massic;        // gas mass flow rate
+            /// rough estimate of the mixture velocity
             j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
-            // estimativa da fracao de vazio sem escorregamento
+            // no-slip void fraction estimate
             double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
-            // propriedades de mistura
+            // mixture properties
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
-            // estimativa de numero de Reynolds
+            // Reynolds number estimate
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);
@@ -637,47 +637,47 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
                 double dhid = 4 * state.march.cells[0].duto.area / state.march.cells[0].duto.peri;
                 reynolds = state.march.cells[0].Rey(dhid, j, rmis, visMis);
             }
-            // estimativa de um fator de friccao
+            // friction factor estimate
             frictionFactor = state.march.cells[0].fric(reynolds, state.march.cells[0].duto.rug / state.march.cells[0].duto.a);
         }
         double tmparea = state.march.cells[0].duto.area;
         double tmpperi = state.march.cells[0].duto.peri;
-        // estimativa da perda por friccao no sistema, se o acessorio no inicio da tubulacao
-        // nao for uma fonte de liquido, esta estimativa sera zero
+        // estimate of the friction loss in the system; if the accessory at the start of the pipe
+        // is not a liquid source, this estimate is zero
         perdafric = (frictionFactor * rmis * j * fabs(j) / 2.) * tmpperi / tmparea;
-        // se o acessorio for uma IPR, a estimativa serÃ¡ uma pressao prÃ³xima a uma vazao baixa
-        // no fundo do poco
-        // se nao for IPR, a estimativa continua, considerando a perda de carga e a hidrostatica,
-        // que serÃ¡ avaliada neste laco
+        // if the accessory is an IPR, the estimate is a pressure close to a low flow rate
+        // at the bottom of the well
+        // if it is not an IPR, the estimate goes on with the pressure loss and the hydrostatics,
+        // evaluated in this loop
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchute, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchute, taux);
-            // se o sistema nao for um anel principal de GL
-            // para a estimativa de pressao, se utilizara so a hidrostatica de liquido, o que dara um
-            // chute inicial de pressao muito alta
+            // if the system is not a main gas-lift ring
+            // the pressure estimate uses only the liquid hydrostatics, which gives a
+            // very high initial pressure guess
             double alfa = 0.;
             if (completionFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
             }
             if (state.march.annulusDrift == 0)
-                alfa = 1.; // se for o anel, so se tem gas
+                alfa = 1.; // if it is the ring, there is only gas
             else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
+            // pressure advance by the hydrostatics and the estimated friction loss
             pchute += ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2);
-            // incremento de pressao devido a algum ganho de pressao constante em alguma celula
+            // pressure increment from a constant pressure gain in some cell
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchute += state.march.cells[i - 1].acsr.delp;
-            // caso exista alguma IPR no meio do duto, verifica se a pressao estimada esta maior que
-            // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
-            // para evitar isto, se corrige a pressao para um valor proximo da
-            // pressao estatica da IPR da celula
+            // if there is an IPR along the pipe, checks whether the estimated pressure is above
+            // the static pressure: this solver does not work with negative flow rates;
+            // to avoid them, the pressure is corrected to a value close to the
+            // static pressure of the cell's IPR
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -0.01 * state.march.cells[i - 1].acsr.ipr.Pres) && i == 1) {
                 pchute = (10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
@@ -686,16 +686,16 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
                 if (pchute < 1.01 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            // tambÃ©m se evita um chute com valores maiores que o limite maximo de uma tabela
-            // no caso de se estar usando PVTSim
+            // a guess above the maximum limit of a table is also avoided
+            // when PVTSim is used
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
 
         if (pchute > 1000)
-            pchute = 1000; // pressao maxima de chute
+            pchute = 1000; // maximum pressure guess
     } else
-        pchute = chute; // caso chute nao seja negativo utiliza a estimativa enviada na
+        pchute = chute; // when chute is not negative, the estimate passed in is used
 }
 
 }  // namespace
@@ -703,12 +703,12 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
 double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &state, double chute) {
     state.reverseSteady = 1;
     state.march.convergenceMonitor = 1000.;
-    // busca de dois chutes iniciais com valores com sinais opostos
-    // para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
-    double pchute = state.march.gasSurfacePressure; // inicializando o valor de pchute com o valor da pressao a jusante
-    // do choke, pchute sera o valor de chute de fato no processo de busca
-    // se o valor de chute>0, pchute=chute, senao, ele e estimado
-    double taux; // valor de temperatura auxiliar para o eventual calculo
+    // search for two initial guesses whose values have opposite signs
+    // for marchaProdPerm1, to start the root finding.
+    double pchute = state.march.gasSurfacePressure; // initialising pchute with the pressure downstream
+    // of the choke; pchute is the guess actually used in the search
+    // if chute>0, pchute=chute, otherwise it is estimated
+    double taux; // auxiliary temperature value for a possible calculation
     // de pchute
     double j = 0.;
     double rmis = 0.;
@@ -717,63 +717,63 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     double completionFractionGuess = 0.;
 
     estimateInitialReverseBottomHolePressure(state, completionFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
-    // lista de parametro do metodo
-    double pchute2;        // segundo chute de pressao da busca
-    double pchuteAux = 0.; // auxiliar na busca de dos chutes de pressao
-    // necessarios para se dar partida no metodo de calculo de raiz
-    double marchResidual; // marchResidual recebe sempre o valor retornado pelo procedimento de marcha
-    // neste caso, Ã© a pressao a montante do choke-a pressao da ultima celula, calculada pela
-    // marcha
+    // the method's parameter list
+    double pchute2;        // second pressure guess of the search
+    double pchuteAux = 0.; // helper in the search for the two pressure guesses
+    // needed to start the root-finding method
+    double marchResidual; // marchResidual always receives the value the march returns
+    // here, the upstream choke pressure minus the pressure of the last cell computed by the
+    // march
     marchResidual = marchReverseProductionSteady(state.march, pchute);
     state.march.searchOrigin = 1;
-    // a marcha pode dar problemas, ou a pressao em algum ponto deu acima da pressao estÃ¡tica de
-    // de alguma IPR no meio do caminho, retorna 1e10,
-    // ou antes de atingir a ultima celula, a pressao ficou proximo de zero, ou a pressao
-    // retorna -1e10, ou a pressao, para o caso PVTSim, ficou acima da pressao maxima da tabela
-    // retorna 1e10
+    // the march can fail: the pressure somewhere rose above the static pressure of
+    // some IPR along the way, returns 1e10;
+    // or before reaching the last cell the pressure got close to zero, or the pressure
+    // returns -1e10; or, with PVTSim, the pressure rose above the table's maximum,
+    // returns 1e10
     classifyReverseMarchSentinel(state, marchResidual, pchuteAux, perdafric, taux);
 
 
-    // para o caso de ter dado eerado a primeira marcha, com pchuteAux faz-se uma nova tentativa
-    int kontaiter = 0; // contador para o laco em que se tentara uma nova estimativa
-    // em que ao menos os valores 1e10 ou 1e-10 nÃ£o seja retornados
+    // if the first march went wrong, a new attempt is made with pchuteAux
+    int kontaiter = 0; // counter for the loop that tries a new estimate
+    // for which at least 1e10 or 1e-10 is not returned
     double pchuteAux0 = pchuteAux;
     double abortValue;
     if (retryUntilReverseMarchCompletes(state, pchuteAux0, kontaiter, marchResidual, pchuteAux, pchute, chute, abortValue))
         return abortValue;
-    if (kontaiter > 100) { // chegou ao limite da iteracao
+    if (kontaiter > 100) { // iteration limit reached
         if ((*state.march.globals).chaverede == 0) {
-            // neste caso, se finaliza a simulacao, nao tem um transiente
-            // a ser feito a seguir e nem se estÃ¡ em uma rede
+            // in this case the simulation ends: there is no transient
+            // to run next and this is not a network
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
-                // apresenta apenas um aviso
+                // only shows a warning
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                // se for em uma iteracao de rede, apos a primeira iteracao
+                // if in a network iteration, after the first iteration
                 if ((*state.march.globals).iterRede > 0)
                     return -1.1e10;
-                // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                // if a transient simulation follows, or this is the first network iteration
                 else
                     return 1.1e10;
             }
         } else {
-            // se for em uma iteracao de rede, apos a primeira iteracao
+            // if in a network iteration, after the first iteration
             if ((*state.march.globals).iterRede > 0)
                 return -1.1e10;
-            // se logo apÃ³s tem uma simulacao transiente ou se esta na primeira iteracao de rede
+            // if a transient simulation follows, or this is the first network iteration
             else
                 return 1.1e10;
         }
     }
 
-    // caso o laÃ§o anterior tenha levado a estimativa de um valor 1e10 para um valor -1e10
-    // ou tenha levado para um valor de -1e10 para 1e10
-    // ou seja, de um chute de pressao alto demais para finalizar a marcha
-    // para um chute de pressao baixo demais para terminar a marcha ou vice versa
+    // if the previous loop took the estimate from 1e10 to -1e10
+    // or from -1e10 to 1e10,
+    // that is, from a pressure guess too high to finish the march
+    // to one too low to finish it, or the other way round,
     while ((marchResidual < -0.9e10 || marchResidual > 0.9e10) && kontaiter < 100) {
-        pchute = 0.5 * (pchute + pchuteAux); // busca-se um valor medio
-        // entre o alto demais e o baixo demais
+        pchute = 0.5 * (pchute + pchuteAux); // a middle value is sought
+        // between the too high and the too low
         if ((fabs(pchute - pchuteAux) / pchute) < 0.001 && marchResidual < -0.9e10) {
             pchute = 1.05 * pchute;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[0].acsr.ipr.Pres - pchute) > 0.00 * state.march.cells[0].acsr.ipr.Pres) {
@@ -806,7 +806,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
                 return 1.1e10;
         }
     }
-    // caso tenha sido possivel obter um chute de pressao em que foi possivel finalizar a marcha
+    // if a pressure guess that lets the march finish was found
     kontaiter = 0;
     pchute2 = pchute;
     double negativeResidualGuess = 0.;
@@ -830,13 +830,13 @@ namespace {
 /// Inner loop of bracketFromLowGuess: the outer loop moves the guess, this one
 /// backs off when the move overshot and the march returned a sentinel.
 bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, double &guessLowerBound, double &positiveResidualGuess, int &kontaiter, double &marchResidual, double pchuteAux, double &pchute2, double chute, int kontaTenta, double &abortValue) {
-    // de ir ate o final sem que a pressao ficasse maior do que a pressao estatica
-    // em um eventual IPR no meio da marcha ou maior que o limitre maximo de pressao
-    // da tabela PVTSim, quando for este o caso
-    // deve-se diminuir a estimativa de pressao baixa
+    // reach the end without the pressure rising above the static pressure
+    // of an IPR along the march, or above the maximum pressure
+    // of the PVTSim table, when there is one;
+    // the low pressure estimate must be lowered
     guessLowerBound = pchute2;
-    pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a maior pressao
-    // que leva a marchResidual>0 e a pressao alta demais
+    pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the highest pressure
+    // that gives marchResidual>0 and the pressure that is too high
     marchResidual = marchProductionSteady(state.march, pchute2);
     if (fabs(marchResidual) > 1.01e10) {
         if (kontaTenta < 0)
@@ -905,17 +905,17 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, doubl
 /// twin is bracketFromHighGuess; the two are not each other's mirror, which is
 /// why they are two functions and not one with a sign parameter.
 bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &guessLowerBound, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
-    // calculada pela
-    // marcha, isto implica em pressao de chute baixa , deve-se agora buscar
-    // uma pressao de chute alta para que marchResidual seja negativo e assim iniciar o processo
-    // de calculo de zero de funcao
-    positiveResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor positivo
-    // a cada nova busca em que marchResidual se aproxima de zero, mas ainda positivo
-    // positiveResidualGuess e atualizado com a Ãºltima pressao de chute
+    // computed by the
+    // march: the pressure guess is low, so now look for
+    // a high pressure guess that makes marchResidual negative, to start the
+    // root finding
+    positiveResidualGuess = pchute; // storing the pressure guess that gives the positive value
+    // at each new search in which marchResidual gets closer to zero but is still positive
+    // positiveResidualGuess is updated with the last pressure guess
     int kontaReverso = 0;
     while (marchResidual > 0) {
         pchuteAux = pchute2;
-        pchute2 *= amplifica; // Aumentando a pressao na busca de marchResidual>0
+        pchute2 *= amplifica; // Raising the pressure in search of marchResidual>0
         int limpres = 0;
         if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
             (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
@@ -980,7 +980,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
                 }
         }
         if (marchResidual > 0 && marchResidual < 0.9e10) {
-            positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
+            positiveResidualGuess = pchute2; // updating positiveResidualGuess
             if (marchResidual > val0 && state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && state.march.input.lingas == 0) {
 
                 kontaReverso++;
@@ -997,8 +997,8 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
                 val0 = marchResidual;
         }
         kontaiter++;
-        if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) { // limite de iteracoes, falha na busca do segundo chute
-            // fim da simulacao ou aviso de falha
+        if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) { // iteration limit: failed to find the second guess
+            // end of the simulation or a failure warning
             if ((*state.march.globals).chaverede == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
@@ -1035,7 +1035,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
                     }
             }
         }
-        while (marchResidual > 0.9e10) { // o incremento de pressao foi demais e a marcha nao foi capaz
+        while (marchResidual > 0.9e10) { // the pressure increment was too large and the march could not
             if (raisePressureUntilMarchCompletes(state, guessLowerBound, positiveResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, chute, kontaTenta, abortValue))
                 return true;
         }
@@ -1048,24 +1048,24 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
 ///
 /// One arm of the sign split that ends searchProductionBottomHolePressure.
 bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &guessLowerBound, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
-    // marcha, isto implica em pressao de chute alta , deve-se agora buscar
-    // uma pressao de chute baixa para que marchResidual seja positivo e assim iniciar o processo
-    // de calculo de zero de funcao
-    negativeResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor negativo
-    // a cada nova busca em que marchResidual se aproxima de zero, mas ainda negativo
-    // negativeResidualGuess Ã© atualizado com a Ãºltima pressao de chute
+    // march: the pressure guess is high, so now look for
+    // a low pressure guess that makes marchResidual positive, to start the
+    // root finding
+    negativeResidualGuess = pchute; // storing the pressure guess that gives the negative value
+    // at each new search in which marchResidual gets closer to zero but is still negative
+    // negativeResidualGuess is updated with the last pressure guess
     int kontaReverso = 0;
     while (marchResidual < 0) {
         if (fabs(pchute2 - pchute) / pchute < (1. - reduz) / 10. && kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
             pchute2 *= 0.5;
         }
         pchuteAux = pchute2;
-        pchute2 *= reduz; // Diminuindo a pressao na busca de marchResidual>0
+        pchute2 *= reduz; // Lowering the pressure in search of marchResidual>0
         if (pchute2 <= guessLowerBound)
-            pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound inicialmente
-        // e zero, mas pode acontecer de baixar demais pchute2 ao ponto de marchResidual=-1e10
-        //(pressao abaixo de 0.5 no meio da marcha), neste caso, guessLowerBound se torna este valor de
-        // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
+            pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound is initially
+        // zero, but pchute2 may be lowered so far that marchResidual=-1e10
+        // (pressure below 0.5 somewhere in the march); then guessLowerBound becomes this value of
+        // pchute2, as it is then known that one cannot go below guessLowerBound
         marchResidual = marchProductionSteady(state.march, pchute2);
         if (fabs(marchResidual) > 1.01e10) {
             if (kontaTenta < 0)
@@ -1085,7 +1085,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
                 }
         }
         if (marchResidual < 0 && marchResidual > -0.9e10) {
-            negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
+            negativeResidualGuess = pchute2; // updating negativeResidualGuess
             if (marchResidual < val0 && state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && state.march.input.lingas == 0) {
 
                 kontaReverso++;
@@ -1101,8 +1101,8 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
                 val0 = marchResidual;
         }
         kontaiter++;
-        if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) { // limite de iteracoes, falha na busca do segundo chute
-            // fim da simulacao ou aviso de falha
+        if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) { // iteration limit: failed to find the second guess
+            // end of the simulation or a failure warning
             if ((*state.march.globals).chaverede == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
@@ -1139,12 +1139,12 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
                     }
             }
         }
-        while (marchResidual < -0.9e10) { // a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
-            // de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
-            // deve-se aumentar a estimativa de pressao baixa
+        while (marchResidual < -0.9e10) { // the pressure reduction was too large and the march could not
+            // reach the end without the pressure falling below 0.5 kgf/cm2;
+            // the low pressure estimate must be raised
             guessLowerBound = pchute2;
-            pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a menor pressao
-            // que leva a marchResidual<0 e a pressao baixa demais
+            pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the lowest pressure
+            // that gives marchResidual<0 and the pressure that is too low
             marchResidual = marchProductionSteady(state.march, pchute2);
             if (fabs(marchResidual) > 1.01e10) {
                 if (kontaTenta < 0)
@@ -1212,7 +1212,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
 bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchuteAux0, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute, double chute, int kontaTenta, double &abortValue) {
     if ((marchResidual < -0.9e10 || marchResidual > 0.9e10) && kontaiter < 50) {
         double valtemp;
-        valtemp = marchProductionSteady(state.march, pchuteAux); // marcha com pchuteAux
+        valtemp = marchProductionSteady(state.march, pchuteAux); // march with pchuteAux
         if (fabs(valtemp) > 1.01e10) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
             if (kontaTenta < 0)
@@ -1230,8 +1230,8 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
                     return true;
                 }
         }
-        while (valtemp > 0.9e10 && marchResidual > 0.9e10) { // estimativa de pressao de fundo ainda alta
-            pchuteAux *= 0.99;                     // reduzindo a estimativa
+        while (valtemp > 0.9e10 && marchResidual > 0.9e10) { // bottom-hole pressure estimate still high
+            pchuteAux *= 0.99;                     // lowering the estimate
             valtemp = marchProductionSteady(state.march, pchuteAux);
             if (fabs(valtemp) > 1.01e10) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
@@ -1250,15 +1250,15 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
                         return true;
                     }
             }
-            kontaiter++; // 50 iteracoes no maximo
+            kontaiter++; // at most 50 iterations
         }
-        while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // estimativa de pressao de fundo ainda baixa
+        while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // bottom-hole pressure estimate still low
             if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
-                pchuteAux *= 1.01; // aumentando a estimativa
-            // verificando se este aumento ultrapassa o limite de pressao de uma eventual IPR no
-            // fundo
+                pchuteAux *= 1.01; // raising the estimate
+            // checking whether this raise exceeds the pressure limit of an IPR at the
+            // bottom
             int limpres = 0;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[0].acsr.ipr.Pres) {
@@ -1267,14 +1267,14 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
                 if (pchuteAux < 0.99 * state.march.cells[0].acsr.ipr.Pres)
                     pchuteAux = 0.99 * state.march.cells[0].acsr.ipr.Pres;
 
-                limpres = 1; // indicadpor de que este avanÃ§o de pressao esta muito alto
-                // outros avancos devem ser feitos em um passo menor
+                limpres = 1; // flag: this pressure step is too large;
+                // further steps must be smaller
             }
-            // verificando se este aumento de estimativa foca acima do valor maximo de pressao
-            // de uma eventual tabela PVTSim
+            // checking whether this raised estimate is above the maximum pressure
+            // of a PVTSim table, if there is one
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
-            valtemp = marchProductionSteady(state.march, pchuteAux); // nova tentativa
+            valtemp = marchProductionSteady(state.march, pchuteAux); // new attempt
             if (fabs(valtemp) > 1.01e10) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
                 if (kontaTenta < 0)
@@ -1292,11 +1292,11 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
                         return true;
                     }
             }
-            if (valtemp < -0.9e10 && limpres == 1) { // continua alto e existe o indicador
-                // de que deve-se usar um passo de aumento de pressao menor
+            if (valtemp < -0.9e10 && limpres == 1) { // still high, and the flag says
+                // a smaller pressure step must be used
                 int iterpres = 0;
-                while (valtemp < -0.9e10 && iterpres < 10) { // novo laco com um passo menor,
-                    // maximo de 10 iteracoes
+                while (valtemp < -0.9e10 && iterpres < 10) { // new loop with a smaller step,
+                    // at most 10 iterations
                     pchuteAux *= 1.001;
                     valtemp = marchProductionSteady(state.march, pchuteAux);
                     if (fabs(valtemp) > 1.01e10) {
@@ -1319,30 +1319,30 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
                     iterpres++;
                 }
                 if (iterpres >= 10) {
-                    // caso em que atingiu o maximo de passos de incremento de pressa em uma situacao
-                    // de passo pequeno, retorna um aviso que deu problema ou finaliza a simulacao
+                    // case where the maximum number of pressure steps was reached with a
+                    // small step: returns a warning that something went wrong, or ends the simulation
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
-                        // neste caso, se finaliza a simulacao, nao tem um transiente
-                        // a ser feito a seguir e nem se estÃ¡ em uma rede
+                        // in this case the simulation ends: there is no transient
+                        // to run next and this is not a network
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                         logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                    "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                    "", "");
                     } else {
-                        // apresenta apenas um aviso
+                        // only shows a warning
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
                         if (kontaTenta < 0)
                             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                        "", "");
-                        // se for em uma iteracao de rede, apos a primeira iteracao
+                        // if in a network iteration, after the first iteration
                         if ((*state.march.globals).iterRede > 0)
                             {
                                 abortValue = -1.1e10;
                                 return true;
                             }
-                        // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                        // if a transient simulation follows, or this is the first network iteration
                         else
                             {
                                 abortValue = 1.1e10;
@@ -1356,7 +1356,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
             }
             kontaiter++;
         }
-        if (valtemp > -0.9e10 && valtemp < 0.9e10) { // conseguiu fazer a marcha atÃƒÂ© o final
+        if (valtemp > -0.9e10 && valtemp < 0.9e10) { // the march reached the end
             marchResidual = valtemp;
             pchute = pchuteAux;
         }
@@ -1369,9 +1369,9 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
 /// -1e10 means the pressure fell near zero before the last cell, 1e10 means it
 /// rose above a static pressure or above the table's maximum.
 void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResidual, double &pchuteAux, double completionFractionGuess, double perdafric, double &taux, double pchute) {
-    if (marchResidual < -0.9e10) { // pressao muito baixa na marcha, deve ser aumentado o valor de chute
-        // faz-se uma nova estimativa, sÃ³ que agora admitindo uma hidrostÃ¡tica de Ã¡gua,
-        // o que darÃ¡ uma pressao de fundpo mais alta
+    if (marchResidual < -0.9e10) { // pressure too low in the march: the guess must be raised
+        // a new estimate is made, now assuming a water hydrostatic head,
+        // which gives a higher bottom-hole pressure
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
@@ -1402,16 +1402,16 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1000) {
-            pchuteAux = 1000; // limite de pchuteAux
+            pchuteAux = 1000; // pchuteAux limit
         }
-    } else if (marchResidual > 0.9e10) { // pressao em algum ponto ficou acima de alguma pressao estatica
-        // deve-se diminuir o valor do chute
+    } else if (marchResidual > 0.9e10) { // the pressure somewhere went above a static pressure
+        // the guess must be lowered
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchuteAux, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
-            // neste caso, utiliza-se uma fracao de vazio alta para a hidrostÃ¡tica
+            // in this case a high void fraction is used for the hydrostatics
             double alfa = 0.8;
             if (completionFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
@@ -1454,15 +1454,15 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
 
         if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
             completionFractionGuess = state.march.cells[0].acsr.injl.bet;
-            // este espaco faz uma estimativa de quanto deve ser a perda de carga media
-            // a partir do valor da vazao no inicio da tubulacao, isto e feito apenas
-            // se existir uma fonte de liquido, celula[0].acsr.tipo == 2
-            taux = state.march.input.celp[0].textern; // a temperatura em que esta estimativa sera feita
-            // e dada pela temperatura da fonte, a pressao para o calculo das propriedades
-            // e feita por pGSup
+            // this block estimates the mean pressure loss
+            // from the flow rate at the start of the pipe; this is done only
+            // if there is a liquid source, celula[0].acsr.tipo == 2
+            taux = state.march.input.celp[0].textern; // the temperature of this estimate
+            // is the source's; the pressure for the properties
+            // is pGSup
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
-            ///////////propriedades fisicas:
+            /////////// physical properties:
             double completionFraction = state.march.cells[0].acsr.injl.bet;
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
             double visP = state.march.cells[0].acsr.injl.FluidoPro.ViscOleo(pchute, taux);
@@ -1473,29 +1473,29 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             double gasDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, taux);
             rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            // estimativa grosseira da vazao massica do liquido complementar
+            // rough estimate of the completion-fluid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
-            // estimativa grosseira da vazao massica de liquido e gas produzidos
+            // rough estimate of the produced liquid and gas mass flow rates
             double massic;
-            // massas especificas, condicao standard
+            // densities at standard conditions
             double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
-            // multiplicador da vazao standard para se obter a Vazao massicagÃ¡s+liquido produzido
+            // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
             // massic *= multiplicador;//alteracao8
             massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
-            // titulo do gas em relacao a misturaoleo+agua+gas
+            // gas quality relative to the oil+water+gas mixture
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
-            double massicP = (1. - fracmasshidra) * massic; // vazao massica de liquido produzido
-            double massicG = fracmasshidra * massic;        // vazao massaica de gas
-            /// estimativa grosseira da velocidade da mistura
+            double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
+            double massicG = fracmasshidra * massic;        // gas mass flow rate
+            /// rough estimate of the mixture velocity
             j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
-            // estimativa da fracao de vazio sem escorregamento
+            // no-slip void fraction estimate
             double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
-            // propriedades de mistura
+            // mixture properties
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
-            // estimativa de numero de Reynolds
+            // Reynolds number estimate
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);
@@ -1503,49 +1503,49 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
                 double dhid = 4 * state.march.cells[0].duto.area / state.march.cells[0].duto.peri;
                 reynolds = state.march.cells[0].Rey(dhid, j, rmis, visMis);
             }
-            // estimativa de um fator de friccao
+            // friction factor estimate
             frictionFactor = state.march.cells[0].fric(reynolds, state.march.cells[0].duto.rug / state.march.cells[0].duto.a);
         }
         double tmparea = state.march.cells[0].duto.area;
         double tmpperi = state.march.cells[0].duto.peri;
-        // estimativa da perda por friccao no sistema, se o acessorio no inicio da tubulacao
-        // nao for uma fonte de liquido, esta estimativa sera zero
+        // estimate of the friction loss in the system; if the accessory at the start of the pipe
+        // is not a liquid source, this estimate is zero
         perdafric = (frictionFactor * rmis * j * fabs(j) / 2.) * tmpperi / tmparea;
-        // se o acessorio for uma IPR, a estimativa serÃ¡ uma pressao prÃ³xima a uma vazao baixa
-        // no fundo do poco
-        // se nao for IPR, a estimativa continua, considerando a perda de carga e a hidrostatica,
-        // que serÃ¡ avaliada neste laco
+        // if the accessory is an IPR, the estimate is a pressure close to a low flow rate
+        // at the bottom of the well
+        // if it is not an IPR, the estimate goes on with the pressure loss and the hydrostatics,
+        // evaluated in this loop
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchute, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchute, taux);
-            // se o sistema nao for um anel principal de GL
-            // para a estimativa de pressao, se utilizara so a hidrostatica de liquido, o que dara um
-            // chute inicial de pressao muito alta
+            // if the system is not a main gas-lift ring
+            // the pressure estimate uses only the liquid hydrostatics, which gives a
+            // very high initial pressure guess
             double alfa = 0.;
             if (completionFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
             }
             if (state.march.annulusDrift == 0)
-                alfa = 1.; // se for o anel, so se tem gas
+                alfa = 1.; // if it is the ring, there is only gas
             else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
+            // pressure advance by the hydrostatics and the estimated friction loss
             pchute += ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2);
             if (pchute < 0.8)
                 pchute = 0.8;
-            // incremento de pressao devido a algum ganho de pressao constante em alguma celula
+            // pressure increment from a constant pressure gain in some cell
             if (state.march.cells[i - 1].acsr.tipo == 7)
                 pchute -= state.march.cells[i - 1].acsr.delp;
-            // caso exista alguma IPR no meio do duto, verifica se a pressao estimada esta maior que
-            // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
-            // para evitar isto, se corrige a pressao para um valor proximo da
-            // pressao estatica da IPR da celula
+            // if there is an IPR along the pipe, checks whether the estimated pressure is above
+            // the static pressure: this solver does not work with negative flow rates;
+            // to avoid them, the pressure is corrected to a value close to the
+            // static pressure of the cell's IPR
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres) && i == 1) {
                 double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * kSecondsPerDay;
@@ -1555,17 +1555,17 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
                 if (pchute < 0.9 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchute = 0.9 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            // tambÃ©m se evita um chute com valores maiores que o limite maximo de uma tabela
-            // no caso de se estar usando PVTSim
+            // a guess above the maximum limit of a table is also avoided
+            // when PVTSim is used
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
 
         if (pchute > 1000) {
-            pchute = 1000; // pressao maxima de chute
+            pchute = 1000; // maximum pressure guess
         }
     } else
-        pchute = chute; // caso chute nao seja negativo utiliza a estimativa enviada na
+        pchute = chute; // when chute is not negative, the estimate passed in is used
 }
 
 }  // namespace
@@ -1573,12 +1573,12 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
 double searchProductionBottomHolePressure(const SteadyStateSearchState &state, double chute, int kontaTenta) {
     state.reverseSteady = 0;
     state.march.convergenceMonitor = 1000.;
-    // busca de dois chutes iniciais com valores com sinais opostos
-    // para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
-    double pchute = state.march.gasSurfacePressure; // inicializando o valor de pchute com o valor da pressao a jusante
-    // do choke, pchute sera o valor de chute de fato no processo de busca
-    // se o valor de chute>0, pchute=chute, senao, ele e estimado
-    double taux; // valor de temperatura auxiliar para o eventual calculo
+    // search for two initial guesses whose values have opposite signs
+    // for marchaProdPerm1, to start the root finding.
+    double pchute = state.march.gasSurfacePressure; // initialising pchute with the pressure downstream
+    // of the choke; pchute is the guess actually used in the search
+    // if chute>0, pchute=chute, otherwise it is estimated
+    double taux; // auxiliary temperature value for a possible calculation
     // de pchute
     double j = 0.;
     double rmis = 0.;
@@ -1587,70 +1587,70 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     double completionFractionGuess = 0.;
 
     estimateInitialBottomHolePressure(state, completionFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
-    // lista de parametro do metodo
-    double pchute2;        // segundo chute de pressao da busca
-    double pchuteAux = 0.; // auxiliar na busca de dos chutes de pressao
-    // necessarios para se dar partida no metodo de calculo de raiz
-    double marchResidual; // marchResidual recebe sempre o valor retornado pelo procedimento de marcha
-    // neste caso, Ã© a pressao a montante do choke-a pressao da ultima celula, calculada pela
-    // marcha
+    // the method's parameter list
+    double pchute2;        // second pressure guess of the search
+    double pchuteAux = 0.; // helper in the search for the two pressure guesses
+    // needed to start the root-finding method
+    double marchResidual; // marchResidual always receives the value the march returns
+    // here, the upstream choke pressure minus the pressure of the last cell computed by the
+    // march
     marchResidual = marchProductionSteady(state.march, pchute);
     state.march.searchOrigin = 1;
-    // a marcha pode dar problemas, ou a pressao em algum ponto deu acima da pressao estÃ¡tica de
-    // de alguma IPR no meio do caminho, retorna 1e10,
-    // ou antes de atingir a ultima celula, a pressao ficou proximo de zero, ou a pressao
-    // retorna -1e10, ou a pressao, para o caso PVTSim, ficou acima da pressao maxima da tabela
-    // retorna 1e10
+    // the march can fail: the pressure somewhere rose above the static pressure of
+    // some IPR along the way, returns 1e10;
+    // or before reaching the last cell the pressure got close to zero, or the pressure
+    // returns -1e10; or, with PVTSim, the pressure rose above the table's maximum,
+    // returns 1e10
     classifyMarchSentinel(state, marchResidual, pchuteAux, completionFractionGuess, perdafric, taux, pchute);
 
 
-    // para o caso de ter dado eerado a primeira marcha, com pchuteAux faz-se uma nova tentativa
-    int kontaiter = 0; // contador para o laco em que se tentara uma nova estimativa
-    // em que ao menos os valores 1e10 ou 1e-10 nao seja retornados
+    // if the first march went wrong, a new attempt is made with pchuteAux
+    int kontaiter = 0; // counter for the loop that tries a new estimate
+    // for which at least 1e10 or 1e-10 is not returned
     double pchuteAux0 = pchuteAux;
     double abortValue;
     if (retryUntilMarchCompletes(state, pchuteAux0, kontaiter, marchResidual, pchuteAux, pchute, chute, kontaTenta, abortValue))
         return abortValue;
-    if (kontaiter > 50) { // chegou ao limite da iteracao
+    if (kontaiter > 50) { // iteration limit reached
         if ((*state.march.globals).chaverede == 0) {
-            // neste caso, se finaliza a simulacao, nao tem um transiente
-            // a ser feito a seguir e nem se estÃ¡ em uma rede
+            // in this case the simulation ends: there is no transient
+            // to run next and this is not a network
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                            "", "");
             } else {
-                // apresenta apenas um aviso
+                // only shows a warning
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
                 if (kontaTenta < 0)
                     logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                "", "");
-                // se for em uma iteracao de rede, apos a primeira iteracao
+                // if in a network iteration, after the first iteration
                 if ((*state.march.globals).iterRede > 0)
                     return -1.1e10;
-                // se logo apos tem uma simulacao transiente ou se esta na primeira iteracao de rede
+                // if a transient simulation follows, or this is the first network iteration
                 else
                     return 1.1e10;
             }
         } else {
-            // se for em uma iteracao de rede, apos a primeira iteracao
+            // if in a network iteration, after the first iteration
             if ((*state.march.globals).iterRede > 0)
                 return -1.1e10;
-            // se logo apÃ³s tem uma simulacao transiente ou se esta na primeira iteracao de rede
+            // if a transient simulation follows, or this is the first network iteration
             else
                 return 1.1e10;
         }
     }
 
-    // caso o laÃ§o anterior tenha levado a estimativa de um valor 1e10 para um valor -1e10
-    // ou tenha levado para um valor de -1e10 para 1e10
-    // ou seja, de um chute de pressao alto demais para finalizar a marcha
-    // para um chute de pressao baixo demais para terminar a marcha ou vice versa
+    // if the previous loop took the estimate from 1e10 to -1e10
+    // or from -1e10 to 1e10,
+    // that is, from a pressure guess too high to finish the march
+    // to one too low to finish it, or the other way round,
     while ((marchResidual < -0.9e10 || marchResidual > 0.9e10) && kontaiter < 50) {
-        pchute = 0.5 * (pchute + pchuteAux); // busca-se um valor medio
-        // entre o alto demais e o baixo demais
+        pchute = 0.5 * (pchute + pchuteAux); // a middle value is sought
+        // between the too high and the too low
         if ((fabs(pchute - pchuteAux) / pchute) < 0.001 && marchResidual < -0.9e10) {
             pchute = 1.05 * pchute;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[0].acsr.ipr.Pres - pchute) < 0.00 * state.march.cells[0].acsr.ipr.Pres) {
@@ -1697,7 +1697,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
                 return 1.1e10;
         }
     }
-    // caso tenha sido possivel obter um chute de pressao em que foi possivel finalizar a marcha
+    // if a pressure guess that lets the march finish was found
     kontaiter = 0;
     pchute2 = pchute;
     double negativeResidualGuess = 0.;
@@ -1710,21 +1710,21 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     if (fabs(marchResidual) < 1e-3)
         return pchute;
     else {
-        if (marchResidual < 0.) { // caso em que pressao a montante do choke < pressao da ultima celula, calculada pela
+        if (marchResidual < 0.) { // case where the upstream choke pressure < the pressure of the last cell computed by the
             double abortValue;
             if (bracketFromHighGuess(state, amplifica, reduz, reversao, val0, guessLowerBound, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
                 return abortValue;
             positiveResidualGuess = pchute2;
-        } else if (marchResidual > 0.) { // caso em que pressao a montante do choke > pressao da ultima celula,
+        } else if (marchResidual > 0.) { // case where the upstream choke pressure > the pressure of the last cell
             double abortValue;
             if (bracketFromLowGuess(state, amplifica, reduz, reversao, val0, guessLowerBound, positiveResidualGuess, negativeResidualGuess, kontaiter, marchResidual, pchuteAux, pchute2, pchute, chute, kontaTenta, abortValue))
                 return abortValue;
         }
 
         if (reversao == 0)
-            return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0); // com as duas estimativas de pressao
-        // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
-        // de funcao
+            return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 0); // with the two pressure estimates
+        // on opposite-sign sides of the curve, the root finding
+        // starts
         else
             return searchReverseProductionBottomHolePressure(state, pchute * 1.);
     }
@@ -1734,18 +1734,18 @@ namespace {
 
 /// Brackets the root when the choke passes less than the column delivers.
 bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double amplifica, double &positiveResidualGuess, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult2, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
-    // isto implica em pressao de chute baixa , deve-se agora buscar
-    // uma pressao de chute alta para que marchResidual seja negativo e assim iniciar o processo
-    // de calculo de zero de funcao
-    positiveResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor positivo
-    // a cada nova busca em que marchResidual se aproxima de zero, mas ainda positivo
-    // positiveResidualGuess e atualizado com a Ãºltima pressao de chute
+    // this means the pressure guess is low, so now look for
+    // a high pressure guess that makes marchResidual negative, to start the
+    // root finding
+    positiveResidualGuess = pchute; // storing the pressure guess that gives the positive value
+    // at each new search in which marchResidual gets closer to zero but is still positive
+    // positiveResidualGuess is updated with the last pressure guess
     while (marchResidual > 0) {
         pchuteAux = pchute2;
         if ((*state.march.globals).chaverede == 0)
-            pchute2 *= amplifica; // Aumentando a pressao na busca de marchResidual>0
+            pchute2 *= amplifica; // Raising the pressure in search of marchResidual>0
         else
-            pchute2 *= mult2; // Aumentando a pressao na busca de marchResidual>0
+            pchute2 *= mult2; // Raising the pressure in search of marchResidual>0
         if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
         int limpres = 0;
@@ -1819,10 +1819,10 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
             }
         }
         if (marchResidual > 0 && marchResidual < 0.9e10)
-            positiveResidualGuess = pchute2; // atualizando o positiveResidualGuess
+            positiveResidualGuess = pchute2; // updating positiveResidualGuess
         kontaiter++;
-        if (kontaiter > 50) { // limite de iteracoes, falha na busca do segundo chute
-            // fim da simulacao ou aviso de falha
+        if (kontaiter > 50) { // iteration limit: failed to find the second guess
+            // end of the simulation or a failure warning
             if ((*state.march.globals).chaverede == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                     NumError(
@@ -1853,14 +1853,14 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
                     }
             }
         }
-        while (marchResidual > 0.9e10) { // o incremento de pressao foi demais e a marcha nao foi capaz
-            // de ir ate o final sem que a pressao ficasse maior do que a pressao estatica
-            // em um eventual IPR no meio da marcha ou maior que o limitre maximo de pressao
-            // da tabela PVTSim, quando for este o caso
-            // deve-se diminuir a estimativa de pressao baixa
+        while (marchResidual > 0.9e10) { // the pressure increment was too large and the march could not
+            // reach the end without the pressure rising above the static pressure
+            // of an IPR along the march, or above the maximum pressure
+            // of the PVTSim table, when there is one;
+            // the low pressure estimate must be lowered
             guessLowerBound = pchute2;
-            pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a maior pressao
-            // que leva a marchResidual>0 e a pressao alta demais
+            pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the highest pressure
+            // that gives marchResidual>0 and the pressure that is too high
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
@@ -1926,27 +1926,27 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, double am
 
 /// Brackets the root when the pressure guess was too high.
 bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double reduz, double &negativeResidualGuess, double &guessLowerBound, int &kontaiter, double mult1, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, double &abortValue) {
-    // Vazao no choke>Vazao da mistura na tubulaÃ§Ã£o
-    // calculada pela marcha, isto implica em pressao de chute alta , deve-se agora buscar
-    // uma pressao de chute baixa para que marchResidual seja positivo e assim iniciar o processo
-    // de calculo de zero de funcao
-    negativeResidualGuess = pchute; // armazenando o valor de chute de pressao que da o valor negativo
-    // a cada nova busca em que marchResidual se aproxima de zero, mas ainda negativo
-    // negativeResidualGuess Ã© atualizado com a Ãºltima pressao de chute
+    // choke flow rate > mixture flow rate in the pipe
+    // computed by the march: the pressure guess is high, so now look for
+    // a low pressure guess that makes marchResidual positive, to start the
+    // root finding
+    negativeResidualGuess = pchute; // storing the pressure guess that gives the negative value
+    // at each new search in which marchResidual gets closer to zero but is still negative
+    // negativeResidualGuess is updated with the last pressure guess
     while (marchResidual < 0) {
         if (fabs(pchute2 - pchute) / pchute < (1. - reduz) / 10. && kontaiter > 50) {
             pchute2 *= 0.5;
         }
         pchuteAux = pchute2;
         if ((*state.march.globals).chaverede == 0)
-            pchute2 *= reduz; // Diminuindo a pressao na busca de marchResidual>0
+            pchute2 *= reduz; // Lowering the pressure in search of marchResidual>0
         else
-            pchute2 *= mult1; // Diminuindo a pressao na busca de marchResidual>0
+            pchute2 *= mult1; // Lowering the pressure in search of marchResidual>0
         if (pchute2 <= guessLowerBound)
-            pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound inicialmente
-        // e zero, mas pode acontecer de baixar demais pchute2 ao ponto de marchResidual=-1e10
-        //(pressao abaixo de 0.5 no meio da marcha), neste caso, guessLowerBound se torna este valor de
-        // pchute2, pois, com isto, ja se sabe que nao se pode ir abaixo de guessLowerBound
+            pchute2 = 0.5 * (pchuteAux + guessLowerBound); // guessLowerBound is initially
+        // zero, but pchute2 may be lowered so far that marchResidual=-1e10
+        // (pressure below 0.5 somewhere in the march); then guessLowerBound becomes this value of
+        // pchute2, as it is then known that one cannot go below guessLowerBound
         if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
         if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
@@ -1970,10 +1970,10 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
                 }
         }
         if (marchResidual < 0 && marchResidual > -0.9e10)
-            negativeResidualGuess = pchute2; // atualizando o negativeResidualGuess
+            negativeResidualGuess = pchute2; // updating negativeResidualGuess
         kontaiter++;
-        if (kontaiter > 50) { // limite de iteracoes, falha na busca do segundo chute
-            // fim da simulacao ou aviso de falha
+        if (kontaiter > 50) { // iteration limit: failed to find the second guess
+            // end of the simulation or a failure warning
             if ((*state.march.globals).chaverede == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoees");
@@ -2003,12 +2003,12 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
                     }
             }
         }
-        while (marchResidual < -0.9e10) { // a reduÃ§Ã£o de pressao foi demais e a marcha nÃ£o foi capaz
-            // de ir ate o final sem que a pressao ficasse inferior a 0.5kgf/cm2
-            // deve-se aumentar a estimativa de pressao baixa
+        while (marchResidual < -0.9e10) { // the pressure reduction was too large and the march could not
+            // reach the end without the pressure falling below 0.5 kgf/cm2;
+            // the low pressure estimate must be raised
             guessLowerBound = pchute2;
-            pchute2 = 0.5 * (pchute2 + pchuteAux); // valor intermediario entre a menor pressao
-            // que leva a marchResidual<0 e a pressao baixa demais
+            pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the lowest pressure
+            // that gives marchResidual<0 and the pressure that is too low
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
@@ -2074,7 +2074,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, double r
 bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, double pchuteAux0, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute, double &abortValue) {
     if (marchResidual < -0.9e10 || marchResidual > 0.9e10) {
         double valtemp;
-        valtemp = marchProductionSteadySecondary(state.march, pchuteAux); // marcha com pchuteAux
+        valtemp = marchProductionSteadySecondary(state.march, pchuteAux); // march with pchuteAux
         if (fabs(valtemp) > 1.01e10) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
             if ((*state.march.globals).iterRede > 0)
@@ -2088,8 +2088,8 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, doub
                     return true;
                 }
         }
-        while (valtemp > 0.9e10 && marchResidual > 0.9e10 && kontaiter < 50) { // estimativa de pressao de fundo ainda alta
-            pchuteAux *= 0.99;                                       // reduzindo a estimativa
+        while (valtemp > 0.9e10 && marchResidual > 0.9e10 && kontaiter < 50) { // bottom-hole pressure estimate still high
+            pchuteAux *= 0.99;                                       // lowering the estimate
             valtemp = marchProductionSteadySecondary(state.march, pchuteAux);
             if (fabs(valtemp) > 1.01e10) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
@@ -2104,26 +2104,26 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, doub
                         return true;
                     }
             }
-            kontaiter++; // 50 iteracoes no maximo
+            kontaiter++; // at most 50 iterations
         }
-        while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // estimativa de pressao de fundo ainda baixa
+        while (valtemp < -0.9e10 && marchResidual < -0.9e10 && kontaiter <= 50) { // bottom-hole pressure estimate still low
             if (state.march.cells[0].acsr.tipo == kAccessoryGasInjection || state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection || state.march.cells[0].acsr.tipo == kAccessoryMultipleSource)
                 pchuteAux *= 1.1;
             else
-                pchuteAux *= 1.01; // aumentando a estimativa
-            // verificando se este aumento ultrapassa o limite de pressao de uma eventual IPR no
-            // fundo
+                pchuteAux *= 1.01; // raising the estimate
+            // checking whether this raise exceeds the pressure limit of an IPR at the
+            // bottom
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchuteAux) < 0.01 * state.march.cells[0].acsr.ipr.Pres) {
                 pchuteAux = -(10 / state.march.cells[0].acsr.ipr.ip) + state.march.cells[0].acsr.ipr.Pres;
                 if (pchuteAux < 0.99 * state.march.cells[0].acsr.ipr.Pres)
                     pchuteAux = 0.99 * state.march.cells[0].acsr.ipr.Pres;
             }
-            // verificando se este aumento de estimativa foca acima do valor maximo de pressao
-            // de uma eventual tabela PVTSim
+            // checking whether this raised estimate is above the maximum pressure
+            // of a PVTSim table, if there is one
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
-            valtemp = marchProductionSteadySecondary(state.march, pchuteAux); // nova tentativa
+            valtemp = marchProductionSteadySecondary(state.march, pchuteAux); // new attempt
             if (fabs(valtemp) > 1.01e10) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
                 if ((*state.march.globals).iterRede > 0)
@@ -2156,7 +2156,7 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, doub
                     return true;
                 }
         }
-        if (valtemp > -0.9e10 && valtemp < 0.9e10) { // conseguiu fazer a marcha atÃƒÂ© o final
+        if (valtemp > -0.9e10 && valtemp < 0.9e10) { // the march reached the end
             marchResidual = valtemp;
             pchute = pchuteAux;
         }
@@ -2166,9 +2166,9 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, doub
 
 /// Moves the guess according to which sentinel the march returned.
 void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double marchResidual, double &pchuteAux, double perdafric, double &taux) {
-    if (marchResidual < -0.9e10) { // pressao muito baixa na marcha, deve ser aumentado o valor de chute
-        // faz-se uma nova estimativa, sÃ³ que agora admitindo uma hidrostÃ¡tica de Ã¡gua,
-        // o que darÃ¡ uma pressao de fundpo mais alta
+    if (marchResidual < -0.9e10) { // pressure too low in the march: the guess must be raised
+        // a new estimate is made, now assuming a water hydrostatic head,
+        // which gives a higher bottom-hole pressure
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
@@ -2192,15 +2192,15 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1100)
-            pchuteAux = 1100;  // limite de pchuteAux
-    } else if (marchResidual > 0.9e10) { // pressao em algum ponto ficou acima de alguma pressao estatica
-        // deve-se diminuir o valor do chute
+            pchuteAux = 1100;  // pchuteAux limit
+    } else if (marchResidual > 0.9e10) { // the pressure somewhere went above a static pressure
+        // the guess must be lowered
         pchuteAux = state.march.gasSurfacePressure;
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchuteAux, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
-            // neste caso, utiliza-se uma fraÃ§Ã£o de vazio alta para a hidrostÃ¡tica
+            // in this case a high void fraction is used for the hydrostatics
             double alfa = 0.8;
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
@@ -2227,16 +2227,16 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
 void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
         if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
-            // este espaco faz uma estimativa de quanto deve ser a perda de carga media
-            // a partir do valor da vazao no inicio da tubulacao, isto e feito apenas
-            // se existir uma fonte de liquido, celula[0].acsr.tipo == 2
+            // this block estimates the mean pressure loss
+            // from the flow rate at the start of the pipe; this is done only
+            // if there is a liquid source, celula[0].acsr.tipo == 2
             taux = state.march.input.celp[0].textern;
-            // a temperatura em que esta estimativa sera feita
-            // e dada pela temperatura da fonte, a pressao para o calculo das propriedades
-            // e feita por pGSup
+            // the temperature of this estimate
+            // is the source's; the pressure for the properties
+            // is pGSup
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
-            ///////////propriedades fisicas:
+            /////////// physical properties:
             double completionFraction = state.march.cells[0].acsr.injl.bet;
             completionFractionGuess = completionFraction;
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
@@ -2249,32 +2249,32 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
             double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            // estimativa grosseira da vazao massica do liquido complementar
+            // rough estimate of the completion-fluid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
-            // estimativa grosseira da vazao massica de liquido e gas produzidos
+            // rough estimate of the produced liquid and gas mass flow rates
             double massic = rlpA * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
-            // massas especificas, condicao standard
+            // densities at standard conditions
             double Rhogs = state.march.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
-            // multiplicador da vazao standard para se obter a Vazao massicagÃ¡s+liquido produzido
+            // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
             // massic *= multiplicador;//alteracao8
             if ((*state.march.globals).chaverede == 1)
                 massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
             else
                 massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
-            // titulo do gas em relacao a misturaoleo+agua+gas
+            // gas quality relative to the oil+water+gas mixture
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
-            double massicP = (1. - fracmasshidra) * massic; // vazao massica de liquido produzido
-            double massicG = fracmasshidra * massic;        // vazao massaica de gas
-            /// estimativa grosseira da velocidade da mistura
+            double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
+            double massicG = fracmasshidra * massic;        // gas mass flow rate
+            /// rough estimate of the mixture velocity
             j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
-            // estimativa da fracao de vazio sem escorregamento
+            // no-slip void fraction estimate
             double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
-            // propriedades de mistura
+            // mixture properties
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
-            // estimativa de numero de Reynolds
+            // Reynolds number estimate
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);
@@ -2282,44 +2282,44 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
                 double dhid = 4 * state.march.cells[0].duto.area / state.march.cells[0].duto.peri;
                 reynolds = state.march.cells[0].Rey(dhid, j, rmis, visMis);
             }
-            // estimativa de um fator de friccao
+            // friction factor estimate
             frictionFactor = state.march.cells[0].fric(reynolds, state.march.cells[0].duto.rug / state.march.cells[0].duto.a);
         }
-        // estimativa da perda por friccao no sistema, se o acessorio no inicio da tubulacao
-        // nao for uma fonte de liquido, esta estimativa sera zero
+        // estimate of the friction loss in the system; if the accessory at the start of the pipe
+        // is not a liquid source, this estimate is zero
         perdafric = (frictionFactor * rmis * j * fabs(j) / 2.) * state.march.cells[0].duto.peri / state.march.cells[0].duto.area;
-        // se o acessorio for uma IPR, a estimativa serÃ¡ uma pressao prÃ³xima a uma vazao baixa
-        // no fundo do poco
-        // se nao for IPR, a estimativa continua, considerando a perda de carga e a hidrostatica,
-        // que serÃ¡ avaliada neste laco
+        // if the accessory is an IPR, the estimate is a pressure close to a low flow rate
+        // at the bottom of the well
+        // if it is not an IPR, the estimate goes on with the pressure loss and the hydrostatics,
+        // evaluated in this loop
         for (int i = state.march.lastCell; i > 0; i--) {
             taux = state.march.input.celp[i].textern;
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchute, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchute, taux);
-            // se o sistema nao for um anel principal de GL
-            // para a estimativa de pressao, se utilizara so a hidrostatica de liquido, o que dara um
-            // chute inicial de pressao muito alta
+            // if the system is not a main gas-lift ring
+            // the pressure estimate uses only the liquid hydrostatics, which gives a
+            // very high initial pressure guess
             double alfa = 0.;
             if (completionFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
             }
             if (state.march.annulusDrift == 0)
-                alfa = 1.; // se for o anel, so se tem gas
+                alfa = 1.; // if it is the ring, there is only gas
             else if ((*state.march.globals).chaverede == 0 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess;
             else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
-            // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
+            // pressure advance by the hydrostatics and the estimated friction loss
             pchute += (rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2;
-            // caso exista alguma IPR no meio do duto, verifica se a pressao estimada esta maior que
-            // a pressao estatica, nÃ£o se trabalha com vazoes negativas neste solver
-            // para evitar isto, se corrige a pressao para um valor proximo da
-            // pressao estatica da IPR da celula
+            // if there is an IPR along the pipe, checks whether the estimated pressure is above
+            // the static pressure: this solver does not work with negative flow rates;
+            // to avoid them, the pressure is corrected to a value close to the
+            // static pressure of the cell's IPR
             if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                 ((state.march.cells[i - 1].acsr.ipr.Pres - pchute) < 0.01 * state.march.cells[i - 1].acsr.ipr.Pres && i == 1)) {
                 double flowRateGuess = 0.15 * state.march.cells[i - 1].duto.area * kSecondsPerDay;
@@ -2329,29 +2329,29 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
                 if (pchute < 0.9 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchute = 0.9 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            // tambÃ©m se evita um chute com valores maiores que o limite maximo de uma tabela
-            // no caso de se estar usando PVTSim
+            // a guess above the maximum limit of a table is also avoided
+            // when PVTSim is used
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
 
         if (pchute > 1000)
-            pchute = 1000.; // pressao maxima de chute
+            pchute = 1000.; // maximum pressure guess
     } else
-        pchute = chute; // caso chute nao seja negativo utiliza a estimativa enviada na
+        pchute = chute; // when chute is not negative, the estimate passed in is used
 }
 
 }  // namespace
 
 double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState &state, double chute, int kontaTenta) {
-    // busca de dois chutes iniciais com valores com sinais opostos
-    // para marchaProdPerm1 e assim iniciar o prpocesso de calculo de erro de funcao.
+    // search for two initial guesses whose values have opposite signs
+    // for marchaProdPerm1, to start the root finding.
     state.reverseSteady = 0;
     state.march.convergenceMonitor = 1000.;
-    double pchute = state.march.gasSurfacePressure; // inicializando o valor de pchute com o valor da pressao a jusante
-    // do choke, pchute sera o valor de chute de fato no processo de busca
-    // se o valor de chute>0, pchute=chute, senao, ele e estimado
-    double taux; // valor de temperatura auxiliar para o eventual calculo
+    double pchute = state.march.gasSurfacePressure; // initialising pchute with the pressure downstream
+    // of the choke; pchute is the guess actually used in the search
+    // if chute>0, pchute=chute, otherwise it is estimated
+    double taux; // auxiliary temperature value for a possible calculation
     // de pchute
     double j = 0.;
     double rmis = 0.;
@@ -2360,36 +2360,36 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     double completionFractionGuess = 0.;
 
     estimateInitialBottomHolePressureSecondary(state, completionFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
-    // lista de parametro do metodo
-    double pchute2;        // segundo chute de pressao da busca
-    double pchuteAux = 0.; // auxiliar na busca de dos chutes de pressao
-    // necessarios para se dar partida no metodo de calculo de raiz
-    double marchResidual; // marchResidual recebe sempre o valor retornado pelo procedimento de marcha
-    // neste caso, Ã© a pressao a montante do choke-a pressao da ultima celula, calculada pela
-    // marcha
+    // the method's parameter list
+    double pchute2;        // second pressure guess of the search
+    double pchuteAux = 0.; // helper in the search for the two pressure guesses
+    // needed to start the root-finding method
+    double marchResidual; // marchResidual always receives the value the march returns
+    // here, the upstream choke pressure minus the pressure of the last cell computed by the
+    // march
     marchResidual = marchProductionSteadySecondary(state.march, pchute);
     state.march.searchOrigin = 1;
-    // a marcha pode dar problemas, ou a pressao em algum ponto deu acima da pressao estatica de
-    // de alguma IPR no meio do caminho, retorna 1e10,
-    // ou antes de atingir a ultima celula, a pressao ficou proximo de zero, ou a pressao
-    // retorna -1e10, ou a pressao, para o caso PVTSim, ficou acima da pressao maxima da tabela
-    // retorna 1e10
+    // the march can fail: the pressure somewhere rose above the static pressure of
+    // some IPR along the way, returns 1e10;
+    // or before reaching the last cell the pressure got close to zero, or the pressure
+    // returns -1e10; or, with PVTSim, the pressure rose above the table's maximum,
+    // returns 1e10
     classifyMarchSentinelSecondary(state, marchResidual, pchuteAux, perdafric, taux);
 
     double mult1 = 0.9;
     double mult2 = 1.1;
 
-    // para o caso de ter dado eerado a primeira marcha, com pchuteAux faz-se uma nova tentativa
-    int kontaiter = 0; // contador para o laco em que se tentara uma nova estimativa
-    // em que ao menos os valores 1e10 ou 1e-10 nÃ£o seja retornados
+    // if the first march went wrong, a new attempt is made with pchuteAux
+    int kontaiter = 0; // counter for the loop that tries a new estimate
+    // for which at least 1e10 or 1e-10 is not returned
     double pchuteAux0 = pchuteAux;
     double abortValue;
     if (retryUntilMarchCompletesSecondary(state, pchuteAux0, kontaiter, marchResidual, pchuteAux, pchute, abortValue))
         return abortValue;
-    if (kontaiter > 50) { // chegou ao limite da iteracao
+    if (kontaiter > 50) { // iteration limit reached
         if ((*state.march.globals).chaverede == 0) {
-            // neste caso, se finaliza a simulacao, nao tem um transiente
-            // a ser feito a seguir e nem se estÃ¡ em uma rede
+            // in this case the simulation ends: there is no transient
+            // to run next and this is not a network
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
@@ -2400,21 +2400,21 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
                     return 1.1e10;
             }
         } else {
-            // se for em uma iteracao de rede, apos a primeira iteracao
+            // if in a network iteration, after the first iteration
             if ((*state.march.globals).iterRede > 0)
                 return -1.1e10;
-            // se logo apÃ³s tem uma simulacao transiente ou se esta na primeira iteracao de rede
+            // if a transient simulation follows, or this is the first network iteration
             else
                 return 1.1e10;
         }
     }
-    // caso o laÃ§o anterior tenha levado a estimativa de um valor 1e10 para um valor -1e10
-    // ou tenha levado para um valor de -1e10 para 1e10
-    // ou seja, de um chute de pressao alto demais para finalizar a marcha
-    // para um chute de pressao baixo demais para terminar a marcha ou vice versa
+    // if the previous loop took the estimate from 1e10 to -1e10
+    // or from -1e10 to 1e10,
+    // that is, from a pressure guess too high to finish the march
+    // to one too low to finish it, or the other way round,
     while ((marchResidual < -0.9e10 || marchResidual > 0.9e10) && kontaiter <= 50) {
-        pchute = 0.5 * (pchute + pchuteAux); // busca-se um valor medio
-        // entre o alto demais e o baixo demais
+        pchute = 0.5 * (pchute + pchuteAux); // a middle value is sought
+        // between the too high and the too low
         if ((fabs(pchute - pchuteAux) / pchute) < 0.001 && marchResidual < -0.9e10) {
             pchute = 1.05 * pchute;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
@@ -2457,7 +2457,7 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
         }
     }
 
-    // caso tenha sido possivel obter um chute de pressao em que foi possivel finalizar a marcha
+    // if a pressure guess that lets the march finish was found
     kontaiter = 0;
     pchute2 = pchute;
     double guessLowerBound = 0.;
@@ -2468,19 +2468,19 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     if (fabs(marchResidual) < 1e-3)
         return pchute;
     else {
-        if (marchResidual < 0.) { // caso em que o chute de pressao foi alto
+        if (marchResidual < 0.) { // case where the pressure guess was high
             double abortValue;
             if (bracketFromHighGuessSecondary(state, reduz, negativeResidualGuess, guessLowerBound, kontaiter, mult1, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
                 return abortValue;
             positiveResidualGuess = pchute2;
-        } else if (marchResidual > 0.) { // caso em que Vazao no choke<Vazao da mistura na tubulaÃ§Ã£o,
+        } else if (marchResidual > 0.) { // case where choke flow rate < mixture flow rate in the pipe,
             double abortValue;
             if (bracketFromLowGuessSecondary(state, amplifica, positiveResidualGuess, negativeResidualGuess, guessLowerBound, kontaiter, mult2, marchResidual, pchuteAux, pchute2, pchute, chute, abortValue))
                 return abortValue;
         }
-        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 1); // com as duas estimativas de pressao
-        // em posicoes de sinal contrario da curva, inicia-se o processo de calculo de zero
-        // de funcao
+        return solveSteadyRoot(state, negativeResidualGuess, positiveResidualGuess, 1, 1); // with the two pressure estimates
+        // on opposite-sign sides of the curve, the root finding
+        // starts
     }
 }
 
@@ -2492,9 +2492,9 @@ namespace {
 /// same function.
 bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &abortValue) {
     
-                advanceUpstreamSteadyPressure(state.march, i, 0); // avanco da marcha para obter a pressao na fronteira esquerda
-                // da celula i
-                // teste para ver se ocorreu algum problema:
+                advanceUpstreamSteadyPressure(state.march, i, 0); // march step to get the pressure at the left boundary
+                // of cell i
+                // checks whether something went wrong:
                 if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].presaux) < (*state.march.globals).localtiny)
                     {
                         abortValue = 1e10;
@@ -2507,26 +2507,26 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         return true;
                     }
                 }
-                refreshUpstreamProductionPeriphery(state.march, i); // atualizacao da pressao da fronteira esquerda,
-                // caso exista alguma BCS ou incremento de pressao
+                refreshUpstreamProductionPeriphery(state.march, i); // update of the left boundary pressure,
+                // if there is an ESP or a pressure increment
                 if (state.march.input.flashCompleto != 2)
-                    advanceSteadyMass(state.march, i); // verifica se existe alguma fonte na celula anterior, com isto, atualiza
-                // as vazoes massica na fronteira a esquerda, alÃ©m das propriedades dos fluidos,
-                // densidade do gas, RGO, API, BSW, beta
+                    advanceSteadyMass(state.march, i); // checks whether the previous cell has a source, and so updates
+                // the mass flow rates at the left boundary and the fluid properties,
+                // gas density, GOR, API, BSW, beta
                 else
                     advanceCompositionalSteadyMass(state.march, i);
-                state.march.updaters.advanceSteadyTemperature(i, 0); // faz o avanco da temperatura, da celula i-1 para a celula i
-                // verifica se teve algum problema nos limites de temperatura
-                // caso se esteja trabalhando com tabela PVTSim
+                state.march.updaters.advanceSteadyTemperature(i, 0); // advances the temperature from cell i-1 to cell i
+                // checks whether the temperature went out of bounds
+                // when working with a PVTSim table
                 if (isnan(state.march.cells[i].temp))
                     NumError("Temperatrura na linha de producao com valor NaN");
                 if (state.march.input.usaTabela == 1 && (state.march.cells[i].temp - state.march.input.tabent.tmin) < (*state.march.globals).localtiny)
                     state.march.cells[i].temp = state.march.input.tabent.tmin;
-                state.march.updaters.updateProductionTemperaturePeriphery(i); // mera atualizacao de atributos de temperatura a esquerda e a direita
-                advanceDownstreamSteadyPressure(state.march, i, 0); // evolui a pressao  fronteira a esquerda da celula i para o
-                // seu centro de celula
-                // verifica se ocorreu algum problema nesta evolucao de de pressao no centro da
-                // celula
+                state.march.updaters.updateProductionTemperaturePeriphery(i); // just updates the left and right temperature fields
+                advanceDownstreamSteadyPressure(state.march, i, 0); // advances the pressure from the left boundary of cell i to
+                // its cell centre
+                // checks whether something went wrong in this pressure advance to the centre of the
+                // cell
                 if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].pres) < (*state.march.globals).localtiny) {
                     {
                         abortValue = 1e10;
@@ -2540,12 +2540,12 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         return true;
                     }
                 }
-                refreshDownstreamProductionPeriphery(state.march, i); // mera atualizacao de atributos que guardam valores de pressao
-                // das celulas a esquerda e a direita
-                for (int j = 0; j < state.march.input.nvalvgas; j++) { // reavaliacao da vazao da valvula de gas lift, quando
-                    // a celula tem uma.
-                    // P.S. parece uma acao desnecessÃ¡ria e talvez atÃ© um complicador
-                    // densecessario, em vavliacao
+                refreshDownstreamProductionPeriphery(state.march, i); // just updates the fields that hold the pressures
+                // of the cells to the left and right
+                for (int j = 0; j < state.march.input.nvalvgas; j++) { // re-evaluates the gas-lift valve flow rate, when
+                    // the cell has one.
+                    // P.S. this looks unnecessary, maybe even a complication
+                    // that is not needed; under evaluation
                     if (state.march.productionValveCellIndices[j] == i) {
                         int k = state.march.gasValveCellIndices[j];
                         state.march.updaters.computeSteadyGasFlowRate(k);
@@ -2554,10 +2554,10 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                 if (state.march.input.tipoFluido == 0)
                     advanceSteadyMassTransfer(state.march, i - 1);
                 else
-                    advanceSteadyGasMassTransfer(state.march, i - 1); // caso seja uma tabela PVTSim, calcula-se a
-                // taxa de transferÃªncia de massa entre as fases para o uso no calculo de
-                // calor latente da equacao de energia
-                if (state.march.input.ordperm > 1) { // correcao de segunda ordem
+                    advanceSteadyGasMassTransfer(state.march, i - 1); // with a PVTSim table, computes the
+                // interphase mass transfer rate for the
+                // latent heat in the energy equation
+                if (state.march.input.ordperm > 1) { // second-order correction
                     double D0presaux = state.march.cells[i].presaux - state.march.cells[i - 1].pres;
                     double D0pres = state.march.cells[i].pres - state.march.cells[i].presaux;
                     double D0temp = state.march.cells[i].temp - state.march.cells[i - 1].temp;
@@ -2579,15 +2579,15 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         advanceSteadyGasMassTransfer(state.march, i - 1);
                 }
     
-                // apÃ³s se atingir a pressao no centro da celula i, primeira iteracao de marcha
-                // verifica-se se existe uma VGL em i e faz-se uma estimativa inicial da Vazao de
-                // GL (caso exista linha de gas). Observar que isto sÃ³ Ã© feito para a iteracao zero.
+                // once the pressure at the centre of cell i is reached, on the first march iteration
+                // checks whether there is a gas-lift valve in i and makes an initial estimate of the gas-lift
+                // flow rate (when there is a gas line). Note that this is done only on iteration zero.
                 if (state.march.input.lingas > 0 && state.march.input.nvalvgas > 0 && state.march.steadyIteration == 0)
                     state.march.updaters.initializeSteadyValveGasFlowRate(i);
                 i++;
     
-                // teste para verificar se a pressao do centro de celula ficou acima
-                // da pressao estatica de uma eventual IPR
+                // checks whether the cell-centre pressure went above
+                // the static pressure of an IPR, if any
                 if (state.march.cells[i - 1].pres <= 0.1 ||
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i - 1].pres) > (*state.march.globals).localtiny)) {
                     {
@@ -2621,13 +2621,13 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
 /// Not a search: it calls no solver and no march, and inlines a march of its
 /// own.
 bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &guessNeedsCorrection, int &i, double betini, double alfini, double pentrada, double &abortValue) {
-    while (guessNeedsCorrection == 1) { // opcao antiga, ja nao tem mais efeito
-        // efetivamente, este while sempre so e feito uma vez, quando a marcha consegue ir ate
-        // a ultima celula sem problemas, caso ocorra algum problema, a marcha e finalizada e
-        // sai do metodo retornando ou 1e10 ou -1e10
+    while (guessNeedsCorrection == 1) { // old option, no longer has any effect
+        // in effect this while runs only once: when the march reaches
+        // the last cell without trouble; if something goes wrong, the march ends and
+        // leaves the method returning 1e10 or -1e10
 
-        // inicializando as pressoes e fracoes volumetricas das celulas iniciais, centro de celula
-        // e fronteira de celula
+        // initialising the pressures and volume fractions of the first cells, cell centre
+        // and cell boundary
         state.march.cells[0].presauxL = pentrada;
         state.march.cells[0].presLini = pentrada;
         state.march.cells[0].presL = pentrada;
@@ -2657,7 +2657,7 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
         state.march.cells[0].betI = state.march.cells[0].bet;
         state.march.cells[1].betLI = state.march.cells[0].bet;
 
-        // verifica se ja existe algum problema no inicio da marcha
+        // checks whether something is already wrong at the start of the march
         if (state.march.cells[0].pres <= 0.1 ||
             (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[0].pres) > (*state.march.globals).localtiny))
             {
@@ -2682,23 +2682,23 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
                 abortValue = 1e10;
                 return true;
             }
-        // IniciaVazValvGasPerm e um metodo que faz uma estimativa da vazao na valvula de GL
-        // quando ainda nao foi feita a marcha na linha de gas. Neste caso, ele recebe o
-        // indice da celula de producao e verifica se nesta celula existe uma VGL, se existir,
-        // caso a condicao na linha de gas seja vazao injetada, divide a vazao injetada pelo numero de
-        // valvulas e indica este valor para a VGL relacionada a celula de producao
-        // caso a condicao seja pressao de injecao, faz-se uma estimativa da pressao na linha de gas
-        // na posicao da VGL por hidrotatica e com isto se calcula a vazao de injecao da VGL
+        // IniciaVazValvGasPerm estimates the flow rate through a gas-lift valve
+        // before the gas line has been marched. It receives the
+        // production cell index and checks whether that cell has a gas-lift valve; if it has,
+        // with an injected-flow-rate condition on the gas line, it divides the injected flow rate by the number of
+        // valves and gives that value to the valve of this production cell;
+        // with an injection-pressure condition, it estimates the gas-line pressure
+        // at the valve by hydrostatics and computes the valve's injection flow rate from it
         if (state.march.input.lingas > 0 && state.march.input.nvalvgas > 0 && state.march.steadyIteration == 0)
             state.march.updaters.initializeSteadyValveGasFlowRate(0);
         i = 1;
-        // inicio da marcha propriamente dita
+        // start of the march proper
         while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 0.1 && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
             if (advanceTertiaryCells(state, i, abortValue))
                 return true;
         }
         if (i == state.march.lastCell + 1)
-            guessNeedsCorrection = 0; // fim da marcha
+            guessNeedsCorrection = 0; // end of the march
     }
     return false;
 }
@@ -2720,17 +2720,17 @@ int acceleratedMarchesPerGuess(InjectionFlowRateCondition) {
 /// searched (tertiary) when it is, under a pressure condition; searched
 /// (secondary) under a flow-rate condition.
 void solveGasLineForSearch(const SteadyStateSearchState &state, InjectionPressureCondition) {
-    // marcha para o caso, pressao de injecao
-    if (state.march.input.chokes.abertura[0] >= 0.2) { // choke de injecao inativo
+    // march for the injection-pressure case
+    if (state.march.input.chokes.abertura[0] >= 0.2) { // injection choke inactive
         for (int iter = 0; iter < 1; iter++) {
             marchGasSteady(state.march);
         }
     } else
-        searchGasPressureSteadyTertiary(state); // choke de injecao ativo
+        searchGasPressureSteadyTertiary(state); // injection choke active
 }
 
 void solveGasLineForSearch(const SteadyStateSearchState &state, InjectionFlowRateCondition) {
-    searchGasPressureSteadySecondary(state); // marcha na linha de gas para o caso de vazao de injecao
+    searchGasPressureSteadySecondary(state); // gas-line march for the injection-flow-rate case
 }
 
 }  // namespace
@@ -2741,9 +2741,9 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
     double alfini;
     double betini;
 
-    // estimativa da fracao de vazio na primeira celula do sistema
-    // fonte de massa no inicio da tubulacao
-    // da mesma maneira que no caso de fonte de liquido, fracao de vazio= sem escorregamento
+    // void fraction estimate in the first cell of the system
+    // mass source at the start of the pipe
+    // as with a liquid source, void fraction = no slip
     state.march.cells[0].temp = state.march.cells[0].acsr.injm.temp;
     if (state.march.input.flashCompleto == 2) {
         if (state.march.input.tabelaDinamica == 0)
@@ -2768,9 +2768,9 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
     else
         betini = 0.;
 
-    // esta marcha e feita para quando se tem alguma fonte no inicio da tubulacao,
-    // portanto, admite-se que o duto esta fechado e coloca-se uma fonte no centro da
-    // primeira celula. As vazoes na fronteira esquerda da celula sÃ£o portanto = 0
+    // this march is for a source at the start of the pipe,
+    // so the pipe is taken as closed and a source is placed at the centre of the
+    // first cell. The flow rates at the cell's left boundary are therefore 0
     state.march.cells[0].tempL = state.march.cells[0].temp;
     state.march.cells[1].tempL = state.march.cells[0].temp;
     state.march.cells[0].tempini = state.march.cells[0].temp;
@@ -2792,25 +2792,25 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
     double presteste0 = -10;
     state.march.steadyIteration = 0;
 
-    int limIter = 200; // limite de iteracoes quando a opcao de aceleracao da convergencia esta desligado. desaconselhavel
-    // desligar esta opcao, os ganhos sao pouco e a convergencia se torna instavel, principalmente
-    // quando o tramo faz perte de um sistema de redes
-    if (state.march.input.AceleraConvergPerm == 1) { // opcao aceleracao de convergencia ligada
-        limIter = 2;                   // em geral faz-se apenas duas iteracoes de marcha para um determinado chute
+    int limIter = 200; // iteration limit when convergence acceleration is off. Turning this option off
+    // is not advisable: the gains are small and convergence becomes unstable, especially
+    // when the branch is part of a network
+    if (state.march.input.AceleraConvergPerm == 1) { // convergence acceleration on
+        limIter = 2;                   // usually only two march iterations are made for a given guess
         if (state.march.input.lingas == 1)
             limIter = withGasInletCondition(
                 state.march.input.gasinj.tipoCC,
-                [](auto condition) { return acceleratedMarchesPerGuess(condition); }); // no caso de se ter
-        // uma condicao de contorno na injecao de gas = pressao, observou-se que o acoplamento dinamico
-        // entre a linha de gas e de producao e mais difoicil, para se conseguir um sistema
-        // melhor acoplado, deve-se fazer uma marcha iterativa a mais
+                [](auto condition) { return acceleratedMarchesPerGuess(condition); }); // with
+        // a pressure boundary condition at the gas injection, the dynamic coupling
+        // between the gas and production lines was found to be harder; for a better coupled
+        // system, one more iterative march should be made
     }
-    // arq.CriterioConvergPerm Ã© um criterio de convergencia da marcha, so faz sentido
-    // quando a aceleracao de convergencia esta desligada. Observe que esta convergencia nÃ£o
-    // e de fato a conevregencia do problema, e apenas um repeticao de marcha para um determinado
-    // chute de pressao ou de vazao no inicio da tubulacao. O que a convergencia busca de fato e
-    // determinar qual a pressao ou vazao de fundo que satisfaz as condicoes de contorno no fim
-    // da tubulacao, esta busca e feita nos metodos de busca.
+    // arq.CriterioConvergPerm is a march convergence criterion; it only makes sense
+    // when convergence acceleration is off. Note that this convergence is not
+    // the convergence of the problem itself, just a repetition of the march for a given
+    // pressure or flow rate guess at the start of the pipe. What convergence really seeks is
+    // the bottom-hole pressure or flow rate that satisfies the boundary conditions at the end
+    // of the pipe; that is done in the search methods.
     while ((fabs(masfim - masfim0) / fabs(masfim) > state.march.input.CriterioConvergPerm ||
             fabs(presteste - presteste0) / fabs(presteste) > state.march.input.CriterioConvergPerm) &&
            state.march.steadyIteration < limIter) {
@@ -2818,19 +2818,19 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
         masfim0 = masfim;
         presteste0 = presteste;
         if (state.march.steadyIteration == 0 && state.march.input.lingas > 0 && state.march.input.nvalvgas > 0 && state.march.networkCoupled == 1)
-            state.march.updaters.initializeTubingConnectionSteady(); // antes de iniciar a primeira iteracao de marcha,
-        // faz-se uma estimativa inicial de como se da o acopamento termico entre a coluna e o anular,
-        // caso se tenha linha de gas
+            state.march.updaters.initializeTubingConnectionSteady(); // before the first march iteration,
+        // an initial estimate of the thermal coupling between the tubing and the annulus is made,
+        // when there is a gas line
         else if (state.march.input.lingas > 0 && state.march.input.nvalvgas > 0 && state.march.networkCoupled == 1)
-            state.march.updaters.connectTubingSteady(); // acoplamento termico feito com valores de pressao e temperatura
-        // obtidas na primeira iteracao de marcha
+            state.march.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
+        // obtained in the first march iteration
         int i;
         int guessNeedsCorrection = 1;
         double abortValue;
         if (marchTertiaryCellsUntilConverged(state, guessNeedsCorrection, i, betini, alfini, pentrada, abortValue))
             return abortValue;
-        // apÃ³s o fim da marcha da linha de produÃ§Ã£o, Ã© feita a marcha da linha de gas
-        // caso exista
+        // after the production line march, the gas line is marched,
+        // if there is one
         if (pentrada > 0 && state.march.input.lingas > 0 && state.march.input.nvalvgas > 0) {
             withGasInletCondition(state.march.gasCells[0].tipoCC,
                                   [&](auto condition) { solveGasLineForSearch(state, condition); });
@@ -2862,11 +2862,11 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
             }
         }
 
-        masfim = state.march.cells[state.march.lastCell - 1].MC; // guarda valor de vazao para se calcular o erro, quando a
-        // opcao de acelerador de convergencia esta desligado
-        presteste = state.march.cells[state.march.lastCell].pres; // guarda valor de pressao para se calcular o erro, quando a
-        // opcao de acelerador de convergencia esta desligado
-        state.march.steadyIteration++; // atualiza a ieteracao da marcha
+        masfim = state.march.cells[state.march.lastCell - 1].MC; // stores the flow rate to compute the error when the
+        // convergence acceleration option is off
+        presteste = state.march.cells[state.march.lastCell].pres; // stores the pressure to compute the error when the
+        // convergence acceleration option is off
+        state.march.steadyIteration++; // updates the march iteration
         if (state.march.steadyIteration > 200 && state.march.input.AP == 0)
             NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
         else if (state.march.steadyIteration > 200)
@@ -2879,8 +2879,8 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
 
     state.march.gasSurfacePressure = (state.march.cells[state.march.lastCell].pres + corrigePresF);
 
-    return state.march.cells[state.march.lastCell].pres; // caso a marcha tenha conseguido ir atÃ© a Ãºltima celula,
-    // retorna a pressao da ultima celula calculada pela marcha
+    return state.march.cells[state.march.lastCell].pres; // if the march reached the last cell,
+    // returns the pressure of the last cell computed by the march
 }
 
 double searchReverseProductionPressureToPressure(const SteadyStateSearchState &state, double chute, double maximumFlowRate, int kontaiter) {
@@ -3517,23 +3517,23 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
             taux = state.march.input.celp[i].textern;
             double rhol = state.march.cells[i].flui.MasEspLiq(pchute, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchute, taux);
-            // se o sistema nao for um anel principal de GL
-            // para a estimativa de pressao, se utilizara so a hidrostatica de liquido, o que dara um
-            // chute inicial de pressao muito alta
+            // if the system is not a main gas-lift ring
+            // the pressure estimate uses only the liquid hydrostatics, which gives a
+            // very high initial pressure guess
             double alfa = 0.1;
             if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i + 1].dx);
-            // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
+            // pressure advance by the hydrostatics and the estimated friction loss
             pchute -= ((rhomix * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed) / kPascalPerKgfPerCm2);
-            // incremento de pressao devido a algum ganho de pressao constante em alguma celula
+            // pressure increment from a constant pressure gain in some cell
             if (state.march.cells[i].acsr.tipo == 7)
                 pchute -= state.march.cells[i].acsr.delp;
-            // caso exista alguma IPR no meio do duto, verifica se a pressao estimada esta menor que
-            // a pressao estatica, nao se trabalha com vazoes negativas neste solver
-            // para evitar isto, se corrige a pressao para um valor proximo da
-            // pressao estatica da IPR da celula
+            // if there is an IPR along the pipe, checks whether the estimated pressure is below
+            // the static pressure: this solver does not work with negative flow rates
+            // to avoid them, the pressure is corrected to a value close to the
+            // static pressure of the cell's IPR
             if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && ((state.march.cells[i].acsr.ipr.Pres - pchute) > 0.0) && i == state.march.lastCell - 1) {
 
                 pchute = -(10 / state.march.cells[i - 1].acsr.ipr.ip) + state.march.cells[i - 1].acsr.ipr.Pres;
@@ -3556,8 +3556,8 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
             totalSourceFlowRate += accessoryFlowRate;
             if (totalSourceFlowRate < 0)
                 totalSourceFlowRate -= accessoryFlowRate;
-            // tambÃ©m se evita um chute com valores maiores que o limite maximo de uma tabela
-            // no caso de se estar usando PVTSim
+            // a guess above the maximum limit of a table is also avoided
+            // when PVTSim is used
             if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
@@ -4711,7 +4711,7 @@ double bracketSecondaryBranchRoot(const SteadyStateSearchState &state, double am
 bool retryUntilBranchMarchCompletes(const SteadyStateSearchState &state, double pchuteAux0, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute, double &abortValue) {
     if (marchResidual < -0.9e10 || marchResidual > 0.9e10) {
         double valtemp;
-        valtemp = marchProductionSteadySecondary(state.march, pchuteAux); // marcha with pchuteAux
+        valtemp = marchProductionSteadySecondary(state.march, pchuteAux); // march with pchuteAux
         if (fabs(valtemp) > 1.01e10) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
             if ((*state.march.globals).iterRede > 0)

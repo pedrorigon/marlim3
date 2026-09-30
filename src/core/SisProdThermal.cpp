@@ -1991,10 +1991,10 @@ void selectAndApplyInteriorFlowRegime(
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.fontemassGR >= globals.localtiny * 1e-5) { // ATTENTION!!!!!!!!!!!!!!!  this makes no sense here
                 setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
             }
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.duto.teta >= 0) { // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
+            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.duto.teta >= 0) { // ATTENTION!!!!!!!!!!!!!!! change of 11/08/24, added
                 bif[cellIndex] = 1;
             }
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.duto.teta < 0) { // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
+            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.duto.teta < 0) { // ATTENTION!!!!!!!!!!!!!!! change of 11/08/24, added
                 setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
             }
         } else if ((fabs(superficialLiquidVelocity) < 1e-15 && (rightSuperficialLiquidVelocity < 0 || cell.duto.teta > 0) // ATTENTION!!!!!!!!!!!!!!! change of 11/08/24: it was ||, changed to &&
@@ -3090,7 +3090,7 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
     }
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // atencao!!!!!!!!!!!!!!!!!!
+    // attention!!!!!!!!!!!!!!!!!!
     // there is an issue that looks unresolved in this march: nothing was tested for
     // the case where the temperature transport velocity is <0; then the temperature in the cell with index
     // should not enter calctemp, since it is no longer a cell with a boundary
@@ -3488,7 +3488,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         leftCell.fluxcalmed = heatFlux; // heat flux in the tubing
 
         double temperatureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidSpecificHeat + gasDensity * meanSuperficialGasVelocity * gasSpecificHeat) * flowArea; // multiplying term
-        // a derivada Dt/Dx
+        // the derivative Dt/Dx
         double cappedMeanSuperficialLiquidVelocity = meanSuperficialLiquidVelocity;
         if (globals.blackOilTemp == 1 && fabs(meanSuperficialLiquidVelocity) > 5)
             cappedMeanSuperficialLiquidVelocity = 5 * meanSuperficialLiquidVelocity / meanSuperficialLiquidVelocity;
@@ -3496,7 +3496,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         if (globals.blackOilTemp == 1 && fabs(meanSuperficialGasVelocity) > 5)
             cappedMeanSuperficialGasVelocity = 5 * meanSuperficialGasVelocity / fabs(meanSuperficialGasVelocity);
         double pressureSpatialCoefficient = 1 * (liquidDensity * cappedMeanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * cappedMeanSuperficialGasVelocity * gasJouleThomson) * flowArea; // multiplying term
-        // a derivada Dp/Dx
+        // the derivative Dp/Dx
         double pressureGradient;
         if ((leftCell.acsr.tipo != kAccessoryPump || leftCell.acsr.bcs.freq < 1) && leftCell.acsr.tipo != 7)
             // without an ESP or a pressure increment, the pressure at the left boundary
@@ -3892,9 +3892,9 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         rightCell.fluxcalmed = heatFlux; // heat flux in the tubing
 
         double temperatureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidSpecificHeat + gasDensity * meanSuperficialGasVelocity * gasSpecificHeat) * flowArea; // multiplying term
-        // a derivada Dt/Dx
+        // the derivative Dt/Dx
         double pressureSpatialCoefficient = 1. * (liquidDensity * meanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * meanSuperficialGasVelocity * gasJouleThomson) * flowArea; // multiplying term
-        // a derivada Dp/Dx
+        // the derivative Dp/Dx
         double pressureGradient;
         if ((rightCell.acsr.tipo != kAccessoryPump || rightCell.acsr.bcs.freq < 1) && rightCell.acsr.tipo != 7)
             // without an ESP or a pressure increment, the pressure at the left boundary
@@ -4187,7 +4187,7 @@ void computeOutletTemperature(const ThermalState &state) {
         double betEF = state.cells[state.lastCell].bet;
         double quality = fabs(gasMassFlowRate / inletMassFlowRate);
 
-        double liquidJouleThomson = (1. - betEF) * state.cells[state.lastCell].flui.JTL(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) - betEF / rholc; // alteraacao2
+        double liquidJouleThomson = (1. - betEF) * state.cells[state.lastCell].flui.JTL(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp) - betEF / rholc; // change 2
         double gasJouleThomson = state.cells[state.lastCell].flui.JTG(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         state.surfaceTemperature = state.cells[state.lastCell].temp + ((1. - quality) * liquidJouleThomson + quality * gasJouleThomson) * (state.cells[state.lastCell].pres - state.cells[state.lastCell].pres); //????????
                                                                                                                   //???????????????????????????????celula[ncel].pres - celula[ncel].pres????????????????????????????????????????????

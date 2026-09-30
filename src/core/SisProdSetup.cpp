@@ -622,7 +622,7 @@ void SProd::validateSetupAndApplyInitialState() {
         arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, chokeInj, celula, celulaG, pGSup, temperatura, presiniG,
                      tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
         pGSupIni = pGSup;
-        // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//alteracao7
+        // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//change 7
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
             aberto = 1;
             abertoini = 1;
@@ -1034,11 +1034,11 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         resetCouplingAndOutputState();
     } catch (exception &excInt) {
         cout << "EXCECAO INESPERADA: " << excInt.what() << endl;
-        // incluir falha
+        // report the failure
         logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "", "", excInt.what());
         // write the log file
         logger.writeOutputLog();
-        // encerrar a aplicacao
+        // end the application
         exit(EXIT_SUCCESS);
     }
 }

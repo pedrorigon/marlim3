@@ -1281,13 +1281,13 @@ void normalizePhaseFractions(vector<double>& fracMolFase, double* fracMolOrigina
     	fracMolFase[kfrac] -= menorFracFase;
     }
 
-    // Calcular soma total
+    // Compute the total sum
     double fracTotFase = 0.;
     for (int kfrac = 0; kfrac < npseudo; kfrac++) {
         fracTotFase += fracMolFase[kfrac];
     }
 
-    // Normalizar
+    // Normalise
     if (fracTotFase > 0) {
     	for (int kfrac = 0; kfrac < npseudo; kfrac++) {
     		fracMolFase[kfrac] /= fracTotFase;

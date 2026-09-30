@@ -2273,7 +2273,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         state.step.movingMeanFlux = state.totalFlux / state.movingMeanCounter;
         state.movingMeanVoidFraction = state.totalVoidFraction / state.movingMeanCounter;
     }
-    // enterramento
+    // buried pipe
     for (int j = 0; j <= state.step.lastCell; j++) {
         if (state.step.cells[j].calor.difus2D == 1) {
             state.step.cells[j].calor.poisson2D.finalizaPassoTransiente(state.step.timeStep, state.step.branchIndex);

@@ -703,7 +703,7 @@ void SProd::consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_c
 
         gas_consumido_Mg = celula[ind].gas_consumido_massa_step;
 
-    //Atualizar BSW
+    // Update the BSW
     double A_cross = celula[ind].duto.area;
     double Lcel    = celula[ind].dx;
     double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h, 1e-12);
@@ -729,15 +729,15 @@ void SProd::consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_c
     if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
     //if (ind==3) system("pause");
 
-    } //Alteracao Hidratos
+    } // hydrate change
 
-    if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+    if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && (*vg1dSP).lixo5>0.01) { // hydrate change
 
     agua_consumida_Mw  = celula[ind].agua_consumida_massa_step;
 
     gas_consumido_Mg   = celula[ind].gas_consumido_massa_step;
 
-    //Atualizar BSW
+    // Update the BSW
     double A_cross = celula[ind].duto.area;
     double Lcel    = celula[ind].dx;
     double Vlivre  = std::max(A_cross * Lcel - celula[ind].V_h_total, 1e-12);
@@ -762,7 +762,7 @@ void SProd::consumeHydrateFormationMass(double &gas_consumido_Mg, double &agua_c
 
     //if (ind==3) cout << " t [s]: " << (*vg1dSP).lixo5 << " BSW: " << BSW_old << " FW: " << celula[ind].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << celula[ind].flui.BSW << endl;
 
-    } //Alteracao Hidratos
+    } // hydrate change
 }
 
 /// Adds to cell ind the mass its source delivers this step when the source is a
@@ -1004,8 +1004,8 @@ void SProd::renovaFonte(int ind) {
         celula[ind].fontemassLR -= (agua_consumida_Mw / (*vg1dSP).lixo5);
         celula[ind].fontemassGR -= (gas_consumido_Mg / (*vg1dSP).lixo5);
     }
-  	//alteracao hidrato 3
-  	if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && celula[ind].flui.BSW>1e-14 && (*vg1dSP).lixo5>0.01) { //alteracao Hidratos
+  	// hydrate change 3
+  	if (arq.calculaEnvelope==1 && arq.tipoHmodel==3 && celula[ind].flui.BSW>1e-14 && (*vg1dSP).lixo5>0.01) { // hydrate change
   		celula[ind].fontemassLR -= (agua_consumida_Mw / (*vg1dSP).lixo5);
   		celula[ind].fontemassGR -= (gas_consumido_Mg / (*vg1dSP).lixo5);
   	}
@@ -1255,12 +1255,12 @@ void SProd::atualizaCC1() {
 /// does not have. SolveTrans reaches it through a callback, so the hydrate
 /// phase runs first in the step.
 void SProd::solveHydrateEnvelopes() {
-    if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+    if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { // *vg1dSP).lixo5>0 && //chris - hydrates
         FA_Hidrato solverHidrato(*this);
         solverHidrato.solverHidrato();
     }
 
-    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { // *vg1dSP).lixo5>0 && //chris - hydrates
         FA_Hidrato_Servico solverHidratoG(*this);
         solverHidratoG.solverHidratoG();
     }
