@@ -453,6 +453,23 @@ sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system) {
 
 
 
+/// The state the five drift-flux closure variants read.
+driftflux::coefficient::ClosureState closureStateOf(SProd &system) {
+    return driftflux::coefficient::ClosureState{
+        .cells = system.celula,
+        .lastCell = system.ncel,
+        .globals = system.vg1dSP,
+        .input = system.arq,
+        .selectors = system.driftSelectors,
+        .gasSurfaceTemperature = system.tGSup,
+        .inletVoidFraction = system.alfE,
+        .inletCompletionFraction = system.betaE,
+        .inletPressure = system.presE,
+        .inletTemperature = system.tempE,
+        .steadyIteration = system.iterperm,
+    };
+}
+
 /// The state the source terms of a cell read and write.
 sisprod::sources::SourceState sourceStateOf(SProd &system) {
     return sisprod::sources::SourceState{

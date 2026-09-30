@@ -92,6 +92,7 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system);
 sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system);
 sisprod::thermal::ThermalState thermalStateOf(SProd &system);
 sisprod::sources::SourceState sourceStateOf(SProd &system);
+driftflux::coefficient::ClosureState closureStateOf(SProd &system);
 trendoutput::TrendState trendStateOf(const SProd &system);
 }  // namespace sisprod::adapters
 
@@ -113,6 +114,7 @@ class SProd {
     friend sisprod::transient::TransientSolveState sisprod::adapters::transientSolveStateOf(SProd &);
     friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &);
     friend sisprod::sources::SourceState sisprod::adapters::sourceStateOf(SProd &);
+    friend driftflux::coefficient::ClosureState sisprod::adapters::closureStateOf(SProd &);
     friend trendoutput::TrendState sisprod::adapters::trendStateOf(const SProd &);
     friend struct sisprod::steady::SteadyStateUpdaters;
     friend struct sisprod::transient::TransientStepUpdaters;

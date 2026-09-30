@@ -33,6 +33,7 @@ using sisprod::adapters::compositionStateOf;
 using sisprod::adapters::transientSolveStateOf;
 using sisprod::adapters::thermalStateOf;
 using sisprod::adapters::sourceStateOf;
+using sisprod::adapters::closureStateOf;
 using sisprod::adapters::trendStateOf;
 using sisprod::kGravity;
 
@@ -614,71 +615,19 @@ void SProd::renovaMasEsp() {
 }
 
 void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
-    const driftflux::coefficient::ClosureState state{
-        .cells = celula,
-        .lastCell = ncel,
-        .globals = vg1dSP,
-        .input = arq,
-        .selectors = driftSelectors,
-        .gasSurfaceTemperature = tGSup,
-        .inletVoidFraction = alfE,
-        .inletCompletionFraction = betaE,
-        .inletPressure = presE,
-        .inletTemperature = tempE,
-        .steadyIteration = iterperm,
-    };
-    driftflux::coefficient::instantaneous(state, ind, c0, ud);
+    driftflux::coefficient::instantaneous(closureStateOf(*this), ind, c0, ud);
 }
 
 void SProd::CalcC0UdBuf(int ind, double &c0, double &ud) {
-    const driftflux::coefficient::ClosureState state{
-        .cells = celula,
-        .lastCell = ncel,
-        .globals = vg1dSP,
-        .input = arq,
-        .selectors = driftSelectors,
-        .gasSurfaceTemperature = tGSup,
-        .inletVoidFraction = alfE,
-        .inletCompletionFraction = betaE,
-        .inletPressure = presE,
-        .inletTemperature = tempE,
-        .steadyIteration = iterperm,
-    };
-    driftflux::coefficient::buffered(state, ind, c0, ud);
+    driftflux::coefficient::buffered(closureStateOf(*this), ind, c0, ud);
 }
 
 void SProd::CalcC0UdIni(int ind, double &c0, double &ud) {
-    const driftflux::coefficient::ClosureState state{
-        .cells = celula,
-        .lastCell = ncel,
-        .globals = vg1dSP,
-        .input = arq,
-        .selectors = driftSelectors,
-        .gasSurfaceTemperature = tGSup,
-        .inletVoidFraction = alfE,
-        .inletCompletionFraction = betaE,
-        .inletPressure = presE,
-        .inletTemperature = tempE,
-        .steadyIteration = iterperm,
-    };
-    driftflux::coefficient::initialization(state, ind, c0, ud);
+    driftflux::coefficient::initialization(closureStateOf(*this), ind, c0, ud);
 }
 
 void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
-    const driftflux::coefficient::ClosureState state{
-        .cells = celula,
-        .lastCell = ncel,
-        .globals = vg1dSP,
-        .input = arq,
-        .selectors = driftSelectors,
-        .gasSurfaceTemperature = tGSup,
-        .inletVoidFraction = alfE,
-        .inletCompletionFraction = betaE,
-        .inletPressure = presE,
-        .inletTemperature = tempE,
-        .steadyIteration = iterperm,
-    };
-    driftflux::coefficient::bufferedInitialization(state, ind, c0, ud);
+    driftflux::coefficient::bufferedInitialization(closureStateOf(*this), ind, c0, ud);
 }
 
 void SProd::correcHidroFric(int i, double &hidro, double &fric) {
@@ -1020,20 +969,7 @@ void SProd::RenovaMassPermCompRev(int i) {
 }
 
 void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
-    const driftflux::coefficient::ClosureState state{
-        .cells = celula,
-        .lastCell = ncel,
-        .globals = vg1dSP,
-        .input = arq,
-        .selectors = driftSelectors,
-        .gasSurfaceTemperature = tGSup,
-        .inletVoidFraction = alfE,
-        .inletCompletionFraction = betaE,
-        .inletPressure = presE,
-        .inletTemperature = tempE,
-        .steadyIteration = iterperm,
-    };
-    driftflux::coefficient::steadyState(state, ind, c0, ud);
+    driftflux::coefficient::steadyState(closureStateOf(*this), ind, c0, ud);
 }
 
 void SProd::RenovaTransMassPerm(int i) {
