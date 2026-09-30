@@ -93,7 +93,7 @@ namespace {
         sourceGasEnthalpy = cell.acsr.injl.FluidoPro.EntalpGas(cell.pres, sourceTemperature);
         sourceLiquidEnthalpy = cell.acsr.injl.FluidoPro.EntalpLiq(cell.pres, sourceTemperature);
         hcF = cell.acsr.injl.fluidocol.CalorLiq(cell.pres, sourceTemperature) * sourceTemperature
-            /*entalpia fluido complementar a ser corrigida*/;
+            /*complementary-fluid enthalpy, to be corrected*/;
     } else if (cell.acsr.tipo == kAccessoryInflowPerformance) {
         sourceTemperature = cell.acsr.ipr.Tres;
         sourceGasEnthalpy = cell.acsr.ipr.FluidoPro.EntalpGas(cell.pres, sourceTemperature);
@@ -129,14 +129,14 @@ namespace {
                 sourceGasEnthalpy = leftCell.flui.EntalpGas(leftCell.pres, sourceTemperature);
                 sourceLiquidEnthalpy = leftCell.flui.EntalpLiq(leftCell.pres, sourceTemperature);
                 hcF = leftCell.fluicol.CalorLiq(leftCell.pres, sourceTemperature) * sourceTemperature;
-                /*entalpia fluido complementar a ser corrigida*/
+                /*complementary-fluid enthalpy, to be corrected*/
 
             } else {
                 sourceTemperature = cell.temp;
                 sourceGasEnthalpy = leftCell.flui.EntalpGas(leftCell.pres, leftCell.temp);
                 sourceLiquidEnthalpy = leftCell.flui.EntalpLiq(leftCell.pres, leftCell.temp);
                 hcF = leftCell.fluicol.CalorLiq(leftCell.pres, leftCell.temp) * sourceTemperature;
-                /*entalpia fluido complementar a ser corrigida*/
+                /*complementary-fluid enthalpy, to be corrected*/
             }
         } else if ((*cell.acsrL).tipo == kAccessoryVolumetricPump) {
 
@@ -147,7 +147,7 @@ namespace {
             sourceGasEnthalpy = leftCell.flui.EntalpGas(leftCell.pres, sourceTemperature);
             sourceLiquidEnthalpy = leftCell.flui.EntalpLiq(leftCell.pres, sourceTemperature);
             hcF = leftCell.fluicol.CalorLiq(leftCell.pres, sourceTemperature) * sourceTemperature;
-            /*entalpia fluido complementar a ser corrigida*/
+            /*complementary-fluid enthalpy, to be corrected*/
         } else {
             sourceGasEnthalpy = 0.;
             sourceLiquidEnthalpy = 0.;
@@ -237,21 +237,21 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
     double liquidDensityAtCellPressure = cell.flui.MasEspLiq(meanPressure, meanTemperature);
     double gasEnthalpy = cell.flui.EntalpGas(previousMeanPressure, meanTemperature);
     double liquidEnthalpy = cell.flui.EntalpLiq(previousMeanPressure, meanTemperature);
-    double hc = cell.fluicol.CalorLiq(previousMeanPressure, meanTemperature) * meanTemperature; // corrigir entalpia
+    double hc = cell.fluicol.CalorLiq(previousMeanPressure, meanTemperature) * meanTemperature; // enthalpy to be corrected
 
     double leftGasDensity = cell.flui.MasEspGas(leftPressure, leftTemperature);
     double leftLiquidDensity = cell.flui.MasEspLiq(leftPressure, leftTemperature);
     double rhocL = cell.fluicol.MasEspFlu(leftPressure, leftTemperature);
     double leftGasEnthalpy = cell.flui.EntalpGas(leftPressure, leftTemperature);
     double leftLiquidEnthalpy = cell.flui.EntalpLiq(leftPressure, leftTemperature);
-    double hcL = cell.fluicol.CalorLiq(leftPressure, leftTemperature) * leftTemperature; // corrigir entalpia
+    double hcL = cell.fluicol.CalorLiq(leftPressure, leftTemperature) * leftTemperature; // enthalpy to be corrected
 
     double rightGasDensity = cell.flui.MasEspGas(rightPressure, rightTemperature);
     double rightLiquidDensity = cell.flui.MasEspLiq(rightPressure, rightTemperature);
     double rhocR = cell.fluicol.MasEspFlu(rightPressure, rightTemperature);
     double rightGasEnthalpy = cell.flui.EntalpGas(rightPressure, rightTemperature);
     double rightLiquidEnthalpy = cell.flui.EntalpLiq(rightPressure, rightTemperature);
-    double hcR = cell.fluicol.CalorLiq(rightPressure, rightTemperature) * rightTemperature; // corrigir entalpia
+    double hcR = cell.fluicol.CalorLiq(rightPressure, rightTemperature) * rightTemperature; // enthalpy to be corrected
 
     double previousMixtureInternalEnergy = gasDensity * previousMeanVoidFraction * (gasEnthalpy - previousMeanPressure * kPascalPerKgfPerCm2 / gasDensity) + liquidDensity * (1 - betmed0) * (1. - previousMeanVoidFraction) * (liquidEnthalpy - previousMeanPressure * kPascalPerKgfPerCm2 / liquidDensity) +
                            betmed0 * rhoc * (1. - previousMeanVoidFraction) * (hc - previousMeanPressure * kPascalPerKgfPerCm2 / rhoc);
@@ -302,8 +302,8 @@ double interpolateMixtureEnergy(const ThermalState &state, int cellIndex, int pr
 
     double rhocp0 = cell.fluicol.MasEspFlu(lowerPressure, temperature);
     double rhocp1 = cell.fluicol.MasEspFlu(upperPressure, temperature);
-    double hlc0 = cell.fluicol.CalorLiq(lowerPressure, temperature) * temperature; // corrigir entalpia
-    double hlc1 = cell.fluicol.CalorLiq(upperPressure, temperature) * temperature; // corrigir en;talpia
+    double hlc0 = cell.fluicol.CalorLiq(lowerPressure, temperature) * temperature; // enthalpy to be corrected
+    double hlc1 = cell.fluicol.CalorLiq(upperPressure, temperature) * temperature; // enthalpy to be corrected
 
     double lowerMixtureEnergy = meanVoidFraction * lowerGasDensity * (lowerGasEnthalpy - lowerPressure * kPascalPerKgfPerCm2 / lowerGasDensity) +
                     (1 - meanVoidFraction) * (1 - betmed) * lowerLiquidDensity * (lowerLiquidEnthalpy - lowerPressure * kPascalPerKgfPerCm2 / lowerLiquidDensity) +
@@ -1251,7 +1251,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
 
     liquidDensity = leftFaceFluid.MasEspLiq(cell.presaux, meanTemperature);
     if (cellHasNegativeLiquidMassFlowRate)
-        betI = cell.bet; // testeBeta
+        betI = cell.bet; // beta test
     else
         betI = cell.betL;
 
@@ -1259,16 +1259,16 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
 
     double betL = leftCell.betL;
     if (leftCellHasNegativeLiquidMassFlowRate)
-        betL = leftCell.bet; // testeBeta
+        betL = leftCell.bet; // beta test
 
     if (cellIndex > 0)
         betI = leftCell.betPigD;
     if (cellHasNegativeLiquidMassFlowRate)
-        betI = cell.betPigE; // testeBeta
+        betI = cell.betPigE; // beta test
     if (cellIndex > 1)
         betL = state.cells[cellIndex - 2].betPigD;
     if (leftCellHasNegativeLiquidMassFlowRate)
-        betL = leftCell.betPigE; // testebeta
+        betL = leftCell.betPigE; // beta test
 
     double mixtureLiquidDensity = (1 - betI) * liquidDensity +
                   betI * cell.fluicol.MasEspFlu(
@@ -1985,10 +1985,10 @@ void selectAndApplyInteriorFlowRegime(
     } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - 1 * globals.localtiny && (noLiquidSourceOnEitherFace)) {
         setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
         clearDriftClosure(state, cellIndex);
-        if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) { // ATENCAO!!!!!!!!!!!!!!! não teria de ser bifásico, mono-liq só seo ângulo fosse negativo, não?
+        if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.localtiny && rightSuperficialLiquidVelocity < 0) { // ATTENTION!!!!!!!!!!!!!!! shouldn't this be two-phase, single-phase liquid only if the angle were negative?
             setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
         } else if (fabs(rightSuperficialLiquidVelocity) < globals.localtiny * 1e-5) {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.fontemassGR >= globals.localtiny * 1e-5) { // ATENCAO!!!!!!!!!!!!!!!  sem sentido isto aqui
+            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.fontemassGR >= globals.localtiny * 1e-5) { // ATTENTION!!!!!!!!!!!!!!!  this makes no sense here
                 setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
             }
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.duto.teta >= 0) { // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
@@ -1997,7 +1997,7 @@ void selectAndApplyInteriorFlowRegime(
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.alfPigE < globals.localtiny && cell.duto.teta < 0) { // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, adicionado
                 setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
             }
-        } else if ((fabs(superficialLiquidVelocity) < 1e-15 && (rightSuperficialLiquidVelocity < 0 || cell.duto.teta > 0) // ATENCAO!!!!!!!!!!!!!!! alteracao 11/08/24, estava || mudado para &&
+        } else if ((fabs(superficialLiquidVelocity) < 1e-15 && (rightSuperficialLiquidVelocity < 0 || cell.duto.teta > 0) // ATTENTION!!!!!!!!!!!!!!! change of 11/08/24: it was ||, changed to &&
                     && ((cell.alfPigE <= (1 - 10 * globals.localtiny + .0 * cell.alfPigER) &&
                          cell.alfPigER < 1 - 1 * globals.localtiny) ||
                         cell.alfPigE <= 0.7)))
@@ -2094,7 +2094,7 @@ void updateInteriorFlowPartitionCell(
     if (valv[cellIndex] == 1) {
         double betI = leftCell.betPigD;
         double liquidDensity;
-        if (cell.QL < 0.) { // testeBeta
+        if (cell.QL < 0.) { // beta test
             betI = cell.betPigE;
             liquidDensity = (1 - betI) * cell.rpCi + betI * cell.rcCi;
         } else {
@@ -2115,8 +2115,8 @@ void updateInteriorFlowPartitionCell(
         else
             betIL = state.cells[cellIndex - 2].betPigD;
         if (leftCell.QL < 0.)
-            betIL = leftCell.betPigE; // testeBeta
-        // betIL = leftCell.betPigE;        //duvidabeta
+            betIL = leftCell.betPigE; // beta test
+        // betIL = leftCell.betPigE;        // beta doubt
         double leftGasDensity = cell.rgLi;
         double leftLiquidDensity = (1 - betIL) * cell.rpLi + betIL * cell.rcLi;
         double leftSuperficialGasVelocity = (cell.ML - cell.MliqiniL) / (leftGasDensity * leftFlowArea);
@@ -2124,7 +2124,7 @@ void updateInteriorFlowPartitionCell(
 
         double rightFlowArea = cell.dutoR.area;
         double betIR = cell.betPigD;
-        if (cell.QLR < 0.) { // testeBeta
+        if (cell.QLR < 0.) { // beta test
             if (cellIndex > state.lastCell - 2)
                 betIR = cell.betR;
             else
@@ -2167,8 +2167,8 @@ void updateOutletBoundaryFlowPartition(
     double meanTemperature = cell.temp * lengthRatio + leftCell.temp * (1. - lengthRatio);
     double betI = cell.betL;
     if (cell.QL < 0.)
-        betI = cell.bet; // testeBeta
-    // betI = cell.bet;            //duvidabeta
+        betI = cell.bet; // beta test
+    // betI = cell.bet;            // beta doubt
     double gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
     double liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
     double flowArea = cell.duto.area;
@@ -2183,8 +2183,8 @@ void updateOutletBoundaryFlowPartition(
     double leftMeanTemperature = leftCell.temp * leftLengthRatio + leftCell.tempL * (1. - leftLengthRatio);
     double betIL = leftCell.betL;
     if (leftCell.QL < 0.)
-        betIL = leftCell.bet; // testeBeta
-    // betIL = leftCell.bet;            //duvidabeta
+        betIL = leftCell.bet; // beta test
+    // betIL = leftCell.bet;            // beta doubt
     double leftLiquidDensity = (1 - betIL) * cell.flui.MasEspLiq(leftMeanPressure, leftMeanTemperature) + betIL * cell.fluicol.MasEspFlu(leftMeanPressure, leftMeanTemperature);
     double leftSuperficialLiquidVelocity = (cell.MliqiniL) / (leftLiquidDensity * leftFlowArea);
 
@@ -2287,8 +2287,8 @@ void updateOutletBoundaryFlowPartition(
         cell.term1 = numerator / denominator;
         cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
 
-        // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // teste!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
 
     cell.term1L = leftCell.term1;
@@ -2757,7 +2757,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
 
                 double betI;
                 double surfaceTension;
-                if (cell.QL < 0.) { // testeBeta
+                if (cell.QL < 0.) { // beta test
                     betI = cell.betPigE;
                     liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
@@ -2790,7 +2790,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 double rightMeanPressure = cell.presauxR;
                 double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempL * (1. - rightLengthRatio);
                 double betIR = cell.betPigD;
-                if (cell.QLR < 0.) // testeBeta
+                if (cell.QLR < 0.) // beta test
                     betIR = state.cells[cellIndex + 1].betPigE;
 
                 double rightGasDensity = cell.flui.MasEspGas(rightMeanPressure, rightMeanTemperature);
@@ -2831,7 +2831,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     double betI = leftCell.betPigD;
     double liquidDensity;
     double surfaceTension;
-    if (cell.MliqiniBuf < 0.) { // testeBeta
+    if (cell.MliqiniBuf < 0.) { // beta test
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
@@ -2882,8 +2882,8 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     else
         betIL = state.cells[cellIndex - 2].betPigD;
     if (leftCell.MliqiniBuf < 0.)
-        betIL = leftCell.betPigE; // testeBeta
-    // betIL = leftCell.betPigE;    //duvidabeta
+        betIL = leftCell.betPigE; // beta test
+    // betIL = leftCell.betPigE;    // beta doubt
     double leftGasDensity = cell.flui.MasEspGas(leftMeanPressure, leftMeanTemperature);
     double leftLiquidDensity = (1 - betIL) * cell.flui.MasEspLiq(leftMeanPressure, leftMeanTemperature) + betIL * cell.fluicol.MasEspFlu(leftMeanPressure, leftMeanTemperature);
     double leftSuperficialGasVelocity = (cell.MLBuf - cell.MliqiniLBuf) / (leftGasDensity * leftFlowArea);
@@ -2894,7 +2894,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     double rightMeanPressure = cell.presRBuf;
     double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempR * (1. - rightLengthRatio);
     double betIR = cell.betPigD;
-    if (cell.MliqiniRBuf < 0.) { // testeBeta
+    if (cell.MliqiniRBuf < 0.) { // beta test
         if (cellIndex > state.lastCell - 2)
             betIR = cell.betR;
         else
@@ -2937,7 +2937,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double liquidMixtureDensity = state.inletCompletionFraction * rcis + (1 - state.inletCompletionFraction) * liquidDensity;
     state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
 
-    if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // duvidabeta
+    if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // beta doubt
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
@@ -2969,7 +2969,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double rightMeanPressure = cell.presRBuf * rightLengthRatio + cell.presBuf * (1. - rightLengthRatio);
     double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempR * (1. - rightLengthRatio);
     double betIR = cell.betPigD;
-    if (cell.QLR < 0.) // testeBeta
+    if (cell.QLR < 0.) // beta test
         betIR = state.cells[cellIndex + 1].betPigE;
 
     double rightGasDensity = cell.flui.MasEspGas(rightMeanPressure, rightMeanTemperature);
@@ -3091,10 +3091,10 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // atencao!!!!!!!!!!!!!!!!!!
-    // existe uma questao que parece mal resolvida na resolucao desta marcha, nao foi feito nenhum teste para
-    // o caso em que a velocidade de transporte da temperatura é <0 neste caso, a temperatura na celula de indice
-    // não deveria entrar no metodo calctemp, ja que não e mais o caso de ser uma celula com condicao de
-    // contorno para temperatura??????????????????????????????????????????????????????????????????????/
+    // there is an issue that looks unresolved in this march: nothing was tested for
+    // the case where the temperature transport velocity is <0; then the temperature in the cell with index
+    // should not enter calctemp, since it is no longer a cell with a boundary
+    // condition for temperature??????????????????????????????????????????????????????????????????????/
     //"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     state.cells[0].tempini = state.cells[0].temp;
@@ -3183,37 +3183,37 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
     double sourceSpecificHeatRatio = 0.;
     double sourceLiquidSpecificHeat;
 
-    // calculo da energia adicionada no sistema devido a fontes de massa
-    if (leftCell.acsr.tipo == kAccessoryGasInjection) { // caso fonte de gas
+    // energy added to the system by mass sources
+    if (leftCell.acsr.tipo == kAccessoryGasInjection) { // gas source case
         sourceTemperature = leftCell.acsr.injg.temp;
         sourceGasSpecificHeat = leftCell.acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
         sourceSpecificHeatRatio = leftCell.acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
         sourceLiquidSpecificHeat = 0.;
-    } else if (leftCell.acsr.tipo == kAccessoryLiquidInjection) { // caso fonte de liquido
+    } else if (leftCell.acsr.tipo == kAccessoryLiquidInjection) { // liquid source case
         sourceTemperature = leftCell.acsr.injl.temp;
         sourceGasSpecificHeat = 0.;
         sourceSpecificHeatRatio = 1.;
         sourceLiquidSpecificHeat = (1. - leftCell.acsr.injl.bet) * leftCell.acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + leftCell.acsr.injl.bet * leftCell.acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (leftCell.acsr.tipo == kAccessoryInflowPerformance) { // caso IPR
+    } else if (leftCell.acsr.tipo == kAccessoryInflowPerformance) { // IPR case
         sourceTemperature = leftCell.acsr.ipr.Tres;
         sourceGasSpecificHeat = leftCell.acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = leftCell.acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = leftCell.acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
     } else if (leftCell.acsr.tipo == kAccessoryLeak && leftCell.acsr.fontechk.abertura > 1e-6 &&
                (leftCell.fontemassCR + leftCell.fontemassGR + leftCell.fontemassLR) > 1e-9) {
-        // caso vazamento
+        // leak case
         sourceTemperature = leftCell.acsr.fontechk.tamb;
         sourceGasSpecificHeat = leftCell.acsr.fontechk.fluidoPamb.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = leftCell.acsr.fontechk.fluidoPamb.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = (1. - leftCell.acsr.fontechk.betISamb) *
                    leftCell.acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
                leftCell.acsr.fontechk.betISamb * leftCell.acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (leftCell.acsr.tipo == kAccessoryRadialPorous) { // caso IPR
+    } else if (leftCell.acsr.tipo == kAccessoryRadialPorous) { // IPR case
         sourceTemperature = leftCell.acsr.radialPoro.tRes;
         sourceGasSpecificHeat = leftCell.acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = leftCell.acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = leftCell.acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
-    } else if (leftCell.acsr.tipo == kAccessoryPorous2D) { // caso IPR
+    } else if (leftCell.acsr.tipo == kAccessoryPorous2D) { // IPR case
         sourceTemperature = leftCell.acsr.poroso2D.dados.tRes;
         sourceGasSpecificHeat = leftCell.acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = leftCell.acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
@@ -3253,39 +3253,39 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
                                   double gasDensity) {
     Cel &leftCell = state.cells[cellIndex - 1];
     double annulusResistance = 0.;
-    // verifica se existe acoplamento com o anular:
+    // checks whether there is coupling with the annulus:
     if (state.input.lingas == 1 && (cellIndex - 1 <= state.annulusTubingStart && cellIndex - 1 >= state.annulusTubingEnd)) {
         int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex - 1);
-        // caso tenha acoplamento:
+        // with coupling:
 
         if (state.steadyIteration == 0 && (cellIndex - 1) < state.annulusTubingStart) {
-            // na primeira iteracao, considera-se a resistencia do revestimento + cimento +
-            // formacao, nas outras iteracoes
-            // bastara determinar a troca termica entre a coluna e o gas do anular
-            // no modelo acoplado, a coluna nao tem a definicao da parede revestimento+cimento+formacao
-            // para se obter esta resistencia, precisa-se recorrer ao modelo de troca termica
-            // do anular, o que e feito aqui:
+            // on the first iteration, the resistance of casing + cement +
+            // formation is considered; on the other iterations
+            // it is enough to determine the heat exchange between the tubing and the annulus gas
+            // in the coupled model, the tubing has no casing+cement+formation wall definition;
+            // to obtain this resistance, the heat-exchange model of the
+            // annulus has to be used, which is done here:
             // Note: done up to one cell before reaching the master, (cellIndex-1)<ColunaAnulaIni,
-            // se esta fazendo igual ao que se faz no simulador involuta, para melhorar
-            // a estimativa da temperatura na ANM. Na celula da anm, so se considera a troca termica com o gas
-            // desde a primeira iteracao
+            // the same as the involuta simulator does, to improve
+            // the temperature estimate at the ANM. In the ANM cell only the heat exchange with the gas is considered,
+            // from the first iteration on
             state.gasCells[j].calor.Tint = interfaceMeanTemperature;
             state.gasCells[j].calor.Vint = 100;
             state.gasCells[j].calor.kint = leftCell.flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
             state.gasCells[j].calor.cpint = gasSpecificHeat;
             state.gasCells[j].calor.rhoint = gasDensity;
             state.gasCells[j].calor.viscint = leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * kPascalSecondPerCentipoise;
-            state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
-            annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
+            state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // heat exchange in the annulus
+            annulusResistance = state.gasCells[j].calor.resGlob;                // wall resistance
             // The heat flux itself is not of interest here, only the resistance
-            // termica do conjunto de paredes a partir do revestimento em direcao aa formacao
+            // of the walls, from the casing towards the formation.
             leftCell.calor.Vextern1 = 100.;
             leftCell.calor.kextern1 = state.gasCells[j].calor.kint;
             leftCell.calor.cpextern1 = state.gasCells[j].calor.cpint;
             leftCell.calor.rhoextern1 = state.gasCells[j].calor.rhoint;
             leftCell.calor.viscextern1 = state.gasCells[j].calor.viscint;
-        } else { // apos a primeira iteracao, considera-se apenas a troca termica entre a coluna e o gas do anular
-            // passando pela parede da coluna, claro
+        } else { // after the first iteration, only the heat exchange between the tubing and the annulus gas is considered,
+            // through the tubing wall, of course
             annulusResistance = 0.;
             leftCell.calor.Vextern1 = state.gasCells[j].VGasR / state.gasCells[j].u1L;
             leftCell.calor.kextern1 = state.gasCells[j].calor.kint;
@@ -3294,11 +3294,11 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
             leftCell.calor.viscextern1 = state.gasCells[j].calor.viscint;
         }
         if (state.steadyIteration == 0)
-            leftCell.calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
+            leftCell.calor.Textern1 = state.gasCells[j].calor.Textern1; // on the first iteration, as the calculation
         // uses the whole well resistance, so the external temperature is the geothermal one
         else
-            leftCell.calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
-        // e a temperatura do gas
+            leftCell.calor.Textern1 = state.gasCells[j].temp; // on the following iterations, the ambient temperature
+        // is the gas temperature
     }
     return annulusResistance;
 }
@@ -3314,7 +3314,7 @@ double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
     double upstreamMeanLiquidVelocity = 0;
     double meanGasVelocity = 0;
     double meanLiquidVelocity = 0;
-    // termo de energia cinetica:
+    // kinetic energy term:
     if (cell.acsr.tipo == kAccessoryNone && leftCell.acsr.tipo == kAccessoryNone && cellIndex > 2) {
         double kineticCellLength = leftCell.dx;
         double upstreamDiameter = leftCell.duto.a;
@@ -3425,19 +3425,19 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         meanTemperature = cell.temp;
     }
     double meanSuperficialGasVelocity;
-    meanSuperficialGasVelocity = cell.QG / flowArea; // velocidade superficial de gas
+    meanSuperficialGasVelocity = cell.QG / flowArea; // gas superficial velocity
     double meanSuperficialLiquidVelocity;
-    meanSuperficialLiquidVelocity = cell.QL / flowArea; // velocidade superficial de liquido
+    meanSuperficialLiquidVelocity = cell.QL / flowArea; // liquid superficial velocity
     double mixtureFluxSign = 1.;
-    if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > 0.05 && state.thermalSourceDisabled == 0) { // calculo termico e feito para velocidades de mistura superiores a 0,1 m/s,
+    if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > 0.05 && state.thermalSourceDisabled == 0) { // the thermal calculation is done for mixture velocities above 0.1 m/s,
         // at lower velocities the fluid temperature is taken as the ambient temperature
         mixtureFluxSign = (meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) / fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
         double interfaceMeanPressure = cell.presaux + 0 * leftCell.dpB / kPascalPerKgfPerCm2;
         double interfaceMeanTemperature;
-        if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0) // temperatura na interface esquerda da celula
-            // caso em que se considera que ja foi
-            // feita uma iteracao e ja se tem a temperatura na celula cellIndex vinda da iteracao anterior
-            // isto pode dificultar a convergencia, quando se deseja a aceleracao da convergencia
+        if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0) // temperature at the cell's left interface
+            // case in which one iteration is considered to have been
+            // done already, with the temperature of cell cellIndex known from the previous iteration;
+            // this can hinder convergence when convergence acceleration is wanted
             // the temperature at the left boundary is taken as that of the left cell
             interfaceMeanTemperature = (cell.dx * cell.temp + cell.dxL * cell.tempL) / (cell.dx + cell.dxL);
         else
@@ -3457,11 +3457,11 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             liquidJouleThomson = -(1 + (interfaceMeanTemperature + 273.14) * leftCell.fluicol.DrhoDtFlu(interfaceMeanPressure, interfaceMeanTemperature) / rc) / rc;
         }
         double gasJouleThomson = leftCell.flui.JTG(interfaceMeanPressure, interfaceMeanTemperature);
-        // energia potencial:
+        // potential energy:
         double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(leftCell.duto.teta);
 
 
-        // definicao dos parametros internos na tubulacao para se obter a troca termica om o meio ambiente
+        // internal tubing parameters for the heat exchange with the surroundings
         leftCell.calor.Tint = interfaceMeanTemperature;
         leftCell.calor.Vint = fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
         double liquidConductivity = (1. - betmed) * leftCell.flui.CondLiq(interfaceMeanPressure, interfaceMeanTemperature) + betmed * leftCell.fluicol.CondLiq(interfaceMeanPressure, interfaceMeanTemperature);
@@ -3471,7 +3471,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double liquidViscosity = (1. - betmed) * leftCell.flui.ViscOleo(interfaceMeanPressure, interfaceMeanTemperature) + betmed * leftCell.fluicol.VisFlu(interfaceMeanPressure, interfaceMeanTemperature);
         leftCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * kPascalSecondPerCentipoise;
 
-        [[maybe_unused]] double relaxedHeatFlux = 0; // variavel nao utilizada
+        [[maybe_unused]] double relaxedHeatFlux = 0; // unused variable
         if (state.steadyIteration > 0)
             relaxedHeatFlux = leftCell.fluxcalmed;
         double annulusResistance = 0.;
@@ -3485,9 +3485,9 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             heatFlux = mixtureFluxSign * leftCell.calor.transperm(leftCell.resAcopRedeP);
         } else
             heatFlux = mixtureFluxSign * leftCell.calor.transperm(annulusResistance);
-        leftCell.fluxcalmed = heatFlux; // fluxo de calor na coluna
+        leftCell.fluxcalmed = heatFlux; // heat flux in the tubing
 
-        double temperatureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidSpecificHeat + gasDensity * meanSuperficialGasVelocity * gasSpecificHeat) * flowArea; // termo que multiplica
+        double temperatureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidSpecificHeat + gasDensity * meanSuperficialGasVelocity * gasSpecificHeat) * flowArea; // multiplying term
         // a derivada Dt/Dx
         double cappedMeanSuperficialLiquidVelocity = meanSuperficialLiquidVelocity;
         if (globals.blackOilTemp == 1 && fabs(meanSuperficialLiquidVelocity) > 5)
@@ -3495,20 +3495,20 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double cappedMeanSuperficialGasVelocity = meanSuperficialGasVelocity;
         if (globals.blackOilTemp == 1 && fabs(meanSuperficialGasVelocity) > 5)
             cappedMeanSuperficialGasVelocity = 5 * meanSuperficialGasVelocity / fabs(meanSuperficialGasVelocity);
-        double pressureSpatialCoefficient = 1 * (liquidDensity * cappedMeanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * cappedMeanSuperficialGasVelocity * gasJouleThomson) * flowArea; // termo que multiplica
+        double pressureSpatialCoefficient = 1 * (liquidDensity * cappedMeanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * cappedMeanSuperficialGasVelocity * gasJouleThomson) * flowArea; // multiplying term
         // a derivada Dp/Dx
         double pressureGradient;
         if ((leftCell.acsr.tipo != kAccessoryPump || leftCell.acsr.bcs.freq < 1) && leftCell.acsr.tipo != 7)
-            // caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
-            //  e a pressao no centro de celula para o calculo de Dp/Dx
+            // without an ESP or a pressure increment, the pressure at the left boundary
+            // and the pressure at the cell centre are used to compute Dp/Dx
             pressureGradient = 2. * (cell.presaux - leftCell.pres) * kPascalPerKgfPerCm2 / leftCell.dx;
         else {
-            // caso tenha BCS ou incremento de pressao  utiliza-se a pressao da celulaa esquerda
-            //  e a pressao no centro de celula para o calculoi de Dp/Dx
+            // with an ESP or a pressure increment, the pressure of the cell to the left
+            // and the pressure at the cell centre are used to compute Dp/Dx
             pressureGradient = 2. * (cell.presaux - leftCell.pres) * kPascalPerKgfPerCm2 / leftCell.dx;
         }
         cell.VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
-        // apenas para se ter um valor quando a simulacao transiente se iniciar
+        // only so that there is a value when the transient simulation starts
         [[maybe_unused]] double temperatureGradient = (-leftCell.temp) / meanCellLength;
 
         double kineticTerm = computeSteadyKineticTerm(
@@ -3520,7 +3520,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double gasMassSourceTerm = steadySources.gas;
         double liquidMassSourceTerm = steadySources.liquid;
 
-        // efeito do calor latente, quando este for solicitado
+        // latent heat effect, when requested
         double latentHeatTerm = computeSteadyLatentHeatTerm(
             state, cellIndex, flowArea, meanPressure, meanTemperature,
             meanSuperficialGasVelocity, meanSuperficialLiquidVelocity);
@@ -3612,35 +3612,35 @@ TemperatureSourceTerms computeReverseSteadySourceTerms(
     double sourceSpecificHeatRatio = 0.;
     double sourceLiquidSpecificHeat;
 
-    // calculo da energia adicionada no sistema devido a fontes de massa
-    if (rightCell.acsr.tipo == kAccessoryGasInjection) { // caso fonte de gas
+    // energy added to the system by mass sources
+    if (rightCell.acsr.tipo == kAccessoryGasInjection) { // gas source case
         sourceTemperature = rightCell.acsr.injg.temp;
         sourceGasSpecificHeat = rightCell.acsr.injg.FluidoPro.CalorGas(meanPressure, sourceTemperature);
         sourceSpecificHeatRatio = rightCell.acsr.injg.FluidoPro.ConstAdG(meanPressure, sourceTemperature);
         sourceLiquidSpecificHeat = 0.;
-    } else if (rightCell.acsr.tipo == kAccessoryLiquidInjection) { // caso fonte de liquido
+    } else if (rightCell.acsr.tipo == kAccessoryLiquidInjection) { // liquid source case
         sourceTemperature = rightCell.acsr.injl.temp;
         sourceGasSpecificHeat = 0.;
         sourceSpecificHeatRatio = 1.;
         sourceLiquidSpecificHeat = (1. - rightCell.acsr.injl.bet) * rightCell.acsr.injl.FluidoPro.CalorLiq(meanPressure, meanTemperature) + rightCell.acsr.injl.bet * rightCell.acsr.injl.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (rightCell.acsr.tipo == kAccessoryInflowPerformance) { // caso IPR
+    } else if (rightCell.acsr.tipo == kAccessoryInflowPerformance) { // IPR case
         sourceTemperature = rightCell.acsr.ipr.Tres;
         sourceGasSpecificHeat = rightCell.acsr.ipr.FluidoPro.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = rightCell.acsr.ipr.FluidoPro.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = rightCell.acsr.ipr.FluidoPro.CalorLiq(meanPressure, meanTemperature);
-    } else if (rightCell.acsr.tipo == kAccessoryRadialPorous) { // caso IPR
+    } else if (rightCell.acsr.tipo == kAccessoryRadialPorous) { // IPR case
         sourceTemperature = rightCell.acsr.radialPoro.tRes;
         sourceGasSpecificHeat = rightCell.acsr.radialPoro.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = rightCell.acsr.radialPoro.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = rightCell.acsr.radialPoro.flup.CalorLiq(meanPressure, meanTemperature);
-    } else if (rightCell.acsr.tipo == kAccessoryPorous2D) { // caso IPR
+    } else if (rightCell.acsr.tipo == kAccessoryPorous2D) { // IPR case
         sourceTemperature = rightCell.acsr.poroso2D.dados.tRes;
         sourceGasSpecificHeat = rightCell.acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = rightCell.acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = rightCell.acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
     } else if (rightCell.acsr.tipo == kAccessoryLeak && rightCell.acsr.fontechk.abertura > 1e-6 &&
                (rightCell.fontemassCR + rightCell.fontemassGR + rightCell.fontemassLR) > 1e-9) {
-        // caso vazamento
+        // leak case
         sourceTemperature = rightCell.acsr.fontechk.tamb;
         sourceGasSpecificHeat = rightCell.acsr.fontechk.fluidoPamb.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = rightCell.acsr.fontechk.fluidoPamb.ConstAdG(meanPressure, meanTemperature);
@@ -3684,7 +3684,7 @@ double computeReverseSteadyKineticTerm(
     double upstreamMeanLiquidVelocity = 0;
     double meanGasVelocity = 0;
     double meanLiquidVelocity = 0;
-    // termo de energia cinetica:
+    // kinetic energy term:
     if (cell.acsr.tipo == kAccessoryNone && rightCell.acsr.tipo == kAccessoryNone && cellIndex < state.lastCell) {
         double kineticCellLength = rightCell.dx;
         double upstreamDiameter = rightCell.duto.a;
@@ -3735,7 +3735,7 @@ double computeReverseSteadyLatentHeatTerm(
             latentHeatTerm = 0;
     }
 
-    //////trecho sem utilidade////////////////////////////////////////////////////////
+    ////// useless section////////////////////////////////////////////////////////
     double interfaceVoidFraction;
     double leftInterfaceVoidFraction;
     if (meanSuperficialGasVelocity > 0) {
@@ -3781,8 +3781,8 @@ double applyReverseSteadyAnnulusCoupling(
             state.gasCells[j].calor.cpint = gasSpecificHeat;
             state.gasCells[j].calor.rhoint = gasDensity;
             state.gasCells[j].calor.viscint = rightCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * kPascalSecondPerCentipoise;
-            state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // troca termica no anular
-            annulusResistance = state.gasCells[j].calor.resGlob;                // resistencia das paredes
+            state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // heat exchange in the annulus
+            annulusResistance = state.gasCells[j].calor.resGlob;                // wall resistance
             // Only the thermal resistance from the casing to the formation is needed, not the actual heat flow.
             rightCell.calor.Vextern1 = 100.;
             rightCell.calor.kextern1 = state.gasCells[j].calor.kint;
@@ -3799,11 +3799,11 @@ double applyReverseSteadyAnnulusCoupling(
             rightCell.calor.viscextern1 = state.gasCells[j].calor.viscint;
         }
         if (state.steadyIteration == 0)
-            rightCell.calor.Textern1 = state.gasCells[j].calor.Textern1; // na primeira iteracao, como se
+            rightCell.calor.Textern1 = state.gasCells[j].calor.Textern1; // on the first iteration, as the calculation
         // uses the whole well resistance, so the external temperature is the geothermal one
         else
-            rightCell.calor.Textern1 = state.gasCells[j].temp; // nas iteracoes seguintes, a temperatura ambiente
-        // e a temperatura do gas
+            rightCell.calor.Textern1 = state.gasCells[j].temp; // on the following iterations, the ambient temperature
+        // is the gas temperature
     }
     return annulusResistance;
 }
@@ -3889,24 +3889,24 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
             gasSpecificHeat, gasDensity);
         rightCell.fluxcalmed = 0;
         heatFlux = mixtureFluxSign * rightCell.calor.transperm(annulusResistance);
-        rightCell.fluxcalmed = heatFlux; // fluxo de calor na coluna
+        rightCell.fluxcalmed = heatFlux; // heat flux in the tubing
 
-        double temperatureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidSpecificHeat + gasDensity * meanSuperficialGasVelocity * gasSpecificHeat) * flowArea; // termo que multiplica
+        double temperatureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidSpecificHeat + gasDensity * meanSuperficialGasVelocity * gasSpecificHeat) * flowArea; // multiplying term
         // a derivada Dt/Dx
-        double pressureSpatialCoefficient = 1. * (liquidDensity * meanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * meanSuperficialGasVelocity * gasJouleThomson) * flowArea; // termo que multiplica
+        double pressureSpatialCoefficient = 1. * (liquidDensity * meanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * meanSuperficialGasVelocity * gasJouleThomson) * flowArea; // multiplying term
         // a derivada Dp/Dx
         double pressureGradient;
         if ((rightCell.acsr.tipo != kAccessoryPump || rightCell.acsr.bcs.freq < 1) && rightCell.acsr.tipo != 7)
-            // caso nao tenha BCS ou incremento de pressao  utiliza-se a pressao na fronteira esquerda
-            //  e a pressao no centro de celula para o calculo de Dp/Dx
+            // without an ESP or a pressure increment, the pressure at the left boundary
+            // and the pressure at the cell centre are used to compute Dp/Dx
             pressureGradient = 2. * (rightCell.presaux - rightCell.pres) * kPascalPerKgfPerCm2 / rightCell.dx;
         else {
-            // caso tenha BCS ou incremento de pressao  utiliza-se a pressao da celulaa esquerda
-            //  e a pressao no centro de celula para o calculoi de Dp/Dx
+            // with an ESP or a pressure increment, the pressure of the cell to the left
+            // and the pressure at the cell centre are used to compute Dp/Dx
             pressureGradient = (interfaceMeanPressure - rightCell.pres) * kPascalPerKgfPerCm2Coarse / cellLength;
         }
         cell.VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
-        // apenas para se ter um valor quando a simulacao transiente se iniciar
+        // only so that there is a value when the transient simulation starts
         [[maybe_unused]] double temperatureGradient = (-rightCell.temp) / meanCellLength;
 
         double kineticTerm = computeReverseSteadyKineticTerm(
@@ -3918,39 +3918,39 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         double gasMassSourceTerm = reverseSources.gas;
         double liquidMassSourceTerm = reverseSources.liquid;
 
-        // efeito do calor latente, quando este for solicitado
+        // latent heat effect, when requested
         double latentHeatTerm = computeReverseSteadyLatentHeatTerm(
             state, cellIndex, flowArea, meanPressure, meanTemperature,
             meanSuperficialGasVelocity, meanSuperficialLiquidVelocity);
 
         if (fabs(temperatureSpatialCoefficient) > globals.localtiny) {
-            // parecela de energia relacionada ao ytrabalho de fronteira, energia potencial,
-            // energia cinetica, fontes de massa, calor latente e trabalho de eixo:
+            // energy term from boundary work, potential energy,
+            // kinetic energy, mass sources, latent heat and shaft work:
             double sourceTemperatureGradient = meanTemperatureGradientCorrection * (pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower) + (liquidMassSourceTerm + gasMassSourceTerm) - latentHeatTerm - rightCell.potBT / meanCellLength) / temperatureSpatialCoefficient;
-            // parcela de energia relacionada aa troca termica
+            // energy term from the heat exchange
             double heatFluxTemperatureGradient = meanTemperatureGradientCorrection * (heatFlux) / temperatureSpatialCoefficient;
 
-            // e feita uma avaliacao se a troca termica esta se dando de maneira muito rapida
-            // como avanco da temperatura e explicita, isto pode levar a instabilidade no calculo termico
-            // se for verificado que a troca termica esta ocorrendo de maneira rapida, o avanco e
-            // feito em um numero maior de passos de uma celula para outra
+            // checks whether the heat exchange is happening too fast:
+            // as the temperature advance is explicit, this can make the thermal calculation unstable;
+            // if the heat exchange is found to be fast, the advance is
+            // made in a larger number of steps from one cell to the next
             int subStepCount;
             double subStepLength;
             double stabilityLength = fabs(temperatureSpatialCoefficient) / meanTemperatureGradientCorrection;
             if (meanCellLength / (rightCell.calor.resGlob + annulusResistance) < (stabilityLength + 0. * 1000.)) {
                 subStepCount = 1;
                 subStepLength = meanCellLength;
-            } else { // resistencia termica e pequena, se determinara em quantos passos se dara
-                // o avanco de temperatrura
+            } else { // small thermal resistance: determines in how many steps
+                // the temperature advance is made
                 subStepCount = (meanCellLength / (rightCell.calor.resGlob + annulusResistance)) / (stabilityLength + 0 * 1000) + 1;
-                subStepLength = meanCellLength / subStepCount; // celula divida em npassos
+                subStepLength = meanCellLength / subStepCount; // cell divided into npassos
             }
             double subStepTemperature = rightCell.temp;
 
-            subStepTemperature = subStepLength * (-(-rightCell.temp) / subStepLength + sourceTemperatureGradient + heatFluxTemperatureGradient); // primeiro avanco
-            for (int j = 1; j < subStepCount; j++) {                                                  // avancos seguintes
-                // as pacelas de energia sao mantidas, com excessao do fluxo de calor que e
-                // reavalkiado a cada passo:
+            subStepTemperature = subStepLength * (-(-rightCell.temp) / subStepLength + sourceTemperatureGradient + heatFluxTemperatureGradient); // first step
+            for (int j = 1; j < subStepCount; j++) {                                                  // following steps
+                // the energy terms are kept, except the heat flux, which is
+                // re-evaluated at each step:
                 rightCell.calor.Tint = subStepTemperature;
                 rightCell.calor.Vint = meanSuperficialGasVelocity + meanSuperficialLiquidVelocity;
                 liquidConductivity = (1. - betmed) * rightCell.flui.CondLiq(meanPressure, subStepTemperature) + betmed * rightCell.fluicol.CondLiq(meanPressure, subStepTemperature);
@@ -3980,7 +3980,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
                 cell.temp = kMaximumTemperatureCelsius;
         } else
             cell.temp = cell.calor.Textern1;
-    } else { // caso em que a velocidade da mistura e muito baixa
+    } else { // case where the mixture velocity is very low
         cell.temp = rightCell.calor.Textern1;
         if (state.input.lingas == 1 && (cellIndex + 1 <= state.annulusTubingStart && cellIndex + 1 >= state.annulusTubingEnd)) {
             int j = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex + 1);
