@@ -15,8 +15,8 @@ namespace sisprod::steady {
 void correctGasSpecificGravity(const SteadyStateState &state, int i) {
     if (state.input.corrDeng == 0) { // this switch, for black oil, distinguishes
         // between the density of dissolved gas and of free gas
-        // rDgD= razao entre a densidade do gas dissolvido e o gas nas condicoes standard
-        // rDgL= razao entre a densidade do gas livre e o gas nas condicoes standard
+        // rDgD = ratio between the density of the dissolved gas and the gas at standard conditions
+        // rDgL = ratio between the density of the free gas and the gas at standard conditions
         // arq.corrDeng==0 means no distinction between the densities
         state.cells[i].flui.rDgD = 1.;
         state.cells[i].flui.rDgL = 1.;
