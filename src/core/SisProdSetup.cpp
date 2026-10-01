@@ -522,34 +522,34 @@ void SProd::buildGasLiftLine() {
         arq.geraMaster2(celulaG);
         arq.gerachokeinj(chokeInj);
         if (arq.nvalvgas > 0) {
-            chokeVGL = new ChokeGas[arq.nvalvgas];
-            posicVGLP = new int[arq.nvalvgas];
-            posicVGLG = new int[arq.nvalvgas];
+            gasLift.chokeVGL = new ChokeGas[arq.nvalvgas];
+            gasLift.posicVGLP = new int[arq.nvalvgas];
+            gasLift.posicVGLG = new int[arq.nvalvgas];
         }
         for (int i = 0; i < arq.nvalvgas; i++) {
             double diaG = arq.valvgl[i].diagarg;
             double presEstag = celulaG[arq.valvgl[i].posicG].pres;
             double tempEstag = celulaG[arq.valvgl[i].posicG].temp;
             double presGarg = celula[arq.valvgl[i].posicP].pres;
-            posicVGLP[i] = arq.valvgl[i].posicP;
-            posicVGLG[i] = arq.valvgl[i].posicG;
-            celulaG[posicVGLG[i]].vgl = 1;
+            gasLift.posicVGLP[i] = arq.valvgl[i].posicP;
+            gasLift.posicVGLG[i] = arq.valvgl[i].posicG;
+            celulaG[gasLift.posicVGLG[i]].vgl = 1;
             if (arq.valvgl[i].tipo == 2) {
                 arq.valvgl[i].frec = 0.;
                 arq.valvgl[i].cd = 1.;
             }
             double throatArea = M_PI * diaG * diaG / 4.;
-            chokeVGL[i] = ChokeGas(arq.flug, throatArea,
+            gasLift.chokeVGL[i] = ChokeGas(arq.flug, throatArea,
                                    arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
                                    tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
                                    throatArea / arq.valvgl[i].razarea,
                                    arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
-            celulaG[posicVGLG[i]].pEstag = chokeVGL[i].presEstag;
-            celulaG[posicVGLG[i]].tEstag = chokeVGL[i].tempEstag;
-            celulaG[posicVGLG[i]].pGarg = chokeVGL[i].presGarg;
-            celulaG[posicVGLG[i]].tGarg = chokeVGL[i].tempGarg;
-            celulaG[posicVGLG[i]].qGarg = chokeVGL[i].qGarg;
-            celulaG[posicVGLG[i]].areaGarg = chokeVGL[i].areagarg;
+            celulaG[gasLift.posicVGLG[i]].pEstag = gasLift.chokeVGL[i].presEstag;
+            celulaG[gasLift.posicVGLG[i]].tEstag = gasLift.chokeVGL[i].tempEstag;
+            celulaG[gasLift.posicVGLG[i]].pGarg = gasLift.chokeVGL[i].presGarg;
+            celulaG[gasLift.posicVGLG[i]].tGarg = gasLift.chokeVGL[i].tempGarg;
+            celulaG[gasLift.posicVGLG[i]].qGarg = gasLift.chokeVGL[i].qGarg;
+            celulaG[gasLift.posicVGLG[i]].areaGarg = gasLift.chokeVGL[i].areagarg;
         }
         for (int i = 0; i <= ncelGas; i++) {
             celulaG[i].celInter = &celInter;
@@ -897,19 +897,19 @@ void SProd::allocateEventProfileAndTrendArrays() {
 /// events known at start, finds the smallest cell length, and zeroes the
 /// moving-average and running-total state the transient loop starts from.
 void SProd::resetCouplingAndOutputState() {
-    verificaAcop = 0;
+    gasLift.verificaAcop = 0;
 
     if (arq.lingas > 0) {
-        AnulaColunaIni = arq.anulcoluini();
-        AnulaColunaFim = arq.anulcolufim();
-        ColunaAnulaIni = arq.coluanulini();
-        ColunaAnulaFim = arq.coluanulfim();
-        if (ColunaAnulaFim == -1) {
-            ColunaAnulaFim = 0;
-            AnulaColunaFim--;
+        gasLift.AnulaColunaIni = arq.anulcoluini();
+        gasLift.AnulaColunaFim = arq.anulcolufim();
+        gasLift.ColunaAnulaIni = arq.coluanulini();
+        gasLift.ColunaAnulaFim = arq.coluanulfim();
+        if (gasLift.ColunaAnulaFim == -1) {
+            gasLift.ColunaAnulaFim = 0;
+            gasLift.AnulaColunaFim--;
         }
-        if (AnulaColunaIni >= 0 && AnulaColunaFim >= 0 && ColunaAnulaIni >= 0 && ColunaAnulaFim >= 0)
-            verificaAcop = 1;
+        if (gasLift.AnulaColunaIni >= 0 && gasLift.AnulaColunaFim >= 0 && gasLift.ColunaAnulaIni >= 0 && gasLift.ColunaAnulaFim >= 0)
+            gasLift.verificaAcop = 1;
     }
 
     verificaAcopRedeP = 0;

@@ -54,9 +54,9 @@ void SProd::resetRunState() {
     CalcLat = 0;
     trackRGO = 0;
     trackDeng = 0;
-    chokeVGL = 0;
-    posicVGLP = 0;
-    posicVGLG = 0;
+    gasLift.chokeVGL = 0;
+    gasLift.posicVGLP = 0;
+    gasLift.posicVGLG = 0;
     receb = 0;
     fechaM1 = 0;
     abreM1 = 0;
@@ -107,10 +107,10 @@ void SProd::resetRunState() {
     betaEini = -1;
     alfEini = -1;
 
-    tempMedContDesc = 10.;
-    maxVecContDesc = 1000;
-    vazmedDesc = 0;
-    tempmedDEsc = 0;
+    gasLift.tempMedContDesc = 10.;
+    gasLift.maxVecContDesc = 1000;
+    gasLift.vazmedDesc = 0;
+    gasLift.tempmedDEsc = 0;
 
     tGSup = 0.;
     tGSupIni = 0.;
@@ -168,7 +168,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
              int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
                                                            flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
-                                                           matglobG(3 * arq.ncelg, 5, 5), termolivreG(3 * arq.ncelg),
+                                                           gasLift{.matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5), .termolivreG = Vcr<double>(3 * arq.ncelg)},
                                                            matglobP(2 * arq.ncelp, 3, 2), termolivreP(2 * arq.ncelp) {
     resolveDriftSelectors();
     resetRunState();
@@ -185,7 +185,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
 }
 
 SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 + 1),
-                 matglobG(3 * 1, 5, 5), termolivreG(3 * 1),
+                 gasLift{.matglobG = BandMtx<double>(3 * 1, 5, 5), .termolivreG = Vcr<double>(3 * 1)},
                  matglobP(2 * 1, 3, 2), termolivreP(2 * 1) {
     resolveDriftSelectors();
     resetRunState();
@@ -217,12 +217,12 @@ void releaseTrendSet(int count, double ***matrices, int *length, double *resetTi
 void SProd::releaseOwnedStorage() {
     if (arq.lingas > 0)
         delete[] celulaG;
-    if (chokeVGL!=0 && arq.lingas > 0)
-        delete[] chokeVGL;
-    if (posicVGLP!=0 && arq.lingas > 0)
-        delete[] posicVGLP;
-    if (posicVGLG!=0 && arq.lingas > 0)
-        delete[] posicVGLG;
+    if (gasLift.chokeVGL!=0 && arq.lingas > 0)
+        delete[] gasLift.chokeVGL;
+    if (gasLift.posicVGLP!=0 && arq.lingas > 0)
+        delete[] gasLift.posicVGLP;
+    if (gasLift.posicVGLG!=0 && arq.lingas > 0)
+        delete[] gasLift.posicVGLG;
     if (nabreM1 > 0)
         delete[] abreM1;
     if (nfechaM1 > 0)
@@ -283,8 +283,8 @@ SProd &SProd::operator=(const SProd &sp) {
     flutG = sp.flutG;
     matglobP = sp.matglobP;
     termolivreP = sp.termolivreP;
-    matglobG = sp.matglobG;
-    termolivreG = sp.termolivreG;
+    gasLift.matglobG = sp.gasLift.matglobG;
+    gasLift.termolivreG = sp.gasLift.termolivreG;
     vg1dSP = sp.vg1dSP;
     resetRunState();
     celInterIni = celInter;
@@ -311,8 +311,8 @@ SProd &SProd::operator=(const SProd &sp) {
     tVet.clear();
     dtSim.clear();
     dtCFL.clear();
-    vazmaxMedDesc.clear();
-    dtDesc.clear();
+    gasLift.vazmaxMedDesc.clear();
+    gasLift.dtDesc.clear();
     taxaDpMax.clear();
     taxaDTMax.clear();
     tabDin.clear();
@@ -337,8 +337,8 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1);
     matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2);
     termolivreP = Vcr<double>(2 * arq.ncelp);
-    matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5);
-    termolivreG = Vcr<double>(3 * arq.ncelg);
+    gasLift.matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5);
+    gasLift.termolivreG = Vcr<double>(3 * arq.ncelg);
     vg1dSP = arq.vg1dSP;
     resetRunState();
     celInterIni = celInter;

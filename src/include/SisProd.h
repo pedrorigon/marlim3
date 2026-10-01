@@ -148,6 +148,75 @@ struct PropertyTables {
     double **RSLivia = nullptr;
 };
 
+/// The gas-lift line's pressure-velocity system, its valves and the cells they join, the
+/// column-annulus thermal coupling, and the unloading controller's samples and settings.
+struct GasLiftLine {
+    /**
+     * @brief Global pressure-velocity coupling matrix for the gas line.
+     */
+    BandMtx<double> matglobG;
+    /**
+     * @brief Right-hand side and solution vector for the gas-line pressure-velocity system.
+     */
+    Vcr<double> termolivreG;
+    /**
+     * @brief Production-line cell indices associated with gas-lift valves.
+     */
+    int *posicVGLP = nullptr;
+    /**
+     * @brief Service-line cell indices associated with gas-lift valves.
+     */
+    int *posicVGLG = nullptr;
+    /**
+     * @brief Service-line index where column-annulus thermal coupling begins.
+     */
+    int AnulaColunaIni = 0;
+    /**
+     * @brief Service-line index where column-annulus thermal coupling ends.
+     */
+    int AnulaColunaFim = 0;
+    /**
+     * @brief Production-column index aligned with AnulaColunaIni.
+     */
+    int ColunaAnulaIni = 0;
+    /**
+     * @brief Production-column index aligned with AnulaColunaFim.
+     */
+    int ColunaAnulaFim = 0;
+    /**
+     * @brief Indicates whether column-annulus thermal coupling is enabled.
+     */
+    int verificaAcop = 0;
+    /**
+     * @brief Gas-lift valves installed in the system.
+     */
+    ChokeGas *chokeVGL = nullptr;
+    /**
+     * @brief Time horizon used by the gas-lift unloading controller.
+     */
+    double tempMedContDesc = 10.;
+    /**
+     * @brief Maximum number of flow samples retained by the unloading PI controller.
+     */
+    double maxVecContDesc = 1000;
+    /**
+     * @brief Average maximum completion-fluid mass flow through the gas-lift valves.
+     */
+    double vazmedDesc = 0;
+    /**
+     * @brief Averaging interval used for gas-lift-valve mass flow.
+     */
+    double tempmedDEsc = 0;
+    /**
+     * @brief Maximum valve mass-flow samples used by the unloading controller.
+     */
+    vector<double> vazmaxMedDesc;
+    /**
+     * @brief Time-step samples associated with the unloading-flow average.
+     */
+    vector<double> dtDesc;
+};
+
 }  // namespace sisprod
 
 /**
@@ -496,13 +565,10 @@ class SProd {
     FullMtx<double> flut;
   private:
     /**
-     * @brief Global pressure-velocity coupling matrix for the gas line.
+     * @brief The gas-lift line's pressure-velocity system, valves, column-annulus coupling
+     * and unloading controller.
      */
-    BandMtx<double> matglobG;
-    /**
-     * @brief Right-hand side and solution vector for the gas-line pressure-velocity system.
-     */
-    Vcr<double> termolivreG;
+    sisprod::GasLiftLine gasLift;
     /**
      * @brief Global pressure-velocity coupling matrix for the multiphase production line.
      */
@@ -525,14 +591,6 @@ class SProd {
     double tfinal = 0;
 
   private:
-    /**
-     * @brief Production-line cell indices associated with gas-lift valves.
-     */
-    int *posicVGLP = nullptr;
-    /**
-     * @brief Service-line cell indices associated with gas-lift valves.
-     */
-    int *posicVGLG = nullptr;
 
     /**
      * @brief Number of scheduled Master1 opening events.
@@ -647,26 +705,6 @@ class SProd {
      */
     int *ntrendtransB = nullptr;
 
-    /**
-     * @brief Service-line index where column-annulus thermal coupling begins.
-     */
-    int AnulaColunaIni = 0;
-    /**
-     * @brief Service-line index where column-annulus thermal coupling ends.
-     */
-    int AnulaColunaFim = 0;
-    /**
-     * @brief Production-column index aligned with AnulaColunaIni.
-     */
-    int ColunaAnulaIni = 0;
-    /**
-     * @brief Production-column index aligned with AnulaColunaFim.
-     */
-    int ColunaAnulaFim = 0;
-    /**
-     * @brief Indicates whether column-annulus thermal coupling is enabled.
-     */
-    int verificaAcop = 0;
   public:
     /**
      * @brief Secondary-line index where parallel-network coupling with the primary line begins.
@@ -809,10 +847,6 @@ class SProd {
      */
     ChokeGas chokeInj;
   private:
-    /**
-     * @brief Gas-lift valves installed in the system.
-     */
-    ChokeGas *chokeVGL = nullptr;
   public:
     /**
      * @brief Gas service-line control volumes.
@@ -860,30 +894,6 @@ class SProd {
     double velInterIni = 0.;
 
   private:
-    /**
-     * @brief Time horizon used by the gas-lift unloading controller.
-     */
-    double tempMedContDesc = 10.;
-    /**
-     * @brief Maximum number of flow samples retained by the unloading PI controller.
-     */
-    double maxVecContDesc = 1000;
-    /**
-     * @brief Average maximum completion-fluid mass flow through the gas-lift valves.
-     */
-    double vazmedDesc = 0;
-    /**
-     * @brief Averaging interval used for gas-lift-valve mass flow.
-     */
-    double tempmedDEsc = 0;
-    /**
-     * @brief Maximum valve mass-flow samples used by the unloading controller.
-     */
-    vector<double> vazmaxMedDesc;
-    /**
-     * @brief Time-step samples associated with the unloading-flow average.
-     */
-    vector<double> dtDesc;
   public:
 
     /**

@@ -59,22 +59,22 @@ struct GasLiftState {
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
 
-    /// Gas-lift valve chokes -- SProd::chokeVGL.
+    /// Gas-lift valve chokes -- SProd::gasLift.chokeVGL.
     ChokeGas *gasLiftChokes;
     /// Injection choke -- SProd::chokeInj.
     ChokeGas &injectionChoke;
-    /// Gas-line cell index of each gas-lift valve -- SProd::posicVGLG.
+    /// Gas-line cell index of each gas-lift valve -- SProd::gasLift.posicVGLG.
     const int *gasValveCellIndices;
-    /// Production cell index of each gas-lift valve -- SProd::posicVGLP.
+    /// Production cell index of each gas-lift valve -- SProd::gasLift.posicVGLP.
     const int *productionValveCellIndices;
 
-    /// Band matrix and free-term vector of the gas line -- SProd::matglobG and
-    /// SProd::termolivreG.
+    /// Band matrix and free-term vector of the gas line -- SProd::gasLift.matglobG and
+    /// SProd::gasLift.termolivreG.
     BandMtx<double> &gasSystemMatrix;
     Vcr<double> &gasFreeTerms;
 
     /// Annulus/tubing coupling bounds, shared with the thermal module and named
-    /// as they are named there -- SProd::ColunaAnulaIni, ColunaAnulaFim,
+    /// as they are named there -- SProd::gasLift.ColunaAnulaIni, ColunaAnulaFim,
     /// AnulaColunaIni, AnulaColunaFim.
     const int &annulusTubingStart;
     const int &annulusTubingEnd;
@@ -83,7 +83,7 @@ struct GasLiftState {
 
     /// Steady-state iteration counter -- SProd::iterperm.
     const int &steadyIteration;
-    /// Network coupling flag -- SProd::verificaAcop.
+    /// Network coupling flag -- SProd::gasLift.verificaAcop.
     const int &networkCoupled;
     /// Thermal source switch -- SProd::semTermo.
     const int &thermalSourceDisabled;
@@ -107,7 +107,7 @@ struct GasLiftState {
     double &initialInterfaceVelocity;
     double &initialInterfaceTimeStep;
 
-    /// Unloading averages -- SProd::vazmedDesc, tempmedDEsc (spelling as in
+    /// Unloading averages -- SProd::gasLift.vazmedDesc, tempmedDEsc (spelling as in
     /// SProd), and the bounds they are compared against.
     ///
     /// The two vectors are NOT const: they are sliding windows. advanceGasSubStep

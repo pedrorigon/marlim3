@@ -93,7 +93,7 @@ struct SteadyStateState {
     /// calls vazmassSachd and vazmaxSachd on it, and neither is const-qualified.
     choke &surfaceChoke;
     /// Gas-line and production cell index of each gas-lift valve --
-    /// SProd::posicVGLG and posicVGLP.
+    /// SProd::gasLift.posicVGLG and posicVGLP.
     const int *gasValveCellIndices;
     const int *productionValveCellIndices;
 
@@ -108,7 +108,7 @@ struct SteadyStateState {
 
     /// Annulus drift flag -- SProd::derivaAnel. Read only.
     const int &annulusDrift;
-    /// Network coupling flag -- SProd::verificaAcop. Read only.
+    /// Network coupling flag -- SProd::gasLift.verificaAcop. Read only.
     const int &networkCoupled;
     /// End-node flag -- SProd::noextremo. Read only.
     const int &endNode;

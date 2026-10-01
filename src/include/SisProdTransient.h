@@ -408,7 +408,7 @@ struct TransientSolveState {
     double &movingMeanCounter;
     /// SProd::alfMedMov -- written or read by the solve; not promised const.
     double &movingMeanVoidFraction;
-    /// SProd::verificaAcop -- written or read by the solve; not promised const.
+    /// SProd::gasLift.verificaAcop -- written or read by the solve; not promised const.
     int &networkCoupled;
     /// SProd::poisson3D -- written or read by the solve; not promised const.
     solverP3D &poissonSolver3D;
