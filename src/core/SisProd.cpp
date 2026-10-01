@@ -452,11 +452,10 @@ SProd &SProd::operator=(const SProd &sp) {
     return *this;
 }
 
-void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq, double vbetaRev,
-                         double vbetaRevini, double vtitRev, double vtitRevini, double vdtCicMin) {
+SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     releaseOwnedStorage();
 
-    arq.copiaSemJson(sp);
+    arq.copiaSemJson(parsedInput);
     resolveDriftSelectors();
     flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1);
     flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1);
@@ -470,24 +469,36 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
     dtInterIni = dtInter;
     velInterIni = velInter;
 
-    noextremo = vnoextremo;
-    noinicial = vnoinicial;
-    derivaAnel = vderivaAnel;
+    noextremo = carried.noextremo;
+    noinicial = carried.noinicial;
+    derivaAnel = carried.derivaAnel;
 
-    betaRev = vbetaRev;
-    betaRevini = vbetaRevini;
-    titRev = vtitRev;
-    titRevini = vtitRevini;
+    betaRev = carried.betaRev;
+    betaRevini = carried.betaRevini;
+    titRev = carried.titRev;
+    titRevini = carried.titRevini;
 
-    bloq = vbloq;
+    bloq = carried.bloq;
 
-    dtCicMin = vdtCicMin;
+    dtCicMin = carried.dtCicMin;
 
     redeParalelaCCsecundario = -1;
     redeParalelaP = -1;
     redeParalelaS = -1;
 
     montasistema();
+}
+
+SProd::CarriedState SProd::carriedState() const {
+    return {.noextremo = noextremo,
+            .noinicial = noinicial,
+            .derivaAnel = derivaAnel,
+            .bloq = bloq,
+            .betaRev = betaRev,
+            .betaRevini = betaRevini,
+            .titRev = titRev,
+            .titRevini = titRevini,
+            .dtCicMin = dtCicMin};
 }
 
 void SProd::HidroDescargaG() {

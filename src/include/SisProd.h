@@ -1166,17 +1166,33 @@ class SProd {
 
   private:
     /// Frees every array this object owns, reading its current sizes and switches.
-    /// The destructor calls it, and operator= and copiaSemJson call it before
-    /// copying anything in.
+    /// The destructor calls it, and operator= and the constructor from a parsed
+    /// input call it before copying anything in.
     void releaseOwnedStorage();
   public:
     /// Performs a deep copy of the production-system state.
     SProd &operator=(const SProd &);
 
-    /// Copies an already parsed system configuration without reading the JSON file again.
-    void copiaSemJson(Ler &, int vnoextremo, int vnoinicial, int vderivaAnel, int vbloq,
-                      double vbetaRev, double vbetaRevini, double vtitRev, double vtitRevini,
-                      double vdtCicMin);
+    /// What a system built from an already parsed input takes from the system that
+    /// input came from: its place in the network and its reverse-flow state.
+    struct CarriedState {
+        int noextremo;
+        int noinicial;
+        int derivaAnel;
+        int bloq;
+        double betaRev;
+        double betaRevini;
+        double titRev;
+        double titRevini;
+        double dtCicMin;
+    };
+
+    /// The state another system built from this one's input takes over.
+    CarriedState carriedState() const;
+
+    /// Builds a system from an already parsed input, without reading the JSON file
+    /// again, with the place in the network and the reverse-flow state in carried.
+    SProd(Ler &parsedInput, const CarriedState &carried);
 
   private:
     /// Points every cell fluid, and every source fluid it carries, at the

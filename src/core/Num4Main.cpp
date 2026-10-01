@@ -8229,18 +8229,10 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 
     Ler *vecArq;
     vecArq = new Ler[analisePara.nVariaveis];
-    int vecnoextremo[analisePara.nVariaveis];
-    int vecnoinicial[analisePara.nVariaveis];
-    int vecderivaAnel[analisePara.nVariaveis];
-    int vecbloq[analisePara.nVariaveis];
-    double vecbetaRev[analisePara.nVariaveis];
-    double vecbetaRevini[analisePara.nVariaveis];
-    double titRev[analisePara.nVariaveis];
-    double titRevini[analisePara.nVariaveis];
-    double vecdtCicMin[analisePara.nVariaveis];
     varGlob1D *vg1dTramo;
     vg1dTramo = new varGlob1D[analisePara.nVariaveis];
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++)vg1dTramo[iSeq] = (*sistem1.vg1dSP);
+    const SProd::CarriedState carried = sistem1.carriedState();
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) {
     	indfalha[iSeq]=0;
         vg1dTramo[iSeq].sequenciaAP = iSeq;
@@ -8248,15 +8240,6 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
         nomeArquivoLogAP.erase(nomeArquivoLogAP.size() - 4);
         std::string sIseq = std::to_string(iSeq);
         nomeArquivoLogAP = nomeArquivoLogAP + "_AP_" + sIseq + ".log";
-        vecnoextremo[iSeq] = sistem1.noextremo;
-        vecnoinicial[iSeq] = sistem1.noinicial;
-        vecderivaAnel[iSeq] = sistem1.derivaAnel;
-        vecbloq[iSeq] = sistem1.bloq;
-        vecbetaRev[iSeq] = sistem1.betaRev;
-        vecbetaRevini[iSeq] = sistem1.betaRevini;
-        titRev[iSeq] = sistem1.titRev;
-        titRevini[iSeq] = sistem1.titRevini;
-        vecdtCicMin[iSeq] = sistem1.dtCicMin;
         vecArq[iSeq].copiaSemJson(sistem1.arq);
         vecArq[iSeq].vg1dSP = &vg1dTramo[iSeq];
     }
@@ -8297,9 +8280,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 		double vazE;
 		int indChk;
 		double falha=0.;
-		SProd sistem2;
-		sistem2.copiaSemJson(vecArq[iSeq], vecnoextremo[iSeq],  vecnoinicial[iSeq], vecderivaAnel[iSeq], vecbloq[iSeq],
-				vecbetaRev[iSeq],vecbetaRevini[iSeq],titRev[iSeq], titRevini[iSeq], vecdtCicMin[iSeq]);
+		SProd sistem2(vecArq[iSeq], carried);
 
         // criar objeto de simulacao
         // construtor do objeto que representa o tramo

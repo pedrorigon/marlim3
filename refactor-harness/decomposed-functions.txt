@@ -420,3 +420,11 @@ correcHidroFric
 # sequences; the only change is the const overload of vector::operator[] on the
 # four read-only parallel-network vectors), L2, and the example and network
 # differentials of analise-codigo/ferramentas.
+# copiaSemJson became the constructor from an already parsed input,
+# SProd(Ler &, const CarriedState &), on 2026-09-30 by the owner's decision: its
+# only caller, the parallel sensitivity analysis, built a default object and
+# called it at once. The constructor delegates to the default one and runs the
+# same body, each parameter read from the CarriedState; proved token for token
+# against the previous commit, and by the parallel sensitivity-analysis
+# differential.
+copiaSemJson -> REMOVED
