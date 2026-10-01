@@ -50,15 +50,10 @@ void SProd::resetRunState() {
     cpg = 0;
     cpl = 0;
     drholdT = 0;
-    npontos = 0;
     nfluP = 0;
-    ModelCp = 0;
-    Modeljtl = 0;
     CalcLat = 0;
     trackRGO = 0;
     trackDeng = 0;
-    ninjgas = 0;
-    lingas = 0;
     chokeVGL = 0;
     posicVGLP = 0;
     posicVGLG = 0;
@@ -137,9 +132,6 @@ void SProd::resetRunState() {
     momentoDesesp = 0;
 
     modeloCompleto = 1;
-    modeloCompleto0 = 1;
-    kontaMudaModelo = 0;
-    kontarestriSegrega = 0;
 
     DpMaxMed = 1.;
     DTMaxMed = 1.;

@@ -356,10 +356,10 @@ struct TransientSolveState {
     double &defaultInletTemperature;
     /// SProd::derivaAnel -- written or read by the solve; not promised const.
     int &annulusDrift;
-    /// SProd::saidaSubTextoSis -- written or read by the solve; not promised const.
-    const char* *closingSubtitles;
-    /// SProd::saidaTextoSis -- written or read by the solve; not promised const.
-    const char* *closingTitles;
+    /// SProd::saidaSubTextoSis -- read only.
+    const char *const *closingSubtitles;
+    /// SProd::saidaTextoSis -- read only.
+    const char *const *closingTitles;
     /// SProd::kontaRenovaComp -- written or read by the solve; not promised const.
     int &compositionalRefreshCounter;
     /// SProd::jVet -- written or read by the solve; not promised const.

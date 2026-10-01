@@ -305,7 +305,6 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     iterperm = 0;
     masChkSup = 0;
     dt = arq.dtmax;
-    dtini = arq.dtmax;
     dtInter = arq.dtmax;
     tfinal = arq.tfinal;
     TransMassModel = 0;
@@ -315,16 +314,12 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     masChkSupini = 0;
     betaRev = 0.;
     trackDeng = arq.trackDeng;
-    ninjgas = arq.ninjgas;
-    lingas = arq.lingas;
     nfluP = arq.nfluP;
-    ModelCp = arq.modelcp;
-    Modeljtl = arq.modelJTL;
     CalcLat = arq.latente;
     if (arq.flashCompleto == 1)
         arq.trackRGO = 1;
     trackRGO = arq.trackRGO;
-    injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
+    const int injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
     arq.fluc.injPoc = injPoc;
     if (arq.flashCompleto == 1)
         arq.fluc.injPoc = 0;
@@ -344,7 +339,6 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
                 "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e a ultima celula nao contem uma IPR, e necessario neste modo se ter uma IPR na ultima celula");
     }
 
-    npontos = arq.tabent.npont;
     if (arq.modelcp > 0)
         arq.geraTabCp();
     if (arq.modelJTL == 1)
@@ -633,7 +627,6 @@ void SProd::validateSetupAndApplyInitialState() {
     }
 
     tempSup = celula[ncel].temp;
-    masSup = celula[ncel - 1].MC;
 
     tGSup = celula[ncel].calor.Textern1;
 }
@@ -961,6 +954,7 @@ void SProd::resetCouplingAndOutputState() {
             kontaTempoTransProfG++;
     }
 
+    ostringstream saidaLog;
     saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
     tmpLog = saidaLog.str();
     // if it's not a simulation POCO_INJETOR

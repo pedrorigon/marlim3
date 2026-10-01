@@ -124,18 +124,6 @@ class SProd {
     friend struct sisprod::thermal::ThermalSourceUpdater;
     friend struct sisprod::composition::CompositionUpdaters;
 
-    /**
-     * @brief Selects the specific-heat model used by the black-oil formulation. The value is read from the JSON
-     * input and determines whether specific heat is calculated by the internal black-oil model or obtained
-     * from a PVT table.
-     */
-    int ModelCp = 0;
-    /**
-     * @brief Selects the liquid Joule-Thomson model used by the black-oil formulation. The value is read from the
-     * JSON input and determines whether the coefficient is calculated internally or obtained from a PVT
-     * table.
-     */
-    int Modeljtl = 0;
   public:
     /**
      * @brief Enables latent-heat calculations for black-oil simulations.
@@ -151,18 +139,6 @@ class SProd {
      * @brief Enables transport equations for gas density and the gas-phase CO2 molar fraction.
      */
     int trackDeng = 0;
-    /**
-     * @brief Number of gas sources; retained for compatibility with arq.ninjgas.
-     */
-    int ninjgas = 0;
-    /**
-     * @brief Indicates whether a gas service line is coupled to the production system.
-     */
-    int lingas = 0;
-    /**
-     * @brief Indicates that the current case represents an injection well.
-     */
-    int injPoc = 0;
   public:
 
     /**
@@ -288,10 +264,6 @@ class SProd {
     double temperatura = 0;
 
   private:
-    /**
-     * @brief Reserved mass-flow state; currently unused.
-     */
-    double masSup = 0;
   public:
     /**
      * @brief Reserved temperature state; currently unused.
@@ -438,10 +410,6 @@ class SProd {
      */
     int *receb = nullptr;
     /**
-     * @brief Number of points in the fluid-property tables.
-     */
-    int npontos = 0;
-    /**
      * @brief Number of production fluids.
      */
     int nfluP = 0;
@@ -520,10 +488,6 @@ class SProd {
      */
     double dt = 0.;
   private:
-    /**
-     * @brief Time step used at the previous time level.
-     */
-    double dtini = 0;
   public:
     /**
      * @brief Simulation end time.
@@ -716,10 +680,6 @@ class SProd {
      * @brief Current gas-line wall-temperature profile output index.
      */
     int kontaTempoTransProfG = 0;
-    /**
-     * @brief In-memory stream used to assemble event-log output.
-     */
-    ostringstream saidaLog;
   public:
     /**
      * @brief Event-log file name.
@@ -763,14 +723,6 @@ class SProd {
     int modeloCompleto = 1;
   private:
     /**
-     * @brief Previous complete-model activation state.
-     */
-    int modeloCompleto0 = 1;
-    /**
-     * @brief Counter used when switching between model formulations.
-     */
-    int kontaMudaModelo = 0;
-    /**
      * @brief History of recently accepted time steps.
      */
     vector<double> dtSim;
@@ -794,10 +746,6 @@ class SProd {
      * @brief Number of remaining steps under the current time-step restriction.
      */
     int kontarestriDt = 0;
-    /**
-     * @brief Counter for segregation-related time-step restrictions.
-     */
-    int kontarestriSegrega = 0;
     /**
      * @brief Accumulated CFL time steps used to compute dtCFLMed.
      */
@@ -1106,7 +1054,7 @@ class SProd {
   private:
     vector<int> kontaTempoCelUni;
 
-    const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
+    static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
                                      "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
                                      "      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
                                      "                   Infeliz e o espirito ansioso pelo futuro.                    ",
@@ -1122,7 +1070,7 @@ class SProd {
                                      "                            Nada e permanente, exceto a mudanca                           ",
                                      "                  Uma jornada de mil quilometros comeca com um unico passo                ",
 									 "Seja paciente. Espere ate que a lama assente e a agua fique limpa. Permaneça imovel ate que a acao correta suja por si so"};
-    const char *saidaSubTextoSis[16] = {
+    static constexpr const char *saidaSubTextoSis[16] = {
         "                         Galeno de Pergamo do Transiente Longo                          ",
         "                     J. California Cooper depois da simulacao divergir                  ",
         "                                Marcel Proust no CrossFit                               ",
