@@ -931,6 +931,19 @@ struct SteadySearch {
     double monitConvPermBase = 1.;
 };
 
+/// The coupling with the three-dimensional thermal model: its Poisson solver and the index
+/// corrections of the coupled sections.
+struct Coupling3D {
+    /**
+     * @brief Index corrections used by coupled thermal sections.
+     */
+    vector<int> acertaIndAcop;
+    /**
+     * @brief Three-dimensional Poisson solver used by the thermal model.
+     */
+    solverP3D poisson3D;
+};
+
 }  // namespace sisprod
 
 /**
@@ -1190,17 +1203,13 @@ class SProd {
   private:
   public:
     /**
-     * @brief Index corrections used by coupled thermal sections.
+     * @brief The coupling with the three-dimensional thermal model.
      */
-    vector<int> acertaIndAcop;
+    sisprod::Coupling3D coupling3D;
     /**
      * @brief Shared one-dimensional simulation settings.
      */
     varGlob1D *vg1dSP = nullptr;
-    /**
-     * @brief Three-dimensional Poisson solver used by the thermal model.
-     */
-    solverP3D poisson3D;
 
   private:
     /**

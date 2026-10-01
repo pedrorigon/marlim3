@@ -410,7 +410,7 @@ struct TransientSolveState {
     double &movingMeanVoidFraction;
     /// SProd::gasLift.verificaAcop -- written or read by the solve; not promised const.
     int &networkCoupled;
-    /// SProd::poisson3D -- written or read by the solve; not promised const.
+    /// SProd::coupling3D.poisson3D -- written or read by the solve; not promised const.
     solverP3D &poissonSolver3D;
     /// SProd::transient.presVet -- written or read by the solve; not promised const.
     std::vector<double> &pressureHistory;

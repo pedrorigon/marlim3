@@ -259,7 +259,7 @@ SProd &SProd::operator=(const SProd &sp) {
     transient.taxaDpMax.clear();
     transient.taxaDTMax.clear();
     tables.tabDin.clear();
-    acertaIndAcop.clear();
+    coupling3D.acertaIndAcop.clear();
     transient.indCelPoisson2D.clear();
     networkCoupling.indFonteRedeParalelaIni.clear();
     networkCoupling.fonteMpRedeParalelaIni.clear();

@@ -13197,18 +13197,18 @@ int main(int argc, char **argv) {
                     double hiv = sistem1.celula[icel].calor.hi;
                     double hev = sistem1.celula[icel].calor.he; // sistem1.celula[icel].calor.he;
                     double tiv = sistem1.celula[icel].temp;
-                    sistem1.poisson3D = solverP3D(sistem1.arq.modoDifus3DJson, sistem1.vg1dSP,
+                    sistem1.coupling3D.poisson3D = solverP3D(sistem1.arq.modoDifus3DJson, sistem1.vg1dSP,
                                                   sistem1.arq.nacop, sistem1.arq.geoAcop, hiv, hev, tiv);
-                    if (sistem1.arq.nacop != sistem1.poisson3D.dados.CC.nAcop)
+                    if (sistem1.arq.nacop != sistem1.coupling3D.poisson3D.dados.CC.nAcop)
                         NumError(
                             "O numero de acoplamentos indicados no json principal é diferente do numero de acoplamentos indicados no parse do solver 3D");
                     else {
                         for (int iacop0 = 0; iacop0 < sistem1.arq.nacop; iacop0++) {
                             int inexistente = 1;
                             for (int iacop1 = 0; iacop1 < sistem1.arq.nacop; iacop1++) {
-                                if (sistem1.arq.celAcop[iacop0].rotulo == sistem1.poisson3D.dados.CC.rotuloAcop[iacop1]) {
+                                if (sistem1.arq.celAcop[iacop0].rotulo == sistem1.coupling3D.poisson3D.dados.CC.rotuloAcop[iacop1]) {
                                     inexistente = 0;
-                                    sistem1.acertaIndAcop.push_back(iacop1);
+                                    sistem1.coupling3D.acertaIndAcop.push_back(iacop1);
                                     break;
                                 }
                             }
@@ -13219,51 +13219,51 @@ int main(int argc, char **argv) {
 
                     for (int iacop = 0; iacop < sistem1.arq.nacop; iacop++) {
                         int icelAcop = sistem1.arq.celAcop[iacop].indCel;
-                        int iacop1 = sistem1.acertaIndAcop[iacop];
-                        sistem1.poisson3D.dados.tInt[iacop1] = sistem1.celula[icelAcop].temp;
+                        int iacop1 = sistem1.coupling3D.acertaIndAcop[iacop];
+                        sistem1.coupling3D.poisson3D.dados.tInt[iacop1] = sistem1.celula[icelAcop].temp;
                         double hiCel = sistem1.celula[icelAcop].calor.hInt();
-                        sistem1.poisson3D.dados.hI[iacop1] = hiCel;
+                        sistem1.coupling3D.poisson3D.dados.hI[iacop1] = hiCel;
                     }
-                    double tamb[sistem1.poisson3D.dados.CC.nRic];
-                    for (int idir = 0; idir < sistem1.poisson3D.dados.CC.nRic; idir++) {
-                        tamb[idir] = sistem1.poisson3D.dados.CC.ccRic[idir].valAmb[0];
-                        sistem1.poisson3D.dados.CC.ccRic[idir].valAmb[0] = sistem1.celula[icel].temp;
+                    double tamb[sistem1.coupling3D.poisson3D.dados.CC.nRic];
+                    for (int idir = 0; idir < sistem1.coupling3D.poisson3D.dados.CC.nRic; idir++) {
+                        tamb[idir] = sistem1.coupling3D.poisson3D.dados.CC.ccRic[idir].valAmb[0];
+                        sistem1.coupling3D.poisson3D.dados.CC.ccRic[idir].valAmb[0] = sistem1.celula[icel].temp;
                     }
-                    sistem1.poisson3D.inicializaTransientePoisson();
+                    sistem1.coupling3D.poisson3D.inicializaTransientePoisson();
                     int kontaperm = 0;
                     double deltFic = 1.;
                     double qparede0 = 1e15;
                     double erroParede = 1e101;
                     (*sistem1.vg1dSP).tempo = 0.;
-                    deltFic = sistem1.poisson3D.defineDeltPoisson();
+                    deltFic = sistem1.coupling3D.poisson3D.defineDeltPoisson();
                     while (erroParede > 1e-1) {
-                        sistem1.poisson3D.transientePoissonDummy(deltFic, kontaperm);
+                        sistem1.coupling3D.poisson3D.transientePoissonDummy(deltFic, kontaperm);
                         deltFic *= 2.0;
                         if (deltFic > 100.)
                             deltFic = 100.;
                         kontaperm++;
-                        erroParede = fabs(sistem1.poisson3D.dados.qTotal[0] - qparede0);
-                        cout << "erroParede= " << (sistem1.poisson3D.dados.qTotal[0] - qparede0);
+                        erroParede = fabs(sistem1.coupling3D.poisson3D.dados.qTotal[0] - qparede0);
+                        cout << "erroParede= " << (sistem1.coupling3D.poisson3D.dados.qTotal[0] - qparede0);
                         cout << endl;
-                        qparede0 = sistem1.poisson3D.dados.qTotal[0];
+                        qparede0 = sistem1.coupling3D.poisson3D.dados.qTotal[0];
                     }
                     kontaperm = 0;
                     while ((*sistem1.vg1dSP).tempo < 2000.) {
-                        deltFic = sistem1.poisson3D.defineDeltPoisson();
+                        deltFic = sistem1.coupling3D.poisson3D.defineDeltPoisson();
                         if ((*sistem1.vg1dSP).tempo > 100. && (*sistem1.vg1dSP).tempo < 1000.) {
-                            for (int iric = 0; iric < sistem1.poisson3D.dados.CC.nRic; iric++) {
-                                sistem1.poisson3D.dados.CC.ccRic[iric].valAmb[0] =
+                            for (int iric = 0; iric < sistem1.coupling3D.poisson3D.dados.CC.nRic; iric++) {
+                                sistem1.coupling3D.poisson3D.dados.CC.ccRic[iric].valAmb[0] =
                                     sistem1.celula[icel].temp + (tamb[iric] - sistem1.celula[icel].temp) *
                                                                     ((*sistem1.vg1dSP).tempo - 100.) / 900.;
                             }
                         }
-                        sistem1.poisson3D.transientePoissonDummy(deltFic, kontaperm);
+                        sistem1.coupling3D.poisson3D.transientePoissonDummy(deltFic, kontaperm);
                         (*sistem1.vg1dSP).tempo += deltFic;
                         kontaperm++;
                         cout << "tempo= " << (*sistem1.vg1dSP).tempo;
                         cout << endl;
                     }
-                    sistem1.poisson3D.malha.imprime(0);
+                    sistem1.coupling3D.poisson3D.malha.imprime(0);
                 }
                 while ((*sistem1.vg1dSP).lixo5 < sistem1.transient.tfinal) {
                     vg1dTramo.RGOMax = 14000.;
