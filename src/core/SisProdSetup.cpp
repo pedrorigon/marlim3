@@ -500,7 +500,7 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
     arq.gerachokesup(chokeSup);
     transient.npig = arq.npig;
     if (transient.npig > 0) {
-        transient.receb = new int[transient.npig];
+        transient.receb = vector<int>(transient.npig);
         for (int i = 0; i < transient.npig; i++)
             transient.receb[i] = arq.pig[i].receb;
     }
@@ -829,8 +829,8 @@ void SProd::allocateEventProfileAndTrendArrays() {
 
     transient.nabreM1 = arq.eventoabre;
     transient.nfechaM1 = arq.eventofecha;
-    transient.abreM1 = new double[transient.nabreM1];
-    transient.fechaM1 = new double[transient.nfechaM1];
+    transient.abreM1 = vector<double>(transient.nabreM1);
+    transient.fechaM1 = vector<double>(transient.nfechaM1);
     for (int i = 0; i < transient.nabreM1; i++)
         transient.abreM1[i] = arq.Tevento[i];
     for (int i = 0; i < transient.nfechaM1; i++)

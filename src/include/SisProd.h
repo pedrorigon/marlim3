@@ -246,7 +246,7 @@ struct TransientRun {
     /**
      * @brief Cell indices where pigs are received.
      */
-    int *receb = nullptr;
+    vector<int> receb;
     /**
      * @brief Global pressure-velocity coupling matrix for the multiphase production line.
      */
@@ -262,11 +262,11 @@ struct TransientRun {
     /**
      * @brief Times at which Master1 closes.
      */
-    double *fechaM1 = nullptr;
+    vector<double> fechaM1;
     /**
      * @brief Times at which Master1 opens.
      */
-    double *abreM1 = nullptr;
+    vector<double> abreM1;
     /**
      * @brief Number of events written to the event log.
      */

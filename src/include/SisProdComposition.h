@@ -50,7 +50,7 @@ struct CompositionState {
     int &movingPigCount;                  // indpigP
     int &previousMovingPigCount;          // indpigPini
     int &scheduledPigCount;               // npig
-    int *&pigReceiverCells;               // receb
+    int *pigReceiverCells;                // receb
 
     CompositionUpdaters updaters;
 };

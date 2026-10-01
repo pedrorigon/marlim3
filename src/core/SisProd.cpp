@@ -54,9 +54,6 @@ void SProd::resetRunState() {
     CalcLat = 0;
     transient.trackRGO = 0;
     transient.trackDeng = 0;
-    transient.receb = 0;
-    transient.fechaM1 = 0;
-    transient.abreM1 = 0;
     celulaG = 0;
     celula = 0;
     celInter = 1e7;
@@ -223,10 +220,8 @@ void SProd::releaseOwnedStorage() {
     releaseVector(gasLift.chokeVGL);
     releaseVector(gasLift.posicVGLP);
     releaseVector(gasLift.posicVGLG);
-    if (transient.nabreM1 > 0)
-        delete[] transient.abreM1;
-    if (transient.nfechaM1 > 0)
-        delete[] transient.fechaM1;
+    releaseVector(transient.abreM1);
+    releaseVector(transient.fechaM1);
 
     if (arq.nperfistransp > 0)
         delete[] trends.ncelperftransp;
@@ -262,8 +257,7 @@ void SProd::releaseOwnedStorage() {
 
     if (ncel > 0)
         delete[] celula;
-    if (transient.npig > 0)
-        delete[] transient.receb;
+    releaseVector(transient.receb);
 
     if (arq.tabelaDinamica == 1) {
         tabDin.clear();

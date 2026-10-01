@@ -326,7 +326,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .masterRatio1 = system.vRazMast1,
         .masterCriticalRatio = system.vRazMastCrit,
         .interfaceVelocity = system.velInter,
-        .masterOpenSchedule = system.transient.abreM1,
+        .masterOpenSchedule = system.transient.abreM1.data(),
         .input = system.arq,
         .initialInterfaceCell = system.celInterIni,
         .cells = system.celula,
@@ -337,7 +337,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system) {
         .simulationTimeSteps = system.transient.dtSim,
         .auxiliaryCflTimeStep = system.dtauxCFL,
         .finalAuxiliaryTimeStep = system.dtauxFinal,
-        .masterCloseSchedule = system.transient.fechaM1,
+        .masterCloseSchedule = system.transient.fechaM1.data(),
         .productionFreeTerms = system.flut,
         .gasFreeTerms = system.flutG,
         .branchIndex = system.indTramo,
@@ -384,7 +384,7 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system) {
         .movingPigCount = system.indpigP,
         .previousMovingPigCount = system.indpigPini,
         .scheduledPigCount = system.transient.npig,
-        .pigReceiverCells = system.transient.receb,
+        .pigReceiverCells = system.transient.receb.data(),
         .updaters = {system},
     };
 }
