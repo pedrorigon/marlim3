@@ -934,15 +934,23 @@ class SProd {
   private:
   public:
     /**
-     * @brief Gas service-line control volumes.
+     * @brief Gas service-line control volumes, held by gasCells.
      */
     CelG *celulaG = nullptr;
     /**
-     * @brief Multiphase production-line control volumes.
+     * @brief Multiphase production-line control volumes, held by productionCells.
      */
     Cel *celula = nullptr;
 
   private:
+    /**
+     * @brief The gas service-line control volumes celulaG points at.
+     */
+    vector<CelG> gasCells;
+    /**
+     * @brief The production-line control volumes celula points at.
+     */
+    vector<Cel> productionCells;
   public:
 
     /**

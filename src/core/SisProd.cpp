@@ -210,8 +210,7 @@ void releaseVector(vector<T> &v) {
 /// Frees every array this object owns, reading its current sizes and switches.
 /// An array added to the construction must be released here too.
 void SProd::releaseOwnedStorage() {
-    if (arq.lingas > 0)
-        delete[] celulaG;
+    releaseVector(gasCells);
     releaseVector(gasLift.chokeVGL);
     releaseVector(gasLift.posicVGLP);
     releaseVector(gasLift.posicVGLG);
@@ -237,8 +236,7 @@ void SProd::releaseOwnedStorage() {
     releaseVector(tables.TBPVTSim);
     tables.RSLivia.release();
 
-    if (ncel > 0)
-        delete[] celula;
+    releaseVector(productionCells);
     releaseVector(transient.receb);
 
     if (arq.tabelaDinamica == 1) {

@@ -369,7 +369,8 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     ncel = arq.ncelp - 1;
     temperatura = arq.celp[0].textern;
     tempRev = arq.tempReves;
-    celula = new Cel[ncel + 1];
+    productionCells = vector<Cel>(ncel + 1);
+    celula = productionCells.data();
     arq.geracelp(celula);
     if (arq.nipr > 0)
         arq.geraipr(celula);
@@ -507,7 +508,8 @@ void SProd::buildGasLiftLine() {
         ncelGas = arq.ncelg;
         ncelGas--;
         celInter = arq.celdescarga;
-        celulaG = new CelG[ncelGas + 1];
+        gasCells = vector<CelG>(ncelGas + 1);
+        celulaG = gasCells.data();
         arq.geracelg(celulaG);
         arq.geraMaster2(celulaG);
         arq.gerachokeinj(chokeInj);
