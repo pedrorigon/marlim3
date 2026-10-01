@@ -54,9 +54,6 @@ void SProd::resetRunState() {
     CalcLat = 0;
     transient.trackRGO = 0;
     transient.trackDeng = 0;
-    gasLift.chokeVGL = 0;
-    gasLift.posicVGLP = 0;
-    gasLift.posicVGLG = 0;
     transient.receb = 0;
     transient.fechaM1 = 0;
     transient.abreM1 = 0;
@@ -210,6 +207,12 @@ void releaseTrendSet(int count, double ***matrices, int *length, double *resetTi
     delete[] bufferedCounts;
 }
 
+/// Destroys the elements of v and gives its memory back.
+template <typename T>
+void releaseVector(vector<T> &v) {
+    vector<T>().swap(v);
+}
+
 }  // namespace
 
 /// Frees every array this object owns, reading its current sizes and switches.
@@ -217,12 +220,9 @@ void releaseTrendSet(int count, double ***matrices, int *length, double *resetTi
 void SProd::releaseOwnedStorage() {
     if (arq.lingas > 0)
         delete[] celulaG;
-    if (gasLift.chokeVGL!=0 && arq.lingas > 0)
-        delete[] gasLift.chokeVGL;
-    if (gasLift.posicVGLP!=0 && arq.lingas > 0)
-        delete[] gasLift.posicVGLP;
-    if (gasLift.posicVGLG!=0 && arq.lingas > 0)
-        delete[] gasLift.posicVGLG;
+    releaseVector(gasLift.chokeVGL);
+    releaseVector(gasLift.posicVGLP);
+    releaseVector(gasLift.posicVGLG);
     if (transient.nabreM1 > 0)
         delete[] transient.abreM1;
     if (transient.nfechaM1 > 0)

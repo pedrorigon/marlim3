@@ -522,9 +522,9 @@ void SProd::buildGasLiftLine() {
         arq.geraMaster2(celulaG);
         arq.gerachokeinj(chokeInj);
         if (arq.nvalvgas > 0) {
-            gasLift.chokeVGL = new ChokeGas[arq.nvalvgas];
-            gasLift.posicVGLP = new int[arq.nvalvgas];
-            gasLift.posicVGLG = new int[arq.nvalvgas];
+            gasLift.chokeVGL = vector<ChokeGas>(arq.nvalvgas);
+            gasLift.posicVGLP = vector<int>(arq.nvalvgas);
+            gasLift.posicVGLG = vector<int>(arq.nvalvgas);
         }
         for (int i = 0; i < arq.nvalvgas; i++) {
             double diaG = arq.valvgl[i].diagarg;

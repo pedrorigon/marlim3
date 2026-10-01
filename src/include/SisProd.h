@@ -162,11 +162,11 @@ struct GasLiftLine {
     /**
      * @brief Production-line cell indices associated with gas-lift valves.
      */
-    int *posicVGLP = nullptr;
+    vector<int> posicVGLP;
     /**
      * @brief Service-line cell indices associated with gas-lift valves.
      */
-    int *posicVGLG = nullptr;
+    vector<int> posicVGLG;
     /**
      * @brief Service-line index where column-annulus thermal coupling begins.
      */
@@ -190,7 +190,7 @@ struct GasLiftLine {
     /**
      * @brief Gas-lift valves installed in the system.
      */
-    ChokeGas *chokeVGL = nullptr;
+    vector<ChokeGas> chokeVGL;
     /**
      * @brief Time horizon used by the gas-lift unloading controller.
      */

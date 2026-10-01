@@ -821,9 +821,9 @@ int main() {
     system.ncel = kCells - 1;
     system.celulaG = new CelG[kGasCells + 3];
     system.gasLift.termolivreG = Vcr<double>(3 * (kGasCells + 3), 0.);
-    system.gasLift.chokeVGL = new ChokeGas[kValves];
-    system.gasLift.posicVGLG = new int[kValves];
-    system.gasLift.posicVGLP = new int[kValves];
+    system.gasLift.chokeVGL = vector<ChokeGas>(kValves);
+    system.gasLift.posicVGLG = vector<int>(kValves);
+    system.gasLift.posicVGLP = vector<int>(kValves);
 
     // advanceBufferedGasSubStep assembles into the band matrix, which nothing
     // else in this sweep touches, so main never sized it.
