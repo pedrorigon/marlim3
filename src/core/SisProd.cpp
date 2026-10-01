@@ -136,7 +136,7 @@ void SProd::resetRunState() {
     fluiRevRede = ProFlu();
     tempRev = 0.;
     revPerm = 0;
-    ntabDin = 0;
+    tables.ntabDin = 0;
 
     transient.nCelulaPoisson2D = 0;
     trocaTermicaLenta = 0.01;
@@ -213,7 +213,7 @@ void SProd::releaseOwnedStorage() {
     releaseVector(transient.receb);
 
     if (arq.tabelaDinamica == 1) {
-        tabDin.clear();
+        tables.tabDin.clear();
     }
 }
 
@@ -258,7 +258,7 @@ SProd &SProd::operator=(const SProd &sp) {
     gasLift.dtDesc.clear();
     transient.taxaDpMax.clear();
     transient.taxaDTMax.clear();
-    tabDin.clear();
+    tables.tabDin.clear();
     acertaIndAcop.clear();
     transient.indCelPoisson2D.clear();
     indFonteRedeParalelaIni.clear();

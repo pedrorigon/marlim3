@@ -123,7 +123,7 @@ struct SquareTable {
 /// The fluid-property tables the fluids of a system's cells point at. The black-oil
 /// compressibility-factor, specific-heat and liquid-density-derivative tables belong to the
 /// input; the latent-heat table and the Livia bubble-point and solution-gas-ratio tables are
-/// built and owned by the system.
+/// built and owned by the system, and so are the dynamic tables of a compositional network.
 struct PropertyTables {
     /**
      * @brief Black-oil gas-compressibility-factor table.
@@ -168,6 +168,14 @@ struct PropertyTables {
      * expensive calculation during the simulation.
      */
     SquareTable RSLivia;
+    /**
+     * @brief Dynamic fluid-property tables.
+     */
+    vector<tabelaDinamica> tabDin;
+    /**
+     * @brief Number of dynamic property tables.
+     */
+    int ntabDin = 0;
 };
 
 /// The gas-lift line's pressure-velocity system, its valves and the cells they join, the
@@ -833,10 +841,12 @@ class SProd {
      * @brief Number of production fluids.
      */
     int nfluP = 0;
+  public:
     /**
      * @brief The fluid-property tables the fluids of this system's cells point at.
      */
     sisprod::PropertyTables tables;
+  private:
   public:
 
     /**
@@ -1084,14 +1094,6 @@ class SProd {
      */
     int buscaIni = 0;
 
-    /**
-     * @brief Dynamic fluid-property tables.
-     */
-    vector<tabelaDinamica> tabDin;
-    /**
-     * @brief Number of dynamic property tables.
-     */
-    int ntabDin = 0;
   private:
   public:
     /**

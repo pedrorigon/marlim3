@@ -602,8 +602,8 @@ void SProd::validateSetupAndApplyInitialState() {
 /// that side.
 void SProd::buildDynamicTablesAndInclinations() {
     if (arq.tabelaDinamica == 1) {
-        ntabDin = 1;
-        tabDin.push_back(tabelaDinamica());
+        tables.ntabDin = 1;
+        tables.tabDin.push_back(tabelaDinamica());
         for (int i = 1; i < ncel; i++) {
             if ((celula[i].acsr.tipo == kAccessoryGasInjection) ||
                 (celula[i].acsr.tipo == kAccessoryLiquidInjection) ||
@@ -611,12 +611,12 @@ void SProd::buildDynamicTablesAndInclinations() {
                 (celula[i].acsr.tipo == kAccessoryMultipleSource) || celula[i].acsr.tipo == kAccessoryLeak || celula[i].acsr.tipo == kAccessoryRadialPorous || celula[i].acsr.tipo == kAccessoryPorous2D) {
                 tabelaDinamica temp;
                 temp.celIni = i + 1;
-                tabDin[ntabDin - 1].celFim = i;
-                tabDin.push_back(temp);
-                ntabDin++;
+                tables.tabDin[tables.ntabDin - 1].celFim = i;
+                tables.tabDin.push_back(temp);
+                tables.ntabDin++;
             }
         }
-        tabDin[ntabDin - 1].celFim = ncel;
+        tables.tabDin[tables.ntabDin - 1].celFim = ncel;
     }
 
     celula[0].angEsq = celula[0].duto.teta;
