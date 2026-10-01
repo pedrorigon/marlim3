@@ -1170,7 +1170,9 @@ class SProd {
     /// input call it before copying anything in.
     void releaseOwnedStorage();
   public:
-    /// Performs a deep copy of the production-system state.
+    /// Rebuilds this system from sp's input file, read again from disk, and takes
+    /// over sp's place in the network and reverse-flow state. Not a copy: the run
+    /// state starts afresh and the system is assembled again.
     SProd &operator=(const SProd &);
 
     /// What a system built from an already parsed input takes from the system that
