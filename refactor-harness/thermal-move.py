@@ -2283,7 +2283,7 @@ def alpha_normalize(tokens: list[str]) -> list[str]:
     return out
 
 
-def declared_constants(path: str = "src/core/SisProdThermal.cpp") -> dict[str, str]:
+def declared_constants(path: str = "src/core/SisProdThermal.cpp") -> dict[str, set[str]]:
     """Read the literal a named constant stands for, from the source itself.
 
     A constant introduced to replace a literal turns a number token into an
@@ -2299,17 +2299,28 @@ def declared_constants(path: str = "src/core/SisProdThermal.cpp") -> dict[str, s
 
     If the constant ever stopped being the literal, the build would fail before
     this function was ever called. The table cannot drift from the truth.
+
+    An integral value asserted as a double (98600.) is also accepted in its integer
+    spelling (98600): the static_assert proves the number, and a call site may have
+    written either. A token comparison cannot see whether such an integer stood in
+    floating-point context; 3b3bb72, which named these constants, proved that it did
+    by object identity (all objects and the binary byte-identical).
     """
     sources = [path, "src/include/SisProdConstants.h"]
-    found: dict[str, str] = {}
+    found: dict[str, set[str]] = {}
     for source in sources:
         try:
             text = open(source, encoding="utf-8").read()
         except OSError:
             continue
         # Both spellings: with a message and without.
-        found.update(re.findall(
-            r"static_assert\(\s*(\w+)\s*==\s*(-?[0-9][0-9.eE+-]*)\s*[,)]", text))
+        for name, value in re.findall(
+                r"static_assert\(\s*(\w+)\s*==\s*(-?[0-9][0-9.eE+-]*)\s*[,)]", text):
+            spellings = found.setdefault(name, set())
+            spellings.add(value)
+            integral = re.fullmatch(r"(-?[0-9]+)\.0*", value)
+            if integral:
+                spellings.add(integral.group(1))
     return found
 
 
@@ -2342,13 +2353,13 @@ def rename_consistent(expected: list[str], actual: list[str]) -> bool:
     i = j = 0
     while i < len(expected) and j < len(actual):
         want, have = expected[i], actual[j]
-        value = constants.get(have)
-        if value == want:
+        values = constants.get(have, set())
+        if want in values:
             previous = want
             i += 1; j += 1
             continue
-        if (value is not None and value.startswith("-") and want == "-"
-                and i + 1 < len(expected) and value[1:] == expected[i + 1]):
+        if (want == "-" and i + 1 < len(expected)
+                and any(v.startswith("-") and v[1:] == expected[i + 1] for v in values)):
             previous = expected[i + 1]
             i += 2; j += 1
             continue
