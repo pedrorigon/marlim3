@@ -1232,13 +1232,10 @@ class SProd {
     /// instead of sharing.
     SProd(const SProd &) = delete;
 
-    /// Releases dynamically allocated simulation buffers and cell arrays.
-    ~SProd();
-
   private:
-    /// Frees every array this object owns, reading its current sizes and switches.
-    /// The destructor calls it, and operator= and the constructor from a parsed
-    /// input call it before copying anything in.
+    /// Gives back the memory of every array this object owns. operator= and the
+    /// constructor from a parsed input call it before rebuilding, so that the arrays
+    /// of the previous system are free before the input is read again.
     void releaseOwnedStorage();
   public:
     /// Rebuilds this system from sp's input file, read again from disk, and takes

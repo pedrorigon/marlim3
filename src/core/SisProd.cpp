@@ -186,8 +186,8 @@ void releaseVector(vector<T> &v) {
 
 }  // namespace
 
-/// Frees every array this object owns, reading its current sizes and switches.
-/// An array added to the construction must be released here too.
+/// Gives back the memory of every array this object owns, so that a rebuild starts
+/// with it free.
 void SProd::releaseOwnedStorage() {
     releaseVector(gasCells);
     releaseVector(gasLift.chokeVGL);
@@ -215,10 +215,6 @@ void SProd::releaseOwnedStorage() {
     if (arq.tabelaDinamica == 1) {
         tabDin.clear();
     }
-}
-
-SProd::~SProd() {
-    releaseOwnedStorage();
 }
 
 SProd &SProd::operator=(const SProd &sp) {
