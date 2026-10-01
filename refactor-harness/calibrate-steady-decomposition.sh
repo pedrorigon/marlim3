@@ -40,6 +40,15 @@ print(f"{i+1},{k+1}")
 PY
 }
 
+# The control: the untouched module has to pass. Without it, a checker that fails for any
+# other reason fails every probe below, and each failure would count as a detection.
+if ! python3 "$script_dir/check-steady-decomposition.py" "$baseline" > "$scratch/control.log" 2>&1; then
+    printf '%s  control                      FAILED CONTROL%s\n' "$red" "$reset"
+    tail -5 "$scratch/control.log" >&2
+    echo "steady-decomposition calibration control failed" >&2
+    exit 1
+fi
+
 detected=0; missed=0; skipped=0
 probe() { # <function> <sed-body> <label>
     local span; span="$(range "$1")"

@@ -26,6 +26,15 @@ trap 'cp "$scratch/pristine.cpp" "$target"; cp "$scratch/pristine-gaslift.cpp" "
 cp "$target" "$scratch/pristine.cpp"
 cp "$target_gaslift" "$scratch/pristine-gaslift.cpp"
 
+# The control: the untouched sources have to pass. Without it, a sweep that cannot even
+# build fails every probe below, and each failure would count as a detection.
+if ! bash "$script_dir/verify-gaslift.sh" compare "$golden" > "$scratch/control.log" 2>&1; then
+    printf '%s  control                      FAILED CONTROL%s\n' "$red" "$reset"
+    tail -5 "$scratch/control.log" >&2
+    echo "gaslift calibration control failed" >&2
+    exit 1
+fi
+
 detected=0; missed=0; skipped=0
 probe() { # <label> <from> <to> [file-to-inject-into]
     local into="${4:-$target}" pristine="$scratch/pristine.cpp"
