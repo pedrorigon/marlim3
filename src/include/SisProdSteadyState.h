@@ -99,9 +99,9 @@ struct SteadyStateState {
 
     /// Steady-state iteration counter -- SProd::iterperm. Written.
     int &steadyIteration;
-    /// Which boundary the search started from -- SProd::buscaIni. Written.
+    /// Which boundary the search started from -- SProd::steadySearch.buscaIni. Written.
     int &searchOrigin;
-    /// Convergence monitors -- SProd::monitConvPerm and monitConvPermBase.
+    /// Convergence monitors -- SProd::steadySearch.monitConvPerm and monitConvPermBase.
     /// Both written.
     double &convergenceMonitor;
     double &baseConvergenceMonitor;
@@ -114,7 +114,7 @@ struct SteadyStateState {
     const int &endNode;
     /// Thermal source switch -- SProd::semTermo. Read only.
     const int &thermalSourceDisabled;
-    /// Slow-heat-transfer switch -- SProd::trocaTermicaLenta. Written.
+    /// Slow-heat-transfer switch -- SProd::steadySearch.trocaTermicaLenta. Written.
     double &slowHeatTransferThreshold;
 
     /// Surface gas pressure -- SProd::gasLift.pGSup. Written.
@@ -130,11 +130,11 @@ struct SteadyStateState {
 
     /// Ambient temperature -- SProd::temperatura. Read only.
     const double &defaultInletTemperature;
-    /// Casing temperature -- SProd::tempRev. Read only.
+    /// Casing temperature -- SProd::steadySearch.tempRev. Read only.
     const double &casingTemperature;
     /// Inlet quality -- SProd::titE. Read only.
     const double &inletQuality;
-    /// Number of production fluids -- SProd::nfluP. Read only.
+    /// Number of production fluids -- SProd::steadySearch.nfluP. Read only.
     const int &productionFluidCount;
 
     /// Everything the march needs that is not its own.

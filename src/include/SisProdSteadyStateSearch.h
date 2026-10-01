@@ -25,12 +25,12 @@ struct SteadyStateSearchState {
     /// it calls one.
     SteadyStateState march;
 
-    /// Holdup guess carried between search attempts -- SProd::chuteHol.
+    /// Holdup guess carried between search attempts -- SProd::steadySearch.chuteHol.
     /// Read only.
     const double &holdupGuess;
-    /// Reverse-flow network fluid -- SProd::fluiRevRede. Read only.
+    /// Reverse-flow network fluid -- SProd::steadySearch.fluiRevRede. Read only.
     const ProFlu &reverseNetworkFluid;
-    /// Whether this steady solve runs in reverse -- SProd::revPerm. Written.
+    /// Whether this steady solve runs in reverse -- SProd::steadySearch.revPerm. Written.
     int &reverseSteady;
 };
 

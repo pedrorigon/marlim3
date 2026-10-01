@@ -277,7 +277,7 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     networkCoupling.masChkSupini = 0;
     networkCoupling.betaRev = 0.;
     transient.trackDeng = arq.trackDeng;
-    nfluP = arq.nfluP;
+    steadySearch.nfluP = arq.nfluP;
     CalcLat = arq.latente;
     if (arq.flashCompleto == 1)
         arq.trackRGO = 1;
@@ -313,21 +313,21 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     tables.zdranP = arq.zdranP;
     tables.dzdpP = arq.dzdpP;
     tables.dzdtP = arq.dzdtP;
-    fluiRevRede = arq.flup[0];
+    steadySearch.fluiRevRede = arq.flup[0];
     if (arq.flashCompleto == 2)
-        fluiRevRede.atualizaPropCompStandard();
+        steadySearch.fluiRevRede.atualizaPropCompStandard();
     for (int i = 0; i < arq.nfluP; i++) {
         arq.flup[i].npontos = arq.tabent.npont;
         arq.flup[i].cpg = tables.cpg;
         arq.flup[i].cpl = tables.cpl;
         arq.flup[i].drholdT = tables.drholdT;
-        arq.flup[i].nfluP = nfluP;
+        arq.flup[i].nfluP = steadySearch.nfluP;
     }
     arq.flug.npontos = arq.tabent.npont;
     arq.flug.cpg = tables.cpg;
     arq.flug.cpl = tables.cpl;
     arq.flug.drholdT = tables.drholdT;
-    arq.flug.nfluP = nfluP;
+    arq.flug.nfluP = steadySearch.nfluP;
 
     arq.fluc.npontos = arq.tabent.npont;
     arq.fluc.RhoInj = arq.RhoInj;
@@ -341,7 +341,7 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     arq.geraduto();
     ncel = arq.ncelp - 1;
     temperatura = arq.celp[0].textern;
-    tempRev = arq.tempReves;
+    steadySearch.tempRev = arq.tempReves;
     productionCells = vector<Cel>(ncel + 1);
     celula = productionCells.data();
     arq.geracelp(celula);

@@ -273,7 +273,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.betaE = 0.13;
     system.titE = 0.20;
     system.alfE = scenario.voidFraction;
-    system.trocaTermicaLenta = 1.e99;
+    system.steadySearch.trocaTermicaLenta = 1.e99;
     system.iterperm = 0;
     system.CalcLat = 0;
     system.arq.flashCompleto = 0;

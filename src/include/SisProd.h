@@ -888,6 +888,49 @@ struct NetworkCoupling {
     int redeParalelaS = -1;
 };
 
+/// What the steady-state search carries from one iteration to the next: the convergence
+/// monitor and its reference, the initial estimates, the reverse flow of a network solution
+/// and its fluid and temperature, the number of production fluids and the slow thermal
+/// coupling parameter.
+struct SteadySearch {
+    /**
+     * @brief Control parameter for slowly varying thermal coupling.
+     */
+    double trocaTermicaLenta = 0.01;
+    /**
+     * @brief Number of production fluids.
+     */
+    int nfluP = 0;
+    /**
+     * @brief Initial holdup estimate used by the steady-state solver.
+     */
+    double chuteHol = -1.;
+    /**
+     * @brief Controls the search for an initial steady-state estimate.
+     */
+    int buscaIni = 0;
+    /**
+     * @brief Fluid state received from downstream during reverse network flow.
+     */
+    ProFlu fluiRevRede;
+    /**
+     * @brief Temperature associated with reverse network flow.
+     */
+    double tempRev = 0.;
+    /**
+     * @brief Indicates reverse flow in the steady-state network solution.
+     */
+    int revPerm = 0;
+    /**
+     * @brief Current steady-state convergence monitor.
+     */
+    double monitConvPerm = 1000.;
+    /**
+     * @brief Reference value for the steady-state convergence monitor.
+     */
+    double monitConvPermBase = 1.;
+};
+
 }  // namespace sisprod
 
 /**
@@ -936,10 +979,12 @@ class SProd {
     int ncel = 0;
 
   private:
+  public:
     /**
-     * @brief Control parameter for slowly varying thermal coupling.
+     * @brief What the steady-state search carries from one iteration to the next.
      */
-    double trocaTermicaLenta = 0.01;
+    sisprod::SteadySearch steadySearch;
+  private:
   public:
 
     /**
@@ -992,10 +1037,6 @@ class SProd {
      */
     int masChkSup = 0;
   private:
-    /**
-     * @brief Number of production fluids.
-     */
-    int nfluP = 0;
   public:
     /**
      * @brief The fluid-property tables the fluids of this system's cells point at.
@@ -1138,14 +1179,6 @@ class SProd {
 
 
   public:
-    /**
-     * @brief Initial holdup estimate used by the steady-state solver.
-     */
-    double chuteHol = -1.;
-    /**
-     * @brief Controls the search for an initial steady-state estimate.
-     */
-    int buscaIni = 0;
 
   private:
   public:
@@ -1154,19 +1187,7 @@ class SProd {
      */
     int bloq = 0;
 
-    /**
-     * @brief Fluid state received from downstream during reverse network flow.
-     */
-    ProFlu fluiRevRede;
-    /**
-     * @brief Temperature associated with reverse network flow.
-     */
-    double tempRev = 0.;
   private:
-    /**
-     * @brief Indicates reverse flow in the steady-state network solution.
-     */
-    int revPerm = 0;
   public:
     /**
      * @brief Index corrections used by coupled thermal sections.
@@ -1186,14 +1207,6 @@ class SProd {
      * @brief Indicates that the thermal source term is disabled.
      */
     int semTermo = 0;
-    /**
-     * @brief Current steady-state convergence monitor.
-     */
-    double monitConvPerm = 1000.;
-    /**
-     * @brief Reference value for the steady-state convergence monitor.
-     */
-    double monitConvPermBase = 1.;
   public:
 
 

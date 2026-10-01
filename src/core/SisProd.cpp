@@ -50,7 +50,7 @@ void SProd::resetRunState() {
     tables.cpg = 0;
     tables.cpl = 0;
     tables.drholdT = 0;
-    nfluP = 0;
+    steadySearch.nfluP = 0;
     CalcLat = 0;
     transient.trackRGO = 0;
     transient.trackDeng = 0;
@@ -121,9 +121,9 @@ void SProd::resetRunState() {
     transient.DpMaxMed = 1.;
     transient.DTMaxMed = 1.;
 
-    chuteHol = -1.;
+    steadySearch.chuteHol = -1.;
 
-    buscaIni = 0;
+    steadySearch.buscaIni = 0;
 
     for (int i = 0; i < 10; i++) {
         transient.vRazMast0[i] = 0.;
@@ -133,18 +133,18 @@ void SProd::resetRunState() {
 
     transient.kontaRenovaComp = 0;
 
-    fluiRevRede = ProFlu();
-    tempRev = 0.;
-    revPerm = 0;
+    steadySearch.fluiRevRede = ProFlu();
+    steadySearch.tempRev = 0.;
+    steadySearch.revPerm = 0;
     tables.ntabDin = 0;
 
     transient.nCelulaPoisson2D = 0;
-    trocaTermicaLenta = 0.01;
+    steadySearch.trocaTermicaLenta = 0.01;
 
     semTermo = 0;
 
-    monitConvPerm = 1000.;
-    monitConvPermBase = 1.;
+    steadySearch.monitConvPerm = 1000.;
+    steadySearch.monitConvPermBase = 1.;
 
     transient.alteraTempo = 0;
 }
