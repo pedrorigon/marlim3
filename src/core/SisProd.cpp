@@ -324,14 +324,6 @@ void SProd::HidroDescargaP() {
     sisprod::gaslift::computeProductionUnloadingHydrostatics(gasLiftStateOf(*this));
 }
 
-void SProd::renovaGas() {
-    sisprod::gaslift::updateGasLine(gasLiftStateOf(*this));
-}
-
-void SProd::renovaGasBuf() {
-    sisprod::gaslift::updateBufferedGasLine(gasLiftStateOf(*this));
-}
-
 double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
                            double dextern, double areagarg, double Rvalv, double Temp) {
     return sisprod::gaslift::calibratedValveArea(PCal, TCal, PVO, PT, dextern, areagarg, Rvalv, Temp);
@@ -341,32 +333,12 @@ void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
     sisprod::thermal::computeGasTemperature(thermalStateOf(*this), i, tempantiga, modoPerm);
 }
 
-void SProd::resolveDescarga() {
-    sisprod::gaslift::solveUnloading(gasLiftStateOf(*this));
-}
-
 void SProd::tempDescarga(int i) {
     sisprod::thermal::computeDischargeTemperature(thermalStateOf(*this), i);
 }
 
-void SProd::avancInter() {
-    sisprod::gaslift::advanceInterface(gasLiftStateOf(*this));
-}
-
 double SProd::TempDescGL(int igl) {
     return sisprod::thermal::computeGasLiftDischargeTemperature(thermalStateOf(*this), igl);
-}
-
-void SProd::ValvGasTrans() {
-    sisprod::gaslift::updateTransientGasValves(gasLiftStateOf(*this));
-}
-
-double SProd::prescordesc(double vazmax, int ivalv, double fator, int sinal) {
-    return sisprod::gaslift::unloadingPressureCorrection(gasLiftStateOf(*this), vazmax, ivalv, fator, sinal);
-}
-
-double SProd::CalcPresValvDesc(double vazGarg, int ivalv) {
-    return sisprod::gaslift::computeUnloadingValvePressure(gasLiftStateOf(*this), vazGarg, ivalv);
 }
 
 double SProd::BuscaPresInjDesc() {
@@ -377,50 +349,13 @@ void SProd::subtempoGas() {
     sisprod::gaslift::advanceGasSubStep(gasLiftStateOf(*this));
 }
 
-void SProd::subtempoGasBuf() {
-    sisprod::gaslift::advanceBufferedGasSubStep(gasLiftStateOf(*this));
-}
-
 void SProd::conectaColuna() {
     sisprod::gaslift::connectTubing(gasLiftStateOf(*this));
-}
-
-double SProd::interpolaHLatente(double pres, double temp) {
-    return sisprod::thermal::interpolateLatentHeat(
-        thermalStateOf(*this), pres, temp);
 }
 
 void SProd::calctemp(int i, double tempantiga, int modoPerm) {
     sisprod::thermal::computeTemperature(
         thermalStateOf(*this), i, tempantiga, modoPerm);
-}
-
-double SProd::calcHmix(int i) {
-    return sisprod::thermal::computeMixtureEnthalpy(
-        thermalStateOf(*this), i);
-}
-
-double SProd::energmix(int i, int jp0, int jt, double razp) {
-    return sisprod::thermal::interpolateMixtureEnergy(
-        thermalStateOf(*this), i, jp0, jt, razp);
-}
-
-void SProd::calcTempEntalp(int i) {
-    sisprod::thermal::updateTemperatureFromEnthalpy(
-        thermalStateOf(*this), i);
-}
-
-void SProd::calcTransMassTermo(int i) {
-    sisprod::thermal::computeThermalMassTransfer(
-        thermalStateOf(*this), i);
-}
-
-void SProd::FonteValv(int ind) {
-    sisprod::sources::addMasterValveFlow(sourceStateOf(*this), ind);
-}
-
-void SProd::salvaFonte() {
-    sisprod::transient::storePreviousSources(transientStateOf(*this));
 }
 
 void SProd::renovaFonte(int ind) {
@@ -451,48 +386,8 @@ void SProd::CalcC0UdIniBuf(int ind, double &c0, double &ud) {
     driftflux::coefficient::bufferedInitialization(closureStateOf(*this), ind, c0, ud);
 }
 
-void SProd::correcHidroFric(int i, double &hidro, double &fric) {
-
-    double dx = 0.5 * celula[i].dx;
-    double dia = celula[i].duto.a;
-    double area = 0.25 * M_PI * dia * dia;
-    double si = celula[i].duto.peri;
-    double alfmed = celula[i].alf;
-    double rhog = celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp);
-    double rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp) + celula[i].bet * celula[i].fluicol.MasEspFlu(celula[i].pres, celula[i].temp);
-    double ugsmed = (celula[i].MC - celula[i].Mliqini) / (area * rhog);
-    double ulsmed = celula[i].Mliqini / (area * rhol);
-    double j = ugsmed + ulsmed;
-
-    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    double viscmix = alfmed * celula[i].flui.ViscGas(celula[i].pres, celula[i].temp) + (1 - alfmed) * ((1 - celula[i].bet) * celula[i].flui.ViscOleo(celula[i].pres, celula[i].temp) + celula[i].bet * celula[i].fluicol.VisFlu(celula[i].pres, celula[i].temp));
-
-    double re1;
-    if (celula[i].duto.revest == 0)
-        re1 = celula[i].Rey(celula[i].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / si;
-        re1 = celula[i].Rey(dhid, j, rhomix, viscmix);
-    }
-    double f1 = celula[i].fric(re1, celula[i].duto.rug / dia);
-    fric = (1 - arq.MedSimpPresFront) * 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
-    hidro = (1 - arq.MedSimpPresFront) * kGravity * sin(celula[i].duto.teta) * rhomix * dx;
-}
-
-void SProd::auxMiniTab(ProFlu &flui) {
-    sisprod::transient::fillFluidMiniTable(transientStateOf(*this), flui);
-}
-
-void SProd::geraMiniTabFlu() {
-    sisprod::transient::generateFluidMiniTables(transientStateOf(*this));
-}
-
 void SProd::renova(int expli) {
     sisprod::transient::updateCells(transientStateOf(*this), expli);
-}
-
-void SProd::renovaVaz() {
-    sisprod::transient::updateFlowRates(transientStateOf(*this));
 }
 
 void SProd::renovaBuffer() {
@@ -542,10 +437,6 @@ void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
     sisprod::transient::applyOutletBufferCondition(transientStateOf(*this), titRev, alfRev, betRev);
 }
 
-void SProd::determinaDTExpli() {
-    sisprod::transient::computeExplicitTimeStep(transientStateOf(*this));
-}
-
 void SProd::determinaDT(int vexpli) {
     sisprod::transient::computeTimeStep(transientStateOf(*this), vexpli);
 }
@@ -580,10 +471,6 @@ void SProd::ReiniEvolFrac0() {
     sisprod::transient::restartFractionEvolutionInitial(transientStateOf(*this));
 }
 
-void SProd::SubReiniEvolFrac() {
-    sisprod::transient::restartFractionEvolutionSub(transientStateOf(*this));
-}
-
 void SProd::ReiniEvolFrac() {
     sisprod::transient::restartFractionEvolution(transientStateOf(*this));
 }
@@ -594,10 +481,6 @@ void SProd::AtualizaPig() {
 
 void SProd::SolveAcopPV(int vexpli, int ciclo) {
     sisprod::transient::solvePressureVolumeCoupling(transientStateOf(*this), vexpli, ciclo);
-}
-
-void SProd::prepDifusCalorND(int i) {
-    sisprod::thermal::prepareNonDimensionalHeatDiffusion(thermalStateOf(*this), i);
 }
 
 void SProd::marchaEnergTrans(int ciclo, int ciclomax) {
@@ -664,14 +547,6 @@ double SProd::marchaProdPerm1(double pchute) {
     return sisprod::steady::marchProductionSteady(steadyStateOf(*this), pchute);
 }
 
-double SProd::marchaProdPerm1Rev(double pchute) {
-    return sisprod::steady::marchReverseProductionSteady(steadyStateOf(*this), pchute);
-}
-
-double SProd::marchaProdPerm2(double pchute) {
-    return sisprod::steady::marchProductionSteadySecondary(steadyStateOf(*this), pchute);
-}
-
 double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
     return sisprod::steady::searchProductionBottomHolePressure(searchStateOf(*this), chute, kontaTenta);
 }
@@ -692,10 +567,6 @@ double SProd::marchaProdPresPres1(double mchute) {
     return sisprod::steady::marchProductionPressureToPressure(steadyStateOf(*this), mchute);
 }
 
-double SProd::marchaProdPresPres1Rev(double mchute) {
-    return sisprod::steady::marchReverseProductionPressureToPressure(steadyStateOf(*this), mchute);
-}
-
 double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) {
     return sisprod::steady::searchProductionPressureToPressure(searchStateOf(*this), chute, maxvaz, kontaiter);
 }
@@ -704,24 +575,12 @@ double SProd::buscaProdPresPresPermRev(double chute, double maxvaz, int kontaite
     return sisprod::steady::searchReverseProductionPressureToPressure(searchStateOf(*this), chute, maxvaz, kontaiter);
 }
 
-double SProd::marchaProdPresPres2(double mchute) {
-    return sisprod::steady::marchProductionPressureToPressureSecondary(steadyStateOf(*this), mchute);
-}
-
 double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
     return sisprod::steady::searchProductionPressureToPressureSecondary(searchStateOf(*this), chute, maxvaz);
 }
 
-double SProd::marchaProdPresPres3(double mchute) {
-    return sisprod::steady::marchProductionPressureToPressureTertiary(steadyStateOf(*this), mchute);
-}
-
 double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
     return sisprod::steady::searchProductionPressureToPressureTertiary(searchStateOf(*this), chute, maxvaz);
-}
-
-double SProd::marchaGasPerm1(double chutemass) {
-    return sisprod::steady::marchGasSteady(steadyStateOf(*this), chutemass);
 }
 
 double SProd::buscaGasPresPerm2() {
@@ -730,30 +589,6 @@ double SProd::buscaGasPresPerm2() {
 
 double SProd::buscaGasPresPerm3() {
     return sisprod::steady::searchGasPressureSteadyTertiary(searchStateOf(*this));
-}
-
-double SProd::marchaGasPerm2(double pchute, double chutemass) {
-    return sisprod::steady::marchGasSteadySecondary(steadyStateOf(*this), pchute, chutemass);
-}
-
-double SProd::marchaGasPerm3(double pchute) {
-    return sisprod::steady::marchGasSteadyTertiary(steadyStateOf(*this), pchute);
-}
-
-void SProd::RenovaPresPermMon(int i, int RK) {
-    sisprod::steady::advanceUpstreamSteadyPressure(steadyStateOf(*this), i, RK);
-}
-
-double SProd::RenovaPresPermNcel() {
-    return sisprod::steady::steadyPressureAtLastCell(steadyStateOf(*this));
-}
-
-double SProd::calcDpArea(int i, double rhomix, double rey, double jmix) {
-    return sisprod::steady::areaChangePressureDrop(steadyStateOf(*this), i, rhomix, rey, jmix);
-}
-
-void SProd::RenovaPresPermJus(int i, int RK) {
-    sisprod::steady::advanceDownstreamSteadyPressure(steadyStateOf(*this), i, RK);
 }
 
 void SProd::corrDeng(int i) {
@@ -774,31 +609,8 @@ void SProd::corrDeng(int i) {
 
 
 
-void SProd::RenovaMassPerm(int i) {
-    sisprod::steady::advanceSteadyMass(steadyStateOf(*this), i);
-}
-void SProd::RenovaMassPermRev(int i) {
-    sisprod::steady::advanceReverseSteadyMass(steadyStateOf(*this), i);
-}
-
-void SProd::RenovaMassPermComp(int i) {
-    sisprod::steady::advanceCompositionalSteadyMass(steadyStateOf(*this), i);
-}
-
-void SProd::RenovaMassPermCompRev(int i) {
-    sisprod::steady::advanceReverseCompositionalSteadyMass(steadyStateOf(*this), i);
-}
-
 void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
     driftflux::coefficient::steadyState(closureStateOf(*this), ind, c0, ud);
-}
-
-void SProd::RenovaTransMassPerm(int i) {
-    sisprod::steady::advanceSteadyMassTransfer(steadyStateOf(*this), i);
-}
-
-void SProd::RenovaTransMassPermGas(int i) {
-    sisprod::steady::advanceSteadyGasMassTransfer(steadyStateOf(*this), i);
 }
 
 void SProd::RenovaTempPerm(int i, int RK) {
@@ -809,12 +621,6 @@ void SProd::RenovaTempPermRev(int i, int RK) {
     sisprod::thermal::advanceReverseSteadyTemperature(thermalStateOf(*this), i, RK);
 }
 
-void SProd::atualizaPeriPmonProd(int i) {
-    sisprod::steady::refreshUpstreamProductionPeriphery(steadyStateOf(*this), i);
-}
-void SProd::atualizaPeriPjusProd(int i) {
-    sisprod::steady::refreshDownstreamProductionPeriphery(steadyStateOf(*this), i);
-}
 void SProd::atualizaPeriTempProd(int i) {
     sisprod::thermal::updateProductionTemperaturePeriphery(thermalStateOf(*this), i);
 }
@@ -855,21 +661,6 @@ void SProd::IniciaconectaColunaPerm() {
     sisprod::gaslift::initializeTubingConnectionSteady(gasLiftStateOf(*this));
 }
 
-void SProd::atualizaProp() {
-    sisprod::steady::refreshProperties(steadyStateOf(*this));
-}
-
-void SProd::atualizaVelTermPerm() {
-    sisprod::steady::refreshSteadyThermalVelocities(steadyStateOf(*this));
-}
-
-void SProd::calcDTPseudoTrans() {
-    sisprod::steady::computePseudoTransientTimeStep(steadyStateOf(*this));
-}
-double SProd::marchaInjPerm1(double chute) {
-    return sisprod::steady::marchInjectionSteady(steadyStateOf(*this), chute);
-}
-
 double SProd::buscaInjPfundoPerm1(double chute) {
     return sisprod::steady::searchInjectionBottomHolePressure1(searchStateOf(*this), chute);
 }
@@ -890,13 +681,6 @@ double SProd::buscaInjPfundoPerm5(double chute) {
     return sisprod::steady::searchInjectionBottomHolePressure5(searchStateOf(*this), chute);
 }
 
-double SProd::multMarcha(double chute, int prod, int tipoCC) {
-    return sisprod::steady::dispatchMarch(searchStateOf(*this), chute, prod, tipoCC);
-}
-double SProd::zriddr(double x1, double x2, int prod, int tipoCC) {
-    return sisprod::steady::solveSteadyRoot(searchStateOf(*this), x1, x2, prod, tipoCC);
-}
-
 double SProd::hidroreverso(double hol, double vaz, double vazG) {
     return sisprod::steady::reverseHydrostatic(steadyStateOf(*this), hol, vaz, vazG);
 }
@@ -909,10 +693,3 @@ double SProd::hidroTramoSecundario(double titulo) {
     return sisprod::steady::secondaryBranchHydrostatic(steadyStateOf(*this), titulo);
 }
 
-void SProd::hidroLinServ() {
-    sisprod::steady::gasLineHydrostatic(steadyStateOf(*this));
-}
-
-double SProd::buscaTramoSecVazPerm(double pPartida, int indPartida) {
-    return sisprod::steady::searchSecondaryBranchFlowRate(searchStateOf(*this), pPartida, indPartida);
-}

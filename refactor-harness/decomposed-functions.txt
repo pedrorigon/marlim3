@@ -103,7 +103,6 @@ sign
 # switch. Verified by verify-dispatch.py: the original chain, carved out of the
 # baseline commit, compiled beside the new selector and swept over 2240
 # combinations of the five selectors, including the three rows no model reaches.
-multMarcha
 
 # --- stage 5: thermal calculation ----------------------------------------
 # T061 moved the first three scalar thermal kernels to SisProdThermal.cpp.
@@ -111,9 +110,6 @@ multMarcha
 # compares 3491 tokens exactly. verify-thermal.sh drives all three through the
 # preserved public SProd methods; 43 rows remain byte-identical, and the
 # calibration catches a corruption in each moved body.
-interpolaHLatente
-calcHmix
-energmix
 
 # T062 first moved calctemp whole and proved its 5937-token inverse against the
 # pre-move commit. It was then split, one block at a time, into
@@ -128,8 +124,6 @@ calctemp
 # second compared equal over 3887 tokens before its mass-source block was
 # extracted to satisfy SC-004; the decomposition checker verifies 2523 main
 # tokens and 1986 helper tokens separately. calcTransMassTermo remains dead.
-calcTempEntalp
-calcTransMassTermo
 
 # T064 first moved renovaTemp whole and proved its 7039-token inverse against
 # the pre-move commit. It was then split into inlet initialization, property
@@ -154,7 +148,6 @@ renovatermColIni
 # 1,630 tokens exactly. Its calibration includes the qualified `dt` and
 # `poissonSolver.renova()` cases so a member call cannot be mistaken for an
 # unqualified SProd call again.
-prepDifusCalorND
 marchaEnergTrans
 
 # T068 moved both steady temperature marches whole, proving inverses of 4362
@@ -218,17 +211,9 @@ calcTempFim
 # All this declaration suppresses is "the body at this address differs from the
 # baseline body" -- which is the point of having moved it.
 HidroDescargaG
-renovaGas
-renovaGasBuf
 areaValvCali
-resolveDescarga
-avancInter
-ValvGasTrans
-prescordesc
-CalcPresValvDesc
 BuscaPresInjDesc
 subtempoGas
-subtempoGasBuf
 conectaColuna
 solveLinGas
 delpGasPerm
@@ -254,37 +239,12 @@ IniciaconectaColunaPerm
 # The nine T090 and T092 helpers are NOT listed. They have no baseline
 # counterpart, so L0 never compares them, and listing them would be a stale
 # declaration the check rejects.
-RenovaMassPerm
-RenovaMassPermRev
-RenovaMassPermComp
-RenovaMassPermCompRev
-RenovaPresPermMon
-RenovaPresPermJus
-RenovaPresPermNcel
-calcDpArea
 corrDeng
-RenovaTransMassPerm
-RenovaTransMassPermGas
 marchaProdPerm1
-marchaProdPerm1Rev
-marchaProdPerm2
 marchaProdPresPres1
-marchaProdPresPres1Rev
-marchaProdPresPres2
-marchaProdPresPres3
-marchaGasPerm1
-marchaGasPerm2
-marchaGasPerm3
-marchaInjPerm1
 hidroreverso
 hidroreversoInj
 hidroTramoSecundario
-hidroLinServ
-atualizaProp
-atualizaVelTermPerm
-calcDTPseudoTrans
-atualizaPeriPmonProd
-atualizaPeriPjusProd
 
 # --- stage 7, second half: the searches ------------------------------------
 # Same situation as the marches above: each moved to
@@ -313,7 +273,6 @@ buscaInjPfundoPerm2
 buscaInjPfundoPerm3
 buscaInjPfundoPerm4
 buscaInjPfundoPerm5
-buscaTramoSecVazPerm
 
 # --- stage 8: the transient step --------------------------------------------
 # Every name here moved to SisProdTransient.cpp and left a one-line delegation,
@@ -328,13 +287,11 @@ buscaTramoSecVazPerm
 # The helpers this stage's decomposition created are NOT listed: they have no
 # baseline counterpart, so L0 never compares them.
 renova
-renovaVaz
 renovaBuffer
 renovaBufferCego
 calcCCpres
 calcCCBuffer
 determinaDT
-determinaDTExpli
 atenuaDtMax
 avaliaVariaDpDt
 restringeDTporValv
@@ -342,7 +299,6 @@ aberturaVal0
 aberturaVal1
 EvoluiFrac
 ReiniEvolFrac0
-SubReiniEvolFrac
 ReiniEvolFrac
 AtualizaPig
 SolveAcopPV
@@ -367,7 +323,6 @@ montasistema
 # tokens before the cut -- which matters here because no corpus model enables
 # the hydrate calculation renovaFonte's first cut lifted. L2 14/14 after each.
 renovaFonte
-auxMiniTab
 # The default constructor SProd() was cut too (nullOutputCouplingAndSaturationState),
 # missed at first because the ad-hoc scan could not match a function without a
 # return type. SProd is declared above since stage 1 and covers both overloads.
@@ -395,8 +350,6 @@ renovaFracMol2
 # premise T104c showed false. Proved token for token by transient-move.py
 # `check` against the pre-move commit; auxMiniTab (declared above, T101) moved
 # with it as fillFluidMiniTable, and the two corner helpers as module internals.
-geraMiniTabFlu
-salvaFonte
 
 # --- stage 9: named constants (code analysis) -----------------------------
 # Unit conversions and physical constants written as literals now use the names
@@ -406,9 +359,7 @@ salvaFonte
 # restructured (its two pairs of branches, which differed only in the void and
 # beta fractions they store, merged): verified by the argument in its commit and
 # the unloading differential decks.
-FonteValv
 HidroDescargaP
-correcHidroFric
 
 # --- stage 9: source terms (code analysis, D4) -----------------------------
 # renovaFonte and FonteValv (declared above) moved with their two helpers,
@@ -428,3 +379,59 @@ correcHidroFric
 # against the previous commit, and by the parallel sensitivity-analysis
 # differential.
 copiaSemJson -> REMOVED
+
+# --- stage 9: D5 (code analysis) -------------------------------------------
+# The SProd methods that only forwarded to a module function, and correcHidroFric, had
+# no caller in the code and were removed. Their bodies live in the modules, where the
+# move tools verified them; the stage sweeps call those module functions directly.
+# SProd::zriddr went too, but its entry above stays: L0 matches by name, and the Ridders
+# root finder in RootFindingSolvers.h is also called zriddr.
+atualizaPeriPjusProd -> REMOVED
+atualizaPeriPmonProd -> REMOVED
+atualizaProp -> REMOVED
+atualizaVelTermPerm -> REMOVED
+auxMiniTab -> REMOVED
+avancInter -> REMOVED
+buscaTramoSecVazPerm -> REMOVED
+calcDpArea -> REMOVED
+calcDTPseudoTrans -> REMOVED
+calcHmix -> REMOVED
+CalcPresValvDesc -> REMOVED
+calcTempEntalp -> REMOVED
+calcTransMassTermo -> REMOVED
+correcHidroFric -> REMOVED
+determinaDTExpli -> REMOVED
+energmix -> REMOVED
+FonteValv -> REMOVED
+geraMiniTabFlu -> REMOVED
+hidroLinServ -> REMOVED
+interpolaHLatente -> REMOVED
+marchaGasPerm1 -> REMOVED
+marchaGasPerm2 -> REMOVED
+marchaGasPerm3 -> REMOVED
+marchaInjPerm1 -> REMOVED
+marchaProdPerm1Rev -> REMOVED
+marchaProdPerm2 -> REMOVED
+marchaProdPresPres1Rev -> REMOVED
+marchaProdPresPres2 -> REMOVED
+marchaProdPresPres3 -> REMOVED
+multMarcha -> REMOVED
+prepDifusCalorND -> REMOVED
+prescordesc -> REMOVED
+renovaGas -> REMOVED
+renovaGasBuf -> REMOVED
+RenovaMassPerm -> REMOVED
+RenovaMassPermComp -> REMOVED
+RenovaMassPermCompRev -> REMOVED
+RenovaMassPermRev -> REMOVED
+RenovaPresPermJus -> REMOVED
+RenovaPresPermMon -> REMOVED
+RenovaPresPermNcel -> REMOVED
+RenovaTransMassPerm -> REMOVED
+RenovaTransMassPermGas -> REMOVED
+renovaVaz -> REMOVED
+resolveDescarga -> REMOVED
+salvaFonte -> REMOVED
+SubReiniEvolFrac -> REMOVED
+subtempoGasBuf -> REMOVED
+ValvGasTrans -> REMOVED

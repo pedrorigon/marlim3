@@ -1333,56 +1333,25 @@ class SProd {
     /// Initializes the production line for gas-lift unloading.
     void HidroDescargaP();
 
-    /// Estimates the gas-injection pressure correction required to avoid erosional valve velocity.
-    double prescordesc(double velmax, int ivalv, double fator, int sinal);
-    /// Computes the unloading injection-pressure correction for one gas-lift valve.
-    double CalcPresValvDesc(double velGarg, int ivalv);
     /// Controls injection and upstream-choke pressures from gas-lift-valve flow rates.
     double BuscaPresInjDesc();
-    /// Updates gas-line state after solving pressure-velocity coupling.
-    void renovaGas();
-    /// Updates intermediate gas-line state during network convergence.
-    void renovaGasBuf();
 
     /// Calculates gas-lift-valve opening area from calibration and operating conditions.
     double areaValvCali(double PCal, double TCal, double PVO, double PT,
                         double dextern, double areagarg, double Rvalv, double Temp);
     /// Advances the temperature of one gas-line control volume.
     void calctempGas(int i, double tempantiga, int modoPerm = 0);
-    /// Solves gas-line pressure and flow in the completion-fluid region during unloading.
-    void resolveDescarga();
     /// Updates gas-line temperature in the completion-fluid region during unloading.
     void tempDescarga(int i);
-    /// Advances the completion-fluid/gas interface in the service line.
-    void avancInter();
     /// Calculates gas temperature across a gas-lift valve using the Joule-Thomson model.
     double TempDescGL(int igl);
-    /// Maps gas-lift-valve positions to gas-line control volumes.
-    void ValvGasTrans();
     /// Advances the coupled gas-line pressure, velocity, and temperature solution.
     void subtempoGas();
-    /// Advances the intermediate gas-line state used by network convergence.
-    void subtempoGasBuf();
     /// Exchanges heat-transfer data between the production column and annulus.
     void conectaColuna();
-    /// Interpolates latent heat from enthalpy tables.
-    double interpolaHLatente(double pres, double temp);
     /// Advances the temperature of one production-line control volume.
     void calctemp(int i, double tempantiga, int modoPerm = 0);
-    /// Returns the mixture enthalpy helper value; currently unused.
-    double calcHmix(int i);
-    /// Returns the mixture-energy helper value; currently unused.
-    double energmix(int i, int jp0, int jt, double razp);
-    /// Updates temperature from enthalpy; currently unused.
-    void calcTempEntalp(int i);
-    /// Evaluates thermal mass-transfer terms; currently unused.
-    void calcTransMassTermo(int i);
 
-    /// Calculates flow through Master1 while it operates as a choke.
-    void FonteValv(int ind);
-    /// Stores source terms from the previous time level for possible rollback.
-    /// Nothing in the product calls it.
-    void salvaFonte();
     /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
     void renovaFonte(int ind);
     /// Stores previous void fractions and updates pig motion and reception.
@@ -1398,20 +1367,11 @@ class SProd {
     void CalcC0UdIni(int ind, double &c0, double &ud);
     /// Evaluates slip parameters at the inlet of an internal network section.
     void CalcC0UdIniBuf(int ind, double &c0, double &ud);
-    /// Applies hydrostatic and friction corrections; currently unused.
-    void correcHidroFric(int i, double &hidro, double &fric);
-    /// Prepares auxiliary data for a local fluid-property table. Nothing in the
-    /// product calls it.
-    void auxMiniTab(ProFlu &flu);
-    /// Generates the local fluid-property table. Nothing in the product calls it.
-    void geraMiniTabFlu();
   public:
 
     /// Loads pressure-velocity results into cell and face state variables.
     void renova(int expli = 0);
   private:
-    /// Updates phase and mixture flow rates.
-    void renovaVaz();
   public:
     /// Updates only section-end states during intermediate network convergence.
     void renovaBuffer();
@@ -1443,8 +1403,6 @@ class SProd {
     /// Selects a stable time step from CFL and additional model restrictions.
     void determinaDT(int vexpli = 0);
   private:
-    /// Selects a stable time step from CFL and additional model restrictions.
-    void determinaDTExpli();
   public:
     /// Limits time-step growth when accepted steps remain well below the CFL estimate.
     void atenuaDtMax();
@@ -1464,8 +1422,6 @@ class SProd {
     /// Restores the initial fraction state after an invalid update.
     void ReiniEvolFrac0();
   private:
-    /// Stores only the volume fractions required by fraction rollback.
-    void SubReiniEvolFrac();
   public:
     /// Restores previous volume fractions after a nonphysical update.
     void ReiniEvolFrac();
@@ -1475,8 +1431,6 @@ class SProd {
     void SolveAcopPV(int vexpli = 0, int ciclo = 0);
 
   private:
-    /// Prepares the multidimensional heat-diffusion problem for one cell.
-    void prepDifusCalorND(int i);
   public:
     /// Advances the transient energy equation.
     void marchaEnergTrans(int ciclo = 0, int ciclomax = 0);
@@ -1515,10 +1469,6 @@ class SProd {
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
     double marchaProdPerm1(double pchute);
   private:
-    /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
-    double marchaProdPerm1Rev(double pchute);
-    /// Marches the steady production solution using a bottomhole-pressure guess with an outlet choke.
-    double marchaProdPerm2(double pchute);
   public:
     /// Brackets and solves the bottomhole-pressure root for marchaProdPerm1.
     double buscaProdPfundoPerm(double chute = -1., int kontaTenta = -1);
@@ -1531,29 +1481,16 @@ class SProd {
     /// Marches the steady production solution using a bottomhole mass-flow guess.
     double marchaProdPresPres1(double mchute);
   private:
-    /// Marches the steady production solution using a bottomhole mass-flow guess.
-    double marchaProdPresPres1Rev(double mchute);
   public:
     /// Brackets and solves the mass-flow root for marchaProdPresPres1.
     double buscaProdPresPresPerm(double mchute, double maxvaz = 0., int kontaiter = 0);
     /// Brackets and solves the reverse-flow mass-flow root.
     double buscaProdPresPresPermRev(double mchute, double maxvaz = 0., int kontaiter = 0);
   private:
-    /// Marches the steady production solution for the second pressure-pressure boundary formulation.
-    double marchaProdPresPres2(double mchute);
   public:
     /// Brackets and solves the mass-flow root for marchaProdPresPres2.
     double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
   private:
-    /// Marches the steady production solution for the third pressure-pressure
-    /// boundary formulation: marchaProdPresPres2 with the choke's throughput
-    /// forced to zero, which is the closed-choke case.
-    ///
-    /// Nothing calls it: marchaProdPresPres2 already reduces to exactly this when
-    /// the choke is shut, because the throat area is `abertura[0] * area` and both
-    /// vazmaxSachd and vazmassSachd scale to zero with it -- leaving the same
-    /// `0. - celula[ncel - 1].MR` residual this function returns literally.
-    double marchaProdPresPres3(double mchute);
   public:
     /// Brackets and solves the mass-flow root for the closed-choke case, chosen
     /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
@@ -1563,48 +1500,18 @@ class SProd {
     double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
 
   private:
-    /// Marches the steady gas line with prescribed injection pressure and a mass-flow guess.
-    double marchaGasPerm1(double chutemass = -1);
-    /// Marches the steady gas line with prescribed injection flow and a pressure guess.
-    double marchaGasPerm2(double pchute, double chutemass = -1);
-    /// Marches the steady gas line across the injection choke using a downstream-pressure guess.
-    double marchaGasPerm3(double pchute);
     /// Brackets and solves the pressure root for marchaGasPerm2.
     double buscaGasPresPerm2();
     /// Brackets and solves the pressure root for marchaGasPerm3.
     double buscaGasPresPerm3();
-    /// Marches pressure from the previous cell center to the downstream face.
-    void RenovaPresPermMon(int i, int RK);
-    /// Marches pressure from the last cell center to the outlet face.
-    double RenovaPresPermNcel();
-    /// Calculates the pressure contribution caused by an area change.
-    double calcDpArea(int i, double rhomix, double rey, double jmix);
-    /// Marches pressure from the upstream face to the current cell center.
-    void RenovaPresPermJus(int i, int RK);
     /// Corrects gas density in one control volume.
     void corrDeng(int i);
-    /// Updates steady-state mass flow and fluid state after a source term.
-    void RenovaMassPerm(int i);
-    /// Updates steady-state mass flow for reverse flow.
-    void RenovaMassPermRev(int i);
-    /// Updates steady-state mass flow and pseudocomponent composition after a source term.
-    void RenovaMassPermComp(int i);
-    /// Updates steady-state mass flow and pseudocomponent composition after a source term.
-    void RenovaMassPermCompRev(int i);
     /// Calculates steady-state slip parameters at a downstream face.
     void CalcC0UdPerm(int ind, double &c0, double &ud);
-    /// Calculates steady-state interphase mass transfer.
-    void RenovaTransMassPerm(int i);
-    /// Calculates steady-state interphase mass transfer.
-    void RenovaTransMassPermGas(int i);
     /// Marches steady-state temperature from cell i-1 to cell i.
     void RenovaTempPerm(int i, int RK);
     /// Marches steady-state temperature in the reverse direction.
     void RenovaTempPermRev(int i, int RK);
-    /// Adds pump pressure gain at the upstream face of a production cell.
-    void atualizaPeriPmonProd(int i);
-    /// Synchronizes neighboring face pressures after updating a cell-center pressure.
-    void atualizaPeriPjusProd(int i);
     /// Synchronizes neighboring face temperatures after updating a cell-center temperature.
     void atualizaPeriTempProd(int i);
 
@@ -1625,15 +1532,7 @@ class SProd {
     void conectaColunaPerm();
     /// Initializes estimated column-annulus heat transfer before the steady-state march.
     void IniciaconectaColunaPerm();
-    /// Refreshes fluid properties.
-    void atualizaProp();
-    /// Updates steady-state velocities and thermal terms.
-    void atualizaVelTermPerm();
-    /// Calculates the pseudo-transient time step.
-    void calcDTPseudoTrans();
 
-    /// Marches the steady injection-well solution using a pressure or flow-rate guess.
-    double marchaInjPerm1(double chute);
   public:
     /// Solves injection cases CC1 and CC3.
     double buscaInjPfundoPerm1(double chute = -1.);
@@ -1647,16 +1546,7 @@ class SProd {
     double buscaInjPfundoPerm5(double chute = -1.);
 
   private:
-    /// Dispatches the selected production, gas-line, or injection steady-state marching method.
-    double multMarcha(double chute, int prod, int tipoCC);
 
-    /// Solves for the steady-state boundary condition by Ridders' method.
-    ///
-    /// Binds the production domain to rootfinding::zriddr: it captures prod and
-    /// tipoCC in the objective, derives the minimum iteration count from the
-    /// input deck, and carries the convergence monitor. The algorithm itself
-    /// knows nothing of that.
-    double zriddr(double x1, double x2, int prod, int tipoCC);
   public:
 
     /// Estimates steady production-network node pressures from hydrostatics.
@@ -1666,11 +1556,7 @@ class SProd {
     /// Estimates secondary-branch pressures in a parallel production network.
     double hidroTramoSecundario(double titulo);
   private:
-    /// Builds a hydrostatic estimate for the gas service line.
-    void hidroLinServ();
 
-    /// Solves the secondary-branch flow rate in a steady parallel network.
-    double buscaTramoSecVazPerm(double pPartida, int indPartida);
     /// Marches the steady secondary branch of a parallel network.
     double marchaTramoSecVaz(double pchute, double chutemass = -1);
   public:

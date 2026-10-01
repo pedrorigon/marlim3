@@ -9,6 +9,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
+#include "SisProdThermal.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
 
@@ -531,12 +532,12 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
 
 void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
-    const double latentHeat = system.interpolaHLatente(
+    const double latentHeat = sisprod::thermal::interpolateLatentHeat(sisprod::adapters::thermalStateOf(system), 
         scenario.pressure, scenario.temperature);
     printf("%-20s %-15s value=%a\n", "interpolaHLatente", scenario.name, latentHeat);
 
     resetCells(system, cells, scenario);
-    const double mixtureEnthalpy = system.calcHmix(2);
+    const double mixtureEnthalpy = sisprod::thermal::computeMixtureEnthalpy(sisprod::adapters::thermalStateOf(system), 2);
     printf("%-20s %-15s value=%a\n", "calcHmix", scenario.name, mixtureEnthalpy);
 
     resetCells(system, cells, scenario);
@@ -550,7 +551,7 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     printf("%-20s %-15s tempSup=%a\n", "calcTempFim", scenario.name, system.tempSup);
 
     resetCells(system, cells, scenario);
-    system.prepDifusCalorND(2);
+    sisprod::thermal::prepareNonDimensionalHeatDiffusion(sisprod::adapters::thermalStateOf(system), 2);
     const TransCal &heat = cells[2].calor;
     printf("%-20s %-15s Tint=%a dtL=%a Vint=%a dt=%a k=%a cp=%a rho=%a visc=%a beta=%a\n",
            "prepDifusCalorND", scenario.name, heat.Tint, heat.dtL, heat.Vint,
@@ -558,13 +559,13 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
 
     resetCells(system, cells, scenario);
     initializePropertyTables(cells[2], scenario);
-    const double tabulatedEnergy = system.energmix(2, 1, 2, 0.35);
+    const double tabulatedEnergy = sisprod::thermal::interpolateMixtureEnergy(sisprod::adapters::thermalStateOf(system), 2, 1, 2, 0.35);
     printf("%-20s %-15s value=%a\n", "energmix", scenario.name, tabulatedEnergy);
 
     if (scenario.pressure >= 60. && scenario.pressure < 140.) {
         resetCells(system, cells, scenario);
         initializePropertyTables(cells[2], scenario);
-        system.calcTempEntalp(2);
+        sisprod::thermal::updateTemperatureFromEnthalpy(sisprod::adapters::thermalStateOf(system), 2);
         printf("%-20s %-15s temp=%a\n", "calcTempEntalp", scenario.name, cells[2].temp);
     }
 

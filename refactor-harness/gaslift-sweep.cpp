@@ -16,6 +16,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
+#include "SisProdGasLift.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
 
@@ -671,12 +672,12 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // Two calls with throat rates on either side of vazDescControl, to drive the
     // raise branch and the lower branch rather than one of them twice.
     seed();
-    system.CalcPresValvDesc(4.0 * system.arq.vazDescControl, 0);
+    sisprod::gaslift::computeUnloadingValvePressure(sisprod::adapters::gasLiftStateOf(system), 4.0 * system.arq.vazDescControl, 0);
     printUnloadingControl("CalcPresValvDesc-high", scenario.name, system);
 
     seed();
     system.pGSup = system.arq.presMinDesc * 0.99;
-    system.CalcPresValvDesc(0.1 * system.arq.vazDescControl, 1);
+    sisprod::gaslift::computeUnloadingValvePressure(sisprod::adapters::gasLiftStateOf(system), 0.1 * system.arq.vazDescControl, 1);
     printUnloadingControl("CalcPresValvDesc-low", scenario.name, system);
 
     // Two rows again. The search corrects the surface pressure through the
@@ -698,21 +699,21 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // ordinary advance, and the hand-over that fires only when the interface is
     // in the last cell AND has filled it. Driving one leaves the other blind.
     seed();
-    system.avancInter();
+    sisprod::gaslift::advanceInterface(sisprod::adapters::gasLiftStateOf(system));
     printGas("avancInter", scenario.name, system.celulaG[kInterfaceCell]);
 
     seed();
     system.celInter = system.ncelGas - 1;
     system.celulaG[system.celInter].razInterIni = 0.995;
     system.celulaG[system.celInter].razInter = 0.995;
-    system.avancInter();
+    sisprod::gaslift::advanceInterface(sisprod::adapters::gasLiftStateOf(system));
     printGas("avancInter-handover", scenario.name, system.celulaG[system.ncelGas - 1]);
     printRatios("avancInter-ratios", scenario.name, system.celulaG[system.ncelGas - 1]);
     // The hand-over writes the cell AHEAD of the interface as well.
     printRatios("avancInter-ahead", scenario.name, system.celulaG[system.ncelGas]);
 
     seed();
-    system.resolveDescarga();
+    sisprod::gaslift::solveUnloading(sisprod::adapters::gasLiftStateOf(system));
     printGas("resolveDescarga", scenario.name, system.celulaG[kInterfaceCell]);
     printGas("resolveDescarga-last", scenario.name, system.celulaG[kGasCells]);
 
@@ -731,7 +732,7 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     seed();
     Vcr<double> wideFreeTerms = system.gasLift.termolivreG;
     system.gasLift.termolivreG = Vcr<double>(3 * (kGasCells + 1), 0.);
-    system.subtempoGasBuf();
+    sisprod::gaslift::advanceBufferedGasSubStep(sisprod::adapters::gasLiftStateOf(system));
     printGas("subtempoGasBuf", scenario.name, system.celulaG[kInterfaceCell]);
     printBuffered("subtempoGasBuf-buffer", scenario.name,
                   system.celulaG[kInterfaceCell], system.celulaG[0]);
@@ -765,11 +766,11 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    system.renovaGas();
+    sisprod::gaslift::updateGasLine(sisprod::adapters::gasLiftStateOf(system));
     printGas("renovaGas", scenario.name, system.celulaG[2]);
 
     resetGasLine(system, scenario);
-    system.renovaGasBuf();
+    sisprod::gaslift::updateBufferedGasLine(sisprod::adapters::gasLiftStateOf(system));
     printGas("renovaGasBuf", scenario.name, system.celulaG[2]);
     // VGasRBuf is the ONLY field updateBufferedGasLine writes, and printGas does
     // not carry it, so until this row existed the routine could have been
@@ -783,7 +784,7 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetGasLine(system, scenario);
     resetValves(system);
     printValue("prescordesc", scenario.name,
-               system.prescordesc(0.4, 0, 1.1, 1));
+               sisprod::gaslift::unloadingPressureCorrection(sisprod::adapters::gasLiftStateOf(system), 0.4, 0, 1.1, 1));
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
