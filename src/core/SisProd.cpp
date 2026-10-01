@@ -60,7 +60,7 @@ void SProd::resetRunState() {
     dtInter = 0.;
     velInter = 0.;
 
-    MatTrendG = 0;
+    trends.MatTrendG = 0;
     trends.resettrendg = 0;
     trends.ntrendg = 0;
     trends.ntrendgB = 0;
@@ -68,9 +68,9 @@ void SProd::resetRunState() {
     trends.resettrendtransg = 0;
     trends.ntrendtransg = 0;
     trends.ntrendtransgB = 0;
-    MatTrendP = 0;
+    trends.MatTrendP = 0;
     trends.resettrend = 0;
-    ntrend = 0;
+    trends.ntrend = 0;
     trends.ntrendB = 0;
     trends.MatTrendTransP = 0;
     trends.resettrendtrans = 0;
@@ -107,7 +107,7 @@ void SProd::resetRunState() {
     dtauxCFL = 0.;
     dtauxFinal = 0.;
 
-    kimpT = 0.;
+    trends.kimpT = 0.;
 
     transient.kontaGolfada = 1000;
 

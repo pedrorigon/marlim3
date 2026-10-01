@@ -826,13 +826,13 @@ void SProd::allocateEventProfileAndTrendArrays() {
             trends.productionTrendSet.allocate(
                 arq.ntendp,
                 [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); }, // round(arq.tfinal / arq.trendp[i].dt);
-                [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; }, MatTrendP,
-                trends.resettrend, ntrend, trends.ntrendB);
+                [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; }, trends.MatTrendP,
+                trends.resettrend, trends.ntrend, trends.ntrendB);
         }
         if (arq.ntendg > 0) {
             trends.gasTrendSet.allocate(
                 arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt); },
-                [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; }, MatTrendG,
+                [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; }, trends.MatTrendG,
                 trends.resettrendg, trends.ntrendg, trends.ntrendgB);
         }
         if (arq.ntendtransp > 0) {

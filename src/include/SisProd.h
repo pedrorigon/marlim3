@@ -443,9 +443,10 @@ struct TrendSet {
     }
 };
 
-/// The trend and profile output a system writes: the wall-temperature trend matrices, the
-/// sample counters and reset times of the trend families, the profile and single-cell output
-/// indices, and the cells whose radial temperature profiles are written.
+/// The trend and profile output a system writes: the trend matrices of every family
+/// (production, gas line, and the wall temperatures of both), their sample counters and reset
+/// times, the profile and single-cell output indices, the cells whose radial temperature
+/// profiles are written, and the count of output passes.
 struct TrendRecorder {
     /**
      * @brief Gas-line cells where radial temperature profiles are written.
@@ -545,6 +546,22 @@ struct TrendRecorder {
      * resettrendtransg, ntrendtransg and ntrendtransgB.
      */
     TrendSet gasWallTrendSet;
+    /**
+     * @brief Buffered gas-line trend data.
+     */
+    double ***MatTrendG = nullptr;
+    /**
+     * @brief Buffered production-line trend data.
+     */
+    double ***MatTrendP = nullptr;
+    /**
+     * @brief Number of production-line trend samples currently stored.
+     */
+    int *ntrend = nullptr;
+    /**
+     * @brief Trend-output cycle counter; a value of one triggers header output.
+     */
+    double kimpT = 0.;
 };
 
 }  // namespace sisprod
@@ -901,28 +918,18 @@ class SProd {
 
 
   public:
-    /**
-     * @brief Buffered gas-line trend data.
-     */
-    double ***MatTrendG = nullptr;
   private:
 
   public:
-    /**
-     * @brief Buffered production-line trend data.
-     */
-    double ***MatTrendP = nullptr;
   private:
   public:
-    /**
-     * @brief Number of production-line trend samples currently stored.
-     */
-    int *ntrend = nullptr;
   private:
+  public:
     /**
      * @brief The trend and profile output this system writes.
      */
     sisprod::TrendRecorder trends;
+  private:
 
   public:
     /**
@@ -1076,10 +1083,6 @@ class SProd {
     int redeTemporario = 0;
   public:
 
-    /**
-     * @brief Trend-output cycle counter; a value of one triggers header output.
-     */
-    double kimpT = 0.;
 
   private:
 

@@ -45,7 +45,7 @@ struct TrendState {
     /// Branch index; negative outside a network -- SProd::indTramo.
     const int &branchIndex;
     /// Count of output passes so far; captions go out on the first --
-    /// SProd::kimpT.
+    /// SProd::trends.kimpT.
     const double &printPassCount;
 
     /// MatTrendP, ntrend, ntrendB.

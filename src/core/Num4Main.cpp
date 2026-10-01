@@ -2581,7 +2581,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
 
             if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
                 for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].ntrend[j]);
+                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].trends.ntrend[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -8049,17 +8049,17 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
                 escreveIni.close();
             }
         }
-        sistem1.kimpT = 1;
+        sistem1.trends.kimpT = 1;
         for (int i = 0; i < sistem1.arq.ntendp; i++) {
             sistem1.ImprimeTrendPCab(i);
-            sistem1.arq.imprimeTrend(sistem1.celula, sistem1.MatTrendP[i], 0, i, 0);
+            sistem1.arq.imprimeTrend(sistem1.celula, sistem1.trends.MatTrendP[i], 0, i, 0);
             sistem1.ImprimeTrendP(i);
         }
         if (sistem1.arq.lingas == 1) {
             sistem1.arq.imprimeProfileG(sistem1.celulaG, sistem1.flutG, 0, sistem1.indTramo);
             for (int i = 0; i < sistem1.arq.ntendg; i++) {
                 sistem1.ImprimeTrendGCab(i);
-                sistem1.arq.imprimeTrendG(sistem1.celulaG, sistem1.MatTrendG[i], 0, i, 0, 0);
+                sistem1.arq.imprimeTrendG(sistem1.celulaG, sistem1.trends.MatTrendG[i], 0, i, 0, 0);
                 sistem1.ImprimeTrendG(i);
             }
         }
@@ -8217,7 +8217,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
     escreveAP << "Numero de combinacoes da Analise Parametrica "<< analisePara.nVariaveis<< endl;
     escreveAP.close();
     int indfalha[analisePara.nVariaveis];
-    sistem1.kimpT = 1;
+    sistem1.trends.kimpT = 1;
     for (int i = 0; i < sistem1.arq.ntendp; i++) {
         sistem1.ImprimeTrendPCab(i);
     }
@@ -8457,15 +8457,15 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
                 	sistem2.celula[j].calor.poisson2D.imprimePermanente(sistem2.indTramo);
             	}
         	}
-        	sistem2.kimpT = 1;
+        	sistem2.trends.kimpT = 1;
         	for (int i = 0; i < sistem2.arq.ntendp; i++) {
-            	sistem2.arq.imprimeTrend(sistem2.celula, sistem2.MatTrendP[i], 0, i, 0);
+            	sistem2.arq.imprimeTrend(sistem2.celula, sistem2.trends.MatTrendP[i], 0, i, 0);
             	sistem2.ImprimeTrendP(i);
         	}
         	if (sistem2.arq.lingas == 1) {
             	sistem2.arq.imprimeProfileG(sistem2.celulaG, sistem2.flutG, 0, sistem2.indTramo);
             	for (int i = 0; i < sistem2.arq.ntendg; i++) {
-                	sistem2.arq.imprimeTrendG(sistem2.celulaG, sistem2.MatTrendG[i], 0, i, 0, 0);
+                	sistem2.arq.imprimeTrendG(sistem2.celulaG, sistem2.trends.MatTrendG[i], 0, i, 0, 0);
                 	sistem2.ImprimeTrendG(i);
             	}
         	}
@@ -8600,7 +8600,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
     escreveAP << "relatório de falhas da Analise Parametrica para um Tramo " << endl;
     escreveAP.close();
 
-    sistem1.kimpT = 1;
+    sistem1.trends.kimpT = 1;
     for (int i = 0; i < sistem1.arq.ntendp; i++) {
         sistem1.ImprimeTrendPCab(i);
     }
@@ -8723,15 +8723,15 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
                 sistem2[iSeq].celula[j].calor.poisson2D.imprimePermanente(sistem2[iSeq].indTramo);
             }
         }
-        sistem2[iSeq].kimpT = 1;
+        sistem2[iSeq].trends.kimpT = 1;
         for (int i = 0; i < sistem2[iSeq].arq.ntendp; i++) {
-            sistem2[iSeq].arq.imprimeTrend(sistem2[iSeq].celula, sistem2[iSeq].MatTrendP[i], 0, i, 0);
+            sistem2[iSeq].arq.imprimeTrend(sistem2[iSeq].celula, sistem2[iSeq].trends.MatTrendP[i], 0, i, 0);
             sistem2[iSeq].ImprimeTrendP(i);
         }
         if (sistem2[iSeq].arq.lingas == 1) {
             sistem2[iSeq].arq.imprimeProfileG(sistem2[iSeq].celulaG, sistem2[iSeq].flutG, 0, sistem2[iSeq].indTramo);
             for (int i = 0; i < sistem2[iSeq].arq.ntendg; i++) {
-                sistem2[iSeq].arq.imprimeTrendG(sistem2[iSeq].celulaG, sistem2[iSeq].MatTrendG[i], 0, i, 0, 0);
+                sistem2[iSeq].arq.imprimeTrendG(sistem2[iSeq].celulaG, sistem2[iSeq].trends.MatTrendG[i], 0, i, 0, 0);
                 sistem2[iSeq].ImprimeTrendG(i);
             }
         }
@@ -8960,11 +8960,11 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
                     sistem1.celula[j].calor.poisson2D.imprimePermanente(sistem1.indTramo);
                 }
             }
-            sistem1.kimpT = 1;
+            sistem1.trends.kimpT = 1;
             for (int i = 0; i < sistem1.arq.ntendp; i++) {
                 if (iSeq == 0)
                     sistem1.ImprimeTrendPCab(i);
-                sistem1.arq.imprimeTrend(sistem1.celula, sistem1.MatTrendP[i], 0, i, 0);
+                sistem1.arq.imprimeTrend(sistem1.celula, sistem1.trends.MatTrendP[i], 0, i, 0);
                 sistem1.ImprimeTrendP(i);
             }
             if (sistem1.arq.lingas == 1) {
@@ -8972,7 +8972,7 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
                 for (int i = 0; i < sistem1.arq.ntendg; i++) {
                     if (iSeq == 0)
                         sistem1.ImprimeTrendGCab(i);
-                    sistem1.arq.imprimeTrendG(sistem1.celulaG, sistem1.MatTrendG[i], 0, i, 0, 0);
+                    sistem1.arq.imprimeTrendG(sistem1.celulaG, sistem1.trends.MatTrendG[i], 0, i, 0, 0);
                     sistem1.ImprimeTrendG(i);
                 }
             }
@@ -9817,17 +9817,17 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
                     	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
                     		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
                     }
-                    malha[i].kimpT++;
+                    malha[i].trends.kimpT++;
                     for (int j = 0; j < malha[i].arq.ntendp; j++) {
                         malha[i].ImprimeTrendPCab(j, nrede);
-                        malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
+                        malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], 0, j, 0);
                         malha[i].ImprimeTrendP(j, nrede);
                     }
                     if (malha[i].arq.lingas == 1) {
                         malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
                         for (int j = 0; j < malha[i].arq.ntendg; j++) {
                             malha[i].ImprimeTrendGCab(j, nrede);
-                            malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
+                            malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].trends.MatTrendG[j], 0, j, 0, 0);
                             malha[i].ImprimeTrendG(j, nrede);
                         }
                     }
@@ -9942,17 +9942,17 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
         	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
         		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
         }
-        malha[i].kimpT++;
+        malha[i].trends.kimpT++;
         for (int j = 0; j < malha[i].arq.ntendp; j++) {
             malha[i].ImprimeTrendPCab(j, nrede);
-            malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
+            malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], 0, j, 0);
             malha[i].ImprimeTrendP(j, nrede);
         }
         if (malha[i].arq.lingas == 1) {
             malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
             for (int j = 0; j < malha[i].arq.ntendg; j++) {
                 malha[i].ImprimeTrendGCab(j, nrede);
-                malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
+                malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].trends.MatTrendG[j], 0, j, 0, 0);
                 malha[i].ImprimeTrendG(j, nrede);
             }
         }
@@ -11113,7 +11113,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
             if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
                 for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].ntrend[j]);
+                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].trends.ntrend[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -11624,17 +11624,17 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
         	for(int iCelUni=0; iCelUni<malha[i].arq.nCelUnit; iCelUni++)
         		malha[i].arq.relatorioCelulaUnitaria(malha[i].celula,malha[i].arq.celUnit[iCelUni].posicP, malha[i].indTramo,nrede);
         }
-        malha[i].kimpT++;
+        malha[i].trends.kimpT++;
         for (int j = 0; j < malha[i].arq.ntendp; j++) {
             malha[i].ImprimeTrendPCab(j, nrede);
-            malha[i].arq.imprimeTrend(malha[i].celula, malha[i].MatTrendP[j], 0, j, 0);
+            malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], 0, j, 0);
             malha[i].ImprimeTrendP(j, nrede);
         }
         if (malha[i].arq.lingas == 1) {
             malha[i].arq.imprimeProfileG(malha[i].celulaG, malha[i].flutG, 0, malha[i].indTramo);
             for (int j = 0; j < malha[i].arq.ntendg; j++) {
                 malha[i].ImprimeTrendGCab(j, nrede);
-                malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].MatTrendG[j], 0, j, 0, 0);
+                malha[i].arq.imprimeTrendG(malha[i].celulaG, malha[i].trends.MatTrendG[j], 0, j, 0, 0);
                 malha[i].ImprimeTrendG(j, nrede);
             }
         }
