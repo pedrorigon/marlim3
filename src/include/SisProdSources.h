@@ -29,13 +29,13 @@ struct SourceState {
     /// Steady-state mode -- SProd::modoPerm. In it the porous media advance
     /// pseudo-transiently and the master valve adds no flow.
     const int &steadyMode;
-    /// Secondary branch index in a parallel network -- SProd::redeParalelaS.
+    /// Secondary branch index in a parallel network -- SProd::networkCoupling.redeParalelaS.
     const int &parallelSecondaryBranch;
     /// Boundary-condition type of the secondary parallel-network branch --
-    /// SProd::redeParalelaCCsecundario.
+    /// SProd::networkCoupling.redeParalelaCCsecundario.
     const int &parallelSecondaryBoundaryCondition;
     /// Leak-source cells whose flows are recorded for the first iteration of a
-    /// parallel network, and those flows -- SProd::indFonteRedeParalelaIni,
+    /// parallel network, and those flows -- SProd::networkCoupling.indFonteRedeParalelaIni,
     /// fonteMpRedeParalelaIni, fonteMcRedeParalelaIni and fonteMgRedeParalelaIni.
     const std::vector<int> &parallelSourceCells;
     const std::vector<double> &parallelSourceProductionLiquid;

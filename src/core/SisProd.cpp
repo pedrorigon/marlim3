@@ -86,11 +86,11 @@ void SProd::resetRunState() {
     titE = -1;
     betaE = -1;
     alfE = -1;
-    presEini = -1;
-    tempEini = -1;
-    titEini = -1;
-    betaEini = -1;
-    alfEini = -1;
+    networkCoupling.presEini = -1;
+    networkCoupling.tempEini = -1;
+    networkCoupling.titEini = -1;
+    networkCoupling.betaEini = -1;
+    networkCoupling.alfEini = -1;
 
     gasLift.tempMedContDesc = 10.;
     gasLift.maxVecContDesc = 1000;
@@ -98,7 +98,7 @@ void SProd::resetRunState() {
     gasLift.tempmedDEsc = 0;
 
     tGSup = 0.;
-    tGSupIni = 0.;
+    networkCoupling.tGSupIni = 0.;
 
     transient.dtCFLMed = 1.;
     transient.dtSimMed = 1.;
@@ -112,7 +112,7 @@ void SProd::resetRunState() {
     transient.kontaGolfada = 1000;
 
     transient.mudaModoChk = 0;
-    mudaModoChkini = 0;
+    networkCoupling.mudaModoChkini = 0;
 
     transient.momentoDesesp = 0;
 
@@ -161,7 +161,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     gasLift.dtInterIni = gasLift.dtInter;
     gasLift.velInterIni = gasLift.velInter;
     redeTemporario = temporario;
-    betaRevini = 0;
+    networkCoupling.betaRevini = 0;
     bloq = vbloq;
     vg1dSP = Vvg1dSP;
     if (TD >= 0)
@@ -238,15 +238,15 @@ SProd &SProd::operator=(const SProd &sp) {
     noinicial = sp.noinicial;
     derivaAnel = sp.derivaAnel;
 
-    betaRevini = sp.betaRevini;
-    titRevini = sp.titRevini;
+    networkCoupling.betaRevini = sp.networkCoupling.betaRevini;
+    networkCoupling.titRevini = sp.networkCoupling.titRevini;
 
     bloq = sp.bloq;
 
     transient.dtCicMin = sp.transient.dtCicMin;
-    redeParalelaCCsecundario = sp.redeParalelaCCsecundario;
-    redeParalelaP = sp.redeParalelaP;
-    redeParalelaS = sp.redeParalelaS;
+    networkCoupling.redeParalelaCCsecundario = sp.networkCoupling.redeParalelaCCsecundario;
+    networkCoupling.redeParalelaP = sp.networkCoupling.redeParalelaP;
+    networkCoupling.redeParalelaS = sp.networkCoupling.redeParalelaS;
 
     transient.presVet.clear();
     transient.jVet.clear();
@@ -261,10 +261,10 @@ SProd &SProd::operator=(const SProd &sp) {
     tables.tabDin.clear();
     acertaIndAcop.clear();
     transient.indCelPoisson2D.clear();
-    indFonteRedeParalelaIni.clear();
-    fonteMpRedeParalelaIni.clear();
-    fonteMcRedeParalelaIni.clear();
-    fonteMgRedeParalelaIni.clear();
+    networkCoupling.indFonteRedeParalelaIni.clear();
+    networkCoupling.fonteMpRedeParalelaIni.clear();
+    networkCoupling.fonteMcRedeParalelaIni.clear();
+    networkCoupling.fonteMgRedeParalelaIni.clear();
 
     montasistema();
 
@@ -292,16 +292,16 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     noinicial = carried.noinicial;
     derivaAnel = carried.derivaAnel;
 
-    betaRevini = carried.betaRevini;
-    titRevini = carried.titRevini;
+    networkCoupling.betaRevini = carried.betaRevini;
+    networkCoupling.titRevini = carried.titRevini;
 
     bloq = carried.bloq;
 
     transient.dtCicMin = carried.dtCicMin;
 
-    redeParalelaCCsecundario = -1;
-    redeParalelaP = -1;
-    redeParalelaS = -1;
+    networkCoupling.redeParalelaCCsecundario = -1;
+    networkCoupling.redeParalelaP = -1;
+    networkCoupling.redeParalelaS = -1;
 
     montasistema();
 }
@@ -311,8 +311,8 @@ SProd::CarriedState SProd::carriedState() const {
             .noinicial = noinicial,
             .derivaAnel = derivaAnel,
             .bloq = bloq,
-            .betaRevini = betaRevini,
-            .titRevini = titRevini,
+            .betaRevini = networkCoupling.betaRevini,
+            .titRevini = networkCoupling.titRevini,
             .dtCicMin = transient.dtCicMin};
 }
 

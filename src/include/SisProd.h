@@ -772,6 +772,122 @@ struct TrendRecorder {
     double kimpT = 0.;
 };
 
+/// What a system keeps as a branch of a network: the inlet and outlet conditions of the
+/// previous time level, the reverse-flow state, and the coupling with the other branch of a
+/// parallel network.
+struct NetworkCoupling {
+    /**
+     * @brief Inlet pressure stored at the previous time level.
+     */
+    double presEini = -1;
+    /**
+     * @brief Inlet temperature stored at the previous time level.
+     */
+    double tempEini = -1;
+    /**
+     * @brief Inlet gas mass fraction stored at the previous time level.
+     */
+    double titEini = -1;
+    /**
+     * @brief Inlet void fraction stored at the previous time level.
+     */
+    double alfEini = -1;
+    /**
+     * @brief Inlet complementary-liquid fraction stored at the previous time level.
+     */
+    double betaEini = -1;
+    /**
+     * @brief Previous-time-level value of presfim.
+     */
+    double presfimini = 0;
+    /**
+     * @brief Gas mass fraction imposed during reverse flow at the last control volume. Used only by transient
+     * network simulations.
+     */
+    double titRev = 1.;
+    /**
+     * @brief Previous-time-level value of titRev.
+     */
+    double titRevini = 1.;
+    /**
+     * @brief Complementary-liquid fraction imposed during reverse flow at the last control volume. Used only by
+     * transient network simulations.
+     */
+    double betaRev = 0.;
+    /**
+     * @brief Previous-time-level value of betaRev.
+     */
+    double betaRevini = 1.;
+    /**
+     * @brief Previous-time-level downstream or separator temperature.
+     */
+    double tGSupIni = 0.;
+    /**
+     * @brief Reserved temperature state; currently unused.
+     */
+    double tempSup = 0;
+    /**
+     * @brief Previous-time-level value of masChkSup.
+     */
+    int masChkSupini = 0;
+    /**
+     * @brief Previous-time-level value of mudaModoChk.
+     */
+    int mudaModoChkini = 0;
+    /**
+     * @brief Secondary-line index where parallel-network coupling with the primary line begins.
+     */
+    int SecPrimIniRedeP = 0;
+    /**
+     * @brief Secondary-line index where parallel-network coupling with the primary line ends.
+     */
+    int SecPrimFimRedeP = 0;
+    /**
+     * @brief Primary-line index aligned with SecPrimIniRedeP.
+     */
+    int PrimSecIniRedeP = 0;
+    /**
+     * @brief Primary-line index aligned with SecPrimFimRedeP.
+     */
+    int PrimSecFimRedeP = 0;
+    /**
+     * @brief Indicates thermal coupling on the primary branch of a parallel network.
+     */
+    int verificaAcopRedeP = 0;
+    /**
+     * @brief Indicates thermal coupling on the secondary branch of a parallel network.
+     */
+    int verificaAcopRedeS = 0;
+    /**
+     * @brief Initial source indices for parallel-network coupling.
+     */
+    vector<int> indFonteRedeParalelaIni;
+    /**
+     * @brief Initial production-liquid sources for the parallel network.
+     */
+    vector<double> fonteMpRedeParalelaIni;
+    /**
+     * @brief Initial complementary-liquid sources for the parallel network.
+     */
+    vector<double> fonteMcRedeParalelaIni;
+    /**
+     * @brief Initial gas sources for the parallel network.
+     */
+    vector<double> fonteMgRedeParalelaIni;
+    /**
+     * @brief Boundary-condition type applied to the secondary parallel-network branch.
+     */
+    int redeParalelaCCsecundario = -1;
+    /**
+     * @brief Primary branch index in a parallel network.
+     */
+    int redeParalelaP = -1;
+    /**
+     * @brief Secondary branch index in a parallel network.
+     */
+    int redeParalelaS = -1;
+};
+
 }  // namespace sisprod
 
 /**
@@ -847,57 +963,15 @@ class SProd {
      */
     double betaE = -1;
     /**
-     * @brief Inlet pressure stored at the previous time level.
+     * @brief What this system keeps as a branch of a network.
      */
-    double presEini = -1;
-    /**
-     * @brief Inlet temperature stored at the previous time level.
-     */
-    double tempEini = -1;
-    /**
-     * @brief Inlet gas mass fraction stored at the previous time level.
-     */
-    double titEini = -1;
-    /**
-     * @brief Inlet void fraction stored at the previous time level.
-     */
-    double alfEini = -1;
-    /**
-     * @brief Inlet complementary-liquid fraction stored at the previous time level.
-     */
-    double betaEini = -1;
+    sisprod::NetworkCoupling networkCoupling;
 
     /**
      * @brief Pressure in the last production-line control volume. When the surface choke is open, this value is
      * equal to the separator pressure.
      */
     double presfim = 0;
-    /**
-     * @brief Previous-time-level value of presfim.
-     */
-    double presfimini = 0;
-    /**
-     * @brief Gas mass fraction imposed during reverse flow at the last control volume. Used only by transient
-     * network simulations.
-     */
-    double titRev = 1.;
-    /**
-     * @brief Previous-time-level value of titRev.
-     */
-    double titRevini = 1.;
-    /**
-     * @brief Complementary-liquid fraction imposed during reverse flow at the last control volume. Used only by
-     * transient network simulations.
-     */
-    double betaRev = 0.;
-    /**
-     * @brief Previous-time-level value of betaRev.
-     */
-    double betaRevini = 1.;
-    /**
-     * @brief Previous-time-level downstream or separator temperature.
-     */
-    double tGSupIni = 0.;
     /**
      * @brief Separator temperature or temperature at the inlet of the downstream section.
      */
@@ -909,10 +983,6 @@ class SProd {
 
   private:
   public:
-    /**
-     * @brief Reserved temperature state; currently unused.
-     */
-    double tempSup = 0;
 
 
   private:
@@ -921,14 +991,6 @@ class SProd {
      * @brief Indicates whether the surface choke is active.
      */
     int masChkSup = 0;
-    /**
-     * @brief Previous-time-level value of masChkSup.
-     */
-    int masChkSupini = 0;
-    /**
-     * @brief Previous-time-level value of mudaModoChk.
-     */
-    int mudaModoChkini = 0;
   private:
     /**
      * @brief Number of production fluids.
@@ -1004,30 +1066,6 @@ class SProd {
   private:
 
   public:
-    /**
-     * @brief Secondary-line index where parallel-network coupling with the primary line begins.
-     */
-    int SecPrimIniRedeP = 0;
-    /**
-     * @brief Secondary-line index where parallel-network coupling with the primary line ends.
-     */
-    int SecPrimFimRedeP = 0;
-    /**
-     * @brief Primary-line index aligned with SecPrimIniRedeP.
-     */
-    int PrimSecIniRedeP = 0;
-    /**
-     * @brief Primary-line index aligned with SecPrimFimRedeP.
-     */
-    int PrimSecFimRedeP = 0;
-    /**
-     * @brief Indicates thermal coupling on the primary branch of a parallel network.
-     */
-    int verificaAcopRedeP = 0;
-    /**
-     * @brief Indicates thermal coupling on the secondary branch of a parallel network.
-     */
-    int verificaAcopRedeS = 0;
 
   private:
   public:
@@ -1158,34 +1196,6 @@ class SProd {
     double monitConvPermBase = 1.;
   public:
 
-    /**
-     * @brief Initial source indices for parallel-network coupling.
-     */
-    vector<int> indFonteRedeParalelaIni;
-    /**
-     * @brief Initial production-liquid sources for the parallel network.
-     */
-    vector<double> fonteMpRedeParalelaIni;
-    /**
-     * @brief Initial complementary-liquid sources for the parallel network.
-     */
-    vector<double> fonteMcRedeParalelaIni;
-    /**
-     * @brief Initial gas sources for the parallel network.
-     */
-    vector<double> fonteMgRedeParalelaIni;
-    /**
-     * @brief Boundary-condition type applied to the secondary parallel-network branch.
-     */
-    int redeParalelaCCsecundario = -1;
-    /**
-     * @brief Primary branch index in a parallel network.
-     */
-    int redeParalelaP = -1;
-    /**
-     * @brief Secondary branch index in a parallel network.
-     */
-    int redeParalelaS = -1;
 
   private:
 

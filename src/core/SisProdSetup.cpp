@@ -274,8 +274,8 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     transient.indpigP = 0;
     transient.indpigPini = transient.indpigP;
     transient.reinicia = 0;
-    masChkSupini = 0;
-    betaRev = 0.;
+    networkCoupling.masChkSupini = 0;
+    networkCoupling.betaRev = 0.;
     transient.trackDeng = arq.trackDeng;
     nfluP = arq.nfluP;
     CalcLat = arq.latente;
@@ -288,7 +288,7 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
         arq.fluc.injPoc = 0;
     (*vg1dSP).localtiny = arq.mono;
     (*vg1dSP).CritCond = arq.critcond;
-    titRev = -1;
+    networkCoupling.titRev = -1;
     if (injPoc >= 1 && arq.nipr == 0 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5)
         NumError(
             "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e nao foi incluido nenhuma IPR no sistema");
@@ -591,7 +591,7 @@ void SProd::validateSetupAndApplyInitialState() {
         }
     }
 
-    tempSup = celula[ncel].temp;
+    networkCoupling.tempSup = celula[ncel].temp;
 
     tGSup = celula[ncel].calor.Textern1;
 }
@@ -871,12 +871,12 @@ void SProd::resetCouplingAndOutputState() {
             gasLift.verificaAcop = 1;
     }
 
-    verificaAcopRedeP = 0;
-    verificaAcopRedeS = 0;
-    SecPrimIniRedeP = 0;
-    SecPrimFimRedeP = 0;
-    PrimSecIniRedeP = 0;
-    PrimSecFimRedeP = 0;
+    networkCoupling.verificaAcopRedeP = 0;
+    networkCoupling.verificaAcopRedeS = 0;
+    networkCoupling.SecPrimIniRedeP = 0;
+    networkCoupling.SecPrimFimRedeP = 0;
+    networkCoupling.PrimSecIniRedeP = 0;
+    networkCoupling.PrimSecFimRedeP = 0;
 
     if(arq.AP==0){
     	if (arq.nperfisp > 0) {

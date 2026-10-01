@@ -230,7 +230,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.semTermo = 0;
     system.presfim = scenario.pressure - 5.;
     system.gasLift.pGSup = scenario.pressure;
-    system.tempSup = -901.;
+    system.networkCoupling.tempSup = -901.;
     system.arq.master1.razareaativ = 0.;
     system.arq.lingas = 0;
     system.arq.escorregaTran = 1;
@@ -255,7 +255,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.arq.limTransMass = 10.;
     system.arq.AceleraConvergPerm = 0;
     system.arq.nCompTotalUnidadesP = 100.;
-    system.verificaAcopRedeP = 0;
+    system.networkCoupling.verificaAcopRedeP = 0;
     system.vg1dSP->blackOilTemp = 0;
     system.arq.chokep.abertura[0] = scenario.chokeOpening;
 }
@@ -380,9 +380,9 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
         if (mode == PermMode::latentNegative)
             system.arq.condlatente = 0;
     } else if (mode == PermMode::coupledNetwork) {
-        system.verificaAcopRedeP = 1;
-        system.PrimSecFimRedeP = cellIndex - 1;
-        system.PrimSecIniRedeP = cellIndex - 1;
+        system.networkCoupling.verificaAcopRedeP = 1;
+        system.networkCoupling.PrimSecFimRedeP = cellIndex - 1;
+        system.networkCoupling.PrimSecIniRedeP = cellIndex - 1;
         cells[cellIndex - 1].resAcopRedeP = 2.5;
         cells[cellIndex - 1].potTermo = 1400.;
         cells[cellIndex - 1].fonteCal = 350.;
@@ -548,7 +548,7 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
 
     resetCells(system, cells, scenario);
     system.calcTempFim();
-    printf("%-20s %-15s tempSup=%a\n", "calcTempFim", scenario.name, system.tempSup);
+    printf("%-20s %-15s tempSup=%a\n", "calcTempFim", scenario.name, system.networkCoupling.tempSup);
 
     resetCells(system, cells, scenario);
     sisprod::thermal::prepareNonDimensionalHeatDiffusion(sisprod::adapters::thermalStateOf(system), 2);
