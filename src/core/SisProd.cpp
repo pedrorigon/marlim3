@@ -190,9 +190,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     derivaAnel = -1;
     redeTemporario = temporario;
 
-    betaRev = 0;
     betaRevini = 0;
-    titRev = 1.;
     titRevini = 1.;
     dtCFLTotal = 0.;
     dtSimTotal = 0.;
@@ -417,9 +415,7 @@ SProd &SProd::operator=(const SProd &sp) {
     noinicial = sp.noinicial;
     derivaAnel = sp.derivaAnel;
 
-    betaRev = sp.betaRev;
     betaRevini = sp.betaRevini;
-    titRev = sp.titRev;
     titRevini = sp.titRevini;
 
     bloq = sp.bloq;
@@ -473,9 +469,7 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     noinicial = carried.noinicial;
     derivaAnel = carried.derivaAnel;
 
-    betaRev = carried.betaRev;
     betaRevini = carried.betaRevini;
-    titRev = carried.titRev;
     titRevini = carried.titRevini;
 
     bloq = carried.bloq;
@@ -494,9 +488,7 @@ SProd::CarriedState SProd::carriedState() const {
             .noinicial = noinicial,
             .derivaAnel = derivaAnel,
             .bloq = bloq,
-            .betaRev = betaRev,
             .betaRevini = betaRevini,
-            .titRev = titRev,
             .titRevini = titRevini,
             .dtCicMin = dtCicMin};
 }

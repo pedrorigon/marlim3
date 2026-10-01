@@ -1182,9 +1182,7 @@ class SProd {
         int noinicial;
         int derivaAnel;
         int bloq;
-        double betaRev;
         double betaRevini;
-        double titRev;
         double titRevini;
         double dtCicMin;
     };
