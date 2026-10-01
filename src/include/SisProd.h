@@ -303,10 +303,11 @@ struct GasLiftLine {
     double velInterIni = 0.;
 };
 
-/// The state of a transient run: the time-step and change-rate histories and the
-/// restrictions on the step, the Master1 valve schedule, the production-line
-/// pressure-velocity matrix, the event and log counters, the transport switches, the pigs
-/// and the cells of the two-dimensional Poisson model.
+/// The state of a transient run: the time step, its history and the restrictions on it, the
+/// moving averages and running totals, the Master1 valve state and schedule, the
+/// production-line pressure-velocity system, the buffered sources, the event and log
+/// counters, the transport switches, the pigs and the cells of the two-dimensional Poisson
+/// model.
 struct TransientRun {
     /**
      * @brief Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil
@@ -447,6 +448,157 @@ struct TransientRun {
      * @brief Signals that the time step must be adjusted.
      */
     int alteraTempo = 0;
+    /**
+     * @brief Requests rollback and time-step reevaluation when at least one control volume produces a holdup or
+     * volume fraction outside the physical [0, 1] range.
+     */
+    int reinicia = 0;
+    /**
+     * @brief Recent Master1 ratio values for the active state.
+     */
+    double vRazMast1[10] = {};
+    /**
+     * @brief Recent Master1 ratio values for the inactive state.
+     */
+    double vRazMast0[10] = {};
+    /**
+     * @brief Critical Master1 ratio history used by the switching logic.
+     */
+    double vRazMastCrit[10] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+    /**
+     * @brief Previous-time-level value of pGSup.
+     */
+    double pGSupIni = 0.;
+    /**
+     * @brief Kept for the restart file, which records it; nothing in the
+     * simulation reads it.
+     */
+    double massfonte = 0.;
+    /**
+     * @brief CFL safety factor, typically set to 0.8.
+     */
+    double mult = 0;
+    /**
+     * @brief Time-averaged pressure in the final production-line control volume. Used to decide whether the
+     * surface choke behaves as a localized pressure loss or as a discharge-flow model.
+     */
+    double presMedMov = 0;
+    /**
+     * @brief Time-averaged mixture volumetric flux in the final production-line control volume. Used by the
+     * surface-choke operating-mode logic.
+     */
+    double jMedMov = 0;
+    /**
+     * @brief Time-averaged void fraction in the final production-line control volume, updated once the
+     * averaging window fills. Zero until then; only the restart file reads it.
+     */
+    double alfMedMov = 0.;
+    /**
+     * @brief Start time of the moving-average window.
+     */
+    double tMedMov = 0;
+    /**
+     * @brief Duration of the moving-average window.
+     */
+    double ktMedMov = 0.;
+    /**
+     * @brief Accumulated pressure used to compute presMedMov.
+     */
+    double pTotal = 0.;
+    /**
+     * @brief Accumulated mixture flux used to compute jMedMov.
+     */
+    double jTotal = 0.;
+    /**
+     * @brief Accumulated void fraction used to compute alfMedMov.
+     */
+    double alfTotal = 0.;
+    /**
+     * @brief Pressure samples used by the moving-average calculation.
+     */
+    vector<double> presVet;
+    /**
+     * @brief Mixture-flux samples used by the moving-average calculation.
+     */
+    vector<double> jVet;
+    /**
+     * @brief Void-fraction samples used by the moving-average calculation.
+     */
+    vector<double> alfVet;
+    /**
+     * @brief Time samples associated with the moving-average window.
+     */
+    vector<double> tVet;
+    /**
+     * @brief Current surface-choke open/closed state.
+     */
+    int aberto = 0;
+    /**
+     * @brief Previous-time-level surface-choke state.
+     */
+    int abertoini = 0;
+    /**
+     * @brief Counter that delays transitions out of active-choke mode.
+     */
+    int tempoaberto = 0;
+    /**
+     * @brief Previous-time-level value of tempoaberto.
+     */
+    int tempoabertoini = 0;
+    /**
+     * @brief Signals a surface-choke operating-mode transition.
+     */
+    int mudaModoChk = 0;
+    /**
+     * @brief Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3
+     * = disabled.
+     */
+    int TransMassModel = 0;
+    /**
+     * @brief Number of pigs currently moving through the line.
+     */
+    int indpigP = 0;
+    /**
+     * @brief Previous-time-level value of indpigP.
+     */
+    int indpigPini = 0;
+    /**
+     * @brief Right-hand side and solution vector for the production-line pressure-velocity system.
+     */
+    Vcr<double> termolivreP;
+    /**
+     * @brief Simulation end time.
+     */
+    double tfinal = 0;
+    /**
+     * @brief Current complete-model activation state.
+     */
+    int modeloCompleto = 1;
+    /**
+     * @brief Auxiliary CFL time-step accumulator.
+     */
+    double dtauxCFL = 0.;
+    /**
+     * @brief Auxiliary accepted-time-step accumulator.
+     */
+    double dtauxFinal = 0.;
+    /**
+     * @brief Intermediate production-liquid inflow estimate for a network section.
+     */
+    double fontemassPRBuf = 0.;
+    /**
+     * @brief Intermediate complementary-liquid inflow estimate for a network section.
+     */
+    double fontemassCRBuf = 0.;
+    /**
+     * @brief Intermediate gas inflow estimate for a network section.
+     */
+    double fontemassGRBuf = 0.;
+    /**
+     * @brief Minimum time step allowed by the current cycle. Zero until a
+     * transient cycle sets it.
+     */
+    double dtCicMin = 0.;
 };
 
 /// The storage of one family of trends: for each trend, its rows of samples, and its reset time
@@ -666,11 +818,6 @@ class SProd {
      * @brief Number of control volumes in the production line.
      */
     int ncel = 0;
-    /**
-     * @brief Requests rollback and time-step reevaluation when at least one control volume produces a holdup or
-     * volume fraction outside the physical [0, 1] range.
-     */
-    int reinicia = 0;
 
   private:
     /**
@@ -678,18 +825,6 @@ class SProd {
      */
     double trocaTermicaLenta = 0.01;
   public:
-    /**
-     * @brief Recent Master1 ratio values for the active state.
-     */
-    double vRazMast1[10] = {};
-    /**
-     * @brief Recent Master1 ratio values for the inactive state.
-     */
-    double vRazMast0[10] = {};
-    /**
-     * @brief Critical Master1 ratio history used by the switching logic.
-     */
-    double vRazMastCrit[10] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
 
     /**
      * @brief Current inlet pressure boundary condition.
@@ -760,10 +895,6 @@ class SProd {
      */
     double betaRevini = 1.;
     /**
-     * @brief Previous-time-level value of pGSup.
-     */
-    double pGSupIni = 0.;
-    /**
      * @brief Previous-time-level downstream or separator temperature.
      */
     double tGSupIni = 0.;
@@ -782,84 +913,8 @@ class SProd {
      * @brief Reserved temperature state; currently unused.
      */
     double tempSup = 0;
-    /**
-     * @brief Kept for the restart file, which records it; nothing in the
-     * simulation reads it.
-     */
-    double massfonte = 0.;
-    /**
-     * @brief CFL safety factor, typically set to 0.8.
-     */
-    double mult = 0;
 
-    /**
-     * @brief Time-averaged pressure in the final production-line control volume. Used to decide whether the
-     * surface choke behaves as a localized pressure loss or as a discharge-flow model.
-     */
-    double presMedMov = 0;
-    /**
-     * @brief Time-averaged mixture volumetric flux in the final production-line control volume. Used by the
-     * surface-choke operating-mode logic.
-     */
-    double jMedMov = 0;
-    /**
-     * @brief Time-averaged void fraction in the final production-line control volume, updated once the
-     * averaging window fills. Zero until then; only the restart file reads it.
-     */
-    double alfMedMov = 0.;
-    /**
-     * @brief Start time of the moving-average window.
-     */
-    double tMedMov = 0;
-    /**
-     * @brief Duration of the moving-average window.
-     */
-    double ktMedMov = 0.;
-    /**
-     * @brief Accumulated pressure used to compute presMedMov.
-     */
-    double pTotal = 0.;
-    /**
-     * @brief Accumulated mixture flux used to compute jMedMov.
-     */
-    double jTotal = 0.;
-    /**
-     * @brief Accumulated void fraction used to compute alfMedMov.
-     */
-    double alfTotal = 0.;
-    /**
-     * @brief Pressure samples used by the moving-average calculation.
-     */
-    vector<double> presVet;
-    /**
-     * @brief Mixture-flux samples used by the moving-average calculation.
-     */
-    vector<double> jVet;
-    /**
-     * @brief Void-fraction samples used by the moving-average calculation.
-     */
-    vector<double> alfVet;
-    /**
-     * @brief Time samples associated with the moving-average window.
-     */
-    vector<double> tVet;
 
-    /**
-     * @brief Current surface-choke open/closed state.
-     */
-    int aberto = 0;
-    /**
-     * @brief Previous-time-level surface-choke state.
-     */
-    int abertoini = 0;
-    /**
-     * @brief Counter that delays transitions out of active-choke mode.
-     */
-    int tempoaberto = 0;
-    /**
-     * @brief Previous-time-level value of tempoaberto.
-     */
-    int tempoabertoini = 0;
   private:
   public:
     /**
@@ -871,26 +926,9 @@ class SProd {
      */
     int masChkSupini = 0;
     /**
-     * @brief Signals a surface-choke operating-mode transition.
-     */
-    int mudaModoChk = 0;
-    /**
      * @brief Previous-time-level value of mudaModoChk.
      */
     int mudaModoChkini = 0;
-    /**
-     * @brief Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3
-     * = disabled.
-     */
-    int TransMassModel = 0;
-    /**
-     * @brief Number of pigs currently moving through the line.
-     */
-    int indpigP = 0;
-    /**
-     * @brief Previous-time-level value of indpigP.
-     */
-    int indpigPini = 0;
   private:
     /**
      * @brief Number of production fluids.
@@ -933,15 +971,13 @@ class SProd {
      */
     sisprod::GasLiftLine gasLift;
   private:
+  public:
     /**
      * @brief The state of a transient run.
      */
     sisprod::TransientRun transient;
+  private:
   public:
-    /**
-     * @brief Right-hand side and solution vector for the production-line pressure-velocity system.
-     */
-    Vcr<double> termolivreP;
 
     /**
      * @brief Current time step.
@@ -949,10 +985,6 @@ class SProd {
     double dt = 0.;
   private:
   public:
-    /**
-     * @brief Simulation end time.
-     */
-    double tfinal = 0;
 
   private:
 
@@ -1015,20 +1047,8 @@ class SProd {
      * steady state. The source terms read it (sisprod::sources::SourceState).
      */
     int modoPerm = 0.;
-    /**
-     * @brief Current complete-model activation state.
-     */
-    int modeloCompleto = 1;
   private:
   public:
-    /**
-     * @brief Auxiliary CFL time-step accumulator.
-     */
-    double dtauxCFL = 0.;
-    /**
-     * @brief Auxiliary accepted-time-step accumulator.
-     */
-    double dtauxFinal = 0.;
   private:
   public:
 
@@ -1067,18 +1087,6 @@ class SProd {
      */
     int derivaAnel = -1;
 
-    /**
-     * @brief Intermediate production-liquid inflow estimate for a network section.
-     */
-    double fontemassPRBuf = 0.;
-    /**
-     * @brief Intermediate complementary-liquid inflow estimate for a network section.
-     */
-    double fontemassCRBuf = 0.;
-    /**
-     * @brief Intermediate gas inflow estimate for a network section.
-     */
-    double fontemassGRBuf = 0.;
 
   private:
     /**
@@ -1134,11 +1142,6 @@ class SProd {
      * @brief Three-dimensional Poisson solver used by the thermal model.
      */
     solverP3D poisson3D;
-    /**
-     * @brief Minimum time step allowed by the current cycle. Zero until a
-     * transient cycle sets it.
-     */
-    double dtCicMin = 0.;
 
   private:
     /**

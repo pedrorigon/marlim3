@@ -77,9 +77,9 @@ void SProd::resetRunState() {
     trends.ntrendtrans = 0;
     trends.ntrendtransB = 0;
 
-    fontemassPRBuf = 0.;
-    fontemassCRBuf = 0.;
-    fontemassGRBuf = 0.;
+    transient.fontemassPRBuf = 0.;
+    transient.fontemassCRBuf = 0.;
+    transient.fontemassGRBuf = 0.;
 
     presE = -1;
     tempE = -1;
@@ -104,19 +104,19 @@ void SProd::resetRunState() {
     transient.dtSimMed = 1.;
     transient.restriDt = 0;
     transient.kontarestriDt = 0;
-    dtauxCFL = 0.;
-    dtauxFinal = 0.;
+    transient.dtauxCFL = 0.;
+    transient.dtauxFinal = 0.;
 
     trends.kimpT = 0.;
 
     transient.kontaGolfada = 1000;
 
-    mudaModoChk = 0;
+    transient.mudaModoChk = 0;
     mudaModoChkini = 0;
 
     transient.momentoDesesp = 0;
 
-    modeloCompleto = 1;
+    transient.modeloCompleto = 1;
 
     transient.DpMaxMed = 1.;
     transient.DTMaxMed = 1.;
@@ -126,9 +126,9 @@ void SProd::resetRunState() {
     buscaIni = 0;
 
     for (int i = 0; i < 10; i++) {
-        vRazMast0[i] = 0.;
-        vRazMast1[i] = 0.;
-        vRazMastCrit[i] = 0.5;
+        transient.vRazMast0[i] = 0.;
+        transient.vRazMast1[i] = 0.;
+        transient.vRazMastCrit[i] = 0.5;
     }
 
     transient.kontaRenovaComp = 0;
@@ -154,7 +154,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
              int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
                                                            flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
                                                            gasLift{.matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5), .termolivreG = Vcr<double>(3 * arq.ncelg)},
-                                                           transient{.matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2)}, termolivreP(2 * arq.ncelp) {
+                                                           transient{.matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2), .termolivreP = Vcr<double>(2 * arq.ncelp)} {
     resolveDriftSelectors();
     resetRunState();
     gasLift.celInterIni = gasLift.celInter;
@@ -171,7 +171,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
 
 SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 + 1),
                  gasLift{.matglobG = BandMtx<double>(3 * 1, 5, 5), .termolivreG = Vcr<double>(3 * 1)},
-                 transient{.matglobP = BandMtx<double>(2 * 1, 3, 2)}, termolivreP(2 * 1) {
+                 transient{.matglobP = BandMtx<double>(2 * 1, 3, 2), .termolivreP = Vcr<double>(2 * 1)} {
     resolveDriftSelectors();
     resetRunState();
 }
@@ -225,7 +225,7 @@ SProd &SProd::operator=(const SProd &sp) {
     flut = sp.flut;
     flutG = sp.flutG;
     transient.matglobP = sp.transient.matglobP;
-    termolivreP = sp.termolivreP;
+    transient.termolivreP = sp.transient.termolivreP;
     gasLift.matglobG = sp.gasLift.matglobG;
     gasLift.termolivreG = sp.gasLift.termolivreG;
     vg1dSP = sp.vg1dSP;
@@ -243,15 +243,15 @@ SProd &SProd::operator=(const SProd &sp) {
 
     bloq = sp.bloq;
 
-    dtCicMin = sp.dtCicMin;
+    transient.dtCicMin = sp.transient.dtCicMin;
     redeParalelaCCsecundario = sp.redeParalelaCCsecundario;
     redeParalelaP = sp.redeParalelaP;
     redeParalelaS = sp.redeParalelaS;
 
-    presVet.clear();
-    jVet.clear();
-    alfVet.clear();
-    tVet.clear();
+    transient.presVet.clear();
+    transient.jVet.clear();
+    transient.alfVet.clear();
+    transient.tVet.clear();
     transient.dtSim.clear();
     transient.dtCFL.clear();
     gasLift.vazmaxMedDesc.clear();
@@ -279,7 +279,7 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1);
     flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1);
     transient.matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2);
-    termolivreP = Vcr<double>(2 * arq.ncelp);
+    transient.termolivreP = Vcr<double>(2 * arq.ncelp);
     gasLift.matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5);
     gasLift.termolivreG = Vcr<double>(3 * arq.ncelg);
     vg1dSP = arq.vg1dSP;
@@ -297,7 +297,7 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
 
     bloq = carried.bloq;
 
-    dtCicMin = carried.dtCicMin;
+    transient.dtCicMin = carried.dtCicMin;
 
     redeParalelaCCsecundario = -1;
     redeParalelaP = -1;
@@ -313,7 +313,7 @@ SProd::CarriedState SProd::carriedState() const {
             .bloq = bloq,
             .betaRevini = betaRevini,
             .titRevini = titRevini,
-            .dtCicMin = dtCicMin};
+            .dtCicMin = transient.dtCicMin};
 }
 
 void SProd::HidroDescargaG() {

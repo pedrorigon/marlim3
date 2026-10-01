@@ -654,24 +654,24 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
         rst << sis.gasLift.ncelGas << " ; ";
         rst << sis.gasLift.presiniG << " ; ";
         rst << sis.gasLift.tempiniG << " ; ";
-        rst << sis.massfonte << " ; ";
-        rst << sis.mult << " ; ";
-        rst << sis.presMedMov << " ; ";
-        rst << sis.jMedMov << " ; ";
-        rst << sis.alfMedMov << " ; ";
-        rst << sis.tMedMov << " ; ";
-        rst << sis.aberto << " ; ";
-        rst << sis.tempoaberto << " ; ";
-        rst << sis.ktMedMov << " ; ";
-        rst << sis.pTotal << " ; ";
-        rst << sis.jTotal << " ; ";
-        rst << sis.alfTotal << " ; ";
-        rst << sis.presVet.size() << " ; ";
-        for (int i = 0; i < sis.presVet.size(); i++) {
-            rst << sis.presVet[i] << " ; ";
-            rst << sis.jVet[i] << " ; ";
-            rst << sis.alfVet[i] << " ; ";
-            rst << sis.tVet[i] << " ; ";
+        rst << sis.transient.massfonte << " ; ";
+        rst << sis.transient.mult << " ; ";
+        rst << sis.transient.presMedMov << " ; ";
+        rst << sis.transient.jMedMov << " ; ";
+        rst << sis.transient.alfMedMov << " ; ";
+        rst << sis.transient.tMedMov << " ; ";
+        rst << sis.transient.aberto << " ; ";
+        rst << sis.transient.tempoaberto << " ; ";
+        rst << sis.transient.ktMedMov << " ; ";
+        rst << sis.transient.pTotal << " ; ";
+        rst << sis.transient.jTotal << " ; ";
+        rst << sis.transient.alfTotal << " ; ";
+        rst << sis.transient.presVet.size() << " ; ";
+        for (int i = 0; i < sis.transient.presVet.size(); i++) {
+            rst << sis.transient.presVet[i] << " ; ";
+            rst << sis.transient.jVet[i] << " ; ";
+            rst << sis.transient.alfVet[i] << " ; ";
+            rst << sis.transient.tVet[i] << " ; ";
         }
         rst << sis.gasLift.celInter << " ; ";
         rst << sis.gasLift.dtInter << " ; ";
@@ -679,9 +679,9 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
         rst << sis.gasLift.celInterIni << " ; ";
         rst << sis.gasLift.dtInterIni << " ; ";
         rst << sis.gasLift.velInterIni << " ; ";
-        rst << sis.fontemassPRBuf << " ; ";
-        rst << sis.fontemassCRBuf << " ; ";
-        rst << sis.fontemassGRBuf << " ; ";
+        rst << sis.transient.fontemassPRBuf << " ; ";
+        rst << sis.transient.fontemassCRBuf << " ; ";
+        rst << sis.transient.fontemassGRBuf << " ; ";
         rst << endl;
         rst << endl;
         rst << endl;
@@ -788,29 +788,29 @@ void ReadSnapShot(SProd &sis) {
     rst >> chave;
     rst >> sis.gasLift.tempiniG;
     rst >> chave;
-    rst >> sis.massfonte;
+    rst >> sis.transient.massfonte;
     rst >> chave;
-    rst >> sis.mult;
+    rst >> sis.transient.mult;
     rst >> chave;
-    rst >> sis.presMedMov;
+    rst >> sis.transient.presMedMov;
     rst >> chave;
-    rst >> sis.jMedMov;
+    rst >> sis.transient.jMedMov;
     rst >> chave;
-    rst >> sis.alfMedMov;
+    rst >> sis.transient.alfMedMov;
     rst >> chave;
-    rst >> sis.tMedMov;
+    rst >> sis.transient.tMedMov;
     rst >> chave;
-    rst >> sis.aberto;
+    rst >> sis.transient.aberto;
     rst >> chave;
-    rst >> sis.tempoaberto;
+    rst >> sis.transient.tempoaberto;
     rst >> chave;
-    rst >> sis.ktMedMov;
+    rst >> sis.transient.ktMedMov;
     rst >> chave;
-    rst >> sis.pTotal;
+    rst >> sis.transient.pTotal;
     rst >> chave;
-    rst >> sis.jTotal;
+    rst >> sis.transient.jTotal;
     rst >> chave;
-    rst >> sis.alfTotal;
+    rst >> sis.transient.alfTotal;
     rst >> chave;
     int nvet;
     rst >> nvet;
@@ -819,16 +819,16 @@ void ReadSnapShot(SProd &sis) {
         double temp;
         rst >> temp;
         rst >> chave;
-        sis.presVet.push_back(temp);
+        sis.transient.presVet.push_back(temp);
         rst >> temp;
         rst >> chave;
-        sis.jVet.push_back(temp);
+        sis.transient.jVet.push_back(temp);
         rst >> temp;
         rst >> chave;
-        sis.alfVet.push_back(temp);
+        sis.transient.alfVet.push_back(temp);
         rst >> temp;
         rst >> chave;
-        sis.tVet.push_back(temp);
+        sis.transient.tVet.push_back(temp);
     }
     rst >> sis.gasLift.celInter;
     rst >> chave;
@@ -842,11 +842,11 @@ void ReadSnapShot(SProd &sis) {
     rst >> chave;
     rst >> sis.gasLift.velInterIni;
     rst >> chave;
-    rst >> sis.fontemassPRBuf;
+    rst >> sis.transient.fontemassPRBuf;
     rst >> chave;
-    rst >> sis.fontemassCRBuf;
+    rst >> sis.transient.fontemassCRBuf;
     rst >> chave;
-    rst >> sis.fontemassGRBuf;
+    rst >> sis.transient.fontemassGRBuf;
     rst >> chave;
 
     int ncel = sis.ncel + 1;
@@ -1749,11 +1749,11 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
 
                             } else {
 
-                                MasstempC[k] = malha[ind].fontemassCRBuf;
+                                MasstempC[k] = malha[ind].transient.fontemassCRBuf;
 
-                                MasstempP[k] = malha[ind].fontemassPRBuf;
+                                MasstempP[k] = malha[ind].transient.fontemassPRBuf;
 
-                                MasstempG[k] = malha[ind].fontemassGRBuf;
+                                MasstempG[k] = malha[ind].transient.fontemassGRBuf;
                             }
                             double pres = malha[ind].gasLift.pGSup;
                             malha[ind].calcTempFim();
@@ -2313,7 +2313,7 @@ void corrigeVazNo(SProd *malha, int ind) {
             malha[ind].celula[ncel].term1 = 0;
             malha[ind].celula[ncel].term2 = 0;
         }
-        if ((malha[ind].masChkSup == 0 || malha[ind].aberto == 1)) {
+        if ((malha[ind].masChkSup == 0 || malha[ind].transient.aberto == 1)) {
             malha[ind].celula[ncel - 1].QLR = 0;
             malha[ind].celula[ncel].QL = 0;
         }
@@ -2333,9 +2333,9 @@ void corrigeVazNoBuf(SProd *malha, int ind) {
     int ncel = malha[ind].ncel;
 
     if ((malha[ind].noextremo != 1 && malha[ind].titRev >= 1. - (*malha[ind].vg1dSP).localtiny)) {
-        if ((malha[ind].fontemassPRBuf + malha[ind].fontemassCRBuf) < 0) {
-            malha[ind].fontemassPRBuf = 0;
-            malha[ind].fontemassCRBuf = 0;
+        if ((malha[ind].transient.fontemassPRBuf + malha[ind].transient.fontemassCRBuf) < 0) {
+            malha[ind].transient.fontemassPRBuf = 0;
+            malha[ind].transient.fontemassCRBuf = 0;
 
             malha[ind].celula[ncel - 1].term1R = 0;
             malha[ind].celula[ncel - 1].term2R = 0;
@@ -2343,8 +2343,8 @@ void corrigeVazNoBuf(SProd *malha, int ind) {
             malha[ind].celula[ncel].term2 = 0;
         }
     } else if ((malha[ind].noextremo != 1 && malha[ind].titRev <= (*malha[ind].vg1dSP).localtiny)) {
-        if (malha[ind].fontemassGRBuf < 0) {
-            malha[ind].fontemassGRBuf = 0;
+        if (malha[ind].transient.fontemassGRBuf < 0) {
+            malha[ind].transient.fontemassGRBuf = 0;
             malha[ind].celula[ncel - 1].term1R = 1;
             malha[ind].celula[ncel - 1].term2R = 0;
             malha[ind].celula[ncel].term1 = 1;
@@ -2370,7 +2370,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
+        malha[i].arq.tfinal = malha[i].transient.tfinal = (*arqRede.vg1dSP).TmaxR;
         if (inativo[i] == 0) {
             malha[i].arq.master1.razareaativ = 0.4;
             if (arqRede.malha[i].nafluente > 0) {
@@ -2590,10 +2590,10 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
         dtteste = 1e6;
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
-                malha[i].modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
+                malha[i].transient.modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
                 malha[i].determinaDT();
-                malha[i].dtauxCFL = malha[i].dt;
-                malha[i].dtauxFinal = malha[i].dt;
+                malha[i].transient.dtauxCFL = malha[i].dt;
+                malha[i].transient.dtauxFinal = malha[i].dt;
                 if (malha[i].dt < dtteste)
                     dtteste = malha[i].dt;
             }
@@ -2611,7 +2611,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
         }
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
-                malha[i].reinicia = 0;
+                malha[i].transient.reinicia = 0;
                 celpos[i] = malha[i].arq.master1.posic;
                 // razMast0[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
                 malha[i].aberturaVal0(); // caso varias valvulas
@@ -2628,7 +2628,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 malha[i].atualizaCC1();
                 // razMastCrit[i]=0.5;//caso so Master
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                    malha[i].vRazMastCrit[j] = 0.5; // caso varias valvulas
+                    malha[i].transient.vRazMastCrit[j] = 0.5; // caso varias valvulas
                 // razMast[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
                 malha[i].aberturaVal1(); // caso varias valvulas
                 if (arqRede.malha[i].ncoleta > 0 &&
@@ -2637,11 +2637,11 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 if ((*arqRede.vg1dSP).lixo5R >= 4000) {
                 }
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                    if (malha[i].vRazMast1[j] != malha[i].vRazMast0[j])
-                        malha[i].modeloCompleto = 0; // caso varias valvulas
-                if (malha[i].modeloCompleto == 1)
+                    if (malha[i].transient.vRazMast1[j] != malha[i].transient.vRazMast0[j])
+                        malha[i].transient.modeloCompleto = 0; // caso varias valvulas
+                if (malha[i].transient.modeloCompleto == 1)
                     malha[i].avaliaVariaDpDt(); // caso varias valvulas
-                if (malha[i].modeloCompleto == 0)
+                if (malha[i].transient.modeloCompleto == 0)
                     malha[i].arq.cicloAcopTerm = 0;
                 else
                     malha[i].arq.cicloAcopTerm = 1;
@@ -2650,7 +2650,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
         int modeloCompletoGlob = 1;
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
-                if (malha[i].modeloCompleto == 0)
+                if (malha[i].transient.modeloCompleto == 0)
                     modeloCompletoGlob = 0;
             }
         }
@@ -2659,7 +2659,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
 
-                malha[i].pGSupIni = malha[i].gasLift.pGSup;
+                malha[i].transient.pGSupIni = malha[i].gasLift.pGSup;
                 malha[i].tGSupIni = malha[i].tGSup;
                 malha[i].presEini = malha[i].presE;
                 malha[i].tempEini = malha[i].tempE;
@@ -2686,10 +2686,10 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 rcR[i] = malha[i].celula[0].rcR;
                 rpRi[i] = malha[i].celula[0].rpRi;
                 rcRi[i] = malha[i].celula[0].rcRi;
-                malha[i].abertoini = malha[i].aberto;
-                malha[i].tempoabertoini = malha[i].tempoaberto;
+                malha[i].transient.abertoini = malha[i].transient.aberto;
+                malha[i].transient.tempoabertoini = malha[i].transient.tempoaberto;
                 malha[i].masChkSupini = malha[i].masChkSup;
-                malha[i].mudaModoChkini = malha[i].mudaModoChk;
+                malha[i].mudaModoChkini = malha[i].transient.mudaModoChk;
             }
         }
 
@@ -2702,7 +2702,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0) {
 
-                    if (malha[i].modeloCompleto == 0) {
+                    if (malha[i].transient.modeloCompleto == 0) {
                         for (int j = 0; j <= malha[i].ncel; j++)
                             malha[i].celula[j].m2d = 0.;
                     } else {
@@ -2717,7 +2717,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                                 razDT = 1;
                             }
                             if ((fabs(malha[i].celula[j].dpdtIni) / malha[i].celula[j].pres < razDp) && fabs(malha[i].celula[j].dTdtIni) < razDT) {
-                                if (malha[i].TransMassModel == 0)
+                                if (malha[i].transient.TransMassModel == 0)
                                     malha[i].celula[j].m2d = 1.;
                                 else
                                     malha[i].celula[j].m2d = 0.;
@@ -2741,15 +2741,15 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         if (malha[i].celula[j].acsr.tipo == 15) {
                             malha[i].celula[j].acsr.radialPoro.avancoSW(malha[i].dt);
                             if (malha[i].celula[j].acsr.radialPoro.reinicia == -1) {
-                                if (malha[i].reinicia > -1)
-                                    malha[i].reinicia = -1;
+                                if (malha[i].transient.reinicia > -1)
+                                    malha[i].transient.reinicia = -1;
                                 // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
                             }
                         } else if (malha[i].celula[j].acsr.tipo == 16) {
                             malha[i].celula[j].acsr.poroso2D.avancoSW(malha[i].dt);
                             if (malha[i].celula[j].acsr.poroso2D.reinicia == -1) {
-                                if (malha[i].reinicia > -1)
-                                    malha[i].reinicia = -1;
+                                if (malha[i].transient.reinicia > -1)
+                                    malha[i].transient.reinicia = -1;
                                 // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
                             }
                         }
@@ -2768,7 +2768,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
             }
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0) {
-                    if (malha[i].reinicia == -1)
+                    if (malha[i].transient.reinicia == -1)
                         reiniGlob = -1;
                 }
             }
@@ -2800,10 +2800,10 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 for (int i = 0; i < narq; i++) {
                     if (inativo[i] == 0) {
                         malha[i].dt = dtteste;
-                        malha[i].dtauxFinal = malha[i].dt;
+                        malha[i].transient.dtauxFinal = malha[i].dt;
                         malha[i].ReiniEvolFrac();
                         malha[i].EvoluiFrac(alfRev[i], betRev[i], kontaAcop);
-                        malha[i].reinicia = 0;
+                        malha[i].transient.reinicia = 0;
                         for (int j = 0; j <= malha[i].ncel; j++) {
                             if (malha[i].celula[j].acsr.tipo == 15) {
                                 malha[i].celula[j].acsr.radialPoro.avancoSWcorrec();
@@ -2841,7 +2841,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                 if (inativo[i] == 0) {
                     malha[i].AtualizaPig();
                     if (kontaAcop == 0)
-                        malha[i].dtCicMin = malha[i].dt;
+                        malha[i].transient.dtCicMin = malha[i].dt;
                     if (kontaAcop == 1 * modeloCompletoGlob)
                         malha[i].atenuaDtMax();
 
@@ -2870,7 +2870,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                             celposAux = malha[i].arq.valv[j - 1].posicP;
                         else
                             celposAux = celpos[i];
-                        if (malha[i].celula[celposAux].alf < 0.05 && malha[i].vRazMast1[j] <= malha[i].arq.master1.razareaativ)
+                        if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.vRazMast1[j] <= malha[i].arq.master1.razareaativ)
                             malha[i].celula[celposAux].alf = 0.05;
                     }
                     // caso varias valvulas
@@ -2913,14 +2913,14 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         malha[i].renovatermColIni();
                     malha[i].SolveAcopPV();
 
-                    if (kontaAcop < 1 * malha[i].modeloCompleto && malha[i].modeloCompleto == 1) {
+                    if (kontaAcop < 1 * malha[i].transient.modeloCompleto && malha[i].transient.modeloCompleto == 1) {
                         for (int j = 0; j <= malha[i].ncel; j++)
                             malha[i].celula[j].dpdt =
-                                1 * (malha[i].termolivreP[2 * j + 1] - malha[i].celula[j].pres) / malha[i].celula[j].dt;
+                                1 * (malha[i].transient.termolivreP[2 * j + 1] - malha[i].celula[j].pres) / malha[i].celula[j].dt;
                     }
                     malha[i].renova();
                     if (malha[i].arq.cicloAcopTerm == 1) {
-                        if (kontaAcop < 1 * malha[i].modeloCompleto)
+                        if (kontaAcop < 1 * malha[i].transient.modeloCompleto)
                             for (int j = 0; j <= malha[i].ncel; j++)
                                 malha[i].celula[j].dpdt = malha[i].celula[j].d2pdt2;
                         malha[i].marchaEnergTrans(kontaAcop, ciclomax);
@@ -2960,7 +2960,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                             }
                         }
 
-                        if (malha[i].modeloCompleto == 0) {
+                        if (malha[i].transient.modeloCompleto == 0) {
                             for (int j = 0; j <= malha[i].ncel; j++) {
                                 malha[i].celula[j].FeiticoDoTempo3();
                                 if (malha[i].celula[j].acsr.tipo == 15) {
@@ -2974,7 +2974,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         malha[i].celula[malha[i].ncel].fontemassCR = fonteC[i];
                         malha[i].celula[malha[i].ncel].fontemassLR = fonteP[i];
                         malha[i].celula[malha[i].ncel].fontemassGR = fonteG[i];
-                        malha[i].gasLift.pGSup = malha[i].pGSupIni;
+                        malha[i].gasLift.pGSup = malha[i].transient.pGSupIni;
                         malha[i].tGSup = malha[i].tGSupIni;
                         malha[i].presfim = malha[i].presfimini;
                         malha[i].tempE = malha[i].tempEini;
@@ -2992,10 +2992,10 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
                         malha[i].celula[0].rpRi = rpRi[i];
                         malha[i].celula[0].rcRi = rcRi[i];
                         malha[i].arq.ConContEntrada = condcon[i];
-                        malha[i].aberto = malha[i].abertoini;
-                        malha[i].tempoaberto = malha[i].tempoabertoini;
+                        malha[i].transient.aberto = malha[i].transient.abertoini;
+                        malha[i].transient.tempoaberto = malha[i].transient.tempoabertoini;
                         malha[i].masChkSup = malha[i].masChkSupini;
-                        malha[i].mudaModoChk = malha[i].mudaModoChkini;
+                        malha[i].transient.mudaModoChk = malha[i].mudaModoChkini;
                         if (malha[i].celula[0].acsr.tipo == 10) {
                             malha[i].celula[0].acsr.injm.MassG = injMG[i];
                             malha[i].celula[0].acsr.injm.MassP = injMP[i];
@@ -3054,7 +3054,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
         }
         for (int i = 0; i < narq; i++) {
             if (inativo[i] == 0) {
-                if (malha[i].modeloCompleto == 0) {
+                if (malha[i].transient.modeloCompleto == 0) {
                     malha[i].marchaEnergTrans(0, 0);
                 }
                 if (arqRede.malha[i].ncoleta > 0) {
@@ -10690,7 +10690,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
+        malha[i].arq.tfinal = malha[i].transient.tfinal = (*arqRede.vg1dSP).TmaxR;
     }
     double dtteste;
     (*arqRede.vg1dSP).lixo5R = 0.;
@@ -10698,8 +10698,8 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
         dtteste = 1e6;
         for (int i = 0; i < narq; i++) {
             malha[i].determinaDT();
-            malha[i].dtauxCFL = malha[i].dt;
-            malha[i].dtauxFinal = malha[i].dt;
+            malha[i].transient.dtauxCFL = malha[i].dt;
+            malha[i].transient.dtauxFinal = malha[i].dt;
             if (malha[i].dt < dtteste)
                 dtteste = malha[i].dt;
         }
@@ -10721,7 +10721,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
         }
 
         for (int i = 0; i < narq; i++) {
-            malha[i].reinicia = 0;
+            malha[i].transient.reinicia = 0;
             celpos[i] = malha[i].arq.master1.posic;
             razMast0[i] = malha[i].celula[celpos[i]].acsr.chk.AreaGarg / malha[i].celula[celpos[i]].duto.area;
             malha[i].solveLinGas();
@@ -10733,10 +10733,10 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                                   malha[i].gasLift.presiniG, malha[i].gasLift.tempiniG,
                                   malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
             razMast[i] = malha[i].celula[celpos[i]].acsr.chk.AreaGarg / malha[i].celula[celpos[i]].duto.area;
-            malha[i].modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
+            malha[i].transient.modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
             if (razMast[i] != razMast0[i])
-                malha[i].modeloCompleto = 0;
-            if (malha[i].modeloCompleto == 1)
+                malha[i].transient.modeloCompleto = 0;
+            if (malha[i].transient.modeloCompleto == 1)
                 malha[i].avaliaVariaDpDt(razMast[i], razMast0[i]);
         }
         for (int i = 0; i < dreno.size(); i++) {
@@ -10751,7 +10751,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
 
         int modeloCompletoGlob = 0;
         for (int i = 0; i < narq; i++) {
-            if (malha[i].modeloCompleto == 1)
+            if (malha[i].transient.modeloCompleto == 1)
                 modeloCompletoGlob = 1;
         }
 
@@ -10759,12 +10759,12 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
             int reiniGlob = 0;
             for (int i = 0; i < narq; i++) {
                 if (i != indAnel) {
-                    if (malha[i].modeloCompleto == 0) {
+                    if (malha[i].transient.modeloCompleto == 0) {
                         for (int j = 0; j <= malha[i].ncel; j++)
                             malha[i].celula[j].m2d = 0.;
                     } else {
                         for (int j = 0; j <= malha[i].ncel; j++) {
-                            if (malha[i].TransMassModel == 0)
+                            if (malha[i].transient.TransMassModel == 0)
                                 malha[i].celula[j].m2d = 1.;
                             else
                                 malha[i].celula[j].m2d = 0.;
@@ -10774,7 +10774,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                 }
             }
             for (int i = 0; i < narq; i++)
-                if (malha[i].reinicia == -1)
+                if (malha[i].transient.reinicia == -1)
                     reiniGlob = -1;
             if (reiniGlob < 0) {
                 for (int i = 0; i < narq; i++) {
@@ -10782,7 +10782,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                         malha[i].ReiniEvolFrac0();
                     if (malha[i].dt < dtteste) {
                         dtteste = malha[i].dt;
-                        malha[i].dtauxFinal = malha[i].dt;
+                        malha[i].transient.dtauxFinal = malha[i].dt;
                     }
                 }
                 for (int i = 0; i < narq; i++) {
@@ -10791,7 +10791,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                         malha[i].ReiniEvolFrac();
                         malha[i].EvoluiFrac(1., 1., kontaAcop);
                     }
-                    malha[i].reinicia = 0;
+                    malha[i].transient.reinicia = 0;
                 }
             }
             if ((*arqRede.vg1dSP).lixo5R <= 1e-15)
@@ -10813,12 +10813,12 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                     malha[i].renova();
                 else {
                     for (int j = 0; j <= malha[i].ncel; j++)
-                        malha[i].celula[j].dpdt = (malha[i].termolivreP[2 * j + 1] -
+                        malha[i].celula[j].dpdt = (malha[i].transient.termolivreP[2 * j + 1] -
                                                    malha[i].celula[j].pres) /
                                                   malha[i].celula[j].dt;
                 }
                 if (kontaAcop != 1 * modeloCompletoGlob) {
-                    malha[i].indpigPini = malha[i].indpigP;
+                    malha[i].transient.indpigPini = malha[i].transient.indpigP;
                     for (int j = 0; j <= malha[i].ncel; j++)
                         malha[i].celula[j].FeiticoDoTempo2();
                 }
@@ -11076,7 +11076,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].tfinal = (*arqRede.vg1dSP).TmaxR;
+        malha[i].arq.tfinal = malha[i].transient.tfinal = (*arqRede.vg1dSP).TmaxR;
     }
 
     double dtteste;
@@ -11121,10 +11121,10 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
         dtteste = 1e6;
         for (int i = 0; i < narq; i++) {
-            malha[i].modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
+            malha[i].transient.modeloCompleto = malha[i].arq.correcaoMassaEspLiq;
             malha[i].determinaDT();
-            malha[i].dtauxCFL = malha[i].dt;
-            malha[i].dtauxFinal = malha[i].dt;
+            malha[i].transient.dtauxCFL = malha[i].dt;
+            malha[i].transient.dtauxFinal = malha[i].dt;
             if (malha[i].dt < dtteste)
                 dtteste = malha[i].dt;
         }
@@ -11137,7 +11137,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
             }
         }
         for (int i = 0; i < narq; i++) {
-            malha[i].reinicia = 0;
+            malha[i].transient.reinicia = 0;
             celpos[i] = malha[i].arq.master1.posic;
             // razMast0[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
             malha[i].aberturaVal0(); // caso varias valvulas
@@ -11151,30 +11151,30 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                                   malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
             malha[i].atualizaCC1();
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                malha[i].vRazMastCrit[j] = 0.5; // caso varias valvulas
+                malha[i].transient.vRazMastCrit[j] = 0.5; // caso varias valvulas
             malha[i].aberturaVal1();            // caso varias valvulas
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                if (malha[i].vRazMast1[j] != malha[i].vRazMast0[j])
-                    malha[i].modeloCompleto = 0; // caso varias valvulas
-            if (malha[i].modeloCompleto == 1)
+                if (malha[i].transient.vRazMast1[j] != malha[i].transient.vRazMast0[j])
+                    malha[i].transient.modeloCompleto = 0; // caso varias valvulas
+            if (malha[i].transient.modeloCompleto == 1)
                 malha[i].avaliaVariaDpDt(); // caso varias valvulas
-            if (malha[i].modeloCompleto == 0)
+            if (malha[i].transient.modeloCompleto == 0)
                 malha[i].arq.cicloAcopTerm = 0;
             else
                 malha[i].arq.cicloAcopTerm = 1;
         }
         int modeloCompletoGlob = 1;
         for (int i = 0; i < narq; i++) {
-            if (malha[i].modeloCompleto == 0)
+            if (malha[i].transient.modeloCompleto == 0)
                 modeloCompletoGlob = 0;
         }
         int ciclomax = modeloCompletoGlob;
 
         for (int i = 0; i < narq; i++) {
-            malha[i].abertoini = malha[i].aberto;
-            malha[i].tempoabertoini = malha[i].tempoaberto;
+            malha[i].transient.abertoini = malha[i].transient.aberto;
+            malha[i].transient.tempoabertoini = malha[i].transient.tempoaberto;
             malha[i].masChkSupini = malha[i].masChkSup;
-            malha[i].mudaModoChkini = malha[i].mudaModoChk;
+            malha[i].mudaModoChkini = malha[i].transient.mudaModoChk;
         }
 
         for (int kontaAcop = 0; kontaAcop <= 1 * modeloCompletoGlob; kontaAcop++) {
@@ -11182,7 +11182,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
             for (int i = 0; i < narq; i++) {
 
-                if (malha[i].modeloCompleto == 0) {
+                if (malha[i].transient.modeloCompleto == 0) {
                     for (int j = 0; j <= malha[i].ncel; j++)
                         malha[i].celula[j].m2d = 0.;
                 } else {
@@ -11196,7 +11196,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                             razDT = 1;
                         }
                         if ((fabs(malha[i].celula[j].dpdtIni) / malha[i].celula[j].pres < razDp) && fabs(malha[i].celula[j].dTdtIni) < razDT) {
-                            if (malha[i].TransMassModel == 0)
+                            if (malha[i].transient.TransMassModel == 0)
                                 malha[i].celula[j].m2d = 1.;
                             else
                                 malha[i].celula[j].m2d = 0.;
@@ -11220,14 +11220,14 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                     if (malha[i].celula[j].acsr.tipo == 15) {
                         malha[i].celula[j].acsr.radialPoro.avancoSW(malha[i].dt);
                         if (malha[i].celula[j].acsr.radialPoro.reinicia == -1) {
-                            if (malha[i].reinicia > -1)
-                                malha[i].reinicia = -1;
+                            if (malha[i].transient.reinicia > -1)
+                                malha[i].transient.reinicia = -1;
                         }
                     } else if (malha[i].celula[j].acsr.tipo == 16) {
                         malha[i].celula[j].acsr.poroso2D.avancoSW(malha[i].dt);
                         if (malha[i].celula[j].acsr.poroso2D.reinicia == -1) {
-                            if (malha[i].reinicia > -1)
-                                malha[i].reinicia = -1;
+                            if (malha[i].transient.reinicia > -1)
+                                malha[i].transient.reinicia = -1;
                         }
                     }
                 }
@@ -11237,12 +11237,12 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                 }
 
                 if (kontaAcop == 0 && malha[i].arq.controleDTvalv == 1) {
-                    if (malha[i].reinicia > -1)
+                    if (malha[i].transient.reinicia > -1)
                         malha[i].restringeDTporValv(); // caso varias valvulas
                 }
             }
             for (int i = 0; i < narq; i++) {
-                if (malha[i].reinicia == -1)
+                if (malha[i].transient.reinicia == -1)
                     reiniGlob = -1;
             }
             if (reiniGlob < 0) {
@@ -11270,10 +11270,10 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                 }
                 for (int i = 0; i < narq; i++) {
                     malha[i].dt = dtteste;
-                    malha[i].dtauxFinal = malha[i].dt;
+                    malha[i].transient.dtauxFinal = malha[i].dt;
                     malha[i].ReiniEvolFrac();
                     malha[i].EvoluiFrac(1., 0., kontaAcop);
-                    malha[i].reinicia = 0;
+                    malha[i].transient.reinicia = 0;
                     for (int j = 0; j <= malha[i].ncel; j++) {
                         if (malha[i].celula[j].acsr.tipo == 15) {
                             malha[i].celula[j].acsr.radialPoro.avancoSWcorrec();
@@ -11290,7 +11290,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                 malha[i].AtualizaPig();
 
                 if (kontaAcop == 0)
-                    malha[i].dtCicMin = malha[i].dt;
+                    malha[i].transient.dtCicMin = malha[i].dt;
 
                 if (kontaAcop == 1 * modeloCompletoGlob)
                     malha[i].atenuaDtMax();
@@ -11312,14 +11312,14 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                         celposAux = malha[i].arq.valv[j - 1].posicP;
                     else
                         celposAux = celpos[i];
-                    if (malha[i].celula[celposAux].alf < 0.05 && malha[i].vRazMast1[j] <= malha[i].arq.master1.razareaativ)
+                    if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.vRazMast1[j] <= malha[i].arq.master1.razareaativ)
                         malha[i].celula[celposAux].alf = 0.05;
                 }
                 malha[i].SolveAcopPV();
 
                 if (kontaAcop < 1 * modeloCompletoGlob) {
                     for (int j = 0; j <= malha[i].ncel; j++) {
-                        malha[i].celula[j].dpdt = 1 * (malha[i].termolivreP[2 * j + 1] - malha[i].celula[j].pres) / malha[i].celula[j].dt;
+                        malha[i].celula[j].dpdt = 1 * (malha[i].transient.termolivreP[2 * j + 1] - malha[i].celula[j].pres) / malha[i].celula[j].dt;
                         malha[i].celula[j].dpdtIni = malha[i].celula[j].dpdt;
                     }
                 }
@@ -11346,8 +11346,8 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
                     malha[i].celula[malha[i].ncel].fontemassLR = fonteP[i];
                     malha[i].celula[malha[i].ncel].fontemassGR = fonteG[i];
 
-                    malha[i].aberto = malha[i].abertoini;
-                    malha[i].tempoaberto = malha[i].tempoabertoini;
+                    malha[i].transient.aberto = malha[i].transient.abertoini;
+                    malha[i].transient.tempoaberto = malha[i].transient.tempoabertoini;
                 }
             }
         }
@@ -13265,7 +13265,7 @@ int main(int argc, char **argv) {
                     }
                     sistem1.poisson3D.malha.imprime(0);
                 }
-                while ((*sistem1.vg1dSP).lixo5 < sistem1.tfinal) {
+                while ((*sistem1.vg1dSP).lixo5 < sistem1.transient.tfinal) {
                     vg1dTramo.RGOMax = 14000.;
                     (*sistem1.vg1dSP).RGOMax = 14000.; // RGO maximo admitido para um eventual modelo black oil, isto e necessario pois como o modelo
                     // foi originalmente baseado em um sistema black-oil, teria problemas nas equacoes de transferencia de massa caso

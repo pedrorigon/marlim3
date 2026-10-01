@@ -262,18 +262,18 @@ void SProd::generateSaturationTablesFromCorrelations() {
 void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes) {
     indTramo = -1;
     transient.KontaImprime = 0;
-    tempoaberto = 0.;
-    tempoabertoini = 0.;
+    transient.tempoaberto = 0.;
+    transient.tempoabertoini = 0.;
     modoPerm = 0;
     iterperm = 0;
     masChkSup = 0;
     dt = arq.dtmax;
     gasLift.dtInter = arq.dtmax;
-    tfinal = arq.tfinal;
-    TransMassModel = 0;
-    indpigP = 0;
-    indpigPini = indpigP;
-    reinicia = 0;
+    transient.tfinal = arq.tfinal;
+    transient.TransMassModel = 0;
+    transient.indpigP = 0;
+    transient.indpigPini = transient.indpigP;
+    transient.reinicia = 0;
     masChkSupini = 0;
     betaRev = 0.;
     transient.trackDeng = arq.trackDeng;
@@ -337,7 +337,7 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     arq.fluc.DrhoDtInj = arq.DrhoDtInj;
 
     if (arq.modelcp > 0 || arq.modelJTL == 1 || arq.latente > 0 || (arq.pocinjec == 1 && (arq.condpocinj.tipoFlui == 2 || arq.condpocinj.tipoFlui == 3)))
-        TransMassModel = arq.transmass;
+        transient.TransMassModel = arq.transmass;
     arq.geraduto();
     ncel = arq.ncelp - 1;
     temperatura = arq.celp[0].textern;
@@ -458,7 +458,7 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
     if (arq.nvalv > 0)
         arq.geraValv(celula);
     arq.gerapresfim(presfim, gasLift.pGSup);
-    pGSupIni = gasLift.pGSup;
+    transient.pGSupIni = gasLift.pGSup;
     chokeSup = choke(1., 1.);
     gasLift.chokeInj = ChokeGas();
     arq.gerachokesup(chokeSup);
@@ -580,14 +580,14 @@ void SProd::validateSetupAndApplyInitialState() {
     if (arq.pocinjec == 0) {
         arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.chokeInj, celula, gasLift.celulaG, gasLift.pGSup, temperatura, gasLift.presiniG,
                      gasLift.tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
-        pGSupIni = gasLift.pGSup;
+        transient.pGSupIni = gasLift.pGSup;
         // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//change 7
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
-            aberto = 1;
-            abertoini = 1;
+            transient.aberto = 1;
+            transient.abertoini = 1;
         } else {
-            aberto = 0;
-            abertoini = 1;
+            transient.aberto = 0;
+            transient.abertoini = 1;
         }
     }
 
@@ -959,14 +959,14 @@ void SProd::resetCouplingAndOutputState() {
 
     transient.kSP = 0;
     transient.indevento = 1;
-    mult = 0.8;
-    presMedMov = 0.;
-    jMedMov = 0.;
-    tMedMov = 60.;
-    ktMedMov = 0.;
-    pTotal = 0.;
-    jTotal = 0.;
-    alfTotal = 0.;
+    transient.mult = 0.8;
+    transient.presMedMov = 0.;
+    transient.jMedMov = 0.;
+    transient.tMedMov = 60.;
+    transient.ktMedMov = 0.;
+    transient.pTotal = 0.;
+    transient.jTotal = 0.;
+    transient.alfTotal = 0.;
 }
 
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
