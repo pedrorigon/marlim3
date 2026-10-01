@@ -60,7 +60,6 @@ void SProd::resetRunState() {
     dtInter = 0.;
     velInter = 0.;
 
-    trends.ncelperftransg = 0;
     TrendLengthG = 0;
     MatTrendG = 0;
     trends.resettrendg = 0;
@@ -71,7 +70,6 @@ void SProd::resetRunState() {
     trends.resettrendtransg = 0;
     trends.ntrendtransg = 0;
     trends.ntrendtransgB = 0;
-    trends.ncelperftransp = 0;
     TrendLengthP = 0;
     MatTrendP = 0;
     trends.resettrend = 0;
@@ -223,10 +221,8 @@ void SProd::releaseOwnedStorage() {
     releaseVector(transient.abreM1);
     releaseVector(transient.fechaM1);
 
-    if (arq.nperfistransp > 0)
-        delete[] trends.ncelperftransp;
-    if (arq.nperfistransg > 0 && arq.lingas > 0)
-        delete[] trends.ncelperftransg;
+    releaseVector(trends.ncelperftransp);
+    releaseVector(trends.ncelperftransg);
 
     if (arq.ntendp > 0 && redeTemporario == 0)
         releaseTrendSet(arq.ntendp, MatTrendP, TrendLengthP, trends.resettrend, ntrend, trends.ntrendB);

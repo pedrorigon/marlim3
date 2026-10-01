@@ -365,7 +365,7 @@ struct TransientSolveState {
     /// SProd::jVet -- written or read by the solve; not promised const.
     std::vector<double> &fluxHistory;
     /// SProd::trends.ncelperftransg -- written or read by the solve; not promised const.
-    int* &gasCrossSectionCellCounts;
+    int* gasCrossSectionCellCounts;
     /// SProd::trends.kontaTempoTransProfG -- written or read by the solve; not promised const.
     int &gasCrossSectionProfileTimeCounter;
     /// SProd::trends.ntrendtransgB -- written or read by the solve; not promised const.

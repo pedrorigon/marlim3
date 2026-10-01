@@ -841,14 +841,14 @@ void SProd::allocateEventProfileAndTrendArrays() {
         ntempGas = ncelGas;
 
     if (arq.nperfistransp > 0) {
-        trends.ncelperftransp = new int[arq.nperfistransp];
+        trends.ncelperftransp = vector<int>(arq.nperfistransp);
         for (int i = 0; i < arq.nperfistransp; i++) {
             int posiccel = arq.proftransp.posic[i];
             trends.ncelperftransp[i] = celula[posiccel].calor.nglobal;
         }
     }
     if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        trends.ncelperftransg = new int[arq.nperfistransg];
+        trends.ncelperftransg = vector<int>(arq.nperfistransg);
         for (int i = 0; i < arq.nperfistransg; i++) {
             int posiccel = arq.proftransg.posic[i];
             trends.ncelperftransg[i] = celulaG[posiccel].calor.nglobal;
@@ -927,10 +927,10 @@ void SProd::resetCouplingAndOutputState() {
     		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransp > 0) {
-    		arq.imprimeProfileTrans(celula, trends.ncelperftransp, (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTrans(celula, trends.ncelperftransp.data(), (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileTransG(celulaG, trends.ncelperftransg, (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTransG(celulaG, trends.ncelperftransg.data(), (*vg1dSP).lixo5, indTramo);
     	}
     }
     trends.kontaTempoProf = 0;

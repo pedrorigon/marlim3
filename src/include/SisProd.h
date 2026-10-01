@@ -370,7 +370,7 @@ struct TrendRecorder {
     /**
      * @brief Gas-line cells where radial temperature profiles are written.
      */
-    int *ncelperftransg = nullptr;
+    vector<int> ncelperftransg;
     /**
      * @brief Times at which gas-line trend buffers are reset.
      */
@@ -402,7 +402,7 @@ struct TrendRecorder {
     /**
      * @brief Production-line cells where radial temperature profiles are written.
      */
-    int *ncelperftransp = nullptr;
+    vector<int> ncelperftransp;
     /**
      * @brief Times at which production-line trend buffers are reset.
      */
