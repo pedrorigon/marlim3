@@ -492,7 +492,7 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system) {
         .cells = system.celula,
         .gasCells = system.celulaG,
         .input = system.arq,
-        .latentHeatTable = system.tables.HLat,
+        .latentHeatTable = system.tables.HLat.data(),
         .globals = system.vg1dSP,
         .thermalSourceDisabled = system.semTermo,
         .productionNetworkCoupled = system.verificaAcopRedeS,

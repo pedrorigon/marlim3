@@ -86,8 +86,8 @@ void forEachSourceFluid(Cel &cell, Apply &&apply) {
 /// tables read from the PVTSim file, and switches them to saturation model 4.
 void SProd::assignPvtSimBubbleTablesToCells() {
     auto assignTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = tables.PBPVTSim;
-        fluid.TBPVTSim = tables.TBPVTSim;
+        fluid.PBPVTSim = tables.PBPVTSim.data();
+        fluid.TBPVTSim = tables.TBPVTSim.data();
         fluid.corrSat = 4;
     };
     for (int i = 0; i <= ncel; i++) {
@@ -126,10 +126,9 @@ void writeTable(const string &path, const FullMtx<double> &table) {
 /// and writes perfilBolha; with tabRSPB on, also reads the solution gas-oil ratio
 /// table and writes perfilRSLivia.
 void SProd::loadPvtSimSaturationTables() {
-    LerPB = 1;
     int ndiv = arq.tabent.npont - 1;
-    tables.PBPVTSim = new double[ndiv + 1];
-    tables.TBPVTSim = new double[ndiv + 1];
+    tables.PBPVTSim = vector<double>(ndiv + 1);
+    tables.TBPVTSim = vector<double>(ndiv + 1);
     vector<double> PresPVTSim(ndiv + 1);
 
     string impfile;
@@ -156,11 +155,7 @@ void SProd::loadPvtSimSaturationTables() {
     writeTable(pathPrefixoArqSaida + "perfilBolha", BolhaTemp);
 
     if (arq.tabRSPB == 1) {
-        lerRS = 1;
-        tables.RSLivia = new double *[ndiv + 2];
-        for (int i = 0; i < ndiv + 2; i++) {
-            tables.RSLivia[i] = new double[ndiv + 2];
-        }
+        tables.RSLivia.allocate(ndiv + 2);
         for (int i = 1; i <= ndiv + 1; i++) {
             tables.RSLivia[i][0] = PresPVTSim[i - 1];
             tables.RSLivia[0][i] = tables.TBPVTSim[i - 1];
@@ -223,7 +218,7 @@ void SProd::loadPvtSimSaturationTables() {
         writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
         auto pointAtRatioTable = [&](ProFlu &fluid) {
-            fluid.TabRSLivia = tables.RSLivia;
+            fluid.TabRSLivia = tables.RSLivia.data();
             fluid.tabRSPB = 1;
         };
         for (int i = 0; i <= ncel; i++) {
@@ -244,12 +239,9 @@ void SProd::generateSaturationTablesFromCorrelations() {
     double dtteste = (arq.tabent.tmax - tteste) / ndiv;
     FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
     FullMtx<double> PBTemp(ndiv + 2, 2);
-    tables.TBPVTSim = new double[ndiv + 1];
-    tables.PBPVTSim = new double[ndiv + 1];
-    tables.RSLivia = new double *[ndiv + 2];
-    for (int i = 0; i < ndiv + 2; i++) {
-        tables.RSLivia[i] = new double[ndiv + 2];
-    }
+    tables.TBPVTSim = vector<double>(ndiv + 1);
+    tables.PBPVTSim = vector<double>(ndiv + 1);
+    tables.RSLivia.allocate(ndiv + 2);
     double ttestepb = tteste;
     for (int i = 0; i <= ndiv; i++) {
         tables.TBPVTSim[i] = ttestepb;
@@ -277,9 +269,9 @@ void SProd::generateSaturationTablesFromCorrelations() {
     writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
     auto pointAtTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = tables.PBPVTSim;
-        fluid.TBPVTSim = tables.TBPVTSim;
-        fluid.TabRSLivia = tables.RSLivia;
+        fluid.PBPVTSim = tables.PBPVTSim.data();
+        fluid.TBPVTSim = tables.TBPVTSim.data();
+        fluid.TabRSLivia = tables.RSLivia.data();
         fluid.tabRSPB = 1;
     };
     for (int i = 0; i <= ncel; i++) {
@@ -287,8 +279,6 @@ void SProd::generateSaturationTablesFromCorrelations() {
         forEachSourceFluid(celula[i], pointAtTables);
     }
 
-    LerPB = 1;
-    lerRS = 1;
 }
 
 /// Copies the run configuration into the members, checks that an injection well
@@ -729,9 +719,8 @@ void SProd::configureLatentHeat() {
                 }
             }
             lendoPVTSim.close();
-            tables.HLat = new double *[ndiv + 2];
+            tables.HLat.allocate(ndiv + 2);
             for (int i = 0; i < ndiv + 2; i++) {
-                tables.HLat[i] = new double[ndiv + 2];
                 for (int j = 0; j < ndiv + 2; j++)
                     tables.HLat[i][j] = HLatTemp[i][j];
             }

@@ -80,9 +80,6 @@ void SProd::resetRunState() {
     trends.resettrendtrans = 0;
     trends.ntrendtrans = 0;
     trends.ntrendtransB = 0;
-    LerPB = 0;
-    tables.PBPVTSim = 0;
-    tables.TBPVTSim = 0;
 
     fontemassPRBuf = 0.;
     fontemassCRBuf = 0.;
@@ -235,21 +232,10 @@ void SProd::releaseOwnedStorage() {
         releaseTrendSet(arq.ntendtransg, trends.MatTrendTransG, TrendLengthTransG, trends.resettrendtransg, trends.ntrendtransg,
                         trends.ntrendtransgB);
 
-    int ndiv = arq.tabent.npont - 1;
-    if (CalcLat > 0 && arq.flashCompleto == 0) {
-        for (int i = 0; i < ndiv + 2; i++)
-            delete[] tables.HLat[i];
-        delete[] tables.HLat;
-    }
-    if (LerPB > 0) {
-        delete[] tables.PBPVTSim;
-        delete[] tables.TBPVTSim;
-        if (lerRS > 0) {
-            for (int i = 0; i < ndiv + 2; i++)
-                delete[] tables.RSLivia[i];
-            delete[] tables.RSLivia;
-        }
-    }
+    tables.HLat.release();
+    releaseVector(tables.PBPVTSim);
+    releaseVector(tables.TBPVTSim);
+    tables.RSLivia.release();
 
     if (ncel > 0)
         delete[] celula;

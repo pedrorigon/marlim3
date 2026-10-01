@@ -435,9 +435,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
 
 void initializeLatentHeatTable(SProd &system) {
     system.arq.tabent.npont = 3;
-    system.tables.HLat = new double *[4];
-    for (int row = 0; row < 4; ++row)
-        system.tables.HLat[row] = new double[4];
+    system.tables.HLat.allocate(4);
 
     const double pressures[4] = {0., 20., 80., 140.};
     const double temperatures[4] = {0., 10., 70., 130.};

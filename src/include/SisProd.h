@@ -98,6 +98,28 @@ trendoutput::TrendState trendStateOf(const SProd &system);
 
 namespace sisprod {
 
+/// A square table the fluids read through a double **: its rows, and a pointer to each.
+struct SquareTable {
+    vector<vector<double>> rows;
+    vector<double *> rowPointers;
+
+    /// n rows of n values each.
+    void allocate(int n) {
+        rows.assign(n, vector<double>(n));
+        rowPointers.resize(n);
+        for (int i = 0; i < n; i++)
+            rowPointers[i] = rows[i].data();
+    }
+    /// Destroys the rows and gives their memory back.
+    void release() {
+        vector<vector<double>>().swap(rows);
+        vector<double *>().swap(rowPointers);
+    }
+    /// What the fluids are given: the row pointers, null when there is no table.
+    double **data() { return rowPointers.data(); }
+    double *operator[](int i) { return rowPointers[i]; }
+};
+
 /// The fluid-property tables the fluids of a system's cells point at. The black-oil
 /// compressibility-factor, specific-heat and liquid-density-derivative tables belong to the
 /// input; the latent-heat table and the Livia bubble-point and solution-gas-ratio tables are
@@ -130,22 +152,22 @@ struct PropertyTables {
     /**
      * @brief Black-oil latent-heat table.
      */
-    double **HLat = nullptr;
+    SquareTable HLat;
     /**
      * @brief Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table
      * is separate from the full PVTSim fluid-property model.
      */
-    double *PBPVTSim = nullptr;
+    vector<double> PBPVTSim;
     /**
      * @brief Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This
      * table is separate from the full PVTSim fluid-property model.
      */
-    double *TBPVTSim = nullptr;
+    vector<double> TBPVTSim;
     /**
      * @brief Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its
      * expensive calculation during the simulation.
      */
-    double **RSLivia = nullptr;
+    SquareTable RSLivia;
 };
 
 /// The gas-lift line's pressure-velocity system, its valves and the cells they join, the
@@ -921,14 +943,6 @@ class SProd {
     Cel *celula = nullptr;
 
   private:
-    /**
-     * @brief Enables reading bubble-pressure and bubble-temperature tables in black-oil mode.
-     */
-    int LerPB = 0;
-    /**
-     * @brief Enables reading a solution-gas-ratio table in black-oil mode.
-     */
-    int lerRS = 0;
   public:
 
     /**
