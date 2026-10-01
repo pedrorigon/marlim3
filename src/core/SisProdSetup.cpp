@@ -18,33 +18,6 @@ using sisprod::kPsiPerPascal;
 
 namespace {
 
-/// Allocates one set of trend matrices: for each of the count trends, length[i]
-/// rows of rowWidth(i) values whose first sentinelCount(i) hold the -10000
-/// sentinel, and the reset timers and sample counts, zeroed.
-template <typename RowWidth, typename SentinelCount>
-void allocateTrendSet(int count, const int *length, RowWidth rowWidth, SentinelCount sentinelCount,
-                      double ***&matrices, double *&resetTimers, int *&counts, int *&bufferedCounts) {
-    resetTimers = new double[count];
-    counts = new int[count];
-    bufferedCounts = new int[count];
-    matrices = new double **[count];
-    for (int i = 0; i < count; i++) {
-        matrices[i] = new double *[length[i]];
-        for (int j = 0; j < length[i]; j++) {
-            matrices[i][j] = new double[rowWidth(i)];
-            for (int k = 0; k < sentinelCount(i); k++)
-                matrices[i][j][k] = -10000.;
-        }
-        resetTimers[i] = 0;
-        counts[i] = 0;
-        bufferedCounts[i] = 0;
-    }
-}
-
-}  // namespace
-
-namespace {
-
 /// Calls apply on each fluid the cell's source carries: that of a liquid,
 /// inflow-performance or multiple source, or, for a porous reservoir, its own
 /// and those of its cells. A gas injection's fluid is not visited. An apply that
@@ -850,34 +823,29 @@ void SProd::allocateEventProfileAndTrendArrays() {
         (*vg1dSP).TmaxR = arq.tfinal;
     if (redeTemporario == 0) {
         if (arq.ntendp > 0) {
-            TrendLengthP = new int[arq.ntendp];
-            for (int i = 0; i < arq.ntendp; i++)
-                TrendLengthP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); // round(arq.tfinal / arq.trendp[i].dt);
-            allocateTrendSet(arq.ntendp, TrendLengthP, [&](int i) { return arq.nvartrendp[i] + 2; },
-                             [&](int i) { return arq.nvartrendp[i] + 1; }, MatTrendP, trends.resettrend, ntrend, trends.ntrendB);
+            trends.productionTrendSet.allocate(
+                arq.ntendp,
+                [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); }, // round(arq.tfinal / arq.trendp[i].dt);
+                [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; }, MatTrendP,
+                trends.resettrend, ntrend, trends.ntrendB);
         }
         if (arq.ntendg > 0) {
-            TrendLengthG = new int[arq.ntendg];
-            for (int i = 0; i < arq.ntendg; i++)
-                TrendLengthG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt);
-            allocateTrendSet(arq.ntendg, TrendLengthG, [&](int i) { return arq.nvartrendg[i] + 2; },
-                             [&](int i) { return arq.nvartrendg[i] + 1; }, MatTrendG, trends.resettrendg, trends.ntrendg, trends.ntrendgB);
+            trends.gasTrendSet.allocate(
+                arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt); },
+                [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; }, MatTrendG,
+                trends.resettrendg, trends.ntrendg, trends.ntrendgB);
         }
         if (arq.ntendtransp > 0) {
-            TrendLengthTransP = new int[arq.ntendtransp];
-            for (int i = 0; i < arq.ntendtransp; i++)
-                TrendLengthTransP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt);
-            allocateTrendSet(arq.ntendtransp, TrendLengthTransP, [](int) { return 2; }, [](int) { return 2; },
-                             trends.MatTrendTransP, trends.resettrendtrans, trends.ntrendtrans, trends.ntrendtransB);
-        }
-        if (arq.ntendtransg > 0 && arq.lingas > 0) {
-            TrendLengthTransG = new int[arq.ntendtransg];
-            for (int i = 0; i < arq.ntendtransg; i++)
-                TrendLengthTransG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt);
+            trends.productionWallTrendSet.allocate(
+                arq.ntendtransp, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt); },
+                [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransP, trends.resettrendtrans,
+                trends.ntrendtrans, trends.ntrendtransB);
         }
         if (arq.ntendtransg > 0) {
-            allocateTrendSet(arq.ntendtransg, TrendLengthTransG, [](int) { return 2; }, [](int) { return 2; },
-                             trends.MatTrendTransG, trends.resettrendtransg, trends.ntrendtransg, trends.ntrendtransgB);
+            trends.gasWallTrendSet.allocate(
+                arq.ntendtransg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt); },
+                [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransG, trends.resettrendtransg,
+                trends.ntrendtransg, trends.ntrendtransgB);
         }
     }
 }

@@ -60,22 +60,18 @@ void SProd::resetRunState() {
     dtInter = 0.;
     velInter = 0.;
 
-    TrendLengthG = 0;
     MatTrendG = 0;
     trends.resettrendg = 0;
     trends.ntrendg = 0;
     trends.ntrendgB = 0;
-    TrendLengthTransG = 0;
     trends.MatTrendTransG = 0;
     trends.resettrendtransg = 0;
     trends.ntrendtransg = 0;
     trends.ntrendtransgB = 0;
-    TrendLengthP = 0;
     MatTrendP = 0;
     trends.resettrend = 0;
     ntrend = 0;
     trends.ntrendB = 0;
-    TrendLengthTransP = 0;
     trends.MatTrendTransP = 0;
     trends.resettrendtrans = 0;
     trends.ntrendtrans = 0;
@@ -182,23 +178,6 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
 
 namespace {
 
-/// Frees one set of trend matrices and its bookkeeping.
-void releaseTrendSet(int count, double ***matrices, int *length, double *resetTimers, int *counts,
-                     int *bufferedCounts) {
-    for (int i = 0; i < count && matrices && length; i++) {
-        if (matrices[i]) {
-            for (int j = 0; j < length[i]; j++)
-                delete[] matrices[i][j];
-            delete[] matrices[i];
-        }
-    }
-    delete[] matrices;
-    delete[] length;
-    delete[] resetTimers;
-    delete[] counts;
-    delete[] bufferedCounts;
-}
-
 /// Destroys the elements of v and gives its memory back.
 template <typename T>
 void releaseVector(vector<T> &v) {
@@ -220,16 +199,10 @@ void SProd::releaseOwnedStorage() {
     releaseVector(trends.ncelperftransp);
     releaseVector(trends.ncelperftransg);
 
-    if (arq.ntendp > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendp, MatTrendP, TrendLengthP, trends.resettrend, ntrend, trends.ntrendB);
-    if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendg, MatTrendG, TrendLengthG, trends.resettrendg, trends.ntrendg, trends.ntrendgB);
-    if (arq.ntendtransp > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendtransp, trends.MatTrendTransP, TrendLengthTransP, trends.resettrendtrans, trends.ntrendtrans,
-                        trends.ntrendtransB);
-    if (arq.ntendtransg > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendtransg, trends.MatTrendTransG, TrendLengthTransG, trends.resettrendtransg, trends.ntrendtransg,
-                        trends.ntrendtransgB);
+    trends.productionTrendSet.release();
+    trends.gasTrendSet.release();
+    trends.productionWallTrendSet.release();
+    trends.gasWallTrendSet.release();
 
     tables.HLat.release();
     releaseVector(tables.PBPVTSim);

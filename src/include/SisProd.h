@@ -385,6 +385,56 @@ struct TransientRun {
     int alteraTempo = 0;
 };
 
+/// The storage of one family of trends: for each trend, its rows of samples, and its reset time
+/// and sample counts. The solve reads it through the pointers allocate() points at it.
+struct TrendSet {
+    vector<vector<vector<double>>> values;
+    vector<vector<double *>> rows;
+    vector<double **> matrices;
+    vector<double> resetTimers;
+    vector<int> counts;
+    vector<int> bufferedCounts;
+
+    /// For each of the count trends, length(i) rows of rowWidth(i) values whose first
+    /// sentinelCount(i) hold the -10000 sentinel, and the reset timers and sample counts,
+    /// zeroed; points matrixPointer, resetTimerPointer, countPointer and bufferedCountPointer
+    /// at them.
+    template <typename Length, typename RowWidth, typename SentinelCount>
+    void allocate(int count, Length length, RowWidth rowWidth, SentinelCount sentinelCount, double ***&matrixPointer,
+                  double *&resetTimerPointer, int *&countPointer, int *&bufferedCountPointer) {
+        values.resize(count);
+        rows.resize(count);
+        matrices.resize(count);
+        for (int i = 0; i < count; i++) {
+            const int n = length(i);
+            values[i].assign(n, vector<double>(rowWidth(i)));
+            rows[i].resize(n);
+            for (int j = 0; j < n; j++) {
+                rows[i][j] = values[i][j].data();
+                for (int k = 0; k < sentinelCount(i); k++)
+                    values[i][j][k] = -10000.;
+            }
+            matrices[i] = rows[i].data();
+        }
+        resetTimers.assign(count, 0.);
+        counts.assign(count, 0);
+        bufferedCounts.assign(count, 0);
+        matrixPointer = matrices.data();
+        resetTimerPointer = resetTimers.data();
+        countPointer = counts.data();
+        bufferedCountPointer = bufferedCounts.data();
+    }
+    /// Destroys the rows and the counts and gives their memory back.
+    void release() {
+        vector<vector<vector<double>>>().swap(values);
+        vector<vector<double *>>().swap(rows);
+        vector<double **>().swap(matrices);
+        vector<double>().swap(resetTimers);
+        vector<int>().swap(counts);
+        vector<int>().swap(bufferedCounts);
+    }
+};
+
 /// The trend and profile output a system writes: the wall-temperature trend matrices, the
 /// sample counters and reset times of the trend families, the profile and single-cell output
 /// indices, and the cells whose radial temperature profiles are written.
@@ -469,6 +519,24 @@ struct TrendRecorder {
      * @brief For each single-cell output, the index of its next output time.
      */
     vector<int> kontaTempoCelUni;
+    /**
+     * @brief The production-line trends, read through MatTrendP, resettrend, ntrend and ntrendB.
+     */
+    TrendSet productionTrendSet;
+    /**
+     * @brief The gas-line trends, read through MatTrendG, resettrendg, ntrendg and ntrendgB.
+     */
+    TrendSet gasTrendSet;
+    /**
+     * @brief The production-line wall-temperature trends, read through MatTrendTransP,
+     * resettrendtrans, ntrendtrans and ntrendtransB.
+     */
+    TrendSet productionWallTrendSet;
+    /**
+     * @brief The gas-line wall-temperature trends, read through MatTrendTransG,
+     * resettrendtransg, ntrendtransg and ntrendtransgB.
+     */
+    TrendSet gasWallTrendSet;
 };
 
 }  // namespace sisprod
@@ -822,25 +890,13 @@ class SProd {
   private:
 
 
-    /**
-     * @brief Maximum number of samples stored for each gas-line trend.
-     */
-    int *TrendLengthG = nullptr;
   public:
     /**
      * @brief Buffered gas-line trend data.
      */
     double ***MatTrendG = nullptr;
   private:
-    /**
-     * @brief Maximum number of wall-temperature samples stored for each gas-line trend.
-     */
-    int *TrendLengthTransG = nullptr;
 
-    /**
-     * @brief Maximum number of samples stored for each production-line trend.
-     */
-    int *TrendLengthP = nullptr;
   public:
     /**
      * @brief Buffered production-line trend data.
@@ -853,10 +909,6 @@ class SProd {
      */
     int *ntrend = nullptr;
   private:
-    /**
-     * @brief Maximum number of wall-temperature samples stored for each production-line trend.
-     */
-    int *TrendLengthTransP = nullptr;
     /**
      * @brief The trend and profile output this system writes.
      */
