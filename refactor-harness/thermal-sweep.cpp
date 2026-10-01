@@ -396,9 +396,9 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
                mode == PermMode::annulusLater) {
         resetAnnulus(system, scenario);
         system.arq.lingas = 1;
-        system.ColunaAnulaIni = 4;
-        system.ColunaAnulaFim = 0;
-        system.AnulaColunaIni = 4;
+        system.gasLift.ColunaAnulaIni = 4;
+        system.gasLift.ColunaAnulaFim = 0;
+        system.gasLift.AnulaColunaIni = 4;
         if (mode == PermMode::annulusLater) {
             system.iterperm = 1;
             cells[cellIndex - 1].dTdLCor = 1.e5;
@@ -414,8 +414,8 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
     configurePermCase(system, cells, scenario, cellIndex, mode);
     system.RenovaTempPerm(cellIndex, RK);
     const CelG *forwardGas = system.arq.lingas == 1
-                                 ? &system.celulaG[system.ColunaAnulaIni +
-                                                  system.AnulaColunaIni -
+                                 ? &system.celulaG[system.gasLift.ColunaAnulaIni +
+                                                  system.gasLift.AnulaColunaIni -
                                                   (cellIndex - 1)]
                                  : nullptr;
     printPermState("RenovaTempPerm", caseName, cells[cellIndex],
@@ -425,8 +425,8 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
     configurePermCase(system, cells, scenario, cellIndex, mode);
     system.RenovaTempPermRev(cellIndex, RK);
     const CelG *reverseGas = system.arq.lingas == 1
-                                 ? &system.celulaG[system.ColunaAnulaIni +
-                                                  system.AnulaColunaIni -
+                                 ? &system.celulaG[system.gasLift.ColunaAnulaIni +
+                                                  system.gasLift.AnulaColunaIni -
                                                   (cellIndex + 1)]
                                  : nullptr;
     printPermState("RenovaTempPermRev", caseName, cells[cellIndex],
@@ -435,19 +435,19 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
 
 void initializeLatentHeatTable(SProd &system) {
     system.arq.tabent.npont = 3;
-    system.HLat = new double *[4];
+    system.tables.HLat = new double *[4];
     for (int row = 0; row < 4; ++row)
-        system.HLat[row] = new double[4];
+        system.tables.HLat[row] = new double[4];
 
     const double pressures[4] = {0., 20., 80., 140.};
     const double temperatures[4] = {0., 10., 70., 130.};
     for (int row = 0; row < 4; ++row) {
-        system.HLat[row][0] = pressures[row];
-        system.HLat[0][row] = temperatures[row];
+        system.tables.HLat[row][0] = pressures[row];
+        system.tables.HLat[0][row] = temperatures[row];
     }
     for (int row = 1; row < 4; ++row)
         for (int column = 1; column < 4; ++column)
-            system.HLat[row][column] = 100. * row + 7. * column;
+            system.tables.HLat[row][column] = 100. * row + 7. * column;
 }
 
 double **allocateTable(int size) {
