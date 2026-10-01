@@ -183,28 +183,12 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     celInterIni = celInter;
     dtInterIni = dtInter;
     velInterIni = velInter;
-    RSLivia = 0;
-    lerRS = 0;
-    noextremo = 1;
-    noinicial = 1;
-    derivaAnel = -1;
     redeTemporario = temporario;
-
     betaRevini = 0;
-    titRevini = 1.;
-    dtCFLTotal = 0.;
-    dtSimTotal = 0.;
-
     bloq = vbloq;
-
     vg1dSP = Vvg1dSP;
-
     if (TD >= 0)
         arq.tabelaDinamica = TD;
-
-    redeParalelaCCsecundario = -1;
-    redeParalelaP = -1;
-    redeParalelaS = -1;
     montasistema(compfonte, posicfonte, nfontes);
 }
 
@@ -213,102 +197,6 @@ SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 +
                  matglobP(2 * 1, 3, 2), termolivreP(2 * 1) {
     resolveDriftSelectors();
     resetRunState();
-    tfinal = 0;
-    dtini = 0;
-    contaLog = 0;
-
-    menorDx = 0.;
-    iterperm = 0.;
-    kSP = 0.;
-    KontaImprime = 0.;
-    indevento = 0.;
-    modoPerm = 0.;
-    ktMedMov = 0.;
-    pTotal = 0.;
-    jTotal = 0.;
-
-    alfTotal = 0.;
-    dt = 0.;
-    nabreM1 = 0;
-    nfechaM1 = 0;
-    HLat = 0;
-
-    celInterIni = 0.;
-    dtInterIni = 0.;
-    velInterIni = 0.;
-    injPoc = 0;
-
-    indTramo = -1;
-    ncel = 0;
-    reinicia = 0;
-    presfim = 0;
-    presfimini = 0;
-
-    pGSup = 0;
-    pGSupIni = 0.;
-    temperatura = 0;
-
-    masSup = 0;
-    tempSup = 0;
-
-    ncelGas = 0;
-
-    mult = 0;
-    presMedMov = 0;
-    jMedMov = 0;
-    tMedMov = 0;
-
-    aberto = 0;
-    abertoini = 0;
-    tempoaberto = 0;
-    tempoabertoini = 0;
-    EstadoMaster1 = 0;
-    contaMaster1 = 0;
-    masChkSup = 0;
-    masChkSupini = 0;
-    TransMassModel = 0;
-    indpigP = 0;
-    indpigPini = indpigP;
-    npig = 0;
-
-    AnulaColunaIni = 0;
-    AnulaColunaFim = 0;
-    ColunaAnulaIni = 0;
-    ColunaAnulaFim = 0;
-    verificaAcop = 0;
-    verificaAcopRedeP = 0;
-    verificaAcopRedeS = 0;
-    SecPrimIniRedeP = 0;
-    SecPrimFimRedeP = 0;
-    PrimSecIniRedeP = 0;
-    PrimSecFimRedeP = 0;
-    kontaTempoProf = 0;
-    //kontaTempoCelUni = 0;
-    kontaTempoProfG = 0;
-    kontaTempoTransProf = 0;
-    kontaTempoTransProfG = 0;
-    RSLivia = 0;
-    lerRS = 0;
-
-    noextremo = 1;
-    noinicial = 1;
-    derivaAnel = -1;
-
-    titRev = 1.;
-    titRevini = 1.;
-    betaRev = 0.;
-    betaRevini = 1.;
-    redeTemporario = 0;
-    dtCFLTotal = 0.;
-    dtSimTotal = 0.;
-
-    bloq = 0;
-
-    vg1dSP = 0;
-
-    redeParalelaCCsecundario = -1;
-    redeParalelaP = -1;
-    redeParalelaS = -1;
 }
 
 namespace {
