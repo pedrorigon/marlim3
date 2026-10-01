@@ -178,8 +178,10 @@ struct PropertyTables {
     int ntabDin = 0;
 };
 
-/// The gas-lift line's pressure-velocity system, its valves and the cells they join, the
-/// column-annulus thermal coupling, and the unloading controller's samples and settings.
+/// The gas-lift line: its cells, the injection choke, the valves and the cells they join, its
+/// pressure-velocity system, its surface and initial conditions, the column-annulus thermal
+/// coupling, the completion-fluid interface, and the unloading controller's samples and
+/// settings.
 struct GasLiftLine {
     /**
      * @brief Global pressure-velocity coupling matrix for the gas line.
@@ -245,6 +247,60 @@ struct GasLiftLine {
      * @brief Time-step samples associated with the unloading-flow average.
      */
     vector<double> dtDesc;
+    /**
+     * @brief Separator pressure or pressure at the inlet of the downstream network section.
+     */
+    double pGSup = 0;
+    /**
+     * @brief Number of control volumes in the gas service line.
+     */
+    int ncelGas = 0;
+    /**
+     * @brief Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity
+     * analysis case sets it; the steady summary and the restart file record it either way.
+     */
+    double presiniG = 0.;
+    /**
+     * @brief Gas-injection temperature in the service line. Zero until an injection condition
+     * or a sensitivity analysis case sets it; the restart file records it either way.
+     */
+    double tempiniG = 0.;
+    /**
+     * @brief Gas-injection choke model.
+     */
+    ChokeGas chokeInj;
+    /**
+     * @brief Gas service-line control volumes, held by gasCells.
+     */
+    CelG *celulaG = nullptr;
+    /**
+     * @brief The gas service-line control volumes celulaG points at.
+     */
+    vector<CelG> gasCells;
+    /**
+     * @brief Current service-line cell containing the completion-fluid/gas interface.
+     */
+    int celInter = 1e7;
+    /**
+     * @brief Maximum time step that keeps the unloading interface within one gas-line cell.
+     */
+    double dtInter = 0.;
+    /**
+     * @brief Current completion-fluid/gas interface velocity.
+     */
+    double velInter = 0.;
+    /**
+     * @brief Previous-time-level interface cell.
+     */
+    int celInterIni = 0.;
+    /**
+     * @brief Previous-time-level interface-limited time step.
+     */
+    double dtInterIni = 0.;
+    /**
+     * @brief Previous-time-level interface velocity.
+     */
+    double velInterIni = 0.;
 };
 
 /// The state of a transient run: the time-step and change-rate histories and the
@@ -704,10 +760,6 @@ class SProd {
      */
     double betaRevini = 1.;
     /**
-     * @brief Separator pressure or pressure at the inlet of the downstream network section.
-     */
-    double pGSup = 0;
-    /**
      * @brief Previous-time-level value of pGSup.
      */
     double pGSupIni = 0.;
@@ -730,20 +782,6 @@ class SProd {
      * @brief Reserved temperature state; currently unused.
      */
     double tempSup = 0;
-    /**
-     * @brief Number of control volumes in the gas service line.
-     */
-    int ncelGas = 0;
-    /**
-     * @brief Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity
-     * analysis case sets it; the steady summary and the restart file record it either way.
-     */
-    double presiniG = 0.;
-    /**
-     * @brief Gas-injection temperature in the service line. Zero until an injection condition
-     * or a sensitivity analysis case sets it; the restart file records it either way.
-     */
-    double tempiniG = 0.;
     /**
      * @brief Kept for the restart file, which records it; nothing in the
      * simulation reads it.
@@ -888,11 +926,13 @@ class SProd {
      */
     FullMtx<double> flut;
   private:
+  public:
     /**
-     * @brief The gas-lift line's pressure-velocity system, valves, column-annulus coupling
-     * and unloading controller.
+     * @brief The gas-lift line: its cells, chokes and valves, its pressure-velocity system, and
+     * the unloading of its completion fluid.
      */
     sisprod::GasLiftLine gasLift;
+  private:
     /**
      * @brief The state of a transient run.
      */
@@ -996,16 +1036,8 @@ class SProd {
      * @brief Surface-choke model.
      */
     choke chokeSup;
-    /**
-     * @brief Gas-injection choke model.
-     */
-    ChokeGas chokeInj;
   private:
   public:
-    /**
-     * @brief Gas service-line control volumes, held by gasCells.
-     */
-    CelG *celulaG = nullptr;
     /**
      * @brief Multiphase production-line control volumes, held by productionCells.
      */
@@ -1013,39 +1045,11 @@ class SProd {
 
   private:
     /**
-     * @brief The gas service-line control volumes celulaG points at.
-     */
-    vector<CelG> gasCells;
-    /**
      * @brief The production-line control volumes celula points at.
      */
     vector<Cel> productionCells;
   public:
 
-    /**
-     * @brief Current service-line cell containing the completion-fluid/gas interface.
-     */
-    int celInter = 1e7;
-    /**
-     * @brief Maximum time step that keeps the unloading interface within one gas-line cell.
-     */
-    double dtInter = 0.;
-    /**
-     * @brief Current completion-fluid/gas interface velocity.
-     */
-    double velInter = 0.;
-    /**
-     * @brief Previous-time-level interface cell.
-     */
-    int celInterIni = 0.;
-    /**
-     * @brief Previous-time-level interface-limited time step.
-     */
-    double dtInterIni = 0.;
-    /**
-     * @brief Previous-time-level interface velocity.
-     */
-    double velInterIni = 0.;
 
   private:
   public:

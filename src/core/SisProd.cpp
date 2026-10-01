@@ -54,11 +54,11 @@ void SProd::resetRunState() {
     CalcLat = 0;
     transient.trackRGO = 0;
     transient.trackDeng = 0;
-    celulaG = 0;
+    gasLift.celulaG = 0;
     celula = 0;
-    celInter = 1e7;
-    dtInter = 0.;
-    velInter = 0.;
+    gasLift.celInter = 1e7;
+    gasLift.dtInter = 0.;
+    gasLift.velInter = 0.;
 
     trends.MatTrendG = 0;
     trends.resettrendg = 0;
@@ -157,9 +157,9 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
                                                            transient{.matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2)}, termolivreP(2 * arq.ncelp) {
     resolveDriftSelectors();
     resetRunState();
-    celInterIni = celInter;
-    dtInterIni = dtInter;
-    velInterIni = velInter;
+    gasLift.celInterIni = gasLift.celInter;
+    gasLift.dtInterIni = gasLift.dtInter;
+    gasLift.velInterIni = gasLift.velInter;
     redeTemporario = temporario;
     betaRevini = 0;
     bloq = vbloq;
@@ -189,7 +189,7 @@ void releaseVector(vector<T> &v) {
 /// Gives back the memory of every array this object owns, so that a rebuild starts
 /// with it free.
 void SProd::releaseOwnedStorage() {
-    releaseVector(gasCells);
+    releaseVector(gasLift.gasCells);
     releaseVector(gasLift.chokeVGL);
     releaseVector(gasLift.posicVGLP);
     releaseVector(gasLift.posicVGLG);
@@ -230,9 +230,9 @@ SProd &SProd::operator=(const SProd &sp) {
     gasLift.termolivreG = sp.gasLift.termolivreG;
     vg1dSP = sp.vg1dSP;
     resetRunState();
-    celInterIni = celInter;
-    dtInterIni = dtInter;
-    velInterIni = velInter;
+    gasLift.celInterIni = gasLift.celInter;
+    gasLift.dtInterIni = gasLift.dtInter;
+    gasLift.velInterIni = gasLift.velInter;
 
     noextremo = sp.noextremo;
     noinicial = sp.noinicial;
@@ -284,9 +284,9 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     gasLift.termolivreG = Vcr<double>(3 * arq.ncelg);
     vg1dSP = arq.vg1dSP;
     resetRunState();
-    celInterIni = celInter;
-    dtInterIni = dtInter;
-    velInterIni = velInter;
+    gasLift.celInterIni = gasLift.celInter;
+    gasLift.dtInterIni = gasLift.dtInter;
+    gasLift.velInterIni = gasLift.velInter;
 
     noextremo = carried.noextremo;
     noinicial = carried.noinicial;

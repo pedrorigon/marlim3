@@ -229,7 +229,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.ncel = kCells - 2;
     system.semTermo = 0;
     system.presfim = scenario.pressure - 5.;
-    system.pGSup = scenario.pressure;
+    system.gasLift.pGSup = scenario.pressure;
     system.tempSup = -901.;
     system.arq.master1.razareaativ = 0.;
     system.arq.lingas = 0;
@@ -262,7 +262,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
 
 void resetAnnulus(SProd &system, const Scenario &scenario) {
     for (int index = 0; index < kCells + 3; ++index) {
-        CelG &cell = system.celulaG[index];
+        CelG &cell = system.gasLift.celulaG[index];
         const double scale = 1. + 0.03 * index;
         cell.flui = fallbackFluid(system.vg1dSP);
         cell.temp = scenario.temperature + 8. + 0.1 * index;
@@ -415,7 +415,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
     configurePermCase(system, cells, scenario, cellIndex, mode);
     system.RenovaTempPerm(cellIndex, RK);
     const CelG *forwardGas = system.arq.lingas == 1
-                                 ? &system.celulaG[system.gasLift.ColunaAnulaIni +
+                                 ? &system.gasLift.celulaG[system.gasLift.ColunaAnulaIni +
                                                   system.gasLift.AnulaColunaIni -
                                                   (cellIndex - 1)]
                                  : nullptr;
@@ -426,7 +426,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
     configurePermCase(system, cells, scenario, cellIndex, mode);
     system.RenovaTempPermRev(cellIndex, RK);
     const CelG *reverseGas = system.arq.lingas == 1
-                                 ? &system.celulaG[system.gasLift.ColunaAnulaIni +
+                                 ? &system.gasLift.celulaG[system.gasLift.ColunaAnulaIni +
                                                   system.gasLift.AnulaColunaIni -
                                                   (cellIndex + 1)]
                                  : nullptr;
@@ -507,7 +507,7 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
     resetCells(system, cells, scenario);
     resetAnnulus(system, scenario);
     for (int index = gasIndex - 1; index <= gasIndex; ++index) {
-        CelG &cell = system.celulaG[index];
+        CelG &cell = system.gasLift.celulaG[index];
         const double scale = 1. + 0.05 * index;
         cell.duto.a = 0.12 * scale;
         cell.duto.area = M_PI * cell.duto.a * cell.duto.a / 4.;
@@ -516,18 +516,18 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
         cell.pres = scenario.pressure * scale;
         cell.VGasL = 0.55 * scale;
     }
-    system.celulaG[gasIndex].razInter = currentRatio;
-    system.celulaG[gasIndex - 1].razInter = previousRatio;
+    system.gasLift.celulaG[gasIndex].razInter = currentRatio;
+    system.gasLift.celulaG[gasIndex - 1].razInter = previousRatio;
 
     system.tempDescarga(gasIndex);
 
-    const CelG &source = system.celulaG[gasIndex - 1];
+    const CelG &source = system.gasLift.celulaG[gasIndex - 1];
     const Cel &production = cells[gasIndex - 1];
     printf("%-20s %-15s Tint=%a Vint=%a k=%a cp=%a rho=%a visc=%a prevR=%a nextL=%a\n",
            "tempDescarga", caseName, source.calor.Tint, source.calor.Vint,
            source.calor.kint, source.calor.cpint, production.calor.rhoint,
            production.calor.viscint, source.tempR,
-           system.celulaG[gasIndex].tempL);
+           system.gasLift.celulaG[gasIndex].tempL);
 }
 
 void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
@@ -642,7 +642,7 @@ int main() {
     Cel *storage = new Cel[kCells + 1];
     Cel *cells = storage + 1;
     system.celula = cells;
-    system.celulaG = new CelG[kCells + 3];
+    system.gasLift.celulaG = new CelG[kCells + 3];
     initializeLatentHeatTable(system);
 
     for (const Scenario &scenario : kScenarios)

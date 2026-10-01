@@ -268,7 +268,7 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     iterperm = 0;
     masChkSup = 0;
     dt = arq.dtmax;
-    dtInter = arq.dtmax;
+    gasLift.dtInter = arq.dtmax;
     tfinal = arq.tfinal;
     TransMassModel = 0;
     indpigP = 0;
@@ -457,10 +457,10 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
     }
     if (arq.nvalv > 0)
         arq.geraValv(celula);
-    arq.gerapresfim(presfim, pGSup);
-    pGSupIni = pGSup;
+    arq.gerapresfim(presfim, gasLift.pGSup);
+    pGSupIni = gasLift.pGSup;
     chokeSup = choke(1., 1.);
-    chokeInj = ChokeGas();
+    gasLift.chokeInj = ChokeGas();
     arq.gerachokesup(chokeSup);
     transient.npig = arq.npig;
     if (transient.npig > 0) {
@@ -476,16 +476,16 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
 /// Without a gas line, only zeroes the gas cell count.
 void SProd::buildGasLiftLine() {
     if (arq.lingas == 0)
-        ncelGas = 0;
+        gasLift.ncelGas = 0;
     else if (arq.lingas > 0) {
-        ncelGas = arq.ncelg;
-        ncelGas--;
-        celInter = arq.celdescarga;
-        gasCells = vector<CelG>(ncelGas + 1);
-        celulaG = gasCells.data();
-        arq.geracelg(celulaG);
-        arq.geraMaster2(celulaG);
-        arq.gerachokeinj(chokeInj);
+        gasLift.ncelGas = arq.ncelg;
+        gasLift.ncelGas--;
+        gasLift.celInter = arq.celdescarga;
+        gasLift.gasCells = vector<CelG>(gasLift.ncelGas + 1);
+        gasLift.celulaG = gasLift.gasCells.data();
+        arq.geracelg(gasLift.celulaG);
+        arq.geraMaster2(gasLift.celulaG);
+        arq.gerachokeinj(gasLift.chokeInj);
         if (arq.nvalvgas > 0) {
             gasLift.chokeVGL = vector<ChokeGas>(arq.nvalvgas);
             gasLift.posicVGLP = vector<int>(arq.nvalvgas);
@@ -493,12 +493,12 @@ void SProd::buildGasLiftLine() {
         }
         for (int i = 0; i < arq.nvalvgas; i++) {
             double diaG = arq.valvgl[i].diagarg;
-            double presEstag = celulaG[arq.valvgl[i].posicG].pres;
-            double tempEstag = celulaG[arq.valvgl[i].posicG].temp;
+            double presEstag = gasLift.celulaG[arq.valvgl[i].posicG].pres;
+            double tempEstag = gasLift.celulaG[arq.valvgl[i].posicG].temp;
             double presGarg = celula[arq.valvgl[i].posicP].pres;
             gasLift.posicVGLP[i] = arq.valvgl[i].posicP;
             gasLift.posicVGLG[i] = arq.valvgl[i].posicG;
-            celulaG[gasLift.posicVGLG[i]].vgl = 1;
+            gasLift.celulaG[gasLift.posicVGLG[i]].vgl = 1;
             if (arq.valvgl[i].tipo == 2) {
                 arq.valvgl[i].frec = 0.;
                 arq.valvgl[i].cd = 1.;
@@ -509,20 +509,20 @@ void SProd::buildGasLiftLine() {
                                    tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
                                    throatArea / arq.valvgl[i].razarea,
                                    arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
-            celulaG[gasLift.posicVGLG[i]].pEstag = gasLift.chokeVGL[i].presEstag;
-            celulaG[gasLift.posicVGLG[i]].tEstag = gasLift.chokeVGL[i].tempEstag;
-            celulaG[gasLift.posicVGLG[i]].pGarg = gasLift.chokeVGL[i].presGarg;
-            celulaG[gasLift.posicVGLG[i]].tGarg = gasLift.chokeVGL[i].tempGarg;
-            celulaG[gasLift.posicVGLG[i]].qGarg = gasLift.chokeVGL[i].qGarg;
-            celulaG[gasLift.posicVGLG[i]].areaGarg = gasLift.chokeVGL[i].areagarg;
+            gasLift.celulaG[gasLift.posicVGLG[i]].pEstag = gasLift.chokeVGL[i].presEstag;
+            gasLift.celulaG[gasLift.posicVGLG[i]].tEstag = gasLift.chokeVGL[i].tempEstag;
+            gasLift.celulaG[gasLift.posicVGLG[i]].pGarg = gasLift.chokeVGL[i].presGarg;
+            gasLift.celulaG[gasLift.posicVGLG[i]].tGarg = gasLift.chokeVGL[i].tempGarg;
+            gasLift.celulaG[gasLift.posicVGLG[i]].qGarg = gasLift.chokeVGL[i].qGarg;
+            gasLift.celulaG[gasLift.posicVGLG[i]].areaGarg = gasLift.chokeVGL[i].areagarg;
         }
-        for (int i = 0; i <= ncelGas; i++) {
-            celulaG[i].celInter = &celInter;
-            celulaG[i].razInter = 1.;
-            celulaG[i].razInterIni = 1.;
-            if (i >= celInter) {
-                celulaG[i].razInter = 0.;
-                celulaG[i].razInterIni = 0.;
+        for (int i = 0; i <= gasLift.ncelGas; i++) {
+            gasLift.celulaG[i].celInter = &gasLift.celInter;
+            gasLift.celulaG[i].razInter = 1.;
+            gasLift.celulaG[i].razInterIni = 1.;
+            if (i >= gasLift.celInter) {
+                gasLift.celulaG[i].razInter = 0.;
+                gasLift.celulaG[i].razInterIni = 0.;
             }
         }
     }
@@ -578,9 +578,9 @@ void SProd::validateSetupAndApplyInitialState() {
     (*vg1dSP).lixo5 = 0.;
     (*vg1dSP).contador = 0;
     if (arq.pocinjec == 0) {
-        arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, chokeInj, celula, celulaG, pGSup, temperatura, presiniG,
-                     tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
-        pGSupIni = pGSup;
+        arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.chokeInj, celula, gasLift.celulaG, gasLift.pGSup, temperatura, gasLift.presiniG,
+                     gasLift.tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
+        pGSupIni = gasLift.pGSup;
         // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//change 7
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
             aberto = 1;
@@ -802,7 +802,7 @@ void SProd::allocateEventProfileAndTrendArrays() {
 
     int ntempGas = 0;
     if (arq.lingas > 0)
-        ntempGas = ncelGas;
+        ntempGas = gasLift.ncelGas;
 
     if (arq.nperfistransp > 0) {
         trends.ncelperftransp = vector<int>(arq.nperfistransp);
@@ -815,7 +815,7 @@ void SProd::allocateEventProfileAndTrendArrays() {
         trends.ncelperftransg = vector<int>(arq.nperfistransg);
         for (int i = 0; i < arq.nperfistransg; i++) {
             int posiccel = arq.proftransg.posic[i];
-            trends.ncelperftransg[i] = celulaG[posiccel].calor.nglobal;
+            trends.ncelperftransg[i] = gasLift.celulaG[posiccel].calor.nglobal;
         }
     }
 
@@ -883,13 +883,13 @@ void SProd::resetCouplingAndOutputState() {
     		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfisg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileG(gasLift.celulaG, flutG, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransp > 0) {
     		arq.imprimeProfileTrans(celula, trends.ncelperftransp.data(), (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileTransG(celulaG, trends.ncelperftransg.data(), (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTransG(gasLift.celulaG, trends.ncelperftransg.data(), (*vg1dSP).lixo5, indTramo);
     	}
     }
     trends.kontaTempoProf = 0;

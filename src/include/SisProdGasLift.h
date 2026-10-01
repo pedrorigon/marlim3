@@ -42,7 +42,7 @@ struct GasLiftTemperatureUpdater {
 /// Scalars are held by reference, not by value: a copy would read every one at
 /// construction, before the branch that decides whether it is read at all.
 struct GasLiftState {
-    /// Gas-line cells -- SProd::celulaG. Written as well as read.
+    /// Gas-line cells -- SProd::gasLift.celulaG. Written as well as read.
     CelG *gasCells;
     /// Production cells -- SProd::celula. The gas line reads the tubing it
     /// feeds, and writes back at the connection points.
@@ -54,14 +54,14 @@ struct GasLiftState {
     /// Shared 1D globals -- SProd::vg1dSP.
     varGlob1D *globals;
 
-    /// Index of the last gas-line cell -- SProd::ncelGas.
+    /// Index of the last gas-line cell -- SProd::gasLift.ncelGas.
     const int &gasCellCount;
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
 
     /// Gas-lift valve chokes -- SProd::gasLift.chokeVGL.
     ChokeGas *gasLiftChokes;
-    /// Injection choke -- SProd::chokeInj.
+    /// Injection choke -- SProd::gasLift.chokeInj.
     ChokeGas &injectionChoke;
     /// Gas-line cell index of each gas-lift valve -- SProd::gasLift.posicVGLG.
     const int *gasValveCellIndices;
@@ -88,17 +88,17 @@ struct GasLiftState {
     /// Thermal source switch -- SProd::semTermo.
     const int &thermalSourceDisabled;
 
-    /// Previous-step gas pressure and temperature -- SProd::presiniG and
-    /// SProd::tempiniG. The pressure is written.
+    /// Previous-step gas pressure and temperature -- SProd::gasLift.presiniG and
+    /// SProd::gasLift.tempiniG. The pressure is written.
     double &initialGasPressure;
     const double &initialGasTemperature;
-    /// Surface gas pressure -- SProd::pGSup. Written.
+    /// Surface gas pressure -- SProd::gasLift.pGSup. Written.
     double &gasSurfacePressure;
 
     /// Time step -- SProd::dt. Written: the gas line can shorten it.
     double &timeStep;
 
-    /// Unloading interface state -- SProd::celInter, velInter, dtInter, and
+    /// Unloading interface state -- SProd::gasLift.celInter, velInter, dtInter, and
     /// their initial counterparts. All written.
     int &interfaceCell;
     double &interfaceVelocity;

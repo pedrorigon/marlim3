@@ -75,7 +75,7 @@ struct SteadyStateUpdaters {
 struct SteadyStateState {
     /// Production cells -- SProd::celula. Written.
     Cel *cells;
-    /// Gas-line cells -- SProd::celulaG. Written.
+    /// Gas-line cells -- SProd::gasLift.celulaG. Written.
     CelG *gasCells;
     /// Input deck -- SProd::arq. NOT const: the march writes back into it.
     Ler &input;
@@ -84,10 +84,10 @@ struct SteadyStateState {
 
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
-    /// Index of the last gas-line cell -- SProd::ncelGas.
+    /// Index of the last gas-line cell -- SProd::gasLift.ncelGas.
     const int &gasCellCount;
 
-    /// Injection choke -- SProd::chokeInj. Written.
+    /// Injection choke -- SProd::gasLift.chokeInj. Written.
     ChokeGas &injectionChoke;
     /// Surface choke -- SProd::chokeSup. Not const: marchProductionSteadySecondary
     /// calls vazmassSachd and vazmaxSachd on it, and neither is const-qualified.
@@ -117,9 +117,9 @@ struct SteadyStateState {
     /// Slow-heat-transfer switch -- SProd::trocaTermicaLenta. Written.
     double &slowHeatTransferThreshold;
 
-    /// Surface gas pressure -- SProd::pGSup. Written.
+    /// Surface gas pressure -- SProd::gasLift.pGSup. Written.
     double &gasSurfacePressure;
-    /// Previous-step gas pressure and temperature -- SProd::presiniG and
+    /// Previous-step gas pressure and temperature -- SProd::gasLift.presiniG and
     /// tempiniG. Read only here; the gas line owns them.
     const double &initialGasPressure;
     const double &initialGasTemperature;
