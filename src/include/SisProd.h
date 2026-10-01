@@ -217,6 +217,152 @@ struct GasLiftLine {
     vector<double> dtDesc;
 };
 
+/// The state of a transient run: the time-step and change-rate histories and the
+/// restrictions on the step, the Master1 valve schedule, the production-line
+/// pressure-velocity matrix, the event and log counters, the transport switches, the pigs
+/// and the cells of the two-dimensional Poisson model.
+struct TransientRun {
+    /**
+     * @brief Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil
+     * ratio, and light/heavy mass fractions.
+     */
+    int trackRGO = 0;
+    /**
+     * @brief Enables transport equations for gas density and the gas-phase CO2 molar fraction.
+     */
+    int trackDeng = 0;
+    /**
+     * @brief Current Master1 valve state.
+     */
+    int EstadoMaster1 = 0;
+    /**
+     * @brief Counter used while changing the Master1 state.
+     */
+    int contaMaster1 = 0;
+    /**
+     * @brief Number of pigs scheduled for launch.
+     */
+    int npig = 0;
+    /**
+     * @brief Cell indices where pigs are received.
+     */
+    int *receb = nullptr;
+    /**
+     * @brief Global pressure-velocity coupling matrix for the multiphase production line.
+     */
+    BandMtx<double> matglobP;
+    /**
+     * @brief Number of scheduled Master1 opening events.
+     */
+    int nabreM1 = 0;
+    /**
+     * @brief Number of scheduled Master1 closing events.
+     */
+    int nfechaM1 = 0;
+    /**
+     * @brief Times at which Master1 closes.
+     */
+    double *fechaM1 = nullptr;
+    /**
+     * @brief Times at which Master1 opens.
+     */
+    double *abreM1 = nullptr;
+    /**
+     * @brief Number of events written to the event log.
+     */
+    int contaLog = 0;
+    /**
+     * @brief Smallest production-line control-volume length.
+     */
+    double menorDx = 0.;
+    /**
+     * @brief Simulation time-step counter.
+     */
+    int kSP = 0.;
+    /**
+     * @brief Controls event-log output frequency.
+     */
+    int KontaImprime = 0.;
+    /**
+     * @brief Index of the next scheduled simulation event.
+     */
+    int indevento = 0.;
+    /**
+     * @brief History of recently accepted time steps.
+     */
+    vector<double> dtSim;
+    /**
+     * @brief History of time steps proposed by the CFL criterion.
+     */
+    vector<double> dtCFL;
+    /**
+     * @brief Average time step proposed by the CFL criterion.
+     */
+    double dtCFLMed = 1.;
+    /**
+     * @brief Average time step actually used by the simulation.
+     */
+    double dtSimMed = 1.;
+    /**
+     * @brief Indicates that time-step growth must remain restricted.
+     */
+    int restriDt = 0;
+    /**
+     * @brief Number of remaining steps under the current time-step restriction.
+     */
+    int kontarestriDt = 0;
+    /**
+     * @brief Accumulated CFL time steps used to compute dtCFLMed.
+     */
+    double dtCFLTotal = 0.;
+    /**
+     * @brief Accumulated accepted time steps used to compute dtSimMed.
+     */
+    double dtSimTotal = 0.;
+    /**
+     * @brief Counts alternating liquid-flow oscillations near an active surface choke.
+     */
+    int kontaGolfada = 1000;
+    /**
+     * @brief Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It
+     * mitigates a pressure blind spot when the upstream side contains only liquid and increases if the
+     * problem persists.
+     */
+    double momentoDesesp = 0;
+    /**
+     * @brief Recent maximum pressure-change rates.
+     */
+    vector<double> taxaDpMax;
+    /**
+     * @brief Average maximum pressure-change rate.
+     */
+    double DpMaxMed = 1.;
+    /**
+     * @brief Recent maximum temperature-change rates.
+     */
+    vector<double> taxaDTMax;
+    /**
+     * @brief Average maximum temperature-change rate.
+     */
+    double DTMaxMed = 1.;
+    /**
+     * @brief Counter controlling compositional-property refreshes.
+     */
+    int kontaRenovaComp = 0;
+    /**
+     * @brief Production cells handled by the two-dimensional Poisson model.
+     */
+    vector<int> indCelPoisson2D;
+    /**
+     * @brief Number of cells handled by the two-dimensional Poisson model.
+     */
+    int nCelulaPoisson2D = 0;
+    /**
+     * @brief Signals that the time step must be adjusted.
+     */
+    int alteraTempo = 0;
+};
+
 }  // namespace sisprod
 
 /**
@@ -253,15 +399,6 @@ class SProd {
      */
     int CalcLat = 0;
   private:
-    /**
-     * @brief Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil
-     * ratio, and light/heavy mass fractions.
-     */
-    int trackRGO = 0;
-    /**
-     * @brief Enables transport equations for gas density and the gas-phase CO2 molar fraction.
-     */
-    int trackDeng = 0;
   public:
 
     /**
@@ -485,14 +622,6 @@ class SProd {
      */
     int tempoabertoini = 0;
   private:
-    /**
-     * @brief Current Master1 valve state.
-     */
-    int EstadoMaster1 = 0;
-    /**
-     * @brief Counter used while changing the Master1 state.
-     */
-    int contaMaster1 = 0;
   public:
     /**
      * @brief Indicates whether the surface choke is active.
@@ -524,14 +653,6 @@ class SProd {
      */
     int indpigPini = 0;
   private:
-    /**
-     * @brief Number of pigs scheduled for launch.
-     */
-    int npig = 0;
-    /**
-     * @brief Cell indices where pigs are received.
-     */
-    int *receb = nullptr;
     /**
      * @brief Number of production fluids.
      */
@@ -570,9 +691,9 @@ class SProd {
      */
     sisprod::GasLiftLine gasLift;
     /**
-     * @brief Global pressure-velocity coupling matrix for the multiphase production line.
+     * @brief The state of a transient run.
      */
-    BandMtx<double> matglobP;
+    sisprod::TransientRun transient;
   public:
     /**
      * @brief Right-hand side and solution vector for the production-line pressure-velocity system.
@@ -592,22 +713,6 @@ class SProd {
 
   private:
 
-    /**
-     * @brief Number of scheduled Master1 opening events.
-     */
-    int nabreM1 = 0;
-    /**
-     * @brief Number of scheduled Master1 closing events.
-     */
-    int nfechaM1 = 0;
-    /**
-     * @brief Times at which Master1 closes.
-     */
-    double *fechaM1 = nullptr;
-    /**
-     * @brief Times at which Master1 opens.
-     */
-    double *abreM1 = nullptr;
 
     /**
      * @brief Gas-line cells where radial temperature profiles are written.
@@ -754,31 +859,11 @@ class SProd {
      */
     string tmpLog;
   private:
-    /**
-     * @brief Number of events written to the event log.
-     */
-    int contaLog = 0;
 
-    /**
-     * @brief Smallest production-line control-volume length.
-     */
-    double menorDx = 0.;
     /**
      * @brief Number of iterations used to bracket the initial steady-state root.
      */
     int iterperm = 0.;
-    /**
-     * @brief Simulation time-step counter.
-     */
-    int kSP = 0.;
-    /**
-     * @brief Controls event-log output frequency.
-     */
-    int KontaImprime = 0.;
-    /**
-     * @brief Index of the next scheduled simulation event.
-     */
-    int indevento = 0.;
   public:
     /**
      * @brief Steady-state mode flag: 1 while Num4Main solves a network branch at
@@ -790,38 +875,6 @@ class SProd {
      */
     int modeloCompleto = 1;
   private:
-    /**
-     * @brief History of recently accepted time steps.
-     */
-    vector<double> dtSim;
-    /**
-     * @brief History of time steps proposed by the CFL criterion.
-     */
-    vector<double> dtCFL;
-    /**
-     * @brief Average time step proposed by the CFL criterion.
-     */
-    double dtCFLMed = 1.;
-    /**
-     * @brief Average time step actually used by the simulation.
-     */
-    double dtSimMed = 1.;
-    /**
-     * @brief Indicates that time-step growth must remain restricted.
-     */
-    int restriDt = 0;
-    /**
-     * @brief Number of remaining steps under the current time-step restriction.
-     */
-    int kontarestriDt = 0;
-    /**
-     * @brief Accumulated CFL time steps used to compute dtCFLMed.
-     */
-    double dtCFLTotal = 0.;
-    /**
-     * @brief Accumulated accepted time steps used to compute dtSimMed.
-     */
-    double dtSimTotal = 0.;
   public:
     /**
      * @brief Auxiliary CFL time-step accumulator.
@@ -832,10 +885,6 @@ class SProd {
      */
     double dtauxFinal = 0.;
   private:
-    /**
-     * @brief Counts alternating liquid-flow oscillations near an active surface choke.
-     */
-    int kontaGolfada = 1000;
   public:
 
     /**
@@ -935,30 +984,8 @@ class SProd {
     double kimpT = 0.;
 
   private:
-    /**
-     * @brief Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It
-     * mitigates a pressure blind spot when the upstream side contains only liquid and increases if the
-     * problem persists.
-     */
-    double momentoDesesp = 0;
 
-    /**
-     * @brief Recent maximum pressure-change rates.
-     */
-    vector<double> taxaDpMax;
-    /**
-     * @brief Average maximum pressure-change rate.
-     */
-    double DpMaxMed = 1.;
 
-    /**
-     * @brief Recent maximum temperature-change rates.
-     */
-    vector<double> taxaDTMax;
-    /**
-     * @brief Average maximum temperature-change rate.
-     */
-    double DTMaxMed = 1.;
   public:
     /**
      * @brief Initial holdup estimate used by the steady-state solver.
@@ -978,10 +1005,6 @@ class SProd {
      */
     int ntabDin = 0;
   private:
-    /**
-     * @brief Counter controlling compositional-property refreshes.
-     */
-    int kontaRenovaComp = 0;
   public:
     /**
      * @brief Section-blocking state.
@@ -1022,14 +1045,6 @@ class SProd {
 
   private:
     /**
-     * @brief Production cells handled by the two-dimensional Poisson model.
-     */
-    vector<int> indCelPoisson2D;
-    /**
-     * @brief Number of cells handled by the two-dimensional Poisson model.
-     */
-    int nCelulaPoisson2D = 0;
-    /**
      * @brief Indicates that the thermal source term is disabled.
      */
     int semTermo = 0;
@@ -1041,10 +1056,6 @@ class SProd {
      * @brief Reference value for the steady-state convergence monitor.
      */
     double monitConvPermBase = 1.;
-    /**
-     * @brief Signals that the time step must be adjusted.
-     */
-    int alteraTempo = 0;
   public:
 
     /**

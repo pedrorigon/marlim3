@@ -298,7 +298,7 @@ void SProd::generateSaturationTablesFromCorrelations() {
 /// compfonte, whose cell indices it records in posicfonte.
 void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes) {
     indTramo = -1;
-    KontaImprime = 0;
+    transient.KontaImprime = 0;
     tempoaberto = 0.;
     tempoabertoini = 0.;
     modoPerm = 0;
@@ -313,12 +313,12 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
     reinicia = 0;
     masChkSupini = 0;
     betaRev = 0.;
-    trackDeng = arq.trackDeng;
+    transient.trackDeng = arq.trackDeng;
     nfluP = arq.nfluP;
     CalcLat = arq.latente;
     if (arq.flashCompleto == 1)
         arq.trackRGO = 1;
-    trackRGO = arq.trackRGO;
+    transient.trackRGO = arq.trackRGO;
     const int injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
     arq.fluc.injPoc = injPoc;
     if (arq.flashCompleto == 1)
@@ -498,11 +498,11 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
     chokeSup = choke(1., 1.);
     chokeInj = ChokeGas();
     arq.gerachokesup(chokeSup);
-    npig = arq.npig;
-    if (npig > 0) {
-        receb = new int[npig];
-        for (int i = 0; i < npig; i++)
-            receb[i] = arq.pig[i].receb;
+    transient.npig = arq.npig;
+    if (transient.npig > 0) {
+        transient.receb = new int[transient.npig];
+        for (int i = 0; i < transient.npig; i++)
+            transient.receb[i] = arq.pig[i].receb;
     }
 }
 
@@ -822,19 +822,19 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
 void SProd::allocateEventProfileAndTrendArrays() {
     for (int i = 0; i < ncel; i++) {
         if (celula[i].calor.difus2D == 1) {
-            indCelPoisson2D.push_back(i);
-            nCelulaPoisson2D++;
+            transient.indCelPoisson2D.push_back(i);
+            transient.nCelulaPoisson2D++;
         }
     }
 
-    nabreM1 = arq.eventoabre;
-    nfechaM1 = arq.eventofecha;
-    abreM1 = new double[nabreM1];
-    fechaM1 = new double[nfechaM1];
-    for (int i = 0; i < nabreM1; i++)
-        abreM1[i] = arq.Tevento[i];
-    for (int i = 0; i < nfechaM1; i++)
-        fechaM1[i] = arq.Teventof[i];
+    transient.nabreM1 = arq.eventoabre;
+    transient.nfechaM1 = arq.eventofecha;
+    transient.abreM1 = new double[transient.nabreM1];
+    transient.fechaM1 = new double[transient.nfechaM1];
+    for (int i = 0; i < transient.nabreM1; i++)
+        transient.abreM1[i] = arq.Tevento[i];
+    for (int i = 0; i < transient.nfechaM1; i++)
+        transient.fechaM1[i] = arq.Teventof[i];
 
     int ntempGas = 0;
     if (arq.lingas > 0)
@@ -959,16 +959,16 @@ void SProd::resetCouplingAndOutputState() {
     tmpLog = saidaLog.str();
     // if it's not a simulation POCO_INJETOR
     if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
-        contaLog = 0;
+        transient.contaLog = 0;
         int nevent = arq.logevento.size();
-        while (fabs(arq.logevento[contaLog].instante - (*vg1dSP).lixo5) < dt && contaLog < nevent) {
+        while (fabs(arq.logevento[transient.contaLog].instante - (*vg1dSP).lixo5) < dt && transient.contaLog < nevent) {
             time_t now = time(0);
             tm *ltm = localtime(&now); // Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
             ofstream escreveIni(tmpLog.c_str(), ios_base::app);
             escreveIni << "Evento Externo = ";
-            escreveIni << arq.logevento[contaLog].instante << " ; ";
-            escreveIni << arq.logevento[contaLog].duracao << " ; ";
-            escreveIni << arq.logevento[contaLog].descricao << " ; ";
+            escreveIni << arq.logevento[transient.contaLog].instante << " ; ";
+            escreveIni << arq.logevento[transient.contaLog].duracao << " ; ";
+            escreveIni << arq.logevento[transient.contaLog].descricao << " ; ";
             escreveIni << "datahora = ";
             escreveIni << ltm->tm_mday << "/";
             escreveIni << 1 + ltm->tm_mon << "/";
@@ -977,15 +977,15 @@ void SProd::resetCouplingAndOutputState() {
             escreveIni << 0 + ltm->tm_min << ":";
             escreveIni << 0 + ltm->tm_sec;
             escreveIni << endl;
-            contaLog++;
+            transient.contaLog++;
             escreveIni.close();
         }
     }
 
-    menorDx = 1e10;
+    transient.menorDx = 1e10;
     for (int i = 0; i <= ncel; i++) {
-        if (celula[i].dx < menorDx)
-            menorDx = celula[i].dx;
+        if (celula[i].dx < transient.menorDx)
+            transient.menorDx = celula[i].dx;
         if (i > 0)
             celula[i].razdxTM = celula[i - 1].dx / (celula[i - 1].dx + celula[i].dx);
         if (i > 1)
@@ -998,8 +998,8 @@ void SProd::resetCouplingAndOutputState() {
     	}
     }
 
-    kSP = 0;
-    indevento = 1;
+    transient.kSP = 0;
+    transient.indevento = 1;
     mult = 0.8;
     presMedMov = 0.;
     jMedMov = 0.;

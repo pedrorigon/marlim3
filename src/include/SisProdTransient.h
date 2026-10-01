@@ -52,37 +52,37 @@ struct TransientStepUpdaters {
 /// reference through Ler::atualiza (pGSup, presE, tempE, titE, betaE), are not
 /// const either.
 struct TransientStepState {
-    /// SProd::DTMaxMed -- written.
+    /// SProd::transient.DTMaxMed -- written.
     double &meanMaximumTimeStep;
-    /// SProd::DpMaxMed -- written.
+    /// SProd::transient.DpMaxMed -- written.
     double &meanMaximumPressureChange;
-    /// SProd::EstadoMaster1 -- written.
+    /// SProd::transient.EstadoMaster1 -- written.
     int &masterState;
     /// SProd::aberto -- written.
     int &surfaceChokeOpen;
     /// SProd::abertoini -- written.
     int &initiallyOpen;
-    /// SProd::alteraTempo -- written.
+    /// SProd::transient.alteraTempo -- written.
     int &timeChanged;
     /// SProd::betaE -- written.
     double &inletCompletionFraction;
     /// SProd::celInter -- written.
     int &interfaceCell;
-    /// SProd::contaMaster1 -- written.
+    /// SProd::transient.contaMaster1 -- written.
     int &masterCounter;
     /// SProd::tables.cpg -- written.
     double** gasSpecificHeatTable;
     /// SProd::dt -- written.
     double &timeStep;
-    /// SProd::dtCFLMed -- written.
+    /// SProd::transient.dtCFLMed -- written.
     double &meanCflTimeStep;
-    /// SProd::dtCFLTotal -- written.
+    /// SProd::transient.dtCFLTotal -- written.
     double &totalCflTimeStep;
     /// SProd::dtInter -- written.
     double &interfaceTimeStep;
-    /// SProd::dtSimMed -- written.
+    /// SProd::transient.dtSimMed -- written.
     double &meanSimulationTimeStep;
-    /// SProd::dtSimTotal -- written.
+    /// SProd::transient.dtSimTotal -- written.
     double &totalSimulationTimeStep;
     /// SProd::fontemassCRBuf -- written.
     double &bufferedCompletionMassSource;
@@ -90,17 +90,17 @@ struct TransientStepState {
     double &bufferedGasMassSource;
     /// SProd::fontemassPRBuf -- written.
     double &bufferedLiquidMassSource;
-    /// SProd::indevento -- written.
+    /// SProd::transient.indevento -- written.
     int &eventIndex;
-    /// SProd::kontaGolfada -- written.
+    /// SProd::transient.kontaGolfada -- written.
     int &slugCount;
-    /// SProd::kontarestriDt -- written.
+    /// SProd::transient.kontarestriDt -- written.
     int &timeStepRestrictionCount;
     /// SProd::masChkSup -- written.
     int &surfaceChokeMassFlag;
     /// SProd::modeloCompleto -- written.
     int &fullModel;
-    /// SProd::momentoDesesp -- written.
+    /// SProd::transient.momentoDesesp -- written.
     double &desperationMoment;
     /// SProd::mudaModoChk -- written.
     int &chokeModeChanged;
@@ -110,7 +110,7 @@ struct TransientStepState {
     double &outletPressure;
     /// SProd::reinicia -- written.
     int &restart;
-    /// SProd::restriDt -- written.
+    /// SProd::transient.restriDt -- written.
     int &timeStepRestricted;
     /// SProd::tempoaberto -- written.
     int &openTime;
@@ -126,7 +126,7 @@ struct TransientStepState {
     double *masterCriticalRatio;
     /// SProd::velInter -- written.
     double &interfaceVelocity;
-    /// SProd::abreM1 -- read only.
+    /// SProd::transient.abreM1 -- read only.
     double* masterOpenSchedule;
     /// SProd::arq -- read only.
     Ler &input;
@@ -138,17 +138,17 @@ struct TransientStepState {
     CelG* gasCells;
     /// SProd::chokeSup -- read only.
     choke &surfaceChoke;
-    /// SProd::dtCFL -- read only.
+    /// SProd::transient.dtCFL -- read only.
     std::vector<double> &cflTimeSteps;
     /// SProd::dtInterIni -- read only.
     const double &initialInterfaceTimeStep;
-    /// SProd::dtSim -- read only.
+    /// SProd::transient.dtSim -- read only.
     std::vector<double> &simulationTimeSteps;
     /// SProd::dtauxCFL -- read only.
     double &auxiliaryCflTimeStep;
     /// SProd::dtauxFinal -- read only.
     double &finalAuxiliaryTimeStep;
-    /// SProd::fechaM1 -- read only.
+    /// SProd::transient.fechaM1 -- read only.
     double* masterCloseSchedule;
     /// SProd::flut -- read only.
     FullMtx<double> &productionFreeTerms;
@@ -158,13 +158,13 @@ struct TransientStepState {
     const int &branchIndex;
     /// SProd::jMedMov -- read only.
     double &movingMeanFlux;
-    /// SProd::kSP -- read only.
+    /// SProd::transient.kSP -- read only.
     int &stepIndex;
-    /// SProd::matglobP -- read only.
+    /// SProd::transient.matglobP -- read only.
     BandMtx<double> &productionMatrix;
-    /// SProd::menorDx -- read only.
+    /// SProd::transient.menorDx -- read only.
     const double &smallestCellLength;
-    /// SProd::nabreM1 -- read only.
+    /// SProd::transient.nabreM1 -- read only.
     const int &masterOpenCount;
     /// SProd::ncel -- read only.
     const int &lastCell;
@@ -172,7 +172,7 @@ struct TransientStepState {
     const int &gasCellCount;
     /// SProd::ncelperftransp -- read only.
     int* productionCrossSectionCount;
-    /// SProd::nfechaM1 -- read only.
+    /// SProd::transient.nfechaM1 -- read only.
     const int &masterCloseCount;
     /// SProd::noextremo -- read only.
     const int &endNode;
@@ -184,9 +184,9 @@ struct TransientStepState {
     double &movingMeanPressure;
     /// SProd::tMedMov -- read only.
     const double &movingMeanTemperature;
-    /// SProd::taxaDTMax -- read only.
+    /// SProd::transient.taxaDTMax -- read only.
     std::vector<double> &maximumTimeStepRates;
-    /// SProd::taxaDpMax -- read only.
+    /// SProd::transient.taxaDpMax -- read only.
     std::vector<double> &maximumPressureRates;
     /// SProd::tempE -- read only.
     double &inletTemperature;
@@ -360,7 +360,7 @@ struct TransientSolveState {
     const char *const *closingSubtitles;
     /// SProd::saidaTextoSis -- read only.
     const char *const *closingTitles;
-    /// SProd::kontaRenovaComp -- written or read by the solve; not promised const.
+    /// SProd::transient.kontaRenovaComp -- written or read by the solve; not promised const.
     int &compositionalRefreshCounter;
     /// SProd::jVet -- written or read by the solve; not promised const.
     std::vector<double> &fluxHistory;
@@ -398,7 +398,7 @@ struct TransientSolveState {
     ChokeGas &injectionChoke;
     /// SProd::tmpLog -- written or read by the solve; not promised const.
     std::string &logBuffer;
-    /// SProd::contaLog -- written or read by the solve; not promised const.
+    /// SProd::transient.contaLog -- written or read by the solve; not promised const.
     int &logCounter;
     /// SProd::TransMassModel -- written or read by the solve; not promised const.
     int &massTransferModel;
@@ -414,7 +414,7 @@ struct TransientSolveState {
     solverP3D &poissonSolver3D;
     /// SProd::presVet -- written or read by the solve; not promised const.
     std::vector<double> &pressureHistory;
-    /// SProd::KontaImprime -- written or read by the solve; not promised const.
+    /// SProd::transient.KontaImprime -- written or read by the solve; not promised const.
     int &printCounter;
     /// SProd::kimpT -- written or read by the solve; not promised const.
     double &printPassCount;
@@ -448,9 +448,9 @@ struct TransientSolveState {
     double &totalPressure;
     /// SProd::alfTotal -- written or read by the solve; not promised const.
     double &totalVoidFraction;
-    /// SProd::trackDeng -- written or read by the solve; not promised const.
+    /// SProd::transient.trackDeng -- written or read by the solve; not promised const.
     int &trackGasGravity;
-    /// SProd::trackRGO -- written or read by the solve; not promised const.
+    /// SProd::transient.trackRGO -- written or read by the solve; not promised const.
     int &trackGasOilRatio;
     /// SProd::kontaTempoCelUni -- written or read by the solve; not promised const.
     std::vector<int> &unitCellTimeCounters;
