@@ -96,6 +96,60 @@ driftflux::coefficient::ClosureState closureStateOf(SProd &system);
 trendoutput::TrendState trendStateOf(const SProd &system);
 }  // namespace sisprod::adapters
 
+namespace sisprod {
+
+/// The fluid-property tables the fluids of a system's cells point at. The black-oil
+/// compressibility-factor, specific-heat and liquid-density-derivative tables belong to the
+/// input; the latent-heat table and the Livia bubble-point and solution-gas-ratio tables are
+/// built and owned by the system.
+struct PropertyTables {
+    /**
+     * @brief Black-oil gas-compressibility-factor table.
+     */
+    double **zdranP = nullptr;
+    /**
+     * @brief Pressure derivative of the black-oil compressibility-factor table.
+     */
+    double **dzdpP = nullptr;
+    /**
+     * @brief Temperature derivative of the black-oil compressibility-factor table.
+     */
+    double **dzdtP = nullptr;
+    /**
+     * @brief Black-oil gas specific-heat table.
+     */
+    double **cpg = nullptr;
+    /**
+     * @brief Black-oil produced-liquid specific-heat table.
+     */
+    double **cpl = nullptr;
+    /**
+     * @brief Temperature derivative of liquid density.
+     */
+    double **drholdT = nullptr;
+    /**
+     * @brief Black-oil latent-heat table.
+     */
+    double **HLat = nullptr;
+    /**
+     * @brief Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table
+     * is separate from the full PVTSim fluid-property model.
+     */
+    double *PBPVTSim = nullptr;
+    /**
+     * @brief Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This
+     * table is separate from the full PVTSim fluid-property model.
+     */
+    double *TBPVTSim = nullptr;
+    /**
+     * @brief Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its
+     * expensive calculation during the simulation.
+     */
+    double **RSLivia = nullptr;
+};
+
+}  // namespace sisprod
+
 /**
  * @brief Models and solves a one-dimensional production system.
  *
@@ -414,33 +468,9 @@ class SProd {
      */
     int nfluP = 0;
     /**
-     * @brief Black-oil gas-compressibility-factor table.
+     * @brief The fluid-property tables the fluids of this system's cells point at.
      */
-    double **zdranP = nullptr;
-    /**
-     * @brief Pressure derivative of the black-oil compressibility-factor table.
-     */
-    double **dzdpP = nullptr;
-    /**
-     * @brief Temperature derivative of the black-oil compressibility-factor table.
-     */
-    double **dzdtP = nullptr;
-    /**
-     * @brief Black-oil gas specific-heat table.
-     */
-    double **cpg = nullptr;
-    /**
-     * @brief Black-oil produced-liquid specific-heat table.
-     */
-    double **cpl = nullptr;
-    /**
-     * @brief Temperature derivative of liquid density.
-     */
-    double **drholdT = nullptr;
-    /**
-     * @brief Black-oil latent-heat table.
-     */
-    double **HLat = nullptr;
+    sisprod::PropertyTables tables;
   public:
 
     /**
@@ -794,21 +824,6 @@ class SProd {
     Cel *celula = nullptr;
 
   private:
-    /**
-     * @brief Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table
-     * is separate from the full PVTSim fluid-property model.
-     */
-    double *PBPVTSim = nullptr;
-    /**
-     * @brief Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This
-     * table is separate from the full PVTSim fluid-property model.
-     */
-    double *TBPVTSim = nullptr;
-    /**
-     * @brief Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its
-     * expensive calculation during the simulation.
-     */
-    double **RSLivia = nullptr;
     /**
      * @brief Enables reading bubble-pressure and bubble-temperature tables in black-oil mode.
      */

@@ -86,8 +86,8 @@ void forEachSourceFluid(Cel &cell, Apply &&apply) {
 /// tables read from the PVTSim file, and switches them to saturation model 4.
 void SProd::assignPvtSimBubbleTablesToCells() {
     auto assignTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = PBPVTSim;
-        fluid.TBPVTSim = TBPVTSim;
+        fluid.PBPVTSim = tables.PBPVTSim;
+        fluid.TBPVTSim = tables.TBPVTSim;
         fluid.corrSat = 4;
     };
     for (int i = 0; i <= ncel; i++) {
@@ -128,8 +128,8 @@ void writeTable(const string &path, const FullMtx<double> &table) {
 void SProd::loadPvtSimSaturationTables() {
     LerPB = 1;
     int ndiv = arq.tabent.npont - 1;
-    PBPVTSim = new double[ndiv + 1];
-    TBPVTSim = new double[ndiv + 1];
+    tables.PBPVTSim = new double[ndiv + 1];
+    tables.TBPVTSim = new double[ndiv + 1];
     vector<double> PresPVTSim(ndiv + 1);
 
     string impfile;
@@ -143,30 +143,30 @@ void SProd::loadPvtSimSaturationTables() {
     int lacoleitura = ndiv;
     readPvtSimRow(lendoPVTSim, chave, "PRESSURE", PresPVTSim, lacoleitura,
                   [](double value) { return value / kPascalPerKgfPerCm2PvtSim; });
-    readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", PBPVTSim, lacoleitura,
+    readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", tables.PBPVTSim, lacoleitura,
                   [](double value) { return value * kPsiPerPascal; });
-    readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", TBPVTSim, lacoleitura, [](double value) { return value; });
+    readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", tables.TBPVTSim, lacoleitura, [](double value) { return value; });
     assignPvtSimBubbleTablesToCells();
 
     FullMtx<double> BolhaTemp(ndiv + 2, 2);
     for (int i = 0; i <= ndiv; i++) {
-        BolhaTemp[i][0] = TBPVTSim[i];
-        BolhaTemp[i][1] = PBPVTSim[i];
+        BolhaTemp[i][0] = tables.TBPVTSim[i];
+        BolhaTemp[i][1] = tables.PBPVTSim[i];
     }
     writeTable(pathPrefixoArqSaida + "perfilBolha", BolhaTemp);
 
     if (arq.tabRSPB == 1) {
         lerRS = 1;
-        RSLivia = new double *[ndiv + 2];
+        tables.RSLivia = new double *[ndiv + 2];
         for (int i = 0; i < ndiv + 2; i++) {
-            RSLivia[i] = new double[ndiv + 2];
+            tables.RSLivia[i] = new double[ndiv + 2];
         }
         for (int i = 1; i <= ndiv + 1; i++) {
-            RSLivia[i][0] = PresPVTSim[i - 1];
-            RSLivia[0][i] = TBPVTSim[i - 1];
+            tables.RSLivia[i][0] = PresPVTSim[i - 1];
+            tables.RSLivia[0][i] = tables.TBPVTSim[i - 1];
             for (int j = 1; j <= ndiv + 1; j++) {
-                if (TBPVTSim[j - 1] > -10) {
-                    double TFa = 1.8 * TBPVTSim[j - 1] + 32;
+                if (tables.TBPVTSim[j - 1] > -10) {
+                    double TFa = 1.8 * tables.TBPVTSim[j - 1] + 32;
 
                     constexpr double A0 = 6542.69213 * 1e-11;
                     constexpr double A1 = 2.60464618;
@@ -191,9 +191,9 @@ void SProd::loadPvtSimSaturationTables() {
                     double Deng = celula[0].flui.Deng;
                     double API = celula[0].flui.API;
                     double multCor = (D0 + D1 * yco2 * pow(TFa, D2));
-                    double pbtemp = PBPVTSim[j - 1];
+                    double pbtemp = tables.PBPVTSim[j - 1];
 
-                    double pcor = (RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere * multCor;
+                    double pcor = (tables.RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere * multCor;
                     double pr = pcor / pbtemp;
 
                     double a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
@@ -204,26 +204,26 @@ void SProd::loadPvtSimSaturationTables() {
                     double rstemp = 0.;
                     if (rstemp < 0.)
                         rstemp = 0.;
-                    else if ((RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere > pbtemp)
+                    else if ((tables.RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere > pbtemp)
                         rstemp = 1.;
                     else
                         rstemp = Rsr;
-                    RSLivia[i][j] = rstemp;
+                    tables.RSLivia[i][j] = rstemp;
                 } else
-                    RSLivia[i][j] = 0;
+                    tables.RSLivia[i][j] = 0;
             }
         }
         FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
         for (int i = 1; i <= ndiv + 1; i++) {
-            RSTemp[i][0] = RSLivia[i][0];
-            RSTemp[0][i] = RSLivia[0][i];
+            RSTemp[i][0] = tables.RSLivia[i][0];
+            RSTemp[0][i] = tables.RSLivia[0][i];
             for (int j = 1; j <= ndiv + 1; j++)
-                RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+                RSTemp[i][j] = tables.RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
         }
         writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
         auto pointAtRatioTable = [&](ProFlu &fluid) {
-            fluid.TabRSLivia = RSLivia;
+            fluid.TabRSLivia = tables.RSLivia;
             fluid.tabRSPB = 1;
         };
         for (int i = 0; i <= ncel; i++) {
@@ -244,30 +244,30 @@ void SProd::generateSaturationTablesFromCorrelations() {
     double dtteste = (arq.tabent.tmax - tteste) / ndiv;
     FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
     FullMtx<double> PBTemp(ndiv + 2, 2);
-    TBPVTSim = new double[ndiv + 1];
-    PBPVTSim = new double[ndiv + 1];
-    RSLivia = new double *[ndiv + 2];
+    tables.TBPVTSim = new double[ndiv + 1];
+    tables.PBPVTSim = new double[ndiv + 1];
+    tables.RSLivia = new double *[ndiv + 2];
     for (int i = 0; i < ndiv + 2; i++) {
-        RSLivia[i] = new double[ndiv + 2];
+        tables.RSLivia[i] = new double[ndiv + 2];
     }
     double ttestepb = tteste;
     for (int i = 0; i <= ndiv; i++) {
-        TBPVTSim[i] = ttestepb;
-        PBPVTSim[i] = arq.flup[0].PB(pteste, ttestepb);
-        PBTemp[i][0] = TBPVTSim[i];
-        PBTemp[i][1] = PBPVTSim[i];
+        tables.TBPVTSim[i] = ttestepb;
+        tables.PBPVTSim[i] = arq.flup[0].PB(pteste, ttestepb);
+        PBTemp[i][0] = tables.TBPVTSim[i];
+        PBTemp[i][1] = tables.PBPVTSim[i];
         ttestepb += dtteste;
     }
 
     for (int i = 1; i <= ndiv + 1; i++) {
-        RSLivia[i][0] = pteste;
-        RSTemp[i][0] = RSLivia[i][0];
+        tables.RSLivia[i][0] = pteste;
+        RSTemp[i][0] = tables.RSLivia[i][0];
         ttestepb = tteste;
         for (int j = 1; j <= ndiv + 1; j++) {
-            RSLivia[0][j] = ttestepb;
-            RSLivia[i][j] = arq.flup[0].RS(pteste, ttestepb);
-            RSTemp[0][j] = RSLivia[0][j];
-            RSTemp[i][j] = RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+            tables.RSLivia[0][j] = ttestepb;
+            tables.RSLivia[i][j] = arq.flup[0].RS(pteste, ttestepb);
+            RSTemp[0][j] = tables.RSLivia[0][j];
+            RSTemp[i][j] = tables.RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
             ttestepb += dtteste;
         }
         pteste += dpteste;
@@ -277,9 +277,9 @@ void SProd::generateSaturationTablesFromCorrelations() {
     writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
     auto pointAtTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = PBPVTSim;
-        fluid.TBPVTSim = TBPVTSim;
-        fluid.TabRSLivia = RSLivia;
+        fluid.PBPVTSim = tables.PBPVTSim;
+        fluid.TBPVTSim = tables.TBPVTSim;
+        fluid.TabRSLivia = tables.RSLivia;
         fluid.tabRSPB = 1;
     };
     for (int i = 0; i <= ncel; i++) {
@@ -343,27 +343,27 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
         arq.geraTabCp();
     if (arq.modelJTL == 1)
         arq.geraTabDrholDt();
-    cpg = arq.cpg;
-    cpl = arq.cpl;
-    drholdT = arq.drholdT;
+    tables.cpg = arq.cpg;
+    tables.cpl = arq.cpl;
+    tables.drholdT = arq.drholdT;
 
-    zdranP = arq.zdranP;
-    dzdpP = arq.dzdpP;
-    dzdtP = arq.dzdtP;
+    tables.zdranP = arq.zdranP;
+    tables.dzdpP = arq.dzdpP;
+    tables.dzdtP = arq.dzdtP;
     fluiRevRede = arq.flup[0];
     if (arq.flashCompleto == 2)
         fluiRevRede.atualizaPropCompStandard();
     for (int i = 0; i < arq.nfluP; i++) {
         arq.flup[i].npontos = arq.tabent.npont;
-        arq.flup[i].cpg = cpg;
-        arq.flup[i].cpl = cpl;
-        arq.flup[i].drholdT = drholdT;
+        arq.flup[i].cpg = tables.cpg;
+        arq.flup[i].cpl = tables.cpl;
+        arq.flup[i].drholdT = tables.drholdT;
         arq.flup[i].nfluP = nfluP;
     }
     arq.flug.npontos = arq.tabent.npont;
-    arq.flug.cpg = cpg;
-    arq.flug.cpl = cpl;
-    arq.flug.drholdT = drholdT;
+    arq.flug.cpg = tables.cpg;
+    arq.flug.cpl = tables.cpl;
+    arq.flug.drholdT = tables.drholdT;
     arq.flug.nfluP = nfluP;
 
     arq.fluc.npontos = arq.tabent.npont;
@@ -729,11 +729,11 @@ void SProd::configureLatentHeat() {
                 }
             }
             lendoPVTSim.close();
-            HLat = new double *[ndiv + 2];
+            tables.HLat = new double *[ndiv + 2];
             for (int i = 0; i < ndiv + 2; i++) {
-                HLat[i] = new double[ndiv + 2];
+                tables.HLat[i] = new double[ndiv + 2];
                 for (int j = 0; j < ndiv + 2; j++)
-                    HLat[i][j] = HLatTemp[i][j];
+                    tables.HLat[i][j] = HLatTemp[i][j];
             }
             string tmp = pathPrefixoArqSaida + "perfilLatente.dat";
             writeTable(tmp, HLatTemp);

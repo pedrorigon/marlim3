@@ -44,12 +44,12 @@ void SProd::resolveDriftSelectors() {
 /// The run state every construction and reassignment starts from, before each
 /// path sets what is its own and montasistema builds the system.
 void SProd::resetRunState() {
-    zdranP = 0;
-    dzdpP = 0;
-    dzdtP = 0;
-    cpg = 0;
-    cpl = 0;
-    drholdT = 0;
+    tables.zdranP = 0;
+    tables.dzdpP = 0;
+    tables.dzdtP = 0;
+    tables.cpg = 0;
+    tables.cpl = 0;
+    tables.drholdT = 0;
     nfluP = 0;
     CalcLat = 0;
     trackRGO = 0;
@@ -89,8 +89,8 @@ void SProd::resetRunState() {
     ntrendtrans = 0;
     ntrendtransB = 0;
     LerPB = 0;
-    PBPVTSim = 0;
-    TBPVTSim = 0;
+    tables.PBPVTSim = 0;
+    tables.TBPVTSim = 0;
 
     fontemassPRBuf = 0.;
     fontemassCRBuf = 0.;
@@ -247,16 +247,16 @@ void SProd::releaseOwnedStorage() {
     int ndiv = arq.tabent.npont - 1;
     if (CalcLat > 0 && arq.flashCompleto == 0) {
         for (int i = 0; i < ndiv + 2; i++)
-            delete[] HLat[i];
-        delete[] HLat;
+            delete[] tables.HLat[i];
+        delete[] tables.HLat;
     }
     if (LerPB > 0) {
-        delete[] PBPVTSim;
-        delete[] TBPVTSim;
+        delete[] tables.PBPVTSim;
+        delete[] tables.TBPVTSim;
         if (lerRS > 0) {
             for (int i = 0; i < ndiv + 2; i++)
-                delete[] RSLivia[i];
-            delete[] RSLivia;
+                delete[] tables.RSLivia[i];
+            delete[] tables.RSLivia;
         }
     }
 
