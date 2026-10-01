@@ -841,17 +841,17 @@ void SProd::allocateEventProfileAndTrendArrays() {
         ntempGas = ncelGas;
 
     if (arq.nperfistransp > 0) {
-        ncelperftransp = new int[arq.nperfistransp];
+        trends.ncelperftransp = new int[arq.nperfistransp];
         for (int i = 0; i < arq.nperfistransp; i++) {
             int posiccel = arq.proftransp.posic[i];
-            ncelperftransp[i] = celula[posiccel].calor.nglobal;
+            trends.ncelperftransp[i] = celula[posiccel].calor.nglobal;
         }
     }
     if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        ncelperftransg = new int[arq.nperfistransg];
+        trends.ncelperftransg = new int[arq.nperfistransg];
         for (int i = 0; i < arq.nperfistransg; i++) {
             int posiccel = arq.proftransg.posic[i];
-            ncelperftransg[i] = celulaG[posiccel].calor.nglobal;
+            trends.ncelperftransg[i] = celulaG[posiccel].calor.nglobal;
         }
     }
 
@@ -863,21 +863,21 @@ void SProd::allocateEventProfileAndTrendArrays() {
             for (int i = 0; i < arq.ntendp; i++)
                 TrendLengthP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); // round(arq.tfinal / arq.trendp[i].dt);
             allocateTrendSet(arq.ntendp, TrendLengthP, [&](int i) { return arq.nvartrendp[i] + 2; },
-                             [&](int i) { return arq.nvartrendp[i] + 1; }, MatTrendP, resettrend, ntrend, ntrendB);
+                             [&](int i) { return arq.nvartrendp[i] + 1; }, MatTrendP, trends.resettrend, ntrend, trends.ntrendB);
         }
         if (arq.ntendg > 0) {
             TrendLengthG = new int[arq.ntendg];
             for (int i = 0; i < arq.ntendg; i++)
                 TrendLengthG[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt);
             allocateTrendSet(arq.ntendg, TrendLengthG, [&](int i) { return arq.nvartrendg[i] + 2; },
-                             [&](int i) { return arq.nvartrendg[i] + 1; }, MatTrendG, resettrendg, ntrendg, ntrendgB);
+                             [&](int i) { return arq.nvartrendg[i] + 1; }, MatTrendG, trends.resettrendg, trends.ntrendg, trends.ntrendgB);
         }
         if (arq.ntendtransp > 0) {
             TrendLengthTransP = new int[arq.ntendtransp];
             for (int i = 0; i < arq.ntendtransp; i++)
                 TrendLengthTransP[i] = 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt);
             allocateTrendSet(arq.ntendtransp, TrendLengthTransP, [](int) { return 2; }, [](int) { return 2; },
-                             MatTrendTransP, resettrendtrans, ntrendtrans, ntrendtransB);
+                             trends.MatTrendTransP, trends.resettrendtrans, trends.ntrendtrans, trends.ntrendtransB);
         }
         if (arq.ntendtransg > 0 && arq.lingas > 0) {
             TrendLengthTransG = new int[arq.ntendtransg];
@@ -886,7 +886,7 @@ void SProd::allocateEventProfileAndTrendArrays() {
         }
         if (arq.ntendtransg > 0) {
             allocateTrendSet(arq.ntendtransg, TrendLengthTransG, [](int) { return 2; }, [](int) { return 2; },
-                             MatTrendTransG, resettrendtransg, ntrendtransg, ntrendtransgB);
+                             trends.MatTrendTransG, trends.resettrendtransg, trends.ntrendtransg, trends.ntrendtransgB);
         }
     }
 }
@@ -927,31 +927,31 @@ void SProd::resetCouplingAndOutputState() {
     		arq.imprimeProfileG(celulaG, flutG, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransp > 0) {
-    		arq.imprimeProfileTrans(celula, ncelperftransp, (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTrans(celula, trends.ncelperftransp, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileTransG(celulaG, ncelperftransg, (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTransG(celulaG, trends.ncelperftransg, (*vg1dSP).lixo5, indTramo);
     	}
     }
-    kontaTempoProf = 0;
-    kontaTempoProfG = 0;
+    trends.kontaTempoProf = 0;
+    trends.kontaTempoProfG = 0;
     if (arq.nperfisp > 0) {
         if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            kontaTempoProf++;
+            trends.kontaTempoProf++;
     }
     if (arq.nperfisg > 0 && arq.lingas > 0) {
         if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            kontaTempoProfG++;
+            trends.kontaTempoProfG++;
     }
-    kontaTempoTransProf = 0;
-    kontaTempoTransProfG = 0;
+    trends.kontaTempoTransProf = 0;
+    trends.kontaTempoTransProfG = 0;
     if (arq.nperfistransp > 0) {
         if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            kontaTempoTransProf++;
+            trends.kontaTempoTransProf++;
     }
     if (arq.nperfistransg > 0 && arq.lingas > 0) {
         if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            kontaTempoTransProfG++;
+            trends.kontaTempoTransProfG++;
     }
 
     ostringstream saidaLog;
@@ -994,7 +994,7 @@ void SProd::resetCouplingAndOutputState() {
 
     if (arq.nCelUnit>0) {
     	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
-    		kontaTempoCelUni.push_back(0);
+    		trends.kontaTempoCelUni.push_back(0);
     	}
     }
 

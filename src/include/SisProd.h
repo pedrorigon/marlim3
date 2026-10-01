@@ -363,6 +363,92 @@ struct TransientRun {
     int alteraTempo = 0;
 };
 
+/// The trend and profile output a system writes: the wall-temperature trend matrices, the
+/// sample counters and reset times of the trend families, the profile and single-cell output
+/// indices, and the cells whose radial temperature profiles are written.
+struct TrendRecorder {
+    /**
+     * @brief Gas-line cells where radial temperature profiles are written.
+     */
+    int *ncelperftransg = nullptr;
+    /**
+     * @brief Times at which gas-line trend buffers are reset.
+     */
+    double *resettrendg = nullptr;
+    /**
+     * @brief Number of gas-line trend samples currently stored.
+     */
+    int *ntrendg = nullptr;
+    /**
+     * @brief Number of gas-line trend samples stored before the last flush.
+     */
+    int *ntrendgB = nullptr;
+    /**
+     * @brief Buffered gas-line wall-temperature trend data.
+     */
+    double ***MatTrendTransG = nullptr;
+    /**
+     * @brief Times at which gas-line wall-temperature buffers are reset.
+     */
+    double *resettrendtransg = nullptr;
+    /**
+     * @brief Number of gas-line wall-temperature samples currently stored.
+     */
+    int *ntrendtransg = nullptr;
+    /**
+     * @brief Number of gas-line wall-temperature samples stored before the last flush.
+     */
+    int *ntrendtransgB = nullptr;
+    /**
+     * @brief Production-line cells where radial temperature profiles are written.
+     */
+    int *ncelperftransp = nullptr;
+    /**
+     * @brief Times at which production-line trend buffers are reset.
+     */
+    double *resettrend = nullptr;
+    /**
+     * @brief Number of production-line trend samples stored before the last flush.
+     */
+    int *ntrendB = nullptr;
+    /**
+     * @brief Buffered production-line wall-temperature trend data.
+     */
+    double ***MatTrendTransP = nullptr;
+    /**
+     * @brief Times at which production-line wall-temperature buffers are reset.
+     */
+    double *resettrendtrans = nullptr;
+    /**
+     * @brief Number of production-line wall-temperature samples currently stored.
+     */
+    int *ntrendtrans = nullptr;
+    /**
+     * @brief Number of production-line wall-temperature samples stored before the last flush.
+     */
+    int *ntrendtransB = nullptr;
+    /**
+     * @brief Current production-profile output index.
+     */
+    int kontaTempoProf = 0;
+    /**
+     * @brief Current gas-line profile output index.
+     */
+    int kontaTempoProfG = 0;
+    /**
+     * @brief Current production-wall-temperature profile output index.
+     */
+    int kontaTempoTransProf = 0;
+    /**
+     * @brief Current gas-line wall-temperature profile output index.
+     */
+    int kontaTempoTransProfG = 0;
+    /**
+     * @brief For each single-cell output, the index of its next output time.
+     */
+    vector<int> kontaTempoCelUni;
+};
+
 }  // namespace sisprod
 
 /**
@@ -715,10 +801,6 @@ class SProd {
 
 
     /**
-     * @brief Gas-line cells where radial temperature profiles are written.
-     */
-    int *ncelperftransg = nullptr;
-    /**
      * @brief Maximum number of samples stored for each gas-line trend.
      */
     int *TrendLengthG = nullptr;
@@ -729,42 +811,10 @@ class SProd {
     double ***MatTrendG = nullptr;
   private:
     /**
-     * @brief Times at which gas-line trend buffers are reset.
-     */
-    double *resettrendg = nullptr;
-    /**
-     * @brief Number of gas-line trend samples currently stored.
-     */
-    int *ntrendg = nullptr;
-    /**
-     * @brief Number of gas-line trend samples stored before the last flush.
-     */
-    int *ntrendgB = nullptr;
-    /**
      * @brief Maximum number of wall-temperature samples stored for each gas-line trend.
      */
     int *TrendLengthTransG = nullptr;
-    /**
-     * @brief Buffered gas-line wall-temperature trend data.
-     */
-    double ***MatTrendTransG = nullptr;
-    /**
-     * @brief Times at which gas-line wall-temperature buffers are reset.
-     */
-    double *resettrendtransg = nullptr;
-    /**
-     * @brief Number of gas-line wall-temperature samples currently stored.
-     */
-    int *ntrendtransg = nullptr;
-    /**
-     * @brief Number of gas-line wall-temperature samples stored before the last flush.
-     */
-    int *ntrendtransgB = nullptr;
 
-    /**
-     * @brief Production-line cells where radial temperature profiles are written.
-     */
-    int *ncelperftransp = nullptr;
     /**
      * @brief Maximum number of samples stored for each production-line trend.
      */
@@ -775,10 +825,6 @@ class SProd {
      */
     double ***MatTrendP = nullptr;
   private:
-    /**
-     * @brief Times at which production-line trend buffers are reset.
-     */
-    double *resettrend = nullptr;
   public:
     /**
      * @brief Number of production-line trend samples currently stored.
@@ -786,29 +832,13 @@ class SProd {
     int *ntrend = nullptr;
   private:
     /**
-     * @brief Number of production-line trend samples stored before the last flush.
-     */
-    int *ntrendB = nullptr;
-    /**
      * @brief Maximum number of wall-temperature samples stored for each production-line trend.
      */
     int *TrendLengthTransP = nullptr;
     /**
-     * @brief Buffered production-line wall-temperature trend data.
+     * @brief The trend and profile output this system writes.
      */
-    double ***MatTrendTransP = nullptr;
-    /**
-     * @brief Times at which production-line wall-temperature buffers are reset.
-     */
-    double *resettrendtrans = nullptr;
-    /**
-     * @brief Number of production-line wall-temperature samples currently stored.
-     */
-    int *ntrendtrans = nullptr;
-    /**
-     * @brief Number of production-line wall-temperature samples stored before the last flush.
-     */
-    int *ntrendtransB = nullptr;
+    sisprod::TrendRecorder trends;
 
   public:
     /**
@@ -837,22 +867,6 @@ class SProd {
     int verificaAcopRedeS = 0;
 
   private:
-    /**
-     * @brief Current production-profile output index.
-     */
-    int kontaTempoProf = 0;
-    /**
-     * @brief Current gas-line profile output index.
-     */
-    int kontaTempoProfG = 0;
-    /**
-     * @brief Current production-wall-temperature profile output index.
-     */
-    int kontaTempoTransProf = 0;
-    /**
-     * @brief Current gas-line wall-temperature profile output index.
-     */
-    int kontaTempoTransProfG = 0;
   public:
     /**
      * @brief Event-log file name.
@@ -1088,7 +1102,6 @@ class SProd {
     int redeParalelaS = -1;
 
   private:
-    vector<int> kontaTempoCelUni;
 
     static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
                                      "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",

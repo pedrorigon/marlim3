@@ -66,28 +66,28 @@ void SProd::resetRunState() {
     dtInter = 0.;
     velInter = 0.;
 
-    ncelperftransg = 0;
+    trends.ncelperftransg = 0;
     TrendLengthG = 0;
     MatTrendG = 0;
-    resettrendg = 0;
-    ntrendg = 0;
-    ntrendgB = 0;
+    trends.resettrendg = 0;
+    trends.ntrendg = 0;
+    trends.ntrendgB = 0;
     TrendLengthTransG = 0;
-    MatTrendTransG = 0;
-    resettrendtransg = 0;
-    ntrendtransg = 0;
-    ntrendtransgB = 0;
-    ncelperftransp = 0;
+    trends.MatTrendTransG = 0;
+    trends.resettrendtransg = 0;
+    trends.ntrendtransg = 0;
+    trends.ntrendtransgB = 0;
+    trends.ncelperftransp = 0;
     TrendLengthP = 0;
     MatTrendP = 0;
-    resettrend = 0;
+    trends.resettrend = 0;
     ntrend = 0;
-    ntrendB = 0;
+    trends.ntrendB = 0;
     TrendLengthTransP = 0;
-    MatTrendTransP = 0;
-    resettrendtrans = 0;
-    ntrendtrans = 0;
-    ntrendtransB = 0;
+    trends.MatTrendTransP = 0;
+    trends.resettrendtrans = 0;
+    trends.ntrendtrans = 0;
+    trends.ntrendtransB = 0;
     LerPB = 0;
     tables.PBPVTSim = 0;
     tables.TBPVTSim = 0;
@@ -229,20 +229,20 @@ void SProd::releaseOwnedStorage() {
         delete[] transient.fechaM1;
 
     if (arq.nperfistransp > 0)
-        delete[] ncelperftransp;
+        delete[] trends.ncelperftransp;
     if (arq.nperfistransg > 0 && arq.lingas > 0)
-        delete[] ncelperftransg;
+        delete[] trends.ncelperftransg;
 
     if (arq.ntendp > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendp, MatTrendP, TrendLengthP, resettrend, ntrend, ntrendB);
+        releaseTrendSet(arq.ntendp, MatTrendP, TrendLengthP, trends.resettrend, ntrend, trends.ntrendB);
     if (arq.ntendg > 0 && arq.lingas > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendg, MatTrendG, TrendLengthG, resettrendg, ntrendg, ntrendgB);
+        releaseTrendSet(arq.ntendg, MatTrendG, TrendLengthG, trends.resettrendg, trends.ntrendg, trends.ntrendgB);
     if (arq.ntendtransp > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendtransp, MatTrendTransP, TrendLengthTransP, resettrendtrans, ntrendtrans,
-                        ntrendtransB);
+        releaseTrendSet(arq.ntendtransp, trends.MatTrendTransP, TrendLengthTransP, trends.resettrendtrans, trends.ntrendtrans,
+                        trends.ntrendtransB);
     if (arq.ntendtransg > 0 && redeTemporario == 0)
-        releaseTrendSet(arq.ntendtransg, MatTrendTransG, TrendLengthTransG, resettrendtransg, ntrendtransg,
-                        ntrendtransgB);
+        releaseTrendSet(arq.ntendtransg, trends.MatTrendTransG, TrendLengthTransG, trends.resettrendtransg, trends.ntrendtransg,
+                        trends.ntrendtransgB);
 
     int ndiv = arq.tabent.npont - 1;
     if (CalcLat > 0 && arq.flashCompleto == 0) {
