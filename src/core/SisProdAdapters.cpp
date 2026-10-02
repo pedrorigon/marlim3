@@ -117,7 +117,7 @@ void sisprod::thermal::ThermalClosureUpdater::bufferedInitialization(
 
 void sisprod::thermal::ThermalEvolutionUpdater::solvePressureVelocityCoupling(
     int cycle) const {
-    sisprod::transient::solvePressureVolumeCoupling(context.transientStep(), cycle, 0);
+    sisprod::transient::solvePressureVolumeCoupling(context.transientStep(), 0, cycle);
 }
 
 void sisprod::thermal::ThermalEvolutionUpdater::renew() const {
