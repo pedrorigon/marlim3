@@ -920,7 +920,7 @@ void SProd::resetCouplingAndOutputState() {
     if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
         transient.contaLog = 0;
         int nevent = arq.logevento.size();
-        while (fabs(arq.logevento[transient.contaLog].instante - (*vg1dSP).lixo5) < dt && transient.contaLog < nevent) {
+        while (transient.contaLog < nevent && fabs(arq.logevento[transient.contaLog].instante - (*vg1dSP).lixo5) < dt) {
             time_t now = time(0);
             tm *ltm = localtime(&now); // Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
             ofstream escreveIni(tmpLog.c_str(), ios_base::app);
