@@ -320,7 +320,7 @@ struct detIPR {
 struct detGASINJ {
     int tipoCC;   // Boundary-condition type: 0 = injection pressure, 1 = injection flow rate
     int parserie; // Number of elements in the injection flow-rate or pressure time series
-    int chuteVaz; // Optional steady-state injection-flow initial guess for pressure-controlled injection
+    int chuteVaz = 0; // Optional steady-state injection-flow initial guess for pressure-controlled injection
     // Used to improve convergence
     double *temperatura; // Injection-temperature time-series values
     double *presinj;     // Injection-pressure time-series values, when applicable
