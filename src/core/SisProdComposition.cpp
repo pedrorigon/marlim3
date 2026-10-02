@@ -404,7 +404,7 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
             source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
         }
-    } else if ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump) {
+    } else if (state.cells[i].acsrL != 0 && ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump)) {
         double rholiq;
         double rhogas;
 
@@ -1516,7 +1516,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                 source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
                 source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
             }
-        } else if ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump) {
+        } else if (state.cells[i].acsrL != 0 && ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump)) {
             if (i > 0) {
                 double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
                 if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
@@ -1539,7 +1539,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                     source.deadOil *= ((1 - state.cells[i].flui.BSW) / rhoPSTF);
                     source.water *= (state.cells[i].flui.BSW / rhoPSTF);
                     source.BSW = state.cells[i].flui.BSW;
-                    source.denag = state.cells[i - 1].flui.Denag;
+                    source.denag = state.cells[i].flui.Denag;
                     source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
                     source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
                 }
