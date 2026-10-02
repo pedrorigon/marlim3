@@ -2533,7 +2533,7 @@ void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
     }
     if(titVec[3].first>1.-1e-3){
     	int busca=2;
-    	while(busca>=0 && titVec[busca].first>1.+1e-3)busca--;
+    	while(busca>=0 && titVec[busca].first>1.-1e-3)busca--;
     	if(busca>=0){
     		int jtroca;
     		int ktroca;
