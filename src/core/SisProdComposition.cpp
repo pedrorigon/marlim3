@@ -1401,7 +1401,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                 source.water *= (1 / (state.cells[i].acsr.injm.FluidoPro.BSW * 1000 * state.cells[i].acsr.injm.FluidoPro.Denag));
             }
             source.BSW = state.cells[i].acsr.injm.FluidoPro.BSW;
-            source.denag = state.cells[i].acsr.injl.FluidoPro.Denag;
+            source.denag = state.cells[i].acsr.injm.FluidoPro.Denag;
             source.viscL = 0 * 30 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureLow);
             source.viscH = 0 * 20 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
         }
