@@ -1,6 +1,6 @@
 /// The connection between SProd and the modules: the state view each module
-/// receives (sisprod::adapters) and the callbacks through which a module asks
-/// SProd for what it still computes itself.
+/// receives (sisprod::adapters), the solve context that builds the views of a call,
+/// and the callbacks through which a module reaches another module's code with them.
 #include "SisProd.h"
 #include "SisProdSolveContext.h"
 #include "SisProdComposition.h"
@@ -14,184 +14,183 @@
 
 void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
     int cellIndex) const {
-    context.system().tempDescarga(cellIndex);
+    sisprod::thermal::computeDischargeTemperature(context.thermal(), cellIndex);
 }
 
 void sisprod::gaslift::GasLiftTemperatureUpdater::computeGasTemperature(
     int cellIndex, double previousTemperature, int steadyMode) const {
-    context.system().calctempGas(cellIndex, previousTemperature, steadyMode);
+    sisprod::thermal::computeGasTemperature(context.thermal(), cellIndex, previousTemperature, steadyMode);
 }
 
 double sisprod::gaslift::GasLiftTemperatureUpdater::gasLiftDischargeTemperature(
     int valveIndex) const {
-    return context.system().TempDescGL(valveIndex);
+    return sisprod::thermal::computeGasLiftDischargeTemperature(context.thermal(), valveIndex);
 }
 
 // ------------------------------------------- steady-state callbacks ----
 //
-// Sixteen forwards, fourteen of which reach code in another module. They come
-// back through SProd because reaching sisprod::gaslift or sisprod::thermal
-// needs one of their state structs, and the adapters in this file are the
-// only place that builds those.
+// The steady march reaches the drift closures, the source terms, and the gas-line
+// and thermal steps through these, with the views of the solve context: its own
+// view does not carry their state.
 void sisprod::steady::SteadyStateUpdaters::steadyDriftClosure(int cellIndex, double &c0, double &ud) const {
-    context.system().CalcC0UdPerm(cellIndex, c0, ud);
+    driftflux::coefficient::steadyState(context.closure(), cellIndex, c0, ud);
 }
 void sisprod::steady::SteadyStateUpdaters::updateSource(int cellIndex) const {
-    context.system().renovaFonte(cellIndex);
+    sisprod::sources::renewSourceTerms(context.sources(), cellIndex);
 }
 void sisprod::steady::SteadyStateUpdaters::advanceSteadyTemperature(int cellIndex, int rungeKuttaStage) const {
-    context.system().RenovaTempPerm(cellIndex, rungeKuttaStage);
+    sisprod::thermal::advanceSteadyTemperature(context.thermal(), cellIndex, rungeKuttaStage);
 }
 void sisprod::steady::SteadyStateUpdaters::advanceReverseSteadyTemperature(int cellIndex, int rungeKuttaStage) const {
-    context.system().RenovaTempPermRev(cellIndex, rungeKuttaStage);
+    sisprod::thermal::advanceReverseSteadyTemperature(context.thermal(), cellIndex, rungeKuttaStage);
 }
 void sisprod::steady::SteadyStateUpdaters::computeTemperature(int cellIndex, double previousTemperature,
                                                               int steadyMode) const {
-    context.system().calctemp(cellIndex, previousTemperature, steadyMode);
+    sisprod::thermal::computeTemperature(context.thermal(), cellIndex, previousTemperature, steadyMode);
 }
 void sisprod::steady::SteadyStateUpdaters::computeGasTemperature(int cellIndex, double previousTemperature,
                                                                  int steadyMode) const {
-    context.system().calctempGas(cellIndex, previousTemperature, steadyMode);
+    sisprod::thermal::computeGasTemperature(context.thermal(), cellIndex, previousTemperature, steadyMode);
 }
 void sisprod::steady::SteadyStateUpdaters::updateProductionTemperaturePeriphery(int cellIndex) const {
-    context.system().atualizaPeriTempProd(cellIndex);
+    sisprod::thermal::updateProductionTemperaturePeriphery(context.thermal(), cellIndex);
 }
 void sisprod::steady::SteadyStateUpdaters::initializeSteadyValveGasFlowRate(int cellIndex) const {
-    context.system().IniciaVazValvGasPerm(cellIndex);
+    sisprod::gaslift::initializeSteadyValveGasFlowRate(context.gasLift(), cellIndex);
 }
 void sisprod::steady::SteadyStateUpdaters::initializeTubingConnectionSteady() const {
-    context.system().IniciaconectaColunaPerm();
+    sisprod::gaslift::initializeTubingConnectionSteady(context.gasLift());
 }
 void sisprod::steady::SteadyStateUpdaters::updateSteadyGasPressure(int cellIndex) const {
-    context.system().RenovaPresGasPerm(cellIndex);
+    sisprod::gaslift::updateSteadyGasPressure(context.gasLift(), cellIndex);
 }
 void sisprod::steady::SteadyStateUpdaters::updateSteadyGasTemperature(int cellIndex) const {
-    context.system().RenovaTempGasPerm(cellIndex);
+    sisprod::gaslift::updateSteadyGasTemperature(context.gasLift(), cellIndex);
 }
 void sisprod::steady::SteadyStateUpdaters::computeSteadyGasFlowRate(int cellIndex) const {
-    context.system().calcVazGasPerm(cellIndex);
+    sisprod::gaslift::computeSteadyGasFlowRate(context.gasLift(), cellIndex);
 }
 void sisprod::steady::SteadyStateUpdaters::connectTubing() const {
-    context.system().conectaColuna();
+    sisprod::gaslift::connectTubing(context.gasLift());
 }
 void sisprod::steady::SteadyStateUpdaters::connectTubingSteady() const {
-    context.system().conectaColunaPerm();
+    sisprod::gaslift::connectTubingSteady(context.gasLift());
 }
 double sisprod::steady::SteadyStateUpdaters::steadyGasPressureDrop(int cellIndex) const {
-    return context.system().delpGasPerm(cellIndex);
+    return sisprod::gaslift::steadyGasPressureDrop(context.gasLift(), cellIndex);
 }
 double sisprod::steady::SteadyStateUpdaters::steadyInjectionPressureDrop(int cellIndex) const {
-    return context.system().delpInjPerm(cellIndex);
+    return sisprod::gaslift::steadyInjectionPressureDrop(context.gasLift(), cellIndex);
 }
 // The two searches a march calls; their results are discarded at the call
 // site.
 void sisprod::steady::SteadyStateUpdaters::searchGasPressureSteadySecondary() const {
-    context.system().buscaGasPresPerm2();
+    sisprod::steady::searchGasPressureSteadySecondary(context.search());
 }
 void sisprod::steady::SteadyStateUpdaters::searchGasPressureSteadyTertiary() const {
-    context.system().buscaGasPresPerm3();
+    sisprod::steady::searchGasPressureSteadyTertiary(context.search());
 }
 
 void sisprod::thermal::ThermalSourceUpdater::operator()(int cellIndex) const {
-    context.system().renovaFonte(cellIndex);
+    sisprod::sources::renewSourceTerms(context.sources(), cellIndex);
 }
 
 void sisprod::thermal::ThermalClosureUpdater::instantaneous(
     int cellIndex, double &distribution, double &driftVelocity) const {
-    context.system().CalcC0Ud(cellIndex, distribution, driftVelocity);
+    driftflux::coefficient::instantaneous(context.closure(), cellIndex, distribution, driftVelocity);
 }
 
 void sisprod::thermal::ThermalClosureUpdater::buffered(
     int cellIndex, double &distribution, double &driftVelocity) const {
-    context.system().CalcC0UdBuf(cellIndex, distribution, driftVelocity);
+    driftflux::coefficient::buffered(context.closure(), cellIndex, distribution, driftVelocity);
 }
 
 void sisprod::thermal::ThermalClosureUpdater::initialization(
     int cellIndex, double &distribution, double &driftVelocity) const {
-    context.system().CalcC0UdIni(cellIndex, distribution, driftVelocity);
+    driftflux::coefficient::initialization(context.closure(), cellIndex, distribution, driftVelocity);
 }
 
 void sisprod::thermal::ThermalClosureUpdater::bufferedInitialization(
     int cellIndex, double &distribution, double &driftVelocity) const {
-    context.system().CalcC0UdIniBuf(cellIndex, distribution, driftVelocity);
+    driftflux::coefficient::bufferedInitialization(context.closure(), cellIndex, distribution, driftVelocity);
 }
 
 void sisprod::thermal::ThermalEvolutionUpdater::solvePressureVelocityCoupling(
     int cycle) const {
-    context.system().SolveAcopPV(cycle);
+    sisprod::transient::solvePressureVolumeCoupling(context.transientStep(), cycle, 0);
 }
 
 void sisprod::thermal::ThermalEvolutionUpdater::renew() const {
-    context.system().renova();
+    sisprod::transient::updateCells(context.transientStep(), 0);
 }
 
 void sisprod::transient::TransientStepUpdaters::advanceGasSubStep() const {
-    context.system().subtempoGas();
+    sisprod::gaslift::advanceGasSubStep(context.gasLift());
 }
 
 void sisprod::composition::CompositionUpdaters::correctGasSpecificGravity(int i) const {
-    context.system().corrDeng(i);
+    sisprod::steady::correctGasSpecificGravity(context.steady(), i);
 }
 
 void sisprod::transient::TransientSolveUpdaters::solveHydrateEnvelopes() const {
     context.system().solveHydrateEnvelopes();
 }
 double sisprod::transient::TransientSolveUpdaters::searchUnloadingInjectionPressure() const {
-    return context.system().BuscaPresInjDesc();
+    return sisprod::gaslift::searchUnloadingInjectionPressure(context.gasLift());
 }
 void sisprod::transient::TransientSolveUpdaters::writeProductionTrendHeader(int i, int nrede) const {
-    context.system().ImprimeTrendPCab(i, nrede);
+    trendoutput::writeProductionTrendHeader(context.trends(), i, nrede);
 }
 void sisprod::transient::TransientSolveUpdaters::writeProductionTrendRows(int i, int nrede) const {
-    context.system().ImprimeTrendP(i, nrede);
+    trendoutput::writeProductionTrendRows(context.trends(), i, nrede);
 }
 void sisprod::transient::TransientSolveUpdaters::writeGasTrendHeader(int i, int nrede) const {
-    context.system().ImprimeTrendGCab(i, nrede);
+    trendoutput::writeGasLineTrendHeader(context.trends(), i, nrede);
 }
 void sisprod::transient::TransientSolveUpdaters::writeGasTrendRows(int i, int nrede) const {
-    context.system().ImprimeTrendG(i, nrede);
+    trendoutput::writeGasLineTrendRows(context.trends(), i, nrede);
 }
 void sisprod::transient::TransientSolveUpdaters::writeProductionCrossSectionTrendHeader(int i) const {
-    context.system().ImprimeTrendTransPCab(i);
+    trendoutput::writeProductionCrossSectionTrendHeader(context.trends(), i);
 }
 void sisprod::transient::TransientSolveUpdaters::writeProductionCrossSectionTrendRows(int i) const {
-    context.system().ImprimeTrendTransP(i);
+    trendoutput::writeProductionCrossSectionTrendRows(context.trends(), i);
 }
 void sisprod::transient::TransientSolveUpdaters::writeGasCrossSectionTrendHeader(int i) const {
-    context.system().ImprimeTrendTransGCab(i);
+    trendoutput::writeGasLineCrossSectionTrendHeader(context.trends(), i);
 }
 void sisprod::transient::TransientSolveUpdaters::writeGasCrossSectionTrendRows(int i) const {
-    context.system().ImprimeTrendTransG(i);
+    trendoutput::writeGasLineCrossSectionTrendRows(context.trends(), i);
 }
 void sisprod::transient::TransientSolveUpdaters::evaluateParaffin() const {
-    context.system().avaliaParafina();
+    sisprod::composition::evaluateWaxDeposition(context.composition());
 }
 void sisprod::transient::TransientSolveUpdaters::connectTubing() const {
-    context.system().conectaColuna();
+    sisprod::gaslift::connectTubing(context.gasLift());
 }
 void sisprod::transient::TransientSolveUpdaters::marchTransientEnergy(int ciclo, int ciclomax) const {
-    context.system().marchaEnergTrans(ciclo, ciclomax);
+    sisprod::thermal::advanceTransientEnergy(context.thermal(), ciclo, ciclomax);
 }
 void sisprod::transient::TransientSolveUpdaters::updateMolarFractions(const ProFlu &fluiRev) const {
-    context.system().renovaFracMol2(fluiRev);
+    sisprod::composition::transportPhaseMolarFractions(context.composition(), fluiRev);
 }
 void sisprod::transient::TransientSolveUpdaters::updateDensities() const {
-    context.system().renovaMasEsp();
+    sisprod::composition::cacheCellAndFaceDensities(context.composition());
 }
 void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const ProFlu &fluiRev) const {
-    context.system().renovaRGOdgYco2(fluiRev);
+    sisprod::composition::transportBlackOilProperties(context.composition(), fluiRev);
 }
 void sisprod::transient::TransientSolveUpdaters::updateTemperatures() const {
-    context.system().renovaTemp();
+    sisprod::thermal::updateDistributedMassTransfer(context.thermal());
 }
 void sisprod::transient::TransientSolveUpdaters::updateInitialFractions() const {
-    context.system().renovaalbetini();
+    sisprod::composition::storePreviousFractionsAndMovePigs(context.composition());
 }
 void sisprod::transient::TransientSolveUpdaters::updateThermal(int aflu) const {
-    context.system().renovaterm(aflu);
+    sisprod::thermal::updateFlowPartitionTerms(context.thermal(), aflu);
 }
 void sisprod::transient::TransientSolveUpdaters::solveGasLine() const {
-    context.system().solveLinGas();
+    sisprod::gaslift::solveGasLine(context.gasLift());
 }
 
 

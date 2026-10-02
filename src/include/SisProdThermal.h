@@ -15,14 +15,15 @@ struct varGlob1D;
 
 namespace sisprod::thermal {
 
-/// Direct adapter for the source refresh owned by SProd.
+/// The source refresh the thermal steps call, with the solve context's source view.
 struct ThermalSourceUpdater {
     SolveContext &context;
 
     void operator()(int cellIndex) const;
 };
 
-/// Direct adapter for the four drift-closure entry points owned by SProd.
+/// The four drift-closure entry points the thermal steps call, with the solve context's
+/// closure view.
 struct ThermalClosureUpdater {
     SolveContext &context;
 
@@ -36,7 +37,8 @@ struct ThermalClosureUpdater {
                                 double &driftVelocity) const;
 };
 
-/// Direct adapter for the transient coupling owned by SProd.
+/// The transient coupling the thermal steps call, with the solve context's view of the
+/// transient step.
 struct ThermalEvolutionUpdater {
     SolveContext &context;
 

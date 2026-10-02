@@ -32,9 +32,8 @@ namespace sisprod::transient {
 /// The time loop is driven by Num4Main.cpp, not by this module: it computes one
 /// step and the step size, and the caller decides when to call again.
 
-/// The one thing the transient step needs from outside itself: subtempoGas,
-/// which lives in the gas-lift module and needs a GasLiftState that only the
-/// adapters assemble -- the same routing SteadyStateUpdaters uses.
+/// The one thing the transient step needs from outside itself: the gas-line sub-step,
+/// which lives in the gas-lift module and takes the solve context's GasLiftState.
 struct TransientStepUpdaters {
     SolveContext &context;
 
@@ -308,10 +307,9 @@ void storePreviousSources(const TransientStepState &state);
 
 // =============================================================== the solve ====
 
-/// What SolveTrans needs from outside itself: the SProd methods it calls.
-///
-/// solveHydrateEnvelopes constructs the hydrate solvers from the whole SProd,
-/// which no state struct can supply.
+/// What SolveTrans needs from outside itself: module functions it reaches with the solve
+/// context's views, and solveHydrateEnvelopes, which constructs the hydrate solvers from the
+/// whole SProd, which no state struct can supply, and so goes through the context's system.
 ///
 /// Default arguments are carried only where a call relies on them:
 /// updateThermal is called with none.

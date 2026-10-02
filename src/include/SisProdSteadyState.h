@@ -19,12 +19,9 @@ namespace sisprod::steady {
 /// The callbacks the steady march needs from outside itself.
 ///
 /// Fourteen of these live in other modules -- nine in sisprod::gaslift, five in
-/// sisprod::thermal -- but reaching them needs a GasLiftState or a
-/// ThermalState, which only the adapters build from an SProd. So the call goes
-/// back through SProd, as GasLiftTemperatureUpdater does, and the adapters
-/// remain the one place that knows how to assemble a module's state.
-///
-/// The remaining two are SProd's own: CalcC0UdPerm and renovaFonte.
+/// sisprod::thermal -- and take a GasLiftState or a ThermalState; the other two, the
+/// steady drift closure and the source terms, take the closure and source views. Each
+/// call reaches the module function with the solve context's view.
 struct SteadyStateUpdaters {
     SolveContext &context;
 

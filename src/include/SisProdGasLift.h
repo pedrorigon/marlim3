@@ -18,11 +18,9 @@ template <class T> class BandMtx;
 
 namespace sisprod::gaslift {
 
-/// Direct adapter for the discharge-temperature step owned by SProd.
-///
-/// SProd::tempDescarga already forwards to the thermal module, but reaching it
-/// needs a ThermalState the gas line does not carry. Same shape the thermal
-/// module uses for the closures it does not own.
+/// The thermal steps the gas line calls: the discharge, gas and gas-lift discharge
+/// temperatures. They take a ThermalState the gas line does not carry, which the solve
+/// context provides.
 struct GasLiftTemperatureUpdater {
     SolveContext &context;
 

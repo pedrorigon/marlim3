@@ -13,11 +13,9 @@ namespace sisprod { class SolveContext; }
 
 namespace sisprod::composition {
 
-/// Calls the transports make back into SProd: one, the gas specific gravity
-/// correction (SProd::corrDeng), which delegates to
-/// sisprod::steady::correctGasSpecificGravity. Routing it through SProd keeps
-/// this module depending on the class rather than on the steady module's
-/// state, as the transient module does for its own callbacks.
+/// The one call the transports make outside this module: the gas specific gravity
+/// correction, which lives in sisprod::steady and takes the solve context's
+/// SteadyStateState.
 struct CompositionUpdaters {
     SolveContext &context;
 
