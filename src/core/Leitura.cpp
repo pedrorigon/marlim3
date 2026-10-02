@@ -7743,6 +7743,12 @@ void Ler::parse_gasInj(JSON_entrada_gasInj& gasInj_json) {
 		if (is_ativo(gasInj_json)) {
 			if (controDesc == 0) {
 				gasinj.tipoCC = gasInj_json.tipoCC();
+				// only 0 (injection pressure) and 1 (injection flow rate) exist
+				if (gasinj.tipoCC != 0 && gasinj.tipoCC != 1)
+					logger.log(LOGGER_FALHA,
+					LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+							chaveJson,
+							"Chave #/gasInj/tipoCC deve ser 0 (pressao de injecao) ou 1 (vazao de injecao)");
 				gasinj.parserie = (int) gasInj_json.temperatura().size();
 				// caso os tamanhos dos vetores das chaves difiram entre si
 				if (gasInj_json.temperatura().size()
