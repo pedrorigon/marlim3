@@ -2581,7 +2581,7 @@ void SolveRedeTrans(SProd *malha, Rede &arqRede,
 
             if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
                 for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].trends.ntrend[j]);
+                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], (*arqRede.vg1dSP).lixo5, j, malha[i].trends.ntrend[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -11113,7 +11113,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
 
             if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
                 for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], (*arqRede.vg1dSP).lixo5, i, malha[i].trends.ntrend[j]);
+                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.MatTrendP[j], (*arqRede.vg1dSP).lixo5, j, malha[i].trends.ntrend[j]);
                 }
                 malha[i].renovaTemp();
             }
