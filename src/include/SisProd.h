@@ -76,6 +76,7 @@ extern tm *ltmGlobFim;
 // types are only declared here: the files that define them include the module
 // headers, and consumers never need them.
 class SProd;
+namespace sisprod { class SolveContext; }
 namespace sisprod::composition { struct CompositionState; struct CompositionUpdaters; }
 namespace sisprod::gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
 namespace sisprod::sources { struct SourceState; }
@@ -84,13 +85,13 @@ namespace sisprod::thermal { struct ThermalClosureUpdater; struct ThermalSourceU
 namespace sisprod::transient { struct TransientSolveState; struct TransientSolveUpdaters; struct TransientStepState; struct TransientStepUpdaters; }
 namespace trendoutput { struct TrendState; }
 namespace sisprod::adapters {
-sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system);
-sisprod::steady::SteadyStateState steadyStateOf(SProd &system);
-sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system);
-sisprod::transient::TransientStepState transientStateOf(SProd &system);
-sisprod::composition::CompositionState compositionStateOf(SProd &system);
-sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system);
-sisprod::thermal::ThermalState thermalStateOf(SProd &system);
+sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system, sisprod::SolveContext &context);
+sisprod::steady::SteadyStateState steadyStateOf(SProd &system, sisprod::SolveContext &context);
+sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system, sisprod::SolveContext &context);
+sisprod::transient::TransientStepState transientStateOf(SProd &system, sisprod::SolveContext &context);
+sisprod::composition::CompositionState compositionStateOf(SProd &system, sisprod::SolveContext &context);
+sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system, sisprod::SolveContext &context);
+sisprod::thermal::ThermalState thermalStateOf(SProd &system, sisprod::SolveContext &context);
 sisprod::sources::SourceState sourceStateOf(SProd &system);
 driftflux::coefficient::ClosureState closureStateOf(SProd &system);
 trendoutput::TrendState trendStateOf(const SProd &system);
@@ -956,13 +957,13 @@ struct Coupling3D {
 class SProd {
     // See the note above the class: the adapters and updaters are friends so the
     // members only they read can be private.
-    friend sisprod::gaslift::GasLiftState sisprod::adapters::gasLiftStateOf(SProd &);
-    friend sisprod::steady::SteadyStateState sisprod::adapters::steadyStateOf(SProd &);
-    friend sisprod::steady::SteadyStateSearchState sisprod::adapters::searchStateOf(SProd &);
-    friend sisprod::transient::TransientStepState sisprod::adapters::transientStateOf(SProd &);
-    friend sisprod::composition::CompositionState sisprod::adapters::compositionStateOf(SProd &);
-    friend sisprod::transient::TransientSolveState sisprod::adapters::transientSolveStateOf(SProd &);
-    friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &);
+    friend sisprod::gaslift::GasLiftState sisprod::adapters::gasLiftStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::steady::SteadyStateState sisprod::adapters::steadyStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::steady::SteadyStateSearchState sisprod::adapters::searchStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::transient::TransientStepState sisprod::adapters::transientStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::composition::CompositionState sisprod::adapters::compositionStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::transient::TransientSolveState sisprod::adapters::transientSolveStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::sources::SourceState sisprod::adapters::sourceStateOf(SProd &);
     friend driftflux::coefficient::ClosureState sisprod::adapters::closureStateOf(SProd &);
     friend trendoutput::TrendState sisprod::adapters::trendStateOf(const SProd &);

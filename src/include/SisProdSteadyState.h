@@ -12,6 +12,7 @@ class ProFlu;
 class choke;
 struct varGlob1D;
 class SProd;
+namespace sisprod { class SolveContext; }
 
 namespace sisprod::steady {
 
@@ -25,7 +26,7 @@ namespace sisprod::steady {
 ///
 /// The remaining two are SProd's own: CalcC0UdPerm and renovaFonte.
 struct SteadyStateUpdaters {
-    SProd &system;
+    SolveContext &context;
 
     // --- drift closure and sources -----------------------------------------
     void steadyDriftClosure(int cellIndex, double &c0, double &ud) const;

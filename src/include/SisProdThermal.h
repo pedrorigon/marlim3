@@ -8,6 +8,7 @@ class CelG;
 class ChokeGas;
 class Ler;
 class SProd;
+namespace sisprod { class SolveContext; }
 class choke;
 class solverP3D;
 struct varGlob1D;
@@ -16,14 +17,14 @@ namespace sisprod::thermal {
 
 /// Direct adapter for the source refresh owned by SProd.
 struct ThermalSourceUpdater {
-    SProd &system;
+    SolveContext &context;
 
     void operator()(int cellIndex) const;
 };
 
 /// Direct adapter for the four drift-closure entry points owned by SProd.
 struct ThermalClosureUpdater {
-    SProd &system;
+    SolveContext &context;
 
     void instantaneous(int cellIndex, double &distribution,
                        double &driftVelocity) const;
@@ -37,7 +38,7 @@ struct ThermalClosureUpdater {
 
 /// Direct adapter for the transient coupling owned by SProd.
 struct ThermalEvolutionUpdater {
-    SProd &system;
+    SolveContext &context;
 
     void solvePressureVelocityCoupling(int cycle) const;
     void renew() const;

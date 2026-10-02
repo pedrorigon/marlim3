@@ -18,6 +18,7 @@ class ProFlu;
 class solverP3D;
 struct varGlob1D;
 class SProd;
+namespace sisprod { class SolveContext; }
 template <class T> class Vcr;
 template <class T> class FullMtx;
 template <class T> class BandMtx;
@@ -35,7 +36,7 @@ namespace sisprod::transient {
 /// which lives in the gas-lift module and needs a GasLiftState that only the
 /// adapters assemble -- the same routing SteadyStateUpdaters uses.
 struct TransientStepUpdaters {
-    SProd &system;
+    SolveContext &context;
 
     void advanceGasSubStep() const;
 };
@@ -315,7 +316,7 @@ void storePreviousSources(const TransientStepState &state);
 /// Default arguments are carried only where a call relies on them:
 /// updateThermal is called with none.
 struct TransientSolveUpdaters {
-    SProd &system;
+    SolveContext &context;
 
     void solveHydrateEnvelopes() const;
     [[nodiscard]] double searchUnloadingInjectionPressure() const;

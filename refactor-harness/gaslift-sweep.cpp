@@ -16,6 +16,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
+#include "SisProdSolveContext.h"
 #include "SisProdGasLift.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
@@ -672,12 +673,12 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // Two calls with throat rates on either side of vazDescControl, to drive the
     // raise branch and the lower branch rather than one of them twice.
     seed();
-    sisprod::gaslift::computeUnloadingValvePressure(sisprod::adapters::gasLiftStateOf(system), 4.0 * system.arq.vazDescControl, 0);
+    sisprod::gaslift::computeUnloadingValvePressure(sisprod::SolveContext(system).gasLift(), 4.0 * system.arq.vazDescControl, 0);
     printUnloadingControl("CalcPresValvDesc-high", scenario.name, system);
 
     seed();
     system.gasLift.pGSup = system.arq.presMinDesc * 0.99;
-    sisprod::gaslift::computeUnloadingValvePressure(sisprod::adapters::gasLiftStateOf(system), 0.1 * system.arq.vazDescControl, 1);
+    sisprod::gaslift::computeUnloadingValvePressure(sisprod::SolveContext(system).gasLift(), 0.1 * system.arq.vazDescControl, 1);
     printUnloadingControl("CalcPresValvDesc-low", scenario.name, system);
 
     // Two rows again. The search corrects the surface pressure through the
@@ -699,21 +700,21 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // ordinary advance, and the hand-over that fires only when the interface is
     // in the last cell AND has filled it. Driving one leaves the other blind.
     seed();
-    sisprod::gaslift::advanceInterface(sisprod::adapters::gasLiftStateOf(system));
+    sisprod::gaslift::advanceInterface(sisprod::SolveContext(system).gasLift());
     printGas("avancInter", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
 
     seed();
     system.gasLift.celInter = system.gasLift.ncelGas - 1;
     system.gasLift.celulaG[system.gasLift.celInter].razInterIni = 0.995;
     system.gasLift.celulaG[system.gasLift.celInter].razInter = 0.995;
-    sisprod::gaslift::advanceInterface(sisprod::adapters::gasLiftStateOf(system));
+    sisprod::gaslift::advanceInterface(sisprod::SolveContext(system).gasLift());
     printGas("avancInter-handover", scenario.name, system.gasLift.celulaG[system.gasLift.ncelGas - 1]);
     printRatios("avancInter-ratios", scenario.name, system.gasLift.celulaG[system.gasLift.ncelGas - 1]);
     // The hand-over writes the cell AHEAD of the interface as well.
     printRatios("avancInter-ahead", scenario.name, system.gasLift.celulaG[system.gasLift.ncelGas]);
 
     seed();
-    sisprod::gaslift::solveUnloading(sisprod::adapters::gasLiftStateOf(system));
+    sisprod::gaslift::solveUnloading(sisprod::SolveContext(system).gasLift());
     printGas("resolveDescarga", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
     printGas("resolveDescarga-last", scenario.name, system.gasLift.celulaG[kGasCells]);
 
@@ -732,7 +733,7 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     seed();
     Vcr<double> wideFreeTerms = system.gasLift.termolivreG;
     system.gasLift.termolivreG = Vcr<double>(3 * (kGasCells + 1), 0.);
-    sisprod::gaslift::advanceBufferedGasSubStep(sisprod::adapters::gasLiftStateOf(system));
+    sisprod::gaslift::advanceBufferedGasSubStep(sisprod::SolveContext(system).gasLift());
     printGas("subtempoGasBuf", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
     printBuffered("subtempoGasBuf-buffer", scenario.name,
                   system.gasLift.celulaG[kInterfaceCell], system.gasLift.celulaG[0]);
@@ -766,11 +767,11 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    sisprod::gaslift::updateGasLine(sisprod::adapters::gasLiftStateOf(system));
+    sisprod::gaslift::updateGasLine(sisprod::SolveContext(system).gasLift());
     printGas("renovaGas", scenario.name, system.gasLift.celulaG[2]);
 
     resetGasLine(system, scenario);
-    sisprod::gaslift::updateBufferedGasLine(sisprod::adapters::gasLiftStateOf(system));
+    sisprod::gaslift::updateBufferedGasLine(sisprod::SolveContext(system).gasLift());
     printGas("renovaGasBuf", scenario.name, system.gasLift.celulaG[2]);
     // VGasRBuf is the ONLY field updateBufferedGasLine writes, and printGas does
     // not carry it, so until this row existed the routine could have been
@@ -784,7 +785,7 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetGasLine(system, scenario);
     resetValves(system);
     printValue("prescordesc", scenario.name,
-               sisprod::gaslift::unloadingPressureCorrection(sisprod::adapters::gasLiftStateOf(system), 0.4, 0, 1.1, 1));
+               sisprod::gaslift::unloadingPressureCorrection(sisprod::SolveContext(system).gasLift(), 0.4, 0, 1.1, 1));
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);

@@ -12,6 +12,7 @@ class ChokeGas;
 class Ler;
 struct varGlob1D;
 class SProd;
+namespace sisprod { class SolveContext; }
 template <class T> class Vcr;
 template <class T> class BandMtx;
 
@@ -23,7 +24,7 @@ namespace sisprod::gaslift {
 /// needs a ThermalState the gas line does not carry. Same shape the thermal
 /// module uses for the closures it does not own.
 struct GasLiftTemperatureUpdater {
-    SProd &system;
+    SolveContext &context;
 
     void dischargeTemperature(int cellIndex) const;
     /// steadyMode defaults to 0, as SProd::calctempGas does; most callers omit it.

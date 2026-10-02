@@ -9,6 +9,7 @@ class Ler;
 class ProFlu;
 struct varGlob1D;
 class SProd;
+namespace sisprod { class SolveContext; }
 
 namespace sisprod::composition {
 
@@ -18,7 +19,7 @@ namespace sisprod::composition {
 /// this module depending on the class rather than on the steady module's
 /// state, as the transient module does for its own callbacks.
 struct CompositionUpdaters {
-    SProd &system;
+    SolveContext &context;
 
     void correctGasSpecificGravity(int i) const;
 };
