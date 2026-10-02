@@ -53,6 +53,13 @@ def helper_body(text, name, drop_leading=None):
 cur = open('src/core/SisProdThermal.cpp', encoding='utf-8').read()
 base = tm.MAYBE_UNUSED.sub('', open(sys.argv[1], encoding='utf-8').read())
 
+# The baseline also predates the fix that made the liquid velocity cap keep its sign, as the gas cap
+# does (A9-14). The fix is applied to the baseline, once, so the comparison stays about the
+# decomposition.
+_capped = 'cappedMeanSuperficialLiquidVelocity = 5 * meanSuperficialLiquidVelocity / '
+assert base.count(_capped + 'meanSuperficialLiquidVelocity;') == 1, 'A9-14 anchor not found once'
+base = base.replace(_capped + 'meanSuperficialLiquidVelocity;', _capped + 'fabs(meanSuperficialLiquidVelocity);')
+
 # The baseline predates the removal of the fourteen breakpoint anchors -- guards
 # whose whole body declares an int, assigns zero to it and stops. They emit no
 # code, so removing them cannot move a number, but they are text and the

@@ -82,6 +82,16 @@ git -C "$project_root" show "$PRE_RENAME_COMMIT:src/include/RootFindingSolvers.h
 # bisect below would stop being reported -- the vacuous gate this file exists to
 # prevent. Renaming in the baseline gives the mapping and nothing else.
 sed -i 's/\bfalsacorda\b/bisect/g' "$work/pre-rename.h"
+# The reference carries the fix made after the move (A2-05: a zero discriminant skips the step), so
+# the token check still compares the move and not the fix.
+python3 - "$work/pre-rename.h" <<'FIX' || exit 2
+import sys
+p = sys.argv[1]
+t = open(p).read()
+old = "if (s == 0.0) {\n                fmin = objective(xmin);\n                if(j>minit)return xmin;\n            }\n"
+assert t.count(old) == 1, "A2-05 anchor matched %d times" % t.count(old)
+open(p, "w").write(t.replace(old, old[:-14] + "                continue;\n            }\n"))
+FIX
 
 failures=0
 
@@ -185,7 +195,9 @@ attempt "zriddr: xacc 1e-5 -> 2e-5 (path, not root)" \
 attempt "zbrent: iteration budget starts at 1" \
         "$(swap "'oppositeSignValue = currentValue;\n        for (int iteration = 0;'" "'oppositeSignValue = currentValue;\n        for (int iteration = 1;'")" caught
 attempt "zriddr: A2-05 guard removed, division unreachable" \
-        "$(swap "'                if(iteration>minimumIterations)return bestPoint;\n            }\n            double nextPoint'" "'                return bestPoint;\n            }\n            double nextPoint'")" caught
+        "$(swap "'                if(iteration>minimumIterations)return bestPoint;\n                continue;\n            }\n            double nextPoint'" "'                return bestPoint;\n            }\n            double nextPoint'")" caught
+attempt "zriddr: A2-05 skip removed, the zero discriminant divides again" \
+        "$(swap "'                if(iteration>minimumIterations)return bestPoint;\n                continue;\n            }'" "'                if(iteration>minimumIterations)return bestPoint;\n            }'")" caught
 attempt "zriddr: guard 1e9 -> 1e11" \
         "$(swap "'if (fabs(lowValue) > 1e9 || fabs(highValue) > 1e9)'" "'if (fabs(lowValue) > 1e11 || fabs(highValue) > 1e11)'")" caught
 attempt "zriddr: widening step 1.0001 -> 1.001, both arms" \
