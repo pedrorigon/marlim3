@@ -313,6 +313,7 @@ template <ObjectiveFunction Objective, ResidualMonitor Monitor>
             if (discriminant == 0.0) {
                 bestValue = objective(bestPoint);
                 if(iteration>minimumIterations)return bestPoint;
+                continue;
             }
             double nextPoint = midpoint + (midpoint - intervalLow) * ((lowValue >= highValue ? 1.0 : -1.0) * midpointValue / discriminant);
             if (fabs(nextPoint - previousAnswer) <= rootAccuracy) {
