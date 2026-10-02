@@ -4953,7 +4953,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // pressure or flow rate guess at the start of the pipe. What convergence really seeks is
     // the bottom-hole pressure or flow rate that satisfies the boundary conditions at the end
     // of the pipe; that is done in the search methods.
-    while ((fabs(masfim - masfim0) / masfim > state.input.CriterioConvergPerm ||
+    while ((fabs(masfim - masfim0) / fabs(masfim) > state.input.CriterioConvergPerm ||
             fabs(presteste - presteste0) / fabs(presteste) > state.input.CriterioConvergPerm) &&
            (state.steadyIteration < limIter)) {
         masfim0 = masfim;
