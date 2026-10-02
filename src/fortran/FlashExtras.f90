@@ -407,6 +407,7 @@ module FlashExtras
         real(c_double) :: dTwoPhaseGibbsEnergy, dPreviousTwoPhaseGibbsEnergy            ! Energias de Gibbs da mistura bifásica
         integer :: iIter
         logical :: bApplyDEMInCurrentIteration
+        integer :: iDEMHistoryCount             ! Iterations stored in the DEM history; the extrapolation reads the last four.
         real(c_double), dimension(iNComp) :: oLnK_JustUpdated           ! Valores de "ln K" ajustados na iteração atual de substituição sucessiva.
         real(c_double), dimension(iNComp) :: oLnK_From1IterationBack    ! Valores de "ln K" ajustados na iteração anterior.
         real(c_double), dimension(iNComp) :: oLnK_From2IterationBack    ! Valores de "ln K" ajustados duas iterações atrás.
@@ -474,6 +475,7 @@ module FlashExtras
         end do
 
         dTwoPhaseGibbsEnergy = 10.0d0 * dLeastGibbsEnergy
+        iDEMHistoryCount = 0
 
         ! Primeira tentativa de solução do "flash": via Substituição Sucessiva.
         successiveSubstLoop: do iIter = 1, iMaxSuccessiveSubstIterations
@@ -483,7 +485,8 @@ module FlashExtras
             !dPreviousBetaVap = dBetaVap
 
             ! Aplicar a aceleração DEM agora?
-            bApplyDEMInCurrentIteration = bDEMExtrapolationActive .and. (mod(iIter, iIterationFrequencyForDEM).eq.0)
+            bApplyDEMInCurrentIteration = bDEMExtrapolationActive .and. (mod(iIter, iIterationFrequencyForDEM).eq.0) &
+                                          .and. (iDEMHistoryCount.ge.4)
 
             checkDEM: if(bApplyDEMInCurrentIteration) then
 
@@ -554,6 +557,7 @@ module FlashExtras
                 oLnK_From3IterationBack = oLnK_From2IterationBack
                 oLnK_From2IterationBack = oLnK_From1IterationBack
                 oLnK_From1IterationBack = oLnK_JustUpdated
+                iDEMHistoryCount = iDEMHistoryCount + 1
 
                 do i = 1, iNComp
                     oLnK_JustUpdated(i) = log(oK(i))
