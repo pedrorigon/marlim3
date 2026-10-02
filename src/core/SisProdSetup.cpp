@@ -733,15 +733,15 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
             }
             if (celula[i].acsr.tipo == kAccessoryRadialPorous) {
                 celula[i].acsr.radialPoro.flup.rDgD = 1.;
-                celula[i].acsr.radialPoro.flup.rDgD = 1.;
+                celula[i].acsr.radialPoro.flup.rDgL = 1.;
                 for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                     celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
-                    celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
+                    celula[i].acsr.radialPoro.celula[iRP].flup.rDgL = 1.;
                 }
             }
             if (celula[i].acsr.tipo == kAccessoryPorous2D) {
                 celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
-                celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
+                celula[i].acsr.poroso2D.dados.flup.rDgL = 1.;
                 for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                     celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgD = 1.;
                     celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgL = 1.;
