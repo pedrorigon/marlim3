@@ -851,7 +851,7 @@ void PorosRadSimp::lerDados(string nomeArquivoEntrada) {
         temp.viscO = 0;
         temp.TBF = 0;
         temp.PBF = 0;
-        tabDin.push_back(temp);
+        tabDin.push_back(std::move(temp));
     }
 
     if (tipoModelOleo == 0) {

@@ -614,7 +614,7 @@ void SProd::buildDynamicTablesAndInclinations() {
                 tabelaDinamica temp;
                 temp.celIni = i + 1;
                 tables.tabDin[tables.ntabDin - 1].celFim = i;
-                tables.tabDin.push_back(temp);
+                tables.tabDin.push_back(std::move(temp));
                 tables.ntabDin++;
             }
         }

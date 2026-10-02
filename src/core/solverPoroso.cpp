@@ -208,7 +208,7 @@ solverPoro::solverPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) : dados(Vv
             temp.viscO = 0;
             temp.TBF = 0;
             temp.PBF = 0;
-            tabDin.push_back(temp);
+            tabDin.push_back(std::move(temp));
         }
     }
 }
@@ -400,7 +400,7 @@ solverPoro::solverPoro(const solverPoro &vPoroso) : dados(vPoroso.vg1dSP, vPoros
             temp.viscO = 0;
             temp.TBF = 0;
             temp.PBF = 0;
-            tabDin.push_back(temp);
+            tabDin.push_back(std::move(temp));
         }
     }
 }
@@ -599,7 +599,7 @@ solverPoro &solverPoro::operator=(const solverPoro &vPoroso) {
                 temp.viscO = 0;
                 temp.TBF = 0;
                 temp.PBF = 0;
-                tabDin.push_back(temp);
+                tabDin.push_back(std::move(temp));
             }
         }
     }
