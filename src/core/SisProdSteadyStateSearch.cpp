@@ -954,6 +954,28 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
         }
         if (marchResidual > 0. && limpres == 1) {
             int iterpres = 0;
+            while (marchResidual > 0 && iterpres < 10) {
+                pchute2 *= 1.001;
+                marchResidual = marchProductionSteady(state.march, pchute2);
+                if (fabs(marchResidual) > 1.01e10) {
+                    if (kontaTenta < 0)
+                        logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                   "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
+                                   "", "");
+                    cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
+                    if ((*state.march.globals).iterRede > 0)
+                        {
+                            abortValue = -1.1e10;
+                            return true;
+                        }
+                    else
+                        {
+                            abortValue = 1.1e10;
+                            return true;
+                        }
+                }
+                iterpres++;
+            }
             if (iterpres >= 10)
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                     NumError(
