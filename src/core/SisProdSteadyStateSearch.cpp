@@ -1191,24 +1191,28 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, double &amplifica
             kontaiter++;
             if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
                 if ((*state.march.globals).chaverede == 0) {
-                    if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
+                    if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
+                        NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
+                        logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                   "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
+                                   "", "");
+                    } else {
                         if (kontaTenta < 0)
                             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                        "", "");
-                        else {
-                            cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                            if ((*state.march.globals).iterRede > 0)
-                                {
-                                    abortValue = -1.1e10;
-                                    return true;
-                                }
-                            else
-                                {
-                                    abortValue = 1.1e10;
-                                    return true;
-                                }
-                        }
+                        cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
+                        if ((*state.march.globals).iterRede > 0)
+                            {
+                                abortValue = -1.1e10;
+                                return true;
+                            }
+                        else
+                            {
+                                abortValue = 1.1e10;
+                                return true;
+                            }
+                    }
                 } else {
                     if ((*state.march.globals).iterRede > 0)
                         {
