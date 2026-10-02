@@ -192,7 +192,7 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
         double masentrada = state.cells[cellIndex].MC;
         double massgas = state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini;
         double tit;
-        if (fabs(masentrada < 1e-9) && fabs(massgas < 1e-9)) {
+        if (fabs(masentrada) < 1e-9 && fabs(massgas) < 1e-9) {
             tit = alfE * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp) / (state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp) * alfE + rholmix * (1. - alfE));
         } else {
             if ((massgas >= 0 && state.cells[cellIndex].Mliqini <= 0) || (massgas < 0 && state.cells[cellIndex].Mliqini == 0))
