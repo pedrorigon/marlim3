@@ -3491,7 +3491,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         // the derivative Dt/Dx
         double cappedMeanSuperficialLiquidVelocity = meanSuperficialLiquidVelocity;
         if (globals.blackOilTemp == 1 && fabs(meanSuperficialLiquidVelocity) > 5)
-            cappedMeanSuperficialLiquidVelocity = 5 * meanSuperficialLiquidVelocity / meanSuperficialLiquidVelocity;
+            cappedMeanSuperficialLiquidVelocity = 5 * meanSuperficialLiquidVelocity / fabs(meanSuperficialLiquidVelocity);
         double cappedMeanSuperficialGasVelocity = meanSuperficialGasVelocity;
         if (globals.blackOilTemp == 1 && fabs(meanSuperficialGasVelocity) > 5)
             cappedMeanSuperficialGasVelocity = 5 * meanSuperficialGasVelocity / fabs(meanSuperficialGasVelocity);
