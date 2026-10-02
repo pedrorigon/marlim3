@@ -1384,25 +1384,8 @@ class SProd {
     /// Calculates gas-lift-valve opening area from calibration and operating conditions.
     double areaValvCali(double PCal, double TCal, double PVO, double PT,
                         double dextern, double areagarg, double Rvalv, double Temp);
-    /// Advances the temperature of one gas-line control volume.
-    void calctempGas(int i, double tempantiga, int modoPerm = 0);
     /// Updates gas-line temperature in the completion-fluid region during unloading.
     void tempDescarga(int i);
-    /// Calculates gas temperature across a gas-lift valve using the Joule-Thomson model.
-    double TempDescGL(int igl);
-    /// Advances the coupled gas-line pressure, velocity, and temperature solution.
-    void subtempoGas();
-    /// Exchanges heat-transfer data between the production column and annulus.
-    void conectaColuna();
-    /// Advances the temperature of one production-line control volume.
-    void calctemp(int i, double tempantiga, int modoPerm = 0);
-
-    /// Updates IPR, gas, liquid, leak, and gas-lift source terms.
-    void renovaFonte(int ind);
-    /// Stores previous void fractions and updates pig motion and reception.
-    void renovaalbetini();
-    /// Caches cell and face densities to avoid repeated property calculations.
-    void renovaMasEsp();
 
     /// Selects and evaluates the slip correlation at a production-line face.
     void CalcC0Ud(int ind, double &c0, double &ud);
@@ -1426,12 +1409,6 @@ class SProd {
     /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
     void renovaTemp();
   private:
-    /// Evaluates wax deposition and its effects.
-    void avaliaParafina();
-    /// Transports black-oil properties such as GOR, API, gas density, and CO2 fraction.
-    void renovaRGOdgYco2(ProFlu fluiRev = ProFlu());
-    /// Applies the alternate compositional molar-fraction transport update.
-    void renovaFracMol2(ProFlu fluiRev = ProFlu());
   public:
     /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
     void renovaterm(int aflu = 0);
@@ -1501,14 +1478,6 @@ class SProd {
     /// Appends one gas-line trend sample to its output buffer.
     void ImprimeTrendGCab(int i, int nrede = -1);
   private:
-    /// Appends one production-line wall-temperature trend sample.
-    void ImprimeTrendTransP(int i);
-    /// Appends one production-line wall-temperature trend sample.
-    void ImprimeTrendTransPCab(int i);
-    /// Appends one gas-line wall-temperature trend sample.
-    void ImprimeTrendTransG(int i);
-    /// Appends one gas-line wall-temperature trend sample.
-    void ImprimeTrendTransGCab(int i);
   public:
 
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
@@ -1545,12 +1514,6 @@ class SProd {
     double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
 
   private:
-    /// Brackets and solves the pressure root for marchaGasPerm2.
-    double buscaGasPresPerm2();
-    /// Brackets and solves the pressure root for marchaGasPerm3.
-    double buscaGasPresPerm3();
-    /// Corrects gas density in one control volume.
-    void corrDeng(int i);
     /// Calculates steady-state slip parameters at a downstream face.
     void CalcC0UdPerm(int ind, double &c0, double &ud);
     /// Marches steady-state temperature from cell i-1 to cell i.
@@ -1566,17 +1529,8 @@ class SProd {
     double delpGasPerm(int i);
     /// Estimates pressure variation in an injection-well system.
     double delpInjPerm(int i);
-    /// Calculates gas-lift-valve flow from gas-line and production-line pressures.
-    void calcVazGasPerm(int i);
-    /// Initializes gas-lift-valve flow estimates before the steady-state march.
-    void IniciaVazValvGasPerm(int i);
     /// Marches steady-state gas-line temperature from cell i-1 to cell i.
     void RenovaTempGasPerm(int i);
-
-    /// Exchanges steady-state heat-transfer data between column and annulus.
-    void conectaColunaPerm();
-    /// Initializes estimated column-annulus heat transfer before the steady-state march.
-    void IniciaconectaColunaPerm();
 
   public:
     /// Solves injection cases CC1 and CC3.

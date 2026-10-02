@@ -64,10 +64,6 @@ ImprimeTrendP
 ImprimeTrendPCab
 ImprimeTrendG
 ImprimeTrendGCab
-ImprimeTrendTransP
-ImprimeTrendTransPCab
-ImprimeTrendTransG
-ImprimeTrendTransGCab
 
 # --- stage 2: root-finding solvers ----------------------------------------
 # The three solvers lost `prod` and `tipoCC` from every call: what was
@@ -117,7 +113,6 @@ sign
 # computeTemperatureSourceTerms. L2 passed after every split, the 43-row
 # thermal sweep stayed byte-identical, and measure-functions.py reports zero
 # functions above 200 lines.
-calctemp
 
 # T063 moved calcTempEntalp and calcTransMassTermo through the same invertible
 # ThermalState substitution. The first compared equal over 465 tokens. The
@@ -181,9 +176,7 @@ RenovaTempPermRev
 # committed: the reference table went from 73 to 80 rows, and the sweep built
 # against the pre-move commit and against the moved code yields identical
 # tables.
-calctempGas
 tempDescarga
-TempDescGL
 atualizaPeriTempProd
 calcTempFim
 
@@ -213,17 +206,11 @@ calcTempFim
 HidroDescargaG
 areaValvCali
 BuscaPresInjDesc
-subtempoGas
-conectaColuna
 solveLinGas
 delpGasPerm
 delpInjPerm
 RenovaPresGasPerm
-calcVazGasPerm
-IniciaVazValvGasPerm
 RenovaTempGasPerm
-conectaColunaPerm
-IniciaconectaColunaPerm
 
 # --- stage 7: steady march -------------------------------------------------
 # Every name here is a body that moved to SisProdSteadyState.cpp and left a
@@ -239,7 +226,6 @@ IniciaconectaColunaPerm
 # The nine T090 and T092 helpers are NOT listed. They have no baseline
 # counterpart, so L0 never compares them, and listing them would be a stale
 # declaration the check rejects.
-corrDeng
 marchaProdPerm1
 marchaProdPresPres1
 hidroreverso
@@ -266,8 +252,6 @@ buscaProdPresPresPerm
 buscaProdPresPresPermRev
 buscaProdPresPresPerm2
 buscaProdPresPresPerm3
-buscaGasPresPerm2
-buscaGasPresPerm3
 buscaInjPfundoPerm1
 buscaInjPfundoPerm2
 buscaInjPfundoPerm3
@@ -322,7 +306,6 @@ montasistema
 # proved literal by prove-cut.py -- the helper put back reproduces the host's
 # tokens before the cut -- which matters here because no corpus model enables
 # the hydrate calculation renovaFonte's first cut lifted. L2 14/14 after each.
-renovaFonte
 # The default constructor SProd() was cut too (nullOutputCouplingAndSaturationState),
 # missed at first because the ad-hoc scan could not match a function without a
 # return type. SProd is declared above since stage 1 and covers both overloads.
@@ -333,17 +316,12 @@ renovaFonte
 # proved token for token by composition-move.py `check`, which applies the
 # inverse substitution and compares with the pre-move commit -- calibrated
 # against a changed literal and a field swapped for another.
-renovaalbetini
-renovaMasEsp
-avaliaParafina
 # T102b, T102c -- moved the same way, without decomposition by the owner's
 # decision (each loop body declares ~80 locals used to its end; literal cuts
 # needed 18 to 70 parameters). Proved by composition-move.py `check`.
-renovaRGOdgYco2
 # renovaFracMol was deleted on 2026-09-28 by the owner's decision: private, no
 # caller in this tree or in main.
 renovaFracMol -> REMOVED
-renovaFracMol2
 # SC-015 -- the two per-cell loops that ran every time step from SisProd.cpp
 # moved to SisProdTransient.cpp (generateFluidMiniTables, storePreviousSources);
 # SProd keeps one-line delegations. T126 had kept geraMiniTabFlu here on a
@@ -435,3 +413,30 @@ salvaFonte -> REMOVED
 SubReiniEvolFrac -> REMOVED
 subtempoGasBuf -> REMOVED
 ValvGasTrans -> REMOVED
+
+# --- stage 9: 4d, solve context (code analysis) ----------------------------
+# The SProd methods that only the updaters called, and that only forwarded to a module
+# function, had no caller once the updaters reached the modules with the solve context's
+# views; they were removed.
+avaliaParafina -> REMOVED
+buscaGasPresPerm2 -> REMOVED
+buscaGasPresPerm3 -> REMOVED
+calctemp -> REMOVED
+calctempGas -> REMOVED
+calcVazGasPerm -> REMOVED
+conectaColuna -> REMOVED
+conectaColunaPerm -> REMOVED
+corrDeng -> REMOVED
+ImprimeTrendTransG -> REMOVED
+ImprimeTrendTransGCab -> REMOVED
+ImprimeTrendTransP -> REMOVED
+ImprimeTrendTransPCab -> REMOVED
+IniciaconectaColunaPerm -> REMOVED
+IniciaVazValvGasPerm -> REMOVED
+renovaalbetini -> REMOVED
+renovaFonte -> REMOVED
+renovaFracMol2 -> REMOVED
+renovaMasEsp -> REMOVED
+renovaRGOdgYco2 -> REMOVED
+subtempoGas -> REMOVED
+TempDescGL -> REMOVED

@@ -322,55 +322,14 @@ double SProd::areaValvCali(double PCal, double TCal, double PVO, double PT,
     return sisprod::gaslift::calibratedValveArea(PCal, TCal, PVO, PT, dextern, areagarg, Rvalv, Temp);
 }
 
-void SProd::calctempGas(int i, double tempantiga, int modoPerm) {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::computeGasTemperature(context.thermal(), i, tempantiga, modoPerm);
-}
-
 void SProd::tempDescarga(int i) {
     sisprod::SolveContext context(*this);
     sisprod::thermal::computeDischargeTemperature(context.thermal(), i);
 }
 
-double SProd::TempDescGL(int igl) {
-    sisprod::SolveContext context(*this);
-    return sisprod::thermal::computeGasLiftDischargeTemperature(context.thermal(), igl);
-}
-
 double SProd::BuscaPresInjDesc() {
     sisprod::SolveContext context(*this);
     return sisprod::gaslift::searchUnloadingInjectionPressure(context.gasLift());
-}
-
-void SProd::subtempoGas() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::advanceGasSubStep(context.gasLift());
-}
-
-void SProd::conectaColuna() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::connectTubing(context.gasLift());
-}
-
-void SProd::calctemp(int i, double tempantiga, int modoPerm) {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::computeTemperature(
-        context.thermal(), i, tempantiga, modoPerm);
-}
-
-void SProd::renovaFonte(int ind) {
-    sisprod::SolveContext context(*this);
-    sisprod::sources::renewSourceTerms(context.sources(), ind);
-}
-
-void SProd::renovaalbetini() {
-    sisprod::SolveContext context(*this);
-    sisprod::composition::storePreviousFractionsAndMovePigs(context.composition());
-}
-
-void SProd::renovaMasEsp() {
-    sisprod::SolveContext context(*this);
-    sisprod::composition::cacheCellAndFaceDensities(context.composition());
 }
 
 void SProd::CalcC0Ud(int ind, double &c0, double &ud) {
@@ -414,22 +373,7 @@ void SProd::renovaTemp() {
         context.thermal());
 }
 
-void SProd::avaliaParafina() {
-    sisprod::SolveContext context(*this);
-    sisprod::composition::evaluateWaxDeposition(context.composition());
-}
-
-void SProd::renovaRGOdgYco2(ProFlu fluiRev) {
-    sisprod::SolveContext context(*this);
-    sisprod::composition::transportBlackOilProperties(context.composition(), fluiRev);
-}
-
 /*** change 4 ***/
-
-void SProd::renovaFracMol2(ProFlu fluiRev) {
-    sisprod::SolveContext context(*this);
-    sisprod::composition::transportPhaseMolarFractions(context.composition(), fluiRev);
-}
 
 void SProd::renovaterm(int aflu) {
     sisprod::SolveContext context(*this);
@@ -569,23 +513,6 @@ void SProd::ImprimeTrendG(int i, int nrede) {
     sisprod::SolveContext context(*this);
     trendoutput::writeGasLineTrendRows(context.trends(), i, nrede);
 }
-void SProd::ImprimeTrendTransPCab(int i) {
-    sisprod::SolveContext context(*this);
-    trendoutput::writeProductionCrossSectionTrendHeader(context.trends(), i);
-}
-void SProd::ImprimeTrendTransP(int i) {
-    sisprod::SolveContext context(*this);
-    trendoutput::writeProductionCrossSectionTrendRows(context.trends(), i);
-}
-void SProd::ImprimeTrendTransGCab(int i) {
-    sisprod::SolveContext context(*this);
-    trendoutput::writeGasLineCrossSectionTrendHeader(context.trends(), i);
-}
-void SProd::ImprimeTrendTransG(int i) {
-    sisprod::SolveContext context(*this);
-    trendoutput::writeGasLineCrossSectionTrendRows(context.trends(), i);
-}
-
 double SProd::marchaProdPerm1(double pchute) {
     sisprod::SolveContext context(*this);
     return sisprod::steady::marchProductionSteady(context.steady(), pchute);
@@ -636,35 +563,6 @@ double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
     return sisprod::steady::searchProductionPressureToPressureTertiary(context.search(), chute, maxvaz);
 }
 
-double SProd::buscaGasPresPerm2() {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchGasPressureSteadySecondary(context.search());
-}
-
-double SProd::buscaGasPresPerm3() {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchGasPressureSteadyTertiary(context.search());
-}
-
-void SProd::corrDeng(int i) {
-    sisprod::SolveContext context(*this);
-    sisprod::steady::correctGasSpecificGravity(context.steady(), i);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void SProd::CalcC0UdPerm(int ind, double &c0, double &ud) {
     sisprod::SolveContext context(*this);
     driftflux::coefficient::steadyState(context.closure(), ind, c0, ud);
@@ -705,29 +603,9 @@ void SProd::RenovaPresGasPerm(int i) {
     sisprod::gaslift::updateSteadyGasPressure(context.gasLift(), i);
 }
 
-void SProd::calcVazGasPerm(int i) {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::computeSteadyGasFlowRate(context.gasLift(), i);
-}
-
-void SProd::IniciaVazValvGasPerm(int i) {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::initializeSteadyValveGasFlowRate(context.gasLift(), i);
-}
-
 void SProd::RenovaTempGasPerm(int i) {
     sisprod::SolveContext context(*this);
     sisprod::gaslift::updateSteadyGasTemperature(context.gasLift(), i);
-}
-
-void SProd::conectaColunaPerm() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::connectTubingSteady(context.gasLift());
-}
-
-void SProd::IniciaconectaColunaPerm() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::initializeTubingConnectionSteady(context.gasLift());
 }
 
 double SProd::buscaInjPfundoPerm1(double chute) {
