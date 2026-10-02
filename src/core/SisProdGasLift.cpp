@@ -1269,7 +1269,8 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
                 }
             }
 
-            state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
+            if (cellIndex > 0)
+                state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
             if (cellIndex < state.gasCellCount)
                 state.gasCells[cellIndex + 1].VGasL = state.gasCells[cellIndex].VGasR;
         }
@@ -1279,7 +1280,8 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
             state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex - 1].VGasR - 0 * state.gasCells[cellIndex].massfonteCH;
         else
             state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex - 1].VGasR + 0 * state.gasCells[cellIndex].massfonteCH;
-        state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
+        if (cellIndex > 0)
+            state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
         if (cellIndex < state.gasCellCount)
             state.gasCells[cellIndex + 1].VGasL = state.gasCells[cellIndex].VGasR;
     }
