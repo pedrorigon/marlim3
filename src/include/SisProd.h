@@ -980,8 +980,6 @@ class SProd {
      * @brief Enables latent-heat calculations for black-oil simulations.
      */
     int CalcLat = 0;
-  private:
-  public:
 
     /**
      * @brief Section index when this object belongs to a pipeline network.
@@ -992,14 +990,10 @@ class SProd {
      */
     int ncel = 0;
 
-  private:
-  public:
     /**
      * @brief What the steady-state search carries from one iteration to the next.
      */
     sisprod::SteadySearch steadySearch;
-  private:
-  public:
 
     /**
      * @brief Current inlet pressure boundary condition.
@@ -1040,24 +1034,14 @@ class SProd {
      */
     double temperatura = 0;
 
-  private:
-  public:
-
-
-  private:
-  public:
     /**
      * @brief Indicates whether the surface choke is active.
      */
     int masChkSup = 0;
-  private:
-  public:
     /**
      * @brief The fluid-property tables the fluids of this system's cells point at.
      */
     sisprod::PropertyTables tables;
-  private:
-  public:
 
     /**
      * @brief Parsed user input and simulation configuration.
@@ -1080,50 +1064,26 @@ class SProd {
      * @brief Buffer used to write production-line profiles.
      */
     FullMtx<double> flut;
-  private:
-  public:
     /**
      * @brief The gas-lift line: its cells, chokes and valves, its pressure-velocity system, and
      * the unloading of its completion fluid.
      */
     sisprod::GasLiftLine gasLift;
-  private:
-  public:
     /**
      * @brief The state of a transient run.
      */
     sisprod::TransientRun transient;
-  private:
-  public:
 
     /**
      * @brief Current time step.
      */
     double dt = 0.;
-  private:
-  public:
 
-  private:
-
-
-  public:
-  private:
-
-  public:
-  private:
-  public:
-  private:
-  public:
     /**
      * @brief The trend and profile output this system writes.
      */
     sisprod::TrendRecorder trends;
-  private:
 
-  public:
-
-  private:
-  public:
     /**
      * @brief Event-log file name.
      */
@@ -1140,17 +1100,11 @@ class SProd {
      * steady state. The source terms read it (sisprod::sources::SourceState).
      */
     int modoPerm = 0.;
-  private:
-  public:
-  private:
-  public:
 
     /**
      * @brief Surface-choke model.
      */
     choke chokeSup;
-  private:
-  public:
     /**
      * @brief Multiphase production-line control volumes, held by productionCells.
      */
@@ -1161,10 +1115,7 @@ class SProd {
      * @brief The production-line control volumes celula points at.
      */
     vector<Cel> productionCells;
-  public:
 
-
-  private:
   public:
 
     /**
@@ -1180,29 +1131,18 @@ class SProd {
      */
     int derivaAnel = -1;
 
-
   private:
     /**
      * @brief Temporary-network flag; currently expected to remain zero.
      */
     int redeTemporario = 0;
-  public:
 
-
-  private:
-
-
-  public:
-
-  private:
   public:
     /**
      * @brief Section-blocking state.
      */
     int bloq = 0;
 
-  private:
-  public:
     /**
      * @brief The coupling with the three-dimensional thermal model.
      */
@@ -1217,10 +1157,6 @@ class SProd {
      * @brief Indicates that the thermal source term is disabled.
      */
     int semTermo = 0;
-  public:
-
-
-  private:
 
     static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
                                      "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
@@ -1399,8 +1335,6 @@ class SProd {
 
     /// Loads pressure-velocity results into cell and face state variables.
     void renova(int expli = 0);
-  private:
-  public:
     /// Updates only section-end states during intermediate network convergence.
     void renovaBuffer();
     /// Copies previous states when an active choke bypasses the intermediate network solve.
@@ -1408,8 +1342,6 @@ class SProd {
 
     /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
     void renovaTemp();
-  private:
-  public:
     /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
     void renovaterm(int aflu = 0);
     /// Computes T1 and T2 at the outlet of an internal network section.
@@ -1424,8 +1356,6 @@ class SProd {
 
     /// Selects a stable time step from CFL and additional model restrictions.
     void determinaDT(int vexpli = 0);
-  private:
-  public:
     /// Limits time-step growth when accepted steps remain well below the CFL estimate.
     void atenuaDtMax();
     /// Checks whether liquid-density variation requires the complete formulation.
@@ -1443,8 +1373,6 @@ class SProd {
     void EvoluiFrac(double alfrev = 1., double betrev = 0., int ciclo = 0);
     /// Restores the initial fraction state after an invalid update.
     void ReiniEvolFrac0();
-  private:
-  public:
     /// Restores previous volume fractions after a nonphysical update.
     void ReiniEvolFrac();
     /// Updates phase fractions in cells affected by a moving pig.
@@ -1452,8 +1380,6 @@ class SProd {
     /// Assembles and solves the global pressure-velocity coupling system.
     void SolveAcopPV(int vexpli = 0, int ciclo = 0);
 
-  private:
-  public:
     /// Advances the transient energy equation.
     void marchaEnergTrans(int ciclo = 0, int ciclomax = 0);
     /// Refreshes local dynamic fluid-property tables.
@@ -1477,13 +1403,9 @@ class SProd {
     void ImprimeTrendG(int i, int nrede = -1);
     /// Appends one gas-line trend sample to its output buffer.
     void ImprimeTrendGCab(int i, int nrede = -1);
-  private:
-  public:
 
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
     double marchaProdPerm1(double pchute);
-  private:
-  public:
     /// Brackets and solves the bottomhole-pressure root for marchaProdPerm1.
     double buscaProdPfundoPerm(double chute = -1., int kontaTenta = -1);
     /// Brackets and solves the reverse-flow bottomhole-pressure root.
@@ -1494,18 +1416,12 @@ class SProd {
     double buscaProdPfundoPerm3(double pentrada);
     /// Marches the steady production solution using a bottomhole mass-flow guess.
     double marchaProdPresPres1(double mchute);
-  private:
-  public:
     /// Brackets and solves the mass-flow root for marchaProdPresPres1.
     double buscaProdPresPresPerm(double mchute, double maxvaz = 0., int kontaiter = 0);
     /// Brackets and solves the reverse-flow mass-flow root.
     double buscaProdPresPresPermRev(double mchute, double maxvaz = 0., int kontaiter = 0);
-  private:
-  public:
     /// Brackets and solves the mass-flow root for marchaProdPresPres2.
     double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
-  private:
-  public:
     /// Brackets and solves the mass-flow root for the closed-choke case, chosen
     /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
     ///
@@ -1543,10 +1459,6 @@ class SProd {
     double buscaInjPfundoPerm4();
     /// Solves injection case CC5.
     double buscaInjPfundoPerm5(double chute = -1.);
-
-  private:
-
-  public:
 
     /// Estimates steady production-network node pressures from hydrostatics.
     double hidroreverso(double hol, double vaz = 0, double vazG = 0);
