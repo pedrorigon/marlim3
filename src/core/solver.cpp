@@ -1664,6 +1664,9 @@ void solv2D::resolve() {
     string polyarq;
 
     FILE *fp = fopen(nomeArquivoEntrada.c_str(), "r");
+    if (!fp)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "", "",
+                                       "Arquivo de entrada inexistente");
     char readBuffer[125536];
     FileReadStream is(fp, readBuffer, sizeof(readBuffer));
     Document elementoRaiz;

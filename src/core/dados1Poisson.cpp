@@ -118,6 +118,9 @@ void dadosP::lerPoisson(string nomeArquivoEntrada, double vCondGlob, double vCon
 
     entrada = nomeArquivoEntrada;
     FILE *fp = fopen(nomeArquivoEntrada.c_str(), "r");
+    if (!fp)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       "Arquivo inexistente", "", nomeArquivoEntrada);
     char readBuffer[125536];
     FileReadStream is(fp, readBuffer, sizeof(readBuffer));
     Document elementoPoissonRaiz;
