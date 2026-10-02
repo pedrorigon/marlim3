@@ -1536,8 +1536,10 @@ void TransCal::transcel(int icam, int idisc) {
             r1 = geom.a / 2. + idisc * drcamada[0];
             if (idisc < ncamada[0])
                 r2 = geom.a / 2. + (idisc + 1) * drcamada[0];
-            else
+            else if (0 < lastLayer)
                 r2 = geom.diamC[0] / 2. + drcamada[1];
+            else
+                r2 = r1;
         }
         rho = geom.rhoC[icam];
         cp = geom.cp[icam];
