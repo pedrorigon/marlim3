@@ -3897,18 +3897,7 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
 
 namespace {
 
-/// Which fluid receives the dry-gas aware (six-argument) compositional flash in
-/// the gas-source arm of the steady production marches.
-enum class DryGasFlashTarget {
-    /// marchProductionSteady, marchReverseProductionSteady: the flag goes to
-    /// the injected gas.
-    sourceFluid,
-    /// marchProductionSteadySecondary: the flag goes to the cell fluid.
-    cellFluid,
-};
-
-void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, double &alfini, double &betini,
-                                      DryGasFlashTarget dryGasFlashTarget) {
+void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, double &alfini, double &betini) {
     // void fraction estimate in the first cell of the system
     if (state.cells[0].acsr.tipo == kAccessoryNone) { // no source at all
         state.cells[0].temp = state.input.celp[0].textern;
@@ -3921,19 +3910,9 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
     } else if (state.cells[0].acsr.tipo == kAccessoryGasInjection) { // gas source
         state.cells[0].temp = state.cells[0].acsr.injg.temp;
         if (state.input.flashCompleto == 2) {
-            // The only place the three marches disagree: marchProductionSteady and
-            // marchReverseProductionSteady hand the dry-gas flag to the source's fluid,
-            // marchProductionSteadySecondary to the cell's. Nothing in the code says
-            // which is intended.
-            if (dryGasFlashTarget == DryGasFlashTarget::sourceFluid) {
-                if (state.input.tabelaDinamica == 0)
-                    state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-                state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
-            } else {
-                if (state.input.tabelaDinamica == 0)
-                    state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
-                state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
-            }
+            if (state.input.tabelaDinamica == 0)
+                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
+            state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
         }
         if (state.cells[0].acsr.injg.seco == 1) {
             alfini = 1.;
@@ -4555,7 +4534,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
     double alfini = 0.;
     double betini = 0.;
 
-    seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
+    seedFirstCellVoidFraction(state, pchute, alfini, betini);
     if (fabs(alfini) < 1e-6)
         alfini = 0.;
     if (fabs(betini) < 1e-6)
@@ -4713,7 +4692,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     double betini = 0.;
     state.slowHeatTransferThreshold = 0.1;
 
-    seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::sourceFluid);
+    seedFirstCellVoidFraction(state, pchute, alfini, betini);
     // this march is for a source at the start of the pipe,
     // so the pipe is taken as closed and a source is placed at the centre of the
     // first cell. The flow rates at the cell's left boundary are therefore 0
@@ -4908,7 +4887,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     double alfini = 0.;
     double betini = 0.;
 
-    seedFirstCellVoidFraction(state, pchute, alfini, betini, DryGasFlashTarget::cellFluid);
+    seedFirstCellVoidFraction(state, pchute, alfini, betini);
 
     // this march is for a source at the start of the pipe,
     // so the pipe is taken as closed and a source is placed at the centre of the
