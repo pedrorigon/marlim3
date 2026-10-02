@@ -11460,7 +11460,7 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
             massLiqC = 0.;
         } else if (malha[iS].celula[0].acsr.tipo == 2) {
             massGas = 0.;
-            double beta = malha[iS].celula[0].acsr.injg.QGas * malha[iS].celula[0].acsr.injl.bet;
+            double beta = malha[iS].celula[0].acsr.injl.bet;
             double rhoP = 141.5 / (131.5 + malha[iS].celula[0].acsr.injl.FluidoPro.API);
             double rhoC = malha[iS].celula[0].acsr.injl.fluidocol.rholStd;
             massLiqP = (1. - beta) * malha[iS].celula[0].acsr.injl.QLiq * rhoP / 86400;
