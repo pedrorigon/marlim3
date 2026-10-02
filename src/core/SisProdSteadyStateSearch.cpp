@@ -4378,6 +4378,25 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state) {
         }
         if (i == state.march.lastCell + 1)
             guessNeedsCorrection = 0;
+        else if (!(state.march.cells[i - 1].pres >= 1.)) { // stopped on the pressure
+            if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                NumError("pressao menor que 1");
+            else {
+                if ((*state.march.globals).iterRede > 0)
+                    return -1.1e10;
+                else
+                    return 1.1e10;
+            }
+        } else { // stopped on the mass flow
+            if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                NumError("Vazao massica de injeÃ§Ã£o menor que 0");
+            else {
+                if ((*state.march.globals).iterRede > 0)
+                    return -1.1e10;
+                else
+                    return 1.1e10;
+            }
+        }
     }
     state.march.updaters.updateSource(state.march.lastCell);
     masfim += (state.march.cells[state.march.lastCell].fontemassCR + state.march.cells[state.march.lastCell].fontemassLR + state.march.cells[state.march.lastCell].fontemassGR);

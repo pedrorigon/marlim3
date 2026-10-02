@@ -5982,6 +5982,10 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
         }
         if (i == state.lastCell + 1)
             guessNeedsCorrection = 0;
+        else if (!(state.cells[i - 1].pres >= 1.))
+            return -1e10; // stopped on the pressure, as the march's own pressure test
+        else
+            return 1e10; // stopped on the mass flow, as the march's own flow test
     }
     state.updaters.updateSource(state.lastCell);
     masfim += (state.cells[state.lastCell].fontemassCR + state.cells[state.lastCell].fontemassLR + state.cells[state.lastCell].fontemassGR);
