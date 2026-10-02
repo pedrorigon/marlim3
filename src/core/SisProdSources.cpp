@@ -56,7 +56,6 @@ void consumeHydrateFormationMass(const SourceState &state, double &gas_consumido
             state.cells[cellIndex].flui.BSW = BSW_old;
         }
         //state.cells[cellIndex].FW=state.cells[cellIndex].flui.BSW;
-        if (model2 && cellIndex==3) cout << " t [s]: " << (*state.globals).lixo5 << " BSW: " << BSW_old << " FW: " << state.cells[cellIndex].FW << " frac_agua: " << frac_agua << " BSW atualizada apos acoplamento " << state.cells[cellIndex].flui.BSW << endl;
         //if (cellIndex==3) system("pause");
 
     } // hydrate change
