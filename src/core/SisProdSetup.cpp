@@ -169,10 +169,12 @@ void SProd::loadPvtSimSaturationTables() {
                     double a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
                     double Rsr = a1 * pow(pr, a2) + (1. - a1) * pow(pr, a3);
-                    double rstemp = 0.;
+                    double rstemp = Rsr;
                     if (rstemp < 0.)
                         rstemp = 0.;
                     else if ((tables.RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere > pbtemp)
+                        rstemp = 1.;
+                    else if (rstemp > 1.)
                         rstemp = 1.;
                     else
                         rstemp = Rsr;
