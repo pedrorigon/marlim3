@@ -3685,6 +3685,7 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
             }
             if ((arqRede.malha[i].nafluente == 0 || (permAflu == 0 && arqRede.malha[i].perm == 1)) &&
                 Resolv[i] == 0 && inativo[i] == 0) {
+                double valor = 0.;
                 if (arqRede.malha[i].perm == 1) {
                     (*arqRede.vg1dSP).qualTramo = i;
                     if (malha[i].arq.ConContEntrada == 0) {
@@ -3833,9 +3834,9 @@ double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativ
                         else
                             chutemass = malha[i].celula[0].acsr.injg.QGas;
                         if (malha[i].arq.chokep.abertura[0] > 0.6)
-                            malha[i].buscaProdPresPresPerm(chutemass);
+                            valor = malha[i].buscaProdPresPresPerm(chutemass);
                         else
-                            malha[i].buscaProdPresPresPerm2(chutemass);
+                            valor = malha[i].buscaProdPresPresPerm2(chutemass);
                     }
                 } else {
                     valor = 0;
@@ -6297,6 +6298,7 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
             }
             if ((arqRede.malha[i].nafluente == 0 || (permAflu == 0 && arqRede.malha[i].perm == 1)) &&
                 Resolv[i] == 0 && inativo[i] == 0) {
+                double valor = 0.;
                 if (arqRede.malha[i].perm == 1) {
                     (*arqRede.vg1dSP).qualTramo = i;
                     if (malha[i].arq.ConContEntrada == 0) {
@@ -6452,9 +6454,9 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
                                 chutemass = 1000.;
                         }
                         if (malha[i].arq.chokep.abertura[0] > 0.6)
-                            malha[i].buscaProdPresPresPerm(chutemass);
+                            valor = malha[i].buscaProdPresPresPerm(chutemass);
                         else
-                            malha[i].buscaProdPresPresPerm2(chutemass);
+                            valor = malha[i].buscaProdPresPresPerm2(chutemass);
                     }
                 } else {
                     valor = 0;
