@@ -4050,7 +4050,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / kPascalPerKgfPerCm2;
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4063,7 +4063,8 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= (state.march.cells[i - 1].acsr.ipr.ij) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
-                    mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].fluicol.MasEspFlu(state.march.cells[i - 1].pres, 0.) / state.march.cells[state.march.lastCell].fluicol.MasEspFlu(1.01, 15.)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
+                    else
+                        mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].fluicol.MasEspFlu(state.march.cells[i - 1].pres, 0.) / state.march.cells[state.march.lastCell].fluicol.MasEspFlu(1.01, 15.)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                 }
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -4079,7 +4080,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 double rhol = state.march.cells[i].flui.MasEspGas(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / kPascalPerKgfPerCm2;
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4092,7 +4093,8 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance) {
                     if (state.march.input.condpocinj.tipoFlui < 2)
                         mchute -= (state.march.cells[i - 1].acsr.ipr.ij) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
-                    mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, 0.) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
+                    else
+                        mchute -= (state.march.cells[i - 1].acsr.ipr.ij * state.march.cells[i - 1].flui.MasEspGas(state.march.cells[i - 1].pres, 0.) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres);
                 }
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -4135,7 +4137,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].fluicol.MasEspFlu(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / state.march.cells[state.march.lastCell].fluicol.MasEspFlu(1.01, 15.)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + state.march.updaters.steadyInjectionPressureDrop(i);
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -4159,7 +4161,7 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + state.march.updaters.steadyInjectionPressureDrop(i);
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i + 1].pres) > -(*state.march.globals).localtiny) {
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
