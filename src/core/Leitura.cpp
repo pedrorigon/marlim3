@@ -615,6 +615,7 @@ Ler::Ler(const Ler& vler) {
 	validacaoJson = vler.validacaoJson;
 	tipoSimulacao = vler.tipoSimulacao;
 	reverso=vler.reverso;
+	redeperm=vler.redeperm;
 	vg1dSP=vler.vg1dSP;
 	lerArq();
 }
@@ -1114,6 +1115,7 @@ Ler& Ler::operator =(const Ler& vler) {
 		validacaoJson = vler.validacaoJson;
 		tipoSimulacao = vler.tipoSimulacao;
 		reverso=vler.reverso;
+		redeperm=vler.redeperm;
 		lerArq();
 		if((*vg1dSP).chaverede==1)tabelaDinamica=vler.tabelaDinamica;
 	}
