@@ -5874,7 +5874,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
                 } else {
                     double masgas = state.cells[0].acsr.injg.VMas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp);
                     double quality;
-                    if (state.input.flashCompleto < 2)
+                    if (state.input.flashCompleto != 2)
                         quality = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
                     else
                         quality = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
