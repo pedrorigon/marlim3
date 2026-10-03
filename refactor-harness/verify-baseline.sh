@@ -38,7 +38,7 @@ export LC_ALL=C
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 
-BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
+BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-base-corrigida/baseline}"
 BASELINE_COMMIT="${MARLIM_BASELINE_COMMIT:-$(cat "$BASELINE_DIR/commit" 2>/dev/null || echo 0f3b64f)}"
 
 red=$'\033[0;31m'; green=$'\033[0;32m'; yellow=$'\033[1;33m'; reset=$'\033[0m'
@@ -53,6 +53,17 @@ git -C "$project_root" worktree add --detach "$scratch/tree" "$BASELINE_COMMIT" 
     exit 2
 }
 trap 'git -C "$project_root" worktree remove --force "$scratch/tree" >/dev/null 2>&1; rm -rf "$scratch"' EXIT
+
+# A baseline captured after fixes that change outputs keeps them as patches beside the capture: the
+# base commit plus those patches, applied in order, is what produced it.
+for patch in "$BASELINE_DIR"/patches/*.diff; do
+    [[ -e "$patch" ]] || continue
+    git -C "$scratch/tree" apply "$patch" || {
+        printf '%scould not apply %s%s\n' "$red" "$patch" "$reset" >&2
+        exit 2
+    }
+    printf 'applied %s\n' "$(basename "$patch")"
+done
 
 (
     cd "$scratch/tree" || exit 2

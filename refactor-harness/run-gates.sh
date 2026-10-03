@@ -27,7 +27,7 @@ export LC_ALL=C
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 
-BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
+BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-base-corrigida/baseline}"
 
 evidence_dir="${1:?usage: run-gates.sh <evidence-directory> [model ...]}"
 shift || true

@@ -37,7 +37,7 @@ export LC_ALL=C
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 
-BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
+BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-base-corrigida/baseline}"
 manifest="$BASELINE_DIR/provenance.txt"
 binary="$BASELINE_DIR/bin/Marlim3-baseline"
 

@@ -76,7 +76,7 @@ mkdir -p "$capture_dir"
 # first run of this script produced exactly half the golden's calls -- and it
 # would have looked like a real divergence rather than a script that had not
 # looked everywhere.
-BASELINE_OUTPUTS="${MARLIM_BASELINE:-$HOME/marlim3-baseline}/saidas"
+BASELINE_OUTPUTS="${MARLIM_BASELINE:-$HOME/marlim3-base-corrigida/baseline}/saidas"
 [[ -d "$BASELINE_OUTPUTS" ]] || {
     printf '%sbaseline outputs missing: %s%s\n' "$red" "$BASELINE_OUTPUTS" "$reset" >&2
     exit 2

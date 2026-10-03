@@ -24,7 +24,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 normalize="$script_dir/normalize-output.sh"
 
-BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-baseline}"
+BASELINE_DIR="${MARLIM_BASELINE:-$HOME/marlim3-base-corrigida/baseline}"
 BASELINE_OUTPUTS="$BASELINE_DIR/saidas"
 CURRENT_BINARY="${MARLIM_BIN:-$project_root/build/Marlim3}"
 WORK_DIR="${MARLIM_L2_DIR:-$(mktemp -d -t marlim3-l2-XXXXXX)}"
