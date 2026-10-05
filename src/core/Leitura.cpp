@@ -4291,6 +4291,7 @@ void Ler::parse_fluidos_producao(
                 		memcpy(compDet[i].CpIGCoefs,compDet[0].CpIGCoefs,4*npseudo*sizeof(double));
                 		memcpy(compDet[i].lij,compDet[0].lij,npseudo*npseudo*sizeof(double));
                 		memcpy(compDet[i].kij,compDet[0].kij,npseudo*npseudo*sizeof(double));
+                		compDet[i].liqModel = compDet[0].liqModel;
 
                 	}
               		int fracusu=0;
