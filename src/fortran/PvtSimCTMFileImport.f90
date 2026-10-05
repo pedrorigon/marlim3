@@ -23,7 +23,7 @@ module PvtSimCTMFileImport
         ! ------------ DECLARAÇÃO E DESCRIÇÃO DOS ARGUMENTOS:
         character(len=*), intent(in) :: sPvtSimCTMFileName              ! Nome do arquivo "ctm" do PvtSim do qual se deseja importar os dados.
         logical, intent(in) :: bReadOnlyINComp                          ! "True" para ler apenas o número de componentes e sair.
-        integer(c_int), intent(out) :: iNComp                           ! RESULTADO: Número de componentes.
+        integer(c_int), intent(inout) :: iNComp                         ! RESULTADO: Número de componentes.
         real(c_double), dimension(:), intent(out) :: oZ                 ! RESULTADO: Frações molares dos componentes na mistura.
         real(c_double), dimension(:), intent(out) :: oMW                ! RESULTADO: Massas molares dos componentes na mistura (g/gmol).
         real(c_double), dimension(:), intent(out) :: oTc                ! RESULTADO: Temperaturas críticas dos componentes na mistura.
