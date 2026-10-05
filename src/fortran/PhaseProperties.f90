@@ -163,6 +163,8 @@ module PhaseProperties
             dDerivLiquidZWithP = -1000.0d0
             dDerivLiquidRhoWithP = -1000.0d0
             dLiquidZWithPeneloux = -1000.0d0
+            dDerivLiquidZPenelouxWithT = -1000.0d0
+            dDerivLiquidZPenelouxWithP = -1000.0d0
         end if hasLiq
 
         ! Calcular as propriedades da fase vapor, caso esta fase esteja presente:
@@ -220,6 +222,8 @@ module PhaseProperties
             dDerivVaporZWithP = -1000.0d0
             dDerivVaporRhoWithP = -1000.0d0
             dVaporZWithPeneloux = -1000.0d0
+            dDerivVaporZPenelouxWithT = -1000.0d0
+            dDerivVaporZPenelouxWithP = -1000.0d0
         end if hasVap
 
         ! Calcular propriedades que exijam a presença de ambas as fases:
