@@ -716,7 +716,6 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
     // Volume fractions:
     applyReverseSteadyPhaseFractions(state, i, rhol, rhog);
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
-        double dxmed = 0.5 * (state.cells[i - 1].dx + state.cells[i].dx);
         double hol0 = 1. - state.cells[i - 1].alf;
         double hol1 = 1. - state.cells[i].alf;
         state.cells[i].fluicol.TR = (state.cells[i - 1].fluicol.TR * state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR * residenceTimeSource) / state.cells[i].MComp;
@@ -1138,7 +1137,6 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
         state.cells[i].flui.atualizaPropCompStandard();
     }
 
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -1420,15 +1418,12 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     refreshCompositionalFlashFromNeighbour(state, i, pmed, left.tmed);
     double titulo = state.cells[i].flui.dVaporMassFraction;
 
-    double betI;
     ProFlu fluI;
     ProFluCol fluCI;
     if (state.cells[i].MC >= 0 && i > 0) {
-        betI = state.cells[i].betL;
         fluI = state.cells[i - 1].flui;
         fluCI = state.cells[i - 1].fluicol;
     } else {
-        betI = state.cells[i].bet;
         fluI = state.cells[i].flui;
         fluCI = state.cells[i].fluicol;
     }
@@ -1437,9 +1432,6 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, left.tmed, left.solutionGasRatio);
         left.solutionGasRatio = left.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
         left.waterVolumeFactor = state.cells[i].flui.BAFunc(pmed, left.tmed);
-        double rhogstd = state.cells[i].flui.Deng * kAirDensityAtStandardConditions;
-        double rhololeostd = 1000. * 141.5 / (131.5 + state.cells[i].flui.API);
-        double rhoa = state.cells[i].flui.Denag * 1000.;
 
         if (titulo < 1. - 1e-15)
             state.cells[i].FW = state.cells[i].flui.BSW * left.waterVolumeFactor / (left.oilVolumeFactor + left.waterVolumeFactor * state.cells[i].flui.BSW - state.cells[i].flui.BSW * left.oilVolumeFactor);
@@ -1506,7 +1498,6 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     // Volume fractions:
     applyCompositionalPhaseRegime(state, i, rhol, rhog);
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
-        double dxmed = 0.5 * (state.cells[i - 1].dx + state.cells[i].dx);
         double hol0 = 1. - state.cells[i - 1].alf;
         double hol1 = 1. - state.cells[i].alf;
         state.cells[i].fluicol.TR = (state.cells[i - 1].fluicol.TR * state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR * source.residenceTime) / state.cells[i].MComp;
@@ -1599,7 +1590,6 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
 
 void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     waterCutInSitu = 0.;
     // standard oil flow rate
@@ -1686,7 +1676,6 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
 
 void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -1847,8 +1836,6 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
 
 void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
-    double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.injl.FluidoPro.API);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -2003,8 +1990,6 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
 
 void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
-    double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.ipr.FluidoPro.API);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boipr;
@@ -2158,8 +2143,6 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
 
 void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
-    double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.injm.FluidoPro.API);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -2328,8 +2311,6 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
         fluF = state.cells[i - 1].acsr.fontechk.fluidoPamb;
     }
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
-    double rhololeoF = 1000. * 141.5 / (131.5 + fluF.API);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF = fluF.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double boinjl = fluF.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2465,8 +2446,6 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
 
 void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
-    double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.radialPoro.flup.API);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boipr;
@@ -2620,8 +2599,6 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
 
 void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
     double apiGravity = state.cells[i - 1].flui.API;
-    double rhololeo = 1000. * 141.5 / (131.5 + apiGravity);
-    double rhololeoF = 1000. * 141.5 / (131.5 + state.cells[i - 1].acsr.poroso2D.dados.flup.API);
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boipr;
@@ -3194,7 +3171,6 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
     }
 
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
-        double dxmed = 0.5 * (state.cells[i - 1].dx + state.cells[i].dx);
         double hol0 = 1. - state.cells[i - 1].alf;
         double hol1 = 1. - state.cells[i].alf;
         state.cells[i].fluicol.TR = (state.cells[i - 1].fluicol.TR * state.cells[i - 1].MComp + state.cells[i - 1].fontemassCR * residenceTimeSource) / state.cells[i].MComp;
@@ -3357,8 +3333,6 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
 
         double dx = 0.5 * state.cells[i].dxL;
         double diameter = state.cells[i].dutoL.a;
-        double area = 0.25 * M_PI * diameter * diameter;
-        double perimeter = state.cells[i].dutoL.peri;
         executarCorrelacao(state.cells, i, 1, state.input.AceleraConvergPerm,
                            state.cells[i - 1].correlacaoMR2,
                            holdup, frictionGrad, gravityGrad, totalGrad,
@@ -3461,7 +3435,6 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
         } else {
             alfmed = state.cells[i].alf;
             betmed = state.cells[i].bet;
-            double razdx = state.cells[i].dx / (state.cells[i].dx + state.cells[i].dxL);
             tmed = state.cells[i].temp;
             double pmed = state.cells[i].pres;
             rhog = state.cells[i].flui.MasEspGas(pmed, tmed);
@@ -4715,7 +4688,6 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     double tempteste0 = -1000;
     state.steadyIteration = 0;
 
-    double pchute0 = pchute;
     int limIter = 2; // iteration limit when convergence acceleration is off. Turning this option off
     // is not advisable: the gains are small and convergence becomes unstable, especially
     // when the branch is part of a network
@@ -4816,7 +4788,6 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
             if (state.steadyIteration < 100) {
                 int lento = 0;
                 double media = 0.;
-                double desvio = 0;
                 for (int ktemp = state.lastCell - 1; ktemp >= 1; ktemp--) {
 
                     double area = state.cells[ktemp].duto.area;
@@ -4829,7 +4800,6 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                     media += fabs(ugsmed + ulsmed);
                 }
                 media /= (state.lastCell - 1);
-                desvio = (media - 0.1);
                 if (lento > 0 && lento < state.lastCell) {
                     state.slowHeatTransferThreshold = 100.;
                 }

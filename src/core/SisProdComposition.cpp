@@ -789,14 +789,8 @@ void blackOilSourceWetGasInjection(const CompositionState &state, BlackOilSource
 /// or the inlet when it flows in, cell i itself otherwise.
 void upwindLeftFaceGasProperties(const CompositionState &state, BlackOilFace &left, int i) {
     if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].QG > 0) {
-        double upstreamPressure;
-        double upstreamTemperature;
         if (i > 0) {
-            upstreamPressure = state.cells[i - 1].pres;
-            upstreamTemperature = state.cells[i - 1].temp;
         } else {
-            upstreamPressure = state.inletPressure;
-            upstreamTemperature = state.inletTemperature;
         }
         left.rhog = state.cells[i].rgL;
         left.rhogST = (*state.cells[i].fluiL).Deng * kAirDensityAtStandardConditions;

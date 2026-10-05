@@ -825,8 +825,6 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
-        double cellVoidFraction;
-        cellVoidFraction = state.cells[cellIndex].alf;
 
         double alfneg;
         if (cellIndex > 1)
@@ -897,13 +895,11 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
-                double upstreamGasFlowRate;
                 double upstreamLiquidFlowRate;
 
                 gasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].Mliqini / liquidDensity;
 
-                upstreamGasFlowRate = (state.cells[cellIndex - 1].MC - state.cells[cellIndex - 1].Mliqini) / state.cells[cellIndex].rgLi;
                 // upstreamLiquidFlowRate = state.cells[cellIndex - 1].Mliqini
                 //  / ((1 - betneg) * state.cells[cellIndex].flui.MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature)
                 upstreamLiquidFlowRate = state.cells[cellIndex - 1].Mliqini / ((1 - betneg) * state.cells[cellIndex].rpLi + betneg * state.cells[cellIndex].rcLi);
@@ -935,7 +931,6 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                     state.cells[cellIndex - 1].perdaEstratG = stratifiedMap.fatorperdaGas;
                     FlowPatternPair pair;
                     evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
-                    double alf0E = state.cells[cellIndex - 1].alf;
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1005,8 +1000,6 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
-        double cellVoidFraction;
-        cellVoidFraction = state.cells[cellIndex].alf;
 
         double alfneg;
         if (cellIndex > 1)
@@ -1120,7 +1113,6 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
 
                     FlowPatternPair pair;
                     evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
-                    double alf0E = state.cells[cellIndex - 1].alf;
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1171,8 +1163,6 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
-        double cellVoidFraction;
-        cellVoidFraction = state.cells[cellIndex].alf;
 
         double alfneg;
         if (cellIndex > 1)
@@ -1293,7 +1283,6 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                     state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
                     FlowPatternPair pair;
                     evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
-                    double alf0E = state.inletVoidFraction;
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1357,8 +1346,6 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
-        double cellVoidFraction;
-        cellVoidFraction = state.cells[cellIndex].alf;
 
         double alfneg;
         if (cellIndex > 1)
@@ -1510,8 +1497,6 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
-        double cellVoidFraction;
-        cellVoidFraction = state.cells[cellIndex].alf;
 
         double alfneg;
         if (cellIndex > 1)

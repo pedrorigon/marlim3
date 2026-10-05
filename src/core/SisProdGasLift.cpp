@@ -332,7 +332,6 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
         const bool belowInterface = i <= state.input.celdescargaP;
         double A0 = state.cells[i - 1].duto.area;
         double dx0 = 0.5 * state.cells[i].dxL;
-        double A1 = state.cells[i].duto.area;
         double dx1 = 0.5 * state.cells[i].dx;
         pmed -= rho0 * kGravityUnloadingVariant * dx0 * sin(state.cells[i - 1].duto.teta) / kPascalPerKgfPerCm2Variant;
         tmed = state.cells[i].calor.Textern1;

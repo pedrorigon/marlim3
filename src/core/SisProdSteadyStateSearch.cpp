@@ -188,7 +188,6 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
 }
 
 double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state) {
-    int valveCount = state.march.input.nvalvgas;
     // two pressure guesses upstream of the injection choke; convergence in this case,
     // with an injection choke, is harder, so more guesses are tried:
     double pchute = state.march.injectionChoke.presEstag * 0.8; // upstream choke pressure 20% below the downstream pressure
@@ -372,7 +371,6 @@ double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, d
         while (marchResidual > 0) {
             pchuteAux = pchute2;
             pchute2 *= aumenta; // Raising the pressure in search of marchResidual>0
-            int limpres = 0;
             marchResidual = marchReverseProductionSteady(state.march, pchute2);
             if (marchResidual > 0 && marchResidual < 0.9e10)
                 positiveResidualGuess = pchute2; // updating positiveResidualGuess
@@ -2932,7 +2930,6 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                 return 1.1e10;
         }
     }
-    double mchuteAux;
     double mchute2 = mchute;
     state.march.input.buscaFC = fabs(state.march.input.buscaFC);
 
@@ -2947,7 +2944,6 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
         if (marchResidual < 0.) {
             negativeResidualGuess = mchute;
             while (marchResidual < 0) {
-                mchuteAux = mchute2;
                 mchute2 *= (1. + state.march.input.buscaFC);
                 marchResidual = marchReverseProductionPressureToPressure(state.march, mchute2);
                 if (marchResidual > -0.9e10) {
@@ -3000,7 +2996,6 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
         } else if (marchResidual > 0.) {
             positiveResidualGuess = mchute;
             while (marchResidual > 0) {
-                mchuteAux = mchute2;
                 mchute2 *= (1. - state.march.input.buscaFC);
                 marchResidual = marchReverseProductionPressureToPressure(state.march, mchute2);
                 if (marchResidual > -0.9e10) {
@@ -3069,7 +3064,6 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double guessLowerBound = 0.;
 
     double negativeResidualGuess = 0.;
     double positiveResidualGuess = 0.;
@@ -3140,7 +3134,6 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     marchResidual = 1.;
                 }
                 while (marchResidual < -0.9e10) {
-                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressure(state.march, mchute2);
                     if (marchResidual * sentido < 0 && marchResidual > -0.9e10)
@@ -3199,7 +3192,6 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     }
                 }
                 while (marchResidual < -0.9e10) {
-                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressure(state.march, mchute2);
                     if (marchResidual * sentido > 0 && marchResidual > -0.9e10)
@@ -3264,7 +3256,6 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
     }
     double mchuteAux;
     double mchute2 = mchute;
-    double guessLowerBound = 0.;
     kontaiter = 0;
 
     double negativeResidualGuess = 0.;
@@ -3319,7 +3310,6 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     marchResidual = 1.;
                 }
                 while (marchResidual < -0.9e10) {
-                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                     if (marchResidual < 0 && marchResidual > -0.9e10)
@@ -3364,7 +3354,6 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     }
                 }
                 while (marchResidual < -0.9e10) {
-                    guessLowerBound = mchute2;
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
                     marchResidual = marchProductionPressureToPressureSecondary(state.march, mchute2);
                     if (marchResidual > 0 && marchResidual > -0.9e10)

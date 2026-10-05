@@ -248,7 +248,6 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     double ugsmed = (state.cells[i].QG) / (area);
     double ulsmed = state.cells[i].QL / (area);
     double j = ugsmed + ulsmed;
-    double ABSjL = (fabs(state.cells[i - 1].QG) + fabs(state.cells[i - 1].QL)) / state.cells[i - 1].duto.area;
 
     double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
     double viscmix = alfmed * state.cells[i].flui.ViscGas(state.cells[i].pres, state.cells[i].temp) + (1 - alfmed) * ((1 - state.cells[i].bet) * state.cells[i].flui.ViscOleo(state.cells[i].pres, state.cells[i].temp) + state.cells[i].bet * state.cells[i].fluicol.VisFlu(state.cells[i].pres, state.cells[i].temp));
@@ -565,9 +564,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
                                    state.cells[state.lastCell - 1].fluicol);
     maxSup = state.surfaceChoke.vazmaxSachd(pmon, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui, state.cells[state.lastCell - 1].fluicol);
 
-    int fluxcri = 1;
     if (quality <= 0.01 || fabs(ypres) > fabs(state.surfaceChoke.razpres)) {
-        fluxcri = 0;
         maxSup = masChk;
     }
     if (surfaceChokeIsShut(state))
@@ -592,9 +589,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     double maxSup2 = state.surfaceChoke.vazmaxSachd(pmon, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui,
                                           state.cells[state.lastCell - 1].fluicol);
 
-    fluxcri = 1;
     if (quality <= 0.01 || fabs(ypres) > fabs(state.surfaceChoke.razpres)) {
-        fluxcri = 0;
         maxSup2 = masChk2;
     }
     if (surfaceChokeIsShut(state))
@@ -776,9 +771,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
     maxSup = state.surfaceChoke.vazmaxSachd(pmon, tESup, alfSup, betSup, quality, state.cells[state.lastCell - 1].flui,
                                   state.cells[state.lastCell - 1].fluicol);
 
-    int fluxcri = 1;
     if (quality <= 0.01 || fabs(ypres) > fabs(state.surfaceChoke.razpres)) {
-        fluxcri = 0;
         maxSup = masChk;
     }
     if (surfaceChokeIsShut(state))
@@ -1037,7 +1030,6 @@ void computeExplicitTimeStep(const TransientStepState &state) {
         if (velpropag2 > velpropag1)
             velMax = velpropag2;
         double dtaux;
-        double alfteste = state.cells[i].alf;
         dtaux = state.cells[i].dx / velMax;
         if (dtaux < state.timeStep)
             state.timeStep = dtaux;
@@ -1510,8 +1502,6 @@ void refreshFluidMiniTable(const TransientStepState &state) {
 void refreshInletCondition(const TransientStepState &state) {
     if (state.input.ConContEntrada == 1) {
         if (state.input.tipoFluido == 0 && state.input.flashCompleto == 2) {
-            double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
-            double roST = 141.5 * 1000. / (131.5 + state.cells[0].flui.API);
             double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
             double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
             double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
@@ -1522,7 +1512,6 @@ void refreshInletCondition(const TransientStepState &state) {
             state.inletQuality = val1 / (rlMix + val1);
         } else if (state.input.tipoFluido == 1) {
             double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
-            double roST = 141.5 * 1000. / (131.5 + state.cells[0].flui.API);
             double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
             double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
             double quality = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
@@ -1650,8 +1639,6 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     } else {
         for (int i = 0; i <= state.step.lastCell; i++) {
             double area = state.step.cells[i].duto.area;
-            double vLiqTest = fabs(state.step.cells[i].QL / (area));
-            double vGasTest = fabs(state.step.cells[i].QG / (area));
             double razDp = 0.1;
             double razDT = 1;
             if (i < celpos && state.step.cells[celpos].acsr.chk.AreaGarg < 1e-15 * state.step.cells[celpos].acsr.chk.AreaTub) {
