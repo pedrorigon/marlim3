@@ -998,7 +998,7 @@ struct tabelaFlash {
 
 struct composicional {
     string arquivo;
-    int npseudo;
+    int npseudo = 0;
     int liqModel;
     int vapModel;
     double *fracMol;
