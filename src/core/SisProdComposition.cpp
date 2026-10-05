@@ -108,7 +108,7 @@ void storePreviousFractionsAndMovePigs(const CompositionState &state) {
 void cacheCellAndFaceDensities(const CompositionState &state) {
 
     state.cells[0].rpC = state.cells[0].flui.MasEspLiq(state.cells[0].pres, state.cells[0].temp);
-    state.cells[0].rgC = state.cells[0].flui.MasEspGas(state.cells[0].pres, state.cells[0].temp /*,1*/);
+    state.cells[0].rgC = state.cells[0].flui.MasEspGas(state.cells[0].pres, state.cells[0].temp);
     state.cells[0].rcC = state.cells[0].fluicol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
     state.cells[0].rpL = state.cells[0].rpC;
     state.cells[0].rgL = state.cells[0].rgC;
@@ -122,7 +122,7 @@ void cacheCellAndFaceDensities(const CompositionState &state) {
     state.cells[0].rcLi = state.cells[0].rcCi;
 
     state.cells[0].mipC = state.cells[0].flui.ViscOleo(state.cells[0].pres, state.cells[0].temp);
-    state.cells[0].migC = state.cells[0].flui.ViscGas(state.cells[0].pres, state.cells[0].temp /*,1*/);
+    state.cells[0].migC = state.cells[0].flui.ViscGas(state.cells[0].pres, state.cells[0].temp);
     state.cells[0].micC = state.cells[0].fluicol.VisFlu(state.cells[0].pres, state.cells[0].temp);
 
 #pragma omp parallel for num_threads((*state.globals).ntrd)
@@ -1558,21 +1558,6 @@ void solveCellPhaseMolarFractions(const CompositionState &state, const PhaseFace
         double menorFrac = 0.;
         for (int kfrac = 0; kfrac < ncomp; kfrac++) {
 
-            /*double vazMol1O;
-            double vazMol0O;
-            double vazMol1G;
-            double vazMol0G;
-            vazMol1O=vazMasLiq1*fracMol1O[kfrac]/pesoMol1O;
-            vazMol0O=vazMasLiq0*fracMol0O[kfrac]/pesoMol0O;
-            vazMol1G=vazMasGas1*fracMol1G[kfrac]/pesoMol1G;
-            vazMol0G=vazMasGas0*fracMol0G[kfrac]/pesoMol0G;
-        	fluC[i].fracMol[kfrac] = (celula[i].nMolIni * celula[i].flui.fracMol[kfrac] +
-                                      ((dissolvedGasSource + freeGasSource) * fluF.fracMol[kfrac] / pesoMolF -
-                                       (vazMol1O + vazMol1G) +
-                                       (vazMol0O + vazMol0G)) *
-                                          dt) /
-                                     tempMol;*/
-
 
             fluC[i].fracMol[kfrac] = (state.cells[i].nMolIni * state.cells[i].flui.fracMol[kfrac] +
                                       ((source.dissolvedGas + source.freeGas) * fluF.fracMol[kfrac] / source.pesoMol -
@@ -2076,20 +2061,6 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     for (int kfrac = 0; kfrac < ncomp; kfrac++) {
         cell.pesoMol += state.cells[i].flui.masMol[kfrac] * state.cells[i].flui.fracMol[kfrac];
     }
-
-    /*double menorFracFase = 0.;
-    for (int kfrac = 0; kfrac < ncomp; kfrac++) {
-        if (menorFracFase > fluC[i].fracMol[kfrac]) {
-            menorFracFase = fluC[i].fracMol[kfrac];
-        }
-    }
-    double fracTotFase = 0.;
-    for (int kfrac = 0; kfrac < ncomp; kfrac++)
-        fluC[i].fracMol[kfrac] -= menorFracFase;
-    for (int kfrac = 0; kfrac < ncomp; kfrac++)
-        fracTotFase += fluC[i].fracMol[kfrac];
-    for (int kfrac = 0; kfrac < ncomp; kfrac++)
-        fluC[i].fracMol[kfrac] /= fracTotFase;*/
 
     upwindLiquidFractions(state, left, right, i, fracMol0O, fracMol1O, ncomp);
 

@@ -929,7 +929,6 @@ void computeImplicitTimeStep(const TransientStepState &state) {
         double jmix = 0.;
         double pipeArea = state.cells[i].duto.area;
         double dtaux;
-        // celula[i].Mliqini
         double alfteste = state.cells[i].alf;
         if (i > 0 && (state.cells[i].MC - state.cells[i].Mliqini) > 0)
             alfteste = state.cells[i - 1].alf;
@@ -1016,7 +1015,6 @@ void computeImplicitTimeStep(const TransientStepState &state) {
             state.cells[i].acsr.poroso2D.dt = state.timeStep;
         }
     }
-    // dtInter=dt; // change 2
 }
 
 void computeExplicitTimeStep(const TransientStepState &state) {
@@ -1460,7 +1458,6 @@ void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, in
 }
 
 void refreshFluidMiniTable(const TransientStepState &state) {
-    //if(arq.miniTabAtraso>0)
     	generateFluidMiniTables(state);
     double betIV;
     double solutionGasRatioInSitu;
@@ -1672,14 +1669,12 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
             if (state.step.cells[i].acsr.radialPoro.reinicia == -1) {
                 if (state.step.restart > -1)
                     state.step.restart = -1;
-                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
             }
         } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
             state.step.cells[i].acsr.poroso2D.avancoSW(state.step.timeStep);
             if (state.step.cells[i].acsr.poroso2D.reinicia == -1) {
                 if (state.step.restart > -1)
                     state.step.restart = -1;
-                // celula[i].acsr.radialPoro.reavaliaDT(Ndt)
             }
         }
     }
@@ -2148,7 +2143,6 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
 
         state.step.restart = 0;
         int celpos = state.step.input.master1.posic;
-        // razMast0=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//master-only case
         valveOpeningLow(state.step); // several-valve case
 
         if (state.step.input.controDesc == 1)
@@ -2163,7 +2157,6 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         for (int i = 0; i <= state.step.input.nvalv; i++)
             state.step.masterCriticalRatio[i] = 0.5; // several-valve case
         valveOpeningHigh(state.step);            // several-valve case
-        // razMast=celula[celpos].acsr.chk.AreaGarg/celula[celpos].duto.area;//master-only case
         for (int i = 0; i <= state.step.input.nvalv; i++)
             if (state.step.masterRatio1[i] != state.step.masterRatio0[i])
                 state.step.fullModel = 0; // several-valve case
@@ -2275,7 +2268,6 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         (*state.step.globals).lixo5 = (*state.step.globals).lixo5R;
     writeProfiles(state, nrede);
     writeTrends(state, ordemImpT, velmaxdesc, nrede);
-    // (*vg1dSP).lixo5 += dt; // change 7
     end = chrono::steady_clock::now();
     (*state.step.globals).contador = state.step.stepIndex;
     writeScreenOutput(state, begin, end);

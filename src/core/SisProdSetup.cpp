@@ -583,7 +583,6 @@ void SProd::validateSetupAndApplyInitialState() {
         arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.chokeInj, celula, gasLift.celulaG, gasLift.pGSup, temperatura, gasLift.presiniG,
                      gasLift.tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
         transient.pGSupIni = gasLift.pGSup;
-        // presiniG,tempiniG,presE,tempE,titE,betaE,(*vg1dSP).lixo5);//change 7
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
             transient.aberto = 1;
             transient.abertoini = 1;

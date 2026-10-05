@@ -1746,7 +1746,6 @@ void clearMassTransferDerivatives(const ThermalState &state, int cellIndex) {
 }  // namespace
 
 void updateDistributedMassTransfer(const ThermalState &state) {
-    // #pragma omp parallel for num_threads(state.input.nthrd)
     double leftCellLeftFaceMixtureLiquidDensity = 0.;
     double leftCellLeftFaceOilVolumeFactor = 0.;
     double leftCellLeftFaceSolutionGasRatio = 0.;
@@ -2407,7 +2406,7 @@ void finalizeFlowPartitionTerms(
             if ((liquidDriftFlux < 0. || previousLiquidDriftFlux < 0.) && ((fabs(leftCell.QG / (flowArea)) + fabs(leftCell.QL / (flowArea))) < 0.1) &&
                 (isShutIn == 1 && state.input.modoSegrega == 1) && (cell.duto.teta > 0 && leftCell.duto.teta <= 0) &&
                 (candidateLiquidMass > 0 && cell.term2 > 0) &&
-                ((1. - cell.alfL) /**fabs(sin(state.cells[cellIndex-1].duto.teta))*/ < (1. - cell.alf) /**fabs(sin(cell.duto.teta))*/)) {
+                ((1. - cell.alfL) < (1. - cell.alf))) {
                 cell.term2 = 0.;
             }
             if (cell.duto.teta > 0 && candidateGasMass < 0 && ((isShutIn == 1 && state.input.modoSegrega == 1)) && cell.alfPigE > 1 - 1e-15) {
@@ -3005,9 +3004,7 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     cell.calor.kint = liquidConductivity * (1 - meanVoidFraction) + cell.flui.CondGas(cell.presini, cell.temp) * meanVoidFraction;                                                 // liquidConductivity * (1 - meanVoidFraction) + celula[cellIndex].flui.CondGas(celula[cellIndex].pres, celula[cellIndex].temp) * meanVoidFraction;
     cell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
     cell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
-    //(1. - betmed) * celula[cellIndex].flui.ViscOleo(celula[cellIndex].pres, celula[cellIndex].temp)
     double liquidViscosity = (1. - betmed) * cell.mipC + betmed * cell.micC;
-    // liquidViscosity * (1 - meanVoidFraction) * 1.e-3
     cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + cell.migC * meanVoidFraction * kPascalSecondPerCentipoise;
     double temperaturePerturbation = cell.temp * 0.01;
     if (fabs(cell.temp) < 1e-15)

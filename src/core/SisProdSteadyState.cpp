@@ -1489,7 +1489,6 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     state.cells[i].rpCi = state.cells[i].flui.MasEspLiq(pmed, left.tmed);
     state.cells[i].rcCi = state.cells[i].fluicol.MasEspFlu(pmed, left.tmed);
     rhol = (1 - state.cells[i].bet) * state.cells[i].rpCi + state.cells[i].bet * state.cells[i].rcCi;
-    // rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(pmed, tmed)
     // volumetric flow rates:
     if (i < state.lastCell)
         state.cells[i + 1].QLL = state.cells[i].QL;
@@ -1825,7 +1824,6 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        //* celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, celula[i - 1].temp)
 
         double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
 
@@ -2794,7 +2792,6 @@ void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double w
     state.cells[i].rpCi = state.cells[i].flui.MasEspLiq(pmed, tmed);
     state.cells[i].rcCi = state.cells[i].fluicol.MasEspFlu(pmed, tmed);
     rhol = (1 - state.cells[i].bet) * state.cells[i].rpCi + state.cells[i].bet * state.cells[i].rcCi;
-    // rhol = (1 - celula[i].bet) * celula[i].flui.MasEspLiq(pmed, tmed)
     // volumetric flow rates:
     state.cells[i].QL = state.cells[i].Mliqini / rhol;
     if (i < state.lastCell)
@@ -4248,7 +4245,6 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
         // gas density, GOR, API, BSW, beta
         else
             advanceCompositionalSteadyMass(state, i);
-        // RenovaTempPerm(i, 0);// advances the temperature from cell i-1 to cell i
         // checks whether the temperature went out of bounds
         // when working with a PVTSim table
         if (isnan(state.cells[i].temp))

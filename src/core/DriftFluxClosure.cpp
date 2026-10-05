@@ -900,8 +900,6 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                 gasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].Mliqini / liquidDensity;
 
-                // upstreamLiquidFlowRate = state.cells[cellIndex - 1].Mliqini
-                //  / ((1 - betneg) * state.cells[cellIndex].flui.MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature)
                 upstreamLiquidFlowRate = state.cells[cellIndex - 1].Mliqini / ((1 - betneg) * state.cells[cellIndex].rpLi + betneg * state.cells[cellIndex].rcLi);
 
                 estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,

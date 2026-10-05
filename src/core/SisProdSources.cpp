@@ -55,8 +55,6 @@ void consumeHydrateFormationMass(const SourceState &state, double &gas_consumido
         } else {
             state.cells[cellIndex].flui.BSW = BSW_old;
         }
-        //state.cells[cellIndex].FW=state.cells[cellIndex].flui.BSW;
-        //if (cellIndex==3) system("pause");
 
     } // hydrate change
 }
