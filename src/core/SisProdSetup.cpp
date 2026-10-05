@@ -56,11 +56,13 @@ void forEachSourceFluid(Cel &cell, Apply &&apply) {
 }  // namespace
 
 /// Points every cell fluid, and every source fluid it carries, at the bubble-point
-/// tables read from the PVTSim file, and switches them to saturation model 4.
+/// tables read from the PVTSim file, with their size, and switches them to saturation
+/// model 4.
 void SProd::assignPvtSimBubbleTablesToCells() {
     auto assignTables = [&](ProFlu &fluid) {
         fluid.PBPVTSim = tables.PBPVTSim.data();
         fluid.TBPVTSim = tables.TBPVTSim.data();
+        fluid.npontosB = static_cast<int>(tables.TBPVTSim.size());
         fluid.corrSat = 4;
     };
     for (int i = 0; i <= ncel; i++) {
