@@ -1046,7 +1046,7 @@ void computeTimeStep(const TransientStepState &state, int vexpli) {
         state.input.imprimeProfile(state.cells, state.productionFreeTerms, (*state.globals).lixo5, state.branchIndex);
         if (state.input.lingas > 0 && state.input.nvalvgas > 0)
             state.input.imprimeProfileG(state.gasCells, state.gasFreeTerms, (*state.globals).lixo5, state.branchIndex);
-        state.input.imprimeProfileTrans(state.cells, state.productionCrossSectionCount, (*state.globals).lixo5, state.branchIndex);
+        state.input.imprimeProfileTrans(state.cells, state.productionCrossSectionCount.data(), (*state.globals).lixo5, state.branchIndex);
     }
     state.timeStep = state.input.dtmax;
 
@@ -1806,7 +1806,7 @@ void writeProfiles(const TransientSolveState &state, int nrede) {
     }
     if (state.step.input.nperfistransp > 0) {
         if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter])) {
-            state.step.input.imprimeProfileTrans(state.step.cells, state.step.productionCrossSectionCount, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
+            state.step.input.imprimeProfileTrans(state.step.cells, state.step.productionCrossSectionCount.data(), (*state.step.globals).lixo5, state.step.branchIndex, nrede);
             state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
             state.productionCrossSectionProfileTimeCounter++;
             if (state.productionCrossSectionProfileTimeCounter >= state.step.input.proftransp.n)
@@ -1815,7 +1815,7 @@ void writeProfiles(const TransientSolveState &state, int nrede) {
     }
     if (state.step.input.nperfistransg > 0 && state.step.input.lingas > 0) {
         if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter])) {
-            state.step.input.imprimeProfileTransG(state.step.gasCells, state.gasCrossSectionCellCounts, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
+            state.step.input.imprimeProfileTransG(state.step.gasCells, state.gasCrossSectionCellCounts.data(), (*state.step.globals).lixo5, state.step.branchIndex, nrede);
             state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
             state.gasCrossSectionProfileTimeCounter++;
             if (state.gasCrossSectionProfileTimeCounter >= state.step.input.proftransg.n)

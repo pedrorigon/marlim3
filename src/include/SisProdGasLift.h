@@ -3,9 +3,9 @@
 
 #include <vector>
 
-// Declared, not included: GasLiftState holds only pointers and references to
-// these, so this header stays free of the cell, input-deck, choke and matrix
-// headers and can still be compiled on its own.
+// Declared, not included: GasLiftState holds only references to these, so this
+// header stays free of the cell, input-deck, choke and matrix headers and can
+// still be compiled on its own.
 class Cel;
 class CelG;
 class ChokeGas;
@@ -42,16 +42,16 @@ struct GasLiftTemperatureUpdater {
 /// construction, before the branch that decides whether it is read at all.
 struct GasLiftState {
     /// Gas-line cells -- SProd::gasLift.celulaG. Written as well as read.
-    CelG *gasCells;
+    CelG *const &gasCells;
     /// Production cells -- SProd::celula. The gas line reads the tubing it
     /// feeds, and writes back at the connection points.
-    Cel *cells;
+    Cel *const &cells;
     /// Input deck -- SProd::arq. NOT const: the unloading schedule uses
     /// presMaxDesc as scratch, recomputing it as a minimum over the IPR
     /// accessories and writing it back.
     Ler &input;
     /// Shared 1D globals -- SProd::vg1dSP.
-    varGlob1D *globals;
+    varGlob1D *const &globals;
 
     /// Index of the last gas-line cell -- SProd::gasLift.ncelGas.
     const int &gasCellCount;
@@ -59,13 +59,13 @@ struct GasLiftState {
     const int &lastCell;
 
     /// Gas-lift valve chokes -- SProd::gasLift.chokeVGL.
-    ChokeGas *gasLiftChokes;
+    std::vector<ChokeGas> &gasLiftChokes;
     /// Injection choke -- SProd::gasLift.chokeInj.
     ChokeGas &injectionChoke;
     /// Gas-line cell index of each gas-lift valve -- SProd::gasLift.posicVGLG.
-    const int *gasValveCellIndices;
+    const std::vector<int> &gasValveCellIndices;
     /// Production cell index of each gas-lift valve -- SProd::gasLift.posicVGLP.
-    const int *productionValveCellIndices;
+    const std::vector<int> &productionValveCellIndices;
 
     /// Band matrix and free-term vector of the gas line -- SProd::gasLift.matglobG and
     /// SProd::gasLift.termolivreG.

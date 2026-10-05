@@ -3,9 +3,9 @@
 
 #include <vector>
 
-// Declared, not included: SourceState holds only pointers and references to
-// these, so this header stays free of the cell, input-deck and globals headers
-// and can still be compiled on its own.
+// Declared, not included: SourceState holds only references to these, so this
+// header stays free of the cell, input-deck and globals headers and can still be
+// compiled on its own.
 class Cel;
 class Ler;
 struct varGlob1D;
@@ -19,11 +19,11 @@ namespace sisprod::sources {
 /// construction, before the branch that decides whether it is read at all.
 struct SourceState {
     /// Production cells -- SProd::celula. Their source terms are written.
-    Cel *cells;
+    Cel *const &cells;
     /// Input deck -- SProd::arq. Read only.
     const Ler &input;
     /// Shared 1D globals -- SProd::vg1dSP. Read only.
-    const varGlob1D *globals;
+    const varGlob1D *const &globals;
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
     /// Steady-state mode -- SProd::modoPerm. In it the porous media advance

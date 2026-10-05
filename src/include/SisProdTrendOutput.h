@@ -14,8 +14,8 @@
 /// and it makes the writers callable without an SProd, so they can be exercised
 /// against synthetic buffers.
 
-// Declared, not included: TrendState only holds a reference and a pointer to
-// these, so the header stays free of the input-deck and globals headers.
+// Declared, not included: TrendState only holds references to these, so the
+// header stays free of the input-deck and globals headers.
 class Ler;
 struct varGlob1D;
 
@@ -25,23 +25,23 @@ namespace trendoutput {
 /// together so that no writer can pair a buffer with another group's counters.
 struct TrendSeries {
     /// Samples, indexed [series][row][column] -- MatTrend*.
-    double ***samples;
+    double ***const &samples;
     /// Rows recorded so far, per series -- ntrend*.
-    const int *count;
+    const int *const &count;
     /// Rows already written, per series -- ntrend*B.
-    const int *countBase;
+    const int *const &countBase;
 };
 
 /// The state a trend writer reads, and the only state it may read.
 ///
-/// Every field is a reference or a pointer into the owner's state, never a
-/// copy: the call site advances the counters between the header call and the
-/// row call, so a copy would be read at the wrong moment.
+/// Every field is a reference into the owner's state, never a copy: the call
+/// site advances the counters between the header call and the row call, so a
+/// copy would be read at the wrong moment.
 struct TrendState {
     /// Input deck and configuration -- SProd::arq.
     const Ler &input;
     /// Shared 1D globals; only sequenciaAP is read -- SProd::vg1dSP.
-    const varGlob1D *globals;
+    const varGlob1D *const &globals;
     /// Branch index; negative outside a network -- SProd::indTramo.
     const int &branchIndex;
     /// Count of output passes so far; captions go out on the first --

@@ -1,9 +1,11 @@
 #ifndef SISPRODSTEADYSTATE_H_
 #define SISPRODSTEADYSTATE_H_
 
-// Declared, not included: SteadyStateState holds only pointers and references
-// to these, so this header stays free of the cell, input-deck and choke headers
-// and can still be compiled on its own.
+#include <vector>
+
+// Declared, not included: SteadyStateState holds only references to these, so
+// this header stays free of the cell, input-deck and choke headers and can still
+// be compiled on its own.
 class Cel;
 class CelG;
 class ChokeGas;
@@ -72,13 +74,13 @@ struct SteadyStateUpdaters {
 /// const marks what the march does not write.
 struct SteadyStateState {
     /// Production cells -- SProd::celula. Written.
-    Cel *cells;
+    Cel *const &cells;
     /// Gas-line cells -- SProd::gasLift.celulaG. Written.
-    CelG *gasCells;
+    CelG *const &gasCells;
     /// Input deck -- SProd::arq. NOT const: the march writes back into it.
     Ler &input;
     /// Shared 1D globals -- SProd::vg1dSP. Read only.
-    const varGlob1D *globals;
+    const varGlob1D *const &globals;
 
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
@@ -92,8 +94,8 @@ struct SteadyStateState {
     choke &surfaceChoke;
     /// Gas-line and production cell index of each gas-lift valve --
     /// SProd::gasLift.posicVGLG and posicVGLP.
-    const int *gasValveCellIndices;
-    const int *productionValveCellIndices;
+    const std::vector<int> &gasValveCellIndices;
+    const std::vector<int> &productionValveCellIndices;
 
     /// Steady-state iteration counter -- SProd::iterperm. Written.
     int &steadyIteration;

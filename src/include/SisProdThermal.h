@@ -49,11 +49,12 @@ struct ThermalEvolutionUpdater {
 /// The slice of SProd's state this module reads, so it can be called without
 /// access to all of SProd.
 struct ThermalState {
-    Cel *cells;
-    CelG *gasCells;
+    Cel *const &cells;
+    CelG *const &gasCells;
     const Ler &input;
-    double **latentHeatTable;
-    varGlob1D *globals;
+    /// The latent heat table's row pointers -- SProd::tables.HLat.
+    const std::vector<double *> &latentHeatTable;
+    varGlob1D *const &globals;
     const int &thermalSourceDisabled;
     const int &productionNetworkCoupled;
     const int &primarySectionStart;
@@ -91,7 +92,7 @@ struct ThermalState {
     const int &primaryNetworkSectionEnd;
     const int &primaryNetworkSectionStart;
     const int &gasCellCount;
-    ChokeGas *gasLiftChokes;
+    std::vector<ChokeGas> &gasLiftChokes;
     const double &gasSurfacePressure;
     const double &outletPressure;
     /// Written, not just read -- computeOutletTemperature assigns it.

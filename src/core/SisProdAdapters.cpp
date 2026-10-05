@@ -197,6 +197,16 @@ void sisprod::transient::TransientSolveUpdaters::solveGasLine() const {
 
 namespace sisprod::adapters {
 
+// Some views bind a `const T *const &` field to a `T *` member. C++20 binds such
+// a reference to the member itself; a temporary there would leave the view
+// with a copy that dangles.
+constexpr bool bindsToTheMember() {
+    int *member = nullptr;
+    const int *const &field = member;
+    return &field == &member;
+}
+static_assert(bindsToTheMember());
+
 sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system, SolveContext &context) {
     return sisprod::gaslift::GasLiftState{
         .gasCells = system.gasLift.celulaG,
@@ -205,10 +215,10 @@ sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system, SolveContext &conte
         .globals = system.vg1dSP,
         .gasCellCount = system.gasLift.ncelGas,
         .lastCell = system.ncel,
-        .gasLiftChokes = system.gasLift.chokeVGL.data(),
+        .gasLiftChokes = system.gasLift.chokeVGL,
         .injectionChoke = system.gasLift.chokeInj,
-        .gasValveCellIndices = system.gasLift.posicVGLG.data(),
-        .productionValveCellIndices = system.gasLift.posicVGLP.data(),
+        .gasValveCellIndices = system.gasLift.posicVGLG,
+        .productionValveCellIndices = system.gasLift.posicVGLP,
         .gasSystemMatrix = system.gasLift.matglobG,
         .gasFreeTerms = system.gasLift.termolivreG,
         .annulusTubingStart = system.gasLift.ColunaAnulaIni,
@@ -248,8 +258,8 @@ sisprod::steady::SteadyStateState steadyStateOf(SProd &system, SolveContext &con
         .gasCellCount = system.gasLift.ncelGas,
         .injectionChoke = system.gasLift.chokeInj,
         .surfaceChoke = system.chokeSup,
-        .gasValveCellIndices = system.gasLift.posicVGLG.data(),
-        .productionValveCellIndices = system.gasLift.posicVGLP.data(),
+        .gasValveCellIndices = system.gasLift.posicVGLG,
+        .productionValveCellIndices = system.gasLift.posicVGLP,
         .steadyIteration = system.iterperm,
         .searchOrigin = system.steadySearch.buscaIni,
         .convergenceMonitor = system.steadySearch.monitConvPerm,
@@ -326,7 +336,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .masterRatio1 = system.transient.vRazMast1,
         .masterCriticalRatio = system.transient.vRazMastCrit,
         .interfaceVelocity = system.gasLift.velInter,
-        .masterOpenSchedule = system.transient.abreM1.data(),
+        .masterOpenSchedule = system.transient.abreM1,
         .input = system.arq,
         .initialInterfaceCell = system.gasLift.celInterIni,
         .cells = system.celula,
@@ -337,7 +347,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .simulationTimeSteps = system.transient.dtSim,
         .auxiliaryCflTimeStep = system.transient.dtauxCFL,
         .finalAuxiliaryTimeStep = system.transient.dtauxFinal,
-        .masterCloseSchedule = system.transient.fechaM1.data(),
+        .masterCloseSchedule = system.transient.fechaM1,
         .productionFreeTerms = system.flut,
         .gasFreeTerms = system.flutG,
         .branchIndex = system.indTramo,
@@ -348,7 +358,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .masterOpenCount = system.transient.nabreM1,
         .lastCell = system.ncel,
         .gasCellCount = system.gasLift.ncelGas,
-        .productionCrossSectionCount = system.trends.ncelperftransp.data(),
+        .productionCrossSectionCount = system.trends.ncelperftransp,
         .masterCloseCount = system.transient.nfechaM1,
         .endNode = system.noextremo,
         .gasSurfacePressure = system.gasLift.pGSup,
@@ -384,7 +394,7 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system, SolveCo
         .movingPigCount = system.transient.indpigP,
         .previousMovingPigCount = system.transient.indpigPini,
         .scheduledPigCount = system.transient.npig,
-        .pigReceiverCells = system.transient.receb.data(),
+        .pigReceiverCells = system.transient.receb,
         .updaters = {context},
     };
 }
@@ -401,7 +411,7 @@ sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system, Sol
         .closingTitles = system.saidaTextoSis,
         .compositionalRefreshCounter = system.transient.kontaRenovaComp,
         .fluxHistory = system.transient.jVet,
-        .gasCrossSectionCellCounts = system.trends.ncelperftransg.data(),
+        .gasCrossSectionCellCounts = system.trends.ncelperftransg,
         .gasCrossSectionProfileTimeCounter = system.trends.kontaTempoTransProfG,
         .gasCrossSectionTrendBufferedCounts = system.trends.ntrendtransgB,
         .gasCrossSectionTrendCounts = system.trends.ntrendtransg,
@@ -492,7 +502,7 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system, SolveContext &conte
         .cells = system.celula,
         .gasCells = system.gasLift.celulaG,
         .input = system.arq,
-        .latentHeatTable = system.tables.HLat.data(),
+        .latentHeatTable = system.tables.HLat.rowPointers,
         .globals = system.vg1dSP,
         .thermalSourceDisabled = system.semTermo,
         .productionNetworkCoupled = system.networkCoupling.verificaAcopRedeS,
@@ -531,7 +541,7 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system, SolveContext &conte
         .primaryNetworkSectionEnd = system.networkCoupling.PrimSecFimRedeP,
         .primaryNetworkSectionStart = system.networkCoupling.PrimSecIniRedeP,
         .gasCellCount = system.gasLift.ncelGas,
-        .gasLiftChokes = system.gasLift.chokeVGL.data(),
+        .gasLiftChokes = system.gasLift.chokeVGL,
         .gasSurfacePressure = system.gasLift.pGSup,
         .outletPressure = system.presfim,
         .surfaceTemperature = system.networkCoupling.tempSup,
@@ -550,9 +560,9 @@ namespace sisprod::adapters {
 /// types, so a positional swap would compile in silence and hand a writer
 /// another line's buffer. Naming each one makes that a compile error.
 ///
-/// Every field is a reference or a pointer, never a copy -- the caller advances
-/// the counters between the header call and the row call, so a copy would be
-/// read at the wrong moment.
+/// Every field is a reference, never a copy -- the caller advances the counters
+/// between the header call and the row call, so a copy would be read at the
+/// wrong moment.
 trendoutput::TrendState trendStateOf(const SProd &system) {
     return trendoutput::TrendState{
         .input = system.arq,

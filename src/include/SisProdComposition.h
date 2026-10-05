@@ -1,7 +1,9 @@
 #ifndef SISPRODCOMPOSITION_H_
 #define SISPRODCOMPOSITION_H_
 
-// Declared, not included: the state holds only references and pointers, so the
+#include <vector>
+
+// Declared, not included: the state holds only references, so the
 // definitions are needed where it is built and not here, and the header
 // compiles on its own with nothing but -Isrc/include.
 class Cel;
@@ -49,7 +51,7 @@ struct CompositionState {
     int &movingPigCount;                  // indpigP
     int &previousMovingPigCount;          // indpigPini
     int &scheduledPigCount;               // npig
-    int *pigReceiverCells;                // receb
+    std::vector<int> &pigReceiverCells;   // receb
 
     CompositionUpdaters updaters;
 };

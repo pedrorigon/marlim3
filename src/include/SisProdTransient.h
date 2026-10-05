@@ -1,9 +1,9 @@
 #ifndef SISPRODTRANSIENT_H_
 #define SISPRODTRANSIENT_H_
 
-// Declared, not included. TransientStepState holds only references and
-// pointers, so the definitions are needed where the state is built and not
-// here, and this header compiles on its own with nothing but -Isrc/include.
+// Declared, not included. TransientStepState holds only references, and
+// pointers into arrays SProd holds by value, so the definitions are needed where
+// the state is built and not here, and this header compiles on its own with nothing but -Isrc/include.
 // Including Acidentes2.h for `choke` would pull in Log.h and through it
 // rapidjson, and the header would stop being self-contained.
 //
@@ -51,6 +51,10 @@ struct TransientStepUpdaters {
 /// on `surfaceChoke` changes it. The fields SolveTrans writes, directly or by
 /// reference through Ler::atualiza (pGSup, presE, tempE, titE, betaE), are not
 /// const either.
+///
+/// Pointer members of SProd are held by reference too. masterRatio0,
+/// masterRatio1 and masterCriticalRatio stay pointers: they point into arrays
+/// SProd holds by value, which do not move.
 struct TransientStepState {
     /// SProd::transient.DTMaxMed -- written.
     double &meanMaximumTimeStep;
@@ -71,7 +75,7 @@ struct TransientStepState {
     /// SProd::transient.contaMaster1 -- written.
     int &masterCounter;
     /// SProd::tables.cpg -- written.
-    double** gasSpecificHeatTable;
+    double **const &gasSpecificHeatTable;
     /// SProd::dt -- written.
     double &timeStep;
     /// SProd::transient.dtCFLMed -- written.
@@ -127,15 +131,15 @@ struct TransientStepState {
     /// SProd::gasLift.velInter -- written.
     double &interfaceVelocity;
     /// SProd::transient.abreM1 -- read only.
-    double* masterOpenSchedule;
+    std::vector<double> &masterOpenSchedule;
     /// SProd::arq -- read only.
     Ler &input;
     /// SProd::gasLift.celInterIni -- read only.
     const int &initialInterfaceCell;
     /// SProd::celula -- read only.
-    Cel* cells;
+    Cel *const &cells;
     /// SProd::gasLift.celulaG -- read only.
-    CelG* gasCells;
+    CelG *const &gasCells;
     /// SProd::chokeSup -- read only.
     choke &surfaceChoke;
     /// SProd::transient.dtCFL -- read only.
@@ -149,7 +153,7 @@ struct TransientStepState {
     /// SProd::transient.dtauxFinal -- read only.
     double &finalAuxiliaryTimeStep;
     /// SProd::transient.fechaM1 -- read only.
-    double* masterCloseSchedule;
+    std::vector<double> &masterCloseSchedule;
     /// SProd::flut -- read only.
     FullMtx<double> &productionFreeTerms;
     /// SProd::flutG -- read only.
@@ -171,7 +175,7 @@ struct TransientStepState {
     /// SProd::gasLift.ncelGas -- read only.
     const int &gasCellCount;
     /// SProd::trends.ncelperftransp -- read only.
-    int* productionCrossSectionCount;
+    std::vector<int> &productionCrossSectionCount;
     /// SProd::transient.nfechaM1 -- read only.
     const int &masterCloseCount;
     /// SProd::noextremo -- read only.
@@ -195,7 +199,7 @@ struct TransientStepState {
     /// SProd::gasLift.velInterIni -- read only.
     const double &initialInterfaceVelocity;
     /// SProd::vg1dSP -- read only.
-    varGlob1D* globals;
+    varGlob1D *const &globals;
     /// Everything the step needs that is not its own.
     TransientStepUpdaters updaters;
 };
@@ -364,7 +368,7 @@ struct TransientSolveState {
     /// SProd::transient.jVet -- written or read by the solve; not promised const.
     std::vector<double> &fluxHistory;
     /// SProd::trends.ncelperftransg -- written or read by the solve; not promised const.
-    int* gasCrossSectionCellCounts;
+    std::vector<int> &gasCrossSectionCellCounts;
     /// SProd::trends.kontaTempoTransProfG -- written or read by the solve; not promised const.
     int &gasCrossSectionProfileTimeCounter;
     /// SProd::trends.ntrendtransgB -- written or read by the solve; not promised const.

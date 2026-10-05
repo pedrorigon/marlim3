@@ -6,9 +6,9 @@
 /// The functions in driftflux::correlations are pure: they read nothing but
 /// their arguments and write nothing but the c0 and ud output references, which
 /// makes them testable in isolation against a tabulated sweep.
-// Declared, not included: ClosureState below holds only pointers and references
-// to these, so this header stays free of the cell, input-deck and globals
-// headers and can still be compiled on its own.
+// Declared, not included: ClosureState below holds only references to these,
+// so this header stays free of the cell, input-deck and globals headers and can
+// still be compiled on its own.
 class Cel;
 class Ler;
 struct varGlob1D;
@@ -124,12 +124,12 @@ namespace coefficient {
 /// at all.
 struct ClosureState {
     /// The cell array -- SProd::celula. Written as well as read.
-    Cel *cells;
+    Cel *const &cells;
     /// Index of the last cell -- SProd::ncel.
     const int &lastCell;
     /// Shared 1D globals; only localtiny is read, plus the pointer handed to
     /// the flow-pattern map -- SProd::vg1dSP.
-    varGlob1D *globals;
+    varGlob1D *const &globals;
     /// Input deck -- SProd::arq. Read for mapaArranjo, escorregaTran,
     /// escorregaPerm and AceleraConvergPerm.
     const Ler &input;
