@@ -2298,6 +2298,8 @@ module FlashExtras
         bSuccessiveSubstitutionFoundNegativeTPD = .false.
         bSuccessiveSubstitutionConverged = .false.
         bTPDRelChangeBelowTol = .false.
+        dCurrentWTPD = 0.0d0
+        dTPDRelChange = 0.0d0
 
         ! Calcular os "di" (eq 3 do Cap 9 da referência - atentar que a eq 43 do Cap 10 tem um pequeno erro em "di"):
         calcDi: do i = 1, iNComp
