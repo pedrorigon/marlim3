@@ -69,12 +69,11 @@ Rede &Rede::operator=(const Rede &vrede) {
 }
 
 /*
- * Criar arquivo do schema Rede.
+ * The network schema, as text. It is parsed from memory: a file in the working directory is shared by
+ * every run started there.
  */
-void Rede::writeSchemaRede() {
-    remove(ARQUIVO_SCHEMA_REDE_JSON);
-    // criar arquivo de schema Rede
-    ofstream schemaRedeStream(ARQUIVO_SCHEMA_REDE_JSON, ios_base::out);
+string Rede::schemaRede() const {
+    ostringstream schemaRedeStream;
     schemaRedeStream << "{" << endl;
     schemaRedeStream << "\"$schema\": \"http://json-schema.org/draft-04/schema#\"," << endl;
     schemaRedeStream << "\"id\": \"http://transiente.cenpes.petrobras.com/schemas/" << ARQUIVO_SCHEMA_REDE_JSON << "\"," << endl;
@@ -107,8 +106,7 @@ void Rede::writeSchemaRede() {
     schemaRedeStream << "\"Conexao\": {\"$ref\": \"#/definitions/t_conexao\"} }," << endl;
     schemaRedeStream << "\"required\": [\"versao\", \"configuracaoInicial\", \"Arquivos\", \"Conexao\"]" << endl;
     schemaRedeStream << "}" << endl;
-    // fechar o stream
-    schemaRedeStream.close();
+    return schemaRedeStream.str();
 }
 
 Document Rede::parseEntrada() {
@@ -158,29 +156,17 @@ Document Rede::parseEntrada() {
     return jsonDoc;
 }
 
-Document Rede::parseSchema() {
+Document Rede::parseSchema(const string &schemaText) {
     // criar string para mensagem de falha
     char mensagemFalha[5000];
     // declarar o documento para o schema de validacao do formato do Rede
     Document schemaDoc;
-    // criar arquivo de schema de validacao do formato do Rede
-    FILE *schemaRedeInFile = NULL;
-    // definir buffer de entrada para leitura do arquivo json
-    char schemaRedeInBuf[65536];
-    // realizar a leitura do arquivo de schema do Rede
+    // realizar a leitura do schema do Rede
     try {
         // atualizar logger com arquivo de schema do rede
         logger.setNomeArqEntrada(ARQUIVO_SCHEMA_REDE_JSON);
-        // criar arquivo de schema de validacao do formato do Rede
-        schemaRedeInFile = fopen(ARQUIVO_SCHEMA_REDE_JSON, "r");
-        // criar stream do schema de validacao do formato do Rede
-        FileReadStream schemaRedeInStream(schemaRedeInFile, schemaRedeInBuf, sizeof(schemaRedeInBuf));
         // realizar o parse do schema de validacao do formato do Rede
-        schemaDoc.ParseStream(schemaRedeInStream);
-        // fechar o arquivo
-        fclose(schemaRedeInFile);
-        // remover o arquivo de schema
-        remove(ARQUIVO_SCHEMA_REDE_JSON);
+        schemaDoc.Parse(schemaText.c_str());
         // caso haja erros de parse
         if (schemaDoc.HasParseError()) {
             // transpor os dados da falha para a mensagem
@@ -552,10 +538,8 @@ void Rede::lerArq() {
         }
         // caso a validacao esteja ligada
         if (validacaoJson != tipoValidacaoJson_t::off) {
-            // schema para simulacao transiente
-            writeSchemaRede();
             // parse do schema do Rede
-            Document schemaDoc = parseSchema();
+            Document schemaDoc = parseSchema(schemaRede());
             // realizar a validacao do arquivo Rede segundo o schema
             validateVsSchema(&schemaDoc, &jsonDoc);
         }

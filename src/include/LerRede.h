@@ -118,8 +118,8 @@ class Rede {
   private:
     tipoValidacaoJson_t validacaoJson;
     tipoSimulacao_t tipoSimulacao;
-    void writeSchemaRede();
-    Document parseSchema();
+    string schemaRede() const;
+    Document parseSchema(const string &schemaText);
     Document parseEntrada();
     void validateVsSchema(Document *schemaMrtDoc, Document *mrtDoc);
     void parse_configuracao_inicial(Value &configuracao_inicial_json);
