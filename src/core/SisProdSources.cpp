@@ -211,10 +211,6 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
         double ypres = (state.cells[cellIndex + 1].pres + hidroJ) / (state.cells[cellIndex].pres - hidroM);
         int check = 1;
         if (ypres < 1. || check == 1) {
-            if ((*state.globals).lixo5 > 7059) {
-                int para;
-                para = 1;
-            }
             masChk = state.cells[cellIndex].acsr.chk.vazmassSachd(ypres, state.cells[cellIndex].pres - hidroM, tE, alfE,
                                                        betE, tit, state.cells[cellIndex].flui, state.cells[cellIndex].fluicol);
             maxSup = state.cells[cellIndex].acsr.chk.vazmaxSachd(state.cells[cellIndex].pres - hidroM, tE, alfE,
@@ -225,10 +221,6 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
             betE = state.cells[cellIndex + 1].bet;
             ypres = 1. / ypres;
             sense = -1;
-            if ((*state.globals).lixo5 > 7059) {
-                int para;
-                para = 1;
-            }
             masChk = state.cells[cellIndex].acsr.chk.vazmassSachd(ypres, state.cells[cellIndex + 1].pres + hidroJ, tE, alfE, betE, tit, state.cells[cellIndex + 1].flui,
                                                        state.cells[cellIndex + 1].fluicol);
             maxSup = state.cells[cellIndex].acsr.chk.vazmaxSachd(state.cells[cellIndex + 1].pres + hidroJ, tE, alfE, betE, tit, state.cells[cellIndex + 1].flui,

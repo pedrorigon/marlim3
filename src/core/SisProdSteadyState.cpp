@@ -4123,10 +4123,6 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
         }
         refreshUpstreamProductionPeriphery(state, i); // update of the left boundary pressure,
         // if there is an ESP or a pressure increment
-        if (i == 312) {
-            int para;
-            para = 0;
-        }
         if (state.input.flashCompleto != 2)
             advanceSteadyMass(state, i); // checks whether the previous cell has a source, and so updates
         // the mass flow rates at the left boundary and the fluid properties,
@@ -4835,8 +4831,6 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                 media /= (state.lastCell - 1);
                 desvio = (media - 0.1);
                 if (lento > 0 && lento < state.lastCell) {
-                    int para;
-                    para = 0;
                     state.slowHeatTransferThreshold = 100.;
                 }
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
@@ -5225,10 +5219,6 @@ double marchProductionPressureToPressure(const SteadyStateState &state, double m
             else
                 advanceCompositionalSteadyMass(state, i);
             state.updaters.advanceSteadyTemperature(i, 0);
-            if (i > 1160) {
-                int para;
-                para = 0;
-            }
             if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
                 state.cells[i].temp = state.input.tabent.tmin;
             state.updaters.updateProductionTemperaturePeriphery(i);
@@ -6041,10 +6031,6 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
         }
         double perdafric = (frictionFactor * rmis * j * fabs(j) / 2.) * state.cells[i].duto.peri / state.cells[i].duto.area;
         taux = state.input.celp[i].textern;
-        if (i == 500) {
-            int para;
-            para = 0;
-        }
         double rhol = state.cells[i].flui.MasEspLiq(pchute, taux);
         double rhog = state.cells[i].flui.MasEspGas(pchute, taux);
         double alfa = 1. - liquidHoldup;

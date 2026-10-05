@@ -2142,11 +2142,6 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         if (state.step.input.flashCompleto == 2 && (*state.step.globals).lixo5 < 1e-15 && state.step.input.miniTabAtraso>0) {
             refreshFluidMiniTable(state.step);
         }
-        if ((*state.step.globals).lixo5 >= 0) {
-            int para;
-            para = 0;
-           // arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo, nrede);
-        }
 
         if ((*state.step.globals).lixo5 < 1e-15) {
         	for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++)state.unitCellTimeCounters[iCelU]=1;

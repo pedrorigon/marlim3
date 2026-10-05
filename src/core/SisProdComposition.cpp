@@ -959,11 +959,6 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
         right.yco2G = state.cells[i + 1].flui.yco2;
     }
 
-    if (i == 237) {
-        int para;
-        para = 0;
-    }
-
     BlackOilCell cell;
     cell.liquidHoldup = 1. - state.cells[i].alf;
     cell.completionFraction = state.cells[i].bet;
@@ -1615,10 +1610,6 @@ void solveCellPhaseMolarFractions(const CompositionState &state, const PhaseFace
                 fluC[i].atualizaPropComp(state.cells[i].pres, state.cells[i].temp, fluC[i].dCalculatedBeta,
                                          fluC[i].oCalculatedLiqComposition,
                                          fluC[i].oCalculatedVapComposition, state.input.pocinjec);
-            if (fluC[i].iIER != 0) {
-                int para;
-                para = 0;
-            }
         }
     }
 }
