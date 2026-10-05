@@ -12473,8 +12473,6 @@ void RedeInj(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoV
                 }
             }
         }
-    if (arqRede.nsisprod > 0)
-        delete[] malha;
 }
 
 /*
