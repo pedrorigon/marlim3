@@ -254,6 +254,7 @@ void Rede::parse_configuracao_inicial(Value &configuracao_inicial_json) {
     relax = 0.5;
     fluidoRede = 1;
     tabelaDinamica = 0;
+    TmaxR = 0;
     apenasPreProc = 0;
     chute = 0;
     nthrRede = 1;
