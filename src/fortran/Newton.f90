@@ -525,6 +525,8 @@ module Newton
         ! ------------ CONSTANTES:
         logical, parameter :: bConsiderNewtonNonConvergenceAsError = .true.
 
+        iIER = ERROR_EverythingOK
+
         ! ------------ PROCEDIMENTOS:
         bIgnoreOutcomeAndResume = .false.
 
@@ -638,6 +640,7 @@ module Newton
 
         ! ------------ PROCEDIMENTOS:
 
+        iIER = ERROR_EverythingOK
         bReceivedBetaIsOK = (dBetaVap.GE.(0.0d0)).and.(dBetaVap.LE.(1.0d0))
 
         prepInitialEstimates: if(bReceivedBetaIsOK) then
@@ -1206,6 +1209,8 @@ module Newton
         logical, parameter :: bWriteToDebugFile = .true.                    ! No futuro, MANTER LOCAL, mas possibilitar mudar com argumento opcional!
 
         ! ------------ PROCEDIMENTOS:
+
+        iIER = ERROR_EverythingOK
 
         ! --------> Escrita no arquivo de Debug.
         call WriteDebugFileLine(" ", bConfirmWriteLine = bWriteToDebugFile)

@@ -71,6 +71,8 @@ module PvtSimCTMFileImport
 
         ! ------------ PROCEDIMENTOS:
 
+        iIER = ERROR_EverythingOK
+
         ! Abrir o arquivo:
         OPEN(UNIT=iPvtSimCTMFileUnit, FILE=sPvtSimCTMFileName, STATUS='OLD', ACTION='READ', IOSTAT=iFileOperationsError)
 
@@ -658,6 +660,8 @@ module PvtSimCTMFileImport
         real(c_double) :: dValueFromFile
 
         ! ------------ PROCEDIMENTOS:
+
+        iIER = ERROR_EverythingOK
 
         ! A primeira linha (próxima a ser lida) é lixo:
         read(iPvtSimCTMFileUnit, '(A)', IOSTAT=iFileOperationsError) sGarbageLine

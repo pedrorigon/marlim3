@@ -147,6 +147,8 @@ module FlashExtras
 
         ! ------------------ CÁLCULOS:
 
+        iIER = ERROR_EverythingOK
+
         ! -----------------> Dados de entrada no arquivo de Debug
         call WriteDebugFileLine(" ", bConfirmWriteLine = bWriteToDebugFile)
         call WriteDebugFileLine(" ", bConfirmWriteLine = bWriteToDebugFile)
@@ -437,6 +439,8 @@ module FlashExtras
         logical, parameter :: bWriteToDebugFile = .true.                    ! No futuro, MANTER LOCAL, mas possibilitar mudar com argumento opcional!
 
         ! ------------------ CÁLCULOS:
+
+        iIER = ERROR_EverythingOK
 
         ! -----> Escrita no arquivo de Debug:
         call WriteDebugFileLine(" ", bConfirmWriteLine = bWriteToDebugFile)
@@ -778,6 +782,7 @@ module FlashExtras
         ! ------------------ CÁLCULOS:
 
         ! Inicializando:
+        iIER = ERROR_EverythingOK
         bFlashConverged = .false.
 
         ! Resolver a equação de Rachford-Rice:
@@ -1157,6 +1162,8 @@ module FlashExtras
 
         ! ------------------ CÁLCULOS:
 
+        iIER = ERROR_EverythingOK
+
         ! PRIMEIRO PASSO: Calcular a função F e suas derivadas
         ! ("Função F" apresentada na Referência Bibliográfica, pág 63, equação "6")
         call CalculateFunctionFValuesAndDerivatives(iNComp, iPhaseID, dTemperature, dPressure, oPhasicComposition, &
@@ -1262,6 +1269,7 @@ module FlashExtras
         ! ------------------ CÁLCULOS:
 
         ! Inicializando:
+        iIER = ERROR_EverythingOK
         bPhasicZAvailable = .false.
 
         ! O modelo termodinâmico selecionado é uma equação de estado cúbica?
@@ -1365,6 +1373,8 @@ module FlashExtras
         real(c_double), parameter :: dR = 8.314d0                   ! R no SI (J/mol/K)
 
         ! ------------------ CÁLCULOS:
+
+        iIER = ERROR_EverythingOK
 
         ! Calcular o fator de compressibilidade:
         call CalculatePhasicCompressibilityFactorFromCubicEOS(iNComp, iPhaseID, dTemperature, dPressure, oPhasicComposition, &
@@ -1581,6 +1591,7 @@ module FlashExtras
         ! ------------------ CÁLCULOS:
 
         ! Inicializando:
+        iIER = ERROR_EverythingOK
         dPhasicZ = -10.0d0
 
         ! O modelo termodinâmico selecionado é uma equação de estado cúbica?
@@ -1651,6 +1662,8 @@ module FlashExtras
 
         ! ------------------ CÁLCULOS:
 
+        iIER = ERROR_EverythingOK
+
         ! Determinar as constantes dos componentes puros nas condições do "flash":
         call CalculateCubicEOSParametersForEachComponent(iNComp, dTemperature, iPhasicCubicEOSModel, oTc, oPc, oW, &
                                                    iIER, oCubicEOSaParameters, oCubicEOSbParameters)
@@ -1702,6 +1715,8 @@ module FlashExtras
         integer(c_int), intent(out) :: iIER                            ! Código de erros, conforme convencionado.
 
         ! ------------------ CÁLCULOS:
+
+        iIER = ERROR_EverythingOK
 
         ! Identificar a equação cúbica e proceder de acordo:
         whichEOS: if(iCubicEOSModel.EQ.PENG_ROBINSON_78_PENELOUX) then
@@ -1785,6 +1800,8 @@ module FlashExtras
         logical, parameter :: bWriteToDebugFile = .true.                    ! No futuro, MANTER LOCAL, mas possibilitar mudar com argumento opcional!
 
         ! ------------------ CÁLCULOS:
+
+        iIER = ERROR_EverythingOK
 
         ! -------------> Escrita no arquivo de Debug
         call WriteDebugFileLine(" ", bConfirmWriteLine = bWriteToDebugFile)
@@ -2276,6 +2293,8 @@ module FlashExtras
                                                                             ! variação relativa de TPD entre iterações (não estava no algoritmo original).
 
         ! ------------------ CÁLCULOS:
+
+        iIER = ERROR_EverythingOK
 
         ! -----> Escrita no arquivo de Debug:
         call WriteDebugFileLine(" ", bConfirmWriteLine = bWriteToDebugFile)

@@ -187,6 +187,8 @@ module MarlimComposicional
                                                                                         !   fração molar nula na composição global, quando houver possibilidade
                                                                                         !   de sua presença causar erros numéricos.
 
+        iIER = ERROR_EverythingOK
+
         ! ------------ MAPEANDO VETORES E MATRIZES:
         call c_f_pointer(oZ, temp_oZ, [iNComp])
         call c_f_pointer(oTc, temp_oTc, [iNComp])
@@ -500,6 +502,8 @@ subroutine GetMixtureComponentNumberFromExternalFile(sExternalFileName, iExterna
     type(c_ptr) :: oCpIGCoefs                       ! "Placeholder" sem função.
     type(c_ptr) :: oInputForViscosity               ! "Placeholder" sem função.
 
+    iIER = ERROR_EverythingOK
+
     ! ------------ PROCEDIMENTOS:
     iNComp = -10
 
@@ -560,6 +564,8 @@ subroutine ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFil
     integer :: iPvtSimCTMFileUnit
 
     ! ------------ PROCEDIMENTOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Lendo apenas o número de componentes?
     bReadingNumberOfComponents = (iNComp.LT.0)
@@ -684,6 +690,8 @@ subroutine Marlim_GetPvtSimWAXFileInfoFor1DFlowSimulation(dPressure, dTemperatur
 
     ! ------------ PROCEDIMENTOS:
 
+    iIER = ERROR_EverythingOK
+
     ! MAPEANDO VETORES E MATRIZES:
     call c_f_pointer(oPressurePoints, temp_oPressurePoints, [iPressureCount])
     call c_f_pointer(oCloudPointTemperatures, temp_oCloudPointTemperatures, [iPressureCount])
@@ -748,6 +756,8 @@ subroutine GetWaxParameterExternalFileDimensions(sExternalFileName, iExternalFil
     integer :: iPvtSimWaxFileUnit
 
     ! ------------ PROCEDIMENTOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Pré-tratamento do nome do arquivo:
     allocate(character(iExternalFileNameLength) :: sFileNameToUse)
@@ -830,6 +840,8 @@ subroutine ReadWaxCalculationParametersFromExternalFile(sExternalFileName, iExte
     real(c_double), dimension(:), pointer :: temp_oLiquidDensitiesOfWaxComponents   ! Mapeamento do argumento "oLiquidDensitiesOfWaxComponents"
 
     ! ------------ PROCEDIMENTOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Pré-tratamento do nome do arquivo:
     allocate(character(iExternalFileNameLength) :: sFileNameToUse)
@@ -962,6 +974,8 @@ subroutine Marlim_CalculateMixtureThermodynamicCondition(dFlashPressure, dFlashT
     real(c_double), allocatable, dimension(:) :: oCalculatedVapComp_Fixed
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Mapeando vetores e matrizes:
     call c_f_pointer(oMW, temp_oMW, [iNComp])
@@ -1136,6 +1150,8 @@ subroutine Marlim_CalculateMixtureSurfaceTension(dPressure, dTemperature, iNComp
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
 
+    iIER = ERROR_EverythingOK
+
     ! MAPEANDO VETORES E MATRIZES:
     call c_f_pointer(oTc, temp_oTc, [iNComp])
     call c_f_pointer(oPc, temp_oPc, [iNComp])
@@ -1236,6 +1252,8 @@ subroutine Marlim_CalculatePhaseCpAndEnthalpy(dPressure, dTemperature, iPhaseID,
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
 
+    iIER = ERROR_EverythingOK
+
     ! MAPEANDO VETORES E MATRIZES:
     call c_f_pointer(oPhaseComposition, temp_oPhaseComposition, [iNComp])
     call c_f_pointer(oTc, temp_oTc, [iNComp])
@@ -1322,6 +1340,8 @@ subroutine Marlim_CalculatePhaseDensity(dPressure, dTemperature, iPhaseID, oPhas
     real(c_double), parameter :: dR = 8.314d0                       ! R no SI (J/mol/K)
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+
+    iIER = ERROR_EverythingOK
 
     ! MAPEANDO VETORES E MATRIZES:
     call c_f_pointer(oPhaseComposition, temp_oPhaseComposition, [iNComp])
@@ -1414,6 +1434,8 @@ subroutine Marlim_CalculateTAndPDerivativesOfPhasicRhoAndZ(dPressure, dTemperatu
     real(c_double) :: dDerivPhasicZPenelouxWithP
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+
+    iIER = ERROR_EverythingOK
 
     ! MAPEANDO VETORES E MATRIZES:
     call c_f_pointer(oPhaseComposition, temp_oPhaseComposition, [iNComp])
@@ -1516,6 +1538,8 @@ subroutine Marlim_AdjustGlobalCompositionForTargetGOR(iNComp, oOriginalGlobalCom
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
 
+    iIER = ERROR_EverythingOK
+
     ! Mapeando vetores e matrizes:
     call c_f_pointer(oOriginalGlobalComposition, temp_oOriginalGlobalComposition, [iNComp])
     call c_f_pointer(oMW, temp_oMW, [iNComp])
@@ -1614,6 +1638,8 @@ subroutine Marlim_CalculateCommonlyRequiredValuesAtStockTankConditions(iNComp, o
     real(c_double), dimension(:), pointer :: temp_oGivenInitialVapComposition    ! Mapeamento do argumento "oGivenInitialVapComposition"
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Mapeando vetores e matrizes:
     call c_f_pointer(oZ, temp_oZ, [iNComp])
@@ -1730,6 +1756,8 @@ subroutine Marlim_CalculateOilFormationVolumeFactor(dPressure, dTemperature, iNC
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
 
+    iIER = ERROR_EverythingOK
+
     ! MAPEANDO VETORES E MATRIZES:
     call c_f_pointer(oLiqPhaseComposition, temp_oLiqPhaseComposition, [iNComp])
     call c_f_pointer(oTc, temp_oTc, [iNComp])
@@ -1814,6 +1842,8 @@ subroutine Marlim_FitBlackOilPVTAnalysisCalibrationModels(iNPVTPoints, oExpPress
     integer :: i
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Mapeando vetores e matrizes:
     call c_f_pointer(oExpPressures_Arg, temp_oExpPressures_Arg, [iNPVTPoints])
@@ -1900,6 +1930,8 @@ subroutine Marlim_CalculateBubblePressure(dTemperature, iNComp, oZ, oTc, oPc, oW
     real(c_double), dimension(iNComp) :: oVapCompositionClosestToBubbleT, oLiqCompositionClosestToDewT, oInitialLiqComposition, oInitialVapComposition
 
     ! ------------ PROCEDIMENTOS, CHAMADAS E CÁLCULOS:
+
+    iIER = ERROR_EverythingOK
 
     ! Mapeando vetores e matrizes:
     call c_f_pointer(oZ, temp_oZ, [iNComp])
