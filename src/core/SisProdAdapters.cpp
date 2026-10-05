@@ -579,44 +579,17 @@ trendoutput::TrendState trendStateOf(const SProd &system) {
 
 namespace sisprod {
 
-sisprod::gaslift::GasLiftState SolveContext::gasLift() {
-    return adapters::gasLiftStateOf(system_, *this);
-}
-
-sisprod::steady::SteadyStateState SolveContext::steady() {
-    return adapters::steadyStateOf(system_, *this);
-}
-
-sisprod::steady::SteadyStateSearchState SolveContext::search() {
-    return adapters::searchStateOf(system_, *this);
-}
-
-sisprod::transient::TransientStepState SolveContext::transientStep() {
-    return adapters::transientStateOf(system_, *this);
-}
-
-sisprod::composition::CompositionState SolveContext::composition() {
-    return adapters::compositionStateOf(system_, *this);
-}
-
-sisprod::transient::TransientSolveState SolveContext::transientSolve() {
-    return adapters::transientSolveStateOf(system_, *this);
-}
-
-driftflux::coefficient::ClosureState SolveContext::closure() {
-    return adapters::closureStateOf(system_);
-}
-
-sisprod::sources::SourceState SolveContext::sources() {
-    return adapters::sourceStateOf(system_);
-}
-
-sisprod::thermal::ThermalState SolveContext::thermal() {
-    return adapters::thermalStateOf(system_, *this);
-}
-
-trendoutput::TrendState SolveContext::trends() {
-    return adapters::trendStateOf(system_);
-}
+SolveContext::SolveContext(SProd &system)
+    : system_(system),
+      gasLift_(adapters::gasLiftStateOf(system, *this)),
+      steady_(adapters::steadyStateOf(system, *this)),
+      search_(adapters::searchStateOf(system, *this)),
+      transientStep_(adapters::transientStateOf(system, *this)),
+      composition_(adapters::compositionStateOf(system, *this)),
+      transientSolve_(adapters::transientSolveStateOf(system, *this)),
+      closure_(adapters::closureStateOf(system)),
+      sources_(adapters::sourceStateOf(system)),
+      thermal_(adapters::thermalStateOf(system, *this)),
+      trends_(adapters::trendStateOf(system)) {}
 
 }  // namespace sisprod
