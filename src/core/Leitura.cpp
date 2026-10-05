@@ -9690,7 +9690,9 @@ void Ler::parse_master2(JSON_entrada_master2& master2_json) {
 	string chaveJson("#/master2");
 	try {
 		// caso a propriedade "ativo" esteja habilitada
-		if (is_ativo(master2_json)) {
+		// without points (an absent block is active by default) it takes the inactive default below
+		if (is_ativo(master2_json)
+				&& (master2_json.tempo().size() > 0 || master2_json.abertura().size() > 0)) {
 			master2.curvaCV=0;
 			master2.ncv=0;
 			// caso os tamanhos dos vetores das chaves difiram entre si
