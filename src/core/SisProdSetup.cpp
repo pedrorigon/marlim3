@@ -207,7 +207,8 @@ void SProd::loadPvtSimSaturationTables() {
 
 /// Builds the bubble-point curve and the solution gas-oil ratio table from the
 /// fluid correlations over the input table's pressure-temperature grid, writes
-/// perfilBolha and perfilRSLivia, and points the cell fluids at both.
+/// perfilBolha and perfilRSLivia, and points the cell fluids at both, with the
+/// bubble curve's size.
 void SProd::generateSaturationTablesFromCorrelations() {
     int ndiv = arq.tabent.npont - 1;
     double pteste = arq.tabent.pmin;
@@ -248,6 +249,7 @@ void SProd::generateSaturationTablesFromCorrelations() {
     auto pointAtTables = [&](ProFlu &fluid) {
         fluid.PBPVTSim = tables.PBPVTSim.data();
         fluid.TBPVTSim = tables.TBPVTSim.data();
+        fluid.npontosB = static_cast<int>(tables.TBPVTSim.size());
         fluid.TabRSLivia = tables.RSLivia.data();
         fluid.tabRSPB = 1;
     };
