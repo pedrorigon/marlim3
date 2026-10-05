@@ -74,6 +74,8 @@ BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhea
         while(maxef<efic[k]&&k<lenth-1){maxef=efic[k];k++;}
         BEP=FalsaCorda(1,vaz[k-2],vaz[k]);
         if(BEP<0)BEP=vaz[k-1];
+        // Fhead returns 0 beyond Qzero; while Qzero itself is searched for, nothing is beyond it.
+        Qzero=HUGE_VAL;
         Qzero=FalsaCorda(0,vaz[lenth-2],vaz[lenth-1]);
 
         Hvis=0.;
