@@ -63,6 +63,7 @@
 #include <fstream>
 #include <iostream>
 #include <math.h>
+#include <memory>
 #include <omp.h>
 #include <signal.h>
 #include <sstream>
@@ -12873,14 +12874,12 @@ int main(int argc, char **argv) {
                     escreveRelatorioSucesso << "# RedeInterna      ;" << "# Tramo      ;" << "Permanente     ;" << "Ativo       " << endl;
                     escreveRelatorioSucesso.close();
                     if (arqRede.apenasPreProc == 0) {     // sucesso no pre processamento
-                        SProd **malha;                    // ponteiro para armazenamentodas redes internas que compoe a rede original
-                        malha = new SProd *[redeLeitura]; // alocamento de memoria para o vetor de redes internas
-                        Rede *arqRedeTemp;
-                        arqRedeTemp = new Rede[redeLeitura];
-                        varGlob1D *vg1dRede;
-                        vg1dRede = new varGlob1D[redeLeitura];
-                        int *contapermRede;
-                        contapermRede = new int[redeLeitura];
+                        // The internal networks: their inputs and globals, then the branches of each one, declared
+                        // last so that the branches, which point into the others, are released first.
+                        auto arqRedeTemp = make_unique<Rede[]>(redeLeitura);
+                        auto vg1dRede = make_unique<varGlob1D[]>(redeLeitura);
+                        auto contapermRede = make_unique<int[]>(redeLeitura);
+                        vector<unique_ptr<SProd[]>> malha(redeLeitura);
                         varGlob1D vg1dTemp = varGlob1D();
                         for (int i = 0; i < redeLeitura; i++)
                             vg1dRede[i] = vg1dTemp;
@@ -12914,8 +12913,8 @@ int main(int argc, char **argv) {
                         }
                         for (int i = 0; i < redeLeitura; i++) {
                             contapermRede[i] = 0;
-                            malha[i] = new SProd[vg1dRede[i].narq];
-                            preparaRedeProd(malha[i], arqRedeTemp[i], vg1dRede[i].narq, nomeArquivoLog, validacaoJson,
+                            malha[i] = make_unique<SProd[]>(vg1dRede[i].narq);
+                            preparaRedeProd(malha[i].get(), arqRedeTemp[i], vg1dRede[i].narq, nomeArquivoLog, validacaoJson,
                                             tipoSimulacao_t::transiente, i, contapermRede[i], &vg1dRede[i]);
                         }
 #pragma omp parallel for num_threads(vg1dRedeSimples.ntrdGlob)
@@ -12926,7 +12925,7 @@ int main(int argc, char **argv) {
                             cout << "!!!!!! Resolvendo REDE INTERNA " << i << "!!!!!!" << "\n";
                             vector<noRede> normaEvol;
                             vector<tramoPart> bloq;
-                            solveRedeProd(malha[i], arqRedeTemp[i], vg1dRede[i].narq, inativo, indativo, nomeArquivoLog, validacaoJson,
+                            solveRedeProd(malha[i].get(), arqRedeTemp[i], vg1dRede[i].narq, inativo, indativo, nomeArquivoLog, validacaoJson,
                                           tipoSimulacao_t::transiente, i, contapermRede[i], &vg1dRede[i], normaEvol, bloq); // construcao dos objetos tramos de uma rede
                             // neste metodo e criado o vetor de tramos da rede, avaliado se algum tramo encontra-se em uma condicao sem vazao,
                             // neste caso o tramo e retirado da rede interna, e e feita a resolucao permenente da rede interna, apos esta resolucao
@@ -12937,7 +12936,7 @@ int main(int argc, char **argv) {
                             if (vg1dRede[i].chaveredeT == 1 && arqRede.injec == 0 && (*arqRede.vg1dSP).chaveAnelGL == 0) {
                                 vg1dRede[i].RGOMax = 14000.;
                                 vg1dRede[i].modoTransiente = 1;
-                                SolveRedeTrans(malha[i], arqRedeTemp[i], inativo, indativo, i); // metodo em que se faz a resolucao transiente da rede interna
+                                SolveRedeTrans(malha[i].get(), arqRedeTemp[i], inativo, indativo, i); // metodo em que se faz a resolucao transiente da rede interna
                                 vg1dRede[i].modoTransiente = 0;
                             }
                             vg1dRede[i].restartRede = 1;
@@ -12964,13 +12963,6 @@ int main(int argc, char **argv) {
                                 cout << "*******************************************************************************" << endl;
                             } else
                                 cout << "                                  FIM                                  " << endl;
-                            // deletando as redes internas
-                            for (int kRede = 0; kRede < redeLeitura; kRede++)
-                                delete[] malha[kRede];
-                            delete[] malha; // deletando os objetos tramos
-                            delete[] vg1dRede;
-                            delete[] arqRedeTemp;
-                            delete[] contapermRede;
                         }
 
                         ostringstream relatSucesso;
@@ -13009,10 +13001,9 @@ int main(int argc, char **argv) {
 
                 } else { // caso rede de injecao, resolucao permanente da rede de injecao
                     // OBS: sistemas de injecao so tem solucao permanente
-                    SProd *malha;
                     vg1dRedeSimples.narq = narq;
-                    malha = new SProd[narq];                                                                                       // vetor com os objetos tramos
-                    RedeInj(malha, arqRede, narq, nomeArquivoLog, validacaoJson, tipoSimulacao_t::poco_injetor, &vg1dRedeSimples); // construcao
+                    auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
+                    RedeInj(malha.get(), arqRede, narq, nomeArquivoLog, validacaoJson, tipoSimulacao_t::poco_injetor, &vg1dRedeSimples); // construcao
                     // dos objetos tramos de uma rede de injecao e busca de sua solucao permanente
                     if (saidaClassica == 1) {
                         cout << "*******************************************************************************" << endl;
@@ -13022,20 +13013,17 @@ int main(int argc, char **argv) {
                         cout << "*******************************************************************************" << endl;
                     } else
                         cout << "                                  FIM                                  " << endl;
-                    if (arqRede.nsisprod > 0)
-                        delete[] malha; // deletando os objetos tramos
                 }
             } else {
                 if ((*arqRede.vg1dSP).chaveAnelGL == 1) {
                     // solucao de rede de anel de Gas Lift
                     // SProd* malha;//alteracao7
-                    SProd *malha;
                     vg1dRedeSimples.narq = narq;
-                    malha = new SProd[narq];   // vetor com os objetos tramos
+                    auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
                     Vcr<int> inativo(narq, 0); // indica se algum tramo falhou na sua busca pela soluçao transiente
                     int indativo = 0;          // indica o numero de tramso que foram inativados na solucao permanente por
                     // falha de convergencia
-                    RedeAnelGL(malha, arqRede, narq, inativo, indativo, nomeArquivoLog,
+                    RedeAnelGL(malha.get(), arqRede, narq, inativo, indativo, nomeArquivoLog,
                                validacaoJson, arqRede.chaveredeT, tipoSimulacao_t::transiente, &vg1dRedeSimples); // cosntrucao dos objetos tramos
                     // de uma rede de anel de GL, dentro deste metodo e feita a solucao permanente e
                     // eventualmente a solucao transiente tambem
@@ -13049,17 +13037,14 @@ int main(int argc, char **argv) {
                         cout << "*******************************************************************************" << endl;
                     } else
                         cout << "                                  FIM                                  " << endl;
-                    if (arqRede.nsisprod > 0)
-                        delete[] malha; // deletando os objetos tramos
                 } else {
-                    SProd *malha;
                     vg1dRedeSimples.narq = narq;
-                    malha = new SProd[narq];   // vetor com os objetos tramos
+                    auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
                     Vcr<int> inativo(narq, 0); // indica se algum tramo falhou na sua busca pela soluçao transiente
                     int indativo = 0;          // indica o numero de tramso que foram inativados na solucao permanente por
                     // falha de convergencia
 
-                    RedeParalela(malha, arqRede, narq,
+                    RedeParalela(malha.get(), arqRede, narq,
                                  inativo, indativo, nomeArquivoLog, validacaoJson, arqRede.chaveredeT,
                                  tipoSimulacao_t::transiente, &vg1dRedeSimples);
 
@@ -13072,8 +13057,6 @@ int main(int argc, char **argv) {
                         cout << "*******************************************************************************" << endl;
                     } else
                         cout << "                                  FIM                                  " << endl;
-                    if (arqRede.nsisprod > 0)
-                        delete[] malha; // deletando os objetos tramos
                 }
             }
             // solucao transiente de uma rede de producao classica, sem anel.
