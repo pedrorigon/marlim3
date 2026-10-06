@@ -3463,7 +3463,7 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{
     int interno=1;
     double presR=(0.9678411*14.69595*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
-    if(tab>0){
+    if(tab>0 && std::isfinite(presR) && std::isfinite(tempR)){
       if(presR>dzdtP[1][0]-1e-5)interno=0;
       if(presR<dzdtP[npontos+1][0]+1e-5)interno=0;
       if(tempR>dzdtP[0][1]-1e-5)interno=0;
@@ -3682,7 +3682,7 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{
     int interno=1;
     double presR=(0.9678411*14.69595*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
-    if(tab>0){
+    if(tab>0 && std::isfinite(presR) && std::isfinite(tempR)){
       if(presR>dzdpP[1][0]-1e-5)interno=0;
       if(presR<dzdpP[npontos+1][0]+1e-5)interno=0;
       if(tempR>dzdpP[0][1]-1e-5)interno=0;
