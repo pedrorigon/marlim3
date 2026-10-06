@@ -498,6 +498,7 @@ module FlashExtras
 
                 call ExtrapolatePTFlashKWithDEM(iNComp, oLnK_JustUpdated, oLnK_From1IterationBack, oLnK_From2IterationBack, &
                         oLnK_From3IterationBack, oLnK_DEMResult)
+                iDEMHistoryCount = 0    ! the next extrapolation reads iterations of the new trajectory only
 
                 do i = 1, iNComp
                     oK(i) = exp(min(log(huge(1.0)), oLnK_DEMResult(i)))
