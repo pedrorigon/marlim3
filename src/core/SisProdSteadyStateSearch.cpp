@@ -2519,7 +2519,7 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         abortValue = 1e10;
                         return true;
                     }
-                if (state.march.cells[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(state.march.cells[i].presaux) ||
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].presaux) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
@@ -2552,7 +2552,7 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         return true;
                     }
                 }
-                if (!(state.march.cells[i].pres > 0.1) || // a NaN pressure stops the march too
+                if (marchPressureTooLow(state.march.cells[i].pres) ||
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].pres) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
@@ -2607,7 +2607,7 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
     
                 // checks whether the cell-centre pressure went above
                 // the static pressure of an IPR, if any
-                if (!(state.march.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
+                if (marchPressureTooLow(state.march.cells[i - 1].pres) ||
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i - 1].pres) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
@@ -2677,7 +2677,7 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
         state.march.cells[1].betLI = state.march.cells[0].bet;
 
         // checks whether something is already wrong at the start of the march
-        if (state.march.cells[0].pres <= 0.1 ||
+        if (marchPressureTooLow(state.march.cells[0].pres) ||
             (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[0].pres) > (*state.march.globals).localtiny))
             {
                 abortValue = -1e10;
@@ -2712,7 +2712,7 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &
             state.march.updaters.initializeSteadyValveGasFlowRate(0);
         i = 1;
         // start of the march proper
-        while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 0.1 && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
+        while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
             if (advanceTertiaryCells(state, i, abortValue))
                 return true;
         }

@@ -99,6 +99,16 @@ inline constexpr double kPhaseChangeFloor = 1e-25;
 inline constexpr double kMinimumTemperatureCelsius = -50.;
 inline constexpr double kMaximumTemperatureCelsius = 200.;
 
+/// The lowest cell pressure, in kgf/cm^2, a production steady march goes on
+/// with; at or below it the march stops as a pressure too low.
+inline constexpr double kMarchMinimumPressure = 0.1;
+
+/// True when a cell's pressure stops a production steady march: at or below
+/// kMarchMinimumPressure, or NaN, which fails every comparison.
+inline constexpr bool marchPressureTooLow(double pressure) {
+    return !(pressure > kMarchMinimumPressure);
+}
+
 // ------------------------------------------------------ accessory kinds ----
 
 /// The value of `celula[i].acsr.tipo`, selecting the accessory attached to a
@@ -194,6 +204,8 @@ static_assert(kDerivativePerturbationFactor == 0.999);
 static_assert(kPhaseChangeFloor == 1e-25);
 static_assert(kMinimumTemperatureCelsius == -50.);
 static_assert(kMaximumTemperatureCelsius == 200.);
+static_assert(kMarchMinimumPressure == 0.1);
+static_assert(marchPressureTooLow(0.1) && !marchPressureTooLow(0.2));
 
 }  // namespace sisprod
 

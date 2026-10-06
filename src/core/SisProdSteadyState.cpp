@@ -3748,8 +3748,8 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
 }
 
 void refreshDownstreamProductionPeriphery(const SteadyStateState &state, int i) {
-    if (state.cells[i].pres < 0.1)
-        state.cells[i].pres = 0.1;
+    if (state.cells[i].pres < kMarchMinimumPressure)
+        state.cells[i].pres = kMarchMinimumPressure;
     state.cells[i - 1].presR = state.cells[i].pres;
     if (i < state.lastCell) {
         state.cells[i + 1].presL = state.cells[i].pres;
@@ -4074,7 +4074,7 @@ void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) 
 }
 
 bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
-    while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
@@ -4084,7 +4084,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
                 abortValue = 1e10;
                 return true;
             }
-        if (state.cells[i].presaux <= 0.1 ||
+        if (marchPressureTooLow(state.cells[i].presaux) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4117,7 +4117,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
                 return true;
             }
         }
-        if (!(state.cells[i].pres > 0.1) || // a NaN pressure stops the march too
+        if (marchPressureTooLow(state.cells[i].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4202,7 +4202,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
 
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any
-        if (!(state.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
+        if (marchPressureTooLow(state.cells[i - 1].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4220,7 +4220,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
 }
 
 bool advanceReverseProductionCells(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
-    while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
@@ -4230,7 +4230,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
                 abortValue = 1e10;
                 return true;
             }
-        if (state.cells[i].presaux <= 0.1 ||
+        if (marchPressureTooLow(state.cells[i].presaux) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4262,7 +4262,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
                 return true;
             }
         }
-        if (!(state.cells[i].pres > 0.1) || // a NaN pressure stops the march too
+        if (marchPressureTooLow(state.cells[i].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4300,7 +4300,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
 
         i++;
 
-        if (!(state.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
+        if (marchPressureTooLow(state.cells[i - 1].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4312,7 +4312,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
 }
 
 bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
-    while (i <= state.lastCell && state.cells[i - 1].pres >= 0.1 && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
@@ -4416,7 +4416,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
         i++;
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any, or fell too low
-        if (!(state.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
+        if (marchPressureTooLow(state.cells[i - 1].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny))
             {
                 abortValue = -1e10;
@@ -4599,7 +4599,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             state.cells[0].betI = state.cells[0].bet;
             state.cells[1].betLI = state.cells[0].bet;
             // checks whether something is already wrong at the start of the march
-            if (state.cells[0].pres <= 0.1 ||
+            if (marchPressureTooLow(state.cells[0].pres) ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
                 return -1e10;
             else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
@@ -4755,7 +4755,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
             state.cells[0].betI = state.cells[0].bet;
             state.cells[1].betLI = state.cells[0].bet;
             // checks whether something is already wrong at the start of the march
-            if (state.cells[0].pres <= 0.1 ||
+            if (marchPressureTooLow(state.cells[0].pres) ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
                 return -1e10;
 
@@ -4943,7 +4943,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             state.cells[1].betLI = state.cells[0].bet;
 
             // checks whether something is already wrong at the start of the march
-            if (state.cells[0].pres <= 0.1 ||
+            if (marchPressureTooLow(state.cells[0].pres) ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].presaux) > (*state.globals).localtiny))
                 return -1e10;
             else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < 1e-15)) {
