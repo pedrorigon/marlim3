@@ -1459,7 +1459,7 @@ double TransCal::transperm(double resanul) {
             if (ncamada[i] > 1) {
                 for (int j = 1; j < ncamada[i]; j++) {
                     Tini[i][j] = Tcamada[i][j];
-                    Tcamada[i][j] = Tcamada[i][0] + (j / ncamada[i]) * (Tcamada[i][ncamada[i]] - Tcamada[i][0]);
+                    Tcamada[i][j] = Tcamada[i][0] + (static_cast<double>(j) / ncamada[i]) * (Tcamada[i][ncamada[i]] - Tcamada[i][0]);
                 }
             }
         }
@@ -1945,7 +1945,7 @@ double TransCal::transperm2D() {
         if (ncamada[i] > 1) {
             for (int j = 1; j < ncamada[i]; j++) {
                 Tini[i][j] = Tcamada[i][j];
-                Tcamada[i][j] = Tcamada[i][0] + (j / ncamada[i]) * (Tcamada[i][ncamada[i]] - Tcamada[i][0]);
+                Tcamada[i][j] = Tcamada[i][0] + (static_cast<double>(j) / ncamada[i]) * (Tcamada[i][ncamada[i]] - Tcamada[i][0]);
             }
         }
     }
@@ -2086,7 +2086,7 @@ double TransCal::transtrans2D() {
         if (ncamada[i] > 1) {
             for (int j = 1; j < ncamada[i]; j++) {
                 Tini[i][j] = Tcamada[i][j];
-                Tcamada[i][j] = Tcamada[i][0] + (j / ncamada[i]) * (Tcamada[i][ncamada[i]] - Tcamada[i][0]);
+                Tcamada[i][j] = Tcamada[i][0] + (static_cast<double>(j) / ncamada[i]) * (Tcamada[i][ncamada[i]] - Tcamada[i][0]);
             }
         }
     }
