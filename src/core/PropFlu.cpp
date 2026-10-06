@@ -2331,8 +2331,19 @@ double ProFlu::interpolaLas3( double var)const{
 
 
 
+// Ends the run on a bubble curve interpolaPB cannot use; kept out of line, off its hot path.
+[[noreturn]] [[gnu::cold]] [[gnu::noinline]] static void failBubbleCurveSize(int pointCount){
+    logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Curva de bolha do PVTSim com menos de dois pontos", "N/A",
+        string("npontosB = ") + to_string(pointCount));
+    logger.writeOutputLog();
+    exit(EXIT_SUCCESS);
+}
+
 double ProFlu::interpolaPB( double temp)const{
 
+    // The curve interpolates between two points at least; a fluid given its pointers without its size would
+    // read outside it.
+    if(npontosB<2)failBubbleCurveSize(npontosB);
     int itemp=0;
     double var;
     int ndiv=npontosB-1;
