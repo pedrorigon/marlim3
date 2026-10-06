@@ -167,6 +167,11 @@ void Logger::writeJsonFile(Document *outputDoc) {
         remove(getStResultadoSimulacao().nomeArqLog.c_str());
         // criar arquivo de saída da simulação
         FILE *logOutFile = fopen(getStResultadoSimulacao().nomeArqLog.c_str(), "wb"); // non-Windows use "w"
+        // a path in a directory that does not exist, or cannot be written, opens no file
+        if (!logOutFile) {
+            cout << "NAO FOI POSSIVEL GRAVAR O ARQUIVO DE LOG: " << getStResultadoSimulacao().nomeArqLog << endl;
+            exit(EXIT_FAILURE);
+        }
         // definir buffer de saída da simulação
         char writeBuffer[65536];
         // criar stream do arquivo de saída da simulação
