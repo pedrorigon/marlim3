@@ -4117,7 +4117,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
                 return true;
             }
         }
-        if (state.cells[i].pres <= 0.1 ||
+        if (!(state.cells[i].pres > 0.1) || // a NaN pressure stops the march too
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4202,7 +4202,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
 
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any
-        if (state.cells[i - 1].pres <= 0.1 ||
+        if (!(state.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4262,7 +4262,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
                 return true;
             }
         }
-        if (state.cells[i].pres <= 0.1 ||
+        if (!(state.cells[i].pres > 0.1) || // a NaN pressure stops the march too
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4300,7 +4300,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
 
         i++;
 
-        if (state.cells[i - 1].pres <= 0.1 ||
+        if (!(state.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
             {
                 abortValue = -1e10;
@@ -4416,7 +4416,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
         i++;
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any, or fell too low
-        if (state.cells[i - 1].pres <= 0.1 ||
+        if (!(state.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny))
             {
                 abortValue = -1e10;

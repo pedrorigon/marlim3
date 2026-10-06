@@ -2552,7 +2552,7 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                         return true;
                     }
                 }
-                if (state.march.cells[i].pres <= 0.1 ||
+                if (!(state.march.cells[i].pres > 0.1) || // a NaN pressure stops the march too
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].pres) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
@@ -2607,7 +2607,7 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
     
                 // checks whether the cell-centre pressure went above
                 // the static pressure of an IPR, if any
-                if (state.march.cells[i - 1].pres <= 0.1 ||
+                if (!(state.march.cells[i - 1].pres > 0.1) || // a NaN pressure stops the march too
                     (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i - 1].pres) > (*state.march.globals).localtiny)) {
                     {
                         abortValue = -1e10;
