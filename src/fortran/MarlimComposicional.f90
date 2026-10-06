@@ -502,9 +502,9 @@ subroutine GetMixtureComponentNumberFromExternalFile(sExternalFileName, iExterna
     type(c_ptr) :: oCpIGCoefs                       ! "Placeholder" sem função.
     type(c_ptr) :: oInputForViscosity               ! "Placeholder" sem função.
 
+    ! ------------ PROCEDIMENTOS:
     iIER = ERROR_EverythingOK
 
-    ! ------------ PROCEDIMENTOS:
     iNComp = -10
 
     call ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFileNameLength, iExternalFileSource, &

@@ -525,9 +525,9 @@ module Newton
         ! ------------ CONSTANTES:
         logical, parameter :: bConsiderNewtonNonConvergenceAsError = .true.
 
+        ! ------------ PROCEDIMENTOS:
         iIER = ERROR_EverythingOK
 
-        ! ------------ PROCEDIMENTOS:
         bIgnoreOutcomeAndResume = .false.
 
         doAnythingOrNot: if((.not.bAllowNewtonMinimization).or.(.not.bAllowFlashNewtonMinimization)) then
