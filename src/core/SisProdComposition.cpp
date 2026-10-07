@@ -401,8 +401,8 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
             source.water *= (state.cells[i].flui.BSW / rhoPSTF);
             source.API = state.cells[i].flui.API;
             source.BSW = state.cells[i].flui.BSW;
-            source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+            source.viscL = state.cells[i].flui.VisOM(temperatureLow);
+            source.viscH = state.cells[i].flui.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsrL != 0 && ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump)) {
         double rholiq;
@@ -432,8 +432,8 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
                 source.API = state.cells[i - 1].flui.API;
                 source.BSW = state.cells[i - 1].flui.BSW;
                 source.denag = state.cells[i - 1].flui.Denag;
-                source.viscL = 0 * 30 + 1 * state.cells[i - 1].flui.VisOM(temperatureLow);
-                source.viscH = 0 * 20 + 1 * state.cells[i - 1].flui.VisOM(temperatureHigh);
+                source.viscL = state.cells[i - 1].flui.VisOM(temperatureLow);
+                source.viscH = state.cells[i - 1].flui.VisOM(temperatureHigh);
             }
         } else {
             source.dgO = state.cells[i].flui.Deng;
@@ -459,8 +459,8 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
                 source.API = state.cells[i].flui.API;
                 source.BSW = state.cells[i].flui.BSW;
                 source.denag = state.cells[i].flui.Denag;
-                source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-                source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+                source.viscL = state.cells[i].flui.VisOM(temperatureLow);
+                source.viscH = state.cells[i].flui.VisOM(temperatureHigh);
             }
         }
     }
@@ -503,8 +503,8 @@ void blackOilSourcePorous2D(const CompositionState &state, BlackOilSource &sourc
         source.API = fluF.API;
         source.BSW = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
         source.denag = fluF.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -545,8 +545,8 @@ void blackOilSourceRadialPorous(const CompositionState &state, BlackOilSource &s
         source.API = fluF.API;
         source.BSW = state.cells[i].acsr.radialPoro.BSW;
         source.denag = fluF.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -596,8 +596,8 @@ void blackOilSourceLeak(const CompositionState &state, BlackOilSource &source, i
         source.API = fluF.API;
         source.BSW = fluF.BSW;
         source.denag = fluF.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -638,8 +638,8 @@ void blackOilSourceInflowPerformance(const CompositionState &state, BlackOilSour
         source.API = fluF.API;
         source.BSW = fluF.BSW;
         source.denag = fluF.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -687,8 +687,8 @@ void blackOilSourceMultipleSource(const CompositionState &state, BlackOilSource 
         source.API = fluF.API;
         source.BSW = fluF.BSW;
         source.denag = fluF.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -733,8 +733,8 @@ void blackOilSourceLiquidInjection(const CompositionState &state, BlackOilSource
         source.API = fluF.API;
         source.BSW = fluF.BSW;
         source.denag = fluF.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -780,8 +780,8 @@ void blackOilSourceWetGasInjection(const CompositionState &state, BlackOilSource
         source.API = fluF.API;
         source.BSW = fluF.BSW;
         source.denag = state.cells[i].acsr.injg.FluidoPro.Denag;
-        source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-        source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+        source.viscL = fluF.VisOM(temperatureLow);
+        source.viscH = fluF.VisOM(temperatureHigh);
     }
 }
 
@@ -821,8 +821,8 @@ void upwindRightFaceLiquidProperties(const CompositionState &state, BlackOilFace
         right.API = state.cells[i + 1].flui.API;
         right.BSW = state.cells[i + 1].flui.BSW;
         right.denag = state.cells[i + 1].flui.Denag;
-        right.viscL = 0 * 30 + 1 * state.cells[i + 1].flui.VisOM(temperatureLow);
-        right.viscH = 0 * 20 + 1 * state.cells[i + 1].flui.VisOM(temperatureHigh);
+        right.viscL = state.cells[i + 1].flui.VisOM(temperatureLow);
+        right.viscH = state.cells[i + 1].flui.VisOM(temperatureHigh);
     }
 }
 
@@ -857,8 +857,8 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         left.API = (*state.cells[i].fluiL).API;
         left.BSW = (*state.cells[i].fluiL).BSW;
         left.denag = (*state.cells[i].fluiL).Denag;
-        left.viscL = 0 * 30 + 1 * (*state.cells[i].fluiL).VisOM(temperatureLow);
-        left.viscH = 0 * 20 + 1 * (*state.cells[i].fluiL).VisOM(temperatureHigh);
+        left.viscL = (*state.cells[i].fluiL).VisOM(temperatureLow);
+        left.viscH = (*state.cells[i].fluiL).VisOM(temperatureHigh);
     } else {
         left.betI = state.cells[i].betPigE; // beta test
         left.rgo = state.cells[i].flui.RGO;
@@ -874,8 +874,8 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         left.API = state.cells[i].flui.API;
         left.BSW = state.cells[i].flui.BSW;
         left.denag = state.cells[i].flui.Denag;
-        left.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-        left.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+        left.viscL = state.cells[i].flui.VisOM(temperatureLow);
+        left.viscH = state.cells[i].flui.VisOM(temperatureHigh);
     }
 }
 
@@ -930,8 +930,8 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     right.API = state.cells[i].flui.API;
     right.BSW = state.cells[i].flui.BSW;
     right.denag = state.cells[i].flui.Denag;
-    right.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-    right.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+    right.viscL = state.cells[i].flui.VisOM(temperatureLow);
+    right.viscH = state.cells[i].flui.VisOM(temperatureHigh);
     right.razdgd = 1 / state.cells[i].flui.rDgD;
     right.razdgl = 1 / state.cells[i].flui.rDgL;
 
@@ -986,8 +986,8 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     source.yco2O = cell.yco2ini;
     source.yco2G = cell.yco2ini;
     source.rgo = cell.rgoini;
-    cell.viscLini = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-    cell.viscHini = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+    cell.viscLini = state.cells[i].flui.VisOM(temperatureLow);
+    cell.viscHini = state.cells[i].flui.VisOM(temperatureHigh);
     source.viscL = cell.viscLini;
     source.viscH = cell.viscHini;
     source.rholST = cell.rholST;
@@ -1364,8 +1364,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
             source.BSW = state.cells[i].acsr.injl.FluidoPro.BSW;
             source.denag = state.cells[i].acsr.injl.FluidoPro.Denag;
-            source.viscL = 0 * 30 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureHigh);
+            source.viscL = state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureLow);
+            source.viscH = state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
         double solutionGasRatioSource = state.cells[i].acsr.injm.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
@@ -1391,8 +1391,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
             source.BSW = state.cells[i].acsr.injm.FluidoPro.BSW;
             source.denag = state.cells[i].acsr.injm.FluidoPro.Denag;
-            source.viscL = 0 * 30 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
+            source.viscL = state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureLow);
+            source.viscH = state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
         double solutionGasRatioSource = state.cells[i].acsr.ipr.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
@@ -1415,8 +1415,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
             source.BSW = state.cells[i].acsr.ipr.FluidoPro.BSW;
             source.denag = state.cells[i].acsr.ipr.FluidoPro.Denag;
-            source.viscL = 0 * 30 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureHigh);
+            source.viscL = state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureLow);
+            source.viscH = state.cells[i].acsr.ipr.FluidoPro.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
 
@@ -1440,8 +1440,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
             source.BSW = fluF.BSW;
             source.denag = fluF.Denag;
-            source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+            source.viscL = fluF.VisOM(temperatureLow);
+            source.viscH = fluF.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
         double solutionGasRatioSource = state.cells[i].acsr.radialPoro.flup.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
@@ -1464,8 +1464,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
             source.BSW = state.cells[i].acsr.radialPoro.BSW;
             source.denag = state.cells[i].acsr.radialPoro.flup.Denag;
-            source.viscL = 0 * 30 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * state.cells[i].acsr.radialPoro.flup.VisOM(temperatureHigh);
+            source.viscL = state.cells[i].acsr.radialPoro.flup.VisOM(temperatureLow);
+            source.viscH = state.cells[i].acsr.radialPoro.flup.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         double solutionGasRatioSource = state.cells[i].acsr.poroso2D.dados.flup.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
@@ -1488,8 +1488,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
             source.BSW = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
             source.denag = state.cells[i].acsr.poroso2D.dados.flup.Denag;
-            source.viscL = 0 * 30 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureLow);
-            source.viscH = 0 * 20 + 1 * state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureHigh);
+            source.viscL = state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureLow);
+            source.viscH = state.cells[i].acsr.poroso2D.dados.flup.VisOM(temperatureHigh);
         }
     } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != kAccessoryLiquidInjection && state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
                 state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D) ||
@@ -1502,8 +1502,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                 source.water *= (state.cells[i].flui.BSW / rhoPSTF);
                 source.BSW = state.cells[i].flui.BSW;
                 source.denag = fluF.Denag;
-                source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-                source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+                source.viscL = state.cells[i].flui.VisOM(temperatureLow);
+                source.viscH = state.cells[i].flui.VisOM(temperatureHigh);
             }
         } else if (state.cells[i].acsrL != 0 && ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump)) {
             if (i > 0) {
@@ -1516,8 +1516,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                     source.water *= (state.cells[i - 1].flui.BSW / rhoPSTF);
                     source.BSW = state.cells[i - 1].flui.BSW;
                     source.denag = state.cells[i - 1].flui.Denag;
-                    source.viscL = 0 * 30 + 1 * state.cells[i - 1].flui.VisOM(temperatureLow);
-                    source.viscH = 0 * 20 + 1 * state.cells[i - 1].flui.VisOM(temperatureHigh);
+                    source.viscL = state.cells[i - 1].flui.VisOM(temperatureLow);
+                    source.viscH = state.cells[i - 1].flui.VisOM(temperatureHigh);
                 }
             } else {
                 double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
@@ -1529,8 +1529,8 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                     source.water *= (state.cells[i].flui.BSW / rhoPSTF);
                     source.BSW = state.cells[i].flui.BSW;
                     source.denag = state.cells[i].flui.Denag;
-                    source.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-                    source.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+                    source.viscL = state.cells[i].flui.VisOM(temperatureLow);
+                    source.viscH = state.cells[i].flui.VisOM(temperatureHigh);
                 }
             }
         }
@@ -1964,8 +1964,8 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
         left.bsw = (*state.cells[i].fluiL).BSW * left.waterVolumeFactor / (left.oilVolumeFactor + left.waterVolumeFactor * (*state.cells[i].fluiL).BSW - (*state.cells[i].fluiL).BSW * left.oilVolumeFactor);
         left.BSW = (*state.cells[i].fluiL).BSW;
         left.denag = (*state.cells[i].fluiL).Denag;
-        left.viscL = 0 * 30 + 1 * (*state.cells[i].fluiL).VisOM(temperatureLow);
-        left.viscH = 0 * 20 + 1 * (*state.cells[i].fluiL).VisOM(temperatureHigh);
+        left.viscL = (*state.cells[i].fluiL).VisOM(temperatureLow);
+        left.viscH = (*state.cells[i].fluiL).VisOM(temperatureHigh);
     } else {
         left.betI = state.cells[i].betPigE; // beta test
         double solutionGasRatioLeft = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
@@ -1974,8 +1974,8 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
         left.bsw = state.cells[i].flui.BSW * left.waterVolumeFactor / (left.oilVolumeFactor + left.waterVolumeFactor * state.cells[i].flui.BSW - state.cells[i].flui.BSW * left.oilVolumeFactor);
         left.BSW = state.cells[i].flui.BSW;
         left.denag = state.cells[i].flui.Denag;
-        left.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-        left.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+        left.viscL = state.cells[i].flui.VisOM(temperatureLow);
+        left.viscH = state.cells[i].flui.VisOM(temperatureHigh);
     }
 }
 
@@ -2036,8 +2036,8 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     right.bsw = state.cells[i].flui.BSW * right.waterVolumeFactor / (right.oilVolumeFactor + right.waterVolumeFactor * state.cells[i].flui.BSW - state.cells[i].flui.BSW * right.oilVolumeFactor);
     right.BSW = state.cells[i].flui.BSW;
     right.denag = state.cells[i].flui.Denag;
-    right.viscL = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-    right.viscH = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+    right.viscL = state.cells[i].flui.VisOM(temperatureLow);
+    right.viscH = state.cells[i].flui.VisOM(temperatureHigh);
 
     // betI1 = celula[i + 1].betPigE;    // beta doubt
     if (state.cells[i + 1].QL < 0.) {
@@ -2048,8 +2048,8 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
         right.bsw = state.cells[i + 1].flui.BSW * right.waterVolumeFactor / (right.oilVolumeFactor + right.waterVolumeFactor * state.cells[i + 1].flui.BSW - state.cells[i + 1].flui.BSW * right.oilVolumeFactor);
         right.BSW = state.cells[i + 1].flui.BSW;
         right.denag = state.cells[i + 1].flui.Denag;
-        right.viscL = 0 * 30 + 1 * state.cells[i + 1].flui.VisOM(temperatureLow);
-        right.viscH = 0 * 20 + 1 * state.cells[i + 1].flui.VisOM(temperatureHigh);
+        right.viscL = state.cells[i + 1].flui.VisOM(temperatureLow);
+        right.viscH = state.cells[i + 1].flui.VisOM(temperatureHigh);
     }
     if (right.oilVolumeFactor < 1e-15)
         right.oilVolumeFactor = 1e-15;
@@ -2109,8 +2109,8 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     source.BSW = state.cells[i].flui.BSW;
     cell.denagini = state.cells[i].flui.Denag;
     source.denag = state.cells[i].flui.Denag;
-    cell.viscLini = 0 * 30 + 1 * state.cells[i].flui.VisOM(temperatureLow);
-    cell.viscHini = 0 * 20 + 1 * state.cells[i].flui.VisOM(temperatureHigh);
+    cell.viscLini = state.cells[i].flui.VisOM(temperatureLow);
+    cell.viscHini = state.cells[i].flui.VisOM(temperatureHigh);
     source.viscL = cell.viscLini;
     source.viscH = cell.viscHini;
 

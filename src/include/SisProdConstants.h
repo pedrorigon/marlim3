@@ -76,6 +76,10 @@ inline constexpr double kSecondsPerDay = 86400.;
 /// heat-transfer objects want SI.
 inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
 
+/// Written into the inlet source rate when a pressure-to-pressure search finds no
+/// flowing solution; the network reads it back to report the branch.
+inline constexpr double kNoFlowSolutionMarker = -2121212121.;
+
 /// Standard conditions as this program spells them, for gas density at
 /// surface: one kgf/cm^2 and fifteen degrees Celsius.
 inline constexpr double kStandardPressureKgfPerCm2 = 1.;
@@ -196,6 +200,7 @@ static_assert(kAtmosphereInKgfPerCm2 == 1.033211);
 static_assert(kAtmosphereInPsi == 14.6959488);
 static_assert(kSecondsPerDay == 86400.);
 static_assert(kPascalSecondPerCentipoise == 1.e-3);
+static_assert(kNoFlowSolutionMarker == -2121212121.);
 static_assert(kStandardPressureKgfPerCm2 == 1.);
 static_assert(kStandardTemperatureCelsius == 15.);
 static_assert(celsiusToFahrenheit(0.) == 32.);

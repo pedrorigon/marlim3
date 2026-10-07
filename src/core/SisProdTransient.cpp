@@ -659,16 +659,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
         } else {
             if (state.openTime != 0)
                 state.openTime++;
-            if (state.surfaceChoke.AreaGarg >= 0.601 * state.cells[state.lastCell - 1].duto.area)
-                state.outletPressure = state.gasSurfacePressure;
-            else {
-
-                state.surfaceChokeOpen = 1;
-                state.surfaceChokeMassFlag = 0;
-                if (state.surfaceChokeMassFlag != masChkSup0)
-                    state.chokeModeChanged = 1;
-                state.outletPressure = state.gasSurfacePressure;
-            }
+            state.outletPressure = state.gasSurfacePressure;
             state.surfaceChokeOpen = 1;
             state.surfaceChokeMassFlag = 0;
             if (state.surfaceChokeMassFlag != masChkSup0)
@@ -1847,10 +1838,6 @@ void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxd
                 state.productionTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
-                if ((*state.step.globals).lixo5 >= 800.8000000000000445) {
-                    int para;
-                    para == 1;
-                }
                 state.updaters.writeProductionTrendRows(i, nrede);
                 state.productionTrendBufferedCounts[i] = state.productionTrendCounts[i];
             }

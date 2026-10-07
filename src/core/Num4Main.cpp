@@ -32,6 +32,7 @@
 #include "PropFluColVF.h"
 #include "PropVapor.h"
 #include "SisProd.h"
+#include "SisProdConstants.h"
 #include "TrocaCalor.h"
 #include "Vetor.h"
 #include "acessorios.h"
@@ -7188,12 +7189,12 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                         if ((*arqRede.vg1dSP).fluidoRede == 1) {
                                             if (arqRede.malha[aux].perm == 1 && (malha[aux].celula[0].acsr.injl.QLiq) > 0)
                                                 noConv.qlmistStd -= malha[aux].celula[0].acsr.injl.QLiq;
-                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq + 2121212121) < 1e-15)
+                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq - sisprod::kNoFlowSolutionMarker) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo  : " << aux << endl;
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
                                             if (arqRede.malha[aux].perm == 1 && (malha[aux].celula[0].acsr.injg.QGas) > 0)
                                                 noConv.qgstdTot -= malha[aux].celula[0].acsr.injg.QGas / 86400;
-                                            if (fabs(malha[aux].celula[0].acsr.injg.QGas + 2121212121) < 1e-15)
+                                            if (fabs(malha[aux].celula[0].acsr.injg.QGas - sisprod::kNoFlowSolutionMarker) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
@@ -7211,7 +7212,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                 noConv.mliqmist -= ((1. - fracmasshidra) * massic + vazmassc);
                                                 noConv.mgasmist -= fracmasshidra * massic;
                                             }
-                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq + 2121212121) < 1e-15)
+                                            if (fabs(malha[aux].celula[0].acsr.injl.QLiq - sisprod::kNoFlowSolutionMarker) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
                                         }
                                     } else {
@@ -7268,7 +7269,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                             }
                                             if (fabs(malha[aux].celula[0].acsr.injm.MassC +
                                                      malha[aux].celula[0].acsr.injm.MassP +
-                                                     malha[aux].celula[0].acsr.injm.MassG + 2121212121) < 1e-15)
+                                                     malha[aux].celula[0].acsr.injm.MassG - sisprod::kNoFlowSolutionMarker) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
                                         }
                                     }

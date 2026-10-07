@@ -100,12 +100,6 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state);
 [[nodiscard]] double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state);
 [[nodiscard]] double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, double guess = -1.);
 
-// --------------------------------------------------- secondary-branch search --
-
-/// Searches the flow rate through the secondary branch.
-[[nodiscard]] double searchSecondaryBranchFlowRate(const SteadyStateSearchState &state, double startPressure,
-                                                  int startIndex);
-
 }  // namespace sisprod::steady
 
 #endif  // SISPRODSTEADYSTATESEARCH_H_
