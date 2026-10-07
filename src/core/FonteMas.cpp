@@ -1,4 +1,5 @@
 #include "FonteMas.h"
+#include "UnitConversions.h"
 
 IPR::IPR(double vpres, double vtres, double vip, double vij, double vqm, ProFlu vfluido, int tipoip) {
     Pres = vpres;
@@ -11,7 +12,7 @@ IPR::IPR(double vpres, double vtres, double vip, double vij, double vqm, ProFlu 
     deriC = 0.;
     tipoIPR = tipoip;
     this->FluidoPro = vfluido;
-    Psat = vfluido.PB(Pres, Tres) / (0.9678411 * 14.69595);
+    Psat = vfluido.PB(Pres, Tres) / units::kPsiPerKgfPerCm2;
 }
 
 IPR::IPR(double vpres, double vtres, double vip, double vij, double vqm, int tipoip) {
@@ -85,7 +86,7 @@ double IPR::VMas(const double &pfundo, const double &tfundo) {
     double var = 0.;
     double multiplicador = 0.;
     if (tipoIPR == 1) {
-        Psat = this->FluidoPro.PB(Pres, Tres) / (0.9678411 * 14.69595);
+        Psat = this->FluidoPro.PB(Pres, Tres) / units::kPsiPerKgfPerCm2;
         double Psat2 = Psat;
         if (Psat > Pres)
             Psat2 = Pres;

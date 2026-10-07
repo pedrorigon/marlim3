@@ -17,6 +17,7 @@
 #include "estruturaTabDin.h"
 #include "estruturasPoroso.h"
 #include "variaveisGlobais1D.h"
+#include "UnitConversions.h"
 
 extern detTempoPoroso temp;
 
@@ -118,10 +119,10 @@ class PorosRad {
     void transtransAux(double espessura);
     void FeiticoDoTempo();
     FullMtx<double> perfil();
-    double psia(const double p) const { return (p * 0.9678411) * 14.69595; } // Converts pressure from kgf/cm2 to psia
+    double psia(const double p) const { return p * units::kPsiPerKgfPerCm2; } // Converts pressure from kgf/cm2 to psia
     double Faren(const double t) const { return 1.8 * t + 32; }              // Converts temperature from degrees Celsius to degrees Fahrenheit
     double cel(const double t) const { return (t - 32) / 1.8; }              // Converts temperature from degrees Fahrenheit to degrees Celsius
-    double kgf(const double p) const { return p / (14.69595 * 0.9678411); }  // Converts pressure from psia to kgf/cm2
+    double kgf(const double p) const { return p / units::kPsiPerKgfPerCm2; }  // Converts pressure from psia to kgf/cm2
 };
 
 #endif /* POROSORAD_H_ */

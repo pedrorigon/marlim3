@@ -117,7 +117,7 @@ double ChokeGas::massica(int fluido, double salin) {
 	  }
 	  else{
 		  double SGG=flui.Deng;
-		  double PBAR=0.980665*presEstag;
+		  double PBAR=units::kBarPerKgfPerCm2*presEstag;
 		  double TC=tempEstag;
 		  double agmm=areagarg*(1000*1000);
 		  double CR;
@@ -145,7 +145,7 @@ double ChokeGas::massica(int fluido, double salin) {
 		   CR = ((SGG - 0.5538)/(0.65 - 0.5538))*(CRDpos - CRDant) + CRDant;
 		  else
 		   CR = (10.0*(SGG - 0.55) - JDG)*(CRDpos - CRDant) + CRDant;
-		  double Rhostd=flui.MasEspGas(1.03322745,20.);
+		  double Rhostd=flui.MasEspGas(units::kAtmosphereInKgfPerCm2,20.);
 
 		  double Rg=(8.0465*1000*1E5)/((flui.Deng*28.9625)*100000.);
 

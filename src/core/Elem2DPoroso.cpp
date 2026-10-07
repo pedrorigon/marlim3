@@ -87,8 +87,8 @@ elem2dPoroso::elem2dPoroso(varGlob1D *Vvg1dSP, double **xcoor, int **noEle, int 
         if ((cel2D.presC + fabs(tRes) + flup.API) > 1.) {
             cel2D.vbo = flup.BOFunc(cel2D.presC, tRes);
             cel2D.rhostd = 1000. * 141.5 / (131.5 + flup.API);
-            cel2D.rhogstd = flup.MasEspGas(1.033, 20.);
-            cel2D.rhoastd = flup.MasEspAgua(1.033, 20.);
+            cel2D.rhogstd = flup.MasEspGas(units::kAtmosphereInKgfPerCm2, 20.);
+            cel2D.rhoastd = flup.MasEspAgua(units::kAtmosphereInKgfPerCm2, 20.);
             cel2D.rhoP = flup.MasEspoleo(cel2D.presC, tRes);
             cel2D.rhogP = flup.MasEspGas(cel2D.presC, tRes);
             cel2D.rhoaP = flup.MasEspAgua(cel2D.presC, tRes);

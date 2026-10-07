@@ -339,7 +339,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     }
     
     
-    pmed*=(0.9678411)*14.69595;
+    pmed*=units::kPsiPerKgfPerCm2;
     long double liquidFraction;
     if(fabsl(j)>1e-15)liquidFraction= fabsl(ulsmed / j);
     else liquidFraction=1.-celula[i-1].alf;
@@ -491,7 +491,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     	entrada.gravity=9.81;
     	entrada.muG=gasViscosity/1000.;
     	entrada.muL=liquidViscosity/1000.;
-    	entrada.pressure=pmed*units::kPascalPerKgfPerCm2/((0.9678411)*14.69595);
+    	entrada.pressure=pmed*units::kPascalPerKgfPerCm2/units::kPsiPerKgfPerCm2;
     	entrada.rhoG=gasDensity/0.06243;
     	entrada.rhoL=liquidDensity/0.06243;
     	entrada.roughness=roughness*entrada.diameter;
@@ -958,7 +958,6 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
     static constexpr double MIN_VELOCITY_THRESHOLD = 1e-15;
     static constexpr double MIN_HOLDUP_THRESHOLD = 1e-15;
-    static constexpr double ATM_PRESSURE_PSI = 14.69595;  // Standard atmospheric pressure
     
     // Dimensionless number coefficients (Hagedorn-Brown)
     static constexpr double COEFF_VEL_NUMBER = 1.938;      // Velocity number coefficient
@@ -1127,7 +1126,7 @@ void hagedornBrown(double angle, double diameter, double roughness, double press
         // Primary holdup parameter
         const double holdupParam = (liquidVelNumber * viscosityFactor) /
                                    (pow(gasVelNumber, 0.575) * diameterNumber) *
-                                   pow(pressure / ATM_PRESSURE_PSI, 0.1);
+                                   pow(pressure / units::kAtmosphereInPsi, 0.1);
         const double logHoldupParam = log(holdupParam);
         
         // Base holdup from primary correlation
@@ -2781,7 +2780,6 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
                          unsigned char correlationFlag) {
     
     // Physical Constants
-    static constexpr double ATM_PRESSURE_PSI = 14.69595;      // Standard atmospheric pressure
     static constexpr double REYNOLDS_SCALE = 1488.0;          // Reynolds number scaling factor
     
     // Eaton Correlation Constants
@@ -2827,7 +2825,7 @@ void holdupLiquidFraction(double liquidFraction, double liquidViscosity, double 
         }
         
         // Calculate Eaton parameter xe
-        const double pressureRatio = pressure / ATM_PRESSURE_PSI;
+        const double pressureRatio = pressure / units::kAtmosphereInPsi;
         const double viscosityRatio = liquidViscNumber / EATON_BNL_COEFFICIENT;
         
         const double xe_value = pow(liquidNumber, EATON_LIQUID_EXPONENT) /
@@ -2983,7 +2981,6 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
                  unsigned char& transitionFlag, unsigned char& flowPattern, double& holdup) {
     
     // Physical Constants
-    static constexpr double ATM_PRESSURE_PSI = 14.69595;     // Standard atmospheric pressure
     static constexpr double DEG_TO_RAD = M_PI / 180.0;
     
     // Flow Regime Thresholds
@@ -3139,7 +3136,7 @@ void holdupMinami(double angle, double diameter, double pressure, double velocit
             
         } else {
             // MINAMI CORRELATION II (General Flow - Eaton-based)
-            const double pressureRatio = pressure / ATM_PRESSURE_PSI;
+            const double pressureRatio = pressure / units::kAtmosphereInPsi;
             const double eatonNumber = MINAMI_II_SCALE *
                                       pow(liquidNumber, MINAMI_II_LIQUID_EXP) *
                                       pow(pressureRatio, MINAMI_II_PRESSURE_EXP) *

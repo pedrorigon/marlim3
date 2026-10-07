@@ -4024,12 +4024,12 @@ void Ler::parse_fluidos_producao(
 					linha_completa = ler_linha_continua(lendoPVTSim);
 					strcpy(line, linha_completa.c_str());
 					tenta = strtok(line, " ,()=");
-					flash[i].PBF[0] = atof(tenta) * 0.00014503773800722;
+					flash[i].PBF[0] = atof(tenta) / units::kPascalPerPsi;
 					for (int kontaPVT = 1; kontaPVT <= lacoleituraB;
 							kontaPVT++) {
 						tenta = strtok(NULL, " ,");
 						testatok = atof(tenta);
-						flash[i].PBF[kontaPVT] = testatok * 0.00014503773800722;
+						flash[i].PBF[kontaPVT] = testatok / units::kPascalPerPsi;
 					}
 					tenta = strtok(NULL, " ,");
 					chave = std::string(tenta);
@@ -4102,7 +4102,7 @@ void Ler::parse_fluidos_producao(
 					double dt1;
 
 					int imin=1;
-					while(flup[i].rhogF[imin][0]<=1.0332274497825)imin++;
+					while(flup[i].rhogF[imin][0]<=units::kAtmosphereInKgfPerCm2)imin++;
 					flup[i].indMinEquP=imin+1;
 					int iant=imin+1;
 					flup[i].pMinEqu=flup[i].rhogF[imin+1][0];
@@ -4526,7 +4526,7 @@ void Ler::parse_fluidos_producao(
 									flup[i].fatAcent, flup[i].TIndepPeneloux, flup[i].kij,
 									flup[i].lij, flup[i].liqModel, flup[i].liqModel,
 									flup[i].liqModel,
-									flup[i].liqModel, 1.03322745279996 ,
+									flup[i].liqModel, units::kAtmosphereInKgfPerCm2 ,
 									20., rgo, -1.0,
 									GivenInitialLiqComposition, GivenInitialVapComposition,
 									oGORAdjustedGlobalComp, &dAdjustedGlobalCompGOR,
@@ -12796,8 +12796,8 @@ void Ler::lerArq() {
 					/ ((TCMax - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
 			tabentCrit.tmax = (tabent.tmax + units::kZeroCelsiusInKelvin)
 					/ ((TCMin - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
-			tabentCrit.pmin = tabent.pmin * 0.9678411 * 14.69595 / PCMax;
-			tabentCrit.pmax = tabent.pmax * 0.9678411 * 14.69595 / PCMin;
+			tabentCrit.pmin = tabent.pmin * units::kPsiPerKgfPerCm2 / PCMax;
+			tabentCrit.pmax = tabent.pmax * units::kPsiPerKgfPerCm2 / PCMin;
 		}
 
 		// caso nao seja simulacao de injecao
@@ -13564,8 +13564,8 @@ void Ler::copiaArq(Ler& arqAntigo) {
 				/ ((TCMax - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
 		tabentCrit.tmax = (tabent.tmax + units::kZeroCelsiusInKelvin)
 				/ ((TCMin - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
-		tabentCrit.pmin = tabent.pmin * 0.9678411 * 14.69595 / PCMax;
-		tabentCrit.pmax = tabent.pmax * 0.9678411 * 14.69595 / PCMin;
+		tabentCrit.pmin = tabent.pmin * units::kPsiPerKgfPerCm2 / PCMax;
+		tabentCrit.pmax = tabent.pmax * units::kPsiPerKgfPerCm2 / PCMin;
 	}
 
 	// caso nao seja simulacao de injecao
@@ -16087,7 +16087,7 @@ void Ler::geracelp(Cel* celula) {
 				vkint, vcpint, vrhomix, vviscint, celp[i].kextern,
 				celp[i].cpextern, celp[i].rhoextern, celp[i].viscextern,
 				celp[i].formacCel, celp[i].lito, celp[i].ambext,
-				1.0197 + celp[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2, dxC);
+				units::kKgfPerCm2PerBar + celp[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2, dxC);
 		celula[i] = Cel(vg1dSP,dutosMRT[idutoL], dutosMRT[iduto],
 				dutosMRT[idutoR], flup[indfluPIni], fluc, tmedL, tmed, tmedR,
 				tmed, pmedL, pmed, pmedR, vML, vMC, vMR, vMliqL, vMliq, vMliqR,
@@ -16202,7 +16202,7 @@ void Ler::geracelg(CelG* celula) {
 				vrhog, vviscint, celg[i].kextern, celg[i].cpextern,
 				celg[i].rhoextern, celg[i].viscextern, celg[i].formacCel,
 				celg[i].lito, celg[i].ambext,
-				1.0197 + celg[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2,dxC);
+				units::kKgfPerCm2PerBar + celg[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2,dxC);
 		entrada.coluna = celg[i].acopcol;
 
 		if (i > 0 && i < ncelg - 1)

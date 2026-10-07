@@ -7,6 +7,7 @@
 #include "Matriz.h"
 #include "Vetor.h"
 #include "variaveisGlobais1D.h"
+#include "UnitConversions.h"
 #include <algorithm>
 #include <complex>
 #include <fstream>
@@ -632,17 +633,17 @@ class ProFlu {
     double dRSdP(double, double) const;                                      // Unused
     double dBOSatdP(double, double) const;                                   // Unused
     double retornaR() const { return 8.0465 * 1000 / (Deng * 28.9625); }     // Returns the gas constant
-    double psia(const double p) const { return (p * 0.9678411) * 14.69595; } // Converts pressure from kgf/cm2 to psia
+    double psia(const double p) const { return p * units::kPsiPerKgfPerCm2; } // Converts pressure from kgf/cm2 to psia
     double Faren(const double t) const { return 1.8 * t + 32; }              // Converts temperature from degrees Celsius to degrees Fahrenheit
     double cel(const double t) const { return (t - 32) / 1.8; }              // Converts temperature from degrees Fahrenheit to degrees Celsius
-    double kgf(const double p) const { return p / (14.69595 * 0.9678411); }  // Converts pressure from psia to kgf/cm2
+    double kgf(const double p) const { return p / units::kPsiPerKgfPerCm2; }  // Converts pressure from psia to kgf/cm2
     double ft3bbl() const { return RGO * 35.31467 / 6.29; }                  // Converts gas-oil ratio from m3/m3 to ft3/bbl
     double m3m() const { return RGO * 6.29 / 35.31467; }                     // Converts gas-oil ratio from ft3/bbl to m3/m3
 
     // Updates compositional-model variables for the specified pressure and temperature
     void atualizaPropCompStandard(double GivenInitialBeta = -1.0, double *GivenInitialLiqComposition = NULL,
                                   double *GivenInitialVapComposition = NULL) {
-        double pres = 1.03322;
+        double pres = units::kAtmosphereInKgfPerCm2;
         double temp = 20.;
         double tempRGO = 100.;
         int nuloL = 0;

@@ -5,6 +5,7 @@
  *      Author: Eduardo
  */
 #include "solverPoroso.h"
+#include "UnitConversions.h"
 
 solverPoro::solverPoro() : dados(), termolivre(1), matglob(1, 1) {
     malhaH = 0;
@@ -80,8 +81,8 @@ solverPoro::solverPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) : dados(Vv
 
                 malha.mlh2d[i].cel2D.vbo = malha.mlh2d[i].flup.BOFunc(malha.mlh2d[i].cel2D.presC, malha.mlh2d[i].tRes);
                 malha.mlh2d[i].cel2D.rhostd = 1000. * 141.5 / (131.5 + malha.mlh2d[i].flup.API);
-                malha.mlh2d[i].cel2D.rhogstd = malha.mlh2d[i].flup.MasEspGas(1.033, 20.);
-                malha.mlh2d[i].cel2D.rhoastd = malha.mlh2d[i].flup.MasEspAgua(1.033, 20.);
+                malha.mlh2d[i].cel2D.rhogstd = malha.mlh2d[i].flup.MasEspGas(units::kAtmosphereInKgfPerCm2, 20.);
+                malha.mlh2d[i].cel2D.rhoastd = malha.mlh2d[i].flup.MasEspAgua(units::kAtmosphereInKgfPerCm2, 20.);
                 if (malha.mlh2d[i].cel2D.tipoModelOleo == 1)
                     malha.mlh2d[i].cel2D.rhoP = malha.mlh2d[i].flup.MasEspoleo(malha.mlh2d[i].cel2D.presC, malha.mlh2d[i].tRes);
                 else
@@ -271,8 +272,8 @@ solverPoro::solverPoro(const solverPoro &vPoroso) : dados(vPoroso.vg1dSP, vPoros
 
                 malha.mlh2d[i].cel2D.vbo = malha.mlh2d[i].flup.BOFunc(malha.mlh2d[i].cel2D.presC, malha.mlh2d[i].tRes);
                 malha.mlh2d[i].cel2D.rhostd = 1000. * 141.5 / (131.5 + malha.mlh2d[i].flup.API);
-                malha.mlh2d[i].cel2D.rhogstd = malha.mlh2d[i].flup.MasEspGas(1.033, 20.);
-                malha.mlh2d[i].cel2D.rhoastd = malha.mlh2d[i].flup.MasEspAgua(1.033, 20.);
+                malha.mlh2d[i].cel2D.rhogstd = malha.mlh2d[i].flup.MasEspGas(units::kAtmosphereInKgfPerCm2, 20.);
+                malha.mlh2d[i].cel2D.rhoastd = malha.mlh2d[i].flup.MasEspAgua(units::kAtmosphereInKgfPerCm2, 20.);
                 if (malha.mlh2d[i].cel2D.tipoModelOleo == 1)
                     malha.mlh2d[i].cel2D.rhoP = malha.mlh2d[i].flup.MasEspoleo(malha.mlh2d[i].cel2D.presC, malha.mlh2d[i].tRes);
                 else
@@ -472,8 +473,8 @@ solverPoro &solverPoro::operator=(const solverPoro &vPoroso) {
 
                     malha.mlh2d[i].cel2D.vbo = malha.mlh2d[i].flup.BOFunc(malha.mlh2d[i].cel2D.presC, malha.mlh2d[i].tRes);
                     malha.mlh2d[i].cel2D.rhostd = 1000. * 141.5 / (131.5 + malha.mlh2d[i].flup.API);
-                    malha.mlh2d[i].cel2D.rhogstd = malha.mlh2d[i].flup.MasEspGas(1.033, 20.);
-                    malha.mlh2d[i].cel2D.rhoastd = malha.mlh2d[i].flup.MasEspAgua(1.033, 20.);
+                    malha.mlh2d[i].cel2D.rhogstd = malha.mlh2d[i].flup.MasEspGas(units::kAtmosphereInKgfPerCm2, 20.);
+                    malha.mlh2d[i].cel2D.rhoastd = malha.mlh2d[i].flup.MasEspAgua(units::kAtmosphereInKgfPerCm2, 20.);
                     if (malha.mlh2d[i].cel2D.tipoModelOleo == 1)
                         malha.mlh2d[i].cel2D.rhoP = malha.mlh2d[i].flup.MasEspoleo(malha.mlh2d[i].cel2D.presC, malha.mlh2d[i].tRes);
                     else

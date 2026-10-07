@@ -372,8 +372,8 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada) {
         tabentCrit.npont = tabent.npont;
         tabentCrit.tmin = (tabent.tmin + units::kZeroCelsiusInKelvin) / ((TCMax - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
         tabentCrit.tmax = (tabent.tmax + units::kZeroCelsiusInKelvin) / ((TCMin - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
-        tabentCrit.pmin = tabent.pmin * 0.9678411 * 14.69595 / PCMax;
-        tabentCrit.pmax = tabent.pmax * 0.9678411 * 14.69595 / PCMin;
+        tabentCrit.pmin = tabent.pmin * units::kPsiPerKgfPerCm2 / PCMax;
+        tabentCrit.pmax = tabent.pmax * units::kPsiPerKgfPerCm2 / PCMin;
 
         flup.tabela(tabentCrit.pmax, tabentCrit.tmax, tabentCrit.pmin,
                     tabentCrit.tmin);
@@ -382,7 +382,7 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada) {
         flup.tabelaDZDT(tabentCrit.pmax, tabentCrit.tmax,
                         tabentCrit.pmin, tabentCrit.tmin);
     }
-    pBolha = flup.PB(1., tRes) / (0.9678411 * 14.69595);
+    pBolha = flup.PB(1., tRes) / units::kPsiPerKgfPerCm2;
     if (tipoModelOleo == 0) {
         rhoRef = flup.MasEspoleo(pRes, tRes);
         double dpPres = 0.01 * pRes;
@@ -870,7 +870,7 @@ void dadosPoro::parse_pcOA(Value &pcOA_json) {
     pcOA.presCapOW = new double[pcOA.npont];
     for (int i = 0; i < pcOA.npont; i++) {
         pcOA.satW[i] = pcOA_json["satA"][i].GetDouble();
-        pcOA.presCapOW[i] = pcOA_json["pcOA"][i].GetDouble() / (14.69595 * 0.9678411);
+        pcOA.presCapOW[i] = pcOA_json["pcOA"][i].GetDouble() / units::kPsiPerKgfPerCm2;
     }
 
     pcGO.npont = 1;
@@ -1635,12 +1635,12 @@ void dadosPoro::parse_fluido_producao(
         }
         lendoPVTSim.get(line, 4000);
         tenta = strtok(line, " ,()=");
-        flash.PBF[0] = atof(tenta) * 0.00014503773800722;
+        flash.PBF[0] = atof(tenta) / units::kPascalPerPsi;
         for (int kontaPVT = 1; kontaPVT <= lacoleitura;
              kontaPVT++) {
             tenta = strtok(NULL, " ,");
             testatok = atof(tenta);
-            flash.PBF[kontaPVT] = testatok * 0.00014503773800722;
+            flash.PBF[kontaPVT] = testatok / units::kPascalPerPsi;
         }
         while (chave != "BUBBLETEMPERATURES") {
             lendoPVTSim >> chave;
@@ -1705,7 +1705,7 @@ void dadosPoro::parse_fluido_producao(
         double dt1;
 
         int imin = 1;
-        while (flup.rhogF[imin][0] <= 1.0332274497825)
+        while (flup.rhogF[imin][0] <= units::kAtmosphereInKgfPerCm2)
             imin++;
         flup.indMinEquP = imin + 1;
         int iant = imin + 1;

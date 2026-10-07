@@ -43,9 +43,9 @@ inline constexpr double kSmallBoreSpringRate = 1950.0;
 /// Opening of a calibrated gas-lift valve, from the state already primed on the
 /// choke. Imperial in, fraction out.
 [[nodiscard]] double calibratedValveOpening(const ChokeGas &choke) {
-    return calibratedValveArea(choke.pcalib * kPsiPerKgfPerCm2, choke.tcalib,
-                               (choke.presEstag - kAtmosphereInKgfPerCm2) * kPsiPerKgfPerCm2,
-                               (choke.presGarg - kAtmosphereInKgfPerCm2) * kPsiPerKgfPerCm2,
+    return calibratedValveArea(choke.pcalib * units::kPsiPerKgfPerCm2, choke.tcalib,
+                               (choke.presEstag - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
+                               (choke.presGarg - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
                                choke.dextern, choke.areagarg,
                                choke.areagarg / choke.areafole,
                                units::celsiusToFahrenheit(choke.tempEstag));
@@ -454,7 +454,7 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     // valve opening pressure is the casing pressure; the ratio is of areas.
 
     double bellowsPressureAt80F = calibrationPressure * (1 - valveRatio);
-    bellowsPressureAt80F = (bellowsPressureAt80F + kAtmosphereInPsi) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - kAtmosphereInPsi;
+    bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - units::kAtmosphereInPsi;
     double bellowsPressure = bellowsPressureAt80F * (1 + 0.00215 * (bottomHoleTemperatureFahrenheit - 80));
     // A closed valve is not forced to zero here: the opening fraction returned is
     // always the area ratio computed at the end.

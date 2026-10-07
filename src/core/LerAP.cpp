@@ -5,6 +5,7 @@
  *      Author: Eduardo
  */
 #include "LerAP.h"
+#include "UnitConversions.h"
 
 using namespace rapidjson;
 
@@ -3302,7 +3303,7 @@ void APara::atualizaCompRGO(double rgo, ProFlu &flui) {
                                                flui.fatAcent, flui.TIndepPeneloux, flui.kij,
                                                flui.lij, flui.liqModel, flui.liqModel,
                                                flui.liqModel,
-                                               flui.liqModel, 1.03322745279996,
+                                               flui.liqModel, units::kAtmosphereInKgfPerCm2,
                                                20., rgo, -1.0,
                                                GivenInitialLiqComposition, GivenInitialVapComposition,
                                                oGORAdjustedGlobalComp, &dAdjustedGlobalCompGOR,

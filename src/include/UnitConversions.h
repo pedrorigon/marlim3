@@ -7,11 +7,14 @@ namespace units {
 
 inline constexpr double kPascalPerKgfPerCm2 = 98066.5;
 inline constexpr double kPascalPerAtmosphere = 101325.;
+inline constexpr double kPascalPerBar = 100000.;
 /// A pound-force, 0.45359237 kg under 9.80665 m/s^2, over a square inch, (0.0254 m)^2.
 inline constexpr double kPascalPerPsi = 6894.75729316836134;
 inline constexpr double kPsiPerKgfPerCm2 = kPascalPerKgfPerCm2 / kPascalPerPsi;
 inline constexpr double kAtmosphereInKgfPerCm2 = kPascalPerAtmosphere / kPascalPerKgfPerCm2;
 inline constexpr double kAtmosphereInPsi = kPascalPerAtmosphere / kPascalPerPsi;
+inline constexpr double kKgfPerCm2PerBar = kPascalPerBar / kPascalPerKgfPerCm2;
+inline constexpr double kBarPerKgfPerCm2 = kPascalPerKgfPerCm2 / kPascalPerBar;
 
 inline constexpr double kZeroCelsiusInKelvin = 273.15;
 inline constexpr double kZeroFahrenheitInRankine = 459.67;
@@ -33,6 +36,8 @@ static_assert(kPascalPerPsi == 6894.757293168362);
 static_assert(kPsiPerKgfPerCm2 == 14.223343307119562);
 static_assert(kAtmosphereInKgfPerCm2 == 1.0332274527998857);
 static_assert(kAtmosphereInPsi == 14.695948775513449);
+static_assert(kKgfPerCm2PerBar == 1.0197162129779282);
+static_assert(kBarPerKgfPerCm2 == 0.980665);
 static_assert(kBarrelPerCubicMetre == 6.289810770432105);
 static_assert(kCubicFootPerCubicMetre == 35.31466672148859);
 static_assert(celsiusToFahrenheit(0.) == 32. && celsiusToFahrenheit(100.) == 212.);

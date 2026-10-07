@@ -9,11 +9,8 @@
 #include <math.h>
 
 using enum sisprod::AccessoryKind;
-using sisprod::kAtmospherePerKgfPerCm2;
 using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
-using sisprod::kPsiPerAtmosphere;
-using sisprod::kPsiPerPascal;
 
 namespace {
 
@@ -118,7 +115,7 @@ void SProd::loadPvtSimSaturationTables() {
     readPvtSimRow(lendoPVTSim, chave, "PRESSURE", PresPVTSim, lacoleitura,
                   [](double value) { return value / units::kPascalPerKgfPerCm2; });
     readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", tables.PBPVTSim, lacoleitura,
-                  [](double value) { return value * kPsiPerPascal; });
+                  [](double value) { return value / units::kPascalPerPsi; });
     readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", tables.TBPVTSim, lacoleitura, [](double value) { return value; });
     assignPvtSimBubbleTablesToCells();
 
@@ -163,7 +160,7 @@ void SProd::loadPvtSimSaturationTables() {
                     double multCor = (D0 + D1 * yco2 * pow(TFa, D2));
                     double pbtemp = tables.PBPVTSim[j - 1];
 
-                    double pcor = (tables.RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere * multCor;
+                    double pcor = tables.RSLivia[i][0] * units::kPsiPerKgfPerCm2 * multCor;
                     double pr = pcor / pbtemp;
 
                     double a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
@@ -174,7 +171,7 @@ void SProd::loadPvtSimSaturationTables() {
                     double rstemp = Rsr;
                     if (rstemp < 0.)
                         rstemp = 0.;
-                    else if ((tables.RSLivia[i][0] * kAtmospherePerKgfPerCm2) * kPsiPerAtmosphere > pbtemp)
+                    else if (tables.RSLivia[i][0] * units::kPsiPerKgfPerCm2 > pbtemp)
                         rstemp = 1.;
                     else if (rstemp > 1.)
                         rstemp = 1.;

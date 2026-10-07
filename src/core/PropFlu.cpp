@@ -2271,7 +2271,7 @@ double ProFlu::VisOM(double temper) const{
    }
  }
  else{
-	 return interpolaVarProd(1.033210485, temper, viscO);
+	 return interpolaVarProd(units::kAtmosphereInKgfPerCm2, temper, viscO);
  }
 
 
@@ -2549,8 +2549,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
         	 pbtemp = PB(pres,temp);
          else pbtemp=varPb;
 
-         double P_psi = ipres - 14.69;
-         PbLivia=pbtemp-14.69;
+         double P_psi = ipres - units::kAtmosphereInPsi;
+         PbLivia=pbtemp-units::kAtmosphereInPsi;
 
          double Pr = P_psi/PbLivia; //eq. 2b do paper
 
@@ -2883,7 +2883,7 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 		 else if((ipres>PBolha || (flashCompleto==2 && (iCalculatedThermodynamicCondition==0 || iCalculatedThermodynamicCondition==4))) && RGO>0.){
 
 			 double visSat=0.;
-			 double pBolhaKGF=PBolha/(0.9678411*14.69595);
+			 double pBolhaKGF=PBolha/units::kPsiPerKgfPerCm2;
 			 ////Calculo da viscosidade na pressão de bolha:
 			 if(corrOV==0){
 	    //Beggs_Robinson
@@ -3280,7 +3280,7 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{
 			  TCtemp=TC;
 		  }
 		  int interno=1;
-		  double presR=(0.9678411*14.69595*pres)/PCtemp;
+		  double presR=(units::kPsiPerKgfPerCm2*pres)/PCtemp;
 		  double tempR=(1.8*temp+32+460)/TCtemp;
 		  if(tab>0){
 			  const int upperIndex=npontos+1;
@@ -3481,7 +3481,7 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{
   double zt=0.;
   if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
     int interno=1;
-    double presR=(0.9678411*14.69595*pres)/PCis;
+    double presR=(units::kPsiPerKgfPerCm2*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
     if(tab>0 && std::isfinite(presR) && std::isfinite(tempR)){
       if(presR>dzdtP[1][0]-1e-5)interno=0;
@@ -3671,7 +3671,7 @@ if(rDgLtemp*Deng<=100){
  double zvar = ZdranOriginal(pres, temp,cordg);
  double TR = (itemp + 460)/TCtemp;
  double PR = ipres/PCtemp;
- double PCPA = 6894.8*PCtemp;
+ double PCPA = units::kPascalPerPsi*PCtemp;
  double Adran = 0.064225133;
  double Bdran = 0.53530771*TR - 0.61232032;
  double Cdran = 0.31506237*TR - 1.04670990 - 0.57832728/(TR*TR);
@@ -3700,7 +3700,7 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{
   double zt=0.;
   if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
     int interno=1;
-    double presR=(0.9678411*14.69595*pres)/PCis;
+    double presR=(units::kPsiPerKgfPerCm2*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
     if(tab>0 && std::isfinite(presR) && std::isfinite(tempR)){
       if(presR>dzdpP[1][0]-1e-5)interno=0;
@@ -3724,7 +3724,7 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{
 	          double raztemp=(dzdpP[0][itemp]-tempR)/(dzdpP[0][itemp]-dzdpP[0][itemp+1]);
 	          double latp1=(1-razpres)*(dzdpP[ipres][itemp])+razpres*(dzdpP[ipres+1][itemp]);
 	          double latp2=(1-razpres)*(dzdpP[ipres][itemp+1])+razpres*(dzdpP[ipres+1][itemp+1]);
-	          zt=((1-raztemp)*latp1+raztemp*latp2)/(PCis*6894.8);
+	          zt=((1-raztemp)*latp1+raztemp*latp2)/(PCis*units::kPascalPerPsi);
           }
         }
       }
@@ -3873,7 +3873,7 @@ void ProFlu::tabela(double pmax, double tmax,
     FullMtx<double> zdran(npontos+2,npontos+2);
     if(tab==1){
       for(int i=1; i<=npontos+1;i++){
-    	  double ptesteN=PC*pteste/(0.9678411*14.69595);
+    	  double ptesteN=PC*pteste/units::kPsiPerKgfPerCm2;
     	  zdranP[i][0]=pteste;
     	  for(int j=1;j<=npontos+1;j++){
     		  double ttesteN=(TC*tteste-460-32)/1.8;
@@ -3921,12 +3921,12 @@ void ProFlu::tabelaDZDP(double pmax, double tmax,
     FullMtx<double> saida(npontos+2,npontos+2,0.);
     if(tab==1){
       for(int i=1; i<=npontos+1;i++){
-    	double ptesteN=PC*pteste/(0.9678411*14.69595);
+    	double ptesteN=PC*pteste/units::kPsiPerKgfPerCm2;
     	dzdpP[i][0]=pteste;
     	for(int j=1;j<=npontos+1;j++){
     		double ttesteN=(TC*tteste-460-32)/1.8;
     		dzdpP[0][j]=tteste;
-    		dzdpP[i][j]=DZDPOriginal(ptesteN,ttesteN,1)*(PC*6894.8);
+    		dzdpP[i][j]=DZDPOriginal(ptesteN,ttesteN,1)*(PC*units::kPascalPerPsi);
     		tteste-=dtteste;
     	}
     	pteste-=dpteste;
@@ -3954,7 +3954,7 @@ void ProFlu::tabelaDZDT(double pmax, double tmax,
     FullMtx<double> saida(npontos+2,npontos+2,0.);
     if(tab==1){
       for(int i=1; i<=npontos+1;i++){
-      	double ptesteN=PC*pteste/(0.9678411*14.69595);
+      	double ptesteN=PC*pteste/units::kPsiPerKgfPerCm2;
     	dzdtP[i][0]=pteste;
     	for(int j=1;j<=npontos+1;j++){
     		double ttesteN=(TC*tteste-460-32)/1.8;
@@ -4022,7 +4022,7 @@ if(flashCompleto==0 || flashCompleto==3){
 		double rhostd=1000.*141.5/(131.5+API);
 		double rho1=rhostd-(624/rhostd)*(temp-15.56);
 		double phi=(1.9818*1e-5)*exp((2.4169*1e-4)*temp+(8.6835*1e5+(4.1868*1e3)*temp)/(rho1*rho1));
-		double rhois=rho1/(1.-phi*(pres-1.03322745)/1.01971621);
+		double rhois=rho1/(1.-phi*(pres-units::kAtmosphereInKgfPerCm2)/units::kKgfPerCm2PerBar);
 		BO=rhostd/rhois;
 	}
  }
@@ -5677,7 +5677,7 @@ double ProFlu::DMasEspAgua(double pres, double temp) const{
 	  double rhomist=(1-x)/rholw+x/(din*1000.);
 	  double t1= -1./(rhomist*rhomist);
 	  double t2=((1-x)/(rholw*rholw))*(1000./(bw*bw))*bwAmb;
-	  double t3=- 3.33e-06*0.9678411*14.69595;
+	  double t3=- 3.33e-06*units::kPsiPerKgfPerCm2;
 	  return t1*t2*t3;
 }
 double ProFlu::BAFunc(double pres, double temp) const{

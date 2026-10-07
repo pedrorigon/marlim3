@@ -284,7 +284,7 @@ celrad::celrad(int vncel,int vicel,double vr0, double vr1, double vrm,double vkX
 	vbo=flup.BOFunc(Pcamada, tRes);
 	vboIni=vbo;
 	rhostd=1000.*141.5/(131.5+flup.API);
-	rhogstd=flup.MasEspGas(1.033, 20.);
+	rhogstd=flup.MasEspGas(units::kAtmosphereInKgfPerCm2, 20.);
 	rhoa=flup.MasEspAgua(Pcamada, tRes);
 
 	rhoP1=flup.MasEspoleo(PcamadaR, tRes);

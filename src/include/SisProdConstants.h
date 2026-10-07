@@ -8,15 +8,6 @@ namespace sisprod {
 
 // ---------------------------------------------------------------- units ----
 
-/// Psi per pascal, 1 / 6894.757.
-inline constexpr double kPsiPerPascal = 0.00014503773800722;
-
-/// Atmospheres per kgf/cm^2 (98066.5 / 101325) and psi per atmosphere. The
-/// saturation correlation of the PVTSim tables goes from kgf/cm^2 to psi
-/// through the atmosphere.
-inline constexpr double kAtmospherePerKgfPerCm2 = 0.9678411;
-inline constexpr double kPsiPerAtmosphere = 14.69595;
-
 /// Used as the ratio 6.29 / 35.31467, converting a solution gas-oil ratio from
 /// scf/bbl to m3/m3. Leave it as a division: the quotient written by hand
 /// rounds to a different double.
@@ -35,18 +26,6 @@ inline constexpr double kGravity = 9.82;
 /// pressure variant above, the two are not interchangeable without changing
 /// results.
 inline constexpr double kGravityUnloadingVariant = 9.81;
-
-/// Psi per kgf/cm^2. Gas-lift valve correlations are imperial throughout.
-inline constexpr double kPsiPerKgfPerCm2 = 14.223595;
-
-/// One standard atmosphere in kgf/cm^2, subtracted to turn absolute pressure
-/// into gauge before the imperial conversion.
-inline constexpr double kAtmosphereInKgfPerCm2 = 1.033211;
-
-/// One standard atmosphere in psi, added and subtracted to go between gauge
-/// and absolute pressure in the gas-lift valve calibration. The PVTSim reader
-/// rounds the same quantity as kPsiPerAtmosphere.
-inline constexpr double kAtmosphereInPsi = 14.6959488;
 
 /// Written into the inlet source rate when a pressure-to-pressure search finds no
 /// flowing solution; the network reads it back to report the branch.
@@ -148,17 +127,11 @@ static_assert(kAccessoryMultiPump == 17);
 static_assert(kGasInletInjectionPressure == 0);
 static_assert(kGasInletInjectionFlowRate == 1);
 
-static_assert(kPsiPerPascal == 0.00014503773800722);
-static_assert(kAtmospherePerKgfPerCm2 == 0.9678411);
-static_assert(kPsiPerAtmosphere == 14.69595);
 static_assert(kBarrelPerCubicMetre == 6.29);
 static_assert(kCubicFootPerCubicMetre == 35.31467);
 static_assert(kAirDensityAtStandardConditions == 1.225);
 static_assert(kGravity == 9.82);
 static_assert(kGravityUnloadingVariant == 9.81);
-static_assert(kPsiPerKgfPerCm2 == 14.223595);
-static_assert(kAtmosphereInKgfPerCm2 == 1.033211);
-static_assert(kAtmosphereInPsi == 14.6959488);
 static_assert(kNoFlowSolutionMarker == -2121212121.);
 static_assert(kStandardPressureKgfPerCm2 == 1.);
 static_assert(kStandardTemperatureCelsius == 15.);
