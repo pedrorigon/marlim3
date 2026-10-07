@@ -64,6 +64,7 @@
 #include <iostream>
 #include <math.h>
 #include <memory>
+#include <span>
 #include <omp.h>
 #include <signal.h>
 #include <sstream>
@@ -1487,7 +1488,7 @@ double FQleve(Cel *celula, int i) {
     return qostd * rsi + (celula[i].MC - celula[i].Mliqini) / (dgi * 1.225);
 }
 
-int verificaFonteDuplaReversa(SProd *malha, int aux) {
+int verificaFonteDuplaReversa(span<SProd> malha, int aux) {
     if (malha[aux].celula[0].acsr.tipo == 1) {
         if (malha[aux].celula[1].acsr.tipo == 1) {
             if (malha[aux].celula[1].acsr.injg.QGas * malha[aux].celula[0].acsr.injg.QGas < 0) {
@@ -1526,7 +1527,7 @@ int verificaFonteDuplaReversa(SProd *malha, int aux) {
         return 1;
 }
 
-int trocaFonteColetor(SProd *malha, int aux) {
+int trocaFonteColetor(span<SProd> malha, int aux) {
     if (malha[aux].celula[0].acsr.tipo == 1) {
         if (malha[aux].celula[1].acsr.tipo == 1) {
             if (malha[aux].celula[1].acsr.injg.QGas * malha[aux].celula[0].acsr.injg.QGas < 0) {
@@ -1577,7 +1578,7 @@ int trocaFonteColetor(SProd *malha, int aux) {
         return 1;
 }
 
-void retornaFonteColetor(SProd *malha, int aux) {
+void retornaFonteColetor(span<SProd> malha, int aux) {
     if (malha[aux].celula[0].acsr.tipo == 1) {
         InjGas reserva;
         reserva = malha[aux].celula[0].acsr.injg;
@@ -1596,7 +1597,7 @@ void retornaFonteColetor(SProd *malha, int aux) {
     }
 }
 
-void CicloRedeTrans(SProd *malha, Rede &arqRede,
+void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                     Vcr<int> &inativo, Vcr<double> &alfrev,
                     Vcr<double> &betrev, Vcr<double> &titrev) {
     int narq = arqRede.nsisprod;
@@ -2212,7 +2213,7 @@ void CicloRedeTrans(SProd *malha, Rede &arqRede,
     }
 }
 
-int buscaNoColetorMrestre(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int iaflu) {
+int buscaNoColetorMrestre(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int iaflu) {
     int ncol = arqRede.malha[iaflu].ncoleta;
     int icol = arqRede.malha[iaflu].coleta[0];
 
@@ -2228,7 +2229,7 @@ int buscaNoColetorMrestre(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int ia
     return idmax;
 }
 
-void celAfluFinal(int naflu, int ncol, SProd *malha, Rede &arqRede, Vcr<int> &inativo) {
+void celAfluFinal(int naflu, int ncol, span<SProd> malha, Rede &arqRede, Vcr<int> &inativo) {
     int iaflu = malha[naflu].ncel;
     int icol = 0;
     int colet = arqRede.malha[naflu].ncoleta;
@@ -2299,7 +2300,7 @@ void celAfluFinal(int naflu, int ncol, SProd *malha, Rede &arqRede, Vcr<int> &in
     }
 }
 
-void corrigeVazNo(SProd *malha, int ind) {
+void corrigeVazNo(span<SProd> malha, int ind) {
     int ncel = malha[ind].ncel;
 
     if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.titRev >= 1. - (*malha[ind].vg1dSP).localtiny)) {
@@ -2330,7 +2331,7 @@ void corrigeVazNo(SProd *malha, int ind) {
     }
 }
 
-void corrigeVazNoBuf(SProd *malha, int ind) {
+void corrigeVazNoBuf(span<SProd> malha, int ind) {
     int ncel = malha[ind].ncel;
 
     if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.titRev >= 1. - (*malha[ind].vg1dSP).localtiny)) {
@@ -2354,7 +2355,7 @@ void corrigeVazNoBuf(SProd *malha, int ind) {
     }
 }
 
-void SolveRedeTrans(SProd *malha, Rede &arqRede,
+void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                     Vcr<int> &inativo, int indativo, int nrede) {
 
     int narq = arqRede.nsisprod;
@@ -3107,7 +3108,7 @@ void aviso2(int i) {
     cout << endl;
 }
 
-void verificaTramoVazPres(int &ind, Rede &arqRede, SProd *malha) {
+void verificaTramoVazPres(int &ind, Rede &arqRede, span<SProd> malha) {
     int fimBusca = 0;
     while (fimBusca == 0) {
         if (arqRede.malha[ind].ncoleta > 0) {
@@ -3234,7 +3235,7 @@ void avaliaBloq(int i, Rede &arqRede,
     }
 }
 
-int chutePresRede(int indprod, SProd *malha, Rede &arqRede, double chutehol,
+int chutePresRede(int indprod, span<SProd> malha, Rede &arqRede, double chutehol,
                   Vcr<double> &razcolet, Vcr<double> &prescolet) {
     double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
     double vazG = (*arqRede.vg1dSP).somavazG * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
@@ -3255,7 +3256,7 @@ int chutePresRede(int indprod, SProd *malha, Rede &arqRede, double chutehol,
     return contarecur;
 }
 
-void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, int naflu, int i, int recb,
+void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, int naflu, int i, int recb,
                            Vcr<double> nBloq, convergeNoPerm &noConv, int auxMaster, Vcr<int> coleta = Vcr<int>(), int ncoleta = 0) {
     Vcr<double> qostd(naflu + ncoleta);
     Vcr<double> rholliqIS(naflu + ncoleta);
@@ -3651,7 +3652,7 @@ void totalizaCicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int i
     }
 }
 
-double cicloRedeComp(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
+double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     double norma = 0.;
     int nnos = 0;
     int narq = arqRede.nsisprod - 0 * indativo;
@@ -5143,7 +5144,7 @@ void preparaTabDin(SProd &sistem1) {
     }
 }
 
-void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, int naflu, int i, int recb,
+void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, int naflu, int i, int recb,
                                Vcr<double> nBloq, convergeNoPerm &noConv, int auxMaster, Vcr<int> coleta = Vcr<int>(), int ncoleta = 0) {
     Vcr<double> qostd(naflu + ncoleta);
     Vcr<double> rholliqIS(naflu + ncoleta);
@@ -5481,7 +5482,7 @@ void totalizaCicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, i
     kpos = 0;
 }
 
-void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<tramoPart> &bloq) {
+void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<tramoPart> &bloq) {
     int narq = arqRede.nsisprod - 0 * indativo;
     (*arqRede.vg1dSP).relax = arqRede.relax;
     Vcr<int> Resolv(narq, 0);
@@ -5911,7 +5912,7 @@ void cicloRedeCompCego(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
     }
 }
 
-void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, int naflu, int i, int recb,
+void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, int naflu, int i, int recb,
                        Vcr<double> nBloq, convergeNoPerm &noConv, int auxMaster, Vcr<int> coleta = Vcr<int>(), int ncoleta = 0) {
     Vcr<double> qostd(naflu + ncoleta);
     Vcr<double> RGO(naflu + ncoleta);
@@ -6264,7 +6265,7 @@ void totalizaCicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indat
     noConv.flu.RenovaFluido();
 }
 
-double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
+double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     double norma = 0.;
     int nnos = 0;
     int narq = arqRede.nsisprod - 0 * indativo;
@@ -7291,7 +7292,7 @@ double cicloRede(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo, v
     }
 }
 
-void alteraModoFluidoCompBlack(SProd *malha, int narq, Vcr<int> &calclat0, Vcr<int> &tipoFluido0) {
+void alteraModoFluidoCompBlack(span<SProd> malha, int narq, Vcr<int> &calclat0, Vcr<int> &tipoFluido0) {
     for (int j = 0; j < narq; j++) {
         malha[j].arq.flashCompleto = 0;
         calclat0[j] = malha[j].CalcLat;
@@ -7342,7 +7343,7 @@ void alteraModoFluidoCompBlack(SProd *malha, int narq, Vcr<int> &calclat0, Vcr<i
     }
 }
 
-void alteraModoFluidoBlackComp(SProd *malha, int narq, Vcr<int> calclat0, Vcr<int> tipoFluido0) {
+void alteraModoFluidoBlackComp(span<SProd> malha, int narq, Vcr<int> calclat0, Vcr<int> tipoFluido0) {
     for (int j = 0; j < narq; j++) {
         malha[j].arq.flashCompleto = 2;
         malha[j].CalcLat = calclat0[j];
@@ -7394,7 +7395,7 @@ void alteraModoFluidoBlackComp(SProd *malha, int narq, Vcr<int> calclat0, Vcr<in
     }
 }
 
-int convergeRede(SProd *malha, Rede &arqRede, int narq, Vcr<int> &inativo, int &indativo, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
+int convergeRede(span<SProd> malha, Rede &arqRede, int narq, Vcr<int> &inativo, int &indativo, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     double norma = 1000.;
     double limConvergeLocal = arqRede.limConverge;
     int convergeaux = 0;
@@ -9064,7 +9065,7 @@ int testaBloqueio(Rede &arqRede, int i, vector<tramoPart> &bloq) {
     return fontePart;
 }
 
-void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
+void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
     Vcr<int> resolvPerm(narq, 0);
     int totPerm = 0;
     while (totPerm < narq) {
@@ -9277,7 +9278,7 @@ void avaliaPerm(SProd *malha, Rede &arqRede, int narq, int &semPerm) {
     }
 }
 
-void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
+void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
                      tipoSimulacao_t tipoSimulacaoMrt, int nrede, int &contapermRede, varGlob1D *vG1d) {
     if (narq > 1) { // narq=numero de tramos ativos da rede
         (*arqRede.vg1dSP).simulaTransiente = arqRede.chaveredeT;
@@ -9622,7 +9623,7 @@ void preparaRedeProd(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLo
     }
 }
 
-void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
+void solveRedeProd(span<SProd> malha, Rede &arqRede, int narq,
                    Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
                    tipoSimulacao_t tipoSimulacaoMrt, int nrede, int &contapermRede, varGlob1D *vG1d, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     int convergido = 0;
@@ -10032,7 +10033,7 @@ void solveRedeProd(SProd *malha, Rede &arqRede, int narq,
     }
 }
 
-void RedeProd(SProd *malha, Rede &arqRede, int narq,
+void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
               Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
               tipoSimulacao_t tipoSimulacaoMrt, int nrede, int contapermRede, varGlob1D *vG1d, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     // neste metodo e feita a construcao de um objeto rede e a sua resolucao permanente
@@ -10668,7 +10669,7 @@ void RedeProd(SProd *malha, Rede &arqRede, int narq,
 }
 
 void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
-               vector<fonteposic> dreno, SProd *malha, Rede &arqRede) {
+               vector<fonteposic> dreno, span<SProd> malha, Rede &arqRede) {
 
     Vcr<double> razMast0(narq);
     Vcr<double> razMast(narq);
@@ -10859,7 +10860,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
         WriteSnapShot(malha[i], malha[i].arq.nsnp, i);
 }
 
-void calcPeriAnelGL(SProd *malha, int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
+void calcPeriAnelGL(span<SProd> malha, int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
                     int iter, vector<fonteposic> dreno) {
 
     for (int i = malha[indAnel].arq.ninjgas; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
@@ -10898,7 +10899,7 @@ void calcPeriAnelGL(SProd *malha, int narq, int nfontes, int *indfonte, int *ind
     }
 }
 
-double calcErroGL(SProd *malha, int narq, int nfontes, int *posicfonte, int indAnel,
+double calcErroGL(span<SProd> malha, int narq, int nfontes, int *posicfonte, int indAnel,
                   vector<fonteposic> dreno) {
     double erro = 0;
     for (int i = 0; i < malha[indAnel].arq.ninjgas + dreno.size(); i++) {
@@ -10917,7 +10918,7 @@ double calcErroGL(SProd *malha, int narq, int nfontes, int *posicfonte, int indA
     return erro / divisor;
 }
 
-double objetCC0(SProd *malha, int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
+double objetCC0(span<SProd> malha, int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
                 double pchute, int iter, vector<fonteposic> dreno) {
     malha[indAnel].marchaProdPerm1(pchute);
     calcPeriAnelGL(malha, narq, nfontes, indfonte, indtramo, posicfonte, indAnel, iter, dreno);
@@ -10927,7 +10928,7 @@ double objetCC0(SProd *malha, int narq, int nfontes, int *indfonte, int *indtram
 double SIGN(double a, double b) {
     return (b >= 0 ? 1.0 : -1.0) * fabs(a);
 }
-double zriddr(SProd *malha, double x1, double x2,
+double zriddr(span<SProd> malha, double x1, double x2,
               int narq, int nfontes, int *indfonte, int *indtramo, int *posicfonte, int indAnel,
               vector<fonteposic> dreno) {
     double xacc = 1e-6;
@@ -10978,7 +10979,7 @@ double zriddr(SProd *malha, double x1, double x2,
     }
 }
 
-void conectaPrincipal(SProd *malha, int iP, int iS, int itera = 1) {
+void conectaPrincipal(span<SProd> malha, int iP, int iS, int itera = 1) {
     for (int i = malha[iP].networkCoupling.PrimSecIniRedeP; i >= malha[iP].networkCoupling.PrimSecFimRedeP; i--) {
         int j = malha[iP].networkCoupling.PrimSecIniRedeP + malha[iP].networkCoupling.SecPrimIniRedeP - i;
         if (itera == 1)
@@ -11031,7 +11032,7 @@ void conectaPrincipal(SProd *malha, int iP, int iS, int itera = 1) {
     }
 }
 
-double chutePresRedeParalelaSec(SProd *malha, int iP, int iS, double pchute, int indPartida) {
+double chutePresRedeParalelaSec(span<SProd> malha, int iP, int iS, double pchute, int indPartida) {
     double betaChute = 0.;
     double taux;
     if (malha[iS].celula[0].acsr.tipo == 2)
@@ -11064,7 +11065,7 @@ double chutePresRedeParalelaSec(SProd *malha, int iP, int iS, double pchute, int
     return pchute;
 }
 
-void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
+void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
     int narq = arqRede.nsisprod;
     Vcr<int> celpos(narq);
     Vcr<int> kontasnp(narq, 1);
@@ -11417,7 +11418,7 @@ void SolveRedeParalelaTrans(SProd *malha, Rede &arqRede, int nrede) {
     }
 }
 
-void RedeParalela(SProd *malha, Rede &arqRede, int narq,
+void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
                   Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
                   int transiente, tipoSimulacao_t tipoSimulacaoMrt, varGlob1D *vG1d) {
 
@@ -11766,7 +11767,7 @@ void RedeParalela(SProd *malha, Rede &arqRede, int narq,
     }
 }
 
-void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
+void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
                 Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
                 int transiente, tipoSimulacao_t tipoSimulacaoMrt, varGlob1D *vG1d) {
     int nfontes = narq - 1;
@@ -12128,7 +12129,7 @@ void RedeAnelGL(SProd *malha, Rede &arqRede, int narq,
     delete[] compdreno;
 }
 
-int chutePresRedeInj(int indprod, SProd *malha, Rede &arqRede, double chutehol,
+int chutePresRedeInj(int indprod, span<SProd> malha, Rede &arqRede, double chutehol,
                      Vcr<double> &razcolet, Vcr<double> &prescolet) {
     double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
     double presno = malha[indprod].hidroreversoInj(chutehol, vaz);
@@ -12144,7 +12145,7 @@ int chutePresRedeInj(int indprod, SProd *malha, Rede &arqRede, double chutehol,
     return contarecur;
 }
 
-double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo) {
+double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo) {
     double norma = 0.;
     int nnos = 0;
     int narq = arqRede.nsisprod - 0 * indativo;
@@ -12380,7 +12381,7 @@ double cicloRedeInj(SProd *malha, Rede &arqRede, Vcr<int> &inativo, int indativo
     return sqrt(norma) / nnos;
 }
 
-void RedeInj(SProd *malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
+void RedeInj(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
              tipoSimulacao_t tipoSimulacaoMrt, varGlob1D *vG1d) {
     int testaFlashComp = 0;
     for (int i = 0; i < narq; i++) {
@@ -12914,7 +12915,7 @@ int main(int argc, char **argv) {
                         for (int i = 0; i < redeLeitura; i++) {
                             contapermRede[i] = 0;
                             malha[i] = make_unique<SProd[]>(vg1dRede[i].narq);
-                            preparaRedeProd(malha[i].get(), arqRedeTemp[i], vg1dRede[i].narq, nomeArquivoLog, validacaoJson,
+                            preparaRedeProd(span<SProd>(malha[i].get(), vg1dRede[i].narq), arqRedeTemp[i], vg1dRede[i].narq, nomeArquivoLog, validacaoJson,
                                             tipoSimulacao_t::transiente, i, contapermRede[i], &vg1dRede[i]);
                         }
 #pragma omp parallel for num_threads(vg1dRedeSimples.ntrdGlob)
@@ -12925,7 +12926,7 @@ int main(int argc, char **argv) {
                             cout << "!!!!!! Resolvendo REDE INTERNA " << i << "!!!!!!" << "\n";
                             vector<noRede> normaEvol;
                             vector<tramoPart> bloq;
-                            solveRedeProd(malha[i].get(), arqRedeTemp[i], vg1dRede[i].narq, inativo, indativo, nomeArquivoLog, validacaoJson,
+                            solveRedeProd(span<SProd>(malha[i].get(), vg1dRede[i].narq), arqRedeTemp[i], vg1dRede[i].narq, inativo, indativo, nomeArquivoLog, validacaoJson,
                                           tipoSimulacao_t::transiente, i, contapermRede[i], &vg1dRede[i], normaEvol, bloq); // construcao dos objetos tramos de uma rede
                             // neste metodo e criado o vetor de tramos da rede, avaliado se algum tramo encontra-se em uma condicao sem vazao,
                             // neste caso o tramo e retirado da rede interna, e e feita a resolucao permenente da rede interna, apos esta resolucao
@@ -12936,7 +12937,7 @@ int main(int argc, char **argv) {
                             if (vg1dRede[i].chaveredeT == 1 && arqRede.injec == 0 && (*arqRede.vg1dSP).chaveAnelGL == 0) {
                                 vg1dRede[i].RGOMax = 14000.;
                                 vg1dRede[i].modoTransiente = 1;
-                                SolveRedeTrans(malha[i].get(), arqRedeTemp[i], inativo, indativo, i); // metodo em que se faz a resolucao transiente da rede interna
+                                SolveRedeTrans(span<SProd>(malha[i].get(), vg1dRede[i].narq), arqRedeTemp[i], inativo, indativo, i); // metodo em que se faz a resolucao transiente da rede interna
                                 vg1dRede[i].modoTransiente = 0;
                             }
                             vg1dRede[i].restartRede = 1;
@@ -13003,7 +13004,7 @@ int main(int argc, char **argv) {
                     // OBS: sistemas de injecao so tem solucao permanente
                     vg1dRedeSimples.narq = narq;
                     auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
-                    RedeInj(malha.get(), arqRede, narq, nomeArquivoLog, validacaoJson, tipoSimulacao_t::poco_injetor, &vg1dRedeSimples); // construcao
+                    RedeInj(span<SProd>(malha.get(), narq), arqRede, narq, nomeArquivoLog, validacaoJson, tipoSimulacao_t::poco_injetor, &vg1dRedeSimples); // construcao
                     // dos objetos tramos de uma rede de injecao e busca de sua solucao permanente
                     if (saidaClassica == 1) {
                         cout << "*******************************************************************************" << endl;
@@ -13023,7 +13024,7 @@ int main(int argc, char **argv) {
                     Vcr<int> inativo(narq, 0); // indica se algum tramo falhou na sua busca pela soluçao transiente
                     int indativo = 0;          // indica o numero de tramso que foram inativados na solucao permanente por
                     // falha de convergencia
-                    RedeAnelGL(malha.get(), arqRede, narq, inativo, indativo, nomeArquivoLog,
+                    RedeAnelGL(span<SProd>(malha.get(), narq), arqRede, narq, inativo, indativo, nomeArquivoLog,
                                validacaoJson, arqRede.chaveredeT, tipoSimulacao_t::transiente, &vg1dRedeSimples); // cosntrucao dos objetos tramos
                     // de uma rede de anel de GL, dentro deste metodo e feita a solucao permanente e
                     // eventualmente a solucao transiente tambem
@@ -13044,7 +13045,7 @@ int main(int argc, char **argv) {
                     int indativo = 0;          // indica o numero de tramso que foram inativados na solucao permanente por
                     // falha de convergencia
 
-                    RedeParalela(malha.get(), arqRede, narq,
+                    RedeParalela(span<SProd>(malha.get(), narq), arqRede, narq,
                                  inativo, indativo, nomeArquivoLog, validacaoJson, arqRede.chaveredeT,
                                  tipoSimulacao_t::transiente, &vg1dRedeSimples);
 
