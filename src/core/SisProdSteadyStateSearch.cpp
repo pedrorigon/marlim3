@@ -580,7 +580,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
 }
 
 /// Estimates the bottom-hole pressure the reverse search starts from.
-void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
+void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &state, double &complementaryFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
 
         if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
@@ -593,19 +593,19 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
             /////////// physical properties:
-            double completionFraction = state.march.cells[0].acsr.injl.bet;
-            completionFractionGuess = completionFraction;
+            double complementaryFraction = state.march.cells[0].acsr.injl.bet;
+            complementaryFractionGuess = complementaryFraction;
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
             double visP = state.march.cells[0].acsr.injl.FluidoPro.ViscOleo(pchute, taux);
             double visG = state.march.cells[0].acsr.injl.FluidoPro.ViscGas(pchute, taux);
-            double visMis = (1 - completionFraction) * visP + completionFraction * visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+            double visMis = (1 - complementaryFraction) * visP + complementaryFraction * visC;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
             double liquidDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(pchute, taux);
             double gasDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, taux);
-            rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+            rmis = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
             double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            // rough estimate of the completion-fluid mass flow rate
+            // rough estimate of the complementary-liquid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
             // rough estimate of the produced liquid and gas mass flow rates
             double massic;
@@ -620,9 +620,9 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
             double massicG = fracmasshidra * massic;        // gas mass flow rate
             /// rough estimate of the mixture velocity
-            j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
             // no-slip void fraction estimate
-            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
+            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess);
             // mixture properties
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
@@ -656,7 +656,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             // the pressure estimate uses only the liquid hydrostatics, which gives a
             // very high initial pressure guess
             double alfa = 0.;
-            if (completionFractionGuess < 0.5) {
+            if (complementaryFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
             }
@@ -711,9 +711,9 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     double rmis = 0.;
     double frictionFactor = 0.;
     double perdafric = 0.;
-    double completionFractionGuess = 0.;
+    double complementaryFractionGuess = 0.;
 
-    estimateInitialReverseBottomHolePressure(state, completionFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
+    estimateInitialReverseBottomHolePressure(state, complementaryFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
     // the method's parameter list
     double pchute2;        // second pressure guess of the search
     double pchuteAux = 0.; // helper in the search for the two pressure guesses
@@ -1391,7 +1391,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, double pchute
 ///
 /// -1e10 means the pressure fell near zero before the last cell, 1e10 means it
 /// rose above a static pressure or above the table's maximum.
-void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResidual, double &pchuteAux, double completionFractionGuess, double perdafric, double &taux, double pchute) {
+void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResidual, double &pchuteAux, double complementaryFractionGuess, double perdafric, double &taux, double pchute) {
     if (marchResidual < -0.9e10) { // pressure too low in the march: the guess must be raised
         // a new estimate is made, now assuming a water hydrostatic head,
         // which gives a higher bottom-hole pressure
@@ -1401,7 +1401,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
             double rhol = 1000 + 0 * state.march.cells[i].flui.MasEspLiq(pchuteAux, taux);
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
             double alfa = 0.;
-            if (completionFractionGuess < 0.5) {
+            if (complementaryFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
                 alfa *= 0.5;
@@ -1436,7 +1436,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
             double rhog = state.march.cells[i].flui.MasEspGas(pchuteAux, taux);
             // in this case a high void fraction is used for the hydrostatics
             double alfa = 0.8;
-            if (completionFractionGuess < 0.5) {
+            if (complementaryFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
                 if (alfa > 0.9999)
@@ -1470,11 +1470,11 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
 ///
 /// With a negative guess the pressure is built from the surface pressure, the head
 /// accessory and a friction estimate; otherwise the caller's guess stands.
-void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
+void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, double &complementaryFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
 
         if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
-            completionFractionGuess = state.march.cells[0].acsr.injl.bet;
+            complementaryFractionGuess = state.march.cells[0].acsr.injl.bet;
             // this block estimates the mean pressure loss
             // from the flow rate at the start of the pipe; this is done only
             // if there is a liquid source, celula[0].acsr.tipo == 2
@@ -1484,17 +1484,17 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
             /////////// physical properties:
-            double completionFraction = state.march.cells[0].acsr.injl.bet;
+            double complementaryFraction = state.march.cells[0].acsr.injl.bet;
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
             double visP = state.march.cells[0].acsr.injl.FluidoPro.ViscOleo(pchute, taux);
             double visG = state.march.cells[0].acsr.injl.FluidoPro.ViscGas(pchute, taux);
-            double visMis = (1 - completionFraction) * visP + completionFraction * visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+            double visMis = (1 - complementaryFraction) * visP + complementaryFraction * visC;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
             double liquidDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(pchute, taux);
             double gasDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, taux);
-            rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+            rmis = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            // rough estimate of the completion-fluid mass flow rate
+            // rough estimate of the complementary-liquid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
             // rough estimate of the produced liquid and gas mass flow rates
             double massic;
@@ -1509,9 +1509,9 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
             double massicG = fracmasshidra * massic;        // gas mass flow rate
             /// rough estimate of the mixture velocity
-            j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
             // no-slip void fraction estimate
-            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
+            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess);
             // mixture properties
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
@@ -1545,7 +1545,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             // the pressure estimate uses only the liquid hydrostatics, which gives a
             // very high initial pressure guess
             double alfa = 0.;
-            if (completionFractionGuess < 0.5) {
+            if (complementaryFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
             }
@@ -1604,9 +1604,9 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     double rmis = 0.;
     double frictionFactor = 0.;
     double perdafric = 0.;
-    double completionFractionGuess = 0.;
+    double complementaryFractionGuess = 0.;
 
-    estimateInitialBottomHolePressure(state, completionFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
+    estimateInitialBottomHolePressure(state, complementaryFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
     // the method's parameter list
     double pchute2;        // second pressure guess of the search
     double pchuteAux = 0.; // helper in the search for the two pressure guesses
@@ -1621,7 +1621,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, d
     // or before reaching the last cell the pressure got close to zero, or the pressure
     // returns -1e10; or, with PVTSim, the pressure rose above the table's maximum,
     // returns 1e10
-    classifyMarchSentinel(state, marchResidual, pchuteAux, completionFractionGuess, perdafric, taux, pchute);
+    classifyMarchSentinel(state, marchResidual, pchuteAux, complementaryFractionGuess, perdafric, taux, pchute);
 
 
     // if the first march went wrong, a new attempt is made with pchuteAux
@@ -2244,7 +2244,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
 }
 
 /// Estimates the bottom-hole pressure the secondary search starts from.
-void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &state, double &completionFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
+void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &state, double &complementaryFractionGuess, double &perdafric, double &frictionFactor, double &rmis, double &j, double &taux, double &pchute, double chute) {
     if (chute < 0) {
         if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection && fabs(state.march.cells[0].acsr.injl.QLiq) > 0.) {
             // this block estimates the mean pressure loss
@@ -2257,19 +2257,19 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             if (taux < state.march.input.tmin)
                 taux = state.march.input.tmin;
             /////////// physical properties:
-            double completionFraction = state.march.cells[0].acsr.injl.bet;
-            completionFractionGuess = completionFraction;
+            double complementaryFraction = state.march.cells[0].acsr.injl.bet;
+            complementaryFractionGuess = complementaryFraction;
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
             double visP = state.march.cells[0].acsr.injl.FluidoPro.ViscOleo(pchute, taux);
             double visG = state.march.cells[0].acsr.injl.FluidoPro.ViscGas(pchute, taux);
-            double visMis = (1 - completionFraction) * visP + completionFraction * visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+            double visMis = (1 - complementaryFraction) * visP + complementaryFraction * visC;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
             double liquidDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(pchute, taux);
             double gasDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, taux);
-            rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+            rmis = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
             double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-            // rough estimate of the completion-fluid mass flow rate
+            // rough estimate of the complementary-liquid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / kSecondsPerDay;
             // rough estimate of the produced liquid and gas mass flow rates
             double massic = rlpA * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / kSecondsPerDay;
@@ -2287,9 +2287,9 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
             double massicG = fracmasshidra * massic;        // gas mass flow rate
             /// rough estimate of the mixture velocity
-            j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess) / state.march.cells[0].duto.area;
             // no-slip void fraction estimate
-            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
+            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess);
             // mixture properties
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
@@ -2321,7 +2321,7 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             // the pressure estimate uses only the liquid hydrostatics, which gives a
             // very high initial pressure guess
             double alfa = 0.;
-            if (completionFractionGuess < 0.5) {
+            if (complementaryFractionGuess < 0.5) {
                 double quality = state.march.cells[i].flui.FracMassHidra(pchute, taux);
                 alfa = quality * rhol / (rhog - quality * rhog + quality * rhol);
             }
@@ -2376,9 +2376,9 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     double rmis = 0.;
     double frictionFactor = 0.;
     double perdafric = 0.;
-    double completionFractionGuess = 0.;
+    double complementaryFractionGuess = 0.;
 
-    estimateInitialBottomHolePressureSecondary(state, completionFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
+    estimateInitialBottomHolePressureSecondary(state, complementaryFractionGuess, perdafric, frictionFactor, rmis, j, taux, pchute, chute);
     // the method's parameter list
     double pchute2;        // second pressure guess of the search
     double pchuteAux = 0.; // helper in the search for the two pressure guesses
@@ -2954,19 +2954,19 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                     negativeResidualGuess = mchute2;
                 kontaiter++;
                 double velocityGuess = mchute2;
-                double completionFraction = state.march.cells[1].bet;
+                double complementaryFraction = state.march.cells[1].bet;
                 double voidFraction = state.march.cells[1].alf;
                 double firstCellPressure = state.march.cells[0].pres;
                 double firstCellTemperature = state.march.cells[0].temp;
-                double completionDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
+                double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
                 double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
                 double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-                double rmisL = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+                double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
                 double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
                 double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
                 double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
                 double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-                double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
+                double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
                 double multiplica;
                 if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                     multiplica = rmisLst;
@@ -3096,19 +3096,19 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     negativeResidualGuess = mchute2;
                 kontaiter++;
                 double velocityGuess = mchute2;
-                double completionFraction = state.march.cells[1].bet;
+                double complementaryFraction = state.march.cells[1].bet;
                 double voidFraction = state.march.cells[1].alf;
                 double firstCellPressure = state.march.cells[0].pres;
                 double firstCellTemperature = state.march.cells[0].temp;
-                double completionDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
+                double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
                 double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
                 double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-                double rmisL = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+                double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
                 double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
                 double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
                 double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
                 double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-                double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
+                double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
                 double multiplica;
                 if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                     multiplica = rmisLst;
@@ -3272,19 +3272,19 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     negativeResidualGuess = mchute2;
                 kontaiter++;
                 double velocityGuess = mchute2;
-                double completionFraction = state.march.cells[1].bet;
+                double complementaryFraction = state.march.cells[1].bet;
                 double voidFraction = state.march.cells[1].alf;
                 double firstCellPressure = state.march.cells[0].pres;
                 double firstCellTemperature = state.march.cells[0].temp;
-                double completionDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
+                double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
                 double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
                 double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-                double rmisL = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+                double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
                 double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
                 double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
                 double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
                 double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-                double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
+                double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
                 double multiplica;
                 if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                     multiplica = rmisLst;
@@ -3399,19 +3399,19 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 negativeResidualGuess = mchute2;
             kontaiter++;
             double velocityGuess = mchute2;
-            double completionFraction = state.march.cells[1].bet;
+            double complementaryFraction = state.march.cells[1].bet;
             double voidFraction = state.march.cells[1].alf;
             double firstCellPressure = state.march.cells[0].pres;
             double firstCellTemperature = state.march.cells[0].temp;
-            double completionDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
+            double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
             double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
             double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-            double rmisL = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+            double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
             double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
             double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
             double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
             double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-            double rmisLst = (1 - completionFraction) * rPst + completionFraction * rCst;
+            double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
             double multiplica;
             if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
                 multiplica = rmisLst;
@@ -3925,11 +3925,11 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
 
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
             double visMis = visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
-            rmis = completionDensityAtGuess;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+            rmis = complementaryDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq / kSecondsPerDay;
-            j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicC / complementaryDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);
@@ -3957,11 +3957,11 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, d
 
             double visC = state.march.cells[0].acsr.injg.FluidoPro.ViscGas(pchute, taux);
             double visMis = visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, taux);
-            rmis = completionDensityAtGuess;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, taux);
+            rmis = complementaryDensityAtGuess;
             double rlcA = (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions);
             double massicC = rlcA * state.march.cells[0].acsr.injg.QGas / kSecondsPerDay;
-            j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicC / complementaryDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);
@@ -4402,11 +4402,11 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
         if (state.march.input.flashCompleto < 1) {
             double visC = state.march.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
             double visMis = visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
-            rmis = completionDensityAtGuess;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+            rmis = complementaryDensityAtGuess;
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq / kSecondsPerDay;
-            j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicC / complementaryDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);
@@ -4437,11 +4437,11 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, d
         } else {
             double visC = state.march.cells[0].acsr.injg.FluidoPro.ViscGas(pchute, taux);
             double visMis = visC;
-            double completionDensityAtGuess = state.march.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, taux);
-            rmis = completionDensityAtGuess;
+            double complementaryDensityAtGuess = state.march.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, taux);
+            rmis = complementaryDensityAtGuess;
             double rlcA = (state.march.cells[0].acsr.injg.FluidoPro.Deng * kAirDensityAtStandardConditions);
             double massicC = rlcA * state.march.cells[0].acsr.injg.QGas / kSecondsPerDay;
-            j = (massicC / completionDensityAtGuess) / state.march.cells[0].duto.area;
+            j = (massicC / complementaryDensityAtGuess) / state.march.cells[0].duto.area;
             double reynolds;
             if (state.march.cells[0].duto.revest == 0)
                 reynolds = state.march.cells[0].Rey(state.march.cells[0].duto.a, j, rmis, visMis);

@@ -120,11 +120,11 @@ namespace {
                 double upstreamHydrostaticHead = sin(leftCell.duto.teta) * (0.5 * leftCell.dx) * (upstreamMixtureLiquidDensity * (1 - chokeUpstreamVoidFraction) + chokeUpstreamVoidFraction * upstreamGasDensity) * kGravity / kPascalPerKgfPerCm2Coarse;
                 double downstreamHydrostaticHead = sin(cell.duto.teta) * (0.5 * cell.dx) * (downstreamMixtureLiquidDensity * (1 - chokeDownstreamVoidFraction) + chokeDownstreamVoidFraction * cell.flui.MasEspGas(cell.pres, cell.temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
 
-                double quality = chokeUpstreamVoidFraction * upstreamGasDensity / (upstreamGasDensity * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
+                double upstreamGasMassFraction = chokeUpstreamVoidFraction * upstreamGasDensity / (upstreamGasDensity * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
 
                 double upstreamLiquidJouleThomson = (1. - betE) * leftCell.flui.JTL(leftCell.pres - upstreamHydrostaticHead, leftCell.temp) - betE / rholcJ;
                 double upstreamGasJouleThomson = leftCell.flui.JTG(leftCell.pres - upstreamHydrostaticHead, leftCell.temp);
-                sourceTemperature = chokeUpstreamTemperature + ((1. - quality) * upstreamLiquidJouleThomson + quality * upstreamGasJouleThomson) * (cell.pres + downstreamHydrostaticHead - leftCell.pres - upstreamHydrostaticHead);
+                sourceTemperature = chokeUpstreamTemperature + ((1. - upstreamGasMassFraction) * upstreamLiquidJouleThomson + upstreamGasMassFraction * upstreamGasJouleThomson) * (cell.pres + downstreamHydrostaticHead - leftCell.pres - upstreamHydrostaticHead);
 
                 sourceGasEnthalpy = leftCell.flui.EntalpGas(leftCell.pres, sourceTemperature);
                 sourceLiquidEnthalpy = leftCell.flui.EntalpLiq(leftCell.pres, sourceTemperature);
@@ -416,14 +416,14 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
     const double meanSuperficialLiquidVelocity = basis.liquidSuperficialVelocity;
     double referenceMixtureVelocity = fabs(meanSuperficialGasVelocity) + fabs(meanSuperficialLiquidVelocity);
     double producedLiquidDensity = cell.rpC;
-    double completionFluidDensity = cell.rcC;
-    double liquidDensity = (1. - betmed) * producedLiquidDensity + betmed * completionFluidDensity;
+    double complementaryDensity = cell.rcC;
+    double liquidDensity = (1. - betmed) * producedLiquidDensity + betmed * complementaryDensity;
     double gasDensity = cell.rgC;
     double liquidSpecificHeat = (1. - betmed) * cell.flui.CalorLiq(cell.presini, cell.temp) + betmed * cell.fluicol.CalorLiq(cell.presini, cell.temp);
     double liquidSpecificHeatConstantVolume = liquidSpecificHeat;
     double gasSpecificHeat = cell.flui.CalorGas(cell.presini, cell.temp);
     double gasSpecificHeatConstantVolume = cell.flui.CalorGasVolMod(cell.presini, cell.temp, cell.rgC);
-    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.presini, cell.temp) - betmed / completionFluidDensity;
+    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.presini, cell.temp) - betmed / complementaryDensity;
     double gasJouleThomson = cell.flui.JTG(cell.presini, cell.temp, cell.rgC);
     double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(cell.duto.teta);
 
@@ -492,7 +492,7 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
         .liquidSuperficialVelocity = meanSuperficialLiquidVelocity,
         .referenceMixtureVelocity = referenceMixtureVelocity,
         .rp = producedLiquidDensity,
-        .rc = completionFluidDensity,
+        .rc = complementaryDensity,
         .liquidDensity = liquidDensity,
         .gasDensity = gasDensity,
         .liquidHeatCapacity = liquidSpecificHeat,
@@ -673,12 +673,12 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
 
                 double upstreamHydrostaticHead = sin(leftCell.duto.teta) * (0.5 * leftCell.dx) * (upstreamMixtureLiquidDensity * (1 - chokeUpstreamVoidFraction) + chokeUpstreamVoidFraction * leftCell.rgC) * kGravity / kPascalPerKgfPerCm2Coarse;
                 double downstreamHydrostaticHead = sin(cell.duto.teta) * (0.5 * cell.dx) * (downstreamMixtureLiquidDensity * (1 - chokeDownstreamVoidFraction) + chokeDownstreamVoidFraction * cell.rgC) * kGravity / kPascalPerKgfPerCm2Coarse;
-                double quality = chokeUpstreamVoidFraction * leftCell.rgC / (leftCell.rgC * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
+                double upstreamGasMassFraction = chokeUpstreamVoidFraction * leftCell.rgC / (leftCell.rgC * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
                 sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.presini, leftCell.tempini);                                                                                                                              // leftCell.flui.CalorGas(leftCell.pres, leftCell.temp);
                 sourceLiquidSpecificHeat = (1 - leftCell.bet) * leftCell.flui.CalorLiq(leftCell.presini, leftCell.tempini) + leftCell.bet * leftCell.fluicol.CalorLiq(leftCell.presini, leftCell.tempini); //(1 - leftCell.bet) * leftCell.flui.CalorLiq(leftCell.pres, leftCell.temp)
                 double upstreamLiquidJouleThomson = (1. - betE) * leftCell.flui.JTL(leftCell.presini - upstreamHydrostaticHead, leftCell.tempini) - betE / rholcJ;                                                                                     //(1. - betE) * leftCell.flui.JTL(leftCell.pres - upstreamHydrostaticHead, leftCell.temp)
                 double upstreamGasJouleThomson = leftCell.flui.JTG(leftCell.presini - upstreamHydrostaticHead, leftCell.tempini);                                                                                                                   // leftCell.flui.JTG(leftCell.pres - upstreamHydrostaticHead, leftCell.temp);
-                sourceTemperature = upstreamTemperature + ((1. - quality) * upstreamLiquidJouleThomson / sourceLiquidSpecificHeat + quality * upstreamGasJouleThomson / sourceGasSpecificHeat) *
+                sourceTemperature = upstreamTemperature + ((1. - upstreamGasMassFraction) * upstreamLiquidJouleThomson / sourceLiquidSpecificHeat + upstreamGasMassFraction * upstreamGasJouleThomson / sourceGasSpecificHeat) *
                                   (cell.pres + downstreamHydrostaticHead - leftCell.pres - upstreamHydrostaticHead) * kPascalPerKgfPerCm2Variant;
 
                 sourceSpecificHeatRatio = leftCell.flui.ConstAdG(leftCell.presini, leftCell.tempini);
@@ -783,11 +783,11 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
                 double upstreamHydrostaticHead = sin(leftCell.duto.teta) * (0.5 * leftCell.dx) * (upstreamMixtureLiquidDensity * (1 - chokeUpstreamVoidFraction) + chokeUpstreamVoidFraction * leftCell.flui.MasEspGas(leftCell.pres, leftCell.temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
                 double downstreamHydrostaticHead = sin(cell.duto.teta) * (0.5 * cell.dx) * (downstreamMixtureLiquidDensity * (1 - chokeDownstreamVoidFraction) + chokeDownstreamVoidFraction * cell.flui.MasEspGas(cell.pres, cell.temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
 
-                double quality = chokeUpstreamVoidFraction * leftCell.flui.MasEspGas(leftCell.pres, leftCell.temp) / (leftCell.flui.MasEspGas(leftCell.pres, leftCell.temp) * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
+                double upstreamGasMassFraction = chokeUpstreamVoidFraction * leftCell.flui.MasEspGas(leftCell.pres, leftCell.temp) / (leftCell.flui.MasEspGas(leftCell.pres, leftCell.temp) * chokeUpstreamVoidFraction + upstreamMixtureLiquidDensity * (1. - chokeUpstreamVoidFraction));
 
                 double upstreamLiquidJouleThomson = (1. - betE) * leftCell.flui.JTL(leftCell.pres - upstreamHydrostaticHead, leftCell.temp) - betE / rholcJ;
                 double upstreamGasJouleThomson = leftCell.flui.JTG(leftCell.pres - upstreamHydrostaticHead, leftCell.temp);
-                sourceTemperature = upstreamTemperature + ((1. - quality) * upstreamLiquidJouleThomson + quality * upstreamGasJouleThomson) * (cell.pres + downstreamHydrostaticHead - leftCell.pres - upstreamHydrostaticHead);
+                sourceTemperature = upstreamTemperature + ((1. - upstreamGasMassFraction) * upstreamLiquidJouleThomson + upstreamGasMassFraction * upstreamGasJouleThomson) * (cell.pres + downstreamHydrostaticHead - leftCell.pres - upstreamHydrostaticHead);
 
                 sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.pres, leftCell.temp);
                 sourceLiquidSpecificHeat = (1 - leftCell.bet) * leftCell.flui.CalorLiq(leftCell.pres, leftCell.temp) + leftCell.bet * leftCell.fluicol.CalorLiq(leftCell.pres, leftCell.temp);
@@ -982,14 +982,14 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
         meanSuperficialLiquidVelocity = 0.;
     }
     double producedLiquidDensity = cell.flui.MasEspLiq(cell.pres, cell.temp);
-    double completionFluidDensity = cell.fluicol.MasEspFlu(cell.pres, cell.temp);
-    double liquidDensity = (1. - betmed) * producedLiquidDensity + betmed * completionFluidDensity;
+    double complementaryDensity = cell.fluicol.MasEspFlu(cell.pres, cell.temp);
+    double liquidDensity = (1. - betmed) * producedLiquidDensity + betmed * complementaryDensity;
     double gasDensity = cell.flui.MasEspGas(cell.pres, cell.temp);
     double liquidSpecificHeat = (1. - betmed) * cell.flui.CalorLiq(cell.pres, cell.temp) + betmed * cell.fluicol.CalorLiq(cell.pres, cell.temp);
     double liquidSpecificHeatConstantVolume = liquidSpecificHeat;
     double gasSpecificHeat = cell.flui.CalorGas(cell.pres, cell.temp);
     double gasSpecificHeatConstantVolume = cell.flui.CalorGasVolMod(cell.pres, cell.temp);
-    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.pres, cell.temp) - betmed / completionFluidDensity;
+    double liquidJouleThomson = (1. - betmed) * cell.flui.JTL(cell.pres, cell.temp) - betmed / complementaryDensity;
     double gasJouleThomson = cell.flui.JTG(cell.pres, cell.temp);
     double hydrostaticPower = (liquidDensity * meanSuperficialLiquidVelocity + gasDensity * meanSuperficialGasVelocity) * flowArea * kGravity * sin(cell.duto.teta);
 
@@ -1113,7 +1113,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     double interfacialWorkTerm = flowArea * cell.pres * kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
 
 
-    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (completionFluidDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt)); // / (timeCoefficient / cell.dt);
+    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (complementaryDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt)); // / (timeCoefficient / cell.dt);
 
     cell.FonteMudaFase /= latentHeatTerm;
 }
@@ -2676,7 +2676,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
                 double rcis = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
 
-                double liquidMixtureDensity = state.inletCompletionFraction * rcis + (1 - state.inletCompletionFraction) * liquidDensity;
+                double liquidMixtureDensity = state.inletComplementaryFraction * rcis + (1 - state.inletComplementaryFraction) * liquidDensity;
                 state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
 
                 double betI;
@@ -2686,7 +2686,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                     liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
                 } else {
-                    betI = state.inletCompletionFraction;
+                    betI = state.inletComplementaryFraction;
                     liquidDensity = (1 - betI) * (*cell.fluiL).MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * (*cell.fluiL).TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
                 }
@@ -2730,7 +2730,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 state.cells[1].alfL = state.cells[0].alf;
                 state.cells[0].alfL = state.inletVoidFraction;
                 state.cells[1].betL = state.cells[0].bet;
-                state.cells[0].betL = state.inletCompletionFraction;
+                state.cells[0].betL = state.inletComplementaryFraction;
             }
 
         } else if (aflu == 0) {
@@ -2858,7 +2858,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
     double rcis = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
 
-    double liquidMixtureDensity = state.inletCompletionFraction * rcis + (1 - state.inletCompletionFraction) * liquidDensity;
+    double liquidMixtureDensity = state.inletComplementaryFraction * rcis + (1 - state.inletComplementaryFraction) * liquidDensity;
     state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
 
     if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // beta doubt
@@ -2866,7 +2866,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     } else {
-        betI = state.inletCompletionFraction;
+        betI = state.inletComplementaryFraction;
         liquidDensity = (1 - betI) * (*cell.fluiL).MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * (*cell.fluiL).TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
     }

@@ -75,7 +75,7 @@ struct ThermalState {
     const double &inletTemperature;
     const double &inletQuality;
     double &inletVoidFraction;
-    const double &inletCompletionFraction;
+    const double &inletComplementaryFraction;
     ThermalEvolutionUpdater evolutionUpdater;
     const int &surfaceChokeOpen;
     const double &defaultInletTemperature;

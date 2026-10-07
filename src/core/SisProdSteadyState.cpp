@@ -118,7 +118,7 @@ namespace {
 /// advanceReverseCompositionalSteadyMass.
 ///
 /// What comes after this block in the two callers is not shared and must not
-/// be: advanceReverseSteadyMass zeroes the completion-fluid residence time and
+/// be: advanceReverseSteadyMass zeroes the complementary-liquid residence time and
 /// advanceReverseCompositionalSteadyMass propagates it from the cell upstream.
 void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
@@ -315,7 +315,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
     double residenceTimeSource = 0.;
     if (i == 1) {
         state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
-        // mass flow rates of produced liquid (oil+water), gas and completion fluid
+        // mass flow rates of produced liquid (oil+water), gas and complementary liquid
         // relation between the source at the left and at the right of a cell:
         state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
         state.cells[i].fontemassCL = state.cells[i - 1].fontemassCR;
@@ -419,10 +419,10 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
     else
         waterFlowRate = MasLiqProd / state.cells[i].flui.MasEspAgua(pmed, tmed);
-    double completionFlowRate;
-    completionFlowRate = state.cells[i].MComp / state.cells[i].rcCi;
+    double complementaryFlowRate;
+    complementaryFlowRate = state.cells[i].MComp / state.cells[i].rcCi;
     //////////////////////// wait//////////////////////////////////////
-    state.cells[i].bet = completionFlowRate / (oilFlowRate + waterFlowRate + completionFlowRate);
+    state.cells[i].bet = complementaryFlowRate / (oilFlowRate + waterFlowRate + complementaryFlowRate);
 
     state.cells[i].Mliqini = MasLiqProd;
     state.cells[i - 1].MliqiniR = state.cells[i].Mliqini;
@@ -547,7 +547,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
     double residenceTimeSource = 0.;
     if (i == 1) {
         state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
-        // mass flow rates of produced liquid (oil+water), gas and completion fluid
+        // mass flow rates of produced liquid (oil+water), gas and complementary liquid
         // relation between the source at the left and at the right of a cell:
         state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
         state.cells[i].fontemassCL = state.cells[i - 1].fontemassCR;
@@ -660,10 +660,10 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
     else
         waterFlowRate = MasLiqProd / state.cells[i].flui.MasEspAgua(pmed, tmed);
-    double completionFlowRate;
-    completionFlowRate = state.cells[i].MComp / state.cells[i].rcCi;
+    double complementaryFlowRate;
+    complementaryFlowRate = state.cells[i].MComp / state.cells[i].rcCi;
     //////////////////////// wait//////////////////////////////////////
-    state.cells[i].bet = completionFlowRate / (oilFlowRate + waterFlowRate + completionFlowRate);
+    state.cells[i].bet = complementaryFlowRate / (oilFlowRate + waterFlowRate + complementaryFlowRate);
 
     state.cells[i].Mliqini = MasLiqProd;
     state.cells[i - 1].MliqiniR = state.cells[i].Mliqini;
@@ -1168,21 +1168,21 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
         qostd2 = 0.;
 
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * left.solutionGasRatio / left.oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * left.solutionGasRatio / left.oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
-        if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
-            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * left.oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
+            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * left.oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e6)
             state.cells[i].flui.RGO = (*state.globals).RGOMax;
     }
@@ -1223,8 +1223,8 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
     }
 
     if (state.input.tipoFluido == 0) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the liquid source can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the liquid source can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -1244,9 +1244,9 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, left.tmed);
-        if (fabs(oilFlowRate + waterFlowRate + completionFlowRate) > 1e-15)
-            state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, left.tmed);
+        if (fabs(oilFlowRate + waterFlowRate + complementaryFlowRate) > 1e-15)
+            state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
         else
             state.cells[i].bet = state.cells[i - 1].bet;
     } else {
@@ -1261,14 +1261,14 @@ void carryUpstreamCompositionIntoCell(const SteadyStateState &state, SteadyFace 
     // here variables such as the separator GOR, BSW, API, gas density and others do not change; they equal
     // the values of cell i-1
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // the volume of light components is updated here,
     // following the equations in the report; it is irrelevant to the steady state, but
     // must be computed, as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * left.solutionGasRatio / left.oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * left.solutionGasRatio / left.oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -1298,7 +1298,7 @@ void carryUpstreamCompositionIntoCell(const SteadyStateState &state, SteadyFace 
         state.cells[i].flui.atualizaPropCompStandard();
     }
 
-    if (state.input.tipoFluido == 0) { // re-evaluates the completion-fluid volume fraction;
+    if (state.input.tipoFluido == 0) { // re-evaluates the complementary-liquid volume fraction;
         // even without a source it can change, because the produced liquid shrinks
         double oilVolumeFactorInSitu;
         double waterVolumeFactorInSitu;
@@ -1314,12 +1314,12 @@ void carryUpstreamCompositionIntoCell(const SteadyStateState &state, SteadyFace 
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet);
-        double completionFlowRate;
-        completionFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, left.tmed);
+        double complementaryFlowRate;
+        complementaryFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, left.tmed);
 
         //////////////////////// wait//////////////////////////////////////
-        if (fabs(oilFlowRate + waterFlowRate + completionFlowRate) > 1e-15)
-            state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        if (fabs(oilFlowRate + waterFlowRate + complementaryFlowRate) > 1e-15)
+            state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
         else
             state.cells[i].bet = state.cells[i - 1].bet;
     } else {
@@ -1348,7 +1348,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     readCompositionalSourceProperties(state, i, source.tit, fluF, source.oilVolumeFactor, source.waterVolumeFactor, source.waterCut, source.rhoO, source.rhoW, source.residenceTime);
 
     state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
-    // mass flow rates of produced liquid (oil+water), gas and completion fluid
+    // mass flow rates of produced liquid (oil+water), gas and complementary liquid
     // relation between the source at the left and at the right of a cell:
     state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
     state.cells[i].fontemassCL = state.cells[i - 1].fontemassCR;
@@ -1439,13 +1439,13 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
             state.cells[i].FW = 1.;
         double oilDensity = state.cells[i].flui.MasEspoleo(pmed, left.tmed);
         double waterDensity = state.cells[i].flui.MasEspAgua(pmed, left.tmed);
-        double completionDensity = state.cells[i].fluicol.MasEspFlu(pmed, left.tmed);
-        double denom = completionDensity * state.cells[i].bet + (1 - state.cells[i].bet) * state.cells[i].FW * waterDensity;
+        double complementaryDensity = state.cells[i].fluicol.MasEspFlu(pmed, left.tmed);
+        double denom = complementaryDensity * state.cells[i].bet + (1 - state.cells[i].bet) * state.cells[i].FW * waterDensity;
         if (titulo < 1. - 1e-15) {
             denom += (1 - state.cells[i].bet) * (1. - state.cells[i].FW) * oilDensity / (1. - titulo);
             state.cells[i].QL = state.cells[i].MC / denom;
 
-            state.cells[i].Mliqini = state.cells[i].QL * (state.cells[i].bet * completionDensity + (1 - state.cells[i].bet) * (state.cells[i].FW * waterDensity +
+            state.cells[i].Mliqini = state.cells[i].QL * (state.cells[i].bet * complementaryDensity + (1 - state.cells[i].bet) * (state.cells[i].FW * waterDensity +
                                                                                             (1. - state.cells[i].FW) * oilDensity));
         } else if (state.cells[i].flui.BSW > 1.e-15 || state.cells[i - 1].betI > 1.e-15) {
             state.cells[i].Mliqini = state.cells[i - 1].QL * state.cells[i - 1].rpCi * (1. - state.cells[i - 1].betI) * (1. - left.titV) +
@@ -1458,22 +1458,22 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         }
     } else {
         double oilDensity = state.cells[i].flui.MasEspoleo(pmed, left.tmed);
-        double completionDensity = state.cells[i].fluicol.MasEspFlu(pmed, left.tmed);
+        double complementaryDensity = state.cells[i].fluicol.MasEspFlu(pmed, left.tmed);
         double oilFlowRate = left.mHidro * (1. - titulo) / oilDensity;
-        double completionFlowRate = left.mComp / completionDensity;
-        if (fabs(oilFlowRate + completionFlowRate) > 1e-15)
-            state.cells[i].bet = completionFlowRate / (oilFlowRate + completionFlowRate);
+        double complementaryFlowRate = left.mComp / complementaryDensity;
+        if (fabs(oilFlowRate + complementaryFlowRate) > 1e-15)
+            state.cells[i].bet = complementaryFlowRate / (oilFlowRate + complementaryFlowRate);
         else
             state.cells[i].bet = state.cells[i - 1].bet;
-        double completionFraction = state.cells[i].bet;
+        double complementaryFraction = state.cells[i].bet;
         double denom;
         if (titulo < 1. - 1e-15) {
-            denom = completionDensity * completionFraction + (1. - completionFraction) * oilDensity;
+            denom = complementaryDensity * complementaryFraction + (1. - complementaryFraction) * oilDensity;
             state.cells[i].QL = (left.mHidro * (1. - titulo) + left.mComp) / denom;
-            state.cells[i].Mliqini = state.cells[i].QL * (state.cells[i].bet * completionDensity + (1 - state.cells[i].bet) * oilDensity);
-        } else if (completionFraction > (1 - 1e-15)) {
+            state.cells[i].Mliqini = state.cells[i].QL * (state.cells[i].bet * complementaryDensity + (1 - state.cells[i].bet) * oilDensity);
+        } else if (complementaryFraction > (1 - 1e-15)) {
             state.cells[i].Mliqini = state.cells[i - 1].QL * state.cells[i - 1].betI * state.cells[i - 1].rcCi + state.cells[i - 1].fontemassCR;
-            state.cells[i].QL = state.cells[i].Mliqini / (completionDensity * completionFraction + (1. - completionFraction) * oilDensity);
+            state.cells[i].QL = state.cells[i].Mliqini / (complementaryDensity * complementaryFraction + (1. - complementaryFraction) * oilDensity);
         } else {
             state.cells[i].Mliqini = 0.;
             state.cells[i].QL = 0.;
@@ -1521,22 +1521,22 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
     // here variables such as the separator GOR, BSW, API, gas density and others do not change; they equal
     // the values of cell i-1
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // the volume of light components is updated here,
     // following the equations in the report; it is irrelevant to the steady state, but
     // must be computed, as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
-        if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
-            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e7)
             state.cells[i].flui.RGO = (*state.globals).RGOMax;
     } else if (mudaRGO == 1)
@@ -1559,7 +1559,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
         state.cells[i].flui.RenovaFluido();
         correctGasSpecificGravity(state, i);
     }
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6) { // re-evaluates the completion-fluid volume fraction;
+    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6) { // re-evaluates the complementary-liquid volume fraction;
         // even without a source it can change, because the produced liquid shrinks
         if (state.cells[i].flui.RGO < 1e6)
             oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed);
@@ -1573,14 +1573,14 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet);
-        double completionFlowRate;
+        double complementaryFlowRate;
         if (state.cells[i].flui.RGO < 1e7)
-            completionFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+            complementaryFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
         else
-            completionFlowRate = 0.;
+            complementaryFlowRate = 0.;
         //////////////////////// wait//////////////////////////////////////
-        if ((fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate)) > 0)
-            state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        if ((fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate)) > 0)
+            state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
         else
             state.cells[i].bet = 0.;
     } else
@@ -1611,21 +1611,21 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
     }
 
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
-        if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
-            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
+            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e7)
             state.cells[i].flui.RGO = (*state.globals).RGOMax;
     }
@@ -1655,7 +1655,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
     }
 
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && state.cells[i - 1].alf < 1. - (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
+        // re-evaluates the complementary-liquid volume fraction;
         // even without a liquid source it can change,
         // because the produced liquid shrinks
         oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed);
@@ -1667,8 +1667,8 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet);
-        double completionFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -1715,21 +1715,21 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
     }
 
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
-        if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
-            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
+            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e7)
             state.cells[i].flui.RGO = (*state.globals).RGOMax;
     }
@@ -1806,7 +1806,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
     }
 
     if (state.cells[i - 1].bet > (*state.globals).localtiny && state.cells[i - 1].alf < 1. - (*state.globals).localtiny * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
+        // re-evaluates the complementary-liquid volume fraction;
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterCutNeighbour = state.cells[i].flui.BSW * waterVolumeFactorNeighbour / (oilVolumeFactorNeighbour + waterVolumeFactorNeighbour * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorNeighbour);
@@ -1825,9 +1825,9 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
 
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
 
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -1864,14 +1864,14 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
     // of the cell and the gas associated with the liquid source
     double qgstd = qostd1 * state.cells[i - 1].flui.RGO + qostd2 * state.cells[i - 1].acsr.injl.FluidoPro.RGO;
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -1879,8 +1879,8 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
         if (state.input.trackRGO == -1) {
             // this switch is not used and is kept here in reserve; this
             // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
-            if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
-                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
+                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
             if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
                 state.cells[i].flui.RGO = (*state.globals).RGOMax;
         } else {
@@ -1962,8 +1962,8 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
     }
     if ((state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny * 1e-6) &&
         fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the liquid source can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the liquid source can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -1980,8 +1980,8 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -2018,23 +2018,23 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
     // of the cell and the gas associated with the IPR
     double qgstd = qostd1 * state.cells[i - 1].flui.RGO + qostd2 * state.cells[i - 1].acsr.ipr.FluidoPro.RGO;
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
         if ((state.cells[i - 1].fontemassLR) > 1e-15 && (state.cells[i - 1].fontemassGR) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
+            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
                 mudaRGO == 1 && fabs(state.cells[i - 1].fontemassLR) > 1e-15)
-                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
             if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
                 state.cells[i].flui.RGO = (*state.globals).RGOMax;
         } else
@@ -2115,8 +2115,8 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
         correctGasSpecificGravity(state, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the IPR can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the IPR can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2133,8 +2133,8 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -2171,14 +2171,14 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
     // of the cell and the gas associated with the liquid source
     double qgstd = qostd1 * state.cells[i - 1].flui.RGO + qostd2 * state.cells[i - 1].acsr.injm.FluidoPro.RGO;
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
@@ -2186,8 +2186,8 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
         if ((state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
-                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
+                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
             if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
                 state.cells[i].flui.RGO = (*state.globals).RGOMax;
         } else
@@ -2274,8 +2274,8 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
     }
     if ((state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny) &&
         fabs(state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP + state.cells[i - 1].acsr.injm.MassC) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the liquid source can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the liquid source can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2292,8 +2292,8 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -2332,22 +2332,22 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
         qgstd = qostd1 * state.cells[i - 1].flui.RGO + state.cells[i - 1].fontemassGR / (fluF.Deng * kAirDensityAtStandardConditions);
     }
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
 
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
-        if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny * 1e-6) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
-            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny * 1e-6) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
+            state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
             state.cells[i].flui.RGO = (*state.globals).RGOMax;
     } else { // new separator GOR, changed by the IPR
@@ -2418,8 +2418,8 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
         correctGasSpecificGravity(state, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny * 1e-6) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the leak can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the leak can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2436,8 +2436,8 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -2474,23 +2474,23 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
     // of the cell and the gas associated with the IPR
     double qgstd = qostd1 * state.cells[i - 1].flui.RGO + qostd2 * state.cells[i - 1].acsr.radialPoro.flup.RGO;
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
         if (fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
+            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
                 mudaRGO == 1 && fabs(state.cells[i - 1].fontemassLR) > 1e-15)
-                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
             if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
                 state.cells[i].flui.RGO = (*state.globals).RGOMax;
         } else
@@ -2571,8 +2571,8 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
         correctGasSpecificGravity(state, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the IPR can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the IPR can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2589,8 +2589,8 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -2627,23 +2627,23 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, 
     // of the cell and the gas associated with the IPR
     double qgstd = qostd1 * state.cells[i - 1].flui.RGO + qostd2 * state.cells[i - 1].acsr.poroso2D.dados.flup.RGO;
     double liquidHoldup = 1 - state.cells[i - 1].alf;
-    double completionFraction = state.cells[i - 1].bet;
+    double complementaryFraction = state.cells[i - 1].bet;
     double bsw = state.cells[i - 1].FW;
     double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rhogST = state.cells[i - 1].flui.Deng * kAirDensityAtStandardConditions;
     // volume of light components in cell i, following the equations in the report;
     // irrelevant to the steady state, but it must be computed,
     // as the transient takes it as input
-    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - completionFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
+    state.cells[i - 1].VolLeveST = (((1 - liquidHoldup) * rhog / rhogST) + liquidHoldup * (1 - complementaryFraction) * (1. - bsw) * solutionGasRatio / oilVolumeFactor);
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // this switch is not used and is kept here in reserve; this
         // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
         if (fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && completionFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
+            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
                 mudaRGO == 1 && fabs(state.cells[i - 1].fontemassLR) > 1e-15)
-                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - completionFraction) * (1 - bsw));
+                state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
             if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
                 state.cells[i].flui.RGO = (*state.globals).RGOMax;
         } else
@@ -2725,8 +2725,8 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, 
         correctGasSpecificGravity(state, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-        // re-evaluates the completion-fluid volume fraction;
-        // note that the IPR can have a completion-fluid fraction
+        // re-evaluates the complementary-liquid volume fraction;
+        // note that the IPR can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2743,8 +2743,8 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, 
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
-        double completionFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-        state.cells[i].bet = fabs(completionFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(completionFlowRate));
+        double complementaryFlowRate = (state.cells[i - 1].QL * (state.cells[i - 1].bet) + qlcF) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+        state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
     } else
         state.cells[i].bet = state.cells[i - 1].bet;
 }
@@ -3037,7 +3037,7 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
     }
 
     state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
-    // mass flow rates of produced liquid (oil+water), gas and completion fluid
+    // mass flow rates of produced liquid (oil+water), gas and complementary liquid
     // relation between the source at the left and at the right of a cell:
     state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
     state.cells[i].fontemassCL = state.cells[i - 1].fontemassCR;
@@ -5962,28 +5962,28 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
     for (int i = state.lastCell; i > 0; i--) {
         if (liquidFlowRate > 0. || gasFlowRate > 0.) {
             taux = state.input.celp[0].textern;
-            double completionFraction = 0.;
+            double complementaryFraction = 0.;
             double visC = state.cells[i].fluicol.VisFlu(pchute, taux);
             double visP = state.cells[i].flui.ViscOleo(pchute, taux);
             double visG = state.cells[i].flui.ViscGas(pchute, taux);
-            double visMis = (1 - completionFraction) * visP + completionFraction * visC;
-            double completionDensityAtGuess = state.cells[i].fluicol.MasEspFlu(pchute, taux);
+            double visMis = (1 - complementaryFraction) * visP + complementaryFraction * visC;
+            double complementaryDensityAtGuess = state.cells[i].fluicol.MasEspFlu(pchute, taux);
             double liquidDensityAtGuess = state.cells[i].flui.MasEspLiq(pchute, taux);
             double gasDensityAtGuess = state.cells[i].flui.MasEspGas(pchute, taux);
-            rmis = (1 - completionFraction) * liquidDensityAtGuess + completionFraction * completionDensityAtGuess;
+            rmis = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
             double rlpA = state.cells[i].flui.MasEspLiq(1., 15.);
             double rlcA = state.cells[i].fluicol.MasEspFlu(1.001, 15.);
-            double massicC = rlcA * liquidFlowRate * completionFraction;
-            double massic = rlpA * liquidFlowRate * (1. - completionFraction);
+            double massicC = rlcA * liquidFlowRate * complementaryFraction;
+            double massic = rlpA * liquidFlowRate * (1. - complementaryFraction);
             double Rhogs = state.cells[i].flui.Deng * kAirDensityAtStandardConditions;
             double Rhols = (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) * (1 - state.cells[i].flui.BSW) + 1000. * state.cells[i].flui.Denag * state.cells[i].flui.BSW;
             double multiplicador = (Rhols + state.cells[i].flui.RGO * Rhogs * (1 - state.cells[i].flui.BSW));
-            massic = 1 * liquidFlowRate * (1. - completionFraction) * multiplicador;
+            massic = 1 * liquidFlowRate * (1. - complementaryFraction) * multiplicador;
             double fracmasshidra = state.cells[i].flui.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic;
             double massicG = fracmasshidra * massic + gasFlowRate * Rhogs;
-            j = (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess) / state.cells[i].duto.area;
-            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / completionDensityAtGuess + massicG / gasDensityAtGuess);
+            j = (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess) / state.cells[i].duto.area;
+            double alfmis = (massicG / gasDensityAtGuess) / (massicP / liquidDensityAtGuess + massicC / complementaryDensityAtGuess + massicG / gasDensityAtGuess);
             rmis = (1 - alfmis) * rmis + alfmis * gasDensityAtGuess;
             visMis = (1 - alfmis) * visMis + alfmis * visG;
             double mixtureReynolds;
@@ -6054,11 +6054,11 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
         state.cells[state.lastCell].pres = pchute;
         double visC = state.cells[0].acsr.injl.fluidocol.VisFlu(pchute, taux);
         double visMis = visC;
-        double completionDensityAtGuess = state.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
-        rmis = completionDensityAtGuess;
+        double complementaryDensityAtGuess = state.cells[0].acsr.injl.fluidocol.MasEspFlu(pchute, taux);
+        rmis = complementaryDensityAtGuess;
         double rlcA = state.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
         double massicC = rlcA * liquidFlowRate;
-        j = (massicC / completionDensityAtGuess) / state.cells[0].duto.area;
+        j = (massicC / complementaryDensityAtGuess) / state.cells[0].duto.area;
         double mixtureReynolds;
         if (state.cells[0].duto.revest == 0)
             mixtureReynolds = state.cells[0].Rey(state.cells[0].duto.a, j, rmis, visMis);
@@ -6093,12 +6093,12 @@ double secondaryBranchHydrostatic(const SteadyStateState &state, double titulo) 
     else
         pchute = state.cells[0].pres;
     double taux;
-    double completionFraction;
+    double complementaryFraction;
     if (state.input.ConContEntrada == 1)
-        completionFraction = state.input.CCPres.bet[0];
+        complementaryFraction = state.input.CCPres.bet[0];
     else
-        completionFraction = state.cells[0].bet;
-    state.cells[0].bet = completionFraction;
+        complementaryFraction = state.cells[0].bet;
+    state.cells[0].bet = complementaryFraction;
     taux = state.input.celp[0].textern;
     double titRef = state.cells[0].flui.FracMassHidra(pchute, taux);
     if (state.input.ConContEntrada == 1)
@@ -6112,7 +6112,7 @@ double secondaryBranchHydrostatic(const SteadyStateState &state, double titulo) 
         titEntra = state.input.CCPres.tit[0];
     else
         titEntra = titulo;
-    state.cells[0].alf = titEntra * (rhol * (1. - completionFraction) + rhoc * completionFraction) / (rhog * (1. - titEntra) + titEntra * (rhol * (1. - completionFraction) + rhoc * completionFraction));
+    state.cells[0].alf = titEntra * (rhol * (1. - complementaryFraction) + rhoc * complementaryFraction) / (rhog * (1. - titEntra) + titEntra * (rhol * (1. - complementaryFraction) + rhoc * complementaryFraction));
     for (int i = 0; i < state.lastCell; i++) {
         taux = state.input.celp[i].textern;
         rhol = state.cells[i].flui.MasEspLiq(pchute, taux);
@@ -6121,11 +6121,11 @@ double secondaryBranchHydrostatic(const SteadyStateState &state, double titulo) 
         double tit0 = state.cells[i].flui.FracMassHidra(pchute, taux);
         double delTit = tit0 - titRef;
         double novoTit = titulo + delTit * (titulo / titRef);
-        double alfa = novoTit * (rhol * (1. - completionFraction) + rhoc * completionFraction) / (rhog * (1. - novoTit) + novoTit * (rhol * (1. - completionFraction) + rhoc * completionFraction));
+        double alfa = novoTit * (rhol * (1. - complementaryFraction) + rhoc * complementaryFraction) / (rhog * (1. - novoTit) + novoTit * (rhol * (1. - complementaryFraction) + rhoc * complementaryFraction));
         state.cells[i + 1].alf = alfa;
-        state.cells[i + 1].bet = completionFraction;
+        state.cells[i + 1].bet = complementaryFraction;
 
-        double rhomix = (1. - alfa) * ((1. - completionFraction) * rhol + completionFraction * rhoc) + alfa * rhog;
+        double rhomix = (1. - alfa) * ((1. - complementaryFraction) * rhol + complementaryFraction * rhoc) + alfa * rhog;
         double dxmed = 0.5 * (state.cells[i].dx + state.cells[i + 1].dx);
         pchute -= ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed) / kPascalPerKgfPerCm2);
         state.cells[i + 1].pres = pchute;

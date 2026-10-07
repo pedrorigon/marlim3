@@ -69,7 +69,7 @@ struct TransientStepState {
     /// SProd::transient.alteraTempo -- written.
     int &timeChanged;
     /// SProd::betaE -- written.
-    double &inletCompletionFraction;
+    double &inletComplementaryFraction;
     /// SProd::gasLift.celInter -- written.
     int &interfaceCell;
     /// SProd::transient.contaMaster1 -- written.
@@ -89,7 +89,7 @@ struct TransientStepState {
     /// SProd::transient.dtSimTotal -- written.
     double &totalSimulationTimeStep;
     /// SProd::transient.fontemassCRBuf -- written.
-    double &bufferedCompletionMassSource;
+    double &bufferedComplementaryMassSource;
     /// SProd::transient.fontemassGRBuf -- written.
     double &bufferedGasMassSource;
     /// SProd::transient.fontemassPRBuf -- written.

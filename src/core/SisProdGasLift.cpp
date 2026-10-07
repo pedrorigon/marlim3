@@ -1135,7 +1135,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     double perimeter = state.cells[cellIndex].duto.peri;
     double meanTemperature;
     meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
-    double completionFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].presaux, meanTemperature);
+    double injectedFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].presaux, meanTemperature);
 
     double vel1 = state.cells[cellIndex - 1].QL / (area);
 
@@ -1144,10 +1144,10 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     double reynolds;
     reynolds = state.cells[cellIndex].Rey(
         characteristicDiameter(state.cells[cellIndex].duto.revest, state.cells[cellIndex].duto.a, area, perimeter),
-        vel1, completionFluidDensity, visc);
+        vel1, injectedFluidDensity, visc);
     double frictionFactor = state.cells[cellIndex].fric(reynolds, state.cells[cellIndex].duto.rug / diameter);
-    double frictionGradient = state.cells[cellIndex].dPdLFric * 0.5 * frictionFactor * completionFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
-    double hydrostaticGradient = state.cells[cellIndex].dPdLHidro * kGravity * sin(state.cells[cellIndex].duto.teta) * completionFluidDensity * dx;
+    double frictionGradient = state.cells[cellIndex].dPdLFric * 0.5 * frictionFactor * injectedFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
+    double hydrostaticGradient = state.cells[cellIndex].dPdLHidro * kGravity * sin(state.cells[cellIndex].duto.teta) * injectedFluidDensity * dx;
 
     double pressureDrop = (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
     double meanPressure = state.cells[cellIndex - 1].pres;
@@ -1157,7 +1157,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     area = 0.25 * M_PI * diameter * diameter;
     perimeter = state.cells[cellIndex].dutoL.peri;
     meanTemperature = state.cells[cellIndex - 1].temp;
-    completionFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
+    injectedFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
 
     if (cellIndex > 1)
         vel1 = state.cells[cellIndex - 2].QL / (area);
@@ -1166,10 +1166,10 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
 
     reynolds = state.cells[cellIndex].Rey(
         characteristicDiameter(state.cells[cellIndex].dutoL.revest, state.cells[cellIndex].dutoL.a, area, perimeter),
-        vel1, completionFluidDensity, visc);
+        vel1, injectedFluidDensity, visc);
     frictionFactor = state.cells[cellIndex - 1].fric(reynolds, state.cells[cellIndex].dutoL.rug / diameter);
-    frictionGradient = state.cells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * completionFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
-    hydrostaticGradient = state.cells[cellIndex - 1].dPdLHidro * kGravity * sin(state.cells[cellIndex].dutoL.teta) * completionFluidDensity * dx;
+    frictionGradient = state.cells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * injectedFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
+    hydrostaticGradient = state.cells[cellIndex - 1].dPdLHidro * kGravity * sin(state.cells[cellIndex].dutoL.teta) * injectedFluidDensity * dx;
     pressureDrop += (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
     return pressureDrop;
 }

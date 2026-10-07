@@ -205,7 +205,7 @@ void updateFirstCell(const TransientStepState &state, int i, int expli) {
         double rhogC = state.cells[i].flui.MasEspGas(state.inletPressure, state.inletTemperature);
         double rhopC = state.cells[i].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
         double rhocC = state.cells[i].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-        double rholC = rhopC * (1 - state.inletCompletionFraction) + rhocC * state.inletCompletionFraction;
+        double rholC = rhopC * (1 - state.inletComplementaryFraction) + rhocC * state.inletComplementaryFraction;
         state.cells[0].QL = state.cells[0].Mliqini / rholC;
         state.cells[1].QLL = state.cells[0].QL;
         state.cells[0].QG = (state.cells[0].MC - state.cells[0].Mliqini) / rhogC;
@@ -380,7 +380,7 @@ void updateFlowRates(const TransientStepState &state) {
                 double rhogC = state.cells[i].flui.MasEspGas(state.inletPressure, state.inletTemperature);
                 double rhopC = state.cells[i].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
                 double rhocC = state.cells[i].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-                double rholC = rhopC * (1 - state.inletCompletionFraction) + rhocC * state.inletCompletionFraction;
+                double rholC = rhopC * (1 - state.inletComplementaryFraction) + rhocC * state.inletComplementaryFraction;
                 state.cells[0].QL = state.cells[0].Mliqini / rholC;
                 state.cells[1].QLL = state.cells[0].QL;
                 state.cells[0].QG = (state.cells[0].MC - state.cells[0].Mliqini) / rhogC;
@@ -483,7 +483,7 @@ void updateBufferFromCells(const TransientStepState &state) {
     state.cells[state.lastCell - 1].MliqiniRBuf = state.cells[state.lastCell].Mliqini;
 
     int lastInteriorCell = state.lastCell - 1;
-    state.bufferedCompletionMassSource = state.cells[lastInteriorCell + 1].fontemassCR;
+    state.bufferedComplementaryMassSource = state.cells[lastInteriorCell + 1].fontemassCR;
 
     state.bufferedLiquidMassSource = state.cells[lastInteriorCell + 1].fontemassLR;
 
@@ -800,8 +800,8 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
                             (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
         double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
 
-        state.bufferedCompletionMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
-        state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedCompletionMassSource);
+        state.bufferedComplementaryMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
+        state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedComplementaryMassSource);
         state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
     } else {
         if (surfaceChokeIsOpen(state) &&
@@ -815,11 +815,11 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             masliq = sinal * maxSup * (1. - quality);
             masgas = sinal * maxSup * quality;
             state.bufferedLiquidMassSource = -masliq * (1 - betSup) * rholp / rholmix;
-            state.bufferedCompletionMassSource = -masliq * betSup * rholc / rholmix;
+            state.bufferedComplementaryMassSource = -masliq * betSup * rholc / rholmix;
             state.bufferedGasMassSource = -masgas;
         }
         if (state.surfaceChokeMassFlag == 1 && (*state.globals).chaverede == 1) {
-            state.cells[state.lastCell].fontemassCR = state.bufferedCompletionMassSource;
+            state.cells[state.lastCell].fontemassCR = state.bufferedComplementaryMassSource;
             state.cells[state.lastCell].fontemassLR = state.bufferedLiquidMassSource;
             state.cells[state.lastCell].fontemassGR = state.bufferedGasMassSource;
 
@@ -841,8 +841,8 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
                                 (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
             double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
 
-            state.bufferedCompletionMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
-            state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedCompletionMassSource);
+            state.bufferedComplementaryMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
+            state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedComplementaryMassSource);
             state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
         }
     }
@@ -1417,7 +1417,7 @@ void updatePig(const TransientStepState &state) {
         state.cells[0].betI = state.cells[0].bet;
         state.cells[0].betLI = state.cells[0].bet;
     } else {
-        state.cells[0].betI = state.inletCompletionFraction;
+        state.cells[0].betI = state.inletComplementaryFraction;
         if ((state.cells[0].MC - state.cells[0].Mliqini) * 0 + state.cells[0].Mliqini < 0.)
             state.cells[0].betI = state.cells[0].betPigE; // beta test
         state.cells[0].betLI = state.cells[0].betI;
@@ -1435,7 +1435,7 @@ void updatePig(const TransientStepState &state) {
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo) {
 #pragma omp parallel for num_threads((*state.globals).ntrd)
     for (int i = 0; i <= state.lastCell; i++) {
-        state.cells[i].GeraLocal(state.outletPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletCompletionFraction, ciclo,
+        state.cells[i].GeraLocal(state.outletPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletComplementaryFraction, ciclo,
                             state.fullModel, state.endNode, state.input.corrigeContSep, state.surfaceChoke.AreaGarg, vexpli);
         for (int j = 0; j < 6; j++) {
             state.productionMatrix[2 * i][j - 3] = state.cells[i].local[0][j];
@@ -1494,9 +1494,9 @@ void refreshInletCondition(const TransientStepState &state) {
             double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
             double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
             double rcST = state.cells[0].fluicol.MasEspFlu(1.01, 20.);
-            double completionDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-            double rlMix = state.inletCompletionFraction * completionDensity + (1. - state.inletCompletionFraction) * liquidDensity;
-            double val1 = ((1. - state.inletCompletionFraction) * liquidDensity * titH / (1. - titH));
+            double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+            double rlMix = state.inletComplementaryFraction * complementaryDensity + (1. - state.inletComplementaryFraction) * liquidDensity;
+            double val1 = ((1. - state.inletComplementaryFraction) * liquidDensity * titH / (1. - titH));
             state.inletQuality = val1 / (rlMix + val1);
         } else if (state.input.tipoFluido == 1) {
             double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
@@ -1504,12 +1504,12 @@ void refreshInletCondition(const TransientStepState &state) {
             double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
             double quality = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
             double rcST = state.cells[0].fluicol.MasEspFlu(1.01, 20.);
-            double completionDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-            double val1 = (rcST / completionDensity) * (gasDensity / rgST) * state.input.CCPres.bet[0] / quality;
+            double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+            double val1 = (rcST / complementaryDensity) * (gasDensity / rgST) * state.input.CCPres.bet[0] / quality;
             double val2 = (gasDensity / liquidDensity) * (1 - quality) / quality;
             double titT = gasDensity / (((1. - quality) / quality) * (gasDensity / liquidDensity) + gasDensity + val1);
             state.inletQuality = titT;
-            state.inletCompletionFraction = val1 / (val2 + val1);
+            state.inletComplementaryFraction = val1 / (val2 + val1);
         }
     }
 }
@@ -1710,9 +1710,9 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
 
     double gasMassSource = 0.;
     double liquidMassSource = 0.;
-    double completionMassSource = 0.;
+    double complementaryMassSource = 0.;
     if (state.step.fullModel == 1) {
-        completionMassSource = state.step.cells[state.step.lastCell].fontemassCR;
+        complementaryMassSource = state.step.cells[state.step.lastCell].fontemassCR;
         liquidMassSource = state.step.cells[state.step.lastCell].fontemassLR;
         gasMassSource = state.step.cells[state.step.lastCell].fontemassGR;
     }
@@ -1760,7 +1760,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
             }
         }
 
-        state.step.cells[state.step.lastCell].fontemassCR = completionMassSource;
+        state.step.cells[state.step.lastCell].fontemassCR = complementaryMassSource;
         state.step.cells[state.step.lastCell].fontemassLR = liquidMassSource;
         state.step.cells[state.step.lastCell].fontemassGR = gasMassSource;
 
@@ -2131,7 +2131,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         state.initialGasSurfacePressure = state.step.gasSurfacePressure;
         state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
                      state.defaultInletTemperature, state.initialGasPressure, state.initialGasTemperature,
-                     state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletCompletionFraction, (*state.step.globals).lixo5, state.step.timeStep);
+                     state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletComplementaryFraction, (*state.step.globals).lixo5, state.step.timeStep);
         refreshInletCondition(state.step);
 
         for (int i = 0; i <= state.step.input.nvalv; i++)

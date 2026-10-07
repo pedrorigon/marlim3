@@ -25,7 +25,7 @@ void storePreviousFractionsAndMovePigs(const CompositionState &state) {
         state.cells[0].betLini = state.cells[0].betini;
     } else {
         state.cells[0].alfLini = state.inletQuality;
-        state.cells[0].betLini = state.inletCompletionFraction;
+        state.cells[0].betLini = state.inletComplementaryFraction;
     }
 
     state.previousMovingPigCount = state.movingPigCount;
@@ -232,12 +232,12 @@ struct BlackOilFace {
     double yco2G;
 };
 
-/// Cell i itself: its liquid holdup, completion fraction and in-situ black-oil
+/// Cell i itself: its liquid holdup, complementary-liquid fraction and in-situ black-oil
 /// properties, and the fluid properties it holds before this step (the *ini
 /// members).
 struct BlackOilCell {
     double liquidHoldup;
-    double completionFraction;
+    double complementaryFraction;
     double rholST;
     double rhog;
     double rhogST;
@@ -323,11 +323,11 @@ void transportBlackOilBalances(const CompositionState &state, const BlackOilFace
         balance.residuoA = (balance.volaguaFim - state.cells[i].VolAguaST) * flowArea / dt + (balance.MultAd - balance.MultAe) / dx - source.water / dx;
     }
     rgo[i] = (*state.globals).RGOMax;
-    if (cell.liquidHoldup > (*state.globals).localtiny && cell.completionFraction < (1. - (*state.globals).localtiny) && cell.bsw < (1. - (*state.globals).localtiny)) {
-        rgo[i] = (balance.volleveFim - balance.residuo * dt / flowArea) * cell.oilVolumeFactor / (cell.liquidHoldup * (1 - cell.completionFraction) * (1 - cell.bsw));
+    if (cell.liquidHoldup > (*state.globals).localtiny && cell.complementaryFraction < (1. - (*state.globals).localtiny) && cell.bsw < (1. - (*state.globals).localtiny)) {
+        rgo[i] = (balance.volleveFim - balance.residuo * dt / flowArea) * cell.oilVolumeFactor / (cell.liquidHoldup * (1 - cell.complementaryFraction) * (1 - cell.bsw));
         if (rgo[i] > (*state.globals).RGOMax)
             rgo[i] = (*state.globals).RGOMax;
-    } else if (cell.completionFraction >= (1. - (*state.globals).localtiny) || cell.bsw >= (1. - (*state.globals).localtiny))
+    } else if (cell.complementaryFraction >= (1. - (*state.globals).localtiny) || cell.bsw >= (1. - (*state.globals).localtiny))
         rgo[i] = 0.;
     else
         rgo[i] = (*state.globals).RGOMax;
@@ -844,7 +844,7 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         if (state.input.ConContEntrada == 0)
             left.betI = state.cells[i - 1].betPigD; // beta test
         else
-            left.betI = state.inletCompletionFraction; // beta test
+            left.betI = state.inletComplementaryFraction; // beta test
         left.solutionGasRatio = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, left.solutionGasRatio);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
@@ -909,7 +909,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
             left.betI = state.cells[i].betPigE;
     } else {
         if (state.cells[i].QG >= 0.)
-            left.betI = state.inletCompletionFraction;
+            left.betI = state.inletComplementaryFraction;
         else
             left.betI = state.cells[i].betPigE;
     }
@@ -955,7 +955,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
 
     BlackOilCell cell;
     cell.liquidHoldup = 1. - state.cells[i].alf;
-    cell.completionFraction = state.cells[i].bet;
+    cell.complementaryFraction = state.cells[i].bet;
     cell.rholST = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) + state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
     cell.rhog = state.cells[i].rgC;
     cell.rhogST = state.cells[i].flui.Deng * kAirDensityAtStandardConditions;
@@ -1039,12 +1039,12 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
         balance.MultOd = state.cells[i + 1].QL * (1 - right.betI) * (1 - right.bsw) * right.razdgd * right.solutionGasRatio / right.oilVolumeFactor;
     balance.MultGe = (state.cells[i].MC - state.cells[i].Mliqini) * left.razdgl / (left.rhogST);
     balance.MultGd = (state.cells[i + 1].MC - state.cells[i + 1].Mliqini) * right.razdgl / (right.rhogST);
-    balance.volleveFim = (((1 - cell.liquidHoldup) * cell.rhog * cell.razdgl / (cell.rhogST)) + cell.liquidHoldup * (1 - cell.completionFraction) * (1. - cell.bsw) * cell.solutionGasRatio * cell.razdgd / (cell.oilVolumeFactor));
+    balance.volleveFim = (((1 - cell.liquidHoldup) * cell.rhog * cell.razdgl / (cell.rhogST)) + cell.liquidHoldup * (1 - cell.complementaryFraction) * (1. - cell.bsw) * cell.solutionGasRatio * cell.razdgd / (cell.oilVolumeFactor));
     if (balance.volleveFim < 1e-15)
         balance.volleveFim = 0.;
     balance.residuo = (balance.volleveFim - state.cells[i].VolLeveST) * flowArea / dt + (balance.MultOd - balance.MultOe) / dx + (balance.MultGd - balance.MultGe) / dx - (source.dissolvedGas / dx + source.freeGas / dx);
-    balance.volpesFim = cell.liquidHoldup * (1 - cell.completionFraction) * (1 - cell.bsw) / cell.oilVolumeFactor;
-    balance.volaguaFim = cell.liquidHoldup * (1 - cell.completionFraction) * cell.bsw; // shouldn't this be divided by Bo???????????
+    balance.volpesFim = cell.liquidHoldup * (1 - cell.complementaryFraction) * (1 - cell.bsw) / cell.oilVolumeFactor;
+    balance.volaguaFim = cell.liquidHoldup * (1 - cell.complementaryFraction) * cell.bsw; // shouldn't this be divided by Bo???????????
     balance.MultPe = 0.;
     balance.MultPd = 0.;
     balance.residuoP = 0.;
@@ -1181,12 +1181,12 @@ struct PhaseFace {
     double pesoMolG;
 };
 
-/// Cell i itself: its liquid holdup, completion fraction and in-situ properties,
+/// Cell i itself: its liquid holdup, complementary-liquid fraction and in-situ properties,
 /// the properties it holds before this step (the *ini members), and its molar
 /// weight.
 struct PhaseCell {
     double liquidHoldup;
-    double completionFraction;
+    double complementaryFraction;
     double solutionGasRatio;
     double oilVolumeFactor;
     double waterVolumeFactor;
@@ -1957,7 +1957,7 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
         if (state.input.ConContEntrada == 0)
             left.betI = state.cells[i - 1].betPigD; // beta test
         else
-            left.betI = state.inletCompletionFraction; // beta test
+            left.betI = state.inletComplementaryFraction; // beta test
         double solutionGasRatioLeft = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, solutionGasRatioLeft);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
@@ -2021,7 +2021,7 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
             left.betI = state.cells[i].betPigE;
     } else {
         if (state.cells[i].QG >= 0.)
-            left.betI = state.inletCompletionFraction;
+            left.betI = state.inletComplementaryFraction;
         else
             left.betI = state.cells[i].betPigE;
     }
@@ -2098,7 +2098,7 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
                      state.cells[i].duto.area * state.cells[i].dx / cell.pesoMol;
     fluC[i].Pmol = cell.pesoMol;
     cell.liquidHoldup = 1. - state.cells[i].alf;
-    cell.completionFraction = state.cells[i].bet;
+    cell.complementaryFraction = state.cells[i].bet;
 
     cell.solutionGasRatio = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
     cell.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, cell.solutionGasRatio);
@@ -2122,8 +2122,8 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     }
 
     PhaseBalance balance;
-    balance.volpesFim = cell.liquidHoldup * (1 - cell.completionFraction) * (1 - cell.bsw) / cell.oilVolumeFactor;
-    balance.volaguaFim = cell.liquidHoldup * (1 - cell.completionFraction) * cell.bsw / cell.oilVolumeFactor; // shouldn't this be divided by Bo???????????
+    balance.volpesFim = cell.liquidHoldup * (1 - cell.complementaryFraction) * (1 - cell.bsw) / cell.oilVolumeFactor;
+    balance.volaguaFim = cell.liquidHoldup * (1 - cell.complementaryFraction) * cell.bsw / cell.oilVolumeFactor; // shouldn't this be divided by Bo???????????
     balance.MultPd = 0.;
     balance.residuoP = 0.;
     balance.MultAe = 0.;

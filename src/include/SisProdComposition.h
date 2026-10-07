@@ -43,7 +43,7 @@ struct CompositionState {
     double &inletPressure;                // presE
     double &inletTemperature;             // tempE
     double &inletQuality;                 // titE
-    double &inletCompletionFraction;      // betaE
+    double &inletComplementaryFraction;      // betaE
     int &trackGasOilRatio;                // trackRGO
     int &trackGasGravity;                 // trackDeng
     int &compositionalRefreshCounter;     // kontaRenovaComp
@@ -65,7 +65,7 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev);
 /// the water density with them. The one the transient step calls.
 void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev);
 
-/// Stores the void and completion fractions of the time level just finished,
+/// Stores the void and complementary-liquid fractions of the time level just finished,
 /// then moves the pigs and receives those that reach their receiver cell.
 void storePreviousFractionsAndMovePigs(const CompositionState &state);
 
