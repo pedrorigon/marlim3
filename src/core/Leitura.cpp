@@ -187,6 +187,10 @@ void Ler::iniciarVariaveis() {
 	npseudo=0;
 
 	ConContEntrada=0;
+	// The inlet series start empty: a network sets ConContEntrada to 1 on the branches it feeds without
+	// allocating them, and the destructor frees them by that flag.
+	CCPres = {};
+	CCVPres = {};
 
 	tempReves=-1000.;
 	razCompGasReves=0.;
