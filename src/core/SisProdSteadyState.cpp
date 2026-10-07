@@ -3794,12 +3794,12 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
     int injectionFlowRateIsLow = 0;
     while (((erro > 0.00001 && injectionFlowRateIsLow == 0) || erro1 > 0.00001) && itera < 600) { // convergence iteration
         presteste0 = presteste;
-        if (itera > 20)
-            relaxa = 0.1;
+        if (itera > 100)
+            relaxa = 0.01;
         else if (itera > 50)
             relaxa = 0.05;
-        else if (itera > 100)
-            relaxa = 0.01;
+        else if (itera > 20)
+            relaxa = 0.1;
 
         state.gasCells[0].presL = state.initialGasPressure;
         state.gasCells[0].pres = state.initialGasPressure;
