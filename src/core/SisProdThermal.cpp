@@ -1251,7 +1251,7 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
 
     liquidDensity = leftFaceFluid.MasEspLiq(cell.presaux, meanTemperature);
     if (cellHasNegativeLiquidMassFlowRate)
-        betI = cell.bet; // beta test
+        betI = cell.bet;
     else
         betI = cell.betL;
 
@@ -1259,16 +1259,16 @@ DistributedMassTransferProperties prepareDistributedMassTransferProperties(
 
     double betL = leftCell.betL;
     if (leftCellHasNegativeLiquidMassFlowRate)
-        betL = leftCell.bet; // beta test
+        betL = leftCell.bet;
 
     if (cellIndex > 0)
         betI = leftCell.betPigD;
     if (cellHasNegativeLiquidMassFlowRate)
-        betI = cell.betPigE; // beta test
+        betI = cell.betPigE;
     if (cellIndex > 1)
         betL = state.cells[cellIndex - 2].betPigD;
     if (leftCellHasNegativeLiquidMassFlowRate)
-        betL = leftCell.betPigE; // beta test
+        betL = leftCell.betPigE;
 
     double mixtureLiquidDensity = (1 - betI) * liquidDensity +
                   betI * cell.fluicol.MasEspFlu(
@@ -2060,7 +2060,7 @@ void updateInteriorFlowPartitionCell(
     if (valv[cellIndex] == 1) {
         double betI = leftCell.betPigD;
         double liquidDensity;
-        if (cell.QL < 0.) { // beta test
+        if (cell.QL < 0.) {
             betI = cell.betPigE;
             liquidDensity = (1 - betI) * cell.rpCi + betI * cell.rcCi;
         } else {
@@ -2081,8 +2081,7 @@ void updateInteriorFlowPartitionCell(
         else
             betIL = state.cells[cellIndex - 2].betPigD;
         if (leftCell.QL < 0.)
-            betIL = leftCell.betPigE; // beta test
-        // betIL = leftCell.betPigE;        // beta doubt
+            betIL = leftCell.betPigE;
         double leftGasDensity = cell.rgLi;
         double leftLiquidDensity = (1 - betIL) * cell.rpLi + betIL * cell.rcLi;
         double leftSuperficialGasVelocity = (cell.ML - cell.MliqiniL) / (leftGasDensity * leftFlowArea);
@@ -2090,7 +2089,7 @@ void updateInteriorFlowPartitionCell(
 
         double rightFlowArea = cell.dutoR.area;
         double betIR = cell.betPigD;
-        if (cell.QLR < 0.) { // beta test
+        if (cell.QLR < 0.) {
             if (cellIndex > state.lastCell - 2)
                 betIR = cell.betR;
             else
@@ -2133,8 +2132,7 @@ void updateOutletBoundaryFlowPartition(
     double meanTemperature = cell.temp * lengthRatio + leftCell.temp * (1. - lengthRatio);
     double betI = cell.betL;
     if (cell.QL < 0.)
-        betI = cell.bet; // beta test
-    // betI = cell.bet;            // beta doubt
+        betI = cell.bet;
     double gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
     double liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
     double flowArea = cell.duto.area;
@@ -2149,8 +2147,7 @@ void updateOutletBoundaryFlowPartition(
     double leftMeanTemperature = leftCell.temp * leftLengthRatio + leftCell.tempL * (1. - leftLengthRatio);
     double betIL = leftCell.betL;
     if (leftCell.QL < 0.)
-        betIL = leftCell.bet; // beta test
-    // betIL = leftCell.bet;            // beta doubt
+        betIL = leftCell.bet;
     double leftLiquidDensity = (1 - betIL) * cell.flui.MasEspLiq(leftMeanPressure, leftMeanTemperature) + betIL * cell.fluicol.MasEspFlu(leftMeanPressure, leftMeanTemperature);
     double leftSuperficialLiquidVelocity = (cell.MliqiniL) / (leftLiquidDensity * leftFlowArea);
 
@@ -2681,7 +2678,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
 
                 double betI;
                 double surfaceTension;
-                if (cell.QL < 0.) { // beta test
+                if (cell.QL < 0.) {
                     betI = cell.betPigE;
                     liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
                     surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
@@ -2714,7 +2711,7 @@ void updateFlowPartitionTerms(const ThermalState &state, int aflu) {
                 double rightMeanPressure = cell.presauxR;
                 double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempL * (1. - rightLengthRatio);
                 double betIR = cell.betPigD;
-                if (cell.QLR < 0.) // beta test
+                if (cell.QLR < 0.)
                     betIR = state.cells[cellIndex + 1].betPigE;
 
                 double rightGasDensity = cell.flui.MasEspGas(rightMeanPressure, rightMeanTemperature);
@@ -2755,7 +2752,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     double betI = leftCell.betPigD;
     double liquidDensity;
     double surfaceTension;
-    if (cell.MliqiniBuf < 0.) { // beta test
+    if (cell.MliqiniBuf < 0.) {
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
@@ -2806,8 +2803,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     else
         betIL = state.cells[cellIndex - 2].betPigD;
     if (leftCell.MliqiniBuf < 0.)
-        betIL = leftCell.betPigE; // beta test
-    // betIL = leftCell.betPigE;    // beta doubt
+        betIL = leftCell.betPigE;
     double leftGasDensity = cell.flui.MasEspGas(leftMeanPressure, leftMeanTemperature);
     double leftLiquidDensity = (1 - betIL) * cell.flui.MasEspLiq(leftMeanPressure, leftMeanTemperature) + betIL * cell.fluicol.MasEspFlu(leftMeanPressure, leftMeanTemperature);
     double leftSuperficialGasVelocity = (cell.MLBuf - cell.MliqiniLBuf) / (leftGasDensity * leftFlowArea);
@@ -2818,7 +2814,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     double rightMeanPressure = cell.presRBuf;
     double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempR * (1. - rightLengthRatio);
     double betIR = cell.betPigD;
-    if (cell.MliqiniRBuf < 0.) { // beta test
+    if (cell.MliqiniRBuf < 0.) {
         if (cellIndex > state.lastCell - 2)
             betIR = cell.betR;
         else
@@ -2861,7 +2857,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double liquidMixtureDensity = state.inletComplementaryFraction * rcis + (1 - state.inletComplementaryFraction) * liquidDensity;
     state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
 
-    if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) { // beta doubt
+    if ((cell.MCBuf - state.cells[0].MliqiniBuf) * 0 + 1 * state.cells[0].MliqiniBuf < 0.) {
         betI = cell.betPigE;
         liquidDensity = (1 - betI) * cell.flui.MasEspLiq(meanPressure, meanTemperature) + betI * cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         surfaceTension = (1 - betI) * cell.flui.TensSuper(meanPressure, meanTemperature) + betI * cell.fluicol.TensSuper(meanPressure, meanTemperature);
@@ -2893,7 +2889,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double rightMeanPressure = cell.presRBuf * rightLengthRatio + cell.presBuf * (1. - rightLengthRatio);
     double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempR * (1. - rightLengthRatio);
     double betIR = cell.betPigD;
-    if (cell.QLR < 0.) // beta test
+    if (cell.QLR < 0.)
         betIR = state.cells[cellIndex + 1].betPigE;
 
     double rightGasDensity = cell.flui.MasEspGas(rightMeanPressure, rightMeanTemperature);

@@ -135,7 +135,7 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
 
     double betI;
     if (((state.cells[i].MC - state.cells[i].Mliqini) * 0 + 1 * state.cells[i].Mliqini) < 0)
-        betI = state.cells[i].bet; // beta doubt
+        betI = state.cells[i].bet;
     else
         betI = state.cells[i].betL;
 
@@ -356,7 +356,7 @@ void updateFlowRates(const TransientStepState &state) {
 
             double betI;
             if (((state.cells[i].MC - state.cells[i].Mliqini) * 0 + 1 * state.cells[i].Mliqini) < 0)
-                betI = state.cells[i].bet; // beta doubt
+                betI = state.cells[i].bet;
             else
                 betI = state.cells[i].betL;
 
@@ -670,7 +670,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
         double betloc;
         if ((state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniR > 0.)
-            betloc = state.cells[state.lastCell - 1].bet; // beta test // beta doubt
+            betloc = state.cells[state.lastCell - 1].bet;
         else
             betloc = betRev;
 
@@ -792,7 +792,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             sinal = 0.;
         double betloc;
         if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
-            betloc = state.cells[state.lastCell - 1].bet; // beta test // beta doubt
+            betloc = state.cells[state.lastCell - 1].bet;
         else
             betloc = betRev;
         double rhomistBuf = betloc *
@@ -833,7 +833,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
                 sinal = 0.;
             double betloc;
             if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0.0 + 1.0 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
-                betloc = state.cells[state.lastCell - 1].bet; // beta test // beta doubt
+                betloc = state.cells[state.lastCell - 1].bet;
             else
                 betloc = betRev;
             double rhomistBuf = betloc *
@@ -1419,13 +1419,13 @@ void updatePig(const TransientStepState &state) {
     } else {
         state.cells[0].betI = state.inletComplementaryFraction;
         if ((state.cells[0].MC - state.cells[0].Mliqini) * 0 + state.cells[0].Mliqini < 0.)
-            state.cells[0].betI = state.cells[0].betPigE; // beta test
+            state.cells[0].betI = state.cells[0].betPigE;
         state.cells[0].betLI = state.cells[0].betI;
     }
     for (int i = 1; i <= state.lastCell; i++) {
         state.cells[i].betI = state.cells[i].betPigE;
         if (state.cells[i].QL > 0.)
-            state.cells[i].betI = state.cells[i - 1].betPigD; // beta test
+            state.cells[i].betI = state.cells[i - 1].betPigD;
         state.cells[i - 1].betRI = state.cells[i].betI;
         if (i < state.lastCell)
             state.cells[i + 1].betLI = state.cells[i].betI;

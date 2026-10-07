@@ -807,7 +807,7 @@ void upwindLeftFaceGasProperties(const CompositionState &state, BlackOilFace &le
 /// The liquid at cell i's right face when it flows back from cell i+1.
 void upwindRightFaceLiquidProperties(const CompositionState &state, BlackOilFace &right, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i + 1].QL < 0.) {
-        right.betI = state.cells[i + 1].betPigE; // beta test
+        right.betI = state.cells[i + 1].betPigE;
         right.rgo = state.cells[i + 1].flui.RGO;
         right.solutionGasRatio = state.cells[i + 1].flui.RS(state.cells[i + 1].pres, state.cells[i + 1].temp);
         right.oilVolumeFactor = state.cells[i + 1].flui.BOFunc(state.cells[i + 1].pres, state.cells[i + 1].temp, right.solutionGasRatio);
@@ -842,9 +842,9 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         }
         left.rgo = (*state.cells[i].fluiL).RGO;
         if (state.input.ConContEntrada == 0)
-            left.betI = state.cells[i - 1].betPigD; // beta test
+            left.betI = state.cells[i - 1].betPigD;
         else
-            left.betI = state.inletComplementaryFraction; // beta test
+            left.betI = state.inletComplementaryFraction;
         left.solutionGasRatio = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, left.solutionGasRatio);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
@@ -860,7 +860,7 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         left.viscL = (*state.cells[i].fluiL).VisOM(temperatureLow);
         left.viscH = (*state.cells[i].fluiL).VisOM(temperatureHigh);
     } else {
-        left.betI = state.cells[i].betPigE; // beta test
+        left.betI = state.cells[i].betPigE;
         left.rgo = state.cells[i].flui.RGO;
         left.solutionGasRatio = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, left.solutionGasRatio);
@@ -935,7 +935,6 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     right.razdgd = 1 / state.cells[i].flui.rDgD;
     right.razdgl = 1 / state.cells[i].flui.rDgL;
 
-    // betI1 = celula[i + 1].betPigE;    // beta doubt
     upwindRightFaceLiquidProperties(state, right, i, temperatureHigh, temperatureLow);
     if (right.oilVolumeFactor < 1e-15)
         right.oilVolumeFactor = 1e-15;
@@ -1955,9 +1954,9 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
             upstreamTemperature = state.inletTemperature;
         }
         if (state.input.ConContEntrada == 0)
-            left.betI = state.cells[i - 1].betPigD; // beta test
+            left.betI = state.cells[i - 1].betPigD;
         else
-            left.betI = state.inletComplementaryFraction; // beta test
+            left.betI = state.inletComplementaryFraction;
         double solutionGasRatioLeft = (*state.cells[i].fluiL).RS(upstreamPressure, upstreamTemperature);
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, solutionGasRatioLeft);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
@@ -1967,7 +1966,7 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
         left.viscL = (*state.cells[i].fluiL).VisOM(temperatureLow);
         left.viscH = (*state.cells[i].fluiL).VisOM(temperatureHigh);
     } else {
-        left.betI = state.cells[i].betPigE; // beta test
+        left.betI = state.cells[i].betPigE;
         double solutionGasRatioLeft = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioLeft);
         left.waterVolumeFactor = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
@@ -2039,9 +2038,8 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     right.viscL = state.cells[i].flui.VisOM(temperatureLow);
     right.viscH = state.cells[i].flui.VisOM(temperatureHigh);
 
-    // betI1 = celula[i + 1].betPigE;    // beta doubt
     if (state.cells[i + 1].QL < 0.) {
-        right.betI = state.cells[i + 1].betPigE; // beta test
+        right.betI = state.cells[i + 1].betPigE;
         right.solutionGasRatio = state.cells[i + 1].flui.RS(state.cells[i + 1].pres, state.cells[i + 1].temp);
         right.oilVolumeFactor = state.cells[i + 1].flui.BOFunc(state.cells[i + 1].pres, state.cells[i + 1].temp, right.solutionGasRatio);
         right.waterVolumeFactor = state.cells[i + 1].flui.BAFunc(state.cells[i + 1].pres, state.cells[i + 1].temp);
