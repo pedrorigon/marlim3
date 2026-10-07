@@ -60,6 +60,7 @@
 #include "solverPoroso.h"
 #include "variaveisGlobais1D.h"
 #include "versao.h"
+#include "UnitConversions.h"
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -4765,7 +4766,7 @@ void atualizaCel(SProd &sistem1, int i) {
     sistem1.celula[i].flui.IRGO = sistem1.celula[i - 1].flui.IRGO;
 
     double tmed = (sistem1.celula[i].dx * sistem1.celula[i].temp + sistem1.celula[i].dxL * sistem1.celula[i].tempL) / (sistem1.celula[i].dx + sistem1.celula[i].dxL);
-    double pmed = sistem1.celula[i].presaux + sistem1.celula[i - 1].dpB / 98066.5;
+    double pmed = sistem1.celula[i].presaux + sistem1.celula[i - 1].dpB / units::kPascalPerKgfPerCm2;
 
     int veriI = i - 1;
     while ((sistem1.celula[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) ||
@@ -4894,7 +4895,7 @@ void preparaTabDin(SProd &sistem1) {
         atualizaComp(sistem1, i0);
         sistem1.celula[i0].flui.atualizaPropCompStandard();
         tmed = (sistem1.celula[i0].dx * sistem1.celula[i0].temp + sistem1.celula[i0].dxL * sistem1.celula[i0].tempL) / (sistem1.celula[i0].dx + sistem1.celula[i0].dxL);
-        pmed = sistem1.celula[i0].presaux + sistem1.celula[i0 - 1].dpB / 98066.5;
+        pmed = sistem1.celula[i0].presaux + sistem1.celula[i0 - 1].dpB / units::kPascalPerKgfPerCm2;
         sistem1.celula[i0].flui.atualizaPropComp(pmed, tmed, sistem1.celula[i0 - 1].flui.dCalculatedBeta,
                                                  sistem1.celula[i0 - 1].flui.oCalculatedLiqComposition,
                                                  sistem1.celula[i0 - 1].flui.oCalculatedVapComposition, sistem1.arq.pocinjec);
@@ -11044,7 +11045,7 @@ double chutePresRedeParalelaSec(span<SProd> malha, int iP, int iS, double pchute
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (malha[iS].celula[i].dx + malha[iS].celula[i - 1].dx);
         // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
-        pchute += (rhomix * 9.81 * sin(malha[iS].celula[i].duto.teta) * dxmed) / 98066.5;
+        pchute += (rhomix * 9.81 * sin(malha[iS].celula[i].duto.teta) * dxmed) / units::kPascalPerKgfPerCm2;
         if (malha[iS].arq.usaTabela == 1 && (malha[iS].arq.tabent.pmax - pchute) < (*malha[iS].vg1dSP).localtiny)
             pchute = 0.9 * malha[iS].arq.tabent.pmax;
     }
@@ -11879,7 +11880,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
         for (int i = 1; i <= malha[indAnel].ncel; i++) {
             double rhog = malha[indAnel].celula[i].flui.MasEspGas(pres, temp);
             double tet = malha[indAnel].celula[i].duto.teta;
-            pres = malha[indAnel].celula[i].pres = pres - rhog * 9.81 * malha[indAnel].celula[i].dx * sin(tet) / 98066.5;
+            pres = malha[indAnel].celula[i].pres = pres - rhog * 9.81 * malha[indAnel].celula[i].dx * sin(tet) / units::kPascalPerKgfPerCm2;
             temp = malha[indAnel].celula[i].temp = malha[indAnel].celula[i].calor.Textern1;
         }
     } else {
@@ -11922,7 +11923,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
         for (int i = ncel - 1; i >= 0; i--) {
             double rhog = malha[indAnel].celula[i + 1].flui.MasEspGas(pres, temp);
             double tet = malha[indAnel].celula[i + 1].duto.teta;
-            pres = malha[indAnel].celula[i].pres = pres + rhog * 9.81 * malha[indAnel].celula[i + 1].dx * sin(tet) / 98066.5;
+            pres = malha[indAnel].celula[i].pres = pres + rhog * 9.81 * malha[indAnel].celula[i + 1].dx * sin(tet) / units::kPascalPerKgfPerCm2;
             temp = malha[indAnel].celula[i].temp = malha[indAnel].celula[i].calor.Textern1;
         }
     }

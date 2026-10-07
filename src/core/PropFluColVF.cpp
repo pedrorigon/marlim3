@@ -6,6 +6,7 @@
  */
 #define _USE_MATH_DEFINES // para M_PI
 #include "PropFluColVF.h"
+#include "UnitConversions.h"
 #include <algorithm>
 #include <complex>
 #include <math.h>
@@ -268,7 +269,7 @@ double ProFluColVF::VisFlu(double pres, double temper, double deform) const {
 
 double ProFluColVF::VisGas(double pres, double temp) const {
     double TF = Faren(temp);
-    double TR = TF + 459.67;
+    double TR = TF + units::kZeroFahrenheitInRankine;
     double wg = (rhogStd / 1.29) * 29;
     double AK = (9.4 + 0.02 * wg) * pow(TR, 1.5) / (209. + 19. * wg + TR);
     double x = 3.5 + (986 / TR) + 0.01 * wg;

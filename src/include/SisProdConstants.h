@@ -8,9 +8,6 @@ namespace sisprod {
 
 // ---------------------------------------------------------------- units ----
 
-/// Pascals per kgf/cm^2. Pressure is carried in kgf/cm^2 and needed in Pa.
-inline constexpr double kPascalPerKgfPerCm2 = 98066.5;
-
 /// The same conversion, spelled differently in some places. Using one value
 /// for both would change results.
 inline constexpr double kPascalPerKgfPerCm2Variant = 98066.52;
@@ -69,13 +66,6 @@ inline constexpr double kAtmosphereInKgfPerCm2 = 1.033211;
 /// rounds the same quantity as kPsiPerAtmosphere.
 inline constexpr double kAtmosphereInPsi = 14.6959488;
 
-/// Seconds per day. Flow rates are carried in kg/s and reported in m3/day.
-inline constexpr double kSecondsPerDay = 86400.;
-
-/// Pascal-seconds per centipoise. Viscosity correlations return cP; the
-/// heat-transfer objects want SI.
-inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
-
 /// Written into the inlet source rate when a pressure-to-pressure search finds no
 /// flowing solution; the network reads it back to report the branch.
 inline constexpr double kNoFlowSolutionMarker = -2121212121.;
@@ -84,12 +74,6 @@ inline constexpr double kNoFlowSolutionMarker = -2121212121.;
 /// surface: one kgf/cm^2 and fifteen degrees Celsius.
 inline constexpr double kStandardPressureKgfPerCm2 = 1.;
 inline constexpr double kStandardTemperatureCelsius = 15.;
-
-/// Celsius to Fahrenheit. A function rather than two constants: the two factors
-/// are never used apart.
-inline constexpr double celsiusToFahrenheit(double celsius) {
-    return 1.8 * celsius + 32;
-}
 
 // ------------------------------------------------------------- numerics ----
 
@@ -182,7 +166,6 @@ static_assert(kAccessoryMultiPump == 17);
 static_assert(kGasInletInjectionPressure == 0);
 static_assert(kGasInletInjectionFlowRate == 1);
 
-static_assert(kPascalPerKgfPerCm2 == 98066.5);
 static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
 static_assert(kPascalPerKgfPerCm2PvtSim == 98068.059233);
 static_assert(kPascalPerKgfPerCm2Coarse == 98600.);
@@ -198,13 +181,9 @@ static_assert(kGravityUnloadingVariant == 9.81);
 static_assert(kPsiPerKgfPerCm2 == 14.223595);
 static_assert(kAtmosphereInKgfPerCm2 == 1.033211);
 static_assert(kAtmosphereInPsi == 14.6959488);
-static_assert(kSecondsPerDay == 86400.);
-static_assert(kPascalSecondPerCentipoise == 1.e-3);
 static_assert(kNoFlowSolutionMarker == -2121212121.);
 static_assert(kStandardPressureKgfPerCm2 == 1.);
 static_assert(kStandardTemperatureCelsius == 15.);
-static_assert(celsiusToFahrenheit(0.) == 32.);
-static_assert(celsiusToFahrenheit(100.) == 212.);
 static_assert(kDerivativePerturbationFactor == 0.999);
 static_assert(kPhaseChangeFloor == 1e-25);
 static_assert(kMinimumTemperatureCelsius == -50.);

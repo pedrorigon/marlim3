@@ -1,4 +1,5 @@
 #include "chokegas.h"
+#include "UnitConversions.h"
 
 ChokeGas::ChokeGas(const ProFlu vflui,const double vareagarg,const double vdextern,
 		const double vcd, const double vpresEstag,const double vpresGarg,const double vtempEstag,
@@ -148,7 +149,7 @@ double ChokeGas::massica(int fluido, double salin) {
 
 		  double Rg=(8.0465*1000*1E5)/((flui.Deng*28.9625)*100000.);
 
-		  double QGcrt = (8640.0*agmm*CR*PBAR/Rhostd)/sqrt(Rg*(TC+273.15));
+		  double QGcrt = (8640.0*agmm*CR*PBAR/Rhostd)/sqrt(Rg*(TC+units::kZeroCelsiusInKelvin));
 
 		  double PSIC = 1.1788*pow(agmm,-0.0634);
 		  if (PSIC > 0.97) PSIC = 0.97;
@@ -200,7 +201,7 @@ double ChokeGas::razcrit() {
 }
 
 double ChokeGas::fraiz(double kad, double rt, double mass, double rp) {
-	return pow((mass*sqrt(rt)/(areagarg*presEstag*98066.5)),2.)-(2*kad/(kad-1.))*rp*rp*(1.-pow(rp,kad-1.));
+	return pow((mass*sqrt(rt)/(areagarg*presEstag*units::kPascalPerKgfPerCm2)),2.)-(2*kad/(kad-1.))*rp*rp*(1.-pow(rp,kad-1.));
 }
 
 double ChokeGas::derraiz(double kad, double rp) {
@@ -225,7 +226,7 @@ double ChokeGas::newton(double kad, double rt, double mass, double rp) {
 double ChokeGas::razpres(double mass, double rp) {
 	double kad=flui.ConstAdG(presEstag,tempEstag);
 	double rho0=flui.MasEspGas(presEstag,tempEstag);
-	double rt=presEstag*98066.5/(rho0*flui.Zdran(presEstag,tempEstag));
+	double rt=presEstag*units::kPascalPerKgfPerCm2/(rho0*flui.Zdran(presEstag,tempEstag));
 	double rpcrit=razcrit();
 	rp=razpresSimples(mass,rp);
 	double aux=newton(kad,rt,mass,pow(rp,1./kad));
@@ -240,7 +241,7 @@ double ChokeGas::razpresSimples(double mass, double rp) {
 	double kad=flui.ConstAdG(presEstag,tempEstag);
 	double rho0=flui.MasEspGas(presEstag,tempEstag);
 	double rhoG=flui.MasEspGas(presGarg,tempEstag);
-	double rt=presEstag*98066.5/(rho0*flui.Zdran(presEstag,tempEstag));
+	double rt=presEstag*units::kPascalPerKgfPerCm2/(rho0*flui.Zdran(presEstag,tempEstag));
 	double cd=0.885;
 	double vgarg=mass/(rhoG*areagarg*cd);
 	double vsom=sqrt((2.*kad/(kad+1.))*rt);
@@ -296,12 +297,12 @@ double ChokeGas::massicaVenturi() {
 	  double max;
 	  double kad=flui.ConstAdG(presEstag,tempEstag);
 	  double rho0=flui.MasEspGas(presEstag,tempEstag);
-	  double rt=presEstag*98066.5/(rho0*flui.Zdran(presEstag,tempEstag));
+	  double rt=presEstag*units::kPascalPerKgfPerCm2/(rho0*flui.Zdran(presEstag,tempEstag));
 	  massica=sqrt((2.*kad/(kad-1.))*pow(presGarg/presEstag,2./kad)*(1.-pow(presGarg/presEstag,(kad-1.)/kad)));
-	  massica*=(areafole*presEstag*98066.5/sqrt(rt));
+	  massica*=(areafole*presEstag*units::kPascalPerKgfPerCm2/sqrt(rt));
 	  double razcrit=razpresVenturi();
 	  max=sqrt((2.*kad/(kad-1.))*pow(razcrit,2./kad)*(1.-pow(razcrit,(kad-1.)/kad)));
-	  max*=(areafole*presEstag*98066.5/sqrt(rt));
+	  max*=(areafole*presEstag*units::kPascalPerKgfPerCm2/sqrt(rt));
 	  if(presGarg/presEstag<=razcrit)massica=max;
 	return cd*sens*massica;
 }

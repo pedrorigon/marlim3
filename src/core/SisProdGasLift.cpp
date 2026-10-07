@@ -7,6 +7,7 @@
 #include "celulaGas.h"
 #include "celula3.h"
 #include "chokegas.h"
+#include "UnitConversions.h"
 
 #include <math.h>
 
@@ -47,7 +48,7 @@ inline constexpr double kSmallBoreSpringRate = 1950.0;
                                (choke.presGarg - kAtmosphereInKgfPerCm2) * kPsiPerKgfPerCm2,
                                choke.dextern, choke.areagarg,
                                choke.areagarg / choke.areafole,
-                               celsiusToFahrenheit(choke.tempEstag));
+                               units::celsiusToFahrenheit(choke.tempEstag));
 }
 
 /// What flows through a gas-lift valve, and how its throat pressure is
@@ -169,7 +170,7 @@ void publishExternalFluid(Cel &annulusCell, const ExternalFluidProperties &fluid
     annulusCell.calor.kextern1 = fluid.conductivity;
     annulusCell.calor.cpextern1 = fluid.specificHeat;
     annulusCell.calor.rhoextern1 = fluid.density;
-    annulusCell.calor.viscextern1 = fluid.viscosityCentipoise * kPascalSecondPerCentipoise;
+    annulusCell.calor.viscextern1 = fluid.viscosityCentipoise * units::kPascalSecondPerCentipoise;
 }
 
 /// The pressure the unloading hydrostatics start the gas line from when the
@@ -525,7 +526,7 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
             frictionFactor = state.cells[cellIndex].fric(reynolds, state.cells[cellIndex].duto.rug / state.cells[cellIndex].duto.a);
         }
         double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.;
-        meanPressure -= (-kGravity * mixtureDensity * sin(state.cells[cellIndex].duto.teta) - tens1 * perimeter / flowArea) * cellLength / kPascalPerKgfPerCm2;
+        meanPressure -= (-kGravity * mixtureDensity * sin(state.cells[cellIndex].duto.teta) - tens1 * perimeter / flowArea) * cellLength / units::kPascalPerKgfPerCm2;
         if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
             double candidateMaximumPressure = state.cells[cellIndex].acsr.ipr.Pres - (meanPressure - state.gasSurfacePressure);
             if (candidateMaximumPressure < state.input.presMaxDesc)
@@ -996,7 +997,7 @@ void solveGasLine(const GasLiftState &state) {
                 gasLiftGasCell < state.interfaceCell ||
                 (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > 0.5);
             if (valveDischargesGas) {
-                state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * kSecondsPerDay / state.gasCells[gasLiftGasCell].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
+                state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay / state.gasCells[gasLiftGasCell].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
                 state.cells[gasLiftProductionCell].acsr.injg.tipoflu = 0;
             } else {
                 state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH;
@@ -1088,7 +1089,7 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     double frictionGradient = state.gasCells[cellIndex].dPdLFric * (0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area);
     double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
     double meanPressure = state.gasCells[cellIndex].pres + pressureDrop;
 
     double meanTemperature;
@@ -1124,7 +1125,7 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     }
     frictionGradient = dpFLoc * (0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area);
     hydrostaticGradient = dpHLoc * (kGravity * sin(state.gasCells[cellIndex].dutoL.teta) * gasDensity * dx);
-    pressureDrop += (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
+    pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
     return pressureDrop;
 }
 
@@ -1149,7 +1150,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     double frictionGradient = state.cells[cellIndex].dPdLFric * 0.5 * frictionFactor * injectedFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
     double hydrostaticGradient = state.cells[cellIndex].dPdLHidro * kGravity * sin(state.cells[cellIndex].duto.teta) * injectedFluidDensity * dx;
 
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
+    double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
     double meanPressure = state.cells[cellIndex - 1].pres;
 
     dx = 0.5 * state.cells[cellIndex].dxL;
@@ -1170,7 +1171,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     frictionFactor = state.cells[cellIndex - 1].fric(reynolds, state.cells[cellIndex].dutoL.rug / diameter);
     frictionGradient = state.cells[cellIndex - 1].dPdLFric * 0.5 * frictionFactor * injectedFluidDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
     hydrostaticGradient = state.cells[cellIndex - 1].dPdLHidro * kGravity * sin(state.cells[cellIndex].dutoL.teta) * injectedFluidDensity * dx;
-    pressureDrop += (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
+    pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
     return pressureDrop;
 }
 
@@ -1198,7 +1199,7 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     state.gasCells[cellIndex - 1].termoFric = frictionGradient / dx;
     state.gasCells[cellIndex - 1].termoHidro = hydrostaticGradient / dx;
 
-    double meanPressure = state.gasCells[cellIndex - 1].pres - (frictionGradient + hydrostaticGradient) / kPascalPerKgfPerCm2;
+    double meanPressure = state.gasCells[cellIndex - 1].pres - (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
 
     double meanTemperature = state.gasCells[cellIndex - 1].temp;
 
@@ -1222,7 +1223,7 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     frictionGradient = state.gasCells[cellIndex].dPdLFric * 0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area;
     hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx;
 
-    state.gasCells[cellIndex].pres = meanPressure - (frictionGradient + hydrostaticGradient - dynamicPressureTerm) / kPascalPerKgfPerCm2;
+    state.gasCells[cellIndex].pres = meanPressure - (frictionGradient + hydrostaticGradient - dynamicPressureTerm) / units::kPascalPerKgfPerCm2;
     state.gasCells[cellIndex - 1].presR = state.gasCells[cellIndex].pres;
     if (cellIndex < state.gasCellCount)
         state.gasCells[cellIndex + 1].presL = state.gasCells[cellIndex].pres;
@@ -1249,7 +1250,7 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
             int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
             int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
             double gasTemperature;
-            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * kSecondsPerDay /
+            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay /
                                             (kAirDensityAtStandardConditions * state.gasCells[gasLiftGasCell].flui.Deng); // celulaG[gasLiftGasCell].flui.MasEspGas(1.,15.);
             if (state.gasLiftChokes[valveIndex].presEstag > state.gasLiftChokes[valveIndex].presGarg) {
                 gasTemperature = state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex);
@@ -1294,7 +1295,7 @@ namespace {
 /// the production line.
 void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount,
                                  double, InjectionFlowRateCondition) {
-    double valveFlowRate = (state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) / kSecondsPerDay) / valveCount;
+    double valveFlowRate = (state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) / units::kSecondsPerDay) / valveCount;
     state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
 }
 
@@ -1333,7 +1334,7 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
                 [&](auto condition) {
                     setSteadyValveGasMassSource(state, valveIndex, valveCount, casingTemperature, condition);
                 });
-            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * kSecondsPerDay /
+            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay /
                                             state.gasCells[gasLiftGasCell].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
             state.cells[gasLiftProductionCell].acsr.injg.temp = casingTemperature;
             state.cells[gasLiftProductionCell].fontemassGR = state.gasCells[gasLiftGasCell].massfonteCH;
@@ -1360,7 +1361,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
             state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
-            state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp) * kPascalSecondPerCentipoise;
+            state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp) * units::kPascalSecondPerCentipoise;
             state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
             double leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
             double tubingHeatFlux = 0.;
@@ -1412,7 +1413,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                     state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, stepTemperature);
                     state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
                     state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
-                    state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, stepTemperature) * kPascalSecondPerCentipoise;
+                    state.gasCells[cellIndex - 1].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, stepTemperature) * units::kPascalSecondPerCentipoise;
                     state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
                     leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
                     energyTerm2 = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
@@ -1461,7 +1462,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             state.gasCells[cellIndex].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
             state.gasCells[cellIndex].calor.cpint = gasSpecificHeat;
             state.gasCells[cellIndex].calor.rhoint = gasDensity;
-            state.gasCells[cellIndex].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp) * kPascalSecondPerCentipoise;
+            state.gasCells[cellIndex].calor.viscint = state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp) * units::kPascalSecondPerCentipoise;
             state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
         }
     } else {

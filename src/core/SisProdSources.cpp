@@ -4,6 +4,7 @@
 #include "SisProdConstants.h"
 #include "celula3.h"
 #include "variaveisGlobais1D.h"
+#include "UnitConversions.h"
 
 #include <algorithm>
 #include <math.h>
@@ -16,7 +17,6 @@ using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
 using sisprod::kGravity;
 using sisprod::kPascalPerKgfPerCm2Coarse;
-using sisprod::kSecondsPerDay;
 
 namespace {
 
@@ -287,7 +287,7 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
                 state.cells[cellIndex].fontemassGR += masT * tit;
                 state.cells[cellIndex].fontemassLR += masT * (1. - tit);
                 double rcomp = state.cells[cellIndex].acsr.injg.fluidocol.MasEspFlu(1., 20.);
-                state.cells[cellIndex].fontemassCR += rcomp * state.cells[cellIndex].acsr.injg.razCompGas * state.cells[cellIndex].acsr.injg.QGas / kSecondsPerDay;
+                state.cells[cellIndex].fontemassCR += rcomp * state.cells[cellIndex].acsr.injg.razCompGas * state.cells[cellIndex].acsr.injg.QGas / units::kSecondsPerDay;
             }
         } else {
             state.cells[cellIndex].fontemassGR += 0.;
@@ -297,8 +297,8 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
         double rlcA = state.cells[cellIndex].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
-        state.cells[cellIndex].fontemassCR += rlcA * state.cells[cellIndex].acsr.injl.QLiq * state.cells[cellIndex].acsr.injl.bet / kSecondsPerDay;
-        double massic = state.cells[cellIndex].acsr.injl.QLiq * (1. - state.cells[cellIndex].acsr.injl.bet) / kSecondsPerDay;
+        state.cells[cellIndex].fontemassCR += rlcA * state.cells[cellIndex].acsr.injl.QLiq * state.cells[cellIndex].acsr.injl.bet / units::kSecondsPerDay;
+        double massic = state.cells[cellIndex].acsr.injl.QLiq * (1. - state.cells[cellIndex].acsr.injl.bet) / units::kSecondsPerDay;
         double Rhogs = state.cells[cellIndex].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[cellIndex].acsr.injl.FluidoPro.MasEspGas(1, 15);
         double Rhols = (1000 * 141.5 / (131.5 + state.cells[cellIndex].acsr.injl.FluidoPro.API)) * (1 - state.cells[cellIndex].acsr.injl.FluidoPro.BSW) + 1000. * state.cells[cellIndex].acsr.injl.FluidoPro.Denag * state.cells[cellIndex].acsr.injl.FluidoPro.BSW;
         double multiplicador = (Rhols + state.cells[cellIndex].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.cells[cellIndex].acsr.injl.FluidoPro.BSW));

@@ -6,6 +6,7 @@
  */
 
 #include "multiBCS.h"
+#include "UnitConversions.h"
 
 multiBomCentSub::multiBomCentSub(int vnBCS ,BomCentSub* BCStemp ,int* nestagParcFabtemp ,
 		int* nestagParctemp, double Vfreq, double VeficM,
@@ -258,7 +259,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     		BCSinterno[iCurva].NovaVis(vismis, rhomis, xvaz);
     	    dpB = 0.3048 * BCSinterno[iCurva].Hvis * rhomis * 9.82;
 
-    	    pres+=dpB/98066.5;
+    	    pres+=dpB/units::kPascalPerKgfPerCm2;
 
     	    vpotB = BCSinterno[iCurva].Pvis * 745.7;
     	    potB+=vpotB;

@@ -7,6 +7,7 @@
 #include "celulaGas.h"
 #include "chokegas.h"
 #include "variaveisGlobais1D.h"
+#include "UnitConversions.h"
 
 #include <math.h>
 
@@ -1410,7 +1411,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         state.cells[i + 1].ML = state.cells[i].MC;
     state.cells[i - 1].MRini = state.cells[i - 1].MR;
 
-    double pmed = state.cells[i].presaux + state.cells[i - 1].dpB / kPascalPerKgfPerCm2;
+    double pmed = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
     double rhog;
     double rhol;
     // liquid mass flow rate and volumetric flow rates:
@@ -1598,13 +1599,13 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
     else
         qostd = 0.;
     // new standard gas flow rate, adding the gas source:
-    double qgstd = qostd * state.cells[i - 1].flui.RGO + state.cells[i - 1].acsr.injg.QGas / kSecondsPerDay;
+    double qgstd = qostd * state.cells[i - 1].flui.RGO + state.cells[i - 1].acsr.injg.QGas / units::kSecondsPerDay;
     double deng;
     double yco2;
     // balance that sets the gas density and the CO2 fraction from the gas source
     if (fabs(qgstd) > (*state.globals).localtiny && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
-        deng = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.Deng / kSecondsPerDay) / qgstd;
-        yco2 = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.yco2 / kSecondsPerDay) / qgstd;
+        deng = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.Deng / units::kSecondsPerDay) / qgstd;
+        yco2 = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.yco2 / units::kSecondsPerDay) / qgstd;
     } else {
         deng = state.cells[i - 1].flui.Deng;
         yco2 = state.cells[i - 1].flui.yco2;
@@ -1702,13 +1703,13 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
     if (state.cells[i - 1].acsr.injg.FluidoPro.dStockTankVaporMassFraction < 1. - 1e-15)
         qostd2 = state.cells[i - 1].fontemassLR * (1. - fwinjl) / (boinjl * rholisF);
     // new standard gas flow rate, adding the gas source:
-    double qgstd = qostd * state.cells[i - 1].flui.RGO + state.cells[i - 1].acsr.injg.QGas / kSecondsPerDay;
+    double qgstd = qostd * state.cells[i - 1].flui.RGO + state.cells[i - 1].acsr.injg.QGas / units::kSecondsPerDay;
     double deng;
     double yco2;
     // balance that sets the gas density and the CO2 fraction from the gas source
     if (fabs(qgstd) > (*state.globals).localtiny * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
-        deng = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.Deng / kSecondsPerDay) / qgstd;
-        yco2 = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.yco2 / kSecondsPerDay) / qgstd;
+        deng = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.Deng / units::kSecondsPerDay) / qgstd;
+        yco2 = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.yco2 / units::kSecondsPerDay) / qgstd;
     } else {
         deng = state.cells[i - 1].flui.Deng;
         yco2 = state.cells[i - 1].flui.yco2;
@@ -2785,7 +2786,7 @@ void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double w
     state.cells[i - 1].MliqiniR = state.cells[i].Mliqini;
     if (i < state.lastCell)
         state.cells[i + 1].MliqiniL = state.cells[i].Mliqini;
-    pmed = state.cells[i].presaux + state.cells[i - 1].dpB / kPascalPerKgfPerCm2;
+    pmed = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
     rhog = state.cells[i].rgCi = state.cells[i].flui.MasEspGas(pmed, tmed);
 
     // densities at the cell's left interface
@@ -3150,7 +3151,7 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
         if (i < state.lastCell)
             state.cells[i + 1].QLL = state.cells[i].QL;
         state.cells[i - 1].QLR = state.cells[i].QL;
-        pmed = state.cells[i].presaux + state.cells[i - 1].dpB / kPascalPerKgfPerCm2;
+        pmed = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
         state.cells[i].rpCi = state.cells[i].flui.MasEspLiq(pmed, tmed);
         state.cells[i].rcCi = state.cells[i].fluicol.MasEspFlu(pmed, tmed);
         rhog = state.cells[i].rgCi = state.cells[i].flui.MasEspGas(pmed, tmed);
@@ -3210,7 +3211,7 @@ double areaChangePressureDrop(const SteadyStateState &state, int i, double rhomi
         }
         dpArea = bernou + perdLoc;
     }
-    return dpArea / kPascalPerKgfPerCm2;
+    return dpArea / units::kPascalPerKgfPerCm2;
 }
 
 double steadyPressureAtLastCell(const SteadyStateState &state) {
@@ -3244,7 +3245,7 @@ double steadyPressureAtLastCell(const SteadyStateState &state) {
     double frictionFactor = state.cells[state.lastCell].fric(mixtureReynolds, state.cells[state.lastCell].duto.rug / diameter);
     double gradfric = state.cells[state.lastCell].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
     double gradhidro = state.cells[state.lastCell].dPdLHidro * (kGravity * sin(state.cells[state.lastCell].duto.teta) * rhomix * dx);
-    return -(1. * gradfric + gradhidro) / kPascalPerKgfPerCm2;
+    return -(1. * gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
 }
 
 void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int rungeKuttaStage) {
@@ -3283,7 +3284,7 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
             }
             double gradfric = state.cells[i - 1].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
             double gradhidro = state.cells[i - 1].dPdLHidro * (kGravity * sin(state.cells[i].dutoL.teta) * rhomix * dx);
-            state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2;
+            state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
 
             state.cells[i].termoHidro = sinalJ * gradhidro / dx;
             state.cells[i].termoFric = gradfric / dx;
@@ -3315,7 +3316,7 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
             double frictionFactor = state.cells[i - 1].fric(mixtureReynolds, state.cells[i].dutoL.rug / diameter);
             double gradfric = state.cells[i - 1].dPdLFric * (0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area);
             double gradhidro = state.cells[i - 1].dPdLHidro * (kGravity * sin(state.cells[i].dutoL.teta) * rhomix * dx);
-            state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2;
+            state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
 
             state.cells[i].termoHidro = sinalJ * gradhidro / dx;
             state.cells[i].termoFric = gradfric / dx;
@@ -3337,7 +3338,7 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
 
         double gradfric = state.cells[i - 1].dPdLFric * frictionGrad * 22620.6 * dx;
         double gradhidro = state.cells[i - 1].dPdLHidro * gravityGrad * 22620.6 * dx;
-        state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2;
+        state.cells[i].presaux = state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
 
         state.cells[i].termoHidro = gradhidro / dx;
         state.cells[i].termoFric = gradfric / dx;
@@ -3383,7 +3384,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
                 tmed = razdx * state.cells[i].temp + (1. - razdx) * state.cells[i - 1].temp;
             else
                 tmed = state.cells[i - 1].temp;
-            double pmed = state.cells[i].presaux + state.cells[i - 1].dpB / kPascalPerKgfPerCm2;
+            double pmed = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
             rhog = state.cells[i].rgCi; // celula[i].flui.MasEspGas(pmed, tmed);
             rhol = (1. - betmed) * state.cells[i].rpCi + betmed * state.cells[i].rcCi;
             ugsmed = (state.cells[i].QG) / (area);
@@ -3428,7 +3429,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             if (state.cells[i].mudaArea == 1)
                 dpArea = areaChangePressureDrop(state, i - 1, rhomix, mixtureReynolds, fabs(j));
 
-            state.cells[i].pres = pmed - (gradfric + gradhidro) / kPascalPerKgfPerCm2 + dpArea;
+            state.cells[i].pres = pmed - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2 + dpArea;
         } else {
             alfmed = state.cells[i].alf;
             betmed = state.cells[i].bet;
@@ -3458,7 +3459,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             if (state.cells[i].mudaArea == 1)
                 dpArea = areaChangePressureDrop(state, i - 1, rhomix, mixtureReynolds, fabs(j));
 
-            state.cells[i].pres = state.cells[i].presaux + state.cells[i - 1].dpB / kPascalPerKgfPerCm2 - (gradfric + gradhidro) / kPascalPerKgfPerCm2 + dpArea;
+            state.cells[i].pres = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2 - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2 + dpArea;
         }
     } else {
         double holdup;
@@ -3474,7 +3475,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
 
         double gradfric = state.cells[i - 1].dPdLFric * frictionGrad * 22620.6 * dx;
         double gradhidro = state.cells[i - 1].dPdLHidro * gravityGrad * 22620.6 * dx;
-        state.cells[i].pres = state.cells[i].presaux + state.cells[i - 1].dpB / kPascalPerKgfPerCm2 - (gradfric + gradhidro) / kPascalPerKgfPerCm2;
+        state.cells[i].pres = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2 - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
 
         state.cells[i].termoHidro = gradhidro / dx;
         state.cells[i].termoFric = gradfric / dx;
@@ -3695,7 +3696,7 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
         double bet0 = state.cells[i - 1].bet;
         double rhomis = (alf0 * state.cells[i - 1].flui.MasEspGas(state.cells[i].presaux, tmed) + (1 - alf0) * ((1 - bet0) * state.cells[i - 1].flui.MasEspLiq(state.cells[i].presaux, tmed) + bet0 * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i].presaux, tmed)));
         double vismis = alf0 * state.cells[i - 1].flui.ViscGas(state.cells[i].presaux, tmed) + (1 - alf0) * ((1. - bet0) * state.cells[i - 1].flui.ViscOleo(state.cells[i].presaux, tmed) + bet0 * state.cells[i].fluicol.VisFlu(state.cells[i].presaux, tmed));
-        vazmix *= (kSecondsPerDay / 0.1589876);
+        vazmix *= (units::kSecondsPerDay / 0.1589876);
         state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
         state.cells[i - 1].dpB = sinalQ * 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * kGravity;
         state.cells[i - 1].potB = state.cells[i - 1].acsr.bcs.Pvis * 745.7;
@@ -3707,7 +3708,7 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
         state.cells[i - 1].potTermo += state.cells[i - 1].potBT * (1. - state.cells[i - 1].acsr.bcs.eficM / 100.) * state.cells[i - 1].acsr.bcs.fracTermMotorEfic;
 
     } else if (state.cells[i - 1].acsr.tipo == 7) {
-        state.cells[i - 1].dpB = sinalQ * state.cells[i - 1].acsr.delp * kPascalPerKgfPerCm2;
+        state.cells[i - 1].dpB = sinalQ * state.cells[i - 1].acsr.delp * units::kPascalPerKgfPerCm2;
         double bet0 = state.cells[i - 1].bet;
         double rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i].presaux, tmed);
         double rhol = ((1 - bet0) * state.cells[i - 1].flui.MasEspLiq(state.cells[i].presaux, tmed) + bet0 * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i].presaux, tmed));
@@ -3723,9 +3724,9 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
         double Wcomp;
         double Wbomb;
         Wbomb = (100. / state.cells[i - 1].acsr.eficLiq) * state.cells[i - 1].dpB * qlmon;
-        double wcompiso = -state.cells[i].presaux * kPascalPerKgfPerCm2 * qgMon * log(state.cells[i].presaux / (state.cells[i].presaux + state.cells[i - 1].acsr.delp));
+        double wcompiso = -state.cells[i].presaux * units::kPascalPerKgfPerCm2 * qgMon * log(state.cells[i].presaux / (state.cells[i].presaux + state.cells[i - 1].acsr.delp));
         if (state.cells[i - 1].acsr.tipoCompGas != 2)
-            Wcomp = -(state.cells[i].presaux * kPascalPerKgfPerCm2 * qgMon / (1. - npoli)) *
+            Wcomp = -(state.cells[i].presaux * units::kPascalPerKgfPerCm2 * qgMon / (1. - npoli)) *
                     (pow(1 + sinalQ * state.cells[i - 1].acsr.delp / state.cells[i].presaux, (npoli - 1.) / npoli) - 1.);
         else
             Wcomp = wcompiso;
@@ -3769,7 +3770,7 @@ void gasLineHydrostatic(const SteadyStateState &state) {
         taux = state.input.celg[i].textern;
         rhog = state.gasCells[i].flui.MasEspGas(pchute, taux);
         double dxmed = 0.5 * (state.gasCells[i].dx0 + state.gasCells[i + 1].dx0);
-        pchute -= ((rhog * 9.81 * sinl(state.gasCells[i].duto.teta) * dxmed) / kPascalPerKgfPerCm2);
+        pchute -= ((rhog * 9.81 * sinl(state.gasCells[i].duto.teta) * dxmed) / units::kPascalPerKgfPerCm2);
         state.gasCells[i + 1].pres = pchute;
         state.gasCells[i + 1].temp = taux;
     }
@@ -3903,7 +3904,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
             double qcomp = state.cells[0].acsr.injg.razCompGas *
                            state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
                            state.cells[0].acsr.injg.fluidocol.MasEspFlu(pchute, state.cells[0].temp);
-            qcomp /= kSecondsPerDay;
+            qcomp /= units::kSecondsPerDay;
             alfini = qgas / (qliq + qcomp + qgas);
             if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
                 betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
@@ -5048,7 +5049,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
             double qcomp = state.cells[0].acsr.injg.razCompGas *
                            state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
                            state.cells[0].acsr.injg.fluidocol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
-            qcomp /= kSecondsPerDay;
+            qcomp /= units::kSecondsPerDay;
             alfini = qgas / (qliq + qcomp + qgas);
             if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
                 betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
@@ -5445,7 +5446,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             double qcomp = state.cells[0].acsr.injg.razCompGas *
                            state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
                            state.cells[0].acsr.injg.fluidocol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
-            qcomp /= kSecondsPerDay;
+            qcomp /= units::kSecondsPerDay;
             if (fabs(qliq + qgas) > 1e-15)
                 alfini = qgas / (qliq + qcomp + qgas);
             else
@@ -5695,9 +5696,9 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
     state.gasCells[0].VGasL = 0.;
     if (chutemass < 0) // if no chutemass is given in the parameter list,
                        // the JSON's gas injection value is used
-        state.gasCells[0].massfonteCH = state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(1., 15.6) / kSecondsPerDay;
+        state.gasCells[0].massfonteCH = state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(1., 15.6) / units::kSecondsPerDay;
     else
-        state.gasCells[0].massfonteCH = chutemass * state.gasCells[0].flui.MasEspGas(1., 15.6) / kSecondsPerDay;
+        state.gasCells[0].massfonteCH = chutemass * state.gasCells[0].flui.MasEspGas(1., 15.6) / units::kSecondsPerDay;
     state.gasCells[0].VGasR = state.gasCells[0].massfonteCH;
     state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
 
@@ -5814,7 +5815,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
         } else {
             if (state.input.flashCompleto < 1) {
                 state.cells[0].acsr.injl.QLiq = chute;
-                delp = (1 / (state.cells[0].fluicol.MasEspFlu(state.gasSurfacePressure, state.cells[0].acsr.injl.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * state.cells[0].fluicol.MasEspFlu(1.01, 15.) / kSecondsPerDay) / (state.surfaceChoke.AreaGarg), 2.) / kPascalPerKgfPerCm2;
+                delp = (1 / (state.cells[0].fluicol.MasEspFlu(state.gasSurfacePressure, state.cells[0].acsr.injl.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * state.cells[0].fluicol.MasEspFlu(1.01, 15.) / units::kSecondsPerDay) / (state.surfaceChoke.AreaGarg), 2.) / units::kPascalPerKgfPerCm2;
             } else {
                 state.cells[0].acsr.injg.QGas = chute;
                 if (state.input.flashCompleto == 2) {
@@ -5823,7 +5824,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
                     state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(state.gasSurfacePressure, state.cells[0].acsr.injg.temp, -1, NULL, NULL, state.input.pocinjec);
                 }
                 double rhogstd = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
-                delp = (1 / (state.cells[0].flui.MasEspGas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * rhogstd / kSecondsPerDay) / (state.surfaceChoke.AreaGarg), 2.) / kPascalPerKgfPerCm2;
+                delp = (1 / (state.cells[0].flui.MasEspGas(state.gasSurfacePressure, state.cells[0].acsr.injg.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * rhogstd / units::kSecondsPerDay) / (state.surfaceChoke.AreaGarg), 2.) / units::kPascalPerKgfPerCm2;
                 if (state.cells[0].acsr.injg.seco == 1) {
                     alfini = 1.;
                     betini = 0.;
@@ -6002,7 +6003,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
         double alfa = 1. - liquidHoldup;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (state.cells[i].dx + state.cells[i - 1].dx);
-        pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2);
+        pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2);
         if (state.cells[i - 1].acsr.tipo == 7)
             pchute -= state.cells[i - 1].acsr.delp;
         if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
@@ -6017,7 +6018,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             double vazmix = j * state.cells[i - 1].dutoL.area;
             double rhomis = state.cells[i - 1].flui.MasEspLiq(pchute, taux);
             double vismis = state.cells[i - 1].flui.ViscOleo(pchute, taux);
-            vazmix *= (kSecondsPerDay / 0.1589876);
+            vazmix *= (units::kSecondsPerDay / 0.1589876);
             state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
             state.cells[i - 1].dpB = 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * kGravity;
         }
@@ -6030,7 +6031,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
                                                        pchute, taux, alf0, bet0);
             state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * kPascalPerKgfPerCm2Variant;
         }
-        pchute -= state.cells[i - 1].dpB / kPascalPerKgfPerCm2;
+        pchute -= state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
         state.cells[i - 1].pres = pchute;
     }
     return pchute;
@@ -6076,7 +6077,7 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
         double alfa = 1. - liquidHoldup;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (state.cells[i].dx + state.cells[i - 1].dx);
-        pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / kPascalPerKgfPerCm2);
+        pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2);
         if (state.cells[i - 1].acsr.tipo == 7)
             pchute -= state.cells[i - 1].acsr.delp;
         if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
@@ -6127,7 +6128,7 @@ double secondaryBranchHydrostatic(const SteadyStateState &state, double titulo) 
 
         double rhomix = (1. - alfa) * ((1. - complementaryFraction) * rhol + complementaryFraction * rhoc) + alfa * rhog;
         double dxmed = 0.5 * (state.cells[i].dx + state.cells[i + 1].dx);
-        pchute -= ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed) / kPascalPerKgfPerCm2);
+        pchute -= ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed) / units::kPascalPerKgfPerCm2);
         state.cells[i + 1].pres = pchute;
         state.cells[i + 1].temp = taux;
     }

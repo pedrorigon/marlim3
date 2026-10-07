@@ -8,6 +8,7 @@
 #include "JSONKeyTranslator.h"
 #include "OutputI18n.h"
 #include "rapidjson/filereadstream.h"
+#include "UnitConversions.h"
 
 using namespace rapidjson;
 
@@ -12791,10 +12792,10 @@ void Ler::lerArq() {
 		}
 		if (tabg > 0 || tabp > 0) {
 			tabentCrit.npont = tabent.npont;
-			tabentCrit.tmin = (tabent.tmin + 273.15)
-					/ ((TCMax - 460. - 32.) / 1.8 + 273.15);
-			tabentCrit.tmax = (tabent.tmax + 273.15)
-					/ ((TCMin - 460. - 32.) / 1.8 + 273.15);
+			tabentCrit.tmin = (tabent.tmin + units::kZeroCelsiusInKelvin)
+					/ ((TCMax - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
+			tabentCrit.tmax = (tabent.tmax + units::kZeroCelsiusInKelvin)
+					/ ((TCMin - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
 			tabentCrit.pmin = tabent.pmin * 0.9678411 * 14.69595 / PCMax;
 			tabentCrit.pmax = tabent.pmax * 0.9678411 * 14.69595 / PCMin;
 		}
@@ -13559,10 +13560,10 @@ void Ler::copiaArq(Ler& arqAntigo) {
 	}
 	if (tabg > 0 || tabp > 0) {
 		tabentCrit.npont = tabent.npont;
-		tabentCrit.tmin = (tabent.tmin + 273.15)
-				/ ((TCMax - 460. - 32.) / 1.8 + 273.15);
-		tabentCrit.tmax = (tabent.tmax + 273.15)
-				/ ((TCMin - 460. - 32.) / 1.8 + 273.15);
+		tabentCrit.tmin = (tabent.tmin + units::kZeroCelsiusInKelvin)
+				/ ((TCMax - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
+		tabentCrit.tmax = (tabent.tmax + units::kZeroCelsiusInKelvin)
+				/ ((TCMin - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
 		tabentCrit.pmin = tabent.pmin * 0.9678411 * 14.69595 / PCMax;
 		tabentCrit.pmax = tabent.pmax * 0.9678411 * 14.69595 / PCMin;
 	}
@@ -19071,7 +19072,7 @@ void Ler::imprimeTrend(Cel* const celula,
 			k++;
 		}
 		if (trendp[trend].dpB == 1) {
-			flut[linha][k] = celula[i].dpB/98066.5;
+			flut[linha][k] = celula[i].dpB/units::kPascalPerKgfPerCm2;
 			k++;
 		}
 		if (trendp[trend].potB == 1) {

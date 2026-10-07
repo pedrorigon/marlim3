@@ -6,6 +6,7 @@
  */
 #define _USE_MATH_DEFINES // para M_PI
 #include "SisProdVap.h"
+#include "UnitConversions.h"
 #include <math.h>
 
 SProdVap::SProdVap(string nomeArquivoEntrada, string nomeArquivoLog, varGlob1D *Vvg1dSP) : arq(nomeArquivoEntrada, Vvg1dSP), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1), matglobP(2 * arq.ncelp, 2, 2), termolivreP(
@@ -500,11 +501,11 @@ void SProdVap::calctemp(int i, double tempantiga) {
     double coefdxP = (rhol * ulsmed * jtl + rhog * ugsmed * jtg) * area;
     double dpdx;
     if (i < ncel)
-        dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     else
-        dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i].pres - celula[i].presaux) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     if (celula[i].acsr.tipo == 5 && celula[i].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i].duto.area)
-        dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i].pres - celula[i].presaux) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     // celula[i].VTemper=coefdxT*area/coefTempo;//corrigir a multiplicação pela área
     celula[i].VTemper = coefdxT / coefTempo;
     double dtdx = (celula[i].temp - tempantiga) / dxmed;
@@ -522,7 +523,7 @@ void SProdVap::calctemp(int i, double tempantiga) {
         dpdx = 0.;
     }
     if (celula[i].acsr.tipo == 8 && celula[i].acsr.bvol.freq > 1.) {
-        dpdx = (celula[i].pres - celula[i - 1].pres) * 98066.5 / dxmed;
+        dpdx = (celula[i].pres - celula[i - 1].pres) * units::kPascalPerKgfPerCm2 / dxmed;
     }
 
     double cinetico = 0;
@@ -669,14 +670,14 @@ void SProdVap::calctemp(int i, double tempantiga) {
         delvel = ugsmed;
     else
         delvel = ulsmed;
-    double verifica = area * celula[i].pres * 98066.5 * delvel * (alfinter - alfinterL) / celula[i].dx;
+    double verifica = area * celula[i].pres * units::kPascalPerKgfPerCm2 * delvel * (alfinter - alfinterL) / celula[i].dx;
 
     if (celula[i].temp < 0 || celula[i].temp > 100) {
         int para;
         para = 0.;
     }
 
-    celula[i].temp = ((coefTempo / celula[i].dt) * celula[i].temp - (coefPresTempo * (celula[i].pres - celula[i].presini) * 98066.5 / celula[i].dt) - coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + celula[i - 1].potB / dxmed + fontemassL + fontemassG + fluxcal -
+    celula[i].temp = ((coefTempo / celula[i].dt) * celula[i].temp - (coefPresTempo * (celula[i].pres - celula[i].presini) * units::kPascalPerKgfPerCm2 / celula[i].dt) - coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + celula[i - 1].potB / dxmed + fontemassL + fontemassG + fluxcal -
                       latente) /
                      (coefTempo / celula[i].dt);
     if (celula[i].temp < -50.)
@@ -989,11 +990,11 @@ void SProdVap::calcTransMassTermo(int i) {
     double coefdxP = (rhol * ulsmed * jtl + rhog * ugsmed * jtg) * area;
     double dpdx;
     if (i < ncel)
-        dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     else
-        dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i].pres - celula[i].presaux) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     if (celula[i].acsr.tipo == 5 && celula[i].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i].duto.area)
-        dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i].pres - celula[i].presaux) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     celula[i].VTemper = coefdxT / coefTempo;
     double dtdx = (celula[i].temp - celula[i - 1].temp) / dxmed;
     if (i < ncel)
@@ -1009,7 +1010,7 @@ void SProdVap::calcTransMassTermo(int i) {
         dpdx = 0.;
     }
     if (celula[i].acsr.tipo == 8 && celula[i].acsr.bvol.freq > 1.) {
-        dpdx = (celula[i].pres - celula[i - 1].pres) * 98066.5 / dxmed;
+        dpdx = (celula[i].pres - celula[i - 1].pres) * units::kPascalPerKgfPerCm2 / dxmed;
     }
 
     double cinetico = 0;
@@ -1156,14 +1157,14 @@ void SProdVap::calcTransMassTermo(int i) {
         delvel = ugsmed;
     else
         delvel = ulsmed;
-    double verifica = area * celula[i].pres * 98066.5 * delvel * (alfinter - alfinterL) / celula[i].dx;
+    double verifica = area * celula[i].pres * units::kPascalPerKgfPerCm2 * delvel * (alfinter - alfinterL) / celula[i].dx;
 
     if (celula[i].temp < 0 || celula[i].temp > 100) {
         int para;
         para = 0.;
     }
 
-    celula[i].FonteMudaFase = (-(coefTempo / celula[i].dt) * (celula[i].temp - celula[i].tempini) - (coefPresTempo * (celula[i].pres - celula[i].presini) * 98066.5 / celula[i].dt) - coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + celula[i - 1].potB / dxmed + fontemassL + fontemassG + fluxcal); // / (coefTempo / celula[i].dt);
+    celula[i].FonteMudaFase = (-(coefTempo / celula[i].dt) * (celula[i].temp - celula[i].tempini) - (coefPresTempo * (celula[i].pres - celula[i].presini) * units::kPascalPerKgfPerCm2 / celula[i].dt) - coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + celula[i - 1].potB / dxmed + fontemassL + fontemassG + fluxcal); // / (coefTempo / celula[i].dt);
 
     celula[i].FonteMudaFase /= latente;
 }
@@ -2565,7 +2566,7 @@ void SProdVap::renovaTemp() {
             double gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
             double gradhidro = 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
 
-            celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / 98066.5;
+            celula[i].presaux = celula[i].pres + (gradfric + gradhidro - celula[i - 1].dpB) / units::kPascalPerKgfPerCm2;
             celula[i - 1].presauxR = celula[i].presaux;
             celula[i + 1].presauxL = celula[i].presaux;
 
@@ -3898,7 +3899,7 @@ void SProdVap::calcCCpres(double titRev, double alfRev) {
     double rholmix = rholp;
     double romix = alfSup * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp) + (1 - alfSup) * rholmix;
 
-    double delp = (0.5 / 98066.5) * (1 / romix) * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg) - 1 / (celula[ncel - 1].duto.area * celula[ncel - 1].duto.area)) * masentrada * masentrada;
+    double delp = (0.5 / units::kPascalPerKgfPerCm2) * (1 / romix) * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg) - 1 / (celula[ncel - 1].duto.area * celula[ncel - 1].duto.area)) * masentrada * masentrada;
     double masChk;
 
     double sinal = 1.;
@@ -4002,7 +4003,7 @@ void SProdVap::calcCCpres(double titRev, double alfRev) {
                                       celula[ncel].QL);
             else
                 delp = 0.;
-            presfim = pGSup + sens * delp / 98066.5;
+            presfim = pGSup + sens * delp / units::kPascalPerKgfPerCm2;
         }
         masChkSup = 0;
     }
@@ -4057,7 +4058,7 @@ void SProdVap::calcCCBuffer(double titRev, double alfRev) {
     double rholmix = rholp;
     double romix = alfSup * celula[ncel].flui.MasEspGas(celula[ncel].presBuf, celula[ncel].temp) + (1 - alfSup) * rholmix;
 
-    double delp = (0.5 / 98066.5) * (1 / romix) * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg) - 1 / (celula[ncel - 1].duto.area * celula[ncel - 1].duto.area)) * masentrada * masentrada;
+    double delp = (0.5 / units::kPascalPerKgfPerCm2) * (1 / romix) * (1 / (chokeSup.AreaGarg * chokeSup.AreaGarg) - 1 / (celula[ncel - 1].duto.area * celula[ncel - 1].duto.area)) * masentrada * masentrada;
     double masChk;
 
     double sinal = 1.;
@@ -5029,7 +5030,7 @@ double SProdVap::buscaProdPfundoPerm(double chute) {
         double alfa = 0.;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-        pchute += ((rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
+        pchute += ((rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2);
         if (celula[i - 1].acsr.tipo == 7)
             pchute -= celula[i - 1].acsr.delp;
         if (celula[i - 1].acsr.tipo == 11 && (celula[i - 1].acsr.iprvap.Pres - pchute) > -(*vg1dSP).localtiny)
@@ -5053,7 +5054,7 @@ double SProdVap::buscaProdPfundoPerm(double chute) {
             double alfa = 0.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
             if (celula[i - 1].acsr.tipo == 7)
                 pchuteAux -= celula[i - 1].acsr.delp;
             if (celula[i - 1].acsr.tipo == 11 && (celula[i - 1].acsr.iprvap.Pres - pchuteAux) > -(*vg1dSP).localtiny)
@@ -5069,7 +5070,7 @@ double SProdVap::buscaProdPfundoPerm(double chute) {
             double alfa = 0.8;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
             if (celula[i - 1].acsr.tipo == 7)
                 pchuteAux -= celula[i - 1].acsr.delp;
             if (celula[i - 1].acsr.tipo == 11 && (celula[i - 1].acsr.iprvap.Pres - pchuteAux) > -(*vg1dSP).localtiny)
@@ -5226,7 +5227,7 @@ double SProdVap::buscaProdPfundoPerm2(double chute) {
         double alfa = 0.;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-        pchute += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+        pchute += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
         if (celula[i - 1].acsr.tipo == 11 && (celula[i - 1].acsr.iprvap.Pres - pchute) > -(*vg1dSP).localtiny)
             pchute = 1.05 * celula[i - 1].acsr.iprvap.Pres;
     }
@@ -5249,7 +5250,7 @@ double SProdVap::buscaProdPfundoPerm2(double chute) {
             double alfa = 0.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
             if (celula[i - 1].acsr.tipo == 11 && (celula[i - 1].acsr.iprvap.Pres - pchuteAux) > -(*vg1dSP).localtiny)
                 pchuteAux = 1.01 * celula[i - 1].acsr.iprvap.Pres;
         }
@@ -5262,7 +5263,7 @@ double SProdVap::buscaProdPfundoPerm2(double chute) {
             double alfa = 0.8;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5;
+            pchuteAux += (rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
             if (celula[i - 1].acsr.tipo == 11 && (celula[i - 1].acsr.iprvap.Pres - pchuteAux) > -(*vg1dSP).localtiny)
                 pchuteAux = 1.15 * celula[i - 1].acsr.iprvap.Pres;
         }
@@ -5868,7 +5869,7 @@ void SProdVap::RenovaPresPermMon(int i, int RK) {
         double f1 = celula[i - 1].fric(re1, celula[i].dutoL.rug / dia);
         double gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
         double gradhidro = 9.82 * sin(celula[i].dutoL.teta) * rhomix * dx;
-        celula[i].presaux = celula[i - 1].pres - (gradfric + gradhidro) / 98066.5;
+        celula[i].presaux = celula[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
     } else {
         double alfmed = celula[i].alf;
         double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
@@ -5893,7 +5894,7 @@ void SProdVap::RenovaPresPermMon(int i, int RK) {
         double f1 = celula[i - 1].fric(re1, celula[i].dutoL.rug / dia);
         double gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
         double gradhidro = 9.82 * sin(celula[i].dutoL.teta) * rhomix * dx;
-        celula[i].presaux = celula[i - 1].pres - (gradfric + gradhidro) / 98066.5;
+        celula[i].presaux = celula[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
     }
 }
 
@@ -5927,7 +5928,7 @@ void SProdVap::RenovaPresPermJus(int i, int RK) {
         alfmed = celula[i].alf;
         double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
         tmed = razdx * celula[i].temp + (1. - razdx) * celula[i - 1].temp;
-        double pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
+        double pmed = celula[i].presaux + celula[i - 1].dpB / units::kPascalPerKgfPerCm2;
         rhog = celula[i].flui.MasEspGas(pmed, tmed);
         rhol = celula[i].flui.MasEspLiq(pmed, tmed);
         ugsmed = (celula[i].QG) / (area);
@@ -5947,7 +5948,7 @@ void SProdVap::RenovaPresPermJus(int i, int RK) {
         gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
         gradhidro = 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
 
-        celula[i].pres = pmed - (gradfric + gradhidro) / 98066.5;
+        celula[i].pres = pmed - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
     } else {
         alfmed = celula[i].alf;
         double razdx = celula[i].dx / (celula[i].dx + celula[i].dxL);
@@ -5972,7 +5973,7 @@ void SProdVap::RenovaPresPermJus(int i, int RK) {
         gradfric = 0.5 * f1 * rhomix * (fabs(j) * j) * si * dx / area;
         gradhidro = 9.82 * sin(celula[i].duto.teta) * rhomix * dx;
 
-        celula[i].pres = celula[i].presaux + celula[i - 1].dpB / 98066.5 - (gradfric + gradhidro) / 98066.5;
+        celula[i].pres = celula[i].presaux + celula[i - 1].dpB / units::kPascalPerKgfPerCm2 - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
     }
 }
 
@@ -6541,11 +6542,11 @@ void SProdVap::RenovaTransMassPerm(int i) {
     double coefdxP = (rhol * ulsmed * jtl + rhog * ugsmed * jtg) * area;
     double dpdx;
     if (i < ncel)
-        dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i + 1].presaux - celula[i].pres) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     else
-        dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i].pres - celula[i].presaux) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     if (celula[i].acsr.tipo == 5 && celula[i].acsr.chk.AreaGarg <= (1e-3 + arq.master1.razareaativ) * celula[i].duto.area)
-        dpdx = 2. * (celula[i].pres - celula[i].presaux) * 98066.5 / celula[i].dx;
+        dpdx = 2. * (celula[i].pres - celula[i].presaux) * units::kPascalPerKgfPerCm2 / celula[i].dx;
     celula[i].VTemper = coefdxT / coefTempo;
     double dtdx = (celula[i].temp - celula[i - 1].temp) / dxmed;
     if (i < ncel)
@@ -6561,7 +6562,7 @@ void SProdVap::RenovaTransMassPerm(int i) {
         dpdx = 0.;
     }
     if (celula[i].acsr.tipo == 8 && celula[i].acsr.bvol.freq > 1.) {
-        dpdx = (celula[i].pres - celula[i - 1].pres) * 98066.5 / dxmed;
+        dpdx = (celula[i].pres - celula[i - 1].pres) * units::kPascalPerKgfPerCm2 / dxmed;
     }
 
     double cinetico = 0;
@@ -6668,14 +6669,14 @@ void SProdVap::RenovaTransMassPerm(int i) {
         delvel = ugsmed;
     else
         delvel = ulsmed;
-    double verifica = area * celula[i].pres * 98066.5 * delvel * (alfinter - alfinterL) / celula[i].dx;
+    double verifica = area * celula[i].pres * units::kPascalPerKgfPerCm2 * delvel * (alfinter - alfinterL) / celula[i].dx;
 
     if (celula[i].temp < 0 || celula[i].temp > 100) {
         int para;
         para = 0.;
     }
 
-    celula[i].FonteMudaFase = (-(coefPresTempo * (celula[i].pres - celula[i].presini) * 98066.5 / celula[i].dt) - coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + celula[i - 1].potB / dxmed + fontemassL + fontemassG + fluxcal); // / (coefTempo / celula[i].dt);
+    celula[i].FonteMudaFase = (-(coefPresTempo * (celula[i].pres - celula[i].presini) * units::kPascalPerKgfPerCm2 / celula[i].dt) - coefdxT * dtdx + coefdxP * dpdx - cinetico - (hidro - 0. * verifica) + celula[i - 1].potB / dxmed + fontemassL + fontemassG + fluxcal); // / (coefTempo / celula[i].dt);
 
     celula[i].FonteMudaFase /= latente;
 
@@ -6709,7 +6710,7 @@ void SProdVap::atualizaPeriPmonProd(int i) {
         celula[i - 1].potB = (1. - celula[i - 1].acsr.bcs.Evis / 100. + 100. * (1. - celula[i - 1].acsr.bcs.eficM / 100.) / celula[i - 1].acsr.bcs.eficM) * celula[i - 1].acsr.bcs.Pvis * 745.7;
 
     } else if (celula[i - 1].acsr.tipo == 7)
-        celula[i - 1].dpB = celula[i - 1].acsr.delp * 98066.5;
+        celula[i - 1].dpB = celula[i - 1].acsr.delp * units::kPascalPerKgfPerCm2;
 }
 void SProdVap::atualizaPeriPjusProd(int i) {
     if (celula[i].pres < 0.99)
@@ -6867,7 +6868,7 @@ double SProdVap::hidroreverso(double hol, double vaz) {
         double alfa = 1. - hol;
         double rhomix = (1. - alfa) * rhol + alfa * rhog;
         double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
-        pchute += ((rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / 98066.5);
+        pchute += ((rhomix * 9.81 * sin(celula[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2);
         if (celula[i - 1].acsr.tipo == 7)
             pchute -= celula[i - 1].acsr.delp;
         if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - pchute) < (*vg1dSP).localtiny)
@@ -6882,7 +6883,7 @@ double SProdVap::hidroreverso(double hol, double vaz) {
             celula[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
             celula[i - 1].dpB = 0.3048 * celula[i - 1].acsr.bcs.Hvis * rhomis * 9.82;
         }
-        pchute -= celula[i - 1].dpB / 98066.5;
+        pchute -= celula[i - 1].dpB / units::kPascalPerKgfPerCm2;
         celula[i - 1].pres = pchute;
     }
     return pchute;

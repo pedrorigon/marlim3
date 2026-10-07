@@ -1,6 +1,7 @@
 //Petroleo Brasileiro S.A.
 #include "GradientCorrelations.h"
 #include "CorrelationFits.h"
+#include "UnitConversions.h"
 #include <cmath>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -307,7 +308,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
             tmed = celula[i - 1].temp;
         }
         
-        pmed = celula[i].presaux + celula[i - 1].dpB / 98066.5;
+        pmed = celula[i].presaux + celula[i - 1].dpB / units::kPascalPerKgfPerCm2;
 
         celula[i].flui.PcTcIS();
         compressibilityFactor=celula[i].flui.Zdran(pmed, tmed);
@@ -490,7 +491,7 @@ void executarCorrelacao(Cel* celula, int i, int inter, int AceleraConvergPerm,
     	entrada.gravity=9.81;
     	entrada.muG=gasViscosity/1000.;
     	entrada.muL=liquidViscosity/1000.;
-    	entrada.pressure=pmed*98066.5/((0.9678411)*14.69595);
+    	entrada.pressure=pmed*units::kPascalPerKgfPerCm2/((0.9678411)*14.69595);
     	entrada.rhoG=gasDensity/0.06243;
     	entrada.rhoL=liquidDensity/0.06243;
     	entrada.roughness=roughness*entrada.diameter;

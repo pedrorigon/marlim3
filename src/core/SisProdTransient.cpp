@@ -9,6 +9,7 @@
 #include "celula3.h"
 #include "celulaGas.h"
 #include "variaveisGlobais1D.h"
+#include "UnitConversions.h"
 
 #include <math.h>
 
@@ -85,8 +86,8 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
     double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
     double gradhidro = (1 - medpres) * kGravity * sin(state.cells[i].duto.teta) * rhomix * dx;
     state.cells[i].presauxini = state.cells[i].presaux;
-    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
-    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
+    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
+    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
     dx = 0.5 * state.cells[i].dxL;
     diameter = state.cells[i - 1].duto.a;
     area = 0.25 * M_PI * diameter * diameter;
@@ -114,8 +115,8 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
 
     if (state.cells[i - 1].acsr.tipo != kAccessoryChoke || state.cells[i - 1].acsr.chk.AreaGarg > state.cells[i - 1].acsr.chk.AreaTub * 0.5)
         state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
-                            0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2);
-    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / kPascalPerKgfPerCm2;
+                            0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2);
+    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
     state.cells[i - 1].presauxRini = state.cells[i - 1].presauxR;
     state.cells[i - 1].presauxR = state.cells[i].presaux;
     if (i < state.lastCell) {
@@ -265,8 +266,8 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     double gradhidro = (1 - medpres) * kGravity * sin(state.cells[i].duto.teta) * rhomix * dx;
 
     state.cells[i].presauxini = state.cells[i].presaux;
-    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
-    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / kPascalPerKgfPerCm2;
+    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
+    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
     dx = 0.5 * state.cells[i].dxL;
     diameter = state.cells[i - 1].duto.a;
     area = 0.25 * M_PI * diameter * diameter;
@@ -292,8 +293,8 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     gradhidro = (1 - medpres) * kGravity * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
 
     state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
-                        0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / kPascalPerKgfPerCm2);
-    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / kPascalPerKgfPerCm2;
+                        0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2);
+    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
     state.cells[i - 1].presauxRini = state.cells[i - 1].presauxR;
     state.cells[i - 1].presauxR = state.cells[i].presaux;
     if (i < state.lastCell) {
@@ -601,7 +602,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
     int abertoini = state.surfaceChokeOpen;
     double delp;
     if (surfaceChokeIsOpen(state))
-        delp = (0.5 / kPascalPerKgfPerCm2) * (1 / romix) * (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
+        delp = (0.5 / units::kPascalPerKgfPerCm2) * (1 / romix) * (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
     else
         delp = 0;
 
@@ -774,7 +775,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
 
     double delp;
     if (surfaceChokeIsOpen(state))
-        delp = (0.5 / kPascalPerKgfPerCm2) * (1 / romix) *
+        delp = (0.5 / units::kPascalPerKgfPerCm2) * (1 / romix) *
                (1 / (state.surfaceChoke.AreaGarg * state.surfaceChoke.AreaGarg * state.surfaceChoke.cdchk * state.surfaceChoke.cdchk)) * masentrada * masentrada;
     else
         delp = 0.;
@@ -1232,7 +1233,7 @@ void restrictTimeStepByValve(const TransientStepState &state) {
                         state.desperationMoment = 1;
                     if (state.desperationMoment < 1.)
                         state.desperationMoment = 1.;
-                    state.cells[celpos].fontemassGL += state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / kSecondsPerDay;
+                    state.cells[celpos].fontemassGL += state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / units::kSecondsPerDay;
                     state.cells[celpos - 1].fontemassGR = state.cells[celpos].fontemassGL;
                 }
                 if (state.cells[celpos].alf < 0.5)

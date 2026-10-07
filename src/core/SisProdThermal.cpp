@@ -5,6 +5,7 @@
 #include "Leitura.h"
 #include "celula3.h"
 #include "solver3DPoisson.h"
+#include "UnitConversions.h"
 
 #include <math.h>
 
@@ -253,8 +254,8 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
     double rightLiquidEnthalpy = cell.flui.EntalpLiq(rightPressure, rightTemperature);
     double hcR = cell.fluicol.CalorLiq(rightPressure, rightTemperature) * rightTemperature; // enthalpy to be corrected
 
-    double previousMixtureInternalEnergy = gasDensity * previousMeanVoidFraction * (gasEnthalpy - previousMeanPressure * kPascalPerKgfPerCm2 / gasDensity) + liquidDensity * (1 - betmed0) * (1. - previousMeanVoidFraction) * (liquidEnthalpy - previousMeanPressure * kPascalPerKgfPerCm2 / liquidDensity) +
-                           betmed0 * rhoc * (1. - previousMeanVoidFraction) * (hc - previousMeanPressure * kPascalPerKgfPerCm2 / rhoc);
+    double previousMixtureInternalEnergy = gasDensity * previousMeanVoidFraction * (gasEnthalpy - previousMeanPressure * units::kPascalPerKgfPerCm2 / gasDensity) + liquidDensity * (1 - betmed0) * (1. - previousMeanVoidFraction) * (liquidEnthalpy - previousMeanPressure * units::kPascalPerKgfPerCm2 / liquidDensity) +
+                           betmed0 * rhoc * (1. - previousMeanVoidFraction) * (hc - previousMeanPressure * units::kPascalPerKgfPerCm2 / rhoc);
     double leftEnthalpyFlux = leftGasDensity * leftSuperficialGasVelocity * leftGasEnthalpy + leftLiquidDensity * (1. - betL) * leftSuperficialLiquidVelocity * leftLiquidEnthalpy + rhocL * betL * leftSuperficialLiquidVelocity * hcL;
     double rightEnthalpyFlux = rightGasDensity * rightSuperficialGasVelocity * rightGasEnthalpy + rightLiquidDensity * (1. - betR) * rightSuperficialLiquidVelocity * rightLiquidEnthalpy + rhocR * betR * rightSuperficialLiquidVelocity * hcR;
     double enthalpyFluxDivergence = (rightEnthalpyFlux - leftEnthalpyFlux) / cellLength;
@@ -305,13 +306,13 @@ double interpolateMixtureEnergy(const ThermalState &state, int cellIndex, int pr
     double hlc0 = cell.fluicol.CalorLiq(lowerPressure, temperature) * temperature; // enthalpy to be corrected
     double hlc1 = cell.fluicol.CalorLiq(upperPressure, temperature) * temperature; // enthalpy to be corrected
 
-    double lowerMixtureEnergy = meanVoidFraction * lowerGasDensity * (lowerGasEnthalpy - lowerPressure * kPascalPerKgfPerCm2 / lowerGasDensity) +
-                    (1 - meanVoidFraction) * (1 - betmed) * lowerLiquidDensity * (lowerLiquidEnthalpy - lowerPressure * kPascalPerKgfPerCm2 / lowerLiquidDensity) +
-                    (1 - meanVoidFraction) * (betmed)*rhocp0 * (hlc0 - lowerPressure * kPascalPerKgfPerCm2 / rhocp0);
+    double lowerMixtureEnergy = meanVoidFraction * lowerGasDensity * (lowerGasEnthalpy - lowerPressure * units::kPascalPerKgfPerCm2 / lowerGasDensity) +
+                    (1 - meanVoidFraction) * (1 - betmed) * lowerLiquidDensity * (lowerLiquidEnthalpy - lowerPressure * units::kPascalPerKgfPerCm2 / lowerLiquidDensity) +
+                    (1 - meanVoidFraction) * (betmed)*rhocp0 * (hlc0 - lowerPressure * units::kPascalPerKgfPerCm2 / rhocp0);
 
-    double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * kPascalPerKgfPerCm2 / lowerGasDensity) +
-                    (1 - meanVoidFraction) * (1 - betmed) * upperLiquidDensity * (upperLiquidEnthalpy - upperPressure * kPascalPerKgfPerCm2 / upperLiquidDensity) +
-                    (1 - meanVoidFraction) * (betmed)*rhocp1 * (hlc1 - upperPressure * kPascalPerKgfPerCm2 / rhocp1);
+    double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * units::kPascalPerKgfPerCm2 / lowerGasDensity) +
+                    (1 - meanVoidFraction) * (1 - betmed) * upperLiquidDensity * (upperLiquidEnthalpy - upperPressure * units::kPascalPerKgfPerCm2 / upperLiquidDensity) +
+                    (1 - meanVoidFraction) * (betmed)*rhocp1 * (hlc1 - upperPressure * units::kPascalPerKgfPerCm2 / rhocp1);
 
     return pressureRatio * lowerMixtureEnergy + (1. - pressureRatio) * upperMixtureEnergy;
 }
@@ -440,7 +441,7 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
     cell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
     cell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
     double liquidViscosity = (1. - betmed) * cell.mipC + betmed * cell.micC;
-    cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + cell.migC * meanVoidFraction * kPascalSecondPerCentipoise;
+    cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + cell.migC * meanVoidFraction * units::kPascalSecondPerCentipoise;
     double temperaturePerturbation = cell.temp * 0.01;
     if (fabs(cell.temp) < 1e-15)
         temperaturePerturbation = 0.1;
@@ -846,19 +847,19 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
         TemperatureBalance balance = prepareTemperatureBalance(state, cellIndex, steadyMode);
         double pressureGradient;
         if (cellIndex < state.lastCell - 1)
-            pressureGradient = 2. * (rightCell.presaux - cell.pres) * kPascalPerKgfPerCm2 / cell.dx;
+            pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
         else if (cellIndex == state.lastCell - 1 && state.surfaceChoke.AreaGarg > 0.5 * state.cells[state.lastCell - 1].duto.area)
-            pressureGradient = 2. * (rightCell.presaux - cell.pres) * kPascalPerKgfPerCm2 / cell.dx;
+            pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
         else
-            pressureGradient = 2. * (cell.pres - cell.presaux) * kPascalPerKgfPerCm2 / cell.dx;
+            pressureGradient = 2. * (cell.pres - cell.presaux) * units::kPascalPerKgfPerCm2 / cell.dx;
         if (cellIndex > 0 && leftCell.acsr.tipo == kAccessoryChoke &&
             leftCell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area)
-            pressureGradient = 2. * (rightCell.presaux - cell.pres) * kPascalPerKgfPerCm2 / cell.dx;
+            pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
         else if (cellIndex > 0 && cell.acsr.tipo == kAccessoryChoke &&
                  cell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area) {
-            pressureGradient = (cell.pres - leftCell.pres) * kPascalPerKgfPerCm2 / balance.meanCellLength;
+            pressureGradient = (cell.pres - leftCell.pres) * units::kPascalPerKgfPerCm2 / balance.meanCellLength;
         } else if (cellIndex == 0)
-            pressureGradient = 2. * (rightCell.presaux - cell.pres) * kPascalPerKgfPerCm2 / cell.dx;
+            pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
 
         cell.VTemper = balance.temperatureSpatialCoefficient / balance.timeCoefficient;
         if ((cellIndex == 0 && cell.VTemper < 0.) || (((cellIndex < state.lastCell || cell.VTemper >= 0.) && cellIndex > 0) ||
@@ -878,7 +879,7 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
             if ((cellIndex <= 1 && cell.VTemper <= 0) || (cellIndex == state.lastCell && cell.VTemper <= 0))
                 temperatureGradient = 0.;
             if (cell.acsr.tipo == kAccessoryVolumetricPump && cell.acsr.bvol.freq > 1.) {
-                pressureGradient = (cell.pres - leftCell.pres) * kPascalPerKgfPerCm2 / balance.meanCellLength;
+                pressureGradient = (cell.pres - leftCell.pres) * units::kPascalPerKgfPerCm2 / balance.meanCellLength;
             }
 
             double kineticTerm = computeKineticTemperatureTerm(state, cellIndex, balance);
@@ -924,12 +925,12 @@ void computeTemperature(const ThermalState &state, int cellIndex, double previou
                 slipVelocity = balance.gasSuperficialVelocity;
             else
                 slipVelocity = balance.liquidSuperficialVelocity;
-            double interfacialWorkTerm = balance.flowArea * cell.pres * kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
+            double interfacialWorkTerm = balance.flowArea * cell.pres * units::kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
 
             double leftCellThermalPower = 0.;
             if (cellIndex > 0)
                 leftCellThermalPower = leftCell.potTermo;
-            cell.temp = ((balance.timeCoefficient / cell.dt) * cell.temp - (-balance.pressureTimeCoefficient * (cell.pres - cell.presini) * kPascalPerKgfPerCm2 / cell.dt) + cell.dTdLCor * (-balance.temperatureSpatialCoefficient * temperatureGradient + balance.pressureSpatialCoefficient * pressureGradient - kineticTerm - (balance.hydrostaticPower - 0. * interfacialWorkTerm) + (leftCellThermalPower + cell.fonteCal) / balance.meanCellLength + sourceTerms.liquid + sourceTerms.gas + balance.heatFlux - latentHeatTerm) - (balance.rc - balance.rp) * (1 - balance.voidFraction) * cell.pres * kPascalPerKgfPerCm2 * balance.flowArea * (cell.bet - cell.betini) / (balance.liquidDensity * cell.dt)) / (balance.timeCoefficient / cell.dt);
+            cell.temp = ((balance.timeCoefficient / cell.dt) * cell.temp - (-balance.pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) + cell.dTdLCor * (-balance.temperatureSpatialCoefficient * temperatureGradient + balance.pressureSpatialCoefficient * pressureGradient - kineticTerm - (balance.hydrostaticPower - 0. * interfacialWorkTerm) + (leftCellThermalPower + cell.fonteCal) / balance.meanCellLength + sourceTerms.liquid + sourceTerms.gas + balance.heatFlux - latentHeatTerm) - (balance.rc - balance.rp) * (1 - balance.voidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * balance.flowArea * (cell.bet - cell.betini) / (balance.liquidDensity * cell.dt)) / (balance.timeCoefficient / cell.dt);
 
 
             if (fabs(cell.temp - cell.tempini) / cell.dt > 10.) {
@@ -1001,7 +1002,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     cell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
     cell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
     double liquidViscosity = (1. - betmed) * cell.flui.ViscOleo(cell.pres, cell.temp) + betmed * cell.fluicol.VisFlu(cell.pres, cell.temp);
-    cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + cell.flui.ViscGas(cell.pres, cell.temp) * meanVoidFraction * kPascalSecondPerCentipoise;
+    cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + cell.flui.ViscGas(cell.pres, cell.temp) * meanVoidFraction * units::kPascalSecondPerCentipoise;
     double heatFlux = cell.calor.transtrans();
 
     double timeCoefficient = (liquidDensity * (1 - meanVoidFraction) * liquidSpecificHeatConstantVolume + gasDensity * meanVoidFraction * gasSpecificHeatConstantVolume) * flowArea;
@@ -1011,11 +1012,11 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     double pressureSpatialCoefficient = (liquidDensity * meanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * meanSuperficialGasVelocity * gasJouleThomson) * flowArea;
     double pressureGradient;
     if (hasRightCell)
-        pressureGradient = 2. * (rightCell.presaux - cell.pres) * kPascalPerKgfPerCm2 / cell.dx;
+        pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
     else
-        pressureGradient = 2. * (cell.pres - cell.presaux) * kPascalPerKgfPerCm2 / cell.dx;
+        pressureGradient = 2. * (cell.pres - cell.presaux) * units::kPascalPerKgfPerCm2 / cell.dx;
     if (cell.acsr.tipo == kAccessoryChoke && cell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area)
-        pressureGradient = 2. * (cell.pres - cell.presaux) * kPascalPerKgfPerCm2 / cell.dx;
+        pressureGradient = 2. * (cell.pres - cell.presaux) * units::kPascalPerKgfPerCm2 / cell.dx;
     cell.VTemper = temperatureSpatialCoefficient / timeCoefficient;
     double temperatureGradient = (cell.temp - leftCell.temp) / meanCellLength;
     if (hasRightCell)
@@ -1031,7 +1032,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
         pressureGradient = 0.;
     }
     if (cell.acsr.tipo == kAccessoryVolumetricPump && cell.acsr.bvol.freq > 1.) {
-        pressureGradient = (cell.pres - leftCell.pres) * kPascalPerKgfPerCm2 / meanCellLength;
+        pressureGradient = (cell.pres - leftCell.pres) * units::kPascalPerKgfPerCm2 / meanCellLength;
     }
     if (cell.acsr.tipo == kAccessoryMultiPump && cell.acsr.multibcs.freqnova > 1.) {
         pressureGradient = 0.;
@@ -1110,10 +1111,10 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
         slipVelocity = meanSuperficialGasVelocity;
     else
         slipVelocity = meanSuperficialLiquidVelocity;
-    double interfacialWorkTerm = flowArea * cell.pres * kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
+    double interfacialWorkTerm = flowArea * cell.pres * units::kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
 
 
-    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (complementaryDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt)); // / (timeCoefficient / cell.dt);
+    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (complementaryDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt)); // / (timeCoefficient / cell.dt);
 
     cell.FonteMudaFase /= latentHeatTerm;
 }
@@ -2926,7 +2927,7 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     cell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
     cell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
     double liquidViscosity = (1. - betmed) * cell.mipC + betmed * cell.micC;
-    cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + cell.migC * meanVoidFraction * kPascalSecondPerCentipoise;
+    cell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + cell.migC * meanVoidFraction * units::kPascalSecondPerCentipoise;
     double temperaturePerturbation = cell.temp * 0.01;
     if (fabs(cell.temp) < 1e-15)
         temperaturePerturbation = 0.1;
@@ -3186,7 +3187,7 @@ double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
             state.gasCells[j].calor.kint = leftCell.flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
             state.gasCells[j].calor.cpint = gasSpecificHeat;
             state.gasCells[j].calor.rhoint = gasDensity;
-            state.gasCells[j].calor.viscint = leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * kPascalSecondPerCentipoise;
+            state.gasCells[j].calor.viscint = leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * units::kPascalSecondPerCentipoise;
             state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // heat exchange in the annulus
             annulusResistance = state.gasCells[j].calor.resGlob;                // wall resistance
             // The heat flux itself is not of interest here, only the resistance
@@ -3322,7 +3323,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
     if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > 0.05 && state.thermalSourceDisabled == 0) { // the thermal calculation is done for mixture velocities above 0.1 m/s,
         // at lower velocities the fluid temperature is taken as the ambient temperature
         mixtureFluxSign = (meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) / fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
-        double interfaceMeanPressure = cell.presaux + 0 * leftCell.dpB / kPascalPerKgfPerCm2;
+        double interfaceMeanPressure = cell.presaux + 0 * leftCell.dpB / units::kPascalPerKgfPerCm2;
         double interfaceMeanTemperature;
         if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0) // temperature at the cell's left interface
             // case in which one iteration is considered to have been
@@ -3359,7 +3360,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         leftCell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
         leftCell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
         double liquidViscosity = (1. - betmed) * leftCell.flui.ViscOleo(interfaceMeanPressure, interfaceMeanTemperature) + betmed * leftCell.fluicol.VisFlu(interfaceMeanPressure, interfaceMeanTemperature);
-        leftCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * kPascalSecondPerCentipoise;
+        leftCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + leftCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * units::kPascalSecondPerCentipoise;
 
         [[maybe_unused]] double relaxedHeatFlux = 0; // unused variable
         if (state.steadyIteration > 0)
@@ -3387,7 +3388,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             cappedMeanSuperficialGasVelocity = 5 * meanSuperficialGasVelocity / fabs(meanSuperficialGasVelocity);
         double pressureSpatialCoefficient = 1 * (liquidDensity * cappedMeanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * cappedMeanSuperficialGasVelocity * gasJouleThomson) * flowArea; // multiplying term
         // the derivative Dp/Dx
-        const double pressureGradient = 2. * (cell.presaux - leftCell.pres) * kPascalPerKgfPerCm2 / leftCell.dx;
+        const double pressureGradient = 2. * (cell.presaux - leftCell.pres) * units::kPascalPerKgfPerCm2 / leftCell.dx;
         cell.VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
         // only so that there is a value when the transient simulation starts
         [[maybe_unused]] double temperatureGradient = (-leftCell.temp) / meanCellLength;
@@ -3440,7 +3441,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
                 leftCell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
                 leftCell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
                 liquidViscosity = (1. - betmed) * leftCell.flui.ViscOleo(meanPressure, subStepTemperature) + betmed * leftCell.fluicol.VisFlu(meanPressure, subStepTemperature);
-                leftCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + leftCell.flui.ViscGas(meanPressure, subStepTemperature) * meanVoidFraction * kPascalSecondPerCentipoise;
+                leftCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + leftCell.flui.ViscGas(meanPressure, subStepTemperature) * meanVoidFraction * units::kPascalSecondPerCentipoise;
                 if (state.steadyIteration != 0 && state.input.lingas == 1 && (cellIndex - 1 <= state.annulusTubingStart && cellIndex - 1 >= state.annulusTubingEnd)) {
                     int k = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex - 1);
                     double externalTemperatureStep = (state.gasCells[k - 1].temp - state.gasCells[k].temp) / subStepCount;
@@ -3634,7 +3635,7 @@ double applyReverseSteadyAnnulusCoupling(
             state.gasCells[j].calor.kint = rightCell.flui.CondGas(interfaceMeanPressure, interfaceMeanTemperature);
             state.gasCells[j].calor.cpint = gasSpecificHeat;
             state.gasCells[j].calor.rhoint = gasDensity;
-            state.gasCells[j].calor.viscint = rightCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * kPascalSecondPerCentipoise;
+            state.gasCells[j].calor.viscint = rightCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * units::kPascalSecondPerCentipoise;
             state.gasCells[j].fluxcal = state.gasCells[j].calor.transperm(); // heat exchange in the annulus
             annulusResistance = state.gasCells[j].calor.resGlob;                // wall resistance
             // Only the thermal resistance from the casing to the formation is needed, not the actual heat flow.
@@ -3697,7 +3698,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         // Perform the thermal calculation for mixture velocities above 0.1 m/s.
         // Otherwise, assume the fluid temperature equals the ambient temperature.
         mixtureFluxSign = (meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) / fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
-        double interfaceMeanPressure = rightCell.presaux - cell.dpB / kPascalPerKgfPerCm2;
+        double interfaceMeanPressure = rightCell.presaux - cell.dpB / units::kPascalPerKgfPerCm2;
         double interfaceMeanTemperature;
         if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0)
             // Set the left interface temperature from the previous iteration.
@@ -3730,7 +3731,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         rightCell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
         rightCell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
         double liquidViscosity = (1. - betmed) * rightCell.flui.ViscOleo(interfaceMeanPressure, interfaceMeanTemperature) + betmed * rightCell.fluicol.VisFlu(interfaceMeanPressure, interfaceMeanTemperature);
-        rightCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + rightCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * kPascalSecondPerCentipoise;
+        rightCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + rightCell.flui.ViscGas(interfaceMeanPressure, interfaceMeanTemperature) * meanVoidFraction * units::kPascalSecondPerCentipoise;
 
         [[maybe_unused]] double relaxedHeatFlux = 0;
         if (state.steadyIteration > 0)
@@ -3753,7 +3754,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         if ((rightCell.acsr.tipo != kAccessoryPump || rightCell.acsr.bcs.freq < 1) && rightCell.acsr.tipo != 7)
             // without an ESP or a pressure increment, the pressure at the left boundary
             // and the pressure at the cell centre are used to compute Dp/Dx
-            pressureGradient = 2. * (rightCell.presaux - rightCell.pres) * kPascalPerKgfPerCm2 / rightCell.dx;
+            pressureGradient = 2. * (rightCell.presaux - rightCell.pres) * units::kPascalPerKgfPerCm2 / rightCell.dx;
         else {
             // with an ESP or a pressure increment, the pressure of the cell to the left
             // and the pressure at the cell centre are used to compute Dp/Dx
@@ -3810,7 +3811,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
                 rightCell.calor.cpint = liquidSpecificHeat * (1 - meanVoidFraction) + gasSpecificHeat * meanVoidFraction;
                 rightCell.calor.rhoint = liquidDensity * (1 - meanVoidFraction) + gasDensity * meanVoidFraction;
                 liquidViscosity = (1. - betmed) * rightCell.flui.ViscOleo(meanPressure, subStepTemperature) + betmed * rightCell.fluicol.VisFlu(meanPressure, subStepTemperature);
-                rightCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * kPascalSecondPerCentipoise + rightCell.flui.ViscGas(meanPressure, subStepTemperature) * meanVoidFraction * kPascalSecondPerCentipoise;
+                rightCell.calor.viscint = liquidViscosity * (1 - meanVoidFraction) * units::kPascalSecondPerCentipoise + rightCell.flui.ViscGas(meanPressure, subStepTemperature) * meanVoidFraction * units::kPascalSecondPerCentipoise;
                 if (state.steadyIteration != 0 && state.input.lingas == 1 && (cellIndex + 1 <= state.annulusTubingStart && cellIndex + 1 >= state.annulusTubingEnd)) {
                     int k = state.annulusTubingStart + state.tubingAnnulusStart - (cellIndex + 1);
                     double externalTemperatureStep = (state.gasCells[k].temp - state.gasCells[k - 1].temp) / subStepCount;
@@ -3872,7 +3873,7 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double prev
         state.gasCells[cellIndex].calor.kint = state.gasCells[cellIndex].flui.CondGas(state.gasCells[cellIndex].presini, state.gasCells[cellIndex].tempini);
         state.gasCells[cellIndex].calor.cpint = gasSpecificHeat;
         state.gasCells[cellIndex].calor.rhoint = gasDensity;
-        state.gasCells[cellIndex].calor.viscint = state.gasCells[cellIndex].flui.ViscGas(state.gasCells[cellIndex].presini, state.gasCells[cellIndex].tempini) * kPascalSecondPerCentipoise;
+        state.gasCells[cellIndex].calor.viscint = state.gasCells[cellIndex].flui.ViscGas(state.gasCells[cellIndex].presini, state.gasCells[cellIndex].tempini) * units::kPascalSecondPerCentipoise;
         double temperaturePerturbation = state.gasCells[cellIndex].temp * 0.01;
         if (fabs(state.gasCells[cellIndex].temp) < 1e-15)
             temperaturePerturbation = 0.1;
@@ -3901,9 +3902,9 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double prev
         double pressureSpatialCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * flowArea;
         double pressureGradient;
         if (hasRightGasCell)
-            pressureGradient = 2. * (((1 - lengthRatio) * state.gasCells[cellIndex + 1].presini + lengthRatio * state.gasCells[cellIndex].presini) - state.gasCells[cellIndex].presini) * kPascalPerKgfPerCm2 / cellLength;
+            pressureGradient = 2. * (((1 - lengthRatio) * state.gasCells[cellIndex + 1].presini + lengthRatio * state.gasCells[cellIndex].presini) - state.gasCells[cellIndex].presini) * units::kPascalPerKgfPerCm2 / cellLength;
         else
-            pressureGradient = 2. * (state.gasCells[cellIndex].presini - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].presini + lengthRatio * state.gasCells[cellIndex].presini)) * kPascalPerKgfPerCm2 / cellLength;
+            pressureGradient = 2. * (state.gasCells[cellIndex].presini - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].presini + lengthRatio * state.gasCells[cellIndex].presini)) * units::kPascalPerKgfPerCm2 / cellLength;
         double temperatureGradient = (state.gasCells[cellIndex].tempini - state.gasCells[cellIndex - 1].tempini) / meanCellLength;
         if (hasRightGasCell)
             if (meanSuperficialGasVelocity < 0)
@@ -3926,7 +3927,7 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double prev
         if ((*state.globals).lixo5 < 1000.)
             pressureWorkFactor = 1.;
 
-        state.gasCells[cellIndex].temp = ((timeCoefficient / state.gasCells[cellIndex].dt) * state.gasCells[cellIndex].temp - (pressureWorkFactor) * (pressureTimeCoefficient * (state.gasCells[cellIndex].pres - state.gasCells[cellIndex].presini) * kPascalPerKgfPerCm2 / state.gasCells[cellIndex].dt) + state.gasCells[cellIndex].dTdLCor * (-temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - hydrostaticPower + liquidMassSourceTerm + gasMassSourceTerm + state.gasCells[cellIndex].fluxcal)) / (timeCoefficient / state.gasCells[cellIndex].dt);
+        state.gasCells[cellIndex].temp = ((timeCoefficient / state.gasCells[cellIndex].dt) * state.gasCells[cellIndex].temp - (pressureWorkFactor) * (pressureTimeCoefficient * (state.gasCells[cellIndex].pres - state.gasCells[cellIndex].presini) * units::kPascalPerKgfPerCm2 / state.gasCells[cellIndex].dt) + state.gasCells[cellIndex].dTdLCor * (-temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - hydrostaticPower + liquidMassSourceTerm + gasMassSourceTerm + state.gasCells[cellIndex].fluxcal)) / (timeCoefficient / state.gasCells[cellIndex].dt);
 
         if (state.gasCells[cellIndex].temp < kMinimumTemperatureCelsius)
             state.gasCells[cellIndex].temp = kMinimumTemperatureCelsius;

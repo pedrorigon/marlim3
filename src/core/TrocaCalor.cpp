@@ -9,6 +9,7 @@
 #include "TrocaCalor.h"
 #include "Matriz.h"
 #include "Vetor.h"
+#include "UnitConversions.h"
 #include <algorithm>
 #include <fstream>
 #include <math.h>
@@ -125,7 +126,7 @@ TransCal::TransCal(varGlob1D *Vvg1dSP, const DadosGeo vgeom, const int vpermanen
         Vextern1 = vVextern1;
         dirconvExt = vdirconvExt;
         dt = vdt;
-        betext = 1 / (273.15 + Textern1);
+        betext = 1 / (units::kZeroCelsiusInKelvin + Textern1);
         betint = 1.;
 
         kint = vkint;
@@ -684,7 +685,7 @@ double TransCal::MasEspGas(double temp) const {
     double itemp = Faren(temp);
     double PR = ipres / PCNitro;
     double TR = (itemp + 460) / TCNitro;
-    return ((Deng * 28.9625) * pressao * 98066.5) / (8.0465 * 1000 * ZGopal(PR, TR) * (temp + 273));
+    return ((Deng * 28.9625) * pressao * units::kPascalPerKgfPerCm2) / (8.0465 * 1000 * ZGopal(PR, TR) * (temp + 273));
 }
 
 double TransCal::CalorGas(double temp) const {
@@ -693,8 +694,8 @@ double TransCal::CalorGas(double temp) const {
 }
 
 double TransCal::CondGas(double temp) const {
-    double ppas = 98066.5 * pressao;
-    double fatT = (temp + 273.15) / 191.1;
+    double ppas = units::kPascalPerKgfPerCm2 * pressao;
+    double fatT = (temp + units::kZeroCelsiusInKelvin) / 191.1;
     double XK1 = 3.04314 / 100. + (1.3242 / 10000. + 1.27534 * temp / 10000000.) * temp;
     double RXK = 0.99783 + (1.973 / 100000000. + 7.8868 * pow(10., -16.) * ppas) * ppas;
     if (fatT < 3.0)
@@ -706,7 +707,7 @@ double TransCal::CondGas(double temp) const {
 double TransCal::ViscGas(double temp) const {
     double Deng = 0.9669;
     double TF = Faren(temp);
-    double TR = TF + 459.67;
+    double TR = TF + units::kZeroFahrenheitInRankine;
     double wg = Deng * 29;
     double AK = (9.4 + 0.02 * wg) * pow(TR, 1.5) / (209. + 19. * wg + TR);
     double x = 3.5 + (986 / TR) + 0.01 * wg;
@@ -953,7 +954,7 @@ double TransCal::CalorLiq(double temp) const {
 
 double TransCal::MasEspAr(double temp) const {
 
-    return 101325.0 * airMW / (RGas * (temp + 273.15));
+    return units::kPascalPerAtmosphere * airMW / (RGas * (temp + units::kZeroCelsiusInKelvin));
 }
 
 double TransCal::VisAr(double temp) const {

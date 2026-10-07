@@ -6,6 +6,7 @@
  */
 
 #include "dados1Poroso.h"
+#include "UnitConversions.h"
 
 dadosPoro::dadosPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) {
     vg1dSP = Vvg1dSP;
@@ -369,8 +370,8 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada) {
         if (flup.PC > PCMax)
             PCMax = flup.PC;
         tabentCrit.npont = tabent.npont;
-        tabentCrit.tmin = (tabent.tmin + 273.15) / ((TCMax - 460. - 32.) / 1.8 + 273.15);
-        tabentCrit.tmax = (tabent.tmax + 273.15) / ((TCMin - 460. - 32.) / 1.8 + 273.15);
+        tabentCrit.tmin = (tabent.tmin + units::kZeroCelsiusInKelvin) / ((TCMax - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
+        tabentCrit.tmax = (tabent.tmax + units::kZeroCelsiusInKelvin) / ((TCMin - 460. - 32.) / 1.8 + units::kZeroCelsiusInKelvin);
         tabentCrit.pmin = tabent.pmin * 0.9678411 * 14.69595 / PCMax;
         tabentCrit.pmax = tabent.pmax * 0.9678411 * 14.69595 / PCMin;
 
