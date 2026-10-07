@@ -192,7 +192,7 @@ double ChokeGas::massica(int fluido, double salin) {
 double ChokeGas::tgarg() {
 	double kad=flui.ConstAdG(presEstag,tempEstag);
 	double raz=pow(presEstag/presGarg,(kad-1)/kad);
-	return (tempEstag+273.1)/raz-273.1;
+	return (tempEstag+units::kZeroCelsiusInKelvin)/raz-units::kZeroCelsiusInKelvin;
 }
 
 double ChokeGas::razcrit() {

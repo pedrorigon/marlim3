@@ -454,7 +454,8 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     // valve opening pressure is the casing pressure; the ratio is of areas.
 
     double bellowsPressureAt80F = calibrationPressure * (1 - valveRatio);
-    bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (80 + 460.67) / (calibrationTemperature * 1.8 + 491.67) - units::kAtmosphereInPsi;
+    const double calibrationTemperatureRankine = units::celsiusToFahrenheit(calibrationTemperature) + units::kZeroFahrenheitInRankine;
+    bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (80 + units::kZeroFahrenheitInRankine) / calibrationTemperatureRankine - units::kAtmosphereInPsi;
     double bellowsPressure = bellowsPressureAt80F * (1 + 0.00215 * (bottomHoleTemperatureFahrenheit - 80));
     // A closed valve is not forced to zero here: the opening fraction returned is
     // always the area ratio computed at the end.

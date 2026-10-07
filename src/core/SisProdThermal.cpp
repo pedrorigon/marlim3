@@ -3345,7 +3345,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double liquidJouleThomson = (1. - betmed) * leftCell.flui.JTL(interfaceMeanPressure, interfaceMeanTemperature) - betmed / rc;
         /////??????????????????????????????????????????????????????????????????????????????????????????
         if (state.input.pocinjec > 0 && state.input.condpocinj.tipoFlui == 2) {
-            liquidJouleThomson = -(1 + (interfaceMeanTemperature + 273.14) * leftCell.fluicol.DrhoDtFlu(interfaceMeanPressure, interfaceMeanTemperature) / rc) / rc;
+            liquidJouleThomson = -(1 + (interfaceMeanTemperature + units::kZeroCelsiusInKelvin) * leftCell.fluicol.DrhoDtFlu(interfaceMeanPressure, interfaceMeanTemperature) / rc) / rc;
         }
         double gasJouleThomson = leftCell.flui.JTG(interfaceMeanPressure, interfaceMeanTemperature);
         // potential energy:
@@ -3716,7 +3716,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         // Gas Joule-Thomson coefficient multiplied by cp.p
         double liquidJouleThomson = (1. - betmed) * rightCell.flui.JTL(interfaceMeanPressure, interfaceMeanTemperature) - betmed / rc;
         if (state.input.pocinjec > 0 && state.input.condpocinj.tipoFlui == 2) {
-            liquidJouleThomson = -(1 + (interfaceMeanTemperature + 273.14) * rightCell.fluicol.DrhoDtFlu(interfaceMeanPressure, interfaceMeanTemperature) / rc) / rc;
+            liquidJouleThomson = -(1 + (interfaceMeanTemperature + units::kZeroCelsiusInKelvin) * rightCell.fluicol.DrhoDtFlu(interfaceMeanPressure, interfaceMeanTemperature) / rc) / rc;
         }
         double gasJouleThomson = rightCell.flui.JTG(interfaceMeanPressure, interfaceMeanTemperature);
         // potential energy:
@@ -4006,11 +4006,11 @@ double computeGasLiftDischargeTemperature(const ThermalState &state, int valveIn
     for (int cellIndex = 0; cellIndex < stepCount; cellIndex++) {
         double gasSpecificHeat = state.gasLiftChokes[valveIndex].flui.CalorGas(stageInletPressure, stageInletTemperature);
         double compressibilityTemperatureDerivative = state.gasLiftChokes[valveIndex].flui.DZDT(stageInletPressure, stageInletTemperature);
-        double inletTemperatureKelvin = stageInletTemperature + 273.23;
+        double inletTemperatureKelvin = stageInletTemperature + units::kZeroCelsiusInKelvin;
         stageOutletTemperature = 1.0 / (1.0 / inletTemperatureKelvin - ((286.998 / state.gasLiftChokes[valveIndex].flui.Deng) * compressibilityTemperatureDerivative / gasSpecificHeat) * log((stageOutletPressure) / (stageInletPressure)));
         stageInletPressure = stageOutletPressure;
         stageOutletPressure = stageOutletPressure - pressureStep;
-        stageInletTemperature = stageOutletTemperature - 273.23;
+        stageInletTemperature = stageOutletTemperature - units::kZeroCelsiusInKelvin;
     }
     if (stepCount == 0) {
         double gasSpecificHeat = state.gasLiftChokes[valveIndex].flui.CalorGas(stageInletPressure, stageInletTemperature);

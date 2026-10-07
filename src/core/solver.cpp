@@ -1554,11 +1554,11 @@ double solv2D::tempMed(malha2dVF &malha) {
 #pragma omp parallel for reduction(+ : varTemp, varCapTerm) num_threads(nthrdLocal)
     for (int i = 1; i < malha.nele; i++) {
         double capLocal = malha.mlh2d[i].cel2D.rho * malha.mlh2d[i].cel2D.cp * malha.mlh2d[i].cel2D.vElem;
-        varTemp += capLocal * (malha.mlh2d[i].cel2D.tempC + 273.16);
+        varTemp += capLocal * (malha.mlh2d[i].cel2D.tempC + units::kZeroCelsiusInKelvin);
         varCapTerm += capLocal;
     }
 
-    return varTemp / varCapTerm - 273.16;
+    return varTemp / varCapTerm - units::kZeroCelsiusInKelvin;
 }
 double solv2D::viscMed(malha2dVF &malha) {
     double varTemp = 0.;

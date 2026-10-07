@@ -203,9 +203,9 @@ double ProFluColVF::VisFlu(double pres, double temper, double deform) const {
     if (tabelaVisc == 0) {
         if ((injPoc <= 1 || injPoc > 3) && descarga == 0) {
             double rhol = rholStd / 1000.;
-            double bASTM = (log10(log10((LVisL / 1) / rhol + 0.7)) - log10(log10((LVisH / 1) / rhol + 0.7))) / log10((TempL + 273) / (TempH + 273));
+            double bASTM = (log10(log10((LVisL / 1) / rhol + 0.7)) - log10(log10((LVisH / 1) / rhol + 0.7))) / log10((TempL + units::kZeroCelsiusInKelvin) / (TempH + units::kZeroCelsiusInKelvin));
 
-            double visASTM = rhol * (pow(10, pow(10, (bASTM * log10((temper + 273) / (TempL + 273)) + log10(log10((LVisL / 1) / rhol + 0.7))))) - 0.7);
+            double visASTM = rhol * (pow(10, pow(10, (bASTM * log10((temper + units::kZeroCelsiusInKelvin) / (TempL + units::kZeroCelsiusInKelvin)) + log10(log10((LVisL / 1) / rhol + 0.7))))) - 0.7);
 
             return visASTM;
         } else if (injPoc == 2 || descarga == 1 || tipoF == 1) {

@@ -4706,7 +4706,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     // of the pipe; that is done in the search methods.
     while ((fabs(masfim - masfim0) / fabs(masfim) > state.input.CriterioConvergPerm ||
             fabs(presteste - presteste0) / fabs(presteste) > state.input.CriterioConvergPerm) &&
-           (state.steadyIteration < limIter || fabs(tempteste - tempteste0) / ((tempteste) + 273) > 0.001)) {
+           (state.steadyIteration < limIter || fabs(tempteste - tempteste0) / ((tempteste) + units::kZeroCelsiusInKelvin) > 0.001)) {
 
         masfim0 = masfim;
         presteste0 = presteste;
@@ -5291,7 +5291,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
     state.steadyIteration = 0;
     double tempteste = state.cells[0].temp;
     double tempteste0 = -1000;
-    while (state.steadyIteration < 3 || fabs(tempteste - tempteste0) / ((tempteste) + 273) > 0.001) {
+    while (state.steadyIteration < 3 || fabs(tempteste - tempteste0) / ((tempteste) + units::kZeroCelsiusInKelvin) > 0.001) {
         i = 1;
         tempteste0 = tempteste;
         while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {

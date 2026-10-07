@@ -1513,7 +1513,7 @@ double ProVap::CVgFuncMod(double pres, double temp) {
     double zg = ZFunc(pres, temp);
 
     double RG = cp - cv;
-    double rel1 = zg + (temp + 273) * dzdt;
+    double rel1 = zg + (temp + units::kZeroCelsiusInKelvin) * dzdt;
     double rel2 = zg - dzdp * (pres * units::kPascalPerKgfPerCm2);
     return cv - RG * rel1 * (0 * 1 - rel1 / rel2);
 }
@@ -1618,7 +1618,7 @@ double ProVap::CPgFuncMod(double pres, double temp) {
     double zg = ZFunc(pres, temp);
     double drhodp = rhog * (1 / (pres * units::kPascalPerKgfPerCm2) - dzdp / zg);
 
-    double rel1 = zg + (temp + 273) * dzdt;
+    double rel1 = zg + (temp + units::kZeroCelsiusInKelvin) * dzdt;
     double rel2 = zg - dzdp * (pres * units::kPascalPerKgfPerCm2);
     return (1 / (rhog * zg)) * rel2 * (1 - rel1 / rel2) - (pres * units::kPascalPerKgfPerCm2 / (rhog * rhog)) * drhodp;
 }

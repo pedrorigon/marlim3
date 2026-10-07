@@ -685,7 +685,7 @@ double TransCal::MasEspGas(double temp) const {
     double itemp = Faren(temp);
     double PR = ipres / PCNitro;
     double TR = (itemp + 460) / TCNitro;
-    return ((Deng * 28.9625) * pressao * units::kPascalPerKgfPerCm2) / (8.0465 * 1000 * ZGopal(PR, TR) * (temp + 273));
+    return ((Deng * 28.9625) * pressao * units::kPascalPerKgfPerCm2) / (8.0465 * 1000 * ZGopal(PR, TR) * (temp + units::kZeroCelsiusInKelvin));
 }
 
 double TransCal::CalorGas(double temp) const {

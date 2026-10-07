@@ -2187,10 +2187,10 @@ double ProFlu::VisOM(double temper) const{
 	 //ASTM
      double rhol=1*(141.5/(131.5 + API));
 
-     double bASTM = bASTM1/log10((TempL + 273)/(TempH + 273));
+     double bASTM = bASTM1/log10((TempL + units::kZeroCelsiusInKelvin)/(TempH + units::kZeroCelsiusInKelvin));
 
-     double visASTM=rhol*(pow(10,pow(10,(bASTM*log10((temper + 273)/
-         		 (TempL + 273))+bASTM2)))-0.7);
+     double visASTM=rhol*(pow(10,pow(10,(bASTM*log10((temper + units::kZeroCelsiusInKelvin)/
+         		 (TempL + units::kZeroCelsiusInKelvin))+bASTM2)))-0.7);
      return visASTM;
    }
    else{
@@ -3220,10 +3220,10 @@ double ProFlu::FalsaCorda(double a,double b,double PR,double TR,double delta ,do
 
 double ProFlu::PreRog(double a,double b,double rog,double temp,double delta ,double epsn,int maxit)const{
     double valz=Zdran(a,temp);
-	double valp=rog/(((rDgL*Deng*28.9625)*units::kPascalPerKgfPerCm2)/(8.0465*1000*valz*(temp + 273)));
+	double valp=rog/(((rDgL*Deng*28.9625)*units::kPascalPerKgfPerCm2)/(8.0465*1000*valz*(temp + units::kZeroCelsiusInKelvin)));
 	for(int i=0;i<5;i++){
 			valz=Zdran(valp,temp);
-			valp=rog/(((rDgL*Deng*28.9625)*units::kPascalPerKgfPerCm2)/(8.0465*1000*valz*(temp + 273)));
+			valp=rog/(((rDgL*Deng*28.9625)*units::kPascalPerKgfPerCm2)/(8.0465*1000*valz*(temp + units::kZeroCelsiusInKelvin)));
 	}
 	return valp;
 }
@@ -3985,7 +3985,7 @@ double BO;
 if(flashCompleto==0 || flashCompleto==3){
 	if(IRGO>0){
 	double kgf100= kgf(100);
-	const double tempKelvin=temp + 273.;
+	const double tempKelvin=temp + units::kZeroCelsiusInKelvin;
     double ipres=psia(pres);
     double itemp= Faren(temp);
     double SG100 = (kgf100*293*Deng)/(Zdran(kgf100, temp,1)*tempKelvin);
@@ -4152,7 +4152,7 @@ if(flashCompleto==0 || flashCompleto==3){
 double ProFlu::dBOSatdP(double pres, double temp)const{
  double kgf100= kgf(100);
  double itemp= Faren(temp);
- double SG100 = (kgf100*293*Deng)/(Zdran(kgf100, temp,1)*(temp + 273));
+ double SG100 = (kgf100*293*Deng)/(Zdran(kgf100, temp,1)*(temp + units::kZeroCelsiusInKelvin));
  double Dvazbeg = (itemp - 60)*API/SG100;
  double Bvazbeg;
  if(API > 30)  Bvazbeg = 0.1337;
@@ -4198,7 +4198,7 @@ double ProFlu::interpolaCpl(double pres, double temp) const{
       double latp2=(1-razpres)*(cpl[ipres][itemp+1])+razpres*(cpl[ipres+1][itemp+1]);
       vcpl=(1-raztemp)*latp1+raztemp*latp2;
       double CPWI;
-      double tempK=temp+273.16;
+      double tempK=temp+units::kZeroCelsiusInKelvin;
       double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
       if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
       2.42139*pow(10.,-8.)*tempK*tempK*tempK);
@@ -4213,7 +4213,7 @@ double ProFlu::CalorLiqOriginal(double pres, double temp) const{
  double CPWI;
  double Bcp=0.06103;
  double tempfar=Faren(temp);
- double tempK=temp+273.16;
+ double tempK=temp+units::kZeroCelsiusInKelvin;
  double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
  double CPOI=4187.0*((2.6948*pow(10,-6)*API+3.88402/10000.)*tempfar+(0.0027665*API+0.366079)-Bcp);
  if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
@@ -4233,7 +4233,7 @@ double ProFlu::CalorLiq(double pres, double temp) const{
 		else{
 			vcp=interpolaVarProd(pres, temp, cplF);
 			double CPWI;
-			double tempK=temp+273.16;
+			double tempK=temp+units::kZeroCelsiusInKelvin;
 			double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
 			if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
 					2.42139*pow(10.,-8.)*tempK*tempK*tempK);
@@ -4326,7 +4326,7 @@ double ProFlu::CalorLiq(double pres, double temp) const{
 	    	 }
 	     }
 		double CPWI;
-		double tempK=temp+273.16;
+		double tempK=temp+units::kZeroCelsiusInKelvin;
 		double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
 		if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
 				2.42139*pow(10.,-8.)*tempK*tempK*tempK);
@@ -4422,7 +4422,7 @@ double ProFlu::interpolaDrholDT(double pres, double temp) const{
 
 double ProFlu::CalorGasOriginal(double pres, double temp) const{
 	double RG=(8.0465*1000)/(rDgL*Deng*28.9625);
-	double tempK=temp+273.16;
+	double tempK=temp+units::kZeroCelsiusInKelvin;
 	if (tempK < 240.0) tempK = 240.0;
     if (tempK > 480.0) tempK = 480.0;
     double CP0mM = 0.047801*tempK + 21.714;
@@ -4570,12 +4570,12 @@ double ProFlu::CalorGasVolMod(double pres, double temp,double rhogini) const{
   double dzdt=DZDT(pres,temp,rhog);
   double dzdp=DZDP(pres,temp,rhog);
   double zg=Zdran(pres,temp,rhog);
-  double dvdt=(1/rhog)*(1/(temp+273)+dzdt/zg);
+  double dvdt=(1/rhog)*(1/(temp+units::kZeroCelsiusInKelvin)+dzdt/zg);
   double dvdp=(1/rhog)*(-1/(pres*units::kPascalPerKgfPerCm2)+dzdp/zg);
 
   double RG=(8.0465*1000)/(rDgL*Deng*28.9625);
-  double cv=cpg+(temp+273)*dvdt*dvdt/dvdp;
-  double rel1=zg+(temp+273)*dzdt;
+  double cv=cpg+(temp+units::kZeroCelsiusInKelvin)*dvdt*dvdt/dvdp;
+  double rel1=zg+(temp+units::kZeroCelsiusInKelvin)*dzdt;
   double rel2=zg-dzdp*(pres*units::kPascalPerKgfPerCm2);
   return cv-RG*rel1*(0*1-rel1/rel2);
 }
@@ -4587,12 +4587,12 @@ double ProFlu::CalorGasVolMod2(double pres, double temp,double rhogini) const{
   double dzdt=DZDT(pres,temp,rhog);
   double dzdp=DZDP(pres,temp,rhog);
   double zg=Zdran(pres,temp,rhog);
-  double dvdt=(1/rhog)*(1/(temp+273)+dzdt/zg);
+  double dvdt=(1/rhog)*(1/(temp+units::kZeroCelsiusInKelvin)+dzdt/zg);
   double dvdp=(1/rhog)*(-1/(pres*units::kPascalPerKgfPerCm2)+dzdp/zg);
 
   double RG=(8.0465*1000)/(rDgL*Deng*28.9625);
-  double cv=cpg+(temp+273)*dvdt*dvdt/dvdp;
-  double rel1=zg+(temp+273)*dzdt;
+  double cv=cpg+(temp+units::kZeroCelsiusInKelvin)*dvdt*dvdt/dvdp;
+  double rel1=zg+(temp+units::kZeroCelsiusInKelvin)*dzdt;
   double rel2=zg-dzdp*(pres*units::kPascalPerKgfPerCm2);
   return cv+RG*rel1*(rel1/rel2);
 }
@@ -4606,14 +4606,14 @@ double ProFlu::CalorGasPresMod(double pres, double temp,double rhogini) const{
 	double zg=Zdran(pres,temp,rhog);
 	double drhodp=rhog*(1/(pres*units::kPascalPerKgfPerCm2)-dzdp/zg);
 
-	double rel1=zg+(temp+273)*dzdt;
+	double rel1=zg+(temp+units::kZeroCelsiusInKelvin)*dzdt;
 	double rel2=zg-dzdp*(pres*units::kPascalPerKgfPerCm2);
 	return (1/(rhog*zg))*rel2*(1-rel1/rel2)-(pres*units::kPascalPerKgfPerCm2/(rhog*rhog))*drhodp;
 }
 
 double ProFlu::CondLiq(double pres,double temp)const{
 	   double tempfar=Faren(temp);
-       double tempK=temp+273.16;
+       double tempK=temp+units::kZeroCelsiusInKelvin;
        double XKWDI;
        double XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
        double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
@@ -4637,11 +4637,11 @@ double ProFlu::ConstAdG(double pres, double temp,double rhogini) const{
   double dzdt=DZDT(pres,temp,rhog);
   double dzdp=DZDP(pres,temp,rhog);
   double zg=Zdran(pres,temp,rhog);
-  double dvdt=(1/rhog)*(1/(temp+273)+dzdt/zg);
+  double dvdt=(1/rhog)*(1/(temp+units::kZeroCelsiusInKelvin)+dzdt/zg);
   double dvdp=(1/rhog)*(-1/(pres*units::kPascalPerKgfPerCm2)+dzdp/zg);
-  double aux=cpg/(cpg+(temp+273)*dvdt*dvdt/dvdp);
+  double aux=cpg/(cpg+(temp+units::kZeroCelsiusInKelvin)*dvdt*dvdt/dvdp);
   if(aux<0.)aux=1.;//atencao: observar esta acochambracao
-  return 0*cpg/(cpg-pres*units::kPascalPerKgfPerCm2/((temp+273)*rhog*zg))+aux;
+  return 0*cpg/(cpg-pres*units::kPascalPerKgfPerCm2/((temp+units::kZeroCelsiusInKelvin)*rhog*zg))+aux;
 }
 
 double ProFlu::CondGas(double pres,double temp)const{
@@ -4819,8 +4819,8 @@ double ProFlu::JTL(double pres,double temp) const{
 
 
 double ProFlu::JTG(double pres,double temp, double rhog) const{
-	if(rhog<0)return (temp+273.16)*DZDT(pres, temp)/(Zdran(pres, temp)*MasEspGas(pres, temp));
-	else return (temp+273.16)*DZDT(pres, temp,rhog)/(Zdran(pres, temp,rhog)*rhog);
+	if(rhog<0)return (temp+units::kZeroCelsiusInKelvin)*DZDT(pres, temp)/(Zdran(pres, temp)*MasEspGas(pres, temp));
+	else return (temp+units::kZeroCelsiusInKelvin)*DZDT(pres, temp,rhog)/(Zdran(pres, temp,rhog)*rhog);
 }
 
 
@@ -5098,7 +5098,7 @@ double ProFlu::quadleg(const double x1, const double x2, int tipo,int fase,const
  if(tipo==1){
   if(fase==1){
    double Rgas=8.0465*1000./(rDgL*Deng*28.9625*units::kPascalPerKgfPerCm2);
-   for(int i=0;i<n;i++)s+=-w[i]*((par+273.16)*(Rgas/x[i])*(Zdran(x[i], par)+(par+273.16)*DZDT(x[i], par))-1/MasEspGas(x[i], par))*units::kPascalPerKgfPerCm2;
+   for(int i=0;i<n;i++)s+=-w[i]*((par+units::kZeroCelsiusInKelvin)*(Rgas/x[i])*(Zdran(x[i], par)+(par+units::kZeroCelsiusInKelvin)*DZDT(x[i], par))-1/MasEspGas(x[i], par))*units::kPascalPerKgfPerCm2;
   }
   else for(int i=0;i<n;i++)s+=(w[i]/MasEspLiq(x[i], par))*units::kPascalPerKgfPerCm2;
  }
@@ -5256,9 +5256,9 @@ double ProFlu::MasEspOleoComp(double pres, double temp) const{
 double ProFlu::drhodt(double pres, double temp) const{
 	if(flashCompleto!=2){
 		double z=Zdran(pres,temp);
-		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + 273));
+		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + units::kZeroCelsiusInKelvin));
 		double dzdt=DZDT(pres,temp);
-		return -masesp*(1./(temp+272.15)+dzdt/z);
+		return -masesp*(1./(temp+units::kZeroCelsiusInKelvin)+dzdt/z);
 	}
 	else{
 		if((*vg1dSP).modoTransiente==0 || multbcs==1){
@@ -5387,7 +5387,7 @@ double ProFlu::drhodt(double pres, double temp) const{
 double ProFlu::drhodp(double pres, double temp) const{
 	if(flashCompleto!=2){
 		double z=Zdran(pres,temp);
-		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + 272.15));
+		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + units::kZeroCelsiusInKelvin));
 		double dzdp=DZDP(pres,temp);
 		return masesp*(1./(pres*units::kPascalPerKgfPerCm2)-dzdp/z);
 	}
