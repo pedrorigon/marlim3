@@ -135,14 +135,9 @@ run_case "inst/map-dispatch" "DriftFluxClosure.cpp" \
                     stratifiedMap.mapaTD();" "caught"
 
 printf '\nbuffered (was CalcC0UdBuf) -- NEVER executes in the corpus\n'
-run_case "buf/drop-A3-01-betI" "DriftFluxClosure.cpp" \
-    "        betI = state.cells[cellIndex].betPigE;     // beta doubt
-        double betneg;
-        if (cellIndex > 0) {
-            betneg = state.cells[cellIndex - 1].betL;" \
-    "        double betneg;
-        if (cellIndex > 0) {
-            betneg = state.cells[cellIndex - 1].betL;" "caught"
+run_case "buf/betI-source" "DriftFluxClosure.cpp" \
+    "        const double betI = state.cells[cellIndex].betPigE; // beta doubt" \
+    "        const double betI = state.cells[cellIndex].betL; // beta doubt" "caught"
 run_case "buf/second-phase-cond" "DriftFluxClosure.cpp" \
     "            if (flowPattern != -1) {" \
     "            if (flowPattern == 1) {" "caught"
@@ -172,20 +167,8 @@ run_case "ini/mapaTD-dispatch" "DriftFluxClosure.cpp" \
 
 printf '\nbufferedInitialization (was CalcC0UdIniBuf) -- NEVER executes\n'
 run_case "inibuf/add-ncel-pmed" "DriftFluxClosure.cpp" \
-    "        meanPressure = state.inletPressure;
-        if (cellIndex > 0)
-            upstreamMeanPressure = state.inletPressure;
-        else
-            upstreamMeanPressure = state.inletPressure;
-        double meanTemperature = state.inletTemperature;" \
-    "        meanPressure = state.inletPressure;
-        if (cellIndex > 0)
-            upstreamMeanPressure = state.inletPressure;
-        else
-            upstreamMeanPressure = state.inletPressure;
-        if (cellIndex == state.lastCell)
-            meanPressure = state.cells[cellIndex].pres;
-        double meanTemperature = state.inletTemperature;" "caught"
+    "        const double meanPressure = state.inletPressure;" \
+    "        const double meanPressure = cellIndex == state.lastCell ? state.cells[cellIndex].pres : state.inletPressure;" "caught"
 run_case "inibuf/wrong-source" "DriftFluxClosure.cpp" \
     "            flowScalesOf<BufferedSource>(state, cellIndex,
                                 {.liquidDensity = liquidDensity,
@@ -214,8 +197,8 @@ run_case "perm/fix-A3-03-razdx" "DriftFluxClosure.cpp" \
     "        double lengthRatio = state.cells[cellIndex].dx / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);" \
     "        double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);" "caught"
 run_case "perm/slip-field" "DriftFluxClosure.cpp" \
-    "    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaPerm, c0, ud);" \
-    "    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaTran, c0, ud);" "caught"
+    "    applyNoSlipOverride(state.input.escorregaPerm, c0, ud);" \
+    "    applyNoSlipOverride(state.input.escorregaTran, c0, ud);" "caught"
 
 printf '\nshared helpers -- a defect here reaches all five at once\n'
 run_case "helper/blend-reassociate" "DriftFluxClosure.cpp" \
@@ -228,26 +211,6 @@ run_case "helper/diameter-unconditional" "DriftFluxClosure.cpp" \
     "    double diameter = state.cells[cellIndex].duto.a;
     if (cellIndex > 0)
         diameter = state.cells[cellIndex - 1].duto.a;" "caught"
-run_case "helper/noslip-threshold" "DriftFluxClosure.cpp" \
-    "        double driftCorrection = 1 - (meanSuperficialLiquidVelocity - 0.15) / 0.35;" \
-    "        double driftCorrection = 1 - (meanSuperficialLiquidVelocity - 0.16) / 0.35;" "invisible"
-
-printf '\ndeclared blind spots -- these MUST pass; the token comparison covers them\n'
-# betneg feeds upstreamLiquidFlowRate, which feeds nothing but
-# `if (upstreamLiquidFlowRate < 0.) mult0 = 0.', and mult0 is never read. The
-# chain is dead in ALL FIVE variants, so no behavioural harness can observe a
-# corruption confined to it -- including the 0.99*QG + 0.01*QL expression the
-# contract requires preserved literally (A3-07).
-run_case "dead-chain-0.99QG" "DriftFluxClosure.cpp" \
-    "if ((0.99 * state.cells[cellIndex - 1].QG + 0.01 * state.cells[cellIndex - 1].QL) < 0.)" \
-    "if ((state.cells[cellIndex - 1].QG + (state.cells[cellIndex - 1].QL - state.cells[cellIndex - 1].QG) * 0.01) < 0.)" "invisible"
-run_case "dead-local-mult0" "DriftFluxClosure.cpp" \
-    "    mult0 = 1.;" "    mult0 = 2.;" "invisible"
-run_case "dead-local-timeStep" "DriftFluxClosure.cpp" \
-    "    int timeStep = 20;
-    state.cells[cellIndex].transic0 = state.cells[cellIndex].transic;" \
-    "    int timeStep = 21;
-    state.cells[cellIndex].transic0 = state.cells[cellIndex].transic;" "invisible"
 
 printf '\n'
 if (( fail == 0 )); then

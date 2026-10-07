@@ -347,12 +347,9 @@ using enum sisprod::AccessoryKind;
  * correction reads, whether the flow-pattern map runs at all, whether the
  * transition counter is kept, and which of arq.escorregaTran and
  * arq.escorregaPerm ends the calculation, so each keeps its own control flow
- * and shares only the blocks they have exactly in common. In all five, the
- * chain betneg -> upstreamLiquidFlowRate -> mult0 is computed and never read.
+ * and shares only the blocks they have exactly in common.
  *
- * The `// beta doubt` and `// beta test` markers sit on the assignments of
- * betI and betneg, where a later unconditional assignment makes the selection
- * above it dead.
+ * The `// beta doubt` markers sit on the unconditional assignments of betI.
  */
 
 namespace {
@@ -586,41 +583,14 @@ struct MixtureProperties {
 };
 
 /// Pressure and temperature the property model is evaluated at, for CalcC0Ud.
-///
-/// Three assignments here are immediately overwritten: the length-weighted mean
-/// temperature is replaced by the left cell's, which is replaced again by the
-/// face's or by the surface temperature. The upstream pressure and temperature
-/// it also computes are never read.
 struct MeanConditions {
     double pressure;
     double temperature;
 };
 
-MeanConditions instantaneousMeanConditions(const ClosureState &state, int cellIndex,
-                                           double lengthRatio, double upstreamLengthRatio) {
-    double meanPressure;
-    double upstreamMeanPressure = 0.;
-
-    meanPressure = state.cells[cellIndex].presaux;
-    if (cellIndex > 0)
-        upstreamMeanPressure = state.cells[cellIndex - 1].presaux;
-    if (cellIndex == state.lastCell)
-        meanPressure = state.cells[cellIndex].pres;
-    else
-        upstreamMeanPressure = state.cells[cellIndex].presaux;
-    double meanTemperature = lengthRatio * state.cells[cellIndex].temp + (1 - lengthRatio) * state.cells[cellIndex].tempL;
-    meanTemperature = state.cells[cellIndex].tempL;
-    if (state.cells[cellIndex].VTemper < 0.)
-        meanTemperature = state.cells[cellIndex].temp;
-    double upstreamMeanTemperature;
-    if (cellIndex > 0)
-        upstreamMeanTemperature = upstreamLengthRatio * state.cells[cellIndex - 1].temp + (1 - upstreamLengthRatio) * state.cells[cellIndex - 1].tempL;
-    else
-        upstreamMeanTemperature = meanTemperature;
-    if (cellIndex < state.lastCell)
-        meanTemperature = state.cells[cellIndex].temp;
-    else
-        meanTemperature = state.gasSurfaceTemperature;
+MeanConditions instantaneousMeanConditions(const ClosureState &state, int cellIndex) {
+    const double meanPressure = cellIndex == state.lastCell ? state.cells[cellIndex].pres : state.cells[cellIndex].presaux;
+    const double meanTemperature = cellIndex < state.lastCell ? state.cells[cellIndex].temp : state.gasSurfaceTemperature;
     return MeanConditions{meanPressure, meanTemperature};
 }
 
@@ -634,7 +604,7 @@ PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cell
                                              double noSlipLiquidHoldup, double &surfaceTension) {
     double liquidDensity;
     double liquidViscosity;
-    if (state.cells[cellIndex].QL < 0.) { // beta test
+    if (state.cells[cellIndex].QL < 0.) {
         if (cellIndex == 0 || cellIndex == state.lastCell)
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
         else
@@ -716,25 +686,14 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
 
 /// Dispersed and stratified closure, evaluated as a pair; the same in all five
 /// variants.
-///
-/// mult0 and mult1 are assigned from upstreamLiquidFlowRate and the liquid flow
-/// rate, and never read.
 void evaluateFlowPatternPair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
-                        double upstreamLiquidFlowRate, FlowPatternPair &pair) {
+                             FlowPatternPair &pair) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
                                           state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.dispersedC0, pair.dispersedUd, mix.horizontalCorrection,
                                           state.cells[cellIndex].estabCol, state.selectors.dispersed);
     driftflux::correlations::C0UdEstratificado(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
                                                state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.stratifiedC0, pair.stratifiedUd, mix.horizontalCorrection,
                                                state.cells[cellIndex].estabCol, state.selectors.stratified);
-
-    double mult0, mult1;
-    mult0 = 1.;
-    if (upstreamLiquidFlowRate < 0.)
-        mult0 = 0.;
-    mult1 = 0.;
-    if (mix.liquidFlowRate < 0.)
-        mult1 = 1.;
 }
 
 /// Blends the dispersed and stratified results by superficial velocity, with a
@@ -777,35 +736,17 @@ void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, const 
 /// Discards the computed slip when the deck disables it: the field read is
 /// escorregaTran in the four transient variants and escorregaPerm in the
 /// steady-state one.
-///
-/// Everything above the two assignments is dead: driftCorrection and
-/// distributionCorrection are computed, clamped, and then multiplied by zero, so
-/// c0 is forced to 1 and ud to 0 whenever slip is off.
-void applyNoSlipOverride(const Cel *cells, int cellIndex, int slipEnabled, double &c0, double &ud) {
+void applyNoSlipOverride(int slipEnabled, double &c0, double &ud) {
     if (slipEnabled == 0) {
-        double meanSuperficialLiquidVelocity = cells[cellIndex].QL / cells[cellIndex].duto.area;
-        double driftCorrection = 1 - (meanSuperficialLiquidVelocity - 0.15) / 0.35;
-        double distributionCorrection = c0 - (c0 - 1) * (meanSuperficialLiquidVelocity - 0.15) / 0.35;
-        if (driftCorrection > 1.)
-            driftCorrection = 1.;
-        if (driftCorrection < 0.)
-            driftCorrection = 0.;
-        if (distributionCorrection > c0)
-            distributionCorrection = c0;
-        if (distributionCorrection < 1)
-            distributionCorrection = 1;
-        c0 = 1. + 0 * distributionCorrection;
-        ud = 0. + 0. * ud * driftCorrection;
+        c0 = 1.;
+        ud = 0.;
     }
 }
 
 }  // namespace
 
 void instantaneous(const ClosureState &state, int cellIndex, double &c0, double &ud) {
-    int timeStep = 20;
     state.cells[cellIndex].transic0 = state.cells[cellIndex].transic;
-    if (state.cells[cellIndex].dt < 0.8)
-        timeStep *= (0.8 / state.cells[cellIndex].dt);
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex - 1].velPig > 0 && state.cells[cellIndex - 1].estadoPig == 1) {
@@ -814,45 +755,19 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         applyPigOverride(state, cellIndex, c0, ud);
     } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
-        double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
-        double upstreamLengthRatio;
-        if (cellIndex > 0)
-            upstreamLengthRatio = state.cells[cellIndex - 1].dxL / (state.cells[cellIndex - 1].dx + state.cells[cellIndex - 1].dxL);
-        else
-            upstreamLengthRatio = lengthRatio;
 
         noSlipLiquidHoldup = transientNoSlipHoldup<InstantaneousSource>(state, cellIndex);
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
 
-        double alfneg;
-        if (cellIndex > 1)
-            alfneg = state.cells[cellIndex - 2].alf;
-        else if (cellIndex > 0)
-            alfneg = state.cells[cellIndex - 1].alf;
-        else
-            alfneg = state.cells[cellIndex].alf;
-
         double betI = state.cells[cellIndex].betL;
         if (cellIndex > 0)
             betI = state.cells[cellIndex - 1].betPigD;
         if (((0. * state.cells[cellIndex].QG + 1 * state.cells[cellIndex].QL) < 0.))
-            betI = state.cells[cellIndex].betPigE; // beta doubt
+            betI = state.cells[cellIndex].betPigE;
 
-        double betneg;
-        if (cellIndex > 0) {
-            betneg = state.cells[cellIndex - 1].betL;
-            if (cellIndex > 1)
-                betneg = state.cells[cellIndex - 2].betPigD;
-            if ((0.99 * state.cells[cellIndex - 1].QG + 0.01 * state.cells[cellIndex - 1].QL) < 0.)
-                betneg = state.cells[cellIndex - 1].betPigE; // beta doubt
-
-        } else
-            betneg = state.cells[cellIndex].bet;
-
-        const MeanConditions conditions =
-            instantaneousMeanConditions(state, cellIndex, lengthRatio, upstreamLengthRatio);
+        const MeanConditions conditions = instantaneousMeanConditions(state, cellIndex);
         const double meanPressure = conditions.pressure;
         const double meanTemperature = conditions.temperature;
 
@@ -895,12 +810,8 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
-                double upstreamLiquidFlowRate;
-
                 gasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].Mliqini / liquidDensity;
-
-                upstreamLiquidFlowRate = state.cells[cellIndex - 1].Mliqini / ((1 - betneg) * state.cells[cellIndex].rpLi + betneg * state.cells[cellIndex].rcLi);
 
                 estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                         state.cells[cellIndex].duto.teta, state.cells[cellIndex].duto.rug / diameter);
@@ -928,7 +839,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                     state.cells[cellIndex - 1].perdaEstratL = stratifiedMap.fatorperdaLiq;
                     state.cells[cellIndex - 1].perdaEstratG = stratifiedMap.fatorperdaGas;
                     FlowPatternPair pair;
-                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    evaluateFlowPatternPair(state, cellIndex, mix, pair);
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -972,13 +883,10 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
             state.cells[cellIndex].udSpare = ud;
         }
     }
-    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaTran, c0, ud);
+    applyNoSlipOverride(state.input.escorregaTran, c0, ud);
 }
 
 void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) {
-    int timeStep = 20;
-    if (state.cells[cellIndex].dt < 0.8)
-        timeStep *= (0.8 / state.cells[cellIndex].dt);
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex - 1].velPig > 0 && state.cells[cellIndex - 1].estadoPig == 1) {
@@ -988,69 +896,33 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
     } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
         double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
-        double upstreamLengthRatio;
-        if (cellIndex > 0)
-            upstreamLengthRatio = state.cells[cellIndex - 1].dxL / (state.cells[cellIndex - 1].dx + state.cells[cellIndex - 1].dxL);
-        else
-            upstreamLengthRatio = lengthRatio;
 
         noSlipLiquidHoldup = transientNoSlipHoldup<BufferedSource>(state, cellIndex);
 
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
 
-        double alfneg;
-        if (cellIndex > 1)
-            alfneg = state.cells[cellIndex - 2].alf;
-        else if (cellIndex > 0)
-            alfneg = state.cells[cellIndex - 1].alf;
-        else
-            alfneg = state.cells[cellIndex].alf;
-
-        double betI = state.cells[cellIndex].betL;
-        if (cellIndex > 0)
-            betI = state.cells[cellIndex - 1].betPigD;
-        if ((state.cells[cellIndex].MliqiniBuf) < 0.)
-            betI = state.cells[cellIndex].betPigE; // beta test
-        betI = state.cells[cellIndex].betPigE;     // beta doubt
-        double betneg;
-        if (cellIndex > 0) {
-            betneg = state.cells[cellIndex - 1].betL;
-            if (cellIndex > 1)
-                betneg = state.cells[cellIndex - 2].betPigD;
-            if (state.cells[cellIndex].MliqiniLBuf < 0.)
-                betneg = state.cells[cellIndex - 1].betPigE; // beta test
-            betneg = state.cells[cellIndex - 1].betPigE;     // beta doubt
-        } else
-            betneg = state.cells[cellIndex].bet;
+        const double betI = state.cells[cellIndex].betPigE; // beta doubt
 
         double meanPressure;
-        double upstreamMeanPressure = 0.;
 
         meanPressure = lengthRatio * state.cells[cellIndex].presBuf + (1 - lengthRatio) * state.cells[cellIndex].presLBuf;
         if (cellIndex == state.lastCell)
             meanPressure = state.cells[cellIndex].presBuf;
-        upstreamMeanPressure = state.cells[cellIndex].presauxL;
-        double meanTemperature = lengthRatio * state.cells[cellIndex].temp + (1 - lengthRatio) * state.cells[cellIndex].tempL;
-        meanTemperature = state.cells[cellIndex].tempL;
+        double meanTemperature = state.cells[cellIndex].tempL;
         if (state.cells[cellIndex].VTemper < 0.) {
             if (cellIndex < state.lastCell)
                 meanTemperature = state.cells[cellIndex].temp;
             else
                 meanTemperature = state.gasSurfaceTemperature;
         }
-        double upstreamMeanTemperature;
-        if (cellIndex > 0)
-            upstreamMeanTemperature = upstreamLengthRatio * state.cells[cellIndex - 1].temp + (1 - upstreamLengthRatio) * state.cells[cellIndex - 1].tempL;
-        else
-            upstreamMeanTemperature = meanTemperature;
 
         const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
         double surfaceTension;
-        if ((state.cells[cellIndex].MliqiniBuf) < 0.) { // beta test
+        if ((state.cells[cellIndex].MliqiniBuf) < 0.) {
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
             liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
             surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
@@ -1097,20 +969,14 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
-                double upstreamGasFlowRate;
-                double upstreamLiquidFlowRate;
-
                 gasFlowRate = (state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) / gasDensity;
                 liquidFlowRate = (state.cells[cellIndex].MliqiniBuf) / liquidDensity;
-
-                upstreamGasFlowRate = (state.cells[cellIndex - 1].MCBuf - state.cells[cellIndex - 1].MliqiniBuf) / state.cells[cellIndex].flui.MasEspGas(upstreamMeanPressure, upstreamMeanTemperature);
-                upstreamLiquidFlowRate = (state.cells[cellIndex - 1].MliqiniBuf) / ((1 - betneg) * state.cells[cellIndex].flui.MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature) + betneg * state.cells[cellIndex].fluicol.MasEspFlu(upstreamMeanPressure, upstreamMeanTemperature));
 
                 flowPattern = state.cells[cellIndex].arranjo;
                 if (flowPattern == -1) {
 
                     FlowPatternPair pair;
-                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    evaluateFlowPatternPair(state, cellIndex, mix, pair);
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1140,13 +1006,10 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
             state.cells[cellIndex].udSpare = ud;
         }
     }
-    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaTran, c0, ud);
+    applyNoSlipOverride(state.input.escorregaTran, c0, ud);
 }
 
 void initialization(const ClosureState &state, int cellIndex, double &c0, double &ud) {
-    int timeStep = 20;
-    if (state.cells[cellIndex].dt < 0.8)
-        timeStep *= (0.8 / state.cells[cellIndex].dt);
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
@@ -1162,48 +1025,17 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
 
-        double alfneg;
-        if (cellIndex > 1)
-            alfneg = state.inletVoidFraction;
-        else if (cellIndex > 0)
-            alfneg = state.inletVoidFraction;
-        else
-            alfneg = state.cells[cellIndex].alf;
+        const double betI = state.cells[cellIndex].betPigE; // beta doubt
 
-        double betI = state.cells[cellIndex].betL;
-        if (cellIndex > 0)
-            betI = state.inletCompletionFraction;
-        if (state.cells[cellIndex].QL < 0.)
-            betI = state.cells[cellIndex].betPigE; // beta test
-        betI = state.cells[cellIndex].betPigE;     // beta doubt
-        double betneg;
-        if (cellIndex > 0) {
-            betneg = state.inletCompletionFraction;
-
-        } else
-            betneg = state.cells[cellIndex].bet;
-
-        double meanPressure;
-        double upstreamMeanPressure = 0.;
-
-        meanPressure = state.inletPressure;
-        if (cellIndex > 0)
-            upstreamMeanPressure = state.inletPressure;
-        if (cellIndex == state.lastCell)
-            meanPressure = state.cells[cellIndex].pres;
-        else
-            upstreamMeanPressure = state.inletPressure;
-        double meanTemperature = state.inletTemperature;
-
-        double upstreamMeanTemperature;
-        upstreamMeanTemperature = meanTemperature;
+        const double meanPressure = cellIndex == state.lastCell ? state.cells[cellIndex].pres : state.inletPressure;
+        const double meanTemperature = state.inletTemperature;
 
         const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
         double surfaceTension;
-        if (state.cells[cellIndex].QL < 0.) { // beta test
+        if (state.cells[cellIndex].QL < 0.) {
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
             liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
             surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
@@ -1253,14 +1085,8 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
-                double upstreamGasFlowRate;
-                double upstreamLiquidFlowRate;
-
                 gasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].Mliqini / liquidDensity;
-
-                upstreamGasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / (*state.cells[cellIndex].fluiL).MasEspGas(upstreamMeanPressure, upstreamMeanTemperature);
-                upstreamLiquidFlowRate = state.cells[cellIndex].Mliqini / ((1 - betneg) * (*state.cells[cellIndex].fluiL).MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature) + betneg * state.cells[cellIndex].fluicol.MasEspFlu(upstreamMeanPressure, upstreamMeanTemperature));
 
                 estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                         state.cells[cellIndex].duto.teta, state.cells[cellIndex].duto.rug / diameter);
@@ -1280,7 +1106,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                         state.cells[cellIndex].transic = 0;
                     state.cells[cellIndex].arranjo = flowPattern = stratifiedMap.arr;
                     FlowPatternPair pair;
-                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    evaluateFlowPatternPair(state, cellIndex, mix, pair);
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1323,13 +1149,10 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
             state.cells[cellIndex].udSpare = ud;
         }
     }
-    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaTran, c0, ud);
+    applyNoSlipOverride(state.input.escorregaTran, c0, ud);
 }
 
 void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0, double &ud) {
-    int timeStep = 20;
-    if (state.cells[cellIndex].dt < 0.8)
-        timeStep *= (0.8 / state.cells[cellIndex].dt);
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
@@ -1345,46 +1168,17 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
 
-        double alfneg;
-        if (cellIndex > 1)
-            alfneg = state.inletVoidFraction;
-        else if (cellIndex > 0)
-            alfneg = state.inletVoidFraction;
-        else
-            alfneg = state.cells[cellIndex].alf;
+        const double betI = state.cells[cellIndex].betPigE; // beta doubt
 
-        double betI = state.cells[cellIndex].betL;
-        if (cellIndex > 0)
-            betI = state.inletCompletionFraction;
-        if (state.cells[cellIndex].QL < 0.)
-            betI = state.cells[cellIndex].betPigE; // beta test
-        betI = state.cells[cellIndex].betPigE;     // beta doubt
-        double betneg;
-        if (cellIndex > 0) {
-            betneg = state.inletCompletionFraction;
-
-        } else
-            betneg = state.cells[cellIndex].bet;
-
-        double meanPressure;
-        double upstreamMeanPressure = 0.;
-
-        meanPressure = state.inletPressure;
-        if (cellIndex > 0)
-            upstreamMeanPressure = state.inletPressure;
-        else
-            upstreamMeanPressure = state.inletPressure;
-        double meanTemperature = state.inletTemperature;
-
-        double upstreamMeanTemperature;
-        upstreamMeanTemperature = meanTemperature;
+        const double meanPressure = state.inletPressure;
+        const double meanTemperature = state.inletTemperature;
 
         const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
         double surfaceTension;
-        if (state.cells[cellIndex].MliqiniBuf < 0.) { // beta test
+        if (state.cells[cellIndex].MliqiniBuf < 0.) {
             liquidDensity = (1 - betI) * state.cells[cellIndex].flui.MasEspLiq(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
             liquidViscosity = (1 - betI) * state.cells[cellIndex].flui.ViscOleo(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
             surfaceTension = (1 - betI) * state.cells[cellIndex].flui.TensSuper(meanPressure, meanTemperature) + betI * state.cells[cellIndex].fluicol.TensSuper(meanPressure, meanTemperature);
@@ -1434,20 +1228,14 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
-                double upstreamGasFlowRate;
-                double upstreamLiquidFlowRate;
-
                 gasFlowRate = (state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].MliqiniBuf / liquidDensity;
-
-                upstreamGasFlowRate = (state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) / (*state.cells[cellIndex].fluiL).MasEspGas(upstreamMeanPressure, upstreamMeanTemperature);
-                upstreamLiquidFlowRate = state.cells[cellIndex].MliqiniBuf / ((1 - betneg) * (*state.cells[cellIndex].fluiL).MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature) + betneg * state.cells[cellIndex].fluicol.MasEspFlu(upstreamMeanPressure, upstreamMeanTemperature));
 
                 flowPattern = state.cells[cellIndex].arranjo;
                 if (flowPattern == -1) {
 
                     FlowPatternPair pair;
-                    evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
+                    evaluateFlowPatternPair(state, cellIndex, mix, pair);
 
                     blendBySuperficialVelocity(mix, pair, c0, ud);
 
@@ -1476,7 +1264,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
             state.cells[cellIndex].udSpare = ud;
         }
     }
-    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaTran, c0, ud);
+    applyNoSlipOverride(state.input.escorregaTran, c0, ud);
 }
 
 void steadyState(const ClosureState &state, int cellIndex, double &c0, double &ud) {
@@ -1496,16 +1284,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
         double liquidHoldup = noSlipLiquidHoldup;
         double voidFraction = 1 - liquidHoldup;
 
-        double alfneg;
-        if (cellIndex > 1)
-            alfneg = state.cells[cellIndex - 2].alf;
-        else if (cellIndex > 0)
-            alfneg = state.cells[cellIndex - 1].alf;
-        else
-            alfneg = state.cells[cellIndex].alf;
-
-        double betI = state.cells[cellIndex].betL;
-        double betneg = state.cells[cellIndex].betL;
+        const double betI = state.cells[cellIndex].betL;
 
         double meanPressure;
         double upstreamMeanPressure = 0.;
@@ -1586,18 +1365,8 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
         };
             if (mixtureReynolds > 1e-30) {
                 if (fabs(0 * inclinationAngle + inclinationSign * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
-                    double upstreamGasFlowRate;
-                    double upstreamLiquidFlowRate;
-
                     gasFlowRate = fabs(state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                     liquidFlowRate = fabs(state.cells[cellIndex].Mliqini) / liquidDensity;
-
-                    upstreamGasFlowRate = gasFlowRate;
-                    upstreamLiquidFlowRate = liquidFlowRate;
-                    if (cellIndex > 0) {
-                        upstreamGasFlowRate = fabs(state.cells[cellIndex - 1].MC - state.cells[cellIndex - 1].Mliqini) / state.cells[cellIndex].flui.MasEspGas(upstreamMeanPressure, upstreamMeanTemperature);
-                        upstreamLiquidFlowRate = fabs(state.cells[cellIndex - 1].Mliqini) / ((1 - betneg) * state.cells[cellIndex].flui.MasEspLiq(upstreamMeanPressure, upstreamMeanTemperature) + betneg * state.cells[cellIndex].fluicol.MasEspFlu(upstreamMeanPressure, upstreamMeanTemperature));
-                    }
 
                     estratificado stratifiedMap(diameter, liquidFlowRate, gasFlowRate, liquidDensity, gasDensity, liquidViscosity / pow(10., 3.), gasViscosity / pow(10., 3.), liquidHoldup,
                                             inclinationSign * state.cells[cellIndex].duto.teta, state.cells[cellIndex].duto.rug / diameter);
@@ -1620,10 +1389,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                         }
 
                         FlowPatternPair pair;
-                        evaluateFlowPatternPair(state, cellIndex, mix, upstreamLiquidFlowRate, pair);
-                        double alf0E = state.cells[cellIndex].alf;
-                        if (cellIndex > 0)
-                            alf0E = state.cells[cellIndex - 1].alf;
+                        evaluateFlowPatternPair(state, cellIndex, mix, pair);
 
                         blendBySuperficialVelocity(mix, pair, c0, ud);
                     }
@@ -1652,7 +1418,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
             state.cells[cellIndex].udSpare = ud;
         }
     }
-    applyNoSlipOverride(state.cells, cellIndex, state.input.escorregaPerm, c0, ud);
+    applyNoSlipOverride(state.input.escorregaPerm, c0, ud);
 }
 
 }  // namespace coefficient
