@@ -13,6 +13,7 @@
 #include "Vetor.h"
 #include "Matriz.h"
 #include "PorosoRad.h"
+#include "UnitConversions.h"
 
 using namespace std;
 
@@ -623,7 +624,7 @@ double PorosRad::transperm(double mastot){
 	if(mastot<0){
 	  double keq=celula[0].kabsol1;
 	  double visc=flup.ViscOleo(1., tRes)/1000.;
-	  double ip=98066.52*(keq/(visc))/
+	  double ip=units::kPascalPerKgfPerCm2*(keq/(visc))/
 			         (log(celula[ncel-1].rm/celula[0].rm)+0.);
 	  mastot=ip*(celula[0].presRes-celula[0].Pint)*1000.;
 	}
@@ -677,7 +678,7 @@ void PorosRad::renovaPres(int i, double mTot){
 		double dO;
 		double dG;
 		double dA;
-		double grav=9.82/98066.22;
+		double grav=9.82/units::kPascalPerKgfPerCm2;
 
 		celula[i+1].pcOGm=celula[i+1].interpolaTabela(celula[i+1].pcGOCel.npont, 1.-celula[i+1].sL, celula[i+1].pcGOCel.satG,
 				celula[i+1].pcGOCel.presCapGO);
@@ -702,9 +703,9 @@ void PorosRad::renovaPres(int i, double mTot){
 		celula[i].sW=celula[i+1].sW;
 
 		while(erro>1e-5){
-			dO=celula[i+1].darcyO0=celula[i+1].kmed0*celula[i+1].kabsol0*98066.22/miomed;
-			dG=celula[i+1].darcyG0=celula[i+1].kmedG0*celula[i+1].kabsol0*98066.22/migmed;
-			dA=celula[i+1].darcyA0=celula[i+1].kmedA0*celula[i+1].kabsol0*98066.22/miamed;
+			dO=celula[i+1].darcyO0=celula[i+1].kmed0*celula[i+1].kabsol0*units::kPascalPerKgfPerCm2/miomed;
+			dG=celula[i+1].darcyG0=celula[i+1].kmedG0*celula[i+1].kabsol0*units::kPascalPerKgfPerCm2/migmed;
+			dA=celula[i+1].darcyA0=celula[i+1].kmedA0*celula[i+1].kabsol0*units::kPascalPerKgfPerCm2/miamed;
 
 			double mTotGeom=mTot*celula[i].drP1/celula[i].rQcamadaR;
 			double termoPR=rhomed*dO+rhogmed*dG+rhoamed*dA;

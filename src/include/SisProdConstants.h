@@ -8,24 +8,6 @@ namespace sisprod {
 
 // ---------------------------------------------------------------- units ----
 
-/// The same conversion, spelled differently in some places. Using one value
-/// for both would change results.
-inline constexpr double kPascalPerKgfPerCm2Variant = 98066.52;
-
-/// The PVTSim table reader's spelling. With it one atmosphere is 1.033211
-/// kgf/cm^2, the value kAtmosphereInKgfPerCm2 keeps.
-inline constexpr double kPascalPerKgfPerCm2PvtSim = 98068.059233;
-
-/// A coarse spelling, 0.54% above 98066.5. The half-cell hydrostatic terms
-/// beside a choke or valve use it, as do the interfacial work terms and the
-/// pressure gradients of the gas and reverse steady temperature marches. Not
-/// interchangeable with the spellings above either.
-inline constexpr double kPascalPerKgfPerCm2Coarse = 98600.;
-
-/// Kgf/cm^2 per pascal, 1 / 98066.5 written as a factor. The latent-heat
-/// reader multiplies by it; a product and the division round differently.
-inline constexpr double kKgfPerCm2PerPascal = 1.01971621e-5;
-
 /// Psi per pascal, 1 / 6894.757.
 inline constexpr double kPsiPerPascal = 0.00014503773800722;
 
@@ -166,10 +148,6 @@ static_assert(kAccessoryMultiPump == 17);
 static_assert(kGasInletInjectionPressure == 0);
 static_assert(kGasInletInjectionFlowRate == 1);
 
-static_assert(kPascalPerKgfPerCm2Variant == 98066.52);
-static_assert(kPascalPerKgfPerCm2PvtSim == 98068.059233);
-static_assert(kPascalPerKgfPerCm2Coarse == 98600.);
-static_assert(kKgfPerCm2PerPascal == 1.01971621e-5);
 static_assert(kPsiPerPascal == 0.00014503773800722);
 static_assert(kAtmospherePerKgfPerCm2 == 0.9678411);
 static_assert(kPsiPerAtmosphere == 14.69595);

@@ -6,6 +6,7 @@
  */
 
 #include "solver.h"
+#include "UnitConversions.h"
 
 void solv2D::parse_materiais(Value &material_json) {
     // obter o tamanho do elemento do Json
@@ -174,7 +175,7 @@ void solv2D::parse_tempo(
     tempVF.tempoImp = 0;
     tempVF.parserieImp = 0;
     tempVF.confinado = 0;
-    tempVF.pRef = 1. * 98066.52;
+    tempVF.pRef = 1. * units::kPascalPerKgfPerCm2;
 
     tempVF.errP = 0.00001;
     tempVF.errV = 0.0001;
@@ -268,7 +269,7 @@ void solv2D::parse_tempo(
             tempo_json["anguloY"].GetDouble();
     if (tempo_json.HasMember("confinado")) {
         tempVF.confinado = tempo_json["confinado"].GetInt();
-        tempVF.pRef = tempo_json["pressaoReferencia"].GetDouble() * 98066.52;
+        tempVF.pRef = tempo_json["pressaoReferencia"].GetDouble() * units::kPascalPerKgfPerCm2;
     }
     if (tempo_json.HasMember("perm"))
         tempVF.perm =
@@ -573,7 +574,7 @@ void solv2D::parse_CC(
         CC.ccPres[i].val = new double[CC.ccPres[i].nserie];
         for (int j = 0; j < CC.ccPres[i].nserie; j++) {
             CC.ccPres[i].tempo[j] = CC_json["Outlet"][i]["tempo"][j].GetDouble();
-            CC.ccPres[i].val[j] = CC_json["Outlet"][i]["pres"][j].GetDouble() * 98066.52;
+            CC.ccPres[i].val[j] = CC_json["Outlet"][i]["pres"][j].GetDouble() * units::kPascalPerKgfPerCm2;
         }
     }
 
@@ -1413,7 +1414,7 @@ void solv2D::imprimeMalhaRegular(malha2dVF &malha, int var) {
                                   0 * malhaH[i][j].delx * malha.mlh2d[malhaH[i][j].indEle].cel2D.gradGreenPres[0] +
                                   0 * malhaH[i][j].dely * malha.mlh2d[malhaH[i][j].indEle].cel2D.gradGreenPres[1] +
                                   (1. - (*vg1dSP).mulFC) * forcaCorpo) /
-                                 98066.52;
+                                 units::kPascalPerKgfPerCm2;
                 } else
                     flut[i][j] = 0.;
             }
@@ -2212,7 +2213,7 @@ void solv2D::resolve() {
                 double dh = yMaxWall - malha.mlh2d[i].cel2D.centroideElem[1];
                 double forcaCorpo = dh * (*vg1dSP).gravVF * sin((*vg1dSP).angY) *
                                     malha.mlh2d[i].cel2D.rho * ((*vg1dSP).mulFC - 1. * malha.mlh2d[i].cel2D.beta * (malha.mlh2d[i].cel2D.tempC - malha.mlh2d[i].cel2D.tempRef));
-                malha.mlh2d[i].cel2D.presC = CI.pres[j] * 98066.52 + forcaCorpo;
+                malha.mlh2d[i].cel2D.presC = CI.pres[j] * units::kPascalPerKgfPerCm2 + forcaCorpo;
                 malha.mlh2d[i].cel2D.presCI = malha.mlh2d[i].cel2D.presC;
                 malha.mlh2d[i].cel2D.presC0 = malha.mlh2d[i].cel2D.presC;
                 break;

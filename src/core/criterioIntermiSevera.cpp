@@ -206,7 +206,7 @@ double critInterSev::uls0Boe(Cel *celula) {
 }
 
 double critInterSev::difPresTeB(Cel *celula) {
-    return celula[indFim].pres * 98066.52 - (alfMedAcumula * volumeAcumula / (alfPenetra * celula[indAcumulaFim].duto.area) - cotaColuna) * rholR * 9.82;
+    return celula[indFim].pres * units::kPascalPerKgfPerCm2 - (alfMedAcumula * volumeAcumula / (alfPenetra * celula[indAcumulaFim].duto.area) - cotaColuna) * rholR * 9.82;
 }
 
 double critInterSev::testaCriterio(int tipo, Cel *celula) {

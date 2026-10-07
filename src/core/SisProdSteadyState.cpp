@@ -3740,7 +3740,7 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
         state.cells[i - 1].acsr.multibcs.flui = state.cells[i - 1].flui;
         state.cells[i - 1].acsr.multibcs.fluicol = state.cells[i - 1].fluicol;
         state.cells[i - 1].acsr.multibcs.marchaMultiBcs(state.cells[i - 1].QG, state.cells[i - 1].QL, state.cells[i].presaux, tmed, alf0, bet0);
-        state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * kPascalPerKgfPerCm2Variant;
+        state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * units::kPascalPerKgfPerCm2;
         state.cells[i - 1].potB = state.cells[i - 1].acsr.multibcs.potBT;
         state.cells[i - 1].potBT = state.cells[i - 1].acsr.multibcs.potBT;
         state.cells[i - 1].potTermo = state.cells[i - 1].acsr.multibcs.potTermo;
@@ -4481,7 +4481,7 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
             double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
             double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
             double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
-            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * kPascalPerKgfPerCm2Variant;
+            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * units::kPascalPerKgfPerCm2;
         }
 
     } else {
@@ -5558,7 +5558,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
             double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
             double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
-            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * kPascalPerKgfPerCm2Variant;
+            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * units::kPascalPerKgfPerCm2;
         }
     } else {
         maxSup = 0.;
@@ -6029,7 +6029,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             state.cells[i - 1].acsr.multibcs.fluicol = state.cells[i - 1].fluicol;
             state.cells[i - 1].acsr.multibcs.marchaMultiBcs(state.cells[i - 1].QG, state.cells[i - 1].QL,
                                                        pchute, taux, alf0, bet0);
-            state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * kPascalPerKgfPerCm2Variant;
+            state.cells[i - 1].dpB = state.cells[i - 1].acsr.multibcs.dpB * units::kPascalPerKgfPerCm2;
         }
         pchute -= state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
         state.cells[i - 1].pres = pchute;

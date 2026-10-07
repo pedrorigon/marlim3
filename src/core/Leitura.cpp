@@ -13993,10 +13993,10 @@ void Ler::geraTabCp() {
 		lendoPVTSim >> chave;
 	lendoPVTSim.get(line, 4000);
 	tenta = strtok(line, " ,()=");
-	presPVTSim[0] = atof(tenta) * 1.01971621e-5;
+	presPVTSim[0] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
 		tenta = strtok(NULL, " ,");
-		presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
+		presPVTSim[kontaPVT] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	}
 	while (chave != "TEMPERATURE")
 		lendoPVTSim >> chave;
@@ -14100,10 +14100,10 @@ void Ler::geraTabDrholDt() {
 		lendoPVTSim >> chave;
 	lendoPVTSim.get(line, 4000);
 	tenta = strtok(line, " ,()=");
-	presPVTSim[0] = atof(tenta) * 1.01971621e-5;
+	presPVTSim[0] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
 		tenta = strtok(NULL, " ,");
-		presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
+		presPVTSim[kontaPVT] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	}
 	while (chave != "TEMPERATURE")
 		lendoPVTSim >> chave;
@@ -14236,10 +14236,10 @@ void Ler::geraTabInjCO2() {
 		lendoPVTSim >> chave;
 	lendoPVTSim.get(line, 4000);
 	tenta = strtok(line, " ,()=");
-	presPVTSim[0] = atof(tenta) * 1.01971621e-5;
+	presPVTSim[0] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
 		tenta = strtok(NULL, " ,");
-		presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
+		presPVTSim[kontaPVT] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	}
 	while (chave != "TEMPERATURE")
 		lendoPVTSim >> chave;
@@ -14507,10 +14507,10 @@ void Ler::geraTabFlash(int flu, int var) {
 	linha_completa = ler_linha_continua(lendoPVTSim);
 	strcpy(line, linha_completa.c_str());
 	tenta = strtok(line, " ,()=");
-	presPVTSim[0] = atof(tenta) * 1.01971621e-5;
+	presPVTSim[0] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
 		tenta = strtok(NULL, " ,");
-		presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
+		presPVTSim[kontaPVT] = atof(tenta) / units::kPascalPerKgfPerCm2;
 	}
 	tenta = strtok(NULL, " ,()=");
 	chave = std::string(tenta);
@@ -16087,7 +16087,7 @@ void Ler::geracelp(Cel* celula) {
 				vkint, vcpint, vrhomix, vviscint, celp[i].kextern,
 				celp[i].cpextern, celp[i].rhoextern, celp[i].viscextern,
 				celp[i].formacCel, celp[i].lito, celp[i].ambext,
-				1.0197 + celp[i].profundiM * 1000 * 9.81 / 98066.52, dxC);
+				1.0197 + celp[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2, dxC);
 		celula[i] = Cel(vg1dSP,dutosMRT[idutoL], dutosMRT[iduto],
 				dutosMRT[idutoR], flup[indfluPIni], fluc, tmedL, tmed, tmedR,
 				tmed, pmedL, pmed, pmedR, vML, vMC, vMR, vMliqL, vMliq, vMliqR,
@@ -16202,7 +16202,7 @@ void Ler::geracelg(CelG* celula) {
 				vrhog, vviscint, celg[i].kextern, celg[i].cpextern,
 				celg[i].rhoextern, celg[i].viscextern, celg[i].formacCel,
 				celg[i].lito, celg[i].ambext,
-				1.0197 + celg[i].profundiM * 1000 * 9.81 / 98066.52,dxC);
+				1.0197 + celg[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2,dxC);
 		entrada.coluna = celg[i].acopcol;
 
 		if (i > 0 && i < ncelg - 1)
@@ -18461,7 +18461,7 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 	if(nbcs>0){
 		for(int ibcs=0;ibcs<nbcs;ibcs++){
 			int iposp = bcs[ibcs].posicP;
-			escreveIni << celula[iposp].dpB/98066.52<<" ; ";
+			escreveIni << celula[iposp].dpB/units::kPascalPerKgfPerCm2<<" ; ";
 			escreveIni << celula[iposp].potB/745.7<<" ; ";
 			escreveIni << celula[iposp].potBT/745.7<<" ; ";
 			escreveIni << celula[iposp].acsr.bcs.Hvis*0.3048<<" ; ";
@@ -18477,7 +18477,7 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 	if(nmultibcs>0){
 		for(int ibcs=0;ibcs<nmultibcs;ibcs++){
 			int iposp = multiBcs[ibcs].posicP;
-			escreveIni << celula[iposp].dpB/98066.52<<" ; ";
+			escreveIni << celula[iposp].dpB/units::kPascalPerKgfPerCm2<<" ; ";
 			escreveIni << celula[iposp].potB/745.7<<" ; ";
 			escreveIni << celula[iposp].potBT/745.7<<" ; ";
 		    long double alfmed = celula[iposp - 1].alf;

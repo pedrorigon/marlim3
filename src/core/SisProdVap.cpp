@@ -601,9 +601,9 @@ void SProdVap::calctemp(int i, double tempantiga) {
                 double rholpJ = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp, TEMP);
                 double rholmixJ = rholpJ;
 
-                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP)) * 9.82 / 98600.;
+                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP)) * 9.82 / units::kPascalPerKgfPerCm2;
                 double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp, TEMP)) *
-                                9.82 / 98600.;
+                                9.82 / units::kPascalPerKgfPerCm2;
 
                 double tit = alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP) / (celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP) * alfE + rholmix * (1. - alfE));
                 double jtlM = celula[i - 1].flui.JTlFunc(celula[i - 1].pres - hidroM, celula[i - 1].temp);
@@ -794,8 +794,8 @@ double SProdVap::calcHmix(int i, double tempantiga) {
                 double rholpJ = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp, TEMP);
                 double rholmixJ = rholpJ;
 
-                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP)) * 9.82 / 98600.;
-                double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp, TEMP)) * 9.82 / 98600.;
+                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP)) * 9.82 / units::kPascalPerKgfPerCm2;
+                double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp, TEMP)) * 9.82 / units::kPascalPerKgfPerCm2;
 
                 double tit = alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP) / (celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP) * alfE + rholmix * (1. - alfE));
 
@@ -1088,9 +1088,9 @@ void SProdVap::calcTransMassTermo(int i) {
                 double rholpJ = celula[i].flui.MasEspLiq(celula[i].pres, celula[i].temp, TEMP);
                 double rholmixJ = rholpJ;
 
-                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP)) * 9.82 / 98600.;
+                double hidroM = sin(celula[i - 1].duto.teta) * (0.5 * celula[i - 1].dx) * (rholmix * (1 - alfE) + alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP)) * 9.82 / units::kPascalPerKgfPerCm2;
                 double hidroJ = sin(celula[i].duto.teta) * (0.5 * celula[i].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[i].flui.MasEspGas(celula[i].pres, celula[i].temp, TEMP)) *
-                                9.82 / 98600.;
+                                9.82 / units::kPascalPerKgfPerCm2;
 
                 double tit = alfE * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP) / (celula[i - 1].flui.MasEspGas(celula[i - 1].pres, celula[i - 1].temp, TEMP) * alfE + rholmix * (1. - alfE));
                 double jtlM = celula[i - 1].flui.JTlFunc(celula[i - 1].pres - hidroM, celula[i - 1].temp);
@@ -1184,8 +1184,8 @@ void SProdVap::FonteValv(int ind) {
         double rholpJ = celula[ind + 1].flui.MasEspLiq(celula[ind + 1].pres, celula[ind + 1].temp, TEMP);
         double rholmixJ = rholpJ;
 
-        double hidroM = sin(celula[ind].duto.teta) * (0.5 * celula[ind].dx) * (rholmix * (1 - alfE) + alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp, TEMP)) * 9.82 / 98600.;
-        double hidroJ = sin(celula[ind + 1].duto.teta) * (0.5 * celula[ind + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp, TEMP)) * 9.82 / 98600.;
+        double hidroM = sin(celula[ind].duto.teta) * (0.5 * celula[ind].dx) * (rholmix * (1 - alfE) + alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp, TEMP)) * 9.82 / units::kPascalPerKgfPerCm2;
+        double hidroJ = sin(celula[ind + 1].duto.teta) * (0.5 * celula[ind + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * celula[ind + 1].flui.MasEspGas(celula[ind + 1].pres, celula[ind + 1].temp, TEMP)) * 9.82 / units::kPascalPerKgfPerCm2;
 
         double tit = alfE * celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp, TEMP) / (celula[ind].flui.MasEspGas(celula[ind].pres, celula[ind].temp, TEMP) * alfE + rholmix * (1. - alfE));
         double masChk;

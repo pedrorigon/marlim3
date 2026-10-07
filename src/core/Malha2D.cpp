@@ -5,6 +5,7 @@
  *      Author: Eduardo
  */
 #include "Malha2D.h"
+#include "UnitConversions.h"
 
 
 malha2dVF::malha2dVF(double** xcoor, int** noEle,int* tipo,double* atributo,int nVert, int neleV, int nno,double vdt, int vperm, int vtrans,
@@ -229,7 +230,7 @@ void malha2dVF::imprimeP(double tempo){
 		flut.mx[i][2]=mlh2d[i].cel2D.centroideElem[1];
 		double dh=ymaxWall-mlh2d[i].cel2D.centroideElem[1];
 		double forcaCorpo=dh*(mlh2d[i].cel2D.rho)*(*vg1dSP).gravVF*sin((*vg1dSP).angY);
-		flut.mx[i][3]=(mlh2d[i].cel2D.presC+(1.-(*vg1dSP).mulFC)*forcaCorpo)/98066.52;
+		flut.mx[i][3]=(mlh2d[i].cel2D.presC+(1.-(*vg1dSP).mulFC)*forcaCorpo)/units::kPascalPerKgfPerCm2;
 	}
 
 	ostringstream saidaP;

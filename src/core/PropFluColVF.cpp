@@ -175,7 +175,7 @@ double ProFluColVF::operator[](int i) const { // sobrecarga do operador []
 
 double ProFluColVF::MasEspFlu(double pres, double temper) const {
     if ((injPoc <= 1 || injPoc > 3) && descarga == 0)
-        return rholStd + 0. * (1. - compresT * (temper - 20.)) * exp((pres - 1.033211) * 98066.52 * compresP);
+        return rholStd + 0. * (1. - compresT * (temper - 20.)) * exp((pres - 1.033211) * units::kPascalPerKgfPerCm2 * compresP);
     else if (injPoc == 2 || descarga == 1 || tipoF == 1) {
         double tfarAmb = Faren(20.);
         double ppsiAmb = psia(1.);

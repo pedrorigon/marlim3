@@ -5,14 +5,13 @@
 #define _USE_MATH_DEFINES // for M_PI
 #include "SisProd.h"
 #include "SisProdConstants.h"
+#include "UnitConversions.h"
 #include <math.h>
 
 using enum sisprod::AccessoryKind;
 using sisprod::kAtmospherePerKgfPerCm2;
 using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
-using sisprod::kKgfPerCm2PerPascal;
-using sisprod::kPascalPerKgfPerCm2PvtSim;
 using sisprod::kPsiPerAtmosphere;
 using sisprod::kPsiPerPascal;
 
@@ -117,7 +116,7 @@ void SProd::loadPvtSimSaturationTables() {
     lendoPVTSim >> chave;
     int lacoleitura = ndiv;
     readPvtSimRow(lendoPVTSim, chave, "PRESSURE", PresPVTSim, lacoleitura,
-                  [](double value) { return value / kPascalPerKgfPerCm2PvtSim; });
+                  [](double value) { return value / units::kPascalPerKgfPerCm2; });
     readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", tables.PBPVTSim, lacoleitura,
                   [](double value) { return value * kPsiPerPascal; });
     readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", tables.TBPVTSim, lacoleitura, [](double value) { return value; });
@@ -672,7 +671,7 @@ void SProd::configureLatentHeat() {
                 lacoleitura = 18;
 
             readPvtSimRow(lendoPVTSim, chave, "PRESSURE", presPVTSim, ndiv,
-                          [](double value) { return value * kKgfPerCm2PerPascal; });
+                          [](double value) { return value / units::kPascalPerKgfPerCm2; });
             readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", tempPVTSim, ndiv, [](double value) { return value; });
 
             for (int i = 1; i <= ndiv + 1; i++) {

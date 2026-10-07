@@ -549,7 +549,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
         double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
         double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
         double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
-        state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * kPascalPerKgfPerCm2Variant;
+        state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * units::kPascalPerKgfPerCm2;
     }
     if (ypres > 1.) {
         if (state.input.chkv == 0)

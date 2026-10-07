@@ -6,6 +6,7 @@
  */
 #define _USE_MATH_DEFINES // para M_PI
 #include "PropFluCol.h"
+#include "UnitConversions.h"
 #include <algorithm>
 #include <complex>
 #include <math.h>
@@ -130,7 +131,7 @@ double ProFluCol::MasEspFlu(double pres, double temper) const {
         double rhomist = (1 - x) / rholw + x / rhosal;
         return 1. / rhomist;
     } else if ((injPoc <= 1 || injPoc > 3) && descarga == 0)
-        return rholStd * (1. - compresT * (temper - 20.)) * exp((pres - 1.033211) * 98066.52 * compresP);
+        return rholStd * (1. - compresT * (temper - 20.)) * exp((pres - 1.033211) * units::kPascalPerKgfPerCm2 * compresP);
     else {
         if (pres < 1.02 && temper < 20.1)
             return rholStd;

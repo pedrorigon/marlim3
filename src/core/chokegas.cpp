@@ -97,19 +97,19 @@ double ChokeGas::massica(int fluido, double salin) {
 	  double kad=flui.ConstAdG(presEstag,tempEstag);
 	  double rho0=flui.MasEspGas(presEstag,tempEstag);
 	  if(tipo==0 || tipo==1){
-	    double rt=presEstag*98066.52/(rho0*flui.Zdran(presEstag,tempEstag));
+	    double rt=presEstag*units::kPascalPerKgfPerCm2/(rho0*flui.Zdran(presEstag,tempEstag));
 	    double razcrit=pow((kad+1)/2.,-kad/(kad-1));
 	    if(presGarg/presEstag>razcrit){
 	      massica=sqrt(2.*kad/(kad-1.)*pow(presGarg/presEstag,2./kad)*
 			    (1.-pow(presGarg/presEstag,(kad-1.)/kad)));
-	      massica*=(areagarg*presEstag*98066.52/sqrt(rt));
+	      massica*=(areagarg*presEstag*units::kPascalPerKgfPerCm2/sqrt(rt));
 		  tempGarg=pow(presGarg/presEstag,(kad-1)/kad)*tempEstag;
 	    }
 	    else{
 
 		      max=sqrt(2.*kad/(kad-1.)*pow(razcrit,2./kad)*
 				    (1.-pow(razcrit,(kad-1.)/kad)));
-		      max*=(areagarg*presEstag*98066.52/sqrt(rt));
+		      max*=(areagarg*presEstag*units::kPascalPerKgfPerCm2/sqrt(rt));
 			  tempGarg=pow(razcrit,(kad-1)/kad)*tempEstag;
 
 	      massica=max;
@@ -178,7 +178,7 @@ double ChokeGas::massica(int fluido, double salin) {
 	else{
 		double rho0=MasEspFlu(presEstag,tempEstag,salin);
 		if(presEstag>presGarg)
-		massica=areagarg*sqrt(2.*rho0*(presEstag-presGarg)*98066.52);
+		massica=areagarg*sqrt(2.*rho0*(presEstag-presGarg)*units::kPascalPerKgfPerCm2);
 		else massica=0.;
 		tempGarg=tempEstag;
 		double rho1=MasEspFlu(presGarg,tempGarg,salin);

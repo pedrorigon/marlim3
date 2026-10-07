@@ -1009,7 +1009,7 @@ void CelVap::avancalfPig() {
                 double areagarg = RazAreaPig * duto.area;
                 double rlm = (1. - alfPigEini) * (rpC) +
                              alfPigEini * flui.MasEspGas(pres, temp, TEMP);
-                double massica = areagarg * sqrt(2. * rlm * (DelPig * velPig) * 98066.52);
+                double massica = areagarg * sqrt(2. * rlm * (DelPig * velPig) * units::kPascalPerKgfPerCm2);
                 massica = cdpig * massica;
                 VazaPig = massica / rlm;
             } else
@@ -1048,7 +1048,7 @@ void CelVap::avancalfPig() {
                 double areagarg = RazAreaPig * duto.area;
                 double rlm = (alfPigDini) * (rpC) +
                              alfPigDini * flui.MasEspGas(pres, temp, TEMP);
-                double massica = areagarg * sqrt(2. * rlm * (DelPig * fabs(velPig)) * 98066.52);
+                double massica = areagarg * sqrt(2. * rlm * (DelPig * fabs(velPig)) * units::kPascalPerKgfPerCm2);
                 massica = cdpig * massica;
                 VazaPig = -massica / rlm;
             } else

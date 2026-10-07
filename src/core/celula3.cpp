@@ -1636,7 +1636,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                 acsr.multibcs.flui = flui;
                 acsr.multibcs.fluicol = fluicol;
                 acsr.multibcs.marchaMultiBcs((MR - MliqiniR) / rhogC, MliqiniR / rholC, presauxR, temp, alf0, bet0);
-                dpB = acsr.multibcs.dpB * 98066.52;
+                dpB = acsr.multibcs.dpB * units::kPascalPerKgfPerCm2;
                 potB = acsr.multibcs.potB;
                 potBT = acsr.multibcs.potBT;
                 potTermo = acsr.multibcs.potTermo;
@@ -1647,7 +1647,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                 double vazmix = (MR - MliqiniR) / rhogC + MliqiniR / rholC;
                 vazmix *= (86400 / 0.1589876);
                 acsr.multibcs.marchaMultiBcs((MR - MliqiniR) * 1.001 / rhogC, MliqiniR * 1.001 / rholC, presauxR, temp, alf0, bet0);
-                double dpdvaz = (acsr.multibcs.dpB * 98066.52 - dpB) / (0.001 * vazmix);
+                double dpdvaz = (acsr.multibcs.dpB * units::kPascalPerKgfPerCm2 - dpB) / (0.001 * vazmix);
                 coefDpB = Cdpb * djdm * dpdvaz;
             }
             double delpChoke = 0.;
@@ -2087,7 +2087,7 @@ void Cel::avancalfPig() {
                 double areagarg = RazAreaPig * duto.area;
                 double rlm = (1. - alfPigEini) * ((1 - betPigEini) * rpC + betPigEini * rcC) +
                              alfPigEini * flui.MasEspGas(pres, temp);
-                double massica = areagarg * sqrt(2. * rlm * (DelPig * velPig) * 98066.52);
+                double massica = areagarg * sqrt(2. * rlm * (DelPig * velPig) * units::kPascalPerKgfPerCm2);
                 massica = cdpig * massica;
                 VazaPig = massica / rlm;
             } else
@@ -2159,7 +2159,7 @@ void Cel::avancalfPig() {
                 double areagarg = RazAreaPig * duto.area;
                 double rlm = (alfPigDini) * ((1 - betPigDini) * rpC + betPigDini * rcC) +
                              alfPigDini * flui.MasEspGas(pres, temp);
-                double massica = areagarg * sqrt(2. * rlm * (DelPig * fabs(velPig)) * 98066.52);
+                double massica = areagarg * sqrt(2. * rlm * (DelPig * fabs(velPig)) * units::kPascalPerKgfPerCm2);
                 massica = cdpig * massica;
                 VazaPig = -massica / rlm;
             } else

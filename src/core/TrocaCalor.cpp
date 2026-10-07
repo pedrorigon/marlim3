@@ -60,7 +60,7 @@ TransCal::TransCal(varGlob1D *Vvg1dSP, const DadosGeo vgeom, const int vpermanen
     RGas = 8314.4621;
     pressao = pres;
     TCNitro = Faren(-146.9) + 460.;
-    PCNitro = psia(3399.9 * 1000. / 98066.52);
+    PCNitro = psia(3399.9 * 1000. / units::kPascalPerKgfPerCm2);
 
     reyi = 0;
     reye = 0;

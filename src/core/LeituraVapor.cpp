@@ -13,6 +13,7 @@
  */
 
 #include "LeituraVapor.h"
+#include "UnitConversions.h"
 
 using namespace rapidjson;
 
@@ -2261,7 +2262,7 @@ void LerVap::geracelp(CelVap *celula) {
                   celp[i].textern, celp[i].vextern, jmix, celp[i].dirconv, dtmax,
                   vkint, vcpint, vrhomix, vviscint, celp[i].kextern, celp[i].cpextern,
                   celp[i].rhoextern, celp[i].viscextern, celp[i].formacCel, celp[i].lito, celp[i].ambext,
-                  1.0197 + celp[i].profundiM * 1000 * 9.81 / 98066.52);
+                  1.0197 + celp[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2);
         celula[i] = CelVap(vg1dSP, dutosMRT[idutoL], dutosMRT[iduto],
                            dutosMRT[idutoR], flup, tmedL, tmed, tmedR, tmed,
                            pmedL, pmed, pmedR, vML, vMC, vMR, vMliqL, vMliq, vMliqR, vazioL,

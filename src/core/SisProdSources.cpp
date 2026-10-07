@@ -16,7 +16,6 @@ using sisprod::kAirDensityAtStandardConditions;
 using sisprod::kBarrelPerCubicMetre;
 using sisprod::kCubicFootPerCubicMetre;
 using sisprod::kGravity;
-using sisprod::kPascalPerKgfPerCm2Coarse;
 
 namespace {
 
@@ -183,8 +182,8 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
         double rholcJ = state.cells[cellIndex + 1].fluicol.MasEspFlu(state.cells[cellIndex + 1].pres, state.cells[cellIndex + 1].temp);
         double rholmixJ = (1 - betJ) * rholpJ + betJ * rholcJ;
 
-        double hidroM = sin(state.cells[cellIndex].duto.teta) * (0.5 * state.cells[cellIndex].dx) * (rholmix * (1 - alfE) + alfE * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
-        double hidroJ = sin(state.cells[cellIndex + 1].duto.teta) * (0.5 * state.cells[cellIndex + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * state.cells[cellIndex + 1].flui.MasEspGas(state.cells[cellIndex + 1].pres, state.cells[cellIndex + 1].temp)) * kGravity / kPascalPerKgfPerCm2Coarse;
+        double hidroM = sin(state.cells[cellIndex].duto.teta) * (0.5 * state.cells[cellIndex].dx) * (rholmix * (1 - alfE) + alfE * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp)) * kGravity / units::kPascalPerKgfPerCm2;
+        double hidroJ = sin(state.cells[cellIndex + 1].duto.teta) * (0.5 * state.cells[cellIndex + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * state.cells[cellIndex + 1].flui.MasEspGas(state.cells[cellIndex + 1].pres, state.cells[cellIndex + 1].temp)) * kGravity / units::kPascalPerKgfPerCm2;
 
         double masentrada = state.cells[cellIndex].MC;
         double massgas = state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini;

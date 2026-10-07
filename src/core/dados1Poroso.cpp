@@ -989,10 +989,10 @@ void dadosPoro::geraTabFlash(int var) {
         lendoPVTSim >> chave;
     lendoPVTSim.get(line, 4000);
     tenta = strtok(line, " ,()=");
-    presPVTSim[0] = atof(tenta) * 1.01971621e-5;
+    presPVTSim[0] = atof(tenta) / units::kPascalPerKgfPerCm2;
     for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
         tenta = strtok(NULL, " ,");
-        presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
+        presPVTSim[kontaPVT] = atof(tenta) / units::kPascalPerKgfPerCm2;
     }
     while (chave != "TEMPERATURE")
         lendoPVTSim >> chave;

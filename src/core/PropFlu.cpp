@@ -2803,7 +2803,7 @@ double ProFlu::PB(double pres, double temp) const{
 				 pbtemp=raztemp*tabDin.PBF[posic+1]+(1.-raztemp)*tabDin.PBF[posic];
 			 }
 			 else{
-				 pbtemp=psia(dCalculatedBubbleP/98066.52);
+				 pbtemp=psia(dCalculatedBubbleP/units::kPascalPerKgfPerCm2);
 			 }
 		 }
 	 }
@@ -5389,7 +5389,7 @@ double ProFlu::drhodp(double pres, double temp) const{
 		double z=Zdran(pres,temp);
 		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + 272.15));
 		double dzdp=DZDP(pres,temp);
-		return masesp*(1./(pres*98066.52)-dzdp/z);
+		return masesp*(1./(pres*units::kPascalPerKgfPerCm2)-dzdp/z);
 	}
 	else{
 		if((*vg1dSP).modoTransiente==0 || multbcs==1){

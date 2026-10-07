@@ -549,7 +549,7 @@ double choke::vazmassSachdVap(double y, double presE, double tempE,double alf,do
 	 double rm2=x*Vg2+(1-x)*Vl;
 	 rm2=1./rm2;
 
-	 G2= 2*presE*98600*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
+	 G2= 2*presE*units::kPascalPerKgfPerCm2*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
 	 G2=sqrt(G2);
 	 }
 	 else G2=0.;
@@ -576,7 +576,7 @@ double choke::vazmaxSachdVap(double presE, double tempE,double alf,double  x){
 	 double rm2=x*Vg2+(1-x)*Vl;
 	 rm2=1./rm2;
 
-	 double G2= 2*presE*98600*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
+	 double G2= 2*presE*units::kPascalPerKgfPerCm2*rm2*rm2*((1-x)*(1-y)/rhol+x*(k/(k-1.))*(Vg-y*Vg2));
 	 G2=sqrt(G2);
 	 return cdchk*G2*AreaGarg;
 }
