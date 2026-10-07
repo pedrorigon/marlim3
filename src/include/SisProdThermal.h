@@ -258,17 +258,6 @@ struct DistributedMassTransferCoefficients {
     double flowArea;
 };
 
-/// The drift-flux pair of the slug regime: C0 = 1.2 and ud = 0.32*sqrt(g*D),
-/// signed by the inclination, collapsing to the homogeneous limit (C0 = 1,
-/// ud = 0) once the density ratio passes 0.9.
-struct SlugClosure {
-    double c0;
-    double ud;
-    /// Read after the call by the interior selector only; returned rather than
-    /// passed by reference so the other three callers need no variable for it.
-    double meanDiameter;
-};
-
 /// Which face the upstream properties come from, decided by the sign of the
 /// gas flow rate, for the two drift-closure selectors that share the choice.
 struct UpstreamFaceBasis {

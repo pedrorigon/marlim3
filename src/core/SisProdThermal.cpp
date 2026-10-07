@@ -1868,29 +1868,6 @@ void updateDistributedMassTransfer(const ThermalState &state) {
 
 namespace {
 
-/// meanVoidFraction is in-out: counter-current gas re-seeds it from alfPigE.
-[[nodiscard]] SlugClosure applySlugDriftClosure(
-    const ThermalState &state, int cellIndex, double superficialGasVelocity,
-    double rightGasDensity, double rightLiquidDensity,
-    double &meanVoidFraction) {
-    Cel &cell = state.cells[cellIndex];
-    if (superficialGasVelocity < 0)
-        meanVoidFraction = cell.alfPigE;
-    double c0 = 1.2;
-    double meanDiameter = cell.duto.a;
-    if (cell.MC >= 0)
-        meanDiameter = cell.dutoL.a;
-    double inclinationSign = 1.;
-    if (cell.duto.teta < 0.)
-        inclinationSign = -1.;
-    double ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
-    if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
-        c0 = 1.;
-        ud = 0.;
-    }
-    return SlugClosure{.c0 = c0, .ud = ud, .meanDiameter = meanDiameter};
-}
-
 /// Which face the upstream properties come from, decided by the sign of the gas
 /// flow rate: the left duct and cell when QG >= 0, this cell's duct otherwise.
 [[nodiscard]] UpstreamFaceBasis upstreamFaceBasisOf(const ThermalState &state, int cellIndex) {
@@ -2013,14 +1990,10 @@ void selectAndApplyInteriorFlowRegime(
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftCell.alfPigD < globals.localtiny && leftCell.fontemassGR >= globals.localtiny * 1e-5) {
                 setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
             }
-        } else if ((cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0.)
-            bif[cellIndex] = 1;
-        else if ((cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0)
+        } else if ((cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0.)
             bif[cellIndex] = 1;
         else {
-            if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0)
-                bif[cellIndex] = 1;
-            else if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0)
+            if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0)
                 bif[cellIndex] = 1;
             else if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity > 0)
                 bif[cellIndex] = 1;
@@ -2031,16 +2004,10 @@ void selectAndApplyInteriorFlowRegime(
 
         double c0;
         double ud;
-        double meanVoidFraction;
-
-        meanVoidFraction = leftCell.alfPigD;
-        const SlugClosure slug = applySlugDriftClosure(
-            state, cellIndex, superficialGasVelocity, rightGasDensity,
-            rightLiquidDensity, meanVoidFraction);
-        c0 = slug.c0;
-        ud = slug.ud;
-        if (fabs(cell.QG / (0.25 * M_PI * slug.meanDiameter * slug.meanDiameter * meanVoidFraction)) > 100. ||
-            fabs(cell.QL / (0.25 * M_PI * slug.meanDiameter * slug.meanDiameter * (1. - meanVoidFraction))) > 100.) {
+        const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : leftCell.alfPigD;
+        const double meanDiameter = cell.MC >= 0 ? cell.dutoL.a : cell.duto.a;
+        if (fabs(cell.QG / (0.25 * M_PI * meanDiameter * meanDiameter * meanVoidFraction)) > 100. ||
+            fabs(cell.QL / (0.25 * M_PI * meanDiameter * meanDiameter * (1. - meanVoidFraction))) > 100.) {
             c0 = 1.;
             ud = 0.;
         } else
@@ -2192,7 +2159,6 @@ void updateOutletBoundaryFlowPartition(
     double rightMeanPressure = cell.pres;
     double rightMeanTemperature = cell.temp * rightLengthRatio + cell.tempR * (1. - rightLengthRatio);
     double betIR = cell.bet;
-    double rightGasDensity = cell.flui.MasEspGas(rightMeanPressure, rightMeanTemperature);
     double rightLiquidDensity = (1 - betIR) * cell.flui.MasEspLiq(rightMeanPressure, rightMeanTemperature) + betIR * cell.fluicol.MasEspFlu(rightMeanPressure, rightMeanTemperature);
     double rightSuperficialLiquidVelocity = (cell.MliqiniR) / (rightLiquidDensity * rightFlowArea);
 
@@ -2247,33 +2213,16 @@ void updateOutletBoundaryFlowPartition(
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftCell.alf < globals.localtiny && leftCell.fontemassGR >= globals.localtiny * 1e-5) {
                 setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
             }
-        } else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
+        } else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
             bif[cellIndex] = 1;
-        else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
+        else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
             bif[cellIndex] = 1;
-        else {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
-                bif[cellIndex] = 1;
-            else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
-                bif[cellIndex] = 1;
-        }
     }
 
     if (bif[cellIndex] == 1) {
-        double meanVoidFraction;
-        meanVoidFraction = cell.alfL;
-        double c0 = 1.2;
-        double meanDiameter = cell.duto.a;
-        if (cell.MC >= 0)
-            meanDiameter = cell.dutoL.a;
-        double inclinationSign = 1.;
-        if (cell.duto.teta < 0.)
-            inclinationSign = 1.;
-        double ud = inclinationSign * 0.32 * sqrt(kGravity * meanDiameter);
-        if (fabs(rightGasDensity) / rightLiquidDensity > 0.9) {
-            c0 = 1.;
-            ud = 0.;
-        }
+        const double meanVoidFraction = cell.alfL;
+        double c0;
+        double ud;
         state.closureUpdater.instantaneous(cellIndex, c0, ud);
         if (state.input.escorregamentoCelulaContorno == 0) {
             c0 = 1.;
@@ -2540,12 +2489,8 @@ void selectAndApplyInletRegime(
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && state.inletVoidFraction < globals.localtiny) {
                 setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
             }
-        } else {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
-                branchFlag = 1;
-            else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
-                branchFlag = 1;
-        }
+        } else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
+            branchFlag = 1;
     }
     if (superficialLiquidVelocity > 0 && fabs(superficialGasVelocity) <= globals.localtiny * 1e-5 && state.inletVoidFraction > globals.localtiny && state.inletVoidFraction < 1 - globals.localtiny)
         branchFlag = 1;
@@ -2558,14 +2503,7 @@ void selectAndApplyInletRegime(
 
         double c0;
         double ud;
-        double meanVoidFraction;
-
-        meanVoidFraction = state.inletVoidFraction;
-        const SlugClosure slug = applySlugDriftClosure(
-            state, cellIndex, superficialGasVelocity, rightGasDensity,
-            rightLiquidDensity, meanVoidFraction);
-        c0 = slug.c0;
-        ud = slug.ud;
+        const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : state.inletVoidFraction;
         Regime::updateClosure(state, cellIndex, c0, ud);
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
@@ -2656,16 +2594,10 @@ void selectAndApplyBufferedOutletFlowRegime(
             if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftCell.alfPigD < globals.localtiny && leftCell.fontemassGR >= globals.localtiny * 1e-5) {
                 setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
             }
-        } else if (cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
+        } else if (cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
             branchFlag = 1;
-        else if (cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
+        else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
             branchFlag = 1;
-        else {
-            if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta < 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
-                branchFlag = 1;
-            else if (fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7))
-                branchFlag = 1;
-        }
     }
 
     if (superficialGasVelocity < 0 && cell.alf > globals.localtiny && cell.alf < 1. - globals.localtiny)
@@ -2675,14 +2607,7 @@ void selectAndApplyBufferedOutletFlowRegime(
 
         double c0;
         double ud;
-        double meanVoidFraction;
-
-        meanVoidFraction = leftCell.alfPigD;
-        const SlugClosure slug = applySlugDriftClosure(
-            state, cellIndex, superficialGasVelocity, rightGasDensity,
-            rightLiquidDensity, meanVoidFraction);
-        c0 = slug.c0;
-        ud = slug.ud;
+        const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : leftCell.alfPigD;
         state.closureUpdater.buffered(cellIndex, c0, ud);
         if (state.input.escorregamentoCelulaContorno == 0) {
             c0 = 1.;
@@ -3170,11 +3095,9 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
                                                 double meanPressure,
                                                 double meanTemperature,
                                                 double cellLength) {
-    Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double gasMassSourceTerm = 0.;
     double liquidMassSourceTerm = 0.;
-    [[maybe_unused]] double completionMassSourceTerm = 0.;
     double sourceTemperature = leftCell.temp;
     double sourceGasSpecificHeat;
     double sourceSpecificHeatRatio = 0.;
@@ -3215,10 +3138,6 @@ TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
         sourceGasSpecificHeat = leftCell.acsr.poroso2D.dados.flup.CalorGas(meanPressure, meanTemperature);
         sourceSpecificHeatRatio = leftCell.acsr.poroso2D.dados.flup.ConstAdG(meanPressure, meanTemperature);
         sourceLiquidSpecificHeat = leftCell.acsr.poroso2D.dados.flup.CalorLiq(meanPressure, meanTemperature);
-    } else if (cell.acsrL != 0) {
-
-        clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
-                                 sourceLiquidSpecificHeat);
     } else {
         clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
                                  sourceLiquidSpecificHeat);
@@ -3339,14 +3258,9 @@ double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
     return kineticTerm;
 }
 
-/// Latent-heat term of the steady march. interfacialWorkTerm is computed here
-/// and never read.
+/// Latent-heat term of the steady march.
 double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
-                                   double flowArea, double meanPressure,
-                                   double meanTemperature,
-                                   double meanSuperficialGasVelocity,
-                                   double meanSuperficialLiquidVelocity) {
-    varGlob1D &globals = *state.globals;
+                                   double meanPressure, double meanTemperature) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double latentHeatTerm = 0.;
@@ -3375,23 +3289,6 @@ double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
             latentHeatTerm = 0;
     }
 
-    double interfaceVoidFraction;
-    double leftInterfaceVoidFraction;
-    if (meanSuperficialGasVelocity > 0) {
-        interfaceVoidFraction = leftCell.alf;
-        leftInterfaceVoidFraction = leftCell.alfL;
-    } else {
-        interfaceVoidFraction = leftCell.alfR;
-        leftInterfaceVoidFraction = leftCell.alf;
-    }
-    double slipVelocity;
-    if (interfaceVoidFraction > globals.localtiny && interfaceVoidFraction < (1. - globals.localtiny))
-        slipVelocity = meanSuperficialGasVelocity / interfaceVoidFraction - meanSuperficialLiquidVelocity / (1. - interfaceVoidFraction);
-    else if (interfaceVoidFraction > globals.localtiny)
-        slipVelocity = meanSuperficialGasVelocity;
-    else
-        slipVelocity = meanSuperficialLiquidVelocity;
-    [[maybe_unused]] double interfacialWorkTerm = flowArea * cell.pres * kPascalPerKgfPerCm2Coarse * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
     return latentHeatTerm;
 }
 
@@ -3494,16 +3391,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
             cappedMeanSuperficialGasVelocity = 5 * meanSuperficialGasVelocity / fabs(meanSuperficialGasVelocity);
         double pressureSpatialCoefficient = 1 * (liquidDensity * cappedMeanSuperficialLiquidVelocity * liquidJouleThomson + gasDensity * cappedMeanSuperficialGasVelocity * gasJouleThomson) * flowArea; // multiplying term
         // the derivative Dp/Dx
-        double pressureGradient;
-        if ((leftCell.acsr.tipo != kAccessoryPump || leftCell.acsr.bcs.freq < 1) && leftCell.acsr.tipo != 7)
-            // without an ESP or a pressure increment, the pressure at the left boundary
-            // and the pressure at the cell centre are used to compute Dp/Dx
-            pressureGradient = 2. * (cell.presaux - leftCell.pres) * kPascalPerKgfPerCm2 / leftCell.dx;
-        else {
-            // with an ESP or a pressure increment, the pressure of the cell to the left
-            // and the pressure at the cell centre are used to compute Dp/Dx
-            pressureGradient = 2. * (cell.presaux - leftCell.pres) * kPascalPerKgfPerCm2 / leftCell.dx;
-        }
+        const double pressureGradient = 2. * (cell.presaux - leftCell.pres) * kPascalPerKgfPerCm2 / leftCell.dx;
         cell.VTemper = meanSuperficialLiquidVelocity; // this velocity is only useful in the transient case
         // only so that there is a value when the transient simulation starts
         [[maybe_unused]] double temperatureGradient = (-leftCell.temp) / meanCellLength;
@@ -3518,9 +3406,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
         double liquidMassSourceTerm = steadySources.liquid;
 
         // latent heat effect, when requested
-        double latentHeatTerm = computeSteadyLatentHeatTerm(
-            state, cellIndex, flowArea, meanPressure, meanTemperature,
-            meanSuperficialGasVelocity, meanSuperficialLiquidVelocity);
+        double latentHeatTerm = computeSteadyLatentHeatTerm(state, cellIndex, meanPressure, meanTemperature);
 
         if (fabs(temperatureSpatialCoefficient) > globals.localtiny) {
             // Energy terms for boundary work, potential and kinetic energy,
@@ -3644,10 +3530,6 @@ TemperatureSourceTerms computeReverseSteadySourceTerms(
         sourceLiquidSpecificHeat = (1. - rightCell.acsr.fontechk.betISamb) *
                    rightCell.acsr.fontechk.fluidoPamb.CalorLiq(meanPressure, meanTemperature) +
                rightCell.acsr.fontechk.betISamb * rightCell.acsr.fontechk.fluidocol.CalorLiq(meanPressure, meanTemperature);
-    } else if (rightCell.acsr.tipo != kAccessoryNone) {
-
-        clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
-                                 sourceLiquidSpecificHeat);
     } else {
         clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
                                  sourceLiquidSpecificHeat);
@@ -3709,12 +3591,8 @@ double computeReverseSteadyKineticTerm(
 
 /// Latent-heat term of the REVERSE march. Unlike the direct march, it does not
 /// sanitise NaN or clamp by limTransMass.
-double computeReverseSteadyLatentHeatTerm(
-    const ThermalState &state, int cellIndex, double flowArea,
-    double meanPressure, double meanTemperature,
-    double meanSuperficialGasVelocity,
-    double meanSuperficialLiquidVelocity) {
-    varGlob1D &globals = *state.globals;
+double computeReverseSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
+                                          double meanPressure, double meanTemperature) {
     Cel &cell = state.cells[cellIndex];
     Cel &rightCell = state.cells[cellIndex + 1];
     double latentHeatTerm = 0.;
@@ -3733,23 +3611,6 @@ double computeReverseSteadyLatentHeatTerm(
     }
 
     ////// useless section////////////////////////////////////////////////////////
-    double interfaceVoidFraction;
-    double leftInterfaceVoidFraction;
-    if (meanSuperficialGasVelocity > 0) {
-        interfaceVoidFraction = rightCell.alf;
-        leftInterfaceVoidFraction = rightCell.alfL;
-    } else {
-        interfaceVoidFraction = rightCell.alfR;
-        leftInterfaceVoidFraction = rightCell.alf;
-    }
-    double slipVelocity;
-    if (interfaceVoidFraction > globals.localtiny && interfaceVoidFraction < (1. - globals.localtiny))
-        slipVelocity = meanSuperficialGasVelocity / interfaceVoidFraction - meanSuperficialLiquidVelocity / (1. - interfaceVoidFraction);
-    else if (interfaceVoidFraction > globals.localtiny)
-        slipVelocity = meanSuperficialGasVelocity;
-    else
-        slipVelocity = meanSuperficialLiquidVelocity;
-    [[maybe_unused]] double interfacialWorkTerm = flowArea * rightCell.pres * kPascalPerKgfPerCm2Coarse * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / rightCell.dx;
     return latentHeatTerm;
 }
 
@@ -3916,9 +3777,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         double liquidMassSourceTerm = reverseSources.liquid;
 
         // latent heat effect, when requested
-        double latentHeatTerm = computeReverseSteadyLatentHeatTerm(
-            state, cellIndex, flowArea, meanPressure, meanTemperature,
-            meanSuperficialGasVelocity, meanSuperficialLiquidVelocity);
+        double latentHeatTerm = computeReverseSteadyLatentHeatTerm(state, cellIndex, meanPressure, meanTemperature);
 
         if (fabs(temperatureSpatialCoefficient) > globals.localtiny) {
             // energy term from boundary work, potential energy,
