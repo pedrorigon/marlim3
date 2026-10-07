@@ -58,7 +58,7 @@ CORRELATION_ARGS = ("rhol", "rhog", "tensup", "alf", "reymix", "reymixL",
 CORRELATION_ARGS_EXTRACTED = (
     "liquidDensity", "gasDensity", "surfaceTension", "voidFraction",
     "mixtureReynolds", "liquidReynolds", "gasFlowRate", "liquidFlowRate",
-    "diameter", "roughness", "inclinationAngle", "horizontalCorrection")
+    "diameter", "roughness", "inclinationAngle", "horizontalDriftSign")
 assert len(CORRELATION_ARGS) == len(CORRELATION_ARGS_EXTRACTED)
 
 # Solvers are wrapped rather than injected into, because they have several

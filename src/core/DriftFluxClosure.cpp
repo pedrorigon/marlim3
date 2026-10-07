@@ -122,7 +122,7 @@ double darcyFrictionFactor(double relativeRoughness, double reynolds) {
 void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                        double reynolds, double gasFlowRate, double liquidFlowRate, double diameter,
                        double roughness, double inclinationAngle, double &c0, double &ud,
-                       double horizontalCorrection) {
+                       double horizontalDriftSign) {
     const double flowArea = ductArea(diameter);
     const double mixtureDensity = voidFraction * gasDensity + (1. - voidFraction) * liquidDensity;
 
@@ -162,7 +162,7 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
         (laplaceNumber < 0.025) ? pow((laplaceNumber / 0.025), 0.90) : 1.0;
     const double downwardFlowSign =
         (inclinationAngle >= -(50 * M_PI / 180.) && inclinationAngle < 0 && froudeNumber <= 0.1) ? -1.0 : 1.0;
-    ud = horizontalCorrection * inclinationFactor * buoyancyVelocityScale * viscosityCorrection * laplaceCorrection * downwardFlowSign; // Drift velocity.
+    ud = horizontalDriftSign * inclinationFactor * buoyancyVelocityScale * viscosityCorrection * laplaceCorrection * downwardFlowSign; // Drift velocity.
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
 
@@ -171,28 +171,28 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
 void BhagwatGhajar(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                    double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                    double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                   double horizontalCorrection) {
+                   double horizontalDriftSign) {
     bhagwatGhajarCore(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                       gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0, ud,
-                      horizontalCorrection);
+                      horizontalDriftSign);
 }
 
 void BhagwatGhajarMod(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                       double mixtureReynolds, double liquidReynolds, double gasFlowRate,
                       double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                      double &c0, double &ud, double horizontalCorrection) {
+                      double &c0, double &ud, double horizontalDriftSign) {
     bhagwatGhajarCore(liquidDensity, gasDensity, surfaceTension, voidFraction, liquidReynolds,
                       gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle, c0, ud,
-                      horizontalCorrection);
+                      horizontalDriftSign);
 }
 
 void Choi(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
           double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
           double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-          double horizontalCorrection) {
+          double horizontalDriftSign) {
     const double inclinationSign = inclinationSignOf(inclinationAngle);
     const double flowArea = ductArea(diameter);
-    ud = horizontalCorrection * inclinationSign * 0.0246 * cos(inclinationAngle) + 1.606 * pow(sisprod::kGravity * surfaceTension * (liquidDensity - gasDensity) / (liquidDensity * liquidDensity), 0.25) * sin(inclinationAngle);
+    ud = horizontalDriftSign * inclinationSign * 0.0246 * cos(inclinationAngle) + 1.606 * pow(sisprod::kGravity * surfaceTension * (liquidDensity - gasDensity) / (liquidDensity * liquidDensity), 0.25) * sin(inclinationAngle);
     c0 = 2. / (1 + pow(mixtureReynolds / 1000., 2.)) + (1.2 - 0.2 * sqrt(gasDensity / liquidDensity) * (1 - exp(-18 * voidFraction))) / (1 + pow(1000. / mixtureReynolds, 2.));
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
@@ -200,21 +200,21 @@ void Choi(double liquidDensity, double gasDensity, double surfaceTension, double
 void HibikiIshii(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                 double horizontalCorrection) {
+                 double horizontalDriftSign) {
     const double inclinationSign = inclinationSignOf(inclinationAngle);
     const double flowArea = ductArea(diameter);
     c0 = 1. + (1. - voidFraction) / (voidFraction + 4. * sqrt(gasDensity / liquidDensity));
-    ud = (horizontalCorrection * inclinationSign * (1. - voidFraction) / (voidFraction + 4. * sqrt(gasDensity / liquidDensity))) * sqrt(sisprod::kGravity * fabs(sin(inclinationAngle)) * diameter * (liquidDensity - gasDensity) * (1. - voidFraction) / (0.015 * liquidDensity));
+    ud = (horizontalDriftSign * inclinationSign * (1. - voidFraction) / (voidFraction + 4. * sqrt(gasDensity / liquidDensity))) * sqrt(sisprod::kGravity * fabs(sin(inclinationAngle)) * diameter * (liquidDensity - gasDensity) * (1. - voidFraction) / (0.015 * liquidDensity));
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
 
 void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                 double horizontalCorrection) {
+                 double horizontalDriftSign) {
     const double inclinationSign = inclinationSignOf(inclinationAngle);
     c0 = 1.04;
-    ud = horizontalCorrection * inclinationSign * 0.466;
+    ud = horizontalDriftSign * inclinationSign * 0.466;
     const double flowArea = ductArea(diameter);
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
@@ -234,25 +234,25 @@ void blendAcrossInclination(double liquidDensity, double gasDensity, double surf
                             double voidFraction, double mixtureReynolds, double liquidReynolds,
                             double gasFlowRate, double liquidFlowRate, double diameter,
                             double roughness, double inclinationAngle, double &c0, double &ud,
-                            double horizontalCorrection) {
+                            double horizontalDriftSign) {
     if (fabs(inclinationAngle) < 5 * M_PI / 180.) {
         BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                       liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
-                      inclinationAngle, c0, ud, horizontalCorrection);
+                      inclinationAngle, c0, ud, horizontalDriftSign);
     } else if (fabs(inclinationAngle) > 20 * M_PI / 180.) {
         Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
              liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-             c0, ud, horizontalCorrection);
+             c0, ud, horizontalDriftSign);
     } else {
         const double blendRatio = (fabs(inclinationAngle) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
         BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                          liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
-                         inclinationAngle, c0, ud, horizontalCorrection);
+                         inclinationAngle, c0, ud, horizontalDriftSign);
         const double c0BhagwatGhajarMod = c0;
         const double udBhagwatGhajarMod = ud;
         Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
              liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-             c0, ud, horizontalCorrection);
+             c0, ud, horizontalDriftSign);
         c0 = blendRatio * c0 + (1. - blendRatio) * c0BhagwatGhajarMod;
         ud = blendRatio * ud + (1. - blendRatio) * udBhagwatGhajarMod;
     }
@@ -267,27 +267,27 @@ void applyCommonCorrelation(int correlationIndex, double liquidDensity, double g
                             double surfaceTension, double voidFraction, double mixtureReynolds,
                             double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                             double diameter, double roughness, double inclinationAngle, double &c0,
-                            double &ud, double horizontalCorrection) {
+                            double &ud, double horizontalDriftSign) {
     switch (correlationIndex) {
     case 0:
         Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
              liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
-             c0, ud, horizontalCorrection);
+             c0, ud, horizontalDriftSign);
         break;
     case 1:
         BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                       liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
-                      inclinationAngle, c0, ud, horizontalCorrection);
+                      inclinationAngle, c0, ud, horizontalDriftSign);
         break;
     case 4:
         BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                          liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
-                         inclinationAngle, c0, ud, horizontalCorrection);
+                         inclinationAngle, c0, ud, horizontalDriftSign);
         break;
     case 5:
         blendAcrossInclination(liquidDensity, gasDensity, surfaceTension, voidFraction,
                                mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate,
-                               diameter, roughness, inclinationAngle, c0, ud, horizontalCorrection);
+                               diameter, roughness, inclinationAngle, c0, ud, horizontalDriftSign);
         break;
     }
 }
@@ -297,43 +297,43 @@ void applyCommonCorrelation(int correlationIndex, double liquidDensity, double g
 void C0UdDisperso(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                   double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                   double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                  double horizontalCorrection, int estabCol, int correlationIndex) {
+                  double horizontalDriftSign, int estabCol, int correlationIndex) {
     applyCommonCorrelation(correlationIndex, liquidDensity, gasDensity, surfaceTension, voidFraction,
                            mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter,
-                           roughness, inclinationAngle, c0, ud, horizontalCorrection);
+                           roughness, inclinationAngle, c0, ud, horizontalDriftSign);
 }
 
 void C0UdAnularChurn(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                      double mixtureReynolds, double liquidReynolds, double gasFlowRate,
                      double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                     double &c0, double &ud, double horizontalCorrection, int estabCol, int correlationIndex) {
+                     double &c0, double &ud, double horizontalDriftSign, int estabCol, int correlationIndex) {
     // Hibiki Ishii is accepted in this regime and in no other.
     if (correlationIndex == 3) {
         HibikiIshii(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                     liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
-                    inclinationAngle, c0, ud, horizontalCorrection);
+                    inclinationAngle, c0, ud, horizontalDriftSign);
         return;
     }
     applyCommonCorrelation(correlationIndex, liquidDensity, gasDensity, surfaceTension, voidFraction,
                            mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter,
-                           roughness, inclinationAngle, c0, ud, horizontalCorrection);
+                           roughness, inclinationAngle, c0, ud, horizontalDriftSign);
 }
 
 void C0UdEstratificado(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                        double mixtureReynolds, double liquidReynolds, double gasFlowRate,
                        double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                       double &c0, double &ud, double horizontalCorrection, int estabCol,
+                       double &c0, double &ud, double horizontalDriftSign, int estabCol,
                        int correlationIndex) {
     // Franca Lahey is accepted in this regime and in no other.
     if (correlationIndex == 2) {
         FrancaLahey(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                     liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
-                    inclinationAngle, c0, ud, horizontalCorrection);
+                    inclinationAngle, c0, ud, horizontalDriftSign);
         return;
     }
     applyCommonCorrelation(correlationIndex, liquidDensity, gasDensity, surfaceTension, voidFraction,
                            mixtureReynolds, liquidReynolds, gasFlowRate, liquidFlowRate, diameter,
-                           roughness, inclinationAngle, c0, ud, horizontalCorrection);
+                           roughness, inclinationAngle, c0, ud, horizontalDriftSign);
 }
 
 }  // namespace correlations
@@ -415,7 +415,7 @@ struct SteadyStateSource {
     }
 };
 
-/// No-slip liquid holdup at the face, for the transient variants.
+/// Liquid holdup at the face, for the transient variants.
 ///
 /// Shared by CalcC0Ud and CalcC0UdBuf: gasForSign supplies the gas rate the
 /// sign tests read, QG or MCBuf - MliqiniBuf. It is called at each test rather
@@ -425,25 +425,25 @@ struct SteadyStateSource {
 /// vanishing gas rate, the second rejects one that has collapsed onto either
 /// end of its range.
 template <typename Source>
-double transientNoSlipHoldup(const ClosureState &state, int cellIndex) {
-    double noSlipLiquidHoldup;
+double transientLiquidHoldup(const ClosureState &state, int cellIndex) {
+    double liquidHoldup;
     if (cellIndex > 0)
-        noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
+        liquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
     else
-        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alf;
+        liquidHoldup = 1. - state.cells[cellIndex].alf;
     if (Source::gasForSign(state.cells, cellIndex) < 0)
-        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+        liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
     if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).localtiny * 1e-5) {
         if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
+            liquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
         else if (fabs(state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+            liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
         else
-            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
+            liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
     }
-    if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
-        noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
-    return noSlipLiquidHoldup;
+    if (liquidHoldup < (*state.globals).localtiny || liquidHoldup > 1. - (*state.globals).localtiny)
+        liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
+    return liquidHoldup;
 }
 
 /// Duct inclination seen by the face, for the transient variants.
@@ -487,25 +487,25 @@ double transientInclinationAngle(const ClosureState &state, int cellIndex) {
 /// junction angles to agree in sign, the second reads the downstream angle
 /// alone. So the guard is not decorative, and a call site that passed the wrong
 /// cell would change results wherever the two cells carry different accessories.
-double horizontalCorrectionOf(const ClosureState &state, int cellIndex, int accessoryCellIndex) {
-    double horizontalCorrection = 1.;
+double horizontalDriftSignOf(const ClosureState &state, int cellIndex, int accessoryCellIndex) {
+    double horizontalDriftSign = 1.;
     if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
         if (state.cells[accessoryCellIndex].acsr.tipo != kAccessoryChoke || state.cells[accessoryCellIndex].acsr.chk.AreaGarg > 1e-10) {
             if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
-                horizontalCorrection = -1.;
+                horizontalDriftSign = -1.;
             else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
-                horizontalCorrection = 1.;
+                horizontalDriftSign = 1.;
         } else {
             if (state.cells[cellIndex].angDir < 0)
-                horizontalCorrection = -1.;
+                horizontalDriftSign = -1.;
             else if (state.cells[cellIndex].angDir > 0)
-                horizontalCorrection = 1.;
+                horizontalDriftSign = 1.;
         }
     }
-    return horizontalCorrection;
+    return horizontalDriftSign;
 }
 
-/// No-slip liquid holdup at the face, for the initialisation variants.
+/// Liquid holdup at the face, for the initialisation variants.
 ///
 /// Same shape as the transient one, reading the inlet void fraction instead of
 /// the neighbouring cell's. Shared by CalcC0UdIni and CalcC0UdIniBuf.
@@ -514,21 +514,21 @@ double horizontalCorrectionOf(const ClosureState &state, int cellIndex, int acce
 /// cells[cellIndex - 1].alfPigD while everything around it reads the inlet
 /// fraction.
 template <typename Source>
-double inletNoSlipHoldup(const ClosureState &state, int cellIndex) {
-    double noSlipLiquidHoldup = 1 - state.inletVoidFraction;
+double inletLiquidHoldup(const ClosureState &state, int cellIndex) {
+    double liquidHoldup = 1 - state.inletVoidFraction;
     if (Source::gasForSign(state.cells, cellIndex) < 0)
-        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+        liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
     if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).localtiny * 1e-5) {
         if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.inletVoidFraction) > (*state.globals).localtiny && fabs(1. - state.inletVoidFraction) > (*state.globals).localtiny)
-            noSlipLiquidHoldup = 1 - state.inletVoidFraction;
+            liquidHoldup = 1 - state.inletVoidFraction;
         else if (fabs(state.inletVoidFraction) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
-            noSlipLiquidHoldup = 1. - state.cells[cellIndex].alfPigE;
+            liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
         else
-            noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
+            liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
     }
-    if (noSlipLiquidHoldup < (*state.globals).localtiny || noSlipLiquidHoldup > 1. - (*state.globals).localtiny)
-        noSlipLiquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
-    return noSlipLiquidHoldup;
+    if (liquidHoldup < (*state.globals).localtiny || liquidHoldup > 1. - (*state.globals).localtiny)
+        liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
+    return liquidHoldup;
 }
 
 /// No slip while a pig occupies the face: the drift terms are forced off and the
@@ -554,7 +554,7 @@ struct PhaseProperties {
     double gasDensity;
     double liquidViscosity;
     double gasViscosity;
-    double noSlipLiquidHoldup;
+    double liquidHoldup;
 };
 
 /// The scalars the closure helpers below read, named instead of counted.
@@ -579,7 +579,7 @@ struct MixtureProperties {
     const double &mixtureReynolds;
     const double &liquidReynolds;
     const double &inclinationAngle;
-    const double &horizontalCorrection;
+    const double &horizontalDriftSign;
 };
 
 /// Pressure and temperature the property model is evaluated at, for CalcC0Ud.
@@ -601,7 +601,7 @@ MeanConditions instantaneousMeanConditions(const ClosureState &state, int cellIn
 /// takes the cache. The other four always call the model.
 PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cellIndex, double betI,
                                              double meanPressure, double meanTemperature,
-                                             double noSlipLiquidHoldup, double &surfaceTension) {
+                                             double liquidHoldup, double &surfaceTension) {
     double liquidDensity;
     double liquidViscosity;
     if (state.cells[cellIndex].QL < 0.) {
@@ -635,7 +635,7 @@ PhaseProperties instantaneousPhaseProperties(const ClosureState &state, int cell
             gasDensity = state.cells[cellIndex].rgCi;
         gasViscosity = state.cells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
     }
-    return PhaseProperties{liquidDensity, gasDensity, liquidViscosity, gasViscosity, noSlipLiquidHoldup};
+    return PhaseProperties{liquidDensity, gasDensity, liquidViscosity, gasViscosity, liquidHoldup};
 }
 
 /// The dispersed and stratified closures, evaluated as a pair and then
@@ -677,8 +677,8 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
         diameter = state.cells[cellIndex - 1].duto.a;
     double flowArea = M_PI * diameter * diameter / 4.;
 
-    double mixtureDensity = phases.noSlipLiquidHoldup * phases.liquidDensity + (1 - phases.noSlipLiquidHoldup) * phases.gasDensity;
-    double mixtureViscosity = (phases.noSlipLiquidHoldup * phases.liquidViscosity + (1 - phases.noSlipLiquidHoldup) * phases.gasViscosity) / pow(10., 3.);
+    double mixtureDensity = phases.liquidHoldup * phases.liquidDensity + (1 - phases.liquidHoldup) * phases.gasDensity;
+    double mixtureViscosity = (phases.liquidHoldup * phases.liquidViscosity + (1 - phases.liquidHoldup) * phases.gasViscosity) / pow(10., 3.);
     double mixtureReynolds = diameter * mixtureDensity * (fabs(gasVolumetricFlowRate) / flowArea + fabs(liquidVolumetricFlowRate) / flowArea) / mixtureViscosity;
     double liquidReynolds = diameter * phases.liquidDensity * (fabs(gasVolumetricFlowRate) / flowArea + fabs(liquidVolumetricFlowRate) / flowArea) / (phases.liquidViscosity / 1000.);
     return FlowScales{gasVolumetricFlowRate, liquidVolumetricFlowRate, diameter, flowArea, mixtureReynolds, liquidReynolds};
@@ -689,10 +689,10 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
 void evaluateFlowPatternPair(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
                              FlowPatternPair &pair) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
-                                          state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.dispersedC0, pair.dispersedUd, mix.horizontalCorrection,
+                                          state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.dispersedC0, pair.dispersedUd, mix.horizontalDriftSign,
                                           state.cells[cellIndex].estabCol, state.selectors.dispersed);
     driftflux::correlations::C0UdEstratificado(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
-                                               state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.stratifiedC0, pair.stratifiedUd, mix.horizontalCorrection,
+                                               state.cells[cellIndex].duto.rug, mix.inclinationAngle, pair.stratifiedC0, pair.stratifiedUd, mix.horizontalDriftSign,
                                                state.cells[cellIndex].estabCol, state.selectors.stratified);
 }
 
@@ -723,12 +723,12 @@ void blendBySuperficialVelocity(const MixtureProperties &mix, const FlowPatternP
 void evaluateDispersedOrAnnular(const ClosureState &state, int cellIndex, const MixtureProperties &mix,
                                 int flowPattern, double &c0, double &ud) {
     driftflux::correlations::C0UdDisperso(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate, mix.diameter,
-                                          state.cells[cellIndex].duto.rug, mix.inclinationAngle, c0, ud, mix.horizontalCorrection,
+                                          state.cells[cellIndex].duto.rug, mix.inclinationAngle, c0, ud, mix.horizontalDriftSign,
                                           state.cells[cellIndex].estabCol, state.selectors.dispersed);
     if (flowPattern == -2) {
         driftflux::correlations::C0UdAnularChurn(mix.liquidDensity, mix.gasDensity, mix.surfaceTension, mix.voidFraction, mix.mixtureReynolds, mix.liquidReynolds, mix.gasFlowRate, mix.liquidFlowRate,
                                                  mix.diameter, state.cells[cellIndex].duto.rug, mix.inclinationAngle, c0, ud,
-                                                 mix.horizontalCorrection, state.cells[cellIndex].estabCol,
+                                                 mix.horizontalDriftSign, state.cells[cellIndex].estabCol,
                                                  state.selectors.annularChurn);
     }
 }
@@ -754,12 +754,8 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
     } else if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
         applyPigOverride(state, cellIndex, c0, ud);
     } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
-        double noSlipLiquidHoldup;
-
-        noSlipLiquidHoldup = transientNoSlipHoldup<InstantaneousSource>(state, cellIndex);
-
-        double liquidHoldup = noSlipLiquidHoldup;
-        double voidFraction = 1 - liquidHoldup;
+        const double liquidHoldup = transientLiquidHoldup<InstantaneousSource>(state, cellIndex);
+        const double voidFraction = 1 - liquidHoldup;
 
         double betI = state.cells[cellIndex].betL;
         if (cellIndex > 0)
@@ -771,11 +767,11 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
         const double meanPressure = conditions.pressure;
         const double meanTemperature = conditions.temperature;
 
-        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex - 1);
+        const double horizontalDriftSign = horizontalDriftSignOf(state, cellIndex, cellIndex - 1);
 
         double surfaceTension;
         const PhaseProperties phases = instantaneousPhaseProperties(
-            state, cellIndex, betI, meanPressure, meanTemperature, noSlipLiquidHoldup, surfaceTension);
+            state, cellIndex, betI, meanPressure, meanTemperature, liquidHoldup, surfaceTension);
         const double liquidDensity = phases.liquidDensity;
         const double gasDensity = phases.gasDensity;
         const double liquidViscosity = phases.liquidViscosity;
@@ -787,7 +783,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         const double inclinationAngle = transientInclinationAngle<InstantaneousSource>(state, cellIndex);
@@ -806,7 +802,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
             .mixtureReynolds = mixtureReynolds,
             .liquidReynolds = liquidReynolds,
             .inclinationAngle = inclinationAngle,
-            .horizontalCorrection = horizontalCorrection,
+            .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
@@ -894,13 +890,9 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
     } else if (state.cells[cellIndex].velPig < 0 && state.cells[cellIndex].estadoPig == 1) {
         applyPigOverride(state, cellIndex, c0, ud);
     } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
-        double noSlipLiquidHoldup;
-        double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
-
-        noSlipLiquidHoldup = transientNoSlipHoldup<BufferedSource>(state, cellIndex);
-
-        double liquidHoldup = noSlipLiquidHoldup;
-        double voidFraction = 1 - liquidHoldup;
+        const double lengthRatio = state.cells[cellIndex].dxL / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
+        const double liquidHoldup = transientLiquidHoldup<BufferedSource>(state, cellIndex);
+        const double voidFraction = 1 - liquidHoldup;
 
         const double betI = state.cells[cellIndex].betPigE; // beta doubt
 
@@ -917,7 +909,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
                 meanTemperature = state.gasSurfaceTemperature;
         }
 
-        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
+        const double horizontalDriftSign = horizontalDriftSignOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
@@ -948,7 +940,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         const double inclinationAngle = transientInclinationAngle<BufferedSource>(state, cellIndex);
@@ -965,7 +957,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
             .mixtureReynolds = mixtureReynolds,
             .liquidReynolds = liquidReynolds,
             .inclinationAngle = inclinationAngle,
-            .horizontalCorrection = horizontalCorrection,
+            .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
@@ -1018,19 +1010,15 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
         state.cells[cellIndex].arranjo = 1.;
 
     } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
-        double noSlipLiquidHoldup;
-
-        noSlipLiquidHoldup = inletNoSlipHoldup<InstantaneousSource>(state, cellIndex);
-
-        double liquidHoldup = noSlipLiquidHoldup;
-        double voidFraction = 1 - liquidHoldup;
+        const double liquidHoldup = inletLiquidHoldup<InstantaneousSource>(state, cellIndex);
+        const double voidFraction = 1 - liquidHoldup;
 
         const double betI = state.cells[cellIndex].betPigE; // beta doubt
 
         const double meanPressure = cellIndex == state.lastCell ? state.cells[cellIndex].pres : state.inletPressure;
         const double meanTemperature = state.inletTemperature;
 
-        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
+        const double horizontalDriftSign = horizontalDriftSignOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
@@ -1061,7 +1049,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1081,7 +1069,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
             .mixtureReynolds = mixtureReynolds,
             .liquidReynolds = liquidReynolds,
             .inclinationAngle = inclinationAngle,
-            .horizontalCorrection = horizontalCorrection,
+            .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
@@ -1161,19 +1149,15 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
         state.cells[cellIndex].arranjo = 1.;
 
     } else if ((state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.)) {
-        double noSlipLiquidHoldup;
-
-        noSlipLiquidHoldup = inletNoSlipHoldup<BufferedSource>(state, cellIndex);
-
-        double liquidHoldup = noSlipLiquidHoldup;
-        double voidFraction = 1 - liquidHoldup;
+        const double liquidHoldup = inletLiquidHoldup<BufferedSource>(state, cellIndex);
+        const double voidFraction = 1 - liquidHoldup;
 
         const double betI = state.cells[cellIndex].betPigE; // beta doubt
 
         const double meanPressure = state.inletPressure;
         const double meanTemperature = state.inletTemperature;
 
-        const double horizontalCorrection = horizontalCorrectionOf(state, cellIndex, cellIndex);
+        const double horizontalDriftSign = horizontalDriftSignOf(state, cellIndex, cellIndex);
 
         double liquidDensity;
         double liquidViscosity;
@@ -1204,7 +1188,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1224,7 +1208,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
             .mixtureReynolds = mixtureReynolds,
             .liquidReynolds = liquidReynolds,
             .inclinationAngle = inclinationAngle,
-            .horizontalCorrection = horizontalCorrection,
+            .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
             if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
@@ -1272,17 +1256,14 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
     c0 = 1.;
     ud = 0.;
     if (state.cells[cellIndex].acsr.tipo != kAccessoryPump || state.cells[cellIndex].acsr.bcs.freqnova <= 1.) {
-        double noSlipLiquidHoldup;
         double lengthRatio = state.cells[cellIndex].dx / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
         double upstreamLengthRatio;
         if (cellIndex > 0)
             upstreamLengthRatio = state.cells[cellIndex - 1].dx / (state.cells[cellIndex - 1].dx + state.cells[cellIndex - 1].dxL);
         else
             upstreamLengthRatio = lengthRatio;
-        noSlipLiquidHoldup = 1. - state.cells[cellIndex].alf;
-
-        double liquidHoldup = noSlipLiquidHoldup;
-        double voidFraction = 1 - liquidHoldup;
+        const double liquidHoldup = 1. - state.cells[cellIndex].alf;
+        const double voidFraction = 1 - liquidHoldup;
 
         const double betI = state.cells[cellIndex].betL;
 
@@ -1305,12 +1286,12 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
         else
             upstreamMeanTemperature = meanTemperature;
 
-        double horizontalCorrection = 1.;
+        double horizontalDriftSign = 1.;
         if (fabs(state.cells[cellIndex].duto.teta) < 1e-10) {
             if (state.cells[cellIndex].angEsq < 0 && state.cells[cellIndex].angDir < 0)
-                horizontalCorrection = -1.;
+                horizontalDriftSign = -1.;
             else if (state.cells[cellIndex].angEsq > 0 && state.cells[cellIndex].angDir > 0)
-                horizontalCorrection = 1.;
+                horizontalDriftSign = 1.;
         }
 
         double liquidDensity;
@@ -1338,7 +1319,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;
@@ -1361,7 +1342,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
             .mixtureReynolds = mixtureReynolds,
             .liquidReynolds = liquidReynolds,
             .inclinationAngle = inclinationAngle,
-            .horizontalCorrection = horizontalCorrection,
+            .horizontalDriftSign = horizontalDriftSign,
         };
             if (mixtureReynolds > 1e-30) {
                 if (fabs(0 * inclinationAngle + inclinationSign * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {

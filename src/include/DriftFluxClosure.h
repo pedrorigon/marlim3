@@ -20,31 +20,31 @@ namespace correlations {
 void BhagwatGhajar(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                    double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                    double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                   double horizontalCorrection);
+                   double horizontalDriftSign);
 
 /// Evaluates C0 and Ud using the Bhagwat-Ghajar drift-flux correlation.
 void BhagwatGhajarMod(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                       double mixtureReynolds, double liquidReynolds, double gasFlowRate,
                       double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                      double &c0, double &ud, double horizontalCorrection);
+                      double &c0, double &ud, double horizontalDriftSign);
 
 /// Evaluates C0 and Ud using the Choi drift-flux correlation.
 void Choi(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
           double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
           double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-          double horizontalCorrection);
+          double horizontalDriftSign);
 
 /// Evaluates C0 and Ud using the Hibiki-Ishii drift-flux correlation.
 void HibikiIshii(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                 double horizontalCorrection);
+                 double horizontalDriftSign);
 
 /// Evaluates C0 and Ud using the Franca-Lahey drift-flux correlation.
 void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                  double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                  double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                 double horizontalCorrection);
+                 double horizontalDriftSign);
 
 /// Correlation selected by the aggregators below, resolved from the integer
 /// configuration field before the call.
@@ -80,21 +80,21 @@ struct RegimeSelectors {
 void C0UdDisperso(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                   double mixtureReynolds, double liquidReynolds, double gasFlowRate, double liquidFlowRate,
                   double diameter, double roughness, double inclinationAngle, double &c0, double &ud,
-                  double horizontalCorrection, int estabCol, int correlationIndex);
+                  double horizontalDriftSign, int estabCol, int correlationIndex);
 
 /// Evaluates C0 and Ud for annular or churn flow, using the already-resolved
 /// correlationIndex (arq.CorreAnular at the call site).
 void C0UdAnularChurn(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                      double mixtureReynolds, double liquidReynolds, double gasFlowRate,
                      double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                     double &c0, double &ud, double horizontalCorrection, int estabCol, int correlationIndex);
+                     double &c0, double &ud, double horizontalDriftSign, int estabCol, int correlationIndex);
 
 /// Evaluates C0 and Ud for stratified flow, using the already-resolved
 /// correlationIndex (arq.CorreEstrat at the call site).
 void C0UdEstratificado(double liquidDensity, double gasDensity, double surfaceTension, double voidFraction,
                        double mixtureReynolds, double liquidReynolds, double gasFlowRate,
                        double liquidFlowRate, double diameter, double roughness, double inclinationAngle,
-                       double &c0, double &ud, double horizontalCorrection, int estabCol,
+                       double &c0, double &ud, double horizontalDriftSign, int estabCol,
                        int correlationIndex);
 
 }  // namespace correlations

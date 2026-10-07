@@ -175,7 +175,7 @@ run_case "inibuf/wrong-source" "DriftFluxClosure.cpp" \
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;" \
@@ -184,7 +184,7 @@ run_case "inibuf/wrong-source" "DriftFluxClosure.cpp" \
                                  .gasDensity = gasDensity,
                                  .liquidViscosity = liquidViscosity,
                                  .gasViscosity = gasViscosity,
-                                 .noSlipLiquidHoldup = noSlipLiquidHoldup});
+                                 .liquidHoldup = liquidHoldup});
 
         int flowPattern = 1;
         double totalLength = state.cells[cellIndex].dxL + state.cells[cellIndex].dx;" "caught"
