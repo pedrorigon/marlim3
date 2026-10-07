@@ -391,11 +391,9 @@ class Cel {
 
     double corrigeMassaPres; // Currently unused.
     int mudaDT;
-    int mudaDTL;
     double dpdt;
     double dpdtIni;
     double m2d;
-    double m2dL;
     double d2pdt2;
     double termoHidro; // Hydrostatic pressure variation between the current and right control volumes.
     double termoFric;  // Frictional pressure variation between the current and right control volumes.

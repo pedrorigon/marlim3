@@ -1359,7 +1359,7 @@ class SProd {
     /// Limits time-step growth when accepted steps remain well below the CFL estimate.
     void atenuaDtMax();
     /// Checks whether liquid-density variation requires the complete formulation.
-    void avaliaVariaDpDt(double razMast = 0, double razMast0 = 0, int vexpli = 0);
+    void avaliaVariaDpDt(int vexpli = 0);
     /// Updates the valve logic for the active-state formulation.
     void aberturaVal1();
     /// Updates the valve logic for the inactive-state formulation.

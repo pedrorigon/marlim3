@@ -1141,7 +1141,7 @@ void dampMaximumTimeStep(const TransientStepState &state) {
     }
 }
 
-void evaluatePressureRateOfChange(const TransientStepState &state, double razMast, double razMast0, int vexpli) {
+void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli) {
     double dpdtRef = 2 * state.input.taxaDespre;
     double modDpDt = 0.;
     double modDTDt = 0.;
@@ -1191,16 +1191,16 @@ void evaluatePressureRateOfChange(const TransientStepState &state, double razMas
         if (state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area < 1e-3 &&
             (state.meanMaximumPressureChange > state.input.taxaDespre / 10. || state.meanMaximumTimeStep > 0.001))
             state.fullModel = 1;
-        int linAberta = 1; // several-valve case
+        int linAberta = 1;
         for (int i = 0; i <= state.input.nvalv; i++)
             if (state.masterRatio1[i] <= 1e-3)
-                linAberta = 0; // several-valve case
+                linAberta = 0;
         if ((linAberta == 1 && state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area > 1e-3))
-            state.fullModel = 1; // several-valve case
+            state.fullModel = 1;
     }
     for (int i = 0; i <= state.input.nvalv; i++)
         if (state.masterRatio1[i] != state.masterRatio0[i])
-            state.fullModel = 0; // several-valve case
+            state.fullModel = 0;
     if ((state.meanMaximumPressureChange > 10 || state.meanMaximumTimeStep > 1) && state.fullModel == 1 && vexpli == 0) {
         state.fullModel = 0;
     }
@@ -1592,7 +1592,7 @@ struct PressureRateOfChangePolicy {
         return context.step.fullModel == 1;
     }
     static void apply(const TimeStepPolicyContext &context) {
-        evaluatePressureRateOfChange(context.step, 0, 0, context.explicitScheme);
+        evaluatePressureRateOfChange(context.step, context.explicitScheme);
     }
 };
 
@@ -1670,15 +1670,8 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
         }
     }
 
-    if (state.step.input.correcaoMassaEspLiq == 1) {
-        for (int i = 0; i < state.step.lastCell; i++)
-            state.step.cells[i + 1].mudaDTL = state.step.cells[i].mudaDT;
-    }
-
-    // master-only case
-    // master-only case
     TimeStepPolicies::apply<TimeStepHook::CouplingIterationStart>(
-        {state.step, kontaAcop, vExpli}); // several-valve case
+        {state.step, kontaAcop, vExpli});
     if (state.step.restart == -1) {
         restartFractionEvolutionInitial(state.step);
         for (int i = 0; i <= state.step.lastCell; i++) {
@@ -1729,7 +1722,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
 
     if (state.step.cells[state.step.lastCell].alf < 0.05 && state.step.surfaceChokeMassFlag == 1)
         state.step.cells[state.step.lastCell].alf = 0.05;
-    // several-valve case
+
     for (int j = 0; j <= state.step.input.nvalv; j++) {
         int celposAux;
         if (j > 0)
@@ -1739,7 +1732,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
         if (state.step.cells[celposAux].alf < 0.05 && state.step.masterRatio1[j] <= state.step.input.master1.razareaativ)
             state.step.cells[celposAux].alf = 0.05;
     }
-    // several-valve case
+
     solvePressureVolumeCoupling(state.step, vExpli);
 
     if (kontaAcop < 1 * state.step.fullModel) {
@@ -2130,7 +2123,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
 
         state.step.restart = 0;
         int celpos = state.step.input.master1.posic;
-        valveOpeningLow(state.step); // several-valve case
+        valveOpeningLow(state.step);
 
         if (state.step.input.controDesc == 1)
             velmaxdesc = state.updaters.searchUnloadingInjectionPressure();
@@ -2142,13 +2135,13 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         refreshInletCondition(state.step);
 
         for (int i = 0; i <= state.step.input.nvalv; i++)
-            state.step.masterCriticalRatio[i] = 0.5; // several-valve case
-        valveOpeningHigh(state.step);            // several-valve case
+            state.step.masterCriticalRatio[i] = 0.5;
+        valveOpeningHigh(state.step);
         for (int i = 0; i <= state.step.input.nvalv; i++)
             if (state.step.masterRatio1[i] != state.step.masterRatio0[i])
-                state.step.fullModel = 0; // several-valve case
+                state.step.fullModel = 0;
         TimeStepPolicies::apply<TimeStepHook::AfterValveOpenings>(
-            {state.step, kOutsideCouplingLoop, vExpli}); // several-valve case
+            {state.step, kOutsideCouplingLoop, vExpli});
         if (state.step.fullModel == 0)
             state.step.input.cicloAcopTerm = 0;
         else

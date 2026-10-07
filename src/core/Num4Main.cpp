@@ -2365,9 +2365,6 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
     Vcr<double> alfRev(narq);
     Vcr<double> betRev(narq);
     Vcr<double> titRev(narq);
-    // Vcr<double> razMast0(narq);//caso so Master
-    // Vcr<double> razMast(narq);//caso so Master
-    // Vcr<double> razMastCrit(narq);//caso so Master
     Vcr<int> celpos(narq);
     Vcr<int> kontasnp(narq, 1);
 
@@ -2616,8 +2613,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
             if (inativo[i] == 0) {
                 malha[i].transient.reinicia = 0;
                 celpos[i] = malha[i].arq.master1.posic;
-                // razMast0[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
-                malha[i].aberturaVal0(); // caso varias valvulas
+                malha[i].aberturaVal0();
                 malha[i].solveLinGas();
                 int presinterna = malha[i].noextremo;
                 if (arqRede.malha[i].presimposta == 1)
@@ -2629,11 +2625,9 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                                       malha[i].gasLift.presiniG, malha[i].gasLift.tempiniG,
                                       malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
                 malha[i].atualizaCC1();
-                // razMastCrit[i]=0.5;//caso so Master
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                    malha[i].transient.vRazMastCrit[j] = 0.5; // caso varias valvulas
-                // razMast[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
-                malha[i].aberturaVal1(); // caso varias valvulas
+                    malha[i].transient.vRazMastCrit[j] = 0.5;
+                malha[i].aberturaVal1();
                 if (arqRede.malha[i].ncoleta > 0 &&
                     (malha[i].chokeSup.AreaGarg / malha[i].celula[malha[i].ncel - 1].duto.area) < 0.6)
                     malha[i].arq.chkv = 1;
@@ -2641,9 +2635,9 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 }
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
                     if (malha[i].transient.vRazMast1[j] != malha[i].transient.vRazMast0[j])
-                        malha[i].transient.modeloCompleto = 0; // caso varias valvulas
+                        malha[i].transient.modeloCompleto = 0;
                 if (malha[i].transient.modeloCompleto == 1)
-                    malha[i].avaliaVariaDpDt(); // caso varias valvulas
+                    malha[i].avaliaVariaDpDt();
                 if (malha[i].transient.modeloCompleto == 0)
                     malha[i].arq.cicloAcopTerm = 0;
                 else
@@ -2757,15 +2751,9 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                             }
                         }
                     }
-                    if (malha[i].arq.correcaoMassaEspLiq == 1) {
-                        for (int j = 0; j < malha[i].ncel; j++)
-                            malha[i].celula[j + 1].mudaDTL = malha[i].celula[j].mudaDT;
-                    }
 
                     if (kontaAcop == 0 && malha[i].arq.controleDTvalv == 1) {
-                        // caso so Master
-                        // caso so Master
-                        malha[i].restringeDTporValv(); // caso varias valvulas
+                        malha[i].restringeDTporValv();
                     }
                 }
             }
@@ -2865,8 +2853,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                     }
                     if (malha[i].celula[malha[i].ncel].alf < 0.05 && malha[i].masChkSup == 1)
                         malha[i].celula[malha[i].ncel].alf = 0.05;
-                    // malha[i].celula[celpos[i]].alf=0.05;//caso so Master
-                    // caso varias valvulas
+
                     for (int j = 0; j <= malha[i].arq.nvalv; j++) {
                         int celposAux;
                         if (j > 0)
@@ -2876,7 +2863,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                         if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.vRazMast1[j] <= malha[i].arq.master1.razareaativ)
                             malha[i].celula[celposAux].alf = 0.05;
                     }
-                    // caso varias valvulas
+
                     malha[i].renovaterm(temaflu);
                 }
             }
@@ -10742,7 +10729,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
             if (razMast[i] != razMast0[i])
                 malha[i].transient.modeloCompleto = 0;
             if (malha[i].transient.modeloCompleto == 1)
-                malha[i].avaliaVariaDpDt(razMast[i], razMast0[i]);
+                malha[i].avaliaVariaDpDt();
         }
         for (int i = 0; i < dreno.size(); i++) {
             int ifposic = posicfonte[i];
@@ -11144,8 +11131,7 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
         for (int i = 0; i < narq; i++) {
             malha[i].transient.reinicia = 0;
             celpos[i] = malha[i].arq.master1.posic;
-            // razMast0[i]=malha[i].celula[celpos[i]].acsr.chk.AreaGarg/malha[i].celula[celpos[i]].duto.area;//caso so Master
-            malha[i].aberturaVal0(); // caso varias valvulas
+            malha[i].aberturaVal0();
             malha[i].solveLinGas();
             int presinterna = 1;
             malha[i].arq.atualiza(malha[i].noinicial, presinterna, malha[i].derivaAnel,
@@ -11156,13 +11142,13 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
                                   malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
             malha[i].atualizaCC1();
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                malha[i].transient.vRazMastCrit[j] = 0.5; // caso varias valvulas
-            malha[i].aberturaVal1();            // caso varias valvulas
+                malha[i].transient.vRazMastCrit[j] = 0.5;
+            malha[i].aberturaVal1();
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
                 if (malha[i].transient.vRazMast1[j] != malha[i].transient.vRazMast0[j])
-                    malha[i].transient.modeloCompleto = 0; // caso varias valvulas
+                    malha[i].transient.modeloCompleto = 0;
             if (malha[i].transient.modeloCompleto == 1)
-                malha[i].avaliaVariaDpDt(); // caso varias valvulas
+                malha[i].avaliaVariaDpDt();
             if (malha[i].transient.modeloCompleto == 0)
                 malha[i].arq.cicloAcopTerm = 0;
             else
@@ -11236,14 +11222,10 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
                         }
                     }
                 }
-                if (malha[i].arq.correcaoMassaEspLiq == 1) {
-                    for (int j = 0; j < malha[i].ncel; j++)
-                        malha[i].celula[j + 1].mudaDTL = malha[i].celula[j].mudaDT;
-                }
 
                 if (kontaAcop == 0 && malha[i].arq.controleDTvalv == 1) {
                     if (malha[i].transient.reinicia > -1)
-                        malha[i].restringeDTporValv(); // caso varias valvulas
+                        malha[i].restringeDTporValv();
                 }
             }
             for (int i = 0; i < narq; i++) {
@@ -11310,7 +11292,7 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
                 malha[i].renovaterm();
                 if (malha[i].celula[malha[i].ncel].alf < 0.05 && malha[i].masChkSup == 1)
                     malha[i].celula[malha[i].ncel].alf = 0.05;
-                // caso varias valvulas
+
                 for (int j = 0; j <= malha[i].arq.nvalv; j++) {
                     int celposAux;
                     if (j > 0)

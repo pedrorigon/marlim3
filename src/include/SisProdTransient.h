@@ -277,7 +277,7 @@ void computeImplicitTimeStep(const TransientStepState &state);
 /// jobs delegate to them, and Num4Main.cpp calls those methods when it
 /// sequences a network run itself.
 void dampMaximumTimeStep(const TransientStepState &state);
-void evaluatePressureRateOfChange(const TransientStepState &state, double razMast, double razMast0, int vexpli);
+void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli);
 void restrictTimeStepByValve(const TransientStepState &state);
 void valveOpeningLow(const TransientStepState &state);
 void valveOpeningHigh(const TransientStepState &state);

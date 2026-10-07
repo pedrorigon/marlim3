@@ -336,12 +336,10 @@ Cel::Cel(varGlob1D *Vvg1dSP, const DadosGeo vdutoL, const DadosGeo vduto,
     angDir = 0.;
 
     mudaDT = 0;
-    mudaDTL = 0;
 
     dpdt = 0.;
     dpdtIni = 0.;
     m2d = 0.;
-    m2dL = 0.;
     d2pdt2 = 0.;
 
     alfPigERini = alfPigER;
@@ -685,11 +683,9 @@ Cel::Cel(const Cel &vcel) : TL(2), local(2, 6) { // construtor por copia
     angDir = vcel.angDir;
 
     mudaDT = 0;
-    mudaDTL = 0;
     dpdt = vcel.dpdt;
     dpdtIni = vcel.dpdtIni;
     m2d = vcel.m2d;
-    m2dL = vcel.m2dL;
     d2pdt2 = vcel.d2pdt2;
 
     alfPigERini = vcel.alfPigERini;
@@ -1042,11 +1038,9 @@ Cel &Cel::operator=(const Cel &vcel) {
         angDir = vcel.angDir;
 
         mudaDT = vcel.mudaDT;
-        mudaDTL = vcel.mudaDTL;
         dpdt = vcel.dpdt;
         dpdtIni = vcel.dpdtIni;
         m2d = vcel.m2d;
-        m2dL = vcel.m2dL;
         d2pdt2 = vcel.d2pdt2;
 
         alfPigERini = vcel.alfPigERini;
@@ -1348,8 +1342,6 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
         double drhoLdp = 0.;
         double multL = 1.;
         double multR = 1.;
-        double corDRhol = 1. - 0 * mudaDTL;
-        double corDRholC = 1. - 0 * mudaDT;
 
         if (ciclo == 0) {
 
@@ -1396,7 +1388,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 
                 local[0][0] = -dxL * (1 / rhogL - 1 / rpL) * DTransDxLp;
                 local[0][1] = -((1. / rhogL) * (1. - term1L) + multL * term1L) - dxL * (1 / rhogL - 1 / rpL) * term1L * DTransDxL;
-                local[0][2] = dxL * AL * (((alfL / rhogL) / dpdrho) * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL)) / dt -
+                local[0][2] = dxL * AL * (((alfL / rhogL) / dpdrho) * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL)) / dt -
                               dxL * (1 / rhogL - 1 / rpL) * (DTransDxLp + DTransDxRp);
                 local[0][3] = (1. / rhogL) * (1 - term1) + multR * term1 - dxL * (1 / rhogL - 1 / rpL) * term1 * DTransDxR;
                 local[0][4] = -dxL * (1 / rhogL - 1 / rpL) * DTransDxRp;
@@ -1406,12 +1398,12 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                     fontemassGL += corrigeMassaPres * dxL;
 
                 if (TMModelL == 1 || TMModelL == 2 || TMModelL == 3) {
-                    TL[0] = dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt +
+                    TL[0] = dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt +
                             (1 / rhogL - multR) * term2 -
                             (1 / rhogL - multL) * term2L +
                             (fontemassGL / rhogL + (fontemassLL / rpL + fontemassCL / rcL)) + dxL * (1 / rhogL - 1 / rpL) * transmassL;
                 } else if (TMModelL == 0) {
-                    TL[0] = dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt +
+                    TL[0] = dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt +
                             (1 / rhogL - multR) * term2 -
                             (1 / rhogL - multL) * term2L +
                             (fontemassGL / rhogL + (fontemassLL / rpL + fontemassCL / rcL)) +
@@ -1491,10 +1483,10 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
             local[1][1] = 0.;
             local[1][2] = -ugL * (1 - term1) / dx - ulL * term1 / dx;
             local[1][3] = -Amed * 98066.5 / dxmed;
-            local[1][4] = (1 - (1. - corDRholC * deriMas) * term1R) / dt + ugR * (1 - term1R) / dx + ulR * term1R / dx;
+            local[1][4] = (1 - (1. - deriMas) * term1R) / dt + ugR * (1 - term1R) / dx + ulR * term1R / dx;
             local[1][5] = Amed * 98066.5 / dxmed;
 
-            TL[1] = (MR - (1. - corDRholC * deriMas) * MliqiniR) / dt + (1. - corDRholC * deriMas) * term2R / dt + (ugR * term2R - ugL * term2) / dx -
+            TL[1] = (MR - (1. - deriMas) * MliqiniR) / dt + (1. - deriMas) * term2R / dt + (ugR * term2R - ugL * term2) / dx -
                     (ulR * term2R - ulL * term2) / dx;
 
             double j1;
@@ -1679,11 +1671,11 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                     drhoLdpC = 0.1;
                 local[1][1] = 0.;
                 local[1][2] = -((1. / rhogC) * (1. - term1) + multL * term1);
-                local[1][3] = dx * AC * (((alf / rhogC) / dpdrho) * 98066.5 + corDRholC * (deriPres * (1. - alf) * (1 - bet) * drhoLdpC / rpC + deriPres * (1 / AC) * (1 / rhogC - 1 / rpC) * DTransDtp)) / dt;
+                local[1][3] = dx * AC * (((alf / rhogC) / dpdrho) * 98066.5 + (deriPres * (1. - alf) * (1 - bet) * drhoLdpC / rpC + deriPres * (1 / AC) * (1 / rhogC - 1 / rpC) * DTransDtp)) / dt;
                 local[1][4] = 0.;
                 local[1][5] = 0.;
 
-                TL[1] = dx * AC * (((alf / rhogC) / dpdrho) * pres * 98066.5 + corDRholC * (deriPres * (1. - alf) * (1 - bet) * drhoLdp * pres / rpC + deriPres * (1 / AC) * (1 / rhogC - 1 / rpC) * DTransDtp * pres)) / dt - (1 / rhogC - multL) * term2 +
+                TL[1] = dx * AC * (((alf / rhogC) / dpdrho) * pres * 98066.5 + (deriPres * (1. - alf) * (1 - bet) * drhoLdp * pres / rpC + deriPres * (1 / AC) * (1 / rhogC - 1 / rpC) * DTransDtp * pres)) / dt - (1 / rhogC - multL) * term2 +
                         (fontemassGR / rhogC + (fontemassLR / rpC + fontemassCR / rcC)) + dx * (1 / rhogC - 1 / rpC) * transmassR;
             }
             double drhodt = flui.drhodt(pres, temp);
@@ -1703,8 +1695,6 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
             }
         }
     } else if (posic == ncel) {
-        double corDRhol = 1. - 0 * mudaDTL;
-        double corDRholC = 1. - 0 * mudaDT;
         if (masChkSup == 0) {
             double AL = dutoL.area;
             double rhogL = (*fluiL).MasEspGas(presL, tempL);
@@ -1732,12 +1722,12 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                     coluna = 1.;
 
                 local[0][1] = -((1. / rhogL) * (1. - term1L) + multL * term1L);
-                local[0][2] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL)) / dt;
+                local[0][2] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL)) / dt;
                 local[0][3] = (1. / rhogL) * (1 - term1) + multR * term1;
                 local[0][4] = 0.;
                 local[0][5] = 0.;
 
-                TL[0] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt +
+                TL[0] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt +
                         (1 / rhogL - multR) * term2 - (1 / rhogL - multL) * term2L +
                         (fontemassGL / rhogL + (fontemassLL / rpL + fontemassCL / rcL) / rholL) + dxL * (1 / rhogL - 1 / rpL) * transmassL;
             }
@@ -1833,12 +1823,12 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 
                 local[0][0] = 0.;
                 local[0][1] = -((1. / rhogL) * (1. - term1L) + multL * term1L);
-                local[0][2] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL)) / dt;
+                local[0][2] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL)) / dt;
                 local[0][3] = (1. / rhogL) * (1 - term1) + multR * term1;
                 local[0][4] = 0.;
                 local[0][5] = 0.;
 
-                TL[0] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + corDRhol * (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt + (1 / rhogL - multR) * term2 - (1 / rhogL - multL) * term2L +
+                TL[0] = coluna * dxL * AL * (((alfL / rhogL) / dpdrho) * presL * 98066.5 + (deriPres * (1. - alfL) * (1 - betL) * drhoLdp * presL / rpL + deriPres * (1 / AL) * (1 / rhogL - 1 / rpL) * DTransDtpL * presL)) / dt + (1 / rhogL - multR) * term2 - (1 / rhogL - multL) * term2L +
                         (fontemassGL / rhogL + (fontemassLL / rpL + fontemassCL / rcL)) + dxL * (1 / rhogL - 1 / rpL) * transmassL;
             }
             double drhodt = (*fluiL).drhodt(presL, tempL);
@@ -1877,12 +1867,12 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                 local[1][0] = 0.;
                 local[1][1] = 0.;
                 local[1][2] = -((1. / rhog) * (1. - term1) + multL * term1);
-                local[1][3] = coluna * dxncel * AC * (((alf / rhog) / dpdrho) * 98066.5 + corDRholC * (deriPres * (1. - alf) * (1 - bet) * drhoLdp / rpC + deriPres * (1 / AC) * (1 / rhog - 1 / rpC) * DTransDtp)) / dt -
+                local[1][3] = coluna * dxncel * AC * (((alf / rhog) / dpdrho) * 98066.5 + (deriPres * (1. - alf) * (1 - bet) * drhoLdp / rpC + deriPres * (1 / AC) * (1 / rhog - 1 / rpC) * DTransDtp)) / dt -
                               (DmasschokeG / rhog + DmasschokeL / rpC + DmasschokeC / rcC);
                 local[1][4] = 0.;
                 local[1][5] = 0.;
 
-                TL[1] = coluna * dxncel * AC * (((alf / rhog) / dpdrho) * pres * 98066.5 + corDRholC * (deriPres * (1. - alf) * (1 - bet) * drhoLdp * pres / rpC + deriPres * (1 / AC) * (1 / rhog - 1 / rpC) * DTransDtp * pres)) / dt - (1 / rhog - multL) * term2 +
+                TL[1] = coluna * dxncel * AC * (((alf / rhog) / dpdrho) * pres * 98066.5 + (deriPres * (1. - alf) * (1 - bet) * drhoLdp * pres / rpC + deriPres * (1 / AC) * (1 / rhog - 1 / rpC) * DTransDtp * pres)) / dt - (1 / rhog - multL) * term2 +
                         ((fontemassGR - DmasschokeG * pres) / rhog + (fontemassLR - DmasschokeL * pres) / rpC +
                          (fontemassCR - DmasschokeC * pres) / rcC);
             }
@@ -1900,7 +1890,6 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
         }
     } else if (posic == 0 && ciclo == 0) {
 
-        double corDRholC = 1. - 0 * mudaDT;
         if (presE < 0) {
             local[0][1] = 0.;
             local[0][2] = 0.;
@@ -1952,11 +1941,11 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
 
             local[0][1] = 0.;
             local[0][2] = 0.;
-            local[0][3] = coefTensC * coef1C + (1. - (1. - corDRholC * deriMas)) * term1 / dt;
+            local[0][3] = coefTensC * coef1C + (1. - (1. - deriMas)) * term1 / dt;
             local[0][4] = Amed * 98066.5 / (dx);
             local[0][5] = 0;
 
-            TL[0] = (MC - (1. - corDRholC * deriMas) * Mliqini) / dt + (1. - corDRholC * deriMas) * term2 / dt;
+            TL[0] = (MC - (1. - deriMas) * Mliqini) / dt + (1. - deriMas) * term2 / dt;
             TL[0] += (Amed * 98066.5 * presE / (dx) - (dpfric + dphidro));
         }
 
@@ -1975,10 +1964,10 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
         local[1][1] = 0.;
         local[1][2] = 0.;
         local[1][3] = -Amed * 98066.5 / dxmed;
-        local[1][4] = (1 - (1. - corDRholC * deriMas) * term1R) / dt;
+        local[1][4] = (1 - (1. - deriMas) * term1R) / dt;
         local[1][5] = Amed * 98066.5 / dxmed;
 
-        TL[1] = (MR - (1. - corDRholC * deriMas) * MliqiniR) / dt + (1. - corDRholC * deriMas) * term2R / dt;
+        TL[1] = (MR - (1. - deriMas) * MliqiniR) / dt + (1. - deriMas) * term2R / dt;
 
         double j1;
         double j2;

@@ -410,9 +410,9 @@ void SProd::atenuaDtMax() {
     sisprod::transient::dampMaximumTimeStep(context.transientStep());
 }
 
-void SProd::avaliaVariaDpDt(double razMast, double razMast0, int vexpli) {
+void SProd::avaliaVariaDpDt(int vexpli) {
     sisprod::SolveContext context(*this);
-    sisprod::transient::evaluatePressureRateOfChange(context.transientStep(), razMast, razMast0, vexpli);
+    sisprod::transient::evaluatePressureRateOfChange(context.transientStep(), vexpli);
 }
 
 void SProd::aberturaVal0() {
