@@ -12849,6 +12849,13 @@ void Ler::lerArq() {
 
 		if (jsonDoc.correcao().exists()) parse_correcao(jsonDoc.correcao());
 
+		if (jsonDoc.dutosProducao().size() == 0)
+			logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "", "#dutosProducao",
+					"Arquivo de entrada sem dutos de producao: nao e um caso de simulacao");
+		if (lingas == 1 && jsonDoc.dutosServico().size() == 0)
+			logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "", "#dutosServico",
+					"Linha de servico ativa sem dutos de servico");
+
 		if(jsonDoc.dutosProducao()[0].condicoesIniciais().exists())conINIAmbP=0;
 		else if(jsonDoc.dutosProducao()[0].condicoesIniciaisEAmbiente().exists())conINIAmbP=1;
 
