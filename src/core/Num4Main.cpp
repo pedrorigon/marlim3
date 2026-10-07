@@ -1476,14 +1476,14 @@ double FQleve(Cel *celula, int i) {
         beti = celula[i - 1].bet;
         rsi = celula[i - 1].flui.RS(celula[i - 1].pres,
                                     celula[i - 1].temp) *
-              (6.29 / 35.31467);
+              (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         dgi = celula[i - 1].flui.Deng;
     } else {
         bo = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp);
         bswi = celula[i].flui.BSW;
         fwi = bswi / (bo + bswi - bswi * bo);
         beti = celula[i].bet;
-        rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp) * (6.29 / 35.31467);
+        rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         dgi = celula[i].flui.Deng;
     }
     double qostd = celula[i].QL * (1 - fwi) * (1. - beti) / bo;
@@ -1782,7 +1782,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                 if (malha[ind].celula[fim].flui.RGO < 1e6) {
                                     rs = malha[ind].celula[fim].flui.RS(malha[ind].celula[fim].pres,
                                                                         malha[ind].celula[fim].temp) *
-                                         6.29 / 35.31467;
+                                         units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                                     bo = malha[ind].celula[fim].flui.BOFunc(malha[ind].celula[fim].pres,
                                                                             malha[ind].celula[fim].temp, rs);
                                     ba = malha[ind].celula[fim].flui.BAFunc(malha[ind].celula[fim].pres,
@@ -1913,7 +1913,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                 if (malha[ind].celula[ini].flui.RGO < 1e6) {
                                     rs = malha[ind].celula[ini].flui.RS(malha[ind].celula[ini].pres,
                                                                         malha[ind].celula[ini].temp) *
-                                         6.29 / 35.31467;
+                                         units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                                     bo = malha[ind].celula[ini].flui.BOFunc(malha[ind].celula[ini].pres,
                                                                             malha[ind].celula[ini].temp, rs);
                                     ba = malha[ind].celula[ini].flui.BAFunc(malha[ind].celula[ini].pres,
@@ -4704,7 +4704,7 @@ void atualizaComp(SProd &sistem1, int i) {
         rs = sistem1.celula[i - 1].flui.RS(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
         bo = sistem1.celula[i - 1].flui.BOFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp, rs);
         ba = sistem1.celula[i - 1].flui.BAFunc(sistem1.celula[i - 1].pres, sistem1.celula[i - 1].temp);
-        rs = rs * 6.29 / 35.31467;
+        rs = rs * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         bo = 1;
         rs = 0;
@@ -6010,7 +6010,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
                     qgtemp = qostd[k] * RGO[k];
                 else
-                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * 6.29 / 35.31467;
+                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                 if (qgtemp <= 1e-15)
                     qgtemp = malha[ind].celula[fim + 1].MC / rhogST[k];
                 noConv.qgstdTot += qgtemp;
@@ -6074,7 +6074,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
                     qgtemp = qostd[k] * RGO[k];
                 else
-                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * 6.29 / 35.31467;
+                    qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                 if (qgtemp <= 1e-15)
                     qgtemp = malha[ind].celula[fim + 1].MC / rhogST[k];
                 noConv.qgstdTotNeg += qgtemp;
@@ -6149,7 +6149,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
             if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
                 qgtemp = qostd[k] * RGO[k];
             else
-                qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[ini].flui.RS(pres, temp[k]) * 6.29 / 35.31467;
+                qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[ini].flui.RS(pres, temp[k]) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
             if (qgtemp <= 1e-15)
                 qgtemp = -malha[ind].celula[ini + 1].MC / rhogST[k];
             noConv.qgstdTot += qgtemp;
@@ -7645,7 +7645,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     // propriedades in-situ
                     double rl = fluCP.MasEspoleo(sistem1.presE, sistem1.tempE);
                     double rw = fluCP.Denag * 1000.;
-                    double RSent = fluCP.RS(sistem1.presE, sistem1.tempE) * 6.29 / 35.31467;
+                    double RSent = fluCP.RS(sistem1.presE, sistem1.tempE) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                     double bsw = fluCP.BSW;
                     double bo = fluCP.BOFunc(sistem1.presE, sistem1.tempE);
                     double ba = fluCP.BAFunc(sistem1.presE, sistem1.tempE);
@@ -9367,7 +9367,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                         double roST = 141.5 * 1000. / (131.5 + fluCP.API);
                         double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double rw = fluCP.Denag * 1000.;
-                        double RSent = fluCP.RS(malha[i].presE, malha[i].tempE) * 6.29 / 35.31467;
+                        double RSent = fluCP.RS(malha[i].presE, malha[i].tempE) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                         double bsw = fluCP.BSW;
                         double bo = fluCP.BOFunc(malha[i].presE, malha[i].tempE);
                         double ba = fluCP.BAFunc(malha[i].presE, malha[i].tempE);
@@ -10116,7 +10116,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                         double rgST = malha[i].celula[0].flui.Deng * 1.225;
                         double roST = 141.5 * 1000. / (131.5 + malha[i].celula[0].flui.API);
                         double rw = malha[i].celula[0].flui.Denag * 1000.;
-                        double RSent = malha[i].celula[0].flui.RS(malha[i].presE, malha[i].tempE) * 6.29 / 35.31467;
+                        double RSent = malha[i].celula[0].flui.RS(malha[i].presE, malha[i].tempE) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                         double bsw = malha[i].celula[0].flui.BSW;
                         double bo = malha[i].celula[0].flui.BOFunc(malha[i].presE, malha[i].tempE);
                         double ba = malha[i].celula[0].flui.BAFunc(malha[i].presE, malha[i].tempE);

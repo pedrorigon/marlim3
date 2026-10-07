@@ -89,7 +89,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
    Cvb = 11.172;
   }
 
-  IRGO=RGO*35.31467/6.29;
+  IRGO=RGO*units::kCubicFootPerCubicMetre/units::kBarrelPerCubicMetre;
 
   yco2=vyco2;
   corrC=vcorrC;
@@ -473,7 +473,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
    Cvb = 11.172;
   }
 
-  IRGO=RGO*35.31467/6.29;
+  IRGO=RGO*units::kCubicFootPerCubicMetre/units::kBarrelPerCubicMetre;
 
   yco2=vyco2;
   corrC=vcorrC;
@@ -860,7 +860,7 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
    Cvb = 11.172;
   }
 
-  IRGO=RGO*35.31467/6.29;
+  IRGO=RGO*units::kCubicFootPerCubicMetre/units::kBarrelPerCubicMetre;
   yco2=vyco2;
   corrC=vcorrC;
   if(corrC==0){
@@ -2084,7 +2084,7 @@ void ProFlu::RenovaFluido() {
 	   Cvb = 11.172;
 	  }
 
-	  IRGO=RGO*35.31467/6.29;
+	  IRGO=RGO*units::kCubicFootPerCubicMetre/units::kBarrelPerCubicMetre;
 
 	  if(corrC==0){
 	    if(Deng<=0.7){
@@ -4032,7 +4032,7 @@ if(flashCompleto==0 || flashCompleto==3){
 	 if(varRS<0)rs=interpolaVarProd(pres, temp, RSF);
 	 else rs=varRS;
 	 double rhostd=141.5*1000./(131.5+API);
-	 BO=(rhostd+Deng*1.225*rs*6.29/35.31467)/rhol;
+	 BO=(rhostd+Deng*1.225*rs*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre)/rhol;
  }
  else{
 	 if((*vg1dSP).modoTransiente==0 || multbcs==1){
@@ -5120,7 +5120,7 @@ double ProFlu::MasEspoleo(double pres, double temp,double varRS) const{
 			if(varRS<0 && flashCompleto!=2)rsVar=RS(pres, temp);
 			else rsVar=varRS;
 			return (1000*141.5/(131.5 + API) +
-					rDgD*Deng*1.225*rsVar*6.29/35.31467)/BOFunc(pres, temp,rsVar);
+					rDgD*Deng*1.225*rsVar*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre)/BOFunc(pres, temp,rsVar);
 		}
 		else
 			return interpolaVarProd(pres, temp, rholF);
@@ -5515,7 +5515,7 @@ double ProFlu::drhodp(double pres, double temp) const{
 
 void ProFlu::razDegD(double pres, double temp){
 	if(flashCompleto==0  || flashCompleto==3|| (flashCompleto==2 && tab==1)){
-		double rs=RS(pres, temp)* (6.29 / 35.31467);
+		double rs=RS(pres, temp)* (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 		double SGDG = (API + 12.5)/50 - 0.0000035715*API*rs;
 		if (SGDG < Deng) SGDG = Deng;
 		rDgD=SGDG/Deng;
@@ -5537,7 +5537,7 @@ void ProFlu::razDegD(double pres, double temp){
 }
 void ProFlu::rzDegL(double pres , double temp){
 	if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
-		double rs=RS(pres, temp)* (6.29 / 35.31467);
+		double rs=RS(pres, temp)* (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 		double SGFG;
 		if(fabs(RGO - rs)>1e-5)SGFG= Deng*(RGO-rDgD*rs)/(RGO - rs);
 		else SGFG=Deng;
@@ -5692,7 +5692,7 @@ double ProFlu::MasEspLiq(double pres, double temp,double varRS) const{
 		if(varRS<0)rs=RS(pres, temp);
 		else rs=varRS;
 		double masoleo=((1-BSW)*(1000*141.5/(131.5 + API) +
-    		rDgD*Deng*1.225*rs*6.29/35.31467));
+    		rDgD*Deng*1.225*rs*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre));
 		double bo=BOFunc(pres, temp, rs);
 		double masagua=BSW*1000.*Denag;
 		double rhoa;
@@ -5834,7 +5834,7 @@ double ProFlu::MasOleo(double pres, double temp,double varRS) const{
  if(varRS<0)rs=RS(pres, temp);
  else rs=varRS;
  double var;
-	 var=(1000*141.5/(131.5 + API)+rDgD*Deng*1.225*rs*6.29/35.31467);
+	 var=(1000*141.5/(131.5 + API)+rDgD*Deng*1.225*rs*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre);
  return var;
 }
 
@@ -5844,7 +5844,7 @@ double ProFlu::MasOleoHidra(double pres, double temp,double varRS) const{
 	 if(varRS<0)rs=RS(pres, temp);
 	 else rs=varRS;
 	 double var;
-		 var=(1-BSW)*(1000*141.5/(131.5 + API)+rDgD*Deng*1.225*rs*6.29/35.31467);
+		 var=(1-BSW)*(1000*141.5/(131.5 + API)+rDgD*Deng*1.225*rs*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre);
 	 return var;
 }
 
@@ -5854,7 +5854,7 @@ double ProFlu::MasLiq(double pres, double temp,double varRS) const{
 	 if(varRS<0)rs=RS(pres, temp);
 	 else rs=varRS;
 	 double var;
-		 var=(1-BSW)*(1000*141.5/(131.5 + API)+rDgD*Deng*1.225*rs*6.29/35.31467)+BSW*1000*Denag;
+		 var=(1-BSW)*(1000*141.5/(131.5 + API)+rDgD*Deng*1.225*rs*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre)+BSW*1000*Denag;
 	 return var;
 }
 
@@ -5868,7 +5868,7 @@ double ProFlu::MasGasLivre(double pres, double temp,double varRS) const{
 	 double rs;
 	 if(varRS<0)rs=RS(pres, temp);
 	 else rs=varRS;
-     return 1.225*Deng*(IRGO - rDgD*rs)*6.29/35.31467;
+     return 1.225*Deng*(IRGO - rDgD*rs)*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre;
 }
 double ProFlu::FracAguaInSitu(double pres, double temp,double varRS) const{
 	if(flashCompleto!=2){
@@ -5956,7 +5956,7 @@ double ProFlu::MasGasLivreHidra(double pres, double temp,double varRS) const{
 	 double rs;
 	 if(varRS<0)rs=RS(pres, temp);
 	 else rs=varRS;
-	 return (1-BSW)*1.225*Deng*(IRGO - rDgD*rs)*6.29/35.31467;
+	 return (1-BSW)*1.225*Deng*(IRGO - rDgD*rs)*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre;
 }
 
 double ProFlu::FracMass(double pres, double temp) const{

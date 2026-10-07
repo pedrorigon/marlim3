@@ -9,8 +9,6 @@
 #include <math.h>
 
 using enum sisprod::AccessoryKind;
-using sisprod::kBarrelPerCubicMetre;
-using sisprod::kCubicFootPerCubicMetre;
 
 namespace {
 
@@ -187,7 +185,7 @@ void SProd::loadPvtSimSaturationTables() {
             RSTemp[i][0] = tables.RSLivia[i][0];
             RSTemp[0][i] = tables.RSLivia[0][i];
             for (int j = 1; j <= ndiv + 1; j++)
-                RSTemp[i][j] = tables.RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+                RSTemp[i][j] = tables.RSLivia[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
         }
         writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
 
@@ -234,7 +232,7 @@ void SProd::generateSaturationTablesFromCorrelations() {
             tables.RSLivia[0][j] = ttestepb;
             tables.RSLivia[i][j] = arq.flup[0].RS(pteste, ttestepb);
             RSTemp[0][j] = tables.RSLivia[0][j];
-            RSTemp[i][j] = tables.RSLivia[i][j] * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+            RSTemp[i][j] = tables.RSLivia[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
             ttestepb += dtteste;
         }
         pteste += dpteste;

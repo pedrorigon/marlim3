@@ -1074,11 +1074,11 @@ void dadosPoro::geraTabFlash(int var) {
                 if (var == 8 && i > 0 && j > 0) {
                     double rhostd = 141.5 * 1000. / (131.5 + flup.API);
                     double rgstd = 1.225 * flup.Deng;
-                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * 35.31467 / 6.29;
+                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
                     if (flash.RSF[i][j] < 0)
                         flash.RSF[i][j] = 0.;
                     // falcatrua-teste de consistencia de RS do PVTSIM
-                    VarTemp[i][j] = flash.RSF[i][j] * 6.29 / 35.31467;
+                    VarTemp[i][j] = flash.RSF[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                 }
                 if ((var == 16 || var == 17) && i > 0 && j > 0) {
                     if (var == 16)
@@ -1120,11 +1120,11 @@ void dadosPoro::geraTabFlash(int var) {
                 if (var == 8 && i > 0 && j > 0) {
                     double rhostd = 141.5 * 1000. / (131.5 + flup.API);
                     double rgstd = 1.225 * flup.Deng;
-                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * 35.31467 / 6.29;
+                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
                     if (flash.RSF[i][j] < 0)
                         flash.RSF[i][j] = 0.;
                     // falcatrua-teste de consistencia de RS do PVTSIM
-                    VarTemp[i][j] = flash.RSF[i][j] * 6.29 / 35.31467;
+                    VarTemp[i][j] = flash.RSF[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                 }
                 if ((var == 16 || var == 17) && i > 0 && j > 0) {
                     if (var == 16)
@@ -1817,7 +1817,7 @@ void dadosPoro::parse_fluido_producao(
         rgo = fluidos_producao_json["rgo"].GetDouble();
         if (rgo > flup.RGO) {
             flup.RGO = rgo;
-            flup.IRGO = flup.RGO * 35.31467 / 6.29;
+            flup.IRGO = flup.RGO * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
         }
 
         if (flash.rhogF[0][1] < 20 && flash.rhogF[1][0] < 1.01)

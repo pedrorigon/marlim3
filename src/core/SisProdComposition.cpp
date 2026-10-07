@@ -4,6 +4,7 @@
 #include "SisProdConstants.h"
 #include "celula3.h"
 #include "variaveisGlobais1D.h"
+#include "UnitConversions.h"
 
 #include <math.h>
 
@@ -391,7 +392,7 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
         double rhogas = state.cells[i].flui.Deng * kAirDensityAtStandardConditions;
         source.rholST = rholiq + rhogas * source.rgo * (1. - state.cells[i].flui.BSW);
         source.rhogST = rhogas;
-        double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         source.razdgd = 1 / state.cells[i].flui.rDgD;
         source.razdgl = 1 / state.cells[i].flui.rDgL;
         source.dissolvedGas = (source.dissolvedGas + source.freeGas) * (source.razdgd * solutionGasRatioSource * (1. - state.cells[i].flui.BSW) / source.rholST);
@@ -418,7 +419,7 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
             source.stockTankQuality = state.cells[i - 1].flui.dStockTankVaporMassFraction;
             source.rholST = rholiq + rhogas * source.rgo * (1. - state.cells[i - 1].flui.BSW);
             source.rhogST = rhogas;
-            double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+            double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
             source.razdgd = 1 / state.cells[i - 1].flui.rDgD;
             source.razdgl = 1 / state.cells[i - 1].flui.rDgL;
             source.dissolvedGas = (source.dissolvedGas + source.freeGas) * (source.razdgd * solutionGasRatioSource *
@@ -445,10 +446,10 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
             source.stockTankQuality = state.cells[i].flui.dStockTankVaporMassFraction;
             source.rholST = rholiq + rhogas * source.rgo * (1. - state.cells[i].flui.BSW);
             source.rhogST = rhogas;
-            double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+            double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
             source.razdgd = 1 / state.cells[i].flui.rDgD;
             source.razdgl = 1 / state.cells[i].flui.rDgL;
-            source.dissolvedGas = (source.dissolvedGas + source.freeGas) * (source.razdgd * state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+            source.dissolvedGas = (source.dissolvedGas + source.freeGas) * (source.razdgd * state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                                           (1. - state.cells[i].flui.BSW) / source.rholST);
             if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
                 double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) +
@@ -479,10 +480,10 @@ void blackOilSourcePorous2D(const CompositionState &state, BlackOilSource &sourc
     source.rgo = fluF.RGO;
 
     source.rholST = (1 - state.cells[i].acsr.poroso2D.dados.transfer.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + state.cells[i].acsr.poroso2D.dados.transfer.BSW * 1000 * fluF.Denag + fluF.Deng * kAirDensityAtStandardConditions * source.rgo * (1. - state.cells[i].acsr.poroso2D.dados.transfer.BSW);
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
-    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - state.cells[i].acsr.poroso2D.dados.transfer.BSW) / source.rholST);
+    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - state.cells[i].acsr.poroso2D.dados.transfer.BSW) / source.rholST);
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         double bswaux = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
         double contrabsw = 1. - bswaux;
@@ -521,10 +522,10 @@ void blackOilSourceRadialPorous(const CompositionState &state, BlackOilSource &s
     source.rgo = fluF.RGO;
 
     source.rholST = (1 - state.cells[i].acsr.radialPoro.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + state.cells[i].acsr.radialPoro.BSW * 1000 * fluF.Denag + fluF.Deng * kAirDensityAtStandardConditions * source.rgo * (1. - state.cells[i].acsr.radialPoro.BSW);
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
-    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - state.cells[i].acsr.radialPoro.BSW) / source.rholST);
+    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - state.cells[i].acsr.radialPoro.BSW) / source.rholST);
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         double bswaux = state.cells[i].acsr.radialPoro.BSW;
         double contrabsw = 1. - bswaux;
@@ -569,11 +570,11 @@ void blackOilSourceLeak(const CompositionState &state, BlackOilSource &source, i
     else
         source.rholST = fluF.BSW * 1000 * fluF.Denag;
 
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
     if (state.cells[i].acsr.fontechk.ambGas != 1 || (source.dissolvedGas + source.freeGas) < 0.)
-        source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
+        source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
     else
         source.dissolvedGas = 0.;
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
@@ -614,10 +615,10 @@ void blackOilSourceInflowPerformance(const CompositionState &state, BlackOilSour
     source.rgo = fluF.RGO;
 
     source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag + fluF.Deng * kAirDensityAtStandardConditions * source.rgo * (1. - fluF.BSW);
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
-    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
+    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         double bswaux = fluF.BSW;
         double contrabsw = 1. - bswaux;
@@ -655,14 +656,14 @@ void blackOilSourceMultipleSource(const CompositionState &state, BlackOilSource 
     source.yco2O = fluF.yco2;
     source.rgo = fluF.RGO;
 
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
     source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) +
               fluF.BSW * 1000 *
                   fluF.Denag +
               fluF.Deng * kAirDensityAtStandardConditions * source.rgo * (1. - fluF.BSW);
-    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
+    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
 
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         double bswaux = fluF.BSW;
@@ -704,14 +705,14 @@ void blackOilSourceLiquidInjection(const CompositionState &state, BlackOilSource
     source.yco2O = fluF.yco2;
     source.rgo = fluF.RGO;
 
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
     if (fluF.BSW < 1 - (*state.globals).localtiny)
         source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag + fluF.Deng * kAirDensityAtStandardConditions * source.rgo * (1. - fluF.BSW);
     else
         source.rholST = fluF.BSW * 1000 * fluF.Denag;
-    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
+    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
 
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         double bswaux = fluF.BSW;
@@ -751,14 +752,14 @@ void blackOilSourceWetGasInjection(const CompositionState &state, BlackOilSource
     source.yco2O = fluF.yco2;
     source.rgo = fluF.RGO;
 
-    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+    double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     source.razdgd = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
     if (state.cells[i].acsr.injg.FluidoPro.BSW < 1 - (*state.globals).localtiny)
         source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag + fluF.Deng * kAirDensityAtStandardConditions * source.rgo * (1. - fluF.BSW);
     else
         source.rholST = fluF.BSW * 1000 * fluF.Denag;
-    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
+    source.dissolvedGas = (source.dissolvedGas + source.freeGas) * source.razdgd * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * (1. - fluF.BSW) / source.rholST);
 
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         double bswaux = fluF.BSW;
@@ -813,7 +814,7 @@ void upwindRightFaceLiquidProperties(const CompositionState &state, BlackOilFace
         right.oilVolumeFactor = state.cells[i + 1].flui.BOFunc(state.cells[i + 1].pres, state.cells[i + 1].temp, right.solutionGasRatio);
         right.waterVolumeFactor = state.cells[i + 1].flui.BAFunc(state.cells[i + 1].pres, state.cells[i + 1].temp);
         right.bsw = state.cells[i + 1].flui.BSW * right.waterVolumeFactor / (right.oilVolumeFactor + right.waterVolumeFactor * state.cells[i + 1].flui.BSW - state.cells[i + 1].flui.BSW * right.oilVolumeFactor);
-        right.solutionGasRatio = right.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        right.solutionGasRatio = right.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
         right.dgO = state.cells[i + 1].flui.Deng;
         right.razdgd = 1 / state.cells[i + 1].flui.rDgD;
         right.razdgl = 1 / state.cells[i + 1].flui.rDgL;
@@ -849,7 +850,7 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         left.oilVolumeFactor = (*state.cells[i].fluiL).BOFunc(upstreamPressure, upstreamTemperature, left.solutionGasRatio);
         left.waterVolumeFactor = (*state.cells[i].fluiL).BAFunc(upstreamPressure, upstreamTemperature);
         left.bsw = (*state.cells[i].fluiL).BSW * left.waterVolumeFactor / (left.oilVolumeFactor + left.waterVolumeFactor * (*state.cells[i].fluiL).BSW - (*state.cells[i].fluiL).BSW * left.oilVolumeFactor);
-        left.solutionGasRatio = left.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        left.solutionGasRatio = left.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
         left.dgO = (*state.cells[i].fluiL).Deng;
         left.razdgd = 1 / (*state.cells[i].fluiL).rDgD;
         left.razdgl = 1 / (*state.cells[i].fluiL).rDgL;
@@ -866,7 +867,7 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, left.solutionGasRatio);
         left.waterVolumeFactor = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
         left.bsw = state.cells[i].flui.BSW * left.waterVolumeFactor / (left.oilVolumeFactor + left.waterVolumeFactor * state.cells[i].flui.BSW - state.cells[i].flui.BSW * left.oilVolumeFactor);
-        left.solutionGasRatio = left.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        left.solutionGasRatio = left.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
         left.dgO = state.cells[i].flui.Deng;
         left.razdgd = 1 / state.cells[i].flui.rDgD;
         left.razdgl = 1 / state.cells[i].flui.rDgL;
@@ -924,7 +925,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     right.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, right.solutionGasRatio);
     right.waterVolumeFactor = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
     right.bsw = state.cells[i].flui.BSW * right.waterVolumeFactor / (right.oilVolumeFactor + right.waterVolumeFactor * state.cells[i].flui.BSW - state.cells[i].flui.BSW * right.oilVolumeFactor);
-    right.solutionGasRatio = right.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+    right.solutionGasRatio = right.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     right.dgO = state.cells[i].flui.Deng;
     right.yco2O = state.cells[i].flui.yco2;
     right.API = state.cells[i].flui.API;
@@ -964,7 +965,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
     cell.oilVolumeFactor = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, cell.solutionGasRatio);
     cell.waterVolumeFactor = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
     cell.bsw = state.cells[i].flui.BSW * cell.waterVolumeFactor / (cell.oilVolumeFactor + cell.waterVolumeFactor * state.cells[i].flui.BSW - state.cells[i].flui.BSW * cell.oilVolumeFactor);
-    cell.solutionGasRatio = cell.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+    cell.solutionGasRatio = cell.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
 
     cell.dgini = state.cells[i].flui.Deng;
     cell.yco2ini = state.cells[i].flui.yco2;
@@ -1343,7 +1344,7 @@ void transportPhaseVolumesAndViscosities(const CompositionState &state, const Ph
 /// from the cell's own fluid.
 void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
-        double solutionGasRatioSource = state.cells[i].acsr.injl.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = state.cells[i].acsr.injl.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.injl.FluidoPro.BSW;
             double contrabsw = 1. - bswaux;
@@ -1367,7 +1368,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscH = state.cells[i].acsr.injl.FluidoPro.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
-        double solutionGasRatioSource = state.cells[i].acsr.injm.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = state.cells[i].acsr.injm.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.injm.FluidoPro.BSW;
             double contrabsw = 1. - bswaux;
@@ -1394,7 +1395,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscH = state.cells[i].acsr.injm.FluidoPro.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
-        double solutionGasRatioSource = state.cells[i].acsr.ipr.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = state.cells[i].acsr.ipr.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.ipr.FluidoPro.BSW;
             double contrabsw = 1. - bswaux;
@@ -1419,7 +1420,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
 
-        double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = fluF.BSW;
             double contrabsw = 1. - bswaux;
@@ -1443,7 +1444,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscH = fluF.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-        double solutionGasRatioSource = state.cells[i].acsr.radialPoro.flup.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = state.cells[i].acsr.radialPoro.flup.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.radialPoro.BSW;
             double contrabsw = 1. - bswaux;
@@ -1467,7 +1468,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             source.viscH = state.cells[i].acsr.radialPoro.flup.VisOM(temperatureHigh);
         }
     } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
-        double solutionGasRatioSource = state.cells[i].acsr.poroso2D.dados.flup.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        double solutionGasRatioSource = state.cells[i].acsr.poroso2D.dados.flup.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
             double bswaux = state.cells[i].acsr.poroso2D.dados.transfer.BSW;
             double contrabsw = 1. - bswaux;
@@ -1494,7 +1495,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                 state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D) ||
                (fabs(source.freeGas) > (*state.globals).localtiny && state.cells[i].acsr.tipo != kAccessoryGasInjection && state.cells[i].acsr.tipo != kAccessoryLiquidInjection && state.cells[i].acsr.tipo != kAccessoryInflowPerformance && state.cells[i].acsr.tipo != kAccessoryLeak && state.cells[i].acsr.tipo != kAccessoryRadialPorous && state.cells[i].acsr.tipo != kAccessoryPorous2D)) {
         if (state.cells[i].acsr.tipo == kAccessoryChoke || state.cells[i].acsr.tipo == kAccessoryVolumetricPump) {
-            double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+            double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
             if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
                 double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) + state.cells[i].flui.BSW * 1000 * state.cells[i].flui.Denag;
                 source.deadOil *= ((1 - state.cells[i].flui.BSW) / rhoPSTF);
@@ -1506,7 +1507,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
             }
         } else if (state.cells[i].acsrL != 0 && ((*state.cells[i].acsrL).tipo == kAccessoryChoke || (*state.cells[i].acsrL).tipo == kAccessoryVolumetricPump)) {
             if (i > 0) {
-                double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+                double solutionGasRatioSource = state.cells[i - 1].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
                 if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
                     double rhoPSTF = (1 - state.cells[i - 1].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i - 1].flui.API)) +
                                      state.cells[i - 1].flui.BSW * 1000 *
@@ -1519,7 +1520,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
                     source.viscH = state.cells[i - 1].flui.VisOM(temperatureHigh);
                 }
             } else {
-                double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+                double solutionGasRatioSource = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
                 if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
                     double rhoPSTF = (1 - state.cells[i].flui.BSW) * (1000 * 141.5 / (131.5 + state.cells[i].flui.API)) +
                                      state.cells[i].flui.BSW * 1000 *

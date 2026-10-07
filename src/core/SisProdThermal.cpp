@@ -1440,7 +1440,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
     leftCell.DTransDtp =
         activeDerivative * coefficientFlowArea * (1. - leftCell.alf) *
         (1. - leftCell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
-        kAirDensityAtStandardConditions * leftCellSolutionGasPressureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+        kAirDensityAtStandardConditions * leftCellSolutionGasPressureDerivative * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     cell.DTransDtpL = leftCell.DTransDtp;
     if (isLastCell) {
         const double leftCellSolutionGasPressureDerivative =
@@ -1448,13 +1448,13 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
         cell.DTransDtp =
             activeDerivative * coefficientFlowArea * (1. - cell.alf) *
             (1. - cell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
-            kAirDensityAtStandardConditions * leftCellSolutionGasPressureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+            kAirDensityAtStandardConditions * leftCellSolutionGasPressureDerivative * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     }
     if (state.input.cicloAcopTerm == 1) {
         leftCell.DTransDtT =
             activeDerivative * coefficientFlowArea * (1. - leftCell.alf) *
             (1. - leftCell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
-            kAirDensityAtStandardConditions * leftCellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+            kAirDensityAtStandardConditions * leftCellSolutionGasTemperatureDerivative * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         cell.DTransDtTL = leftCell.DTransDtT;
         if (isLastCell) {
             // Not used: the assignment below reaches for the temperature derivative.
@@ -1463,7 +1463,7 @@ DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
             cell.DTransDtT =
                 activeDerivative * coefficientFlowArea * (1. - cell.alf) *
                 (1. - cell.bet) * (1. - leftCellWaterCut) * leftFaceFluid.Deng *
-                kAirDensityAtStandardConditions * leftCellSolutionGasTemperatureDerivative * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre);
+                kAirDensityAtStandardConditions * leftCellSolutionGasTemperatureDerivative * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         }
     }
 
@@ -1582,9 +1582,9 @@ void applyDistributedMassTransferModel(
 
         leftCell.transmassR =
             -(cell.QL * (1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng *
-              kAirDensityAtStandardConditions * (1. - leftFaceWaterCut) * leftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) +
+              kAirDensityAtStandardConditions * (1. - leftFaceWaterCut) * leftFaceSolutionGasRatio * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) +
             (leftCell.QL * (1 - betL) * (leftCellLeftFaceFluid.rDgD) *
-             leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions * (1. - leftCellLeftFaceWaterCut) * leftCellLeftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) /
+             leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions * (1. - leftCellLeftFaceWaterCut) * leftCellLeftFaceSolutionGasRatio * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) /
              leftCellLeftFaceOilVolumeFactor);
 
         leftCell.transmassR /= leftCell.dx;
@@ -1600,14 +1600,14 @@ void applyDistributedMassTransferModel(
                          (1. - leftCell.alf) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
+                         (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
             leftCell.transmassR +=
                 activeDerivative * ((1. - leftCell.betini) *
                          (1. - leftCell.alfini) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
+                         (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
 
             cell.transmassL = leftCell.transmassR;
@@ -1620,90 +1620,90 @@ void applyDistributedMassTransferModel(
                          (1. - leftCell.alf) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
+                         (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
             leftCell.FonteMudaFase +=
                 activeDerivative * ((1. - leftCell.betini) *
                          (1. - leftCell.alfini) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
+                         (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
         }
 
         if (leftCell.TMModel == 0) {
             cell.DTransDxR =
                 -((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                  (1. - leftFaceWaterCut) * leftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) /
+                  (1. - leftFaceWaterCut) * leftFaceSolutionGasRatio * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftFaceOilVolumeFactor) /
                 (liquidDensity * leftCell.dx);
             cell.DtransDxLinear =
                 -spatialCoupling * cell.QL *
                     ((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftFaceWaterCut) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                      (leftFaceSolutionGasPressureDerivative * cell.dpresaux)) /
                     (leftCell.dx) +
                 spatialCoupling * cell.QL *
                     ((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftFaceWaterCut) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                      (leftFaceSolutionGasPressureDerivative * cell.presaux)) /
                     (leftCell.dx);
             cell.DTransDxRp =
                 -spatialCoupling * cell.QL *
                 ((1 - betI) * (leftFaceFluid.rDgD) * leftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                 (1. - leftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * leftFaceSolutionGasPressureDerivative) /
+                 (1. - leftFaceWaterCut) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * 0.5 * leftFaceSolutionGasPressureDerivative) /
                 (leftCell.dx);
             cell.DTransDxL =
                 ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                 (1. - leftCellLeftFaceWaterCut) * leftCellLeftFaceSolutionGasRatio * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellLeftFaceOilVolumeFactor) /
+                 (1. - leftCellLeftFaceWaterCut) * leftCellLeftFaceSolutionGasRatio * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellLeftFaceOilVolumeFactor) /
                 (leftCellLeftFaceMixtureLiquidDensity * leftCell.dx);
             cell.DtransDxLinear =
                 cell.DtransDxLinear +
                 spatialCoupling * leftCell.QL *
                     ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftCellLeftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftCellLeftFaceWaterCut) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                      (leftCellLeftFaceSolutionGasPressureDerivative * leftCell.dpresaux)) /
                     (leftCell.dx) -
                 spatialCoupling * leftCell.QL *
                     ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                     (1. - leftCellLeftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                     (1. - leftCellLeftFaceWaterCut) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                      (leftCellLeftFaceSolutionGasPressureDerivative * leftCell.presaux)) /
                     (leftCell.dx);
             cell.DTransDxLp =
                 spatialCoupling * leftCell.QL *
                 ((1 - betL) * (leftCellLeftFaceFluid.rDgD) * leftCellLeftFaceFluid.Deng * kAirDensityAtStandardConditions *
-                 (1. - leftCellLeftFaceWaterCut) * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) * 0.5 * leftCellLeftFaceSolutionGasPressureDerivative) /
+                 (1. - leftCellLeftFaceWaterCut) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) * 0.5 * leftCellLeftFaceSolutionGasPressureDerivative) /
                 (leftCell.dx);
             cell.DTransDt1 =
                 -activeDerivative * ((1. - leftCellWaterCut) * coefficientFlowArea *
                           (leftCell.flui.rDgD) *
                           leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                          (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
+                          (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
             cell.DTransDt0 = -cell.DTransDt1;
 
             leftCell.CoefDTR =
                 -((1. - leftCell.bet) * (1. - leftCellWaterCut) * coefficientFlowArea *
                   (leftCell.flui.rDgD) *
                   leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                  (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
+                  (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
             leftCell.CoefDTL = -leftCell.CoefDTR;
             leftCell.coefTransBet =
                 ((1. - leftCellWaterCut) * coefficientFlowArea * (leftCell.flui.rDgD) *
                  leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                 (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
+                 (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor);
 
             cell.transmassL -=
                 activeDerivative * ((1. - leftCell.bet) *
                          (1. - leftCell.alf) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
+                         (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
             cell.transmassL +=
                 activeDerivative * ((1. - leftCell.betini) *
                          (1. - leftCell.alfini) * (1. - leftCellWaterCut) * coefficientFlowArea *
                          (leftCell.flui.rDgD) *
                          leftCell.flui.Deng * kAirDensityAtStandardConditions * leftCellSolutionGasRatio *
-                         (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
+                         (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / leftCellOilVolumeFactor) /
                 leftCell.dt;
 
         } else {

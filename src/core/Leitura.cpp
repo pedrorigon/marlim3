@@ -4213,7 +4213,7 @@ void Ler::parse_fluidos_producao(
 					rgo = fluidos_producao_json[indAtivo].rgo();
 					if(rgo>flup[i].RGO){
 						flup[i].RGO=rgo;
-						flup[i].IRGO=flup[i].RGO*35.31467/6.29;
+						flup[i].IRGO=flup[i].RGO*units::kCubicFootPerCubicMetre/units::kBarrelPerCubicMetre;
 					}
 
 					if(flash[i].rhogF[0][1]<20 && flash[i].rhogF[1][0]<1.01)
@@ -14598,11 +14598,11 @@ void Ler::geraTabFlash(int flu, int var) {
 					double rhostd = 141.5 * 1000.
 							/ (131.5 + flup[flu].API);
 					double rgstd = 1.225 * flup[flu].Deng;
-					flash[flu].RSF[i][j] = (flup[flu].RGO- (rhostd + rgstd * flup[flu].RGO)* flash[flu].RSF[i][j] / rgstd) * 35.31467
-							/ 6.29;
+					flash[flu].RSF[i][j] = (flup[flu].RGO- (rhostd + rgstd * flup[flu].RGO)* flash[flu].RSF[i][j] / rgstd) * units::kCubicFootPerCubicMetre
+							/ units::kBarrelPerCubicMetre;
 					if(flash[flu].RSF[i][j]<0)flash[flu].RSF[i][j]=0.;
 					//falcatrua-teste de consistencia de RS do PVTSIM
-					VarTemp[i][j] = flash[flu].RSF[i][j] * 6.29 / 35.31467;
+					VarTemp[i][j] = flash[flu].RSF[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
 				}
 				if ((var == 16 || var == 17) && i > 0 && j > 0) {
 					if (var == 16)
@@ -14647,11 +14647,11 @@ void Ler::geraTabFlash(int flu, int var) {
 					double rgstd = 1.225 * flup[flu].Deng;
 					flash[flu].RSF[i][j] = (flup[flu].RGO
 							- (rhostd + rgstd * flup[flu].RGO)
-									* flash[flu].RSF[i][j] / rgstd) * 35.31467
-							/ 6.29;
+									* flash[flu].RSF[i][j] / rgstd) * units::kCubicFootPerCubicMetre
+							/ units::kBarrelPerCubicMetre;
 					if(flash[flu].RSF[i][j]<0)flash[flu].RSF[i][j]=0.;
 					//falcatrua-teste de consistencia de RS do PVTSIM
-					VarTemp[i][j] = flash[flu].RSF[i][j] * 6.29 / 35.31467;
+					VarTemp[i][j] = flash[flu].RSF[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
 				}
 				if ((var == 16 || var == 17) && i > 0 && j > 0) {
 					if (var == 16)
@@ -17445,7 +17445,7 @@ double Ler::fqgst(Cel* const celula,int i, double tempo){
 		bswi = celula[i-r].flui.BSW;
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i - r].bet;
-		rsi = celula[i - r].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+		rsi = celula[i - r].flui.RS(pmed,tmed) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 		dgi = celula[i - r].flui.Deng;
 	} else {
 		bo = celula[i].flui.BOFunc(celula[i].pres, celula[i].temp);
@@ -17454,7 +17454,7 @@ double Ler::fqgst(Cel* const celula,int i, double tempo){
 		fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 		beti = celula[i].bet;
 		rsi = celula[i].flui.RS(celula[i].pres, celula[i].temp)
-				* (6.29 / 35.31467);
+				* (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 		dgi = celula[i].flui.Deng;
 	}
 	double qostd =0.;
@@ -17612,7 +17612,7 @@ void Ler::imprimeProfile(Cel* const celula,
 				k++;
 			}
 			if (profp.RS == 1) {
-				flut[i][k] = celula[i].flui.RS(pi,ti)*6.29/35.31467;
+				flut[i][k] = celula[i].flui.RS(pi,ti)*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre;
 				k++;
 			}
 			if (profp.masg == 1) {
@@ -17765,7 +17765,7 @@ void Ler::imprimeProfile(Cel* const celula,
 				k++;
 			}
 			if (profp.Rs == 1) {
-				flut[i][k] = celula[i].flui.RS(pi,ti) * (6.29 / 35.31467);
+				flut[i][k] = celula[i].flui.RS(pi,ti) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 				k++;
 			}
 			if (profp.Bo == 1) {
@@ -19013,7 +19013,7 @@ void Ler::imprimeTrend(Cel* const celula,
 				bswi = celula[m - 1].flui.BSW;
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m - 1].bet;
-				rsi = celula[m - 1].flui.RS(pmed,tmed) * (6.29 / 35.31467);
+				rsi = celula[m - 1].flui.RS(pmed,tmed) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 				dgi = celula[m - 1].flui.Deng;
 				titStd=celula[m-1].flui.dStockTankVaporMassFraction;
 			} else {
@@ -19023,7 +19023,7 @@ void Ler::imprimeTrend(Cel* const celula,
 				fwi = bswi*ba / (bo + ba*bswi - bswi * bo);
 				beti = celula[m].bet;
 				rsi = celula[m].flui.RS(celula[m].pres, celula[m].temp)
-						* (6.29 / 35.31467);
+						* (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 				dgi = celula[m].flui.Deng;
 				titStd=celula[m].flui.dStockTankVaporMassFraction;
 			}
@@ -19128,7 +19128,7 @@ void Ler::imprimeTrend(Cel* const celula,
 			k++;
 		}
 		if (trendp[trend].Rs == 1) {
-			flut[linha][k] = celula[i].flui.RS(celula[i].pres,celula[i].temp)* (6.29 / 35.31467);
+			flut[linha][k] = celula[i].flui.RS(celula[i].pres,celula[i].temp)* (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
 			k++;
 		}
 		if (trendp[trend].Bo == 1) {

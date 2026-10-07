@@ -464,7 +464,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
         oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionGasRatio = solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        solutionGasRatio = solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         oilVolumeFactor = 1;
         solutionGasRatio = 0;
@@ -705,7 +705,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
         oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionGasRatio = solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        solutionGasRatio = solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         oilVolumeFactor = 1;
         solutionGasRatio = 0;
@@ -1380,7 +1380,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         left.solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
         left.oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, left.solutionGasRatio);
         left.waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        left.solutionGasRatio = left.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        left.solutionGasRatio = left.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         left.oilVolumeFactor = 1;
         left.solutionGasRatio = 0;
@@ -1431,7 +1431,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     if (state.input.tipoFluido == 0) {
         left.solutionGasRatio = state.cells[i].flui.RS(pmed, left.tmed);
         left.oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, left.tmed, left.solutionGasRatio);
-        left.solutionGasRatio = left.solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        left.solutionGasRatio = left.solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
         left.waterVolumeFactor = state.cells[i].flui.BAFunc(pmed, left.tmed);
 
         if (titulo < 1. - 1e-15)
@@ -2755,7 +2755,7 @@ void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double w
     if (state.input.tipoFluido == 0) {
         solutionGasRatio = state.cells[i].flui.RS(pmed, tmed);
         oilVolumeFactor = state.cells[i].flui.BOFunc(pmed, tmed, solutionGasRatio);
-        solutionGasRatio = solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        solutionGasRatio = solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
         double rhogstd = state.cells[i].flui.Deng * kAirDensityAtStandardConditions;
         double rhololeostd = 1000. * 141.5 / (131.5 + state.cells[i].flui.API);
         double rhoa = state.cells[i].flui.Denag * 1000.;
@@ -3079,7 +3079,7 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
         solutionGasRatio = state.cells[i - 1].flui.RS(state.cells[i - 1].pres, state.cells[i - 1].temp);
         oilVolumeFactor = state.cells[i - 1].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp, solutionGasRatio);
         waterVolumeFactor = state.cells[i - 1].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
-        solutionGasRatio = solutionGasRatio * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        solutionGasRatio = solutionGasRatio * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         oilVolumeFactor = 1;
         solutionGasRatio = 0;
@@ -3547,7 +3547,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         betL = state.cells[i].betPigE;
 
     if (state.cells[i].acsr.tipo == kAccessoryNone)
-        state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * kAirDensityAtStandardConditions * (1. - waterCutLocal) * solutionGasRatioRightFace * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / oilVolumeFactorRightFace) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * kAirDensityAtStandardConditions * (1. - waterCutLeftCell) * solutionGasRatioLeftFace * (kBarrelPerCubicMetre / kCubicFootPerCubicMetre) / oilVolumeFactorLeftFace));
+        state.cells[i].transmassR = (-(state.cells[i + 1].QL * (1. - betI) * dissolvedGasGravityRatio * dengD * kAirDensityAtStandardConditions * (1. - waterCutLocal) * solutionGasRatioRightFace * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / oilVolumeFactorRightFace) + (state.cells[i].QL * (1. - betL) * freeGasGravityRatio * dengE * kAirDensityAtStandardConditions * (1. - waterCutLeftCell) * solutionGasRatioLeftFace * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) / oilVolumeFactorLeftFace));
     else
         state.cells[i].transmassR = 0.;
 
@@ -3696,7 +3696,7 @@ void refreshUpstreamProductionPeriphery(const SteadyStateState &state, int i) {
         double bet0 = state.cells[i - 1].bet;
         double rhomis = (alf0 * state.cells[i - 1].flui.MasEspGas(state.cells[i].presaux, tmed) + (1 - alf0) * ((1 - bet0) * state.cells[i - 1].flui.MasEspLiq(state.cells[i].presaux, tmed) + bet0 * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i].presaux, tmed)));
         double vismis = alf0 * state.cells[i - 1].flui.ViscGas(state.cells[i].presaux, tmed) + (1 - alf0) * ((1. - bet0) * state.cells[i - 1].flui.ViscOleo(state.cells[i].presaux, tmed) + bet0 * state.cells[i].fluicol.VisFlu(state.cells[i].presaux, tmed));
-        vazmix *= (units::kSecondsPerDay / 0.1589876);
+        vazmix *= (units::kSecondsPerDay / units::kCubicMetrePerBarrel);
         state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
         state.cells[i - 1].dpB = sinalQ * 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * kGravity;
         state.cells[i - 1].potB = state.cells[i - 1].acsr.bcs.Pvis * 745.7;
@@ -3922,7 +3922,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
         double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                       (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
                       (state.cells[0].acsr.injl.FluidoPro.RGO -
-                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(pchute, state.cells[0].temp) * kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(pchute, state.cells[0].temp) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                       state.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions / state.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
         double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                           (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(pchute, state.cells[0].temp) +
@@ -5060,7 +5060,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
         double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                       (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
                       (state.cells[0].acsr.injl.FluidoPro.RGO -
-                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(state.cells[0].pres, state.cells[0].temp) * kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(state.cells[0].pres, state.cells[0].temp) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                       state.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions / state.cells[0].acsr.injl.FluidoPro.MasEspGas(state.cells[0].pres, state.cells[0].temp);
         double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                           (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(state.cells[0].pres, state.cells[0].temp) +
@@ -5460,7 +5460,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
         double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                       (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
                       (state.cells[0].acsr.injl.FluidoPro.RGO -
-                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(state.cells[0].pres, state.cells[0].temp) * kBarrelPerCubicMetre / kCubicFootPerCubicMetre) *
+                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(state.cells[0].pres, state.cells[0].temp) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
                       state.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions / state.cells[0].acsr.injl.FluidoPro.MasEspGas(state.cells[0].pres, state.cells[0].temp);
         double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
                           (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(state.cells[0].pres, state.cells[0].temp) +
@@ -6018,7 +6018,7 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
             double vazmix = j * state.cells[i - 1].dutoL.area;
             double rhomis = state.cells[i - 1].flui.MasEspLiq(pchute, taux);
             double vismis = state.cells[i - 1].flui.ViscOleo(pchute, taux);
-            vazmix *= (units::kSecondsPerDay / 0.1589876);
+            vazmix *= (units::kSecondsPerDay / units::kCubicMetrePerBarrel);
             state.cells[i - 1].acsr.bcs.NovaVis(vismis, rhomis, vazmix);
             state.cells[i - 1].dpB = 0.3048 * state.cells[i - 1].acsr.bcs.Hvis * rhomis * kGravity;
         }

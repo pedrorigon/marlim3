@@ -637,8 +637,8 @@ class ProFlu {
     double Faren(const double t) const { return 1.8 * t + 32; }              // Converts temperature from degrees Celsius to degrees Fahrenheit
     double cel(const double t) const { return (t - 32) / 1.8; }              // Converts temperature from degrees Fahrenheit to degrees Celsius
     double kgf(const double p) const { return p / units::kPsiPerKgfPerCm2; }  // Converts pressure from psia to kgf/cm2
-    double ft3bbl() const { return RGO * 35.31467 / 6.29; }                  // Converts gas-oil ratio from m3/m3 to ft3/bbl
-    double m3m() const { return RGO * 6.29 / 35.31467; }                     // Converts gas-oil ratio from ft3/bbl to m3/m3
+    double ft3bbl() const { return RGO * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre; }                  // Converts gas-oil ratio from m3/m3 to ft3/bbl
+    double m3m() const { return RGO * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre; }                     // Converts gas-oil ratio from ft3/bbl to m3/m3
 
     // Updates compositional-model variables for the specified pressure and temperature
     void atualizaPropCompStandard(double GivenInitialBeta = -1.0, double *GivenInitialLiqComposition = NULL,
@@ -677,7 +677,7 @@ class ProFlu {
         RGO = tempRGO;
         if (dStockTankVaporMassFraction > 0 && RGO < 1e-15)
             RGO = 1e6;
-        IRGO = RGO * 35.31467 / 6.29;
+        IRGO = RGO * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
         if (nuloL == 1)
             delete[] GivenInitialLiqComposition;
         if (nuloV == 1)

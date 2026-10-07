@@ -736,8 +736,8 @@ void PorosRad::renovaPres(int i, double mTot){
 					1*rhogmed*(celula[i+1].zD*grav-celula[i+1].zD0*grav-celula[i+1].pcOGm+celula[i].pcOGm));
 			double vazagua=dA*(celula[i].rQcamadaR/celula[i].drP1)*(celula[i+1].Pcamada-celula[i].Pcamada-
 					1*rhoamed*(celula[i+1].zD*grav-celula[i+1].zD0*grav+celula[i+1].pcAOm-celula[i].pcAOm));
-			double rs1=celula[i].flup.RS(celula[i].pmed1, tRes) * 6.29 / 35.31467;
-			double rs0=celula[i].flup.RS(celula[i].Pcamada, tRes) * 6.29 / 35.31467;
+			double rs1=celula[i].flup.RS(celula[i].pmed1, tRes) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
+			double rs0=celula[i].flup.RS(celula[i].Pcamada, tRes) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
 			double maslib=vazoleoSTD*(rs1-rs0)*celula[i+1].rhogstd;
 			vazoleo=(vazoleo*rhomed-maslib)/celula[i].rhoP;
 			vazgas=(vazgas*rhomed+maslib)/celula[i].rhogP;

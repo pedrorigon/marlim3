@@ -165,7 +165,7 @@ multiBomCentSub& multiBomCentSub::operator =(const multiBomCentSub& bombaantiga)
 
 
 void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, double temp, double alfa, double beta){
-	double xvaz = (86400 / 0.1589876)*(vazG+vazL);
+	double xvaz = (86400 / units::kCubicMetrePerBarrel)*(vazG+vazL);
 	double cpl;
 	double rhol;
 	double cpg;
@@ -216,7 +216,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     double fwRef = fluiL.BSW*baRef / (boRef + baRef*fluiL.BSW - fluiL.BSW * boRef);
 
     if(equilTerm==0 && flui.flashCompleto!=1 && flui.flashCompleto!=2){
-    	double rgoNovo=flui.RS(pres, temp)*6.29/35.31467;
+    	double rgoNovo=flui.RS(pres, temp)*units::kBarrelPerCubicMetre/units::kCubicFootPerCubicMetre;
     	flui.rzDegL(pres, temp);
     	flui.razDegD(pres, temp);
     	double razDengL=flui.rDgL;
@@ -322,7 +322,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
                     + beta * fluicol.VisFlu(pres, temp));
     		vazL=qo+qw+qc;
     		vazG=(vazLIni*rholIni+vazGIni*rhogIni-vazL*rhol)/rhog;
-    		xvaz = (86400 / 0.1589876)*(vazG+vazL);
+    		xvaz = (86400 / units::kCubicMetrePerBarrel)*(vazG+vazL);
     	}
     }
     dpB=pres-presIni;

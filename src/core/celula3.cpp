@@ -1592,7 +1592,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
             }
             if (acsr.tipo == 4 && acsr.bcs.freqnova > 1. && j1 >= 0.) {
                 double vazmix = j1 * AC;
-                vazmix *= (86400 / 0.1589876);
+                vazmix *= (86400 / units::kCubicMetrePerBarrel);
                 acsr.bcs.NovaVis(viscmix1, rhomix1, vazmix);
                 dpB = 0.3048 * acsr.bcs.Hvis * rhomix1 * 9.82;
                 potB = acsr.bcs.Pvis * 745.7;
@@ -1602,7 +1602,7 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                 else
                     potBT = 0.;
                 potTermo += potBT * (1. - acsr.bcs.eficM / 100.) * acsr.bcs.fracTermMotorEfic;
-                double Cdpb = AC * (86400 / 0.1589876);
+                double Cdpb = AC * (86400 / units::kCubicMetrePerBarrel);
                 double djdm = (term1R / rholC + (1 - term1R) / rhogC) / AC;
                 acsr.bcs.NovaVis(viscmix1, rhomix1, vazmix * 1.001);
                 double dpdvaz = (0.3048 * acsr.bcs.Hvis * rhomix1 * 9.82 - dpB) / (0.001 * vazmix);
@@ -1642,10 +1642,10 @@ void Cel::GeraLocal(double presfim, int masChkSup, int ncel, double razareativa,
                 potTermo = acsr.multibcs.potTermo;
                 potTermo += potBT * (1. - acsr.multibcs.eficM / 100.) * acsr.multibcs.fracTermMotorEfic;
 
-                double Cdpb = AC * (86400 / 0.1589876);
+                double Cdpb = AC * (86400 / units::kCubicMetrePerBarrel);
                 double djdm = (term1R / rholC + (1 - term1R) / rhogC) / AC;
                 double vazmix = (MR - MliqiniR) / rhogC + MliqiniR / rholC;
-                vazmix *= (86400 / 0.1589876);
+                vazmix *= (86400 / units::kCubicMetrePerBarrel);
                 acsr.multibcs.marchaMultiBcs((MR - MliqiniR) * 1.001 / rhogC, MliqiniR * 1.001 / rholC, presauxR, temp, alf0, bet0);
                 double dpdvaz = (acsr.multibcs.dpB * units::kPascalPerKgfPerCm2 - dpB) / (0.001 * vazmix);
                 coefDpB = Cdpb * djdm * dpdvaz;

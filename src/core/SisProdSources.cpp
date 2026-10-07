@@ -13,8 +13,6 @@ namespace sisprod::sources {
 
 using enum sisprod::AccessoryKind;
 using sisprod::kAirDensityAtStandardConditions;
-using sisprod::kBarrelPerCubicMetre;
-using sisprod::kCubicFootPerCubicMetre;
 using sisprod::kGravity;
 
 namespace {
@@ -68,7 +66,7 @@ double inSituWaterFraction(const Cel &cell, Cel &fluidCell) {
         rs = fluidCell.flui.RS(cell.pres, cell.temp);
         bo = fluidCell.flui.BOFunc(cell.pres, cell.temp, rs);
         ba = fluidCell.flui.BAFunc(cell.pres, cell.temp);
-        rs = rs * kBarrelPerCubicMetre / kCubicFootPerCubicMetre;
+        rs = rs * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         bo = 1;
         rs = 0;

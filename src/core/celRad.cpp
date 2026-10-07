@@ -934,8 +934,8 @@ void celrad::evoluiSL(int& reinicia,int ciclo,double dpdt){
 	double multTO=poro0*rhostd*area/vbo;
 	double multTA=poro0*area*rhoa;
 
-	double rs1=flup.RS(pmed1, tRes)* 6.29 / 35.31467;
-	double rs0=flup.RS(pmed0, tRes)* 6.29 / 35.31467;
+	double rs1=flup.RS(pmed1, tRes)* units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
+	double rs0=flup.RS(pmed0, tRes)* units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
 
 	double dPoroRhosBO=0;
 	double dPoroRhow=0;

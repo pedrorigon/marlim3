@@ -2,17 +2,11 @@
 #define SISPRODCONSTANTS_H_
 
 /// Physical constants, accessory kinds and gas-line inlet conditions shared by
-/// SProd and its modules. The static_asserts at the end pin each value to its
-/// spelling.
+/// SProd and its modules; the unit conversions are in UnitConversions.h. The
+/// static_asserts at the end pin each value to its spelling.
 namespace sisprod {
 
-// ---------------------------------------------------------------- units ----
-
-/// Used as the ratio 6.29 / 35.31467, converting a solution gas-oil ratio from
-/// scf/bbl to m3/m3. Leave it as a division: the quotient written by hand
-/// rounds to a different double.
-inline constexpr double kBarrelPerCubicMetre = 6.29;
-inline constexpr double kCubicFootPerCubicMetre = 35.31467;
+// ---------------------------------------------------- physical constants ----
 
 /// Density of air at standard conditions, in kg/m3. Always multiplied by a gas
 /// specific gravity, giving the gas density at standard conditions.
@@ -22,9 +16,8 @@ inline constexpr double kAirDensityAtStandardConditions = 1.225;
 /// "correcting" it would change every hydrostatic term.
 inline constexpr double kGravity = 9.82;
 
-/// The gas-lift unloading hydrostatics spell gravity differently. As with the
-/// pressure variant above, the two are not interchangeable without changing
-/// results.
+/// The gas-lift unloading hydrostatics spell gravity differently; the two are
+/// not interchangeable without changing results.
 inline constexpr double kGravityUnloadingVariant = 9.81;
 
 /// Written into the inlet source rate when a pressure-to-pressure search finds no
@@ -127,8 +120,6 @@ static_assert(kAccessoryMultiPump == 17);
 static_assert(kGasInletInjectionPressure == 0);
 static_assert(kGasInletInjectionFlowRate == 1);
 
-static_assert(kBarrelPerCubicMetre == 6.29);
-static_assert(kCubicFootPerCubicMetre == 35.31467);
 static_assert(kAirDensityAtStandardConditions == 1.225);
 static_assert(kGravity == 9.82);
 static_assert(kGravityUnloadingVariant == 9.81);

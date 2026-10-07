@@ -1372,11 +1372,11 @@ void PorosRadSimp::geraTabFlash(int var) {
                 if (var == 8 && i > 0 && j > 0) {
                     double rhostd = 141.5 * 1000. / (131.5 + flup.API);
                     double rgstd = 1.225 * flup.Deng;
-                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * 35.31467 / 6.29;
+                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
                     if (flash.RSF[i][j] < 0)
                         flash.RSF[i][j] = 0.;
                     // falcatrua-teste de consistencia de RS do PVTSIM
-                    VarTemp[i][j] = flash.RSF[i][j] * 6.29 / 35.31467;
+                    VarTemp[i][j] = flash.RSF[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                 }
                 if ((var == 16 || var == 17) && i > 0 && j > 0) {
                     if (var == 16)
@@ -1418,11 +1418,11 @@ void PorosRadSimp::geraTabFlash(int var) {
                 if (var == 8 && i > 0 && j > 0) {
                     double rhostd = 141.5 * 1000. / (131.5 + flup.API);
                     double rgstd = 1.225 * flup.Deng;
-                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * 35.31467 / 6.29;
+                    flash.RSF[i][j] = (flup.RGO - (rhostd + rgstd * flup.RGO) * flash.RSF[i][j] / rgstd) * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
                     if (flash.RSF[i][j] < 0)
                         flash.RSF[i][j] = 0.;
                     // falcatrua-teste de consistencia de RS do PVTSIM
-                    VarTemp[i][j] = flash.RSF[i][j] * 6.29 / 35.31467;
+                    VarTemp[i][j] = flash.RSF[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
                 }
                 if ((var == 16 || var == 17) && i > 0 && j > 0) {
                     if (var == 16)
@@ -2114,7 +2114,7 @@ void PorosRadSimp::parse_fluido_producao(
         rgo = fluidos_producao_json["rgo"].GetDouble();
         if (rgo > flup.RGO) {
             flup.RGO = rgo;
-            flup.IRGO = flup.RGO * 35.31467 / 6.29;
+            flup.IRGO = flup.RGO * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
         }
 
         if (flash.rhogF[0][1] < 20 && flash.rhogF[1][0] < 1.01)
@@ -2661,8 +2661,8 @@ void PorosRadSimp::renovaPres(int i, double mTot) {
             double vazoleoSTD = vazoleo / celula[i + 1].flup.BOFunc(celula[i].pmed1, tRes);
             double vazgas = dG * (celula[i].rQcamadaR / celula[i].drP1) * (celula[i + 1].Pcamada - celula[i].Pcamada - 1 * rhogmed * (celula[i + 1].zD * grav - celula[i + 1].zD0 * grav - celula[i + 1].pcOGm + celula[i].pcOGm));
             double vazagua = dA * (celula[i].rQcamadaR / celula[i].drP1) * (celula[i + 1].Pcamada - celula[i].Pcamada - 1 * rhoamed * (celula[i + 1].zD * grav - celula[i + 1].zD0 * grav + celula[i + 1].pcAOm - celula[i].pcAOm));
-            double rs1 = celula[i].flup.RS(celula[i].pmed1, tRes) * 6.29 / 35.31467;
-            double rs0 = celula[i].flup.RS(celula[i].Pcamada, tRes) * 6.29 / 35.31467;
+            double rs1 = celula[i].flup.RS(celula[i].pmed1, tRes) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
+            double rs0 = celula[i].flup.RS(celula[i].Pcamada, tRes) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
             double maslib = vazoleoSTD * (rs1 - rs0) * celula[i + 1].rhogstd;
             vazoleo = (vazoleo * rhomed - maslib) / celula[i].rhoP;
             vazgas = (vazgas * rhomed + maslib) / celula[i].rhogP;
