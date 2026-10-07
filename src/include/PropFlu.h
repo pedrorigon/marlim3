@@ -178,6 +178,7 @@ class ProFlu {
     Vcr<double> APIEMW;
     Vcr<double> EMW;
     int corrSat; // Solution gas-oil ratio correlation, scf/bbl: 0 -> Vazquez-Beggs; 1 -> Lasater; 2 -> Standing; 3 -> Glaso; 4 -> Livia
+    bool awaitingSaturationTable = false; // Livia with the PVTSim RS-Pb table still to be built: RS and PB use Vazquez-Beggs meanwhile
     int corrOM;  // Dead-oil viscosity correlation, cP: 0 -> ASTM; 1 -> Beggs-Robinson; 2 -> modified Beggs-Robinson; 3 -> Glaso; 4 -> Kartoatmodjo-Schmidt; 5 -> Petrosky-Farshad; 6 -> Beal
     int corrOV;  // Live-oil viscosity correlation, cP: 0 -> Beggs-Robinson; 1 -> Kartoatmodjo-Schmidt; 2 -> Petrosky-Farshad
     int corrOS;  // Undersaturated-oil viscosity correlation, cP: 0 -> Vazquez-Beggs; 1 -> Kartoatmodjo-Schmidt; 2 -> Petrosky-Farshad; 3 -> Beal; 4 -> Khan

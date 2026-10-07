@@ -64,6 +64,7 @@ void SProd::assignPvtSimBubbleTablesToCells() {
         fluid.TBPVTSim = tables.TBPVTSim.data();
         fluid.npontosB = static_cast<int>(tables.TBPVTSim.size());
         fluid.corrSat = 4;
+        fluid.awaitingSaturationTable = false;
     };
     for (int i = 0; i <= ncel; i++) {
         assignTables(celula[i].flui);
@@ -982,7 +983,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
         validateSetupAndApplyInitialState();
         buildDynamicTablesAndInclinations();
         configureLatentHeat();
-        if (celula[0].flui.corrSat == -4) {
+        if (celula[0].flui.awaitingSaturationTable) {
             loadPvtSimSaturationTables();
         } else if (arq.tabRSPB == 1) {
             generateSaturationTablesFromCorrelations();

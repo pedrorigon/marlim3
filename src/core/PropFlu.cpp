@@ -1265,6 +1265,7 @@ ProFlu::ProFlu(const ProFlu& fluido):
   EMW[9]=100;
 
   corrSat=fluido.corrSat;
+  awaitingSaturationTable=fluido.awaitingSaturationTable;
   corrOM=fluido.corrOM;
   corrOV=fluido.corrOV;
   corrOS=fluido.corrOS;
@@ -1590,6 +1591,7 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){
   lingas=fluido.lingas;
 
   corrSat=fluido.corrSat;
+  awaitingSaturationTable=fluido.awaitingSaturationTable;
   corrOM=fluido.corrOM;
   corrOV=fluido.corrOV;
   corrOS=fluido.corrOS;
@@ -2420,7 +2422,7 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
  double rstemp;
  double pbtemp;
  if(flashCompleto==0 || flashCompleto==3){
-    if(corrSat==0 || corrSat==-4){
+    if(corrSat==0 || awaitingSaturationTable){
 	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
 			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
@@ -2683,7 +2685,7 @@ double ProFlu::PB(double pres, double temp) const{
  double itemp;
  double pbtemp=0;
  if(flashCompleto==0 || flashCompleto==3){
-   if(corrSat==0|| corrSat==-4){
+   if(corrSat==0 || awaitingSaturationTable){
 	  if(tabRSPB==1){
 	    pbtemp=interpolaPB(temp);
 

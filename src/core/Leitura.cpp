@@ -3355,6 +3355,7 @@ void Ler::parse_fluidos_producao(
 	double yco2 = 0;
 	int corrC = 1;
 	int corrSat = 0;
+	bool awaitingSaturationTable = false;
 	double aemul = 0.;
 	double bemul = 0.;
 	int vcorrOM = 0;
@@ -3488,11 +3489,7 @@ void Ler::parse_fluidos_producao(
 					if (fluidos_producao_json[indAtivo].modeloRsPb().exists()) {
 						corrSat =
 								fluidos_producao_json[indAtivo].modeloRsPb();
-						// caso modelo RsPb da Livia
-						if (corrSat == 4 && tabRSPB==1) {
-							// TODO: fix this code in the future
-							corrSat = -4;
-						}
+						awaitingSaturationTable = corrSat == 4 && tabRSPB == 1;
 					}
 
 					vcorrOM = 3;
@@ -3560,6 +3557,7 @@ void Ler::parse_fluidos_producao(
 							denag, templ, lvisl, temph, lvish, tipoemul, aemul,
 							bemul, PHI100, bswCorte, tabp, yco2, corrC, corrSat,
 							vcorrOM, vcorrOV, vcorrOS, flashCompleto, identificadores[i]);
+					flup[i].awaitingSaturationTable = awaitingSaturationTable;
 					flup[i].zdranP = zdranP;
 					flup[i].dzdpP = dzdpP;
 					flup[i].dzdtP = dzdtP;
@@ -19964,6 +19962,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 						arqAntigo.flup[iflu].yco2,arqAntigo.flup[iflu].corrC,arqAntigo.flup[iflu].corrSat,
 						arqAntigo.flup[iflu].corrOM,arqAntigo.flup[iflu].corrOV,arqAntigo.flup[iflu].corrOS, flashCompleto,
 						arqAntigo.flup[iflu].id);
+				flup[iflu].awaitingSaturationTable = arqAntigo.flup[iflu].awaitingSaturationTable;
 				flup[iflu].zdranP = zdranP;
 				flup[iflu].dzdpP = dzdpP;
 				flup[iflu].dzdtP = dzdtP;
@@ -20082,6 +20081,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 						arqAntigo.flup[i].yco2,arqAntigo.flup[i].corrC,arqAntigo.flup[i].corrSat,
 						arqAntigo.flup[i].corrOM,arqAntigo.flup[i].corrOV,arqAntigo.flup[i].corrOS, flashCompleto,
 						arqAntigo.flup[i].id);
+				flup[i].awaitingSaturationTable = arqAntigo.flup[i].awaitingSaturationTable;
 				flup[i].indiceFlash = arqAntigo.flup[i].indiceFlash;
 				flup[i].multbcs = arqAntigo.flup[i].multbcs;
 				flup[i].viscBlackOil = flash[i].visc;
@@ -20184,6 +20184,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 						arqAntigo.flup[i].yco2,arqAntigo.flup[i].corrC,arqAntigo.flup[i].corrSat,
 						arqAntigo.flup[i].corrOM,arqAntigo.flup[i].corrOV,arqAntigo.flup[i].corrOS, flashCompleto,
 						arqAntigo.flup[i].id,npseudo);
+				flup[i].awaitingSaturationTable = arqAntigo.flup[i].awaitingSaturationTable;
 
 
 				flup[i].viscBlackOil = arqAntigo.flup[i].viscBlackOil;
