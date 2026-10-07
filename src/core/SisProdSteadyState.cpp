@@ -4423,17 +4423,17 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
                 abortValue = -1e10;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < 1e-15 && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).localtiny && i == 1))
             {
                 abortValue = 1e10;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < 1e-15 && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < (*state.globals).localtiny && i == 1))
             {
                 abortValue = 1e10;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < 1e-15 && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < (*state.globals).localtiny && i == 1))
             {
                 abortValue = 1e10;
                 return true;
@@ -4947,11 +4947,11 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             if (marchPressureTooLow(state.cells[0].pres) ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].presaux) > (*state.globals).localtiny))
                 return -1e10;
-            else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < 1e-15)) {
+            else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).localtiny)) {
                 return 1e10;
-            } else if ((state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < 1e-15)) {
+            } else if ((state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < (*state.globals).localtiny)) {
                 return 1e10;
-            } else if ((state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < 1e-15)) {
+            } else if ((state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < (*state.globals).localtiny)) {
                 return 1e10;
             }
             // IniciaVazValvGasPerm estimates the flow rate through a gas-lift valve
