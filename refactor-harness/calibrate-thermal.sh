@@ -154,8 +154,8 @@ queue_case diffusion-preparation-area SisProdThermal.cpp \
     $'    Cel &leftCell = state.cells[cellIndex - 1];\n    const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex + 1);' caught
 
 queue_case tabulated-gas-density SisProdThermal.cpp \
-    'double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * kPascalPerKgfPerCm2 / lowerGasDensity) +' \
-    'double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * kPascalPerKgfPerCm2 / upperGasDensity) +' caught
+    'double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * units::kPascalPerKgfPerCm2 / lowerGasDensity) +' \
+    'double upperMixtureEnergy = meanVoidFraction * upperGasDensity * (upperGasEnthalpy - upperPressure * units::kPascalPerKgfPerCm2 / upperGasDensity) +' caught
 
 queue_case enthalpy-search-condition SisProdThermal.cpp \
     'while (temperatureIndex < divisionCount + 1 || (mixtureInternalEnergy >= lowerEnergy && mixtureInternalEnergy <= upperEnergy) ||' \
@@ -192,8 +192,8 @@ queue_case reverse-signed-gas SisProdThermal.cpp \
     'meanSuperficialGasVelocity = rightCell.QG / flowArea;' caught
 
 queue_case reverse-interface-pressure SisProdThermal.cpp \
-    'double interfaceMeanPressure = rightCell.presaux - cell.dpB / kPascalPerKgfPerCm2;' \
-    'double interfaceMeanPressure = rightCell.presaux + cell.dpB / kPascalPerKgfPerCm2;' caught
+    'double interfaceMeanPressure = rightCell.presaux - cell.dpB / units::kPascalPerKgfPerCm2;' \
+    'double interfaceMeanPressure = rightCell.presaux + cell.dpB / units::kPascalPerKgfPerCm2;' caught
 
 queue_case forward-network-resistance SisProdThermal.cpp \
     'heatFlux = mixtureFluxSign * leftCell.calor.transperm(leftCell.resAcopRedeP);' \
@@ -204,8 +204,8 @@ queue_case forward-velocity-cap SisProdThermal.cpp \
     'if (globals.blackOilTemp == 2 && fabs(meanSuperficialGasVelocity) > 5)' caught
 
 queue_case reverse-bcs-gradient SisProdThermal.cpp \
-    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * kPascalPerKgfPerCm2Coarse / cellLength;' \
-    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * kPascalPerKgfPerCm2 / cellLength;' caught
+    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * units::kPascalPerKgfPerCm2 / cellLength;' \
+    'pressureGradient = (interfaceMeanPressure - rightCell.pres) * 98600. / cellLength;' caught
 
 # Two bodies carry this guard; the cellIndex - 1 read pins it to the forward
 # steady march rather than to computeTemperature.
