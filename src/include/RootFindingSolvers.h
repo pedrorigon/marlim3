@@ -208,9 +208,11 @@ template <ObjectiveFunction Objective>
 /// in `monitor` and the solver keeps only the composition
 /// `monitor(objective(x))`.
 ///
-/// `reverseMarch` selects nothing: all three branches that test it have
-/// identical arms. It is passed once, on entry; if those arms ever differ, it
-/// has to be read inside the loop instead, since revPerm can change mid-solve.
+/// `reverseMarch` selects nothing: the bracket evaluation and widening are the
+/// same for both march directions, which `objective` itself chooses. Three
+/// tests of it had identical arms (A2-02 to A2-04) and were collapsed. Were the
+/// arms ever to differ, it would have to be read inside the loop instead, since
+/// revPerm can change mid-solve.
 ///
 /// `minimumIterations` is derived from the input deck at the binding site, which
 /// is safe because the flag it comes from is only assigned when the deck is
@@ -237,13 +239,8 @@ template <ObjectiveFunction Objective, ResidualMonitor Monitor>
     double bestPoint;
     double lowValue;
     double highValue;
-    if (reverseMarch == 0) {
-        lowValue = objective(bracketLow);
-        highValue = objective(bracketHigh);
-    } else {
-        lowValue = objective(bracketLow);
-        highValue = objective(bracketHigh);
-    }
+    lowValue = objective(bracketLow);
+    highValue = objective(bracketHigh);
     if (fabs(lowValue) > 1e9 || fabs(highValue) > 1e9)
         return 1e10;
     if (lowValue >= 0.) {
@@ -253,17 +250,10 @@ template <ObjectiveFunction Objective, ResidualMonitor Monitor>
         } else {
             int attempts = 0;
             while (attempts < 100 && lowValue > 0.) {
-                if (reverseMarch == 0) {
-                    if (bracketHigh < bracketLow)
-                        bracketLow *= 1.0001;
-                    else
-                        bracketLow *= 0.999;
-                } else {
-                    if (bracketHigh < bracketLow)
-                        bracketLow *= 1.0001;
-                    else
-                        bracketLow *= 0.999;
-                }
+                if (bracketHigh < bracketLow)
+                    bracketLow *= 1.0001;
+                else
+                    bracketLow *= 0.999;
                 lowValue = objective(bracketLow);
                 attempts++;
             }
@@ -275,17 +265,10 @@ template <ObjectiveFunction Objective, ResidualMonitor Monitor>
         } else {
             int attempts = 0;
             while (attempts < 100 && highValue < 0.) {
-                if (reverseMarch == 0) {
-                    if (bracketLow < bracketHigh)
-                        bracketHigh *= 1.0001;
-                    else
-                        bracketHigh *= 0.999;
-                } else {
-                    if (bracketLow < bracketHigh)
-                        bracketHigh *= 1.0001;
-                    else
-                        bracketHigh *= 0.999;
-                }
+                if (bracketLow < bracketHigh)
+                    bracketHigh *= 1.0001;
+                else
+                    bracketHigh *= 0.999;
                 highValue = objective(bracketHigh);
                 attempts++;
             }

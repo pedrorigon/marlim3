@@ -82,15 +82,24 @@ git -C "$project_root" show "$PRE_RENAME_COMMIT:src/include/RootFindingSolvers.h
 # bisect below would stop being reported -- the vacuous gate this file exists to
 # prevent. Renaming in the baseline gives the mapping and nothing else.
 sed -i 's/\bfalsacorda\b/bisect/g' "$work/pre-rename.h"
-# The reference carries the fix made after the move (A2-05: a zero discriminant skips the step), so
-# the token check still compares the move and not the fix.
+# The reference carries the changes made after the move, so the token check still compares the move and
+# not them: the A2-05 fix (a zero discriminant skips the step) and the collapse of the three revPerm
+# tests whose arms were identical (A2-02 to A2-04, stage 14).
 python3 - "$work/pre-rename.h" <<'FIX' || exit 2
 import sys
 p = sys.argv[1]
 t = open(p).read()
 old = "if (s == 0.0) {\n                fmin = objective(xmin);\n                if(j>minit)return xmin;\n            }\n"
 assert t.count(old) == 1, "A2-05 anchor matched %d times" % t.count(old)
-open(p, "w").write(t.replace(old, old[:-14] + "                continue;\n            }\n"))
+t = t.replace(old, old[:-14] + "                continue;\n            }\n")
+evaluation = "        fl = objective(x1);\n        fh = objective(x2);\n"
+widen_low = "                    if (x2 < x1)\n                        x1 *= 1.0001;\n                    else\n                        x1 *= 0.999;\n"
+widen_high = "                    if (x1 < x2)\n                        x2 *= 1.0001;\n                    else\n                        x2 *= 0.999;\n"
+for arm, indent in ((evaluation, "    "), (widen_low, "                "), (widen_high, "                ")):
+    twins = indent + "if (revPerm == 0) {\n" + arm + indent + "} else {\n" + arm + indent + "}\n"
+    assert t.count(twins) == 1, "revPerm twins matched %d times" % t.count(twins)
+    t = t.replace(twins, "".join(line[4:] + "\n" for line in arm.splitlines()))
+open(p, "w").write(t)
 FIX
 
 failures=0
@@ -200,8 +209,8 @@ attempt "zriddr: A2-05 skip removed, the zero discriminant divides again" \
         "$(swap "'                if(iteration>minimumIterations)return bestPoint;\n                continue;\n            }'" "'                if(iteration>minimumIterations)return bestPoint;\n            }'")" caught
 attempt "zriddr: guard 1e9 -> 1e11" \
         "$(swap "'if (fabs(lowValue) > 1e9 || fabs(highValue) > 1e9)'" "'if (fabs(lowValue) > 1e11 || fabs(highValue) > 1e11)'")" caught
-attempt "zriddr: widening step 1.0001 -> 1.001, both arms" \
-        "$(swap "'                        bracketLow *= 1.0001;'" "'                        bracketLow *= 1.001;'" 2)" caught
+attempt "zriddr: widening step 1.0001 -> 1.001" \
+        "$(swap "'                    bracketLow *= 1.0001;'" "'                    bracketLow *= 1.001;'")" caught
 attempt "SIGN: copysign instead of the comparison" \
         "$(swap "'return (signSource >= 0 ? 1.0 : -1.0) * fabs(magnitude);'" "'return copysign(fabs(magnitude), signSource);'")" caught
 
@@ -216,8 +225,8 @@ attempt "e *= 0.5 spelled out (identical by definition)" \
         "$(swap "'        halfWidth *= 0.5;'" "'        halfWidth = halfWidth * 0.5;'")" passes
 attempt "reassociated (q-1)*(r-1)*(s-1) -- see note" \
         "$(swap "'stepDenominator = (stepDenominator - 1.0) * (valueRatioOpposite - 1.0) * (valueRatioPrevious - 1.0);'" "'stepDenominator = (stepDenominator - 1.0) * ((valueRatioOpposite - 1.0) * (valueRatioPrevious - 1.0));'")" passes
-attempt "A2-02 dead branch collapsed (arms are equal)" \
-        "$(swap "'    if (reverseMarch == 0) {\n        lowValue = objective(bracketLow);\n        highValue = objective(bracketHigh);\n    } else {\n        lowValue = objective(bracketLow);\n        highValue = objective(bracketHigh);\n    }'" "'    lowValue = objective(bracketLow);\n    highValue = objective(bracketHigh);'")" passes
+attempt "A2-02 twin arms reintroduced (arms are equal)" \
+        "$(swap "'    lowValue = objective(bracketLow);\n    highValue = objective(bracketHigh);\n'" "'    if (reverseMarch == 0) {\n        lowValue = objective(bracketLow);\n        highValue = objective(bracketHigh);\n    } else {\n        lowValue = objective(bracketLow);\n        highValue = objective(bracketHigh);\n    }\n'")" passes
 
 printf '\n'
 if (( failures > 0 )); then
