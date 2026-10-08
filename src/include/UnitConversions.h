@@ -32,14 +32,23 @@ inline constexpr double kCubicFootPerCubicMetre = 1. / kCubicMetrePerCubicFoot;
 inline constexpr double kSecondsPerDay = 86400.;
 inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
 
+static_assert(kPascalPerKgfPerCm2 == 98066.5);
+static_assert(kPascalPerAtmosphere == 101325.);
+static_assert(kPascalPerBar == 100000.);
 static_assert(kPascalPerPsi == 6894.757293168362);
 static_assert(kPsiPerKgfPerCm2 == 14.223343307119562);
 static_assert(kAtmosphereInKgfPerCm2 == 1.0332274527998857);
 static_assert(kAtmosphereInPsi == 14.695948775513449);
 static_assert(kKgfPerCm2PerBar == 1.0197162129779282);
 static_assert(kBarPerKgfPerCm2 == 0.980665);
+static_assert(kZeroCelsiusInKelvin == 273.15);
+static_assert(kZeroFahrenheitInRankine == 459.67);
+static_assert(kCubicMetrePerBarrel == 0.158987294928);
+static_assert(kCubicMetrePerCubicFoot == 0.028316846592);
 static_assert(kBarrelPerCubicMetre == 6.289810770432105);
 static_assert(kCubicFootPerCubicMetre == 35.31466672148859);
+static_assert(kSecondsPerDay == 86400.);
+static_assert(kPascalSecondPerCentipoise == 1.e-3);
 static_assert(celsiusToFahrenheit(0.) == 32. && celsiusToFahrenheit(100.) == 212.);
 
 }  // namespace units
