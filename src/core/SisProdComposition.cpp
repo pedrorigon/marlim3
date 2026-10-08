@@ -2011,7 +2011,6 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
     source.oilVolumeFactor = 1.;
     source.waterVolumeFactor = 1.;
     source.waterCut = 1.;
-    source.rhoO = 900.;
     source.rhoW = 1000.;
 
     if (i > 0 || state.input.ConContEntrada == 0) {
