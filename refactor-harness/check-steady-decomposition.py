@@ -60,6 +60,33 @@ _capped = 'cappedMeanSuperficialLiquidVelocity = 5 * meanSuperficialLiquidVeloci
 assert base.count(_capped + 'meanSuperficialLiquidVelocity;') == 1, 'A9-14 anchor not found once'
 base = base.replace(_capped + 'meanSuperficialLiquidVelocity;', _capped + 'fabs(meanSuperficialLiquidVelocity);')
 
+# The baseline also predates 1f7c287 (stage 13), which kept one of each pair of branches that computed the same
+# thing -- the direct march's Dp/Dx with and without a pump on the left, and in both marches the source specific
+# heats of a cell beside an accessory and of any other -- and removed the interfacial work term nothing read. The
+# same simplifications are applied to the baseline, once each, so the comparison stays about the decomposition.
+_dpdx = ('        double pressureGradient;\n'
+         '        if ((state.cells[cellIndex - 1].acsr.tipo != 4 || state.cells[cellIndex - 1].acsr.bcs.freq < 1)'
+         ' && state.cells[cellIndex - 1].acsr.tipo != 7)\n')
+assert base.count(_dpdx) == 1, '1f7c287 Dp/Dx anchor not found once'
+_start = base.index(_dpdx)
+_end = base.index('\n        }\n', _start) + len('\n        }\n')
+base = (base[:_start] + '        const double pressureGradient = 2. * (state.cells[cellIndex].presaux - '
+        'state.cells[cellIndex - 1].pres) * 98066.5 / state.cells[cellIndex - 1].dx;\n' + base[_end:])
+for _neighbour in ('state.cells[cellIndex].acsrL != 0', 'state.cells[cellIndex + 1].acsr.tipo != 0'):
+    _twin = ('        } else if (' + _neighbour + ') {\n\n            sourceGasSpecificHeat = 0.;\n'
+             '            sourceSpecificHeatRatio = 1.;\n            sourceLiquidSpecificHeat = 0.;\n        } else {\n')
+    assert base.count(_twin) == 1, f'1f7c287 source specific heat anchor ({_neighbour}) not found once'
+    base = base.replace(_twin, '        } else {\n')
+_completion = '        double liquidMassSourceTerm = 0.;\n        double fontemassC = 0.;\n'
+assert base.count(_completion) == 1, '1f7c287 completion source anchor not found once'
+base = base.replace(_completion, '        double liquidMassSourceTerm = 0.;\n')
+_interface = '        double interfaceVoidFraction;\n        double leftInterfaceVoidFraction;\n'
+assert base.count(_interface) == 2, '1f7c287 interfacial work anchors not found twice'
+while _interface in base:
+    _start = base.index(_interface)
+    _work = base.index('double interfacialWorkTerm', _start)
+    base = base[:_start] + base[base.index('\n', _work) + 1:]
+
 # The baseline predates the removal of the fourteen breakpoint anchors -- guards
 # whose whole body declares an int, assigns zero to it and stops. They emit no
 # code, so removing them cannot move a number, but they are text and the
@@ -85,13 +112,13 @@ SPECS = [
    ("computeSteadySourceTerms",      "TemperatureSourceTerms steadySources", 4, None),
    ("applySteadyAnnulusCoupling",    "annulusResistance = applySteadyAnnulusCoupling", 3, "double annulusResistance = 0.;"),
    ("computeSteadyKineticTerm",      "double kineticTerm = computeSteadyKineticTerm", 3, None),
-   ("computeSteadyLatentHeatTerm",   "double latentHeatTerm = computeSteadyLatentHeatTerm", 3, None),
+   ("computeSteadyLatentHeatTerm",   "double latentHeatTerm = computeSteadyLatentHeatTerm", 1, None),
  ]),
  ("advanceReverseSteadyTemperature", [
    ("computeReverseSteadySourceTerms",   "TemperatureSourceTerms reverseSources", 4, None),
    ("applyReverseSteadyAnnulusCoupling", "annulusResistance = applyReverseSteadyAnnulusCoupling", 3, "double annulusResistance = 0.;"),
    ("computeReverseSteadyKineticTerm",   "double kineticTerm = computeReverseSteadyKineticTerm", 3, None),
-   ("computeReverseSteadyLatentHeatTerm","double latentHeatTerm = computeReverseSteadyLatentHeatTerm", 3, None),
+   ("computeReverseSteadyLatentHeatTerm","double latentHeatTerm = computeReverseSteadyLatentHeatTerm", 1, None),
  ]),
 ]
 

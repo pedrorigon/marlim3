@@ -113,8 +113,9 @@ probe computeSteadyKineticTerm \
 # Loop-scoped aliases let one function bind the same name twice. If the two
 # bindings ever disagree, expanding with whichever came first would repair one
 # of them out of existence -- the same blind spot as the file-wide expansion,
-# one level down. expand_aliases refuses; this case proves it refuses.
-probe computeSteadySourceTerms \
+# one level down. expand_aliases refuses; this case proves it refuses. (computeSteadySourceTerms, its first
+# home, lost its own `cell` alias in 1f7c287.)
+probe computeSteadyLatentHeatTerm \
     's/Cel &cell = state.cells\[cellIndex\];/Cel \&cell = state.cells[cellIndex];\n    if (cellIndex > 0) { Cel \&cell = state.cells[cellIndex - 1]; (void)cell; }/' \
     'one alias name bound to two different cells'
 
@@ -122,9 +123,10 @@ probe computeSteadySourceTerms \
 # token and no analysis, but a normaliser is a blind spot until something proves
 # otherwise: the attribute must not carry the DECLARATION away with it. The
 # corruption changes the initialiser of a variable that wears the attribute, in
-# a march helper, and it must still be detected.
-probe computeSteadyLatentHeatTerm \
-    's/\[\[maybe_unused\]\] double interfacialWorkTerm = flowArea/[[maybe_unused]] double interfacialWorkTerm = 2. * flowArea/' \
+# a march, and it must still be detected. (Its first anchor, interfacialWorkTerm in
+# the latent-heat helper, was dead code and went in 1f7c287.)
+probe advanceSteadyTemperature \
+    's/\[\[maybe_unused\]\] double temperatureGradient = (-leftCell.temp)/[[maybe_unused]] double temperatureGradient = (-2. * leftCell.temp)/' \
     'initialiser changed on a [[maybe_unused]] declaration'
 
 cp "$scratch/pristine.cpp" "$target"

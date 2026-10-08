@@ -41,8 +41,12 @@ Usage:
 from __future__ import annotations
 
 import functools
+import pathlib
 import re
 import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import unit_spellings  # noqa: E402
 
 
 FUNCTIONS = {
@@ -334,7 +338,10 @@ def tokenize(text: str) -> list[str]:
     # variable. Anything else in it and the block survives into the token
     # stream. calibrate-steady-decomposition.sh injects precisely that -- an
     # anchor shape with one live statement inside -- and requires detection.
-    clean = COMMENT.sub(" ", strip_debug_anchors(text)[0])
+    #
+    # The unit cleanup of stage 13 renamed every unit-conversion spelling, and gave some a new value: both sides
+    # are read with the names the cleanup gave them (unit_spellings.py), which leaves the current code as it is.
+    clean = COMMENT.sub(" ", unit_spellings.to_unit_names(strip_debug_anchors(text)[0]))
     tokens: list[str] = []
     cursor = 0
     while cursor < len(clean):
@@ -354,7 +361,22 @@ def tokenize(text: str) -> list[str]:
         else:
             tokens.append(current)
             cursor += 1
-    return tokens
+    return collapse_units_qualifier(tokens)
+
+
+def collapse_units_qualifier(tokens: list[str]) -> list[str]:
+    """`units :: kName` read as `kName`: the constants of UnitConversions.h are named with their namespace, the
+    ones of SisProdConstants.h without, and both are resolved by their static_asserts."""
+    out: list[str] = []
+    index = 0
+    while index < len(tokens):
+        if (tokens[index] == "units" and tokens[index + 1:index + 3] == [":", ":"]
+                and index + 3 < len(tokens) and (tokens[index + 3][:1].isalpha() or tokens[index + 3][:1] == "_")):
+            index += 3
+            continue
+        out.append(tokens[index])
+        index += 1
+    return out
 
 
 def carve(source: str) -> dict[str, tuple[int, int, str]]:
@@ -2306,7 +2328,7 @@ def declared_constants(path: str = "src/core/SisProdThermal.cpp") -> dict[str, s
     floating-point context; 3b3bb72, which named these constants, proved that it did
     by object identity (all objects and the binary byte-identical).
     """
-    sources = [path, "src/include/SisProdConstants.h"]
+    sources = [path, "src/include/SisProdConstants.h", "src/include/UnitConversions.h"]
     found: dict[str, set[str]] = {}
     for source in sources:
         try:
