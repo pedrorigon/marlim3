@@ -559,7 +559,7 @@ void applyOutletPressureCondition(const TransientStepState &state, double titRev
 
     double ypres = state.gasSurfacePressure / state.outletPressure;
     if (surfaceChokeIsOpen(state) && ypres < 1.) {
-        double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) -
+        double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) +
                       betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
         double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
         double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);

@@ -4475,7 +4475,7 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
         // maxSup is the total flow rate through the choke
 
         if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) -
+            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) +
                           betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
             double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
             double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
@@ -5552,7 +5552,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             maxSup = masChk;
 
         if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) -
+            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) +
                           betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
             double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
             double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
