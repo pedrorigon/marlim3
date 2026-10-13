@@ -47,6 +47,22 @@ void recordStockTankDefault(StockTankDefault kind, double time);
 void recordLightMixtureFallback(int errorCode, double pressure, double temperature, double mixtureMolarMass,
                                 double time);
 
+/// Gas the closing-valve time-step control adds to the source of the valve's
+/// cell, when a closing valve holds almost no gas. The time step that uses it
+/// may still be shortened, so a step keeps its additions until it is accepted.
+struct ArtificialGasAddition {
+    /// 0 for the Master1 valve, k for the production valve k.
+    int valve;
+    int cell;
+    /// kg/s.
+    double massRate;
+};
+
+/// An accepted time step, `step` of `system`'s run, that started at `time` and
+/// lasted `timeStep` seconds with `addition` in its sources.
+void recordArtificialGas(const std::string &system, const ArtificialGasAddition &addition, int step, double time,
+                         double timeStep);
+
 /// Moves every gathered warning into `logger` and forgets it, so a second call
 /// adds nothing.
 void flushTo(Logger &logger);

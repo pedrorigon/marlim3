@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <map>
 #include <mutex>
+#include <tuple>
 #include <utility>
 
 namespace diagnostics {
@@ -46,6 +47,17 @@ struct LightMixtureFallback {
     double maximumMolarMass = 0.;
 };
 
+/// What one valve's artificial gas added up to over a run.
+struct ArtificialGasTotal {
+    long steps = 0;
+    int episodes = 0;
+    int lastStep = 0;
+    double firstTime = 0.;
+    double lastTime = 0.;
+    double mass = 0.;
+    double peakRate = 0.;
+};
+
 /// How often a stock-tank default was applied, and when first.
 struct DefaultCount {
     long count = 0;
@@ -56,6 +68,7 @@ std::mutex registryMutex;
 std::map<std::pair<FlashRoutine, int>, StateRange> flashErrors;
 std::map<StockTankDefault, DefaultCount> stockTankDefaults;
 std::map<int, LightMixtureFallback> lightMixtureFallbacks;
+std::map<std::tuple<std::string, int, int>, ArtificialGasTotal> artificialGas;
 
 template <typename... Values>
 std::string formatted(const char *pattern, Values... values) {
@@ -98,6 +111,10 @@ std::string describeTime(double time) {
     return std::isnan(time) ? std::string() : formatted(" First at simulation time %.6g s.", time);
 }
 
+std::string describeValve(int valve) {
+    return valve == 0 ? std::string("Master1 valve") : formatted("production valve %d", valve);
+}
+
 } // namespace
 
 void recordFlashError(FlashRoutine routine, int errorCode, double pressure, double temperature, double time) {
@@ -124,6 +141,21 @@ void recordLightMixtureFallback(int errorCode, double pressure, double temperatu
         fallback.maximumMolarMass = std::max(fallback.maximumMolarMass, mixtureMolarMass);
     }
     fallback.states.add(pressure, temperature, time);
+}
+
+void recordArtificialGas(const std::string &system, const ArtificialGasAddition &addition, int step, double time,
+                         double timeStep) {
+    std::lock_guard<std::mutex> lock(registryMutex);
+    ArtificialGasTotal &total = artificialGas[{system, addition.valve, addition.cell}];
+    if (total.steps == 0)
+        total.firstTime = time;
+    if (total.steps == 0 || step != total.lastStep + 1)
+        total.episodes++;
+    total.steps++;
+    total.lastStep = step;
+    total.lastTime = time + timeStep;
+    total.mass += addition.massRate * timeStep;
+    total.peakRate = std::max(total.peakRate, addition.massRate);
 }
 
 void flushTo(Logger &logger) {
@@ -160,9 +192,21 @@ void flushTo(Logger &logger) {
                        describeStates(fallback.states),
                    routineName(FlashRoutine::Mixture), formatted("iIER = %d", errorCode));
     }
+    for (const auto &[key, total] : artificialGas) {
+        const auto &[system, valve, cell] = key;
+        logger.log(LOGGER_AVISO, LOG_WARN_RUNTIME_DIAGNOSTIC,
+                   formatted(" the closing-valve time-step control added %.6g kg of artificial gas to the source of "
+                             "cell %d, at the %s, in %s: %s in %s, from %.6g s to %.6g s, peak rate %.6g kg/s.",
+                             total.mass, cell, describeValve(valve).c_str(), system.c_str(),
+                             countOf(total.steps, "accepted time step").c_str(),
+                             countOf(total.episodes, "episode").c_str(), total.firstTime, total.lastTime,
+                             total.peakRate),
+                   "controleDTvalv", "a closing valve with a void fraction below 0.05 in its cell");
+    }
     flashErrors.clear();
     stockTankDefaults.clear();
     lightMixtureFallbacks.clear();
+    artificialGas.clear();
 }
 
 } // namespace diagnostics

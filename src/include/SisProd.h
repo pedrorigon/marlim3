@@ -23,6 +23,7 @@
 #include "Matriz.h"
 #include "PropFlu.h"
 #include "PropFluCol.h"
+#include "RuntimeDiagnostics.h"
 #include "TrocaCalor.h"
 #include "Vetor.h"
 #include "acessorios.h"
@@ -417,6 +418,11 @@ struct TransientRun {
      * problem persists.
      */
     double momentoDesesp = 0;
+    /**
+     * @brief The artificial gas the closing-valve control added in the current time step, kept until the step is
+     * accepted, when it goes to the run's diagnostics.
+     */
+    vector<diagnostics::ArtificialGasAddition> artificialGasThisStep;
     /**
      * @brief Recent maximum pressure-change rates.
      */

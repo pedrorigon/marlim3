@@ -305,6 +305,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .surfaceChokeOpen = system.transient.aberto,
         .initiallyOpen = system.transient.abertoini,
         .timeChanged = system.transient.alteraTempo,
+        .artificialGasThisStep = system.transient.artificialGasThisStep,
         .inletComplementaryFraction = system.betaE,
         .interfaceCell = system.gasLift.celInter,
         .masterCounter = system.transient.contaMaster1,

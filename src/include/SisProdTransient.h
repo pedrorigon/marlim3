@@ -23,6 +23,8 @@ template <class T> class Vcr;
 template <class T> class FullMtx;
 template <class T> class BandMtx;
 
+#include "RuntimeDiagnostics.h"
+
 #include <chrono>
 #include <string>
 #include <vector>
@@ -68,6 +70,8 @@ struct TransientStepState {
     int &initiallyOpen;
     /// SProd::transient.alteraTempo -- written.
     int &timeChanged;
+    /// SProd::transient.artificialGasThisStep -- written.
+    std::vector<diagnostics::ArtificialGasAddition> &artificialGasThisStep;
     /// SProd::betaE -- written.
     double &inletComplementaryFraction;
     /// SProd::gasLift.celInter -- written.

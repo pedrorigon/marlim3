@@ -1248,8 +1248,10 @@ void restrictTimeStepByValve(const TransientStepState &state) {
                         state.desperationMoment = 1;
                     if (state.desperationMoment < 1.)
                         state.desperationMoment = 1.;
-                    state.cells[celpos].fontemassGL += state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / units::kSecondsPerDay;
+                    double artificialGasRate = state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / units::kSecondsPerDay;
+                    state.cells[celpos].fontemassGL += artificialGasRate;
                     state.cells[celpos - 1].fontemassGR = state.cells[celpos].fontemassGL;
+                    state.artificialGasThisStep.push_back({i, celpos, artificialGasRate});
                 }
                 if (state.cells[celpos].alf < 0.5)
                     state.masterCriticalRatio[i] = 0.01;
@@ -1275,6 +1277,19 @@ void restrictTimeStepByValve(const TransientStepState &state) {
         state.cells[0].dt = dtaux;
     }
 }
+
+namespace {
+
+/// The step is accepted: the artificial gas restrictTimeStepByValve added to its
+/// sources goes to the run's diagnostics, with the step's final length.
+void reportAcceptedArtificialGas(const TransientStepState &state) {
+    for (const diagnostics::ArtificialGasAddition &addition : state.artificialGasThisStep)
+        diagnostics::recordArtificialGas(state.input.impfile, addition, state.stepIndex, (*state.globals).lixo5,
+                                         state.timeStep);
+    state.artificialGasThisStep.clear();
+}
+
+} // namespace
 
 void restartFractionEvolutionInitial(const TransientStepState &state) {
     for (int i = 0; i <= state.lastCell; i++) {
@@ -2272,6 +2287,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     writeEventLog(state, maxEvento);
     writeProgressReport(state, MaxKontaImpres);
 
+    reportAcceptedArtificialGas(state.step);
     state.step.stepIndex++;
     state.printCounter++;
     if ((*state.step.globals).chaverede == 0)
