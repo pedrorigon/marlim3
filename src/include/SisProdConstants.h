@@ -12,8 +12,8 @@ namespace sisprod {
 /// specific gravity, giving the gas density at standard conditions.
 inline constexpr double kAirDensityAtStandardConditions = 1.225;
 
-/// Gravitational acceleration as this program uses it. Not 9.80665 --
-/// "correcting" it would change every hydrostatic term.
+/// Gravitational acceleration as this program uses it, not the standard gravity
+/// units::kStandardGravity: "correcting" it would change every hydrostatic term.
 inline constexpr double kGravity = 9.82;
 
 /// The gas-lift unloading hydrostatics spell gravity differently; the two are

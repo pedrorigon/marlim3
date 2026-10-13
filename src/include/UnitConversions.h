@@ -5,6 +5,9 @@
 /// and temperature in degrees Celsius; the correlations ask for SI or field units.
 namespace units {
 
+/// The standard acceleration of gravity, exact by definition (3rd CGPM, 1901). The kilogram-force is a
+/// kilogram under it, which makes the kgf/cm^2 9.80665e4 Pa.
+inline constexpr double kStandardGravity = 9.80665;
 inline constexpr double kPascalPerKgfPerCm2 = 98066.5;
 inline constexpr double kPascalPerAtmosphere = 101325.;
 inline constexpr double kPascalPerBar = 100000.;
@@ -32,7 +35,9 @@ inline constexpr double kCubicFootPerCubicMetre = 1. / kCubicMetrePerCubicFoot;
 inline constexpr double kSecondsPerDay = 86400.;
 inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
 
+static_assert(kStandardGravity == 9.80665);
 static_assert(kPascalPerKgfPerCm2 == 98066.5);
+static_assert(kStandardGravity * 1.e4 == kPascalPerKgfPerCm2);
 static_assert(kPascalPerAtmosphere == 101325.);
 static_assert(kPascalPerBar == 100000.);
 static_assert(kPascalPerPsi == 6894.757293168362);

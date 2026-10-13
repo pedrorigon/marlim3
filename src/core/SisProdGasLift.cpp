@@ -757,8 +757,8 @@ void updateTransientGasValves(const GasLiftState &state) {
         state.gasCells[master2CellIndex].chkcell.tempEstag = state.gasCells[master2CellIndex].temp;
         double rhoM = state.gasCells[master2CellIndex].flui.MasEspGas(state.gasCells[master2CellIndex].pres, state.gasCells[master2CellIndex].temp);
         double rhoJ = state.gasCells[master2CellIndex + 1].flui.MasEspGas(state.gasCells[master2CellIndex + 1].pres, state.gasCells[master2CellIndex + 1].temp);
-        double hidroM = -0.5 * rhoM * state.gasCells[master2CellIndex].dx0 * sin(state.gasCells[master2CellIndex].duto.teta) / units::kPascalPerKgfPerCm2;
-        double hidroJ = 0.5 * rhoJ * state.gasCells[master2CellIndex + 1].dx0 * sin(state.gasCells[master2CellIndex + 1].duto.teta) / units::kPascalPerKgfPerCm2;
+        double hidroM = -0.5 * rhoM * units::kStandardGravity * state.gasCells[master2CellIndex].dx0 * sin(state.gasCells[master2CellIndex].duto.teta) / units::kPascalPerKgfPerCm2;
+        double hidroJ = 0.5 * rhoJ * units::kStandardGravity * state.gasCells[master2CellIndex + 1].dx0 * sin(state.gasCells[master2CellIndex + 1].duto.teta) / units::kPascalPerKgfPerCm2;
         state.gasCells[master2CellIndex].chkcell.presEstag = state.gasCells[master2CellIndex].pres + hidroM;
         state.gasCells[master2CellIndex].chkcell.presGarg = state.gasCells[master2CellIndex + 1].pres + hidroJ;
         if (state.gasCells[master2CellIndex + 1].pres < state.gasCells[master2CellIndex].pres)
