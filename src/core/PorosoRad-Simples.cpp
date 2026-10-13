@@ -7,6 +7,7 @@
 
 #define _USE_MATH_DEFINES // para M_PI
 #include "PorosoRad-Simples.h"
+#include "InputPaths.h"
 #include "Matriz.h"
 #include "Vetor.h"
 #include "UnitConversions.h"
@@ -933,7 +934,7 @@ void PorosRadSimp::parse_tempo(Value &tempo_json) {
     }
     if (flashCompleto == 1 || flashCompleto == 2) {
         if (tempo_json.HasMember("pvtsimArq"))
-            pvtsimarq = pathArqExtEntrada + string(tempo_json["pvtsimArq"].GetString());
+            pvtsimarq = namedInputPath(string(tempo_json["pvtsimArq"].GetString()));
         else {
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -1667,7 +1668,7 @@ void PorosRadSimp::parse_fluido_producao(
     } else if (flashCompleto == 1) {
 
         if (fluidos_producao_json.HasMember("pvtsimArq"))
-            pvtsimarq = pathArqExtEntrada + string(fluidos_producao_json["pvtsimArq"].GetString());
+            pvtsimarq = namedInputPath(string(fluidos_producao_json["pvtsimArq"].GetString()));
 
         string dadosMRPre;
         dadosMRPre = pvtsimarq;

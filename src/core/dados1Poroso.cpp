@@ -6,6 +6,7 @@
  */
 
 #include "dados1Poroso.h"
+#include "InputPaths.h"
 #include "UnitConversions.h"
 
 dadosPoro::dadosPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) {
@@ -1370,7 +1371,7 @@ void dadosPoro::parse_fluido_producao(
     } else if (flashCompleto == 1) {
 
         if (fluidos_producao_json.HasMember("pvtsimArq"))
-            pvtsimarq = pathArqExtEntrada + string(fluidos_producao_json["pvtsimArq"].GetString());
+            pvtsimarq = namedInputPath(string(fluidos_producao_json["pvtsimArq"].GetString()));
 
         string dadosMRPre;
         dadosMRPre = pvtsimarq;
@@ -2213,7 +2214,7 @@ void dadosPoro::parse_tempo(Value &tempo_json) {
     }
     if (flashCompleto == 1 || flashCompleto == 2) {
         if (tempo_json.HasMember("pvtsimArq"))
-            pvtsimarq = pathArqExtEntrada + string(tempo_json["pvtsimArq"].GetString());
+            pvtsimarq = namedInputPath(string(tempo_json["pvtsimArq"].GetString()));
         else {
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -2600,21 +2601,21 @@ void dadosPoro::parse_malha(Value &malha_json) {
         unv = malha_json["tipoArquivo"].GetInt();
     if (unv == 0) {
         if (malha_json.HasMember("elemento"))
-            elearq = pathArqExtEntrada + string(malha_json["elemento"].GetString());
+            elearq = namedInputPath(string(malha_json["elemento"].GetString()));
         else
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                        "Chave 'arquivo de elemento' inexistente", chaveJson, "malha");
 
         if (malha_json.HasMember("no"))
-            noarq = pathArqExtEntrada + string(malha_json["no"].GetString());
+            noarq = namedInputPath(string(malha_json["no"].GetString()));
         else
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                        "Chave 'arquivo de no' inexistente", chaveJson, "malha");
     } else {
         if (malha_json.HasMember("elemento"))
-            elearq = pathArqExtEntrada + string(malha_json["elemento"].GetString());
+            elearq = namedInputPath(string(malha_json["elemento"].GetString()));
         else
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,

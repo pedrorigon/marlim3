@@ -5,6 +5,7 @@
  *      Author: bwz1
  */
 #include "Leitura.h"
+#include "InputPaths.h"
 #include "JSONKeyTranslator.h"
 #include "OutputI18n.h"
 #include "rapidjson/filereadstream.h"
@@ -2599,7 +2600,7 @@ void Ler::parse_configuracao_inicial(
 				modoDifus3D=configuracao_inicial_json.modoDifus3D();
 				if(configuracao_inicial_json.threadP3D().exists())threadP3D=configuracao_inicial_json.threadP3D();
 				else threadP3D=1;
-				modoDifus3DJson=configuracao_inicial_json.modoDifus3DJson();
+				modoDifus3DJson=auxiliaryInputPath(string(configuracao_inicial_json.modoDifus3DJson()));
 			}
 
 			if (configuracao_inicial_json.Avancado().exists()) {
@@ -5208,7 +5209,7 @@ void Ler::parse_unidades_producao(
 				unidadeP[ind].ambext = 0;
 				unidadeP[ind].lito = 0;
 				unidadeP[ind].difusTerm2D = 0;
-				unidadeP[ind].difusTerm2DJSON ="parametros.json" ;
+				unidadeP[ind].difusTerm2DJSON =auxiliaryInputPath("parametros.json") ;
 
 				unidadeP[ind].dx=0;
 				unidadeP[ind].dxVar=0;
@@ -5221,7 +5222,7 @@ void Ler::parse_unidades_producao(
 					unidadeP[ind].difusTerm2D =dutos_producao_json[indAtivo].difusTerm2D();
 					if(unidadeP[ind].difusTerm2D==1){
 						if (dutos_producao_json[indAtivo].difusTerm2DJSON().exists())
-							unidadeP[ind].difusTerm2DJSON =dutos_producao_json[indAtivo].difusTerm2DJSON();
+							unidadeP[ind].difusTerm2DJSON =auxiliaryInputPath(string(dutos_producao_json[indAtivo].difusTerm2DJSON()));
 					}
 				}
 
@@ -5849,7 +5850,7 @@ void Ler::parse_unidades_producaoAmb(
 				unidadeP[ind].ambext = 0;
 				unidadeP[ind].lito = 0;
 				unidadeP[ind].difusTerm2D = 0;
-				unidadeP[ind].difusTerm2DJSON ="parametros.json" ;
+				unidadeP[ind].difusTerm2DJSON =auxiliaryInputPath("parametros.json") ;
 				unidadeP[ind].difusTerm3D = 0;
 				unidadeP[ind].difusTerm3DFE = 0;
 				unidadeP[ind].difusTerm3DAcop =0 ;
@@ -5861,7 +5862,7 @@ void Ler::parse_unidades_producaoAmb(
 					unidadeP[ind].difusTerm2D =dutos_producao_json[indAtivo].difusTerm2D();
 					if(unidadeP[ind].difusTerm2D==1){
 						if (dutos_producao_json[indAtivo].difusTerm2DJSON().exists())
-							unidadeP[ind].difusTerm2DJSON =dutos_producao_json[indAtivo].difusTerm2DJSON();
+							unidadeP[ind].difusTerm2DJSON =auxiliaryInputPath(string(dutos_producao_json[indAtivo].difusTerm2DJSON()));
 					}
 				}
 
@@ -8714,7 +8715,7 @@ void Ler::parse_fonte_PoroRadial(JSON_entrada_fontePoroRadial& fonte_poroRadial_
 				double lverif = porosoRad[i].comp;
 				porosoRad[i].posicP = buscaIndiceMeioP(lverif);
 
-				porosoRad[i].nomeArquivoEntrada =fonte_poroRadial_json[indAtivo].arquivo();
+				porosoRad[i].nomeArquivoEntrada =auxiliaryInputPath(string(fonte_poroRadial_json[indAtivo].arquivo()));
 			}
 			// verificar a unicidade dos identificadores
 			if (!verificarUnicidade(identificadores)) {
@@ -8787,7 +8788,7 @@ void Ler::parse_fonte_Poro2D(JSON_entrada_fontePoro2D& fonte_poro2D_json) {
 				double lverif = poroso2D[i].comp;
 				poroso2D[i].posicP = buscaIndiceMeioP(lverif);
 
-				poroso2D[i].nomeArquivoEntrada =fonte_poro2D_json[indAtivo].arquivo();
+				poroso2D[i].nomeArquivoEntrada =auxiliaryInputPath(string(fonte_poro2D_json[indAtivo].arquivo()));
 			}
 			// verificar a unicidade dos identificadores
 			if (!verificarUnicidade(identificadores)) {

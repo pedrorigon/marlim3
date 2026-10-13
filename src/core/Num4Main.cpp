@@ -19,6 +19,7 @@
 #include "Leitura.h"
 #include "LeituraVapor.h"
 #include "LerAP.h"
+#include "InputPaths.h"
 #include "LerRede.h"
 #include "Log.h"
 #include "Malha2D.h"
@@ -12472,6 +12473,8 @@ static void showUsage(string name) {
          << "\t-i,--input ARQUIVO\tRedefinir o arquivo de entrada\n"
          << "\t-o,--output ARQUIVO\tRedefinir o arquivo LOG de resultado\n"
          << "\t-p,--path CAMINHO\tRedefinir o caminho de outros arquivos de entrada (PVTSIM)\n"
+         << "\t-l,--legacy-paths\tAbrir os arquivos de parametros dos solvers pelo nome escrito no deck, a partir da\n"
+         << "\t\t\t\tpasta de execucao, como antes (sem a opcao, nomes relativos partem do caminho de -p)\n"
          << "\t-d,--dir PASTA\t\tRedefinir a pasta de saida de resultados\n"
          << "\t-v,--validate <JSON>  \tValidar a estrutura/formato JSON da entrada\n"
          << "\t              <SCHEMA>\tValidar o item anterior e a sintaxe de preenchimento da entrada\n"
@@ -12759,6 +12762,9 @@ int main(int argc, char **argv) {
                 cerr << "opcao --path requer um caminho." << endl;
                 return EXIT_FAILURE;
             }
+        } else if ((arg == "-l") || (arg == "--legacy-paths")) {
+            // the old way to find the solvers' parameter files (InputPaths.h)
+            legacyInputPaths = true;
         } else if ((arg == "-d") || (arg == "--dir")) {
             // caso exista outro parametro apos esta opcao
             if (i + 1 < argc) {

@@ -6,6 +6,7 @@
  */
 
 #include "dados3DPoisson.h"
+#include "InputPaths.h"
 
 dadosP3D::dadosP3D(string nomeArquivoEntrada){
 	iniciaVariaveis();
@@ -1023,7 +1024,7 @@ void dadosP3D::parse_CC(Value& CC_json) {
 void dadosP3D::parse_malha(Value& malha_json) {
 	string chaveJson("#/malha");
 	if (malha_json.HasMember("UNV"))
-		elearq = pathArqExtEntrada + string(malha_json["UNV"].GetString());
+		elearq = namedInputPath(string(malha_json["UNV"].GetString()));
 	else logger.log(LOGGER_FALHA,
 			LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
 					"Chave 'arquivo de UNV' inexistente",chaveJson, "malha");

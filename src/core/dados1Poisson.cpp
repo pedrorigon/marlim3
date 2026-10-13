@@ -5,6 +5,7 @@
  *      Author: Eduardo
  */
 #include "dados1Poisson.h"
+#include "InputPaths.h"
 
 dadosP::dadosP(string nomeArquivoEntrada, double vCondGlob, double vCondLoc, double vhE, double vhInt,
                double vTint, double vTamb, double vdiamI, double vdiamE) {
@@ -715,21 +716,21 @@ void dadosP::parse_malha(Value &malha_json) {
         unv = malha_json["tipoArquivo"].GetInt();
     if (unv == 0) {
         if (malha_json.HasMember("elemento"))
-            elearq = pathArqExtEntrada + string(malha_json["elemento"].GetString());
+            elearq = namedInputPath(string(malha_json["elemento"].GetString()));
         else
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                        "Chave 'arquivo de elemento' inexistente", chaveJson, "malha");
 
         if (malha_json.HasMember("no"))
-            noarq = pathArqExtEntrada + string(malha_json["no"].GetString());
+            noarq = namedInputPath(string(malha_json["no"].GetString()));
         else
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                        "Chave 'arquivo de no' inexistente", chaveJson, "malha");
     } else {
         if (malha_json.HasMember("elemento"))
-            elearq = pathArqExtEntrada + string(malha_json["elemento"].GetString());
+            elearq = namedInputPath(string(malha_json["elemento"].GetString()));
         else
             logger.log(LOGGER_FALHA,
                        LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
