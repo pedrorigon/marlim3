@@ -4,6 +4,7 @@
 
 #include "Log.h"
 #include "MarlimComposicional.h"
+#include "RuntimeDiagnostics.h"
 #include "Matriz.h"
 #include "Vetor.h"
 #include "variaveisGlobais1D.h"
@@ -646,6 +647,9 @@ class ProFlu {
     double ft3bbl() const { return RGO * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre; }                  // Converts gas-oil ratio from m3/m3 to ft3/bbl
     double m3m() const { return RGO * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre; }                     // Converts gas-oil ratio from ft3/bbl to m3/m3
 
+    // The simulation time a diagnostic records; NaN for a fluid built without the run's globals
+    double simulationTime() const { return vg1dSP != nullptr ? (*vg1dSP).lixo5 : NAN; }
+
     // Updates compositional-model variables for the specified pressure and temperature
     void atualizaPropCompStandard(double GivenInitialBeta = -1.0, double *GivenInitialLiqComposition = NULL,
                                   double *GivenInitialVapComposition = NULL) {
@@ -674,15 +678,21 @@ class ProFlu {
                                                                     &iCalculatedStockTankThermodynamicCondition,
                                                                     &dStockTankVaporMassFraction, &dStockTankLiquidDensity, &dStockTankVaporDensity,
                                                                     &tempRGO, &iIER);
+        if (iIER != 0)
+            diagnostics::recordFlashError(diagnostics::FlashRoutine::StockTank, iIER, pres, temp, simulationTime());
 
         if (dStockTankLiquidDensity > 0.01) {
             API = 141.5 / (dStockTankLiquidDensity / 1000.) - 131.5;
-        } else
+        } else {
             API = 50;
+            diagnostics::recordStockTankDefault(diagnostics::StockTankDefault::ApiGravity, simulationTime());
+        }
         Deng = dStockTankVaporDensity / 1.225;
         RGO = tempRGO;
-        if (dStockTankVaporMassFraction > 0 && RGO < 1e-15)
+        if (dStockTankVaporMassFraction > 0 && RGO < 1e-15) {
             RGO = 1e6;
+            diagnostics::recordStockTankDefault(diagnostics::StockTankDefault::GasOilRatio, simulationTime());
+        }
         IRGO = RGO * units::kCubicFootPerCubicMetre / units::kBarrelPerCubicMetre;
         if (nuloL == 1)
             delete[] GivenInitialLiqComposition;
@@ -736,6 +746,7 @@ class ProFlu {
                                                           &dVaporPhaseMW, &dVaporMassFraction, &iIER);
         }
         if (monoGas == 0 && dMixtureMW <= (30. + 1e-15) && iIER > 0) {
+            diagnostics::recordLightMixtureFallback(iIER, pres, temp, dMixtureMW, simulationTime());
             iCalculatedThermodynamicCondition = 4;
             dVaporMassFraction = 1.;
             for (int i = 0; i < npseudo; i++) {
@@ -746,6 +757,8 @@ class ProFlu {
                 iIER = 0;
                 dVaporPhaseMW = dMixtureMW;
             }
+        } else if (monoGas == 0 && iIER != 0) {
+            diagnostics::recordFlashError(diagnostics::FlashRoutine::Mixture, iIER, pres, temp, simulationTime());
         }
         if (nuloL == 1)
             delete[] GivenInitialLiqComposition;

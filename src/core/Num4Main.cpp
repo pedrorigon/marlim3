@@ -32,6 +32,7 @@
 #include "PropFluCol.h"
 #include "PropFluColVF.h"
 #include "PropVapor.h"
+#include "RuntimeDiagnostics.h"
 #include "SisProd.h"
 #include "SisProdConstants.h"
 #include "TrocaCalor.h"
@@ -13282,6 +13283,8 @@ int main(int argc, char **argv) {
         exit(EXIT_SUCCESS);
     }
 
+    // the warnings gathered during the run, before the entry that closes it
+    diagnostics::flushTo(logger);
     // incluir log INFO de conclusao da simulacao
     logger.log(LOGGER_INFO, LOG_INFO_SIMULATION_FINISHED, "", "", "SUCESSO");
     // gravar arquivo de log
