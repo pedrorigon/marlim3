@@ -471,6 +471,28 @@ module MarlimComposicional
 
 
 ! ========================================================================================================================
+!       LEITURA DE SOMENTE O NÚMERO DE COMPONENTES, CONFORME A FONTE DO ARQUIVO EXTERNO (SEM TOCAR NAS PROPRIEDADES)
+! ========================================================================================================================
+subroutine ReadComponentCountFromExternalFile(sFileNameToUse, iExternalFileSource, iNComp, iIER)
+
+    implicit none
+
+    character(len=*), intent(in) :: sFileNameToUse                ! Nome (caminho completo) do arquivo externo.
+    integer(c_int), intent(in) :: iExternalFileSource             ! Índice referente à fonte do arquivo externo, conforme convenção.
+    integer(c_int), intent(out) :: iNComp                         ! RESULTADO: Número de componentes.
+    integer(c_int), intent(out) :: iIER                           ! RESULTADO: Código de erros, conforme convenção.
+
+    if(iExternalFileSource.EQ.FLUIDEXTERNALSOURCE_PVTSIM_CTM) then
+        call ReadComponentCountFromPVTSIMFileCTM(sFileNameToUse, iNComp, iIER)
+    else
+        iNComp = 0
+        iIER = ERROR_InvalidExternalFileForMixtureProperties
+    end if
+
+end subroutine ReadComponentCountFromExternalFile
+
+
+! ========================================================================================================================
 !       ROTINA AUXILIAR A SER CHAMADA PELO MARLIM TRANSIENTE PARA OBTER SOMENTE O NÚMERO DE "PSEUDOS" DE ARQUIVO EXTERNO!
 ! ========================================================================================================================
 subroutine GetMixtureComponentNumberFromExternalFile(sExternalFileName, iExternalFileNameLength, iExternalFileSource, &
@@ -489,27 +511,14 @@ subroutine GetMixtureComponentNumberFromExternalFile(sExternalFileName, iExterna
     integer(c_int), intent(out) :: iIER                           ! RESULTADO: Código de erros, conforme convenção.
 
     ! ------------ DECLARAÇÃO E DESCRIÇÃO DAS VARIÁVEIS LOCAIS:
-    type(c_ptr) :: oZ                               ! "Placeholder" sem função.
-    type(c_ptr) :: oMW                              ! "Placeholder" sem função.
-    type(c_ptr) :: oTc                              ! "Placeholder" sem função.
-    type(c_ptr) :: oPc                              ! "Placeholder" sem função.
-    type(c_ptr) :: oW                               ! "Placeholder" sem função.
-    type(c_ptr) :: oParachors                       ! "Placeholder" sem função.
-    type(c_ptr) :: oKij                             ! "Placeholder" sem função.
-    type(c_ptr) :: oLij                             ! "Placeholder" sem função.
-    type(c_ptr) :: oTIndep_Peneloux                 ! "Placeholder" sem função.
-    integer(c_int) :: iThermodynamicModel           ! "Placeholder" sem função.
-    type(c_ptr) :: oCpIGCoefs                       ! "Placeholder" sem função.
-    type(c_ptr) :: oInputForViscosity               ! "Placeholder" sem função.
+    character(:), allocatable :: sFileNameToUse
+    integer :: i                                                  ! Índice de laços "do", etc.
 
     ! ------------ PROCEDIMENTOS:
-    iIER = ERROR_EverythingOK
+    allocate(character(iExternalFileNameLength) :: sFileNameToUse)
+    forall(i=1:iExternalFileNameLength) sFileNameToUse(i:i) = sExternalFileName(i)
 
-    iNComp = -10
-
-    call ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFileNameLength, iExternalFileSource, &
-         iNComp, oZ, oMW, oTc, oPc, oW, oParachors, oKij, oLij, oTIndep_Peneloux, iThermodynamicModel, &
-         oCpIGCoefs, oInputForViscosity, iIER)
+    call ReadComponentCountFromExternalFile(sFileNameToUse, iExternalFileSource, iNComp, iIER)
 
 end subroutine GetMixtureComponentNumberFromExternalFile
 
@@ -530,7 +539,7 @@ subroutine ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFil
     integer(c_int), intent(in), value :: iExternalFileNameLength    ! Tamanho do nome (caminho completo) desse arquivo externo.
     integer(c_int), value, intent(in) :: iExternalFileSource        ! Índice referente à fonte de obtenção do arquivo externo, conforme convenção.
 
-    integer(c_int), intent(inout) :: iNComp                         ! RESULTADO: Número de componentes (dar negativo para ler apenas ele).
+    integer(c_int), intent(inout) :: iNComp                         ! RESULTADO: Número de componentes (negativo ou zero para ler apenas ele).
     type(c_ptr), value, intent(in) :: oZ                            ! RESULTADO: Vetor de frações molares GLOBAIS dos componentes na mistura.
     type(c_ptr), value, intent(in) :: oMW                           ! RESULTADO: Vetor de massas molares dos componentes na mistura (g/gmol).
     type(c_ptr), value, intent(in) :: oTc                           ! RESULTADO: Vetor de temperaturas críticas dos componentes na mistura.
@@ -560,19 +569,21 @@ subroutine ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFil
     real(c_double), dimension(:,:), pointer :: temp_oCpIGCoefs      ! Mapeamento do argumento "oCpIGCoefs".
     real(c_double), dimension(4) :: oPVTSIMViscCSPTuningParam_local ! Coeficientes ajustados para o método CSP de viscosidade
     type(InputForViscosity), pointer :: temp_oInputForViscosity
-    logical :: bReadingNumberOfComponents
     integer :: iPvtSimCTMFileUnit
 
     ! ------------ PROCEDIMENTOS:
 
     iIER = ERROR_EverythingOK
 
-    ! Lendo apenas o número de componentes?
-    bReadingNumberOfComponents = (iNComp.LT.0)
-
     ! Pré-tratamento do nome do arquivo:
     allocate(character(iExternalFileNameLength) :: sFileNameToUse)
     forall(i=1:iExternalFileNameLength) sFileNameToUse(i:i) = sExternalFileName(i)
+
+    ! Pedido só da contagem: nenhum dos vetores é lido nem passado adiante.
+    if(iNComp.LE.0) then
+        call ReadComponentCountFromExternalFile(sFileNameToUse, iExternalFileSource, iNComp, iIER)
+        return
+    end if
 
     ! Proceder de acordo com o tipo de arquivo:
     whichFileType: if(iExternalFileSource.EQ.FLUIDEXTERNALSOURCE_PVTSIM_CTM) then
@@ -580,21 +591,19 @@ subroutine ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFil
         ! Arquivo "ctm" do PVTSIM!
 
         ! Mapeamento de vetores:
-        if(iNComp.GT.0) then
-            call c_f_pointer(oZ, temp_oZ, [iNComp])
-            call c_f_pointer(oTc, temp_oTc, [iNComp])
-            call c_f_pointer(oPc, temp_oPc, [iNComp])
-            call c_f_pointer(oW, temp_oW, [iNComp])
-            call c_f_pointer(oParachors, temp_oParachors, [iNComp])
-            call c_f_pointer(oKij, temp_oKij, [iNComp, iNComp])
-            call c_f_pointer(oLij, temp_oLij, [iNComp, iNComp])
-            call c_f_pointer(oTIndep_Peneloux, temp_oTIndep_Peneloux, [iNComp])
-            call c_f_pointer(oMW, temp_oMW, [iNComp])
-            call c_f_pointer(oCpIGCoefs, temp_oCpIGCoefs, [4, iNComp])
-            call c_f_pointer(oInputForViscosity, temp_oInputForViscosity)
-        end if
+        call c_f_pointer(oZ, temp_oZ, [iNComp])
+        call c_f_pointer(oTc, temp_oTc, [iNComp])
+        call c_f_pointer(oPc, temp_oPc, [iNComp])
+        call c_f_pointer(oW, temp_oW, [iNComp])
+        call c_f_pointer(oParachors, temp_oParachors, [iNComp])
+        call c_f_pointer(oKij, temp_oKij, [iNComp, iNComp])
+        call c_f_pointer(oLij, temp_oLij, [iNComp, iNComp])
+        call c_f_pointer(oTIndep_Peneloux, temp_oTIndep_Peneloux, [iNComp])
+        call c_f_pointer(oMW, temp_oMW, [iNComp])
+        call c_f_pointer(oCpIGCoefs, temp_oCpIGCoefs, [4, iNComp])
+        call c_f_pointer(oInputForViscosity, temp_oInputForViscosity)
 
-        call ReadMixtureComponentsFromPVTSIMFileCTM(sFileNameToUse, (iNComp.LT.0), iNComp, temp_oZ, temp_oMW, temp_oTc, &
+        call ReadMixtureComponentsFromPVTSIMFileCTM(sFileNameToUse, iNComp, temp_oZ, temp_oMW, temp_oTc, &
                         temp_oPc, temp_oW, temp_oParachors, temp_oKij, temp_oLij, temp_oTIndep_Peneloux, iThermodynamicModel, &
                         temp_oCpIGCoefs, oPVTSIMViscCSPTuningParam_local, iIER)
 
@@ -608,9 +617,7 @@ subroutine ReadMixtureComponentsFromExternalFile(sExternalFileName, iExternalFil
         if(iIER.NE.ERROR_EverythingOK) return
 
             ! "Struct" de viscosidade:
-        if(.NOT.bReadingNumberOfComponents) then
-            temp_oInputForViscosity%oPVTSIMViscCSPTuningParam = oPVTSIMViscCSPTuningParam_local
-        end if
+        temp_oInputForViscosity%oPVTSIMViscCSPTuningParam = oPVTSIMViscCSPTuningParam_local
 
     else whichFileType
 
