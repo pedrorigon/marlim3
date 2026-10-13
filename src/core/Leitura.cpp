@@ -8556,7 +8556,7 @@ void Ler::parse_fonte_massa(JSON_entrada_fonteMassa& fonte_massa_json) {
 					fontem[0].vazMasT[j] =CCVPres.mass[j];
 					fontem[0].vazMasC[j] =CCVPres.mass[j]*CCVPres.bet[j];
 					if(tipoFluido==1){
-						fontem[0].vazMasC[j] *=(fluc.MasEspFlu(1.01, 20.)/flup[fontem[0].indfluP].Deng*1.225);
+						fontem[0].vazMasC[j] *=(fluc.standardDensity()/flup[fontem[0].indfluP].Deng*1.225);
 					}
 					fontem[0].vazMasG[j] =0.;
 					fontem[0].tempo[j] =CCVPres.tempo[j];
@@ -17388,7 +17388,7 @@ double Ler::fqlstTot(Cel* const celula,int i, double tempo){
 		qlsC = 86400 * celula[i].QL * beti
 				* celula[i].fluicol.MasEspFlu(
 						celula[i].pres, celula[i].temp)
-				/ celula[i].fluicol.MasEspFlu(1., 15);
+				/ celula[i].fluicol.standardDensity();
 	return qowstd + qlsC;
 }
 double Ler::fqlwst(Cel* const celula,int i, double tempo){
@@ -18192,7 +18192,7 @@ void Ler::imprimeProfileG(CelG* const celula,
 					flut[i][k] = (celula[i].VGasR) * 86400 / (dgi * 1.225);
 				} else {
 					flut[i][k] = (celula[i].VGasR) * 86400
-							/ celula[i].MasEspFlu(1.0, 15.6);
+							/ celula[i].completionFluidStandardDensity();
 				}
 
 				k++;
@@ -18989,7 +18989,7 @@ void Ler::imprimeTrend(Cel* const celula,
 				qlsC = 86400 * celula[m].QL * beti
 						* celula[m - 1].fluicol.MasEspFlu(celula[m - 1].pres,
 								celula[m - 1].temp)
-						/ celula[m - 1].fluicol.MasEspFlu(1., 15);
+						/ celula[m - 1].fluicol.standardDensity();
 			flut[linha][k] = qowstd + qlsC;
 			k++;
 		}
@@ -19165,7 +19165,7 @@ void Ler::imprimeTrend(Cel* const celula,
 				double fw=celula[j].FW;
 				double beta=celula[j].bet;
 				double rhocPT=celula[j].fluicol.MasEspFlu(pres, temp);
-				double rhocST=celula[j].fluicol.rholStd;
+				double rhocST=celula[j].fluicol.standardDensity();
 				double hol=(1.-celula[j].alf);
 				double vop=(1-beta)*(1-fw)*hol/bo;
 				double voc=beta*hol*rhocPT/rhocST;
@@ -19186,7 +19186,7 @@ void Ler::imprimeTrend(Cel* const celula,
 				double fw=celula[j].FW;
 				double beta=celula[j].bet;
 				double rhocPT=celula[j].fluicol.MasEspFlu(pres, temp);
-				double rhocST=celula[j].fluicol.rholStd;
+				double rhocST=celula[j].fluicol.standardDensity();
 				double hol=(1.-celula[j].alf);
 				double vop=(1-beta)*(1-fw)*hol/bo;
 				double voc=beta*hol*rhocPT/rhocST;
@@ -19230,7 +19230,7 @@ void Ler::imprimeTrend(Cel* const celula,
 				double rhoaPT=celula[j].flui.MasEspAgua(pres, temp);
 				double rhoaST=celula[j].flui.MasEspAgua(1.01, 20.);
 				double rhocPT=celula[j].fluicol.MasEspFlu(pres, temp);
-				double rhocST=celula[j].fluicol.rholStd;
+				double rhocST=celula[j].fluicol.standardDensity();
 				double hol=(1.-celula[j].alf);
 				double massg=(1.-hol)*rhogPT*celula[j].duto.area*celula[j].dx;
 				double masspO=(1.-beta)*hol*(1.-fw)*rhooPT*celula[j].duto.area*celula[j].dx;

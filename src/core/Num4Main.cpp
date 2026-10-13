@@ -1856,7 +1856,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             QGmist += Qgas[k];
                             qlmistStd += (qw1 + qostd[k] +
                                           Qcomp[k] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k]) /
-                                              malha[i].celula[0].fluicol.MasEspFlu(1.001, 15.));
+                                              malha[i].celula[0].fluicol.standardDensity());
                             betmist += (Qcomp[k]);
 
                             afluAlimenta += 1;
@@ -1987,7 +1987,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             QGmist -= Qgas[k + afluAlimenta];
                             qlmistStd -= (qw1 + qostd[k + afluAlimenta] +
                                           Qcomp[k + afluAlimenta] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k + afluAlimenta]) /
-                                              malha[i].celula[0].fluicol.MasEspFlu(1.001, 15.));
+                                              malha[i].celula[0].fluicol.standardDensity());
                             betmist -= (Qcomp[k + afluAlimenta]);
 
                             coleAlimenta += 1;
@@ -3374,11 +3374,11 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
                 noConv.Qlmist += Qliq[k];
                 noConv.qlmistStd += (qw1 + qostd[k] +
                                      Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                         malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                         malha[i].celula[recb].fluicol.standardDensity());
                 noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
                 noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                   malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                   malha[i].celula[recb].fluicol.standardDensity());
             }
         } else if (malha[ind].celula[fim + 1].MC < 0) {
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
@@ -3423,9 +3423,9 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
                 noConv.mgasmistNeg += Mgas[k];
                 noConv.qlmistStdNeg += (qw1 + qostd[k] +
                                         Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                            malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                            malha[i].celula[recb].fluicol.standardDensity());
                 noConv.qcmistStdNeg += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                        malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                        malha[i].celula[recb].fluicol.standardDensity());
             }
         }
     }
@@ -3507,12 +3507,12 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
             noConv.Qlmist += Qliq[k];
             noConv.qlmistStd += (qw1 + qostd[k] +
                                  Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
             noConv.qcmistStd += (qw1 + qostd[k] +
                                  Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
             noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                               malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                               malha[i].celula[recb].fluicol.standardDensity());
         }
     }
 
@@ -4433,7 +4433,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
                                                 (malha[aux].celula[0].acsr.injl.QLiq) > 0) {
-                                                double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+                                                double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.standardDensity();
                                                 double vazmassc = rlcA * malha[aux].celula[0].acsr.injl.QLiq * malha[aux].celula[0].acsr.injl.bet / 86400;
                                                 double massic = malha[aux].celula[0].acsr.injl.QLiq *
                                                                 (1. - malha[aux].celula[0].acsr.injl.bet) / 86400;
@@ -4477,7 +4477,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                         Resolv[aux] = 1;
                                         resolvGlob += Resolv[aux];
                                         ciclomalha++;
-                                        double rlcA = malha[aux].celula[0].acsr.injm.fluidocol.MasEspFlu(1.001, 15.);
+                                        double rlcA = malha[aux].celula[0].acsr.injm.fluidocol.standardDensity();
                                         double Rhogs = malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
                                         double Rhols = (1000 * 141.5 / (131.5 + malha[aux].celula[0].acsr.injm.FluidoPro.API)) * (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW) + 1000. * malha[aux].celula[0].acsr.injm.FluidoPro.Denag *
                                                                                                                                                                                           malha[aux].celula[0].acsr.injm.FluidoPro.BSW;
@@ -5255,11 +5255,11 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
                 noConv.Qlmist += Qliq[k];
                 noConv.qlmistStd += (qw1 + qostd[k] +
                                      Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                         malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                         malha[i].celula[recb].fluicol.standardDensity());
                 noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
                 noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                   malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                   malha[i].celula[recb].fluicol.standardDensity());
             }
         } else if (malha[ind].celula[fim + 1].MC < 0) {
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
@@ -5304,9 +5304,9 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
                 noConv.mgasmistNeg += Mgas[k];
                 noConv.qlmistStdNeg += (qw1 + qostd[k] +
                                         Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                            malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                            malha[i].celula[recb].fluicol.standardDensity());
                 noConv.qcmistStdNeg += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                        malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                        malha[i].celula[recb].fluicol.standardDensity());
             }
         }
     }
@@ -5381,11 +5381,11 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
             noConv.Qlmist += Qliq[k];
             noConv.qlmistStd += (qw1 + qostd[k] +
                                  Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
             noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                 malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                 malha[i].celula[recb].fluicol.standardDensity());
             noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                               malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                               malha[i].celula[recb].fluicol.standardDensity());
         }
     }
 
@@ -6035,11 +6035,11 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 noConv.Qlmist += Qliq[k];
                 noConv.qlmistStd += (qw1 + qostd[k] +
                                      Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                         malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                         malha[i].celula[recb].fluicol.standardDensity());
                 noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
                 noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                   malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                   malha[i].celula[recb].fluicol.standardDensity());
             }
         } else if (malha[ind].celula[fim + 1].MC < 0) {
             if (inativo[ind] == 0 && arqRede.malha[ind].perm == 1) {
@@ -6088,9 +6088,9 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 noConv.mgasmistNeg += Mgas[k];
                 noConv.qlmistStdNeg += (qw1 + qostd[k] +
                                         Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                            malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                            malha[i].celula[recb].fluicol.standardDensity());
                 noConv.qcmistStdNeg += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                        malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                        malha[i].celula[recb].fluicol.standardDensity());
             }
         }
     }
@@ -6174,11 +6174,11 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
             noConv.Qlmist += Qliq[k];
             noConv.qlmistStd += (qw1 + qostd[k] +
                                  Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                     malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                     malha[i].celula[recb].fluicol.standardDensity());
             noConv.qcmistStd += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                                 malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                                 malha[i].celula[recb].fluicol.standardDensity());
             noConv.betmist += (Qcomp[k] * malha[i].celula[recb].fluicol.MasEspFlu(pres, temp[k]) /
-                               malha[i].celula[recb].fluicol.MasEspFlu(1.001, 15.));
+                               malha[i].celula[recb].fluicol.standardDensity());
         }
     }
     if (kpos > 0) {
@@ -7187,7 +7187,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                         } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
                                                 (malha[aux].celula[0].acsr.injl.QLiq) > 0) {
-                                                double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+                                                double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.standardDensity();
                                                 double vazmassc = rlcA * malha[aux].celula[0].acsr.injl.QLiq * malha[aux].celula[0].acsr.injl.bet / 86400;
                                                 double massic = malha[aux].celula[0].acsr.injl.QLiq *
                                                                 (1. - malha[aux].celula[0].acsr.injl.bet) / 86400;
@@ -7232,7 +7232,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                             Resolv[aux] = 1;
                                             resolvGlob += Resolv[aux];
                                             ciclomalha++;
-                                            double rlcA = malha[aux].celula[0].acsr.injm.fluidocol.MasEspFlu(1.001, 15.);
+                                            double rlcA = malha[aux].celula[0].acsr.injm.fluidocol.standardDensity();
                                             double Rhogs = malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225; // cel[ind].acsr.injl.FluidoPro.MasEspGas(1, 15);
                                             double Rhols = (1000 * 141.5 / (131.5 + malha[aux].celula[0].acsr.injm.FluidoPro.API)) * (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW) + 1000. * malha[aux].celula[0].acsr.injm.FluidoPro.Denag *
                                                                                                                                                                                               malha[aux].celula[0].acsr.injm.FluidoPro.BSW;
@@ -7630,7 +7630,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
 
                 sistem1.tempE = sistem1.arq.CCPres.temperatura[0]; // temperatura de entrada
                 sistem1.presE = sistem1.arq.CCPres.pres[0];        // pressão de entrada
-                double rcst = sistem1.celula[0].fluicol.MasEspFlu(1.01, 15);
+                double rcst = sistem1.celula[0].fluicol.standardDensity();
                 double rcis = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                 if ((1 - sistem1.betaE) > 1e-10)
                     sistem1.betaE = sistem1.arq.CCPres.bet[0] * rcst / rcis; // beta na condicao in-situ
@@ -7724,7 +7724,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     double rgST = fluCP.Deng * 1.225;
                     double rg = fluCP.MasEspGas(sistem1.presE, sistem1.tempE);
                     double rl = fluCP.MasEspoleo(sistem1.presE, sistem1.tempE);
-                    double rcST = sistem1.celula[0].fluicol.MasEspFlu(1.01, 20.);
+                    double rcST = sistem1.celula[0].fluicol.standardDensity();
                     double rc = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                     double val1;
                     double val2;
@@ -7750,7 +7750,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     double rgST = fluCP.Deng * 1.225;
                     double rg = fluCP.MasEspGas(sistem1.presE, sistem1.tempE);
                     double rl = fluCP.MasEspoleo(sistem1.presE, sistem1.tempE);
-                    double rcST = sistem1.celula[0].fluicol.MasEspFlu(1.01, 20.);
+                    double rcST = sistem1.celula[0].fluicol.standardDensity();
                     double rc = sistem1.celula[0].fluicol.MasEspFlu(sistem1.presE, sistem1.tempE);
                     double val1 = (rcST / rc) * (rg / rgST) * sistem1.arq.CCPres.bet[0] / tit;
                     double val2 = (rg / rl) * (1 - tit) / tit;
@@ -8908,7 +8908,7 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
             }
             if (sistem1.arq.lingas == 1 && sistem1.gasLift.celulaG[0].tipoCC == 0) {
                 sistem1.arq.gasinj.chuteVaz = 1;
-                sistem1.arq.gasinj.vazgas[0] = sistem1.gasLift.celulaG[0].VGasR * 86400. / (sistem1.gasLift.celulaG[0].flui.MasEspGas(1., 15.6));
+                sistem1.arq.gasinj.vazgas[0] = sistem1.gasLift.celulaG[0].VGasR * 86400. / (sistem1.gasLift.celulaG[0].flui.MasEspGas(sisprod::kStandardPressureKgfPerCm2, sisprod::kStandardTemperatureCelsius));
             }
             if (iSeq == 153 || iSeq == 60) {
             }
@@ -9358,7 +9358,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                     malha[i].tempE = malha[i].arq.CCPres.temperatura[0];
                     malha[i].presE = malha[i].arq.CCPres.pres[0];
                     double rgoentrada = 0.;
-                    double rcst = malha[i].celula[0].fluicol.MasEspFlu(1.01, 15);
+                    double rcst = malha[i].celula[0].fluicol.standardDensity();
                     double rcis = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                     malha[i].betaE = malha[i].arq.CCPres.bet[0] * rcst / rcis;
 
@@ -9436,7 +9436,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                             double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                             double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                             double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                            double rcST = malha[i].celula[0].fluicol.standardDensity();
                             double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
@@ -9460,7 +9460,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                             double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                             double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                             double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                            double rcST = malha[i].celula[0].fluicol.standardDensity();
                             double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
@@ -9489,7 +9489,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                         double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                         double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                        double rcST = malha[i].celula[0].fluicol.standardDensity();
                         double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                         double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
@@ -9513,7 +9513,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                         double rg = fluCP.MasEspGas(malha[i].presE, malha[i].tempE);
                         double rl = fluCP.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double tit = fluCP.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                        double rcST = malha[i].celula[0].fluicol.standardDensity();
                         double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                         double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
@@ -9544,7 +9544,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                 double rhogstd = malha[i].celula[0].acsr.injm.FluidoPro.Deng * 1.225;
                 double tit = malha[i].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
                 (*arqRede.vg1dSP).somavaz += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
-                                             malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.rholStd;
+                                             malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.standardDensity();
                 (*arqRede.vg1dSP).somavazG += massTot * tit / rhogstd;
             }
             (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
@@ -10108,7 +10108,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                     malha[i].tempE = malha[i].arq.CCPres.temperatura[0];
                     malha[i].presE = malha[i].arq.CCPres.pres[0];
                     double rgoentrada = 0.;
-                    double rcst = malha[i].celula[0].fluicol.MasEspFlu(1.01, 15);
+                    double rcst = malha[i].celula[0].fluicol.standardDensity();
                     double rcis = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                     malha[i].betaE = malha[i].arq.CCPres.bet[0] * rcst / rcis;
 
@@ -10178,7 +10178,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                             double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
                             double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
                             double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                            double rcST = malha[i].celula[0].fluicol.standardDensity();
                             double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
@@ -10202,7 +10202,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                             double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
                             double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
                             double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                            double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                            double rcST = malha[i].celula[0].fluicol.standardDensity();
                             double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                             double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                             double val2 = (rg / rl) * (1 - tit) / tit;
@@ -10231,7 +10231,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                         double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
                         double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                        double rcST = malha[i].celula[0].fluicol.standardDensity();
                         double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                         double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
@@ -10255,7 +10255,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                         double rg = malha[i].celula[0].flui.MasEspGas(malha[i].presE, malha[i].tempE);
                         double rl = malha[i].celula[0].flui.MasEspoleo(malha[i].presE, malha[i].tempE);
                         double tit = malha[i].celula[0].flui.FracMass(malha[i].presE, malha[i].tempE);
-                        double rcST = malha[i].celula[0].fluicol.MasEspFlu(1.01, 20.);
+                        double rcST = malha[i].celula[0].fluicol.standardDensity();
                         double rc = malha[i].celula[0].fluicol.MasEspFlu(malha[i].presE, malha[i].tempE);
                         double val1 = (rcST / rc) * (rg / rgST) * malha[i].arq.CCPres.bet[0] / tit;
                         double val2 = (rg / rl) * (1 - tit) / tit;
@@ -10286,7 +10286,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                 double rhogstd = malha[i].celula[0].acsr.injm.FluidoPro.Deng * 1.225;
                 double tit = malha[i].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
                 (*arqRede.vg1dSP).somavaz += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
-                                             malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.rholStd;
+                                             malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.standardDensity();
                 (*arqRede.vg1dSP).somavazG += massTot * tit / rhogstd;
             }
             (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
@@ -10738,7 +10738,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
             for (int j = 0; j < dreno[i].nmani; j++) {
                 int itramo = dreno[i].mani[j];
                 malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[itramo].gasLift.celulaG[0].VGasR * 86400 /
-                                                                 malha[itramo].gasLift.celulaG[0].flui.MasEspGas(1.0, 15.6);
+                                                                 malha[itramo].gasLift.celulaG[0].flui.MasEspGas(sisprod::kStandardPressureKgfPerCm2, sisprod::kStandardTemperatureCelsius);
             }
         }
 
@@ -10883,7 +10883,7 @@ void calcPeriAnelGL(span<SProd> malha, int narq, int nfontes, int *indfonte, int
         for (int j = 0; j < dreno[i - malha[indAnel].arq.ninjgas].nmani; j++) {
             int itramo = dreno[i - malha[indAnel].arq.ninjgas].mani[j];
             malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[itramo].gasLift.celulaG[0].VGasR * 86400 /
-                                                             malha[itramo].gasLift.celulaG[0].flui.MasEspGas(1.0, 15.6);
+                                                             malha[itramo].gasLift.celulaG[0].flui.MasEspGas(sisprod::kStandardPressureKgfPerCm2, sisprod::kStandardTemperatureCelsius);
         }
     }
 }
@@ -11450,7 +11450,7 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
             massGas = 0.;
             double beta = malha[iS].celula[0].acsr.injl.bet;
             double rhoP = 141.5 / (131.5 + malha[iS].celula[0].acsr.injl.FluidoPro.API);
-            double rhoC = malha[iS].celula[0].acsr.injl.fluidocol.rholStd;
+            double rhoC = malha[iS].celula[0].acsr.injl.fluidocol.standardDensity();
             massLiqP = (1. - beta) * malha[iS].celula[0].acsr.injl.QLiq * rhoP / 86400;
             massLiqC = beta * malha[iS].celula[0].acsr.injl.QLiq * rhoC / 86400;
         } else if (malha[iS].celula[0].acsr.tipo == 10) {
@@ -12208,14 +12208,14 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
                                 Qcomp[k] = Qliq[k];
                                 cpmist += (Mliq[k] * cpl[k]);
                                 tempmist += (Mliq[k] * cpl[k]) * temp[k];
-                                qlmistStd += (Qcomp[k] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k]) / malha[i].celula[0].fluicol.MasEspFlu(1.001, 15.));
+                                qlmistStd += (Qcomp[k] * malha[i].celula[0].fluicol.MasEspFlu(pres, temp[k]) / malha[i].celula[0].fluicol.standardDensity());
                             } else {
                                 Mgas[k] = malha[ind].celula[fim].MC - malha[ind].celula[fim].Mliqini;
                                 Qliq[k]=Qgas[k] = malha[ind].celula[fim + 1].QG;
                                 Qcomp[k] = 0.;
                                 cpmist += (Mgas[k] * cpl[k]);
                                 tempmist += (Mgas[k] * cpl[k]) * temp[k];
-                                qgmistStd += (Qgas[k] * malha[i].celula[0].flui.MasEspGas(pres, temp[k]) / malha[i].celula[0].flui.MasEspGas(1.001, 15.));
+                                qgmistStd += (Qgas[k] * malha[i].celula[0].flui.MasEspGas(pres, temp[k]) / malha[i].celula[0].flui.MasEspGas(sisprod::kStandardPressureKgfPerCm2, sisprod::kStandardTemperatureCelsius));
                             }
                         }
                     }

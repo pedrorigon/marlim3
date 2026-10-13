@@ -307,7 +307,7 @@ InjLiq &InjLiq::operator=(const InjLiq &vinj) {
 double InjLiq::VMas(const double &pres, const double &temp) {
     // NOTE: For a gas-lift source, the injected flow rate is expressed in Sm3/day, while the mass flow rate is expressed in kg/s.
     double Rhols = (1000. * 141.5 / (131.5 + this->FluidoPro[1])) * (1 - this->FluidoPro[4]) + 1000. * this->FluidoPro[5] * this->FluidoPro[4];
-    return (Rhols * (1. - bet) + bet * fluidocol.MasEspFlu(1., 15)) * QLiq / 86400.;
+    return (Rhols * (1. - bet) + bet * fluidocol.standardDensity()) * QLiq / 86400.;
 }
 
 InjMult::InjMult(double vmp, double vmc, double vmg, double vtemp,

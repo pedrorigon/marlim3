@@ -3901,7 +3901,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
             double qliq = masT * (1. - quality) /
                           state.cells[0].acsr.injg.FluidoPro.MasEspLiq(pchute, state.cells[0].temp);
             double qcomp = state.cells[0].acsr.injg.razCompGas *
-                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
+                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.standardDensity() /
                            state.cells[0].acsr.injg.fluidocol.MasEspFlu(pchute, state.cells[0].temp);
             qcomp /= units::kSecondsPerDay;
             alfini = qgas / (qliq + qcomp + qgas);
@@ -5046,7 +5046,7 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
             double qliq = masT * (1. - quality) /
                           state.cells[0].acsr.injg.FluidoPro.MasEspLiq(state.cells[0].pres, state.cells[0].temp);
             double qcomp = state.cells[0].acsr.injg.razCompGas *
-                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
+                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.standardDensity() /
                            state.cells[0].acsr.injg.fluidocol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
             qcomp /= units::kSecondsPerDay;
             alfini = qgas / (qliq + qcomp + qgas);
@@ -5443,7 +5443,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             double qliq = masT * (1. - quality) /
                           state.cells[0].acsr.injg.FluidoPro.MasEspLiq(state.cells[0].pres, state.cells[0].temp);
             double qcomp = state.cells[0].acsr.injg.razCompGas *
-                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.MasEspFlu(1., 20.) /
+                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.standardDensity() /
                            state.cells[0].acsr.injg.fluidocol.MasEspFlu(state.cells[0].pres, state.cells[0].temp);
             qcomp /= units::kSecondsPerDay;
             if (fabs(qliq + qgas) > 1e-15)
@@ -5695,9 +5695,9 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
     state.gasCells[0].VGasL = 0.;
     if (chutemass < 0) // if no chutemass is given in the parameter list,
                        // the JSON's gas injection value is used
-        state.gasCells[0].massfonteCH = state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(1., 15.6) / units::kSecondsPerDay;
+        state.gasCells[0].massfonteCH = state.input.gasinj.vazgas[0] * state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) / units::kSecondsPerDay;
     else
-        state.gasCells[0].massfonteCH = chutemass * state.gasCells[0].flui.MasEspGas(1., 15.6) / units::kSecondsPerDay;
+        state.gasCells[0].massfonteCH = chutemass * state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) / units::kSecondsPerDay;
     state.gasCells[0].VGasR = state.gasCells[0].massfonteCH;
     state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
 
@@ -5814,7 +5814,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
         } else {
             if (state.input.flashCompleto < 1) {
                 state.cells[0].acsr.injl.QLiq = chute;
-                delp = (1 / (state.cells[0].fluicol.MasEspFlu(state.gasSurfacePressure, state.cells[0].acsr.injl.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * state.cells[0].fluicol.MasEspFlu(1.01, 15.) / units::kSecondsPerDay) / (state.surfaceChoke.AreaGarg), 2.) / units::kPascalPerKgfPerCm2;
+                delp = (1 / (state.cells[0].fluicol.MasEspFlu(state.gasSurfacePressure, state.cells[0].acsr.injl.temp) * state.surfaceChoke.cdchk * 2.)) * pow((chute * state.cells[0].fluicol.standardDensity() / units::kSecondsPerDay) / (state.surfaceChoke.AreaGarg), 2.) / units::kPascalPerKgfPerCm2;
             } else {
                 state.cells[0].acsr.injg.QGas = chute;
                 if (state.input.flashCompleto == 2) {

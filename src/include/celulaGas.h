@@ -151,6 +151,8 @@ class CelG {
     double fric(double re /* Reynolds number. */,
                 double eps /* Relative roughness. */); // Calculate the friction factor.
     double MasEspFlu(double pres, double temp) const; // Calculate the completion-fluid density.
+    // The completion-fluid density at the correlation's own standard conditions, 1 kgf/cm2 and 20 C
+    double completionFluidStandardDensity() const { return MasEspFlu(1., 20.); }
     double VisFlu(double pres, double temp) const;    // Calculate the completion-fluid viscosity.
     double CalorLiq(double pres, double temp) const;  // Calculate the completion-fluid specific heat.
     double CondLiq(double pres, double temp) const;   // Calculate the completion-fluid thermal conductivity.

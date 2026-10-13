@@ -283,7 +283,7 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
                 tit = state.cells[cellIndex].acsr.injg.FluidoPro.FracMassHidra(pr, tr);
                 state.cells[cellIndex].fontemassGR += masT * tit;
                 state.cells[cellIndex].fontemassLR += masT * (1. - tit);
-                double rcomp = state.cells[cellIndex].acsr.injg.fluidocol.MasEspFlu(1., 20.);
+                double rcomp = state.cells[cellIndex].acsr.injg.fluidocol.standardDensity();
                 state.cells[cellIndex].fontemassCR += rcomp * state.cells[cellIndex].acsr.injg.razCompGas * state.cells[cellIndex].acsr.injg.QGas / units::kSecondsPerDay;
             }
         } else {
@@ -293,7 +293,7 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
         }
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
-        double rlcA = state.cells[cellIndex].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
+        double rlcA = state.cells[cellIndex].acsr.injl.fluidocol.standardDensity();
         state.cells[cellIndex].fontemassCR += rlcA * state.cells[cellIndex].acsr.injl.QLiq * state.cells[cellIndex].acsr.injl.bet / units::kSecondsPerDay;
         double massic = state.cells[cellIndex].acsr.injl.QLiq * (1. - state.cells[cellIndex].acsr.injl.bet) / units::kSecondsPerDay;
         double Rhogs = state.cells[cellIndex].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[cellIndex].acsr.injl.FluidoPro.MasEspGas(1, 15);

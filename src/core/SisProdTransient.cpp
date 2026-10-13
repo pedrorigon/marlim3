@@ -1509,7 +1509,7 @@ void refreshInletCondition(const TransientStepState &state) {
             double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
             double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
             double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
-            double rcST = state.cells[0].fluicol.MasEspFlu(1.01, 20.);
+            double rcST = state.cells[0].fluicol.standardDensity();
             double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
             double rlMix = state.inletComplementaryFraction * complementaryDensity + (1. - state.inletComplementaryFraction) * liquidDensity;
             double val1 = ((1. - state.inletComplementaryFraction) * liquidDensity * titH / (1. - titH));
@@ -1519,7 +1519,7 @@ void refreshInletCondition(const TransientStepState &state) {
             double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
             double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
             double quality = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
-            double rcST = state.cells[0].fluicol.MasEspFlu(1.01, 20.);
+            double rcST = state.cells[0].fluicol.standardDensity();
             double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
             double val1 = (rcST / complementaryDensity) * (gasDensity / rgST) * state.input.CCPres.bet[0] / quality;
             double val2 = (gasDensity / liquidDensity) * (1 - quality) / quality;

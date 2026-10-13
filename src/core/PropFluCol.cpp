@@ -140,6 +140,12 @@ double ProFluCol::MasEspFlu(double pres, double temper) const {
     }
 }
 
+double ProFluCol::standardDensity() const {
+    if (injPoc == 2 || descarga == 1 || tipoF == 1)
+        return MasEspFlu(1., 20.);
+    return rholStd;
+}
+
 double ProFluCol::VisFlu(double pres, double temper) const {
     // Viscosidade de �leo morto pelo m�todo ASTM
     // Viscosidade de �leo morto em fun��o da temperatura em Celcius, viscosidade em cP
