@@ -181,6 +181,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
   PBPVTSim=0;
   TBPVTSim=0;
   TabRSLivia=0;
+  rsTablePressureCount=0;
+  rsTableTemperatureCount=0;
   tabRSPB=0;
 
   flashCompleto=vflash;
@@ -565,6 +567,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
   PBPVTSim=0;
   TBPVTSim=0;
   TabRSLivia=0;
+  rsTablePressureCount=0;
+  rsTableTemperatureCount=0;
  tabRSPB=0;
  flashCompleto=vflash;
  tabelaDinamica=0;
@@ -947,6 +951,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
   PBPVTSim=0;
   TBPVTSim=0;
   TabRSLivia=0;
+  rsTablePressureCount=0;
+  rsTableTemperatureCount=0;
   tabRSPB=0;
   flashCompleto=vflash;
   tabelaDinamica=0;
@@ -1276,6 +1282,8 @@ ProFlu::ProFlu(const ProFlu& fluido):
   PBPVTSim=fluido.PBPVTSim;
   TBPVTSim=fluido.TBPVTSim;
   TabRSLivia=fluido.TabRSLivia;
+  rsTablePressureCount=fluido.rsTablePressureCount;
+  rsTableTemperatureCount=fluido.rsTableTemperatureCount;
   tabRSPB=fluido.tabRSPB;
 
   flashCompleto=fluido.flashCompleto;
@@ -1602,6 +1610,8 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){
   PBPVTSim=fluido.PBPVTSim;
   TBPVTSim=fluido.TBPVTSim;
   TabRSLivia=fluido.TabRSLivia;
+  rsTablePressureCount=fluido.rsTablePressureCount;
+  rsTableTemperatureCount=fluido.rsTableTemperatureCount;
  tabRSPB=fluido.tabRSPB;
 
  flashCompleto=fluido.flashCompleto;
@@ -1968,17 +1978,19 @@ ProFlu ProFlu::operator+(const ProFlu& fluido) const{
 
 }
 
-double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int renovaInd*/) const{
+double ProFlu::interpolaVarProd(double pres, double temp, double** Var, int pressureCount, int temperatureCount) const{
     int ipres=0;
     int itemp=0;
     double varprop;
-    const int ndiv=npontos-1;
-    const int upperIndex=ndiv+1;
+    // A table with sizes of its own is not on the flash axes, so the search ranges built for those do not apply.
+    const bool flashAxes=pressureCount==0 && temperatureCount==0;
+    const int pressureUpper=pressureCount>0 ? pressureCount : npontos;
+    const int temperatureUpper=temperatureCount>0 ? temperatureCount : npontos;
     double* const tempAxis=Var[0];
     const double presMin=Var[1][0];
-    const double presMax=Var[upperIndex][0];
+    const double presMax=Var[pressureUpper][0];
     const double tempMin=tempAxis[1];
-    const double tempMax=tempAxis[upperIndex];
+    const double tempMax=tempAxis[temperatureUpper];
     if(pres<presMin || pres>=presMax || temp<tempMin || temp>=tempMax){
     	varprop=1.225*Deng;
 		if(pres>=presMax|| temp<tempMin || temp>=tempMax){
@@ -1999,7 +2011,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       int e, m, d;
       // The search ranges exist only for tables on a flash table's axes; any other table is
       // bracketed by bisection over the whole axis.
-      if(erroP==0 && !pchange.empty() && pres>=Var[indMinEquP][0]){
+      if(flashAxes && erroP==0 && !pchange.empty() && pres>=Var[indMinEquP][0]){
           int busca=0;
           while(pres>pchange[busca])busca++;
           double pmax=Var[ipchange[busca]][0];
@@ -2008,7 +2020,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       else{
         e = 1;
-        if(erroP==1 || pchange.empty())d = ndiv+1;
+        if(!flashAxes || erroP==1 || pchange.empty())d = pressureUpper;
         else d = indMinEquP;
         ipres=d;
         while (e <= d) {
@@ -2017,7 +2029,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
  	    	  ipres=m;
  	    	  break;
  	      }
- 	      else if (m==ndiv+1 && Var[m][0] == pres){
+ 	      else if (m==pressureUpper && Var[m][0] == pres){
  	    	ipres=m-1;
  	    	break;
  	      }
@@ -2029,7 +2041,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 	      else d = m - 1;
 	    }
       }
-      if(erroT==0 && !tchange.empty() && temp>=Var[0][indMinEquT]){
+      if(flashAxes && erroT==0 && !tchange.empty() && temp>=Var[0][indMinEquT]){
           int busca=0;
           while(temp>tchange[busca])busca++;
           double tmax=tempAxis[itchange[busca]];
@@ -2038,7 +2050,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       else{
         e = 1;
-        if(erroT==1 || tchange.empty())d = ndiv+1;
+        if(!flashAxes || erroT==1 || tchange.empty())d = temperatureUpper;
         else d = indMinEquT;
         itemp=d;
         while (e <= d) {
@@ -2047,7 +2059,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
             itemp=m;
             break;
           }
-          else if (m==ndiv+1 && tempAxis[m] == temp){
+          else if (m==temperatureUpper && tempAxis[m] == temp){
             itemp=m-1;
             break;
           }
@@ -2398,10 +2410,11 @@ double ProFlu::interpolaRS( double pres, double temp)const{
   double delt=TabRSLivia[0][2]-TabRSLivia[0][1];
   int itemp=floor((temp-tmin)/delt)+2;
 
-  double pmax=TabRSLivia[npontos][0];
-  double delp=TabRSLivia[npontos][0]-TabRSLivia[npontos-1][0];
+  const int pressurePoints=rsPressurePoints();
+  double pmax=TabRSLivia[pressurePoints][0];
+  double delp=TabRSLivia[pressurePoints][0]-TabRSLivia[pressurePoints-1][0];
   int ipres=floor((pmax-pres)/delp)+1;
-  ipres=npontos-ipres;
+  ipres=pressurePoints-ipres;
 
   double razpres=(pres-TabRSLivia[ipres][0])/(TabRSLivia[ipres+1][0]-TabRSLivia[ipres][0]);
   double raztemp=(temp-TabRSLivia[0][itemp])/(TabRSLivia[0][itemp+1]-TabRSLivia[0][itemp]);
@@ -2424,8 +2437,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
  double pbtemp;
  if(flashCompleto==0 || flashCompleto==3){
     if(corrSat==0 || awaitingSaturationTable){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2441,8 +2454,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     }
 
     else if(corrSat==1){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	     rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2482,8 +2495,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     }
 
     else if(corrSat==2){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2502,8 +2515,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
 
 
     else if(corrSat==3){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2536,9 +2549,9 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     }
     else if(corrSat==4){
 
-       if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
-         rstemp=interpolaVarProd(pres,temp, TabRSLivia);
+       if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
+         rstemp=interpolaVarProd(pres,temp, TabRSLivia, rsPressurePoints(), rsTemperaturePoints());
          return rstemp*IRGO;
        }
        else{

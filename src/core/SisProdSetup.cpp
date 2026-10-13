@@ -69,20 +69,36 @@ void SProd::assignPvtSimBubbleTablesToCells() {
 
 namespace {
 
-/// Reads one row of a PVTSim table file: skips words up to `name`, then
-/// converts the numbers on the rest of that line into row[0] to row[last].
-template <typename Row, typename Convert>
-void readPvtSimRow(ifstream &file, string &word, const char *name, Row &row, int last, Convert convert) {
-    while (word != name)
-        file >> word;
-    char line[4000];
-    file.get(line, 4000);
-    char *token = strtok(line, " ,()=");
-    row[0] = convert(atof(token));
-    for (int k = 1; k <= last; k++) {
-        token = strtok(NULL, " ,");
-        row[k] = convert(atof(token));
+/// Reads one row of a PVTSim table file: skips words up to `name`, then converts every number on the rest of that
+/// line. A missing row, or one with fewer than two numbers, ends the run naming the file.
+template <typename Convert>
+vector<double> readPvtSimRow(ifstream &file, string &word, const char *name, const string &fileName, Convert convert) {
+    while (word != name && file >> word) {
     }
+    if (word != name)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       string("PVTSim file without the row ") + name, "pvtsimArq", fileName);
+    string line;
+    getline(file, line);
+    vector<double> values;
+    for (char *token = strtok(line.data(), " ,()=\\"); token != nullptr; token = strtok(nullptr, " ,()=\\")) {
+        char *end = nullptr;
+        double value = strtod(token, &end);
+        if (end != token)
+            values.push_back(convert(value));
+    }
+    if (values.size() < 2)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       string("PVTSim row with fewer than two values: ") + name, "pvtsimArq", fileName);
+    return values;
+}
+
+/// True when every value is above the one before it.
+bool strictlyIncreasing(const vector<double> &axis) {
+    for (size_t k = 1; k < axis.size(); k++)
+        if (!(axis[k] > axis[k - 1]))
+            return false;
+    return true;
 }
 
 /// Writes a table to the file at `path`, replacing it, after a `# header` line naming the quantity when one is given.
@@ -99,11 +115,6 @@ void writeTable(const string &path, const FullMtx<double> &table, const string &
 /// and writes perfilBolha; with tabRSPB on, also reads the solution gas-oil ratio
 /// table and writes perfilRSLivia.
 void SProd::loadPvtSimSaturationTables() {
-    int ndiv = arq.tabent.npont - 1;
-    tables.PBPVTSim = vector<double>(ndiv + 1);
-    tables.TBPVTSim = vector<double>(ndiv + 1);
-    vector<double> PresPVTSim(ndiv + 1);
-
     string impfile;
     impfile = arq.pvtsimarq;
     string dadosMR = impfile;
@@ -112,27 +123,38 @@ void SProd::loadPvtSimSaturationTables() {
     char line[4000];
     lendoPVTSim.get(line, 4000);
     lendoPVTSim >> chave;
-    int lacoleitura = ndiv;
-    readPvtSimRow(lendoPVTSim, chave, "PRESSURE", PresPVTSim, lacoleitura,
-                  [](double value) { return value / units::kPascalPerKgfPerCm2; });
-    readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", tables.PBPVTSim, lacoleitura,
-                  [](double value) { return value / units::kPascalPerPsi; });
-    readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", tables.TBPVTSim, lacoleitura, [](double value) { return value; });
+    // The file's own grid: its rows set the table sizes, apart from the input table's resolution.
+    vector<double> PresPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                              [](double value) { return value / units::kPascalPerKgfPerCm2; });
+    tables.PBPVTSim = readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", dadosMR,
+                                    [](double value) { return value / units::kPascalPerPsi; });
+    tables.TBPVTSim = readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", dadosMR, [](double value) { return value; });
+    if (tables.PBPVTSim.size() != tables.TBPVTSim.size())
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       "PVTSim bubble-point curve with different numbers of pressures and temperatures",
+                                       "pvtsimArq", dadosMR);
+    if (!strictlyIncreasing(PresPVTSim) || !strictlyIncreasing(tables.TBPVTSim))
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       "PVTSim pressure or bubble-temperature axis not strictly increasing", "pvtsimArq",
+                                       dadosMR);
+    const int pressureCount = static_cast<int>(PresPVTSim.size());
+    const int bubbleCount = static_cast<int>(tables.TBPVTSim.size());
     assignPvtSimBubbleTablesToCells();
 
-    FullMtx<double> BolhaTemp(ndiv + 2, 2);
-    for (int i = 0; i <= ndiv; i++) {
+    FullMtx<double> BolhaTemp(bubbleCount + 1, 2);
+    for (int i = 0; i < bubbleCount; i++) {
         BolhaTemp[i][0] = tables.TBPVTSim[i];
         BolhaTemp[i][1] = tables.PBPVTSim[i];
     }
     writeTable(pathPrefixoArqSaida + "perfilBolha", BolhaTemp);
 
     if (arq.tabRSPB == 1) {
-        tables.RSLivia.allocate(ndiv + 2);
-        for (int i = 1; i <= ndiv + 1; i++) {
+        tables.RSLivia.allocate(pressureCount + 1, bubbleCount + 1);
+        for (int j = 1; j <= bubbleCount; j++)
+            tables.RSLivia[0][j] = tables.TBPVTSim[j - 1];
+        for (int i = 1; i <= pressureCount; i++) {
             tables.RSLivia[i][0] = PresPVTSim[i - 1];
-            tables.RSLivia[0][i] = tables.TBPVTSim[i - 1];
-            for (int j = 1; j <= ndiv + 1; j++) {
+            for (int j = 1; j <= bubbleCount; j++) {
                 if (tables.TBPVTSim[j - 1] > -10) {
                     double TFa = 1.8 * tables.TBPVTSim[j - 1] + 32;
 
@@ -183,11 +205,12 @@ void SProd::loadPvtSimSaturationTables() {
                     tables.RSLivia[i][j] = 0;
             }
         }
-        FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
-        for (int i = 1; i <= ndiv + 1; i++) {
+        FullMtx<double> RSTemp(pressureCount + 1, bubbleCount + 1);
+        for (int j = 1; j <= bubbleCount; j++)
+            RSTemp[0][j] = tables.RSLivia[0][j];
+        for (int i = 1; i <= pressureCount; i++) {
             RSTemp[i][0] = tables.RSLivia[i][0];
-            RSTemp[0][i] = tables.RSLivia[0][i];
-            for (int j = 1; j <= ndiv + 1; j++)
+            for (int j = 1; j <= bubbleCount; j++)
                 RSTemp[i][j] = tables.RSLivia[i][j];
         }
         // The table holds the reduced ratio Rs/Rsb, which has no unit to convert.
@@ -198,6 +221,8 @@ void SProd::loadPvtSimSaturationTables() {
 
         auto pointAtRatioTable = [&](ProFlu &fluid) {
             fluid.TabRSLivia = tables.RSLivia.data();
+            fluid.rsTablePressureCount = pressureCount;
+            fluid.rsTableTemperatureCount = bubbleCount;
             fluid.tabRSPB = 1;
         };
         for (int i = 0; i <= ncel; i++) {
@@ -221,7 +246,7 @@ void SProd::generateSaturationTablesFromCorrelations() {
     FullMtx<double> PBTemp(ndiv + 2, 2);
     tables.TBPVTSim = vector<double>(ndiv + 1);
     tables.PBPVTSim = vector<double>(ndiv + 1);
-    tables.RSLivia.allocate(ndiv + 2);
+    tables.RSLivia.allocate(ndiv + 2, ndiv + 2);
     double ttestepb = tteste;
     for (int i = 0; i <= ndiv; i++) {
         tables.TBPVTSim[i] = ttestepb;
@@ -256,6 +281,8 @@ void SProd::generateSaturationTablesFromCorrelations() {
         fluid.TBPVTSim = tables.TBPVTSim.data();
         fluid.npontosB = static_cast<int>(tables.TBPVTSim.size());
         fluid.TabRSLivia = tables.RSLivia.data();
+        fluid.rsTablePressureCount = ndiv + 1;
+        fluid.rsTableTemperatureCount = ndiv + 1;
         fluid.tabRSPB = 1;
     };
     for (int i = 0; i <= ncel; i++) {
@@ -675,9 +702,18 @@ void SProd::configureLatentHeat() {
             if (strcmp(tenta, "THREE") == 0)
                 lacoleitura = 18;
 
-            readPvtSimRow(lendoPVTSim, chave, "PRESSURE", presPVTSim, ndiv,
-                          [](double value) { return value / units::kPascalPerKgfPerCm2; });
-            readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", tempPVTSim, ndiv, [](double value) { return value; });
+            vector<double> pressuresRead = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                                         [](double value) { return value / units::kPascalPerKgfPerCm2; });
+            vector<double> temperaturesRead = readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", dadosMR,
+                                                            [](double value) { return value; });
+            if (static_cast<int>(pressuresRead.size()) <= ndiv || static_cast<int>(temperaturesRead.size()) <= ndiv)
+                logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                               "PVTSim file with fewer table points than the input table", "pvtsimArq",
+                                               dadosMR);
+            for (int k = 0; k <= ndiv; k++) {
+                presPVTSim[k] = pressuresRead[k];
+                tempPVTSim[k] = temperaturesRead[k];
+            }
 
             for (int i = 1; i <= ndiv + 1; i++) {
                 HLatTemp[i][0] = presPVTSim[i - 1];
@@ -704,7 +740,7 @@ void SProd::configureLatentHeat() {
                 }
             }
             lendoPVTSim.close();
-            tables.HLat.allocate(ndiv + 2);
+            tables.HLat.allocate(ndiv + 2, ndiv + 2);
             for (int i = 0; i < ndiv + 2; i++) {
                 for (int j = 0; j < ndiv + 2; j++)
                     tables.HLat[i][j] = HLatTemp[i][j];

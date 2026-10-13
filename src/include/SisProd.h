@@ -99,16 +99,16 @@ trendoutput::TrendState trendStateOf(const SProd &system);
 
 namespace sisprod {
 
-/// A square table the fluids read through a double **: its rows, and a pointer to each.
-struct SquareTable {
+/// A pressure-temperature table the fluids read through a double **: its rows, and a pointer to each.
+struct GridTable {
     vector<vector<double>> rows;
     vector<double *> rowPointers;
 
-    /// n rows of n values each.
-    void allocate(int n) {
-        rows.assign(n, vector<double>(n));
-        rowPointers.resize(n);
-        for (int i = 0; i < n; i++)
+    /// rowCount rows of columnCount values each.
+    void allocate(int rowCount, int columnCount) {
+        rows.assign(rowCount, vector<double>(columnCount));
+        rowPointers.resize(rowCount);
+        for (int i = 0; i < rowCount; i++)
             rowPointers[i] = rows[i].data();
     }
     /// Destroys the rows and gives their memory back.
@@ -153,7 +153,7 @@ struct PropertyTables {
     /**
      * @brief Black-oil latent-heat table.
      */
-    SquareTable HLat;
+    GridTable HLat;
     /**
      * @brief Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table
      * is separate from the full PVTSim fluid-property model.
@@ -168,7 +168,7 @@ struct PropertyTables {
      * @brief Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its
      * expensive calculation during the simulation.
      */
-    SquareTable RSLivia;
+    GridTable RSLivia;
     /**
      * @brief Dynamic fluid-property tables.
      */

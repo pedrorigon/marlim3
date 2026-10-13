@@ -205,6 +205,8 @@ class ProFlu {
     double *PBPVTSim;    // Bubble-point pressure values loaded from a PVTSim file
     double *TBPVTSim;    // Bubble-point temperature values loaded from a PVTSim file
     double **TabRSLivia; // Table of solution gas-oil ratio values for the Black Oil model when using
+    int rsTablePressureCount;    // Pressure points of TabRSLivia: its rows 1 to this count (0: npontos)
+    int rsTableTemperatureCount; // Temperature points of TabRSLivia: its columns 1 to this count (0: npontos)
     // interpolated correlation values instead of direct calculation
     double aemul;  // Parameter a of the exponential emulsion model
     double bemul;  // Parameter b of the exponential emulsion model
@@ -513,8 +515,12 @@ class ProFlu {
                     double pmin /*minimum reduced pressure in the table*/,
                     double tmin /*minimum reduced temperature in the table*/) const; // Generates the Black Oil table of the compressibility-factor derivative with respect to temperature
     double interpolaVarProd(double pres /*pressure in kgf/cm2*/,
-                            double temp /*temperature in degrees Celsius*/, double **Var /*property table obtained from PVTSim*/) const; // Method
+                            double temp /*temperature in degrees Celsius*/, double **Var /*property table obtained from PVTSim*/,
+                            int pressureCount = 0 /*pressure points of Var; 0: npontos, on the flash axes*/,
+                            int temperatureCount = 0 /*temperature points of Var; 0: npontos, on the flash axes*/) const; // Method
     // that interpolates a PVTSim property at the specified pressure and temperature
+    int rsPressurePoints() const { return rsTablePressureCount > 0 ? rsTablePressureCount : npontos; }
+    int rsTemperaturePoints() const { return rsTableTemperatureCount > 0 ? rsTableTemperatureCount : npontos; }
     double BOFunc(double pres /*pressure in kgf/cm2*/, double temp /*temperature in degrees Celsius*/,
                   double varRS = -1 /*Solution gas-oil ratio in scf/bbl when already available; a negative value causes the method to calculate it*/
     ) const;                        // Calculates the formation volume factor
