@@ -4,6 +4,7 @@
 /// holds its lifecycle.
 #define _USE_MATH_DEFINES // for M_PI
 #include "SisProd.h"
+#include "OutputI18n.h"
 #include "SisProdConstants.h"
 #include "UnitConversions.h"
 #include <math.h>
@@ -84,9 +85,11 @@ void readPvtSimRow(ifstream &file, string &word, const char *name, Row &row, int
     }
 }
 
-/// Writes a table to the file at `path`, replacing it.
-void writeTable(const string &path, const FullMtx<double> &table) {
+/// Writes a table to the file at `path`, replacing it, after a `# header` line naming the quantity when one is given.
+void writeTable(const string &path, const FullMtx<double> &table, const string &header = "") {
     ofstream file(path.c_str(), ios_base::out);
+    if (!header.empty())
+        file << "# " << header << "\n";
     file << table;
 }
 
@@ -185,9 +188,13 @@ void SProd::loadPvtSimSaturationTables() {
             RSTemp[i][0] = tables.RSLivia[i][0];
             RSTemp[0][i] = tables.RSLivia[0][i];
             for (int j = 1; j <= ndiv + 1; j++)
-                RSTemp[i][j] = tables.RSLivia[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
+                RSTemp[i][j] = tables.RSLivia[i][j];
         }
-        writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
+        // The table holds the reduced ratio Rs/Rsb, which has no unit to convert.
+        writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp,
+                   output_i18n::tr(arq.idiomaSaida,
+                                   "Razao de solubilidade reduzida Rs/Rsb (-); primeira coluna: pressao (kgf/cm2); primeira linha: temperatura (C)",
+                                   "Reduced solution gas-oil ratio Rs/Rsb (-); first column: pressure (kgf/cm2); first row: temperature (C)"));
 
         auto pointAtRatioTable = [&](ProFlu &fluid) {
             fluid.TabRSLivia = tables.RSLivia.data();
@@ -239,7 +246,10 @@ void SProd::generateSaturationTablesFromCorrelations() {
     }
 
     writeTable(pathPrefixoArqSaida + "perfilBolha", PBTemp);
-    writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp);
+    writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp,
+               output_i18n::tr(arq.idiomaSaida,
+                               "Razao de solubilidade Rs (m3/m3); primeira coluna: pressao (kgf/cm2); primeira linha: temperatura (C)",
+                               "Solution gas-oil ratio Rs (m3/m3); first column: pressure (kgf/cm2); first row: temperature (C)"));
 
     auto pointAtTables = [&](ProFlu &fluid) {
         fluid.PBPVTSim = tables.PBPVTSim.data();
