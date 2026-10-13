@@ -499,21 +499,12 @@ class APara {
             delete[] APCondEquiv;
         }
 
-        if (nVariaveis > 1) {
-            delete[] sequenciaAP;
-            delete[] genericoAP;
-            delete[] vecParSerie;
-        }
-
-        if (nVariaveis > 1 && dim > 0 && tipoAP == 1) {
-            for (int i = 0; i < nVariaveis; i++) {
-                delete[] saidaBHP[i];
-                delete[] saidaVazLiq[i];
-            }
-            delete[] saidaBHP;
-            delete[] saidaVazLiq;
-        }
+        releaseSweepVectors();
     }
+
+    // Frees the sweep's sequence, generic indices and per-variable series, and the BHP and liquid-rate outputs,
+    // whatever lerArq allocated of them.
+    void releaseSweepVectors();
 
     Document parseEntrada();
     void parse_variaveis(Value &variaveis_json);

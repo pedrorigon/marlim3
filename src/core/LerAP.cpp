@@ -138,20 +138,7 @@ APara &APara::operator=(const APara &vAP) {
             delete[] APCondEquiv;
         }
 
-        if (nVariaveis > 1) {
-            delete[] sequenciaAP;
-            delete[] genericoAP;
-            delete[] vecParSerie;
-        }
-
-        if (nVariaveis > 1 && dim > 0) {
-            for (int i = 0; i < nVariaveis; i++) {
-                delete[] saidaBHP[i];
-                delete[] saidaVazLiq[i];
-            }
-            delete[] saidaBHP;
-            delete[] saidaVazLiq;
-        }
+        releaseSweepVectors();
 
         entrada = vAP.entrada;
         vg1dSP = vAP.vg1dSP;
@@ -1650,8 +1637,11 @@ void APara::lerArq() {
     varSeq[21] = listaV.vchk;
     varSeq[22] = listaV.vpocinj;
 
-    sequenciaAP = 0;
-    if (nVariaveis > 1) {
+    // A sweep of one combination is a sweep too: every declared variable needs the vectors.
+    sequenciaAP = nullptr;
+    genericoAP = nullptr;
+    vecParSerie = nullptr;
+    if (dim > 0) {
         sequenciaAP = new casoVEC[nVariaveis];
         genericoAP = new genericoVEC[nVariaveis];
         vecParSerie = new int[dim];
@@ -1696,6 +1686,25 @@ void APara::lerArq() {
     } else {
         saidaBHP = 0;
         saidaVazLiq = 0;
+    }
+}
+
+void APara::releaseSweepVectors() {
+    delete[] sequenciaAP;
+    delete[] genericoAP;
+    delete[] vecParSerie;
+    sequenciaAP = nullptr;
+    genericoAP = nullptr;
+    vecParSerie = nullptr;
+    if (saidaBHP) {
+        for (int i = 0; i < nVariaveis; i++) {
+            delete[] saidaBHP[i];
+            delete[] saidaVazLiq[i];
+        }
+        delete[] saidaBHP;
+        delete[] saidaVazLiq;
+        saidaBHP = nullptr;
+        saidaVazLiq = nullptr;
     }
 }
 
