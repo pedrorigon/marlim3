@@ -257,7 +257,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.ncel = kCells - 2;
     system.thermalSourceDisabled = 0;
     system.presfim = scenario.pressure - 5.;
-    system.gasLift.pGSup = scenario.pressure;
+    system.gasLift.separatorPressure = scenario.pressure;
     system.networkCoupling.chokeOutletTemperature = -901.;
     system.arq.master1.razareaativ = 0.;
     system.arq.lingas = 0;
@@ -290,7 +290,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
 
 void resetAnnulus(SProd &system, const Scenario &scenario) {
     for (int index = 0; index < kCells + 3; ++index) {
-        CelG &cell = system.gasLift.celulaG[index];
+        CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.03 * index;
         cell.flui = fallbackFluid(system.vg1dSP);
         cell.temp = scenario.temperature + 8. + 0.1 * index;
@@ -327,9 +327,9 @@ constexpr int kGasCells = 5;
 constexpr int kValves = 2;
 
 void resetGasLine(SProd &system, const Scenario &scenario) {
-    system.gasLift.ncelGas = kGasCells;
+    system.gasLift.cellCount = kGasCells;
     for (int index = 0; index <= kGasCells + 1; ++index) {
-        CelG &cell = system.gasLift.celulaG[index];
+        CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.04 * index;
         cell.flui = fallbackFluid(system.vg1dSP);
         cell.duto.a = 0.09 * scale;
@@ -369,14 +369,14 @@ void resetGasLine(SProd &system, const Scenario &scenario) {
                                         cell.temp, 18. + index);
     }
     for (int index = 0; index < 3 * (kGasCells + 2); ++index)
-        system.gasLift.termolivreG[index] = 40. + 0.5 * index;
+        system.gasLift.rightHandSide[index] = 40. + 0.5 * index;
 }
 
 void resetValves(SProd &system) {
     for (int valve = 0; valve < kValves; ++valve) {
-        system.gasLift.posicVGLG[valve] = valve + 1;
-        system.gasLift.posicVGLP[valve] = valve + 2;
-        ChokeGas &choke = system.gasLift.chokeVGL[valve];
+        system.gasLift.gasValveCells[valve] = valve + 1;
+        system.gasLift.productionValveCells[valve] = valve + 2;
+        ChokeGas &choke = system.gasLift.valveChokes[valve];
         choke.presEstag = 90. + 5. * valve;
         choke.tempEstag = 60. + 2. * valve;
         choke.presGarg = 70. + 5. * valve;
@@ -438,32 +438,32 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     system.arq.gasinj.presinj[0] = scenario.pressure * 1.1;
     (*system.vg1dSP).lixo5 = 5000.;
 
-    system.gasLift.celInter = kInterfaceCell;
-    system.gasLift.celInterIni = kInterfaceCell;
-    system.gasLift.velInter = 0.35 + scenario.gasFlow;
-    system.gasLift.velInterIni = 0.30 + scenario.gasFlow;
-    system.gasLift.dtInter = 0.4;
-    system.gasLift.dtInterIni = 0.45;
+    system.gasLift.interfaceCell = kInterfaceCell;
+    system.gasLift.previousInterfaceCell = kInterfaceCell;
+    system.gasLift.interfaceVelocity = 0.35 + scenario.gasFlow;
+    system.gasLift.previousInterfaceVelocity = 0.30 + scenario.gasFlow;
+    system.gasLift.interfaceTimeStep = 0.4;
+    system.gasLift.previousInterfaceTimeStep = 0.45;
 
-    system.gasLift.pGSup = scenario.pressure * 1.15;
+    system.gasLift.separatorPressure = scenario.pressure * 1.15;
     // ABOVE the gas line, not below it. The injection choke sits upstream, and
     // ChokeGas::massica zeroes its own output when the stagnation pressure is
     // below the throat pressure. Seeded under the line, the choke delivered
     // exactly nothing, so the whole source term advanceBufferedGasSubStep
     // assembles was zero and moving the opening bound changed no digit.
-    system.gasLift.presiniG = scenario.pressure * kInjectionOverPressure * 1.15;
-    system.gasLift.tempiniG = scenario.temperature + 4.;
+    system.gasLift.injectionPressure = scenario.pressure * kInjectionOverPressure * 1.15;
+    system.gasLift.injectionTemperature = scenario.temperature + 4.;
     system.dt = 0.5;
 
     // Sliding windows. advanceGasSubStep push_backs at the tail and erases the
     // front once the window passes maxVecContDesc, so both must start non-empty
     // and the bound must be small enough that the erase branch is reachable.
-    system.gasLift.vazmedDesc = 0.22 + scenario.gasFlow;
-    system.gasLift.tempmedDEsc = scenario.temperature + 3.;
-    system.gasLift.tempMedContDesc = scenario.temperature + 2.;
-    system.gasLift.maxVecContDesc = 3.;
-    system.gasLift.vazmaxMedDesc = {0.18, 0.20, 0.24};
-    system.gasLift.dtDesc = {0.5, 0.5, 0.5};
+    system.gasLift.meanUnloadingFlowRate = 0.22 + scenario.gasFlow;
+    system.gasLift.unloadingAveragingInterval = scenario.temperature + 3.;
+    system.gasLift.unloadingAveragingWindow = scenario.temperature + 2.;
+    system.gasLift.unloadingSampleCapacity = 3.;
+    system.gasLift.maximumUnloadingFlowSamples = {0.18, 0.20, 0.24};
+    system.gasLift.unloadingTimeStepSamples = {0.5, 0.5, 0.5};
 
     // resetValves puts the valves at gas cells 1 and 2, which is right for the
     // steady half but leaves both at or below the interface here -- and
@@ -472,8 +472,8 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     // resetValves runs again before every measurement, so the steady rows are
     // untouched.
     for (int valve = 0; valve < kValves; ++valve) {
-        system.gasLift.posicVGLG[valve] = kInterfaceCell + 1 + valve;
-        ChokeGas &choke = system.gasLift.chokeVGL[valve];
+        system.gasLift.gasValveCells[valve] = kInterfaceCell + 1 + valve;
+        ChokeGas &choke = system.gasLift.valveChokes[valve];
         // frec must not be 1: it divides (1 - frec).
         choke.frec = 0.1 + 0.05 * valve;
         // areafole must not be 0: it divides areagarg.
@@ -535,24 +535,24 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     system.celula[1].acsr.tipo = 3;
     system.celula[1].acsr.ipr.Pres = scenario.pressure * 1.10;
 
-    system.gasLift.chokeInj.presEstag = scenario.pressure * 1.3;
-    system.gasLift.chokeInj.tempEstag = scenario.temperature + 8.;
-    system.gasLift.chokeInj.presGarg = scenario.pressure * 1.1;
+    system.gasLift.injectionChoke.presEstag = scenario.pressure * 1.3;
+    system.gasLift.injectionChoke.tempEstag = scenario.temperature + 8.;
+    system.gasLift.injectionChoke.presGarg = scenario.pressure * 1.1;
     // Sized as a FRACTION of the pipe, so abertoChk lands around the 0.2 bound
     // advanceBufferedGasSubStep switches on rather than far below it, where
     // moving the bound changes nothing.
-    system.gasLift.chokeInj.areagarg =
-        (0.15 + 0.3 * scenario.voidFraction) * system.gasLift.celulaG[0].duto.area;
-    system.gasLift.chokeInj.flui = fallbackFluid(system.vg1dSP);
+    system.gasLift.injectionChoke.areagarg =
+        (0.15 + 0.3 * scenario.voidFraction) * system.gasLift.cells[0].duto.area;
+    system.gasLift.injectionChoke.flui = fallbackFluid(system.vg1dSP);
 
     for (int index = 0; index <= kGasCells + 1; ++index) {
-        CelG &cell = system.gasLift.celulaG[index];
-        // celInter is a POINTER on the cell, aimed at SProd::gasLift.celInter, and
+        CelG &cell = system.gasLift.cells[index];
+        // celInter is a POINTER on the cell, aimed at SProd::gasLift.interfaceCell, and
         // CelG::GeraLocal dereferences it unconditionally. Unseeded it is null
         // and advanceBufferedGasSubStep segfaults -- which is how this line came
         // to be written. Same wiring the product does at SisProd.cpp:1483.
-        cell.celInter = &system.gasLift.celInter;
-        cell.celInterini = &system.gasLift.celInterIni;
+        cell.celInter = &system.gasLift.interfaceCell;
+        cell.celInterini = &system.gasLift.previousInterfaceCell;
         cell.posic = index;
 
         // The product's convention: fully gas ahead of the interface, fully
@@ -601,15 +601,16 @@ void printValue(const char *method, const char *scenario, double value) {
 void printInterface(const char *method, const char *scenario, const SProd &system) {
     printf("%-28s %-15s celInter=%d velInter=%a dtInter=%a pGSup=%a presiniG=%a "
            "vazmedDesc=%a tempmedDEsc=%a\n",
-           method, scenario, system.gasLift.celInter, system.gasLift.velInter, system.gasLift.dtInter,
-           system.gasLift.pGSup, system.gasLift.presiniG, system.gasLift.vazmedDesc, system.gasLift.tempmedDEsc);
+           method, scenario, system.gasLift.interfaceCell, system.gasLift.interfaceVelocity,
+           system.gasLift.interfaceTimeStep, system.gasLift.separatorPressure, system.gasLift.injectionPressure,
+           system.gasLift.meanUnloadingFlowRate, system.gasLift.unloadingAveragingInterval);
 }
 
 void printUnloadingControl(const char *method, const char *scenario,
                            const SProd &system) {
     printf("%-28s %-15s presiniG=%a presMaxDesc=%a pGSup=%a\n",
-           method, scenario, system.gasLift.presiniG, system.arq.presMaxDesc,
-           system.gasLift.pGSup);
+           method, scenario, system.gasLift.injectionPressure, system.arq.presMaxDesc,
+           system.gasLift.separatorPressure);
 }
 
 // printGas publishes pressures, velocities and temperatures -- none of which
@@ -661,8 +662,8 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
 
     seed();
     system.HidroDescargaG();
-    printGas("HidroDescargaG", scenario.name, system.gasLift.celulaG[0]);
-    printGas("HidroDescargaG-mid", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
+    printGas("HidroDescargaG", scenario.name, system.gasLift.cells[0]);
+    printGas("HidroDescargaG-mid", scenario.name, system.gasLift.cells[kInterfaceCell]);
 
     // computeUnloadingValvePressure returns velmax, which it sets to 0 and never
     // assigns again -- the return is a constant, in the product as much as here,
@@ -677,7 +678,7 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     printUnloadingControl("CalcPresValvDesc-high", scenario.name, system);
 
     seed();
-    system.gasLift.pGSup = system.arq.presMinDesc * 0.99;
+    system.gasLift.separatorPressure = system.arq.presMinDesc * 0.99;
     sisprod::gaslift::computeUnloadingValvePressure(sisprod::SolveContext(system).gasLift(), 0.1 * system.arq.vazDescControl, 1);
     printUnloadingControl("CalcPresValvDesc-low", scenario.name, system);
 
@@ -694,29 +695,29 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     seed();
     printValue("BuscaPresInjDesc", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(sisprod::SolveContext(system).gasLift()));
     printInterface("BuscaPresInjDesc-state", scenario.name, system);
-    printValve("BuscaPresInjDesc-valve", scenario.name, system.gasLift.chokeVGL[0]);
+    printValve("BuscaPresInjDesc-valve", scenario.name, system.gasLift.valveChokes[0]);
 
     // Two rows, because advanceInterface is two routines behind one name: the
     // ordinary advance, and the hand-over that fires only when the interface is
     // in the last cell AND has filled it. Driving one leaves the other blind.
     seed();
     sisprod::gaslift::advanceInterface(sisprod::SolveContext(system).gasLift());
-    printGas("avancInter", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
+    printGas("avancInter", scenario.name, system.gasLift.cells[kInterfaceCell]);
 
     seed();
-    system.gasLift.celInter = system.gasLift.ncelGas - 1;
-    system.gasLift.celulaG[system.gasLift.celInter].razInterIni = 0.995;
-    system.gasLift.celulaG[system.gasLift.celInter].razInter = 0.995;
+    system.gasLift.interfaceCell = system.gasLift.cellCount - 1;
+    system.gasLift.cells[system.gasLift.interfaceCell].razInterIni = 0.995;
+    system.gasLift.cells[system.gasLift.interfaceCell].razInter = 0.995;
     sisprod::gaslift::advanceInterface(sisprod::SolveContext(system).gasLift());
-    printGas("avancInter-handover", scenario.name, system.gasLift.celulaG[system.gasLift.ncelGas - 1]);
-    printRatios("avancInter-ratios", scenario.name, system.gasLift.celulaG[system.gasLift.ncelGas - 1]);
+    printGas("avancInter-handover", scenario.name, system.gasLift.cells[system.gasLift.cellCount - 1]);
+    printRatios("avancInter-ratios", scenario.name, system.gasLift.cells[system.gasLift.cellCount - 1]);
     // The hand-over writes the cell AHEAD of the interface as well.
-    printRatios("avancInter-ahead", scenario.name, system.gasLift.celulaG[system.gasLift.ncelGas]);
+    printRatios("avancInter-ahead", scenario.name, system.gasLift.cells[system.gasLift.cellCount]);
 
     seed();
     sisprod::gaslift::solveUnloading(sisprod::SolveContext(system).gasLift());
-    printGas("resolveDescarga", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
-    printGas("resolveDescarga-last", scenario.name, system.gasLift.celulaG[kGasCells]);
+    printGas("resolveDescarga", scenario.name, system.gasLift.cells[kInterfaceCell]);
+    printGas("resolveDescarga-last", scenario.name, system.gasLift.cells[kGasCells]);
 
     // subtempoGasBuf is the only routine here that solves the band system, and
     // BandMtx::GaussElimPP rejects a right-hand side whose size differs from its
@@ -731,17 +732,17 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // publishes. So it is narrowed for this call only and restored after.
     // Nothing is lost: the assembly overwrites every entry it then solves.
     seed();
-    Vcr<double> wideFreeTerms = system.gasLift.termolivreG;
-    system.gasLift.termolivreG = Vcr<double>(3 * (kGasCells + 1), 0.);
+    Vcr<double> wideFreeTerms = system.gasLift.rightHandSide;
+    system.gasLift.rightHandSide = Vcr<double>(3 * (kGasCells + 1), 0.);
     sisprod::gaslift::advanceBufferedGasSubStep(sisprod::SolveContext(system).gasLift());
-    printGas("subtempoGasBuf", scenario.name, system.gasLift.celulaG[kInterfaceCell]);
+    printGas("subtempoGasBuf", scenario.name, system.gasLift.cells[kInterfaceCell]);
     printBuffered("subtempoGasBuf-buffer", scenario.name,
-                  system.gasLift.celulaG[kInterfaceCell], system.gasLift.celulaG[0]);
+                  system.gasLift.cells[kInterfaceCell], system.gasLift.cells[0]);
     // The opening bound also rewrites the injection choke itself, and that
     // write appears in no other row.
-    printValve("subtempoGasBuf-choke", scenario.name, system.gasLift.chokeInj);
+    printValve("subtempoGasBuf-choke", scenario.name, system.gasLift.injectionChoke);
     printInterface("subtempoGasBuf-state", scenario.name, system);
-    system.gasLift.termolivreG = wideFreeTerms;
+    system.gasLift.rightHandSide = wideFreeTerms;
 }
 
 void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
@@ -768,18 +769,18 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetGasLine(system, scenario);
     resetValves(system);
     sisprod::gaslift::updateGasLine(sisprod::SolveContext(system).gasLift());
-    printGas("renovaGas", scenario.name, system.gasLift.celulaG[2]);
+    printGas("renovaGas", scenario.name, system.gasLift.cells[2]);
 
     resetGasLine(system, scenario);
     sisprod::gaslift::updateBufferedGasLine(sisprod::SolveContext(system).gasLift());
-    printGas("renovaGasBuf", scenario.name, system.gasLift.celulaG[2]);
+    printGas("renovaGasBuf", scenario.name, system.gasLift.cells[2]);
     // VGasRBuf is the ONLY field updateBufferedGasLine writes, and printGas does
     // not carry it, so until this row existed the routine could have been
     // rewritten freely. Here the free terms come straight from resetGasLine
     // rather than from a solve, so the values are finite and discriminating.
     printf("%-28s %-15s VGasRBuf0=%a VGasRBuf2=%a VGasRBuf4=%a\n",
-           "renovaGasBuf-buffer", scenario.name, system.gasLift.celulaG[0].VGasRBuf,
-           system.gasLift.celulaG[2].VGasRBuf, system.gasLift.celulaG[4].VGasRBuf);
+           "renovaGasBuf-buffer", scenario.name, system.gasLift.cells[0].VGasRBuf,
+           system.gasLift.cells[2].VGasRBuf, system.gasLift.cells[4].VGasRBuf);
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
@@ -799,13 +800,13 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetGasLine(system, scenario);
     resetValves(system);
     sisprod::gaslift::updateSteadyGasPressure(sisprod::SolveContext(system).gasLift(), 2);
-    printGas("RenovaPresGasPerm", scenario.name, system.gasLift.celulaG[2]);
+    printGas("RenovaPresGasPerm", scenario.name, system.gasLift.cells[2]);
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
     sisprod::gaslift::updateSteadyGasTemperature(sisprod::SolveContext(system).gasLift(), 2);
-    printGas("RenovaTempGasPerm", scenario.name, system.gasLift.celulaG[2]);
+    printGas("RenovaTempGasPerm", scenario.name, system.gasLift.cells[2]);
 }
 
 }  // namespace
@@ -821,11 +822,11 @@ int main() {
     Cel *cells = storage + 1;
     system.celula = cells;
     system.ncel = kCells - 1;
-    system.gasLift.celulaG = new CelG[kGasCells + 3];
-    system.gasLift.termolivreG = Vcr<double>(3 * (kGasCells + 3), 0.);
-    system.gasLift.chokeVGL = vector<ChokeGas>(kValves);
-    system.gasLift.posicVGLG = vector<int>(kValves);
-    system.gasLift.posicVGLP = vector<int>(kValves);
+    system.gasLift.cells = new CelG[kGasCells + 3];
+    system.gasLift.rightHandSide = Vcr<double>(3 * (kGasCells + 3), 0.);
+    system.gasLift.valveChokes = vector<ChokeGas>(kValves);
+    system.gasLift.gasValveCells = vector<int>(kValves);
+    system.gasLift.productionValveCells = vector<int>(kValves);
 
     // advanceBufferedGasSubStep assembles into the band matrix, which nothing
     // else in this sweep touches, so main never sized it.
@@ -837,7 +838,7 @@ int main() {
     // GaussElimPP reports it through the Logger -- which in this harness has no
     // open file and segfaults instead. Cost of getting this wrong: a crash that
     // looks like a bug in the routine under test.
-    system.gasLift.matglobG = BandMtx<double>(3 * (kGasCells + 1), 5, 5);
+    system.gasLift.systemMatrix = BandMtx<double>(3 * (kGasCells + 1), 5, 5);
     system.arq.gasinj.presinj = new double[2];
 
     for (const Scenario &scenario : kScenarios)

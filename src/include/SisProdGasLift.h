@@ -41,7 +41,7 @@ struct GasLiftTemperatureUpdater {
 /// Scalars are held by reference, not by value: a copy would read every one at
 /// construction, before the branch that decides whether it is read at all.
 struct GasLiftState {
-    /// Gas-line cells -- SProd::gasLift.celulaG. Written as well as read.
+    /// Gas-line cells -- SProd::gasLift.cells. Written as well as read.
     CelG *const &gasCells;
     /// Production cells -- SProd::celula. The gas line reads the tubing it
     /// feeds, and writes back at the connection points.
@@ -53,27 +53,27 @@ struct GasLiftState {
     /// Shared 1D globals -- SProd::vg1dSP.
     varGlob1D *const &globals;
 
-    /// Index of the last gas-line cell -- SProd::gasLift.ncelGas.
+    /// Index of the last gas-line cell -- SProd::gasLift.cellCount.
     const int &gasCellCount;
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
 
-    /// Gas-lift valve chokes -- SProd::gasLift.chokeVGL.
+    /// Gas-lift valve chokes -- SProd::gasLift.valveChokes.
     std::vector<ChokeGas> &gasLiftChokes;
-    /// Injection choke -- SProd::gasLift.chokeInj.
+    /// Injection choke -- SProd::gasLift.injectionChoke.
     ChokeGas &injectionChoke;
-    /// Gas-line cell index of each gas-lift valve -- SProd::gasLift.posicVGLG.
+    /// Gas-line cell index of each gas-lift valve -- SProd::gasLift.gasValveCells.
     const std::vector<int> &gasValveCellIndices;
-    /// Production cell index of each gas-lift valve -- SProd::gasLift.posicVGLP.
+    /// Production cell index of each gas-lift valve -- SProd::gasLift.productionValveCells.
     const std::vector<int> &productionValveCellIndices;
 
-    /// Band matrix and free-term vector of the gas line -- SProd::gasLift.matglobG and
-    /// SProd::gasLift.termolivreG.
+    /// Band matrix and free-term vector of the gas line -- SProd::gasLift.systemMatrix and
+    /// SProd::gasLift.rightHandSide.
     BandMtx<double> &gasSystemMatrix;
     Vcr<double> &gasFreeTerms;
 
     /// Annulus/tubing coupling bounds, shared with the thermal module and named
-    /// as they are named there -- SProd::gasLift.ColunaAnulaIni, ColunaAnulaFim,
+    /// as they are named there -- SProd::gasLift.tubingCouplingStart, ColunaAnulaFim,
     /// AnulaColunaIni, AnulaColunaFim.
     const int &annulusTubingStart;
     const int &annulusTubingEnd;
@@ -82,22 +82,22 @@ struct GasLiftState {
 
     /// Steady-state iteration counter -- SProd::steadyIteration.
     const int &steadyIteration;
-    /// Network coupling flag -- SProd::gasLift.verificaAcop.
+    /// Network coupling flag -- SProd::gasLift.annulusThermalCoupling.
     const int &networkCoupled;
     /// Thermal source switch -- SProd::thermalSourceDisabled.
     const int &thermalSourceDisabled;
 
-    /// Previous-step gas pressure and temperature -- SProd::gasLift.presiniG and
-    /// SProd::gasLift.tempiniG. The pressure is written.
+    /// Previous-step gas pressure and temperature -- SProd::gasLift.injectionPressure and
+    /// SProd::gasLift.injectionTemperature. The pressure is written.
     double &initialGasPressure;
     const double &initialGasTemperature;
-    /// Surface gas pressure -- SProd::gasLift.pGSup. Written.
+    /// Surface gas pressure -- SProd::gasLift.separatorPressure. Written.
     double &gasSurfacePressure;
 
     /// Time step -- SProd::dt. Written: the gas line can shorten it.
     double &timeStep;
 
-    /// Unloading interface state -- SProd::gasLift.celInter, velInter, dtInter, and
+    /// Unloading interface state -- SProd::gasLift.interfaceCell, velInter, dtInter, and
     /// their initial counterparts. All written.
     int &interfaceCell;
     double &interfaceVelocity;
@@ -106,7 +106,7 @@ struct GasLiftState {
     double &initialInterfaceVelocity;
     double &initialInterfaceTimeStep;
 
-    /// Unloading averages -- SProd::gasLift.vazmedDesc, tempmedDEsc (spelling as in
+    /// Unloading averages -- SProd::gasLift.meanUnloadingFlowRate, tempmedDEsc (spelling as in
     /// SProd), and the bounds they are compared against.
     ///
     /// The two vectors are NOT const: they are sliding windows. advanceGasSubStep

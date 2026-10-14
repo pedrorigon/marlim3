@@ -38,19 +38,19 @@ void SProd::resetRunState() {
     tGSup = 0.;
     thermalSourceDisabled = 0;
 
-    gasLift.celulaG = nullptr;
-    gasLift.celInter = kNoInterfaceCell;
-    gasLift.dtInter = 0.;
-    gasLift.velInter = 0.;
-    gasLift.celInterIni = gasLift.celInter;
-    gasLift.dtInterIni = gasLift.dtInter;
-    gasLift.velInterIni = gasLift.velInter;
-    gasLift.tempMedContDesc = kUnloadingAveragingWindow;
-    gasLift.maxVecContDesc = kUnloadingSampleCapacity;
-    gasLift.vazmedDesc = 0;
-    gasLift.tempmedDEsc = 0;
-    gasLift.vazmaxMedDesc.clear();
-    gasLift.dtDesc.clear();
+    gasLift.cells = nullptr;
+    gasLift.interfaceCell = kNoInterfaceCell;
+    gasLift.interfaceTimeStep = 0.;
+    gasLift.interfaceVelocity = 0.;
+    gasLift.previousInterfaceCell = gasLift.interfaceCell;
+    gasLift.previousInterfaceTimeStep = gasLift.interfaceTimeStep;
+    gasLift.previousInterfaceVelocity = gasLift.interfaceVelocity;
+    gasLift.unloadingAveragingWindow = kUnloadingAveragingWindow;
+    gasLift.unloadingSampleCapacity = kUnloadingSampleCapacity;
+    gasLift.meanUnloadingFlowRate = 0;
+    gasLift.unloadingAveragingInterval = 0;
+    gasLift.maximumUnloadingFlowSamples.clear();
+    gasLift.unloadingTimeStepSamples.clear();
 
     transient.trackRGO = 0;
     transient.trackDeng = 0;
@@ -126,8 +126,8 @@ void SProd::allocateSolutionBuffers() {
     transient.matglobP =
         BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth, kProductionRightBandwidth);
     transient.termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
-    gasLift.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
-    gasLift.termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
+    gasLift.systemMatrix = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
+    gasLift.rightHandSide = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
 }
 
 SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidation,
@@ -137,8 +137,9 @@ SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidatio
       arq(inputFile, logFile, jsonValidation, simulationType, reversedGeometry, globals, steadyBranch),
       flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
       flut(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns),
-      gasLift{.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
-              .termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg)},
+      gasLift{.systemMatrix =
+                  BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
+              .rightHandSide = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg)},
       transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
                                             kProductionRightBandwidth),
                 .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
@@ -166,9 +167,9 @@ void releaseVector(vector<T> &v) {
 
 void SProd::releaseOwnedStorage() {
     releaseVector(gasLift.gasCells);
-    releaseVector(gasLift.chokeVGL);
-    releaseVector(gasLift.posicVGLP);
-    releaseVector(gasLift.posicVGLG);
+    releaseVector(gasLift.valveChokes);
+    releaseVector(gasLift.productionValveCells);
+    releaseVector(gasLift.gasValveCells);
     releaseVector(transient.abreM1);
     releaseVector(transient.fechaM1);
 

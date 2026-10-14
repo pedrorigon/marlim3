@@ -131,65 +131,65 @@ struct PropertyTables {
 struct GasLiftLine {
     /// Global pressure-velocity coupling matrix for the gas line, sized for one cell until the system is sized for its
     /// input.
-    BandMtx<double> matglobG{kGasLineUnknownsPerCell, kGasLineBandwidth, kGasLineBandwidth};
-    /// Right-hand side and solution vector for the gas-line pressure-velocity system, sized like matglobG.
-    Vcr<double> termolivreG{kGasLineUnknownsPerCell};
+    BandMtx<double> systemMatrix{kGasLineUnknownsPerCell, kGasLineBandwidth, kGasLineBandwidth};
+    /// Right-hand side and solution vector for the gas-line pressure-velocity system, sized like systemMatrix.
+    Vcr<double> rightHandSide{kGasLineUnknownsPerCell};
     /// Production-line cell indices associated with gas-lift valves.
-    std::vector<int> posicVGLP;
+    std::vector<int> productionValveCells;
     /// Service-line cell indices associated with gas-lift valves.
-    std::vector<int> posicVGLG;
+    std::vector<int> gasValveCells;
     /// Service-line index where column-annulus thermal coupling begins.
-    int AnulaColunaIni = 0;
+    int annulusCouplingStart = 0;
     /// Service-line index where column-annulus thermal coupling ends.
-    int AnulaColunaFim = 0;
-    /// Production-column index aligned with AnulaColunaIni.
-    int ColunaAnulaIni = 0;
-    /// Production-column index aligned with AnulaColunaFim.
-    int ColunaAnulaFim = 0;
+    int annulusCouplingEnd = 0;
+    /// Production-column index aligned with annulusCouplingStart.
+    int tubingCouplingStart = 0;
+    /// Production-column index aligned with annulusCouplingEnd.
+    int tubingCouplingEnd = 0;
     /// Indicates whether column-annulus thermal coupling is enabled.
-    int verificaAcop = 0;
+    int annulusThermalCoupling = 0;
     /// Gas-lift valves installed in the system.
-    std::vector<ChokeGas> chokeVGL;
+    std::vector<ChokeGas> valveChokes;
     /// Time horizon used by the gas-lift unloading controller.
-    double tempMedContDesc = kUnloadingAveragingWindow;
+    double unloadingAveragingWindow = kUnloadingAveragingWindow;
     /// Maximum number of flow samples retained by the unloading PI controller.
-    double maxVecContDesc = kUnloadingSampleCapacity;
+    double unloadingSampleCapacity = kUnloadingSampleCapacity;
     /// Average maximum completion-fluid mass flow through the gas-lift valves.
-    double vazmedDesc = 0;
+    double meanUnloadingFlowRate = 0;
     /// Averaging interval used for gas-lift-valve mass flow.
-    double tempmedDEsc = 0;
+    double unloadingAveragingInterval = 0;
     /// Maximum valve mass-flow samples used by the unloading controller.
-    std::vector<double> vazmaxMedDesc;
+    std::vector<double> maximumUnloadingFlowSamples;
     /// Time-step samples associated with the unloading-flow average.
-    std::vector<double> dtDesc;
+    std::vector<double> unloadingTimeStepSamples;
     /// Separator pressure or pressure at the inlet of the downstream network section.
-    double pGSup = 0;
+    double separatorPressure = 0;
     /// Number of control volumes in the gas service line.
-    int ncelGas = 0;
+    int cellCount = 0;
     /// Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity analysis case sets it; the
     /// steady summary and the restart file record it either way.
-    double presiniG = 0.;
+    double injectionPressure = 0.;
     /// Gas-injection temperature in the service line. Zero until an injection condition or a sensitivity analysis
     /// case sets it; the restart file records it either way.
-    double tempiniG = 0.;
+    double injectionTemperature = 0.;
     /// Gas-injection choke model.
-    ChokeGas chokeInj;
+    ChokeGas injectionChoke;
     /// Gas service-line control volumes, held by gasCells.
-    CelG *celulaG = nullptr;
-    /// The gas service-line control volumes celulaG points at.
+    CelG *cells = nullptr;
+    /// The gas service-line control volumes that cells points at.
     std::vector<CelG> gasCells;
     /// Current service-line cell containing the completion-fluid/gas interface.
-    int celInter = kNoInterfaceCell;
+    int interfaceCell = kNoInterfaceCell;
     /// Maximum time step that keeps the unloading interface within one gas-line cell.
-    double dtInter = 0.;
+    double interfaceTimeStep = 0.;
     /// Current completion-fluid/gas interface velocity.
-    double velInter = 0.;
+    double interfaceVelocity = 0.;
     /// Previous-time-level interface cell.
-    int celInterIni = 0;
+    int previousInterfaceCell = 0;
     /// Previous-time-level interface-limited time step.
-    double dtInterIni = 0.;
+    double previousInterfaceTimeStep = 0.;
     /// Previous-time-level interface velocity.
-    double velInterIni = 0.;
+    double previousInterfaceVelocity = 0.;
 };
 
 /// The state of a transient run: the time step, its history and the restrictions on it, the

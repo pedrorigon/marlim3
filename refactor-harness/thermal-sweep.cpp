@@ -230,7 +230,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.ncel = kCells - 2;
     system.thermalSourceDisabled = 0;
     system.presfim = scenario.pressure - 5.;
-    system.gasLift.pGSup = scenario.pressure;
+    system.gasLift.separatorPressure = scenario.pressure;
     system.networkCoupling.chokeOutletTemperature = -901.;
     system.arq.master1.razareaativ = 0.;
     system.arq.lingas = 0;
@@ -263,7 +263,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
 
 void resetAnnulus(SProd &system, const Scenario &scenario) {
     for (int index = 0; index < kCells + 3; ++index) {
-        CelG &cell = system.gasLift.celulaG[index];
+        CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.03 * index;
         cell.flui = fallbackFluid(system.vg1dSP);
         cell.temp = scenario.temperature + 8. + 0.1 * index;
@@ -398,9 +398,9 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
                mode == PermMode::annulusLater) {
         resetAnnulus(system, scenario);
         system.arq.lingas = 1;
-        system.gasLift.ColunaAnulaIni = 4;
-        system.gasLift.ColunaAnulaFim = 0;
-        system.gasLift.AnulaColunaIni = 4;
+        system.gasLift.tubingCouplingStart = 4;
+        system.gasLift.tubingCouplingEnd = 0;
+        system.gasLift.annulusCouplingStart = 4;
         if (mode == PermMode::annulusLater) {
             system.steadyIteration = 1;
             cells[cellIndex - 1].dTdLCor = 1.e5;
@@ -416,8 +416,8 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
     configurePermCase(system, cells, scenario, cellIndex, mode);
     sisprod::thermal::advanceSteadyTemperature(sisprod::SolveContext(system).thermal(), cellIndex, RK);
     const CelG *forwardGas = system.arq.lingas == 1
-                                 ? &system.gasLift.celulaG[system.gasLift.ColunaAnulaIni +
-                                                  system.gasLift.AnulaColunaIni -
+                                 ? &system.gasLift.cells[system.gasLift.tubingCouplingStart +
+                                                  system.gasLift.annulusCouplingStart -
                                                   (cellIndex - 1)]
                                  : nullptr;
     printPermState("RenovaTempPerm", caseName, cells[cellIndex],
@@ -427,8 +427,8 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
     configurePermCase(system, cells, scenario, cellIndex, mode);
     sisprod::thermal::advanceReverseSteadyTemperature(sisprod::SolveContext(system).thermal(), cellIndex, RK);
     const CelG *reverseGas = system.arq.lingas == 1
-                                 ? &system.gasLift.celulaG[system.gasLift.ColunaAnulaIni +
-                                                  system.gasLift.AnulaColunaIni -
+                                 ? &system.gasLift.cells[system.gasLift.tubingCouplingStart +
+                                                  system.gasLift.annulusCouplingStart -
                                                   (cellIndex + 1)]
                                  : nullptr;
     printPermState("RenovaTempPermRev", caseName, cells[cellIndex],
@@ -508,7 +508,7 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
     resetCells(system, cells, scenario);
     resetAnnulus(system, scenario);
     for (int index = gasIndex - 1; index <= gasIndex; ++index) {
-        CelG &cell = system.gasLift.celulaG[index];
+        CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.05 * index;
         cell.duto.a = 0.12 * scale;
         cell.duto.area = M_PI * cell.duto.a * cell.duto.a / 4.;
@@ -517,18 +517,18 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
         cell.pres = scenario.pressure * scale;
         cell.VGasL = 0.55 * scale;
     }
-    system.gasLift.celulaG[gasIndex].razInter = currentRatio;
-    system.gasLift.celulaG[gasIndex - 1].razInter = previousRatio;
+    system.gasLift.cells[gasIndex].razInter = currentRatio;
+    system.gasLift.cells[gasIndex - 1].razInter = previousRatio;
 
     sisprod::thermal::computeDischargeTemperature(sisprod::SolveContext(system).thermal(), gasIndex);
 
-    const CelG &source = system.gasLift.celulaG[gasIndex - 1];
+    const CelG &source = system.gasLift.cells[gasIndex - 1];
     const Cel &production = cells[gasIndex - 1];
     printf("%-20s %-15s Tint=%a Vint=%a k=%a cp=%a rho=%a visc=%a prevR=%a nextL=%a\n",
            "tempDescarga", caseName, source.calor.Tint, source.calor.Vint,
            source.calor.kint, source.calor.cpint, production.calor.rhoint,
            production.calor.viscint, source.tempR,
-           system.gasLift.celulaG[gasIndex].tempL);
+           system.gasLift.cells[gasIndex].tempL);
 }
 
 void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
@@ -643,7 +643,7 @@ int main() {
     Cel *storage = new Cel[kCells + 1];
     Cel *cells = storage + 1;
     system.celula = cells;
-    system.gasLift.celulaG = new CelG[kCells + 3];
+    system.gasLift.cells = new CelG[kCells + 3];
     initializeLatentHeatTable(system);
 
     for (const Scenario &scenario : kScenarios)

@@ -75,7 +75,7 @@ struct SteadyStateUpdaters {
 struct SteadyStateState {
     /// Production cells -- SProd::celula. Written.
     Cel *const &cells;
-    /// Gas-line cells -- SProd::gasLift.celulaG. Written.
+    /// Gas-line cells -- SProd::gasLift.cells. Written.
     CelG *const &gasCells;
     /// Input deck -- SProd::arq. NOT const: the march writes back into it.
     Ler &input;
@@ -84,16 +84,16 @@ struct SteadyStateState {
 
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
-    /// Index of the last gas-line cell -- SProd::gasLift.ncelGas.
+    /// Index of the last gas-line cell -- SProd::gasLift.cellCount.
     const int &gasCellCount;
 
-    /// Injection choke -- SProd::gasLift.chokeInj. Written.
+    /// Injection choke -- SProd::gasLift.injectionChoke. Written.
     ChokeGas &injectionChoke;
     /// Surface choke -- SProd::chokeSup. Not const: marchProductionSteadySecondary
     /// calls vazmassSachd and vazmaxSachd on it, and neither is const-qualified.
     choke &surfaceChoke;
     /// Gas-line and production cell index of each gas-lift valve --
-    /// SProd::gasLift.posicVGLG and posicVGLP.
+    /// SProd::gasLift.gasValveCells and posicVGLP.
     const std::vector<int> &gasValveCellIndices;
     const std::vector<int> &productionValveCellIndices;
 
@@ -108,7 +108,7 @@ struct SteadyStateState {
 
     /// Annulus drift flag -- SProd::derivaAnel. Read only.
     const int &annulusDrift;
-    /// Network coupling flag -- SProd::gasLift.verificaAcop. Read only.
+    /// Network coupling flag -- SProd::gasLift.annulusThermalCoupling. Read only.
     const int &networkCoupled;
     /// End-node flag -- SProd::noextremo. Read only.
     const int &endNode;
@@ -117,9 +117,9 @@ struct SteadyStateState {
     /// Slow-heat-transfer switch -- SProd::steadySearch.slowHeatTransferThreshold. Written.
     double &slowHeatTransferThreshold;
 
-    /// Surface gas pressure -- SProd::gasLift.pGSup. Written.
+    /// Surface gas pressure -- SProd::gasLift.separatorPressure. Written.
     double &gasSurfacePressure;
-    /// Previous-step gas pressure and temperature -- SProd::gasLift.presiniG and
+    /// Previous-step gas pressure and temperature -- SProd::gasLift.injectionPressure and
     /// tempiniG. Read only here; the gas line owns them.
     const double &initialGasPressure;
     const double &initialGasTemperature;

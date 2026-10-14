@@ -308,7 +308,7 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     steadyIteration = 0;
     masChkSup = 0;
     dt = arq.dtmax;
-    gasLift.dtInter = arq.dtmax;
+    gasLift.interfaceTimeStep = arq.dtmax;
     transient.tfinal = arq.tfinal;
     transient.TransMassModel = 0;
     transient.indpigP = 0;
@@ -498,10 +498,10 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
     }
     if (arq.nvalv > 0)
         arq.geraValv(celula);
-    arq.gerapresfim(presfim, gasLift.pGSup);
-    transient.pGSupIni = gasLift.pGSup;
+    arq.gerapresfim(presfim, gasLift.separatorPressure);
+    transient.pGSupIni = gasLift.separatorPressure;
     chokeSup = choke(1., 1.);
-    gasLift.chokeInj = ChokeGas();
+    gasLift.injectionChoke = ChokeGas();
     arq.gerachokesup(chokeSup);
     transient.npig = arq.npig;
     if (transient.npig > 0) {
@@ -517,53 +517,53 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
 /// Without a gas line, only zeroes the gas cell count.
 void SProd::buildGasLiftLine() {
     if (arq.lingas == 0)
-        gasLift.ncelGas = 0;
+        gasLift.cellCount = 0;
     else if (arq.lingas > 0) {
-        gasLift.ncelGas = arq.ncelg;
-        gasLift.ncelGas--;
-        gasLift.celInter = arq.celdescarga;
-        gasLift.gasCells = vector<CelG>(gasLift.ncelGas + 1);
-        gasLift.celulaG = gasLift.gasCells.data();
-        arq.geracelg(gasLift.celulaG);
-        arq.geraMaster2(gasLift.celulaG);
-        arq.gerachokeinj(gasLift.chokeInj);
+        gasLift.cellCount = arq.ncelg;
+        gasLift.cellCount--;
+        gasLift.interfaceCell = arq.celdescarga;
+        gasLift.gasCells = vector<CelG>(gasLift.cellCount + 1);
+        gasLift.cells = gasLift.gasCells.data();
+        arq.geracelg(gasLift.cells);
+        arq.geraMaster2(gasLift.cells);
+        arq.gerachokeinj(gasLift.injectionChoke);
         if (arq.nvalvgas > 0) {
-            gasLift.chokeVGL = vector<ChokeGas>(arq.nvalvgas);
-            gasLift.posicVGLP = vector<int>(arq.nvalvgas);
-            gasLift.posicVGLG = vector<int>(arq.nvalvgas);
+            gasLift.valveChokes = vector<ChokeGas>(arq.nvalvgas);
+            gasLift.productionValveCells = vector<int>(arq.nvalvgas);
+            gasLift.gasValveCells = vector<int>(arq.nvalvgas);
         }
         for (int i = 0; i < arq.nvalvgas; i++) {
             double diaG = arq.valvgl[i].diagarg;
-            double presEstag = gasLift.celulaG[arq.valvgl[i].posicG].pres;
-            double tempEstag = gasLift.celulaG[arq.valvgl[i].posicG].temp;
+            double presEstag = gasLift.cells[arq.valvgl[i].posicG].pres;
+            double tempEstag = gasLift.cells[arq.valvgl[i].posicG].temp;
             double presGarg = celula[arq.valvgl[i].posicP].pres;
-            gasLift.posicVGLP[i] = arq.valvgl[i].posicP;
-            gasLift.posicVGLG[i] = arq.valvgl[i].posicG;
-            gasLift.celulaG[gasLift.posicVGLG[i]].vgl = 1;
+            gasLift.productionValveCells[i] = arq.valvgl[i].posicP;
+            gasLift.gasValveCells[i] = arq.valvgl[i].posicG;
+            gasLift.cells[gasLift.gasValveCells[i]].vgl = 1;
             if (arq.valvgl[i].tipo == 2) {
                 arq.valvgl[i].frec = 0.;
                 arq.valvgl[i].cd = 1.;
             }
             double throatArea = std::numbers::pi * diaG * diaG / 4.;
-            gasLift.chokeVGL[i] = ChokeGas(arq.flug, throatArea,
+            gasLift.valveChokes[i] = ChokeGas(arq.flug, throatArea,
                                    arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
                                    tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
                                    throatArea / arq.valvgl[i].razarea,
                                    arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
-            gasLift.celulaG[gasLift.posicVGLG[i]].pEstag = gasLift.chokeVGL[i].presEstag;
-            gasLift.celulaG[gasLift.posicVGLG[i]].tEstag = gasLift.chokeVGL[i].tempEstag;
-            gasLift.celulaG[gasLift.posicVGLG[i]].pGarg = gasLift.chokeVGL[i].presGarg;
-            gasLift.celulaG[gasLift.posicVGLG[i]].tGarg = gasLift.chokeVGL[i].tempGarg;
-            gasLift.celulaG[gasLift.posicVGLG[i]].qGarg = gasLift.chokeVGL[i].qGarg;
-            gasLift.celulaG[gasLift.posicVGLG[i]].areaGarg = gasLift.chokeVGL[i].areagarg;
+            gasLift.cells[gasLift.gasValveCells[i]].pEstag = gasLift.valveChokes[i].presEstag;
+            gasLift.cells[gasLift.gasValveCells[i]].tEstag = gasLift.valveChokes[i].tempEstag;
+            gasLift.cells[gasLift.gasValveCells[i]].pGarg = gasLift.valveChokes[i].presGarg;
+            gasLift.cells[gasLift.gasValveCells[i]].tGarg = gasLift.valveChokes[i].tempGarg;
+            gasLift.cells[gasLift.gasValveCells[i]].qGarg = gasLift.valveChokes[i].qGarg;
+            gasLift.cells[gasLift.gasValveCells[i]].areaGarg = gasLift.valveChokes[i].areagarg;
         }
-        for (int i = 0; i <= gasLift.ncelGas; i++) {
-            gasLift.celulaG[i].celInter = &gasLift.celInter;
-            gasLift.celulaG[i].razInter = 1.;
-            gasLift.celulaG[i].razInterIni = 1.;
-            if (i >= gasLift.celInter) {
-                gasLift.celulaG[i].razInter = 0.;
-                gasLift.celulaG[i].razInterIni = 0.;
+        for (int i = 0; i <= gasLift.cellCount; i++) {
+            gasLift.cells[i].celInter = &gasLift.interfaceCell;
+            gasLift.cells[i].razInter = 1.;
+            gasLift.cells[i].razInterIni = 1.;
+            if (i >= gasLift.interfaceCell) {
+                gasLift.cells[i].razInter = 0.;
+                gasLift.cells[i].razInterIni = 0.;
             }
         }
     }
@@ -619,9 +619,10 @@ void SProd::validateSetupAndApplyInitialState() {
     (*vg1dSP).lixo5 = 0.;
     (*vg1dSP).contador = 0;
     if (arq.pocinjec == 0) {
-        arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.chokeInj, celula, gasLift.celulaG, gasLift.pGSup, temperatura, gasLift.presiniG,
-                     gasLift.tempiniG, presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
-        transient.pGSupIni = gasLift.pGSup;
+        arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.injectionChoke, celula, gasLift.cells,
+                     gasLift.separatorPressure, temperatura, gasLift.injectionPressure, gasLift.injectionTemperature,
+                     presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
+        transient.pGSupIni = gasLift.separatorPressure;
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
             transient.aberto = 1;
             transient.abertoini = 1;
@@ -851,7 +852,7 @@ void SProd::allocateEventProfileAndTrendArrays() {
 
     int ntempGas = 0;
     if (arq.lingas > 0)
-        ntempGas = gasLift.ncelGas;
+        ntempGas = gasLift.cellCount;
 
     if (arq.nperfistransp > 0) {
         trends.productionWallProfileCells = vector<int>(arq.nperfistransp);
@@ -864,7 +865,7 @@ void SProd::allocateEventProfileAndTrendArrays() {
         trends.gasWallProfileCells = vector<int>(arq.nperfistransg);
         for (int i = 0; i < arq.nperfistransg; i++) {
             int posiccel = arq.proftransg.posic[i];
-            trends.gasWallProfileCells[i] = gasLift.celulaG[posiccel].calor.nglobal;
+            trends.gasWallProfileCells[i] = gasLift.cells[posiccel].calor.nglobal;
         }
     }
 
@@ -905,19 +906,20 @@ void SProd::allocateEventProfileAndTrendArrays() {
 /// events known at start, finds the smallest cell length, and zeroes the
 /// moving-average and running-total state the transient loop starts from.
 void SProd::resetCouplingAndOutputState() {
-    gasLift.verificaAcop = 0;
+    gasLift.annulusThermalCoupling = 0;
 
     if (arq.lingas > 0) {
-        gasLift.AnulaColunaIni = arq.anulcoluini();
-        gasLift.AnulaColunaFim = arq.anulcolufim();
-        gasLift.ColunaAnulaIni = arq.coluanulini();
-        gasLift.ColunaAnulaFim = arq.coluanulfim();
-        if (gasLift.ColunaAnulaFim == -1) {
-            gasLift.ColunaAnulaFim = 0;
-            gasLift.AnulaColunaFim--;
+        gasLift.annulusCouplingStart = arq.anulcoluini();
+        gasLift.annulusCouplingEnd = arq.anulcolufim();
+        gasLift.tubingCouplingStart = arq.coluanulini();
+        gasLift.tubingCouplingEnd = arq.coluanulfim();
+        if (gasLift.tubingCouplingEnd == -1) {
+            gasLift.tubingCouplingEnd = 0;
+            gasLift.annulusCouplingEnd--;
         }
-        if (gasLift.AnulaColunaIni >= 0 && gasLift.AnulaColunaFim >= 0 && gasLift.ColunaAnulaIni >= 0 && gasLift.ColunaAnulaFim >= 0)
-            gasLift.verificaAcop = 1;
+        if (gasLift.annulusCouplingStart >= 0 && gasLift.annulusCouplingEnd >= 0 && gasLift.tubingCouplingStart >= 0 &&
+            gasLift.tubingCouplingEnd >= 0)
+            gasLift.annulusThermalCoupling = 1;
     }
 
     networkCoupling.primaryThermalCoupling = 0;
@@ -932,13 +934,13 @@ void SProd::resetCouplingAndOutputState() {
     		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfisg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileG(gasLift.celulaG, flutG, (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileG(gasLift.cells, flutG, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransp > 0) {
     		arq.imprimeProfileTrans(celula, trends.productionWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileTransG(gasLift.celulaG, trends.gasWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTransG(gasLift.cells, trends.gasWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
     	}
     }
     trends.productionProfileTimeIndex = 0;
