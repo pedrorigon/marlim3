@@ -595,6 +595,157 @@ class SProd {
     friend struct sisprod::composition::CompositionUpdaters;
 
   public:
+    /// What a system built from an already parsed input takes from the system that
+    /// input came from: its place in the network and its reverse-flow state.
+    struct CarriedState {
+        int noextremo;
+        int noinicial;
+        int derivaAnel;
+        int bloq;
+        double betaRevini;
+        double titRevini;
+        double dtCicMin;
+    };
+
+    /// Constructs and initializes a production-system simulation from the input and log files.
+    SProd(std::string nomeArquivoEntrada, std::string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
+          tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = nullptr, int TD = -1, int vbloq = 0,
+          int reverso = 0,
+          double *compfonte = nullptr,
+          int *posicfonte = nullptr,
+          int nfontes = 0,
+          int redeperm = 1);
+
+    /// Creates an empty production-system object.
+    SProd();
+
+    /// Builds a system from an already parsed input, without reading the JSON file
+    /// again, with the place in the network and the reverse-flow state in carried.
+    SProd(Ler &parsedInput, const CarriedState &carried);
+
+    /// Not copyable: the object owns raw arrays, which operator= rebuilds
+    /// instead of sharing.
+    SProd(const SProd &) = delete;
+
+    /// Rebuilds this system from sp's input file, read again from disk, and takes
+    /// over sp's place in the network and reverse-flow state. Not a copy: the run
+    /// state starts afresh and the system is assembled again.
+    SProd &operator=(const SProd &);
+
+    /// The state another system built from this one's input takes over.
+    CarriedState carriedState() const;
+
+    /// Loads pressure-velocity results into cell and face state variables.
+    void renova(int expli = 0);
+    /// Updates only section-end states during intermediate network convergence.
+    void renovaBuffer();
+    /// Copies previous states when an active choke bypasses the intermediate network solve.
+    void renovaBufferCego();
+
+    /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
+    void renovaTemp();
+    /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
+    void renovaterm(int aflu = 0);
+    /// Computes T1 and T2 at the outlet of an internal network section.
+    void renovatermAfluFim();
+    /// Computes T1 and T2 at the inlet of an internal network section.
+    void renovatermColIni();
+
+    /// Calculates outlet-choke flow from the last-cell and separator pressures.
+    void calcCCpres(double titRev = 1., double alfRev = 1., double betRev = 0.);
+    /// Calculates outlet-choke flow for the intermediate network state.
+    void calcCCBuffer(double titRev = 1., double alfRev = 1., double betRev = 0.);
+
+    /// Selects a stable time step from CFL and additional model restrictions.
+    void determinaDT(int vexpli = 0);
+    /// Limits time-step growth when accepted steps remain well below the CFL estimate.
+    void atenuaDtMax();
+    /// Checks whether liquid-density variation requires the complete formulation.
+    void avaliaVariaDpDt(int vexpli = 0);
+    /// Updates the valve logic for the active-state formulation.
+    void aberturaVal1();
+    /// Updates the valve logic for the inactive-state formulation.
+    void aberturaVal0();
+    /// Restricts the time step during valve-state transitions.
+    void restringeDTporValv();
+
+    /// Advances the gas-injection system and prepares its coupling with the production line.
+    void solveLinGas();
+    /// Advances phase volume fractions.
+    void EvoluiFrac(double alfrev = 1., double betrev = 0., int ciclo = 0);
+    /// Restores the initial fraction state after an invalid update.
+    void ReiniEvolFrac0();
+    /// Restores previous volume fractions after a nonphysical update.
+    void ReiniEvolFrac();
+    /// Updates phase fractions in cells affected by a moving pig.
+    void AtualizaPig();
+    /// Assembles and solves the global pressure-velocity coupling system.
+    void SolveAcopPV(int vexpli = 0, int ciclo = 0);
+
+    /// Advances the transient energy equation.
+    void marchaEnergTrans(int ciclo = 0, int ciclomax = 0);
+    /// Refreshes local dynamic fluid-property tables.
+    void atualizaMiniTab();
+    /// Updates the first boundary condition.
+    void atualizaCC1();
+
+    /// Advances the complete transient production-system solution and handles output and logging. fluiRev is the
+    /// fluid that flows back from the collector, null when the system has none.
+    void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0., int nrede = -1,
+                    const ProFlu *fluiRev = nullptr);
+
+    /// Appends the buffered rows of a production-line trend file.
+    void ImprimeTrendP(int i, int nrede = -1);
+    /// Writes the column captions of a production-line trend file, truncating it.
+    void ImprimeTrendPCab(int i, int nrede = -1);
+    /// Appends the buffered rows of a service-line trend file.
+    void ImprimeTrendG(int i, int nrede = -1);
+    /// Writes the column captions of a service-line trend file, truncating it.
+    void ImprimeTrendGCab(int i, int nrede = -1);
+
+    /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
+    double marchaProdPerm1(double pchute);
+    /// Brackets and solves the bottomhole-pressure root for marchaProdPerm1.
+    double buscaProdPfundoPerm(double chute = -1., int kontaTenta = -1);
+    /// Brackets and solves the reverse-flow bottomhole-pressure root.
+    double buscaProdPfundoPermRev(double chute = -1.);
+    /// Brackets and solves the bottomhole-pressure root for marchaProdPerm2.
+    double buscaProdPfundoPerm2(double chute = -1., int kontaTenta = -1);
+    /// Runs a direct march when inlet pressure and flow rate are known.
+    double buscaProdPfundoPerm3(double pentrada);
+    /// Marches the steady production solution using a bottomhole mass-flow guess.
+    double marchaProdPresPres1(double mchute);
+    /// Brackets and solves the mass-flow root for marchaProdPresPres1.
+    double buscaProdPresPresPerm(double mchute, double maxvaz = 0., int kontaiter = 0);
+    /// Brackets and solves the reverse-flow mass-flow root.
+    double buscaProdPresPresPermRev(double mchute, double maxvaz = 0., int kontaiter = 0);
+    /// Brackets and solves the mass-flow root for marchaProdPresPres2.
+    double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
+    /// Brackets and solves the mass-flow root for the closed-choke case, chosen
+    /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
+    double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
+
+    /// Solves injection cases CC1 and CC3.
+    double buscaInjPfundoPerm1(double chute = -1.);
+    /// Solves injection case CC0.
+    double buscaInjPfundoPerm2(double chute = -1.);
+    /// Solves injection case CC2.
+    double buscaInjPfundoPerm3(double chute = -1.);
+    /// Solves injection case CC4.
+    double buscaInjPfundoPerm4();
+    /// Solves injection case CC5.
+    double buscaInjPfundoPerm5(double chute = -1.);
+
+    /// Estimates steady production-network node pressures from hydrostatics.
+    double hidroreverso(double hol, double vaz = 0, double vazG = 0);
+    /// Estimates steady injection-network node pressures from hydrostatics.
+    double hidroreversoInj(double hol, double vaz = 0);
+    /// Estimates secondary-branch pressures in a parallel production network.
+    double hidroTramoSecundario(double titulo);
+
+    /// Calculates temperature downstream from the surface choke for network coupling.
+    void calcTempFim();
+
     /// Enables latent-heat calculations for black-oil simulations.
     int CalcLat = 0;
 
@@ -634,11 +785,13 @@ class SProd {
 
     /// Parsed user input and simulation configuration.
     Ler arq;
+
   private:
     /// Drift-flux correlation chosen for each flow regime.
     ///
     /// Resolved from arq once, when the object is built, so the per cell path never reads configuration.
     driftflux::correlations::RegimeSelectors driftSelectors;
+
   public:
     /// Buffer used to write gas-line profiles, one row until the system is sized for its input.
     FullMtx<double> flutG{1, sisprod::kGasLineProfileFixedColumns};
@@ -658,10 +811,11 @@ class SProd {
 
     /// Event-log file name.
     std::string tmpLog;
-  private:
 
+  private:
     /// Number of iterations used to bracket the initial steady-state root.
     int iterperm = 0;
+
   public:
     /// Steady-state mode flag: 1 while Num4Main solves a network branch at steady state. The source terms read it
     /// (sisprod::sources::SourceState).
@@ -677,7 +831,6 @@ class SProd {
     std::vector<Cel> productionCells;
 
   public:
-
     /// Indicates that the section outlet is not connected to another network section.
     int noextremo = 1;
     /// Indicates that the section inlet is not connected to another network section.
@@ -730,17 +883,7 @@ class SProd {
         "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
         "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    ",
         "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
-  public:
 
-    /// Constructs and initializes a production-system simulation from the input and log files.
-    SProd(std::string nomeArquivoEntrada, std::string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-          tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = nullptr, int TD = -1, int vbloq = 0,
-          int reverso = 0,
-          double *compfonte = nullptr,
-          int *posicfonte = nullptr,
-          int nfontes = 0,
-          int redeperm = 1);
-  private:
     /// Puts the run state back where a system built from an input starts: the property tables and the steady-state
     /// search as declared, the trend pointers null, the boundary conditions, the time-step statistics and the counters
     /// at their initial values, the previous-time-level interface state equal to the current one, and the histories
@@ -748,44 +891,11 @@ class SProd {
     void resetRunState();
     /// Sizes the profile buffers and the pressure-velocity systems of both lines for arq's cells, all zero.
     void allocateSolutionBuffers();
-  public:
-    /// Creates an empty production-system object.
-    SProd();
 
-    /// Not copyable: the object owns raw arrays, which operator= rebuilds
-    /// instead of sharing.
-    SProd(const SProd &) = delete;
-
-  private:
     /// Gives back the memory of every array this object owns. operator= calls it before rebuilding, so that the
     /// arrays of the previous system are free before the input is read again.
     void releaseOwnedStorage();
-  public:
-    /// Rebuilds this system from sp's input file, read again from disk, and takes
-    /// over sp's place in the network and reverse-flow state. Not a copy: the run
-    /// state starts afresh and the system is assembled again.
-    SProd &operator=(const SProd &);
 
-    /// What a system built from an already parsed input takes from the system that
-    /// input came from: its place in the network and its reverse-flow state.
-    struct CarriedState {
-        int noextremo;
-        int noinicial;
-        int derivaAnel;
-        int bloq;
-        double betaRevini;
-        double titRevini;
-        double dtCicMin;
-    };
-
-    /// The state another system built from this one's input takes over.
-    CarriedState carriedState() const;
-
-    /// Builds a system from an already parsed input, without reading the JSON file
-    /// again, with the place in the network and the reverse-flow state in carried.
-    SProd(Ler &parsedInput, const CarriedState &carried);
-
-  private:
     /// Takes over the place in the network and the reverse-flow state in carried.
     void applyCarriedState(const CarriedState &carried);
     /// Points every cell fluid, and every source fluid it carries, at the
@@ -855,124 +965,9 @@ class SProd {
     void HidroDescargaG();
     /// Initializes the production line for gas-lift unloading.
     void HidroDescargaP();
-  public:
 
-    /// Loads pressure-velocity results into cell and face state variables.
-    void renova(int expli = 0);
-    /// Updates only section-end states during intermediate network convergence.
-    void renovaBuffer();
-    /// Copies previous states when an active choke bypasses the intermediate network solve.
-    void renovaBufferCego();
-
-    /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
-    void renovaTemp();
-    /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
-    void renovaterm(int aflu = 0);
-    /// Computes T1 and T2 at the outlet of an internal network section.
-    void renovatermAfluFim();
-    /// Computes T1 and T2 at the inlet of an internal network section.
-    void renovatermColIni();
-
-    /// Calculates outlet-choke flow from the last-cell and separator pressures.
-    void calcCCpres(double titRev = 1., double alfRev = 1., double betRev = 0.);
-    /// Calculates outlet-choke flow for the intermediate network state.
-    void calcCCBuffer(double titRev = 1., double alfRev = 1., double betRev = 0.);
-
-    /// Selects a stable time step from CFL and additional model restrictions.
-    void determinaDT(int vexpli = 0);
-    /// Limits time-step growth when accepted steps remain well below the CFL estimate.
-    void atenuaDtMax();
-    /// Checks whether liquid-density variation requires the complete formulation.
-    void avaliaVariaDpDt(int vexpli = 0);
-    /// Updates the valve logic for the active-state formulation.
-    void aberturaVal1();
-    /// Updates the valve logic for the inactive-state formulation.
-    void aberturaVal0();
-    /// Restricts the time step during valve-state transitions.
-    void restringeDTporValv();
-
-    /// Advances the gas-injection system and prepares its coupling with the production line.
-    void solveLinGas();
-    /// Advances phase volume fractions.
-    void EvoluiFrac(double alfrev = 1., double betrev = 0., int ciclo = 0);
-    /// Restores the initial fraction state after an invalid update.
-    void ReiniEvolFrac0();
-    /// Restores previous volume fractions after a nonphysical update.
-    void ReiniEvolFrac();
-    /// Updates phase fractions in cells affected by a moving pig.
-    void AtualizaPig();
-    /// Assembles and solves the global pressure-velocity coupling system.
-    void SolveAcopPV(int vexpli = 0, int ciclo = 0);
-
-    /// Advances the transient energy equation.
-    void marchaEnergTrans(int ciclo = 0, int ciclomax = 0);
-    /// Refreshes local dynamic fluid-property tables.
-    void atualizaMiniTab();
-    /// Updates the first boundary condition.
-    void atualizaCC1();
-
-  private:
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
-  public:
-    /// Advances the complete transient production-system solution and handles output and logging. fluiRev is the
-    /// fluid that flows back from the collector, null when the system has none.
-    void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0., int nrede = -1,
-                    const ProFlu *fluiRev = nullptr);
-
-    /// Appends the buffered rows of a production-line trend file.
-    void ImprimeTrendP(int i, int nrede = -1);
-    /// Writes the column captions of a production-line trend file, truncating it.
-    void ImprimeTrendPCab(int i, int nrede = -1);
-    /// Appends the buffered rows of a service-line trend file.
-    void ImprimeTrendG(int i, int nrede = -1);
-    /// Writes the column captions of a service-line trend file, truncating it.
-    void ImprimeTrendGCab(int i, int nrede = -1);
-
-    /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
-    double marchaProdPerm1(double pchute);
-    /// Brackets and solves the bottomhole-pressure root for marchaProdPerm1.
-    double buscaProdPfundoPerm(double chute = -1., int kontaTenta = -1);
-    /// Brackets and solves the reverse-flow bottomhole-pressure root.
-    double buscaProdPfundoPermRev(double chute = -1.);
-    /// Brackets and solves the bottomhole-pressure root for marchaProdPerm2.
-    double buscaProdPfundoPerm2(double chute = -1., int kontaTenta = -1);
-    /// Runs a direct march when inlet pressure and flow rate are known.
-    double buscaProdPfundoPerm3(double pentrada);
-    /// Marches the steady production solution using a bottomhole mass-flow guess.
-    double marchaProdPresPres1(double mchute);
-    /// Brackets and solves the mass-flow root for marchaProdPresPres1.
-    double buscaProdPresPresPerm(double mchute, double maxvaz = 0., int kontaiter = 0);
-    /// Brackets and solves the reverse-flow mass-flow root.
-    double buscaProdPresPresPermRev(double mchute, double maxvaz = 0., int kontaiter = 0);
-    /// Brackets and solves the mass-flow root for marchaProdPresPres2.
-    double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
-    /// Brackets and solves the mass-flow root for the closed-choke case, chosen
-    /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
-    double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
-
-    /// Solves injection cases CC1 and CC3.
-    double buscaInjPfundoPerm1(double chute = -1.);
-    /// Solves injection case CC0.
-    double buscaInjPfundoPerm2(double chute = -1.);
-    /// Solves injection case CC2.
-    double buscaInjPfundoPerm3(double chute = -1.);
-    /// Solves injection case CC4.
-    double buscaInjPfundoPerm4();
-    /// Solves injection case CC5.
-    double buscaInjPfundoPerm5(double chute = -1.);
-
-    /// Estimates steady production-network node pressures from hydrostatics.
-    double hidroreverso(double hol, double vaz = 0, double vazG = 0);
-    /// Estimates steady injection-network node pressures from hydrostatics.
-    double hidroreversoInj(double hol, double vaz = 0);
-    /// Estimates secondary-branch pressures in a parallel production network.
-    double hidroTramoSecundario(double titulo);
-
-    /// Calculates temperature downstream from the surface choke for network coupling.
-    void calcTempFim();
-
-  private:
 
     /// Caches the drift-flux correlation of each regime from arq.
     ///
