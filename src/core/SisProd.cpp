@@ -475,12 +475,12 @@ void SProd::atualizaCC1() {
 /// SolveTrans reaches it through a callback, so the hydrate phase runs first in
 /// the step.
 void SProd::solveHydrateEnvelopes() {
-    if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { // *vg1dSP).lixo5>0 && //chris - hydrates
+    if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) {
         FA_Hidrato solverHidrato(*this);
         solverHidrato.solverHidrato();
     }
 
-    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) { // *vg1dSP).lixo5>0 && //chris - hydrates
+    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) {
         FA_Hidrato_Servico solverHidratoG(*this);
         solverHidratoG.solverHidratoG();
     }
