@@ -18,6 +18,8 @@
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 
+using namespace sisprod;
+
 void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
 }
@@ -294,133 +296,133 @@ SProd::CarriedState SProd::carriedState() const {
 }
 
 void SProd::HidroDescargaG() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::computeGasUnloadingHydrostatics(context.gasLift());
+    SolveContext context(*this);
+    gaslift::computeGasUnloadingHydrostatics(context.gasLift());
 }
 
 void SProd::HidroDescargaP() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::computeProductionUnloadingHydrostatics(context.gasLift());
+    SolveContext context(*this);
+    gaslift::computeProductionUnloadingHydrostatics(context.gasLift());
 }
 
 void SProd::renova(int expli) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::updateCells(context.transientStep(), expli);
+    SolveContext context(*this);
+    transient::updateCells(context.transientStep(), expli);
 }
 
 void SProd::renovaBuffer() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::updateBufferFromSolution(context.transientStep());
+    SolveContext context(*this);
+    transient::updateBufferFromSolution(context.transientStep());
 }
 
 void SProd::renovaBufferCego() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::updateBufferFromCells(context.transientStep());
+    SolveContext context(*this);
+    transient::updateBufferFromCells(context.transientStep());
 }
 
 void SProd::renovaTemp() {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::updateDistributedMassTransfer(context.thermal());
+    SolveContext context(*this);
+    thermal::updateDistributedMassTransfer(context.thermal());
 }
 
 void SProd::renovaterm(int aflu) {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::updateFlowPartitionTerms(context.thermal(), aflu);
+    SolveContext context(*this);
+    thermal::updateFlowPartitionTerms(context.thermal(), aflu);
 }
 
 void SProd::renovatermAfluFim() {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::updateOutletFlowPartitionTerms(context.thermal());
+    SolveContext context(*this);
+    thermal::updateOutletFlowPartitionTerms(context.thermal());
 }
 
 void SProd::renovatermColIni() {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::updateInletFlowPartitionTerms(context.thermal());
+    SolveContext context(*this);
+    thermal::updateInletFlowPartitionTerms(context.thermal());
 }
 
 void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::applyOutletPressureCondition(context.transientStep(), titRev, alfRev, betRev);
+    SolveContext context(*this);
+    transient::applyOutletPressureCondition(context.transientStep(), titRev, alfRev, betRev);
 }
 
 void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::applyOutletBufferCondition(context.transientStep(), titRev, alfRev, betRev);
+    SolveContext context(*this);
+    transient::applyOutletBufferCondition(context.transientStep(), titRev, alfRev, betRev);
 }
 
 void SProd::determinaDT(int vexpli) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::computeTimeStep(context.transientStep(), vexpli);
+    SolveContext context(*this);
+    transient::computeTimeStep(context.transientStep(), vexpli);
 }
 
 void SProd::atenuaDtMax() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::dampMaximumTimeStep(context.transientStep());
+    SolveContext context(*this);
+    transient::dampMaximumTimeStep(context.transientStep());
 }
 
 void SProd::avaliaVariaDpDt(int vexpli) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::evaluatePressureRateOfChange(context.transientStep(), vexpli);
+    SolveContext context(*this);
+    transient::evaluatePressureRateOfChange(context.transientStep(), vexpli);
 }
 
 void SProd::aberturaVal0() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::valveOpeningLow(context.transientStep());
+    SolveContext context(*this);
+    transient::valveOpeningLow(context.transientStep());
 }
 
 void SProd::aberturaVal1() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::valveOpeningHigh(context.transientStep());
+    SolveContext context(*this);
+    transient::valveOpeningHigh(context.transientStep());
 }
 
 void SProd::restringeDTporValv() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::restrictTimeStepByValve(context.transientStep());
+    SolveContext context(*this);
+    transient::restrictTimeStepByValve(context.transientStep());
 }
 
 void SProd::solveLinGas() {
-    sisprod::SolveContext context(*this);
-    sisprod::gaslift::solveGasLine(context.gasLift());
+    SolveContext context(*this);
+    gaslift::solveGasLine(context.gasLift());
 }
 
 void SProd::EvoluiFrac(double alfrev, double betrev, int ciclo) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::evolveFractions(context.transientStep(), alfrev, betrev, ciclo);
+    SolveContext context(*this);
+    transient::evolveFractions(context.transientStep(), alfrev, betrev, ciclo);
 }
 
 void SProd::ReiniEvolFrac0() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::restartFractionEvolutionInitial(context.transientStep());
+    SolveContext context(*this);
+    transient::restartFractionEvolutionInitial(context.transientStep());
 }
 
 void SProd::ReiniEvolFrac() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::restartFractionEvolution(context.transientStep());
+    SolveContext context(*this);
+    transient::restartFractionEvolution(context.transientStep());
 }
 
 void SProd::AtualizaPig() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::updatePig(context.transientStep());
+    SolveContext context(*this);
+    transient::updatePig(context.transientStep());
 }
 
 void SProd::SolveAcopPV(int vexpli, int ciclo) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::solvePressureVolumeCoupling(context.transientStep(), vexpli, ciclo);
+    SolveContext context(*this);
+    transient::solvePressureVolumeCoupling(context.transientStep(), vexpli, ciclo);
 }
 
 void SProd::marchaEnergTrans(int ciclo, int ciclomax) {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::advanceTransientEnergy(context.thermal(), ciclo, ciclomax);
+    SolveContext context(*this);
+    thermal::advanceTransientEnergy(context.thermal(), ciclo, ciclomax);
 }
 
 void SProd::atualizaMiniTab() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::refreshFluidMiniTable(context.transientStep());
+    SolveContext context(*this);
+    transient::refreshFluidMiniTable(context.transientStep());
 }
 
 void SProd::atualizaCC1() {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::refreshInletCondition(context.transientStep());
+    SolveContext context(*this);
+    transient::refreshInletCondition(context.transientStep());
 }
 
 void SProd::solveHydrateEnvelopes() {
@@ -436,122 +438,122 @@ void SProd::solveHydrateEnvelopes() {
 }
 
 void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
-    sisprod::SolveContext context(*this);
-    sisprod::transient::solveTransientStep(context.transientSolve(), titRev, alfRev, betRev, nrede, fluiRev);
+    SolveContext context(*this);
+    transient::solveTransientStep(context.transientSolve(), titRev, alfRev, betRev, nrede, fluiRev);
 }
 
 void SProd::ImprimeTrendPCab(int i, int nrede) {
-    sisprod::SolveContext context(*this);
+    SolveContext context(*this);
     trendoutput::writeProductionTrendHeader(context.trends(), i, nrede);
 }
 
 void SProd::ImprimeTrendP(int i, int nrede) {
-    sisprod::SolveContext context(*this);
+    SolveContext context(*this);
     trendoutput::writeProductionTrendRows(context.trends(), i, nrede);
 }
 
 void SProd::ImprimeTrendGCab(int i, int nrede) {
-    sisprod::SolveContext context(*this);
+    SolveContext context(*this);
     trendoutput::writeGasLineTrendHeader(context.trends(), i, nrede);
 }
 
 void SProd::ImprimeTrendG(int i, int nrede) {
-    sisprod::SolveContext context(*this);
+    SolveContext context(*this);
     trendoutput::writeGasLineTrendRows(context.trends(), i, nrede);
 }
 
 double SProd::marchaProdPerm1(double pchute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::marchProductionSteady(context.steady(), pchute);
+    SolveContext context(*this);
+    return steady::marchProductionSteady(context.steady(), pchute);
 }
 
 double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionBottomHolePressure(context.search(), chute, kontaTenta);
+    SolveContext context(*this);
+    return steady::searchProductionBottomHolePressure(context.search(), chute, kontaTenta);
 }
 
 double SProd::buscaProdPfundoPermRev(double chute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchReverseProductionBottomHolePressure(context.search(), chute);
+    SolveContext context(*this);
+    return steady::searchReverseProductionBottomHolePressure(context.search(), chute);
 }
 
 double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionBottomHolePressureSecondary(context.search(), chute, kontaTenta);
+    SolveContext context(*this);
+    return steady::searchProductionBottomHolePressureSecondary(context.search(), chute, kontaTenta);
 }
 
 double SProd::buscaProdPfundoPerm3(double pentrada) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionBottomHolePressureTertiary(context.search(), pentrada);
+    SolveContext context(*this);
+    return steady::searchProductionBottomHolePressureTertiary(context.search(), pentrada);
 }
 
 double SProd::marchaProdPresPres1(double mchute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::marchProductionPressureToPressure(context.steady(), mchute);
+    SolveContext context(*this);
+    return steady::marchProductionPressureToPressure(context.steady(), mchute);
 }
 
 double SProd::buscaProdPresPresPerm(double mchute, double maxvaz, int kontaiter) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
+    SolveContext context(*this);
+    return steady::searchProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
 }
 
 double SProd::buscaProdPresPresPermRev(double mchute, double maxvaz, int kontaiter) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchReverseProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
+    SolveContext context(*this);
+    return steady::searchReverseProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
 }
 
 double SProd::buscaProdPresPresPerm2(double mchute, double maxvaz) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionPressureToPressureSecondary(context.search(), mchute, maxvaz);
+    SolveContext context(*this);
+    return steady::searchProductionPressureToPressureSecondary(context.search(), mchute, maxvaz);
 }
 
 double SProd::buscaProdPresPresPerm3(double mchute, double maxvaz) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionPressureToPressureTertiary(context.search(), mchute, maxvaz);
+    SolveContext context(*this);
+    return steady::searchProductionPressureToPressureTertiary(context.search(), mchute, maxvaz);
 }
 
 void SProd::calcTempFim() {
-    sisprod::SolveContext context(*this);
-    sisprod::thermal::computeOutletTemperature(context.thermal());
+    SolveContext context(*this);
+    thermal::computeOutletTemperature(context.thermal());
 }
 
 double SProd::buscaInjPfundoPerm1(double chute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchInjectionBottomHolePressure1(context.search(), chute);
+    SolveContext context(*this);
+    return steady::searchInjectionBottomHolePressure1(context.search(), chute);
 }
 
 double SProd::buscaInjPfundoPerm2(double chute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchInjectionBottomHolePressure2(context.search(), chute);
+    SolveContext context(*this);
+    return steady::searchInjectionBottomHolePressure2(context.search(), chute);
 }
 
 double SProd::buscaInjPfundoPerm3(double chute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchInjectionBottomHolePressure3(context.search(), chute);
+    SolveContext context(*this);
+    return steady::searchInjectionBottomHolePressure3(context.search(), chute);
 }
 
 double SProd::buscaInjPfundoPerm4() {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchInjectionBottomHolePressure4(context.search());
+    SolveContext context(*this);
+    return steady::searchInjectionBottomHolePressure4(context.search());
 }
 
 double SProd::buscaInjPfundoPerm5(double chute) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::searchInjectionBottomHolePressure5(context.search(), chute);
+    SolveContext context(*this);
+    return steady::searchInjectionBottomHolePressure5(context.search(), chute);
 }
 
 double SProd::hidroreverso(double hol, double vaz, double vazG) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::reverseHydrostatic(context.steady(), hol, vaz, vazG);
+    SolveContext context(*this);
+    return steady::reverseHydrostatic(context.steady(), hol, vaz, vazG);
 }
 
 double SProd::hidroreversoInj(double hol, double vaz) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::reverseInjectionHydrostatic(context.steady(), hol, vaz);
+    SolveContext context(*this);
+    return steady::reverseInjectionHydrostatic(context.steady(), hol, vaz);
 }
 
 double SProd::hidroTramoSecundario(double titulo) {
-    sisprod::SolveContext context(*this);
-    return sisprod::steady::secondaryBranchHydrostatic(context.steady(), titulo);
+    SolveContext context(*this);
+    return steady::secondaryBranchHydrostatic(context.steady(), titulo);
 }
 
