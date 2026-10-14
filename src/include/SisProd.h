@@ -774,7 +774,9 @@ class SProd {
           int nfontes = 0,
           int redeperm = 1);
   private:
-    /// The run state every construction and reassignment starts from.
+    /// Puts the run state back where a system built from an input starts: the table and trend pointers null, the
+    /// boundary conditions, the steady-state search, the time-step statistics and the counters at their initial
+    /// values, the previous-time-level interface state equal to the current one, and the histories empty.
     void resetRunState();
   public:
     /// Creates an empty production-system object.

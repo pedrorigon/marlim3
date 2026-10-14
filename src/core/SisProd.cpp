@@ -128,6 +128,28 @@ void SProd::resetRunState() {
     steadySearch.monitConvPermBase = 1.;
 
     transient.alteraTempo = 0;
+
+    gasLift.celInterIni = gasLift.celInter;
+    gasLift.dtInterIni = gasLift.dtInter;
+    gasLift.velInterIni = gasLift.velInter;
+
+    transient.presVet.clear();
+    transient.jVet.clear();
+    transient.alfVet.clear();
+    transient.tVet.clear();
+    transient.dtSim.clear();
+    transient.dtCFL.clear();
+    gasLift.vazmaxMedDesc.clear();
+    gasLift.dtDesc.clear();
+    transient.taxaDpMax.clear();
+    transient.taxaDTMax.clear();
+    tables.tabDin.clear();
+    coupling3D.acertaIndAcop.clear();
+    transient.indCelPoisson2D.clear();
+    networkCoupling.indFonteRedeParalelaIni.clear();
+    networkCoupling.fonteMpRedeParalelaIni.clear();
+    networkCoupling.fonteMcRedeParalelaIni.clear();
+    networkCoupling.fonteMgRedeParalelaIni.clear();
 }
 
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
@@ -143,9 +165,6 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
                 .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)} {
     resolveDriftSelectors();
     resetRunState();
-    gasLift.celInterIni = gasLift.celInter;
-    gasLift.dtInterIni = gasLift.dtInter;
-    gasLift.velInterIni = gasLift.velInter;
     networkCoupling.betaRevini = 0;
     bloq = vbloq;
     vg1dSP = Vvg1dSP;
@@ -162,7 +181,6 @@ SProd::SProd()
                                             kProductionRightBandwidth),
                 .termolivreP = Vcr<double>(kProductionUnknownsPerCell)} {
     resolveDriftSelectors();
-    resetRunState();
 }
 
 namespace {
@@ -214,9 +232,6 @@ SProd &SProd::operator=(const SProd &sp) {
     gasLift.termolivreG = sp.gasLift.termolivreG;
     vg1dSP = sp.vg1dSP;
     resetRunState();
-    gasLift.celInterIni = gasLift.celInter;
-    gasLift.dtInterIni = gasLift.dtInter;
-    gasLift.velInterIni = gasLift.velInter;
 
     noextremo = sp.noextremo;
     noinicial = sp.noinicial;
@@ -231,24 +246,6 @@ SProd &SProd::operator=(const SProd &sp) {
     networkCoupling.redeParalelaCCsecundario = sp.networkCoupling.redeParalelaCCsecundario;
     networkCoupling.redeParalelaP = sp.networkCoupling.redeParalelaP;
     networkCoupling.redeParalelaS = sp.networkCoupling.redeParalelaS;
-
-    transient.presVet.clear();
-    transient.jVet.clear();
-    transient.alfVet.clear();
-    transient.tVet.clear();
-    transient.dtSim.clear();
-    transient.dtCFL.clear();
-    gasLift.vazmaxMedDesc.clear();
-    gasLift.dtDesc.clear();
-    transient.taxaDpMax.clear();
-    transient.taxaDTMax.clear();
-    tables.tabDin.clear();
-    coupling3D.acertaIndAcop.clear();
-    transient.indCelPoisson2D.clear();
-    networkCoupling.indFonteRedeParalelaIni.clear();
-    networkCoupling.fonteMpRedeParalelaIni.clear();
-    networkCoupling.fonteMcRedeParalelaIni.clear();
-    networkCoupling.fonteMgRedeParalelaIni.clear();
 
     montasistema();
 
@@ -269,9 +266,6 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     gasLift.termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
     vg1dSP = arq.vg1dSP;
     resetRunState();
-    gasLift.celInterIni = gasLift.celInter;
-    gasLift.dtInterIni = gasLift.dtInter;
-    gasLift.velInterIni = gasLift.velInter;
 
     noextremo = carried.noextremo;
     noinicial = carried.noinicial;
