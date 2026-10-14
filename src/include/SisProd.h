@@ -1401,13 +1401,13 @@ class SProd {
     void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
                     int nrede = -1, ProFlu fluiRev = ProFlu());
 
-    /// Appends one production-line trend sample to its output buffer.
+    /// Appends the buffered rows of a production-line trend file.
     void ImprimeTrendP(int i, int nrede = -1);
-    /// Appends one production-line trend sample to its output buffer.
+    /// Writes the column captions of a production-line trend file, truncating it.
     void ImprimeTrendPCab(int i, int nrede = -1);
-    /// Appends one gas-line trend sample to its output buffer.
+    /// Appends the buffered rows of a service-line trend file.
     void ImprimeTrendG(int i, int nrede = -1);
-    /// Appends one gas-line trend sample to its output buffer.
+    /// Writes the column captions of a service-line trend file, truncating it.
     void ImprimeTrendGCab(int i, int nrede = -1);
 
     /// Marches the steady production solution using a bottomhole-pressure guess with outlet pressure prescribed.
