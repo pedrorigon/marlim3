@@ -73,28 +73,36 @@ extern time_t nowGlobFim;
 extern tm *ltmGlobFim;
 
 class SProd;
-namespace sisprod { class SolveContext; }
-namespace sisprod::composition { struct CompositionState; struct CompositionUpdaters; }
-namespace sisprod::gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
-namespace sisprod::sources { struct SourceState; }
-namespace sisprod::steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
-namespace sisprod::thermal { struct ThermalClosureUpdater; struct ThermalSourceUpdater; struct ThermalState; }
-namespace sisprod::transient { struct TransientSolveState; struct TransientSolveUpdaters; struct TransientStepState; struct TransientStepUpdaters; }
 namespace trendoutput { struct TrendState; }
-namespace sisprod::adapters {
-sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::steady::SteadyStateState steadyStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::transient::TransientStepState transientStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::composition::CompositionState compositionStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::thermal::ThermalState thermalStateOf(SProd &system, sisprod::SolveContext &context);
-sisprod::sources::SourceState sourceStateOf(SProd &system);
-driftflux::coefficient::ClosureState closureStateOf(SProd &system);
-trendoutput::TrendState trendStateOf(const SProd &system);
-}  // namespace sisprod::adapters
 
 namespace sisprod {
+
+class SolveContext;
+namespace composition { struct CompositionState; struct CompositionUpdaters; }
+namespace gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
+namespace sources { struct SourceState; }
+namespace steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
+namespace thermal { struct ThermalClosureUpdater; struct ThermalSourceUpdater; struct ThermalState; }
+namespace transient {
+struct TransientSolveState;
+struct TransientSolveUpdaters;
+struct TransientStepState;
+struct TransientStepUpdaters;
+}  // namespace transient
+
+namespace adapters {
+gaslift::GasLiftState gasLiftStateOf(SProd &system, SolveContext &context);
+steady::SteadyStateState steadyStateOf(SProd &system, SolveContext &context);
+steady::SteadyStateSearchState searchStateOf(SProd &system, SolveContext &context);
+transient::TransientStepState transientStateOf(SProd &system, SolveContext &context);
+composition::CompositionState compositionStateOf(SProd &system, SolveContext &context);
+transient::TransientSolveState transientSolveStateOf(SProd &system, SolveContext &context);
+thermal::ThermalState thermalStateOf(SProd &system, SolveContext &context);
+sources::SourceState sourceStateOf(SProd &system);
+driftflux::coefficient::ClosureState closureStateOf(SProd &system);
+trendoutput::TrendState trendStateOf(const SProd &system);
+}  // namespace adapters
+
 
 /// A pressure-temperature table the fluids read through a double **: its rows, and a pointer to each.
 struct GridTable {
