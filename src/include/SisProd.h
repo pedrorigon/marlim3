@@ -830,7 +830,7 @@ struct NetworkCoupling {
      */
     double tGSupIni = 0.;
     /**
-     * @brief Reserved temperature state; currently unused.
+     * @brief Temperature downstream of the surface choke, delivered to the next network section.
      */
     double tempSup = 0;
     /**
