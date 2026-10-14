@@ -152,6 +152,16 @@ void SProd::resetRunState() {
     networkCoupling.fonteMgRedeParalelaIni.clear();
 }
 
+void SProd::allocateSolutionBuffers() {
+    flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns);
+    flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns);
+    transient.matglobP =
+        BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth, kProductionRightBandwidth);
+    transient.termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
+    gasLift.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
+    gasLift.termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
+}
+
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int reverso,
              double *compfonte, int *posicfonte, int nfontes, int redeperm)
@@ -224,12 +234,7 @@ SProd &SProd::operator=(const SProd &sp) {
 
     arq = sp.arq;
     resolveDriftSelectors();
-    flut = sp.flut;
-    flutG = sp.flutG;
-    transient.matglobP = sp.transient.matglobP;
-    transient.termolivreP = sp.transient.termolivreP;
-    gasLift.matglobG = sp.gasLift.matglobG;
-    gasLift.termolivreG = sp.gasLift.termolivreG;
+    allocateSolutionBuffers();
     vg1dSP = sp.vg1dSP;
     resetRunState();
 
@@ -257,13 +262,7 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
 
     arq.copiaSemJson(parsedInput);
     resolveDriftSelectors();
-    flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns);
-    flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns);
-    transient.matglobP =
-        BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth, kProductionRightBandwidth);
-    transient.termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
-    gasLift.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
-    gasLift.termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
+    allocateSolutionBuffers();
     vg1dSP = arq.vg1dSP;
     resetRunState();
 

@@ -778,6 +778,8 @@ class SProd {
     /// boundary conditions, the steady-state search, the time-step statistics and the counters at their initial
     /// values, the previous-time-level interface state equal to the current one, and the histories empty.
     void resetRunState();
+    /// Sizes the profile buffers and the pressure-velocity systems of both lines for arq's cells, all zero.
+    void allocateSolutionBuffers();
   public:
     /// Creates an empty production-system object.
     SProd();
