@@ -198,7 +198,7 @@ struct TransientStepState {
     std::vector<double> &maximumPressureRates;
     /// SProd::tempE -- read only.
     double &inletTemperature;
-    /// SProd::networkCoupling.titRev -- read only.
+    /// SProd::networkCoupling.reverseQuality -- read only.
     const double &reverseQuality;
     /// SProd::gasLift.velInterIni -- read only.
     const double &initialInterfaceVelocity;

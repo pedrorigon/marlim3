@@ -314,8 +314,8 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     transient.indpigP = 0;
     transient.indpigPini = transient.indpigP;
     transient.reinicia = 0;
-    networkCoupling.masChkSupini = 0;
-    networkCoupling.betaRev = 0.;
+    networkCoupling.previousSurfaceChokeActive = 0;
+    networkCoupling.reverseLiquidFraction = 0.;
     transient.trackDeng = arq.trackDeng;
     steadySearch.productionFluidCount = arq.nfluP;
     CalcLat = arq.latente;
@@ -328,7 +328,7 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
         arq.fluc.injPoc = 0;
     (*vg1dSP).localtiny = arq.mono;
     (*vg1dSP).CritCond = arq.critcond;
-    networkCoupling.titRev = -1;
+    networkCoupling.reverseQuality = -1;
     if (injPoc >= 1 && arq.nipr == 0 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5)
         NumError(
             "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e nao foi incluido nenhuma IPR no sistema");
@@ -631,7 +631,7 @@ void SProd::validateSetupAndApplyInitialState() {
         }
     }
 
-    networkCoupling.tempSup = celula[ncel].temp;
+    networkCoupling.chokeOutletTemperature = celula[ncel].temp;
 
     tGSup = celula[ncel].calor.Textern1;
 }
@@ -918,12 +918,12 @@ void SProd::resetCouplingAndOutputState() {
             gasLift.verificaAcop = 1;
     }
 
-    networkCoupling.verificaAcopRedeP = 0;
-    networkCoupling.verificaAcopRedeS = 0;
-    networkCoupling.SecPrimIniRedeP = 0;
-    networkCoupling.SecPrimFimRedeP = 0;
-    networkCoupling.PrimSecIniRedeP = 0;
-    networkCoupling.PrimSecFimRedeP = 0;
+    networkCoupling.primaryThermalCoupling = 0;
+    networkCoupling.secondaryThermalCoupling = 0;
+    networkCoupling.secondaryCouplingStart = 0;
+    networkCoupling.secondaryCouplingEnd = 0;
+    networkCoupling.primaryCouplingStart = 0;
+    networkCoupling.primaryCouplingEnd = 0;
 
     if(arq.AP==0){
     	if (arq.nperfisp > 0) {

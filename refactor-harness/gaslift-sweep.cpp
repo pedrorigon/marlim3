@@ -258,7 +258,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.thermalSourceDisabled = 0;
     system.presfim = scenario.pressure - 5.;
     system.gasLift.pGSup = scenario.pressure;
-    system.networkCoupling.tempSup = -901.;
+    system.networkCoupling.chokeOutletTemperature = -901.;
     system.arq.master1.razareaativ = 0.;
     system.arq.lingas = 0;
     system.arq.escorregaTran = 1;
@@ -283,7 +283,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.arq.limTransMass = 10.;
     system.arq.AceleraConvergPerm = 0;
     system.arq.nCompTotalUnidadesP = 100.;
-    system.networkCoupling.verificaAcopRedeP = 0;
+    system.networkCoupling.primaryThermalCoupling = 0;
     system.vg1dSP->blackOilTemp = 0;
     system.arq.chokep.abertura[0] = scenario.chokeOpening;
 }

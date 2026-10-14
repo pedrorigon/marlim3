@@ -475,61 +475,61 @@ struct TrendRecorder {
 /// parallel network.
 struct NetworkCoupling {
     /// Inlet pressure stored at the previous time level.
-    double presEini = -1;
+    double previousInletPressure = -1;
     /// Inlet temperature stored at the previous time level.
-    double tempEini = -1;
+    double previousInletTemperature = -1;
     /// Inlet gas mass fraction stored at the previous time level.
-    double titEini = -1;
+    double previousInletQuality = -1;
     /// Inlet void fraction stored at the previous time level.
-    double alfEini = -1;
+    double previousInletVoidFraction = -1;
     /// Inlet complementary-liquid fraction stored at the previous time level.
-    double betaEini = -1;
+    double previousInletLiquidFraction = -1;
     /// Previous-time-level value of presfim.
-    double presfimini = 0;
+    double previousOutletPressure = 0;
     /// Gas mass fraction imposed during reverse flow at the last control volume. Used only by transient network
     /// simulations.
-    double titRev = 1.;
-    /// Previous-time-level value of titRev.
-    double titRevini = 1.;
+    double reverseQuality = 1.;
+    /// Previous-time-level value of reverseQuality.
+    double previousReverseQuality = 1.;
     /// Complementary-liquid fraction imposed during reverse flow at the last control volume. Used only by transient
     /// network simulations.
-    double betaRev = 0.;
-    /// Previous-time-level value of betaRev.
-    double betaRevini = 1.;
+    double reverseLiquidFraction = 0.;
+    /// Previous-time-level value of reverseLiquidFraction.
+    double previousReverseLiquidFraction = 1.;
     /// Previous-time-level downstream or separator temperature.
-    double tGSupIni = 0.;
+    double previousSeparatorTemperature = 0.;
     /// Temperature downstream of the surface choke, delivered to the next network section.
-    double tempSup = 0;
+    double chokeOutletTemperature = 0;
     /// Previous-time-level value of masChkSup.
-    int masChkSupini = 0;
+    int previousSurfaceChokeActive = 0;
     /// Previous-time-level value of mudaModoChk.
-    int mudaModoChkini = 0;
+    int previousChokeModeChanged = 0;
     /// Secondary-line index where parallel-network coupling with the primary line begins.
-    int SecPrimIniRedeP = 0;
+    int secondaryCouplingStart = 0;
     /// Secondary-line index where parallel-network coupling with the primary line ends.
-    int SecPrimFimRedeP = 0;
-    /// Primary-line index aligned with SecPrimIniRedeP.
-    int PrimSecIniRedeP = 0;
-    /// Primary-line index aligned with SecPrimFimRedeP.
-    int PrimSecFimRedeP = 0;
+    int secondaryCouplingEnd = 0;
+    /// Primary-line index aligned with secondaryCouplingStart.
+    int primaryCouplingStart = 0;
+    /// Primary-line index aligned with secondaryCouplingEnd.
+    int primaryCouplingEnd = 0;
     /// Indicates thermal coupling on the primary branch of a parallel network.
-    int verificaAcopRedeP = 0;
+    int primaryThermalCoupling = 0;
     /// Indicates thermal coupling on the secondary branch of a parallel network.
-    int verificaAcopRedeS = 0;
+    int secondaryThermalCoupling = 0;
     /// Initial source indices for parallel-network coupling.
-    std::vector<int> indFonteRedeParalelaIni;
+    std::vector<int> parallelSourceCells;
     /// Initial production-liquid sources for the parallel network.
-    std::vector<double> fonteMpRedeParalelaIni;
+    std::vector<double> parallelSourceProductionLiquid;
     /// Initial complementary-liquid sources for the parallel network.
-    std::vector<double> fonteMcRedeParalelaIni;
+    std::vector<double> parallelSourceComplementaryLiquid;
     /// Initial gas sources for the parallel network.
-    std::vector<double> fonteMgRedeParalelaIni;
+    std::vector<double> parallelSourceGas;
     /// Boundary-condition type applied to the secondary parallel-network branch.
-    int redeParalelaCCsecundario = -1;
+    int parallelSecondaryBoundaryCondition = -1;
     /// Primary branch index in a parallel network.
-    int redeParalelaP = -1;
+    int parallelPrimaryBranch = -1;
     /// Secondary branch index in a parallel network.
-    int redeParalelaS = -1;
+    int parallelSecondaryBranch = -1;
 };
 
 /// What the steady-state search carries from one iteration to the next: the convergence
@@ -601,8 +601,8 @@ class SProd {
         int noinicial;
         int derivaAnel;
         int bloq;
-        double betaRevini;
-        double titRevini;
+        double previousReverseLiquidFraction;
+        double previousReverseQuality;
         double dtCicMin;
     };
 

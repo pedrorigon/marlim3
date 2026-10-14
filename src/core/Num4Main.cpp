@@ -1764,8 +1764,8 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             }
                             double pres = malha[ind].gasLift.pGSup;
                             malha[ind].calcTempFim();
-                            tempFim[k] = malha[ind].networkCoupling.tempSup;
-                            temp[k] = malha[ind].networkCoupling.tempSup;
+                            tempFim[k] = malha[ind].networkCoupling.chokeOutletTemperature;
+                            temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
 
                             if ((malha[ind].celula[fim].MliqiniR) > 0.) {
                                 double bo = malha[ind].celula[fim].flui.BOFunc(pres, temp[k]);
@@ -2167,8 +2167,8 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                 ciclomalha++;
                                 for (int iaflu = 0; iaflu < arqRede.malha[aux].nafluente; iaflu++) {
                                     int indaflu = arqRede.malha[aux].afluente[iaflu];
-                                    malha[indaflu].networkCoupling.titRev = alfmist;
-                                    malha[indaflu].networkCoupling.betaRev = betmist;
+                                    malha[indaflu].networkCoupling.reverseQuality = alfmist;
+                                    malha[indaflu].networkCoupling.reverseLiquidFraction = betmist;
 
                                     if ((*arqRede.vg1dSP).iterRedeT == 0)
                                         malha[indaflu].tGSup = tempmist;
@@ -2270,12 +2270,12 @@ void celAfluFinal(int naflu, int ncol, span<SProd> malha, Rede &arqRede, Vcr<int
     malha[naflu].celula[iaflu].MR = malha[naflu].celula[iaflu].MC;
 
     if (malha[naflu].masChkSup == 0 && malha[naflu].arq.chkv == 0) {
-        malha[naflu].celula[iaflu].alf = malha[naflu].networkCoupling.titRev;
+        malha[naflu].celula[iaflu].alf = malha[naflu].networkCoupling.reverseQuality;
         malha[naflu].celula[iaflu].alfR = malha[ncol].celula[icol].alfR;
     }
 
     if (malha[naflu].masChkSup == 0 && malha[naflu].arq.chkv == 0) {
-        malha[naflu].celula[iaflu].bet = malha[naflu].networkCoupling.betaRev;
+        malha[naflu].celula[iaflu].bet = malha[naflu].networkCoupling.reverseLiquidFraction;
         malha[naflu].celula[iaflu].betR = malha[ncol].celula[icol].betR;
     }
 
@@ -2297,18 +2297,18 @@ void celAfluFinal(int naflu, int ncol, span<SProd> malha, Rede &arqRede, Vcr<int
     malha[naflu].celula[iaflu].rcRi = malha[ncol].celula[icol].rcRi;
 
     if (malha[naflu].masChkSup == 0 && malha[naflu].arq.chkv == 0) {
-        malha[naflu].celula[iaflu].alfPigE = malha[naflu].networkCoupling.titRev;
-        malha[naflu].celula[iaflu].alfPigER = malha[naflu].networkCoupling.titRev;
-        malha[naflu].celula[iaflu].alfPigD = malha[naflu].networkCoupling.titRev;
-        malha[naflu].celula[iaflu].betPigE = malha[naflu].networkCoupling.betaRev;
-        malha[naflu].celula[iaflu].betPigD = malha[naflu].networkCoupling.betaRev;
+        malha[naflu].celula[iaflu].alfPigE = malha[naflu].networkCoupling.reverseQuality;
+        malha[naflu].celula[iaflu].alfPigER = malha[naflu].networkCoupling.reverseQuality;
+        malha[naflu].celula[iaflu].alfPigD = malha[naflu].networkCoupling.reverseQuality;
+        malha[naflu].celula[iaflu].betPigE = malha[naflu].networkCoupling.reverseLiquidFraction;
+        malha[naflu].celula[iaflu].betPigD = malha[naflu].networkCoupling.reverseLiquidFraction;
     }
 }
 
 void corrigeVazNo(span<SProd> malha, int ind) {
     int ncel = malha[ind].ncel;
 
-    if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.titRev >= 1. - (*malha[ind].vg1dSP).localtiny)) {
+    if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality >= 1. - (*malha[ind].vg1dSP).localtiny)) {
         if ((malha[ind].celula[ncel - 1].MliqiniR < 0)) {
             malha[ind].celula[ncel - 1].MR -= (malha[ind].celula[ncel - 1].MliqiniR);
             malha[ind].celula[ncel - 1].MliqiniR = 0;
@@ -2324,7 +2324,7 @@ void corrigeVazNo(span<SProd> malha, int ind) {
             malha[ind].celula[ncel - 1].QLR = 0;
             malha[ind].celula[ncel].QL = 0;
         }
-    } else if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.titRev <= (*malha[ind].vg1dSP).localtiny)) {
+    } else if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality <= (*malha[ind].vg1dSP).localtiny)) {
         if (malha[ind].celula[ncel - 1].MliqiniR < 0) {
             malha[ind].celula[ncel - 1].MR = malha[ind].celula[ncel - 1].MliqiniR;
             malha[ind].celula[ncel - 1].term1R = 1;
@@ -2339,7 +2339,7 @@ void corrigeVazNo(span<SProd> malha, int ind) {
 void corrigeVazNoBuf(span<SProd> malha, int ind) {
     int ncel = malha[ind].ncel;
 
-    if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.titRev >= 1. - (*malha[ind].vg1dSP).localtiny)) {
+    if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality >= 1. - (*malha[ind].vg1dSP).localtiny)) {
         if ((malha[ind].transient.fontemassPRBuf + malha[ind].transient.fontemassCRBuf) < 0) {
             malha[ind].transient.fontemassPRBuf = 0;
             malha[ind].transient.fontemassCRBuf = 0;
@@ -2349,7 +2349,7 @@ void corrigeVazNoBuf(span<SProd> malha, int ind) {
             malha[ind].celula[ncel].term1 = 0;
             malha[ind].celula[ncel].term2 = 0;
         }
-    } else if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.titRev <= (*malha[ind].vg1dSP).localtiny)) {
+    } else if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality <= (*malha[ind].vg1dSP).localtiny)) {
         if (malha[ind].transient.fontemassGRBuf < 0) {
             malha[ind].transient.fontemassGRBuf = 0;
             malha[ind].celula[ncel - 1].term1R = 1;
@@ -2515,8 +2515,8 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
 
     for (int i = 0; i < narq; i++) {
         if (inativo[i] == 0) {
-            malha[i].networkCoupling.titRev = malha[i].celula[malha[i].ncel].alf;
-            malha[i].networkCoupling.betaRev = malha[i].celula[malha[i].ncel].bet;
+            malha[i].networkCoupling.reverseQuality = malha[i].celula[malha[i].ncel].alf;
+            malha[i].networkCoupling.reverseLiquidFraction = malha[i].celula[malha[i].ncel].bet;
         }
     }
 
@@ -2661,15 +2661,15 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
             if (inativo[i] == 0) {
 
                 malha[i].transient.pGSupIni = malha[i].gasLift.pGSup;
-                malha[i].networkCoupling.tGSupIni = malha[i].tGSup;
-                malha[i].networkCoupling.presEini = malha[i].presE;
-                malha[i].networkCoupling.tempEini = malha[i].tempE;
-                malha[i].networkCoupling.titEini = malha[i].titE;
-                malha[i].networkCoupling.betaEini = malha[i].betaE;
-                malha[i].networkCoupling.alfEini = malha[i].alfE;
-                malha[i].networkCoupling.titRevini = malha[i].networkCoupling.titRev;
-                malha[i].networkCoupling.betaRevini = malha[i].networkCoupling.betaRev;
-                malha[i].networkCoupling.presfimini = malha[i].presfim;
+                malha[i].networkCoupling.previousSeparatorTemperature = malha[i].tGSup;
+                malha[i].networkCoupling.previousInletPressure = malha[i].presE;
+                malha[i].networkCoupling.previousInletTemperature = malha[i].tempE;
+                malha[i].networkCoupling.previousInletQuality = malha[i].titE;
+                malha[i].networkCoupling.previousInletLiquidFraction = malha[i].betaE;
+                malha[i].networkCoupling.previousInletVoidFraction = malha[i].alfE;
+                malha[i].networkCoupling.previousReverseQuality = malha[i].networkCoupling.reverseQuality;
+                malha[i].networkCoupling.previousReverseLiquidFraction = malha[i].networkCoupling.reverseLiquidFraction;
+                malha[i].networkCoupling.previousOutletPressure = malha[i].presfim;
                 condcon[i] = malha[i].arq.ConContEntrada;
                 temperatura[i] = malha[i].temperatura;
                 injTempIni[i] = malha[i].celula[0].acsr.injm.temp;
@@ -2689,8 +2689,8 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 rcRi[i] = malha[i].celula[0].rcRi;
                 malha[i].transient.abertoini = malha[i].transient.aberto;
                 malha[i].transient.tempoabertoini = malha[i].transient.tempoaberto;
-                malha[i].networkCoupling.masChkSupini = malha[i].masChkSup;
-                malha[i].networkCoupling.mudaModoChkini = malha[i].transient.mudaModoChk;
+                malha[i].networkCoupling.previousSurfaceChokeActive = malha[i].masChkSup;
+                malha[i].networkCoupling.previousChokeModeChanged = malha[i].transient.mudaModoChk;
             }
         }
 
@@ -2969,15 +2969,15 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                         malha[i].celula[malha[i].ncel].fontemassLR = fonteP[i];
                         malha[i].celula[malha[i].ncel].fontemassGR = fonteG[i];
                         malha[i].gasLift.pGSup = malha[i].transient.pGSupIni;
-                        malha[i].tGSup = malha[i].networkCoupling.tGSupIni;
-                        malha[i].presfim = malha[i].networkCoupling.presfimini;
-                        malha[i].tempE = malha[i].networkCoupling.tempEini;
-                        malha[i].titE = malha[i].networkCoupling.titEini;
-                        malha[i].betaE = malha[i].networkCoupling.betaEini;
-                        malha[i].alfE = malha[i].networkCoupling.alfEini;
-                        malha[i].presE = malha[i].networkCoupling.presEini;
-                        malha[i].networkCoupling.betaRev = malha[i].networkCoupling.betaRevini;
-                        malha[i].networkCoupling.titRev = malha[i].networkCoupling.titRevini;
+                        malha[i].tGSup = malha[i].networkCoupling.previousSeparatorTemperature;
+                        malha[i].presfim = malha[i].networkCoupling.previousOutletPressure;
+                        malha[i].tempE = malha[i].networkCoupling.previousInletTemperature;
+                        malha[i].titE = malha[i].networkCoupling.previousInletQuality;
+                        malha[i].betaE = malha[i].networkCoupling.previousInletLiquidFraction;
+                        malha[i].alfE = malha[i].networkCoupling.previousInletVoidFraction;
+                        malha[i].presE = malha[i].networkCoupling.previousInletPressure;
+                        malha[i].networkCoupling.reverseLiquidFraction = malha[i].networkCoupling.previousReverseLiquidFraction;
+                        malha[i].networkCoupling.reverseQuality = malha[i].networkCoupling.previousReverseQuality;
                         malha[i].temperatura = temperatura[i];
                         malha[i].celula[malha[i].ncel].flui = fluiFim[i];
                         malha[i].celula[0].fluiL = fluiIni[i];
@@ -2988,8 +2988,8 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                         malha[i].arq.ConContEntrada = condcon[i];
                         malha[i].transient.aberto = malha[i].transient.abertoini;
                         malha[i].transient.tempoaberto = malha[i].transient.tempoabertoini;
-                        malha[i].masChkSup = malha[i].networkCoupling.masChkSupini;
-                        malha[i].transient.mudaModoChk = malha[i].networkCoupling.mudaModoChkini;
+                        malha[i].masChkSup = malha[i].networkCoupling.previousSurfaceChokeActive;
+                        malha[i].transient.mudaModoChk = malha[i].networkCoupling.previousChokeModeChanged;
                         if (malha[i].celula[0].acsr.tipo == 10) {
                             malha[i].celula[0].acsr.injm.MassG = injMG[i];
                             malha[i].celula[0].acsr.injm.MassP = injMP[i];
@@ -3320,7 +3320,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
                 titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
                 double pres = malha[ind].gasLift.pGSup;
                 malha[ind].calcTempFim();
-                temp[k] = malha[ind].networkCoupling.tempSup;
+                temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
                 if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
@@ -3390,7 +3390,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
                     malha[ind].gasLift.pGSup, malha[ind].celula[fim].temp);
                 double pres = malha[ind].gasLift.pGSup;
                 malha[ind].calcTempFim();
-                temp[k] = malha[ind].networkCoupling.tempSup;
+                temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
                 BSW[k] = malha[ind].celula[fim].flui.BSW;
@@ -3454,7 +3454,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
             titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
             double pres = malha[indAflu].gasLift.pGSup;
             malha[ind].calcTempFim();
-            temp[k] = malha[ind].networkCoupling.tempSup;
+            temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
             Bet[k] = malha[ind].celula[ini].bet;
 
             if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
@@ -3838,7 +3838,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                     int icol = arqRede.malha[i].coleta[0];
                     malha[i].gasLift.pGSup = malha[icol].celula[0].pres;
                     malha[i].tGSup = malha[icol].celula[0].temp;
-                    malha[i].networkCoupling.tempSup = malha[icol].celula[0].temp;
+                    malha[i].networkCoupling.chokeOutletTemperature = malha[icol].celula[0].temp;
                 }
                 if (valor < -1e9 || valor > 1e9) {
                     inativo[i] = 1;
@@ -4268,7 +4268,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                         } else {
                                             malha[indaflu].gasLift.pGSup = malha[aux].celula[0].pres;
                                             malha[indaflu].tGSup = malha[aux].celula[0].temp;
-                                            malha[indaflu].networkCoupling.tempSup = malha[aux].celula[0].temp;
+                                            malha[indaflu].networkCoupling.chokeOutletTemperature = malha[aux].celula[0].temp;
                                         }
                                     }
                                 }
@@ -5204,7 +5204,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
                 titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
                 double pres = malha[ind].gasLift.pGSup;
                 malha[ind].calcTempFim();
-                temp[k] = malha[ind].networkCoupling.tempSup;
+                temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
                 if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
@@ -5271,7 +5271,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
                     malha[ind].gasLift.pGSup, malha[ind].celula[fim].temp);
                 double pres = malha[ind].gasLift.pGSup;
                 malha[ind].calcTempFim();
-                temp[k] = malha[ind].networkCoupling.tempSup;
+                temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
                 BSW[k] = malha[ind].celula[fim].flui.BSW;
@@ -5330,7 +5330,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
             titW[k] = (1 - fw) * rhoO / ((1 - fw) * rhoO + fw * rhoW);
             double pres = malha[indAflu].gasLift.pGSup;
             malha[ind].calcTempFim();
-            temp[k] = malha[ind].networkCoupling.tempSup;
+            temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
             Bet[k] = malha[ind].celula[ini].bet;
 
             if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
@@ -5975,7 +5975,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 RGO[k] = malha[ind].celula[fim].flui.RGO;
                 double pres = malha[ind].gasLift.pGSup;
                 malha[ind].calcTempFim();
-                temp[k] = malha[ind].networkCoupling.tempSup;
+                temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
                 if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
@@ -6052,7 +6052,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 RGO[k] = malha[ind].celula[fim].flui.RGO;
                 double pres = malha[ind].gasLift.pGSup;
                 malha[ind].calcTempFim();
-                temp[k] = malha[ind].networkCoupling.tempSup;
+                temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
                 BSW[k] = malha[ind].celula[fim].flui.BSW;
@@ -6114,7 +6114,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
             RGO[k] = malha[ind].celula[ini].flui.RGO;
             double pres = malha[indAflu].gasLift.pGSup;
             malha[ind].calcTempFim();
-            temp[k] = malha[ind].networkCoupling.tempSup;
+            temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
             Bet[k] = malha[ind].celula[ini].bet;
 
             if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
@@ -6458,7 +6458,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                     int icol = arqRede.malha[i].coleta[0];
                     malha[i].gasLift.pGSup = malha[icol].celula[0].pres;
                     malha[i].tGSup = malha[icol].celula[0].temp;
-                    malha[i].networkCoupling.tempSup = malha[icol].celula[0].temp;
+                    malha[i].networkCoupling.chokeOutletTemperature = malha[icol].celula[0].temp;
                 }
                 if (valor < -1e9 || valor > 1e9) {
                     inativo[i] = 1;
@@ -6984,7 +6984,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                         } else {
                                             malha[indaflu].gasLift.pGSup = malha[aux].celula[0].pres;
                                             malha[indaflu].tGSup = malha[aux].celula[0].temp;
-                                            malha[indaflu].networkCoupling.tempSup = malha[aux].celula[0].temp;
+                                            malha[indaflu].networkCoupling.chokeOutletTemperature = malha[aux].celula[0].temp;
                                         }
                                     }
                                 }
@@ -10973,8 +10973,8 @@ double zriddr(span<SProd> malha, double x1, double x2,
 }
 
 void conectaPrincipal(span<SProd> malha, int iP, int iS, int itera = 1) {
-    for (int i = malha[iP].networkCoupling.PrimSecIniRedeP; i >= malha[iP].networkCoupling.PrimSecFimRedeP; i--) {
-        int j = malha[iP].networkCoupling.PrimSecIniRedeP + malha[iP].networkCoupling.SecPrimIniRedeP - i;
+    for (int i = malha[iP].networkCoupling.primaryCouplingStart; i >= malha[iP].networkCoupling.primaryCouplingEnd; i--) {
+        int j = malha[iP].networkCoupling.primaryCouplingStart + malha[iP].networkCoupling.secondaryCouplingStart - i;
         if (itera == 1)
             malha[iP].celula[i].calor.Textern2 = malha[iS].celula[j].calor.Tcamada[0][0];
         else
@@ -11084,12 +11084,12 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
             }
         }
 
-        if (malha[iP].networkCoupling.verificaAcopRedeP == 1 && malha[iS].networkCoupling.verificaAcopRedeS == 1) {
+        if (malha[iP].networkCoupling.primaryThermalCoupling == 1 && malha[iS].networkCoupling.secondaryThermalCoupling == 1) {
             conectaPrincipal(malha, iP, iS);
-            int nacopP = malha[iP].networkCoupling.PrimSecIniRedeP - malha[iP].networkCoupling.PrimSecFimRedeP;
+            int nacopP = malha[iP].networkCoupling.primaryCouplingStart - malha[iP].networkCoupling.primaryCouplingEnd;
             for (int iacop = 0; iacop <= nacopP; iacop++) {
-                malha[iS].celula[malha[iS].networkCoupling.SecPrimIniRedeP + iacop].fluxcalAcopRedeP =
-                    malha[iP].celula[malha[iP].networkCoupling.PrimSecIniRedeP - iacop].fluxcalmed;
+                malha[iS].celula[malha[iS].networkCoupling.secondaryCouplingStart + iacop].fluxcalAcopRedeP =
+                    malha[iP].celula[malha[iP].networkCoupling.primaryCouplingStart - iacop].fluxcalmed;
             }
         }
 
@@ -11169,8 +11169,8 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
         for (int i = 0; i < narq; i++) {
             malha[i].transient.abertoini = malha[i].transient.aberto;
             malha[i].transient.tempoabertoini = malha[i].transient.tempoaberto;
-            malha[i].networkCoupling.masChkSupini = malha[i].masChkSup;
-            malha[i].networkCoupling.mudaModoChkini = malha[i].transient.mudaModoChk;
+            malha[i].networkCoupling.previousSurfaceChokeActive = malha[i].masChkSup;
+            malha[i].networkCoupling.previousChokeModeChanged = malha[i].transient.mudaModoChk;
         }
 
         for (int kontaAcop = 0; kontaAcop <= 1 * modeloCompletoGlob; kontaAcop++) {
@@ -11438,10 +11438,10 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
         (malha[iS].celula[0].acsr.tipo != 1 && malha[iS].celula[0].acsr.tipo != 2 && malha[iS].celula[0].acsr.tipo != 10))
         NumError("Tramo secundario da Rede paralela deve ter condicao de contorno de pressao, ou fonte de líquido, gás ou massa no início do tramo");
 
-    malha[iP].networkCoupling.redeParalelaP = 1;
-    malha[iS].networkCoupling.redeParalelaS = 1;
-    malha[iP].networkCoupling.redeParalelaCCsecundario = malha[iS].arq.ConContEntrada;
-    malha[iS].networkCoupling.redeParalelaCCsecundario = malha[iS].arq.ConContEntrada;
+    malha[iP].networkCoupling.parallelPrimaryBranch = 1;
+    malha[iS].networkCoupling.parallelSecondaryBranch = 1;
+    malha[iP].networkCoupling.parallelSecondaryBoundaryCondition = malha[iS].arq.ConContEntrada;
+    malha[iS].networkCoupling.parallelSecondaryBoundaryCondition = malha[iS].arq.ConContEntrada;
     double massGas = 0.;
     double massLiqP = 0.;
     double massLiqC = 0.;
@@ -11466,34 +11466,34 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
         massLiqP /= nfontes;
         massLiqC /= nfontes;
         for (int i = 0; i < nfontes; i++) {
-            malha[iP].networkCoupling.indFonteRedeParalelaIni.emplace_back(arqRede.conexFR[i].noP);
-            malha[iP].networkCoupling.fonteMgRedeParalelaIni.emplace_back(massGas);
-            malha[iP].networkCoupling.fonteMpRedeParalelaIni.emplace_back(massLiqP);
-            malha[iP].networkCoupling.fonteMcRedeParalelaIni.emplace_back(massLiqC);
+            malha[iP].networkCoupling.parallelSourceCells.emplace_back(arqRede.conexFR[i].noP);
+            malha[iP].networkCoupling.parallelSourceGas.emplace_back(massGas);
+            malha[iP].networkCoupling.parallelSourceProductionLiquid.emplace_back(massLiqP);
+            malha[iP].networkCoupling.parallelSourceComplementaryLiquid.emplace_back(massLiqC);
         }
     }
 
-    malha[iP].networkCoupling.verificaAcopRedeP = 0;
-    malha[iP].networkCoupling.verificaAcopRedeS = 0;
-    malha[iS].networkCoupling.verificaAcopRedeP = 0;
-    malha[iS].networkCoupling.verificaAcopRedeS = 0;
+    malha[iP].networkCoupling.primaryThermalCoupling = 0;
+    malha[iP].networkCoupling.secondaryThermalCoupling = 0;
+    malha[iS].networkCoupling.primaryThermalCoupling = 0;
+    malha[iS].networkCoupling.secondaryThermalCoupling = 0;
 
-    malha[iP].networkCoupling.PrimSecIniRedeP = malha[iP].arq.acopPriRedeParalelaini();
-    malha[iP].networkCoupling.PrimSecFimRedeP = malha[iP].arq.acopPriRedeParalelafim();
-    malha[iS].networkCoupling.PrimSecIniRedeP = malha[iP].networkCoupling.PrimSecIniRedeP;
-    malha[iS].networkCoupling.PrimSecFimRedeP = malha[iP].networkCoupling.PrimSecFimRedeP;
-    malha[iS].networkCoupling.SecPrimIniRedeP = malha[iS].arq.acopSecRedeParalelaini();
-    malha[iS].networkCoupling.SecPrimFimRedeP = malha[iS].arq.acopSecRedeParalelafim();
-    malha[iP].networkCoupling.SecPrimIniRedeP = malha[iS].networkCoupling.SecPrimIniRedeP;
-    malha[iP].networkCoupling.SecPrimFimRedeP = malha[iS].networkCoupling.SecPrimFimRedeP;
-    if (malha[iP].networkCoupling.PrimSecIniRedeP >= 0 && malha[iP].networkCoupling.PrimSecFimRedeP >= 0 && malha[iS].networkCoupling.PrimSecIniRedeP >= 0 && malha[iS].networkCoupling.PrimSecFimRedeP >= 0) {
-        malha[iP].networkCoupling.verificaAcopRedeP = 1;
-        malha[iS].networkCoupling.verificaAcopRedeS = 1;
+    malha[iP].networkCoupling.primaryCouplingStart = malha[iP].arq.acopPriRedeParalelaini();
+    malha[iP].networkCoupling.primaryCouplingEnd = malha[iP].arq.acopPriRedeParalelafim();
+    malha[iS].networkCoupling.primaryCouplingStart = malha[iP].networkCoupling.primaryCouplingStart;
+    malha[iS].networkCoupling.primaryCouplingEnd = malha[iP].networkCoupling.primaryCouplingEnd;
+    malha[iS].networkCoupling.secondaryCouplingStart = malha[iS].arq.acopSecRedeParalelaini();
+    malha[iS].networkCoupling.secondaryCouplingEnd = malha[iS].arq.acopSecRedeParalelafim();
+    malha[iP].networkCoupling.secondaryCouplingStart = malha[iS].networkCoupling.secondaryCouplingStart;
+    malha[iP].networkCoupling.secondaryCouplingEnd = malha[iS].networkCoupling.secondaryCouplingEnd;
+    if (malha[iP].networkCoupling.primaryCouplingStart >= 0 && malha[iP].networkCoupling.primaryCouplingEnd >= 0 && malha[iS].networkCoupling.primaryCouplingStart >= 0 && malha[iS].networkCoupling.primaryCouplingEnd >= 0) {
+        malha[iP].networkCoupling.primaryThermalCoupling = 1;
+        malha[iS].networkCoupling.secondaryThermalCoupling = 1;
     }
-    if (malha[iP].networkCoupling.verificaAcopRedeP == 1 && malha[iS].networkCoupling.verificaAcopRedeS == 1) {
+    if (malha[iP].networkCoupling.primaryThermalCoupling == 1 && malha[iS].networkCoupling.secondaryThermalCoupling == 1) {
         conectaPrincipal(malha, iP, iS, 0);
-        int nacopP = malha[iP].networkCoupling.PrimSecIniRedeP - malha[iP].networkCoupling.PrimSecFimRedeP;
-        int nacopS = malha[iS].networkCoupling.SecPrimFimRedeP - malha[iS].networkCoupling.SecPrimIniRedeP;
+        int nacopP = malha[iP].networkCoupling.primaryCouplingStart - malha[iP].networkCoupling.primaryCouplingEnd;
+        int nacopS = malha[iS].networkCoupling.secondaryCouplingEnd - malha[iS].networkCoupling.secondaryCouplingStart;
         if (nacopP != nacopS)
             NumError("Acoplamento termico entre tramo primario e secundario com numero de celulas diferente");
     }
@@ -11541,11 +11541,11 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
                 malha[iP].celula[celP].acsr.fontechk.titamb = malha[iS].celula[celS].acsr.fontechk.titT;
             }
         }
-        if (malha[iP].networkCoupling.verificaAcopRedeP == 1 && malha[iS].networkCoupling.verificaAcopRedeS == 1) {
-            int nacopP = malha[iP].networkCoupling.PrimSecIniRedeP - malha[iP].networkCoupling.PrimSecFimRedeP;
+        if (malha[iP].networkCoupling.primaryThermalCoupling == 1 && malha[iS].networkCoupling.secondaryThermalCoupling == 1) {
+            int nacopP = malha[iP].networkCoupling.primaryCouplingStart - malha[iP].networkCoupling.primaryCouplingEnd;
             for (int iacop = 0; iacop <= nacopP; iacop++) {
-                malha[iP].celula[malha[iP].networkCoupling.PrimSecIniRedeP - iacop].resAcopRedeP =
-                    malha[iS].celula[malha[iS].networkCoupling.SecPrimIniRedeP + iacop].calor.resGlob;
+                malha[iP].celula[malha[iP].networkCoupling.primaryCouplingStart - iacop].resAcopRedeP =
+                    malha[iS].celula[malha[iS].networkCoupling.secondaryCouplingStart + iacop].calor.resGlob;
             }
         }
         resulmed = (0.5 * resulP0 + 0.5 * resulP);
@@ -11554,11 +11554,11 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
             resulP = SolveTramoSolteiro(malha[iP], resulmed);
         else
             resulP = SolveTramoSolteiro(malha[iP]);
-        if (malha[iP].networkCoupling.verificaAcopRedeP == 1 && malha[iS].networkCoupling.verificaAcopRedeS == 1) {
-            int nacopP = malha[iP].networkCoupling.PrimSecIniRedeP - malha[iP].networkCoupling.PrimSecFimRedeP;
+        if (malha[iP].networkCoupling.primaryThermalCoupling == 1 && malha[iS].networkCoupling.secondaryThermalCoupling == 1) {
+            int nacopP = malha[iP].networkCoupling.primaryCouplingStart - malha[iP].networkCoupling.primaryCouplingEnd;
             for (int iacop = 0; iacop <= nacopP; iacop++) {
-                malha[iS].celula[malha[iS].networkCoupling.SecPrimIniRedeP + iacop].fluxcalAcopRedeP =
-                    malha[iP].celula[malha[iP].networkCoupling.PrimSecIniRedeP - iacop].fluxcalmed;
+                malha[iS].celula[malha[iS].networkCoupling.secondaryCouplingStart + iacop].fluxcalAcopRedeP =
+                    malha[iP].celula[malha[iP].networkCoupling.primaryCouplingStart - iacop].fluxcalmed;
             }
         }
         for (int i = 0; i < nfontes; i++) {

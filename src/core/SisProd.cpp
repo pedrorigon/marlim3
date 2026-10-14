@@ -105,17 +105,17 @@ void SProd::resetRunState() {
     trends.ntrendtransB = nullptr;
     trends.kimpT = 0.;
 
-    networkCoupling.presEini = -1;
-    networkCoupling.tempEini = -1;
-    networkCoupling.titEini = -1;
-    networkCoupling.betaEini = -1;
-    networkCoupling.alfEini = -1;
-    networkCoupling.tGSupIni = 0.;
-    networkCoupling.mudaModoChkini = 0;
-    networkCoupling.indFonteRedeParalelaIni.clear();
-    networkCoupling.fonteMpRedeParalelaIni.clear();
-    networkCoupling.fonteMcRedeParalelaIni.clear();
-    networkCoupling.fonteMgRedeParalelaIni.clear();
+    networkCoupling.previousInletPressure = -1;
+    networkCoupling.previousInletTemperature = -1;
+    networkCoupling.previousInletQuality = -1;
+    networkCoupling.previousInletLiquidFraction = -1;
+    networkCoupling.previousInletVoidFraction = -1;
+    networkCoupling.previousSeparatorTemperature = 0.;
+    networkCoupling.previousChokeModeChanged = 0;
+    networkCoupling.parallelSourceCells.clear();
+    networkCoupling.parallelSourceProductionLiquid.clear();
+    networkCoupling.parallelSourceComplementaryLiquid.clear();
+    networkCoupling.parallelSourceGas.clear();
 
     coupling3D.coupledIndexCorrections.clear();
 }
@@ -133,7 +133,7 @@ void SProd::allocateSolutionBuffers() {
 SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidation,
              tipoSimulacao_t simulationType, varGlob1D *globals, int dynamicTable, int blocking, int reversedGeometry,
              double *extraSourceLengths, int *extraSourceCells, int extraSourceCount, int steadyBranch)
-    : networkCoupling{.betaRevini = 0},
+    : networkCoupling{.previousReverseLiquidFraction = 0},
       arq(inputFile, logFile, jsonValidation, simulationType, reversedGeometry, globals, steadyBranch),
       flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
       flut(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns),
@@ -199,9 +199,9 @@ SProd &SProd::operator=(const SProd &other) {
     allocateSolutionBuffers();
     resetRunState();
     applyCarriedState(other.carriedState());
-    networkCoupling.redeParalelaCCsecundario = other.networkCoupling.redeParalelaCCsecundario;
-    networkCoupling.redeParalelaP = other.networkCoupling.redeParalelaP;
-    networkCoupling.redeParalelaS = other.networkCoupling.redeParalelaS;
+    networkCoupling.parallelSecondaryBoundaryCondition = other.networkCoupling.parallelSecondaryBoundaryCondition;
+    networkCoupling.parallelPrimaryBranch = other.networkCoupling.parallelPrimaryBranch;
+    networkCoupling.parallelSecondaryBranch = other.networkCoupling.parallelSecondaryBranch;
 
     montasistema();
 
@@ -223,8 +223,8 @@ SProd::CarriedState SProd::carriedState() const {
             .noinicial = noinicial,
             .derivaAnel = derivaAnel,
             .bloq = bloq,
-            .betaRevini = networkCoupling.betaRevini,
-            .titRevini = networkCoupling.titRevini,
+            .previousReverseLiquidFraction = networkCoupling.previousReverseLiquidFraction,
+            .previousReverseQuality = networkCoupling.previousReverseQuality,
             .dtCicMin = transient.dtCicMin};
 }
 
@@ -233,8 +233,8 @@ void SProd::applyCarriedState(const CarriedState &carried) {
     noinicial = carried.noinicial;
     derivaAnel = carried.derivaAnel;
     bloq = carried.bloq;
-    networkCoupling.betaRevini = carried.betaRevini;
-    networkCoupling.titRevini = carried.titRevini;
+    networkCoupling.previousReverseLiquidFraction = carried.previousReverseLiquidFraction;
+    networkCoupling.previousReverseQuality = carried.previousReverseQuality;
     transient.dtCicMin = carried.dtCicMin;
 }
 
