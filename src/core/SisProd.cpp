@@ -424,12 +424,12 @@ void SProd::atualizaCC1() {
 }
 
 void SProd::solveHydrateEnvelopes() {
-    if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) {
+    if (arq.calculaEnvelope == 1 && vg1dSP->lixo5 <= arq.tfinal) {
         FA_Hidrato solverHidrato(*this);
         solverHidrato.solverHidrato();
     }
 
-    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) {
+    if (arq.lingas > 0 && arq.calculaEnvelope == 1 && vg1dSP->lixo5 <= arq.tfinal) {
         FA_Hidrato_Servico solverHidratoG(*this);
         solverHidratoG.solverHidratoG();
     }
