@@ -37,7 +37,7 @@ void SProd::resetRunState() {
     transient.trackDeng = 0;
     gasLift.celulaG = nullptr;
     celula = nullptr;
-    gasLift.celInter = 1e7;
+    gasLift.celInter = kNoInterfaceCell;
     gasLift.dtInter = 0.;
     gasLift.velInter = 0.;
 
@@ -73,8 +73,8 @@ void SProd::resetRunState() {
     networkCoupling.betaEini = -1;
     networkCoupling.alfEini = -1;
 
-    gasLift.tempMedContDesc = 10.;
-    gasLift.maxVecContDesc = 1000;
+    gasLift.tempMedContDesc = kUnloadingAveragingWindow;
+    gasLift.maxVecContDesc = kUnloadingSampleCapacity;
     gasLift.vazmedDesc = 0;
     gasLift.tempmedDEsc = 0;
 
@@ -90,7 +90,7 @@ void SProd::resetRunState() {
 
     trends.kimpT = 0.;
 
-    transient.kontaGolfada = 1000;
+    transient.kontaGolfada = kInitialSlugCount;
 
     transient.mudaModoChk = 0;
     networkCoupling.mudaModoChkini = 0;
@@ -106,10 +106,10 @@ void SProd::resetRunState() {
 
     steadySearch.buscaIni = 0;
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < kMasterRatioHistorySize; i++) {
         transient.vRazMast0[i] = 0.;
         transient.vRazMast1[i] = 0.;
-        transient.vRazMastCrit[i] = 0.5;
+        transient.vRazMastCrit[i] = kDefaultMasterCriticalRatio;
     }
 
     transient.kontaRenovaComp = 0;
@@ -120,22 +120,27 @@ void SProd::resetRunState() {
     tables.ntabDin = 0;
 
     transient.nCelulaPoisson2D = 0;
-    steadySearch.trocaTermicaLenta = 0.01;
+    steadySearch.trocaTermicaLenta = kSlowHeatTransferThreshold;
 
     semTermo = 0;
 
-    steadySearch.monitConvPerm = 1000.;
+    steadySearch.monitConvPerm = kInitialConvergenceMonitor;
     steadySearch.monitConvPermBase = 1.;
 
     transient.alteraTempo = 0;
 }
 
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
-             int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
-                                                           flutG(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
-                                                           gasLift{.matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5), .termolivreG = Vcr<double>(3 * arq.ncelg)},
-                                                           transient{.matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2), .termolivreP = Vcr<double>(2 * arq.ncelp)} {
+             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso,
+             double *compfonte, int *posicfonte, int nfontes, int redeperm)
+    : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
+      flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
+      flut(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns),
+      gasLift{.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
+              .termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg)},
+      transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
+                                            kProductionRightBandwidth),
+                .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)} {
     resolveDriftSelectors();
     resetRunState();
     gasLift.celInterIni = gasLift.celInter;
@@ -150,9 +155,13 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     montasistema(compfonte, posicfonte, nfontes);
 }
 
-SProd::SProd() : arq(), flutG(1, 1 + 2 + 1 + 1 + 1 + 1), flut(1, 1 + 2 + 1 + 1 + 1),
-                 gasLift{.matglobG = BandMtx<double>(3 * 1, 5, 5), .termolivreG = Vcr<double>(3 * 1)},
-                 transient{.matglobP = BandMtx<double>(2 * 1, 3, 2), .termolivreP = Vcr<double>(2 * 1)} {
+SProd::SProd()
+    : arq(), flutG(1, kGasLineProfileFixedColumns), flut(1, kProductionProfileFixedColumns),
+      gasLift{.matglobG = BandMtx<double>(kGasLineUnknownsPerCell, kGasLineBandwidth, kGasLineBandwidth),
+              .termolivreG = Vcr<double>(kGasLineUnknownsPerCell)},
+      transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell, kProductionLeftBandwidth,
+                                            kProductionRightBandwidth),
+                .termolivreP = Vcr<double>(kProductionUnknownsPerCell)} {
     resolveDriftSelectors();
     resetRunState();
 }
@@ -255,12 +264,13 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
 
     arq.copiaSemJson(parsedInput);
     resolveDriftSelectors();
-    flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1);
-    flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + 2 + 1 + 1 + 1 + 1 + 1);
-    transient.matglobP = BandMtx<double>(2 * arq.ncelp, 3, 2);
-    transient.termolivreP = Vcr<double>(2 * arq.ncelp);
-    gasLift.matglobG = BandMtx<double>(3 * arq.ncelg, 5, 5);
-    gasLift.termolivreG = Vcr<double>(3 * arq.ncelg);
+    flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns);
+    flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns);
+    transient.matglobP =
+        BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth, kProductionRightBandwidth);
+    transient.termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
+    gasLift.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
+    gasLift.termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
     vg1dSP = arq.vg1dSP;
     resetRunState();
     gasLift.celInterIni = gasLift.celInter;
