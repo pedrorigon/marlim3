@@ -34,6 +34,7 @@
 #include "variaveisGlobais1D.h"
 #include <ctime>
 #include <math.h>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -276,11 +277,11 @@ struct TransientRun {
     /// fraction outside the physical [0, 1] range.
     int rollbackRequested = 0;
     /// Recent Master1 ratio values for the active state.
-    double masterValveRatiosActive[kMasterRatioHistorySize] = {};
+    std::array<double, kMasterRatioHistorySize> masterValveRatiosActive{};
     /// Recent Master1 ratio values for the inactive state.
-    double masterValveRatiosInactive[kMasterRatioHistorySize] = {};
+    std::array<double, kMasterRatioHistorySize> masterValveRatiosInactive{};
     /// Critical Master1 ratio history used by the switching logic.
-    double masterValveCriticalRatios[kMasterRatioHistorySize] = {
+    std::array<double, kMasterRatioHistorySize> masterValveCriticalRatios{
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,

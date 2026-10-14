@@ -69,11 +69,9 @@ void SProd::resetRunState() {
     transient.fullModel = 1;
     transient.meanMaximumPressureRate = 1.;
     transient.meanMaximumTemperatureRate = 1.;
-    for (int i = 0; i < kMasterRatioHistorySize; i++) {
-        transient.masterValveRatiosInactive[i] = 0.;
-        transient.masterValveRatiosActive[i] = 0.;
-        transient.masterValveCriticalRatios[i] = kDefaultMasterCriticalRatio;
-    }
+    transient.masterValveRatiosInactive.fill(0.);
+    transient.masterValveRatiosActive.fill(0.);
+    transient.masterValveCriticalRatios.fill(kDefaultMasterCriticalRatio);
     transient.compositionalRefreshCounter = 0;
     transient.poisson2DCellCount = 0;
     transient.adjustTimeStep = 0;
